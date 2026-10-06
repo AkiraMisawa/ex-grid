@@ -231,7 +231,7 @@ public class LiveSourceTests
 
     // ---- LV-4: a whole new list, paired by key -----------------------------------------------
 
-    [Fact] // ADR-0141 / LV-4: a new key is added, a missing one removed, a new instance changed, the same instance unchanged
+    [Fact] // ADR-0141 / LV-4 (D7): a new key is added, a missing one removed, a new instance changed, the same instance unchanged; the order is the list's
     public void A_whole_new_list_is_paired_by_key()
     {
         var source = Live(new FakeTimeProvider(), out var rows);
@@ -239,35 +239,138 @@ public class LiveSourceTests
 
         source.ReplaceAll([new Deal("F", "FX", 0), rows[3], b, rows[0], new Deal("E", "Rates", 4)]);
 
-        // C is gone; B changed in its place; F and E added at the end in the list's order; A and D are
-        // the instances they were.
-        Assert.Equal("A,B,D,F,E", Ids(source));
-        Assert.Same(rows[0], source.Window[0]);
-        Assert.Same(b, source.Window[1]);
-        Assert.Same(rows[3], source.Window[2]);
+        // C is gone; B changed; F and E added; A and D are the instances they were; and the rows stand
+        // in the list's order.
+        Assert.Equal("F,D,B,A,E", Ids(source));
+        Assert.Same(rows[3], source.Window[1]);
+        Assert.Same(b, source.Window[2]);
+        Assert.Same(rows[0], source.Window[3]);
     }
 
-    [Fact] // ADR-0141 / LV-4: the result and the Row Sequence Version equal those of the batch that says the same
-    public void A_whole_new_list_equals_the_batch_that_says_the_same()
+    [Fact] // ADR-0141 / LV-4 (D7): the rows are those of the batch that says the same; in the base order, with the rows added at its end, the order and the Row Sequence Version are the batch's too
+    public void A_whole_new_list_holds_the_rows_of_the_batch_that_says_the_same()
     {
         foreach (var query in new (GridFilter? Filter, SortSpec[] Sorts)[] { (null, []), (AmountAtLeast(2), ByAmount) })
         {
-            var byList = Live(new FakeTimeProvider(), out var rows);
-            var byBatch = Live(new FakeTimeProvider(), out _);
-            foreach (var source in new[] { byList, byBatch })
+            foreach (var inBaseOrder in new[] { true, false })
             {
-                source.OnFilterChanged(query.Filter);
-                source.OnSortChanged(query.Sorts);
+                var byList = Live(new FakeTimeProvider(), out var rows);
+                var byBatch = Live(new FakeTimeProvider(), out _);
+                foreach (var source in new[] { byList, byBatch })
+                {
+                    source.OnFilterChanged(query.Filter);
+                    source.OnSortChanged(query.Sorts);
+                }
+                var e = new Deal("E", "Rates", 4);
+                var a = rows[0] with { Amount = 0 };
+
+                byList.ReplaceAll(inBaseOrder ? [a, rows[1], rows[3], e] : [e, rows[3], a, rows[1]]);
+                byBatch.Apply(new(added: [e], changed: [a], removedKeys: ["C"]));
+
+                // The two sources hold value-equal rows of their own: compared by value, in key order.
+                Assert.Equal(byBatch.Window.OrderBy(d => d.Id, StringComparer.Ordinal), byList.Window.OrderBy(d => d.Id, StringComparer.Ordinal));
+                if (inBaseOrder)
+                {
+                    Assert.Equal(byBatch.Window.Select(d => d.Id), byList.Window.Select(d => d.Id));
+                    Assert.Equal(byBatch.RowSequenceVersion, byList.RowSequenceVersion);
+                }
             }
-            var e = new Deal("E", "Rates", 4);
-            var a = rows[0] with { Amount = 0 };
-
-            byList.ReplaceAll([e, rows[3], a, rows[1]]);
-            byBatch.Apply(new(added: [e], changed: [a], removedKeys: ["C"]));
-
-            Assert.Equal(byBatch.Window.Select(d => d.Id), byList.Window.Select(d => d.Id));
-            Assert.Equal(byBatch.RowSequenceVersion, byList.RowSequenceVersion);
         }
+    }
+
+    [Fact] // ADR-0141 / LV-4 (D7): a list in a new order is shown in that order, and the Row Sequence Version moves
+    public void A_whole_new_list_sets_the_order()
+    {
+        var source = Live(new FakeTimeProvider(), out var rows);
+        var version = source.RowSequenceVersion;
+        var events = 0;
+        source.StateChanged += () => events++;
+
+        source.ReplaceAll([rows[3], rows[2], rows[1], rows[0]]);
+
+        Assert.Equal("D,C,B,A", Ids(source));
+        Assert.Equal(version + 1, source.RowSequenceVersion);
+        Assert.Equal(1, events);
+        // The base order is the list's: what the next batch adds goes after it, and the value list
+        // reads in it (ADR-0009).
+        source.Apply(new(added: [new Deal("E", "FX", 0)]));
+        Assert.Equal("D,C,B,A,E", Ids(source));
+    }
+
+    [Fact] // ADR-0141 / LV-4 (D7), ADR-0023: under a Sort, ties fall in the list's order
+    public void Under_a_sort_ties_fall_in_the_lists_order()
+    {
+        var source = Live(new FakeTimeProvider(), out var rows);
+        source.OnSortChanged([new SortSpec("Book", SortDirection.Ascending)]);
+        Assert.Equal("B,D,A,C", Ids(source));
+        var version = source.RowSequenceVersion;
+
+        source.ReplaceAll([rows[2], rows[1], rows[0], rows[3]]);
+
+        Assert.Equal("B,D,C,A", Ids(source));
+        Assert.Equal(version + 1, source.RowSequenceVersion);
+    }
+
+    [Fact] // ADR-0141 / LV-4 (D7), LV-7: a new order the Sort does not show keeps the result and the version, and raises nothing
+    public void A_new_order_the_sort_does_not_show_changes_nothing()
+    {
+        var source = Live(new FakeTimeProvider(), out var rows);
+        source.OnSortChanged(ByAmount);
+        var window = source.Window;
+        var version = source.RowSequenceVersion;
+        var events = 0;
+        source.StateChanged += () => events++;
+
+        source.ReplaceAll([rows[3], rows[2], rows[1], rows[0]]);
+
+        Assert.Same(window, source.Window);
+        Assert.Equal(version, source.RowSequenceVersion);
+        Assert.Equal(0, events);
+        // Taken all the same: without the Sort, the list's order shows.
+        source.OnSortChanged([]);
+        Assert.Equal("D,C,B,A", Ids(source));
+    }
+
+    [Fact] // ADR-0141 / LV-4 (D7), LV-9: a row added inside the list stands where the list puts it, and is marked whole; the rows it moved are not marked
+    public void A_row_added_inside_the_list_stands_where_the_list_puts_it()
+    {
+        var clock = new FakeTimeProvider();
+        var source = Live(clock, out var rows);
+        var changedAt = source.CellChangedAt!;
+        var version = source.RowSequenceVersion;
+
+        source.ReplaceAll([rows[0], new Deal("E", "FX", 6), rows[1], rows[2], rows[3]]);
+
+        Assert.Equal("A,E,B,C,D", Ids(source));
+        Assert.Equal(version + 1, source.RowSequenceVersion);
+        Assert.All(new[] { IdColumn, BookColumn, AmountColumn }, column => Assert.Equal(clock.GetUtcNow(), changedAt(source.Window[1], column)));
+        foreach (var row in source.Window.Where(d => d.Id != "E"))
+            Assert.All(new[] { IdColumn, BookColumn, AmountColumn }, column => Assert.Null(changedAt(row, column)));
+    }
+
+    [Fact] // ADR-0141 / LV-4 (D7), LV-6, LV-9: a new order is gathered like any change; a change gathered after it marks only its own cells
+    public void A_new_order_is_gathered_and_a_later_change_marks_only_its_cells()
+    {
+        var clock = new FakeTimeProvider();
+        var source = Live(clock, out var rows, gather: true);
+        var changedAt = source.CellChangedAt!;
+        source.Apply(new(changed: [rows[3] with { Book = "Rates" }]));
+        var d = source.Window[3];
+
+        source.ReplaceAll([d, rows[2], rows[1], rows[0]]);
+        clock.Advance(TimeSpan.FromMilliseconds(100));
+        var b = rows[1] with { Amount = 9 };
+        source.Apply(new(changed: [b]));
+        Assert.Equal("A,B,C,D", Ids(source));
+
+        clock.Advance(TimeSpan.FromMilliseconds(150));
+
+        Assert.Equal("D,C,B,A", Ids(source));
+        Assert.Same(b, source.Window[2]);
+        Assert.Equal(clock.GetUtcNow(), changedAt(b, AmountColumn));
+        Assert.Null(changedAt(b, BookColumn));
+        foreach (var row in source.Window.Where(r => r.Id != "B"))
+            Assert.Null(changedAt(row, AmountColumn));
     }
 
     [Fact] // ADR-0141 / LV-4: the same list again changes nothing — no event, no new Window
@@ -412,6 +515,127 @@ public class LiveSourceTests
 
         Assert.Contains("'A'", refusal.Message);
         Assert.Throws<ArgumentException>(() => source.ReplaceRow(source.Window[1], source.Window[1] with { Id = "Q" }));
+    }
+
+    // ---- LV-16: what was gathered is put out before a write is judged --------------------------
+
+    [Fact] // ADR-0141/0142 / LV-16: inside a gather interval, a commit's ReplaceRow is refused by name before PublishGathered, and accepted on the newest row after it
+    public void After_PublishGathered_a_ReplaceRow_built_on_the_newest_row_is_accepted()
+    {
+        var clock = new FakeTimeProvider();
+        var source = Live(clock, out var rows, gather: true);
+        source.Apply(new(changed: [rows[3] with { Amount = 7 }]));
+        // Gathered, not yet published: the Window, which the grid paints, still holds rows[0].
+        var gathered = rows[0] with { Amount = 8 };
+        source.Apply(new(changed: [gathered]));
+        Assert.Same(rows[0], source.Window[0]);
+
+        var refusal = Assert.Throws<ArgumentException>(() => source.ReplaceRow(source.Window[0], source.Window[0] with { Book = "Edited" }));
+        Assert.Contains("'A'", refusal.Message);
+
+        ((IGridSource<Deal>)source).PublishGathered();
+
+        Assert.Same(gathered, source.Window[0]);
+        source.ReplaceRow(source.Window[0], source.Window[0] with { Book = "Edited" });
+        // The edit is built on the gathered change, so it keeps it.
+        Assert.Equal("Edited", source.Window[0].Book);
+        Assert.Equal(8m, source.Window[0].Amount);
+    }
+
+    [Fact] // ADR-0141 / LV-16: PublishGathered raises StateChanged when it put something out, and nothing when nothing was gathered
+    public void PublishGathered_raises_StateChanged_only_when_it_published()
+    {
+        var clock = new FakeTimeProvider();
+        var source = Live(clock, out var rows, gather: true);
+        source.Apply(new(changed: [rows[3] with { Amount = 7 }]));
+        var events = 0;
+        source.StateChanged += () => events++;
+
+        source.PublishGathered();
+        Assert.Equal(0, events);
+
+        source.Apply(new(changed: [rows[0] with { Amount = 8 }]));
+        source.PublishGathered();
+        Assert.Equal(1, events);
+        Assert.Equal(8m, source.Window[0].Amount);
+
+        source.PublishGathered();
+        Assert.Equal(1, events);
+    }
+
+    [Fact] // ADR-0141 / LV-16, LV-6: PublishGathered is a publication: the next change waits the interval from it, and the interval's end then publishes nothing more
+    public void PublishGathered_brings_the_publication_forward()
+    {
+        var clock = new FakeTimeProvider();
+        var source = Live(clock, out var rows, gather: true);
+        source.Apply(new(changed: [rows[3] with { Amount = 7 }]));
+        clock.Advance(TimeSpan.FromMilliseconds(100));
+        source.Apply(new(changed: [rows[0] with { Amount = 8 }]));
+        source.PublishGathered();
+        var events = 0;
+        source.StateChanged += () => events++;
+
+        // The interval that was running ends: nothing is left to publish.
+        clock.Advance(TimeSpan.FromMilliseconds(150));
+        Assert.Equal(0, events);
+
+        // A change 150 ms after PublishGathered waits for the interval from it.
+        source.Apply(new(changed: [rows[1] with { Amount = 9 }]));
+        clock.Advance(TimeSpan.FromMilliseconds(99));
+        Assert.Equal(0, events);
+        Assert.Equal(1m, source.Window[1].Amount);
+        clock.Advance(TimeSpan.FromMilliseconds(1));
+        Assert.Equal(1, events);
+        Assert.Equal(9m, source.Window[1].Amount);
+    }
+
+    [Fact] // ADR-0141 / LV-16, principle 6: a publication posted to the source's context, which PublishGathered took first, does not run again early
+    public async Task A_posted_publication_that_PublishGathered_took_does_not_run_again()
+    {
+        var context = new QueueContext();
+        var previous = SynchronizationContext.Current;
+        var clock = new FakeTimeProvider();
+        InMemoryGridSource<Deal> source;
+        Deal[] rows;
+        SynchronizationContext.SetSynchronizationContext(context);
+        try
+        {
+            source = Live(clock, out rows, gather: true);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+        var token = TestContext.Current.CancellationToken;
+
+        // After a quiet interval: decided at once, and posted to the source's context.
+        await Task.Run(() => source.Apply(new(changed: [rows[0] with { Amount = 7 }])), token);
+        source.PublishGathered();
+        Assert.Equal(7m, source.Window[0].Amount);
+        // Within the interval from that publication: gathered.
+        await Task.Run(() => source.Apply(new(changed: [rows[1] with { Amount = 8 }])), token);
+
+        context.RunAll();
+
+        Assert.Equal(1m, source.Window[1].Amount);
+        clock.Advance(Interval);
+        context.RunAll();
+        Assert.Equal(8m, source.Window[1].Amount);
+    }
+
+    [Fact] // ADR-0141 / LV-16: without a Row Key nothing is gathered, so PublishGathered does nothing
+    public void PublishGathered_without_a_key_does_nothing()
+    {
+        var source = GridSource.From(Deals());
+        source.OnColumnsChanged(Columns);
+        var window = source.Window;
+        var events = 0;
+        source.StateChanged += () => events++;
+
+        ((IGridSource<Deal>)source).PublishGathered();
+
+        Assert.Equal(0, events);
+        Assert.Same(window, source.Window);
     }
 
     [Fact] // ADR-0141 / LV-6: changes may arrive on any thread; every one lands, and the Window is the newest version

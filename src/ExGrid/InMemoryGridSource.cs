@@ -28,7 +28,7 @@ namespace ExGrid;
 /// grid reads are replaced together on the context the source was built on — on Blazor, the
 /// renderer's — which is where the grid reads them; where there is none, as on WebAssembly or in a
 /// test, they are replaced on the thread that applies them. The grid's own calls (a sort, a filter,
-/// <see cref="ReplaceRow"/>) arrive on that context.</para>
+/// <see cref="ReplaceRow"/>, <see cref="PublishGathered"/>) arrive on that context.</para>
 /// </summary>
 public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCircuit
 {
@@ -56,6 +56,9 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     private long[] _windowOrdinals = [];
     // A publication decided on and not yet run: changes arriving meanwhile go with it.
     private bool _publishing;
+    // A whole new list put the base in another order since the Window was last computed (D7): the
+    // Window's ordinals are of the order before, and the next publication requeries whole.
+    private bool _reordered;
 
     internal InMemoryGridSource(IReadOnlyList<TRow> rows)
     {
@@ -336,11 +339,18 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     /// Takes a whole new list, paired with the rows held by Row Key (ADR-0141, LV-4), as ag-grid
     /// takes new <c>rowData</c> under <c>getRowId</c>: a new key is a row added, a key missing is a
     /// row removed, a different instance under a key is a row changed, and the same instance is a
-    /// row unchanged. It is the Change Batch that says the same, applied the same way: the result
-    /// and the Row Sequence Version are that batch's. The list's own order is not taken: a row
-    /// keeps its place in the base order, and the rows added go at its end in the list's order.
-    /// Pairing compares references, never values, so it reads no value of any row. A key that
-    /// repeats in the list, or a null one, refuses the list by name.
+    /// row unchanged. Pairing compares references, never values, so it reads no value of any row. A
+    /// key that repeats in the list, or a null one, refuses the list by name.
+    ///
+    /// <para><b>The source's own order follows the list</b> (D7 of 2026-10-06), as ag-grid's does
+    /// under <c>getRowId</c>: a reload whose rows come back in a new order is shown in that order,
+    /// and under a Sort their ties fall in it. The Row Sequence Version moves when the result's
+    /// sequence of keys moved, and only then: a new order a Sort does not show moves nothing and
+    /// raises nothing. A list in the base order, with the rows it adds after the rows held, is
+    /// exactly the Change Batch that says the same, its result and version included; a list in
+    /// another order is requeried whole when it is published, which the result does not show
+    /// (ADR-0023). It is gathered like a batch, and a new order marks nothing, as a sort does
+    /// not.</para>
     /// </summary>
     /// <exception cref="InvalidOperationException">The source was given no Row Key.</exception>
     public void ReplaceAll(IReadOnlyList<TRow> rows)
@@ -530,14 +540,18 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         public TRow MarkAgainst { get; set; } = default!;
     }
 
-    /// <summary>What a batch or a list does, checked whole before any of it is taken in.</summary>
+    /// <summary>What a batch or a list does, checked whole before any of it is taken in. A list
+    /// that puts the rows in another order than a batch would also carries its keys in its order
+    /// (D7).</summary>
     private sealed record ChangePlan(
         List<(object Key, TRow Row)> Added,
         List<(object Key, TRow Row)> Changed,
         List<object> Removed,
         List<TRow> Checked)
     {
-        public bool IsEmpty => Added.Count == 0 && Changed.Count == 0 && Removed.Count == 0;
+        public object[]? Order { get; init; }
+
+        public bool IsEmpty => Added.Count == 0 && Changed.Count == 0 && Removed.Count == 0 && Order is null;
     }
 
     /// <summary>Checks a batch against what is held, all of it, before anything is taken in
@@ -607,32 +621,45 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         return plan;
     }
 
-    /// <summary>A whole new list, paired with what is held by key (LV-4).</summary>
+    /// <summary>A whole new list, paired with what is held by key (LV-4), and whether its order is
+    /// the one the batch that says the same would give — the rows held in the base order, the rows
+    /// added after them all (D7).</summary>
     private ChangePlan PairWithHeld(KeyedRows<TRow> keyed, IReadOnlyList<TRow> rows)
     {
         var plan = new ChangePlan([], [], [], []);
         var listed = new Dictionary<object, int>(rows.Count);
+        var keys = new object[rows.Count];
+        var lastOrdinal = -1L;
+        var addedBefore = false;
+        var reordered = false;
         for (var i = 0; i < rows.Count; i++)
         {
             var row = rows[i] ?? throw new ArgumentException($"Row {i} of the list is null.", nameof(rows));
-            var key = keyed.KeyOf(row, $"Row {i} of the list");
+            var key = keys[i] = keyed.KeyOf(row, $"Row {i} of the list");
             if (!listed.TryAdd(key, i))
             {
                 throw new ArgumentException(
                     $"Rows {listed[key]} and {i} of the list both have the Row Key '{key}'; two rows under one key " +
                     "would be painted as one (ADR-0140). Nothing of the list was taken (ADR-0141).", nameof(rows));
             }
-            if (!keyed.TryGet(key, out var held, out _))
+            if (!keyed.TryGet(key, out var held, out var ordinal))
             {
                 plan.Added.Add((key, row));
                 plan.Checked.Add(row);
+                addedBefore = true;
+                continue;
             }
-            else if (!ReferenceEquals(held, row))
+            // A row held that stands before one it followed in the base, or after a row added.
+            reordered |= addedBefore || ordinal < lastOrdinal;
+            lastOrdinal = ordinal;
+            if (!ReferenceEquals(held, row))
             {
                 plan.Changed.Add((key, row));
                 plan.Checked.Add(row);
             }
         }
+        if (reordered)
+            plan = plan with { Order = keys };
         // Every held key the list names is either kept or changed; when fewer are named than are
         // held, the rest are removed.
         if (listed.Count - plan.Added.Count < keyed.Count)
@@ -683,6 +710,13 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
             Remember(keyed, key);
             keyed.Add(key, row);
         }
+        if (plan.Order is { } order)
+        {
+            // The list's order is the base's now (D7). The rows take new ordinals, so the next
+            // publication cannot place them among the Window by the old ones: it requeries whole.
+            keyed.Reorder(order);
+            _reordered = true;
+        }
     }
 
     private Pending Remember(KeyedRows<TRow> keyed, object key)
@@ -701,7 +735,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     /// publication is taken on, and changes arriving before it runs go with it.</summary>
     private bool Decide()
     {
-        if (_pending.Count == 0 || !_gatherer!.ShouldAskNow(busy: _publishing))
+        if ((_pending.Count == 0 && !_reordered) || !_gatherer!.ShouldAskNow(busy: _publishing))
             return false;
         _publishing = true;
         return true;
@@ -711,9 +745,9 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     private void Dispatch()
     {
         if (_context is null || ReferenceEquals(SynchronizationContext.Current, _context))
-            PublishGathered();
+            PublishDecided();
         else
-            _context.Post(static state => ((InMemoryGridSource<TRow>)state!).PublishGathered(), this);
+            _context.Post(static state => ((InMemoryGridSource<TRow>)state!).PublishDecided(), this);
     }
 
     /// <summary>The gathering timer fired, on the clock's thread.</summary>
@@ -729,12 +763,18 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
             Dispatch();
     }
 
-    private void PublishGathered()
+    /// <summary>The publication <see cref="Decide"/> took on. Another publication may have run
+    /// before it — <see cref="PublishGathered"/>, a user's edit, a new Query — and taken its changes
+    /// with it; it then does nothing, rather than publish early whatever was gathered since, before
+    /// the interval from that publication is up (principle 6: the outcome does not depend on which
+    /// of the two ran first).</summary>
+    private void PublishDecided()
     {
         bool raise;
         lock (_gate)
         {
-            _publishing = false;
+            if (!_publishing)
+                return;
             raise = PublishPending();
         }
         if (raise)
@@ -742,14 +782,51 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     }
 
     /// <summary>
+    /// Puts out at once the live changes gathered and not yet published (ADR-0141/0142, LV-16), so
+    /// the Window is the newest version this source holds: the grid calls it just before it judges a
+    /// write, and a <see cref="ReplaceRow"/> built on the row it then reads is taken. It is a
+    /// publication like the one at an interval's end: the next live change waits
+    /// <see cref="GatherInterval"/> from it, and the publication that interval would have made has
+    /// nothing left to make. Nothing gathered, or no Row Key, and it does nothing.
+    ///
+    /// <para><b>It raises <see cref="StateChanged"/> when it put something out</b>, as every
+    /// publication does, and never when it did not. The judgement: a publication without its event
+    /// would leave every other listener — a second grid bound to this source, a Consumer's status
+    /// line — on the version before it for good, since nothing is left for the interval's end to
+    /// publish. The grid that called it reads the Window itself straight after, so the event is
+    /// redundant for that grid, and it costs no repaint of every row: its rows render on a new
+    /// instance (ADR-0003), so only the rows the publication replaced render, once, in the render
+    /// the write causes anyway. A grid may also ignore the event it raises while it calls this, as it
+    /// ignores the events of the column push it makes itself.</para>
+    ///
+    /// <para>Called by the grid on its own context, as its other calls are; like
+    /// <see cref="ReplaceRow"/>, it publishes on the thread that calls it, under the source's
+    /// lock.</para>
+    /// </summary>
+    public void PublishGathered()
+    {
+        if (_keyed is null)
+            return;
+        bool raise;
+        lock (_gate)
+            raise = PublishPending();
+        if (raise)
+            StateChanged?.Invoke();
+    }
+
+    /// <summary>
     /// Under the lock: the Window brought up to the newest version from the changes gathered, by
     /// the incremental requery; the version moved when the sequence did (LV-7); the Change
-    /// Highlight recorded (LV-9). True when the grid has something new to paint.
+    /// Highlight recorded (LV-9). True when the grid has something new to paint. Every publication
+    /// takes the one decided on with it (<see cref="PublishDecided"/>), and the wait armed for the
+    /// interval's end has nothing left to wait for.
     /// </summary>
     private bool PublishPending()
     {
-        if (_pending.Count == 0)
+        _publishing = false;
+        if (_pending.Count == 0 && !_reordered)
             return false;
+        _gatherer!.Disarm();
         var keyed = _keyed!;
         var changes = new List<RowChange<TRow>>(_pending.Count);
         var pendings = new List<Pending>(_pending.Count);
@@ -765,11 +842,13 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         }
         _pending.Clear();
         _gatherer!.Shown();
-        if (changes.Count == 0)
+        var reordered = _reordered;
+        _reordered = false;
+        if (changes.Count == 0 && !reordered)
             return false;
 
         var outcome = LiveRequery.Apply(
-            _window, _windowOrdinals, changes, _columns ?? [], Filter, Sorts, keyed.Count, keyed.Snapshot);
+            _window, _windowOrdinals, changes, _columns ?? [], Filter, Sorts, keyed.Count, keyed.Snapshot, reordered);
         RecordChanges(changes, pendings, outcome);
 
         var windowChanged = !ReferenceEquals(outcome.Result, _window);

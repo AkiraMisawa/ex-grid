@@ -126,6 +126,8 @@ public sealed class TradeStoreTests
             var change = await store.ApplyLiveChangesAsync(3, Token);
             if (change.TradeIds.Contains(booked))
                 booking = change;
+            else
+                Assert.Empty(change.BookedIds);
         }
 
         Assert.NotNull(booking);
@@ -136,6 +138,8 @@ public sealed class TradeStoreTests
         Assert.Equal(TestData.Line(generated), LineOf(after[booked]));
         var cancelled = Assert.Single(booking.TradeIds, id => before.ContainsKey(id) && !after.ContainsKey(id));
         Assert.Equal(5, booking.TradeIds.Length); // three moved, one cancelled, one booked
+        // ADR-0141 D6: the booked trade is named apart from the ones changed.
+        Assert.Equal([booked], booking.BookedIds);
         Assert.DoesNotContain(cancelled, after.Keys);
     }
 
@@ -308,6 +312,7 @@ public sealed class TradeStoreTests
 
         Assert.NotNull(change);
         Assert.Equal([id], change.TradeIds);
+        Assert.Empty(change.BookedIds);
         Assert.Equal(999, store.TradeCount);
         var told = await store.Changes.ReadAsync(Token);
         Assert.Equal(change.Version, told.Version);

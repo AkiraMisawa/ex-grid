@@ -50,9 +50,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- What the ExPivot pages and /grid-live show under "The code" is read from their own source
+    <!-- What the ExPivot pages, /grid-live and /grid-live-local show under "The code" is read from their own source
          (DemoCode), embedded here, so the code a page shows is the code it runs. -->
-    <EmbeddedResource Include="DemoPivotData.cs;DemoCsv.cs;DemoRiskData.cs;DemoServerPivot.cs;Pages\PivotPage.razor;Pages\PivotCsvPage.razor;Pages\PivotDbPage.razor;Pages\PivotLivePage.razor;Pages\PivotRiskPage.razor;Pages\GridLivePage.razor"
+    <EmbeddedResource Include="DemoPivotData.cs;DemoCsv.cs;DemoRiskData.cs;DemoServerPivot.cs;Pages\PivotPage.razor;Pages\PivotCsvPage.razor;Pages\PivotDbPage.razor;Pages\PivotLivePage.razor;Pages\PivotRiskPage.razor;Pages\GridLivePage.razor;Pages\GridLiveLocalPage.razor"
                       LogicalName="DemoCode/%(Filename)%(Extension)" />
   </ItemGroup>
 

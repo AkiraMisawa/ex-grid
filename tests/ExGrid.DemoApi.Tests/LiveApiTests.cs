@@ -19,7 +19,7 @@ public sealed class LiveApiTests(DemoApiServer server) : IClassFixture<DemoApiSe
         var token = timeout.Token;
 
         var versions = Channel.CreateUnbounded<string>();
-        var changes = Channel.CreateUnbounded<(string Version, string[] TradeIds)>();
+        var changes = Channel.CreateUnbounded<(string Version, string[] TradeIds, string[] BookedIds)>();
         await using var connection = new HubConnectionBuilder()
             .WithUrl(new Uri(server.Factory.Server.BaseAddress, TradesHub.Path.TrimStart('/')), options =>
             {
@@ -30,7 +30,8 @@ public sealed class LiveApiTests(DemoApiServer server) : IClassFixture<DemoApiSe
             .Build();
         // The message names a page subscribes to, spelled as a page spells them.
         connection.On<string>("VersionChanged", version => versions.Writer.TryWrite(version));
-        connection.On<string, string[]>("TradesChanged", (version, tradeIds) => changes.Writer.TryWrite((version, tradeIds)));
+        connection.On<string, string[], string[]>("TradesChanged",
+            (version, tradeIds, bookedIds) => changes.Writer.TryWrite((version, tradeIds, bookedIds)));
         await connection.StartAsync(token);
 
         using var client = server.Factory.CreateClient();
@@ -44,7 +45,7 @@ public sealed class LiveApiTests(DemoApiServer server) : IClassFixture<DemoApiSe
             Assert.Equal(3, settings.GetProperty("tradesPerTick").GetInt32());
         }
 
-        var heard = new List<(string Version, string[] TradeIds)>();
+        var heard = new List<(string Version, string[] TradeIds, string[] BookedIds)>();
         var heardVersions = new List<string>();
         for (var i = 0; i < 4; i++)
         {
@@ -62,6 +63,9 @@ public sealed class LiveApiTests(DemoApiServer server) : IClassFixture<DemoApiSe
             Assert.Equal(TestData.Counter(before) + 1 + i, TestData.Counter(heard[i].Version));
             Assert.InRange(heard[i].TradeIds.Length, 3, 5);
             Assert.Equal(heard[i].TradeIds.Order(StringComparer.Ordinal), heard[i].TradeIds);
+            // ADR-0141 D6: the trades booked are named apart, and are among the trades the change touched.
+            Assert.Subset(heard[i].TradeIds.ToHashSet(), heard[i].BookedIds.ToHashSet());
+            Assert.Equal(heard[i].TradeIds.Length == 5 ? 1 : 0, heard[i].BookedIds.Length);
         }
 
         // What the hub named is what the change touched: the database recorded the same.

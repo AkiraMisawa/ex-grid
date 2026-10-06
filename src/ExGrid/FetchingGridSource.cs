@@ -14,7 +14,7 @@ namespace ExGrid;
 /// that starts with nothing has to break its own cold start.</para>
 ///
 /// <para><b>Given a Row Key, it hears that the data moved on</b> (ADR-0141): the Consumer calls
-/// <see cref="NotifyChanged"/> however it learns it — SignalR, polling, a message bus — and the
+/// <see cref="NotifyChanged()"/> however it learns it — SignalR, polling, a message bus — and the
 /// source reads its Window again, gathered on the source's clock by the rules
 /// <c>GridSource.From</c> gathers by. It pairs every answer's rows with the ones it painted by
 /// key and marks the cells whose painted text changed (<see cref="CellChangedAt"/>); it refuses an
@@ -22,6 +22,14 @@ namespace ExGrid;
 /// server knows whether the order of the whole result moved: an answer may carry the server's
 /// order token (<see cref="GridPage{TRow}.OrderToken"/>), and the Row Sequence Version moves when
 /// it differs from the previous answer's, and with every change when the server sends none.</para>
+///
+/// <para><b>A write under live data</b> (ADR-0141/0142, D5; LV-16). Before it judges a write, the
+/// grid asks its source to put out what it has gathered (<see cref="IGridSource{TRow}.PublishGathered"/>).
+/// This source has nothing it could put out without waiting: what it waits for is an answer from
+/// the server, so it keeps the interface's default, and does nothing. A write is therefore judged
+/// against what was painted, and its Edit Intent carries the row the grid painted. Whether the
+/// server's data moved under the write — a row changed upstream since that answer — is the
+/// Consumer's server's to judge when it takes the write (ADR-0141).</para>
 /// </summary>
 public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, IBindsToOneCircuit
 {
@@ -67,6 +75,16 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     private bool _answered;
     // The rows the grid last said it needs: what a Window read again must still reach.
     private RowRange? _lastNeeded;
+    // The notices heard, counted; how many the carrying question in flight was asked after; how many
+    // an answer that landed has carried; and the last notice that named no added keys (0 for none).
+    // What the Change Highlight of an answer takes a row not painted before to be (D6).
+    private long _notices;
+    private long _noticesAsked;
+    private long _noticesShown;
+    private long _lastNameless;
+    // The keys named as added, each with the last notice that named it, not yet let go: a carrying
+    // answer that lands applies them all, and lets go of the ones its question was asked after.
+    private Dictionary<object, long>? _named;
 
     internal FetchingGridSource(
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
@@ -118,12 +136,18 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     /// <item>Every answer's rows are paired by key with the rows the source painted before it, and
     /// a cell is marked when its painted text differs — the column's <c>Format</c>, as the grid
     /// paints a value cell; a change the format hides is not marked.</item>
-    /// <item>On an answer that carries a change of data, a row not painted before is marked whole
-    /// where it cannot have come into view by moving: between two rows painted before, or past an
-    /// end of the result that the Window painted before also reached. A row at an edge of the
-    /// Window may have slid in from beyond it as rows were added or removed elsewhere, and the
-    /// source cannot tell that from a row that appeared, so it does not mark it: a mark never
-    /// appears on a value that did not change (ADR-0067).</item>
+    /// <item>On an answer that carries a change of data, a row not painted before under a key the
+    /// Consumer named as added (<see cref="NotifyChanged(IEnumerable{object})"/>) is marked whole,
+    /// wherever it stands; one painted before is compared as any other. When every notice heard
+    /// since the last answer that carried a change named its added keys, a row under a key none
+    /// named came into view by moving, and is not marked (D6).</item>
+    /// <item>When a notice named nothing (<see cref="NotifyChanged()"/>), the source guesses: a row
+    /// not painted before is marked whole where it cannot have come into view by moving — between
+    /// two rows painted before, or past an end of the result that the Window painted before also
+    /// reached. A row at an edge of the Window may have slid in from beyond it as rows were added or
+    /// removed elsewhere, and the source cannot tell that from a row that appeared, so it does not
+    /// mark it: a mark never appears on a value that did not change (ADR-0067). Naming the added
+    /// keys is what marks a row booked at an edge.</item>
     /// <item>A scroll, a sort or a filter marks nothing new: a sort or a filter drops the Window, and
     /// nothing is left to pair with.</item>
     /// </list>
@@ -170,17 +194,69 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     /// second would flicker the loading indication over data that is still the newest the grid has
     /// (as ExPivot's, ADR-0067). May be called on any thread.
     /// </summary>
+    /// <remarks>Says nothing of which keys were added, so a row the read shows that was not painted
+    /// before is guessed at (see <see cref="CellChangedAt"/>); <see cref="NotifyChanged(IEnumerable{object})"/>
+    /// says which.</remarks>
     /// <exception cref="InvalidOperationException">The source was given no Row Key, so it could not
     /// pair what it reads again with what it painted.</exception>
     public void NotifyChanged()
     {
         var gatherer = _gatherer ?? throw NoKey(nameof(NotifyChanged));
+        Heard(gatherer, null);
+    }
+
+    /// <summary>
+    /// <see cref="NotifyChanged()"/>, naming the Row Keys of the rows the Consumer knows were added
+    /// as the data moved on — a trade booked — and so that no other key was (ADR-0141, D6; LV-9). A
+    /// row under a named key that the read shows, not painted before, is marked whole wherever it
+    /// lands in the Window, an edge included; a row under a key no notice named came into the Window
+    /// by moving, and is not marked whole. An empty list says that nothing was added. Names are
+    /// gathered with the notices, and a read applies every name heard before it lands; a name the
+    /// read that carries it does not show is let go, so a scroll or a later read that brings the row
+    /// into view marks nothing. May be called on any thread.
+    /// </summary>
+    /// <param name="addedKeys">The Row Keys added, as the source's Row Key names them; none null.</param>
+    /// <exception cref="InvalidOperationException">The source was given no Row Key.</exception>
+    /// <exception cref="ArgumentException">A key is null; nothing is heard.</exception>
+    public void NotifyChanged(IEnumerable<object> addedKeys)
+    {
+        ArgumentNullException.ThrowIfNull(addedKeys);
+        var gatherer = _gatherer ?? throw NoKey(nameof(NotifyChanged));
+        // Taken now, on the caller's thread: the Consumer's collection may change once this returns.
+        var keys = addedKeys.ToArray();
+        for (var i = 0; i < keys.Length; i++)
+        {
+            if (keys[i] is null)
+            {
+                throw new ArgumentException(
+                    $"Added key {i} is null. A Row Key names a row, and no row is named by nothing (ADR-0140); nothing " +
+                    "was heard.", nameof(addedKeys));
+            }
+        }
+        Heard(gatherer, keys);
+    }
+
+    /// <summary>A notice, with the keys it names as added or null for none named, taken on the
+    /// source's context.</summary>
+    private void Heard(ChangeGatherer gatherer, object[]? addedKeys)
+    {
         if (_disposed)
             return;
         OnContext(() =>
         {
             if (_disposed)
                 return;
+            _notices++;
+            if (addedKeys is null)
+            {
+                _lastNameless = _notices;
+            }
+            else
+            {
+                _named ??= new Dictionary<object, long>();
+                foreach (var key in addedKeys)
+                    _named[key] = _notices;
+            }
             _changeWaiting = true;
             if (gatherer.ShouldAskNow(busy: _inFlight is not null))
                 AskForChange();
@@ -477,7 +553,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     /// <param name="needed">The range its answer has to reach.</param>
     /// <param name="notify">Raise <see cref="StateChanged"/> whatever the loading flag does.</param>
     /// <param name="quiet">A read of the Window for data that moved on: it does not raise
-    /// <see cref="IsLoading"/> (see <see cref="NotifyChanged"/>).</param>
+    /// <see cref="IsLoading"/> (see <see cref="NotifyChanged()"/>).</param>
     private Task Start(RowRange wanted, RowRange needed, bool notify = false, bool quiet = false)
     {
         // The previous answer can no longer be the truth, so it is cancelled and, if it
@@ -495,6 +571,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         // change). One that supersedes a question that carried it carries it on.
         var carries = _changeWaiting || (_inFlightCarries && _inFlight is not null);
         _inFlightCarries = carries;
+        // Every notice heard so far is carried by it: what its landing lets go of (D6).
+        if (carries)
+            _noticesAsked = _notices;
         _inFlight = wanted;
         var generation = ++_generation;
         if (_changeWaiting)
@@ -615,6 +694,8 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
             RowSequenceVersion++;
         if (keys is not null)
             RecordChanges(page, keys, carries);
+        if (carries)
+            LetGoOfNotices();
         _orderToken = page.OrderToken;
         _answered = true;
 
@@ -687,36 +768,76 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         // past that end, so a row there was not painted because it was not there.
         var reachedTop = WindowStart == 0 && page.Start == 0;
         var reachedBottom = WindowStart + Window.Count == TotalCount && page.Start + page.Rows.Count == page.TotalCount;
+        // What a row not painted before is taken to be (D6). Named as added by a notice heard before
+        // this answer landed: it appeared, wherever it stands. Otherwise it is guessed at only when a
+        // notice heard since the last carrying answer named nothing — the Consumer did not say what was
+        // added; when every such notice named its keys, a key none named came into view by moving.
+        var named = carries ? _named : null;
+        var guess = carries && _lastNameless > _noticesShown;
         var run = -1;
         for (var i = 0; i <= keys.Length; i++)
         {
             if (i < keys.Length && !painted.ContainsKey(keys[i]))
             {
+                if (named is not null && named.ContainsKey(keys[i]))
+                    appeared.Add(keys[i]);
                 if (run < 0)
                     run = i;
                 continue;
             }
             if (i < keys.Length)
             {
+                // A row painted before is compared, named as added or not: the screen showed it before
+                // and after, as GridSource.From compares a key removed and added again within one
+                // gathering, so both bundled sources mark the same (ADR-0141). A judgement of D6's build.
                 var old = painted[keys[i]];
                 if (!ReferenceEquals(old, page.Rows[i]))
                     pairs.Add((keys[i], old, page.Rows[i]));
             }
             if (run >= 0)
             {
-                // A run of rows not painted before, from run to i - 1, and whether rows painted
-                // before stand on both sides of it, or an end of the result both Windows reached.
+                // A run of rows not painted before, from run to i - 1, and whether rows painted before
+                // stand on both sides of it, or an end of the result both Windows reached. Its named
+                // rows are marked already.
                 var above = run > 0 || reachedTop;
                 var below = i < keys.Length || reachedBottom;
-                if (carries && above && below)
+                if (guess && above && below)
                 {
                     for (var j = run; j < i; j++)
-                        appeared.Add(keys[j]);
+                    {
+                        if (named is null || !named.ContainsKey(keys[j]))
+                            appeared.Add(keys[j]);
+                    }
                 }
                 run = -1;
             }
         }
         times.Record(_columns, pairs, appeared, []);
+    }
+
+    /// <summary>A carrying answer landed: the notices its question was asked after are shown, and
+    /// the names they gave are let go. Names heard while it was out stay for the next read, which
+    /// shows them if this answer did not (D6).</summary>
+    private void LetGoOfNotices()
+    {
+        _noticesShown = Math.Max(_noticesShown, _noticesAsked);
+        if (_named is null)
+            return;
+        List<object>? shown = null;
+        foreach (var (key, heard) in _named)
+        {
+            if (heard <= _noticesShown)
+                (shown ??= []).Add(key);
+        }
+        if (shown is null)
+            return;
+        if (shown.Count == _named.Count)
+        {
+            _named = null;
+            return;
+        }
+        foreach (var key in shown)
+            _named.Remove(key);
     }
 
     /// <summary>

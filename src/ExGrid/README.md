@@ -92,8 +92,9 @@ elsewhere, you push a `Window` of rows instead and answer the grid's `OnRangeNee
 
 For data that changes while it is read, give the source a Row Key:
 `GridSource.From(trades, t => t.TradeId)` takes Change Batches (`Apply`) and whole new lists
-(`ReplaceAll`), and `GridSource.Fetch(..., rowKey: t => t.TradeId)` reads its Window again when
-told `NotifyChanged()`. Either gathers the changes, keeps the selection while only values change,
+(`ReplaceAll`, shown in the list's order), and `GridSource.Fetch(..., rowKey: t => t.TradeId)`
+reads its Window again when told `NotifyChanged()` — or `NotifyChanged(bookedIds)`, naming the
+rows that were added. Either gathers the changes, keeps the selection while only values change,
 and answers the grid's `CellChangedAt` with the cells whose text changed.
 
 Two rules keep the grid fast:

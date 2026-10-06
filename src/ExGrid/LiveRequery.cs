@@ -41,6 +41,10 @@ internal sealed record LiveRequeryOutcome<TRow>(
 /// position too. The changes are paired by Row Key, so a key removed and added again at the same
 /// position has not moved the sequence.</para>
 ///
+/// <para>A whole new list may put the base itself in another order (D7). The rows then take new
+/// ordinals, which the previous result's cannot be compared with, and a row that did not change can
+/// move: the result is requeried whole, and the two results are compared position by position.</para>
+///
 /// <para>Its result must equal <see cref="GridQueryEngine.Apply{TRow}"/> over the new base exactly,
 /// the stable tie order included; a layer-1 property test holds it to that (LV-5).</para>
 /// </summary>
@@ -70,6 +74,10 @@ internal static class LiveRequery
     /// <param name="baseCount">How many rows the base holds now: what decides the whole requery.</param>
     /// <param name="wholeBase">The base now, in its order, with each row's ordinal: asked for only
     /// when the batch is requeried whole.</param>
+    /// <param name="reordered">The base was put in another order since <paramref name="previous"/>
+    /// was computed (D7: a whole new list sets the order), so the ordinals of
+    /// <paramref name="previous"/> and of the old versions are of the order before, and the base's of
+    /// the order now: the result is requeried whole (see <see cref="Reordered"/>).</param>
     public static LiveRequeryOutcome<TRow> Apply<TRow>(
         TRow[] previous,
         long[] previousOrdinals,
@@ -78,8 +86,11 @@ internal static class LiveRequery
         GridFilter? filter,
         IReadOnlyList<SortSpec> sorts,
         int baseCount,
-        Func<(TRow[] Rows, long[] Ordinals)> wholeBase)
+        Func<(TRow[] Rows, long[] Ordinals)> wholeBase,
+        bool reordered = false)
     {
+        if (reordered)
+            return Reordered(previous, changes, columns, filter, sorts, wholeBase);
         var order = GridQueryEngine.OrderOf(columns, sorts);
         var passes = GridQueryEngine.PredicateOf(columns, filter);
 
@@ -165,6 +176,77 @@ internal static class LiveRequery
         for (var j = 0; j < changes.Count && !moved; j++)
             moved = oldIndex[j] != newIndex[j];
         return new LiveRequeryOutcome<TRow>(result, ordinals, oldIndex, newIndex, moved);
+    }
+
+    /// <summary>
+    /// The result after the base was put in another order (D7), requeried whole by the engine itself,
+    /// so it equals <see cref="GridQueryEngine.Apply{TRow}"/> over the base in its new order. The
+    /// ordinals of <paramref name="previous"/> and of the changes' old versions are of the order
+    /// before, so nothing is placed by them: each old version is found in the previous result, and
+    /// each new one in this, by reference. Whether the sequence moved is answered by comparing the two
+    /// results position by position — rows that kept their keys and their places did not move it,
+    /// and a row and its new version under one key are the same row — since an order moved can move
+    /// rows that did not change. When the result is the previous one row for row, it is kept, with
+    /// the base's new ordinals beside it, so the grid has nothing new to paint.
+    /// </summary>
+    private static LiveRequeryOutcome<TRow> Reordered<TRow>(
+        TRow[] previous,
+        IReadOnlyList<RowChange<TRow>> changes,
+        IReadOnlyList<ColumnInfo<TRow>> columns,
+        GridFilter? filter,
+        IReadOnlyList<SortSpec> sorts,
+        Func<(TRow[] Rows, long[] Ordinals)> wholeBase)
+    {
+        var (rows, rowOrdinals) = wholeBase();
+        var positions = GridQueryEngine.ApplyPositions(rows, columns, filter, sorts);
+        var result = new TRow[positions.Length];
+        var ordinals = new long[positions.Length];
+        for (var i = 0; i < positions.Length; i++)
+        {
+            result[i] = rows[positions[i]];
+            ordinals[i] = rowOrdinals[positions[i]];
+        }
+
+        var oldIndex = new int[changes.Count];
+        var newIndex = new int[changes.Count];
+        Array.Fill(oldIndex, -1);
+        Array.Fill(newIndex, -1);
+        // A changed row's old version, and the new one under its key.
+        var newVersionOf = new Dictionary<object, object>(changes.Count, ReferenceEqualityComparer.Instance);
+        if (changes.Count > 0)
+        {
+            var previousAt = IndexOf(previous);
+            var resultAt = IndexOf(result);
+            for (var j = 0; j < changes.Count; j++)
+            {
+                var change = changes[j];
+                if (change.HasOld && previousAt.TryGetValue(change.Old!, out var was))
+                    oldIndex[j] = was;
+                if (change.HasNew && resultAt.TryGetValue(change.New!, out var now))
+                    newIndex[j] = now;
+                if (change.HasOld && change.HasNew)
+                    newVersionOf.TryAdd(change.Old!, change.New!);
+            }
+        }
+
+        var moved = previous.Length != result.Length;
+        var same = !moved;
+        for (var i = 0; i < result.Length && !moved; i++)
+        {
+            if (ReferenceEquals(previous[i], result[i]))
+                continue;
+            same = false;
+            moved = !(newVersionOf.TryGetValue(previous[i]!, out var newVersion) && ReferenceEquals(newVersion, result[i]));
+        }
+        return new LiveRequeryOutcome<TRow>(same ? previous : result, ordinals, oldIndex, newIndex, moved);
+    }
+
+    private static Dictionary<object, int> IndexOf<TRow>(TRow[] rows)
+    {
+        var at = new Dictionary<object, int>(rows.Length, ReferenceEqualityComparer.Instance);
+        for (var i = 0; i < rows.Length; i++)
+            at.TryAdd(rows[i]!, i);
+        return at;
     }
 
     private static (TRow[] Result, long[] Ordinals) Merge<TRow>(
