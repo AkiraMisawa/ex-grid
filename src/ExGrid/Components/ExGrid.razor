@@ -1523,7 +1523,9 @@
     /// the one whose message says reselecting a target of the same shape will work; the
     /// editability reason is the one where no reselection of that shape ever will. Every such
     /// write — Delete and the fill keys too — is also refused when what the user saw of its
-    /// target changed before it landed, judged after the other rules:
+    /// target, or of a fill's source, changed before it landed, judged after the other rules
+    /// against the newest version the bound source holds (ADR-0142 D3 to D5); cells the user's
+    /// own earlier write changed are not compared (D1):
     /// <see cref="PasteRefusalReason.TargetChanged"/>, or
     /// <see cref="PasteRefusalReason.RenderNoLongerKept"/> when the grid can no longer tell
     /// (ADR-0142, LV-13).</summary>
@@ -2509,7 +2511,16 @@
 
     private void OnSourceStateChanged()
     {
-        if (_disposed || _applying)
+        if (_disposed)
+            return;
+        // Raised inside the grid's own request that the source put out what it gathered (D5):
+        // noted, and taken in once by the write that asked, after the call (TakeInGatheredAsync).
+        if (_askingGathered)
+        {
+            _gatheredHeard = true;
+            return;
+        }
+        if (_applying)
             return;
         // Marshalled: a Source that fetches raises this from whatever thread its answer
         // arrived on. ApplyState has to run with it — OnParametersSet does not run for a
@@ -3660,9 +3671,10 @@
     /// The fill drag's release (ADR-0050, item 5): exactly one Fill Intent, or one refusal,
     /// or nothing when the pointer came back inside the source. Editable is judged on the
     /// target before anything is raised (ADR-0035). Positions taken under an order that has
-    /// since moved name different rows, so such a drag raises nothing (ADR-0011). A target whose
-    /// painted text changed since the render the release was taken against is refused
-    /// (ADR-0142, LV-13).
+    /// since moved name different rows, so such a drag raises nothing (ADR-0011). A fill writes
+    /// its source's values over its target, so the drag is refused when a painted cell of either
+    /// shows other text than in the render the release was taken against (ADR-0142, LV-13, D4) —
+    /// judged against the newest version, which the bound source is asked for first (D5).
     /// </summary>
     /// <param name="releasedOn">The cell the release landed on, or null off the cells.</param>
     /// <param name="paint">The render the release was taken against.</param>
@@ -3672,7 +3684,11 @@
         var pointer = releasedOn ?? _fillPointer;
         var version = _fillVersion;
         SetDragging(false);
-        if (_disposed || source is not { } from || pointer is not { } to || version != _sequenceVersion)
+        if (_disposed || source is not { } from || pointer is not { } to)
+            return;
+        // Before the order is checked: a gathered change that moved it leaves the drag's
+        // positions naming other rows, and the drag raises nothing (ADR-0011, D5).
+        if (!await TakeInGatheredAsync() || version != _sequenceVersion)
             return;
         if (FillRules.PlanFill(from, to, ColumnIsEditable) is not { } decision)
             return;
@@ -3682,14 +3698,18 @@
                 await OnPasteRefused.InvokeAsync(decision.Reason);
             return;
         }
-        if (await RefuseWriteOverChangedTargetAsync(paint, [decision.Extension.Target]))
+        if (await RefuseWriteOverChangedTargetAsync(paint, [decision.Extension.Target, from]))
             return;
         // Nobody taking the intent is nobody accepting it: the Selection stays on the source.
         if (!OnFill.HasDelegate)
             return;
         var intent = new GridFillIntent(from, decision.Extension, version);
+        // The user's own write (D1): a gesture taken before it is painted does not compare it.
+        var written = NoteOwnWrite([intent.Target]);
         await OnFill.InvokeAsync(intent);
-        if (!intent.IsRefused)
+        if (intent.IsRefused)
+            ForgetOwnWrite(written);
+        else
             SelectFilledRange(from, intent.Target, version);
     }
 
@@ -5584,10 +5604,21 @@
             _suppressRender = false;
             StateHasChanged();
         }
+        // Judged against the newest version the bound source holds (ADR-0142 D5, LV-16). A
+        // position names its row only under the order it was read in: when the gathered change
+        // moved the order, Space's position names another row now, and the press is paired by
+        // its row instead — by key, or by instance (ADR-0011).
+        var version = _sequenceVersion;
+        if (!await TakeInGatheredAsync())
+            return;
+        if (version != _sequenceVersion)
+            atRow = null;
         // And nothing else: no focus is moved (ADR-0037, amended). A press never focused the
         // button, so the keyboard is still where it was — or in whatever the handler opened,
         // which taking it back to the root would rob. A press on a row that changed since the
-        // render it was taken against is refused, with its reason (ADR-0142, LV-12).
+        // render it was taken against is refused, with its reason (ADR-0142, LV-12). The press
+        // is raised with the row its button held, or Space read at the Focus: the newest version
+        // was judged, and a row the gathered change replaced paints what the user saw.
         await FireOrRefuseActionAsync(args, told, atRow);
     }
 
@@ -5843,6 +5874,10 @@
             return;
         var block = parsed.Values;
 
+        // Planned and judged against the newest version the bound source holds (ADR-0142 D5,
+        // LV-16): a gathered change that moved the order drops the Selection first (ADR-0011).
+        if (!await TakeInGatheredAsync())
+            return;
         var target = _selection.Selection;
         var extent = Extent;
         var decision = ClipboardRules.PlanPaste(
@@ -5861,7 +5896,13 @@
         var version = _sequenceVersion;
         var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
         if (OnPaste.HasDelegate)
+        {
+            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+            var written = NoteOwnWrite(decision.Plan.Targets);
             await OnPaste.InvokeAsync(intent);
+            if (intent.IsRefused)
+                ForgetOwnWrite(written);
+        }
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
         if (intent.IsRefused)
             return;
@@ -6160,7 +6201,7 @@
             case GridKeyKind.None:
                 // F2 and a printable character open the Cell Editor (ADR-0010) — the
                 // gate forwarded them; whether this cell edits is decided here.
-                await TryStartEditingAsync(key, ctrl, alt, meta, metaIsPrimary);
+                await TryStartEditingAsync(key, ctrl, alt, meta, metaIsPrimary, paint);
                 return;
             case GridKeyKind.OpenContextMenu:
                 OpenContextMenuAtFocus();
@@ -6191,7 +6232,7 @@
             case GridKeyKind.ClearAndEdit:
                 // Backspace: an editor entry like a printable key, minus the character
                 // (ADR-0035) — judged where every entry is, on the Focus.
-                await TryStartEditingAsync(EditMode.Overwrite, "");
+                await TryStartEditingAsync(EditMode.Overwrite, "", paint);
                 return;
             case GridKeyKind.Clear:
             case GridKeyKind.FillDown:
@@ -6775,7 +6816,13 @@
         return slice >= 0 && slice < _window.Count && !_placeholderMode;
     }
 
-    private async Task TryStartEditingAsync(string key, bool ctrl, bool alt, bool meta, bool metaIsPrimary)
+    /// <param name="key">The key as the browser named it.</param>
+    /// <param name="ctrl">Whether Control was held.</param>
+    /// <param name="alt">Whether Alt was held.</param>
+    /// <param name="meta">Whether Meta was held.</param>
+    /// <param name="metaIsPrimary">Whether Meta is the platform's primary modifier.</param>
+    /// <param name="paint">The render the key was taken against (ADR-0142, D2).</param>
+    private async Task TryStartEditingAsync(string key, bool ctrl, bool alt, bool meta, bool metaIsPrimary, int paint)
     {
         // A chorded key is not typing — except AltGr, which Windows reports as Control
         // and Alt held together and is how the German, French and Nordic layouts type
@@ -6790,13 +6837,14 @@
         // The character that started Overwrite mode is not lost (ADR-0010): it was
         // pressed before the editor existed, so the core holds it and the editor opens
         // containing it. Caret keeps the current value, with the caret inside it.
-        await TryStartEditingAsync(caret ? EditMode.Caret : EditMode.Overwrite, caret ? null : key);
+        await TryStartEditingAsync(caret ? EditMode.Caret : EditMode.Overwrite, caret ? null : key, paint);
     }
 
     /// <param name="mode">Overwrite or Caret (ADR-0010).</param>
     /// <param name="initialText">What the editor opens holding; null for the Focus cell's
     /// own text, which is what Caret keeps.</param>
-    private async Task TryStartEditingAsync(EditMode mode, string? initialText)
+    /// <param name="paint">The render the opening gesture was taken against (ADR-0142, D2).</param>
+    private async Task TryStartEditingAsync(EditMode mode, string? initialText, int paint)
     {
         var extent = Extent;
         if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
@@ -6818,7 +6866,7 @@
 
         if (!Apply(current))
             _suppressRender = false;
-        await StartEditingAsync(current.Focus, mode, initialText ?? OpeningTextOf(current.Focus));
+        await StartEditingAsync(current.Focus, mode, initialText ?? OpeningTextOf(current.Focus), paint);
     }
 
     /// <summary>
@@ -6826,11 +6874,14 @@
     /// gate — a 1×1 shape, so only the empty selection and the Editable declaration can
     /// refuse it, in ADR-0035's order. No verdict runs: there is no value to judge. A clear
     /// is a write, so it is refused, as a paste is, over a target whose painted text changed
-    /// since the render the key was taken against (ADR-0142's rule).
+    /// since the render the key was taken against (ADR-0142 D3, LV-13), judged against the
+    /// newest version the bound source holds (D5).
     /// </summary>
     /// <param name="paint">The render the key was taken against.</param>
     private async Task RaiseClearIntentAsync(int paint)
     {
+        if (!await TakeInGatheredAsync())
+            return;
         var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(1, 1), ColumnIsEditable);
         if (decision.IsRefused)
         {
@@ -6841,7 +6892,11 @@
         if (await RefuseWriteOverChangedTargetAsync(paint, decision.Plan.Targets))
             return;
         if (OnClear.HasDelegate)
+        {
+            // The user's own write (ADR-0142 D1).
+            NoteOwnWrite(decision.Plan.Targets);
             await OnClear.InvokeAsync(new GridClearIntent(decision.Plan.Targets, _sequenceVersion));
+        }
     }
 
     /// <summary>
@@ -6849,13 +6904,21 @@
     /// form — never the displayed text, which may be rounded or <c>####</c> — and raised as
     /// one paste intent. The rows come from the Window where it has them and are asked for
     /// through the copy route where it does not; anything short of the whole source refuses
-    /// the fill rather than filling from a guess. Its target is judged as a paste's is, against
-    /// the render the key was taken against, once the source is in hand (ADR-0142's rule).
+    /// the fill rather than filling from a guess. Its target and its source are judged as a
+    /// paste's target is, against the render the key was taken against, once the source is in
+    /// hand (ADR-0142 D3 and D4, LV-13): a fill writes its source's values, so a source cell whose
+    /// painted text changed would write values the user did not see. It is planned and judged
+    /// against the newest version the bound source holds, asked for first (D5).
     /// </summary>
     /// <param name="direction">Down for Ctrl+D, Right for Ctrl+R.</param>
     /// <param name="paint">The render the key was taken against.</param>
     private async Task FillFromKeyAsync(GridDirection direction, int paint)
     {
+        // Asked once, before the plan: the source's rows are read from the Window it leaves. A
+        // source row beyond the Window is asked of the source and was never painted, so a change
+        // the source gathers while it answers judges nothing it showed (ADR-0142's rule).
+        if (!await TakeInGatheredAsync())
+            return;
         var decision = ClipboardRules.PlanFill(_selection.Selection, direction, ColumnIsEditable, CopyCellCap);
         if (decision.IsRefused)
         {
@@ -6877,7 +6940,7 @@
                 await OnPasteRefused.InvokeAsync(PasteRefusalReason.SourceUnavailable);
             return;
         }
-        if (await RefuseWriteOverChangedTargetAsync(paint, plan.Paste.Targets))
+        if (await RefuseWriteOverChangedTargetAsync(paint, [.. plan.Paste.Targets, plan.Source]))
             return;
 
         var source = plan.Source;
@@ -6890,7 +6953,14 @@
             block.Add(values);
         }
         if (OnPaste.HasDelegate)
-            await OnPaste.InvokeAsync(new GridPasteIntent(plan.Paste, block, version, fillSource: source));
+        {
+            var intent = new GridPasteIntent(plan.Paste, block, version, fillSource: source);
+            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+            var written = NoteOwnWrite(plan.Paste.Targets);
+            await OnPaste.InvokeAsync(intent);
+            if (intent.IsRefused)
+                ForgetOwnWrite(written);
+        }
     }
 
     private string CellTextOf(CellPosition cell)
@@ -6982,14 +7052,19 @@
         };
     }
 
-    private async Task StartEditingAsync(CellPosition cell, EditMode mode, string initialText)
+    /// <param name="cell">The cell the editor opens on.</param>
+    /// <param name="mode">Overwrite or Caret (ADR-0010).</param>
+    /// <param name="initialText">What the editor opens holding.</param>
+    /// <param name="told">The render the gesture opening the editor was taken against (ADR-0142,
+    /// D2), or <c>PaintNotTold</c> for the newest.</param>
+    private async Task StartEditingAsync(CellPosition cell, EditMode mode, string initialText, int told)
     {
         _editSurface = EditSurface.Cell;
         _editMode = mode;
         _editingCell = cell;
-        // What the cell paints as the editor opens over it: a commit is judged against it
-        // (ADR-0142, LV-11).
-        KeepSeenText(cell);
+        // What the cell showed in the render the opening gesture was taken against: a commit is
+        // judged against it (ADR-0142, LV-11, D2).
+        KeepSeenText(cell, told);
         _editText = initialText;
         _editCaret = initialText.Length;
         // Placed explicitly at the end of the opening text, never assumed to be where the
@@ -7228,6 +7303,14 @@
     /// a key typed in it: see <see cref="EndEditingAsync"/>.</param>
     private async Task<bool> CommitEditAsync(bool reclaimFocus = true, bool byPress = false)
     {
+        // The bound source puts out what it has gathered first, so the commit is judged against,
+        // and its Edit Intent carries, the newest version (ADR-0142 D5, LV-16). A gathered change
+        // that moved the order has discarded the edit, as any such change does (ADR-0011): the
+        // edit has ended, and there is nothing to commit.
+        if (!await TakeInGatheredAsync())
+            return false;
+        if (_editMode == EditMode.None)
+            return true;
         var cell = _editingCell;
         var text = _editText;
         var slice = cell.Row - _windowStart;
@@ -7277,6 +7360,10 @@
         // back through the display channels when the Consumer answers them (ADR-0034).
         _editError = null;
         var intent = new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text);
+        // The user's own write (ADR-0142 D1): a later gesture taken before it is painted does not
+        // compare the cell it wrote.
+        if (OnEdit.HasDelegate)
+            NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
         await EndEditingAsync(reclaimFocus, byPress, OnEdit.HasDelegate ? () => OnEdit.InvokeAsync(intent) : null);
         return true;
     }
@@ -7312,6 +7399,14 @@
     /// <param name="paint">The render the Ctrl+Enter was taken against (ADR-0142, LV-13).</param>
     private async Task CommitFillAsync(int paint)
     {
+        // Judged against the newest version the bound source holds (ADR-0142 D5, LV-16). A
+        // gathered change that moved the order has dropped the Selection and discarded the edit
+        // (ADR-0011): there is nothing left to fill.
+        if (!await TakeInGatheredAsync() || _editMode == EditMode.None)
+        {
+            StateHasChanged();
+            return;
+        }
         // The same gate as a paste, over the whole selection — not the one cell the
         // editor was opened on (ADR-0035). A refusal is announced rather than silent:
         // an attempted write against a non-editable column is always reported.
@@ -7360,7 +7455,11 @@
         // Copied before the editor is torn down: the intent names the cell the text was
         // entered in, which a clipboard paste of the same field does not (ADR-0050 item 5).
         var intent = new GridPasteIntent(decision.Plan, [[_editText]], _sequenceVersion, enteredAt: _editingCell);
+        // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+        var written = OnPaste.HasDelegate ? NoteOwnWrite(decision.Plan.Targets) : null;
         await EndEditingAsync(endedIn: OnPaste.HasDelegate ? () => OnPaste.InvokeAsync(intent) : null);
+        if (written is not null && intent.IsRefused)
+            ForgetOwnWrite(written);
         StateHasChanged();
     }
 
@@ -7387,6 +7486,7 @@
         _editMode = EditMode.None;
         _editText = "";
         _editSeenText = null;
+        _editSeenUnknown = false;
         _reportedText = null;
         ForgetCaretPlacement();
         _editError = null;
@@ -7442,8 +7542,13 @@
     /// stays: that focus is the core handing the keyboard back to the bar after a press
     /// elsewhere pointed (ADR-0018, ED-26), and a press in the bar's own text ends pointing by
     /// the caret it reports.</para>
+    ///
+    /// <para>An edit it opens keeps what the cell showed in the render the press was taken
+    /// against, which the listener tells at the press (<see cref="BarPressTakenAt"/>; ADR-0142,
+    /// D2).</para>
     /// </summary>
-    private async Task OnFormulaBarFocusAsync()
+    /// <param name="told">The render the press was taken against, or <c>PaintNotTold</c>.</param>
+    private async Task OnFormulaBarFocusAsync(int told)
     {
         if (_editMode != EditMode.None)
         {
@@ -7483,7 +7588,7 @@
         _editSurface = EditSurface.Bar;
         _editMode = EditMode.Caret;
         _editingCell = focus;
-        KeepSeenText(focus);
+        KeepSeenText(focus, told);
         _editText = OpeningTextOf(focus);
         if (ReportsCaret && string.Equals(_editText, shown, StringComparison.Ordinal))
         {
@@ -7610,7 +7715,7 @@
         => new(
             FormulaBarText(),
             !FormulaBarEditable,
-            _chromeFormulaBarFocused ??= () => _pressAnswer = FromChromeAsync(OnFormulaBarFocusAsync),
+            _chromeFormulaBarFocused ??= () => _pressAnswer = FromChromeAsync(() => OnFormulaBarFocusAsync(TakeBarPressTold())),
             _chromeFormulaBarTextChanged ??= text => FromChrome(() => OnFormulaBarInput(text)),
             _formulaBarFocusRequest,
             _chromeBarTakeFocus ??= () => InvokeAsync(() => FocusSurfaceAsync(bar: true)))
@@ -7714,7 +7819,8 @@
     }
 
     /// <summary>F2's other door (ADR-0010): a double click enters Caret on an editable
-    /// cell — the original value stays, with the caret inside it.</summary>
+    /// cell — the original value stays, with the caret inside it. The edit keeps what the cell
+    /// showed in the render the double click's press was taken against (ADR-0142, D2).</summary>
     private async Task OnViewportDoubleClickAsync(MouseEventArgs e)
     {
         // The second press of a double click handed over (ADR-0058) opens no edit either, and
@@ -7738,7 +7844,7 @@
         var extent = Extent;
         if (!Apply(_selection.Selection.Click(cell, extent)))
             _suppressRender = false;
-        await StartEditingAsync(cell, EditMode.Caret, OpeningTextOf(cell));
+        await StartEditingAsync(cell, EditMode.Caret, OpeningTextOf(cell), _lastPressPaint);
     }
 
     /// <summary>
@@ -7895,7 +8001,7 @@
             return;
         }
         if (IsEditableCell(focus))
-            await StartEditingAsync(focus, EditMode.Overwrite, " ");
+            await StartEditingAsync(focus, EditMode.Overwrite, " ", paint);
     }
 
     /// <summary>The chosen action of the Interactive cell, or null when there is none —

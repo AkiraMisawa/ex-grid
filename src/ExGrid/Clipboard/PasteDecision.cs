@@ -71,9 +71,11 @@ public enum PasteRefusalReason
     /// <summary>A painted cell of the target shows other text than it did in the render the
     /// gesture was taken against: the data under it changed between what the user saw and the
     /// write landing, and writing over it would lose that change unseen (ADR-0142, LV-13). Raised
-    /// for a paste, a Ctrl+Enter fill, a fill-handle drag, a fill key and Delete alike. Cells that
-    /// were not painted were not seen, and are not compared. Component-level, never produced by
-    /// the pure rules.</summary>
+    /// for a paste, a Ctrl+Enter fill, a fill-handle drag, a fill key and Delete alike — and for a
+    /// fill-handle drag or a fill key whose painted source cell changed, since it would write
+    /// values the user did not see (D4). Cells that were not painted were not seen, and cells the
+    /// user's own earlier write changed are known to them; neither is compared (D1).
+    /// Component-level, never produced by the pure rules.</summary>
     TargetChanged,
 
     /// <summary>The render the gesture was taken against is no longer kept, or showed the rows in

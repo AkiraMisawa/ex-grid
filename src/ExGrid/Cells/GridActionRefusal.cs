@@ -14,8 +14,10 @@ public enum ActionRefusalReason
     RowChanged,
 
     /// <summary>The render the press was taken against is no longer kept, or showed the rows in
-    /// another order, so the grid can no longer tell what the user saw of the row. Chrome must not
-    /// say the row changed: it may not have.</summary>
+    /// another order with no Row Key to pair the press with its row by, or the row has left the
+    /// Window, so the grid can no longer tell what the user saw of the row against what it holds.
+    /// With a Row Key, a press whose row only moved is judged on that row instead (ADR-0140/0142).
+    /// Chrome must not say the row changed: it may not have.</summary>
     RenderNoLongerKept,
 }
 
