@@ -77,7 +77,7 @@ and the user is told why.**
 
 ## Settled while building it
 
-*(2026-10-06, decided with the user — D1 to D5 — when the first build met the bundled sources.)*
+*(2026-10-06, decided with the user — D1 to D5, P1 and P2 — when the first build met the bundled sources.)*
 
 - **The user's own writes count as seen** (D1). A cell that one of the user's own earlier gestures
   wrote, after the render a later gesture was taken against, is not compared for that gesture.
@@ -101,6 +101,18 @@ and the user is told why.**
     gathered change to the edited cell itself would have been written over unseen.
   - A user's gesture brings the change forward, as in ExPivot
     ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+- **A cell derived from the user's own write is still compared** (P1, accepted). D1 lets off only
+  the cells the user's own gestures wrote. A cell computed from them — an ExSheet formula, a spilled
+  array, a Consumer's computed column — still changes, and is still compared. So on a circuit,
+  writing A1 and at once pasting over B1 = A1 × 2 is refused, where on WebAssembly it lands: a host
+  difference that remains, at machine speed only. The refusal is the safe side and says why, and a
+  second gesture lands.
+  - Rejected for now: judging such a gesture against the first render after the user's write
+    (which would miss an upstream change in the same round trip, close to what D1 rejected), and a
+    Consumer declaring its derived cells. The second is the one to take if ExSheet finds it bites.
+- **A refused commit says whether the cell changed or the grid can no longer tell** (P2). When the
+  render the opening gesture was taken against is no longer kept, the refusal's reason is
+  `RenderNoLongerKept`, never a change: a wrong reason is worse than none.
 - **With a Row Key, an Action press is paired with its row by key**
   ([ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md)).
   Without one, a press whose row moved cannot be paired, and is refused as taken against a render no

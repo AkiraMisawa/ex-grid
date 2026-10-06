@@ -918,7 +918,10 @@ public class WriteRefusalTests : GridTestContext
         await KeyAsync(cut, "Enter", paint: Paint(cut));
 
         Assert.Empty(heard.Edits);
-        Assert.Equal("Row 000000", Assert.Single(heard.CommitRefusals).PaintedText);
+        var refusal = Assert.Single(heard.CommitRefusals);
+        Assert.Equal("Row 000000", refusal.PaintedText);
+        // P2 (2026-10-06): never worded as a change — the cell did not change.
+        Assert.Equal(CommitRefusalReason.RenderNoLongerKept, refusal.Reason);
 
         await KeyAsync(cut, "Enter", paint: Paint(cut));
         Assert.Equal("5", Assert.Single(heard.Edits).Value);
@@ -1294,6 +1297,7 @@ public class WriteRefusalTests : GridTestContext
 
         Assert.Empty(heard.Edits);
         Assert.Equal("777", Assert.Single(heard.CommitRefusals).PaintedText);
+        Assert.Equal(CommitRefusalReason.CellChanged, heard.CommitRefusals[0].Reason);
         Assert.Equal(777m, source.Window[0].Amount);
 
         await KeyAsync(cut, "Enter");

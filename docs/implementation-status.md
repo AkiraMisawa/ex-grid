@@ -838,3 +838,44 @@ from a CSV in 955 ms and 14.6 s; read from Arrow in 475 ms and 3.7 s.
 - **Excel's behaviour was read, not observed.** Every reading is listed in
   `docs/specs/expivot/excel-behaviours.md`, for a run beside Excel on Windows (ticket 07).
 - **Edge, Windows and a real IME have run none of it.**
+
+## ExGrid's live data (2026-10-06)
+
+*(Built on `claude/exgrid-live-data`. Decided with the user in the grilling of 2026-10-05 and the
+decisions D1 to D10, P1 and P2 of 2026-10-06:
+[ADR-0140](adr/0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md),
+[ADR-0141](adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md) and
+[ADR-0142](adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md). §31 of the
+Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's key.)*
+
+**What exists.**
+
+- **The Row Key** (ADR-0140): `RowKey` on the grid, or a source's; a row's component is kept by it,
+  so a changed row repaints in place. A repeated or null key is refused by name. ExPivot names its
+  report rows by `PivotRowKey`, made with the row.
+- **`GridSource.From` with a Row Key** (ADR-0141): Change Batches, a whole new list that sets the
+  order, an incremental requery held equal to `GridQueryEngine.Apply` by a property test, gathering
+  on ExPivot's rules, the Change Highlight by painted text, vouching for distinct rows, and
+  `PublishGathered`.
+- **`GridSource.Fetch` hears that its data moved on**: `NotifyChanged`, with the added keys when the
+  Consumer knows them; the server's order token; `/grid-live` is built on it.
+- **`/grid-live-local`**: a million trades in the browser, fed Change Batches.
+- **Writes refused when what the user saw changed** (ADR-0142): the Cell Editor's commit, Actions,
+  paste, fills and clears, each judged against the render it was taken against, keyboard gestures
+  included; the user's own writes count as seen.
+
+**Found by building it, and fixed.**
+
+- **`CellTextMetrics.ToString()` overflowed the stack**: its `Bold` is metrics of the same type.
+- **An integer Row Key collided with a Placeholder's key.**
+- **A gathered publication posted to a source's context ran again** after a write had taken its
+  changes, publishing later changes before their interval was up.
+- **`/grid-live` missed a trade cancelled after the Window** while a Selection reached past it.
+
+**Not done.**
+
+- **Layer 3 has not run** the new and changed specs (`write-refusal.spec.mjs`,
+  `grid-live.spec.mjs`, `grid-live-local.spec.mjs`, `measure-live.spec.mjs`); CI runs them.
+- **LV-15 is observed only in part**: apply to frame has a spec; the bytes per update on the Server
+  host, and the requery and the grid's pass per update in the browser, are not recorded yet.
+

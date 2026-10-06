@@ -446,8 +446,14 @@
     /// editor still stands with the typing and covers the cell, so the sentence is where the user
     /// sees the new value; Enter again writes over it, Escape leaves it.</summary>
     private void OnCommitRefused(GridCommitRefusal refusal)
-        => Status(refusal, $"{refusal.Column} changed to {refusal.PaintedText} while you were typing — " +
-            "press Enter again to write over it, or Escape to keep it", s => _commitRefusedStatus = s);
+        => Status(refusal, refusal.Reason switch
+        {
+            CommitRefusalReason.RenderNoLongerKept =>
+                $"Not written: the grid can no longer tell what {refusal.Column} showed when you started typing. " +
+                $"It shows {refusal.PaintedText} now — press Enter again to write over it, or Escape to keep it",
+            _ => $"{refusal.Column} changed to {refusal.PaintedText} while you were typing — " +
+                 "press Enter again to write over it, or Escape to keep it",
+        }, s => _commitRefusedStatus = s);
 
     /// <summary>An action pressed on a row that moved before the press landed (ADR-0142, LV-12).
     /// Nothing was done; one more press, on the row as it is now, does it.</summary>

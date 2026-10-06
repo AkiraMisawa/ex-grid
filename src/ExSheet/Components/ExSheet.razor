@@ -259,7 +259,10 @@
         // the editor stands with the typing, and the notice says what the cell shows now.
         _commitRefused = new EventCallback<GridCommitRefusal>(null, (Func<GridCommitRefusal, Task>)(refusal =>
         {
-            Tell(SheetWords.CommitRefused(new CellAddress(refusal.Cell.Row, refusal.Cell.Column).ToString(), refusal.PaintedText));
+            var address = new CellAddress(refusal.Cell.Row, refusal.Cell.Column).ToString();
+            Tell(refusal.Reason == CommitRefusalReason.RenderNoLongerKept
+                ? SheetWords.CommitRefusedUnseen(address, refusal.PaintedText)
+                : SheetWords.CommitRefused(address, refusal.PaintedText));
             StateHasChanged();
             return Task.CompletedTask;
         }));

@@ -18,4 +18,21 @@ namespace ExGrid.Cells;
 /// <param name="Column">The edited column's name.</param>
 /// <param name="PaintedText">The text the cell paints now — the value the notice shows, and the
 /// one a second commit is judged against.</param>
-public readonly record struct GridCommitRefusal(CellPosition Cell, string Column, string PaintedText);
+/// <param name="Reason">Whether the cell changed, or the grid can no longer tell what the user saw
+/// of it. Chrome words the two apart: a wrong reason is worse than none.</param>
+public readonly record struct GridCommitRefusal(CellPosition Cell, string Column, string PaintedText, CommitRefusalReason Reason);
+
+/// <summary>Why a Cell Editor commit was refused (ADR-0142, LV-11; decided with the user as P2,
+/// 2026-10-06).</summary>
+public enum CommitRefusalReason
+{
+    /// <summary>The cell paints other text than it did in the render the gesture that opened the
+    /// editor was taken against, or than the last refusal showed: it changed upstream while the
+    /// user typed.</summary>
+    CellChanged,
+
+    /// <summary>The render the opening gesture was taken against is no longer kept, or showed the
+    /// rows in another order, so the grid can no longer tell what the user saw of the cell. The cell
+    /// may not have changed; Chrome must not say it did.</summary>
+    RenderNoLongerKept,
+}

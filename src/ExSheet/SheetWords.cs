@@ -89,6 +89,10 @@ internal static class SheetWords
     internal static string CommitRefused(string address, string shown) =>
         $"What was typed was not entered yet: {address} changed to {shown} while it was being edited. Press Enter to enter it over that, or Escape to keep it.";
 
+    // ADR-0142 (P2): the grid can no longer tell what the cell showed, so the notice must not say it changed.
+    internal static string CommitRefusedUnseen(string address, string shown) =>
+        $"What was typed was not entered yet: it can no longer be told what {address} showed when editing began. It shows {shown} now. Press Enter to enter it over that, or Escape to keep it.";
+
     internal static string CopyRefused(CopyRefusalReason reason) => reason switch
     {
         CopyRefusalReason.EmptySelection => "Select the cells to copy.",

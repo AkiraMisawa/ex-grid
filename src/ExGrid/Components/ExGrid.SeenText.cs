@@ -446,9 +446,8 @@ public partial class ExGrid<TRow>
     /// seen there, and is kept as it paints at the open, which is what the editor shows the user
     /// from then on. A paint no longer kept, or painted under another order, cannot say what was
     /// seen (<see cref="_editSeenUnknown"/>): refused rather than written over something the user
-    /// may not have seen (principle 1). <see cref="GridCommitRefusal"/> has no reason for "cannot
-    /// tell", so that refusal reads as a change to the text the cell paints; it needs more paints
-    /// than are kept within one round trip.</para>
+    /// may not have seen (principle 1), as <see cref="CommitRefusalReason.RenderNoLongerKept"/>,
+    /// never as a change; it needs more paints than are kept within one round trip.</para>
     /// </summary>
     private void KeepSeenText(CellPosition cell, int told)
     {
@@ -483,12 +482,14 @@ public partial class ExGrid<TRow>
         if (RowInHand(cell.Row) is null || (_editSeenText is null && !_editSeenUnknown))
             return false;
         var now = PaintedTextNow(cell.Row, cell.Column) ?? "";
-        if (!_editSeenUnknown && string.Equals(_editSeenText, now, StringComparison.Ordinal))
+        var unknown = _editSeenUnknown;
+        if (!unknown && string.Equals(_editSeenText, now, StringComparison.Ordinal))
             return false;
         _editSeenText = now;
         _editSeenUnknown = false;
+        var reason = unknown ? CommitRefusalReason.RenderNoLongerKept : CommitRefusalReason.CellChanged;
         if (OnCommitRefused.HasDelegate)
-            await OnCommitRefused.InvokeAsync(new GridCommitRefusal(cell, Columns[cell.Column].Name, now));
+            await OnCommitRefused.InvokeAsync(new GridCommitRefusal(cell, Columns[cell.Column].Name, now, reason));
         return true;
     }
 

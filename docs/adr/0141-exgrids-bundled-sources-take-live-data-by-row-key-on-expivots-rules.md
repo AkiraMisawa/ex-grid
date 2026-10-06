@@ -198,4 +198,4 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
     and a row compares it by reference (`ExGridRow.razor:320`). A kept row would therefore still
     render.
 - **ExSheet's live data** remains the subject of its own ADR.
-- **The Definition of Done gains LV-3 to LV-10 and LV-16** (§31).
+- **The Definition of Done gains LV-3 to LV-10, LV-16 and LV-18** (§31).
