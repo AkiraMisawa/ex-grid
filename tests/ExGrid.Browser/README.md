@@ -356,9 +356,13 @@ nobody had asked for. What that means when writing a test:
   (LV-11); a Ctrl+V pressed straight after F9 judged against the render it was pressed on —
   refused where that render was the older one, pasted where it already showed the change (LV-13,
   LV-14). On the Server host only, where a gesture can be taken before F9's render comes back: an
-  Action press, a Ctrl+Enter fill and a fill-handle release refused (LV-12, LV-13). Each race reads
-  what the page showed at the gesture first, from a capture listener ahead of the grid's, and says
-  so by name if the change had already been painted.
+  Action press, a Ctrl+Enter fill and a fill-handle release refused (LV-12, LV-13); a commit whose
+  opening key was taken before F9's change refused with the new value (LV-11, D2); a Ctrl+D whose
+  source F9 moved refused though its target did not move (LV-13, D4). The user's own writes count
+  as seen (LV-17, D1): `5` Enter ↑ Ctrl+V and `1` Enter ↑ `2` Enter, typed at once, land on both
+  hosts, the Server host at 0 and at 150 ms. Each race reads what the page showed at the gesture
+  first, from a capture listener ahead of the grid's, and says so by name if the change had
+  already been painted.
 - `find.spec.mjs` — Find (ADR-0055), **run once per Chrome** on `/features`: Ctrl+F taken
   from the browser and the keys typed after it landing in the panel's field, Enter and
   Shift+Enter stepping, a match beyond the painted rows revealed, "no match" in a live
