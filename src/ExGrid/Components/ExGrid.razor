@@ -5887,7 +5887,10 @@
         // drops the Selection first (ADR-0011).
         if (!await TakeInGatheredAsync())
             return;
-        if (address.SequenceVersion != _sequenceVersion || !ReferenceEquals(address.Columns, _columnNames))
+        // Row Sequence Version belongs to one source; another source may start at the same
+        // number. Its detached identity must match too, without retaining the old source graph.
+        if (!ReferenceEquals(address.SourceIdentity, PaintIdentityOf(Source))
+            || address.SequenceVersion != _sequenceVersion || !ReferenceEquals(address.Columns, _columnNames))
         {
             if (OnPasteRefused.HasDelegate)
                 await OnPasteRefused.InvokeAsync(PasteRefusalReason.RenderNoLongerKept);

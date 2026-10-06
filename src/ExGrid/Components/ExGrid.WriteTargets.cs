@@ -91,10 +91,12 @@ public partial class ExGrid<TRow>
 
     // Immutable positional evidence for one paste, held only while its stream is read or its
     // Consumer answers. It retains no row, column accessor, or displayed value (ADR-0154).
-    private sealed record PasteTarget(GridSelection Selection, int SequenceVersion, string[] Columns, int Paint);
+    private sealed record PasteTarget(GridSelection Selection, int SequenceVersion, string[] Columns,
+        int Paint, object? SourceIdentity);
 
     private PasteTarget CapturePasteTarget(int paint)
-        => new(_selection.Selection, _sequenceVersion, _columnNames, paint == PaintNotTold ? NotePaint() : paint);
+        => new(_selection.Selection, _sequenceVersion, _columnNames,
+            paint == PaintNotTold ? NotePaint() : paint, PaintIdentityOf(Source));
 
     // No row instance or accessor is retained. A key is the Consumer's declared identity;
     // a reference token has no path back to its row. Column/action names survive a redeclaration.

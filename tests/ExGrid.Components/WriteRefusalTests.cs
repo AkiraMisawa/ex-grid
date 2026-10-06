@@ -943,6 +943,27 @@ public class WriteRefusalTests : GridTestContext
         Assert.True(stream.Disposed);
     }
 
+    [Fact] // ADR-0154: source-local sequence numbers do not identify a different source's rows.
+    public async Task ADR0154_a_streamed_paste_never_rebinds_to_a_different_source_at_the_same_version()
+    {
+        var rows = TestRows.Many(50);
+        var original = new GatheringSource(rows, freshKey: true);
+        var replacement = new GatheringSource(Changed(rows, 0, book: "Another source's row"), freshKey: true);
+        Assert.Equal(original.RowSequenceVersion, replacement.RowSequenceVersion);
+        var heard = new Heard();
+        var cut = RenderSourceGrid(original, heard);
+        await ClickAsync(cut, 50, 10);
+        var stream = new HeldPasteStream("User");
+        var paste = cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(stream, null));
+        await stream.Opened.Task;
+        cut.Render(ps => ps.Add(g => g.Source, replacement));
+        stream.Release();
+        await paste;
+        Assert.Empty(heard.Pastes);
+        Assert.Equal([PasteRefusalReason.RenderNoLongerKept], heard.PasteRefusals);
+        Assert.True(stream.Disposed);
+    }
+
     private sealed class HeldPasteStream(string text) : IJSStreamReference
     {
         private readonly byte[] _bytes = System.Text.Encoding.UTF8.GetBytes(text);
