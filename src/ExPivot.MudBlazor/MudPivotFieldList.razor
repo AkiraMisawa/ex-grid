@@ -7,82 +7,91 @@
    component cannot carry :preventDefault. Every Area and the list of fields prevent dragover's
    default, so a drop is never lost to a render still on its way; a drop that changes nothing is
    ExPivot's to ignore. Each entry's open menu or panel stands directly under it, in ExPivot's
-   frame, and no element here is positioned, so the frame takes the pane's width. *@
+   frame, positioned against the full-width scrolling body so both scroll together. *@
+@* A delayed DOM gesture keeps the context from this render, including its layout (ADR-0061). *@
+@{ var renderedContext = Context; }
 <div class="mud-ex-pivot-pane">
-    <MudText Typo="Typo.subtitle1" Class="mud-ex-pivot-pane-title">@Context.Title</MudText>
-    <MudText Typo="Typo.caption" Class="mud-ex-pivot-pane-caption">@Context.Word("choose-fields")</MudText>
-    <MudTextField T="string" Value="Context.Search" ValueChanged="Context.SearchChanged" Immediate="true"
-                  Label="@Context.Word("search-fields")" Variant="Variant.Outlined" Margin="Margin.Dense"
-                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                  Class="mud-ex-pivot-search" />
-    <div class="@(Context.ListAcceptsDrop ? "mud-ex-pivot-fields mud-ex-pivot-drop-remove" : "mud-ex-pivot-fields")"
-         role="list" aria-label="@Context.Title" @ondragover:preventDefault @ondrop="Context.DropOnList">
-        @foreach (var field in Context.Fields)
-        {
-            <div @key="field.Name" role="listitem" draggable="true"
-                 class="@(Context.Dragging?.Field == field.Name ? "mud-ex-pivot-field mud-ex-pivot-dragging" : "mud-ex-pivot-field")"
-                 @ondragstart="() => Context.StartDrag(PivotDragSubject.FromList(field.Name))"
-                 @ondragend="Context.EndDrag">
-                <MudCheckBox T="bool" Value="field.IsPlaced" ValueChanged="@(_ => field.Toggle())" Label="@field.Caption"
-                             Dense="true" Size="Size.Small" Color="Color.Primary" Class="mud-ex-pivot-field-check" />
-                @if (field.IsFiltered)
-                {
-                    <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Size="Size.Small" Color="Color.Primary"
-                             Title="@Context.Word("filtered")" Class="mud-ex-pivot-filtered-mark" />
-                }
-            </div>
-        }
+    <div class="mud-ex-pivot-pane-heading">
+        <MudText Typo="Typo.subtitle1" Class="mud-ex-pivot-pane-title" title="@Context.Title">@Context.Title</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Class="mud-ex-pivot-pane-close"
+                       aria-label="@Context.Word("hide-field-list")" title="@Context.Word("hide-field-list")" OnClick="Context.Close" />
     </div>
-    <MudText Typo="Typo.caption" Class="mud-ex-pivot-pane-caption">@Context.Word("drag-fields")</MudText>
-    <div class="mud-ex-pivot-areas">
-        @foreach (var area in Context.Areas)
-        {
-            var end = area.Entries.Count(e => !e.IsValuesPseudoField);
-            <div @key="area.Area" class="@AreaClass(area)" @ondragover:preventDefault
-                 @ondragenter="() => Context.DragOver(area.Area, end)"
-                 @ondrop="() => Context.Drop(area.Area, end)">
-                <div class="mud-ex-pivot-area-title">
-                    <MudIcon Icon="@MudPivotIcons.ForArea(area.Area)" Size="Size.Small" Class="mud-ex-pivot-area-icon" />
-                    <MudText Typo="Typo.body2" Class="mud-ex-pivot-area-name">@area.Title</MudText>
-                </div>
-                <div class="mud-ex-pivot-area-entries" role="list" aria-label="@area.Title">
-                    @foreach (var entry in area.Entries)
+    <div class="mud-ex-pivot-pane-body">
+        <MudText Typo="Typo.caption" Class="mud-ex-pivot-pane-caption">@Context.Word("choose-fields")</MudText>
+        <MudTextField T="string" Value="Context.Search" ValueChanged="Context.SearchChanged" Immediate="true"
+                      Label="@Context.Word("search-fields")" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Class="mud-ex-pivot-search" />
+        <div class="@(Context.ListAcceptsDrop ? "mud-ex-pivot-fields mud-ex-pivot-drop-remove" : "mud-ex-pivot-fields")"
+             role="list" aria-label="@Context.Title" @ondragover:preventDefault @ondrop="Context.DropOnList">
+            @foreach (var field in Context.Fields)
+            {
+                <div @key="field.Name" role="listitem" draggable="true"
+                     class="@(Context.Dragging?.Field == field.Name ? "mud-ex-pivot-field mud-ex-pivot-dragging" : "mud-ex-pivot-field")"
+                     @ondragstart="() => renderedContext.StartDrag(PivotDragSubject.FromList(field.Name))"
+                     @ondragend="Context.EndDrag">
+                    <MudCheckBox T="bool" Value="field.IsPlaced" ValueChanged="@(_ => field.Toggle())" Label="@field.Caption"
+                                 Dense="true" Size="Size.Small" Color="Color.Primary" Class="mud-ex-pivot-field-check" />
+                    @if (field.IsFiltered)
                     {
-                        var index = entry.IsValuesPseudoField ? end : entry.Entry.Index;
-                        <div @key="entry.Entry" class="@EntryClass(area, entry, index)" role="listitem" draggable="true"
-                             @ondragstart="() => Context.StartDrag(PivotDragSubject.FromArea(entry.Entry))"
-                             @ondragend="Context.EndDrag"
-                             @ondragenter="() => Context.DragOver(area.Area, index)" @ondragenter:stopPropagation
-                             @ondragover:preventDefault
-                             @ondrop="() => Context.Drop(area.Area, index)" @ondrop:stopPropagation>
-                            <MudPivotButton Variant="Variant.Outlined" Size="Size.Small" FullWidth="true"
-                                            Color="@(entry.IsFiltered ? Color.Primary : Color.Default)"
-                                            EndIcon="@Icons.Material.Filled.ArrowDropDown" Class="mud-ex-pivot-entry-button"
-                                            OnClick="entry.OpenMenu" FocusRequest="entry.FocusRequest"
-                                            aria-haspopup="menu" aria-expanded="@(entry.IsMenuOpen ? "true" : "false")"
-                                            aria-label="@PivotWords.Fill(Context.Word("field-menu"), entry.Caption)">
-                                <span class="mud-ex-pivot-entry-caption">@entry.Caption</span>
-                                @if (entry.IsFiltered)
-                                {
-                                    <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Size="Size.Small" Class="mud-ex-pivot-filtered-mark" />
-                                }
-                            </MudPivotButton>
-                            @entry.Popup
-                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Size="Size.Small" Color="Color.Primary"
+                                 Title="@Context.Word("filtered")" Class="mud-ex-pivot-filtered-mark" />
                     }
                 </div>
-            </div>
-        }
-    </div>
-    @* Excel's Defer Layout Update at the pane's foot (ADR-0061/0062): a MudCheckBox with a
-       MudButton beside it. While it is ticked the pane's changes build ExPivot's pending layout,
-       and Update applies it in one change. *@
-    <div class="mud-ex-pivot-defer">
-        <MudCheckBox T="bool" Value="Context.DeferLayoutUpdate" ValueChanged="@(on => Context.DeferLayoutUpdateChanged(on))"
-                     Label="@Context.Word("defer-layout-update")" Dense="true" Size="Size.Small" Color="Color.Primary"
-                     Class="mud-ex-pivot-defer-check" />
-        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" Disabled="!Context.CanUpdate"
-                   OnClick="Context.Update" Class="mud-ex-pivot-update">@Context.Word("update")</MudButton>
+            }
+        </div>
+        <MudText Typo="Typo.caption" Class="mud-ex-pivot-pane-caption">@Context.Word("drag-fields")</MudText>
+        <div class="mud-ex-pivot-areas">
+            @foreach (var area in Context.Areas)
+            {
+                var end = area.Entries.Count(e => !e.IsValuesPseudoField);
+                <div @key="area.Area" class="@AreaClass(area)" @ondragover:preventDefault
+                     @ondragenter="() => renderedContext.DragOver(area.Area, end)"
+                     @ondrop="() => renderedContext.Drop(area.Area, end)">
+                    <div class="mud-ex-pivot-area-title">
+                        <MudIcon Icon="@MudPivotIcons.ForArea(area.Area)" Size="Size.Small" Class="mud-ex-pivot-area-icon" />
+                        <MudText Typo="Typo.body2" Class="mud-ex-pivot-area-name">@area.Title</MudText>
+                    </div>
+                    <div class="mud-ex-pivot-area-entries" role="list" aria-label="@area.Title">
+                        @foreach (var entry in area.Entries)
+                        {
+                            var index = entry.IsValuesPseudoField ? end : entry.Entry.Index;
+                            <div @key="entry.Entry" class="@EntryClass(area, entry, index)" role="listitem" draggable="true"
+                                 @onmousedown:stopPropagation="entry.IsMenuOpen" @onfocusin:stopPropagation="entry.IsMenuOpen"
+                                 @ondragstart="() => renderedContext.StartDrag(PivotDragSubject.FromArea(entry.Entry))"
+                                 @ondragend="Context.EndDrag"
+                                 @ondragenter="() => renderedContext.DragOver(area.Area, index)" @ondragenter:stopPropagation
+                                 @ondragover:preventDefault
+                                 @ondrop="() => renderedContext.Drop(area.Area, index)" @ondrop:stopPropagation>
+                                <MudPivotButton Variant="Variant.Outlined" Size="Size.Small" FullWidth="true"
+                                                Color="@(entry.IsFiltered ? Color.Primary : Color.Default)"
+                                                EndIcon="@Icons.Material.Filled.ArrowDropDown" Class="mud-ex-pivot-entry-button"
+                                                OnClick="entry.OpenMenu" FocusRequest="entry.FocusRequest"
+                                                aria-haspopup="menu" aria-expanded="@(entry.IsMenuOpen ? "true" : "false")"
+                                                aria-label="@PivotWords.Fill(Context.Word("field-menu"), entry.Caption)">
+                                    <span class="mud-ex-pivot-entry-caption">@entry.Caption</span>
+                                    @if (entry.IsFiltered)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Size="Size.Small" Class="mud-ex-pivot-filtered-mark" />
+                                    }
+                                </MudPivotButton>
+                                @entry.Popup
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        @* Excel's Defer Layout Update at the pane's foot (ADR-0061/0062): a MudCheckBox with a
+           MudButton beside it. While it is ticked the pane's changes build ExPivot's pending layout,
+           and Update applies it in one change. *@
+        <div class="mud-ex-pivot-defer">
+            <MudCheckBox T="bool" Value="Context.DeferLayoutUpdate" ValueChanged="@(on => Context.DeferLayoutUpdateChanged(on))"
+                         Label="@Context.Word("defer-layout-update")" Dense="true" Size="Size.Small" Color="Color.Primary"
+                         Class="mud-ex-pivot-defer-check" />
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" Disabled="!Context.CanUpdate"
+                       OnClick="Context.Update" Class="mud-ex-pivot-update">@Context.Word("update")</MudButton>
+        </div>
     </div>
 </div>
 

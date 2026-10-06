@@ -335,6 +335,31 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-field-list"));
     }
 
+    [Fact] // ADR-0061: the heading's close button binds visibility and preserves deferred edits
+    public async Task The_heading_closes_the_pane_and_keeps_its_pending_layout()
+    {
+        var page = RenderPage<BoundToggle>();
+        var cut = page.FindComponent<PivotComponent>();
+        var reportBefore = RowTexts(cut);
+        await DeferAsync(cut, true);
+        await TickFieldAsync(cut, "Quantity", true);
+        await OpenMenuAsync(cut, "Rows", "Region");
+        await RunMenuAsync(cut, "Field Settings…");
+
+        await cut.Find("button[aria-label='Hide Field List']").ClickAsync(new MouseEventArgs());
+
+        Assert.False(page.Instance.Shown);
+        Assert.Empty(cut.FindAll(".ex-pivot-field-list"));
+        Assert.Empty(cut.FindAll(".ex-pivot-popup"));
+        Assert.Equal(reportBefore, RowTexts(cut));
+        await cut.Find(".ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
+        Assert.True(page.Instance.Shown);
+        Assert.Empty(cut.FindAll(".ex-pivot-popup"));
+        Assert.Contains("Sum of Quantity", AreaEntries(cut, "Values"));
+        await cut.Find(".ex-pivot-update").ClickAsync(new MouseEventArgs());
+        Assert.Contains(cut.Instance.CurrentLayout.Values, v => v.Field == "Quantity");
+    }
+
     [Fact] // ADR-0061: a pane hidden by the user stays hidden while the Consumer keeps passing the value it always passed
     public async Task An_unbound_pane_keeps_the_users_choice()
     {

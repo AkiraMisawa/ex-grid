@@ -1,7 +1,10 @@
+using System.Reflection;
 using Bunit;
+using ExPivot.Chrome;
 using ExPivot.Components.Tests.Support;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 
@@ -99,6 +102,118 @@ public class FieldListTests : PivotTestContext
         Assert.Empty(AreaEntries(cut, "Rows"));
     }
 
+    [Fact] // ADR-0061: dropping on the report removes only the dragged placement
+    public async Task Dropping_on_the_report_removes_only_the_dragged_placement()
+    {
+        var told = new List<PivotLayout>();
+        var cut = RenderPivot(new PivotLayout
+        {
+            Rows = [P("Region")],
+            Values = [Sum("Amount"), new("Region", PivotAggregation.Count)],
+        }, ps => ps.Add(p => p.LayoutChanged, told.Add));
+
+        await AreaElement(cut, "Rows").QuerySelector(".ex-pivot-entry")!.DragStartAsync(new DragEventArgs());
+        await cut.Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
+
+        Assert.Empty(AreaEntries(cut, "Rows"));
+        Assert.Equal(["Sum of Amount", "Count of Region"], AreaEntries(cut, "Values"));
+        Assert.Empty(Assert.Single(told).Rows);
+    }
+
+    [Theory] // ADR-0061: a drag's entry index is meaningful only in the layout it began against
+    [InlineData(".ex-pivot-sheet")]
+    [InlineData(".ex-pivot-fields")]
+    [InlineData(".ex-pivot-area")]
+    public async Task A_drop_after_the_layout_changes_does_not_act_on_a_different_entry(string target)
+    {
+        var told = new List<PivotLayout>();
+        var layout = new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] };
+        var cut = RenderPivot(layout, ps => ps.Add(p => p.LayoutChanged, told.Add));
+        await AreaElement(cut, "Rows").QuerySelector(".ex-pivot-entry")!.DragStartAsync(new DragEventArgs());
+
+        cut.Render(ps => ps.Add(p => p.Layout, layout with { Rows = [P("Product"), P("Region")] }));
+        await cut.Find(target).DropAsync(new DragEventArgs());
+
+        Assert.Equal(["Product", "Region"], AreaEntries(cut, "Rows"));
+        Assert.Empty(told);
+    }
+
+    [Theory] // ADR-0061: neither a late dragstart nor an old target can reinterpret entry indices
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Old_rendered_drag_callbacks_do_not_change_a_replacement_layout(bool lateStart)
+    {
+        var layout = new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] };
+        var cut = RenderPivot(layout);
+        var old = cut.FindComponent<PivotFieldListView>().Instance.Context;
+        cut.Render(ps => ps.Add(p => p.Layout, layout with { Rows = [P("Product"), P("Region")] }));
+        var current = cut.FindComponent<PivotFieldListView>().Instance.Context;
+
+        await cut.InvokeAsync(() => (lateStart ? old : current).StartDrag(PivotDragSubject.FromArea(new(PivotArea.Rows, 0))));
+        await cut.InvokeAsync(() => (lateStart ? current : old).Drop(PivotArea.Columns, 0));
+
+        Assert.Equal(["Product", "Region"], AreaEntries(cut, "Rows"));
+        Assert.Empty(AreaEntries(cut, "Columns"));
+    }
+
+    [Fact] // ADR-0061: a replacement source invalidates a drag even if the layout is unchanged
+    public async Task A_drop_after_the_source_changes_does_nothing()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")] });
+        await AreaElement(cut, "Rows").QuerySelector(".ex-pivot-entry")!.DragStartAsync(new DragEventArgs());
+        cut.Render(ps => ps.Add(p => p.Source, Bundled()));
+        await cut.Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
+        Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
+    }
+
+    [Theory] // ADR-0061: removal accepts a placed entry, never Σ Values, a list field or an external drag
+    [InlineData("pseudo")]
+    [InlineData("list")]
+    [InlineData("external")]
+    [InlineData("cancelled")]
+    [InlineData("hidden")]
+    public async Task Report_removal_ignores_drags_it_cannot_remove(string gesture)
+    {
+        var layout = new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount"), Sum("Quantity")] };
+        var cut = RenderPivot(layout);
+        var context = cut.FindComponent<PivotFieldListView>().Instance.Context;
+        if (gesture != "external")
+        {
+            var subject = gesture switch
+            {
+                "pseudo" => PivotDragSubject.FromArea(PivotEntry.ValuesPseudoField(PivotAxis.Columns)),
+                "list" => PivotDragSubject.FromList("Product"),
+                _ => PivotDragSubject.FromArea(new(PivotArea.Rows, 0)),
+            };
+            await cut.InvokeAsync(() => context.StartDrag(subject));
+        }
+        if (gesture == "cancelled")
+            await cut.InvokeAsync(context.EndDrag);
+        if (gesture == "hidden")
+        {
+            await cut.InvokeAsync(context.Close);
+            await cut.Find(".ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
+        }
+
+        Assert.Empty(cut.FindAll(".ex-pivot-report-drop-remove"));
+        await cut.Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
+        Assert.Same(layout, cut.Instance.CurrentLayout);
+    }
+
+    [Fact] // ADR-0061: the empty report is also a removal target, including for a Value Field
+    public async Task Removing_values_rows_and_filters_reaches_the_empty_report()
+    {
+        var cut = RenderPivot(new PivotLayout { Filters = [P("Online")], Rows = [P("Region")], Values = [Sum("Amount")] });
+        await AreaElement(cut, "Values").QuerySelector(".ex-pivot-entry")!.DragStartAsync(new DragEventArgs());
+        await cut.Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
+        await AreaElement(cut, "Rows").QuerySelector(".ex-pivot-entry")!.DragStartAsync(new DragEventArgs());
+        await cut.Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
+        Assert.Single(cut.FindAll(".ex-pivot-empty"));
+        await AreaElement(cut, "Filters").QuerySelector(".ex-pivot-entry")!.DragStartAsync(new DragEventArgs());
+        await cut.Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
+        Assert.True(cut.Instance.CurrentLayout.IsEmpty);
+    }
+
     [Fact] // ADR-0061: a drag that ends without a drop changes nothing
     public async Task A_drag_that_ends_changes_nothing()
     {
@@ -186,6 +301,45 @@ public class FieldListTests : PivotTestContext
         Assert.Single(cut.FindAll(".ex-pivot-popup"));
         Assert.NotNull(AreaElement(cut, "Columns").QuerySelector(".ex-pivot-popup"));
     }
+
+    [Theory] // ADR-0061 (PV-11): an outside event painted for an old menu cannot close its replacement
+    [InlineData("onmousedown", false)]
+    [InlineData("onfocusin", false)]
+    [InlineData("onmousedown", true)]
+    [InlineData("onfocusin", true)]
+    public async Task A_late_dismissal_leaves_the_replacement_surface_open(string eventName, bool panel)
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });
+        await OpenMenuAsync(cut, "Rows", "Region");
+        var oldDismissal = RenderedDismissal(cut, eventName);
+
+        if (panel)
+            await RunMenuAsync(cut, "Field Settings…");
+        else
+            await OpenMenuAsync(cut, "Rows", "Product");
+
+        // The browser saw the old menu when it made this gesture. Deliver that rendered event
+        // only after its replacement exists, without sleeps or assumptions about a round trip.
+        EventArgs args = eventName == "onmousedown" ? new MouseEventArgs() : new FocusEventArgs();
+        await cut.InvokeAsync(() => oldDismissal.InvokeAsync(args));
+
+        var popup = Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        Assert.Equal(panel ? "Field Settings…" : "Options for Product", popup.GetAttribute("aria-label"));
+    }
+
+    // As in SurfaceWriteBackTests: the renderer's event binding is the browser-facing boundary.
+    // bUnit normally dispatches against the latest render; keep the older binding here so the
+    // test can deliver exactly the gesture a circuit had not received before the replacement.
+#pragma warning disable BL0006
+    private EventCallback RenderedDismissal(IRenderedComponent<global::ExPivot.Components.ExPivot> cut, string eventName)
+    {
+        var read = typeof(Renderer).GetMethod("GetCurrentRenderTreeFrames", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var frames = (ArrayRange<RenderTreeFrame>)read.Invoke(Renderer, [cut.ComponentId])!;
+        var binding = frames.Array.Take(frames.Count).First(frame =>
+            frame.FrameType == RenderTreeFrameType.Attribute && frame.AttributeName == eventName).AttributeValue;
+        return binding is EventCallback callback ? callback : new EventCallback(cut.Instance, (MulticastDelegate)binding);
+    }
+#pragma warning restore BL0006
 
     [Fact] // ADR-0061: Hide Field List from the Context Menu, and back
     public async Task The_field_list_can_be_hidden_and_shown()

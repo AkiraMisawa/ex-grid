@@ -137,6 +137,60 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.getByRole('checkbox', { name: 'Desk', exact: true })).not.toBeChecked();
         });
 
+        test(`ADR-0061: entries dropped on the report are removed from Rows and Columns (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            for (const [caption, area, remaining] of [['Desk', 'Rows', ['Region']], ['Product', 'Columns', []]]) {
+                await entry(page, caption).dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
+                await expect.poll(() => entriesOf(page, area)).toEqual(remaining);
+                await expect(field(page, caption).getByRole('checkbox')).not.toBeChecked();
+            }
+            await expect(page.locator('#pivot-status')).toContainText('2 changes made in the pane');
+        });
+
+        test(`ADR-0061: a report removal waits for Defer Layout Update (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const before = await reportRows(page);
+            await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
+            await entry(page, 'Desk').dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region']);
+            await circuitQuiet();
+            expect(await reportRows(page)).toBe(before);
+            await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+            await pane(page).getByRole('button', { name: 'Update', exact: true }).click();
+            await expect.poll(() => reportRows(page)).toBeLessThan(before);
+            await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
+        });
+
+        test(`ADR-0061: an unused field and a details grid do not accept report removal (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await field(page, 'Month').dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
+            await circuitQuiet();
+            await expect(field(page, 'Month').getByRole('checkbox')).not.toBeChecked();
+            await firstValue(page).dblclick({ force: true });
+            const details = pivot(page).getByRole('tabpanel').getByRole('grid');
+            await expect(details).toBeVisible();
+            await entry(page, 'Desk').dragTo(details, { targetPosition: { x: 80, y: 60 } });
+            await circuitQuiet();
+            expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+        });
+
+        test(`ADR-0061: cancelling over the report clears the removal indication without removing (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const from = await entry(page, 'Desk').boundingBox();
+            const to = await report(page).boundingBox();
+            await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+            await page.mouse.down();
+            await page.mouse.move(to.x + 80, to.y + 60, { steps: 10 });
+            await expect(pivot(page).locator('.ex-pivot-report-drop-remove')).toHaveText('Remove Field');
+            await page.keyboard.press('Escape');
+            await page.mouse.up();
+            await expect(pivot(page).locator('.ex-pivot-report-drop-remove')).toHaveCount(0);
+            await circuitQuiet();
+            expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+        });
+
         test(`ADR-0059: the − button collapses an Item, and the Focus stays on it (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const toggle = report(page).locator('.ex-pivot-toggle').first();
@@ -460,22 +514,156 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(entry(page, 'Region')).toHaveAttribute('aria-expanded', 'false');
         });
 
+        test(`ADR-0061 (PV-11): pressing the report dismisses a field menu and keeps the cell and keyboard (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+
+            await firstValue(page).click({ force: true });
+
+            await expect(menu).toHaveCount(0);
+            await expect(report(page)).toBeFocused();
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            await circuitQuiet();
+            await expect(report(page)).toBeFocused();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+        });
+
+        test(`ADR-0061 (PV-11): a disabled item or padding keeps Escape inside the field menu (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            for (const target of ['disabled item', 'padding']) {
+                await entry(page, 'Region').click();
+                await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+                if (target === 'disabled item') {
+                    const disabled = menu.getByRole('menuitem', { name: 'Move Up', exact: true });
+                    await expect(disabled).toBeDisabled();
+                    await disabled.click({ force: true });
+                } else {
+                    await menu.click({ position: { x: 2, y: 2 } });
+                }
+                await page.keyboard.press('Escape');
+                await expect(menu).toHaveCount(0);
+                await expect(entry(page, 'Region')).toBeFocused();
+                await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            }
+        });
+
+        test(`ADR-0061 (PV-11): focus outside a field menu dismisses it without taking the keyboard back (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            const search = pane(page).getByRole(chrome === 'builtin' ? 'searchbox' : 'textbox', { name: 'Search', exact: true });
+            for (const destination of [report(page), search]) {
+                await entry(page, 'Region').click();
+                await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+                // Focus alone, with no pointer event that could hide a missing focus boundary.
+                await destination.focus();
+                await expect(menu).toHaveCount(0);
+                await circuitQuiet();
+                await expect(destination).toBeFocused();
+            }
+            await search.fill('Region');
+            await expect(fieldsList(page).getByRole('checkbox')).toHaveCount(1);
+            await expect(fieldsList(page).getByRole('checkbox', { name: 'Region', exact: true })).toBeVisible();
+        });
+
+        test(`ADR-0061 (PV-11): the field menu opener still toggles and another entry opens its own menu (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const opener = entry(page, 'Region');
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            await opener.click();
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await opener.focus();
+            await circuitQuiet();
+            await expect(menu).toBeVisible();
+            // Hold the press through a render opportunity: it must not dismiss early and make
+            // the release reopen a menu it was meant to close (ADR-0056).
+            await opener.hover();
+            await page.mouse.down();
+            await circuitQuiet();
+            await expect(menu).toBeVisible();
+            await page.mouse.up();
+            await expect(menu).toHaveCount(0);
+            await expect(opener).toBeFocused();
+
+            await opener.click();
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await entry(page, 'Product').click();
+            const next = page.getByRole('menu', { name: 'Options for Product' });
+            await expect(menu).toHaveCount(0);
+            await expect(next.getByRole('menuitem', { name: 'Move to Report Filter', exact: true })).toBeFocused();
+            await circuitQuiet();
+            await expect(next).toBeVisible();
+            await page.keyboard.press('Escape');
+            await expect(next).toHaveCount(0);
+            await expect(entry(page, 'Product')).toBeFocused();
+        });
+
+        test(`ADR-0061 (PV-11): a press on a pane caption dismisses only the field menu (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await setRoundTrip(150);
+            await entry(page, 'Region').click();
+            await expect(page.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            // This caption takes no DOM focus: a focusin handler alone cannot dismiss the menu.
+            await pane(page).getByText('Drag fields between areas below:', { exact: true }).click();
+            await expect(page.getByRole('menu')).toHaveCount(0);
+            await circuitQuiet();
+            await expect(entry(page, 'Region')).not.toBeFocused();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+
+            await entry(page, 'Region').click();
+            await page.getByRole('menuitem', { name: 'Field Settings…', exact: true }).click();
+            const settings = page.getByRole('dialog', { name: 'Field Settings…', exact: true });
+            await expect(settings).toBeVisible();
+            // On Server, rendering the panel precedes its opening focus request (ADR-0039).
+            await expect(settings.locator(':focus')).toHaveCount(1);
+            await firstValue(page).click({ force: true });
+            await expect(report(page)).toBeFocused();
+            await circuitQuiet();
+            await expect(settings).toBeVisible();
+            await settings.getByRole('button', { name: 'Cancel', exact: true }).click();
+            await expect(settings).toHaveCount(0);
+        });
+
+        test(`ADR-0061 (PV-11): back-to-back field menu dismissal and opening keep the new keyboard behind a round trip (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            await expect(page.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await setRoundTrip(150);
+            await firstValue(page).click({ force: true });
+            await entry(page, 'Product').click();
+            const menu = page.getByRole('menu', { name: 'Options for Product' });
+            await expect(menu.getByRole('menuitem', { name: 'Move to Report Filter', exact: true })).toBeFocused();
+            await circuitQuiet();
+            await expect(menu).toBeVisible();
+            await expect(menu.getByRole('menuitem', { name: 'Move to Report Filter', exact: true })).toBeFocused();
+            await page.keyboard.press('Escape');
+            await expect(menu).toHaveCount(0);
+            await expect(entry(page, 'Product')).toBeFocused();
+        });
+
         test(`ADR-0061: a menu drops down under its entry, as wide as the pane and over what follows (${chrome})`, async ({ page }) => {
             await open(page, chrome);
+            await setRoundTrip(150);
             // The Values Area stands in the pane's right-hand column.
             const opener = entry(page, 'Sum of P&L');
             await opener.click();
             const menu = page.getByRole('menu', { name: 'Options for Sum of P&L' });
             await expect(menu).toBeVisible();
-
-            const field = await pane(page).boundingBox();
-            const at = await opener.boundingBox();
-            const box = await menu.boundingBox();
+            // Opening focus can scroll the body after the menu first renders on Server.
+            await expect(menu.locator(':focus')).toHaveCount(1);
+            await circuitQuiet();
+            const { field, at, box, area } = await pane(page).evaluate(p => ({
+                field: p.getBoundingClientRect().toJSON(),
+                at: p.querySelector('button[aria-label="Options for Sum of P&L"]').getBoundingClientRect().toJSON(),
+                box: p.querySelector('[role="menu"][aria-label="Options for Sum of P&L"]').getBoundingClientRect().toJSON(),
+                area: p.querySelector('[role="list"][aria-label="Values"]').parentElement.getBoundingClientRect().toJSON(),
+            }));
             expect(box.width).toBeGreaterThan(field.width - 40);
             expect(box.y).toBeGreaterThanOrEqual(at.y + at.height - 1);
             expect(box.y).toBeLessThan(at.y + at.height + 12);
             // Over what follows: the Values Area's own box did not grow to hold it.
-            const area = await areaList(page, 'Values').locator('xpath=..').boundingBox();
             expect(area.y + area.height).toBeLessThan(box.y + box.height);
         });
 
@@ -594,6 +782,52 @@ for (const chrome of ['builtin', 'mud']) {
             await toggle.click();
             await expect(pane(page)).toBeVisible();
             await expect(page.locator('#pivot-field-list-status')).toHaveText('Field List shown: True');
+        });
+
+        test(`ADR-0061: a cramped Field List keeps its heading close button reachable while scrolling (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await setRoundTrip(150);
+            await alterPage(page, () => {
+                const root = document.querySelector('.ex-pivot');
+                const before = root.getAttribute('style');
+                root.style.setProperty('--ex-pivot-field-list-width', '160px');
+                root.style.height = '260px';
+                return () => root.setAttribute('style', before);
+            });
+            const body = pane(page).locator('.ex-pivot-pane-body, .mud-ex-pivot-pane-body');
+            await body.evaluate(b => { b.scrollTop = b.scrollHeight; });
+            await expect.poll(() => body.evaluate(b => b.scrollTop)).toBeGreaterThan(0);
+            await entry(page, 'Region').click();
+            await page.getByRole('menuitem', { name: 'Field Settings…', exact: true }).click();
+            const settings = page.getByRole('dialog', { name: 'Field Settings…', exact: true });
+            await expect(settings).toBeVisible();
+            await expect(settings.locator(':focus')).toHaveCount(1);
+            for (const offset of [0, 120]) {
+                await body.evaluate((b, offset) => { b.scrollTop = offset; }, offset);
+                await circuitQuiet();
+                await expect.poll(() => body.evaluate(b => b.scrollTop)).toBe(offset);
+                await expect.poll(() => body.evaluate(b => {
+                    const opener = b.querySelector('[aria-label="Options for Region"]').getBoundingClientRect();
+                    const panel = b.querySelector('[role="dialog"]').getBoundingClientRect();
+                    return Math.abs(panel.top - opener.bottom);
+                })).toBeLessThan(8);
+            }
+            // The panel's last action remains reachable through the body scroller.
+            await settings.getByRole('button', { name: 'Cancel', exact: true }).click({ trial: true });
+            const close = pane(page).getByRole('button', { name: 'Hide Field List', exact: true });
+            await expect.poll(() => close.evaluate(b => {
+                const box = b.getBoundingClientRect();
+                const region = b.closest('[role=region]').getBoundingClientRect();
+                return box.left >= region.left && box.right <= region.right && box.top >= region.top
+                    && box.bottom <= region.bottom && b.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+            })).toBe(true);
+            await close.click();
+            await expect(pane(page)).toHaveCount(0);
+            await expect(page.locator('#pivot-field-list-status')).toHaveText('Field List shown: False');
+            await toolbarButton(page, 'Field List').click();
+            await expect(pane(page)).toBeVisible();
+            await expect(page.getByRole('dialog', { name: 'Field Settings…', exact: true })).toHaveCount(0);
+            expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
         });
 
         test(`ADR-0061: while Defer Layout Update is ticked the pane's changes wait for Update (${chrome})`, async ({ page }) => {

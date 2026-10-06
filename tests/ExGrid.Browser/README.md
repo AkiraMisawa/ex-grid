@@ -625,20 +625,29 @@ nobody had asked for. What that means when writing a test:
 - `pivot.spec.mjs` — ExPivot on `/pivot` (§29, docs/specs/expivot), **run once per Chrome**:
   ExPivot's own markup and `ExPivot.MudBlazor`'s (`/pivot?chrome=mud`), found by role and name,
   which both give the same. A field dragged from the list of fields onto an Area with the
-  browser's own drag and drop, an entry dropped before another and back onto the list (PV-10);
+  browser's own drag and drop, an entry dropped before another, back onto the list or onto the
+  report (PV-10); report removal following Defer Layout Update, an unused field and a details grid
+  changing nothing, and Escape cancelling the drag and its removal indication;
   the `−` button collapsing an Item with the Focus kept (PV-13); a double click on a value
   opening a tab at the report's foot, titled by the cell and holding the trades behind it, with
   the keyboard on the tab, a second tab beside it, and closing them; a dialog when the page asks
   for one (`?details=dialog`), taking the keyboard, inert behind it and closed by Escape; and the
   page taking the trades itself (`?details=page`) with neither opening (PV-14, DC-63); the
   keyboard into a field's menu and back to its entry, a menu dropping down under its entry as
-  wide as the pane, and a command moving the field (PV-11); the Pivot Toolbar above the report — the
+  wide as the pane, and a command moving the field (PV-11); a press on the report or a pane caption,
+  and focus moved to the report or search, dismissing a Field List menu without taking the keyboard
+  back; Escape after a press on a disabled item or frame padding; the opener still toggling and
+  another entry opening its menu; a menu dismissed and reopened behind 150 ms keeping its keyboard;
+  and Field Settings left standing by a report press (PV-11); the Pivot Toolbar above the report — the
   report filter band on its left, Layout and the pane's toggle on its right, no Refresh for the
   bundled source (PV-30) — the band filtering, and its Filter… opening under the Pivot Toolbar over
   the report and closed by a press on the backdrop, the keyboard back on its button (PV-12); the
   Layout menu over the report, its current choices marked, a no-op disabled, Escape and a choice
   giving the keyboard back to Layout (PV-30); the toggle hiding and showing the pane, bound by the
-  page; Defer Layout Update holding the report until Update (PV-28); the words switch speaking
+  page; the heading's close icon still reachable in a narrow, short pane with its body scrolled
+  and a panel open, following its opener at zero and nonzero scroll offsets and keeping its last
+  action reachable, closing through the same binding; opening focus awaited before a report press
+  or body scroll under a 150 ms round trip; Defer Layout Update holding the report until Update (PV-28); the words switch speaking
   Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade date, moved
   to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in the Japanese
   words (ADR-0060); and the code the page shows under "The code" equal to the regions of its source

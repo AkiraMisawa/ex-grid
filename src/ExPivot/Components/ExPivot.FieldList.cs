@@ -20,7 +20,9 @@ public partial class ExPivot
     private readonly Dictionary<string, int> _bandFocus = new(StringComparer.Ordinal);
     private readonly EventCallback _escape;
     private OpenSurface? _open;
-    private PivotDragSubject? _drag;
+    private sealed record FieldDrag(PivotDragSubject Subject, PivotLayout Layout, PivotSource Source);
+
+    private FieldDrag? _drag;
     private (PivotArea Area, int Index)? _dropAt;
     private string _search = "";
     private int _focusSequence;
@@ -296,6 +298,18 @@ public partial class ExPivot
 
     private void CloseOpenQuietly() => _open = null;
 
+    private void DismissFieldMenu(OpenSurface? menu)
+    {
+        // The gesture names the menu it was painted against. A replacement surface must not be
+        // closed by an older press or focus event arriving over the circuit (ADR-0061).
+        if (menu is not null && ReferenceEquals(_open, menu))
+        {
+            CloseOpenQuietly();
+            // The outside operation owns the keyboard: do not ask the entry for it back.
+            StateHasChanged();
+        }
+    }
+
     private Task OnEscapeAsync()
     {
         // While a popup of the content's own is open, Escape is that popup's (ADR-0039).
@@ -449,6 +463,7 @@ public partial class ExPivot
     private PivotFieldListContext FieldListContext()
     {
         var layout = PaneLayout;
+        var source = Source;
         var fields = Source.Fields
             .Where(f => _search.Length == 0 || f.Caption.Contains(_search, StringComparison.CurrentCultureIgnoreCase))
             .Select(f =>
@@ -489,15 +504,16 @@ public partial class ExPivot
             _search,
             SearchChanged,
             areas,
-            _drag,
-            StartDrag,
+            CurrentDrag,
+            subject => StartDrag(subject, layout, source),
             DragOver,
-            DropAsync,
-            _drag?.Entry is not null,
-            DropOnListAsync,
+            (area, index) => DropAsync(layout, area, index),
+            CanRemoveDrag,
+            () => DropOnListAsync(layout),
             EndDrag,
             Word)
         {
+            Close = () => SetFieldListShownAsync(false),
             DeferLayoutUpdate = _pending is not null,
             DeferLayoutUpdateChanged = SetDeferAsync,
             CanUpdate = _pending is { } pending && !ReferenceEquals(pending, _layout),
@@ -531,11 +547,19 @@ public partial class ExPivot
     /// <summary>Whether a drop of what is dragged on <paramref name="area"/> would change anything:
     /// Σ Values goes only to Rows and Columns.</summary>
     private bool Accepts(PivotArea area)
-        => _drag is { } drag && (drag.Entry is not { IsValuesPseudoField: true } || area is PivotArea.Rows or PivotArea.Columns);
+        => CurrentDrag is { } drag && (drag.Entry is not { IsValuesPseudoField: true } || area is PivotArea.Rows or PivotArea.Columns);
 
-    private void StartDrag(PivotDragSubject subject)
+    private PivotDragSubject? CurrentDrag
+        => _fieldListShown && _drag is { } drag && ReferenceEquals(drag.Layout, PaneLayout)
+            && ReferenceEquals(drag.Source, Source) ? drag.Subject : null;
+
+    private bool CanRemoveDrag => CurrentDrag?.Entry is { IsValuesPseudoField: false };
+
+    private bool ReportAcceptsDrop => CanRemoveDrag && _selectedSheet is null && _dialog is null;
+
+    private void StartDrag(PivotDragSubject subject, PivotLayout layout, PivotSource source)
     {
-        _drag = subject;
+        _drag = new FieldDrag(subject, layout, source);
         _dropAt = null;
         CloseOpenQuietly();
         StateHasChanged();
@@ -543,7 +567,7 @@ public partial class ExPivot
 
     private void DragOver(PivotArea area, int index)
     {
-        if (_drag is null || _dropAt == (area, index))
+        if (CurrentDrag is null || _dropAt == (area, index))
             return;
         _dropAt = (area, index);
         StateHasChanged();
@@ -558,30 +582,43 @@ public partial class ExPivot
         StateHasChanged();
     }
 
-    private Task DropAsync(PivotArea area, int index)
+    private PivotDragSubject? TakeDrag(PivotLayout targetLayout)
     {
-        var drag = _drag;
+        // Both ends name the layout the browser saw. A late gesture cannot reuse an index
+        // against a replacement layout, even when the dragged field still exists (ADR-0061).
+        var drag = ReferenceEquals(targetLayout, PaneLayout) ? CurrentDrag : null;
         _drag = null;
         _dropAt = null;
+        return drag;
+    }
+
+    private Task DropAsync(PivotLayout layout, PivotArea area, int index)
+    {
+        var drag = TakeDrag(layout);
         if (drag is null)
         {
             StateHasChanged();
             return Task.CompletedTask;
         }
-        var layout = PaneLayout;
         if (drag.Field is { } field)
             return PaneApplyAsync(PivotLayoutEdits.Place(layout, InfoOf(field), area, index));
         var entry = drag.Entry!.Value;
         return PaneApplyAsync(PivotLayoutEdits.Move(layout, entry, area, index, entry.IsValuesPseudoField ? null : InfoOf(FieldOf(layout, entry))));
     }
 
-    private Task DropOnListAsync()
+    private Task DropOnReportAsync(PivotLayout layout, bool reportShown)
     {
-        var drag = _drag;
-        _drag = null;
-        _dropAt = null;
-        if (drag?.Entry is { } entry)
-            return PaneApplyAsync(PivotLayoutEdits.Remove(PaneLayout, entry));
+        if (reportShown && _selectedSheet is null && _dialog is null)
+            return DropOnListAsync(layout);
+        EndDrag();
+        return Task.CompletedTask;
+    }
+
+    private Task DropOnListAsync(PivotLayout layout)
+    {
+        var drag = TakeDrag(layout);
+        if (drag?.Entry is { IsValuesPseudoField: false } entry)
+            return PaneApplyAsync(PivotLayoutEdits.Remove(layout, entry));
         StateHasChanged();
         return Task.CompletedTask;
     }

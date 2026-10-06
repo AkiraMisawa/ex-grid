@@ -1,9 +1,11 @@
+using System.Reflection;
 using Bunit;
 using ExGrid.MudBlazor;
 using ExPivot.Components;
 using ExPivot.Engine;
 using ExPivot.MudBlazor.Tests.Support;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Extensions;
@@ -83,6 +85,53 @@ public class MudPivotChromeTests : MudPivotTestContext
         await cut.Find(".mud-ex-pivot-fields").DropAsync(new DragEventArgs());
         Assert.Equal(["Region"], Entries(cut, "Rows"));
     }
+
+    [Theory] // ADR-0061/0062: the real rendered DOM callbacks retain the layout at both drag endpoints
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    public async Task A_late_rendered_drag_event_cannot_reinterpret_an_entry(bool builtin, bool lateStart)
+    {
+        var cut = RenderPivot(RegionProduct, chrome: builtin ? BuiltIn : null);
+        var eventName = lateStart ? "ondragstart" : "ondrop";
+        EventCallback retained;
+        if (builtin)
+        {
+            var view = cut.FindComponent<PivotFieldListView>();
+            retained = RenderedEntryEvent(view.ComponentId, view.Instance, eventName);
+        }
+        else
+        {
+            var view = cut.FindComponent<MudPivotFieldList>();
+            retained = RenderedEntryEvent(view.ComponentId, view.Instance, eventName);
+        }
+        cut.Render(ps => ps.Add(p => p.Layout, RegionProduct with { Rows = [P("Product"), P("Region")] }));
+        if (!lateStart)
+            await cut.Find("[aria-label='Options for Region']").ParentElement!.DragStartAsync(new DragEventArgs());
+
+        await cut.InvokeAsync(() => retained.InvokeAsync(new DragEventArgs()));
+        if (lateStart)
+            await cut.Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
+
+        Assert.Equal(["Product", "Region"], cut.Instance.CurrentLayout.Rows.Select(p => p.Field));
+    }
+
+    // Retain the browser's actual binding, as SurfaceWriteBackTests does. Keeping Context itself
+    // would miss a view's lambda that reads its replacement Context when the event arrives.
+#pragma warning disable BL0006
+    private EventCallback RenderedEntryEvent(int componentId, IComponent receiver, string eventName)
+    {
+        var read = typeof(Renderer).GetMethod("GetCurrentRenderTreeFrames", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var frames = (ArrayRange<RenderTreeFrame>)read.Invoke(Renderer, [componentId])!;
+        var entryIndex = Array.FindIndex(frames.Array, 0, frames.Count, frame =>
+            frame.FrameType == RenderTreeFrameType.Element && Equals(frame.ElementKey, new PivotEntry(PivotArea.Rows, 0)));
+        Assert.True(entryIndex >= 0);
+        var binding = frames.Array.Skip(entryIndex + 1).TakeWhile(frame => frame.FrameType == RenderTreeFrameType.Attribute)
+            .Single(frame => frame.AttributeName == eventName).AttributeValue;
+        return binding is EventCallback callback ? callback : new EventCallback((IHandleEvent)receiver, (MulticastDelegate)binding);
+    }
+#pragma warning restore BL0006
 
     [Fact] // ADR-0061/0062: an entry's menu is MudButtons inside ExPivot's frame — ExPivot's commands, order and states, each with its icon
     public async Task An_entrys_menu_is_ExPivots_commands_as_MudButtons()
