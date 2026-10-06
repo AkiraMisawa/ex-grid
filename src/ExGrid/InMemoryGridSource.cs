@@ -28,7 +28,7 @@ namespace ExGrid;
 /// grid reads are replaced together on the context the source was built on — on Blazor, the
 /// renderer's — which is where the grid reads them; where there is none, as on WebAssembly or in a
 /// test, they are replaced on the thread that applies them. The grid's own calls (a sort, a filter,
-/// <see cref="ReplaceRow"/>) arrive on that context.</para>
+/// <see cref="ReplaceRow"/>, <see cref="PublishGathered"/>) arrive on that context.</para>
 /// </summary>
 public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCircuit
 {
@@ -711,9 +711,9 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     private void Dispatch()
     {
         if (_context is null || ReferenceEquals(SynchronizationContext.Current, _context))
-            PublishGathered();
+            PublishDecided();
         else
-            _context.Post(static state => ((InMemoryGridSource<TRow>)state!).PublishGathered(), this);
+            _context.Post(static state => ((InMemoryGridSource<TRow>)state!).PublishDecided(), this);
     }
 
     /// <summary>The gathering timer fired, on the clock's thread.</summary>
@@ -729,12 +729,18 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
             Dispatch();
     }
 
-    private void PublishGathered()
+    /// <summary>The publication <see cref="Decide"/> took on. Another publication may have run
+    /// before it — <see cref="PublishGathered"/>, a user's edit, a new Query — and taken its changes
+    /// with it; it then does nothing, rather than publish early whatever was gathered since, before
+    /// the interval from that publication is up (principle 6: the outcome does not depend on which
+    /// of the two ran first).</summary>
+    private void PublishDecided()
     {
         bool raise;
         lock (_gate)
         {
-            _publishing = false;
+            if (!_publishing)
+                return;
             raise = PublishPending();
         }
         if (raise)
@@ -742,14 +748,51 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     }
 
     /// <summary>
+    /// Puts out at once the live changes gathered and not yet published (ADR-0141/0142, LV-16), so
+    /// the Window is the newest version this source holds: the grid calls it just before it judges a
+    /// write, and a <see cref="ReplaceRow"/> built on the row it then reads is taken. It is a
+    /// publication like the one at an interval's end: the next live change waits
+    /// <see cref="GatherInterval"/> from it, and the publication that interval would have made has
+    /// nothing left to make. Nothing gathered, or no Row Key, and it does nothing.
+    ///
+    /// <para><b>It raises <see cref="StateChanged"/> when it put something out</b>, as every
+    /// publication does, and never when it did not. The judgement: a publication without its event
+    /// would leave every other listener — a second grid bound to this source, a Consumer's status
+    /// line — on the version before it for good, since nothing is left for the interval's end to
+    /// publish. The grid that called it reads the Window itself straight after, so the event is
+    /// redundant for that grid, and it costs no repaint of every row: its rows render on a new
+    /// instance (ADR-0003), so only the rows the publication replaced render, once, in the render
+    /// the write causes anyway. A grid may also ignore the event it raises while it calls this, as it
+    /// ignores the events of the column push it makes itself.</para>
+    ///
+    /// <para>Called by the grid on its own context, as its other calls are; like
+    /// <see cref="ReplaceRow"/>, it publishes on the thread that calls it, under the source's
+    /// lock.</para>
+    /// </summary>
+    public void PublishGathered()
+    {
+        if (_keyed is null)
+            return;
+        bool raise;
+        lock (_gate)
+            raise = PublishPending();
+        if (raise)
+            StateChanged?.Invoke();
+    }
+
+    /// <summary>
     /// Under the lock: the Window brought up to the newest version from the changes gathered, by
     /// the incremental requery; the version moved when the sequence did (LV-7); the Change
-    /// Highlight recorded (LV-9). True when the grid has something new to paint.
+    /// Highlight recorded (LV-9). True when the grid has something new to paint. Every publication
+    /// takes the one decided on with it (<see cref="PublishDecided"/>), and the wait armed for the
+    /// interval's end has nothing left to wait for.
     /// </summary>
     private bool PublishPending()
     {
+        _publishing = false;
         if (_pending.Count == 0)
             return false;
+        _gatherer!.Disarm();
         var keyed = _keyed!;
         var changes = new List<RowChange<TRow>>(_pending.Count);
         var pendings = new List<Pending>(_pending.Count);

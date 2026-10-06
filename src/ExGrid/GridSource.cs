@@ -43,6 +43,10 @@ public static class GridSource
     /// range at a time and holds the answer as the Window (ADR-0025). It fetches the
     /// first page itself, coalesces requests while scrolling, cancels what a newer
     /// question supersedes and discards an answer that arrives after it.
+    /// <para>Under live data, a write is judged against what was painted: the source has
+    /// nothing it could put out before the write without asking the server, and whether the
+    /// server's data moved under the write is the Consumer's server's to judge (ADR-0141/0142,
+    /// LV-16).</para>
     /// </summary>
     /// <param name="fetch">Answers a <see cref="GridQuery"/> with a <see cref="GridPage{TRow}"/>.
     /// Its Filter and Sort semantics are expected to match <see cref="From{TRow}(IReadOnlyList{TRow})"/> (ADR-0023).</param>
@@ -62,7 +66,7 @@ public static class GridSource
     /// <see cref="Finding.GridFind.Step{TRow}"/> would over that result. Null reports that
     /// this source cannot search, and Ctrl+F is refused.</param>
     /// <param name="rowKey">A row's Row Key, for live data (ADR-0141): with one, the source can be
-    /// told that the data moved on (<see cref="FetchingGridSource{TRow}.NotifyChanged"/>), pairs each
+    /// told that the data moved on (<see cref="FetchingGridSource{TRow}.NotifyChanged()"/>), pairs each
     /// answer's rows with the painted ones by it, marks the cells that changed, and refuses an answer
     /// that repeats a key. The Row Mark adapter's key is one (ADR-0140), and serves when this is
     /// left out; both given must be the same delegate. Null with no adapter takes no live data.</param>

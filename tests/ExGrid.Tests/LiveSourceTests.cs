@@ -414,6 +414,127 @@ public class LiveSourceTests
         Assert.Throws<ArgumentException>(() => source.ReplaceRow(source.Window[1], source.Window[1] with { Id = "Q" }));
     }
 
+    // ---- LV-16: what was gathered is put out before a write is judged --------------------------
+
+    [Fact] // ADR-0141/0142 / LV-16: inside a gather interval, a commit's ReplaceRow is refused by name before PublishGathered, and accepted on the newest row after it
+    public void After_PublishGathered_a_ReplaceRow_built_on_the_newest_row_is_accepted()
+    {
+        var clock = new FakeTimeProvider();
+        var source = Live(clock, out var rows, gather: true);
+        source.Apply(new(changed: [rows[3] with { Amount = 7 }]));
+        // Gathered, not yet published: the Window, which the grid paints, still holds rows[0].
+        var gathered = rows[0] with { Amount = 8 };
+        source.Apply(new(changed: [gathered]));
+        Assert.Same(rows[0], source.Window[0]);
+
+        var refusal = Assert.Throws<ArgumentException>(() => source.ReplaceRow(source.Window[0], source.Window[0] with { Book = "Edited" }));
+        Assert.Contains("'A'", refusal.Message);
+
+        ((IGridSource<Deal>)source).PublishGathered();
+
+        Assert.Same(gathered, source.Window[0]);
+        source.ReplaceRow(source.Window[0], source.Window[0] with { Book = "Edited" });
+        // The edit is built on the gathered change, so it keeps it.
+        Assert.Equal("Edited", source.Window[0].Book);
+        Assert.Equal(8m, source.Window[0].Amount);
+    }
+
+    [Fact] // ADR-0141 / LV-16: PublishGathered raises StateChanged when it put something out, and nothing when nothing was gathered
+    public void PublishGathered_raises_StateChanged_only_when_it_published()
+    {
+        var clock = new FakeTimeProvider();
+        var source = Live(clock, out var rows, gather: true);
+        source.Apply(new(changed: [rows[3] with { Amount = 7 }]));
+        var events = 0;
+        source.StateChanged += () => events++;
+
+        source.PublishGathered();
+        Assert.Equal(0, events);
+
+        source.Apply(new(changed: [rows[0] with { Amount = 8 }]));
+        source.PublishGathered();
+        Assert.Equal(1, events);
+        Assert.Equal(8m, source.Window[0].Amount);
+
+        source.PublishGathered();
+        Assert.Equal(1, events);
+    }
+
+    [Fact] // ADR-0141 / LV-16, LV-6: PublishGathered is a publication: the next change waits the interval from it, and the interval's end then publishes nothing more
+    public void PublishGathered_brings_the_publication_forward()
+    {
+        var clock = new FakeTimeProvider();
+        var source = Live(clock, out var rows, gather: true);
+        source.Apply(new(changed: [rows[3] with { Amount = 7 }]));
+        clock.Advance(TimeSpan.FromMilliseconds(100));
+        source.Apply(new(changed: [rows[0] with { Amount = 8 }]));
+        source.PublishGathered();
+        var events = 0;
+        source.StateChanged += () => events++;
+
+        // The interval that was running ends: nothing is left to publish.
+        clock.Advance(TimeSpan.FromMilliseconds(150));
+        Assert.Equal(0, events);
+
+        // A change 150 ms after PublishGathered waits for the interval from it.
+        source.Apply(new(changed: [rows[1] with { Amount = 9 }]));
+        clock.Advance(TimeSpan.FromMilliseconds(99));
+        Assert.Equal(0, events);
+        Assert.Equal(1m, source.Window[1].Amount);
+        clock.Advance(TimeSpan.FromMilliseconds(1));
+        Assert.Equal(1, events);
+        Assert.Equal(9m, source.Window[1].Amount);
+    }
+
+    [Fact] // ADR-0141 / LV-16, principle 6: a publication posted to the source's context, which PublishGathered took first, does not run again early
+    public async Task A_posted_publication_that_PublishGathered_took_does_not_run_again()
+    {
+        var context = new QueueContext();
+        var previous = SynchronizationContext.Current;
+        var clock = new FakeTimeProvider();
+        InMemoryGridSource<Deal> source;
+        Deal[] rows;
+        SynchronizationContext.SetSynchronizationContext(context);
+        try
+        {
+            source = Live(clock, out rows, gather: true);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+        var token = TestContext.Current.CancellationToken;
+
+        // After a quiet interval: decided at once, and posted to the source's context.
+        await Task.Run(() => source.Apply(new(changed: [rows[0] with { Amount = 7 }])), token);
+        source.PublishGathered();
+        Assert.Equal(7m, source.Window[0].Amount);
+        // Within the interval from that publication: gathered.
+        await Task.Run(() => source.Apply(new(changed: [rows[1] with { Amount = 8 }])), token);
+
+        context.RunAll();
+
+        Assert.Equal(1m, source.Window[1].Amount);
+        clock.Advance(Interval);
+        context.RunAll();
+        Assert.Equal(8m, source.Window[1].Amount);
+    }
+
+    [Fact] // ADR-0141 / LV-16: without a Row Key nothing is gathered, so PublishGathered does nothing
+    public void PublishGathered_without_a_key_does_nothing()
+    {
+        var source = GridSource.From(Deals());
+        source.OnColumnsChanged(Columns);
+        var window = source.Window;
+        var events = 0;
+        source.StateChanged += () => events++;
+
+        ((IGridSource<Deal>)source).PublishGathered();
+
+        Assert.Equal(0, events);
+        Assert.Same(window, source.Window);
+    }
+
     [Fact] // ADR-0141 / LV-6: changes may arrive on any thread; every one lands, and the Window is the newest version
     public async Task Changes_from_many_threads_all_land()
     {
