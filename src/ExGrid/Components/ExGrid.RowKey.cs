@@ -127,7 +127,11 @@ public partial class ExGrid<TRow>
                 RequireDistinctKeys(_window, _windowStart, key);
         }
         _observedWindow = _window;
-        _rowKey = key;
+        // Equivalent delegates declare the same identity. Keep the current representative
+        // so detached Action evidence keeps its token across a getter's fresh Func instances.
+        // Historical paints retain only that token, never this delegate or its target.
+        if (!Equals(_rowKey, key))
+            _rowKey = key;
         _windowVouched = vouched;
     }
 

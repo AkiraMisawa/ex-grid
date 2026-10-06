@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using ExGrid.Cells;
 using ExGrid.Clipboard;
+using ExGrid.Selection;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
@@ -88,6 +89,13 @@ public partial class ExGrid<TRow>
         return true;
     }
 
+    // Immutable positional evidence for one paste, held only while its stream is read or its
+    // Consumer answers. It retains no row, column accessor, or displayed value (ADR-0154).
+    private sealed record PasteTarget(GridSelection Selection, int SequenceVersion, string[] Columns, int Paint);
+
+    private PasteTarget CapturePasteTarget(int paint)
+        => new(_selection.Selection, _sequenceVersion, _columnNames, paint == PaintNotTold ? NotePaint() : paint);
+
     // No row instance or accessor is retained. A key is the Consumer's declared identity;
     // a reference token has no path back to its row. Column/action names survive a redeclaration.
     private sealed record ActionTarget(int Paint, int? Sequence, int? Row, object? Identity,
@@ -97,7 +105,7 @@ public partial class ExGrid<TRow>
     private ActionTarget? _answeredActionPress;
 
     /// <summary>The original address of an Action press (ADR-0154), captured before Blazor's
-    /// click. A disposed row may lose its click; the core then resolves this address itself.
+    /// click. A disposed or moved row may lose its click; the core resolves this address itself.
     /// Public only for the grid's JavaScript interop, not for Consumers.</summary>
     /// <param name="paint">The address token written on the Viewport.</param>
     /// <param name="row">The original absolute row index, or minus one.</param>
@@ -123,12 +131,19 @@ public partial class ExGrid<TRow>
     private bool RendersActionTarget(ActionTarget target)
     {
         var current = _paints.LastOrDefault();
-        if (current is null) return false;
+        var original = PaintNamed(target.Paint);
+        if (current is null || original is null) return false;
+        // Redeclaring columns can replace event attributes or move the original command's
+        // button. A command existing elsewhere does not prove that its native click survived.
+        if (!ReferenceEquals(current.ColumnsIdentity, original.ColumnsIdentity)) return false;
         // A column/command removed since the press can dispose its event attribute too.
         if (!current.Columns.Any(c => c.Name == target.Column && c.Actions.Contains(target.Command))) return false;
-        return current.Rows.Any(row => row is not null && (target.Key is not null
-            && ReferenceEquals(current.KeyIdentity, target.KeyDeclaration)
-                ? Equals(row.Key, target.Key) : ReferenceEquals(row.Identity, target.Identity)));
+        // Moving a keyed component can lose the browser's native click even when the same
+        // button survives. Only its original position can still be awaiting that click.
+        var index = (target.Row ?? -1) - current.FirstRow;
+        if (index < 0 || index >= current.Rows.Length || current.Rows[index] is not { } row) return false;
+        return target.Key is not null && ReferenceEquals(current.KeyIdentity, target.KeyDeclaration)
+            ? Equals(row.Key, target.Key) : ReferenceEquals(row.Identity, target.Identity);
     }
 
     private async Task AnswerActionPressWithNoClickAsync()

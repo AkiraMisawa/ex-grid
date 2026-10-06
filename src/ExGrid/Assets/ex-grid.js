@@ -1987,10 +1987,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const nameBox = event.button === 0 && !replaying ? ownNameBox(event.target) : null;
         nameBoxPressed = nameBox !== document.activeElement ? nameBox : null;
         nameBoxSelected = null;
-        // A press on an action of this grid's rows keeps the render it was made on (actionPress).
+        // Capture the whole original address with the paint. A keyed row can move the same
+        // button between press and release; reading its ids at release would name another row
+        // in the old paint (ADR-0154). These are render-written ids, not a layout measurement.
         if (!replaying) {
             const button = event.button === 0 ? ownAction(event.target) : null;
-            actionPress = button !== null ? { button, paint: paintNow() } : null;
+            const cell = button !== null ? button.closest('[role=gridcell]') : null;
+            const at = cell !== null ? /r(\d+)c(\d+)$/.exec(cell.id) : null;
+            const index = cell !== null ? Array.prototype.indexOf.call(cell.querySelectorAll('.ex-action'), button) : -1;
+            actionPress = button !== null ? {
+                button, paint: paintNow(), row: at ? Number(at[1]) : -1,
+                column: at ? Number(at[2]) : -1, index,
+            } : null;
         }
         // A press into an editor surface puts the keyboard there.
         noteSurface(event.target);
@@ -2126,14 +2134,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             actionPress = null;
         }
         if (core && action !== null && event.button === 0 && ownAction(event.target) === action.button) {
-            // And what it pressed — the row and column its cell's id names, and which of the cell's
-            // actions — so that the core can answer a press whose click Blazor will not deliver:
-            // one whose row component a render the browser has not seen yet has disposed (ADR-0154). Read from the ids the render wrote; nothing is measured.
-            const cell = action.button.closest('[role=gridcell]');
-            const at = cell !== null ? /r(\d+)c(\d+)$/.exec(cell.id) : null;
-            const index = cell !== null ? Array.prototype.indexOf.call(cell.querySelectorAll('.ex-action'), action.button) : -1;
-            core.invokeMethodAsync('ActionPressTakenAt', action.paint,
-                at ? Number(at[1]) : -1, at ? Number(at[2]) : -1, index).catch((error) => {
+            // Resolve the address captured at mousedown even if the retained button moved.
+            // The core also answers a click lost when Blazor disposed the row (ADR-0154).
+            core.invokeMethodAsync('ActionPressTakenAt', action.paint, action.row, action.column, action.index).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to hear where an action was pressed', error);
                 }

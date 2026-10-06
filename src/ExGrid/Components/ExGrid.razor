@@ -5820,8 +5820,9 @@
     /// JS side's to release, and are released here either way.
     ///
     /// <para>The paste carries its original address context, read from the Viewport at the
-    /// <c>paste</c> event — held or not. A changed row or column order cannot redirect it
-    /// while clipboard bytes are being read (ADR-0154).</para>
+    /// <c>paste</c> event — held or not. The selected target is captured before either stream
+    /// is read. Later selection movement cannot redirect it, and a changed row or column order
+    /// refuses the original target (ADR-0154).</para>
     ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
@@ -5832,7 +5833,7 @@
     [JSInvokable]
     public async Task OnPasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint = PaintNotTold)
     {
-        if (paint == PaintNotTold) paint = NotePaint();
+        var target = CapturePasteTarget(paint);
         await using var textReference = text;
         await using var htmlReference = html;
         if (_disposed)
@@ -5844,7 +5845,7 @@
                 await OnPasteRefused.InvokeAsync(PasteRefusalReason.TooLarge);
             return;
         }
-        await OnPasteAsync(await ReadAsync(text), await ReadAsync(html), paint);
+        await PasteIntoAsync(await ReadAsync(text), await ReadAsync(html), target);
 
         static async Task<string?> ReadAsync(IJSStreamReference? reference)
         {
@@ -5869,7 +5870,10 @@
     /// <param name="html">The <c>text/html</c> flavour, or null for none.</param>
     /// <param name="paint">The render the paste was taken against (ADR-0154); left out, the
     /// newest.</param>
-    public async Task OnPasteAsync(string? text, string? html, int paint = PaintNotTold)
+    public Task OnPasteAsync(string? text, string? html, int paint = PaintNotTold)
+        => PasteIntoAsync(text, html, CapturePasteTarget(paint));
+
+    private async Task PasteIntoAsync(string? text, string? html, PasteTarget address)
     {
         if (_disposed)
             return;
@@ -5883,7 +5887,13 @@
         // drops the Selection first (ADR-0011).
         if (!await TakeInGatheredAsync())
             return;
-        var target = _selection.Selection;
+        if (address.SequenceVersion != _sequenceVersion || !ReferenceEquals(address.Columns, _columnNames))
+        {
+            if (OnPasteRefused.HasDelegate)
+                await OnPasteRefused.InvokeAsync(PasteRefusalReason.RenderNoLongerKept);
+            return;
+        }
+        var target = address.Selection;
         var extent = Extent;
         var decision = ClipboardRules.PlanPaste(
             target, new PasteShape(block.Count, block[0].Count), ColumnIsEditable,
@@ -5895,15 +5905,12 @@
             return;
         }
         // A delayed paste still belongs to its original row and column order (ADR-0154).
-        if (await RefuseStaleWriteAsync(paint))
+        if (await RefuseStaleWriteAsync(address.Paint))
             return;
         var version = _sequenceVersion;
         var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
         if (OnPaste.HasDelegate)
-        {
-
             await OnPaste.InvokeAsync(intent);
-        }
         AskSummaryAgain();
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
         if (intent.IsRefused)
@@ -7922,10 +7929,15 @@
         if (focus.Column < 0 || focus.Column >= Columns.Count)
             return;
         var column = Columns[focus.Column];
+        // Space identifies a command from the declaration it was pressed against. A later
+        // declaration may move that command or remove it; it must never substitute another.
+        var paintedColumn = PaintNamed(paint)?.Columns.ElementAtOrDefault(focus.Column);
+        var actions = paintedColumn?.Actions ?? column.Actions.Select(action => action.Name).ToArray();
+        var actionColumnName = paintedColumn?.Name ?? column.Name;
 
         // The Mark Column acts on the selection's rows, not on the one under the Focus,
         // and needs none of them in hand: they are named by position (ADR-0043).
-        if (column.IsMarkColumn)
+        if (column.IsMarkColumn && actions.Length == 0)
         {
             await MarkSelectedRowsAsync();
             return;
@@ -7936,7 +7948,7 @@
         var slice = focus.Row - _windowStart;
         var row = slice >= 0 && slice < _window.Count ? _window[slice] : null;
 
-        if (InteractiveChoice() is { } choice)
+        if (_interactive is { } choice && choice.Cell == focus && choice.Action < actions.Length)
         {
             // Firing leaves (ADR-0037): an action changes the row under it — it opens a
             // view, or deletes the row — and staying inside would leave the chosen action
@@ -7945,18 +7957,18 @@
             _suppressRender = false;
             StateHasChanged();
             if (row is not null)
-                await RaiseActionAsync(new GridActionEventArgs<TRow>(row, column.Name, column.Actions[choice.Action].Name), paint, focus.Row);
+                await RaiseActionAsync(new GridActionEventArgs<TRow>(row, actionColumnName, actions[choice.Action]), paint, focus.Row);
             return;
         }
 
         if (row is null)
             return;
-        if (column.Actions.Count == 1)
+        if (actions.Length == 1)
         {
-            await RaiseActionAsync(new GridActionEventArgs<TRow>(row, column.Name, column.Actions[0].Name), paint, focus.Row);
+            await RaiseActionAsync(new GridActionEventArgs<TRow>(row, actionColumnName, actions[0]), paint, focus.Row);
             return;
         }
-        if (column.Actions.Count > 1)
+        if (actions.Length > 1)
         {
             // The keyboard stays on the root (ADR-0037): what changes is which action the
             // row paints as chosen and what aria-activedescendant names.

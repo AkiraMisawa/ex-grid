@@ -7,6 +7,7 @@ using ExGrid.Components.Tests.Support;
 using ExGrid.Selection;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Xunit;
 
 namespace ExGrid.Components.Tests;
@@ -507,12 +508,34 @@ public class WriteRefusalTests : GridTestContext
         Assert.Equal(ActionRefusalReason.RenderNoLongerKept, Assert.Single(heard.ActionRefusals).Reason);
     }
 
-    private sealed class GatheringSource(TestRow[] rows) : IGridSource<TestRow>
+    [Fact] // ADR-0140/0154: equivalent Row Key delegates remain the same declaration.
+    public async Task ADR0154_a_source_returning_equivalent_key_delegates_preserves_the_action_target()
+    {
+        var rows = TestRows.Many(50);
+        var source = new GatheringSource(rows, freshKey: true);
+        Assert.NotSame(source.RowKey, source.RowKey);
+        Assert.Equal(source.RowKey, source.RowKey);
+        var heard = new Heard();
+        var cut = RenderSourceGrid(source, heard, WithAction());
+        var taken = Paint(cut);
+        await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(taken, 0, 2, 0));
+        var current = Changed(rows, 0, amount: 777m);
+        await cut.InvokeAsync(() => { source.Gather(current); source.PublishGathered(); });
+        await cut.FindAll(".ex-action")[0].ClickAsync(new MouseEventArgs());
+        Assert.Empty(heard.ActionRefusals);
+        Assert.Same(current[0], Assert.Single(heard.Actions).Row);
+    }
+
+    private sealed class GatheringSource(TestRow[] rows, bool freshKey = false) : IGridSource<TestRow>
     {
         private IReadOnlyList<TestRow>? _gathered;
         private int? _gatheredVersion;
 
         public IReadOnlyList<TestRow> Window { get; private set; } = rows;
+
+        public Func<TestRow, object>? RowKey => freshKey ? new Func<TestRow, object>(GetKey) : null;
+
+        private object GetKey(TestRow row) => row.Book;
 
         public int WindowStart => 0;
 
@@ -807,6 +830,9 @@ public class WriteRefusalTests : GridTestContext
         var current = keyed ? Moved(rows, 0, 2, 777m) : Changed(rows, 0, amount: 777m);
         cut.Render(ps => ps.Add(g => g.Window, current).Add(g => g.RowSequenceVersion, keyed ? 1 : 0));
         if (!beforeReplacement) await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(paint, 0, 2, 0));
+        // Replacing or moving the original button can lose its native click. Dispatch must
+        // already have happened, even with a Row Key that kept the component alive.
+        Assert.Single(heard.Actions);
         // Even a late callback for a core-answered click must not repeat the command.
         await cut.InvokeAsync(() => oldHandler(new(rows[0], "Do", "approve")));
         Assert.Empty(heard.ActionRefusals);
@@ -825,6 +851,10 @@ public class WriteRefusalTests : GridTestContext
         await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(taken, 0, 2, 0));
         cut.Render(ps => ps.Add(g => g.Columns, [.. Columns(), GridColumn<TestRow>.ActionColumn("Do",
             removed ? [new("cancel", "Cancel")] : [new("cancel", "Cancel"), new("approve", "Approve")], width: Fixed100)]));
+        // A changed declaration may replace the original event attribute even when its
+        // command still exists elsewhere. Completion must not depend on a surviving click.
+        if (removed) Assert.Single(heard.ActionRefusals);
+        else Assert.Single(heard.Actions);
         await cut.FindAll(".ex-action")[0].ClickAsync(new MouseEventArgs());
         if (removed)
         {
@@ -832,6 +862,104 @@ public class WriteRefusalTests : GridTestContext
             Assert.Equal("approve", Assert.Single(heard.ActionRefusals).ActionName);
         }
         else Assert.Equal("approve", Assert.Single(heard.Actions).ActionName);
+    }
+
+    [Theory] // ADR-0154: Space names the command in its original declaration, not today's index.
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task ADR0154_a_delayed_space_preserves_its_original_command(bool interactive, bool removed)
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var initial = interactive
+            ? new GridAction[] { new("inspect", "Inspect"), new("approve", "Approve") }
+            : [new("approve", "Approve")];
+        var cut = RenderGrid(rows, heard, [.. Columns(), GridColumn<TestRow>.ActionColumn("Do", initial, width: Fixed100)]);
+        await ClickAsync(cut, 250, 10);
+        if (interactive)
+        {
+            await KeyAsync(cut, " ");
+            await KeyAsync(cut, "ArrowRight");
+        }
+        var taken = Paint(cut);
+        cut.Render(ps => ps.Add(g => g.Columns, [.. Columns(), GridColumn<TestRow>.ActionColumn("Do",
+            removed ? [new("cancel", "Cancel")] : [new("approve", "Approve"), new("cancel", "Cancel")], width: Fixed100)]));
+        await KeyAsync(cut, " ", paint: taken);
+        if (removed)
+        {
+            Assert.Empty(heard.Actions);
+            Assert.Equal("approve", Assert.Single(heard.ActionRefusals).ActionName);
+        }
+        else
+        {
+            Assert.Empty(heard.ActionRefusals);
+            Assert.Equal("approve", Assert.Single(heard.Actions).ActionName);
+        }
+    }
+
+    [Theory] // ADR-0154: asynchronous clipboard reads keep the selection from the paste event.
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ADR0154_a_streamed_paste_keeps_its_original_selection(bool html)
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(TestRows.Many(50), heard);
+        await ClickAsync(cut, 50, 10);
+        var stream = new HeldPasteStream(html ? "<table><tr><td>User</td></tr></table>" : "User");
+        var paste = cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(html ? null : stream, html ? stream : null, Paint(cut)));
+        await stream.Opened.Task;
+        await ClickAsync(cut, 150, 30);
+        stream.Release();
+        await paste;
+        Assert.Empty(heard.PasteRefusals);
+        Assert.Equal([new SelectionRange(0, 0, 1, 1)], Assert.Single(heard.Pastes).Plan.Targets);
+        Assert.True(stream.Disposed);
+    }
+
+    [Theory] // ADR-0154: a newer selection cannot rescue a paste's obsolete row/column order.
+    [InlineData("rows")]
+    [InlineData("columns")]
+    [InlineData("gathered")]
+    public async Task ADR0154_a_streamed_paste_refuses_its_original_order_after_it_changes(string change)
+    {
+        var rows = TestRows.Many(50);
+        var source = new GatheringSource(rows);
+        var heard = new Heard();
+        var cut = change == "gathered" ? RenderSourceGrid(source, heard) : RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        var stream = new HeldPasteStream("User");
+        var paste = cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(stream, null));
+        await stream.Opened.Task;
+        if (change == "columns") cut.Render(ps => ps.Add(g => g.Columns, Columns().Reverse().ToArray()));
+        else if (change == "rows") cut.Render(ps => ps.Add(g => g.Window, rows.Reverse().ToArray()).Add(g => g.RowSequenceVersion, 1));
+        else source.Gather(rows.Reverse().ToArray(), version: 1);
+        await ClickAsync(cut, 150, 30);
+        stream.Release();
+        await paste;
+        Assert.Empty(heard.Pastes);
+        Assert.Equal([PasteRefusalReason.RenderNoLongerKept], heard.PasteRefusals);
+        Assert.True(stream.Disposed);
+    }
+
+    private sealed class HeldPasteStream(string text) : IJSStreamReference
+    {
+        private readonly byte[] _bytes = System.Text.Encoding.UTF8.GetBytes(text);
+        private readonly TaskCompletionSource<Stream> _stream = new();
+        public TaskCompletionSource Opened { get; } = new();
+        public bool Disposed { get; private set; }
+        public long Length => _bytes.Length;
+        public void Release() => _stream.SetResult(new MemoryStream(_bytes, writable: false));
+        public ValueTask<Stream> OpenReadStreamAsync(long maxAllowedSize = 512000, CancellationToken cancellationToken = default)
+        {
+            Opened.SetResult();
+            return new(_stream.Task);
+        }
+        public ValueTask DisposeAsync() { Disposed = true; return ValueTask.CompletedTask; }
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new NotSupportedException();
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
+            => throw new NotSupportedException();
     }
 
     [Fact] // ADR-0154: a removed keyed target is refused once without retaining its old payload.
