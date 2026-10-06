@@ -208,7 +208,18 @@ nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
   layer 3 rules below before trusting a pass.
 - **The browser that exercises a change is a targeted run locally, and CI's full run.**
   - **Locally, run the targeted run**: the spec files and `--grep` the change bears on, on one
-    host with `--project=chrome`. When CI fails, fix that test and rerun it alone.
+    host with `--project=chrome`. When CI fails, fix that test and rerun it alone, and a failure
+    seen only in CI may be traced in a local run of that test.
+  - **A new spec, and a spec the change rewrites, runs locally before the push that opens or
+    updates the pull request** — on each host it runs on, `--project=chrome`, and a new one with
+    `--repeat-each=3`. Its first run is never CI's. *(Decided with the user, 2026-10-06: the first
+    CI run of #64 failed seventeen specs that had never run anywhere, on causes one local run
+    shows at once — a page that threw on render, a click on a cell that does not take presses.)*
+  - **Give a worktree's hosts ports no other checkout uses** — for example
+    `EXGRID_BASE_URL=http://localhost:5398` for the Server host and `…:5399` for WebAssembly in one
+    worktree, another pair in the next; `hosting.mjs` derives the rest — because a runner reuses a
+    host already on its port, and would test the other checkout's code and pass. Run headless on a
+    Mac (`EXGRID_HEADLESS=1`).
   - **The full run, both hosts and both browsers, is CI's.** CI runs it sharded on Linux in
     about ten minutes. One host on a Mac takes about twenty-five, and the worktree cannot be
     rebuilt meanwhile, because a rebuild under a running DemoHost breaks it.
@@ -217,7 +228,9 @@ nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
     of the base.
   - **CI runs a pull request only while it merges cleanly with its base**, so resolve conflicts
     before waiting on it.
-  - **A background agent's brief carries the same scope.**
+  - **A background agent's brief carries the same scope.** An agent that writes or rewrites a spec
+    runs it as above before it reports, under the one-at-a-time rule of "Working in parallel"; when
+    agents work at once, the orchestrator runs their specs in turn before the push.
   - **A full local run earns its time only where CI cannot look**: a macOS-only path, or a trace CI
     did not keep.
 - **An unexpected console message or runtime exception is a failure**, not noise to scroll past.
