@@ -47,7 +47,7 @@ public class ChangeHighlightTests : PivotTestContext
     {
         var source = new LiveSource();
         var cut = RenderPivot(RegionAmount, source: source);
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(MarkedTexts(cut));
         Assert.Empty(MarkedTexts(cut));
         Clock.Advance(TimeSpan.FromSeconds(3));
         var at = Clock.GetUtcNow();
@@ -75,7 +75,7 @@ public class ChangeHighlightTests : PivotTestContext
         await PublishAsync(cut, source, EastApples(100.4m));
 
         Assert.Equal("East | 180", RowTexts(cut)[0]);
-        Assert.Equal(180.4m, ((PivotValue)Grid(cut).Instance.Columns[1].Value(Grid(cut).Instance.Window[0])!).Exact);
+        Assert.Equal(180.4m, ((PivotDisplayValue)Grid(cut).Instance.Columns[1].Value(Grid(cut).Instance.Window[0])!).Exact);
         Assert.Empty(MarkedTexts(cut));
         Assert.All(Enumerable.Range(0, 5), row => Assert.Null(ChangedAt(cut, row, 1)));
 
@@ -190,7 +190,7 @@ public class ChangeHighlightTests : PivotTestContext
         await PublishAsync(cut, source, EastApples(101));
 
         Assert.Equal("East | 181", RowTexts(cut)[0]);
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(MarkedTexts(cut));
         Assert.Empty(MarkedTexts(cut));
         var refusal = Assert.Throws<ArgumentOutOfRangeException>(
             () => cut.Render(ps => ps.Add(p => p.ChangeHighlightDuration, TimeSpan.FromSeconds(-1))));
@@ -241,7 +241,7 @@ public class ChangeHighlightTests : PivotTestContext
         }
 
         cut.WaitForState(() => !cut.Instance.IsLoading);
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(MarkedTexts(cut));
         Assert.Empty(MarkedTexts(cut));
     }
 
@@ -259,7 +259,7 @@ public class ChangeHighlightTests : PivotTestContext
         await TickFieldAsync(cut, "Quantity", true);
 
         Assert.Equal("East | 182 | 18", RowTexts(cut)[0]);
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(MarkedTexts(cut));
         Assert.Empty(MarkedTexts(cut));
         Clock.Advance(TimeSpan.FromSeconds(1));
         Assert.Equal(3, source.Questions.Count);
@@ -278,7 +278,7 @@ public class ChangeHighlightTests : PivotTestContext
 
         Assert.Equal(3, source.Questions.Count);
         Assert.Equal("East | 182", RowTexts(cut)[0]);
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(MarkedTexts(cut));
         Assert.Empty(MarkedTexts(cut));
     }
 
@@ -287,22 +287,22 @@ public class ChangeHighlightTests : PivotTestContext
     {
         var cut = RenderPivot(RegionAmount);
 
-        cut.Render(ps => ps.Add(p => p.Source, Bundled(EastApples(101))));
+        cut.Render(ps => ps.Add(p => p.DataSource, Bundled(EastApples(101))));
         Assert.Equal(["181", "286"], MarkedTexts(cut));
 
         cut.Render(ps => ps.Add(p => p.Label, PivotWords.Japanese));
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(MarkedTexts(cut));
         Assert.Empty(MarkedTexts(cut));
     }
 
-    // ---- The delegate: new for each data version, the same otherwise --------------------------
+    // ---- ADR-0153: immutable rows carry changes through one stable delegate ------------------
 
-    [Fact] // ADR-0068 (PV-36): the grid is handed a new delegate for each data version, and the same one across everything else
-    public async Task A_new_delegate_for_each_data_version()
+    [Fact] // ADR-0153 (LV-27): row replacement carries change information; the delegate remains stable
+    public async Task ADR0153_One_stable_delegate_reads_immutable_row_changes()
     {
         var source = new LiveSource();
         var cut = RenderPivot(RegionAmount, source: source);
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(MarkedTexts(cut));
 
         await PublishAsync(cut, source, EastApples(101));
         var first = Grid(cut).Instance.CellChangedAt;
@@ -322,11 +322,11 @@ public class ChangeHighlightTests : PivotTestContext
         await PublishAsync(cut, source, EastApples(102));
         var second = Grid(cut).Instance.CellChangedAt;
         Assert.NotNull(second);
-        Assert.NotSame(first, second);
+        Assert.Same(first, second);
 
         // A data version that changes nothing painted is a version all the same.
         Clock.Advance(Interval);
         await PublishAsync(cut, source, EastApples(102));
-        Assert.NotSame(second, Grid(cut).Instance.CellChangedAt);
+        Assert.Same(second, Grid(cut).Instance.CellChangedAt);
     }
 }

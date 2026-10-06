@@ -54,7 +54,7 @@ public abstract class PivotTestContext : BunitContext
     internal BunitJSModuleInterop ReportGridHandle()
     {
         var handle = _module.SetupModule("attach",
-            invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotReportRow>>);
+            invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotDisplayRow>>);
         StandIn(handle);
         return handle;
     }
@@ -135,7 +135,7 @@ public abstract class PivotTestContext : BunitContext
         Interactive();
         return Render<PivotComponent>(ps =>
         {
-            ps.Add(p => p.Source, source ?? Bundled(records))
+            ps.Add(p => p.DataSource, source ?? Bundled(records))
               .Add(p => p.Culture, CultureInfo.GetCultureInfo("en-US"))
               .Add(p => p.ViewportHeight, (ViewportSize)400)
               .Add(p => p.ViewportWidth, (ViewportSize)700);
@@ -160,8 +160,8 @@ public abstract class PivotTestContext : BunitContext
         SetRendererInfo(new RendererInfo("Server", isInteractive: true));
     }
 
-    internal static IRenderedComponent<ExGrid<PivotReportRow>> Grid(IRenderedComponent<PivotComponent> cut)
-        => cut.FindComponent<ExGrid<PivotReportRow>>();
+    internal static IRenderedComponent<ExGrid<PivotDisplayRow>> Grid(IRenderedComponent<PivotComponent> cut)
+        => cut.FindComponent<ExGrid<PivotDisplayRow>>();
 
     /// <summary>Each painted row's cells as text, label cells first, joined with " | ".</summary>
     internal static string[] RowTexts(IRenderedComponent<PivotComponent> cut)
@@ -211,7 +211,7 @@ public abstract class PivotTestContext : BunitContext
     internal static IReadOnlyList<GridCommand> ContextCommands(IRenderedComponent<PivotComponent> cut, int row, string column)
     {
         var grid = Grid(cut).Instance;
-        var context = new ContextMenuContext<PivotReportRow>(
+        var context = new ContextMenuContext<PivotDisplayRow>(
             grid.Window[row], column, ColumnType.Number, [new SelectionRange(row, 0, 1, 1)], grid.RowSequenceVersion, [], () => { });
         return grid.ContextCommands!(context).ToArray();
     }

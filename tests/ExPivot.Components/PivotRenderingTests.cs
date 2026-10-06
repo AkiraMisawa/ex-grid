@@ -22,19 +22,19 @@ public class PivotRenderingTests : PivotTestContext
     {
         var cut = RenderPivot();
 
-        Assert.Empty(cut.FindComponents<ExGrid.Components.ExGrid<PivotReportRow>>());
+        Assert.Empty(cut.FindComponents<ExGrid.Components.ExGrid<PivotDisplayRow>>());
         Assert.Equal("To build a report, choose fields from the PivotTable Fields list.", cut.Find(".ex-pivot-empty").TextContent);
     }
 
-    [Fact] // ADR-0059: one ExGrid, the whole report as its Window, the label column pinned
+    [Fact] // ADR-0059: one ExGrid, the requested Window and full extent, the label column pinned
     public void The_report_is_one_grid_with_its_labels_pinned()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
 
         var grid = Grid(cut).Instance;
-        Assert.Single(cut.FindComponents<ExGrid.Components.ExGrid<PivotReportRow>>());
+        Assert.Single(cut.FindComponents<ExGrid.Components.ExGrid<PivotDisplayRow>>());
         Assert.Equal(1, grid.PinnedColumnCount);
-        Assert.Null(grid.TotalCount);
+        Assert.Equal(5, grid.TotalCount);
         Assert.Equal(["Row Labels", "Sum of Amount"], HeaderTexts(cut));
         Assert.Equal(["East | 180", "North | 10", "West | 90", "(blank) | 5", "Grand Total | 285"], RowTexts(cut));
     }
@@ -107,7 +107,7 @@ public class PivotRenderingTests : PivotTestContext
         }, records: records);
 
         Assert.Equal("East | 1,234.50", RowTexts(cut)[0]);
-        var value = (PivotValue)Grid(cut).Instance.Columns[1].Value(Grid(cut).Instance.Window[0])!;
+        var value = (PivotDisplayValue)Grid(cut).Instance.Columns[1].Value(Grid(cut).Instance.Window[0])!;
         Assert.Equal("1234.5", value.ToString(null, System.Globalization.CultureInfo.InvariantCulture));
     }
 
@@ -129,11 +129,11 @@ public class PivotRenderingTests : PivotTestContext
         var cut = RenderPivot(RegionProduct);
         var version = Grid(cut).Instance.RowSequenceVersion;
 
-        cut.Render(ps => ps.Add(p => p.Source, Bundled(Sales.Select(s => s with { Amount = s.Amount + 1 }).ToArray())));
+        cut.Render(ps => ps.Add(p => p.DataSource, Bundled(Sales.Select(s => s with { Amount = s.Amount + 1 }).ToArray())));
 
         Assert.Equal(version, Grid(cut).Instance.RowSequenceVersion);
         Assert.Equal("−East | 183", RowTexts(cut)[0]);
-        cut.Render(ps => ps.Add(p => p.Source, Bundled(Sales[..6])));
+        cut.Render(ps => ps.Add(p => p.DataSource, Bundled(Sales[..6])));
         Assert.NotEqual(version, Grid(cut).Instance.RowSequenceVersion);
     }
 
@@ -144,12 +144,12 @@ public class PivotRenderingTests : PivotTestContext
         var cut = RenderPivot(new PivotLayout { Values = [Sum("Amount")] }, source: first);
         Assert.Single(first.Questions);
 
-        cut.Render(ps => ps.Add(p => p.Source, first));
+        cut.Render(ps => ps.Add(p => p.DataSource, first));
         Assert.Single(first.Questions);
         Assert.Equal("285", RowTexts(cut)[0]);
 
         var second = new OnDemandSource(Bundled([.. Sales, new Sale("South", "Apples", 1000m, 1, true)])) { AnswersAtOnce = true };
-        cut.Render(ps => ps.Add(p => p.Source, second));
+        cut.Render(ps => ps.Add(p => p.DataSource, second));
         Assert.Single(second.Questions);
         Assert.Equal("1285", RowTexts(cut)[0]);
     }
@@ -171,7 +171,7 @@ public class PivotRenderingTests : PivotTestContext
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
 
         cut.Render(ps => ps
-            .Add(p => p.Source, Positions())
+            .Add(p => p.DataSource, Positions())
             .Add(p => p.Layout, new PivotLayout { Rows = [P("Desk")], Values = [Sum("Pnl")] }));
 
         Assert.Equal(["Credit | 2", "Rates | 5", "Grand Total | 7"], RowTexts(cut));
@@ -182,7 +182,7 @@ public class PivotRenderingTests : PivotTestContext
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
 
-        var refusal = Assert.Throws<InvalidOperationException>(() => cut.Render(ps => ps.Add(p => p.Source, Positions())));
+        var refusal = Assert.Throws<InvalidOperationException>(() => cut.Render(ps => ps.Add(p => p.DataSource, Positions())));
 
         Assert.Contains("'Region'", refusal.Message);
     }
@@ -199,7 +199,7 @@ public class PivotRenderingTests : PivotTestContext
     public async Task Field_list_interactions_do_not_render_the_grid()
     {
         var cut = RenderPivot(RegionProduct);
-        var before = cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount);
+        var before = cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount);
         var grid = Grid(cut).RenderCount;
 
         await cut.Find(".ex-pivot-search").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "Reg" });
@@ -207,7 +207,7 @@ public class PivotRenderingTests : PivotTestContext
         await cut.Find(".ex-pivot-search").FocusInAsync(new FocusEventArgs());
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
 
-        Assert.Equal(before, cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount));
+        Assert.Equal(before, cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount));
         Assert.Equal(grid, Grid(cut).RenderCount);
     }
 
@@ -218,7 +218,7 @@ public class PivotRenderingTests : PivotTestContext
         var name = Grid(cut).Instance.Columns[1].Name;
 
         await cut.InvokeAsync(() => Grid(cut).Instance.OnColumnWidthChanged.InvokeAsync(new ExGrid.ColumnWidthChange(name, 150)));
-        cut.Render(ps => ps.Add(p => p.Source, Bundled()));
+        cut.Render(ps => ps.Add(p => p.DataSource, Bundled()));
 
         var column = Grid(cut).Instance.Columns[1];
         Assert.Equal(150, column.Width.Width.FixedPx);

@@ -20,7 +20,7 @@ public partial class ExPivot
     private readonly Dictionary<string, int> _bandFocus = new(StringComparer.Ordinal);
     private readonly EventCallback _escape;
     private OpenSurface? _open;
-    private sealed record FieldDrag(PivotDragSubject Subject, PivotLayout Layout, PivotSource Source);
+    private sealed record FieldDrag(PivotDragSubject Subject, PivotLayout Layout, PivotReportSource Source);
 
     private FieldDrag? _drag;
     private (PivotArea Area, int Index)? _dropAt;
@@ -114,10 +114,10 @@ public partial class ExPivot
     private readonly Dictionary<string, ItemsLoad> _itemLoads = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ItemsLoad> _earlierItems = new(StringComparer.Ordinal);
     private long _itemsSequence;
-    private PivotSource? _itemsSource;
+    private PivotReportSource? _itemsSource;
     private string? _itemsVersion;
 
-    private IReadOnlyDictionary<string, PivotFieldInfo> Infos => Source.Fields.ToDictionary(f => f.Name, f => f.Info, StringComparer.Ordinal);
+    private IReadOnlyDictionary<string, PivotFieldInfo> Infos => _source!.Fields.ToDictionary(f => f.Name, f => f.Info, StringComparer.Ordinal);
 
     private PivotFieldInfo InfoOf(string field)
         => FieldOf(field)?.Info ?? throw new InvalidOperationException($"No Pivot Field named '{field}' is offered by the source.");
@@ -148,7 +148,7 @@ public partial class ExPivot
     {
         if (_report is not { } report || _reportSource is not { } source)
             return;
-        var version = report.Cube.SourceVersion;
+        var version = report.SourceVersion;
         if (ReferenceEquals(source, _itemsSource) && version == _itemsVersion)
             return;
         if (ReferenceEquals(source, _itemsSource))
@@ -190,7 +190,7 @@ public partial class ExPivot
             return;
         var load = new ItemsLoad { Sequence = ++_itemsSequence };
         _itemLoads[field] = load;
-        _ = ListItemsAsync(source, new PivotItemsQuery(field, report.Cube.SourceVersion, max: ItemListCap),
+        _ = ListItemsAsync(source, new PivotItemsQuery(field, report.SourceVersion, max: ItemListCap),
             page =>
             {
                 load.Page = page;
@@ -233,7 +233,7 @@ public partial class ExPivot
         }
     }
 
-    private async Task ListItemsAsync(PivotSource source, PivotItemsQuery query, Action<PivotItemPage> listed, Action<SourceProblem> failed)
+    private async Task ListItemsAsync(PivotReportSource source, PivotItemsQuery query, Action<PivotItemPage> listed, Action<SourceProblem> failed)
     {
         try
         {
@@ -463,8 +463,8 @@ public partial class ExPivot
     private PivotFieldListContext FieldListContext()
     {
         var layout = PaneLayout;
-        var source = Source;
-        var fields = Source.Fields
+        var source = _source!;
+        var fields = _source!.Fields
             .Where(f => _search.Length == 0 || f.Caption.Contains(_search, StringComparison.CurrentCultureIgnoreCase))
             .Select(f =>
             {
@@ -551,13 +551,13 @@ public partial class ExPivot
 
     private PivotDragSubject? CurrentDrag
         => _fieldListShown && _drag is { } drag && ReferenceEquals(drag.Layout, PaneLayout)
-            && ReferenceEquals(drag.Source, Source) ? drag.Subject : null;
+            && ReferenceEquals(drag.Source, _source!) ? drag.Subject : null;
 
     private bool CanRemoveDrag => CurrentDrag?.Entry is { IsValuesPseudoField: false };
 
     private bool ReportAcceptsDrop => CanRemoveDrag && _selectedSheet is null && _dialog is null;
 
-    private void StartDrag(PivotDragSubject subject, PivotLayout layout, PivotSource source)
+    private void StartDrag(PivotDragSubject subject, PivotLayout layout, PivotReportSource source)
     {
         _drag = new FieldDrag(subject, layout, source);
         _dropAt = null;
@@ -872,7 +872,7 @@ public partial class ExPivot
         {
             // Under the report's Source Version, whichever version listed the Items in view. An
             // answer to an older search is discarded, as an answer to a superseded question is.
-            _ = ListItemsAsync(source, new PivotItemsQuery(open.Field, report.Cube.SourceVersion, text, ItemListCap),
+            _ = ListItemsAsync(source, new PivotItemsQuery(open.Field, report.SourceVersion, text, ItemListCap),
                 found =>
                 {
                     if (open.SearchGeneration == generation)
@@ -941,7 +941,7 @@ public partial class ExPivot
     private PivotValueFieldSettingsContext ValueFieldSettingsContext(OpenSurface open)
     {
         var percent = open.ShowValuesAs != PivotShowValuesAs.NoCalculation;
-        var features = Source.Features;
+        var features = _source!.Features;
         return new PivotValueFieldSettingsContext(
             InfoOf(open.Field).Caption,
             open.Caption,

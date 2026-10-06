@@ -48,7 +48,7 @@ public partial class ExPivot
             PivotCommandIds.LayoutMenu, Word(PivotCommandIds.LayoutMenu), layoutOpen, ToggleLayoutMenu,
             layoutOpen ? PopupFragment(_open!) : null, _layoutMenuFocus);
         // Refresh is offered only by a source that can be asked again (ADR-0066).
-        var refresh = Source.Features.CanRefresh
+        var refresh = _source!.Features.CanRefresh
             ? new PivotCommand(PivotCommandIds.Refresh, Word(PivotCommandIds.Refresh), true, RefreshAsync)
             : null;
         var fieldList = new PivotCommand(PivotCommandIds.FieldListToggle, Word(PivotCommandIds.FieldListToggle), true,

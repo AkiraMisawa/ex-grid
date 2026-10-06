@@ -70,7 +70,7 @@ public class DetailsAndVersionTests : PivotTestContext
 
         cut.WaitForAssertion(() => Assert.NotEmpty(source.DetailQueries));
         var query = source.DetailQueries[0];
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, query.SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, query.SourceVersion);
         Assert.Equal(0, query.Start);
         Assert.Equal(ExGrid.FetchingGridSource<PivotDetailRecord>.DefaultPageRows, query.Count);
         Assert.Equal([new PivotFieldItem("Region", PivotItemKey.Text("East"))], query.RowItems);
@@ -100,7 +100,7 @@ public class DetailsAndVersionTests : PivotTestContext
         await cut.Find(".ex-pivot-tab-close").ClickAsync(new MouseEventArgs());
         Assert.Empty(cut.FindAll(".ex-pivot-tabs"));
         Assert.Empty(cut.FindAll(".ex-pivot-details-panel"));
-        Assert.Single(cut.FindComponents<ExGrid<PivotReportRow>>());
+        Assert.Single(cut.FindComponents<ExGrid<PivotDisplayRow>>());
     }
 
     [Fact] // ADR-0059 (PV-14): while a details tab is selected its records cover the report, which stays with its state and is marked covered — left unpainted, so its own header cannot stand over the records' — until the report's tab brings it back
@@ -196,7 +196,7 @@ public class DetailsAndVersionTests : PivotTestContext
         var cut = RenderPivot(ByRegionAndProduct);
         await DoubleClickAsync(cut, 0, 1);
 
-        cut.Render(ps => ps.Add(p => p.Source, Bundled(Sales.Select(s => s with { Amount = s.Amount * 2 }).ToArray())));
+        cut.Render(ps => ps.Add(p => p.DataSource, Bundled(Sales.Select(s => s with { Amount = s.Amount * 2 }).ToArray())));
 
         Assert.Equal("Details: East / Apples", cut.FindAll(".ex-pivot-tab-button")[1].TextContent);
         cut.WaitForAssertion(() => Assert.Equal(
@@ -306,7 +306,7 @@ public class DetailsAndVersionTests : PivotTestContext
 
         var query = Assert.Single(source.ItemQueries);
         Assert.Equal("Region", query.Field);
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, query.SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, query.SourceVersion);
         Assert.Equal(PivotComponent.ItemListCap, query.Max);
         Assert.Equal(["(Select All)", "East", "North", "West", "(blank)"], cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim()));
     }
@@ -371,7 +371,7 @@ public class DetailsAndVersionTests : PivotTestContext
 
         Assert.Equal(2, source.ItemQueries.Count);
         Assert.Equal("r1000", source.ItemQueries[1].Search);
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, source.ItemQueries[1].SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, source.ItemQueries[1].SourceVersion);
         cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "R10000"], cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));
     }
 
@@ -382,13 +382,13 @@ public class DetailsAndVersionTests : PivotTestContext
         await OpenMenuAsync(cut, "Rows", "Region");
         await RunMenuAsync(cut, "Filter…");
         cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".ex-pivot-item").Count));
-        var before = cut.Instance.Report!.Cube.SourceVersion;
+        var before = cut.Instance.Report!.Metadata.SourceVersion;
 
-        cut.Render(ps => ps.Add(p => p.Source, Bundled([.. Sales, new Sale("South", "Apples", 1m, 1, true)])));
+        cut.Render(ps => ps.Add(p => p.DataSource, Bundled([.. Sales, new Sale("South", "Apples", 1m, 1, true)])));
 
         cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "East", "North", "South", "West", "(blank)"],
             cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));
-        Assert.NotEqual(before, cut.Instance.Report!.Cube.SourceVersion);
+        Assert.NotEqual(before, cut.Instance.Report!.Metadata.SourceVersion);
         Assert.Single(cut.FindAll(".ex-pivot-popup"));
     }
 

@@ -60,7 +60,11 @@ public sealed record PivotReportSettings
 /// <param name="Baseline">A retained complete Window's Report Version, or null for a complete response.</param>
 /// <param name="MaxLeaves">The existing leaf cap.</param>
 public sealed record PivotReportRequest(string RequestId, PivotLayout Layout, PivotReportSettings Settings,
-    PivotReportWindow Window, PivotReportVersion? Baseline = null, int MaxLeaves = PivotQuery.DefaultMaxLeaves);
+    PivotReportWindow Window, PivotReportVersion? Baseline = null, int MaxLeaves = PivotQuery.DefaultMaxLeaves)
+{
+    /// <summary>Whether this gesture can mark data changes; layout and display-setting gestures cannot.</summary>
+    public bool MarkChanges { get; init; } = true;
+}
 
 /// <summary>A detached value cell, including its exact value and shown text.</summary>
 /// <param name="Number">The approximate number; zero for an error.</param>

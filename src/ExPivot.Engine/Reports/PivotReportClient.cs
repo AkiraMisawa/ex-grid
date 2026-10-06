@@ -5,8 +5,13 @@ public sealed class PivotReportClient
 {
     private readonly PivotReportSource _source;
     private long _generation;
-    /// <summary>Creates the state owner for one report view; source lifetime remains the Consumer's.</summary>
-    public PivotReportClient(PivotReportSource source) => _source = source ?? throw new ArgumentNullException(nameof(source));
+    /// <summary>Creates the state owner for one report view; source lifetime remains the Consumer's.
+    /// A previously validated Window may be carried across a source replacement as its baseline.</summary>
+    public PivotReportClient(PivotReportSource source, PivotReportState? previous = null)
+    {
+        _source = source ?? throw new ArgumentNullException(nameof(source));
+        Current = previous;
+    }
     /// <summary>The last completely validated Window; a failed request leaves it unchanged.</summary>
     public PivotReportState? Current { get; private set; }
     /// <summary>The latest current request's refusal, or null after a successful adoption.</summary>
@@ -15,7 +20,7 @@ public sealed class PivotReportClient
     /// <summary>Reads the current request and, if its baseline is lost, requests one complete replacement.</summary>
     /// <returns>True if this request was adopted; false for a refusal or an obsolete reply.</returns>
     public async ValueTask<bool> ReadAsync(PivotLayout layout, PivotReportSettings settings, PivotReportWindow window,
-        int maxLeaves = PivotQuery.DefaultMaxLeaves, CancellationToken cancellationToken = default)
+        int maxLeaves = PivotQuery.DefaultMaxLeaves, CancellationToken cancellationToken = default, bool markChanges = true)
     {
         ArgumentNullException.ThrowIfNull(layout);
         ArgumentNullException.ThrowIfNull(settings);
@@ -25,7 +30,8 @@ public sealed class PivotReportClient
         var generation = Interlocked.Increment(ref _generation);
         var previous = Current;
         var baseline = previous?.Window == window ? previous.Metadata.Version : null;
-        var request = new PivotReportRequest(Guid.NewGuid().ToString("N"), layout, settings, window, baseline, maxLeaves);
+        var request = new PivotReportRequest(Guid.NewGuid().ToString("N"), layout, settings, window, baseline, maxLeaves)
+            { MarkChanges = markChanges };
         var recovered = false;
         while (true)
         {

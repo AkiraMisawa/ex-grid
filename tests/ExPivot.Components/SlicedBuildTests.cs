@@ -178,7 +178,7 @@ public class SlicedBuildTests : PivotTestContext
         Assert.Equal("−Apples | 1498500", RowTexts(cut)[0]);
         Assert.Equal("R0000 | 0", RowTexts(cut)[1]);
         Assert.Single(told);
-        Assert.Same(report.Layout, told[0]);
+        Assert.Same(report.Metadata.Layout, told[0]);
     }
 
     [Fact] // ADR-0066/0025 (PV-40): a gesture made while the answer's report is built supersedes the question; the half-built report is never shown
@@ -210,11 +210,11 @@ public class SlicedBuildTests : PivotTestContext
         });
 
         var report = cut.Instance.Report!;
-        Assert.Equal(["Product", "Region", "Online"], report.Layout.Rows.Select(p => p.Field));
+        Assert.Equal(["Product", "Region", "Online"], report.Metadata.Layout.Rows.Select(p => p.Field));
         Assert.Equal(1 + 3 + 3_000 + 3_000, report.Rows.Count);
         // Only the layout shown is raised; the superseded one never is.
         Assert.Single(told);
-        Assert.Same(report.Layout, told[0]);
+        Assert.Same(report.Metadata.Layout, told[0]);
     }
 
     [Fact] // ADR-0066 (PV-26/PV-40): a gesture the answer held lays out, made while a question's report is built, supersedes it at once
@@ -315,7 +315,7 @@ public class SlicedBuildTests : PivotTestContext
         Assert.StartsWith("−West", RowTexts(cut)[0], StringComparison.Ordinal);
         await cut.Find(".ex-pivot-layout-button").ClickAsync(new MouseEventArgs());
         await RunMenuAsync(cut, "Show in Tabular Form");
-        Assert.Equal(PivotReportForm.Tabular, cut.Instance.Report!.Layout.Form);
+        Assert.Equal(PivotReportForm.Tabular, cut.Instance.Report!.Metadata.Layout.Form);
 
         Assert.Equal(0, yields);
         Assert.Single(source.Questions);
@@ -346,7 +346,7 @@ public class SlicedBuildTests : PivotTestContext
 
         // The report built is the answer's, whole: the data before the batch.
         var report = cut.Instance.Report!;
-        Assert.Equal(["Product", "Region"], report.Layout.Rows.Select(p => p.Field));
+        Assert.Equal(["Product", "Region"], report.Metadata.Layout.Rows.Select(p => p.Field));
         Assert.Equal("1", report.Rows[1].ValueAt(0)!.Text);
         Assert.Equal("3000", report.Rows[^1].ValueAt(0)!.Text);
 
@@ -355,7 +355,7 @@ public class SlicedBuildTests : PivotTestContext
         await cut.InvokeAsync(() => Clock.Advance(PivotComponent.DefaultRedrawInterval));
         await ReleaseAllAsync(cut, yields, done: () => cut.Instance.Report!.Rows[^1].ValueAt(0)!.Text == "6000");
         Assert.Equal("2", cut.Instance.Report!.Rows[1].ValueAt(0)!.Text);
-        Assert.Equal(["Product", "Region"], cut.Instance.Report.Layout.Rows.Select(p => p.Field));
+        Assert.Equal(["Product", "Region"], cut.Instance.Report.Metadata.Layout.Rows.Select(p => p.Field));
     }
 
     [Fact] // ADR-0060/0067 (PV-33/PV-40): new words while a report is built: the report shown is in the new words
@@ -372,7 +372,7 @@ public class SlicedBuildTests : PivotTestContext
         await ReleaseAllAsync(cut, yields);
 
         var report = cut.Instance.Report!;
-        Assert.Equal(["Product", "Region"], report.Layout.Rows.Select(p => p.Field));
+        Assert.Equal(["Product", "Region"], report.Metadata.Layout.Rows.Select(p => p.Field));
         Assert.Equal(PivotWords.Japanese(PivotWords.GrandTotal), report.Rows[^1].Labels[0].Text);
         Assert.Equal(PivotWords.Japanese(PivotWords.RowLabels), HeaderTexts(cut)[0]);
     }

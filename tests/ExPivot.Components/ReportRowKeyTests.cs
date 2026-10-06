@@ -58,14 +58,14 @@ public class ReportRowKeyTests : PivotTestContext
     }
 
     /// <summary>Every painted report row component, by the key of the row it paints.</summary>
-    private static Dictionary<PivotRowKey, ExGridRow<PivotReportRow>> PaintedByKey(IRenderedComponent<PivotComponent> cut)
-        => cut.FindComponents<ExGridRow<PivotReportRow>>()
+    private static Dictionary<PivotRowKey, ExGridRow<PivotDisplayRow>> PaintedByKey(IRenderedComponent<PivotComponent> cut)
+        => cut.FindComponents<ExGridRow<PivotDisplayRow>>()
             .Select(row => row.Instance)
             .ToDictionary(row => row.Row.Key);
 
     // Not Assert.Same: a failure would print the components, and a row component's CellTextMetrics
     // cannot be printed (its Bold is another CellTextMetrics, so the record's ToString never ends).
-    private static void SameComponent(ExGridRow<PivotReportRow> expected, ExGridRow<PivotReportRow> actual)
+    private static void SameComponent(ExGridRow<PivotDisplayRow> expected, ExGridRow<PivotDisplayRow> actual)
         => Assert.True(ReferenceEquals(expected, actual), $"the row component at {expected.RowIndex} was built again");
 
     [Fact] // ADR-0140 / PV-42: across live redraws, no row component is built for a key already painted, and the changed rows repaint in place
@@ -76,7 +76,7 @@ public class ReportRowKeyTests : PivotTestContext
         var cut = RenderPivot(PnlByRegionAndDesk, source: source);
         var painted = PaintedByKey(cut);
         Assert.True(painted.Count > 6, $"{painted.Count} rows painted");
-        var built = new HashSet<ExGridRow<PivotReportRow>>(painted.Values, ReferenceEqualityComparer.Instance);
+        var built = new HashSet<ExGridRow<PivotDisplayRow>>(painted.Values, ReferenceEqualityComparer.Instance);
         var random = new Random(20261006);
 
         for (var redraw = 0; redraw < 12; redraw++)

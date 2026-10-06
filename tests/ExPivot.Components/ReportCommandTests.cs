@@ -83,7 +83,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal([new PivotDetailItem("Product", "Apples")], shown.ColumnItems);
         Assert.Equal("Sum of Amount", shown.ValueField);
         Assert.Equal("Details: East / Apples", shown.Title);
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, shown.SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, shown.SourceVersion);
     }
 
     [Fact] // ADR-0063: an empty cell has no records to show, and a double click there shows nothing
@@ -215,7 +215,7 @@ public class ReportCommandTests : PivotTestContext
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
             builder.OpenComponent<PivotComponent>(0);
-            builder.AddComponentParameter(1, nameof(PivotComponent.Source), _source);
+            builder.AddComponentParameter(1, nameof(PivotComponent.DataSource), _source);
             builder.AddComponentParameter(3, nameof(PivotComponent.Layout), Layout);
             builder.AddComponentParameter(4, nameof(PivotComponent.LayoutChanged),
                 EventCallback.Factory.Create<PivotLayout>(this, layout => Layout = layout));
@@ -236,7 +236,7 @@ public class ReportCommandTests : PivotTestContext
             for (var i = 0; i < 2; i++)
             {
                 builder.OpenComponent<PivotComponent>(0);
-                builder.AddComponentParameter(1, nameof(PivotComponent.Source), _source);
+                builder.AddComponentParameter(1, nameof(PivotComponent.DataSource), _source);
                 builder.AddComponentParameter(3, nameof(PivotComponent.Layout), new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
                 builder.AddComponentParameter(4, nameof(PivotComponent.ViewportHeight), (ExGrid.ViewportSize)300);
                 builder.AddComponentParameter(5, nameof(PivotComponent.ViewportWidth), (ExGrid.ViewportSize)600);

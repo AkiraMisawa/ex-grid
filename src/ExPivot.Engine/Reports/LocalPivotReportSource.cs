@@ -21,7 +21,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
     private volatile bool _dirty = true;
     private bool _disposed;
     private IReadOnlyList<PivotField> _effectiveFields;
-    private sealed record HeldReport(PivotReportMetadata Metadata, PivotReport Report);
+    private sealed record HeldReport(PivotReportMetadata Metadata, PivotReport Report, PivotSource Provider);
 
     internal LocalPivotReportSource(PivotSource source,
         IReadOnlyDictionary<string, Func<object, IComparable?>>? orderKeys, int versionsKept, TimeProvider clock, PivotSlicing slicing)
@@ -36,6 +36,27 @@ public sealed class LocalPivotReportSource : PivotReportSource
         _slicing = slicing;
         source.Changed += SourceChanged;
     }
+    /// <summary>Carries the bounded baseline from a replaced local provider into this new report
+    /// computation. Its next request still recomputes from its own provider; the baseline permits
+    /// exact row-order comparison and data-change highlighting across that replacement.</summary>
+    public async ValueTask ContinueFromAsync(LocalPivotReportSource previous, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(previous);
+        if (ReferenceEquals(this, previous)) throw new ArgumentException("A report cannot replace itself.", nameof(previous));
+        await previous._gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (_versions.Count != 0) throw new InvalidOperationException("A baseline must precede this report's first request.");
+            foreach (var held in previous._versions.Take(_versionsKept))
+            {
+                _versions.AddLast(held);
+                if (previous._windows.TryGetValue(held.Metadata.Version, out var window))
+                    _windows.Add(held.Metadata.Version, window);
+            }
+        }
+        finally { previous._gate.Release(); }
+    }
+
     /// <inheritdoc />
     public override IReadOnlyList<PivotField> Fields => _source.Fields;
     /// <inheritdoc />
@@ -85,7 +106,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
                         column.Role, column.ValueField, report.ColumnPath(index).Select(p => new PivotFieldItem(p.Field, p.Item)).ToArray())).ToArray(),
                     report.HeaderSpans, report.HeaderTierCount, report.ValueCaptions)
                 { LabelWidths = request.Settings.LabelMetrics is { } metrics ? _labelSizing.Widths(report, metrics, [], [], true) : [] };
-                last = new(metadata, report);
+                last = new(metadata, report, _source);
                 _versions.AddFirst(last);
                 while (_versions.Count > _versionsKept)
                 {
@@ -110,7 +131,9 @@ public sealed class LocalPivotReportSource : PivotReportSource
             {
                 var row = last.Report.Rows[request.Window.Start + i];
                 var prior = priorByKey?.GetValueOrDefault(row.Key);
-                rows[i] = Project(last.Report, row, prior, now);
+                rows[i] = Project(last.Report, row, prior, now,
+                    markData: comparable && previous!.Metadata.SourceVersion != last.Metadata.SourceVersion && request.MarkChanges,
+                    keepMarks: comparable && request.MarkChanges, previous?.Metadata.ValueColumns);
                 if (previous is null || i >= previous.Rows.Count || !ReferenceEquals(previous.Rows[i], rows[i]))
                     changes.Add(new(i, rows[i]));
             }
@@ -147,7 +170,8 @@ public sealed class LocalPivotReportSource : PivotReportSource
         return null;
     }
 
-    private static PivotDisplayRow Project(PivotReport report, PivotReportRow row, PivotDisplayRow? prior, DateTimeOffset now)
+    private static PivotDisplayRow Project(PivotReport report, PivotReportRow row, PivotDisplayRow? prior,
+        DateTimeOffset now, bool markData, bool keepMarks, IReadOnlyList<PivotDisplayColumn>? priorColumns)
     {
         var values = new PivotDisplayValue?[report.ValueColumns.Count];
         var changed = new DateTimeOffset?[values.Length];
@@ -156,11 +180,18 @@ public sealed class LocalPivotReportSource : PivotReportSource
         for (var c = 0; c < values.Length; c++)
         {
             values[c] = PivotDisplayValue.From(row.ValueAt(c));
-            if (prior is not null && c < prior.Values.Count)
+            var oldColumn = -1;
+            if (priorColumns is not null)
+                for (var j = 0; j < priorColumns.Count; j++)
+                    if (priorColumns[j].Name == report.ValueColumns[c].Name) { oldColumn = j; break; }
+            if (prior is not null && oldColumn >= 0 && oldColumn < prior.Values.Count)
             {
-                changed[c] = prior.Values[c]?.Text == values[c]?.Text ? prior.ChangedAt[c] : now;
-                same &= prior.Values[c] == values[c];
+                changed[c] = markData && (prior.Values[oldColumn]?.Text ?? "") != (values[c]?.Text ?? "")
+                    ? now : keepMarks ? prior.ChangedAt[oldColumn] : null;
+                same &= oldColumn == c && prior.Values[oldColumn] == values[c] && prior.ChangedAt[oldColumn] == changed[c];
             }
+            else if (markData)
+                changed[c] = now;
         }
         if (same) return prior!;
         return new(row.Key, row.Role, row.ValueField, row.CarriesValues, row.Labels, values,
@@ -185,7 +216,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
             var row = held.Report.Rows.FirstOrDefault(row => row.Key.Equals(query.Row));
             if (row is null || query.ValueColumn < -1 || query.ValueColumn >= held.Report.ValueColumns.Count)
                 return new(query.Version, null, new(PivotReportRefusalKind.InvalidRequest, "The requested cell is not in this report."));
-            var page = await _source.DetailsAsync(held.Report.DetailsQuery(row, query.ValueColumn, query.Start, query.Count), cancellationToken).ConfigureAwait(false);
+            var page = await held.Provider.DetailsAsync(held.Report.DetailsQuery(row, query.ValueColumn, query.Start, query.Count), cancellationToken).ConfigureAwait(false);
             return new(query.Version, page);
         }
         finally { _gate.Release(); }

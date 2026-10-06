@@ -275,14 +275,14 @@ public class LiveDataTests : PivotTestContext
     public async Task A_new_version_keeps_the_bands_summary_while_its_items_are_on_their_way()
     {
         var (cut, source) = await ListedAsync(WestHidden);
-        var first = cut.Instance.Report!.Cube.SourceVersion;
+        var first = cut.Instance.Report!.Metadata.SourceVersion;
 
         await PublishAsync(cut, source, [.. Sales, South]);
 
-        Assert.NotEqual(first, cut.Instance.Report!.Cube.SourceVersion);
+        Assert.NotEqual(first, cut.Instance.Report!.Metadata.SourceVersion);
         var asked = source.ItemQuestions[^1];
         Assert.Equal(2, source.ItemQuestions.Count);
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, asked.Query.SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, asked.Query.SourceVersion);
         Assert.False(asked.Completion.Task.IsCompleted);
         Assert.Equal("(Multiple Items)", BandSummary(cut));
 
@@ -392,7 +392,7 @@ public class LiveDataTests : PivotTestContext
         var (cut, _) = await ListedAsync(WestHidden);
         var next = new LiveSource { HoldsItems = true };
 
-        cut.Render(ps => ps.Add(p => p.Source, next));
+        cut.Render(ps => ps.Add(p => p.DataSource, next));
 
         Assert.Equal("Loading…", BandSummary(cut));
         await cut.InvokeAsync(Assert.Single(next.ItemQuestions).AnswerAsync);
@@ -484,7 +484,7 @@ public class LiveDataTests : PivotTestContext
         var first = new LiveSource();
         var cut = RenderPivot(RegionAmount, source: first);
         var second = new LiveSource();
-        cut.Render(ps => ps.Add(p => p.Source, second));
+        cut.Render(ps => ps.Add(p => p.DataSource, second));
         Assert.Single(second.Questions);
 
         await cut.InvokeAsync(() => first.Publish(EastApples(101)));
@@ -642,7 +642,7 @@ public class LiveDataTests : PivotTestContext
     {
         var server = new Server();
         var cut = RenderPivot(RegionAmount, source: server.Source);
-        var version = cut.Instance.Report!.Cube.SourceVersion;
+        var version = cut.Instance.Report!.Metadata.SourceVersion;
 
         await cut.InvokeAsync(() => server.Source.NotifyChanged(version));
         Assert.Single(server.Asked);
@@ -660,7 +660,7 @@ public class LiveDataTests : PivotTestContext
     {
         var source = new LiveSource();
         var cut = RenderPivot(RegionProduct, source: source);
-        var rows = cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount);
+        var rows = cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount);
         var grid = Grid(cut).RenderCount;
 
         source.Fails = new InvalidOperationException("The server is unreachable.");
@@ -668,7 +668,7 @@ public class LiveDataTests : PivotTestContext
         await cut.Find(".ex-pivot-search").InputAsync(new ChangeEventArgs { Value = "Reg" });
 
         Assert.Single(cut.FindAll(".ex-pivot-stale-notice"));
-        Assert.Equal(rows, cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount));
+        Assert.Equal(rows, cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount));
         Assert.Equal(grid, Grid(cut).RenderCount);
     }
 }

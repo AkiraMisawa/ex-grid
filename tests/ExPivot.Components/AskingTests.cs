@@ -61,7 +61,7 @@ public class AskingTests : PivotTestContext
         Assert.True(cut.Instance.IsLoading);
         Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
         Assert.Equal("Loading…", cut.Find(".ex-pivot-empty").TextContent);
-        Assert.Empty(cut.FindComponents<ExGrid<PivotReportRow>>());
+        Assert.Empty(cut.FindComponents<ExGrid<PivotDisplayRow>>());
     }
 
     [Fact] // ADR-0066 (PV-25): while a question is out the Field List shows the new layout, and the report stays as it was under the grid's IsLoading
@@ -251,7 +251,7 @@ public class AskingTests : PivotTestContext
 
     private static async Task ChangeAggregationAsync(IRenderedComponent<PivotComponent> cut, string aggregation)
     {
-        var caption = cut.Instance.Report!.ValueCaptions[0];
+        var caption = cut.Instance.Report!.Metadata.ValueCaptions[0];
         await OpenMenuAsync(cut, "Values", caption);
         await RunMenuAsync(cut, "Value Field Settings…");
         await cut.FindAll(".ex-pivot-value-settings select")[0].ChangeAsync(new ChangeEventArgs { Value = aggregation });
@@ -408,7 +408,7 @@ public class AskingTests : PivotTestContext
     public async Task The_pane_and_the_toolbar_do_not_render_the_grid()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });
-        var rows = cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount);
+        var rows = cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount);
         var grid = Grid(cut).RenderCount;
 
         await cut.Find(".ex-pivot-defer input").ChangeAsync(new ChangeEventArgs { Value = true });
@@ -421,7 +421,7 @@ public class AskingTests : PivotTestContext
         await cut.Find("button[aria-label='Hide Field List']").ClickAsync(new MouseEventArgs());
         await cut.Find(".ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
 
-        Assert.Equal(rows, cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount));
+        Assert.Equal(rows, cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount));
         Assert.Equal(grid, Grid(cut).RenderCount);
     }
 }

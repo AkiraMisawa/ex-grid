@@ -16,6 +16,17 @@ public class GlyphWidthTableTests
     private static readonly CellTextMetrics Metrics =
         new CellTextMetrics(14, 9, 5, 16, 0, 15, 10, 6, 18, 19).WithGlyphWidths(Table, 14);
 
+    [Fact] // ADR-0151: label geometry sent to another process includes resolved glyph scale and weight.
+    public void ADR0151_Exported_glyph_widths_use_the_resolved_metrics()
+    {
+        var metrics = Metrics.WithGlyphWidths(Table, 28).Bold;
+        var widths = metrics.ExportGlyphWidths();
+        Assert.Equal(28, widths['M']);
+        Assert.Equal(10, widths['i']);
+        Assert.Equal(10, widths['E']);
+        Assert.Empty(metrics.For(ExGrid.ColumnType.Text).ExportGlyphWidths());
+    }
+
     [Fact] // ADR-0016 / ticket 83: a glyph the table holds is charged its own width, at either weight
     public void A_glyph_the_table_holds_is_charged_its_own_width()
     {
