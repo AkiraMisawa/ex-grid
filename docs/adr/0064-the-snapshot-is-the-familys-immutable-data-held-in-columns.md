@@ -229,7 +229,11 @@ they hold for every reader.**
   it. Its criteria are §30. *(Changed 2026-10-03: the whole family ships as prereleases from
   ExGrid's tag, the data packages with it
   ([ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
-  §30 still judges them, and still never gates ExGrid.)*
+  §30 still judges them, and still never gates ExGrid.)* *(Changed 2026-10-05: ExGrid references
+  `ExGrid.Data` for the Aggregations' definitions, which the Selection Summary shares
+  ([ADR-0130](./0130-the-selection-summary-is-asked-of-the-consumer-like-find.md)). That is not
+  adopting the Snapshot, which still waits for an ADR of its own; the definitions' criteria gate
+  ExGrid's release, and the rest of §30 still does not.)*
 
 ## Considered options
 

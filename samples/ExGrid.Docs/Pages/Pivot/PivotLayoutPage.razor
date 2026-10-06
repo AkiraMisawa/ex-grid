@@ -61,6 +61,11 @@
                 A field's own subtotals are switched in its Field Settings (<code>PivotFieldPlacement.Subtotals</code>).
             </li>
         </ul>
+        <p>
+            Select cells of the report and the line under it shows Excel's Average, Count and Sum of what you
+            selected. As in Excel, a subtotal or a grand total you select is summed with the rest — select a whole
+            column and the total counts its parts twice. <code>ShowSelectionSummary="false"</code> turns the line off.
+        </p>
         <DocsExample Builtin="typeof(ReportForms)" Mud="typeof(ReportFormsMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
     </DocsSection>
 

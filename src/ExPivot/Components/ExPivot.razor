@@ -268,6 +268,7 @@
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
+        AdoptSummaryFigures();
         if (FieldListWidth is not (> 0 and < 10_000) || !double.IsFinite(FieldListWidth))
             throw new ArgumentOutOfRangeException(nameof(FieldListWidth), FieldListWidth, "A width in pixels, above zero.");
         if (Source is null)

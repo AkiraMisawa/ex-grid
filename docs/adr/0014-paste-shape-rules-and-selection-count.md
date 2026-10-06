@@ -41,7 +41,9 @@ Ctrl+Shift+Down looks like "select down to the bottom", but the bottom can be a 
 
 **The grid can produce the selected-cell count on its own** — it is the sum of rectangle areas and
 needs no data. Sums and averages cannot be produced (they need data; if they are wanted, that is
-the Consumer's job, since only the Consumer has it).
+the Consumer's job, since only the Consumer has it). *(Added 2026-10-05: they are wanted, and
+[ADR-0130](./0130-the-selection-summary-is-asked-of-the-consumer-like-find.md) has the grid ask
+for them — the Selection Summary. The Consumer still computes them; the count stays the grid's.)*
 
 ## Rows that are invisible or not yet fetched are included in the selection
 

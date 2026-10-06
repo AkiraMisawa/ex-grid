@@ -109,4 +109,20 @@ public interface IGridSource<TRow>
     Task<Finding.GridFindResult> FindAsync(Finding.GridFindRequest request, CancellationToken cancellationToken)
         => throw new NotSupportedException(
             $"{GetType().Name} does not search: CanFind is false, and the grid does not ask (ADR-0055).");
+
+    /// <summary>
+    /// Whether this source answers <see cref="SummarizeAsync"/> (ADR-0130). The default is no, so a
+    /// source written before the Selection Summary keeps compiling and no figure is shown.
+    /// </summary>
+    bool CanSummarize => false;
+
+    /// <summary>
+    /// The Selection Summary's figures over the cells a request names, in the order it was read in,
+    /// or a decline with a reason — never a partial figure (ADR-0130).
+    /// <see cref="Summarizing.GridSummary.Of{TRow}"/> is the reference for what each figure is.
+    /// Called only when <see cref="CanSummarize"/>; the default refuses by name.
+    /// </summary>
+    Task<Summarizing.GridSummaryResult> SummarizeAsync(Summarizing.GridSummaryRequest request, CancellationToken cancellationToken)
+        => throw new NotSupportedException(
+            $"{GetType().Name} does not summarise: CanSummarize is false, and the grid does not ask (ADR-0130).");
 }

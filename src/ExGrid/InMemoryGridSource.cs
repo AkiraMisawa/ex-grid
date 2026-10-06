@@ -239,6 +239,31 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         }));
     }
 
+    /// <summary>Always: every row is in hand (ADR-0130).</summary>
+    public bool CanSummarize => true;
+
+    /// <summary>
+    /// The reference Selection Summary (ADR-0130): <see cref="Summarizing.GridSummary.Of{TRow}"/> over
+    /// the current result, reading each column's value accessor. A column this source was not told
+    /// about, or one with no value (an Action Column), is blank. It never declines, at any size. A
+    /// request read under another version is answered anyway: the grid discards it by the version.
+    /// </summary>
+    public Task<Summarizing.GridSummaryResult> SummarizeAsync(Summarizing.GridSummaryRequest request, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+        var columns = _columns ?? [];
+        return Task.FromResult(Summarizing.GridSummary.Of(Window, request, name =>
+        {
+            foreach (var column in columns)
+            {
+                if (column.Name == name)
+                    return column.IsQueryable ? column.Value : null;
+            }
+            return null;
+        }));
+    }
+
     /// <summary>Everything is in hand, so a copy beyond the Window cannot arise — but
     /// the answer is honest anyway: the slice of the current result, clamped to what
     /// exists (ADR-0005).</summary>

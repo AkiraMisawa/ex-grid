@@ -107,6 +107,25 @@ public sealed partial class Sheet
     public IEnumerable<CellAddress> EntryAddresses =>
         _cells.Values.Where(c => c.Entry is not null).Select(c => c.Address).Order();
 
+    /// <summary>
+    /// The text <paramref name="number"/> would show in the cell at <paramref name="address"/>, under
+    /// the cell's Number Format and the Sheet's culture — how Excel shows its status bar's figures,
+    /// in the active cell's format (ADR-0130). Null where the format cannot show it (a date out of
+    /// range, a number that is not finite).
+    /// </summary>
+    public string? FormatAs(CellAddress address, double number)
+    {
+        if (!double.IsFinite(number))
+            return null;
+        var (text, cannotShow, _) = GetNumberFormat(address).Format(Value.FromNumber(number), Culture);
+        return cannotShow ? null : text;
+    }
+
+    /// <summary>The addresses of every cell holding a Value — an Entry's, or an array's spilled into it
+    /// (ADR-0125) — in no particular order. The cells a Selection Summary folds in (ADR-0130).</summary>
+    public IEnumerable<CellAddress> ValueAddresses =>
+        _cells.Values.Where(c => c.Value is not null).Select(c => c.Address);
+
     /// <summary>The cell's Value, or <see langword="null"/> for a blank cell.</summary>
     public Value? GetValue(CellAddress address) => _cells.TryGetValue(address, out var cell) ? cell.Value : null;
 

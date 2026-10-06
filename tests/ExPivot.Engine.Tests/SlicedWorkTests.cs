@@ -624,10 +624,10 @@ public class SlicedWorkTests
             SameTree(expected.Children[c], actual.Children[c], name);
     }
 
-    private static string PartBits(SumPart sum)
+    private static string PartBits(ExGrid.Data.AggregateSum sum)
         => string.Join(",", decimal.GetBits(sum.Exact)) + $"|{Bits(sum.Double)}|{Bits(sum.Compensation)}|{sum.Inexact}";
 
-    private static string PartBits(ExtremesPart extremes)
+    private static string PartBits(ExGrid.Data.AggregateExtremes extremes)
         => string.Join(",", decimal.GetBits(extremes.ExactMin)) + "|" + string.Join(",", decimal.GetBits(extremes.ExactMax))
             + $"|{Bits(extremes.Min)}|{Bits(extremes.Max)}|{extremes.Inexact}";
 

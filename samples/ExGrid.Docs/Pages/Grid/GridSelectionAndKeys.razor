@@ -58,6 +58,45 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="Status-bar figures">
+        <p>
+            Select two cells or more and the status line under the grid shows what Excel's status bar shows:
+            <strong>Average, Count and Sum</strong>. Right-click the line to choose among all six — Average,
+            Count, Numerical Count, Min, Max and Sum. The figures cover <strong>every selected cell</strong>, the
+            rows not painted and not yet fetched included: Ctrl+Shift+↓ down a column of a million rows sums a
+            million rows.
+        </p>
+        <ul>
+            <li>
+                <strong>Who sums.</strong> The grid does not hold your data, so it asks, as it does for
+                <kbd>Ctrl</kbd>+<kbd>F</kbd>. <code>GridSource.From</code> answers by itself; a server answers
+                through <code>GridSource.Fetch(..., summarize: ...)</code>; a grid you push rows to answers through
+                <code>OnSummarize</code>. With nobody to ask, no figure is shown.
+            </li>
+            <li>
+                <strong>What counts.</strong> A number is in every figure, summed exactly when it is an integer or a
+                <code>decimal</code>. Text, a Boolean and a date are counted and never summed. A blank is in none.
+                A cell under two ranges counts once.
+            </li>
+            <li>
+                <strong>Never the wrong total.</strong> Change the selection and the figures go at once; they come
+                back only as the answer to the selection you now have. A selection the server will not sum shows
+                its reason, never part of a total.
+            </li>
+            <li>
+                <strong>On by default.</strong> Any grid that can summarise shows the line, so that selecting does
+                not move the rows under your hand. <code>ShowSelectionSummary="false"</code> takes it off the
+                grid; <code>OnSelectionSummaryChanged</code> still hands you the figures, for a status bar of your own.
+                Bind <code>SummaryFigures</code> to keep the menu's choice; without a binding the menu is not offered.
+            </li>
+        </ul>
+        <DocsExample Title="Status-bar figures" Builtin="typeof(SelectionFigures)" Mud="typeof(SelectionFiguresMud)"
+                     Files="@(["Examples/Data/Trade.cs"])">
+            Select some Notional cells, then right-click the line under the grid. <code>OnSelectionSummaryChanged</code>
+            hands the same figures to a status bar of your own, shown under the grid.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="Which row am I on?">
         <ul>
             <li>
@@ -78,5 +117,8 @@
     <DocsSection Title="API">
         <ApiTable Type="typeof(ExGrid.Selection.GridSelection)" />
         <ApiTable Type="typeof(ExGrid.Selection.SelectionRange)" />
+        <ApiTable Type="typeof(ExGrid.Summarizing.GridSummaryRequest)" />
+        <ApiTable Type="typeof(ExGrid.Summarizing.GridSummaryResult)" />
+        <ApiTable Type="typeof(ExGrid.Summarizing.SelectionSummary)" />
     </DocsSection>
 </DocsPage>

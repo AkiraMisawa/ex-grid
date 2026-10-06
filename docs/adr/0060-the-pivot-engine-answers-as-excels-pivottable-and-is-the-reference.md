@@ -317,6 +317,15 @@ report of many rows costs its rows, not its rows × its columns.
 - **A record behind a cell carries a date part as its number**: `2026`, `3`, `9`. The label is the
   report's painting, and a record is data.
 
+## The definitions are shared with the Selection Summary *(added 2026-10-05)*
+
+[ADR-0130](./0130-the-selection-summary-is-asked-of-the-consumer-like-find.md) shows Excel's
+status-bar figures over a grid's selection, and gives six of them the meaning of the Aggregations
+of the same names. **The definitions of all eleven Aggregations — what each counts and includes,
+and how a result is finished from its parts — move to `ExGrid.Data`**, so a pivot cell and the
+status bar cannot disagree. Their meaning here is unchanged. The columnar accumulator stays in
+`ExPivot.Engine` and produces the parts.
+
 ## Consequences
 
 - **`ExPivot.Engine`'s tests pin every rule here** (layer 1), and name this ADR. Readings are marked

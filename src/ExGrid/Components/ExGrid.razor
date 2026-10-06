@@ -844,7 +844,8 @@
             <button type="button" @onclick="() => TurnPageAsync(1)" disabled="@(_pageIndex >= PageCount - 1)">›</button>
         </div>
     }
-    @if ((!_selection.Selection.IsEmpty && (PageSize is not null || !SelectionIntersectsView())) || ShowsMarkStatus)
+    @{ ReviewSummary(); }
+    @if ((!_selection.Selection.IsEmpty && (PageSize is not null || !SelectionIntersectsView())) || ShowsMarkStatus || ShowsSummaryStrip)
     {
         @* The selection count, the off-screen indicator that closes the invisible-paste
            hole — for paging and scrolling alike — and, under a pager, the explicit way
@@ -870,6 +871,11 @@
             @if (PageSize is not null && _markColumn >= 0)
             {
                 <button type="button" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
+            }
+            @* Excel's status-bar figures over the selection (ADR-0130). *@
+            @if (ShowsSummaryStrip)
+            {
+                RenderSummary(__builder);
             }
         </div>
     }
@@ -2382,7 +2388,9 @@
          nameof(RowSequenceVersion), nameof(OnRangeNeeded), nameof(Sorts), nameof(OnSortChanged),
          nameof(OnCopyRowsNeeded), nameof(Filters), nameof(OnFilterChanged), nameof(OnDistinctValuesNeeded),
          // The push mode's answer to a Find: beside a Source, two answers to one question (ADR-0055).
-         nameof(OnFind)];
+         nameof(OnFind),
+         // The push mode's answer to a Selection Summary, likewise (ADR-0130).
+         nameof(OnSummarize)];
 
     /// <summary>
     /// Blazor's parameter entry point, overridden to refuse by name a Source passed
@@ -2543,6 +2551,7 @@
         _sequenceVersion = Source?.RowSequenceVersion ?? RowSequenceVersion;
         _sorts = Source is not null ? Source.Sorts : Sorts ?? [];
         _filter = Source is not null ? Source.Filter : Filters;
+        NoteRowsForSummary();
 
         if (_cellMetricsSupplied && CellMetrics.DigitWidthPx <= 0)
         {
@@ -3088,6 +3097,9 @@
             _scrollerFocusOwed = false;
             await ReclaimFocusAsync();
         }
+
+        // The Selection Summary's question owed by this render, and its news (ADR-0130).
+        await SettleSummaryAsync();
 
         if (_announcePending is { } pending)
         {
@@ -3700,6 +3712,7 @@
             return;
         var intent = new GridFillIntent(from, decision.Extension, version);
         await OnFill.InvokeAsync(intent);
+        AskSummaryAgain();
         if (!intent.IsRefused)
             SelectFilledRange(from, intent.Target, version);
     }
@@ -5850,6 +5863,7 @@
         var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
         if (OnPaste.HasDelegate)
             await OnPaste.InvokeAsync(intent);
+        AskSummaryAgain();
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
         if (intent.IsRefused)
             return;
@@ -6819,6 +6833,7 @@
         }
         if (OnClear.HasDelegate)
             await OnClear.InvokeAsync(new GridClearIntent(decision.Plan.Targets, _sequenceVersion));
+        AskSummaryAgain();
     }
 
     /// <summary>
@@ -6863,6 +6878,7 @@
         }
         if (OnPaste.HasDelegate)
             await OnPaste.InvokeAsync(new GridPasteIntent(plan.Paste, block, version, fillSource: source));
+        AskSummaryAgain();
     }
 
     private string CellTextOf(CellPosition cell)
@@ -7234,6 +7250,7 @@
         _editError = null;
         var intent = new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text);
         await EndEditingAsync(reclaimFocus, byPress, OnEdit.HasDelegate ? () => OnEdit.InvokeAsync(intent) : null);
+        AskSummaryAgain();
         return true;
     }
 
@@ -7303,6 +7320,7 @@
         // entered in, which a clipboard paste of the same field does not (ADR-0050 item 5).
         var intent = new GridPasteIntent(decision.Plan, [[_editText]], _sequenceVersion, enteredAt: _editingCell);
         await EndEditingAsync(endedIn: OnPaste.HasDelegate ? () => OnPaste.InvokeAsync(intent) : null);
+        AskSummaryAgain();
         StateHasChanged();
     }
 
@@ -8621,6 +8639,7 @@
         // (ADR-0055, the fetching Source's rule).
         _findCancellation?.Cancel();
         _findCancellation = null;
+        CancelSummary();
         _settleTimer?.Dispose();
         _edgeTimer?.Dispose();
         _announceTimer?.Dispose();

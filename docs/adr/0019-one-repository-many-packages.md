@@ -10,7 +10,7 @@ ex-grid/                      ← one repository
 ├── AGENTS.md
 ├── docs/adr/                 ← one ADR sequence
 ├── src/
-│   ├── ExGrid/               → NuGet: ExGrid            (no dependencies)
+│   ├── ExGrid/               → NuGet: ExGrid            (Blazor, and ExGrid.Data since ADR-0130)
 │   ├── ExGrid.MudBlazor/     → NuGet: ExGrid.MudBlazor  (a Chrome implementation)
 │   ├── ExGrid.Fluxor/        → NuGet: ExGrid.Fluxor     (push interface ↔ store)
 │   ├── ExSheet/              → NuGet: ExSheet           (the component; ADR-0046)
@@ -118,7 +118,10 @@ may be too aggressive for a sheet.
   affect both, and splitting them would produce a mesh of cross-references.
 - **CI verifies everything in one run.** When the core changes, ExSheet and the integration
   packages build at the same time. Across repositories the breakage would be noticed later.
-- **`ExGrid` has no dependencies.** MudBlazor and Fluxor stay inside the integration packages
+- **`ExGrid` has no dependencies** *(but one of the family's own since 2026-10-05: `ExGrid.Data`,
+  which itself depends on nothing, for the Aggregations' one definition that the Selection Summary
+  shares with ExPivot — [ADR-0130](./0130-the-selection-summary-is-asked-of-the-consumer-like-find.md).
+  No third-party package joins it.)*. MudBlazor and Fluxor stay inside the integration packages
   ([ADR-0017](./0017-target-chromium-browsers-only.md) /
   [ADR-0018](./0018-multiple-instances-must-be-independent.md) /
   [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)). Sharing a repository and mixing

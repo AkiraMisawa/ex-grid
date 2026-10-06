@@ -37,7 +37,10 @@
             Your server should sort and filter exactly as <code>GridSource.From</code> does; the server here simply
             runs the reference implementation, <code>GridQueryEngine.Apply</code>. Pass <code>distinctValues</code>
             to fill the filter panel's value lists and <code>find</code> to answer <kbd>Ctrl</kbd>+<kbd>F</kbd>; without
-            <code>find</code>, the grid refuses to search rather than search only what it has painted. Subscribe to
+            <code>find</code>, the grid refuses to search rather than search only what it has painted. Pass
+            <code>summarize</code> to answer the status-bar figures over a selection — a <code>SUM</code> on your
+            server — giving what <code>GridSummary.Of</code> gives over the same rows, or declining with a reason;
+            without it, no figure is shown. Subscribe to
             <code>FetchFailed</code> to show a failure yourself; unobserved, it is rethrown.
         </p>
         <DocsExample Title="100,000 trades from a slow server" Builtin="typeof(FetchGrid)" Mud="typeof(FetchGridMud)"

@@ -7,6 +7,7 @@ An Excel-like grid for Blazor, built for reading money and risk numbers:
 - rectangular selection, the keyboard, and copy and paste as a spreadsheet user expects them —
   Delete, Ctrl+D / Ctrl+R and Ctrl+Z included, with your application keeping the history
 - Ctrl+F that searches every row, not only the painted ones
+- Excel's status-bar figures — Average, Count, Sum and the rest — over every selected cell, asked of whoever holds the data
 - filter panels, a column menu, a Context Menu and a find panel that a design system can replace
 
 The grid neither holds nor executes. The data, sorting, filtering and edits belong to your

@@ -995,6 +995,35 @@
     cursor: pointer;
 }
 .ex-pager button:disabled { cursor: default; }
+/* The Selection Summary (ADR-0130): Excel's status-bar figures, at the line's far end. The box
+   keeps one line's height while it says nothing, so the strip does not change height as figures
+   come and go. Its figures menu is a list of ticked items in the popover frame. */
+.ex-summary {
+    display: flex;
+    gap: calc(2 * var(--ex-cell-padding-x, 8px));
+    min-height: 1lh;
+    /* The rest of the line, figures at its far end: the right-click that opens the figures menu
+       lands anywhere there, figures or none, as on Excel's status bar. */
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    white-space: nowrap;
+}
+.ex-summary-menu { display: flex; flex-direction: column; align-items: stretch; min-width: 12em; }
+.ex-summary-menu-item {
+    font: inherit;
+    width: 100%;
+    /* Laid out here, whatever a page's own stylesheet does to buttons: a design system's reset
+       that centres a flex button would centre every item. */
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: start;
+    background: none;
+    border: 0;
+    padding: 2px var(--ex-cell-padding-x, 8px) 2px 0;
+    cursor: pointer;
+}
+.ex-summary-menu-tick { display: inline-block; width: 1.4em; text-align: center; }
 /* The live region (ADR-0033): visually hidden, present to assistive technology. The
    classic clip recipe rather than display:none, which would silence it entirely. */
 .ex-announce {
