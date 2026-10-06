@@ -43,7 +43,14 @@ public sealed class PivotReportClient
             }
             if (generation != Volatile.Read(ref _generation)) return false;
             cancellationToken.ThrowIfCancellationRequested();
-            var issue = Validate(update, request, previous, out var state);
+            PivotReportRefusal? issue;
+            PivotReportState? state;
+            try { issue = Validate(update, request, previous, out state); }
+            catch (Exception error) when (error is ArgumentException or InvalidOperationException or NullReferenceException)
+            {
+                issue = Invalid("The report response is malformed: " + error.Message);
+                state = null;
+            }
             if (issue is null)
             {
                 Current = state;
@@ -66,6 +73,7 @@ public sealed class PivotReportClient
         PivotReportState? previous, out PivotReportState? state)
     {
         state = null;
+        if (update is null) return Invalid("The report response is null.");
         if (update.RequestId != request.RequestId || update.Window != request.Window)
             return Invalid("The report response names another request or Window.");
         if (update.Refusal is { } refusal) return refusal;
@@ -95,6 +103,8 @@ public sealed class PivotReportClient
             {
                 if (change.Offset < 0 || change.Offset >= rows.Length || !changed.Add(change.Offset))
                     return Invalid("The report delta repeats or exceeds a row position.");
+                if (change.Row is null || !previous.Rows[change.Offset].Key.Equals(change.Row.Key))
+                    return Invalid("A delta changes row identity without a new row sequence.");
                 rows[change.Offset] = change.Row;
             }
         }
@@ -103,9 +113,18 @@ public sealed class PivotReportClient
         {
             if (row is null || row.Key is null || !keys.Add(row.Key)
                 || row.Labels.Count != metadata.LabelColumns.Count || row.Values.Count != metadata.ValueColumns.Count
-                || row.ChangedAt.Count != row.Values.Count || row.Role != row.Key.Role || row.ValueField != row.Key.ValueField)
+                || row.ChangedAt.Count != row.Values.Count || row.Role != row.Key.Role || row.ValueField != row.Key.ValueField
+                || !Enum.IsDefined(row.Role) || row.RowPath.Count != row.Key.Items.Count
+                || !row.RowPath.Select(p => p.Item).SequenceEqual(row.Key.Items)
+                || row.Values.Any(value => value is not null && (value.Text is null || !double.IsFinite(value.Number))))
                 return Invalid("The report Window contains an invalid or duplicate row.");
         }
+        if (metadata.LabelWidths.Count != 0 && metadata.LabelWidths.Count != metadata.LabelColumns.Count
+            || metadata.LabelWidths.Any(width => !double.IsFinite(width) || width < 0))
+            return Invalid("The report label widths do not match its columns.");
+        if (previous is not null && previous.Metadata.Version == metadata.Version
+            && previous.Metadata.SourceVersion != metadata.SourceVersion)
+            return Invalid("One Report Version names two Source Versions.");
         var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (var name in metadata.LabelColumns.Select(c => c.Name).Concat(metadata.ValueColumns.Select(c => c.Name)))
             if (string.IsNullOrEmpty(name) || !names.Add(name)) return Invalid("The report has duplicate column names.");

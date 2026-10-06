@@ -32,11 +32,12 @@ public abstract class PivotReportSource : IAsyncDisposable
     /// <param name="source">The data provider; this report does not own its lifetime.</param>
     /// <param name="orderKeys">Server-registered Order Key functions, by policy identifier.</param>
     /// <param name="versionsKept">Bounded number of immutable reports available to versioned operations.</param>
+    /// <param name="slicing">How calculation work shares the calling thread.</param>
     /// <param name="timeProvider">The clock that timestamps shown-text changes.</param>
     public static LocalPivotReportSource From(PivotSource source,
         IReadOnlyDictionary<string, Func<object, IComparable?>>? orderKeys = null,
-        int versionsKept = 2, TimeProvider? timeProvider = null)
-        => new(source, orderKeys, versionsKept, timeProvider ?? TimeProvider.System);
+        int versionsKept = 2, TimeProvider? timeProvider = null, PivotSlicing? slicing = null)
+        => new(source, orderKeys, versionsKept, timeProvider ?? TimeProvider.System, slicing ?? PivotSlicing.Default);
 
     /// <summary>Uses the Consumer's transport. Authentication, connection and server report lifetime remain the Consumer's.</summary>
     public static FetchingPivotReportSource Fetch(IReadOnlyList<PivotField> fields, PivotSourceFeatures features,

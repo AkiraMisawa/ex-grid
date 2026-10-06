@@ -30,6 +30,8 @@ public sealed record PivotReportSettings
     public string CultureName { get; init; } = "";
     /// <summary>Resolved word overrides, by PivotWords or PivotDateWords identifier.</summary>
     public IReadOnlyDictionary<string, string> Words { get; init; } = new Dictionary<string, string>();
+    /// <summary>The explicitly resolved label geometry, or null when widths are not requested.</summary>
+    public PivotReportLabelMetrics? LabelMetrics { get; init; }
     /// <summary>Server-registered Order Key policy identifiers, by field name.</summary>
     public IReadOnlyDictionary<string, string> OrderKeyPolicies { get; init; } = new Dictionary<string, string>();
     /// <summary>Captures the options' words as values, without carrying a delegate over a transport.</summary>

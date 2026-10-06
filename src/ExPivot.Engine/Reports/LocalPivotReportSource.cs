@@ -10,18 +10,21 @@ public sealed class LocalPivotReportSource : PivotReportSource
     private readonly IReadOnlyDictionary<string, Func<object, IComparable?>> _orderKeys;
     private readonly int _versionsKept;
     private readonly TimeProvider _clock;
+    private readonly PivotSlicing _slicing;
+    private readonly PivotLabelSizing _labelSizing = new();
     private readonly SemaphoreSlim _gate = new(1);
     private readonly LinkedList<HeldReport> _versions = [];
     private readonly Dictionary<PivotReportVersion, PivotReportState> _windows = [];
     private string? _settings;
     private string? _layout;
-    private bool _dirty = true;
+    private int _maxLeaves;
+    private volatile bool _dirty = true;
     private bool _disposed;
     private IReadOnlyList<PivotField> _effectiveFields;
     private sealed record HeldReport(PivotReportMetadata Metadata, PivotReport Report);
 
     internal LocalPivotReportSource(PivotSource source,
-        IReadOnlyDictionary<string, Func<object, IComparable?>>? orderKeys, int versionsKept, TimeProvider clock)
+        IReadOnlyDictionary<string, Func<object, IComparable?>>? orderKeys, int versionsKept, TimeProvider clock, PivotSlicing slicing)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentOutOfRangeException.ThrowIfLessThan(versionsKept, 1);
@@ -30,6 +33,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
         _orderKeys = orderKeys ?? new Dictionary<string, Func<object, IComparable?>>();
         _versionsKept = versionsKept;
         _clock = clock;
+        _slicing = slicing;
         source.Changed += SourceChanged;
     }
     /// <inheritdoc />
@@ -60,7 +64,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
             if (_settings != settings && ResolveFields(request.Settings) is { } policyRefusal)
                 return PivotReportUpdate.Refused(request, policyRefusal);
             var last = _versions.First?.Value;
-            if (_dirty || _settings != settings || _layout != layout || last is null)
+            if (_dirty || _settings != settings || _layout != layout || _maxLeaves != request.MaxLeaves || last is null)
             {
                 // Cleared before awaiting: a newer source notification keeps the next read dirty.
                 _dirty = false;
@@ -71,15 +75,16 @@ public sealed class LocalPivotReportSource : PivotReportSource
                     _dirty = true;
                     return PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.SourceRefused, answer.Refusal!.Message, answer.Refusal.Field));
                 }
-                var cube = await PivotEngine.CubeAsync(query, answer, _effectiveFields, cancellationToken: cancellationToken).ConfigureAwait(false);
-                var report = await PivotEngine.ReportAsync(cube, request.Layout, request.Settings.ToOptions(), cancellationToken: cancellationToken).ConfigureAwait(false);
+                var cube = await PivotEngine.CubeAsync(query, answer, _effectiveFields, slicing: _slicing, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var report = await PivotEngine.ReportAsync(cube, request.Layout, request.Settings.ToOptions(), slicing: _slicing, cancellationToken: cancellationToken).ConfigureAwait(false);
                 var sameRows = last is not null && await report.HasSameRowsAsAsync(last.Report, cancellationToken: cancellationToken).ConfigureAwait(false);
                 var metadata = new PivotReportMetadata(new(Guid.NewGuid().ToString("N")), cube.SourceVersion,
                     sameRows ? last!.Metadata.RowSequenceVersion : Guid.NewGuid().ToString("N"),
                     request.Layout, request.Settings, report.Rows.Count, report.LabelColumns,
                     report.ValueColumns.Select((column, index) => new PivotDisplayColumn(column.Name, column.Header,
                         column.Role, column.ValueField, report.ColumnPath(index).Select(p => new PivotFieldItem(p.Field, p.Item)).ToArray())).ToArray(),
-                    report.HeaderSpans, report.HeaderTierCount, report.ValueCaptions);
+                    report.HeaderSpans, report.HeaderTierCount, report.ValueCaptions)
+                { LabelWidths = request.Settings.LabelMetrics is { } metrics ? _labelSizing.Widths(report, metrics, [], [], true) : [] };
                 last = new(metadata, report);
                 _versions.AddFirst(last);
                 while (_versions.Count > _versionsKept)
@@ -90,9 +95,13 @@ public sealed class LocalPivotReportSource : PivotReportSource
                 }
                 _settings = settings;
                 _layout = layout;
+                _maxLeaves = request.MaxLeaves;
             }
             _windows.TryGetValue(request.Baseline ?? new(""), out var previous);
             if (previous?.Window != request.Window) previous = null;
+            var comparable = previous is not null && PivotReportJson.SameSettings(previous.Metadata.Settings, request.Settings)
+                && PivotLayoutJson.Write(previous.Metadata.Layout) == layout;
+            var priorByKey = comparable ? previous!.Rows.ToDictionary(row => row.Key) : null;
             var count = Math.Min(request.Window.Count, Math.Max(0, last.Metadata.RowCount - request.Window.Start));
             var rows = new PivotDisplayRow[count];
             var changes = new List<PivotReportRowChange>();
@@ -100,7 +109,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
             for (var i = 0; i < count; i++)
             {
                 var row = last.Report.Rows[request.Window.Start + i];
-                var prior = previous?.Rows.FirstOrDefault(candidate => candidate.Key.Equals(row.Key));
+                var prior = priorByKey?.GetValueOrDefault(row.Key);
                 rows[i] = Project(last.Report, row, prior, now);
                 if (previous is null || i >= previous.Rows.Count || !ReferenceEquals(previous.Rows[i], rows[i]))
                     changes.Add(new(i, rows[i]));
@@ -239,38 +248,32 @@ public sealed class LocalPivotReportSource : PivotReportSource
             var sum = new AggregateSum();
             var extremes = new AggregateExtremes();
             var error = false;
-            var seen = new HashSet<(int Row, int Column)>();
-            foreach (var range in query.Ranges)
-                for (var r = range.Top; r <= range.Bottom; r++)
+            foreach (var (r, c) in SelectedCells(query.Ranges))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var (isValue, index, _) = columns[c];
+                if (!isValue)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    for (var c = range.Left; c <= range.Right; c++)
-                    {
-                        if (!seen.Add((r, c))) continue;
-                        var (isValue, index, _) = columns[c];
-                        if (!isValue)
-                        {
-                            if (!string.IsNullOrEmpty(held.Report.Rows[r].Labels[index].Text)) counts.Values++;
-                            continue;
-                        }
-                        var value = held.Report.Rows[r].ValueAt(index);
-                        if (value is null) continue;
-                        counts.Values++;
-                        if (value.IsError) { error = true; continue; }
-                        var first = counts.Numbers == 0;
-                        if (value.Exact is { } exact)
-                        {
-                            AggregateArithmetic.Add(ref sum, exact, first);
-                            AggregateArithmetic.Add(ref extremes, exact, first);
-                        }
-                        else
-                        {
-                            AggregateArithmetic.Add(ref sum, value.Number, first);
-                            AggregateArithmetic.Add(ref extremes, value.Number, first);
-                        }
-                        counts.Numbers++;
-                    }
+                    if (!string.IsNullOrEmpty(held.Report.Rows[r].Labels[index].Text)) counts.Values++;
+                    continue;
                 }
+                var value = held.Report.Rows[r].ValueAt(index);
+                if (value is null) continue;
+                counts.Values++;
+                if (value.IsError) { error = true; continue; }
+                var first = counts.Numbers == 0;
+                if (value.Exact is { } exact)
+                {
+                    AggregateArithmetic.Add(ref sum, exact, first);
+                    AggregateArithmetic.Add(ref extremes, exact, first);
+                }
+                else
+                {
+                    AggregateArithmetic.Add(ref sum, value.Number, first);
+                    AggregateArithmetic.Add(ref extremes, value.Number, first);
+                }
+                counts.Numbers++;
+            }
             AggregateArithmetic.Finish(ref sum);
             AggregateArithmetic.Finish(ref extremes);
             string? format = null;
@@ -287,6 +290,29 @@ public sealed class LocalPivotReportSource : PivotReportSource
             return new(query.Version, counts, sum, extremes, error, format, held.Metadata.Culture.Name);
         }
         finally { _gate.Release(); }
+    }
+
+    // The union is represented by row bands and merged column intervals, not one stored
+    // entry per selected cell. Selecting a large report does not allocate its cell count.
+    private static IEnumerable<(int Row, int Column)> SelectedCells(IReadOnlyList<PivotReportRange> ranges)
+    {
+        var boundaries = ranges.SelectMany(r => new[] { r.Top, r.Bottom + 1 }).Distinct().Order().ToArray();
+        for (var b = 0; b + 1 < boundaries.Length; b++)
+        {
+            var top = boundaries[b];
+            var intervals = ranges.Where(r => r.Top <= top && r.Bottom >= top).OrderBy(r => r.Left).ToArray();
+            var merged = new List<(int Left, int Right)>();
+            foreach (var interval in intervals)
+            {
+                if (merged.Count > 0 && interval.Left <= (long)merged[^1].Right + 1)
+                    merged[^1] = (merged[^1].Left, Math.Max(merged[^1].Right, interval.Right));
+                else merged.Add((interval.Left, interval.Right));
+            }
+            for (var r = top; r < boundaries[b + 1]; r++)
+                foreach (var (left, right) in merged)
+                    for (var c = left; c <= right; c++)
+                        yield return (r, c);
+        }
     }
 
     private static PivotReportRefusal? CheckRanges(PivotReport report, IReadOnlyList<string> names,
