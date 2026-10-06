@@ -12,7 +12,8 @@ namespace ExGrid.Components;
 // between Windows; the key pairs one render's rows with the next one's, and nothing else.
 //
 // Every new Window is taken in here: checked for a row that appears twice (ADR-0003), or a key
-// that does (ADR-0140, LV-2) — unless its source vouches for it (ADR-0141, LV-10).
+// that does (ADR-0140, LV-2) — unless its source or pushing Consumer vouches for it
+// (ADR-0141/0150, LV-10).
 public partial class ExGrid<TRow>
 {
     /// <summary>
@@ -35,6 +36,18 @@ public partial class ExGrid<TRow>
     /// </summary>
     [Parameter] public Func<TRow, object>? RowKey { get; set; }
 
+    /// <summary>
+    /// The Consumer vouches that every row in its pushed <see cref="Window"/> is non-null and
+    /// answers a non-null, distinct <see cref="RowKey"/> under that key's equality (ADR-0150).
+    /// False, the default, checks the whole Window. True skips that check: the Consumer must
+    /// keep the guarantee by construction or validation. A false guarantee is a Consumer defect
+    /// the grid does not promise to detect; Blazor's duplicate-key exception is not a validator.
+    /// Without a Row Key, the grid still checks row instances. Withdrawing the guarantee checks
+    /// even the same Window again. Ignored beside <see cref="Source"/>, whose own guarantee
+    /// applies only to its own Row Key, never to a different key supplied by the Consumer.
+    /// </summary>
+    [Parameter] public bool VouchesDistinctRows { get; set; }
+
     // One key object per row instance, so @key is reference identity even when TRow
     // overrides Equals (a record row model): value-equal rows are still different rows
     // (ADR-0003), and Blazor's duplicate-@key refusal must not fire on them. Entries
@@ -42,7 +55,7 @@ public partial class ExGrid<TRow>
     private static readonly ConditionalWeakTable<TRow, object> RowIdentityKeys = new();
 
     // The Row Key in force for the rows painted — the grid's own, else the Source's, else none — and
-    // whether the Window in hand was taken on its source's word. Both are what the last Window taken
+    // whether the Window in hand was taken on its source's or pushing Consumer's word. Both are what the last Window taken
     // in was checked under, so a new key over the same Window checks it again.
     private Func<TRow, object>? _rowKey;
     private bool _windowVouched;
@@ -67,7 +80,11 @@ public partial class ExGrid<TRow>
 
     /// <summary>A painted row's component key: its Row Key while one is in force, else an object
     /// that stands for its instance (ADR-0140/0003).</summary>
-    private object RowComponentKey(TRow row) => _rowKey is { } key ? key(row) : RowIdentityKeys.GetValue(row, static _ => new object());
+    private object RowComponentKey(TRow row) => _rowKey is { } key ? key(row) : RowInstanceKey(row);
+
+    // A detached identity token also lets historical paints recognise a row without holding it.
+    // The token never points back to the row, and the weak table does not keep its key alive.
+    private static object RowInstanceKey(TRow row) => RowIdentityKeys.GetValue(row, static _ => new object());
 
     /// <summary>
     /// A Placeholder's component key: its position, in a type of the grid's own. A bare boxed index
@@ -81,7 +98,8 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// Takes in the Window in hand, under the Row Key in force: checked whole when it is new or the
-    /// key moved, and not at all when its source vouches for it (ADR-0141, LV-10). Refused up front
+    /// key moved, and not at all when its source or pushing Consumer vouches for it
+    /// (ADR-0141/0150, LV-10). Refused up front
     /// rather than failing strangely mid-render, and before Blazor's own exception for clashing
     /// keys, which names neither the key nor the rows (LV-2).
     /// </summary>
@@ -95,8 +113,10 @@ public partial class ExGrid<TRow>
         // (IGridSource.VouchesDistinctRows), and with no key it has none to give, so the grid's
         // check by instance stands. Delegates compare by method and target, so a source whose
         // RowKey property hands out a fresh delegate each time is still recognised.
-        var vouched = key is not null && Source is { VouchesDistinctRows: true } && Equals(key, own);
-        if (ReferenceEquals(_observedWindow, _window) && Equals(key, _rowKey) && (vouched || !_windowVouched))
+        var vouched = key is not null && (Source is null
+            ? VouchesDistinctRows
+            : Source.VouchesDistinctRows && Equals(key, own));
+        if (ReferenceEquals(_observedWindow, _window) && Equals(key, _rowKey) && vouched == _windowVouched)
             return;
 
         if (!vouched)

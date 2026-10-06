@@ -357,6 +357,113 @@ public class RowKeyTests : GridTestContext
 
     // ---- LV-10, the grid's side: a Window the source vouches for is not passed through the check --
 
+    [Fact] // ADR-0150 / LV-10: a pushed Window can give the same guarantee as a keyed source
+    public void ADR0150_a_vouched_pushed_window_only_reads_keys_of_painted_rows()
+    {
+        var counting = new CountingKey();
+        var trades = Trades(5_000);
+        var cut = RenderGrid(trades, counting.Key, ps => ps
+            .Add(g => g.VouchesDistinctRows, true).Add(g => g.ViewportHeight, 300));
+        var painted = Rows(cut).Count;
+        counting.Calls = 0;
+
+        cut.Render(ps => ps.Add(g => g.Window,
+            trades.Select(trade => trade.Id == 1001 ? trade.WithAmount(3m) : trade).ToArray()));
+
+        Assert.Equal(3m, RowComponentOf(cut, 1001).Row.Amount);
+        Assert.InRange(counting.Calls, 1, painted * 4);
+    }
+
+    [Fact] // ADR-0150 / LV-10: the default keeps the full validation pass
+    public void ADR0150_a_pushed_window_is_checked_by_default()
+    {
+        var counting = new CountingKey();
+        RenderGrid(Trades(5_000), counting.Key);
+        Assert.True(counting.Calls >= 5_000, $"the key was asked {counting.Calls} times");
+    }
+
+    [Fact] // ADR-0150 / LV-10: withdrawal checks a Window even if it has the same instance
+    public void ADR0150_withdrawing_a_pushed_vouch_checks_the_same_window()
+    {
+        var trades = Trades(5_000);
+        trades[4_001] = new Trade(trades[4_000].Id, "Twin", 0m);
+        var cut = RenderGrid(trades, ById, ps => ps.Add(g => g.VouchesDistinctRows, true));
+
+        var refusal = Assert.Throws<InvalidOperationException>(() => cut.Render(ps => ps.Add(g => g.VouchesDistinctRows, false)));
+
+        Assert.Contains("Window[4000] and Window[4001]", refusal.Message);
+        Assert.Contains("same Row Key", refusal.Message);
+    }
+
+    [Fact] // ADR-0150 / LV-10: granting a guarantee over an already checked Window still records its later withdrawal
+    public void ADR0150_a_vouch_granted_and_withdrawn_on_the_same_window_rechecks_it()
+    {
+        var counting = new CountingKey();
+        var cut = RenderGrid(Trades(5_000), counting.Key);
+        cut.Render(ps => ps.Add(g => g.VouchesDistinctRows, true));
+        counting.Calls = 0;
+
+        cut.Render(ps => ps.Add(g => g.VouchesDistinctRows, false));
+
+        Assert.True(counting.Calls >= 5_000, $"the key was asked {counting.Calls} times");
+    }
+
+    [Fact] // ADR-0150 / LV-10: the pushed guarantee says nothing without a Row Key
+    public void ADR0150_a_pushed_vouch_without_a_key_still_checks_instances()
+    {
+        var trades = Trades(5_000);
+        trades[4_001] = trades[4_000];
+
+        var refusal = Assert.Throws<InvalidOperationException>(() =>
+            RenderGrid(trades, null, ps => ps.Add(g => g.VouchesDistinctRows, true)));
+
+        Assert.Contains("same row instance", refusal.Message);
+    }
+
+    [Theory] // ADR-0150 / LV-10: a bound Source supplies the only vouch; a pushed promise cannot cover an overridden key
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ADR0150_a_pushed_vouch_does_not_override_the_sources_guarantee(bool sourceVouches)
+    {
+        var counting = new CountingKey();
+        var source = new KeyedSource(Trades(5_000)) { RowKey = ById, Vouches = sourceVouches };
+
+        Render<ExGrid<Trade>>(ps => ps.Add(g => g.Source, source).Add(g => g.Columns, Columns)
+            .Add(g => g.RowKey, counting.Key).Add(g => g.VouchesDistinctRows, true));
+
+        Assert.True(counting.Calls >= 5_000, $"the key was asked {counting.Calls} times");
+    }
+
+    [Fact] // ADR-0150 / LV-10: only the Source itself can promise its own Window is valid
+    public void ADR0150_a_pushed_vouch_cannot_vouch_for_an_unvouched_source()
+    {
+        var counting = new CountingKey();
+        var source = new KeyedSource(Trades(5_000)) { RowKey = counting.Key, Vouches = false };
+
+        Render<ExGrid<Trade>>(ps => ps.Add(g => g.Source, source).Add(g => g.Columns, Columns)
+            .Add(g => g.VouchesDistinctRows, true));
+
+        Assert.True(counting.Calls >= 5_000, $"the key was asked {counting.Calls} times");
+    }
+
+    [Fact] // ADR-0153 / LV-24: an unchanged row keeps its captured text when another row changes
+    public void ADR0153_unchanged_rows_do_not_revisit_their_value_accessors_for_history()
+    {
+        var reads = new List<int>();
+        GridColumn<Trade>[] columns =
+        [
+            new("Book", ColumnType.Text, row => { reads.Add(row.Id); return row.Book; }, width: Fixed100),
+        ];
+        var trades = Trades();
+        var cut = RenderGrid(trades, ById, columns: columns);
+        reads.Clear();
+
+        cut.Render(ps => ps.Add(g => g.Window, new[] { trades[0], trades[1].WithAmount(3m), trades[2] }));
+
+        Assert.Contains(trades[1].Id, reads);
+        Assert.DoesNotContain(trades[2].Id, reads);
+    }
+
     [Fact] // ADR-0141 / LV-10: a Window the source vouches for is not walked — the key is asked only of the rows painted
     public void A_vouched_window_is_not_walked()
     {

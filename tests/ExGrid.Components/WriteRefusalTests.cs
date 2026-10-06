@@ -16,8 +16,8 @@ namespace ExGrid.Components.Tests;
 /// A write is refused when what the user saw of its target changed before it lands (ADR-0142,
 /// LV-11 to LV-14). What the user saw is the painted text of the target's painted cells, in the
 /// render the gesture was taken against: the Viewport names that render (<c>data-ex-paint</c>),
-/// the browser tells it with each gesture, and the core keeps what it needs to recompute the text
-/// of the cells it painted for its last few renders. Here a test tells a gesture an earlier render,
+/// the browser tells it with each gesture, and the core keeps the immutable text its last few
+/// renders compared (ADR-0153). Here a test tells a gesture an earlier render,
 /// as ED-31's tests tell a press an earlier layout; what the browser reads is layer 3's.
 ///
 /// 20px rows in a 120px Viewport (five rows painted), 350px wide: Book 0–100 and Amount 100–200,
@@ -502,6 +502,79 @@ public class WriteRefusalTests : GridTestContext
     }
 
     // ---- LV-13: a paste, a Ctrl+Enter fill and a fill-handle drag ----
+
+    [Fact] // ADR-0153 / LV-24: historical text is the text painted then, not a later answer from an old lookup
+    public async Task ADR0153_a_delayed_paste_compares_the_text_captured_when_painted()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var text = "Before";
+        PaintedTextOf<TestRow> paintedText = (_, column, _, _) => column.Name == "Book" ? text : null;
+        var cut = RenderGrid(rows, heard, extra: ps => ps.Add(g => g.PaintedText, paintedText));
+        await ClickAsync(cut, 50, 10);
+        var pressedOn = Paint(cut);
+        text = "After";
+        Push(cut, Changed(rows, 0, book: "After"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x", null, pressedOn));
+
+        Assert.Empty(heard.Pastes);
+        Assert.Equal([PasteRefusalReason.TargetChanged], heard.PasteRefusals);
+    }
+
+    [Fact] // ADR-0153 / LV-24: #### does not conceal the accessible value from historical comparison
+    public async Task ADR0153_a_delayed_paste_compares_the_accessible_number_behind_hashes()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var amount = 123456789012345m;
+        GridColumn<TestRow>[] columns =
+        [
+            new("Amount", ColumnType.Number, _ => amount, width: Fixed100, editable: true),
+        ];
+        var cut = RenderGrid(rows, heard, columns);
+        await ClickAsync(cut, 50, 10);
+        var pressedOn = Paint(cut);
+        Assert.Contains("###", cut.Find(".ex-row .ex-cell").TextContent);
+        amount = 987654321012345m;
+        Push(cut, Changed(rows, 0, amount: amount));
+        Assert.Contains("###", cut.Find(".ex-row .ex-cell").TextContent);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("1", null, pressedOn));
+
+        Assert.Empty(heard.Pastes);
+        Assert.Equal([PasteRefusalReason.TargetChanged], heard.PasteRefusals);
+    }
+
+    [Theory] // ADR-0153 / LV-24: immutable evidence preserves the existing 64-paint history
+    [InlineData(63, false)]
+    [InlineData(64, true)]
+    public async Task ADR0153_history_keeps_exactly_the_existing_paint_horizon(int newerPaints, bool refused)
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        var pressedOn = Paint(cut);
+        for (var i = 0; i < newerPaints; i++)
+        {
+            rows = Changed(rows, 1);
+            Push(cut, rows);
+        }
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x", null, pressedOn));
+
+        if (refused)
+        {
+            Assert.Empty(heard.Pastes);
+            Assert.Equal([PasteRefusalReason.RenderNoLongerKept], heard.PasteRefusals);
+        }
+        else
+        {
+            Assert.Single(heard.Pastes);
+            Assert.Empty(heard.PasteRefusals);
+        }
+    }
 
     [Fact] // ADR-0142 / LV-13: a paste whose painted target changed after the render it was taken against is refused
     public async Task A_paste_whose_painted_target_changed_is_refused()

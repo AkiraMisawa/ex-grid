@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using ExGrid.Cells;
 using ExGrid.Clipboard;
 using ExGrid.Columns;
@@ -17,11 +18,11 @@ namespace ExGrid.Components;
 // (data-ex-paint, beside data-ex-sequence and data-ex-layout). The browser reads that name with
 // each gesture — a press on the rows or on an action, a key, a paste — and tells it with the
 // gesture (ADR-0021's notes of 2026-10-02 and 2026-10-05), and the gesture is judged against the
-// paint it names. The grid keeps, for its last few paints, what it needs to recompute the painted
-// text of the cells it painted: the row instances, the columns, their widths and the Consumer's
-// painted-text and appearance lookups. Nothing per cell is kept, and nothing per cell reaches
-// JavaScript. A gesture taken against a paint no longer kept is refused: the grid can no longer
-// tell what the user saw.
+// paint it names. The grid keeps the text compared by its last few paints, with detached row
+// identity and Row Keys (ADR-0153). An old lookup is never called to reconstruct what the user
+// saw. Only rows with Action payloads are held; ordinary rows, columns and lookups are not.
+// Nothing per cell reaches JavaScript. A gesture taken against a paint no longer kept is refused:
+// the grid can no longer tell what the user saw.
 //
 // Settled while building it (ADR-0142, D1 to D5 of 2026-10-06):
 // - The user's own writes count as seen (D1). A cell one of the user's own earlier gestures wrote,
@@ -90,39 +91,47 @@ public partial class ExGrid<TRow>
     private readonly List<Paint> _paints = [];
     private int _paintId;
 
-    /// <summary>What one paint painted, as much as recomputing its cells' painted text needs: the
-    /// row instances of the painted rows (null where a position had no row in hand), the columns
-    /// and their widths, which of them were painted, and the Consumer's lookups the text depends
-    /// on. The row order is kept, because a position names a row only under one.</summary>
+    // Tokens compare references without retaining the objects behind them. In particular, a
+    // column accessor or painted-text delegate may close over an entire Consumer report.
+    private static readonly ConditionalWeakTable<object, object> PaintIdentityKeys = new();
+
+    private static object? PaintIdentityOf(object? value)
+        => value is null ? null : PaintIdentityKeys.GetValue(value, static _ => new object());
+
+    private sealed record PaintedColumn(string Name, string[] Actions);
+
+    private sealed record PaintedRow(object Identity, object? Key, TRow? ActionRow, string?[] Text);
+
+    /// <summary>Immutable evidence of one paint (ADR-0153). Identity tokens point to no row or
+    /// lookup. Only an Action's required payload and a Consumer's arbitrary Row Key may retain
+    /// Consumer objects. Text covers the painted columns alone, including a number's accessible
+    /// text behind ####. The row order is kept because a position names a row only under one.</summary>
     private sealed class Paint
     {
         public required int Id { get; init; }
         public required int SequenceVersion { get; init; }
         public required int FirstRow { get; init; }
-        public required TRow?[] Rows { get; init; }
-        public required IReadOnlyList<GridColumn<TRow>> Columns { get; init; }
-        public required ColumnGeometry Geometry { get; init; }
+        public required PaintedRow?[] Rows { get; init; }
+        public required PaintedColumn[] Columns { get; init; }
+        public required bool HasActions { get; init; }
+        public required int[] TextColumns { get; init; }
+        public required object ColumnsIdentity { get; init; }
+        public required object GeometryIdentity { get; init; }
         public required ColumnRange? Scrollable { get; init; }
         public required CellTextMetrics Metrics { get; init; }
-        public required PaintedTextOf<TRow>? PaintedText { get; init; }
-        public required CellAppearanceOf<TRow>? Appearance { get; init; }
-
-        /// <summary>Whether column <paramref name="column"/> was painted: a Pinned Column always,
-        /// a scrollable one only inside the slice on screen, and none of those in a fling, whose
-        /// Placeholders paint their Pinned Columns alone (ADR-0004).</summary>
-        public bool Painted(int column)
-            => column >= 0 && column < Columns.Count
-               && (column < Geometry.PinnedCount
-                   || (Scrollable is { } scrollable && column >= scrollable.Start && column < scrollable.Start + scrollable.Count));
+        public required object? PaintedTextIdentity { get; init; }
+        public required object? AppearanceIdentity { get; init; }
+        public required object? RowKeyIdentity { get; init; }
 
         /// <summary>The painted text of a cell this paint painted, or null for one it did not
         /// paint as text: off screen, no row in hand, or an Action, Template or Mark cell.</summary>
         public string? TextAt(int row, int column)
         {
             var at = row - FirstRow;
-            if (at < 0 || at >= Rows.Length || Rows[at] is not { } data || !Painted(column))
+            if (at < 0 || at >= Rows.Length || Rows[at] is not { } data)
                 return null;
-            return PaintedTextFor(data, Columns[column], column, Geometry, Metrics, PaintedText, Appearance);
+            var painted = Array.BinarySearch(TextColumns, column);
+            return painted >= 0 ? data.Text[painted] : null;
         }
     }
 
@@ -143,26 +152,69 @@ public partial class ExGrid<TRow>
         var geometry = _columnStyles.Geometry;
         var metrics = _metrics.CellMetrics;
         var last = _paints.Count > 0 ? _paints[^1] : null;
-        if (last is not null && last.SequenceVersion == _sequenceVersion && last.FirstRow == first
-            && last.Rows.Length == count && ReferenceEquals(last.Columns, Columns)
-            && ReferenceEquals(last.Geometry, geometry) && last.Scrollable == scrollable && last.Metrics == metrics
-            && ReferenceEquals(last.PaintedText, PaintedText) && ReferenceEquals(last.Appearance, CellAppearance)
+        var columnsIdentity = PaintIdentityOf(Columns)!;
+        var geometryIdentity = PaintIdentityOf(geometry)!;
+        var textIdentity = PaintIdentityOf(PaintedText);
+        var appearanceIdentity = PaintIdentityOf(CellAppearance);
+        var keyIdentity = PaintIdentityOf(_rowKey);
+        var sameDisplay = last is not null && ReferenceEquals(last.ColumnsIdentity, columnsIdentity)
+            && ReferenceEquals(last.GeometryIdentity, geometryIdentity) && last.Scrollable == scrollable && last.Metrics == metrics
+            && ReferenceEquals(last.PaintedTextIdentity, textIdentity) && ReferenceEquals(last.AppearanceIdentity, appearanceIdentity)
+            && ReferenceEquals(last.RowKeyIdentity, keyIdentity);
+        if (sameDisplay && last!.SequenceVersion == _sequenceVersion && last.FirstRow == first && last.Rows.Length == count
             && PaintsTheSameRows(last))
         {
             return last.Id;
         }
-        var rows = new TRow?[count];
+        var sameColumns = last is not null && ReferenceEquals(last.ColumnsIdentity, columnsIdentity);
+        var columns = sameColumns
+            ? last!.Columns
+            : Columns.Select(column => new PaintedColumn(column.Name, column.Actions.Select(action => action.Name).ToArray())).ToArray();
+        var hasActions = sameColumns ? last!.HasActions : columns.Any(column => column.Actions.Length > 0);
+        var textColumns = sameDisplay ? last!.TextColumns : PaintedColumns(geometry.PinnedCount, scrollable);
+        var rows = new PaintedRow?[count];
         for (var i = 0; i < count; i++)
-            rows[i] = RowInHand(first + i);
+        {
+            if (RowInHand(first + i) is not { } row)
+                continue;
+            var identity = RowInstanceKey(row);
+            var previous = first + i - (last?.FirstRow ?? 0);
+            if (sameDisplay && previous >= 0 && previous < last!.Rows.Length
+                && last.Rows[previous] is { } unchanged && ReferenceEquals(unchanged.Identity, identity))
+            {
+                rows[i] = unchanged;
+                continue;
+            }
+            var text = new string?[textColumns.Length];
+            for (var c = 0; c < text.Length; c++)
+            {
+                var column = textColumns[c];
+                text[c] = PaintedTextFor(row, Columns[column], column, geometry, metrics, PaintedText, CellAppearance);
+            }
+            rows[i] = new PaintedRow(identity, _rowKey?.Invoke(row), hasActions ? row : null, text);
+        }
         _paints.Add(new Paint
         {
             Id = ++_paintId, SequenceVersion = _sequenceVersion, FirstRow = first, Rows = rows,
-            Columns = Columns, Geometry = geometry, Scrollable = scrollable, Metrics = metrics,
-            PaintedText = PaintedText, Appearance = CellAppearance,
+            Columns = columns, HasActions = hasActions, TextColumns = textColumns, ColumnsIdentity = columnsIdentity,
+            GeometryIdentity = geometryIdentity, Scrollable = scrollable, Metrics = metrics,
+            PaintedTextIdentity = textIdentity, AppearanceIdentity = appearanceIdentity, RowKeyIdentity = keyIdentity,
         });
         if (_paints.Count > PaintsKept)
             _paints.RemoveAt(0);
         return _paintId;
+    }
+
+    private int[] PaintedColumns(int pinned, ColumnRange? scrollable)
+    {
+        var start = Math.Max(pinned, scrollable?.Start ?? pinned);
+        var end = scrollable is { } range ? Math.Min(Columns.Count, range.Start + range.Count) : start;
+        var columns = new int[pinned + Math.Max(0, end - start)];
+        for (var i = 0; i < pinned; i++)
+            columns[i] = i;
+        for (var i = start; i < end; i++)
+            columns[pinned + i - start] = i;
+        return columns;
     }
 
     /// <summary>Whether the rows now in hand at <paramref name="paint"/>'s positions are the
@@ -171,7 +223,8 @@ public partial class ExGrid<TRow>
     {
         for (var i = 0; i < paint.Rows.Length; i++)
         {
-            if (!ReferenceEquals(paint.Rows[i], RowInHand(paint.FirstRow + i)))
+            var row = RowInHand(paint.FirstRow + i);
+            if (!ReferenceEquals(paint.Rows[i]?.Identity, row is null ? null : RowInstanceKey(row)))
                 return false;
         }
         return true;
@@ -255,7 +308,7 @@ public partial class ExGrid<TRow>
         var last = paint.FirstRow + paint.Rows.Length - 1;
         foreach (var range in targets)
         {
-            var right = Math.Min(range.RightColumn, paint.Columns.Count - 1);
+            var right = Math.Min(range.RightColumn, paint.Columns.Length - 1);
             for (var row = Math.Max(range.TopRow, paint.FirstRow); row <= Math.Min(range.BottomRow, last); row++)
             {
                 for (var column = Math.Max(range.LeftColumn, 0); column <= right; column++)
@@ -326,7 +379,8 @@ public partial class ExGrid<TRow>
         else
         {
             var sameOrder = paint.SequenceVersion == _sequenceVersion;
-            var painted = Array.FindIndex(paint.Rows, r => ReferenceEquals(r, pressed));
+            var identity = RowInstanceKey(pressed);
+            var painted = Array.FindIndex(paint.Rows, r => ReferenceEquals(r?.Identity, identity));
             int? then = painted >= 0 ? paint.FirstRow + painted : null;
             var now = atRow ?? PositionInHand(pressed);
             if (then is null && now is null)
@@ -350,7 +404,7 @@ public partial class ExGrid<TRow>
             if (RowInHand(nowRow) is null)
                 return Seen.Unknown;
         }
-        for (var column = 0; column < paint.Columns.Count; column++)
+        foreach (var column in paint.TextColumns)
         {
             if (paint.TextAt(thenRow, column) is not { } seen)
                 continue;
@@ -367,9 +421,15 @@ public partial class ExGrid<TRow>
     /// null for a row it did not paint. A pass over the painted rows only.</summary>
     private static int? PaintedPositionOf(Paint paint, Func<TRow, object> rowKey, object key)
     {
+        var sameKey = ReferenceEquals(paint.RowKeyIdentity, PaintIdentityOf(rowKey));
         for (var i = 0; i < paint.Rows.Length; i++)
         {
-            if (paint.Rows[i] is { } row && Equals(rowKey(row), key))
+            if (paint.Rows[i] is not { } row)
+                continue;
+            // An Action's payload also preserves the former pairing when the Consumer changes
+            // the key declaration between its press and its handling.
+            var paintedKey = sameKey ? row.Key : row.ActionRow is { } actionRow ? rowKey(actionRow) : null;
+            if (Equals(paintedKey, key))
                 return paint.FirstRow + i;
         }
         return null;
@@ -539,13 +599,13 @@ public partial class ExGrid<TRow>
         _actionPressPending = null;
         if (row < 0 || column < 0 || action < 0 || PaintNamed(paint) is not { } painted
             || row < painted.FirstRow || row >= painted.FirstRow + painted.Rows.Length
-            || painted.Rows[row - painted.FirstRow] is not { } pressed
-            || column >= painted.Columns.Count || action >= painted.Columns[column].Actions.Count)
+            || painted.Rows[row - painted.FirstRow]?.ActionRow is not { } pressed
+            || column >= painted.Columns.Length || action >= painted.Columns[column].Actions.Length)
         {
             return;
         }
         _actionPressPending = new ActionPressPending(paint, pressed, painted.Columns[column].Name,
-            painted.Columns[column].Actions[action].Name);
+            painted.Columns[column].Actions[action]);
         await AnswerActionPressWithNoClickAsync();
     }
 
@@ -583,16 +643,17 @@ public partial class ExGrid<TRow>
             var key = rowKey(row);
             foreach (var painted in rows)
             {
-                if (painted is not null && Equals(rowKey(painted), key))
+                if (painted is not null && Equals(painted.Key, key))
                     return true;
             }
             return false;
         }
         // By reference, never by value: a record row equal to the pressed one is another row's
         // component (ADR-0003).
+        var identity = RowInstanceKey(row);
         foreach (var painted in rows)
         {
-            if (ReferenceEquals(painted, row))
+            if (ReferenceEquals(painted?.Identity, identity))
                 return true;
         }
         return false;
