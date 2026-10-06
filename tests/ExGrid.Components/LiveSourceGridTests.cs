@@ -150,6 +150,27 @@ public class LiveSourceGridTests : GridTestContext
         cut.WaitForAssertion(() => Assert.Equal([("Delta", "Book"), ("Delta", "Amount")], MarkedCells(cut)));
     }
 
+    [Fact] // ADR-0141 / LV-9, ADR-0067: a filter or a change of columns changes what is painted, and marks nothing
+    public void A_filter_or_a_column_change_marks_nothing()
+    {
+        var rows = TestRows.Window();
+        var source = GridSource.From(rows, r => r.Book, Clock);
+        source.GatherInterval = TimeSpan.Zero;
+        var cut = RenderGrid(source, source.CellChangedAt);
+
+        source.OnFilterChanged(new GridFilter(new Dictionary<string, FilterSpec>
+        {
+            ["Book"] = new([new FilterClause(FilterOperator.Equals, "Beta")]),
+        }));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindComponents<ExGridRow<TestRow>>()));
+        Assert.Empty(MarkedCells(cut));
+
+        source.OnFilterChanged(null);
+        cut.Render(ps => ps.Add(g => g.Columns, [Columns[1], Columns[0]]));
+        cut.WaitForAssertion(() => Assert.Equal(3, cut.FindComponents<ExGridRow<TestRow>>().Count));
+        Assert.Empty(MarkedCells(cut));
+    }
+
     // ---- GridSource.Fetch told that the data moved on -----------------------------------------------
 
     /// <summary>A server holding its rows, answering every question at once, as new instances.</summary>
@@ -224,5 +245,56 @@ public class LiveSourceGridTests : GridTestContext
 
         cut.WaitForAssertion(() => Assert.Equal("77.0", AmountText(cut, "Row 000000")));
         Assert.Equal(1, selection!.CellCount);
+    }
+
+    // A row put into the server's rows at the Window's third place, as a new booking would land under a
+    // server's order, and the row the Window's last place shows after it.
+    private static TestRow Booked(Server server)
+    {
+        var booked = new TestRow { Book = "Row 000002b", Amount = 5 };
+        server.Rows.Insert(3, booked);
+        return booked;
+    }
+
+    [Fact] // ADR-0141 D6 / LV-9: a key the Consumer names as added is marked whole; a key that only slid into the Window is not
+    public void A_named_added_key_is_marked_whole_and_one_that_slid_in_is_not()
+    {
+        var server = new Server();
+        var source = GridSource.Fetch<TestRow>(server.Fetch, rowKey: r => r.Book, clock: Clock);
+        var changedAt = source.CellChangedAt!;
+        var cut = RenderGrid(source, changedAt);
+        cut.WaitForAssertion(() => Assert.Equal("3.0", AmountText(cut, "Row 000003")));
+        var size = source.Window.Count;
+        var before = source.Window.Select(r => r.Book).ToHashSet(StringComparer.Ordinal);
+        // Two rows cancelled at the front and one booked among the first: one row past the Window's
+        // end slides into it.
+        server.Rows.RemoveAt(0);
+        server.Rows.RemoveAt(0);
+        var booked = new TestRow { Book = "Row 000002b", Amount = 5 };
+        server.Rows.Insert(1, booked);
+
+        source.NotifyChanged([booked.Book]);
+
+        cut.WaitForAssertion(() => Assert.Equal("5.0", AmountText(cut, booked.Book)));
+        Assert.Equal(size, source.Window.Count);
+        var slid = Assert.Single(source.Window, r => r.Book != booked.Book && !before.Contains(r.Book));
+        var inWindow = source.Window.Single(r => r.Book == booked.Book);
+        Assert.All(Columns, column => Assert.NotNull(changedAt(inWindow, column)));
+        Assert.All(Columns, column => Assert.Null(changedAt(slid, column)));
+    }
+
+    [Fact] // ADR-0141 D6 / LV-9: with no keys named, a new key between two rows painted before is guessed to be added, and marked whole
+    public void With_no_keys_named_a_key_between_painted_rows_is_guessed_added()
+    {
+        var server = new Server();
+        var source = GridSource.Fetch<TestRow>(server.Fetch, rowKey: r => r.Book, clock: Clock);
+        var cut = RenderGrid(source, source.CellChangedAt);
+        cut.WaitForAssertion(() => Assert.Equal("3.0", AmountText(cut, "Row 000003")));
+        var booked = Booked(server);
+
+        source.NotifyChanged();
+
+        cut.WaitForAssertion(() => Assert.Equal("5.0", AmountText(cut, booked.Book)));
+        Assert.Equal(2, MarkedCells(cut).Count(c => c.Book == booked.Book));
     }
 }

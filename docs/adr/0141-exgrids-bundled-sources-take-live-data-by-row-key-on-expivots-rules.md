@@ -155,6 +155,9 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
     that slid into the Window from outside it. Only the server knows which.
   - When the Consumer names the added keys as it says the data moved on, a named key is marked
     whole, and a key that was not named is not: it slid in.
+  - A named key the source had painted before is a row removed and added again, and is compared
+    cell by cell, as `GridSource.From` treats a key removed and added again within one gathering.
+    *(Refined while building it, 2026-10-06; the code review asked that it be written here.)*
   - When it names none, the source guesses. A new key is marked whole only where it cannot have slid
     in: between two rows painted before, or at an end of the result both Windows reached. Under a
     server's sort, a row that a change of value moved into the middle is then marked whole too.

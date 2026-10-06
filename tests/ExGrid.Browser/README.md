@@ -358,7 +358,8 @@ nobody had asked for. What that means when writing a test:
   LV-14). On the Server host only, where a gesture can be taken before F9's render comes back: an
   Action press, a Ctrl+Enter fill and a fill-handle release refused (LV-12, LV-13); a commit whose
   opening key was taken before F9's change refused with the new value (LV-11, D2); a Ctrl+D whose
-  source F9 moved refused though its target did not move (LV-13, D4). The user's own writes count
+  source F9 moved refused though its target did not move (LV-13, D4); a Delete and a Ctrl+R whose
+  target F9 moved refused (LV-13, D3). The user's own writes count
   as seen (LV-17, D1): `5` Enter ↑ Ctrl+V and `1` Enter ↑ `2` Enter, typed at once, land on both
   hosts, the Server host at 0 and at 150 ms. Each race reads what the page showed at the gesture
   first, from a capture listener ahead of the grid's, and says so by name if the change had

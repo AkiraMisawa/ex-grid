@@ -372,6 +372,45 @@ test('LV-11: a change in the round trip between the key that opens the editor an
     await expect(notional).toHaveText('5');
 });
 
+test('LV-13: a Delete whose target changed since the key was pressed is refused, and clears nothing (ADR-0142 D3)', async ({ page }) => {
+    test.skip(!SERVER, 'WebAssembly paints F9\'s change before Delete can be taken on the render before it');
+    // Notional rows 0 and 1, both moved by F9.
+    await clickCell(page, 0, NOTIONAL);
+    await page.keyboard.press('Shift+ArrowDown');
+    await circuitQuiet();
+    const before = (await cell(page, 0, NOTIONAL).textContent()).trim();
+    await watchWhatIsSeen(page, 0, NOTIONAL);
+    await setRoundTrip(150);
+
+    await page.keyboard.press('F9');
+    await page.keyboard.press('Delete');
+
+    expect((await seenAt(page, 'keydown', 'Delete')).text, 'Delete was taken on the render before F9\'s change').toBe(before);
+    await expect(page.locator('#paste-refused-status')).toContainText('TargetChanged');
+    await circuitQuiet();
+    await expect(page.locator('#clear-status')).toHaveText('Cleared: —');
+});
+
+test('LV-13: a Ctrl+R whose target changed since the key was pressed is refused (ADR-0142 D3)', async ({ page }) => {
+    test.skip(!SERVER, 'WebAssembly paints F9\'s change before Ctrl+R can be taken on the render before it');
+    // Row 0, Trader to Notional: Trader is the source, and F9 moves Notional, the target. Notional's
+    // right is the Action column, which no fill can write (ADR-0035), so the fill runs rightward into it.
+    await clickCell(page, 0, NOTIONAL - 1);
+    await page.keyboard.press('Shift+ArrowRight');
+    await circuitQuiet();
+    const before = (await cell(page, 0, NOTIONAL).textContent()).trim();
+    await watchWhatIsSeen(page, 0, NOTIONAL);
+    await setRoundTrip(150);
+
+    await page.keyboard.press('F9');
+    await page.keyboard.press('ControlOrMeta+r');
+
+    expect((await seenAt(page, 'keydown', 'r')).text, 'Ctrl+R was taken on the render before F9\'s change').toBe(before);
+    await expect(page.locator('#paste-refused-status')).toContainText('TargetChanged');
+    await circuitQuiet();
+    await expect(page.locator('#paste-status')).toHaveText('Pasted: —');
+});
+
 test('LV-13: a Ctrl+D whose source changed since the key was pressed is refused, though its target did not change (ADR-0142 D4)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before Ctrl+D can be taken on the render before it');
     // Notional rows 4 to 6: F9 moves row 4, the source, and not rows 5 and 6, the target.
@@ -385,7 +424,7 @@ test('LV-13: a Ctrl+D whose source changed since the key was pressed is refused,
     await setRoundTrip(150);
 
     await page.keyboard.press('F9');
-    await page.keyboard.press('ControlOrMeta+D');
+    await page.keyboard.press('ControlOrMeta+d');
 
     expect((await seenAt(page, 'keydown', 'd')).text, 'Ctrl+D was taken on the render before F9\'s change').toBe(before);
     await expect(page.locator('#paste-refused-status')).toContainText('TargetChanged');
