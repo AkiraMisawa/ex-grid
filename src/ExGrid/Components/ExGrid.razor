@@ -5755,6 +5755,8 @@
         }
         if (CopyAnswer is not null)
             return AskCopyAnswer(decision.Plan, withHeaders: false) ?? ClipboardPayload.None;
+        if (CopyAnswerAsync is not null)
+            return ClipboardPayload.Async;
         if (!WindowCovers(decision.Plan))
         {
             // The async route needs somebody to ask. Without one, refuse by name
@@ -5808,6 +5810,12 @@
         }
         if (CopyAnswer is not null)
             return AskCopyAnswer(decision.Plan, withHeaders);
+        if (CopyAnswerAsync is { } answerAsync)
+        {
+            var request = new GridCopyRequest(decision.Plan, withHeaders, _sequenceVersion);
+            var answer = await answerAsync(request, CancellationToken.None);
+            return _disposed ? null : UseCopyAnswer(answer);
+        }
 
         var rows = await GatherRowsAsync(decision.Plan);
         if (_disposed)
@@ -6062,6 +6070,11 @@
     private ClipboardPayload? AskCopyAnswer(CopyPlan plan, bool withHeaders)
     {
         var answer = CopyAnswer!(new GridCopyRequest(plan, withHeaders, _sequenceVersion));
+        return UseCopyAnswer(answer);
+    }
+
+    private ClipboardPayload? UseCopyAnswer(GridCopyAnswer? answer)
+    {
         if (answer is null)
             throw new InvalidOperationException(
                 "CopyAnswer returned null. Answer GridCopyAnswer.Write with both flavours, or GridCopyAnswer.Refuse " +
