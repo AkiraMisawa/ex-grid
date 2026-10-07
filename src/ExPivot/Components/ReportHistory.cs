@@ -18,9 +18,10 @@ namespace ExPivot.Components;
 ///
 /// <para><b>What is kept, and for how long.</b> A mark ends with its time: a time whose mark has
 /// ended answers nothing, whether or not it has been let go yet, so a mark never depends on when it
-/// was asked for. The times are let go only as new ones are recorded — decided by data, never by a
-/// render — and with them the rows and columns that left the report. A key is kept as the newest row
-/// recorded under it, so an old report's axis tree is not held by a time that keeps moving on.</para>
+/// was asked for. A time is let go when its mark ends (<see cref="NextLetGo"/>, which ExPivot's clock
+/// keeps), and the rows and columns that left the report take their times with them. A key is kept as
+/// the newest row recorded under it, so an old report's axis tree is not held by a time that keeps
+/// moving on.</para>
 /// </summary>
 internal sealed class ReportHistory
 {
@@ -49,6 +50,11 @@ internal sealed class ReportHistory
     /// <summary>How many rows and columns have a time kept, for layer 2.</summary>
     internal int Kept => _rows.Count + _columns.Count;
 
+    /// <summary>When the oldest time kept ends its mark, and is to be let go (<see cref="LetGo"/>);
+    /// null when none is kept.</summary>
+    public DateTimeOffset? NextLetGo
+        => _recorded.TryPeek(out var oldest) ? ChangeHighlightRules.EndOf(oldest.At, _duration()) : null;
+
     /// <summary>A history of the report a change other than data laid out, which marks nothing.</summary>
     /// <param name="report">The report on screen.</param>
     /// <param name="now">The clock ExPivot reads.</param>
@@ -57,7 +63,7 @@ internal sealed class ReportHistory
         => new(report, now, duration, canMark: duration() > TimeSpan.Zero);
 
     /// <summary>
-    /// The next data version, laid out under the history's layout and words: what changed in its
+    /// Newer data, laid out under the history's layout and words: what changed in its
     /// painted values since the report before it, marked at <paramref name="at"/> — when its answer
     /// arrived. The rows and columns that left take their times with them, and the times whose marks
     /// have ended are let go.
@@ -101,7 +107,8 @@ internal sealed class ReportHistory
         return times;
     }
 
-    private void LetGo()
+    /// <summary>Lets go every time whose mark has ended.</summary>
+    public void LetGo()
     {
         var now = _now();
         var duration = _duration();

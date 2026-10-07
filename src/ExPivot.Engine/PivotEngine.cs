@@ -95,6 +95,20 @@ public static class PivotEngine
     }
 
     /// <summary>
+    /// Whether every live redraw under <paramref name="layout"/> starts afresh, its cube and its report
+    /// built as they are for a new layout (ADR-0161): an order that follows values — a sort by a Value
+    /// Field, where a changed value can move a row among its siblings — or a Show Values As, where a
+    /// change on one path moves the shown values on others.
+    /// </summary>
+    /// <param name="layout">The layout on screen.</param>
+    internal static bool StartsAfresh(PivotLayout layout)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        return layout.Rows.Concat(layout.Columns).Any(placement => placement.Sort.ByValue is not null)
+            || layout.Values.Any(value => value.ShowValuesAs != PivotShowValuesAs.NoCalculation);
+    }
+
+    /// <summary>
     /// The cube of a live redraw's answer, made from the cube on screen (ADR-0161): under the same
     /// question, when the answer's leaves are those of <paramref name="previous"/>'s answer and only
     /// their values changed, it shares <paramref name="previous"/>'s axis trees and cells and computes
@@ -112,7 +126,7 @@ public static class PivotEngine
     /// <param name="query">The question the answer was given to.</param>
     /// <param name="answer">The source's answer.</param>
     /// <param name="fields">The source's fields: how Items are labelled and ordered.</param>
-    public static PivotCube NextCube(PivotCube previous, PivotQuery query, PivotAnswer answer, IReadOnlyList<PivotField> fields)
+    internal static PivotCube NextCube(PivotCube previous, PivotQuery query, PivotAnswer answer, IReadOnlyList<PivotField> fields)
     {
         ArgumentNullException.ThrowIfNull(previous);
         ArgumentNullException.ThrowIfNull(query);
@@ -129,7 +143,7 @@ public static class PivotEngine
     /// <param name="fields">The source's fields: how Items are labelled and ordered.</param>
     /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
     /// <param name="cancellationToken">Stops the work at the next yield.</param>
-    public static ValueTask<PivotCube> NextCubeAsync(
+    internal static ValueTask<PivotCube> NextCubeAsync(
         PivotCube previous,
         PivotQuery query,
         PivotAnswer answer,
@@ -158,7 +172,7 @@ public static class PivotEngine
     /// <param name="cube">The cube to lay out, which must hold the layout.</param>
     /// <param name="layout">The layout.</param>
     /// <param name="options">The culture and the words; <see cref="PivotOptions.Default"/> when left out.</param>
-    public static PivotReport NextReport(PivotReport previous, PivotCube cube, PivotLayout layout, PivotOptions? options = null)
+    internal static PivotReport NextReport(PivotReport previous, PivotCube cube, PivotLayout layout, PivotOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(previous);
         return Slicer.Run(NextReportAsync(previous, cube, layout, options, Slicer.Unsliced));
@@ -172,7 +186,7 @@ public static class PivotEngine
     /// <param name="options">The culture and the words; <see cref="PivotOptions.Default"/> when left out.</param>
     /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
     /// <param name="cancellationToken">Stops the work at the next yield.</param>
-    public static ValueTask<PivotReport> NextReportAsync(
+    internal static ValueTask<PivotReport> NextReportAsync(
         PivotReport previous,
         PivotCube cube,
         PivotLayout layout,

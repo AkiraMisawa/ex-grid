@@ -107,7 +107,7 @@ public class LiveRedrawTests : PivotTestContext
             // A second on: every mark of the redraw before has ended, and its row repainted, before
             // this redraw is counted (ADR-0068).
             Clock.Advance(TimeSpan.FromSeconds(1));
-            cut.WaitForState(() => true);
+            cut.WaitForAssertion(() => Assert.Empty(ChangeHighlightTests.MarkedTexts(cut)));
             var previous = cut.Instance.Report!;
             var before = Painted(cut).ToDictionary(row => (object)row.Instance, row => row.RenderCount, ReferenceEqualityComparer.Instance);
 
@@ -135,6 +135,30 @@ public class LiveRedrawTests : PivotTestContext
         // The run changed rows and kept rows alike, so neither half of the rule went untested.
         Assert.True(changedRows > 10, $"{changedRows} painted rows changed");
         Assert.True(keptRows > changedRows, $"{keptRows} painted rows kept against {changedRows} changed");
+    }
+
+    [Fact] // ADR-0161 (PV-44): a redraw from the last shares rows, and a source handed in afresh — a refresh, though its data be the same — shares none, nor does a layout the user changes
+    public async Task A_new_source_or_a_new_layout_shares_no_row()
+    {
+        var trades = Generate(2_000);
+        var source = PivotSource.From(trades, TradeFields, Whole);
+        var cut = RenderPivot(PnlByRegionAndDesk, ps => ps.Add(p => p.Slicing, Whole), source: source);
+        var first = cut.Instance.Report!;
+
+        await cut.InvokeAsync(() => source.Apply(TradeFields.Batch(changed: Amend(trades, 3, new Random(5)))));
+        cut.WaitForAssertion(() => Assert.NotSame(first, cut.Instance.Report));
+        var redrawn = cut.Instance.Report!;
+        Assert.True(redrawn.WasMadeFrom(first));
+        Assert.Contains(redrawn.Rows, row => first.Rows.Contains(row));
+
+        cut.Render(ps => ps.Add(p => p.Source, PivotSource.From(trades, TradeFields, Whole)));
+        cut.WaitForAssertion(() => Assert.NotSame(redrawn, cut.Instance.Report));
+        var refreshed = cut.Instance.Report!;
+        Assert.DoesNotContain(refreshed.Rows, row => redrawn.Rows.Contains(row));
+
+        cut.Render(ps => ps.Add(p => p.Layout, PnlByRegionAndDesk with { Form = PivotReportForm.Tabular }));
+        cut.WaitForAssertion(() => Assert.NotSame(refreshed, cut.Instance.Report));
+        Assert.DoesNotContain(cut.Instance.Report!.Rows, row => refreshed.Rows.Contains(row));
     }
 
     [Fact] // ADR-0160/0161 (LV-22): after a run of live redraws, no report but the one on screen is alive

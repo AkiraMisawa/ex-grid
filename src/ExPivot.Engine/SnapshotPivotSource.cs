@@ -176,7 +176,7 @@ public sealed class SnapshotPivotSource : PivotSource
             lock (_gate)
             {
                 held.Assembling--;
-                if (answer is not null)
+                if (answer is { IsRefused: false })
                     _lastAnswered = (query, answer.SourceVersion);
                 // Kept for the next asking, unless the source has moved on meanwhile.
                 if (answer is not null && ReferenceEquals(_held, held) && ReferenceEquals(_snapshot, snapshot))

@@ -84,6 +84,7 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
 
     /// <summary>The same question, naming <paramref name="version"/> as the one the asker holds an
     /// answer of (<see cref="ChangedSince"/>); null names none.</summary>
+    /// <param name="version">The Source Version of the answer held, or null.</param>
     public PivotQuery WithChangedSince(string? version)
         => string.Equals(version, ChangedSince, StringComparison.Ordinal) ? this : new PivotQuery(Rows, Columns, Filters, Values, MaxLeaves, version);
 

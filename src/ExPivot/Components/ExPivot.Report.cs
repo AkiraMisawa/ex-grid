@@ -400,7 +400,7 @@ public partial class ExPivot
         while (_valueAccessors.Count <= column)
         {
             var index = _valueAccessors.Count;
-            _valueAccessors.Add(row => _report!.ValueAt(row, index));
+            _valueAccessors.Add(row => _report is { } report && index < report.ValueColumns.Count ? report.ValueAt(row, index) : null);
         }
         return _valueAccessors[column];
     }
@@ -618,7 +618,7 @@ public partial class ExPivot
     {
         // The commands act on the report on screen's row that stands for the one clicked (ADR-0161):
         // compared by key, as a row may be shared by several reports.
-        if (_report is not { } report || report.RowFor(context.Row.Key) is not { } row)
+        if (_report is not { } report || report.RowFor(context.Row) is not { } row)
             return [];
         var layout = report.Layout;
         var labelColumn = report.LabelColumns.ToList().FindIndex(c => c.Name == context.Column);
@@ -664,7 +664,7 @@ public partial class ExPivot
             // Show Details is always offered: the tab, the dialog or the Consumer takes the
             // records (ADR-0059). An empty cell has none to show.
             commands.Add(new GridCommand(PivotCommandIds.ShowDetails, report.ValueAt(row, valueColumn) is not null,
-                () => ShowDetailsAsync(row, valueColumn)));
+                () => ShowDetailsAsync(row, context.Column)));
             if (vf >= 0)
             {
                 // The panel opens in the pane, under the Value Field's entry: offered while the

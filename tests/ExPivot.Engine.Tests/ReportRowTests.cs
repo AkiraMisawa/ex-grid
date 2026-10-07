@@ -63,15 +63,17 @@ public class ReportRowTests
         return (row, new WeakReference<PivotReport>(report));
     }
 
-    [Fact] // ADR-0161 (principle 1): a row of a report laid out from another answer is refused by name, never read as another cell
-    public void A_row_of_another_answer_is_refused()
+    [Fact] // ADR-0161 (principle 1): a row of a report laid out from another answer is read by what it stands for here, never as another cell by its place in another cube; a row that stands for nothing here reads nothing
+    public void A_row_of_another_answer_is_read_by_what_it_stands_for()
     {
         var report = Report(RowsBy("Region"));
         var other = Report(RowsBy("Region"), [.. Sales.Select(sale => sale with { Amount = sale.Amount + 1 })]);
+        var collapsed = Report(RowsBy("Region", "Product") with { Rows = [P("Region") with { Collapsed = true }, P("Product")] });
+        var apples = Report(RowsBy("Region", "Product")).Rows.First(row => row.Role == PivotRowRole.Item);
 
-        var refusal = Assert.Throws<ArgumentException>(() => report.ValueAt(other.Rows[0], 0));
-
-        Assert.Equal("row", refusal.ParamName);
+        Assert.Equal("183", other.ValueAt(other.Rows[0], 0)!.Text);
+        Assert.Equal("180", report.ValueAt(other.Rows[0], 0)!.Text);
+        Assert.Null(collapsed.ValueAt(apples, 0));
         Assert.Throws<ArgumentOutOfRangeException>(() => report.ValueAt(report.Rows[0], 1));
     }
 

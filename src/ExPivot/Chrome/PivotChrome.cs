@@ -77,9 +77,9 @@ public interface IPivotChrome
 /// <summary>
 /// The Stale Report's notice (ADR-0067): the newest data cannot be shown — the new answer broke a
 /// cap, the source refused or failed, or memory ran out while its report was made (ADR-0161) — so
-/// the report stays on the last version it could compute, and says what happened and as of when. Retry asks the source again; the notice goes
-/// when an answer is laid out. Its words are ExPivot's, by id: <c>stale-report</c> frames the
-/// sentence, <c>retry</c> names the command.
+/// the report stays on the last version it could compute, and says what happened and as of when.
+/// Retry asks the source again; the notice goes when an answer is laid out. Its words are
+/// ExPivot's, by id: <c>stale-report</c> frames the sentence, <c>retry</c> names the command.
 /// </summary>
 /// <param name="Message">The whole sentence: "Showing the data as of 14:32:05: the newest data
 /// needs more than 200,000 cells."</param>

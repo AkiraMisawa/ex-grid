@@ -308,10 +308,12 @@ public partial class ExPivot
         {
             throw new InvalidOperationException($"The layout cannot be asked: {error.Message}", error);
         }
-        // Newer data names the version of the answer on screen, so that the answer can say which of
-        // its leaves changed since (ADR-0161).
-        if (kind != Question.Layout && HeldOnScreen(source) is { } held)
-            query = query.WithChangedSince(held.SourceVersion);
+        // Newer data under the question on screen is made from the cube on screen (ADR-0161), and
+        // names its version, so that the answer can say which of its leaves changed since. A layout
+        // whose every redraw starts afresh asks as a new layout does.
+        var previous = kind != Question.Layout && !PivotEngine.StartsAfresh(layout) ? HeldOnScreen(source) : null;
+        if (previous is not null)
+            query = query.WithChangedSince(previous.SourceVersion);
         Supersede();
         var generation = _generation;
         var asking = new CancellationTokenSource();
@@ -321,7 +323,7 @@ public partial class ExPivot
         _changed = false;
         DisarmRedraw();
         SetLoading(kind != Question.Live);
-        _ = AskAsync(source, query, layout, generation, asking, raise, kind);
+        _ = AskAsync(source, query, layout, generation, asking, raise, kind, previous);
         StateHasChanged();
     }
 
@@ -340,7 +342,7 @@ public partial class ExPivot
     /// </summary>
     private async Task AskAsync(
         PivotSource source, PivotQuery query, PivotLayout layout, int generation, CancellationTokenSource asking, bool raise,
-        Question kind)
+        Question kind, PivotCube? previous)
     {
         try
         {
@@ -393,9 +395,9 @@ public partial class ExPivot
                     if (answer.LeafCount >= LargeStep)
                         await pace.YieldAsync();
                 }
-                // Newer data under the question on screen is made from the cube on screen (ADR-0161):
-                // the engine builds it afresh when the answer's leaves are not that cube's.
-                cube = await pace.AfterAsync(kind != Question.Layout && HeldOnScreen(source) is { } previous
+                // The engine builds the cube afresh when the answer's leaves are not those of the cube
+                // it is made from (ADR-0161).
+                cube = await pace.AfterAsync(previous is not null
                     ? PivotEngine.NextCubeAsync(previous, query, answer, source.Fields, Pacing, asking.Token)
                     : PivotEngine.CubeAsync(query, answer, source.Fields, Pacing, asking.Token));
                 await pace.GoOnAsync(answer.LeafCount);
@@ -564,12 +566,12 @@ public partial class ExPivot
     private PivotSlicing Pacing => Slicing ?? PivotSlicing.Default;
 
     /// <summary>A report laid out, with what was measured of it on the way (PV-40): whether its rows
-    /// are those of the report it was compared with, what changed in its painted values since that
-    /// report when it is newer data under the same layout and words — what the Change Highlight marks
+    /// are those of the report on screen when it was done, what changed in its painted values since
+    /// that report when it is newer data under the same layout and words — what the Change Highlight marks
     /// — and its label columns' widths under the metrics they were sized by; none of these for a
     /// report a cap refuses, which is shown nowhere.</summary>
     private sealed record Built(
-        PivotReport Report, PivotReport? ComparedTo, bool SameRows, PivotReportChanges? Changes, double[]? LabelWidths, GridMetrics Metrics);
+        PivotReport Report, bool SameRows, PivotReportChanges? Changes, double[]? LabelWidths, GridMetrics Metrics);
 
     /// <summary>
     /// Lays <paramref name="layout"/> out from <paramref name="cube"/> in slices (PV-40): the
@@ -596,13 +598,21 @@ public partial class ExPivot
             var sameRows = false;
             PivotReportChanges? changes = null;
             double[]? widths = null;
-            if (CapBrokenBy(report) is null)
+            // Compared with the report on screen as it is when the work is done: one put up meanwhile
+            // is compared again, in slices as before, so that what is shown was measured against what
+            // it replaces (PV-40).
+            while (CapBrokenBy(report) is null)
             {
+                comparedTo = _report;
+                sameRows = false;
+                changes = null;
                 if (comparedTo is not null)
                 {
                     sameRows = await pace.AfterAsync(report.HasSameRowsAsAsync(comparedTo, Pacing, token));
                     await pace.GoOnAsync(size);
-                    if (data && ExtendsHistory(comparedTo, report))
+                    // What changed is what the Change Highlight marks: nothing to find while it marks
+                    // nothing.
+                    if (data && ChangeHighlightDuration > TimeSpan.Zero && ExtendsHistory(comparedTo, report))
                     {
                         changes = await pace.AfterAsync(report.ChangesSinceAsync(comparedTo, Pacing, token));
                         await pace.GoOnAsync(size);
@@ -614,9 +624,11 @@ public partial class ExPivot
                     : await LabelWidthsAsync(report, metrics, pace);
                 // What follows — the report put on screen, and painted — has a turn of its own.
                 await pace.GoOnAsync(size);
+                if (ReferenceEquals(comparedTo, _report))
+                    break;
             }
             if (ReferenceEquals(options, _options))
-                return new Built(report, comparedTo, sameRows, changes, widths, metrics);
+                return new Built(report, sameRows, changes, widths, metrics);
         }
     }
 
@@ -691,8 +703,7 @@ public partial class ExPivot
     /// The report before is let go here: the history keeps times, not reports.
     /// </summary>
     /// <param name="built">The report, laid out, and what was measured of it: its rows and its
-    /// painted values compared with the report on screen, which are compared again only when another
-    /// was put up meanwhile, and its label columns' widths.</param>
+    /// painted values compared with the report on screen, and its label columns' widths.</param>
     /// <param name="layout">The layout it was laid out under.</param>
     /// <param name="arrivedAt">When the answer it was laid out from arrived; null to keep the time
     /// of the report on screen, whose answer it is laid out from again.</param>
@@ -706,22 +717,23 @@ public partial class ExPivot
             _relabelling = null;
             relabelling.Cancel();
         }
-        var sameRows = ReferenceEquals(built.ComparedTo, _report)
-            ? built.SameRows
-            : _report is not null && report.HasSameRowsAs(_report);
-        if (!sameRows)
+        // Measured against the report on screen, in slices: BuildAsync compares again until the
+        // report it compared with is the one on screen.
+        if (!built.SameRows)
             _rowSequenceVersion++;
         var at = arrivedAt ?? _shownAt;
         if (data && _history is { } history && _report is { } previous && ExtendsHistory(previous, report))
         {
-            var changes = ReferenceEquals(built.ComparedTo, previous) && built.Changes is { } measured ? measured : report.ChangesSince(previous);
-            history.Record(report, changes, at);
+            // A history that cannot mark — a duration of zero — finds and records nothing.
+            if (history.Answer is not null && built.Changes is { } changes)
+                history.Record(report, changes, at);
         }
         else
         {
             _history = ReportHistory.Start(report, Now, ChangeHighlightDurationNow);
             _cellChangedAt = _history.Answer;
         }
+        ArmLetGo();
         _report = report;
         _shown = layout;
         _shownAt = at;

@@ -90,3 +90,14 @@ on the changed paths, and shares every row whose path did not change. Nothing is
 - **Layer 3:** the five pivot specs on the WebAssembly host, Chrome, headless: 108 passed and 7
   skipped. The 7 are `measure-pivot`'s, which run only when asked. This ticket's state was run with the
   review's fixes (the next commit) on it, before and after the second review pass.
+
+2026-10-07 (review): as the orchestrator decided, `NextCube`, `NextReport` and their sliced forms,
+`StartsAfresh`, `ChangesSince`, `PivotReportChanges`, `RowFor` and `WasMadeFrom` are internal. ExPivot sees
+them through `InternalsVisibleTo`; ExPivot.MudBlazor and the samples need none of them. Public, for a
+Consumer or a server's source: `PivotReport.ValueAt`, `PivotQuery.ChangedSince` and `WithChangedSince`,
+`PivotAnswer.ChangedLeaves` and `WithChangedLeaves`, and `PivotLeafChanges`. A layout that orders by a
+Value Field or has a Show Values As builds its cube afresh too, so those redraws share nothing. An answer
+that carries other parts than the cube keeps starts afresh. PV-44 now also chains across every layout
+change, sharing no row there, and new words and a new culture share none
+(`New_words_or_a_new_culture_share_no_row`). `LiveRedrawTests.A_new_source_or_a_new_layout_shares_no_row`
+covers ExPivot. Layers 1 and 2: 9,093 passed, 9 skipped.

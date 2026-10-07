@@ -304,7 +304,7 @@ public class ChangeHighlightTests : PivotTestContext
 
     // ---- The history keeps times, not reports (ADR-0161, PV-46) -----------------------------
 
-    [Fact] // ADR-0161/0068 (PV-46): one delegate is handed to the grid for as long as a history lasts — across data versions and everything else — and a new one when it starts again
+    [Fact] // ADR-0161/0068 (PV-46): one delegate is handed to the grid for as long as a history lasts — across redraws of newer data and everything else — and a new one when it starts again
     public async Task One_delegate_for_as_long_as_a_history_lasts()
     {
         var source = new LiveSource();
@@ -326,7 +326,7 @@ public class ChangeHighlightTests : PivotTestContext
             new ExGrid.Selection.SelectionRange(0, 1, 1, 1), new ExGrid.Selection.CellPosition(0, 1), Grid(cut).Instance.RowSequenceVersion));
         Assert.Same(first, Grid(cut).Instance.CellChangedAt);
 
-        // More data, and a data version that changes nothing painted: the same delegate.
+        // More data, and newer data that changes nothing painted: the same delegate.
         Clock.Advance(Interval);
         await PublishAsync(cut, source, EastApples(102));
         Assert.Same(first, Grid(cut).Instance.CellChangedAt);
@@ -339,6 +339,103 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.NotNull(Grid(cut).Instance.CellChangedAt);
         Assert.NotSame(first, Grid(cut).Instance.CellChangedAt);
         Assert.Empty(MarkedTexts(cut));
+    }
+
+    [Fact] // ADR-0161/0068 (PV-46): a duration that stops being zero starts the history again with a delegate that marks, and one that becomes zero takes the delegate away
+    public async Task A_duration_that_stops_or_starts_being_zero_starts_the_history_again()
+    {
+        var source = new LiveSource();
+        var cut = RenderPivot(RegionAmount, ps => ps.Add(p => p.ChangeHighlightDuration, TimeSpan.Zero), source: source);
+        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        await PublishAsync(cut, source, EastApples(101));
+        Assert.Empty(MarkedTexts(cut));
+        Assert.Equal(0, cut.Instance.ChangeTimesKept);
+
+        cut.Render(ps => ps.Add(p => p.ChangeHighlightDuration, TimeSpan.FromSeconds(1)));
+        var marking = Grid(cut).Instance.CellChangedAt;
+        Assert.NotNull(marking);
+        Clock.Advance(Interval);
+        await PublishAsync(cut, source, EastApples(102));
+        Assert.Equal(["182", "287"], MarkedTexts(cut));
+        Assert.Same(marking, Grid(cut).Instance.CellChangedAt);
+
+        cut.Render(ps => ps.Add(p => p.ChangeHighlightDuration, TimeSpan.Zero));
+        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(MarkedTexts(cut));
+    }
+
+    [Fact] // ADR-0161 (PV-46): the times are let go on the clock ExPivot reads, a new one too
+    public async Task Times_are_let_go_on_the_clock_handed_in()
+    {
+        var source = new LiveSource();
+        var cut = RenderPivot(RegionAmount, source: source);
+        await PublishAsync(cut, source, EastApples(101));
+        Assert.True(cut.Instance.ChangeTimesKept > 0);
+        var other = new Microsoft.Extensions.Time.Testing.FakeTimeProvider(Clock.GetUtcNow());
+
+        cut.Render(ps => ps.Add(p => p.Clock, other));
+        Clock.Advance(TimeSpan.FromSeconds(5));
+        Assert.True(cut.Instance.ChangeTimesKept > 0);
+        other.Advance(TimeSpan.FromSeconds(1));
+
+        cut.WaitForAssertion(() => Assert.Equal(0, cut.Instance.ChangeTimesKept));
+    }
+
+    [Fact] // ADR-0161 (PV-46): a pivot removed while times are kept disposes the timer that lets them go — the clock moving on reaches nothing
+    public async Task A_removed_pivot_disposes_its_timer()
+    {
+        var clock = new CountingClock(Clock);
+        var source = new LiveSource();
+        var cut = RenderPivot(RegionAmount, ps => ps.Add(p => p.Clock, clock), source: source);
+        await PublishAsync(cut, source, EastApples(101));
+        var letGo = Assert.Single(clock.Timers, timer => timer.Callback.Method.Name == "OnLetGoDue");
+        Assert.False(letGo.Timer.Disposed);
+
+        await DisposeComponentsAsync();
+        Clock.Advance(TimeSpan.FromSeconds(5));
+
+        Assert.True(letGo.Timer.Disposed);
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
+    /// <summary>The test's clock, keeping each timer made on it and whether it was disposed.</summary>
+    private sealed class CountingClock(TimeProvider inner) : TimeProvider
+    {
+        public List<(TimerCallback Callback, CountedTimer Timer)> Timers { get; } = [];
+
+        public override DateTimeOffset GetUtcNow() => inner.GetUtcNow();
+
+        public override long GetTimestamp() => inner.GetTimestamp();
+
+        public override long TimestampFrequency => inner.TimestampFrequency;
+
+        public override TimeZoneInfo LocalTimeZone => inner.LocalTimeZone;
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            var timer = new CountedTimer(inner.CreateTimer(callback, state, dueTime, period));
+            Timers.Add((callback, timer));
+            return timer;
+        }
+    }
+
+    private sealed class CountedTimer(ITimer inner) : ITimer
+    {
+        public bool Disposed { get; private set; }
+
+        public bool Change(TimeSpan dueTime, TimeSpan period) => inner.Change(dueTime, period);
+
+        public void Dispose()
+        {
+            Disposed = true;
+            inner.Dispose();
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Disposed = true;
+            return inner.DisposeAsync();
+        }
     }
 
     [Fact] // ADR-0161 (PV-46): a mark ends with its time, and the history answers nothing for it from then on, though no further data comes
@@ -372,9 +469,12 @@ public class ChangeHighlightTests : PivotTestContext
             reports.Add(Weakly(cut));
         }
         Assert.Equal(9, reports.Count);
+        Assert.True(cut.Instance.ChangeTimesKept > 0);
 
         Clock.Advance(TimeSpan.FromSeconds(2));
         cut.WaitForAssertion(() => Assert.Empty(MarkedTexts(cut)));
+        // Every time has ended, and gone with it, though no further data came.
+        cut.WaitForAssertion(() => Assert.Equal(0, cut.Instance.ChangeTimesKept));
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();

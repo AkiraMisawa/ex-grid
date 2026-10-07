@@ -35,10 +35,21 @@ public partial class ExPivot
     /// <summary>
     /// The records behind a value cell (ADR-0059/0063), asked from a command made earlier: of the
     /// report on screen's row that stands for <paramref name="row"/> — compared by key, as a row may
-    /// be shared by several reports (ADR-0161) — and nothing when the report on screen has none.
+    /// be shared by several reports (ADR-0161) — in its value column named
+    /// <paramref name="column"/>, which a redraw may have moved; and nothing when the report on
+    /// screen has neither.
     /// </summary>
-    private Task ShowDetailsAsync(PivotReportRow row, int valueColumn)
-        => _report is { } report && report.RowFor(row.Key) is { } own ? ShowDetailsOfAsync(report, own, valueColumn) : Task.CompletedTask;
+    private Task ShowDetailsAsync(PivotReportRow row, string column)
+    {
+        if (_report is not { } report || report.RowFor(row) is not { } own)
+            return Task.CompletedTask;
+        for (var j = 0; j < report.ValueColumns.Count; j++)
+        {
+            if (string.Equals(report.ValueColumns[j].Name, column, StringComparison.Ordinal))
+                return ShowDetailsOfAsync(report, own, j);
+        }
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     /// The records behind a value cell of the report on screen (ADR-0059/0063): an empty cell has

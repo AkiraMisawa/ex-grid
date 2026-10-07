@@ -135,17 +135,6 @@ internal sealed class AggregationPass
     /// </summary>
     public PivotAnswer Answer(string sourceVersion) => Slicer.Run(AnswerAsync(sourceVersion, Slicer.Unsliced));
 
-    /// <summary>The Source Version of the last answer assembled from the pass, or null before the
-    /// first.</summary>
-    public string? AnsweredVersion
-    {
-        get
-        {
-            lock (_answeredGate)
-                return _answeredVersion;
-        }
-    }
-
     /// <summary>
     /// <see cref="Answer"/> assembled in slices (ADR-0066, PV-40): each step over the leaves, the
     /// Items or the finished parts a piece at a time, yielding whenever the slice is spent. It only
@@ -221,13 +210,14 @@ internal sealed class AggregationPass
             values[v] = new PivotAnswerValues(_values[v].Field, finished, leafCount);
         }
         var answer = new PivotAnswer(sourceVersion, axes[.._query.Rows.Count], axes[_query.Rows.Count..], leafCount, counts, values);
-        var changes = Remember(sourceVersion, changedSince, order.AsSpan(0, leafCount), spelled);
+        var changes = TakeChanges(sourceVersion, changedSince, order.AsSpan(0, leafCount), spelled);
         return changes is null ? answer : answer.WithChangedLeaves(changes);
     }
 
-    // Says which leaves changed since the last answer, when that is the version asked, and makes
-    // this answer the last.
-    private PivotLeafChanges? Remember(string sourceVersion, string? changedSince, ReadOnlySpan<int> order, PivotItemKey[][] spelled)
+    // Takes the leaves touched since the last answer as the ones changed, when that answer's is the
+    // version asked, and makes this answer the last. Two answers may be assembled at once; batches
+    // never fold meanwhile (Defer).
+    private PivotLeafChanges? TakeChanges(string sourceVersion, string? changedSince, ReadOnlySpan<int> order, PivotItemKey[][] spelled)
     {
         lock (_answeredGate)
         {
@@ -269,8 +259,7 @@ internal sealed class AggregationPass
                 return false;
             for (var i = 0; i < one[level].Length; i++)
             {
-                var (a, b) = (one[level][i], other[level][i]);
-                if (a.Kind != b.Kind || !string.Equals(a.Value, b.Value, StringComparison.Ordinal))
+                if (!PivotItemKey.SameSpelling(one[level][i], other[level][i]))
                     return false;
             }
         }
@@ -552,11 +541,8 @@ internal sealed class AggregationPass
     }
 
     // A leaf a batch took a row from or brought one to: changed since the last answer (ADR-0161).
-    private void Touch(int leaf)
-    {
-        lock (_answeredGate)
-            _touched.Add(leaf);
-    }
+    // A batch folds only while no answer is assembled from the pass, under the source's lock.
+    private void Touch(int leaf) => _touched.Add(leaf);
 
     // A field's marked leaves, from nothing, over the rows each holds, in slice order — the
     // operations a fresh pass performs on that leaf, in the same order, so the parts come out the

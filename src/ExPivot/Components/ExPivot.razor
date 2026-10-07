@@ -257,9 +257,9 @@
 
     /// <summary>Whether the report is a Stale Report (ADR-0067): the newest data could not be
     /// shown — it broke a cap, the source refused or failed, a Refresh failed, or memory ran out
-    /// while its report was made (ADR-0161) — so the report
-    /// stays on the last version it could compute, and the notice under the Pivot Toolbar says what
-    /// happened and as of when, with Retry.</summary>
+    /// while its report was made (ADR-0161) — so the report stays on the last version it could
+    /// compute, and the notice under the Pivot Toolbar says what happened and as of when, with
+    /// Retry.</summary>
     public bool IsStale => _stale is not null;
 
     // The Consumer's word, the engine's English, then the English of the words the engine does not
@@ -287,11 +287,13 @@
         UseClock(Clock ?? Services.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System);
         // A duration that becomes zero, or stops being zero, is no data: the history starts again,
         // with a delegate for the grid when it can mark and none when it cannot (ADR-0068/0161).
-        if (_history is not null && _report is { } shown && (_history.Answer is not null) != (ChangeHighlightDuration > TimeSpan.Zero))
+        var canMark = ChangeHighlightDuration > TimeSpan.Zero;
+        if (_history is not null && _report is { } shown && (_history.Answer is not null) != canMark)
         {
             _history = ReportHistory.Start(shown, Now, ChangeHighlightDurationNow);
             _cellChangedAt = _history.Answer;
             _gridVersion++;
+            ArmLetGo();
         }
 
         var pursue = !_initialised;
@@ -390,6 +392,8 @@
         StopListening();
         _redrawTimer?.Dispose();
         _redrawTimer = null;
+        _letGoTimer?.Dispose();
+        _letGoTimer = null;
         _generation++;
         _asking?.Cancel();
         _asking = null;

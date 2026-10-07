@@ -67,16 +67,27 @@ public class NextReportTests
         var named = new Tally();
         var compared = new Tally();
         var forms = new HashSet<PivotReportForm>();
+        PivotCube? cube = null, cubeB = null;
+        PivotReport? report = null, reportB = null;
         for (var k = 0; k < Layouts; k++)
         {
             var layout = RandomLayout(random, seed, k);
             forms.Add(layout.Form);
             var query = PivotQuery.For(layout);
-            var answer = await source.AggregateAsync(query, Ct);
+            var answer = await source.AggregateAsync(cube is null ? query : query.WithChangedSince(cube.SourceVersion), Ct);
             Assert.False(answer.IsRefused, $"seed {seed}, layout {k}: {answer.Refusal?.Message}");
-            var cube = PivotEngine.Cube(query, answer, fields);
-            var report = PivotEngine.Report(cube, layout, EnUs);
-            var (cubeB, reportB) = (cube, report);
+            if (cube is null)
+            {
+                cube = cubeB = PivotEngine.Cube(query, answer, fields);
+                report = reportB = PivotEngine.Report(cube, layout, EnUs);
+            }
+            else
+            {
+                // A new layout is no data: made from the report before it, it shares no row.
+                var laidOut = PivotEngine.Report(PivotEngine.Cube(query, answer, fields), layout, EnUs);
+                (cube, report) = Step(cube, report!, query, answer, layout, laidOut, false, $"seed {seed}, layout {k}, a new layout, as named", named);
+                (cubeB, reportB) = Step(cubeB!, reportB!, query, answer.WithChangedLeaves(null), layout, laidOut, false, $"seed {seed}, layout {k}, a new layout, compared", compared);
+            }
             for (var b = 0; b < Batches; b++)
             {
                 var (batch, kind) = world.Next(Declared);
@@ -94,11 +105,11 @@ public class NextReportTests
                     && (next.ChangedLeaves is { } says && says.Since == cube.SourceVersion
                         ? says.SameLeaves && !PivotCube.TooManyChanged(says.Leaves.Count, next.LeafCount)
                         : !PivotCube.TooManyChanged(changed, next.LeafCount));
-                (cube, report) = Step(cube, report, asked, next, layout, fresh, namedIncremental, $"{where}, as named", named);
+                (cube, report) = Step(cube, report!, asked, next, layout, fresh, namedIncremental, $"{where}, as named", named);
 
                 // As a source that says nothing answers: the engine compares the leaves itself.
                 var comparedIncremental = !StartsAfresh(layout) && sameLeaves && !PivotCube.TooManyChanged(changed, next.LeafCount);
-                (cubeB, reportB) = Step(cubeB, reportB, asked, next.WithChangedLeaves(null), layout, fresh, comparedIncremental, $"{where}, compared", compared);
+                (cubeB, reportB) = Step(cubeB!, reportB!, asked, next.WithChangedLeaves(null), layout, fresh, comparedIncremental, $"{where}, compared", compared);
 
                 answer = next;
             }
@@ -112,6 +123,31 @@ public class NextReportTests
             Assert.True(tally.Afresh > 3, $"seed {seed}, {way}: {tally.Afresh} redraws afresh");
             Assert.True(tally.SharedRows > 20 && tally.NewRows > 0, $"seed {seed}, {way}: {tally.SharedRows} rows shared, {tally.NewRows} made anew");
         }
+    }
+
+    [Theory] // ADR-0161 (PV-44): new words or a new culture are no data — the next report, made from the last over newer data, shares no row, and equals one laid out afresh
+    [InlineData("words")]
+    [InlineData("culture")]
+    public async Task New_words_or_a_new_culture_share_no_row(string change)
+    {
+        var trades = new World(new Random(11)).Initial(200);
+        var source = PivotSource.From(trades, Declared);
+        var layout = new PivotLayout { Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Desk")], Values = [new PivotValueField("Amount")] };
+        var query = PivotQuery.For(layout);
+        var cube = PivotEngine.Cube(query, await source.AggregateAsync(query, Ct), Declared.Fields);
+        var report = PivotEngine.Report(cube, layout, EnUs);
+        source.Apply(Declared.Batch(changed: [trades[0] with { Amount = 1m }]));
+        var asked = query.WithChangedSince(cube.SourceVersion);
+        var answer = await source.AggregateAsync(asked, Ct);
+        var options = change == "words" ? EnUs with { Label = PivotWords.Japanese } : new PivotOptions { Culture = CultureInfo.GetCultureInfo("de-DE") };
+
+        var nextCube = PivotEngine.NextCube(cube, asked, answer, Declared.Fields);
+        var next = PivotEngine.NextReport(report, nextCube, layout, options);
+
+        Assert.Equal(cube.Id, nextCube.MadeFrom);
+        Assert.False(next.WasMadeFrom(report));
+        Assert.DoesNotContain(next.Rows, row => report.Rows.Contains(row));
+        SameReport(PivotEngine.Report(PivotEngine.Cube(asked, answer, Declared.Fields), layout, options), next, change);
     }
 
     [Fact] // ADR-0161: the values that changed over many redraws, once they pass an eighth of the cells, are copied once into a cube's own — and every cube still equals one built afresh
@@ -191,7 +227,7 @@ public class NextReportTests
 
         SameReport(fresh, next, where);
         // Nothing is rewritten in place: the cube on screen lays out what it laid out.
-        Assert.True(before.SequenceEqual(Lines(PivotEngine.Report(previousCube, layout, EnUs))), $"{where}: the cube before changed");
+        Assert.True(before.SequenceEqual(Lines(PivotEngine.Report(previousCube, previous.Layout, previous.Options))), $"{where}: the cube before changed");
         Assert.True(before.SequenceEqual(Lines(previous)), $"{where}: the report before changed");
 
         var earlier = previous.Rows.ToHashSet(ReferenceEqualityComparer.Instance);

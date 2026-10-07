@@ -42,3 +42,12 @@ the report it was made from. Tests: `ReportChangesTests` (layer 1) and, in `Chan
 leaves the grid no delegate, they now assert a new one that marks nothing. Layers 1 and 2: 9,065 passed,
 8 skipped.
 Layer 3: `/pivot-live`'s spec on the WebAssembly host, Chrome, headless, on this ticket's own state: 5 passed.
+
+2026-10-07 (review): a time is let go when its mark ends, by a timer on ExPivot's clock, and not only
+when new data comes (ADR-0161: "An entry goes when its time is over"). The timer is re-timed on a new
+clock and disposed with the pivot. With a duration of zero nothing is compared or recorded. A duration
+that becomes zero, or stops being zero, starts the history again. When another report goes up during a
+build, the build compares again, in slices, and `Show`'s unsliced fallback is gone. `ChangesSince` and
+`PivotReportChanges` are internal. Tests: `A_duration_that_stops_or_starts_being_zero_starts_the_history_again`,
+`Times_are_let_go_on_the_clock_handed_in`, `A_removed_pivot_disposes_its_timer`, and the burst test,
+which now also asserts that no time is kept.

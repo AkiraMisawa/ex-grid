@@ -46,3 +46,10 @@ report. PV-43's allocation test is unchanged and green. Layers 1 and 2: 9,055 pa
 Layer 3: the five pivot specs (`pivot`, `pivot-live`, `pivot-csv`, `pivot-db`, `pivot-risk`) on the
 WebAssembly host, Chrome, headless, on this ticket's own state: 108 passed and 7 skipped. The 7 are
 `measure-pivot`'s, which the file filter also names and which run only when asked.
+
+2026-10-07 (review): `PivotReport.ValueAt` reads a row of another answer by its key — this report's row
+that stands for the same thing — and nothing when there is none, rather than refuse it inside a grid's
+render. `RowFor` is internal, as the orchestrator decided, and finds a row the report holds without
+indexing it, so a Context Menu does not build an index of 401,001 keys. The report's lazy state is safe
+to read from any thread. A Show Details command made before a redraw finds its column by name and
+does nothing when the column has gone (`ReportCommandTests`).

@@ -86,7 +86,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, shown.SourceVersion);
     }
 
-    [Fact] // ADR-0161/0063: a command of a menu opened before a live redraw acts on the report on screen's row that stands for the one clicked — compared by key — and on none once that row has left
+    [Fact] // ADR-0161/0063 (principles 1, 6): a command of a menu opened before a live redraw acts on the report on screen's row that stands for the one clicked — compared by key — in the column of the same name, which may have moved; and on none once the row has left
     public async Task A_command_made_before_a_redraw_acts_on_the_row_on_screen()
     {
         PivotDetails? shown = null;
@@ -98,9 +98,11 @@ public class ReportCommandTests : PivotTestContext
         var showNorth = ContextCommands(cut, 1, apples).Single(c => c.Id == PivotCommandIds.ShowDetails);
         var first = cut.Instance.Report!;
 
-        // East's Apples change, and North's only sale leaves: a new report is on screen.
-        await cut.InvokeAsync(() => source.Publish([Sales[0] with { Amount = 101m }, .. Sales[1..5], Sales[6]]));
+        // East's Apples change, North's only sale leaves, and Almonds come before Apples: a new
+        // report is on screen, its Apples one column further right.
+        await cut.InvokeAsync(() => source.Publish([Sales[0] with { Amount = 101m }, .. Sales[1..5], Sales[6], new Sale("West", "Almonds", 3m, 1, true)]));
         Assert.NotSame(first, cut.Instance.Report);
+        Assert.Equal(["Row Labels", "Almonds", "Apples", "Pears", "Plums", "Grand Total"], HeaderTexts(cut));
 
         await cut.InvokeAsync(showEast.Invoke);
         Assert.NotNull(shown);
@@ -111,6 +113,24 @@ public class ReportCommandTests : PivotTestContext
 
         shown = null;
         await cut.InvokeAsync(showNorth.Invoke);
+        Assert.Null(shown);
+    }
+
+    [Fact] // ADR-0161/0063 (principle 1): a command of a menu opened before a live redraw on a column whose Item has since left does nothing, rather than show another column's records
+    public async Task A_command_on_a_column_that_left_does_nothing()
+    {
+        PivotDetails? shown = null;
+        var source = new LiveSource();
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Product")], Values = [Sum("Amount")] },
+            ps => ps.Add(p => p.OnShowDetails, (PivotDetails details) => shown = details), source: source);
+        Assert.Equal(["Row Labels", "Apples", "Pears", "Plums", "Grand Total"], HeaderTexts(cut));
+        var westPlums = ContextCommands(cut, 2, Grid(cut).Instance.Columns[3].Name).Single(c => c.Id == PivotCommandIds.ShowDetails);
+
+        // Plums leave: Grand Total is the value column that index names now.
+        await cut.InvokeAsync(() => source.Publish(Sales.Where(s => s.Product != "Plums").ToArray()));
+        Assert.Equal(["Row Labels", "Apples", "Pears", "Grand Total"], HeaderTexts(cut));
+
+        await cut.InvokeAsync(westPlums.Invoke);
         Assert.Null(shown);
     }
 

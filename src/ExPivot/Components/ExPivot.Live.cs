@@ -44,15 +44,53 @@ public partial class ExPivot
     private TimeProvider? _redrawTimerClock;
     private DateTimeOffset? _redrawDue;
 
-    // The Change Highlight (ADR-0068/0161): the change times of the data versions under the layout
-    // on screen — never their reports — and the delegate the grid is handed, one for as long as a
+    // The Change Highlight (ADR-0068/0161): when the cells under the layout on screen changed with
+    // the data — times, never reports — and the delegate the grid is handed, one for as long as a
     // history lasts, null while the duration is zero.
     private ReportHistory? _history;
     private CellChangeOf<PivotReportRow>? _cellChangedAt;
     private Func<TimeSpan>? _durationNow;
 
+    /// <summary>How many rows and columns the Change Highlight keeps a time for, for layer 2.</summary>
+    internal int ChangeTimesKept => _history?.Kept ?? 0;
+
     /// <summary>How long a mark lasts, read by the history when it is asked.</summary>
     private Func<TimeSpan> ChangeHighlightDurationNow => _durationNow ??= () => ChangeHighlightDuration;
+
+    // The one timer that lets the history's times go as their marks end, made on the clock it runs on
+    // (ADR-0161: an entry goes when its time is over, though no further data comes).
+    private ITimer? _letGoTimer;
+    private TimeProvider? _letGoTimerClock;
+
+    /// <summary>Times the history's next letting go, or stops the timer when nothing is kept.</summary>
+    private void ArmLetGo()
+    {
+        if (_history?.NextLetGo is not { } due)
+        {
+            _letGoTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            return;
+        }
+        if (_letGoTimer is null || !ReferenceEquals(_letGoTimerClock, _time))
+        {
+            _letGoTimer?.Dispose();
+            _letGoTimerClock = _time;
+            _letGoTimer = _time.CreateTimer(OnLetGoDue, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        }
+        var wait = due - Now();
+        _letGoTimer.Change(wait > TimeSpan.Zero ? wait : TimeSpan.Zero, Timeout.InfiniteTimeSpan);
+    }
+
+    private void OnLetGoDue(object? state)
+    {
+        // Off the renderer's synchronisation context, like the redraw's timer.
+        _ = InvokeAsync(() =>
+        {
+            if (_disposed)
+                return;
+            _history?.LetGo();
+            ArmLetGo();
+        });
+    }
 
     // The Stale Report (ADR-0067): what happened, while the newest data cannot be shown; the
     // answer held whose layout a cap refused, which the notice goes with once a layout that fits
@@ -78,6 +116,13 @@ public partial class ExPivot
             _redrawTimer = null;
             _redrawTimerClock = null;
             _redrawDue = null;
+        }
+        if (_letGoTimer is not null)
+        {
+            _letGoTimer.Dispose();
+            _letGoTimer = null;
+            _letGoTimerClock = null;
+            ArmLetGo();
         }
     }
 

@@ -9,9 +9,9 @@ namespace ExPivot.Engine;
 /// parts, never from the totals below it. It lays nothing out. Collapse, order, the form, the
 /// totals, Show Values As, formats and captions are laid out from it again without asking the
 /// source (<see cref="PivotEngine.Report"/>); <see cref="Holds"/> says whether a layout can be.
-/// <para>A live redraw makes the next cube from the last (<see cref="PivotEngine.NextCube"/>,
-/// ADR-0161): it shares the axis trees and the cells, takes its own copy of the values that change,
-/// and leaves the cube it was made from exactly as it was.</para>
+/// <para>A live redraw makes the next cube from the last (ADR-0161): it shares the axis trees and
+/// the cells, takes its own copy of the values that change, and leaves the cube it was made from
+/// exactly as it was.</para>
 /// </summary>
 public sealed class PivotCube
 {
@@ -339,7 +339,7 @@ public sealed class PivotCube
                 return false;
             for (var i = 0; i < items.Length; i++)
             {
-                if (items[i].Kind != their[i].Kind || !string.Equals(items[i].Value, their[i].Value, StringComparison.Ordinal))
+                if (!PivotItemKey.SameSpelling(items[i], their[i]))
                     return false;
             }
             if (!mine[level].ItemOfLeaf.AsSpan(0, leafCount).SequenceEqual(theirs[level].ItemOfLeaf.AsSpan(0, leafCount)))

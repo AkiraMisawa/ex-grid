@@ -81,16 +81,16 @@ Link both stylesheets in your host page:
 - **Live data.** ExPivot listens to the source's `Changed` — a server's source raises it when you
   call `NotifyChanged`, however you learn of the change (SignalR, polling, a message bus) — and
   asks again for the whole answer. Changes are gathered and the report is redrawn at most every
-  `RedrawInterval` (250 ms; zero redraws on every change). When only values changed, a redraw is made
-  from the report on screen: only the cells on the changed leaves' paths are computed again, and only
-  the rows whose painted text changed are new rows, which the grid repaints (ADR-0161). A change of values keeps the Selection
-  and any open menu or panel. A value cell whose shown text changed is marked for
-  `ChangeHighlightDuration` (one second); a new layout, a sort or a collapse marks nothing. When
-  the newest data cannot be shown — it breaks a cap, the source fails, a Refresh fails, or memory runs
-  out while its report is made — the
-  report stays as it was, and a notice under the Pivot Toolbar says what happened and as of when,
-  with Retry. While a new version's Items are on their way, the report filter band and Filter… keep
-  the ones they listed. `Clock` takes a `TimeProvider` for tests.
+  `RedrawInterval` (250 ms; zero redraws on every change). When only values changed, a redraw is
+  made from the report on screen: only the cells on the changed leaves' paths are computed again,
+  and only the rows whose painted text changed are new rows, which the grid repaints (ADR-0161). A
+  change of values keeps the Selection and any open menu or panel. A value cell whose shown text
+  changed is marked for `ChangeHighlightDuration` (one second); a new layout, a sort or a collapse
+  marks nothing. When the newest data cannot be shown — it breaks a cap, the source fails, a
+  Refresh fails, or memory runs out while its report is made — the report stays as it was, and a
+  notice under the Pivot Toolbar says what happened and as of when, with Retry. While a new
+  version's Items are on their way, the report filter band and Filter… keep the ones they listed.
+  `Clock` takes a `TimeProvider` for tests.
 - **ShowFieldList** can be bound (`@bind-ShowFieldList`) to remember the pane the user hid or
   showed from the Pivot Toolbar.
 - **Label** replaces any word by its id. `Label="PivotWords.Japanese"` speaks the words of

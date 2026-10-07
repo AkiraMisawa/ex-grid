@@ -94,6 +94,7 @@ public sealed class PivotAnswer
     /// null, saying nothing. Shares the leaves; refuses a leaf the answer has not, and a refusal,
     /// which has no leaves.
     /// </summary>
+    /// <param name="changedLeaves">What changed since an earlier version, or null.</param>
     public PivotAnswer WithChangedLeaves(PivotLeafChanges? changedLeaves)
     {
         if (IsRefused)
@@ -191,6 +192,7 @@ public sealed class PivotLeafChanges
 
     /// <summary>Leaves made afresh since <paramref name="since"/>: none of them is said to be the
     /// leaf it was.</summary>
+    /// <param name="since">The Source Version they were made afresh since.</param>
     public static PivotLeafChanges Remade(string since)
     {
         ArgumentNullException.ThrowIfNull(since);

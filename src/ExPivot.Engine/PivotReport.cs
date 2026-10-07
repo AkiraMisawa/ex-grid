@@ -21,8 +21,10 @@ public sealed class PivotReport
     private long _madeFrom;
     private (int Row, int Column)[] _changedCells = [];
 
-    // The cells read so far, by row, each kept as its value or NoValue for an empty cell; and the
-    // rows by what they stand for, made the first time a row is looked up by its key.
+    // The cells read so far, by row, each kept as its value or NoValue for an empty cell, under a
+    // lock: a report is read from any thread. And the rows by what they stand for, made the first
+    // time a row is looked up by its key, never changed once made.
+    private readonly Lock _cellsGate = new();
     private readonly Dictionary<PivotReportRow, object?[]> _cells = [];
     private Dictionary<PivotRowKey, PivotReportRow>? _rowsByKey;
 
@@ -61,7 +63,7 @@ public sealed class PivotReport
     /// earlier report's do, and it shares every row whose painted text did not change — so what was
     /// measured of the earlier report's labels holds for this one.
     /// </summary>
-    public bool WasMadeFrom(PivotReport earlier)
+    internal bool WasMadeFrom(PivotReport earlier)
     {
         ArgumentNullException.ThrowIfNull(earlier);
         return _madeFrom == earlier.Id;
@@ -173,30 +175,38 @@ public sealed class PivotReport
     /// The value in <paramref name="valueColumn"/> of <paramref name="row"/>, or null for an empty
     /// cell (ADR-0161): computed on the first read, and kept by this report. A row is read by what it
     /// stands for in this report's cube, so a row this report shares with the report before it reads
-    /// this report's value. A row of a report laid out from another answer is refused by name, never
-    /// read as another cell.
+    /// this report's value. A row of a report laid out from another answer reads the cell of this
+    /// report's row that stands for the same thing — the same role, Value Field and Items — never
+    /// another cell by its position in another cube; and nothing when this report has no such row.
     /// </summary>
-    /// <param name="row">A row of this report.</param>
+    /// <param name="row">A row of this report, or of another report of its layout.</param>
     /// <param name="valueColumn">A value column's index in <see cref="ValueColumns"/>.</param>
     public PivotValue? ValueAt(PivotReportRow row, int valueColumn)
     {
         ArgumentNullException.ThrowIfNull(row);
         if ((uint)valueColumn >= (uint)ValueColumns.Count)
             throw new ArgumentOutOfRangeException(nameof(valueColumn), valueColumn, $"The report has {ValueColumns.Count} value columns.");
-        if (!_cells.TryGetValue(row, out var cells))
+        if (!Holds(row))
         {
-            if (!Holds(row))
-                throw new ArgumentException("The row is not of this report's answer: it was laid out from another (ADR-0161).", nameof(row));
-            cells = new object?[ValueColumns.Count];
-            _cells[row] = cells;
+            if (RowFor(row.Key) is not { } own)
+                return null;
+            row = own;
         }
-        var cell = cells[valueColumn];
-        if (cell is null)
+        lock (_cellsGate)
         {
-            cell = (object?)Compute(row, valueColumn) ?? NoValue;
-            cells[valueColumn] = cell;
+            if (!_cells.TryGetValue(row, out var cells))
+            {
+                cells = new object?[ValueColumns.Count];
+                _cells[row] = cells;
+            }
+            var cell = cells[valueColumn];
+            if (cell is null)
+            {
+                cell = (object?)Compute(row, valueColumn) ?? NoValue;
+                cells[valueColumn] = cell;
+            }
+            return cell as PivotValue;
         }
-        return cell as PivotValue;
     }
 
     // Whether the row's Items are a node of this report's cube, and its Value Field one of the
@@ -212,22 +222,39 @@ public sealed class PivotReport
     }
 
     /// <summary>
+    /// This report's row that stands for what <paramref name="row"/> stands for, or null when it has
+    /// none (ADR-0161): the row itself when the report holds it — as a row from the grid nearly always
+    /// is — found without indexing the report; otherwise the row of the same key.
+    /// </summary>
+    internal PivotReportRow? RowFor(PivotReportRow row)
+    {
+        var rows = Rows;
+        for (var i = 0; i < rows.Count; i++)
+        {
+            if (ReferenceEquals(rows[i], row))
+                return row;
+        }
+        return RowFor(row.Key);
+    }
+
+    /// <summary>
     /// This report's row that stands for what <paramref name="key"/> names — the same role, Value
     /// Field and Items — or null when it has none (ADR-0161). A row of another report of the layout
     /// finds the row standing for the same thing here. The rows are indexed by their keys the first
     /// time one is looked up.
     /// </summary>
-    public PivotReportRow? RowFor(PivotRowKey key)
+    internal PivotReportRow? RowFor(PivotRowKey key)
     {
         ArgumentNullException.ThrowIfNull(key);
-        if (_rowsByKey is null)
+        var index = Volatile.Read(ref _rowsByKey);
+        if (index is null)
         {
             var rows = new Dictionary<PivotRowKey, PivotReportRow>(Rows.Count);
             foreach (var row in Rows)
                 rows.TryAdd(row.Key, row);
-            _rowsByKey = rows;
+            index = Interlocked.CompareExchange(ref _rowsByKey, rows, null) ?? rows;
         }
-        return _rowsByKey.TryGetValue(key, out var found) ? found : null;
+        return index.TryGetValue(key, out var found) ? found : null;
     }
 
     /// <summary>The Items a row stands for, outermost first: each row field's name and Item.</summary>
@@ -257,14 +284,15 @@ public sealed class PivotReport
     /// <paramref name="valueColumn"/> −1, and asks for every record of its row. A row that stands
     /// for no records — a Value Field's row — asks for its Item's.
     /// </summary>
-    /// <param name="row">A row of this report, or one that stands for a row of it (<see cref="RowFor"/>).</param>
+    /// <param name="row">A row of this report, or of another report of its layout that stands for a
+    /// row of it.</param>
     /// <param name="valueColumn">A value column's index, or −1 for the row's label cell.</param>
     /// <param name="start">The first record wanted.</param>
     /// <param name="count">How many records are wanted.</param>
     public PivotDetailsQuery DetailsQuery(PivotReportRow row, int valueColumn, int start = 0, int count = int.MaxValue)
     {
         ArgumentNullException.ThrowIfNull(row);
-        row = RowFor(row.Key) ?? throw new ArgumentException("The row stands for no row of this report.", nameof(row));
+        row = RowFor(row) ?? throw new ArgumentException("The row stands for no row of this report.", nameof(row));
         if (valueColumn < -1 || valueColumn >= ValueColumns.Count)
             throw new ArgumentOutOfRangeException(nameof(valueColumn), valueColumn, "Not a value column of the report, nor −1.");
         var rowItems = RowPath(row).Select(step => new PivotFieldItem(step.Field, step.Item)).ToArray();
@@ -316,7 +344,8 @@ public sealed class PivotReport
     /// columns that left. Rows are paired by their keys and columns by their names, so a row a sort by
     /// value moved is compared with itself; a change the number format hides is no change.
     /// </summary>
-    public PivotReportChanges ChangesSince(PivotReport earlier)
+    /// <param name="earlier">A report of the same layout, laid out before this one.</param>
+    internal PivotReportChanges ChangesSince(PivotReport earlier)
     {
         ArgumentNullException.ThrowIfNull(earlier);
         return Slicer.Run(ChangesSinceAsync(earlier, Slicer.Unsliced));
@@ -331,7 +360,7 @@ public sealed class PivotReport
     /// <param name="earlier">The report to compare with.</param>
     /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
     /// <param name="cancellationToken">Stops the work at the next yield.</param>
-    public ValueTask<PivotReportChanges> ChangesSinceAsync(PivotReport earlier, PivotSlicing? slicing = null, CancellationToken cancellationToken = default)
+    internal ValueTask<PivotReportChanges> ChangesSinceAsync(PivotReport earlier, PivotSlicing? slicing = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(earlier);
         return ChangesSinceAsync(earlier, Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken));
@@ -470,9 +499,7 @@ public sealed class PivotReport
     internal static async ValueTask<PivotReport?> NextAsync(PivotReport previous, PivotCube cube, PivotLayout layout, PivotOptions options, Slicer slicer)
     {
         if (cube.MadeFrom != previous.Cube.Id || cube.AffectedRows is not { } affectedRows || cube.AffectedColumns is not { } affectedColumns
-            || !ReferenceEquals(previous.Layout, layout) || !Equals(previous.Options, options)
-            || layout.Rows.Concat(layout.Columns).Any(placement => placement.Sort.ByValue is not null)
-            || layout.Values.Any(value => value.ShowValuesAs != PivotShowValuesAs.NoCalculation))
+            || !ReferenceEquals(previous.Layout, layout) || !Equals(previous.Options, options) || PivotEngine.StartsAfresh(layout))
             return null;
         var rows = new PivotReportRow[previous.Rows.Count];
         var report = new PivotReport(
@@ -528,7 +555,7 @@ public sealed class PivotReport
 /// columns are named by their positions in the later report, and those that left by the earlier
 /// report's keys and names.
 /// </summary>
-public sealed class PivotReportChanges
+internal sealed class PivotReportChanges
 {
     internal PivotReportChanges(int[] newRows, int[] newColumns, (int Row, int Column)[] cells, PivotRowKey[] leftRows, string[] leftColumns)
     {
@@ -569,7 +596,8 @@ internal sealed record ValueFieldPlan(
 /// One row of a Pivot Report (ADR-0060/0161): what it stands for — its role, its Value Field, its
 /// Items, which make its key — and its labels, one per label column. It holds no value and no
 /// report: a value cell is asked of a report (<see cref="PivotReport.ValueAt"/>). The row's identity
-/// is the grid's change signal (ADR-0003), and a next report shares the rows it did not change.
+/// is the grid's change signal (ADR-0003), and the next report of a live redraw shares the rows it
+/// did not change.
 /// </summary>
 public sealed class PivotReportRow
 {
