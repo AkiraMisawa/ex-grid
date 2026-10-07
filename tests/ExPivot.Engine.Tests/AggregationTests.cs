@@ -22,7 +22,7 @@ public class AggregationTests
     {
         var report = PivotEngine.Compute(values.Select(v => new Obs("g", v)).ToArray(), ObsFields,
             new PivotLayout { Values = [new PivotValueField("Value", aggregation)] }, EnUs);
-        return report.Rows.Single().ValueAt(0);
+        return report.ValueAt(report.Rows.Single(), 0);
     }
 
     private static string? Text(PivotAggregation aggregation, params object?[] values) => Aggregate(aggregation, values)?.Text;

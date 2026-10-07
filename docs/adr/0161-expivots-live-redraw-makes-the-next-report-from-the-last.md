@@ -177,7 +177,12 @@ structure is left for later.
 
 - **The engine's public surface changes.** `PivotReportRow.ValueAt` and `PivotReportRow.Report` move to
   the report (`PivotReport.ValueAt(row, column)`), and `PivotAnswer` gains its optional changed leaves.
-  The packages are prereleases (ADR-0042).
+  The packages are prereleases (ADR-0042). *(As built, 2026-10-07: a source sees
+  `PivotQuery.ChangedSince`, and answers with `PivotAnswer.ChangedLeaves` through `WithChangedLeaves` and
+  `PivotLeafChanges`; the next cube and report, and the comparison, stay internal to the engine and
+  ExPivot. The engine starts afresh when more than a quarter of the leaves, and more than 16, changed.
+  Measured on CoreCLR at 400,000 leaves with one leaf changed: the next cube in 7.6 ms with the leaf
+  named, 12.2 ms with the engine comparing, against 36.5 ms built afresh.)*
 - **ADR-0060, ADR-0066, ADR-0067 and ADR-0068 are noted.**
 - **ExPivot vouches for its report** (ticket 02, ADR-0141 as amended on 2026-10-07).
 - **§21.11's reservation of kept report rows is settled here**, and the Definition of Done gains PV-44 to

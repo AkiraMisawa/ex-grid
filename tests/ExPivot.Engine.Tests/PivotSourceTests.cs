@@ -131,7 +131,7 @@ public class PivotSourceTests
             Assert.Equal(answer.SourceVersion, details.SourceVersion);
             // The records behind a cell are the ones it counts: its Amounts that are not Blank.
             var amounts = details.Records.Count(record => record.Values[3] is not null);
-            Assert.Equal(row.ValueAt(0)?.Text, amounts == 0 ? null : amounts.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Assert.Equal(report.ValueAt(row, 0)?.Text, amounts == 0 ? null : amounts.ToString(System.Globalization.CultureInfo.InvariantCulture));
             Assert.Equal(details.Records.Count, details.Total);
         }
     }

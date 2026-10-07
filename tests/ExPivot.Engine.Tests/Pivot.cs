@@ -85,7 +85,7 @@ internal static class Pivot
                 new string(' ', label.Indent * 2)
                 + (label.Toggle is { } toggle ? toggle.IsCollapsed ? "[+]" : "[-]" : "")
                 + (label.Text ?? ""));
-            var values = Enumerable.Range(0, report.ValueColumns.Count).Select(i => row.ValueAt(i)?.Text ?? "");
+            var values = Enumerable.Range(0, report.ValueColumns.Count).Select(i => report.ValueAt(row, i)?.Text ?? "");
             return (role + " " + string.Join(" | ", labels) + " || " + string.Join(" | ", values)).TrimEnd();
         }).ToArray();
 
@@ -102,5 +102,5 @@ internal static class Pivot
             .ToArray();
 
     /// <summary>A row's value in one column as painted, or empty.</summary>
-    public static string Cell(PivotReport report, int row, int column) => report.Rows[row].ValueAt(column)?.Text ?? "";
+    public static string Cell(PivotReport report, int row, int column) => report.ValueAt(report.Rows[row], column)?.Text ?? "";
 }

@@ -255,7 +255,7 @@ public class HiddenItemAndCubeTests
             .ToArray();
         var report = Report(new PivotLayout { Rows = [P("Region"), P("Product")], Columns = [P("Online")], Values = [Sum("Amount"), Sum("Quantity")] }, many);
 
-        Assert.Equal("200000", report.Rows[^1].ValueAt(report.ValueColumns.Count - 1)!.Text);
+        Assert.Equal("200000", report.ValueAt(report.Rows[^1], report.ValueColumns.Count - 1)!.Text);
         Assert.Equal(1 + 50 + 1 + 50 + 1, report.Rows.Count);
     }
 }

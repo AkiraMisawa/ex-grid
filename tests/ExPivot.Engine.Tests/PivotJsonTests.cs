@@ -30,6 +30,31 @@ public class PivotJsonTests
         Assert.Equal(12_345, read.MaxLeaves);
     }
 
+    [Fact] // ADR-0161/0066: the version a question names, and the leaves an answer says changed since one, round-trip — the same leaves with some changed, or leaves made afresh
+    public async Task The_version_named_and_the_changed_leaves_round_trip()
+    {
+        var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount", PivotParts.Sum)]).WithChangedSince("source:7");
+        var answer = await Server.AggregateAsync(query, Ct);
+        Assert.True(answer.LeafCount >= 2);
+
+        var read = PivotJson.ReadQuery(PivotJson.Write(query));
+        var changed = PivotJson.ReadAnswer(PivotJson.Write(answer.WithChangedLeaves(PivotLeafChanges.Of("source:7", [0, answer.LeafCount - 1]))));
+        var remade = PivotJson.ReadAnswer(PivotJson.Write(answer.WithChangedLeaves(PivotLeafChanges.Remade("source:7"))));
+
+        Assert.Equal("source:7", read.ChangedSince);
+        Assert.Null(PivotJson.ReadQuery(PivotJson.Write(query.WithChangedSince(null))).ChangedSince);
+        Assert.Equal("source:7", changed.ChangedLeaves!.Since);
+        Assert.True(changed.ChangedLeaves.SameLeaves);
+        Assert.Equal([0, answer.LeafCount - 1], changed.ChangedLeaves.Leaves);
+        SameAnswer(answer, changed);
+        Assert.False(remade.ChangedLeaves!.SameLeaves);
+        Assert.Empty(remade.ChangedLeaves.Leaves);
+        Assert.Null(PivotJson.ReadAnswer(PivotJson.Write(answer)).ChangedLeaves);
+        // A leaf the answer has not is refused by name.
+        var wrong = PivotJson.Write(answer.WithChangedLeaves(PivotLeafChanges.Of("source:7", [0]))).Replace("\"leaves\":[0]", "\"leaves\":[999]", StringComparison.Ordinal);
+        Assert.Contains("999", Assert.Throws<FormatException>(() => PivotJson.ReadAnswer(wrong)).Message);
+    }
+
     [Fact] // ADR-0066: the Leaf Aggregates round-trip — every part, exact decimals, non-finite doubles
     public async Task An_answer_round_trips_to_the_last_bit()
     {

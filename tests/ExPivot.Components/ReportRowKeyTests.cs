@@ -150,11 +150,16 @@ public class ReportRowKeyTests : PivotTestContext
         var second = cut.Instance.Report!;
 
         Assert.Equal(first.Rows.Count, second.Rows.Count);
+        var shared = 0;
         for (var i = 0; i < first.Rows.Count; i++)
         {
-            Assert.NotSame(first.Rows[i], second.Rows[i]);
             Assert.Equal(key(first.Rows[i]), key(second.Rows[i]));
+            if (ReferenceEquals(first.Rows[i], second.Rows[i]))
+                shared++;
         }
+        // ADR-0161: the next report shares the rows whose painted text did not change, and makes the
+        // others anew — one trade's region, desk and grand total.
+        Assert.Equal(first.Rows.Count - 3, shared);
         Assert.Equal(first.Rows.Count, first.Rows.Select(row => key(row)).Distinct().Count());
     }
 

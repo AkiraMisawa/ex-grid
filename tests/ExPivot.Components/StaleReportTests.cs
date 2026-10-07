@@ -307,6 +307,103 @@ public class StaleReportTests : PivotTestContext
         Assert.Equal("Try again", cut.Find(".ex-pivot-retry").TextContent);
     }
 
+    // ---- PV-47: a redraw that runs out of memory ----------------------------------------------
+
+    /// <summary>A keyed sale, for Change Batches.</summary>
+    public sealed record Trade(long Id, string Region, decimal Amount);
+
+    [Fact] // ADR-0161/0067 (PV-47): a live redraw that runs out of memory while the report is made leaves the report on screen, stale, saying memory ran out; nothing reaches the renderer, and the next change asks again
+    public async Task A_redraw_out_of_memory_while_the_report_is_made_leaves_it_stale()
+    {
+        var starved = false;
+        // The engine asks a field's Order Key of each Item as it lays the report out.
+        var fields = PivotFields.Of<Trade>()
+            .Key("Id", t => t.Id)
+            .Text("Region", t => t.Region, orderKey: region => starved ? throw new OutOfMemoryException() : region)
+            .Number("Amount", t => t.Amount);
+        var source = PivotSource.From([new Trade(1, "East", 100m), new Trade(2, "West", 70m)], fields);
+        var cut = RenderPivot(RegionAmount, source: source);
+        var shownAt = Clock.GetUtcNow();
+        var report = cut.Instance.Report;
+        Clock.Advance(TimeSpan.FromSeconds(3));
+        starved = true;
+
+        await cut.InvokeAsync(() => source.Apply(fields.Batch(added: [new Trade(3, "North", 10m)])));
+
+        Assert.Same(report, cut.Instance.Report);
+        Assert.Equal(["East | 100", "West | 70", "Grand Total | 170"], RowTexts(cut));
+        Assert.True(cut.Instance.IsStale);
+        Assert.Equal($"Showing the data as of {TimeOf(shownAt)}: memory ran out while the newest data was laid out.", Notice(cut));
+        Assert.Null(cut.Instance.LastError);
+        Assert.False(cut.Instance.IsLoading);
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+
+        starved = false;
+        Clock.Advance(PivotComponent.DefaultRedrawInterval);
+        await cut.InvokeAsync(() => source.Apply(fields.Batch(added: [new Trade(4, "South", 1m)])));
+
+        Assert.False(cut.Instance.IsStale);
+        Assert.Equal(["East | 100", "North | 10", "South | 1", "West | 70", "Grand Total | 181"], RowTexts(cut));
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
+    [Fact] // ADR-0161/0067 (PV-47): a live redraw that runs out of memory while the cube is made leaves the report stale in the same way
+    public async Task A_redraw_out_of_memory_while_the_cube_is_made_leaves_it_stale()
+    {
+        var starved = false;
+        // ExPivot's slices: every look at the clock ends one, and a yield while starved runs out of
+        // memory — the first is in the cube of an answer of three thousand leaves.
+        var slicing = new PivotSlicing
+        {
+            Budget = TimeSpan.Zero,
+            Yield = _ => starved ? throw new OutOfMemoryException() : ValueTask.CompletedTask,
+        };
+        var fields = PivotFields.Of<Trade>()
+            .Key("Id", t => t.Id)
+            .Text("Region", t => t.Region)
+            .Number("Amount", t => t.Amount);
+        var trades = Enumerable.Range(0, 3_000).Select(i => new Trade(i, "R" + i.ToString("0000", CultureInfo.InvariantCulture), 1m)).ToArray();
+        var source = PivotSource.From(trades, fields, new PivotSlicing { Budget = TimeSpan.FromDays(1) });
+        var cut = RenderPivot(RegionAmount, ps => ps.Add(p => p.Slicing, slicing), source: source);
+        var shownAt = Clock.GetUtcNow();
+        var report = cut.Instance.Report;
+        Assert.Equal("R0000 | 1", RowTexts(cut)[0]);
+        starved = true;
+
+        await cut.InvokeAsync(() => source.Apply(fields.Batch(changed: [trades[0] with { Amount = 2m }])));
+
+        Assert.Same(report, cut.Instance.Report);
+        Assert.Equal("R0000 | 1", RowTexts(cut)[0]);
+        Assert.Equal($"Showing the data as of {TimeOf(shownAt)}: memory ran out while the newest data was laid out.", Notice(cut));
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+
+        starved = false;
+        Clock.Advance(PivotComponent.DefaultRedrawInterval);
+        await cut.InvokeAsync(() => source.Apply(fields.Batch(changed: [trades[1] with { Amount = 3m }])));
+
+        Assert.False(cut.Instance.IsStale);
+        Assert.Equal(["R0000 | 2", "R0001 | 3"], RowTexts(cut)[..2]);
+    }
+
+    [Fact] // ADR-0161/0067 (PV-47): the reason's words are ExPivot's, by id, in Excel's Japanese edition too
+    public async Task The_out_of_memory_reason_is_worded_by_id()
+    {
+        var starved = false;
+        var fields = PivotFields.Of<Trade>()
+            .Key("Id", t => t.Id)
+            .Text("Region", t => t.Region, orderKey: region => starved ? throw new OutOfMemoryException() : region)
+            .Number("Amount", t => t.Amount);
+        var source = PivotSource.From([new Trade(1, "East", 100m)], fields);
+        var cut = RenderPivot(RegionAmount, ps => ps.Add(p => p.Label, PivotWords.Japanese), source: source);
+        starved = true;
+
+        await cut.InvokeAsync(() => source.Apply(fields.Batch(added: [new Trade(2, "West", 1m)])));
+
+        var word = PivotWords.Japanese("stale-out-of-memory");
+        Assert.NotNull(word);
+        Assert.EndsWith(": " + word, Notice(cut));
+    }
+
     /// <summary>A Chrome that draws a stub for the Stale Report's notice and keeps the context it
     /// was last handed.</summary>
     private sealed class StaleChrome : IPivotChrome

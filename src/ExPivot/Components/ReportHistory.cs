@@ -5,208 +5,191 @@ using ExPivot.Engine;
 namespace ExPivot.Components;
 
 /// <summary>
-/// The reports of the recent data versions under one layout, newest first: what ExPivot answers
-/// the report grid's <c>CellChangedAt</c> from (ADR-0067/0068). Immutable — a data version makes a
-/// new history, and with it a new delegate, whose identity is the grid's change signal; a history
-/// the grid still holds keeps answering as it did. Only data extends it: a new layout, a sort, a
-/// collapse, a form, Show Values As, a format or new words start a new one, which marks nothing.
+/// The report's Change Highlight under one layout (ADR-0067/0068/0161): when each value cell's
+/// painted text last changed with the data, by row key and value column name, and when a row or a
+/// column appeared — what ExPivot answers the report grid's <c>CellChangedAt</c> from. It holds the
+/// times and never a report: a report is held only while the next is laid out, and compared with it
+/// then (<see cref="PivotReport.ChangesSince"/>).
 ///
-/// <para>A value cell is marked at the time of the newest version whose painted text differs from
-/// the version before it — a cell with no counterpart there, its row or its column new, included —
-/// so a change the number format hides is never marked. The cells are compared by what they stand
-/// for: the row's role, Value Field and Items, and the column's name, which carries its own role,
-/// Items and Value Field. The work is the grid's question per painted cell, and it is kept light and
-/// lazy: a row is found by its position in the order the grid paints, a version's rows by key only
-/// when its rows differ from the next one's, and each text once per report.</para>
+/// <para><b>One delegate for the history's life.</b> A history starts with a layout, a sort, a
+/// collapse, a form, Show Values As, a format or new words, which mark nothing, and only data extends
+/// it. A row renders because its instance is new, not because the delegate is (ADR-0068's note of
+/// 2026-10-07), as a bundled source's does (LV-9).</para>
+///
+/// <para><b>What is kept, and for how long.</b> A mark ends with its time: a time whose mark has
+/// ended answers nothing, whether or not it has been let go yet, so a mark never depends on when it
+/// was asked for. A time is let go when its mark ends (<see cref="NextLetGo"/>, which ExPivot's clock
+/// keeps), and the rows and columns that left the report take their times with them. A key is kept as
+/// the newest row recorded under it, so an old report's axis tree is not held by a time that keeps
+/// moving on.</para>
 /// </summary>
 internal sealed class ReportHistory
 {
-    private readonly ReportVersion[] _versions;
+    private readonly Func<DateTimeOffset> _now;
+    private readonly Func<TimeSpan> _duration;
+    private readonly Dictionary<PivotRowKey, RowTimes> _rows = [];
+    private readonly Dictionary<string, DateTimeOffset> _columns = new(StringComparer.Ordinal);
+    // Every time recorded, oldest first, so that letting the old ones go costs what was recorded and
+    // never a walk over everything kept.
+    private readonly Queue<(PivotRowKey? Row, string? Column, DateTimeOffset At)> _recorded = new();
+    private HashSet<string> _valueColumns;
 
-    private ReportHistory(ReportVersion[] versions, bool canMark)
+    private ReportHistory(PivotReport report, Func<DateTimeOffset> now, Func<TimeSpan> duration, bool canMark)
     {
-        _versions = versions;
-        // Made once per history: the delegate's identity is what tells the grid to ask again.
+        _now = now;
+        _duration = duration;
+        _valueColumns = NamesOf(report);
+        // Made once per history: its identity is what the grid compares.
         Answer = canMark ? ChangedAt : null;
     }
 
-    /// <summary>The report on screen.</summary>
-    public PivotReport Current => _versions[0].Report;
-
-    /// <summary>How many versions are held, the report on screen included.</summary>
-    public int Count => _versions.Length;
-
-    /// <summary>What the grid is handed: null while nothing can be marked — no version before
-    /// the one on screen, or a duration of zero — so the grid asks nothing (DC-1).</summary>
+    /// <summary>What the grid is handed: null when nothing can be marked — a duration of zero — so the
+    /// grid asks nothing (DC-1).</summary>
     public CellChangeOf<PivotReportRow>? Answer { get; }
 
-    /// <summary>A history of one report, which marks nothing: the first report, and every report a
-    /// change other than data laid out.</summary>
-    public static ReportHistory Start(PivotReport report, DateTimeOffset at)
-        => new([new ReportVersion(report, at, sameRowsAsPrevious: false, previous: null)], canMark: false);
+    /// <summary>How many rows and columns have a time kept, for layer 2.</summary>
+    internal int Kept => _rows.Count + _columns.Count;
+
+    /// <summary>When the oldest time kept ends its mark, and is to be let go (<see cref="LetGo"/>);
+    /// null when none is kept.</summary>
+    public DateTimeOffset? NextLetGo
+        => _recorded.TryPeek(out var oldest) ? ChangeHighlightRules.EndOf(oldest.At, _duration()) : null;
+
+    /// <summary>A history of the report a change other than data laid out, which marks nothing.</summary>
+    /// <param name="report">The report on screen.</param>
+    /// <param name="now">The clock ExPivot reads.</param>
+    /// <param name="duration">How long a mark lasts, read when asked.</param>
+    public static ReportHistory Start(PivotReport report, Func<DateTimeOffset> now, Func<TimeSpan> duration)
+        => new(report, now, duration, canMark: duration() > TimeSpan.Zero);
 
     /// <summary>
-    /// The history with <paramref name="report"/>, the next data version, laid out under the same
-    /// layout and words as the one on screen. It holds the versions whose marks can still show at
-    /// <paramref name="at"/> — each version's marks last <paramref name="duration"/> from its time —
-    /// and, as the baseline of the oldest of them, the one before it.
+    /// Newer data, laid out under the history's layout and words: what changed in its
+    /// painted values since the report before it, marked at <paramref name="at"/> — when its answer
+    /// arrived. The rows and columns that left take their times with them, and the times whose marks
+    /// have ended are let go.
     /// </summary>
-    public ReportHistory Extend(PivotReport report, DateTimeOffset at, bool sameRowsAsPrevious, TimeSpan duration)
+    public void Record(PivotReport report, PivotReportChanges changes, DateTimeOffset at)
     {
-        var kept = new List<ReportVersion>(_versions.Length + 1)
+        foreach (var key in changes.LeftRows)
+            _rows.Remove(key);
+        foreach (var name in changes.LeftColumns)
+            _columns.Remove(name);
+        foreach (var row in changes.NewRows)
         {
-            new(report, at, sameRowsAsPrevious, _versions[0]),
-        };
-        foreach (var version in _versions)
-        {
-            kept.Add(version);
-            // This version's own marks have ended, so nothing before it can matter: it stays only
-            // as the baseline of the version after it.
-            if (ChangeHighlightRules.EndOf(version.At, duration) <= at)
-                break;
+            var key = report.Rows[row].Key;
+            TimesOf(key).Appeared(at);
+            _recorded.Enqueue((key, null, at));
         }
-        return new ReportHistory([.. kept], canMark: duration > TimeSpan.Zero);
+        foreach (var column in changes.NewColumns)
+        {
+            var name = report.ValueColumns[column].Name;
+            _columns[name] = at;
+            _recorded.Enqueue((null, name, at));
+        }
+        foreach (var (row, column) in changes.Cells)
+        {
+            var key = report.Rows[row].Key;
+            TimesOf(key).Changed(report.ValueColumns[column].Name, at);
+            _recorded.Enqueue((key, null, at));
+        }
+        if (changes.NewColumns.Count > 0 || changes.LeftColumns.Count > 0)
+            _valueColumns = NamesOf(report);
+        LetGo();
+    }
+
+    // The times of a row, kept under the newest key recorded for it: an equal key of an earlier
+    // report would hold that report's axis tree for as long as the row keeps changing.
+    private RowTimes TimesOf(PivotRowKey key)
+    {
+        if (!_rows.Remove(key, out var times))
+            times = new RowTimes();
+        _rows.Add(key, times);
+        return times;
+    }
+
+    /// <summary>Lets go every time whose mark has ended.</summary>
+    public void LetGo()
+    {
+        var now = _now();
+        var duration = _duration();
+        while (_recorded.TryPeek(out var oldest) && ChangeHighlightRules.EndOf(oldest.At, duration) <= now)
+        {
+            _recorded.Dequeue();
+            if (oldest.Row is { } key)
+            {
+                if (_rows.TryGetValue(key, out var times) && ChangeHighlightRules.EndOf(times.Newest, duration) <= now)
+                    _rows.Remove(key);
+            }
+            else if (oldest.Column is { } name && _columns.TryGetValue(name, out var appeared)
+                && ChangeHighlightRules.EndOf(appeared, duration) <= now)
+            {
+                _columns.Remove(name);
+            }
+        }
     }
 
     /// <summary>
-    /// When the shown value of the cell at (<paramref name="row"/>, <paramref name="column"/>) last
-    /// changed with the data, or null (ADR-0068): asked by the grid for each painted value cell.
+    /// When the painted text of the cell at (<paramref name="row"/>, <paramref name="column"/>) last
+    /// changed with the data, or null (ADR-0068): asked by the grid for each painted value cell of a
+    /// row that renders. Null for a label cell, and once the mark has ended.
     /// </summary>
     private DateTimeOffset? ChangedAt(PivotReportRow row, GridColumn<PivotReportRow> column)
     {
-        var versions = _versions;
-        var v = 0;
-        // The report on screen, normally; a row of an older one only while the grid catches up.
-        while (v < versions.Length && !ReferenceEquals(versions[v].Report, row.Report))
-            v++;
-        if (v >= versions.Length - 1)
+        var name = column.Name;
+        if (!_valueColumns.Contains(name))
             return null;
-        var i = versions[v].IndexOf(row);
-        var j = versions[v].ColumnIndexOf(column);
-        if (i < 0 || j < 0)
-            return null;
-        for (; v < versions.Length - 1; v++)
+        DateTimeOffset? at = _columns.TryGetValue(name, out var appeared) ? appeared : null;
+        if (_rows.TryGetValue(row.Key, out var times) && times.At(name) is { } changed && (at is null || changed > at))
+            at = changed;
+        return at is { } time && ChangeHighlightRules.EndOf(time, _duration()) > _now() ? time : null;
+    }
+
+    private static HashSet<string> NamesOf(PivotReport report)
+        => report.ValueColumns.Select(column => column.Name).ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>One row's change times: when it appeared, if it did, and when each value column whose
+    /// text changed last changed. A row changes a few cells at a time, so a short list.</summary>
+    private sealed class RowTimes
+    {
+        private DateTimeOffset? _appeared;
+        private List<(string Column, DateTimeOffset At)>? _columns;
+
+        public DateTimeOffset Newest { get; private set; }
+
+        public void Appeared(DateTimeOffset at)
         {
-            var newer = versions[v];
-            var older = versions[v + 1];
-            var olderRow = newer.SameRowsAsPrevious ? i : older.IndexOfKey(newer.KeyAt(i));
-            var olderColumn = newer.SameColumnsAsPrevious ? j : older.ColumnIndexOf(newer.Report.ValueColumns[j].Name);
-            if (olderRow < 0 || olderColumn < 0
-                || !string.Equals(newer.TextAt(i, j), older.TextAt(olderRow, olderColumn), StringComparison.Ordinal))
+            _appeared = at;
+            _columns = null;
+            Newest = at;
+        }
+
+        public void Changed(string column, DateTimeOffset at)
+        {
+            _columns ??= [];
+            Newest = at;
+            for (var i = 0; i < _columns.Count; i++)
             {
-                return newer.At;
+                if (string.Equals(_columns[i].Column, column, StringComparison.Ordinal))
+                {
+                    _columns[i] = (column, at);
+                    return;
+                }
             }
-            i = olderRow;
-            j = olderColumn;
+            _columns.Add((column, at));
         }
-        return null;
-    }
-}
 
-/// <summary>One data version of the report: the report, when its answer arrived, how its rows and
-/// columns line up with the version before it, and what is looked up in it, built when first
-/// needed.</summary>
-internal sealed class ReportVersion
-{
-    private readonly Dictionary<string, int> _columnsByName;
-    private readonly Dictionary<GridColumn<PivotReportRow>, int> _columns = new(ReferenceEqualityComparer.Instance);
-    private Dictionary<PivotReportRow, int>? _rowsByInstance;
-    private Dictionary<PivotRowKey, int>? _rowsByKey;
-    private int _hint;
-
-    public ReportVersion(PivotReport report, DateTimeOffset at, bool sameRowsAsPrevious, ReportVersion? previous)
-    {
-        Report = report;
-        At = at;
-        SameRowsAsPrevious = sameRowsAsPrevious;
-        var columns = report.ValueColumns;
-        _columnsByName = new Dictionary<string, int>(columns.Count, StringComparer.Ordinal);
-        for (var j = 0; j < columns.Count; j++)
-            _columnsByName[columns[j].Name] = j;
-        SameColumnsAsPrevious = previous is not null && SameColumns(columns, previous.Report.ValueColumns);
-    }
-
-    public PivotReport Report { get; }
-
-    /// <summary>When the answer this report was laid out from arrived: the change time of the
-    /// cells it marks.</summary>
-    public DateTimeOffset At { get; }
-
-    /// <summary>Whether its rows are the previous version's, in the same order (ADR-0011's test,
-    /// which the Row Sequence Version already made): a row then stands where it stood.</summary>
-    public bool SameRowsAsPrevious { get; }
-
-    /// <summary>Whether its value columns are the previous version's, in the same order.</summary>
-    public bool SameColumnsAsPrevious { get; }
-
-    private static bool SameColumns(IReadOnlyList<PivotReportColumn> columns, IReadOnlyList<PivotReportColumn> previous)
-    {
-        if (columns.Count != previous.Count)
-            return false;
-        for (var j = 0; j < columns.Count; j++)
+        public DateTimeOffset? At(string column)
         {
-            if (!string.Equals(columns[j].Name, previous[j].Name, StringComparison.Ordinal))
-                return false;
+            var at = _appeared;
+            if (_columns is not null)
+            {
+                foreach (var (name, time) in _columns)
+                {
+                    if (string.Equals(name, column, StringComparison.Ordinal) && (at is null || time > at))
+                        at = time;
+                }
+            }
+            return at;
         }
-        return true;
-    }
-
-    /// <summary>The painted text of a value cell: its engine text, and nothing for an empty
-    /// cell, as the grid paints it.</summary>
-    public string TextAt(int row, int column) => Report.Rows[row].ValueAt(column)?.Text ?? "";
-
-    /// <summary>A grid column's index among the value columns, or −1 for one that is not.</summary>
-    public int ColumnIndexOf(GridColumn<PivotReportRow> column)
-    {
-        if (!_columns.TryGetValue(column, out var index))
-        {
-            index = ColumnIndexOf(column.Name);
-            _columns[column] = index;
-        }
-        return index;
-    }
-
-    /// <summary>A value column's index by its name, or −1.</summary>
-    public int ColumnIndexOf(string name) => _columnsByName.TryGetValue(name, out var index) ? index : -1;
-
-    /// <summary>
-    /// A row's position, or −1. The grid asks row after row, in the order it paints them, so the
-    /// row asked last, or the one after it, is the answer almost every time; a scroll's first row
-    /// finds it through an index of the rows by instance, built once.
-    /// </summary>
-    public int IndexOf(PivotReportRow row)
-    {
-        var rows = Report.Rows;
-        var hint = _hint;
-        if ((uint)hint < (uint)rows.Count && ReferenceEquals(rows[hint], row))
-            return hint;
-        if ((uint)(hint + 1) < (uint)rows.Count && ReferenceEquals(rows[hint + 1], row))
-            return _hint = hint + 1;
-        if (_rowsByInstance is null)
-        {
-            _rowsByInstance = new Dictionary<PivotReportRow, int>(rows.Count, ReferenceEqualityComparer.Instance);
-            for (var i = 0; i < rows.Count; i++)
-                _rowsByInstance[rows[i]] = i;
-        }
-        if (!_rowsByInstance.TryGetValue(row, out var index))
-            return -1;
-        return _hint = index;
-    }
-
-    /// <summary>What the row at <paramref name="index"/> stands for: its key, made with the row.</summary>
-    public PivotRowKey KeyAt(int index) => Report.Rows[index].Key;
-
-    /// <summary>The position of the row that stands for <paramref name="key"/>, or −1: asked only
-    /// of a version whose rows the next version does not share.</summary>
-    public int IndexOfKey(PivotRowKey key)
-    {
-        if (_rowsByKey is null)
-        {
-            var rows = Report.Rows;
-            _rowsByKey = new Dictionary<PivotRowKey, int>(rows.Count);
-            for (var i = 0; i < rows.Count; i++)
-                _rowsByKey.TryAdd(rows[i].Key, i);
-        }
-        return _rowsByKey.TryGetValue(key, out var index) ? index : -1;
     }
 }

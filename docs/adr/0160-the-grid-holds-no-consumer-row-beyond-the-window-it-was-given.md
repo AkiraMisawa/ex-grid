@@ -44,6 +44,13 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
     follow its row through an order move and a commit can tell that the row is gone
     ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of
     2026-10-07). *(Added the same day.)*
+- **Blazor's renderer keeps the frames of the render before the newest** as the buffer it renders into
+  next, and those frames hold the painted rows' parameters. So after the render that takes in a new
+  Window, the rows the previous render painted stay reachable until the grid renders again. That is the
+  framework's, not a holding of the grid's, and it is bounded to one render's painted rows. Rendering
+  once more after each new Window to clear it was considered and not taken: it is a render of the whole
+  grid per live update, to free a few dozen rows. *(Found while building it, 2026-10-07: the rows were
+  traced to `ComponentState`'s next render tree, and to nothing of the grid's.)*
 - **What a Consumer hands the grid as its own object is the Consumer's to hold**: a Row Mark adapter, a
   Pointed At's dashes (ADR-0058), a popover's content. The grid keeps the reference, not rows of its own.
 
@@ -52,7 +59,8 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
 - **By reachability, not by megabytes.** A heap size moves with the runtime and the machine, as a time
   does, so it never gates (§1).
 - **Layer 2, a MUST**: after a run of new Windows, with weak references taken to the row instances of
-  each earlier one and a full collection made, none of them is alive, apart from the three holdings above.
+  each earlier one and a full collection made, none of them is alive, apart from the three holdings above and the rows the render before the newest
+  painted, which Blazor's renderer keeps.
   For ExPivot, after a run of live redraws, no report but the one on screen is alive
   ([ADR-0161](./0161-expivots-live-redraw-makes-the-next-report-from-the-last.md) keeps none).
 - **Observational**: the loop of the out-of-memory record — 101,001 report rows, 20 live redraws in the

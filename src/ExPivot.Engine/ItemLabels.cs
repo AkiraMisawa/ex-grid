@@ -100,7 +100,9 @@ internal sealed class ItemOrder(FieldMeta meta, ItemLabels labels, CultureInfo c
                 {
                     key = orderKey(value);
                 }
-                catch (Exception e)
+                // Memory running out is not the Order Key's failure: it goes on as itself, for a
+                // redraw to catch (ADR-0161).
+                catch (Exception e) when (e is not OutOfMemoryException)
                 {
                     throw new InvalidOperationException(
                         $"The Order Key of {meta.Info.Caption} failed on '{labels.Of(item, meta)}'.", e);
