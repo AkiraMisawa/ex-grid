@@ -351,15 +351,15 @@ nobody had asked for. What that means when writing a test:
 - `write-lands.spec.mjs` — a write lands as the user entered it (ADR-0142, rewritten 2026-10-07;
   LV-11 to LV-14, LV-17) on `/features?upstream=1`, where F9 moves the first five rows' Notional as
   a live feed would. On both hosts, at 150 ms on the Server host: a commit over a cell that changed
-  under the editor refused with the new value in the refusal status, the typing kept, a second
-  Enter landing, Escape writing nothing, and a change to another cell of the row refusing nothing
-  (LV-11); a Ctrl+V pressed straight after F9 pasting where it was aimed, under the same order
+  under the editor landing, with the Overwrite Notice in its live region naming what was seen and
+  what was replaced (LV-11, LV-21), Escape writing and telling nothing, and a change to another cell
+  of the row telling nothing (LV-11); a Ctrl+V pressed straight after F9 pasting where it was aimed, under the same order
   (LV-13, LV-14). On the Server host only, where a gesture can be taken before F9's render comes
   back: an Action press acting on its row as F9 left it (LV-12); a Ctrl+Enter fill, a fill-handle
   release, a Delete, a Ctrl+R and a Ctrl+D whose source F9 moved landing (LV-13); a commit whose
   opening key was taken before F9's change landing, the change before the open not compared
   (LV-11). `5` Enter ↑ Ctrl+V and `1` Enter ↑ `2` Enter, typed at once, land on both hosts, the
-  Server host at 0 and at 150 ms (LV-17). Each race reads what the page showed at the gesture
+  Server host at 0 and at 150 ms, with no notice (LV-17). Each race reads what the page showed at the gesture
   first, from a capture listener ahead of the grid's, and says so by name if the change had
   already been painted.
 - `find.spec.mjs` — Find (ADR-0055), **run once per Chrome** on `/features`: Ctrl+F taken

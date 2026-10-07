@@ -85,8 +85,9 @@ async function seenAt(page, type, key = null) {
     return matching[matching.length - 1];
 }
 
-test('LV-11: a commit over a cell that changed under the editor is refused, says the new value, keeps the typing, and the second commit lands (ADR-0142)', async ({ page }) => {
-    await expect(page.locator('#commit-refused-status')).toHaveAttribute('role', 'status');
+test('LV-11/LV-21: a commit over a cell that changed under the editor lands, and the Overwrite Notice in the live region names what was seen and what was replaced (ADR-0142)', async ({ page }) => {
+    const notice = page.locator('#overwrite-notice-status');
+    await expect(notice).toHaveAttribute('role', 'status');
     const notional = cell(page, 0, NOTIONAL);
     const before = (await notional.textContent()).trim();
     await clickCell(page, 0, NOTIONAL);
@@ -102,21 +103,16 @@ test('LV-11: a commit over a cell that changed under the editor is refused, says
     const moved = (await notional.textContent()).trim();
     await page.keyboard.press('Enter');
 
-    await expect(page.locator('#commit-refused-status')).toContainText(`Notional changed to ${moved}`);
-    const editor = grid(page).locator('input.ex-editor');
-    await expect(editor).toHaveValue('1500000');
-    await circuitQuiet();
-    await expect(page.locator('#edit-status')).toHaveText('Edited: —');
-    await expect(notional).toHaveText(moved);
-
-    // Judged against the value the notice showed: it lands.
-    await page.keyboard.press('Enter');
     await expect(page.locator('#edit-status')).toContainText('Notional=1500000');
-    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
     await expect(notional).toHaveText('1500000');
+    await expect(notice).toContainText(`Notional written over ${moved}; it showed ${before} when you started typing`);
+    await circuitQuiet();
+    await expect(page.locator('#commit-refused-status')).toHaveText('Commit refused: —');
+    await expect(notice).not.toContainText('×2');
 });
 
-test('LV-11: Escape after a refused commit writes nothing (ADR-0142)', async ({ page }) => {
+test('LV-11: Escape over a cell that changed under the editor writes nothing, and tells nothing (ADR-0142)', async ({ page }) => {
     const notional = cell(page, 0, NOTIONAL);
     await clickCell(page, 0, NOTIONAL);
     await expectActiveDescendant(grid(page), /r0c2$/);
@@ -124,18 +120,18 @@ test('LV-11: Escape after a refused commit writes nothing (ADR-0142)', async ({ 
 
     await page.keyboard.type('42');
     await page.keyboard.press('F9');
-    await page.keyboard.press('Enter');
-    await expect(page.locator('#commit-refused-status')).toContainText('Notional changed to');
+    await expect(page.locator('#upstream-status')).toContainText('(×1)');
     const moved = (await notional.textContent()).trim();
 
     await page.keyboard.press('Escape');
     await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
     await circuitQuiet();
     await expect(page.locator('#edit-status')).toHaveText('Edited: —');
+    await expect(page.locator('#overwrite-notice-status')).toHaveText('Overwritten: —');
     await expect(notional).toHaveText(moved);
 });
 
-test('LV-11: a change to another cell of the row refuses nothing (ADR-0142)', async ({ page }) => {
+test('LV-11: a change to another cell of the row refuses nothing, and tells nothing (ADR-0142)', async ({ page }) => {
     await clickCell(page, 0, 1);                       // Trader, editable; F9 moves Notional
     await expectActiveDescendant(grid(page), /r0c1$/);
     await setRoundTrip(150);
@@ -148,6 +144,7 @@ test('LV-11: a change to another cell of the row refuses nothing (ADR-0142)', as
     await expect(cell(page, 0, 1)).toHaveText('Osei');
     await circuitQuiet();
     await expect(page.locator('#commit-refused-status')).toHaveText('Commit refused: —');
+    await expect(page.locator('#overwrite-notice-status')).toHaveText('Overwritten: —');
 });
 
 test('LV-12: an Action press taken on a render whose row has changed since acts on that row as it is now, once (ADR-0142, ADR-0020)', async ({ page }) => {
@@ -230,6 +227,7 @@ test('LV-13: a Ctrl+Enter fill whose target changed since the key was pressed la
     await expect(cell(page, 4, NOTIONAL)).toHaveText('7');
     await circuitQuiet();
     await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
+    await expect(page.locator('#overwrite-notice-status')).toHaveText('Overwritten: —');
 });
 
 test('LV-13: a fill-handle drag released on a render whose target has changed since lands (ADR-0142, ADR-0050 item 5)', async ({ page }) => {
@@ -303,7 +301,7 @@ for (const rtt of [0, 150]) {
         await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
     });
 
-    test(`LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0142, ${rtt} ms)`, async ({ page }) => {
+    test(`LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote, with no notice (ADR-0142 D1, ${rtt} ms)`, async ({ page }) => {
         test.skip(!SERVER && rtt !== 0, 'WebAssembly has no round trip to set');
         const notional = cell(page, 0, NOTIONAL);
         const before = (await notional.textContent()).trim();
@@ -328,10 +326,11 @@ for (const rtt of [0, 150]) {
         await circuitQuiet();
         await expect(page.locator('#edit-status')).toContainText('Notional=2');
         await expect(page.locator('#commit-refused-status')).toHaveText('Commit refused: —');
+        await expect(page.locator('#overwrite-notice-status')).toHaveText('Overwritten: —');
     });
 }
 
-test('LV-11: a change in the round trip between the key that opens the editor and the open is not compared, and the commit lands (ADR-0142)', async ({ page }) => {
+test('LV-11: a change in the round trip between the key that opens the editor and the open is not told, and the commit lands (ADR-0142)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before the next key can be taken on the render before it');
     const notional = cell(page, 0, NOTIONAL);
     const before = (await notional.textContent()).trim();
@@ -354,6 +353,7 @@ test('LV-11: a change in the round trip between the key that opens the editor an
     await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
     await circuitQuiet();
     await expect(page.locator('#commit-refused-status')).toHaveText('Commit refused: —');
+    await expect(page.locator('#overwrite-notice-status')).toHaveText('Overwritten: —');
 });
 
 test('LV-13: a Delete whose target changed since the key was pressed clears it (ADR-0142, ADR-0054)', async ({ page }) => {

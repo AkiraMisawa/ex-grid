@@ -49,7 +49,7 @@
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
         OnSummarize="_summarize" ShowSelectionSummary="ShowSelectionSummary" SummaryFigures="_summaryFigures.Shown" SummaryFiguresChanged="_summaryFiguresChanged" OnSelectionSummaryChanged="OnSelectionSummaryChanged"
         OnCopyRowsNeeded="_rowsNeeded"
-        OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded" OnCommitRefused="_commitRefused"
+        OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded" OnCommitRefused="_commitRefused" OnOverwriteNotice="_overwriteNotice"
         DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" OnBrowserTimeZone="_browserTimeZone" />
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
@@ -119,6 +119,7 @@
     private readonly EventCallback<bool> _editingChanged;
     private readonly EventCallback<EditDiscardReason> _editDiscarded;
     private readonly EventCallback<GridCommitRefusal> _commitRefused;
+    private readonly EventCallback<GridOverwriteNotice> _overwriteNotice;
     private readonly EventCallback<GridDeclaredKeyPress> _formatKey;
     private readonly Action<FormatCellsTab> _formatCellsTabShown;
     private readonly Func<Task> _returnKeyboard;
@@ -271,14 +272,21 @@
             OnEditDiscarded(reason);
             return Task.CompletedTask;
         }));
-        // A commit the grid refused because the cell changed under the editor (ADR-0142, LV-11):
-        // the editor stands with the typing, and the notice says what the cell shows now.
+        // A commit the grid refused because the row it was opened on is gone, or the rows moved
+        // under it (ADR-0142, LV-20): the editor stands with the typing, and the notice says why.
         _commitRefused = new EventCallback<GridCommitRefusal>(null, (Func<GridCommitRefusal, Task>)(refusal =>
         {
             var address = new CellAddress(refusal.Cell.Row, refusal.Cell.Column).ToString();
-            Tell(refusal.Reason == CommitRefusalReason.RenderNoLongerKept
-                ? SheetWords.CommitRefusedUnseen(address, refusal.PaintedText)
-                : SheetWords.CommitRefused(address, refusal.PaintedText));
+            Tell(SheetWords.CommitRefused(address, refusal.Reason));
+            StateHasChanged();
+            return Task.CompletedTask;
+        }));
+        // A commit that landed over a cell that changed while it was being edited (ADR-0142, LV-11,
+        // LV-21): the editor covered the cell, so the notice says what it replaced.
+        _overwriteNotice = new EventCallback<GridOverwriteNotice>(null, (Func<GridOverwriteNotice, Task>)(notice =>
+        {
+            var address = new CellAddress(notice.Cell.Row, notice.Cell.Column).ToString();
+            Tell(SheetWords.Overwritten(address, notice.SeenText, notice.ReplacedText));
             StateHasChanged();
             return Task.CompletedTask;
         }));

@@ -56,6 +56,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         public List<GridActionRefusal<TestRow>> ActionRefusals { get; } = [];
         public List<GridFillIntent> Fills { get; } = [];
         public List<GridClearIntent> Clears { get; } = [];
+        public List<GridOverwriteNotice> Notices { get; } = [];
+        public List<EditDiscardReason> Discards { get; } = [];
 
         /// <summary>Whether the Consumer refuses every paste it hears (ADR-0050, item 3).</summary>
         public bool RefusePastes { get; set; }
@@ -78,6 +80,8 @@ public class WritesLandAsEnteredTests : GridTestContext
                   heard.OnEdit?.Invoke(i);
               })
               .Add(g => g.OnCommitRefused, (GridCommitRefusal r) => heard.CommitRefusals.Add(r))
+              .Add(g => g.OnOverwriteNotice, (GridOverwriteNotice n) => heard.Notices.Add(n))
+              .Add(g => g.OnEditDiscarded, (EditDiscardReason r) => heard.Discards.Add(r))
               .Add(g => g.OnPaste, (GridPasteIntent i) =>
               {
                   heard.Pastes.Add(i);
@@ -203,8 +207,8 @@ public class WritesLandAsEnteredTests : GridTestContext
 
     // ---- LV-11: the Cell Editor ----
 
-    [Fact] // ADR-0142 / LV-11: a commit whose cell paints other text than when the editor opened is refused: no Edit Intent, the editor stays with the typing, and the reason carries the new text
-    public async Task A_commit_over_a_cell_that_changed_under_the_editor_is_refused()
+    [Fact] // ADR-0142 / LV-11: a commit whose cell paints other text than when the editor opened lands with the text typed, and raises one Overwrite Notice naming the cell and both texts, which the Edit Intent carries too
+    public async Task A_commit_over_a_cell_that_changed_under_the_editor_lands_with_an_overwrite_notice()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -212,44 +216,43 @@ public class WritesLandAsEnteredTests : GridTestContext
         await ClickAsync(cut, 50, 10);
         await KeyAsync(cut, "5");
         await TypeAsync(cut, "5x");
+        var changed = Changed(rows, 0, book: "Moved upstream");
 
-        Push(cut, Changed(rows, 0, book: "Moved upstream"));
+        Push(cut, changed);
         await KeyAsync(cut, "Enter");
 
-        Assert.Empty(heard.Edits);
-        var refusal = Assert.Single(heard.CommitRefusals);
-        Assert.Equal(new CellPosition(0, 0), refusal.Cell);
-        Assert.Equal("Book", refusal.Column);
-        Assert.Equal("Moved upstream", refusal.PaintedText);
-        Assert.Equal("5x", cut.Find("input.ex-editor").GetAttribute("value"));
-        // The Focus did not move away from the editor that still stands.
-        Assert.Equal(new CellPosition(0, 0), cut.Instance.ReadSelection().Selection.Focus);
+        Assert.Empty(heard.CommitRefusals);
+        var intent = Assert.Single(heard.Edits);
+        Assert.Equal("5x", intent.Value);
+        Assert.Same(changed[0], intent.Row);
+        Assert.Equal("Row 000000", intent.SeenText);
+        Assert.Equal("Moved upstream", intent.ReplacedText);
+        Assert.Equal(new GridOverwriteNotice(new CellPosition(0, 0), "Book", "Row 000000", "Moved upstream"), Assert.Single(heard.Notices));
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        // The commit moved on as Enter does: the commit landed.
+        Assert.Equal(new CellPosition(1, 0), cut.Instance.ReadSelection().Selection.Focus);
     }
 
-    [Fact] // ADR-0142 / LV-11: a second commit is judged against the value the refusal showed, and raises the intent
-    public async Task A_second_commit_is_judged_against_the_text_the_refusal_showed()
+    [Fact] // ADR-0142 / LV-11: a commit over an unchanged cell raises no notice, and its intent carries the same text as seen and as replaced
+    public async Task A_commit_over_an_unchanged_cell_raises_no_notice()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
         var cut = RenderGrid(rows, heard);
         await ClickAsync(cut, 50, 10);
         await KeyAsync(cut, "5");
-        var changed = Changed(rows, 0, book: "Moved upstream");
-        Push(cut, changed);
-        await KeyAsync(cut, "Enter");
-        Assert.Single(heard.CommitRefusals);
 
         await KeyAsync(cut, "Enter");
 
         var intent = Assert.Single(heard.Edits);
-        Assert.Equal("5", intent.Value);
-        Assert.Same(changed[0], intent.Row);
-        Assert.Single(heard.CommitRefusals);
-        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.Equal("Row 000000", intent.SeenText);
+        Assert.Equal("Row 000000", intent.ReplacedText);
+        Assert.Empty(heard.Notices);
+        Assert.Empty(heard.CommitRefusals);
     }
 
-    [Fact] // ADR-0142 / LV-11: a cell that changes again after the refusal refuses the next commit too, with the newer text
-    public async Task A_change_after_the_refusal_refuses_again_with_the_newer_text()
+    [Fact] // ADR-0142 / LV-11: two changes under the editor are told once, by the text the editor opened over and the text the commit replaced
+    public async Task Two_changes_under_the_editor_are_told_once_by_the_text_they_left()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -258,17 +261,18 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "5");
         var once = Changed(rows, 0, book: "Once");
         Push(cut, once);
-        await KeyAsync(cut, "Enter");
-
         Push(cut, Changed(once, 0, book: "Twice"));
+
         await KeyAsync(cut, "Enter");
 
-        Assert.Empty(heard.Edits);
-        Assert.Equal(["Once", "Twice"], heard.CommitRefusals.Select(r => r.PaintedText));
+        Assert.Single(heard.Edits);
+        var notice = Assert.Single(heard.Notices);
+        Assert.Equal("Row 000000", notice.SeenText);
+        Assert.Equal("Twice", notice.ReplacedText);
     }
 
-    [Fact] // ADR-0142 / LV-11: Escape after a refused commit leaves without writing
-    public async Task Escape_after_a_refused_commit_writes_nothing()
+    [Fact] // ADR-0142 / LV-11: Escape over a cell that changed under the editor writes nothing, and tells nothing
+    public async Task Escape_over_a_changed_cell_writes_nothing_and_raises_no_notice()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -276,16 +280,16 @@ public class WritesLandAsEnteredTests : GridTestContext
         await ClickAsync(cut, 50, 10);
         await KeyAsync(cut, "5");
         Push(cut, Changed(rows, 0, book: "Moved upstream"));
-        await KeyAsync(cut, "Enter");
 
         await KeyAsync(cut, "Escape");
 
         Assert.Empty(heard.Edits);
+        Assert.Empty(heard.Notices);
         Assert.Empty(cut.FindAll(".ex-editor"));
     }
 
-    [Fact] // ADR-0142 / LV-11: a change to another cell of the row refuses nothing, and the commit lands on the row as it is now
-    public async Task A_change_to_another_cell_of_the_row_refuses_nothing()
+    [Fact] // ADR-0142 / LV-11: a change to another cell of the row is on screen: the commit lands on the row as it is now, and tells nothing
+    public async Task A_change_to_another_cell_of_the_row_raises_no_notice()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -298,6 +302,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter");
 
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         var intent = Assert.Single(heard.Edits);
         Assert.Same(changed[0], intent.Row);
     }
@@ -329,11 +334,12 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Same(changed[0], Assert.Single(judged));
         Assert.Empty(heard.Edits);
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         Assert.Single(cut.FindAll("input.ex-editor"));
     }
 
-    [Fact] // ADR-0142 / LV-11, ADR-0010: a press elsewhere that would commit over a changed cell is refused, and the press keeps no meaning of its own
-    public async Task A_press_that_commits_over_a_changed_cell_is_refused_and_moves_nothing()
+    [Fact] // ADR-0142 / LV-11, ADR-0010: a press elsewhere commits over a changed cell, tells it, and keeps its own meaning
+    public async Task A_press_that_commits_over_a_changed_cell_lands_with_the_notice_and_moves()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -344,15 +350,15 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         await DownAsync(cut, 150, 50);
 
-        Assert.Empty(heard.Edits);
-        Assert.Single(heard.CommitRefusals);
-        Assert.Single(cut.FindAll("input.ex-editor"));
-        Assert.Equal(new CellPosition(0, 0), cut.Instance.ReadSelection().Selection.Focus);
+        Assert.Equal("5", Assert.Single(heard.Edits).Value);
+        Assert.Equal("Moved upstream", Assert.Single(heard.Notices).ReplacedText);
+        Assert.Empty(cut.FindAll("input.ex-editor"));
+        Assert.Equal(new CellPosition(2, 1), cut.Instance.ReadSelection().Selection.Focus);
     }
 
     // ---- LV-11: the editor keeps what the cell paints when it opens ----
 
-    [Fact] // ADR-0142 / LV-11: a change in the round trip between the key that opens the editor and the open is not compared — the editor opens over the new text, and the commit lands
+    [Fact] // ADR-0142 / LV-11: a change in the round trip between the key that opens the editor and the open is not told — the editor opens over the new text, and the commit lands with no notice
     public async Task A_change_before_the_editor_opens_is_not_compared_and_the_commit_lands()
     {
         var rows = TestRows.Many(50);
@@ -369,6 +375,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter", paint: Paint(cut));
 
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         var intent = Assert.Single(heard.Edits);
         Assert.Equal("5", intent.Value);
         Assert.Same(changed[0], intent.Row);
@@ -390,6 +397,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter", paint: Paint(cut));
 
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         Assert.Equal("Typed over", Assert.Single(heard.Edits).Value);
     }
 
@@ -414,6 +422,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter", paint: Paint(cut));
 
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         Assert.Single(heard.Edits);
     }
 
@@ -434,6 +443,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter", paint: Paint(cut));
 
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         Assert.Equal("Typed in the bar", Assert.Single(heard.Edits).Value);
     }
 
@@ -451,6 +461,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter", paint: Paint(cut));
 
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         Assert.Equal("かな", Assert.Single(heard.Edits).Value);
     }
 
@@ -473,6 +484,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter", paint: Paint(cut));
 
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         Assert.Equal("5", Assert.Single(heard.Edits).Value);
     }
 
@@ -489,6 +501,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter", paint: Paint(cut));
 
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         Assert.Equal("5", Assert.Single(heard.Edits).Value);
     }
 
@@ -806,12 +819,13 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         Assert.Empty(heard.PasteRefusals);
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         Assert.Equal("z", Assert.Single(Assert.Single(Assert.Single(heard.Pastes).Values)));
         Assert.Empty(cut.FindAll(".ex-editor"));
     }
 
-    [Fact] // ADR-0142 / LV-11, LV-13: a Ctrl+Enter fill whose edited cell changed under the editor is refused as a commit, with the cell's new text
-    public async Task A_ctrl_enter_fill_whose_edited_cell_changed_is_refused_with_its_new_text()
+    [Fact] // ADR-0142 / LV-11, LV-13: a Ctrl+Enter fill whose edited cell changed under the editor lands, and tells the change
+    public async Task A_ctrl_enter_fill_whose_edited_cell_changed_lands_with_the_notice()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -823,14 +837,28 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         await KeyAsync(cut, "Enter", ctrl: true, paint: Paint(cut));
 
-        Assert.Empty(heard.Pastes);
         Assert.Empty(heard.PasteRefusals);
-        Assert.Equal("Moved upstream", Assert.Single(heard.CommitRefusals).PaintedText);
-        Assert.Equal("z", cut.Find("input.ex-editor").GetAttribute("value"));
+        Assert.Empty(heard.CommitRefusals);
+        Assert.Equal("z", Assert.Single(Assert.Single(Assert.Single(heard.Pastes).Values)));
+        Assert.Equal(new GridOverwriteNotice(new CellPosition(0, 0), "Book", "Row 000000", "Moved upstream"), Assert.Single(heard.Notices));
+        Assert.Empty(cut.FindAll(".ex-editor"));
+    }
 
-        // Judged again against the text the refusal showed: the fill goes.
+    [Fact] // ADR-0142 / LV-11, ADR-0050 item 3: a Ctrl+Enter fill the Consumer refused wrote nothing, and tells nothing
+    public async Task A_ctrl_enter_fill_the_consumer_refused_raises_no_notice()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard { RefusePastes = true };
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await ClickAsync(cut, 50, 30, shift: true);
+        await KeyAsync(cut, "z");
+        Push(cut, Changed(rows, 0, book: "Moved upstream"));
+
         await KeyAsync(cut, "Enter", ctrl: true, paint: Paint(cut));
+
         Assert.Single(heard.Pastes);
+        Assert.Empty(heard.Notices);
     }
 
     [Fact] // ADR-0142 / LV-13, ADR-0050 item 5: a fill-handle drag released on a render whose target has changed since lands
@@ -1161,6 +1189,256 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.PasteRefusals);
     }
 
+    // ---- LV-17 (D1): the user's own writes count as seen for the Overwrite Notice ----
+
+    [Fact] // ADR-0142 D1 / LV-17: an editor opened before the user's own write was painted tells nothing when that write paints under it — `5` Enter ↑ `7` Enter, typed at once
+    public async Task An_editor_opened_before_the_users_own_write_was_painted_raises_no_notice()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+
+        await KeyAsync(cut, "5");
+        await KeyAsync(cut, "Enter");
+        await KeyAsync(cut, "ArrowUp");
+        await KeyAsync(cut, "7");
+        // The Consumer's store writes the 5 back only now, under the open editor.
+        Push(cut, Changed(rows, 0, book: "5"));
+        await KeyAsync(cut, "Enter");
+
+        Assert.Equal(["5", "7"], heard.Edits.Select(e => e.Value));
+        Assert.Empty(heard.Notices);
+        Assert.Empty(heard.CommitRefusals);
+    }
+
+    [Fact] // ADR-0142 D1 / LV-17: once the user's write is painted, an editor opened over it tells a change upstream that comes after
+    public async Task An_editor_opened_after_the_users_write_was_painted_tells_a_change_after_it()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        await KeyAsync(cut, "Enter");
+        var written = Changed(rows, 0, book: "5");
+        Push(cut, written);
+        await KeyAsync(cut, "ArrowUp");
+        await KeyAsync(cut, "7");
+
+        Push(cut, Changed(written, 0, book: "Moved upstream"));
+        await KeyAsync(cut, "Enter");
+
+        var notice = Assert.Single(heard.Notices);
+        Assert.Equal("5", notice.SeenText);
+        Assert.Equal("Moved upstream", notice.ReplacedText);
+    }
+
+    [Fact] // ADR-0142 D1 / LV-17: only the cells the user wrote are let off — an editor opened on the cell beside tells its change
+    public async Task Only_the_cells_the_users_own_write_covered_are_let_off()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        // Enter moves to row 1, which the 5 did not write.
+        await KeyAsync(cut, "Enter");
+        await KeyAsync(cut, "7");
+
+        Push(cut, Changed(Changed(rows, 0, book: "5"), 1, book: "Moved upstream"));
+        await KeyAsync(cut, "Enter");
+
+        var notice = Assert.Single(heard.Notices);
+        Assert.Equal(new CellPosition(1, 0), notice.Cell);
+    }
+
+    [Fact] // ADR-0142 D1 / LV-17, ADR-0050 item 3: a paste the Consumer refused wrote nothing, so an editor opened over its cell tells a change there
+    public async Task A_write_the_consumer_refused_lets_nothing_off()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard { RefusePastes = true };
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await PasteAsync(cut, Paint(cut));
+        await KeyAsync(cut, "7");
+
+        Push(cut, Changed(rows, 0, book: "Moved upstream"));
+        await KeyAsync(cut, "Enter");
+
+        Assert.Equal("Moved upstream", Assert.Single(heard.Notices).ReplacedText);
+    }
+
+    [Fact] // ADR-0142 D1 / LV-17: a paste of the user's own, not yet painted, counts as seen too
+    public async Task An_editor_opened_before_the_users_own_paste_was_painted_raises_no_notice()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await PasteAsync(cut, Paint(cut));
+        await KeyAsync(cut, "7");
+
+        Push(cut, Changed(rows, 0, book: "x"));
+        await KeyAsync(cut, "Enter");
+
+        Assert.Single(heard.Edits);
+        Assert.Empty(heard.Notices);
+    }
+
+    // ---- LV-19: the Consumer may refuse an edit ----
+
+    [Fact] // ADR-0142 / LV-19, ADR-0034: Refuse(message) before the handler completes holds the editor with the typing, shows the message at the editor and in the live region, and the gesture moves nothing
+    public async Task A_refused_intent_holds_the_editor_with_the_typing_and_the_message()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard { OnEdit = intent => intent.Refuse("The book is closed for edits.") };
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        await TypeAsync(cut, "5x");
+
+        await KeyAsync(cut, "Enter");
+
+        Assert.True(Assert.Single(heard.Edits).IsRefused);
+        var editor = cut.Find("input.ex-editor");
+        Assert.Equal("5x", editor.GetAttribute("value"));
+        Assert.Equal("true", editor.GetAttribute("aria-invalid"));
+        Assert.Equal("The book is closed for edits.", cut.Find(".ex-announce").TextContent);
+        Assert.Equal(new CellPosition(0, 0), cut.Instance.ReadSelection().Selection.Focus);
+    }
+
+    [Fact] // ADR-0142 / LV-19: after a refusal, a later commit raises the intent again, and a handler that completes without refusing has accepted
+    public async Task A_later_commit_after_a_refusal_raises_the_intent_again()
+    {
+        var rows = TestRows.Many(50);
+        var refuse = true;
+        var heard = new Heard();
+        heard.OnEdit = intent =>
+        {
+            if (refuse)
+                intent.Refuse("Not yet.");
+        };
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        await KeyAsync(cut, "Enter");
+        Assert.Single(cut.FindAll("input.ex-editor"));
+
+        refuse = false;
+        await KeyAsync(cut, "Enter");
+
+        Assert.Equal(2, heard.Edits.Count);
+        Assert.False(heard.Edits[1].IsRefused);
+        Assert.Empty(cut.FindAll(".ex-editor"));
+    }
+
+    [Fact] // ADR-0142 / LV-19: a refusal made after the handler awaited, before it completed, still holds the editor
+    public async Task A_refusal_after_the_handler_awaited_still_holds_the_editor()
+    {
+        var rows = TestRows.Many(50);
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, rows)
+            .Add(g => g.TotalCount, rows.Length)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.OnEdit, async (GridEditIntent<TestRow> intent) =>
+            {
+                await Task.Yield();
+                intent.Refuse("The server holds a newer version.");
+            }));
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+
+        await KeyAsync(cut, "Enter");
+
+        cut.WaitForAssertion(() => Assert.Equal("The server holds a newer version.", cut.Find(".ex-announce").TextContent));
+        Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
+    }
+
+    [Fact] // ADR-0142 / LV-19, LV-11: a refused commit over a changed cell landed nothing, and tells nothing
+    public async Task A_refused_commit_raises_no_overwrite_notice()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard { OnEdit = intent => intent.Refuse("Changed upstream; look again.") };
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        Push(cut, Changed(rows, 0, book: "Moved upstream"));
+
+        await KeyAsync(cut, "Enter");
+
+        var intent = Assert.Single(heard.Edits);
+        Assert.Equal("Row 000000", intent.SeenText);
+        Assert.Equal("Moved upstream", intent.ReplacedText);
+        Assert.Empty(heard.Notices);
+        Assert.Single(cut.FindAll("input.ex-editor"));
+    }
+
+    [Fact] // ADR-0142 / LV-19: Escape after a refused intent writes nothing
+    public async Task Escape_after_a_refused_intent_writes_nothing()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard { OnEdit = intent => intent.Refuse("No.") };
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        await KeyAsync(cut, "Enter");
+
+        await KeyAsync(cut, "Escape");
+
+        Assert.Single(heard.Edits);
+        Assert.Empty(cut.FindAll(".ex-editor"));
+    }
+
+    [Fact] // ADR-0142 / LV-19, ADR-0034: a refusal that says nothing is not one
+    public void A_refusal_without_a_message_is_refused()
+    {
+        var intent = new GridEditIntent<TestRow>(TestRows.Many(1)[0], "Book", "5");
+
+        Assert.Throws<ArgumentException>(() => intent.Refuse(" "));
+        Assert.False(intent.IsRefused);
+    }
+
+    // ---- LV-20: a commit goes to the row the editor was opened on ----
+
+    [Fact] // ADR-0142 / LV-20, ADR-0011 / ED-21: without a Row Key, a row that left the Window under the same order is not RowGone — that is a key no longer in the Window — and takes the typing with it, announced as RowLeftTheWindow
+    public async Task Without_a_row_key_a_commit_whose_row_left_the_window_is_discarded_as_before()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        // The Window slides past row 0, the order unmoved.
+        cut.Render(ps => ps.Add(g => g.Window, rows[1..]).Add(g => g.WindowStart, 1));
+
+        await KeyAsync(cut, "Enter");
+
+        Assert.Empty(heard.Edits);
+        Assert.Empty(heard.CommitRefusals);
+        Assert.Equal([EditDiscardReason.RowLeftTheWindow], heard.Discards);
+        Assert.Empty(cut.FindAll(".ex-editor"));
+    }
+
+    [Fact] // ADR-0142 / LV-20, ADR-0011: an order move that lands while the editor is open, outside a commit, still discards the edit, as ADR-0011 has it
+    public async Task An_order_move_outside_a_commit_still_discards_the_edit()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+
+        Reorder(cut, Moved(rows, 0, 2));
+
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        cut.WaitForAssertion(() => Assert.Equal([EditDiscardReason.OrderChanged], heard.Discards));
+        Assert.Empty(heard.Edits);
+    }
+
     // ---- LV-16 (D5): a bound source puts out what it has gathered before a write is handled ----
 
     /// <summary>A source that holds a change it has gathered until it is asked to put it out, as
@@ -1244,6 +1522,8 @@ public class WritesLandAsEnteredTests : GridTestContext
                   heard.OnEdit?.Invoke(i);
               })
               .Add(g => g.OnCommitRefused, (GridCommitRefusal r) => heard.CommitRefusals.Add(r))
+              .Add(g => g.OnOverwriteNotice, (GridOverwriteNotice n) => heard.Notices.Add(n))
+              .Add(g => g.OnEditDiscarded, (EditDiscardReason r) => heard.Discards.Add(r))
               .Add(g => g.OnPaste, (GridPasteIntent i) =>
               {
                   heard.Pastes.Add(i);
@@ -1278,6 +1558,7 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         Assert.Equal(1, source.Asked);
         Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Notices);
         var intent = Assert.Single(heard.Edits);
         Assert.Same(gathered[0], intent.Row);
         Assert.Equal("5", intent.Value);
@@ -1285,8 +1566,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Contains(cut.FindAll(".ex-row")[0].QuerySelectorAll("[role=gridcell]"), c => c.TextContent.Replace(",", "") == "999999");
     }
 
-    [Fact] // ADR-0142 D5 / LV-16, LV-11: a gathered change to the edited cell itself refuses the commit, with its new text
-    public async Task A_gathered_change_to_the_edited_cell_refuses_the_commit()
+    [Fact] // ADR-0142 D5 / LV-16, LV-11: a gathered change to the edited cell itself lands the commit on the newest row, and raises the notice with the new text
+    public async Task A_gathered_change_to_the_edited_cell_lands_the_commit_with_the_notice()
     {
         var rows = TestRows.Many(50);
         var source = new GatheringSource(rows);
@@ -1294,17 +1575,18 @@ public class WritesLandAsEnteredTests : GridTestContext
         var cut = RenderSourceGrid(source, heard);
         await ClickAsync(cut, 50, 10);
         await KeyAsync(cut, "5");
-        source.Gather(Changed(rows, 0, book: "Gathered upstream"));
+        var gathered = Changed(rows, 0, book: "Gathered upstream");
+        source.Gather(gathered);
 
         await KeyAsync(cut, "Enter");
 
-        Assert.Empty(heard.Edits);
-        Assert.Equal("Gathered upstream", Assert.Single(heard.CommitRefusals).PaintedText);
-        Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
-
-        // Judged again against the text the refusal showed: it lands on the newest row.
-        await KeyAsync(cut, "Enter");
-        Assert.Equal("Gathered upstream", Assert.Single(heard.Edits).Row.Book);
+        Assert.Empty(heard.CommitRefusals);
+        var intent = Assert.Single(heard.Edits);
+        Assert.Same(gathered[0], intent.Row);
+        Assert.Equal("5", intent.Value);
+        var notice = Assert.Single(heard.Notices);
+        Assert.Equal("Row 000000", notice.SeenText);
+        Assert.Equal("Gathered upstream", notice.ReplacedText);
     }
 
     // The bundled source behind LV-16, end to end: GridSource.From keyed by Book, gathering on the
@@ -1356,8 +1638,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Equal(later, source.Window[0].AsOf);
     }
 
-    [Fact] // ADR-0141/0142 D5 / LV-16, LV-11: with GridSource.From gathering, a gathered change to the edited cell refuses the commit with its new text; the second Enter writes
-    public async Task A_gathered_change_to_the_edited_cell_in_GridSource_From_refuses_the_commit()
+    [Fact] // ADR-0141/0142 D5 / LV-16, LV-11: with GridSource.From gathering, a gathered change to the edited cell lands the commit over it, written back through ReplaceRow, and raises the notice with the new text
+    public async Task A_gathered_change_to_the_edited_cell_in_GridSource_From_lands_with_the_notice()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -1370,27 +1652,22 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         await KeyAsync(cut, "Enter");
 
-        Assert.Empty(heard.Edits);
-        Assert.Equal("777", Assert.Single(heard.CommitRefusals).PaintedText);
-        Assert.Equal(CommitRefusalReason.CellChanged, heard.CommitRefusals[0].Reason);
-        Assert.Equal(777m, source.Window[0].Amount);
-
-        await KeyAsync(cut, "Enter");
-
         Assert.Empty(thrown);
+        Assert.Empty(heard.CommitRefusals);
         Assert.Single(heard.Edits);
         Assert.Equal(5m, source.Window[0].Amount);
+        var notice = Assert.Single(heard.Notices);
+        Assert.Equal("0", notice.SeenText);
+        Assert.Equal("777", notice.ReplacedText);
     }
 
-    [Fact] // ADR-0142 D5 / LV-16, ADR-0011: a gathered change that moves the order discards the edit rather than committing it onto another row
-    public async Task A_gathered_change_that_moves_the_order_discards_the_edit()
+    [Fact] // ADR-0142 D5 / LV-16, LV-20: without a Row Key, a gathered change that moves the order refuses the commit as OrderMoved: no intent, the editor stays with the typing, and Escape writes nothing
+    public async Task Without_a_row_key_a_gathered_change_that_moves_the_order_refuses_the_commit()
     {
         var rows = TestRows.Many(50);
         var source = new GatheringSource(rows);
         var heard = new Heard();
-        var discarded = new List<EditDiscardReason>();
-        var cut = RenderSourceGrid(source, heard,
-            extra: ps => ps.Add(g => g.OnEditDiscarded, (EditDiscardReason r) => discarded.Add(r)));
+        var cut = RenderSourceGrid(source, heard);
         await ClickAsync(cut, 50, 10);
         await KeyAsync(cut, "5");
         source.Gather([.. Enumerable.Reverse(rows)], version: 1);
@@ -1398,9 +1675,68 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter");
 
         Assert.Empty(heard.Edits);
-        Assert.Empty(heard.CommitRefusals);
+        Assert.Equal(CommitRefusalReason.OrderMoved, Assert.Single(heard.CommitRefusals).Reason);
+        Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
+        Assert.Empty(heard.Discards);
+
+        // Held from then on: a commit is refused again, and a further move discards nothing.
+        await KeyAsync(cut, "Enter");
+        Assert.Equal(2, heard.CommitRefusals.Count);
+        source.Gather([.. rows], version: 2);
+        await KeyAsync(cut, "Enter");
+        Assert.Empty(heard.Edits);
+        Assert.Empty(heard.Discards);
+        Assert.Single(cut.FindAll("input.ex-editor"));
+
+        await KeyAsync(cut, "Escape");
+        Assert.Empty(heard.Edits);
         Assert.Empty(cut.FindAll(".ex-editor"));
-        Assert.Equal([EditDiscardReason.OrderChanged], discarded);
+    }
+
+    [Fact] // ADR-0142 D5 / LV-16, LV-20, ADR-0140: with a Row Key, a commit whose row a gathered change only moved lands on that row
+    public async Task With_a_row_key_a_commit_whose_row_only_moved_lands_on_that_row()
+    {
+        var rows = TestRows.Many(50);
+        var source = new GatheringSource(rows);
+        var heard = new Heard();
+        var cut = RenderSourceGrid(source, heard, extra: ps => ps.Add(g => g.RowKey, ByBook));
+        await ClickAsync(cut, 50, 30);
+        await KeyAsync(cut, "5");
+        var reversed = Enumerable.Reverse(rows).ToArray();
+        source.Gather(reversed, version: 1);
+
+        await KeyAsync(cut, "Enter");
+
+        Assert.Empty(heard.CommitRefusals);
+        Assert.Empty(heard.Discards);
+        var intent = Assert.Single(heard.Edits);
+        Assert.Same(rows[1], intent.Row);
+        Assert.Equal("5", intent.Value);
+        Assert.Empty(heard.Notices);
+    }
+
+    [Fact] // ADR-0142 D5 / LV-16, LV-20: with a Row Key, a commit whose row a gathered change took out of the Window is refused as RowGone, the editor held, and every later commit too
+    public async Task With_a_row_key_a_commit_whose_row_left_the_window_is_refused_as_row_gone()
+    {
+        var rows = TestRows.Many(50);
+        var source = new GatheringSource(rows);
+        var heard = new Heard();
+        var cut = RenderSourceGrid(source, heard, extra: ps => ps.Add(g => g.RowKey, ByBook));
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        source.Gather(rows[1..], version: 1);
+
+        await KeyAsync(cut, "Enter");
+
+        Assert.Empty(heard.Edits);
+        Assert.Equal(CommitRefusalReason.RowGone, Assert.Single(heard.CommitRefusals).Reason);
+        Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
+
+        // The row's key went with the refusal: a commit is refused again, whatever stands there now.
+        await KeyAsync(cut, "Enter");
+        Assert.Empty(heard.Edits);
+        Assert.Equal([CommitRefusalReason.RowGone, CommitRefusalReason.RowGone], heard.CommitRefusals.Select(r => r.Reason));
+        Assert.Empty(heard.Discards);
     }
 
     [Fact] // ADR-0142 D5 / LV-16, LV-13: a paste asks for the gathered change first, and lands on the newest version
@@ -1795,6 +2131,28 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         Assert.Empty(heard.ActionRefusals);
         Assert.Same(changed[0], Assert.Single(heard.Actions).Row);
+    }
+
+    // ---- LV-21: Chrome words the notice; the grid holds no string, and adds nothing to a row ----
+
+    [Fact] // ADR-0142 / LV-21, ADR-0013: the grid announces no string of its own for an Overwrite Notice, and the row it landed on paints as any written row does
+    public async Task The_grid_holds_no_string_for_the_notice_and_adds_nothing_to_the_row()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        var plainRow = cut.FindAll(".ex-row")[0].GetAttribute("class");
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        Push(cut, Changed(rows, 0, book: "Moved upstream"));
+
+        await KeyAsync(cut, "Enter");
+        Push(cut, Changed(rows, 0, book: "5"));
+
+        Assert.Single(heard.Notices);
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
+        Assert.Equal(plainRow, cut.FindAll(".ex-row")[0].GetAttribute("class"));
+        Assert.DoesNotContain(cut.FindAll(".ex-row")[0].QuerySelectorAll("*"), e => e.ClassName?.Contains("overwrite", StringComparison.OrdinalIgnoreCase) == true);
     }
 
     // ---- LV-14: what the browser reads ----

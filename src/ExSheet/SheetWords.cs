@@ -79,14 +79,19 @@ internal static class SheetWords
         _ => "Nothing was pasted.",
     };
 
-    /// <summary>A commit refused because the cell changed under the editor (ADR-0142, LV-11): the
-    /// editor covers the cell, so the sentence carries what it shows now.</summary>
-    internal static string CommitRefused(string address, string shown) =>
-        $"What was typed was not entered yet: {address} changed to {shown} while it was being edited. Press Enter to enter it over that, or Escape to keep it.";
+    /// <summary>A commit refused because the row it was opened on can no longer be found (ADR-0142,
+    /// LV-20): the editor stands with the typing, and only Escape leaves it.</summary>
+    internal static string CommitRefused(string address, CommitRefusalReason reason) => reason switch
+    {
+        CommitRefusalReason.OrderMoved =>
+            $"What was typed was not entered: the rows moved while {address} was being edited, so it would land in another row. Press Escape to leave it.",
+        _ => $"What was typed was not entered: the row of {address} is no longer there. Press Escape to leave it.",
+    };
 
-    // ADR-0142 (P2): the grid can no longer tell what the cell showed, so the notice must not say it changed.
-    internal static string CommitRefusedUnseen(string address, string shown) =>
-        $"What was typed was not entered yet: it can no longer be told what {address} showed when editing began. It shows {shown} now. Press Enter to enter it over that, or Escape to keep it.";
+    /// <summary>A commit that landed over a cell that changed while it was being edited (ADR-0142,
+    /// LV-11): the editor covered the cell, so the sentence says what it replaced.</summary>
+    internal static string Overwritten(string address, string seen, string replaced) =>
+        $"{address} was entered over a change made while it was being edited: it showed {seen} when editing began and {replaced} just before.";
 
     internal static string CopyRefused(CopyRefusalReason reason) => reason switch
     {

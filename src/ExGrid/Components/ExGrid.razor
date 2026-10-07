@@ -1480,6 +1480,12 @@
     /// column and new value, and the grid holds no committed value — the painted cell
     /// changes when the Consumer returns a new row instance. Uncommitted text is the
     /// grid's and never reaches this.
+    ///
+    /// <para>Raised while the editor still stands, on the row the editor was opened on as it
+    /// is now (ADR-0142): a handler that calls <see cref="GridEditIntent{TRow}.Refuse"/> before
+    /// it completes holds the editor with the typing, and one that completes without it has
+    /// accepted, and the edit ends. The intent carries what the cell painted when the editor
+    /// opened and what the commit replaced.</para>
     /// </summary>
     [Parameter] public EventCallback<GridEditIntent<TRow>> OnEdit { get; set; }
 
@@ -2780,7 +2786,10 @@
         // A dropped selection mid-edit means the cell the editor floats over no longer
         // names the same thing (ADR-0011): the uncommitted text is discarded rather
         // than committed onto a stranger. The gate learns after this render.
-        if (_editMode != EditMode.None && _selection.Selection.IsEmpty)
+        // A commit answers an order move it brings in itself, and an edit a commit was refused for
+        // is held: neither is discarded for an order move (ADR-0142). A change of columns still is.
+        if (_editMode != EditMode.None && _selection.Selection.IsEmpty
+            && !(EditOutlivesOrderMove && _selectionEmptiedBy is null or EditDiscardReason.OrderChanged))
         {
             CloseCompletion();
             EndPointing();
@@ -3720,9 +3729,14 @@
         if (!OnFill.HasDelegate)
             return;
         var intent = new GridFillIntent(from, decision.Extension, version);
+        // The user's own write (ADR-0142 D1): an editor opened before it is painted does not tell
+        // it as a change.
+        var written = NoteOwnWrite([intent.Target]);
         await OnFill.InvokeAsync(intent);
         AskSummaryAgain();
-        if (!intent.IsRefused)
+        if (intent.IsRefused)
+            ForgetOwnWrite(written);
+        else
             SelectFilledRange(from, intent.Target, version);
     }
 
@@ -5866,7 +5880,13 @@
         var version = _sequenceVersion;
         var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
         if (OnPaste.HasDelegate)
+        {
+            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+            var written = NoteOwnWrite(decision.Plan.Targets);
             await OnPaste.InvokeAsync(intent);
+            if (intent.IsRefused)
+                ForgetOwnWrite(written);
+        }
         AskSummaryAgain();
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
         if (intent.IsRefused)
@@ -6854,7 +6874,11 @@
             return;
         }
         if (OnClear.HasDelegate)
+        {
+            // The user's own write (ADR-0142 D1).
+            NoteOwnWrite(decision.Plan.Targets);
             await OnClear.InvokeAsync(new GridClearIntent(decision.Plan.Targets, _sequenceVersion));
+        }
         AskSummaryAgain();
     }
 
@@ -6906,7 +6930,14 @@
             block.Add(values);
         }
         if (OnPaste.HasDelegate)
-            await OnPaste.InvokeAsync(new GridPasteIntent(plan.Paste, block, version, fillSource: source));
+        {
+            var intent = new GridPasteIntent(plan.Paste, block, version, fillSource: source);
+            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+            var written = NoteOwnWrite(plan.Paste.Targets);
+            await OnPaste.InvokeAsync(intent);
+            if (intent.IsRefused)
+                ForgetOwnWrite(written);
+        }
         AskSummaryAgain();
     }
 
@@ -7007,9 +7038,9 @@
         _editSurface = EditSurface.Cell;
         _editMode = mode;
         _editingCell = cell;
-        // What the cell shows as the editor opens over it: a commit is judged against it
-        // (ADR-0142, LV-11).
-        KeepSeenText(cell);
+        // What the cell shows as the editor opens over it, and the order it opens under: a commit's
+        // Overwrite Notice compares with the one, and lands by position under the other (ADR-0142).
+        NoteEditOpened(cell);
         _editText = initialText;
         _editCaret = initialText.Length;
         // Placed explicitly at the end of the opening text, never assumed to be where the
@@ -7246,25 +7277,33 @@
     /// a key typed in it: see <see cref="EndEditingAsync"/>.</param>
     private async Task<bool> CommitEditAsync(bool reclaimFocus = true, bool byPress = false)
     {
+        if (_editMode == EditMode.None)
+            return true;
+        // The row the editor was opened on, named by its Row Key before the bound source puts out
+        // what it has gathered (ADR-0142, LV-20): the commit goes to that row wherever it is then.
+        var openedKey = _rowKey is { } rowKey && !_editRowLost && RowInHand(_editingCell.Row) is { } opened ? rowKey(opened) : null;
         // The bound source puts out what it has gathered first, so the commit is made on, and its
-        // Edit Intent carries, the newest version (ADR-0142 D5, LV-16). A gathered change
-        // that moved the order has discarded the edit, as any such change does (ADR-0011): the
-        // edit has ended, and there is nothing to commit.
-        if (!await TakeInGatheredAsync())
+        // Edit Intent carries, the newest version (ADR-0142 D5, LV-16). A gathered change that
+        // moved the order is answered below, by the row the commit goes to, never by a discard.
+        if (!await TakeInGatheredForCommitAsync())
             return false;
         if (_editMode == EditMode.None)
             return true;
-        var cell = _editingCell;
         var text = _editText;
-        var slice = cell.Row - _windowStart;
-        // The row left the Window mid-edit: there is no identity to commit onto, and a
-        // positional guess would land the value on a different row (ADR-0011). The text
-        // is gone either way, so the grid says which rule took it — this one is on a
-        // gesture, so it is raised here rather than deferred.
-        if (slice < 0 || slice >= _window.Count)
+        // Without a Row Key, the row left the Window under the order the editor was opened under:
+        // there is no identity to commit onto, and a positional guess would land the value on a
+        // different row. The text is gone, and the grid says which rule took it (ADR-0011, ED-21).
+        if (_rowKey is null && _sequenceVersion == _editSequence && RowInHand(_editingCell.Row) is null)
         {
             await EndEditingAsync(reclaimFocus, byPress, DiscardedIn(EditDiscardReason.RowLeftTheWindow));
             return true;
+        }
+        // The row is gone, or, with no Row Key, the order moved: refused, the editor held with the
+        // typing, and the gesture keeps no meaning of its own, as after a Reject (ADR-0142, LV-20).
+        if (await CommitLandingAsync(openedKey) is not { } cell)
+        {
+            RequestEditorFocus();
+            return false;
         }
         // Asked again, not assumed from when the editor opened: a Consumer may revoke the
         // declaration mid-edit, and `Editable` means a write may land here (ADR-0035). This
@@ -7274,38 +7313,71 @@
             await EndEditingAsync(reclaimFocus, byPress, DiscardedIn(EditDiscardReason.ColumnNoLongerEditable));
             return true;
         }
-        // The cell paints other text than the editor was opened over: the value changed upstream
-        // while the user typed, under an editor that covers it (ADR-0142, LV-11). A Refusal, judged
-        // on the operation before the Consumer is asked about the value: the editor stays with the
-        // typing and the gesture keeps no meaning of its own, as after a Reject, and the reason
-        // carries the new text. Only this cell is judged — a change to another cell of the row is
-        // the Edit Verdict's to weigh, below, against the row as it is now.
-        if (await RefuseCommitOverChangedCellAsync(cell))
-        {
-            RequestEditorFocus();
-            return false;
-        }
+        var row = RowInHand(cell.Row)!;
 
         // The Consumer's judgement, at the one moment a veto is still possible (ADR-0034).
         // No function means Accept, so a column that declares nothing behaves as before.
-        var verdict = Columns[cell.Column].Validate?.Invoke(_window[slice], text) ?? EditVerdict.Accept;
+        var verdict = Columns[cell.Column].Validate?.Invoke(row, text) ?? EditVerdict.Accept;
         if (verdict.Kind == EditVerdictKind.Reject)
         {
             // The editor holds with the focus in it and the error shown; Escape stays the
             // only way out without applying. Announced too, because a rejected commit is
             // otherwise a key that did nothing and said nothing (A11Y-15).
-            _editError = verdict.Message;
-            RequestEditorFocus();
-            Announce(verdict.Message);
+            HoldEditWith(verdict.Message);
             return false;
         }
         // A Flag raises the intent unchanged: the mark does not travel in it, and comes
         // back through the display channels when the Consumer answers them (ADR-0034).
         _editError = null;
-        var intent = new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text);
-        await EndEditingAsync(reclaimFocus, byPress, OnEdit.HasDelegate ? () => OnEdit.InvokeAsync(intent) : null);
+        // The commit lands over whatever the cell paints now, and says so when that is not what the
+        // editor opened over: the one change the user could not see (ADR-0142, LV-11).
+        var replaced = PaintedTextNow(cell.Row, cell.Column) ?? "";
+        var notice = OverwriteNoticeFor(cell, replaced);
+        var intent = new GridEditIntent<TRow>(row, Columns[cell.Column].Name, text)
+        {
+            SeenText = _editSeenText ?? replaced,
+            ReplacedText = replaced,
+        };
+        if (OnEdit.HasDelegate)
+        {
+            // Heard while the editor still stands, so that a refusal holds it as a Reject does
+            // (ADR-0142, ADR-0034's note of 2026-10-07; LV-19). The keys typed after the commit wait
+            // behind its answer (ADR-0010), and an order move the Consumer's own write brings in is
+            // this commit's, not a discard. The user's own write (D1), taken back if refused.
+            var written = NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
+            _committingEdit = true;
+            try
+            {
+                await OnEdit.InvokeAsync(intent);
+            }
+            finally
+            {
+                _committingEdit = false;
+            }
+            if (intent.RefusalMessage is { } refused)
+            {
+                ForgetOwnWrite(written);
+                if (_editMode != EditMode.None)
+                    HoldEditWith(refused);
+                return false;
+            }
+        }
+        // The Consumer may have ended the edit itself while it heard the intent (DiscardEditAsync).
+        if (_editMode != EditMode.None)
+            await EndEditingAsync(reclaimFocus, byPress);
+        await RaiseOverwriteNoticeAsync(notice);
         AskSummaryAgain();
         return true;
+    }
+
+    /// <summary>Holds the editor with <paramref name="message"/> shown at it and announced — an
+    /// Edit Verdict's Reject, or the Consumer's refusal of the intent (ADR-0034, ADR-0142): the
+    /// typing stays, and Escape is the only way out without writing.</summary>
+    private void HoldEditWith(string? message)
+    {
+        _editError = message;
+        RequestEditorFocus();
+        Announce(message);
     }
 
     /// <summary>A discard's reason, as what an edit ended in (ADR-0011): raised before the end
@@ -7338,10 +7410,10 @@
 
     private async Task CommitFillAsync()
     {
-        // Made on the newest version the bound source holds (ADR-0142 D5, LV-16). A
-        // gathered change that moved the order has dropped the Selection and discarded the edit
-        // (ADR-0011): there is nothing left to fill.
-        if (!await TakeInGatheredAsync() || _editMode == EditMode.None)
+        // Made on the newest version the bound source holds (ADR-0142 D5, LV-16). A gathered
+        // change that moved the order has dropped the Selection (ADR-0011), and the fill is
+        // refused below as aimed at no Selection, the editor held with the typing.
+        if (!await TakeInGatheredForCommitAsync() || _editMode == EditMode.None)
         {
             StateHasChanged();
             return;
@@ -7355,21 +7427,16 @@
             // Before the editor is torn down (ADR-0035, ED-19). A Refusal judges the
             // operation and never the text, so the editor stays open with the typing in
             // it, and Enter — a gesture the refusal did not name — still commits the one
-            // cell the editor was opened on, which is editable by construction.
+            // cell the editor was opened on, which is editable by construction. It is held: an
+            // order move after does not throw the typing away (ADR-0142).
+            _editHeld = true;
             if (OnPasteRefused.HasDelegate)
                 await OnPasteRefused.InvokeAsync(decision.Reason);
             return;
         }
-        // The edited cell lies under the editor, so it is judged as a commit is, against what it
-        // showed when the editor opened, and refused as a commit with its new text (ADR-0142,
-        // LV-11); the editor stays open with the typing in it, as after the refusal above. The
-        // rest of the target was on screen, and the fill lands over it as entered (LV-13).
-        if (await RefuseCommitOverChangedCellAsync(_editingCell))
-        {
-            RequestEditorFocus();
-            StateHasChanged();
-            return;
-        }
+        // The fill lands over its target as entered (ADR-0142, LV-13). The edited cell lay under
+        // the editor: a change there is told once the fill lands (LV-11).
+        var notice = OverwriteNoticeFor(_editingCell, PaintedTextNow(_editingCell.Row, _editingCell.Column) ?? "");
         // The Refusal judged the operation; the verdict judges the value, and only now
         // that there is still an operation to perform (ADR-0034's fill carve-out, ED-20).
         // It runs once, against the row the editor was opened on: a fill's target
@@ -7391,7 +7458,13 @@
         // Copied before the editor is torn down: the intent names the cell the text was
         // entered in, which a clipboard paste of the same field does not (ADR-0050 item 5).
         var intent = new GridPasteIntent(decision.Plan, [[_editText]], _sequenceVersion, enteredAt: _editingCell);
+        // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+        var written = OnPaste.HasDelegate ? NoteOwnWrite(decision.Plan.Targets) : null;
         await EndEditingAsync(endedIn: OnPaste.HasDelegate ? () => OnPaste.InvokeAsync(intent) : null);
+        if (written is not null && intent.IsRefused)
+            ForgetOwnWrite(written);
+        else
+            await RaiseOverwriteNoticeAsync(notice);
         AskSummaryAgain();
         StateHasChanged();
     }
@@ -7419,6 +7492,8 @@
         _editMode = EditMode.None;
         _editText = "";
         _editSeenText = null;
+        _editHeld = false;
+        _editRowLost = false;
         _reportedText = null;
         ForgetCaretPlacement();
         _editError = null;
@@ -7517,7 +7592,7 @@
         _editSurface = EditSurface.Bar;
         _editMode = EditMode.Caret;
         _editingCell = focus;
-        KeepSeenText(focus);
+        NoteEditOpened(focus);
         _editText = OpeningTextOf(focus);
         if (ReportsCaret && string.Equals(_editText, shown, StringComparison.Ordinal))
         {
