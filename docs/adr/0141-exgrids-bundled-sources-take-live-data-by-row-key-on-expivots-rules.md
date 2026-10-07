@@ -195,7 +195,9 @@ This was ticket 02 of `docs/specs/live-data`.)*
   - a bundled source, which refuses a repeated key as each change comes (this ADR);
   - a Consumer's own `IGridSource`, through `VouchesDistinctRows`, which was already public;
   - a Consumer that pushes its Window, through a grid parameter beside `RowKey`, meaningful only with a
-    Row Key. ExPivot vouches for its report: the engine cannot build a report that repeats a key, because
+    Row Key. *(Built as `VouchesDistinctRows`. Like every push parameter, it is refused by name beside a
+    bound Source, which vouches for itself
+    ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)).)* ExPivot vouches for its report: the engine cannot build a report that repeats a key, because
     an axis node keeps its children by Item (`AxisNode.Child`).
 - **A vouched Window is not walked whole, and its painted rows are still checked.**
   - On every render, the grid checks the Row Keys of the rows it paints, a few dozen, before Blazor's own
