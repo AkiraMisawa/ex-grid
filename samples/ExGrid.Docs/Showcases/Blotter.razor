@@ -231,9 +231,10 @@
     private bool _live = true;
     private int _ticks;
 
-    // An amended trade carries the Modified mark on its status.
+    // An amended trade carries the Modified mark on the term the amendment corrected: the value
+    // shown is no longer the one booked, which its Status alone does not say.
     private static readonly CellStateOf<BlotterTrade> StateOf = (trade, column) =>
-        column.Name == "Status" && trade.Status == "Amended" ? CellState.Modified : CellState.Normal;
+        column.Name == trade.AmendedTerm ? CellState.Modified : CellState.Normal;
 
     protected override void OnInitialized()
     {

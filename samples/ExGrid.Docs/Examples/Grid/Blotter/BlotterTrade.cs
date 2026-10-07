@@ -36,4 +36,10 @@ public sealed record BlotterTrade(
 
     /// <summary>The profit or loss since the trade was done.</summary>
     public decimal TotalPnl => Math.Round((Last - TradePrice) * Signed * Multiplier, 2);
+
+    /// <summary>
+    /// The column of the term an amendment corrected after booking — the quantity or the trade
+    /// price, chosen by the trade's id — or <see langword="null"/> for a trade never amended.
+    /// </summary>
+    public string? AmendedTerm => Status != "Amended" ? null : Id % 2 == 0 ? "Quantity" : "TradePrice";
 }

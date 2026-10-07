@@ -29,7 +29,8 @@ block on `main` before it uses the first number.
 | 0140–0149 | `claude/exgrid-live-data` | ExGrid's live data: the Row Key, live Grid Sources, and writes refused when what the user saw changed (grilled 2026-10-05) |
 | 0150–0159 | `claude/live-data-next` | Live data continued: a pushed Window's vouch and ExPivot's report across redraws |
 | 0160–0169 | `claude/live-data-next-cc` | Live data continued, the Claude Code track run beside `claude/live-data-next` for comparison: the same tickets, decided separately |
-| 0170– | free | reserve a block of ten |
+| 0170–0179 | `claude/modified-mark-and-copy-range` | The Copied Range: a copy outlined with dashes while the clipboard still holds it (decided 2026-10-07) |
+| 0180– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 

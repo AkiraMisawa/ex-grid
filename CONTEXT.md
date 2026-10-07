@@ -556,6 +556,16 @@ previous one's and never a partial one
 from the selected-cell count, which the grid makes itself from the rectangles' areas.
 _Avoid_: aggregate (ExPivot's word), status bar sum, footer, total row (a Row Kind)
 
+**Copied Range**:
+What the grid last copied, outlined with dashes for as long as the clipboard still holds it —
+Excel's moving border, standing still. It goes when the clipboard changes by anything but the
+grid's own copy, on Escape, when an edit opens, when the Selection would be dropped, and when a
+copied cell comes to read other text than it was copied with. A browser that cannot say the
+clipboard changed shows none
+([ADR-0170](./docs/adr/0170-a-copy-outlines-its-range-with-dashes-while-the-clipboard-still-holds-it.md)).
+_Avoid_: marquee, marching ants (they move; this does not), copy mode, cut-copy mode (Excel's
+names for a state the grid does not have: its paste never reads from the outline)
+
 **Anchor** *(retired by ADR-0052)*:
 ADR-0012's name for the fixed end of range extension. Under ADR-0052 the fixed end is the
 **Focus** and the moving end is the **Extent**. It has left the code and the criteria; older ADRs

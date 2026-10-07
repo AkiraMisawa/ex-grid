@@ -82,6 +82,9 @@
 .ex-sheet .ex-editing .ex-range-single::after {
     box-shadow: none;
 }
+/* The Copied Range's dashes (ADR-0170) are the outline's colour, as Excel's are: its green where no
+   Theme or Wrapper names one, or they would be the core's CanvasText round a green outline. */
+.ex-sheet .ex-copied-range::after { outline-color: var(--ex-focus-outline, #217346); }
 .ex-sheet .ex-fill-handle { background: var(--ex-fill-handle-color, var(--ex-focus-outline, #217346)); }
 /* The shade multiplies with the cells beneath it rather than lying over them, so the lines inside a
    range stay as drawn: a black line stays black, as Excel's do over its #C7C7C7, and a Fill darkens
@@ -105,6 +108,8 @@
 .ex-sheet .ex-selection-pinned .ex-range::before { background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22)); }
 @media (forced-colors: active) {
     .ex-sheet .ex-focus::after, .ex-sheet .ex-range-single::after { box-shadow: none; }
+    /* The core's restatement, which the green above would otherwise outrank (ADR-0170). */
+    .ex-sheet .ex-copied-range::after { outline-color: Highlight; }
 }
 
 /* The Row Headings' edge is Excel's #ABABAB over white (Part C): the core's grey at the alpha that

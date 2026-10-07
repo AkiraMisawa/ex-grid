@@ -2216,8 +2216,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         });
     const writeAsync = (withHeaders) => writeCopy(buildCopy(withHeaders));
     // The write of a copy whose payload is `answer`: a null one is a refusal, and lands nothing.
+    // A payload is counted as the grid's own write the moment it is in hand, before the browser
+    // writes it, so the clipboardchange it causes finds it counted; a write that then fails gives
+    // its count back (ADR-0170).
     const writeCopy = (answer) => {
-        const flavour = (type, field) => answer.then((p) => {
+        let counted = false;
+        const payload = answer.then((p) => {
+            if (p && clipboardWatched) {
+                ownWrites += 1;
+                counted = true;
+            }
+            return p;
+        });
+        const flavour = (type, field) => payload.then((p) => {
             if (!p) {
                 throw new Error('the copy was refused');
             }
@@ -2226,7 +2237,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         return navigator.clipboard.write([new ClipboardItem({
             'text/plain': flavour('text/plain', 'text'),
             'text/html': flavour('text/html', 'html'),
-        })]).catch((error) => {
+        })]).then(() => payload.then(copyLanded), (error) => {
+            if (counted) {
+                ownWrites -= 1;
+            }
             // A refusal from the core: nothing landed, which is the refusing grid's
             // contract (ADR-0005), and the reason has already been raised (OnCopyRefused
             // on the C# side, or the console line above). Anything else is a failure and
@@ -2235,6 +2249,43 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return;
             }
             copyNotWritten(error);
+        });
+    };
+    // The Copied Range (ADR-0170): the grid outlines what it copied while the clipboard still
+    // holds it, and only a browser that says when the clipboard changed lets it know that. Without
+    // clipboardchange no landing is reported, so no outline is drawn. Each instance counts the
+    // writes of its own copy that the event has yet to report: an event that finds one counted is
+    // that write, and any other is a change — another application's, another grid's, a text
+    // field's — which drops the outline. A change crosses to .NET only while there may be an
+    // outline to drop. The listener is the clipboard entry of ADR-0021, not a new one.
+    const clipboardWatched = typeof globalThis.ClipboardChangeEvent === 'function'
+        && typeof navigator.clipboard?.addEventListener === 'function';
+    let ownWrites = 0;
+    let outlined = false;
+    const copyLanded = (payload) => {
+        if (!clipboardWatched || !core || !payload || !payload.landing) {
+            return;
+        }
+        outlined = true;
+        core.invokeMethodAsync('OnCopyLandedAsync', payload.landing).catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to outline a copy', error);
+            }
+        });
+    };
+    const onClipboardChange = () => {
+        if (ownWrites > 0) {
+            ownWrites -= 1;
+            return;
+        }
+        if (!outlined || !core) {
+            return;
+        }
+        outlined = false;
+        core.invokeMethodAsync('OnClipboardChangedAsync').catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to drop a copy\'s outline', error);
+            }
         });
     };
     // A write the browser would not make. Nothing landed — but no reason has been raised
@@ -2292,6 +2343,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // receives precision and type intact (ADR-0005).
             event.clipboardData.setData('text/plain', payload.text);
             event.clipboardData.setData('text/html', payload.html);
+            // Set here, the write cannot fail: it is the grid's own, and it has landed (ADR-0170).
+            if (clipboardWatched) {
+                ownWrites += 1;
+            }
+            copyLanded(payload);
             return;
         }
         // Beyond the Window: the asynchronous route, without headers — Ctrl+C copies
@@ -2426,6 +2482,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     root.addEventListener('copy', onCopy);
     root.addEventListener('paste', onPaste);
+    if (clipboardWatched) {
+        navigator.clipboard.addEventListener('clipboardchange', onClipboardChange);
+    }
     root.addEventListener('copy', onHeldClipboard, true);
     root.addEventListener('cut', onHeldClipboard, true);
     root.addEventListener('paste', onHeldClipboard, true);
@@ -2911,6 +2970,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             highlights.clear();
             root.removeEventListener('copy', onCopy);
+            if (clipboardWatched) {
+                navigator.clipboard.removeEventListener('clipboardchange', onClipboardChange);
+            }
             root.removeEventListener('paste', onPaste);
             root.removeEventListener('copy', onHeldClipboard, true);
             root.removeEventListener('cut', onHeldClipboard, true);

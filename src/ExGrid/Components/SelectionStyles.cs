@@ -118,6 +118,21 @@ internal static class SelectionStyles
     }
 
     /// <summary>
+    /// A rectangle of the Copied Range as one layer paints it (ADR-0170), or null when the layer
+    /// holds no part of it: painted whole and clipped to the layer's side, as a selected range is,
+    /// with the outline's sides as a selected range's, so the dashes lie on the Selection's outline
+    /// where the two share a range. No hole: the Focus is under the dashes, not in them.
+    /// </summary>
+    public static string? Copied(
+        SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted, bool pinnedLayer, OutlineCover cover)
+    {
+        if (Whole(range, columns, rowHeightPx, painted, pinnedLayer, outsidePx: rowHeightPx) is not { } style
+            || Side(range, columns, pinnedLayer) is not { } side)
+            return null;
+        return style + OutlineSides(range.TopRow, side.First, columns, pinnedLayer, cover);
+    }
+
+    /// <summary>
     /// The Focus as one layer paints it: its cell, cut to the layer's side, with the sides of
     /// its outline that stay inside the cell (<see cref="OutlineSides"/>); null when the layer
     /// holds no part of it.
