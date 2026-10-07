@@ -1535,8 +1535,8 @@
     [Parameter] public EventCallback<PasteRefusalReason> OnPasteRefused { get; set; }
 
     /// <summary>Text the user had typed and not committed, thrown away because the grid
-    /// could no longer place it (ADR-0011): the order changed under the editor, or the
-    /// row left the Window. Neither is the user's own doing — a Consumer-pushed sort or
+    /// could no longer place it (ADR-0011/0154): the order changed under the editor, the
+    /// bound Source changed, or the row left the Window. A Consumer-pushed sort or
     /// refresh lands and the typing goes — so the grid says so rather than leaving the
     /// loss to be guessed at. Chrome writes the sentence and announces it (A11Y-16); the
     /// grid holds no strings. A discard the Consumer asked for through
@@ -2051,6 +2051,7 @@
     private bool _formulaBarIsChrome;
     private int _formulaBarFocusRequest;
     private CellPosition _editingCell;
+    private object? _editingSourceIdentity;
     private string _editText = "";
     private ElementReference _editorElement;
     private bool _editorNeedsFocus;
@@ -2770,10 +2771,11 @@
         }
 
         ReconcileSelection();
-        // A dropped selection mid-edit means the cell the editor floats over no longer
-        // names the same thing (ADR-0011): the uncommitted text is discarded rather
-        // than committed onto a stranger. The gate learns after this render.
-        if (_editMode != EditMode.None && _selection.Selection.IsEmpty)
+        // A dropped selection or a different Source leaves the editor over another target
+        // (ADR-0011/0154). Discard its text; a binding change alone leaves the Selection intact.
+        // The gate learns after this render.
+        var editingSourceChanged = !ReferenceEquals(_editingSourceIdentity, PaintIdentityOf(Source));
+        if (_editMode != EditMode.None && (_selection.Selection.IsEmpty || editingSourceChanged))
         {
             CloseCompletion();
             EndPointing();
@@ -2790,7 +2792,8 @@
             // it away. Raised from OnAfterRenderAsync for the reason the Range Request
             // is — a Consumer handler run inside this render stack would re-enter the
             // same batch.
-            _pendingDiscard = _selectionEmptiedBy ?? EditDiscardReason.OrderChanged;
+            _pendingDiscard = editingSourceChanged ? EditDiscardReason.SourceChanged
+                : _selectionEmptiedBy ?? EditDiscardReason.OrderChanged;
         }
         PrepareRender();
     }
@@ -3526,6 +3529,7 @@
             _fillPointer = null;
             _fillVersion = _sequenceVersion;
             _fillColumns = _columnNames;
+            _fillSourceIdentity = PaintIdentityOf(Source);
             SetDragging(true);
             return;
         }
@@ -3682,6 +3686,7 @@
     }
 
     private string[]? _fillColumns;
+    private object? _fillSourceIdentity;
 
     /// <summary>
     /// The fill drag's release (ADR-0050, item 5): exactly one Fill Intent, or one refusal,
@@ -3698,12 +3703,14 @@
         var source = _fillSource;
         var pointer = releasedOn ?? _fillPointer;
         var version = _fillVersion;
+        var sourceIdentity = _fillSourceIdentity;
         SetDragging(false);
         if (_disposed || source is not { } from || pointer is not { } to)
             return;
         // Before the order is checked: a gathered change that moved it leaves the drag's
         // positions naming other rows, and the drag raises nothing (ADR-0011, D5).
-        if (!await TakeInGatheredAsync() || version != _sequenceVersion || !ReferenceEquals(_fillColumns, _columnNames))
+        if (!await TakeInGatheredAsync() || version != _sequenceVersion || !ReferenceEquals(_fillColumns, _columnNames)
+            || !ReferenceEquals(sourceIdentity, PaintIdentityOf(Source)))
             return;
         if (FillRules.PlanFill(from, to, ColumnIsEditable) is not { } decision)
             return;
@@ -6895,6 +6902,7 @@
     /// <param name="paint">The render the key was taken against.</param>
     private async Task RaiseClearIntentAsync(int paint)
     {
+        if (paint == PaintNotTold) paint = NotePaint();
         if (!await TakeInGatheredAsync())
             return;
         var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(1, 1), ColumnIsEditable);
@@ -6927,6 +6935,7 @@
     /// <param name="paint">The render the key was taken against.</param>
     private async Task FillFromKeyAsync(GridDirection direction, int paint)
     {
+        if (paint == PaintNotTold) paint = NotePaint();
         // Publish before planning; acquire any missing source rows under that order (ADR-0154).
         if (!await TakeInGatheredAsync())
             return;
@@ -7083,6 +7092,7 @@
         _editSurface = EditSurface.Cell;
         _editMode = mode;
         _editingCell = cell;
+        _editingSourceIdentity = PaintIdentityOf(Source);
         _editText = initialText;
         _editCaret = initialText.Length;
         // Placed explicitly at the end of the opening text, never assumed to be where the
@@ -7400,6 +7410,7 @@
     /// <param name="paint">The render the Ctrl+Enter was taken against (ADR-0154).</param>
     private async Task CommitFillAsync(int paint)
     {
+        if (paint == PaintNotTold) paint = NotePaint();
         // Publish gathered changes first (ADR-0154). A change that moved the order has dropped
         // the Selection and discarded the edit
         // (ADR-0011): there is nothing left to fill.
@@ -7576,6 +7587,7 @@
         _editSurface = EditSurface.Bar;
         _editMode = EditMode.Caret;
         _editingCell = focus;
+        _editingSourceIdentity = PaintIdentityOf(Source);
         _editText = OpeningTextOf(focus);
         if (ReportsCaret && string.Equals(_editText, shown, StringComparison.Ordinal))
         {

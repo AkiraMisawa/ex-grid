@@ -28,6 +28,8 @@ public class PaintRetentionTests : GridTestContext
     [InlineData(OwnerPath.Appearance, true)]
     [InlineData(OwnerPath.RowKeyDelegate, false)]
     [InlineData(OwnerPath.RowKeyDelegate, true)]
+    [InlineData(OwnerPath.Source, false)]
+    [InlineData(OwnerPath.Source, true)]
     public async Task ADR0154_obsolete_data_can_be_collected_with_or_without_actions(OwnerPath path, bool actions)
     {
         var consumer = Render<HistoryConsumer>(ps => ps.Add(c => c.Path, path).Add(c => c.Actions, actions));
@@ -47,7 +49,7 @@ public class PaintRetentionTests : GridTestContext
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference ObserveOwner(HistoryConsumer consumer) => new(consumer.Path == OwnerPath.Text ? consumer.Owner.Text : consumer.Owner);
 
-    public enum OwnerPath { Text, Row, Column, PaintedText, Appearance, RowKeyDelegate }
+    public enum OwnerPath { Text, Row, Column, PaintedText, Appearance, RowKeyDelegate, Source }
 
     private sealed class DataOwner
     {
@@ -68,6 +70,7 @@ public class PaintRetentionTests : GridTestContext
         private GridColumn<HistoryRow>[] _columns = [];
         private PaintedTextOf<HistoryRow>? _paintedText;
         private CellAppearanceOf<HistoryRow>? _appearance;
+        private IGridSource<HistoryRow>? _source;
 
         [Parameter] public OwnerPath Path { get; set; }
         [Parameter] public bool Actions { get; set; }
@@ -95,16 +98,19 @@ public class PaintRetentionTests : GridTestContext
             _key = Path == OwnerPath.RowKeyDelegate ? row => { GC.KeepAlive(owner); return row.Id; } : static row => row.Id;
             _paintedText = Path == OwnerPath.PaintedText ? owner.PaintedText : null;
             _appearance = Path == OwnerPath.Appearance ? owner.Appearance : null;
+            _source = Path == OwnerPath.Source
+                ? GridSource.From(_rows, row => { GC.KeepAlive(owner); return row.Id; }) : null;
         }
 
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
             builder.OpenComponent<ExGrid<HistoryRow>>(0);
-            builder.AddAttribute(1, nameof(ExGrid<HistoryRow>.Window), _rows);
-            builder.AddAttribute(2, nameof(ExGrid<HistoryRow>.Columns), _columns);
-            builder.AddAttribute(3, nameof(ExGrid<HistoryRow>.RowKey), _key);
-            builder.AddAttribute(4, nameof(ExGrid<HistoryRow>.PaintedText), _paintedText);
-            builder.AddAttribute(5, nameof(ExGrid<HistoryRow>.CellAppearance), _appearance);
+            if (_source is { } source) builder.AddAttribute(1, nameof(ExGrid<HistoryRow>.Source), source);
+            else builder.AddAttribute(2, nameof(ExGrid<HistoryRow>.Window), _rows);
+            builder.AddAttribute(3, nameof(ExGrid<HistoryRow>.Columns), _columns);
+            builder.AddAttribute(4, nameof(ExGrid<HistoryRow>.RowKey), _key);
+            builder.AddAttribute(5, nameof(ExGrid<HistoryRow>.PaintedText), _paintedText);
+            builder.AddAttribute(6, nameof(ExGrid<HistoryRow>.CellAppearance), _appearance);
             builder.CloseComponent();
         }
     }

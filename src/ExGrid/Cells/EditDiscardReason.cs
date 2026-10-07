@@ -39,4 +39,9 @@ public enum EditDiscardReason
     /// the root's live region, as a refused copy's is; the reason is the Consumer's, so it is
     /// true of what happened.</summary>
     DiscardedByConsumer,
+
+    /// <summary>The bound Source was replaced while the editor was open (ADR-0154).
+    /// Its row sequence and keys belong to another binding, even if their values match.
+    /// The edit is discarded without changing the Selection.</summary>
+    SourceChanged,
 }

@@ -25,20 +25,24 @@ public partial class ExGrid<TRow>
     private sealed record PaintedColumn(string Name, string[] Actions);
     private sealed record PaintedRow(object Identity, object? Key);
     private sealed record Paint(int Id, int SequenceVersion, int FirstRow, PaintedRow?[] Rows,
-        PaintedColumn[] Columns, object? KeyIdentity, object ColumnsIdentity);
+        PaintedColumn[] Columns, object? KeyIdentity, object ColumnsIdentity, object? SourceIdentity);
     private readonly List<Paint> _paints = [];
     private int _paintId;
-    // All IDs since the last row/column-order change share one positional address. This
+    // All IDs since the last binding or row/column-order change share one positional address. This
     // survives pruning Action identities without retaining any row or displayed value.
     private int _firstAddressPaintId;
     private int _paintSequence;
+    private object? _paintSourceIdentity;
     private string[] _paintColumns = [];
 
     // The DOM attribute keeps its existing name. Its token identifies addresses only.
     private int NotePaint()
     {
-        var sameAddress = _paintSequence == _sequenceVersion && SameNames(_paintColumns);
+        var sourceIdentity = PaintIdentityOf(Source);
+        var sameAddress = ReferenceEquals(_paintSourceIdentity, sourceIdentity)
+            && _paintSequence == _sequenceVersion && SameNames(_paintColumns);
         if (!sameAddress || _paintId == 0) _firstAddressPaintId = _paintId + 1;
+        _paintSourceIdentity = sourceIdentity;
         var hasActions = Columns.Any(column => column.Actions.Count != 0);
         if (!hasActions)
         {
@@ -63,7 +67,7 @@ public partial class ExGrid<TRow>
         var rows = new PaintedRow?[count];
         for (var i = 0; i < count; i++)
             if (RowInHand(first + i) is { } row) rows[i] = new(RowInstanceKey(row), _rowKey?.Invoke(row));
-        var paint = new Paint(++_paintId, _sequenceVersion, first, rows, columns, keyIdentity, columnsIdentity);
+        var paint = new Paint(++_paintId, _sequenceVersion, first, rows, columns, keyIdentity, columnsIdentity, sourceIdentity);
         _paints.Add(paint);
         if (_paints.Count > ActionPaintsKept) _paints.RemoveAt(0);
         _paintSequence = _sequenceVersion;
@@ -80,6 +84,7 @@ public partial class ExGrid<TRow>
 
     private bool AddressStillCurrent(int told)
         => told == PaintNotTold || told >= _firstAddressPaintId && told <= _paintId
+            && ReferenceEquals(_paintSourceIdentity, PaintIdentityOf(Source))
             && _paintSequence == _sequenceVersion && SameNames(_paintColumns);
 
     private async Task<bool> RefuseStaleWriteAsync(int told)
@@ -101,7 +106,7 @@ public partial class ExGrid<TRow>
     // No row instance or accessor is retained. A key is the Consumer's declared identity;
     // a reference token has no path back to its row. Column/action names survive a redeclaration.
     private sealed record ActionTarget(int Paint, int? Sequence, int? Row, object? Identity,
-        object? Key, object? KeyDeclaration, string? Column, string? Command);
+        object? Key, object? KeyDeclaration, string? Column, string? Command, object? SourceIdentity);
     private int? _actionPressTold;
     private ActionTarget? _actionPressPending;
     private ActionTarget? _answeredActionPress;
@@ -126,12 +131,14 @@ public partial class ExGrid<TRow>
         var target = painted is not null && index >= 0 && index < painted.Rows.Length ? painted.Rows[index] : null;
         var declared = painted is not null && column < painted.Columns.Length ? painted.Columns[column] : null;
         _actionPressPending = new(paint, painted?.SequenceVersion, row, target?.Identity, target?.Key,
-            painted?.KeyIdentity, declared?.Name, declared is not null && action < declared.Actions.Length ? declared.Actions[action] : null);
+            painted?.KeyIdentity, declared?.Name, declared is not null && action < declared.Actions.Length ? declared.Actions[action] : null,
+            painted?.SourceIdentity);
         await AnswerActionPressWithNoClickAsync();
     }
 
     private bool RendersActionTarget(ActionTarget target)
     {
+        if (!ReferenceEquals(target.SourceIdentity, PaintIdentityOf(Source))) return false;
         var current = _paints.LastOrDefault();
         var original = PaintNamed(target.Paint);
         if (current is null || original is null) return false;
@@ -172,7 +179,7 @@ public partial class ExGrid<TRow>
         // A click from a replacement component is not evidence of its old position after
         // reordering. The capture listener supplies an explicit address for real presses.
         if (paint is not null && paint.SequenceVersion != _sequenceVersion && row is null && atRow is null)
-            return new(told, paint.SequenceVersion, null, null, null, paint.KeyIdentity, args.ColumnName, args.ActionName);
+            return new(told, paint.SequenceVersion, null, null, null, paint.KeyIdentity, args.ColumnName, args.ActionName, paint.SourceIdentity);
         row ??= atRow ?? PositionInHand(identity);
         // When a newer instance's click supplies the payload, unchanged position evidence
         // still names the original no-key target. A different order cannot supply that proof.
@@ -180,7 +187,7 @@ public partial class ExGrid<TRow>
             ? paint.Rows[r - paint.FirstRow] : null;
         return new(told, paint?.SequenceVersion ?? (told == PaintNotTold ? _sequenceVersion : null), row,
             original?.Identity ?? identity, original?.Key ?? key, paint?.KeyIdentity ?? PaintIdentityOf(_rowKey),
-            args.ColumnName, args.ActionName);
+            args.ColumnName, args.ActionName, told == PaintNotTold ? PaintIdentityOf(Source) : paint?.SourceIdentity);
     }
 
     private int? PositionInHand(object identity)
@@ -192,6 +199,7 @@ public partial class ExGrid<TRow>
 
     private TRow? ResolveActionTarget(ActionTarget target)
     {
+        if (!ReferenceEquals(target.SourceIdentity, PaintIdentityOf(Source))) return null;
         if (target.Command is null || target.Column is null) return null;
         if (!Columns.Any(column => column.Name == target.Column && column.Actions.Any(action => action.Name == target.Command))) return null;
         if (target.Paint != PaintNotTold && target.Sequence is null) return null;

@@ -381,6 +381,57 @@ public class WriteRefusalTests : GridTestContext
         Assert.Equal([EditDiscardReason.OrderChanged], discarded);
     }
 
+    [Theory] // ADR-0154: an editor belongs to its opening binding, on either surface.
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public async Task ADR0154_an_editor_keeps_its_original_source_binding(bool bar, bool fill, bool replaceBinding)
+    {
+        var rows = TestRows.Many(50);
+        var source = new GatheringSource(rows);
+        var heard = new Heard();
+        var discarded = new List<EditDiscardReason>();
+        var cut = RenderSourceGrid(source, heard, extra: ps => ps.Add(g => g.ShowFormulaBar, bar)
+            .Add(g => g.OnEditDiscarded, (EditDiscardReason r) => discarded.Add(r)));
+        await ClickAsync(cut, 50, 10);
+        if (bar)
+        {
+            await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+            await cut.Find(".ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = "5" });
+        }
+        else await KeyAsync(cut, "5");
+        var selection = cut.Instance.ReadSelection();
+        var current = Changed(rows, 0, amount: 999m);
+        if (replaceBinding) cut.Render(ps => ps.Add(g => g.Source, new GatheringSource(current)));
+        else await cut.InvokeAsync(() => { source.Gather(current); source.PublishGathered(); });
+        Assert.Equal(selection, cut.Instance.ReadSelection());
+
+        await KeyAsync(cut, "Enter", ctrl: fill);
+
+        if (replaceBinding)
+        {
+            Assert.Empty(heard.Edits);
+            Assert.Empty(heard.Pastes);
+            Assert.Equal([EditDiscardReason.SourceChanged], discarded);
+            Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+            await ClickAsync(cut, 50, 10);
+            await KeyAsync(cut, "6");
+            await KeyAsync(cut, "Enter");
+            Assert.Same(current[0], Assert.Single(heard.Edits).Row);
+        }
+        else
+        {
+            Assert.Empty(discarded);
+            if (fill) Assert.Equal("5", Assert.Single(heard.Pastes).Values[0][0]);
+            else Assert.Same(current[0], Assert.Single(heard.Edits).Row);
+        }
+    }
+
     [Fact] // ADR-0154: keep the existing target, validation and operation rules.
     public async Task ADR0154_An_action_press_fires_with_the_gathered_row()
     {
@@ -685,6 +736,22 @@ public class WriteRefusalTests : GridTestContext
         Assert.Empty(heard.PasteRefusals);
     }
 
+    [Fact] // ADR-0154: the release must still belong to the binding where the drag began.
+    public async Task ADR0154_a_fill_drag_never_targets_a_replacement_source()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderSourceGrid(new GatheringSource(rows), heard,
+            extra: ps => ps.Add(g => g.ShowFillHandle, true));
+        await ClickAsync(cut, 50, 10);
+        await ClickAsync(cut, 50, 30, shift: true);
+        await DownAsync(cut, 100, 40);
+        await cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = 50, OffsetY = 70 });
+        cut.Render(ps => ps.Add(g => g.Source, new GatheringSource(Changed(rows, 3, book: "Replacement"))));
+        await UpAsync(cut, 50, 70);
+        Assert.Empty(heard.Fills);
+    }
+
     [Theory] // ADR-0154: values may change before an opening key/composition arrives.
     [InlineData("5")]
     [InlineData("F2")]
@@ -752,6 +819,38 @@ public class WriteRefusalTests : GridTestContext
         await fill;
         Assert.Empty(heard.Pastes);
         Assert.Equal([PasteRefusalReason.SourceUnavailable], heard.PasteRefusals);
+    }
+
+    [Theory] // ADR-0154: a requested source range cannot be redirected to another binding.
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ADR0154_an_awaited_fill_keeps_its_original_binding(bool replaceBinding)
+    {
+        var rows = TestRows.Many(50);
+        var held = new TaskCompletionSource<IReadOnlyList<TestRow>>();
+        var asked = new TaskCompletionSource();
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, extra: ps => ps.Add(g => g.OnCopyRowsNeeded,
+            (RowRange _, CancellationToken _) => { asked.SetResult(); return held.Task; }));
+        cut.Render(ps => ps.Add(g => g.Window, [rows[1]]).Add(g => g.WindowStart, 1));
+        await cut.InvokeAsync(() => cut.Instance.PlaceSelectionAsync(new SelectionRange(1, 0, 1, 1), new CellPosition(1, 0), 0));
+        var fill = KeyAsync(cut, "d", ctrl: true);
+        await asked.Task;
+        if (replaceBinding) cut.Render(ps => ps.Add(g => g.Source, new GatheringSource(rows)));
+        else cut.Render(ps => ps.Add(g => g.Window, [Changed(rows, 1, book: "Current target")[1]]));
+        held.SetResult([rows[0]]);
+        await fill;
+        if (replaceBinding)
+        {
+            Assert.Empty(heard.Pastes);
+            Assert.Equal([PasteRefusalReason.RenderNoLongerKept], heard.PasteRefusals);
+        }
+        else
+        {
+            var paste = Assert.Single(heard.Pastes);
+            Assert.Equal(rows[0].Book, paste.Values[0][0]);
+            Assert.Empty(heard.PasteRefusals);
+        }
     }
 
     [Fact] // ADR-0154 / ADR-0035: an awaited source never overrides a revoked Editable declaration.
@@ -962,6 +1061,62 @@ public class WriteRefusalTests : GridTestContext
         Assert.Empty(heard.Pastes);
         Assert.Equal([PasteRefusalReason.RenderNoLongerKept], heard.PasteRefusals);
         Assert.True(stream.Disposed);
+    }
+
+    [Theory] // ADR-0154: a held Delete belongs to one binding, not just its source-local version.
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ADR0154_a_held_delete_keeps_its_original_source_binding(bool replaceBinding)
+    {
+        var rows = TestRows.Many(50);
+        var source = new GatheringSource(rows);
+        var heard = new Heard();
+        var cut = RenderSourceGrid(source, heard);
+        await ClickAsync(cut, 50, 10);
+        var taken = Paint(cut);
+        var current = Changed(rows, 0, book: "New value");
+        if (replaceBinding) cut.Render(ps => ps.Add(g => g.Source, new GatheringSource(current)));
+        else await cut.InvokeAsync(() => { source.Gather(current); source.PublishGathered(); });
+        await KeyAsync(cut, "Delete", paint: taken);
+        if (replaceBinding)
+        {
+            Assert.Empty(heard.Clears);
+            Assert.Equal([PasteRefusalReason.RenderNoLongerKept], heard.PasteRefusals);
+            // The new gesture and ordinary Selection still belong to the current binding.
+            await KeyAsync(cut, "Delete");
+            Assert.Single(heard.Clears);
+        }
+        else
+        {
+            Assert.Empty(heard.PasteRefusals);
+            Assert.Single(heard.Clears);
+        }
+    }
+
+    [Theory] // ADR-0154: a coincidentally equal key in another binding is not the original row.
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ADR0154_an_action_keeps_its_original_binding_even_with_the_same_row_key(bool keyboard)
+    {
+        var rows = TestRows.Many(50);
+        var original = new GatheringSource(rows);
+        var replacement = new GatheringSource(Changed(rows, 0, amount: 777m));
+        var heard = new Heard();
+        // Both bindings deliberately use the exact same key declaration and row keys.
+        var cut = RenderSourceGrid(original, heard, WithAction(), ps => ps.Add(g => g.RowKey, ByBook));
+        await ClickAsync(cut, 250, 10);
+        var taken = Paint(cut);
+        if (!keyboard) await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(taken, 0, 2, 0));
+        cut.Render(ps => ps.Add(g => g.Source, replacement));
+        if (keyboard) await KeyAsync(cut, " ", paint: taken);
+        else await cut.FindAll(".ex-action")[0].ClickAsync(new MouseEventArgs());
+        Assert.Empty(heard.Actions);
+        var refusal = Assert.Single(heard.ActionRefusals);
+        Assert.Equal("approve", refusal.ActionName);
+        Assert.Equal(rows[0].Book, refusal.RowKey);
+        // A new gesture still acts on the current binding; no ordinary selection is changed.
+        await KeyAsync(cut, " ");
+        Assert.Same(replacement.Window[0], Assert.Single(heard.Actions).Row);
     }
 
     private sealed class HeldPasteStream(string text) : IJSStreamReference
