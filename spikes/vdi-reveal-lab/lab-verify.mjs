@@ -6,7 +6,7 @@ const require = createRequire('/home/akira/src/hobby/ex-grid/tests/ExGrid.Browse
 const { chromium } = require('playwright-core');
 
 const base = process.argv[2];
-const modes = (process.argv[3] ?? 'ABCDEF').split('');
+const modes = (process.argv[3] ?? 'ABCDEFGH').split('');
 const browser = await chromium.launch({ headless: false, channel: 'chrome' });
 let failed = false;
 for (const mode of modes) {

@@ -137,12 +137,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     //   C  as A, then the offset nudged by 1px and back over the next two frames
     //   D  as A, then the same nudge 300 ms later
     //   E  as A, then the scroller repainted (opacity 0.999 for one frame), no scroll
+    //   G  as A, with the scroller given `will-change: scroll-position`
+    //   H  as A, with the scroller given an opaque background (the grid's own)
     //   F  the rows painted in one frame, the offset written in the frame after it (B, measured
     //      under Citrix, wrote in the very frame the rows landed in: the task that applied them
     //      outlasted a frame, so its animation frame came at once)
     const labMode = () => {
         const mode = new URLSearchParams(location.search).get('reveal');
-        return mode && 'ABCDEF'.includes(mode.toUpperCase()) ? mode.toUpperCase() : 'A';
+        return mode && 'ABCDEFGH'.includes(mode.toUpperCase()) ? mode.toUpperCase() : 'A';
     };
     const labNudge = () => {
         const at = scroller.scrollTop;
@@ -172,6 +174,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         console.info(`[ex-grid lab] reveal mode ${labMode()}`);
     }
     labTrace(`attach: mode ${labMode()} dpr=${window.devicePixelRatio} ua=${navigator.userAgent}`);
+    // G and H change how the browser may treat the scroller, not the write: whether it scrolls it
+    // as a layer of its own from the start. A stylesheet of the page's, since the scroller's own
+    // style attribute is the core's.
+    const labCss = {
+        G: '.ex-grid > .ex-scroller { will-change: scroll-position; }',
+        H: '.ex-grid > .ex-scroller { background-color: var(--ex-background, Canvas); }',
+    }[labMode()];
+    if (labCss && !document.getElementById('ex-lab-style')) {
+        const style = document.createElement('style');
+        style.id = 'ex-lab-style';
+        style.textContent = labCss;
+        document.head.append(style);
+    }
+    if (labCss) {
+        labTrace(`lab style: ${labCss}`);
+    }
     const labAfterRead = (what) => {
         // After a write the layout is already clean, so these reads cost nothing new.
         labTrace(`${what}: scrollTop=${scroller.scrollTop} max=${scroller.scrollHeight - scroller.clientHeight} `
