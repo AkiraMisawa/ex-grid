@@ -68,7 +68,8 @@ public class SelectionSummaryTests : GridTestContext
     private static Task PressAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, bool shift = false)
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, false, shift, false, false, false));
 
-    private static Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y, bool shift = false)
+    private static Task ClickCellAsync<TRow>(IRenderedComponent<ExGrid<TRow>> cut, double x, double y, bool shift = false)
+        where TRow : class
         => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y, ShiftKey = shift });
 
     // The reference, over the rendered rows: what InMemoryGridSource would answer.
@@ -248,9 +249,6 @@ public class SelectionSummaryTests : GridTestContext
                 return Task.FromResult(Answer(sum: 0m));
             }));
 
-    private static Task SelectAsync(IRenderedComponent<ExGrid<CountedRow>> cut, double x, double y, bool shift = false)
-        => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y, ShiftKey = shift });
-
     [Fact] // ADR-0130 / SM-14: with no figure standing or asked for, a new Window is not walked
     public async Task ADR0130_with_no_figure_a_new_window_is_not_walked()
     {
@@ -258,7 +256,7 @@ public class SelectionSummaryTests : GridTestContext
         var requests = new List<GridSummaryRequest>();
         var rows = CountedRows(500, comparisons);
         var cut = RenderCounted(rows, requests);
-        await SelectAsync(cut, 150, 10); // one cell: nothing to sum
+        await ClickCellAsync(cut, 150, 10); // one cell: nothing to sum
         comparisons.Count = 0;
 
         var changed = rows.ToArray();
@@ -276,8 +274,8 @@ public class SelectionSummaryTests : GridTestContext
         var requests = new List<GridSummaryRequest>();
         var rows = CountedRows(500, comparisons);
         var cut = RenderCounted(rows, requests);
-        await SelectAsync(cut, 150, 30);              // (1, 1)
-        await SelectAsync(cut, 150, 50, shift: true); // to (2, 1): rows 1 and 2
+        await ClickCellAsync(cut, 150, 30);              // (1, 1)
+        await ClickCellAsync(cut, 150, 50, shift: true); // to (2, 1): rows 1 and 2
         Assert.Single(requests);
         comparisons.Count = 0;
 
@@ -297,8 +295,8 @@ public class SelectionSummaryTests : GridTestContext
         var requests = new List<GridSummaryRequest>();
         var rows = CountedRows(500, comparisons);
         var cut = RenderCounted(rows, requests);
-        await SelectAsync(cut, 150, 30);
-        await SelectAsync(cut, 150, 50, shift: true); // rows 1 and 2
+        await ClickCellAsync(cut, 150, 30);
+        await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
 
         var changed = rows.ToArray();
         changed[2] = changed[2].WithAmount(-1m);
@@ -315,8 +313,8 @@ public class SelectionSummaryTests : GridTestContext
         var requests = new List<GridSummaryRequest>();
         var rows = CountedRows(500, comparisons);
         var cut = RenderCounted(rows, requests);
-        await SelectAsync(cut, 150, 30);
-        await SelectAsync(cut, 150, 50, shift: true); // rows 1 and 2
+        await ClickCellAsync(cut, 150, 30);
+        await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
 
         CountedRow[] added = [.. rows, new CountedRow(500, 500m, comparisons)];
         cut.Render(ps => ps.Add(g => g.Window, added).Add(g => g.TotalCount, added.Length));
@@ -331,8 +329,8 @@ public class SelectionSummaryTests : GridTestContext
         var requests = new List<GridSummaryRequest>();
         var rows = CountedRows(5, comparisons);
         var cut = RenderCounted(rows, requests);
-        await SelectAsync(cut, 150, 50);
-        await SelectAsync(cut, 150, 90, shift: true); // rows 2 to 4
+        await ClickCellAsync(cut, 150, 50);
+        await ClickCellAsync(cut, 150, 90, shift: true); // rows 2 to 4
 
         var fewer = rows[..4];
         cut.Render(ps => ps.Add(g => g.Window, fewer).Add(g => g.TotalCount, fewer.Length));
@@ -340,19 +338,37 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Equal(2, requests.Count);
     }
 
-    [Fact] // ADR-0130 / SM-14: a row count that moves while a selected row is outside the Windows asks again — a row added above may have shifted it
-    public async Task ADR0130_a_row_count_moving_under_a_selection_the_window_left_asks_again()
+    [Fact] // ADR-0130 / SM-14: a row added after the Selection moves no figure while the Window is elsewhere either
+    public async Task ADR0130_a_row_added_after_a_selection_out_of_sight_moves_no_figure()
     {
         var comparisons = new Comparisons();
         var requests = new List<GridSummaryRequest>();
         var rows = CountedRows(500, comparisons);
         var cut = RenderCounted(rows, requests);
-        await SelectAsync(cut, 150, 30);
-        await SelectAsync(cut, 150, 50, shift: true); // rows 1 and 2
+        await ClickCellAsync(cut, 150, 30);
+        await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
+        cut.Render(ps => ps.Add(g => g.Window, rows[100..150]).Add(g => g.WindowStart, 100));
 
-        // The Window moves on to rows the Selection is not in, and the count with it: a row added
-        // before row 1 would shift both selected rows, and neither Window can show whether one was.
-        cut.Render(ps => ps.Add(g => g.Window, rows[100..150]).Add(g => g.WindowStart, 100).Add(g => g.TotalCount, 501));
+        // A row added before the Selection would have moved the order, and the Row Sequence
+        // Version with it (ADR-0011, LV-7); under the same version a new count is a row at the end.
+        cut.Render(ps => ps.Add(g => g.Window, rows[100..150]).Add(g => g.TotalCount, 501));
+
+        Assert.Single(requests);
+    }
+
+    [Fact] // ADR-0130 / SM-14: the same list handed over at another start holds other rows at the selected positions, and asks again
+    public async Task ADR0130_the_same_list_at_another_start_asks_again()
+    {
+        var comparisons = new Comparisons();
+        var requests = new List<GridSummaryRequest>();
+        var rows = CountedRows(500, comparisons);
+        var cut = RenderCounted(rows, requests);
+        await ClickCellAsync(cut, 150, 30);
+        await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
+        var slice = rows[..50];
+        cut.Render(ps => ps.Add(g => g.Window, slice));
+
+        cut.Render(ps => ps.Add(g => g.WindowStart, 1));
 
         Assert.Equal(2, requests.Count);
     }
@@ -364,8 +380,8 @@ public class SelectionSummaryTests : GridTestContext
         var requests = new List<GridSummaryRequest>();
         var rows = CountedRows(500, comparisons);
         var cut = RenderCounted(rows, requests);
-        await SelectAsync(cut, 150, 30);
-        await SelectAsync(cut, 150, 50, shift: true); // rows 1 and 2
+        await ClickCellAsync(cut, 150, 30);
+        await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
         comparisons.Count = 0;
 
         cut.Render(ps => ps.Add(g => g.Window, rows.Reverse().ToArray()).Add(g => g.RowSequenceVersion, 1));

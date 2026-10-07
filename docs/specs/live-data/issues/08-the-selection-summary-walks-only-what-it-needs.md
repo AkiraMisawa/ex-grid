@@ -34,3 +34,12 @@ changed count now moves the figures unless every selected row is one both Window
 compared in place. A row added after the Selection still moves nothing. This reads ADR-0130's earlier
 "and the row count" through SM-14's "a change outside the Selection moves no figure". The reading is
 put to the lead to confirm.
+
+2026-10-07, after the second review: the line above is withdrawn. Under the same Row Sequence Version a
+changed count moved no row: rows added or removed bump the version (ADR-0011), and under live data a
+batch that moves any row does (LV-7). So a row added before the Selection always drops the Selection,
+and its figures with it. The withdrawn rule guarded only a broken contract, and it asked again on every
+append while the Selection was out of sight, against SM-14. A changed count moves the figures where it
+cuts through the Selection, as first built. The shortcut that skips the walk for the same list now also
+needs the same start. For the lead to confirm: ADR-0130's earlier "and the row count" reads, under SM-14,
+as "a row count that cuts through the Selection".

@@ -98,7 +98,7 @@ public partial class ExGrid<TRow>
     /// </summary>
     private object RowComponentKey(TRow row, int index)
         => _rowKey is { } rowKey
-            ? DistinctKey(row, index, _windowStart, rowKey, _paintedKeys)
+            ? RequireDistinctKey(row, index, _windowStart, rowKey, _paintedKeys)
             : RowIdentityKeys.GetValue(row, static _ => new object());
 
     /// <summary>
@@ -177,14 +177,14 @@ public partial class ExGrid<TRow>
     {
         var seen = new Dictionary<object, int>(window.Count);
         for (var i = 0; i < window.Count; i++)
-            DistinctKey(window[i], i, windowStart, rowKey, seen);
+            RequireDistinctKey(window[i], i, windowStart, rowKey, seen);
     }
 
     /// <summary>The Row Key of Window[<paramref name="index"/>], recorded in <paramref name="seen"/> —
     /// or refused by name, naming the key and its positions, when the row or its key is null or
     /// <paramref name="seen"/> holds the key already (ADR-0140, LV-2). Both the pass over a Window
     /// and the check of the painted rows take their keys here.</summary>
-    private static object DistinctKey(TRow row, int index, int windowStart, Func<TRow, object> rowKey, Dictionary<object, int> seen)
+    private static object RequireDistinctKey(TRow row, int index, int windowStart, Func<TRow, object> rowKey, Dictionary<object, int> seen)
     {
         if (row is null)
             throw NullRow(index);
