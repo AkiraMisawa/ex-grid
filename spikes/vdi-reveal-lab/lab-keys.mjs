@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 const require = createRequire('/home/akira/src/hobby/ex-grid/tests/ExGrid.Browser/');
 const { chromium } = require('playwright-core');
 const browser = await chromium.launch({ headless: false, channel: 'chrome' });
-for (const mode of 'ABCDE') {
+for (const mode of 'ABCDEF') {
   const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));

@@ -63,9 +63,10 @@
     private static readonly Mode[] Modes =
     [
         new("A", "As shipped: the new rows and the scroll offset in the same frame."),
-        new("B", "The new rows in one frame, the scroll offset written in the next."),
+        new("B", "The new rows, then the offset at the next animation frame. Where the key takes longer than a frame, that is the same frame (seen under Citrix)."),
         new("C", "As A, then the offset nudged by 1px and back over the next two frames."),
         new("D", "As A, then the same 1px nudge 300 ms later."),
         new("E", "As A, then the scroller repainted for one frame without scrolling."),
+        new("F", "The new rows painted in one frame, the scroll offset written in the frame after it."),
     ];
 }

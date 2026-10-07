@@ -137,9 +137,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     //   C  as A, then the offset nudged by 1px and back over the next two frames
     //   D  as A, then the same nudge 300 ms later
     //   E  as A, then the scroller repainted (opacity 0.999 for one frame), no scroll
+    //   F  the rows painted in one frame, the offset written in the frame after it (B, measured
+    //      under Citrix, wrote in the very frame the rows landed in: the task that applied them
+    //      outlasted a frame, so its animation frame came at once)
     const labMode = () => {
         const mode = new URLSearchParams(location.search).get('reveal');
-        return mode && 'ABCDE'.includes(mode.toUpperCase()) ? mode.toUpperCase() : 'A';
+        return mode && 'ABCDEF'.includes(mode.toUpperCase()) ? mode.toUpperCase() : 'A';
     };
     const labNudge = () => {
         const at = scroller.scrollTop;
@@ -197,6 +200,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         const mode = labMode();
+        if (mode === 'F' && !reveal.deferred) {
+            // The first animation frame paints the rows; the write is made in the one after it.
+            reveal.deferred = true;
+            labTrace(`apply: mode F, write deferred past the frame that paints the rows (token ${reveal.token})`);
+            revealObserver.disconnect();
+            requestAnimationFrame(() => {
+                labTrace('  mode F: the frame that paints the rows');
+                requestAnimationFrame(() => {
+                    if (pendingReveal === reveal) {
+                        applyReveal(true);
+                    }
+                });
+            });
+            return;
+        }
         if (mode === 'B' && !reveal.deferred) {
             // The rows are in the DOM now; the offset waits a frame. The write stays held, so a
             // read of the offset meanwhile answers where the scroller is going.
