@@ -1,6 +1,6 @@
 # 06: The grid holds no row beyond its Window
 
-Status: done — but for LV-23's browser record, which ticket 13 makes, as this ticket allows
+Status: done
 
 **What to do:** make [ADR-0160](../../../adr/0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md) hold and be checked. The grid holds a Consumer's row instance and
 its Row Key only while it is in the Window it was last given, apart from the two named holdings.
@@ -51,3 +51,6 @@ its Row Key only while it is in the Window it was last given, apart from the two
   row of the Windows handed to it while hidden. The Window it painted last is held only as the Window
   last measured for Auto widths, and goes once the grid is shown again. Layers 1 and 2: 9,161 passed,
   9 skipped.
+
+2026-10-07 (orchestrator): LV-23's record was made by ticket 13 — flat at 89.5 MB over 20 redraws at
+101,001 rows ([`2026-10-07-macos-live-update-costs-after`](../../../../verification/2026-10-07-macos-live-update-costs-after/README.md)).
