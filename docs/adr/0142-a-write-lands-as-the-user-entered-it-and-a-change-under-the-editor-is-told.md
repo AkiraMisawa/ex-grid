@@ -50,7 +50,12 @@ holds.
   - A commit is refused with the editor left open and the text typed kept; Escape leaves without
     writing. The reason is `RowGone` (the key is no longer in the Window) or `OrderMoved` (no Row Key,
     and the Row Sequence Version moved).
-  - An Action press is refused for the same two reasons.
+  - An Action press is refused for the same two reasons. With a Row Key, a press whose order moved
+    before the core heard it, and whose row component a render has since disposed, cannot be paired with
+    its row: the grid keeps no key of an earlier render
+    ([ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md)). It is refused
+    as `OrderMoved`, which is true of it, and never as `RowGone`, which may not be. *(Settled while
+    building it, 2026-10-07.)*
   - Throwing the typed text away was rejected on 2026-10-05 (Q5b, option B) and stays rejected: the user
     would lose what they typed for something that was not their doing.
 - **ag-grid does the same for the editor and for actions.** Its editor belongs to the row node: the row
