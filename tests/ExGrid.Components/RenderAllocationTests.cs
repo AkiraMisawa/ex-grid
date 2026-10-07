@@ -215,4 +215,65 @@ public class RenderAllocationTests : GridTestContext
             $"an action's class cost {withClass - plain:N1} bytes per painted cell per render " +
             $"({withClass:N1} with it, {plain:N1} without) (PF-3).");
     }
+
+    // A Row Key the row already holds as an object: asking it allocates nothing, so whatever a
+    // render allocates per painted row under it is the grid's own.
+    private static readonly Func<TestRow, object> ByBook = static row => row.Book;
+
+    /// <summary>The least a run of <paramref name="renders"/> re-renders of the root alone allocated
+    /// — every row skipping its own, nothing having changed — over <paramref name="runs"/> runs on a
+    /// grid <paramref name="viewportHeight"/> tall, and how many rows it painted.</summary>
+    private (long Bytes, int Rows) LeastAllocatedByRootReRenders(
+        double viewportHeight, Func<TestRow, object>? rowKey, int renders = 10, int runs = 10)
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(100))
+            .Add(g => g.TotalCount, 100)
+            .Add(g => g.Columns, TextColumns(4))
+            .Add(g => g.RowKey, rowKey)
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, viewportHeight)
+            .Add(g => g.ViewportWidth, 4 * ColumnWidthPx + 100));
+        cut.Render();
+        cut.Render();
+
+        var least = long.MaxValue;
+        for (var run = 0; run < runs; run++)
+        {
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < renders; i++)
+                cut.Render();
+            least = Math.Min(least, GC.GetAllocatedBytesForCurrentThread() - before);
+        }
+        return (least, cut.FindComponents<ExGridRow<TestRow>>().Count);
+    }
+
+    /// <summary>The bytes a re-render of the root allocates for each row it paints: the slope
+    /// between a grid painting 6 rows and one painting 24.</summary>
+    private double PerRowPerRootRender(Func<TestRow, object>? rowKey)
+    {
+        const int renders = 10;
+        LeastAllocatedByRootReRenders(120, rowKey, renders);
+        LeastAllocatedByRootReRenders(480, rowKey, renders);
+
+        var few = LeastAllocatedByRootReRenders(120, rowKey, renders);
+        var many = LeastAllocatedByRootReRenders(480, rowKey, renders);
+        return (double)(many.Bytes - few.Bytes) / ((many.Rows - few.Rows) * renders);
+    }
+
+    [Fact] // ADR-0141 / LV-10 / ADR-0027 P5: the painted rows' Row Keys are checked on every render without allocating per row
+    public void Checking_the_painted_rows_keys_allocates_nothing_per_render()
+    {
+        // Measured as a difference, because a re-render of the root is never free per row: it hands
+        // each row component its parameters, and Blazor boxes the value-typed ones, a cost of the
+        // framework's outside P5 (ADR-0027). A grid under a Row Key and one without leave nothing
+        // between them but the key, asked of each painted row, and its check.
+        var keyed = PerRowPerRootRender(ByBook);
+        var plain = PerRowPerRootRender(rowKey: null);
+
+        Assert.True(
+            keyed - plain < 1,
+            $"the painted rows' keys cost {keyed - plain:N1} bytes per painted row per render " +
+            $"({keyed:N1} under a Row Key, {plain:N1} without) (LV-10).");
+    }
 }
