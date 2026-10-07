@@ -25,9 +25,9 @@ public partial class ExGrid<TRow>
     /// commit, an Action, a paste, a fill, a clear — so the write is made on, and carries, the
     /// newest version. A change gathered while the user typed is brought forward by the gesture, as
     /// in ExPivot (ADR-0067), never waited for. Without a source, or with nothing gathered, nothing
-    /// happens. A gathered change that moved the order drops the Selection (ADR-0011); an open edit
-    /// is discarded as any such change discards it, unless a commit is answering the move itself
-    /// (<see cref="EditOutlivesOrderMove"/>). The caller reads the state again before it goes on.
+    /// happens. A gathered change that moved the order drops the Selection (ADR-0011), and an open
+    /// edit outlives it as it outlives any order move (ADR-0011's note of 2026-10-07). The caller
+    /// reads the state again before it goes on.
     /// Answers false when the source or the new state was refused; the failure is reported as a
     /// source's is, and the write is not made.
     /// </summary>

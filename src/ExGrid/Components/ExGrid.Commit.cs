@@ -8,9 +8,11 @@ using Microsoft.JSInterop;
 namespace ExGrid.Components;
 
 // A Cell Editor commit lands as the user typed it, on the row the editor was opened on (ADR-0142,
-// rewritten 2026-10-07; LV-11, LV-17, LV-19, LV-20). The editor keeps what its cell paints when it
-// opens, and a commit over a cell that changed under it lands with an Overwrite Notice; the user's own
-// writes not yet painted when it opened count as seen (D1, kept for the notice alone).
+// rewritten 2026-10-07; LV-11, LV-17, LV-19, LV-20). The editor outlives an order move: with a Row Key
+// it and the Focus follow their row, and without one it stays where it is (ADR-0011's note of
+// 2026-10-07). It keeps what its cell paints when it opens, and a commit over a cell that changed under
+// it lands with an Overwrite Notice; the user's own writes not yet painted when it opened count as
+// seen (D1, kept for the notice alone).
 public partial class ExGrid<TRow>
 {
     /// <summary>
@@ -20,13 +22,13 @@ public partial class ExGrid<TRow>
     /// since the editor opened (<see cref="CommitRefusalReason.OrderMoved"/>). Without a Row Key, a
     /// row that left the Window under the same order takes the typing with it, raised through
     /// <see cref="OnEditDiscarded"/> as <see cref="EditDiscardReason.RowLeftTheWindow"/> (ADR-0011,
-    /// ED-21). The bound source is asked for what it has gathered first (D5, LV-16), and a move it
-    /// brings in is answered here, not by a discard. No Edit Intent is raised, and the editor stays
-    /// open with what was typed, held from then on; Escape leaves without writing. Every commit
-    /// gesture is refused alike, and, as after a Reject, the gesture keeps no meaning of its own. A
-    /// commit is never refused because the cell's value changed under the editor: it lands, and
-    /// <see cref="OnOverwriteNotice"/> tells it. The grid holds no string for it; Chrome words it
-    /// into its refusal live region (A11Y-16).
+    /// ED-21). The bound source is asked for what it has gathered first (D5, LV-16). No Edit Intent
+    /// is raised, and the editor stays open with what was typed; Escape leaves without writing, and a
+    /// later commit is asked again — with a Row Key, it lands once the key is back in the Window.
+    /// Every commit gesture is refused alike, and, as after a Reject, the gesture keeps no meaning
+    /// of its own. A commit is never refused because the cell's value changed under the editor: it
+    /// lands, and <see cref="OnOverwriteNotice"/> tells it. The grid holds no string for it; Chrome
+    /// words it into its refusal live region (A11Y-16).
     /// </summary>
     [Parameter] public EventCallback<GridCommitRefusal> OnCommitRefused { get; set; }
 
@@ -49,86 +51,88 @@ public partial class ExGrid<TRow>
     // Overwrite Notice compares with. Null while no edit is open, or over a cell that paints no text.
     private string? _editSeenText;
 
-    // Whether one of the user's own writes, not yet painted when the editor opened, covered the
-    // edited cell (D1, LV-17): a change the commit finds there is the user's own, and is not told.
+    // Whether one of the user's own writes covered the edited cell, not yet painted, when the editor
+    // opened (D1, LV-17): a change the commit finds there is the user's own, and is not told.
     private bool _editOpenedBeforeOwnWrite;
 
     // The Row Sequence Version the editor was opened under: without a Row Key, the commit lands by
-    // position under it (ADR-0142).
+    // position while it holds, and is refused as OrderMoved once it has moved (ADR-0142).
     private int _editSequence;
 
-    // Whether a commit gesture of this edit has been refused — a commit as RowGone or OrderMoved
-    // (LV-20), or a Ctrl+Enter fill by the paste gate (ADR-0035). The editor is held from then on: an
-    // order move does not discard it (ADR-0011), since the typing is never thrown away for what the
-    // user did not do (ADR-0142). With a Row Key, a commit refused as RowGone lost the row's key, so
-    // every later commit is refused too (_editRowLost); Escape leaves.
-    private bool _editHeld;
-    private bool _editRowLost;
-
-    // Set while a commit takes in what the bound source gathered, and while the Consumer hears its
-    // intent: an order move that brings in is the commit's to answer — refused, or followed by key —
-    // never ADR-0011's discard.
-    private bool _committingEdit;
+    // The Row Key of the row the editor was opened on, while the editor is open: the third holding
+    // ADR-0160 names, so that the editor and the Focus follow their row through an order move and a
+    // commit can tell that the row is gone (ADR-0011's note of 2026-10-07). Null without a Row Key.
+    private object? _editKey;
 
     /// <summary>Notes what the edit opening over <paramref name="cell"/> starts from (ADR-0142,
-    /// LV-11): what the cell paints now, the order in force, and whether the user's own write
-    /// covers the cell unpainted (D1). A change in the round trip between the gesture that opens the
-    /// editor and the open is not seen under the editor, and is the user's to accept.</summary>
+    /// LV-11): what the cell paints now, the order in force, the row's Row Key, and whether the
+    /// user's own write covers the cell unpainted (D1). A change in the round trip between the
+    /// gesture that opens the editor and the open is not seen under the editor, and is the user's to
+    /// accept.</summary>
     private void NoteEditOpened(CellPosition cell)
     {
         _editSeenText = PaintedTextNow(cell.Row, cell.Column);
-        _editOpenedBeforeOwnWrite = WrittenSinceNewestPaint(cell);
+        _editOpenedBeforeOwnWrite = OwnWriteUnpaintedAt(cell);
         _editSequence = _sequenceVersion;
-        _editHeld = false;
-        _editRowLost = false;
+        _editKey = _rowKey is { } rowKey && RowInHand(cell.Row) is { } row ? rowKey(row) : null;
     }
 
-    /// <summary>Takes in what the bound source has gathered for a commit (D5), answering an order
-    /// move it brings in with the commit rather than with ADR-0011's discard.</summary>
-    private async Task<bool> TakeInGatheredForCommitAsync()
+    /// <summary>
+    /// With a Row Key, the editor and the Focus follow the row they were opened on (ADR-0011's note
+    /// of 2026-10-07): after a new Window is taken in, the editor stands where the Window holds its
+    /// row now, and the Focus with it, while the Selection the order move dropped stays dropped. The
+    /// grid does not scroll to follow it. A row the Window no longer holds leaves the editor where it
+    /// is; its commit is refused as <c>RowGone</c>. Without a Row Key the editor stays where it is,
+    /// and its commit is refused as <c>OrderMoved</c> once the order has moved.
+    /// </summary>
+    private void FollowEditedRow()
     {
-        var taken = false;
-        await WhileCommittingAsync(async () => taken = await TakeInGatheredAsync());
-        return taken;
-    }
-
-    /// <summary>Runs <paramref name="step"/> of a commit — taking in what the source gathered, or
-    /// the Consumer hearing the intent — with an order move it brings in left to the commit.</summary>
-    private async Task WhileCommittingAsync(Func<Task> step)
-    {
-        _committingEdit = true;
-        try
+        if (_editMode == EditMode.None || _rowKey is not { } rowKey || _editKey is not { } key)
+            return;
+        var at = RowInHand(_editingCell.Row) is { } there && Equals(rowKey(there), key)
+            ? _editingCell.Row
+            : PositionInHandByKey(rowKey, key);
+        if (at is not { } row)
+            return;
+        _editingCell = new CellPosition(row, _editingCell.Column);
+        if (_selection.Selection.IsEmpty || _selection.Selection.Focus != _editingCell)
         {
-            await step();
-        }
-        finally
-        {
-            _committingEdit = false;
+            _selection = _selection.With(GridSelection.Empty.Click(_editingCell, Extent));
+            _selectionChanged = true;
         }
     }
 
-    /// <summary>Whether an order move just taken in leaves the open edit standing, instead of
-    /// discarding it (ADR-0011): one a commit is answering, or one that came after a commit gesture
-    /// of this edit was refused.</summary>
-    private bool EditOutlivesOrderMove => _committingEdit || _editHeld;
+    /// <summary>Whether the row the editor stands at is out of the painted rows, as a row it followed
+    /// can be: the grid does not scroll to follow it (ADR-0011's note of 2026-10-07).</summary>
+    private bool EditorAway(RowRange visible)
+        => _editingCell.Row < visible.Start - 1 || _editingCell.Row > visible.Start + visible.Count;
+
+    /// <summary>The cell whose box the editor takes: its own, or, while it is away, its column's on
+    /// the first painted row, where it stays open and holds the keyboard — so the keys typed still
+    /// reach it, and Enter still commits it — but is neither seen nor pressed (<c>ex-editor-away</c>).
+    /// Placed among the painted rows, it adds nothing to what the scroller can scroll.</summary>
+    private CellPosition EditorCellIn(RowRange visible, bool away)
+        => away ? new CellPosition(visible.Start, _editingCell.Column) : _editingCell;
 
     /// <summary>
     /// Where a commit lands (ADR-0142, LV-20): on the row the editor was opened on — by its Row Key
-    /// wherever the row is now, or, without one, at the editor's position while the order it was
-    /// opened under holds. <paramref name="openedKey"/> is that row's key, read before the bound
-    /// source put out what it gathered. Otherwise the commit is refused, <c>RowGone</c> or
-    /// <c>OrderMoved</c>, the editor is held, and null is answered. Without a Row Key, the caller
-    /// has already taken a row that left the Window under the same order (ED-21).
+    /// wherever the Window holds it now, or, without one, at the editor's position while the order it
+    /// was opened under holds. Otherwise the commit is refused, <c>RowGone</c> or <c>OrderMoved</c>,
+    /// the editor stays, and null is answered. Without a Row Key, the caller has already taken a row
+    /// that left the Window under the same order (ED-21).
     /// </summary>
-    private async Task<CellPosition?> CommitLandingAsync(object? openedKey)
+    private async Task<CellPosition?> CommitLandingAsync()
     {
         var cell = _editingCell;
         CommitRefusalReason reason;
         if (_rowKey is { } rowKey)
         {
-            if (!_editRowLost && openedKey is not null && PositionInHandByKey(rowKey, openedKey) is { } at)
+            if (_editKey is { } key && (RowInHand(cell.Row) is { } there && Equals(rowKey(there), key)
+                    ? cell.Row
+                    : PositionInHandByKey(rowKey, key)) is { } at)
+            {
                 return new CellPosition(at, cell.Column);
-            _editRowLost = true;
+            }
             reason = CommitRefusalReason.RowGone;
         }
         else if (_sequenceVersion != _editSequence)
@@ -139,12 +143,8 @@ public partial class ExGrid<TRow>
         {
             return cell;
         }
-        _editHeld = true;
         if (OnCommitRefused.HasDelegate)
-        {
-            await OnCommitRefused.InvokeAsync(new GridCommitRefusal(cell, Columns[cell.Column].Name,
-                PaintedTextNow(cell.Row, cell.Column) ?? "", reason));
-        }
+            await OnCommitRefused.InvokeAsync(new GridCommitRefusal(cell, Columns[cell.Column].Name, reason));
         return null;
     }
 
@@ -169,35 +169,58 @@ public partial class ExGrid<TRow>
 
     // ---- D1: the user's own writes count as seen, for the Overwrite Notice ----
 
-    /// <summary>A write the grid raised for one of the user's own gestures (ADR-0142, D1): the cells
-    /// it named, as positions, the newest paint when it was raised, and the order its positions are
-    /// written in. Positions and numbers only, never a row (ADR-0160). A class, so the one noted is
-    /// the one taken back.</summary>
-    private sealed class OwnWrite(int afterPaint, int sequenceVersion, IReadOnlyList<SelectionRange> cells)
+    /// <summary>
+    /// A write the grid raised for one of the user's own gestures (ADR-0142, D1): the cells it named,
+    /// as positions, the order its positions are written in, and the rows among them the Window held
+    /// and the grid painted when it was raised that no paint has shown it on yet. Positions and
+    /// numbers only, never a row (ADR-0160). A class, so the one noted is the one taken back.
+    /// </summary>
+    private sealed class OwnWrite(int sequenceVersion, IReadOnlyList<SelectionRange> cells, HashSet<int> unpainted)
     {
-        public int AfterPaint { get; } = afterPaint;
-
         public int SequenceVersion { get; } = sequenceVersion;
 
         public IReadOnlyList<SelectionRange> Cells { get; } = cells;
+
+        public HashSet<int> Unpainted { get; } = unpainted;
     }
 
-    // The user's own writes raised since the newest paint, under the order in force: only these can
-    // be unpainted when an editor opens. One raised before a newer paint, or under another order,
-    // goes when the next is noted.
+    // The user's own writes not yet painted, oldest first. One goes once every row of it a paint
+    // could show has been painted with a new instance or has left the Window, or once the order its
+    // positions name has moved. A bound beside that, for a Consumer that never repaints a write.
+    private const int OwnWritesKept = 64;
     private readonly List<OwnWrite> _ownWrites = [];
 
     /// <summary>
     /// Notes a write the grid raises for the user's own gesture (ADR-0142, D1): an Edit Intent, a
     /// paste or fill intent, a Clear Intent, a Fill Intent. Noted as it is raised, before the
     /// Consumer hears it, so an edit the grid opens while the Consumer's handler awaits is opened
-    /// after it, as it was typed. An Action is not one: the grid cannot tell what it writes.
+    /// after it, as it was typed. Of its rows, those painted now are followed until a paint shows
+    /// them anew; a row off screen is never let off. An Action is not one: the grid cannot tell what
+    /// it writes.
     /// </summary>
     private OwnWrite NoteOwnWrite(IReadOnlyList<SelectionRange> cells)
     {
-        _ownWrites.RemoveAll(w => w.AfterPaint < _paintId || w.SequenceVersion != _sequenceVersion);
-        var write = new OwnWrite(_paintId, _sequenceVersion, cells);
-        _ownWrites.Add(write);
+        var unpainted = new HashSet<int>();
+        if (_visible is { } visible)
+        {
+            foreach (var range in cells)
+            {
+                var top = Math.Max(range.TopRow, visible.Start);
+                var bottom = Math.Min(range.BottomRow, visible.Start + visible.Count - 1);
+                for (var row = top; row <= bottom; row++)
+                {
+                    if (RowInHand(row) is not null)
+                        unpainted.Add(row);
+                }
+            }
+        }
+        var write = new OwnWrite(_sequenceVersion, cells, unpainted);
+        if (unpainted.Count > 0)
+        {
+            _ownWrites.Add(write);
+            if (_ownWrites.Count > OwnWritesKept)
+                _ownWrites.RemoveAt(0);
+        }
         return write;
     }
 
@@ -205,14 +228,43 @@ public partial class ExGrid<TRow>
     /// wrote nothing.</summary>
     private void ForgetOwnWrite(OwnWrite write) => _ownWrites.Remove(write);
 
-    /// <summary>Whether one of the user's own writes raised since the newest paint was named — so
-    /// not yet painted — covers <paramref name="cell"/> under the order in force (D1). "Since" is
-    /// the order the grid handled them in, never a time.</summary>
-    private bool WrittenSinceNewestPaint(CellPosition cell)
+    /// <summary>
+    /// Notes which of the user's own writes the Window just taken in shows (D1): a row whose instance
+    /// it replaced at the write's position, compared with <paramref name="previous"/>, the Window it
+    /// replaced, while both are in hand (ADR-0160). A row the Window no longer holds is let go too,
+    /// and a write whose order has moved goes whole. Neither a scroll nor a change to another row
+    /// shows a write, so neither lets it go.
+    /// </summary>
+    private void NoteOwnWritesShown(IReadOnlyList<TRow> previous, int previousStart)
+    {
+        if (_ownWrites.Count == 0)
+            return;
+        var replaced = !ReferenceEquals(previous, _window) || previousStart != _windowStart;
+        _ownWrites.RemoveAll(write =>
+        {
+            if (write.SequenceVersion != _sequenceVersion)
+                return true;
+            if (replaced)
+            {
+                write.Unpainted.RemoveWhere(row =>
+                {
+                    var before = row - previousStart;
+                    var then = before >= 0 && before < previous.Count ? previous[before] : null;
+                    return RowInHand(row) is not { } now || !ReferenceEquals(then, now);
+                });
+            }
+            return write.Unpainted.Count == 0;
+        });
+    }
+
+    /// <summary>Whether one of the user's own writes covers <paramref name="cell"/> under the order
+    /// in force, and no paint has shown it there yet (D1). "Yet" is the order the grid handled them
+    /// in, never a time.</summary>
+    private bool OwnWriteUnpaintedAt(CellPosition cell)
     {
         foreach (var write in _ownWrites)
         {
-            if (write.AfterPaint < _paintId || write.SequenceVersion != _sequenceVersion)
+            if (write.SequenceVersion != _sequenceVersion || !write.Unpainted.Contains(cell.Row))
                 continue;
             foreach (var range in write.Cells)
             {

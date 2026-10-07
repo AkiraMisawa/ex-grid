@@ -8,25 +8,24 @@ using Microsoft.JSInterop;
 namespace ExGrid.Components;
 
 // An Action press acts on the row it was pressed on, as that row is now (ADR-0142, LV-12, LV-20): with
-// a Row Key, the row under the pressed row's key; without one, the pressed instance, or — for a press
-// whose button a render disposed — the row at the position the browser told, while the order it was
-// taken under holds. Otherwise it is refused, RowGone or OrderMoved. No press is lost to Blazor, and
-// none fires twice.
+// a Row Key, the row under the pressed row's key while the Window holds it; without one, the pressed
+// instance, or — for a press whose button a render disposed — the row at the position the browser told,
+// while the order it was taken under holds. Otherwise it is refused: RowGone, or, without a Row Key,
+// OrderMoved. No press is lost to Blazor, and none fires twice.
 public partial class ExGrid<TRow>
 {
     /// <summary>
     /// An Action press refused (ADR-0142, LV-12, LV-20): its row is gone
-    /// (<see cref="ActionRefusalReason.RowGone"/>), or it named its row by a position under an order
-    /// that has moved since (<see cref="ActionRefusalReason.OrderMoved"/>). A press never is refused
-    /// because its row's values changed: it acts on the row it was pressed on, as that row is now.
-    /// With a Row Key, that is the row under the pressed row's key, wherever it stands. Without one,
-    /// a press whose button a render has since disposed acts on the row at the position it was told,
-    /// while the order it was taken under holds. Nothing is raised through <see cref="OnAction"/>.
-    /// The refusal carries the press as it would have been raised; its row is the pressed row where
-    /// the grid still has it, and <see langword="default"/> where the grid never resolved it,
-    /// because the grid holds no row beyond its Window (ADR-0160). A Template cell's own controls
-    /// are the Consumer's (ADR-0037). The grid holds no string for it; Chrome words it into its
-    /// refusal live region (A11Y-16).
+    /// (<see cref="ActionRefusalReason.RowGone"/>), or, without a Row Key, it named its row by a
+    /// position under an order that has moved since (<see cref="ActionRefusalReason.OrderMoved"/>).
+    /// A press never is refused because its row's values changed: it acts on the row it was pressed
+    /// on, as that row is now. With a Row Key, that is the row under the pressed row's key, wherever
+    /// the Window holds it, Space included. Without one, a press whose button a render has since
+    /// disposed acts on the row at the position it was told, while the order it was taken under
+    /// holds. Nothing is raised through <see cref="OnAction"/>. The refusal names the row where the
+    /// grid still holds it, and none where it does not (ADR-0160). A Template cell's own controls are
+    /// the Consumer's (ADR-0037). The grid holds no string for it; Chrome words it into its refusal
+    /// live region (A11Y-16).
     /// </summary>
     [Parameter] public EventCallback<GridActionRefusal<TRow>> OnActionRefused { get; set; }
 
@@ -37,9 +36,10 @@ public partial class ExGrid<TRow>
     /// position when the press was told under the order it was taken under, else null.</summary>
     private sealed record ActionPress(int Paint, int Row, int Serial, TRow? Pressed, string? Column, string? Action);
 
-    // The press being told, until its click is heard or the core answers it. Its row is one of the two
-    // holdings that outlive a Window (ADR-0160): bounded to one, and dropped when the press is heard
-    // or answered. The other is the Window last measured for Auto widths (_measuredWindow).
+    // The press being told, until its click is heard or the core answers it. Its row is one of the
+    // three holdings that outlive a Window (ADR-0160): bounded to one, and dropped when the press is
+    // heard or answered. The others are the Window last measured for Auto widths (_measuredWindow)
+    // and the Row Key of the row under an open editor (_editKey).
     private ActionPress? _actionPress;
 
     // Whether the core answered a told press whose click had not come. A click such a press's
@@ -102,8 +102,7 @@ public partial class ExGrid<TRow>
             return;
         _actionPress = null;
         _actionPressAnswered = true;
-        await RaiseActionAsync(new GridActionEventArgs<TRow>(press.Pressed!, press.Column!, press.Action!), press.Paint,
-            press.Row, byPosition: false);
+        await ActAsync(press.Pressed, press.Column!, press.Action!, press.Paint, press.Row, byPosition: false);
     }
 
     /// <summary>An action pressed by pointer, through its row's button (ADR-0020): the click of the
@@ -118,7 +117,8 @@ public partial class ExGrid<TRow>
         // still delivered: the press was acted on once.
         if (press is null && answered && !RendersRowComponentOf(args.Row))
             return Task.CompletedTask;
-        return RaiseActionAsync(args, press?.Paint ?? PaintNotTold, press is { Row: >= 0 } told ? told.Row : null, byPosition: false);
+        return ActAsync(args.Row, args.ColumnName, args.ActionName, press?.Paint ?? PaintNotTold,
+            press is { Row: >= 0 } told ? told.Row : null, byPosition: false);
     }
 
     /// <summary>
@@ -127,14 +127,16 @@ public partial class ExGrid<TRow>
     /// it was painted with, and a handler that writes the row back through <c>GridSource.From</c>'s
     /// <c>ReplaceRow</c> must not be refused for a stale version.
     /// </summary>
-    /// <param name="args">The press: the row the pressed button held, or the one the core resolved
-    /// for it, which is <see langword="default"/> when it resolved none.</param>
+    /// <param name="pressed">The row the pressed button held, or the one the core resolved for it;
+    /// null when it resolved none.</param>
+    /// <param name="column">The Action Column's name.</param>
+    /// <param name="action">The action's name.</param>
     /// <param name="told">The paint the press was taken against (ADR-0142).</param>
     /// <param name="at">The position the press named, under the order of <paramref name="told"/>;
     /// null where it named none.</param>
     /// <param name="byPosition">Whether the press names its row by the position alone — Space on the
     /// Focus — rather than by the row its button held.</param>
-    private async Task RaiseActionAsync(GridActionEventArgs<TRow> args, int told, int? at, bool byPosition)
+    private async Task ActAsync(TRow? pressed, string column, string action, int told, int? at, bool byPosition)
     {
         // Pointed at from outside, a press on the rows is handed over instead of acting (ADR-0058):
         // the stylesheet lets it through to the rows, and this is the guard behind it.
@@ -148,18 +150,19 @@ public partial class ExGrid<TRow>
             _suppressRender = false;
             StateHasChanged();
         }
-        // A position names its row only under the order it was taken against (ADR-0011). Space names
-        // its row by nothing else, so under another order it is refused; a press whose button held
-        // its row still has the row to go by.
+        // A position names its row only under the order it was taken against (ADR-0011). Without a
+        // Row Key, Space names its row by nothing else, so under another order it is refused; with
+        // one it acts by the key of the row it stands on, and a press whose button held its row still
+        // has the row to go by.
         var orderMoved = at is not null && AimedUnderAnotherOrder(told);
-        if (orderMoved && byPosition)
+        if (orderMoved && byPosition && _rowKey is null)
         {
-            await RefuseActionAsync(args, ActionRefusalReason.OrderMoved);
+            await RefuseActionAsync(pressed, column, action, ActionRefusalReason.OrderMoved);
             return;
         }
         if (orderMoved)
             at = null;
-        at ??= args.Row is { } held ? PositionInHand(held) : null;
+        at ??= pressed is { } held ? PositionInHand(held) : null;
         var version = _sequenceVersion;
         if (!await TakeInGatheredAsync())
             return;
@@ -171,13 +174,13 @@ public partial class ExGrid<TRow>
         // And nothing else: no focus is moved (ADR-0037, amended). A press never focused the button,
         // so the keyboard is still where it was — or in whatever the handler opened, which taking it
         // back to the root would rob.
-        if (PressedRowNow(args.Row, at, orderMoved, out var reason) is not { } row)
+        if (PressedRowNow(pressed, at, orderMoved, out var reason) is not { } row)
         {
-            await RefuseActionAsync(args, reason);
+            await RefuseActionAsync(pressed, column, action, reason);
             return;
         }
         if (OnAction.HasDelegate)
-            await OnAction.InvokeAsync(args with { Row = row });
+            await OnAction.InvokeAsync(new GridActionEventArgs<TRow>(row, column, action));
     }
 
     /// <summary>
@@ -207,9 +210,26 @@ public partial class ExGrid<TRow>
         return null;
     }
 
-    private async Task RefuseActionAsync(GridActionEventArgs<TRow> args, ActionRefusalReason reason)
+    /// <summary>Raises the refusal of a press, naming <paramref name="pressed"/> only while the
+    /// Window holds it (ADR-0160).</summary>
+    private async Task RefuseActionAsync(TRow? pressed, string column, string action, ActionRefusalReason reason)
     {
-        if (OnActionRefused.HasDelegate)
-            await OnActionRefused.InvokeAsync(new GridActionRefusal<TRow>(args, reason));
+        if (!OnActionRefused.HasDelegate)
+            return;
+        var held = pressed is not null && (_rowKey is { } rowKey
+            ? PositionInHandByKey(rowKey, rowKey(pressed)) is not null
+            : WindowHolds(pressed));
+        await OnActionRefused.InvokeAsync(new GridActionRefusal<TRow>(held ? pressed : null, column, action, reason));
+    }
+
+    /// <summary>Whether the Window holds <paramref name="row"/>, by reference (ADR-0003).</summary>
+    private bool WindowHolds(TRow row)
+    {
+        foreach (var held in _window)
+        {
+            if (ReferenceEquals(held, row))
+                return true;
+        }
+        return false;
     }
 }

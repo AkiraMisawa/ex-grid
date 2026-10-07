@@ -377,12 +377,16 @@
                         @* The edited cell's Fill and Font (ADR-0050, item 15): on the field, on the
                            box a Chrome's control stands in, and on the coloured text beneath. *@
                         var editorLook = EditorAppearanceClass();
-                        var editorClass = WithEditorAppearance("ex-editor", editorLook);
-                        var referenceTextClass = WithEditorAppearance("ex-reference-text ex-reference-text-cell", editorLook);
+                        @* The grid does not scroll to follow a row its editor followed out of view
+                           (ADR-0011's note of 2026-10-07): the editor stays open, worn away. *@
+                        var editorAway = EditorAway(visible);
+                        var editorClass = WithEditorAppearance(editorAway ? "ex-editor ex-editor-away" : "ex-editor", editorLook);
+                        var referenceTextClass = WithEditorAppearance(editorAway ? "ex-reference-text ex-reference-text-cell ex-editor-away" : "ex-reference-text ex-reference-text-cell", editorLook);
+                        var editorCell = EditorCellIn(visible, editorAway);
                         @if (_editingCell.Column < _columnStyles.Geometry.PinnedCount)
                         {
                             <div class="ex-editor-pinned" @key="EditorLayerKey">
-                                @if (SelectionStyles.Pinned(SelectionStyles.CellRange(_editingCell), _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedBox)
+                                @if (SelectionStyles.Pinned(SelectionStyles.CellRange(editorCell), _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedBox)
                                 {
                                     @* stopPropagation, like every other interactive
                                        element over the delegated viewport: a
@@ -407,7 +411,7 @@
                                 }
                             </div>
                         }
-                        else if (SelectionStyles.Scrollable(SelectionStyles.CellRange(_editingCell), _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } editorBox)
+                        else if (SelectionStyles.Scrollable(SelectionStyles.CellRange(editorCell), _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } editorBox)
                         {
                             @if (editorChrome is not null)
                             {
@@ -961,8 +965,9 @@
     /// The Consumer's sentence, relayed — the grid writes none of its own.</summary>
     private string? _editError;
 
-    /// <summary>Why the last reconciliation emptied the selection, or null.</summary>
-    private EditDiscardReason? _selectionEmptiedBy;
+    /// <summary>Whether the last reconciliation found the visible columns changed: what discards an
+    /// open edit (ADR-0011). An order move does not (ADR-0011's note of 2026-10-07).</summary>
+    private bool _columnsMoved;
 
     /// <summary>How often the edge band scrolls while a drag holds the pointer in it
     /// (ADR-0008). Provisional the way the band's own numbers are — the shape is the
@@ -2589,6 +2594,7 @@
         _windowStart = Source?.WindowStart ?? WindowStart;
         // While the Window it replaces is still in hand, never later (ADR-0160).
         NotePaintedRowsReplaced(previousWindow, previousStart);
+        NoteOwnWritesShown(previousWindow, previousStart);
         // The appearances kept for rows this Window does not hold go with them (ADR-0160).
         if (_appearances is { } appearances && (!ReferenceEquals(previousWindow, _window) || previousStart != _windowStart))
             appearances.KeepOnly(_rowInHand ??= RowInHand, _visible?.Start ?? 0, _visible?.Count ?? 0);
@@ -2797,13 +2803,12 @@
         }
 
         ReconcileSelection();
-        // A dropped selection mid-edit means the cell the editor floats over no longer
-        // names the same thing (ADR-0011): the uncommitted text is discarded rather
-        // than committed onto a stranger. The gate learns after this render.
-        // A commit answers an order move it brings in itself, and an edit a commit was refused for
-        // is held: neither is discarded for an order move (ADR-0142). A change of columns still is.
-        if (_editMode != EditMode.None && _selection.Selection.IsEmpty
-            && !(EditOutlivesOrderMove && _selectionEmptiedBy is null or EditDiscardReason.OrderChanged))
+        // A change of the visible columns mid-edit means the cell the editor floats over no
+        // longer names the same column (ADR-0011): the uncommitted text is discarded rather than
+        // committed into a stranger. The gate learns after this render. An order move discards
+        // nothing: the editor outlives it, and with a Row Key it and the Focus follow their row
+        // (ADR-0011's note of 2026-10-07).
+        if (_editMode != EditMode.None && _columnsMoved)
         {
             CloseCompletion();
             EndPointing();
@@ -2820,7 +2825,11 @@
             // it away. Raised from OnAfterRenderAsync for the reason the Range Request
             // is — a Consumer handler run inside this render stack would re-enter the
             // same batch.
-            _pendingDiscard = _selectionEmptiedBy ?? EditDiscardReason.OrderChanged;
+            _pendingDiscard = EditDiscardReason.ColumnsChanged;
+        }
+        else
+        {
+            FollowEditedRow();
         }
         PrepareRender();
     }
@@ -2840,19 +2849,11 @@
     /// </summary>
     private void ReconcileSelection()
     {
-        // Which of the two causes emptied it, for the discard reason (ADR-0011). They are
-        // different sentences to a user, and the wrong one is worse than none.
-        _selectionEmptiedBy = null;
-        var held = _selection.Selection;
         var reconciled = _selection.Under(_sequenceVersion);
-        if (!held.IsEmpty && reconciled.Selection.IsEmpty)
-            _selectionEmptiedBy = EditDiscardReason.OrderChanged;
-        if (!ColumnsAreAsBefore())
-        {
-            if (!held.IsEmpty)
-                _selectionEmptiedBy ??= EditDiscardReason.ColumnsChanged;
+        // Noted for an open edit, which a change of columns discards (ADR-0011).
+        _columnsMoved = !ColumnsAreAsBefore();
+        if (_columnsMoved)
             reconciled = HeldSelection.Empty(_sequenceVersion);
-        }
 
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
@@ -7293,13 +7294,10 @@
     {
         if (_editMode == EditMode.None)
             return true;
-        // The row the editor was opened on, named by its Row Key before the bound source puts out
-        // what it has gathered (ADR-0142, LV-20): the commit goes to that row wherever it is then.
-        var openedKey = _rowKey is { } rowKey && !_editRowLost && RowInHand(_editingCell.Row) is { } opened ? rowKey(opened) : null;
         // The bound source puts out what it has gathered first, so the commit is made on, and its
         // Edit Intent carries, the newest version (ADR-0142 D5, LV-16). A gathered change that
         // moved the order is answered below, by the row the commit goes to, never by a discard.
-        if (!await TakeInGatheredForCommitAsync())
+        if (!await TakeInGatheredAsync())
             return false;
         if (_editMode == EditMode.None)
             return true;
@@ -7312,9 +7310,9 @@
             await EndEditingAsync(reclaimFocus, byPress, DiscardedIn(EditDiscardReason.RowLeftTheWindow));
             return true;
         }
-        // The row is gone, or, with no Row Key, the order moved: refused, the editor held with the
+        // The row is gone, or, with no Row Key, the order moved: refused, the editor kept with the
         // typing, and the gesture keeps no meaning of its own, as after a Reject (ADR-0142, LV-20).
-        if (await CommitLandingAsync(openedKey) is not { } cell)
+        if (await CommitLandingAsync() is not { } cell)
         {
             RequestEditorFocus();
             return false;
@@ -7359,7 +7357,7 @@
             // behind its answer (ADR-0010), and an order move the Consumer's own write brings in is
             // this commit's, not a discard. The user's own write (D1), taken back if refused.
             var written = NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
-            await WhileCommittingAsync(() => OnEdit.InvokeAsync(intent));
+            await OnEdit.InvokeAsync(intent);
             if (intent.RefusalMessage is { } refused)
             {
                 ForgetOwnWrite(written);
@@ -7416,12 +7414,20 @@
 
     private async Task CommitFillAsync()
     {
-        // Made on the newest version the bound source holds (ADR-0142 D5, LV-16). A gathered
-        // change that moved the order has dropped the Selection (ADR-0011), and the fill is
-        // refused below as aimed at no Selection, the editor held with the typing.
-        if (!await TakeInGatheredForCommitAsync() || _editMode == EditMode.None)
+        // Made on the newest version the bound source holds (ADR-0142 D5, LV-16).
+        if (!await TakeInGatheredAsync() || _editMode == EditMode.None)
         {
             StateHasChanged();
+            return;
+        }
+        // A fill is positional: once the order has moved since the editor opened, the Selection it
+        // was aimed with no longer names those rows, and it is refused as aimed at none, the editor
+        // kept with the typing — even where the Focus followed its row (ADR-0142; ADR-0011's note
+        // of 2026-10-07).
+        if (_sequenceVersion != _editSequence)
+        {
+            if (OnPasteRefused.HasDelegate)
+                await OnPasteRefused.InvokeAsync(PasteRefusalReason.EmptySelection);
             return;
         }
         // The same gate as a paste, over the whole selection — not the one cell the
@@ -7433,9 +7439,7 @@
             // Before the editor is torn down (ADR-0035, ED-19). A Refusal judges the
             // operation and never the text, so the editor stays open with the typing in
             // it, and Enter — a gesture the refusal did not name — still commits the one
-            // cell the editor was opened on, which is editable by construction. It is held: an
-            // order move after does not throw the typing away (ADR-0142).
-            _editHeld = true;
+            // cell the editor was opened on, which is editable by construction.
             if (OnPasteRefused.HasDelegate)
                 await OnPasteRefused.InvokeAsync(decision.Reason);
             return;
@@ -7498,8 +7502,7 @@
         _editMode = EditMode.None;
         _editText = "";
         _editSeenText = null;
-        _editHeld = false;
-        _editRowLost = false;
+        _editKey = null;
         _reportedText = null;
         ForgetCaretPlacement();
         _editError = null;
@@ -7979,7 +7982,7 @@
             _suppressRender = false;
             StateHasChanged();
             if (row is not null)
-                await RaiseActionAsync(new GridActionEventArgs<TRow>(row, column.Name, column.Actions[choice.Action].Name), paint, focus.Row, byPosition: true);
+                await ActAsync(row, column.Name, column.Actions[choice.Action].Name, paint, focus.Row, byPosition: true);
             return;
         }
 
@@ -7987,7 +7990,7 @@
             return;
         if (column.Actions.Count == 1)
         {
-            await RaiseActionAsync(new GridActionEventArgs<TRow>(row, column.Name, column.Actions[0].Name), paint, focus.Row, byPosition: true);
+            await ActAsync(row, column.Name, column.Actions[0].Name, paint, focus.Row, byPosition: true);
             return;
         }
         if (column.Actions.Count > 1)

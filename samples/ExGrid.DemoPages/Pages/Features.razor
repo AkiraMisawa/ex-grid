@@ -471,9 +471,9 @@
         => Status(refusal.Reason, refusal.Reason switch
         {
             ActionRefusalReason.RowGone =>
-                $"RowGone — {refusal.Action.ActionName} was not done: the row is no longer there",
+                $"RowGone — {refusal.ActionName} was not done: the row is no longer there",
             ActionRefusalReason.OrderMoved =>
-                $"OrderMoved — {refusal.Action.ActionName} was not done: the rows moved before the press landed; press it on the row again",
+                $"OrderMoved — {refusal.ActionName} was not done: the rows moved before the press landed; press it on the row again",
             _ => refusal.Reason.ToString(),
         }, s => _actionRefusedStatus = s);
 

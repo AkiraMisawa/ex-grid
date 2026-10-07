@@ -612,18 +612,12 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Same(changed[0], Assert.Single(heard.Actions).Row);
     }
 
-    [Theory] // ADR-0142 / LV-20, LV-14, ADR-0011: Space names its row by the Focus, a position, so one taken under an order that has moved since is refused as OrderMoved, with a Row Key or without
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Space_taken_under_an_order_that_has_moved_since_is_refused(bool rowKey)
+    [Fact] // ADR-0142 / LV-20, LV-14, ADR-0011: without a Row Key, Space names its row by the Focus, a position, so one taken under an order that has moved since is refused as OrderMoved
+    public async Task Without_a_row_key_Space_taken_under_an_order_that_has_moved_since_is_refused()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
-        var cut = RenderGrid(rows, heard, WithAction(), extra: ps =>
-        {
-            if (rowKey)
-                ps.Add(g => g.RowKey, ByBook);
-        });
+        var cut = RenderGrid(rows, heard, WithAction());
         await ClickAsync(cut, 250, 10);
         var pressedOn = Paint(cut);
         Reorder(cut, Moved(rows, 0, 2));
@@ -633,7 +627,27 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, " ", paint: pressedOn);
 
         Assert.Empty(heard.Actions);
-        Assert.Equal(ActionRefusalReason.OrderMoved, Assert.Single(heard.ActionRefusals).Reason);
+        var refusal = Assert.Single(heard.ActionRefusals);
+        Assert.Equal(ActionRefusalReason.OrderMoved, refusal.Reason);
+        Assert.Equal("approve", refusal.ActionName);
+    }
+
+    [Fact] // ADR-0142 / LV-12, LV-20, ADR-0140: with a Row Key, Space acts on the row under the key of the row the Focus stands on, whatever order its key was taken under
+    public async Task With_a_row_key_Space_taken_under_an_order_that_has_moved_since_acts_by_key()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, WithAction(), extra: ps => ps.Add(g => g.RowKey, ByBook));
+        await ClickAsync(cut, 250, 10);
+        var pressedOn = Paint(cut);
+        var moved = Moved(rows, 0, 2);
+        Reorder(cut, moved);
+        await ClickAsync(cut, 250, 10);
+
+        await KeyAsync(cut, " ", paint: pressedOn);
+
+        Assert.Empty(heard.ActionRefusals);
+        Assert.Same(moved[0], Assert.Single(heard.Actions).Row);
     }
 
     [Fact] // ADR-0142 / LV-12, ADR-0037: Space on an action whose row the view has scrolled away from fires on that row as it is now
@@ -1204,6 +1218,32 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.CommitRefusals);
     }
 
+    [Fact] // ADR-0142 D1 / LV-17, principle 6: a paint of something else in between — a change upstream to another row, a scroll — does not end the user's own write; `5` Enter, then ↑ `7` Enter, tells nothing
+    public async Task An_unrelated_paint_in_between_does_not_end_the_users_own_write()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 30);
+
+        await KeyAsync(cut, "5");
+        await KeyAsync(cut, "Enter");
+        // A live change to another painted row, and a scroll of one row and back: new paints, none
+        // of which shows the 5.
+        var ticked = Changed(rows, 3, amount: 33m);
+        Push(cut, ticked);
+        await ScrollToAsync(cut.Find(".ex-scroller"), 20);
+        await ScrollToAsync(cut.Find(".ex-scroller"), 0);
+        await KeyAsync(cut, "ArrowUp");
+        await KeyAsync(cut, "7");
+        // The store writes the 5 back only now, under the open editor.
+        Push(cut, Changed(ticked, 1, book: "5"));
+        await KeyAsync(cut, "Enter");
+
+        Assert.Equal(["5", "7"], heard.Edits.Select(e => e.Value));
+        Assert.Empty(heard.Notices);
+    }
+
     [Fact] // ADR-0142 D1 / LV-17: once the user's write is painted, an editor opened over it tells a change upstream that comes after
     public async Task An_editor_opened_after_the_users_write_was_painted_tells_a_change_after_it()
     {
@@ -1415,8 +1455,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-editor"));
     }
 
-    [Fact] // ADR-0142 / LV-20, ADR-0011: an order move that lands while the editor is open, outside a commit, still discards the edit, as ADR-0011 has it
-    public async Task An_order_move_outside_a_commit_still_discards_the_edit()
+    [Fact] // ADR-0011 (note of 2026-10-07) / LV-20, ED-21: without a Row Key, an order move under an open editor discards nothing — the editor stays where it is, and its commit is refused as OrderMoved; Escape writes nothing
+    public async Task Without_a_row_key_an_order_move_leaves_the_editor_and_refuses_its_commit()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -1426,9 +1466,101 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         Reorder(cut, Moved(rows, 0, 2));
 
-        Assert.Empty(cut.FindAll(".ex-editor"));
-        cut.WaitForAssertion(() => Assert.Equal([EditDiscardReason.OrderChanged], heard.Discards));
+        Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
+        Assert.Empty(heard.Discards);
+        // The Selection still goes with the order (ADR-0011).
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
+
+        await KeyAsync(cut, "Enter");
+
         Assert.Empty(heard.Edits);
+        var refusal = Assert.Single(heard.CommitRefusals);
+        Assert.Equal(CommitRefusalReason.OrderMoved, refusal.Reason);
+        Assert.Equal(new CellPosition(0, 0), refusal.Cell);
+        Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
+
+        await KeyAsync(cut, "Escape");
+        Assert.Empty(heard.Edits);
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.Empty(heard.Discards);
+    }
+
+    [Fact] // ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, the editor and the Focus follow the row they were opened on through an order move, and the commit lands on it
+    public async Task With_a_row_key_the_editor_and_the_focus_follow_their_row_and_the_commit_lands_on_it()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, extra: ps => ps.Add(g => g.RowKey, ByBook));
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        var moved = Moved(rows, 0, 2);
+
+        Reorder(cut, moved);
+
+        Assert.Empty(heard.Discards);
+        Assert.Equal(new CellPosition(2, 0), cut.Instance.ReadSelection().Selection.Focus);
+        var editor = cut.Find("input.ex-editor");
+        Assert.Equal("5", editor.GetAttribute("value"));
+        // Standing on the row's new place, the third painted row.
+        Assert.Contains("top: 40px", editor.GetAttribute("style"));
+
+        await KeyAsync(cut, "Enter");
+
+        Assert.Empty(heard.CommitRefusals);
+        Assert.Same(moved[2], Assert.Single(heard.Edits).Row);
+    }
+
+    [Fact] // ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a row that moves out of view takes its editor along without scrolling: the editor stays open, the keys typed reach it, and Enter commits it on the row
+    public async Task With_a_row_key_a_row_moved_out_of_view_keeps_its_editor_without_scrolling()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, extra: ps => ps.Add(g => g.RowKey, ByBook));
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        var firstRow = Attribute(cut, "data-ex-first-row");
+        // Row 0 moves to row 40, far below the five painted rows.
+        var moved = Moved(rows, 0, 40);
+
+        Reorder(cut, moved);
+
+        Assert.Equal(firstRow, Attribute(cut, "data-ex-first-row"));
+        Assert.Equal(new CellPosition(40, 0), cut.Instance.ReadSelection().Selection.Focus);
+        var editor = cut.Find("input.ex-editor");
+        Assert.Contains("ex-editor-away", editor.ClassList);
+        await TypeAsync(cut, "57");
+        Assert.Equal(firstRow, Attribute(cut, "data-ex-first-row"));
+
+        // Enter commits on the row; moving the Focus on from it then is Enter's own (ADR-0012).
+        await KeyAsync(cut, "Enter");
+
+        var intent = Assert.Single(heard.Edits);
+        Assert.Equal("57", intent.Value);
+        Assert.Same(moved[40], intent.Row);
+    }
+
+    [Fact] // ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a row whose key left the Window refuses the commit as RowGone with the editor kept, and the commit lands once the row is back
+    public async Task With_a_row_key_a_row_that_left_the_window_refuses_the_commit_until_it_is_back()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, extra: ps => ps.Add(g => g.RowKey, ByBook));
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        cut.Render(ps => ps.Add(g => g.Window, rows[1..]).Add(g => g.TotalCount, rows.Length - 1).Add(g => g.RowSequenceVersion, 1));
+
+        await KeyAsync(cut, "Enter");
+
+        Assert.Empty(heard.Edits);
+        Assert.Equal(CommitRefusalReason.RowGone, Assert.Single(heard.CommitRefusals).Reason);
+        Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
+        Assert.Empty(heard.Discards);
+
+        var back = Moved(rows, 0, 3);
+        cut.Render(ps => ps.Add(g => g.Window, back).Add(g => g.TotalCount, rows.Length).Add(g => g.RowSequenceVersion, 2));
+        await KeyAsync(cut, "Enter");
+
+        Assert.Same(back[3], Assert.Single(heard.Edits).Row);
     }
 
     // ---- LV-16 (D5): a bound source puts out what it has gathered before a write is handled ----
@@ -1707,7 +1839,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.Notices);
     }
 
-    [Fact] // ADR-0142 D5 / LV-16, LV-20: with a Row Key, a commit whose row a gathered change took out of the Window is refused as RowGone, the editor held, and every later commit too
+    [Fact] // ADR-0142 D5 / LV-16, LV-20: with a Row Key, a commit whose row a gathered change took out of the Window is refused as RowGone, the editor kept, and refused again while the key stays out
     public async Task With_a_row_key_a_commit_whose_row_left_the_window_is_refused_as_row_gone()
     {
         var rows = TestRows.Many(50);
@@ -1724,7 +1856,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Equal(CommitRefusalReason.RowGone, Assert.Single(heard.CommitRefusals).Reason);
         Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
 
-        // The row's key went with the refusal: a commit is refused again, whatever stands there now.
+        // The editor holds the row's key: whatever stands at its place now, the commit is refused again.
         await KeyAsync(cut, "Enter");
         Assert.Empty(heard.Edits);
         Assert.Equal([CommitRefusalReason.RowGone, CommitRefusalReason.RowGone], heard.CommitRefusals.Select(r => r.Reason));
@@ -1901,7 +2033,9 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.Actions);
         var refusal = Assert.Single(heard.ActionRefusals);
         Assert.Equal(ActionRefusalReason.OrderMoved, refusal.Reason);
-        Assert.Equal("approve", refusal.Action.ActionName);
+        Assert.Equal("approve", refusal.ActionName);
+        // The pressed row moved as a new instance: the Window no longer holds it, so none is named.
+        Assert.Null(refusal.Row);
     }
 
     [Fact] // ADR-0142 / LV-20, LV-12: without a Row Key, a told press whose row left the Window, under the same order, is refused as RowGone after the render that took it away
@@ -1917,7 +2051,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         cut.Render(ps => ps.Add(g => g.Window, rows[1..]).Add(g => g.WindowStart, 1));
 
         cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowGone, Assert.Single(heard.ActionRefusals).Reason));
-        Assert.Same(rows[0], heard.ActionRefusals[0].Action.Row);
+        // The row is gone from the Window, so the refusal names none (ADR-0160).
+        Assert.Null(heard.ActionRefusals[0].Row);
         Assert.Empty(heard.Actions);
     }
 
@@ -2087,7 +2222,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.Actions);
         var refusal = Assert.Single(heard.ActionRefusals);
         Assert.Equal(ActionRefusalReason.RowGone, refusal.Reason);
-        Assert.Same(rows[0], refusal.Action.Row);
+        Assert.Null(refusal.Row);
     }
 
     [Fact] // ADR-0142 / LV-20, LV-12, "No press is lost to Blazor": with a Row Key, a told press whose row a later render takes out of the Window is answered after that render, as RowGone

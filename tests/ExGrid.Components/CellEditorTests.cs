@@ -429,8 +429,8 @@ public class CellEditorTests : GridTestContext
         Assert.Equal(PasteRefusalReason.TargetNotEditable, refused);
     }
 
-    [Fact] // ADR-0011 / ED-21: a sort landing under an open editor takes the typing, and says so
-    public async Task Text_discarded_because_the_order_changed_is_announced()
+    [Fact] // ADR-0011 (note of 2026-10-07) / ED-21: a sort landing under an open editor discards nothing — the editor stays with the typing
+    public async Task A_sort_landing_under_an_open_editor_keeps_the_typing()
     {
         EditDiscardReason? discarded = null;
         var cut = RenderGrid(onEditDiscarded: r => discarded = r);
@@ -440,8 +440,8 @@ public class CellEditorTests : GridTestContext
 
         cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 1));
 
-        Assert.Empty(cut.FindAll(".ex-editor"));
-        Assert.Equal(EditDiscardReason.OrderChanged, discarded);
+        Assert.Equal("9", cut.Find("input.ex-editor").GetAttribute("value"));
+        Assert.Null(discarded);
     }
 
     [Fact] // ADR-0011 / ED-21: a column change is not a reorder, and must not be reported as one

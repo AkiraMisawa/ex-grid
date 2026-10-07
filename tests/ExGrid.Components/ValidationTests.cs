@@ -454,8 +454,11 @@ public class ValidationTests : GridTestContext
         await TypeAndCommitAsync(cut, "abc");
         Assert.NotEmpty(cut.FindAll(".ex-message"));
 
-        // The Consumer pushes a reorder: the selection is dropped and the editor with it.
+        // The Consumer pushes a reorder: the selection is dropped, and the editor outlives it with its
+        // Reject (ADR-0011's note of 2026-10-07) until Escape ends it.
         cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 1));
+        Assert.Equal("true", cut.Find(".ex-editor").GetAttribute("aria-invalid"));
+        await PressAsync(cut, "Escape");
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, "7");
 
