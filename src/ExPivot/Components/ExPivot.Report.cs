@@ -513,7 +513,8 @@ public partial class ExPivot
         builder.AddComponentParameter(25, nameof(ExGrid<PivotReportRow>.RowKey), ReportRowKey);
         // The report vouches that it holds no Row Key twice (ADR-0141, LV-10): the engine cannot build
         // one that does, because an axis node keeps its children by Item (AxisNode.Child). The grid
-        // then checks only the rows it paints, never the whole report on every redraw.
+        // then checks only the rows it paints, never the whole report on every redraw. Its sequence
+        // number follows the last one's, so the parameters around it keep theirs.
         builder.AddComponentParameter(32, nameof(ExGrid<PivotReportRow>.VouchesDistinctRows), true);
         builder.AddComponentParameter(26, nameof(ExGrid<PivotReportRow>.OnSummarize), _summarize);
         builder.AddComponentParameter(27, nameof(ExGrid<PivotReportRow>.SummaryFigures), _summaryFigures.Shown);

@@ -340,6 +340,23 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Equal(2, requests.Count);
     }
 
+    [Fact] // ADR-0130 / SM-14: a row count that moves while a selected row is outside the Windows asks again — a row added above may have shifted it
+    public async Task ADR0130_a_row_count_moving_under_a_selection_the_window_left_asks_again()
+    {
+        var comparisons = new Comparisons();
+        var requests = new List<GridSummaryRequest>();
+        var rows = CountedRows(500, comparisons);
+        var cut = RenderCounted(rows, requests);
+        await SelectAsync(cut, 150, 30);
+        await SelectAsync(cut, 150, 50, shift: true); // rows 1 and 2
+
+        // The Window moves on to rows the Selection is not in, and the count with it: a row added
+        // before row 1 would shift both selected rows, and neither Window can show whether one was.
+        cut.Render(ps => ps.Add(g => g.Window, rows[100..150]).Add(g => g.WindowStart, 100).Add(g => g.TotalCount, 501));
+
+        Assert.Equal(2, requests.Count);
+    }
+
     [Fact] // ADR-0130 / SM-14 / ADR-0011: an order that moved drops the Selection and its figures, so the new Window is not walked
     public async Task ADR0130_a_window_in_a_new_order_is_not_walked()
     {

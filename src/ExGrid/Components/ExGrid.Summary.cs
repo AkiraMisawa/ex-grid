@@ -60,8 +60,8 @@ public partial class ExGrid<TRow>
     private bool _summaryRaiseOwed;
 
     // How many times the rows under a standing selection may have moved: a changed row at a
-    // selected position the Window held before, a row count that holds a selected row the previous
-    // one did not, or an edit the grid handed over.
+    // selected position the Window held before, a changed row count while a selected row is one the
+    // two Windows cannot compare, or an edit the grid handed over.
     private int _summaryRowsStamp;
     private IReadOnlyList<TRow>? _summaryRows;
     private int _summaryRowsStart;
@@ -76,8 +76,9 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// Notes whether the rows moved under the figures (ADR-0130): a selected position the Window
-    /// held before now holding a different row, or the row count changing under the Selection. A
-    /// Window that only scrolled shows the same rows where both hold them, and moves nothing.
+    /// held before now holding a different row, or the row count changing where the two Windows
+    /// cannot show that the selected rows stayed. A Window that only scrolled shows the same rows
+    /// where both hold them, and moves nothing.
     ///
     /// <para>Walked only while a question stands — figures shown, or being asked for — and only
     /// over the positions it asks about, so the cost follows the Selection's rows in the Window,
@@ -87,37 +88,37 @@ public partial class ExGrid<TRow>
     /// </summary>
     private void NoteRowsForSummary()
     {
-        var rows = _window!;
         var moved = _summaryQuestion is not { } question || question.Version != _sequenceVersion
-            || (_summaryRows is { } previous && SelectedRowsMoved(question.Ranges, rows, previous));
+            || (_summaryRows is { } previous && SelectedRowsMoved(question.Ranges, previous));
         if (moved)
             _summaryRowsStamp++;
-        _summaryRows = rows;
+        _summaryRows = _window;
         _summaryRowsStart = _windowStart;
         _summaryRowsTotal = _total;
     }
 
-    /// <summary>Whether a row the figures were taken over moved: the row count now holding a
-    /// selected position the previous one did not, or the reverse; or a selected position both
-    /// Windows hold now holding a different row, by the row type's equality.</summary>
-    private bool SelectedRowsMoved(IReadOnlyList<SelectionRange> ranges, IReadOnlyList<TRow> rows, IReadOnlyList<TRow> previous)
+    /// <summary>Whether a row the figures were taken over moved, between the Window taken over them,
+    /// <paramref name="previous"/>, and the one in hand: a selected position both hold now holding a
+    /// different row, by the row type's equality; or the row count changing while a selected row is
+    /// one they do not both hold.</summary>
+    private bool SelectedRowsMoved(IReadOnlyList<SelectionRange> ranges, IReadOnlyList<TRow> previous)
     {
+        var rows = _window!;
+        var from = Math.Max(_windowStart, _summaryRowsStart);
+        var to = Math.Min(_windowStart + rows.Count, _summaryRowsStart + previous.Count);
         if (_total != _summaryRowsTotal)
         {
-            // A count unknown on either side could cut through any of them.
-            if (_total is not { } total || _summaryRowsTotal is not { } before)
-                return true;
-            var held = Math.Min(total, before);
+            // A row added or removed may have shifted every row after it, and only a row both
+            // Windows hold can show that it stayed: compared in place below. A row added after the
+            // Selection changes no figure; one added before it, out of sight, may change them all.
             for (var i = 0; i < ranges.Count; i++)
             {
-                if (ranges[i].BottomRow >= held)
+                if (ranges[i].TopRow < from || ranges[i].BottomRow >= to)
                     return true;
             }
         }
         if (ReferenceEquals(previous, rows))
             return false;
-        var from = Math.Max(_windowStart, _summaryRowsStart);
-        var to = Math.Min(_windowStart + rows.Count, _summaryRowsStart + previous.Count);
         var comparer = EqualityComparer<TRow>.Default;
         for (var i = 0; i < ranges.Count; i++)
         {

@@ -48,3 +48,7 @@ The pushed-Window figure on CoreCLR, ticket 01's harness and method (10⁶ rows,
 pushed Window under a Row Key is 45.8–46.3 ms unvouched (ticket 01: 41.3–47.1 ms, the check alone then
 39.9–42.0 ms, now 45.4–46.2 ms under the load). Vouched, it is 0.011–0.015 ms, and 0.105–0.140 ms with
 the render that checks the 18 painted rows. The browser's 257 ms was not re-recorded.
+
+2026-10-07, after the code review: the pass over a Window and the check of the painted rows now take
+their keys through one method, and the public doc no longer quotes a timing. The figure's box is ticked
+on the CoreCLR figure, as the brief allowed; the browser half of it (257 ms) stays open.
