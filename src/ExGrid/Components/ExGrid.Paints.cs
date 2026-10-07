@@ -112,6 +112,56 @@ public partial class ExGrid<TRow>
     /// <summary>The row the Window holds at absolute position <paramref name="row"/>, or null.</summary>
     private TRow? RowInHand(int row) => RowOf(_window, _windowStart, row);
 
+    /// <summary>What a gesture aimed with a Selection an order move dropped needs of it (ADR-0011,
+    /// ADR-0142): its Focus, the action chosen in that cell if one was (ADR-0037), and the newest
+    /// paint when the order moved. Positions and numbers, never a row or a Row Key (ADR-0160).</summary>
+    private sealed record DroppedSelection(int UpToPaint, CellPosition Focus, int? ChosenAction);
+
+    // The Selection the last order move dropped, while no newer one has been dropped. A gesture told
+    // its paint or an earlier one was aimed with it — gestures are told in the order they are made,
+    // so none made after a later Selection can be told an older paint — and is refused as aimed under
+    // another order, rather than taken as a first key on the empty Selection the move left (ADR-0012).
+    private DroppedSelection? _selectionTheOrderDropped;
+
+    /// <summary>Notes the Selection an order move is dropping (ADR-0011), for the gestures still on
+    /// their way that were aimed with it.</summary>
+    private void NoteSelectionTheOrderDropped(GridSelection dropped)
+    {
+        if (dropped.IsEmpty)
+            return;
+        var chosen = _interactive is { } interactive && interactive.Cell == dropped.Focus ? interactive.Action : (int?)null;
+        _selectionTheOrderDropped = new DroppedSelection(_paintId, dropped.Focus, chosen);
+    }
+
+    /// <summary>Whether a gesture told the paint <paramref name="told"/> was aimed with a Selection
+    /// an order move has dropped since (ADR-0011, ADR-0142).</summary>
+    private bool AimedWithASelectionTheOrderDropped(int told)
+        => AimedUnderAnotherOrder(told) && _selectionTheOrderDropped is { } dropped && told <= dropped.UpToPaint;
+
+    /// <summary>
+    /// Space told a paint under an order that has moved since (ADR-0142, LV-12, LV-20): it was aimed
+    /// at a Focus that order took with it, so the Focus in force, which the user did not aim at, is
+    /// not engaged. An action it would have fired there is refused as
+    /// <see cref="ActionRefusalReason.OrderMoved"/>, naming no row: the grid kept no row and no Row
+    /// Key of the Selection the move dropped (ADR-0160), so the row it was aimed at cannot be paired
+    /// with one now, with a Row Key or without. Answers whether it refused.
+    /// </summary>
+    private async Task<bool> RefuseSpaceAimedUnderAnotherOrderAsync(int told)
+    {
+        if (!AimedWithASelectionTheOrderDropped(told) || _selectionTheOrderDropped is not { } dropped
+            || dropped.Focus.Column >= Columns.Count)
+        {
+            return false;
+        }
+        var column = Columns[dropped.Focus.Column];
+        // One action fires on Space; of several, the one chosen in the cell, and none before one is.
+        var action = column.Actions.Count == 1 ? 0 : dropped.ChosenAction;
+        if (column.IsMarkColumn || action is not { } fired || fired >= column.Actions.Count)
+            return false;
+        await RefuseActionAsync(null, column.Name, column.Actions[fired].Name, ActionRefusalReason.OrderMoved);
+        return true;
+    }
+
     /// <summary>
     /// The painted text of one value cell: the Consumer's painted text where it supplies one
     /// (ADR-0050, item 11), fitted to the column's width with the bold widths for a bold cell, and
@@ -144,16 +194,24 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// Refuses a positional write whose gesture was aimed under an order that has moved since
     /// (ADR-0142, LV-13; ADR-0011), through <see cref="OnPasteRefused"/> — the one gate paste, fill
-    /// and Delete go through (ADR-0035). The Selection the gesture was aimed with went with that
-    /// order, so the write is refused as aimed at no Selection. Answers whether it refused.
+    /// and Delete go through (ADR-0035). Answers whether it refused.
     /// </summary>
     private async Task<bool> RefuseWriteAimedUnderAnotherOrderAsync(int told)
     {
         if (!AimedUnderAnotherOrder(told))
             return false;
+        await RefuseWriteUnderAMovedOrderAsync();
+        return true;
+    }
+
+    /// <summary>Raises the refusal of a positional write whose positions an order move gave to
+    /// other rows (ADR-0011, ADR-0142): a gesture aimed under another order, a fill-handle drag made
+    /// under one, or a Ctrl+Enter fill whose editor opened under one. The Selection it was aimed
+    /// with went with that order, so it is refused as aimed at no Selection.</summary>
+    private async Task RefuseWriteUnderAMovedOrderAsync()
+    {
         if (OnPasteRefused.HasDelegate)
             await OnPasteRefused.InvokeAsync(PasteRefusalReason.EmptySelection);
-        return true;
     }
 
     // ---- The row components each paint painted ----
@@ -171,10 +229,12 @@ public partial class ExGrid<TRow>
     private readonly List<PaintRows> _paintRows = [];
 
     // Each painted row component's serial, by its component key — its Row Key, or the object that
-    // stands for its instance (ADR-0140) — for the newest paint, and for the one before while the
-    // newest is being painted. Rebuilt from the rows each new paint paints, so they hold the keys of
-    // rows painted now and nothing older (ADR-0160). Kept only while a column has actions: a serial
-    // serves an Action press alone.
+    // stands for its instance (ADR-0140) — for the newest paint, and for the one before only while
+    // the newest is being painted: that map goes when the render's rows are done, and when a new
+    // Window is taken in. The newest paint's map is rebuilt from the rows each new paint paints, and
+    // a render follows each new Window, so it holds the keys of rows the Window holds and nothing
+    // older (ADR-0160) — a hidden grid's render paints no rows, and keeps no key. Kept only while a
+    // column has actions: a serial serves an Action press alone.
     private Dictionary<object, int> _rowSerials = [];
     private Dictionary<object, int> _previousRowSerials = [];
     private int[]? _paintingSerials;
@@ -218,7 +278,8 @@ public partial class ExGrid<TRow>
         return key;
     }
 
-    /// <summary>Ends a new paint's rows: the keys of the paint before go.</summary>
+    /// <summary>Ends a new paint's rows: the keys of the paint before go. Called as each render's
+    /// rows are done and as the next render begins, and with a new Window (ADR-0160).</summary>
     private void EndRowComponents()
     {
         _paintingSerials = null;

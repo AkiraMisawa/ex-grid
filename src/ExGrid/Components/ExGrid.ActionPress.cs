@@ -21,9 +21,11 @@ public partial class ExGrid<TRow>
     /// has moved since names it (<see cref="ActionRefusalReason.OrderMoved"/>).
     /// A press never is refused because its row's values changed: it acts on the row it was pressed
     /// on, as that row is now. With a Row Key, that is the row under the pressed row's key, wherever
-    /// the Window holds it, Space included. Without one, a press whose button a render has since
-    /// disposed acts on the row at the position it was told, while the order it was taken under
-    /// holds. Nothing is raised through <see cref="OnAction"/>. The refusal names the row where the
+    /// the Window holds it. Without one, a press whose button a render has since disposed acts on
+    /// the row at the position it was told, while the order it was taken under holds. Space taken
+    /// under an order that has moved since is refused as OrderMoved with or without a Row Key: the
+    /// Selection it was aimed with went with that order, and the grid kept no key of it (ADR-0160).
+    /// Nothing is raised through <see cref="OnAction"/>. The refusal names the row where the
     /// grid still holds it, and none where it does not (ADR-0160). A Template cell's own controls are
     /// the Consumer's (ADR-0037). The grid holds no string for it; Chrome words it into its refusal
     /// live region (A11Y-16).
@@ -107,7 +109,7 @@ public partial class ExGrid<TRow>
             return;
         _actionPress = null;
         _actionPressAnswered = true;
-        await ActAsync(press.Pressed, press.Column!, press.Action!, press.Paint, press.Row, byPosition: false);
+        await ActAsync(press.Pressed, press.Column!, press.Action!, press.Paint, press.Row);
     }
 
     /// <summary>An action pressed by pointer, through its row's button (ADR-0020): the click of the
@@ -123,7 +125,7 @@ public partial class ExGrid<TRow>
         if (press is null && answered && !RendersRowComponentOf(args.Row))
             return Task.CompletedTask;
         return ActAsync(args.Row, args.ColumnName, args.ActionName, press?.Paint ?? PaintNotTold,
-            press is { Row: >= 0 } told ? told.Row : null, byPosition: false);
+            press is { Row: >= 0 } told ? told.Row : null);
     }
 
     /// <summary>
@@ -139,9 +141,7 @@ public partial class ExGrid<TRow>
     /// <param name="told">The paint the press was taken against (ADR-0142).</param>
     /// <param name="at">The position the press named, under the order of <paramref name="told"/>;
     /// null where it named none.</param>
-    /// <param name="byPosition">Whether the press names its row by the position alone — Space on the
-    /// Focus — rather than by the row its button held.</param>
-    private async Task ActAsync(TRow? pressed, string column, string action, int told, int? at, bool byPosition)
+    private async Task ActAsync(TRow? pressed, string column, string action, int told, int? at)
     {
         // Pointed at from outside, a press on the rows is handed over instead of acting (ADR-0058):
         // the stylesheet lets it through to the rows, and this is the guard behind it.
@@ -155,17 +155,10 @@ public partial class ExGrid<TRow>
             _suppressRender = false;
             StateHasChanged();
         }
-        // A position names its row only under the order it was taken against (ADR-0011). Without a
-        // Row Key, Space names its row by nothing else, so under another order it is refused; with
-        // one it acts by the key of the row it stands on, and a press whose button held its row still
-        // has the row to go by.
+        // A position names its row only under the order it was taken against (ADR-0011): under
+        // another, a press whose button held its row still has the row to go by. Space taken under
+        // another order never comes here (RefuseSpaceAimedUnderAnotherOrderAsync).
         var orderMoved = at is not null && AimedUnderAnotherOrder(told);
-        if (orderMoved && byPosition && _rowKey is null)
-        {
-            // The row the Focus stands on now is a stranger's: none is named.
-            await RefuseActionAsync(null, column, action, ActionRefusalReason.OrderMoved);
-            return;
-        }
         if (orderMoved)
             at = null;
         at ??= pressed is { } held ? PositionInHand(held) : null;

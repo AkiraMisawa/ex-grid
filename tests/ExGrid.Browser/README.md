@@ -359,7 +359,10 @@ nobody had asked for. What that means when writing a test:
   release, a Delete, a Ctrl+R and a Ctrl+D whose source F9 moved landing (LV-13); a commit whose
   opening key was taken before F9's change landing, the change before the open not compared
   (LV-11). `5` Enter ↑ Ctrl+V and `1` Enter ↑ `2` Enter, typed at once, land on both hosts, the
-  Server host at 0 and at 150 ms, with no notice (LV-17). Each race reads what the page showed at the gesture
+  Server host at 0 and at 150 ms, with no notice (LV-17). On `/features?upstream=1&rowkey=1`, where
+  F8 amends the top row's Notional past every other, under a sort by Notional: the editor going with
+  its row out of view without a scroll, still holding the keyboard, and Enter landing on that row
+  (ADR-0011's note of 2026-10-07, LV-20). Each race reads what the page showed at the gesture
   first, from a capture listener ahead of the grid's, and says so by name if the change had
   already been painted.
 - `find.spec.mjs` — Find (ADR-0055), **run once per Chrome** on `/features`: Ctrl+F taken

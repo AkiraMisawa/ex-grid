@@ -1,6 +1,6 @@
 # 06: The grid holds no row beyond its Window
 
-Status: done
+Status: done — but for LV-23's browser record, which ticket 13 makes, as this ticket allows
 
 **What to do:** make [ADR-0160](../../../adr/0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md) hold and be checked. The grid holds a Consumer's row instance and
 its Row Key only while it is in the Window it was last given, apart from the two named holdings.
@@ -23,7 +23,8 @@ its Row Key only while it is in the Window it was last given, apart from the two
 
 ## Done when
 
-- [ ] LV-22 passes; LV-23 recorded
+- [x] LV-22 passes (the grid's half; ExPivot's is tickets 09 to 12)
+- [ ] LV-23 recorded — left to ticket 13, as this ticket allows
 - [x] Layer 1 and 2 green
 
 ## Comments
@@ -39,3 +40,14 @@ its Row Key only while it is in the Window it was last given, apart from the two
   renders again. That is the renderer's, not a grid holding; the test ends with one more render and
   asserts that boundary as found. LV-22's ExPivot half is Track C's (tickets 09 to 12). LV-23, the
   browser observation, is left to ticket 13, as this ticket allows.
+- 2026-10-07, later: on the orchestrator's decision ADR-0160 names the renderer's previous frames, and
+  LV-22's check is now exact, with no extra render: after the render that takes in the last Window, no
+  earlier row is alive but the ones the render before it painted, read from the positions it painted.
+  An open editor is shown to hold its row's key and no row. The third holding, the open editor's Row
+  Key, carries its ADR-0160 comment beside the other two.
+- 2026-10-07, after review: the row components' serials of the paint before the newest, which are
+  keyed by Row Keys, now go as each render's rows are done and as each new Window is taken in, not at
+  the next render. A test shows that a hidden grid holds no Row Key of the Window it painted, and no
+  row of the Windows handed to it while hidden. The Window it painted last is held only as the Window
+  last measured for Auto widths, and goes once the grid is shown again. Layers 1 and 2: 9,161 passed,
+  9 skipped.

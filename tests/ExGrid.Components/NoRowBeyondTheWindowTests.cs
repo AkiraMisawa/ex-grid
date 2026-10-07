@@ -162,6 +162,77 @@ public class NoRowBeyondTheWindowTests : GridTestContext
         Assert.DoesNotContain(later[1], static r => r.IsAlive);
     }
 
+    /// <summary>A Row Key that is an object of its own, equal by its Book, so the keys the grid
+    /// keeps can be followed: each one handed out is noted by weak reference in
+    /// <paramref name="handedOut"/>, and nothing else holds it.</summary>
+    private sealed record BookKey(string Book);
+
+    private static Func<TestRow, object> KeyedByBook(List<WeakReference> handedOut)
+        => row =>
+        {
+            var key = new BookKey(row.Book);
+            handedOut.Add(new WeakReference(key));
+            return key;
+        };
+
+    /// <summary>Hands the grid a Window of new rows whose Books no earlier Window had, and answers
+    /// weak references to them.</summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference[] HandOverOtherBooks(IRenderedComponent<ExGrid<TestRow>> cut, int version)
+    {
+        var rows = TestRows.Many(50);
+        foreach (var row in rows)
+            row.Book += $" v{version}";
+        cut.Render(ps => ps.Add(g => g.Window, rows).Add(g => g.RowSequenceVersion, version));
+        return [.. rows.Select(static row => new WeakReference(row))];
+    }
+
+    [Fact] // ADR-0160 / LV-22: a hidden grid — a tab in the background reports a Viewport of 0, and nothing is painted — holds no Row Key of the Window it painted, and no row of the Windows handed over while it is hidden; the Window it painted last is held only as the Window last measured for Auto widths, until it is shown again
+    public async Task A_hidden_grid_holds_no_row_or_row_key_beyond_the_window_last_measured()
+    {
+        var keys = new List<WeakReference>();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, Array.Empty<TestRow>())
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, ViewportSize.Stretch)
+            .Add(g => g.ViewportWidth, ViewportSize.Stretch)
+            .Add(g => g.RowKey, KeyedByBook(keys))
+            .Add(g => g.OnAction, (GridActionEventArgs<TestRow> _) => { }));
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 350, 120));
+        var painted = HandOverOtherBooks(cut, version: 0);
+        Assert.NotEmpty(cut.FindAll(".ex-action"));
+        var paintedKeys = keys.ToArray();
+        keys.Clear();
+
+        // The tab goes to the background, and the feed goes on.
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 0, 0));
+        Assert.Empty(cut.FindAll(".ex-viewport [role=row]"));
+        var later = new List<WeakReference[]>();
+        for (var version = 1; version <= 4; version++)
+            later.Add(HandOverOtherBooks(cut, version));
+
+        Collect();
+
+        // The last two Windows are the parameters of the last two renders, which the test's own
+        // root holds as Blazor holds any component's (see above).
+        Assert.DoesNotContain(paintedKeys, static r => r.IsAlive);
+        Assert.DoesNotContain(later[0], static r => r.IsAlive);
+        Assert.DoesNotContain(later[1], static r => r.IsAlive);
+
+        // The Window it painted is the Window last measured, which the hidden Viewport's deferred
+        // measure may hold (ADR-0160's first holding). Shown again, the next measure lets it go.
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 350, 120));
+        Assert.NotEmpty(cut.FindAll(".ex-action"));
+        HandOverOtherBooks(cut, version: 5);
+        HandOverOtherBooks(cut, version: 6);
+
+        Collect();
+
+        Assert.DoesNotContain(painted, static r => r.IsAlive);
+    }
+
     private static void AssertNoneAlive(List<WeakReference[]> windows, int round)
     {
         var alive = windows[round].Count(static r => r.IsAlive);

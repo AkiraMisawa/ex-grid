@@ -415,4 +415,9 @@ public class RefusedWhileEditingTests : SheetTestContext
         await cut.Instance.DoAsync(SheetEdit.InsertRows(1));
         Assert.Equal("Plums", CellText(cut, "A5"));
     }
+
+    [Fact] // ADR-0142 / LV-20, principle 1: every commit refusal the grid can raise has a sentence of its own, naming the cell
+    public void Every_commit_refusal_is_worded_with_its_cell()
+        => Assert.All(Enum.GetValues<global::ExGrid.Cells.CommitRefusalReason>(),
+            static reason => Assert.Contains("C4", SheetWords.CommitRefused("C4", reason)));
 }

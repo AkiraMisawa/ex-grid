@@ -175,9 +175,11 @@ public partial class ExGrid<TRow>
         public Dictionary<CellPosition, string> Unpainted { get; } = unpainted;
     }
 
-    // The user's own writes some cell of which no paint has shown yet, oldest first. A bound on the
-    // cells followed per write, the painted rows first, and on the writes, for a Consumer that never
-    // repaints what it is told to write: the grid holds nothing without one (ADR-0160).
+    // The user's own writes some cell of which no paint has shown yet, oldest first. What each holds
+    // is positions and strings only, never a row or a Row Key (ADR-0160), and both are bounded, for a
+    // Consumer that never repaints what it is told to write: at most OwnWriteCellsFollowed cells per
+    // write, the painted rows first, and the newest OwnWritesKept writes. A cell beyond the bound is
+    // not let off, so an editor opened on it tells a change as any other (ADR-0142).
     private const int OwnWriteCellsFollowed = 1024;
     private const int OwnWritesKept = 64;
     private readonly List<OwnWrite> _ownWrites = [];

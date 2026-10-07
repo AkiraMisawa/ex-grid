@@ -33,11 +33,11 @@ intent. A commit whose row is gone, or whose order moved, is refused with the ed
 
 ## Done when
 
-- [ ] LV-11, LV-16, LV-17, LV-19, LV-20 and LV-21 pass (§32)
-- [ ] The Fluxor spike's check 2 (`5` Enter ↑ `7` Enter through a store) lands on both hosts with no
+- [x] LV-11, LV-16, LV-17, LV-19, LV-20 and LV-21 pass (§32)
+- [x] The Fluxor spike's check 2 (`5` Enter ↑ `7` Enter through a store) lands on both hosts with no
   notice. It is in `verification/2026-10-06-macos-fluxor-spike/harness/`; run it locally once, it is not
   committed as a project
-- [ ] Layer 1 and 2 green; new and rewritten layer-3 specs run locally before the push
+- [x] Layer 1 and 2 green; new and rewritten layer-3 specs run locally before the push
 
 ## Comments
 
@@ -53,3 +53,31 @@ intent. A commit whose row is gone, or whose order moved, is refused with the ed
     same order is still discarded as `RowLeftTheWindow` (ED-21): `RowGone` names a key.
   - The DemoHost and ExSheet word the notice into a live region. Layer 3 and the Fluxor spike's
     check 2 run before the push; their results are added here.
+- 2026-10-07, later: rebuilt on the user's decision (ADR-0011's note of 2026-10-07, option A). An open
+  editor outlives an order move: with a Row Key it and the Focus follow their row, holding its key
+  (ADR-0160's third holding), without scrolling — an editor whose row moved out of view stays mounted,
+  worn away (`ex-editor-away`), so keys still reach it; without one it stays, and its commit is refused
+  as `OrderMoved`. `OrderChanged` is gone from `EditDiscardReason`; `RowLeftTheWindow` stays for a
+  keyless row that slid out under the same order. D1 now follows each written cell's painted text, so
+  neither a scroll nor a change to another cell, of the same row or another, ends it.
+  `GridCommitRefusal.PaintedText` is gone.
+- 2026-10-07, after review:
+  - D1 is tested with the written row scrolled out of view, and with a fill that reached past the
+    painted rows. Its bound is documented where it is declared: positions and strings only.
+  - D1 now judges a new Window under the order just taken in.
+  - An editor whose row moved out of view is tested to stand at that row again once the row is painted.
+  - `/features?upstream=1&rowkey=1` binds the source by trade id. There F8 amends the top row's
+    Notional past every other row's, so under a sort by Notional the row moves to the end.
+  - A layer-3 test in `write-lands.spec.mjs` drives that page. The editor goes with its row out of
+    view without a scroll and keeps the keyboard, the keys typed reach it, and Enter lands on that row.
+  - ExSheet's and the demo's wordings of a commit refusal name every reason and throw on any other.
+
+  Results:
+  - Layers 1 and 2: 9,161 passed, 9 skipped.
+  - Layer 3, locally under the lock in headless Chrome:
+    - `write-lands.spec.mjs` with `--repeat-each=3`: WebAssembly 21 passed and 27 skipped as
+      Server-only; Server 48 passed.
+    - `grid-live` and `grid-live-local`: 9 and 9 passed on each host.
+  - The Fluxor spike's check 2 was copied to `spikes/fluxor-grid` with the notice wired in, and deleted
+    after. W1 and W2, paused and live, pass on both hosts, and the second commit lands with no refusal
+    and no notice.

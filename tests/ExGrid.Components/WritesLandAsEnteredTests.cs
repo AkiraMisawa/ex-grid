@@ -129,6 +129,15 @@ public class WritesLandAsEnteredTests : GridTestContext
     private static void Reorder(IRenderedComponent<ExGrid<TestRow>> cut, TestRow[] rows, int version = 1)
         => cut.Render(ps => ps.Add(g => g.Window, rows).Add(g => g.RowSequenceVersion, version));
 
+    /// <summary>Scrolls, and lets a fling settle (ADR-0004): a jump of more than a Viewport paints
+    /// Placeholders until the delay passes, and no editor opens on one.</summary>
+    private async Task ScrollAndSettleAsync(IRenderedComponent<ExGrid<TestRow>> cut, double top)
+    {
+        await ScrollToAsync(cut.Find(".ex-scroller"), top);
+        Clock.Advance(TimeSpan.FromMilliseconds(150));
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-placeholder")));
+    }
+
     private static int Attribute(IRenderedComponent<ExGrid<TestRow>> cut, string name)
         => int.Parse(cut.Find(".ex-viewport").GetAttribute(name)!, CultureInfo.InvariantCulture);
 
@@ -612,44 +621,74 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Same(changed[0], Assert.Single(heard.Actions).Row);
     }
 
-    [Fact] // ADR-0142 / LV-20, LV-14, ADR-0011: without a Row Key, Space names its row by the Focus, a position, so one taken under an order that has moved since is refused as OrderMoved
-    public async Task Without_a_row_key_Space_taken_under_an_order_that_has_moved_since_is_refused()
+    [Theory] // ADR-0142 / LV-12, LV-20, LV-14, ADR-0011: Space taken under an order that has moved since — the move dropped the Selection it was aimed with, and nothing is clicked again — is refused as OrderMoved naming no row, with a Row Key or without: the grid kept no key of the dropped Selection (ADR-0160)
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Space_taken_under_an_order_that_has_moved_since_is_refused(bool rowKey)
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
-        var cut = RenderGrid(rows, heard, WithAction());
+        var cut = RenderGrid(rows, heard, WithAction(), extra: ps =>
+        {
+            if (rowKey)
+                ps.Add(g => g.RowKey, ByBook);
+        });
         await ClickAsync(cut, 250, 10);
         var pressedOn = Paint(cut);
         Reorder(cut, Moved(rows, 0, 2));
-        // A Focus placed again, under the new order: not the one the Space was aimed at.
-        await ClickAsync(cut, 250, 10);
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
 
         await KeyAsync(cut, " ", paint: pressedOn);
 
         Assert.Empty(heard.Actions);
         var refusal = Assert.Single(heard.ActionRefusals);
         Assert.Equal(ActionRefusalReason.OrderMoved, refusal.Reason);
+        Assert.Equal("Do", refusal.ColumnName);
         Assert.Equal("approve", refusal.ActionName);
-        // The row the Focus stands on now is a stranger's: none is named.
         Assert.Null(refusal.Row);
+        // Refused, not taken as a first key: no Focus is placed.
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
     }
 
-    [Fact] // ADR-0142 / LV-12, LV-20, ADR-0140: with a Row Key, Space acts on the row under the key of the row the Focus stands on, whatever order its key was taken under
-    public async Task With_a_row_key_Space_taken_under_an_order_that_has_moved_since_acts_by_key()
+    [Fact] // ADR-0142 / LV-12, ADR-0037: inside a cell of several actions, Space taken under an order that has moved since is refused naming the action chosen there
+    public async Task Space_in_an_interactive_cell_under_an_order_that_has_moved_since_is_refused_for_the_chosen_action()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
-        var cut = RenderGrid(rows, heard, WithAction(), extra: ps => ps.Add(g => g.RowKey, ByBook));
+        GridColumn<TestRow>[] columns =
+        [
+            .. Columns(),
+            GridColumn<TestRow>.ActionColumn("Do", [new GridAction("approve", "Approve"), new GridAction("reject", "Reject")], width: Fixed100),
+        ];
+        var cut = RenderGrid(rows, heard, columns);
         await ClickAsync(cut, 250, 10);
+        await KeyAsync(cut, " ");
+        await KeyAsync(cut, "ArrowRight");
         var pressedOn = Paint(cut);
-        var moved = Moved(rows, 0, 2);
-        Reorder(cut, moved);
-        await ClickAsync(cut, 250, 10);
+        Reorder(cut, Moved(rows, 0, 2));
+
+        await KeyAsync(cut, " ", paint: pressedOn);
+
+        Assert.Empty(heard.Actions);
+        var refusal = Assert.Single(heard.ActionRefusals);
+        Assert.Equal(ActionRefusalReason.OrderMoved, refusal.Reason);
+        Assert.Equal("reject", refusal.ActionName);
+    }
+
+    [Fact] // ADR-0142 / LV-12, ADR-0012: Space taken under an order that has moved since, aimed at a cell with no action, fires nothing and refuses nothing, and opens no editor on the row the move put there
+    public async Task Space_aimed_at_an_editable_cell_under_an_order_that_has_moved_since_opens_nothing()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, WithAction());
+        await ClickAsync(cut, 50, 10);
+        var pressedOn = Paint(cut);
+        Reorder(cut, Moved(rows, 0, 2));
 
         await KeyAsync(cut, " ", paint: pressedOn);
 
         Assert.Empty(heard.ActionRefusals);
-        Assert.Same(moved[0], Assert.Single(heard.Actions).Row);
+        Assert.Empty(cut.FindAll("input.ex-editor"));
     }
 
     [Fact] // ADR-0142 / LV-12, ADR-0037: Space on an action whose row the view has scrolled away from fires on that row as it is now
@@ -792,7 +831,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Equal(SelectionRange.FromCorners(new CellPosition(0, 0), new CellPosition(0, 0)), Assert.Single(paste.Plan.Targets));
     }
 
-    [Fact] // ADR-0142 / LV-13, LV-14, ADR-0011: a paste aimed under an order that has moved since is refused: the Selection it was aimed with went with that order
+    [Fact] // ADR-0142 / LV-13, LV-14, ADR-0011: a paste aimed under an order that has moved since is refused: the Selection it was aimed with went with that order, and nothing is selected again before it
     public async Task A_paste_aimed_under_an_order_that_has_moved_since_is_refused()
     {
         var rows = TestRows.Many(50);
@@ -801,15 +840,14 @@ public class WritesLandAsEnteredTests : GridTestContext
         await ClickAsync(cut, 50, 10);
         var pressedOn = Paint(cut);
         Reorder(cut, Moved(rows, 0, 2));
-        // A Selection made again, under the new order: not the one the paste was aimed with.
-        await ClickAsync(cut, 50, 10);
 
         await PasteAsync(cut, pressedOn);
 
         Assert.Empty(heard.Pastes);
         Assert.Equal([PasteRefusalReason.EmptySelection], heard.PasteRefusals);
 
-        // One taken under the order in force lands.
+        // One aimed under the order in force, with a Selection made under it, lands.
+        await ClickAsync(cut, 50, 10);
         await PasteAsync(cut, Paint(cut));
         Assert.Single(heard.Pastes);
     }
@@ -908,8 +946,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.PasteRefusals);
     }
 
-    [Fact] // ADR-0142 / LV-13, ADR-0011: a fill-handle drag released after the order moved raises nothing
-    public async Task A_fill_drag_released_after_the_order_moved_raises_nothing()
+    [Fact] // ADR-0142 / LV-13, ADR-0011: a fill-handle drag released after the order moved raises no intent, and is refused as a paste aimed under another order is — never silently
+    public async Task A_fill_drag_released_after_the_order_moved_is_refused()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -922,6 +960,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await ReleaseFillAsync(cut, sequence, layout);
 
         Assert.Empty(heard.Fills);
+        Assert.Equal([PasteRefusalReason.EmptySelection], heard.PasteRefusals);
     }
 
     [Fact] // ADR-0142 / LV-13, ADR-0054: Delete writes too — a Clear over a target changed since its key lands
@@ -1028,7 +1067,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.PasteRefusals);
     }
 
-    [Theory] // ADR-0142 / LV-13, LV-14, ADR-0011: Delete, Ctrl+D and Ctrl+R taken under an order that has moved since are refused, as a paste is
+    [Theory] // ADR-0142 / LV-13, LV-14, ADR-0011, ADR-0012: Delete, Ctrl+D and Ctrl+R taken under an order that has moved since are refused, as a paste is, and not taken as a first key on the empty Selection the move left
     [InlineData("Delete", false)]
     [InlineData("d", true)]
     [InlineData("r", true)]
@@ -1041,14 +1080,56 @@ public class WritesLandAsEnteredTests : GridTestContext
         await ClickAsync(cut, 150, 50, shift: true);
         var pressedOn = Paint(cut);
         Reorder(cut, Moved(rows, 0, 4));
-        await ClickAsync(cut, 50, 30);
-        await ClickAsync(cut, 150, 50, shift: true);
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
 
         await KeyAsync(cut, key, ctrl: ctrl, paint: pressedOn);
 
         Assert.Empty(heard.Pastes);
         Assert.Empty(heard.Clears);
         Assert.Equal([PasteRefusalReason.EmptySelection], heard.PasteRefusals);
+        // Refused, not taken as a first key: no Focus is placed.
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
+    }
+
+    [Fact] // ADR-0142 / ADR-0012: after an order move, a write key taken under the order in force with nothing selected is a first key — only a key aimed with the dropped Selection is refused
+    public async Task A_write_key_taken_after_the_order_moved_with_nothing_selected_is_a_first_key()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        Reorder(cut, Moved(rows, 0, 2));
+
+        await KeyAsync(cut, "Delete", paint: Paint(cut));
+
+        Assert.Empty(heard.PasteRefusals);
+        Assert.Empty(heard.Clears);
+        Assert.False(cut.Instance.ReadSelection().Selection.IsEmpty);
+    }
+
+    [Theory] // ADR-0142 / LV-13, ADR-0011 (note of 2026-10-07): a Ctrl+Enter fill whose order moved since the editor opened is refused, the editor kept with the typing — with a Row Key too, where the Focus followed its row
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_ctrl_enter_fill_after_the_order_moved_is_refused_and_keeps_the_editor(bool rowKey)
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, extra: ps =>
+        {
+            if (rowKey)
+                ps.Add(g => g.RowKey, ByBook);
+        });
+        await ClickAsync(cut, 50, 10);
+        await ClickAsync(cut, 50, 50, shift: true);
+        await KeyAsync(cut, "5");
+        Reorder(cut, Moved(rows, 0, 2));
+
+        await KeyAsync(cut, "Enter", ctrl: true);
+
+        Assert.Empty(heard.Pastes);
+        Assert.Empty(heard.Edits);
+        Assert.Equal([PasteRefusalReason.EmptySelection], heard.PasteRefusals);
+        Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
     }
 
     // ---- Writes typed at once, before the user's own write is painted (LV-17's bulk half) ----
@@ -1265,6 +1346,59 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter");
 
         Assert.Equal(["5", "7"], heard.Edits.Select(e => e.Value));
+        Assert.Empty(heard.Notices);
+    }
+
+    [Fact] // ADR-0142 D1 / LV-17: the written row scrolled out of the painted rows stays covered — ticks to it and to the rows painted meanwhile end nothing — until the write paints; `5` Enter, scroll away and back, ↑ `7`, the 5 written back under the editor, Enter tells nothing
+    public async Task The_users_own_write_stays_covered_while_its_row_is_off_screen()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        await KeyAsync(cut, "Enter");
+
+        // Row 0 leaves the painted rows. The feed ticks a row painted now, and row 0's Amount.
+        await ScrollAndSettleAsync(cut, 30 * 20);
+        Assert.NotEqual(0, Attribute(cut, "data-ex-first-row"));
+        var ticked = Changed(Changed(rows, 31, amount: 33m), 0, amount: 44m);
+        Push(cut, ticked);
+        await ScrollAndSettleAsync(cut, 0);
+        await KeyAsync(cut, "ArrowUp");
+        await KeyAsync(cut, "7");
+        Push(cut, Changed(ticked, 0, book: "5"));
+        await KeyAsync(cut, "Enter");
+
+        Assert.Equal(["5", "7"], heard.Edits.Select(e => e.Value));
+        Assert.Empty(heard.Notices);
+    }
+
+    [Fact] // ADR-0142 D1 / LV-17: a fill reaching past the painted rows covers the cells it wrote there too, while the Window holds them — Ctrl+D down ten rows, scroll to the last, `7`, its fill written back under the editor, Enter tells nothing
+    public async Task A_write_past_the_painted_rows_covers_its_cells_there()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        for (var row = 0; row < 9; row++)
+            await KeyAsync(cut, "ArrowDown", shift: true);
+        await ScrollAndSettleAsync(cut, 0);
+        Assert.Equal(0, Attribute(cut, "data-ex-first-row"));
+        await KeyAsync(cut, "d", ctrl: true);
+        Assert.Single(heard.Pastes);
+
+        // Row 9 was off screen when the fill was raised. The Selection goes to it alone.
+        await ScrollAndSettleAsync(cut, 6 * 20);
+        await ClickAsync(cut, 50, (9 - Attribute(cut, "data-ex-first-row")) * 20 + 10);
+        await KeyAsync(cut, "7");
+        var written = Changed(rows, 9, book: rows[0].Book);
+        Push(cut, written);
+        await KeyAsync(cut, "Enter");
+
+        var edit = Assert.Single(heard.Edits);
+        Assert.Equal("7", edit.Value);
+        Assert.Same(written[9], edit.Row);
         Assert.Empty(heard.Notices);
     }
 
@@ -1561,6 +1695,41 @@ public class WritesLandAsEnteredTests : GridTestContext
         var intent = Assert.Single(heard.Edits);
         Assert.Equal("57", intent.Value);
         Assert.Same(moved[40], intent.Row);
+    }
+
+    [Fact] // ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, an editor whose row moved out of view shows at that row again once the row is painted — scrolled to, or moved back into view — and its commit lands on it
+    public async Task With_a_row_key_an_editor_away_shows_at_its_row_once_the_row_is_painted()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, extra: ps => ps.Add(g => g.RowKey, ByBook));
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        var moved = Moved(rows, 0, 40);
+        Reorder(cut, moved);
+        Assert.Contains("ex-editor-away", cut.Find("input.ex-editor").ClassList);
+
+        // Scrolled to: the editor stands on row 40.
+        await ScrollAndSettleAsync(cut, 38 * 20);
+        var first = Attribute(cut, "data-ex-first-row");
+        var editor = cut.Find("input.ex-editor");
+        Assert.DoesNotContain("ex-editor-away", editor.ClassList);
+        Assert.Contains($"top: {(40 - first) * 20}px", editor.GetAttribute("style"));
+
+        // Moved back up while the view stays put: away again, and at row 1 once scrolled back.
+        var back = Moved(moved, 40, 1);
+        Reorder(cut, back, version: 2);
+        Assert.Contains("ex-editor-away", cut.Find("input.ex-editor").ClassList);
+        await ScrollAndSettleAsync(cut, 0);
+        editor = cut.Find("input.ex-editor");
+        Assert.DoesNotContain("ex-editor-away", editor.ClassList);
+        Assert.Contains($"top: {(1 - Attribute(cut, "data-ex-first-row")) * 20}px", editor.GetAttribute("style"));
+        Assert.Equal("5", editor.GetAttribute("value"));
+
+        await KeyAsync(cut, "Enter");
+
+        Assert.Empty(heard.CommitRefusals);
+        Assert.Same(back[1], Assert.Single(heard.Edits).Row);
     }
 
     [Fact] // ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a row whose key left the Window refuses the commit as RowGone with the editor kept, and the commit lands once the row is back

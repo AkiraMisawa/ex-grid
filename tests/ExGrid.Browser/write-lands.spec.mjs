@@ -418,3 +418,42 @@ test('LV-13: a Ctrl+D whose source changed since the key was pressed fills with 
     await circuitQuiet();
     await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
 });
+
+test('ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a live amendment that re-sorts the editor\'s row out of view takes the editor along without a scroll; the keys typed still reach it, and Enter lands on that row (ADR-0142)', async ({ page }) => {
+    // F8, declared under ?rowkey=1, amends the top row's Notional past every other: under a sort by
+    // Notional the row moves to the end, as a live feed's amendment can move it.
+    await page.goto('/features?upstream=1&rowkey=1');
+    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    await expectTabStopTaken(grid(page));
+    const header = grid(page).locator('.ex-header-cell').nth(NOTIONAL);
+    await header.click({ position: { x: 30, y: 14 }, force: true });
+    await expect(header).toHaveAttribute('aria-sort', 'ascending');
+    const last = 399;                                  // the page's 400 trades
+    await clickCell(page, 0, 1);                       // Trader of trade #0, the smallest Notional
+    await expectActiveDescendant(grid(page), /r0c1$/);
+    const scroller = grid(page).locator('.ex-scroller');
+    const scrollTop = await scroller.evaluate((el) => el.scrollTop);
+
+    await page.keyboard.type('Zed');
+    await page.keyboard.press('F8');
+    await expect(page.locator('#upstream-status')).toContainText('trade #0 amended past every other (×1)');
+
+    // The editor went with its row, out of view; nothing scrolled, and it still holds the keyboard.
+    const editor = grid(page).locator('input.ex-editor');
+    await expect(editor).toHaveClass(/ex-editor-away/);
+    await expect(editor).toBeFocused();
+    expect(await scroller.evaluate((el) => el.scrollTop)).toBe(scrollTop);
+    await page.keyboard.type('x');
+    await expect(editor).toHaveValue('Zedx');
+    expect(await scroller.evaluate((el) => el.scrollTop)).toBe(scrollTop);
+
+    await page.keyboard.press('Enter');
+
+    await expect(page.locator('#edit-status')).toHaveText('Edited: Trader=Zedx on Alpha/Ishikawa #0');
+    await expect(editor).toHaveCount(0);
+    await circuitQuiet();
+    await expect(page.locator('#commit-refused-status')).toHaveText('Commit refused: —');
+    await expect(page.locator('#edit-discarded-status')).toHaveText('Edit discarded: —');
+    await scroller.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+    await expect(cell(page, last, 1)).toHaveText('Zedx');
+});

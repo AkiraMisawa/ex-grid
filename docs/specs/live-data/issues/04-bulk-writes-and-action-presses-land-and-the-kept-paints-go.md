@@ -38,7 +38,7 @@ entered over cells whose painted text changed. The grid stops keeping what earli
 
 - [x] LV-12, LV-13, LV-14 and LV-20's Action half pass (§32), each test named with its ADR
 - [x] No `Paint` keeps a row instance; `PaintsKept` and the painted-text judgement are gone
-- [ ] Layer 1 and 2 green; the layer-3 specs that cover writes under live data (`write-refusal`,
+- [x] Layer 1 and 2 green; the layer-3 specs that cover writes under live data (`write-refusal`,
   `grid-live`, `grid-live-local`) rewritten and run locally before the push (CLAUDE.md)
 
 ## Comments
@@ -52,3 +52,16 @@ entered over cells whose painted text changed. The grid stops keeping what earli
   `WritesLandAsEnteredTests` (renamed from `WriteRefusalTests`). Layer 3: `write-lands.spec.mjs`
   (renamed from `write-refusal.spec.mjs`) is rewritten; it runs locally with ticket 05, before the
   push. The editor's commit still refuses a change under it until ticket 05.
+- 2026-10-07, later: the readings that only judged a write are gone (ADR-0021's note as amended):
+  `BarPressTakenAt`, and the render the key field and the press listener passed along. With a Row Key a
+  press acts on the row under its key; one that cannot be paired is refused as `OrderMoved`; the
+  refusal's row is nullable. After review, a gesture aimed with a Selection that an order move has
+  dropped since is refused by name. It is never taken as a first key, and never dropped without a word:
+  - Delete, Ctrl+D and Ctrl+R are refused as a paste is.
+  - A fill-handle release is refused too; before, it raised nothing.
+  - Space on an action is refused as `OrderMoved`, naming no row, with or without a Row Key: the grid
+    keeps no key of the dropped Selection (ADR-0160). It does not engage the Focus now in force.
+
+  The tests no longer select again before the gesture. A write refused for an order move still says
+  `EmptySelection`; whether `PasteRefusalReason` gains a reason of its own is with the orchestrator.
+  Layer 3 ran locally under the lock on the final code (see ticket 05's comment).

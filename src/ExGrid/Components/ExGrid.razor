@@ -1545,18 +1545,21 @@
     /// editability reason is the one where no reselection of that shape ever will. Every such
     /// write — Delete and the fill keys too — lands as entered over cells whose values changed
     /// since they were painted, on the newest version the bound source holds (ADR-0142, LV-13;
-    /// D5). One whose gesture was aimed under an order that has moved since is refused as
+    /// D5). One aimed under an order that has moved since — a key or a paste taken before the
+    /// move, even onto the empty Selection it left, a fill-handle drag released after it, a
+    /// Ctrl+Enter fill whose editor opened before it — is refused as
     /// <see cref="PasteRefusalReason.EmptySelection"/>: the Selection it was aimed with went with
-    /// that order (ADR-0011).</summary>
+    /// that order (ADR-0011, ADR-0142).</summary>
     [Parameter] public EventCallback<PasteRefusalReason> OnPasteRefused { get; set; }
 
     /// <summary>Text the user had typed and not committed, thrown away because the grid
-    /// could no longer place it (ADR-0011): the order changed under the editor, or the
-    /// row left the Window. Neither is the user's own doing — a Consumer-pushed sort or
-    /// refresh lands and the typing goes — so the grid says so rather than leaving the
-    /// loss to be guessed at. Chrome writes the sentence and announces it (A11Y-16); the
-    /// grid holds no strings. A discard the Consumer asked for through
-    /// <see cref="DiscardEditAsync"/> is raised here too, as
+    /// could no longer place it (ADR-0011): the visible columns changed under the editor, or,
+    /// with no Row Key, its row left the Window under the order it was opened under. An order
+    /// move discards nothing: the editor outlives it (ADR-0011's note of 2026-10-07). Neither
+    /// is the user's own doing — a Consumer's new columns or refresh lands and the typing goes
+    /// — so the grid says so rather than leaving the loss to be guessed at. Chrome writes the
+    /// sentence and announces it (A11Y-16); the grid holds no strings. A discard the Consumer
+    /// asked for through <see cref="DiscardEditAsync"/> is raised here too, as
     /// <see cref="EditDiscardReason.DiscardedByConsumer"/>, its sentence already announced
     /// (ADR-0050 section 6).</summary>
     [Parameter] public EventCallback<EditDiscardReason> OnEditDiscarded { get; set; }
@@ -2595,13 +2598,15 @@
         _windowStart = Source?.WindowStart ?? WindowStart;
         // While the Window it replaces is still in hand, never later (ADR-0160).
         NotePaintedRowsReplaced(previousWindow, previousStart);
-        NoteOwnWritesShown(previousWindow, previousStart);
+        EndRowComponents();
         // The appearances kept for rows this Window does not hold go with them (ADR-0160).
         if (_appearances is { } appearances && (!ReferenceEquals(previousWindow, _window) || previousStart != _windowStart))
             appearances.KeepOnly(_rowInHand ??= RowInHand, _visible?.Start ?? 0, _visible?.Count ?? 0);
         _total = Source is null ? TotalCount : Source.TotalCount;
         _loading = Source?.IsLoading ?? IsLoading;
         _sequenceVersion = Source?.RowSequenceVersion ?? RowSequenceVersion;
+        // Under the order just taken in, so a write aimed under another goes now (D1).
+        NoteOwnWritesShown(previousWindow, previousStart);
         _sorts = Source is not null ? Source.Sorts : Sorts ?? [];
         _filter = Source is not null ? Source.Filter : Filters;
         NoteRowsForSummary();
@@ -2855,6 +2860,10 @@
         _columnsMoved = !ColumnsAreAsBefore();
         if (_columnsMoved)
             reconciled = HeldSelection.Empty(_sequenceVersion);
+        // A Selection the order took, under the same columns: noted for the gestures on their way
+        // that were aimed with it (ADR-0142).
+        else if (reconciled.RowSequenceVersion != _selection.RowSequenceVersion)
+            NoteSelectionTheOrderDropped(_selection.Selection);
 
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
@@ -3108,8 +3117,11 @@
             _focusRequest = null;
         }
 
-        // A told action press whose row component this render disposed: Blazor will not deliver
-        // its click, so the core answers it (ADR-0142, 2026-10-06; ActionPressTakenAt).
+        // The rows of this render are keyed: the serials of the paint before go, so no Row Key of
+        // an earlier Window waits for the next render (ADR-0160). Then a told action press whose row
+        // component this render disposed: Blazor will not deliver its click, so the core answers it
+        // (ADR-0142, 2026-10-06; ActionPressTakenAt).
+        EndRowComponents();
         await AnswerActionPressWithNoClickAsync();
 
         // A prerender's OnAfterRender does not run at all; this guard is for a renderer
@@ -3716,7 +3728,8 @@
     /// The fill drag's release (ADR-0050, item 5): exactly one Fill Intent, or one refusal,
     /// or nothing when the pointer came back inside the source. Editable is judged on the
     /// target before anything is raised (ADR-0035). Positions taken under an order that has
-    /// since moved name different rows, so such a drag raises nothing (ADR-0011). The drag lands
+    /// since moved name different rows, so such a drag is refused, as a paste aimed under another
+    /// order is, and raises no intent (ADR-0011, ADR-0142). The drag lands
     /// as made over cells whose values changed since they were painted (ADR-0142, LV-13), on the
     /// newest version, which the bound source is asked for first (D5).
     /// </summary>
@@ -3729,12 +3742,19 @@
         SetDragging(false);
         if (_disposed || source is not { } from || pointer is not { } to)
             return;
-        // Before the order is checked: a gathered change that moved it leaves the drag's
-        // positions naming other rows, and the drag raises nothing (ADR-0011, D5).
-        if (!await TakeInGatheredAsync() || version != _sequenceVersion)
-            return;
+        // A release back inside the source raises nothing, under any order.
         if (FillRules.PlanFill(from, to, ColumnIsEditable) is not { } decision)
             return;
+        // Before the order is checked: a gathered change that moved it leaves the drag's
+        // positions naming other rows, and the drag is refused, as a paste aimed under another
+        // order is (ADR-0011, ADR-0142; D5).
+        if (!await TakeInGatheredAsync())
+            return;
+        if (version != _sequenceVersion)
+        {
+            await RefuseWriteUnderAMovedOrderAsync();
+            return;
+        }
         if (decision.IsRefused)
         {
             if (OnPasteRefused.HasDelegate)
@@ -6240,8 +6260,10 @@
             case GridKeyKind.FillDown:
             case GridKeyKind.FillRight:
                 // With no Focus these name nothing yet: the key only places one, the
-                // first-key rule (ADR-0012), on the general path below.
-                if (_selection.Selection.IsEmpty)
+                // first-key rule (ADR-0012), on the general path below — unless it was aimed
+                // with a Selection an order move has dropped since, and is refused below as a
+                // write aimed under another order (ADR-0142).
+                if (_selection.Selection.IsEmpty && !AimedWithASelectionTheOrderDropped(paint))
                     break;
                 if (action.Kind == GridKeyKind.Clear)
                     await RaiseClearIntentAsync(paint);
@@ -6296,6 +6318,15 @@
                 await LeaveAsync();
                 return;
             case GridKeyKind.Engage:
+                // Aimed under an order that has moved since, Space never engages the Focus in
+                // force, which the user did not aim at; an action it was aimed at is refused
+                // (ADR-0142, LV-12).
+                if (AimedUnderAnotherOrder(paint))
+                {
+                    if (await RefuseSpaceAimedUnderAnotherOrderAsync(paint) || !_selection.Selection.IsEmpty)
+                        return;
+                    break;
+                }
                 // With no Focus, Space is a first key like any other: it only places the
                 // Focus (ADR-0012), and never fires or enters a cell the user has not
                 // seen focused (ADR-0037). The general path below does the placing.
@@ -7427,8 +7458,7 @@
         // of 2026-10-07).
         if (_sequenceVersion != _editSequence)
         {
-            if (OnPasteRefused.HasDelegate)
-                await OnPasteRefused.InvokeAsync(PasteRefusalReason.EmptySelection);
+            await RefuseWriteUnderAMovedOrderAsync();
             return;
         }
         // The same gate as a paste, over the whole selection — not the one cell the
@@ -7950,8 +7980,9 @@
     /// Template cell's content to take DOM focus; and opens Overwrite on an editable cell
     /// with the space already in it, as if it had been typed. Inside an Interactive cell
     /// it fires the chosen action — and leaves. An action it fires names its row by the Focus,
-    /// under the order the key was taken against, and is refused when that order has moved since
-    /// (ADR-0142, LV-12/LV-14).
+    /// under the order the key was taken against; a Space taken under an order that has moved
+    /// since never comes here, and an action it was aimed at is refused
+    /// (<see cref="RefuseSpaceAimedUnderAnotherOrderAsync"/>; ADR-0142, LV-12/LV-14).
     /// </summary>
     /// <param name="paint">The render the key was taken against (<c>data-ex-paint</c>).</param>
     private async Task EngageAsync(int paint)
@@ -7983,7 +8014,7 @@
             _suppressRender = false;
             StateHasChanged();
             if (row is not null)
-                await ActAsync(row, column.Name, column.Actions[choice.Action].Name, paint, focus.Row, byPosition: true);
+                await ActAsync(row, column.Name, column.Actions[choice.Action].Name, paint, focus.Row);
             return;
         }
 
@@ -7991,7 +8022,7 @@
             return;
         if (column.Actions.Count == 1)
         {
-            await ActAsync(row, column.Name, column.Actions[0].Name, paint, focus.Row, byPosition: true);
+            await ActAsync(row, column.Name, column.Actions[0].Name, paint, focus.Row);
             return;
         }
         if (column.Actions.Count > 1)

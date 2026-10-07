@@ -77,7 +77,7 @@
         OnActionRefused="OnActionRefused"
         ShowFillHandle="UpstreamOn"
         OnFill="OnFill"
-        DeclaredKeys="@(UpstreamOn ? UpstreamKeys : null)"
+        DeclaredKeys="@(RowKeyOn ? UpstreamAndResortKeys : UpstreamOn ? UpstreamKeys : null)"
         OnDeclaredKey="OnUpstreamKey"
         OnFindRefused="OnFindRefused"
         OnColumnWidthChanged="OnWidthChanged"
@@ -127,7 +127,20 @@
 
     private bool UpstreamOn => Upstream == "1";
 
+    /// <summary>
+    /// <c>?rowkey=1</c>, beside <c>?upstream=1</c>, binds the source with the trade's own number as
+    /// its Row Key (ADR-0140), and declares F8 as well: the top row's Notional jumps past every
+    /// other, as a live amendment can, so under a sort by Notional the row moves to the end — with
+    /// an edit open too, which follows its row there without a scroll (ADR-0011's note of
+    /// 2026-10-07).
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "rowkey")]
+    public string? RowKeyParameter { get; set; }
+
+    private bool RowKeyOn => UpstreamOn && RowKeyParameter == "1";
+
     private static readonly string[] UpstreamKeys = ["F9"];
+    private static readonly string[] UpstreamAndResortKeys = ["F9", "F8"];
 
     [Inject] private Microsoft.Extensions.Options.IOptions<PopoverOptions> MudPopovers { get; set; } = default!;
 
@@ -163,6 +176,7 @@
         {
             rows[i] = new DemoTrade
             {
+                Id = i,
                 Book = books[i % books.Length],
                 Trader = traders[(i / 3) % traders.Length],
                 Notional = 1_000_000m + (i * 12_345.67m),
@@ -171,7 +185,7 @@
             };
         }
 
-        _source = GridSource.From(rows);
+        _source = RowKeyOn ? GridSource.From(rows, static t => t.Id) : GridSource.From(rows);
         _second = GridSource.From(rows.Take(20).ToArray());
         _rules
             .Column("Notional", (_, text) => !decimal.TryParse(text, out var value)
@@ -348,7 +362,7 @@
 
     private void OnEdit(GridEditIntent<DemoTrade> intent)
     {
-        _editStatus = $"{intent.Column}={intent.Value} on {intent.Row.Book}/{intent.Row.Trader}";
+        _editStatus = $"{intent.Column}={intent.Value} on {intent.Row.Book}/{intent.Row.Trader}" + (RowKeyOn ? $" #{intent.Row.Id}" : "");
         // The Consumer's half of ADR-0007: a NEW instance carrying the change goes
         // back through the source, and the screen follows the identity change. An
         // unparseable value applies nothing — validation is the Consumer's.
@@ -415,13 +429,13 @@
     {
         "Trader" => new DemoTrade
         {
-            Book = row.Book, Trader = value, Notional = row.Notional,
+            Id = row.Id, Book = row.Book, Trader = value, Notional = row.Notional,
             TradeDate = row.TradeDate, Confirmed = row.Confirmed,
         },
         "Notional" => decimal.TryParse(value, out var notional)
             ? new DemoTrade
             {
-                Book = row.Book, Trader = row.Trader, Notional = notional,
+                Id = row.Id, Book = row.Book, Trader = row.Trader, Notional = notional,
                 TradeDate = row.TradeDate, Confirmed = row.Confirmed,
             }
             : null,
@@ -456,7 +470,9 @@
                 $"OrderMoved — {refusal.Column} was not written: the rows moved while you were typing; press Escape to leave it",
             CommitRefusalReason.RowGone =>
                 $"RowGone — {refusal.Column} was not written: the row is no longer there; press Escape to leave it",
-            _ => refusal.Reason.ToString(),
+            // Every reason is worded above; one the page does not know is a defect to see, not a
+            // sentence to guess (principle 1).
+            _ => throw new ArgumentOutOfRangeException(nameof(refusal), refusal.Reason, "A commit refusal this page does not word."),
         }, s => _commitRefusedStatus = s);
 
     /// <summary>A commit that landed over a cell whose value moved while the user typed (ADR-0142,
@@ -476,7 +492,7 @@
                 $"RowGone — {refusal.ActionName} was not done: the row is no longer there",
             ActionRefusalReason.OrderMoved =>
                 $"OrderMoved — {refusal.ActionName} was not done: the rows moved before the press landed; press it on the row again",
-            _ => refusal.Reason.ToString(),
+            _ => throw new ArgumentOutOfRangeException(nameof(refusal), refusal.Reason, "An action refusal this page does not word."),
         }, s => _actionRefusedStatus = s);
 
     private void OnAction(GridActionEventArgs<DemoTrade> press)
@@ -487,13 +503,28 @@
     private void OnUpstreamKey(GridDeclaredKeyPress press)
     {
         var window = _source.Window;
+        if (press.Key == "F8")
+        {
+            // Under ?rowkey=1: the top row amended past every other Notional.
+            if (window.Count == 0)
+                return;
+            var top = window[0];
+            _source.ReplaceRow(top, new DemoTrade
+            {
+                Id = top.Id, Book = top.Book, Trader = top.Trader, Notional = window.Max(t => t.Notional) + 1_000_000m,
+                TradeDate = top.TradeDate, Confirmed = top.Confirmed,
+            });
+            _rules.Evaluate(_source.Window, _columns);
+            _upstreamStatus = $"trade #{top.Id} amended past every other (×{++_upstreamTicks})";
+            return;
+        }
         var count = Math.Min(5, window.Count);
         for (var row = 0; row < count; row++)
         {
             var old = window[row];
             _source.ReplaceRow(old, new DemoTrade
             {
-                Book = old.Book, Trader = old.Trader, Notional = old.Notional + 1m,
+                Id = old.Id, Book = old.Book, Trader = old.Trader, Notional = old.Notional + 1m,
                 TradeDate = old.TradeDate, Confirmed = old.Confirmed,
             });
         }
