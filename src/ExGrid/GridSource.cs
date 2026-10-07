@@ -43,7 +43,7 @@ public static class GridSource
     /// range at a time and holds the answer as the Window (ADR-0025). It fetches the
     /// first page itself, coalesces requests while scrolling, cancels what a newer
     /// question supersedes and discards an answer that arrives after it.
-    /// <para>Under live data, a write is judged against what was painted: the source has
+    /// <para>Under live data, a write is made on the rows the grid holds: the source has
     /// nothing it could put out before the write without asking the server, and whether the
     /// server's data moved under the write is the Consumer's server's to judge (ADR-0141/0142,
     /// LV-16).</para>

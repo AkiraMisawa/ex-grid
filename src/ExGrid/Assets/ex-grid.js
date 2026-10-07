@@ -1562,8 +1562,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the field before the keyboard left it is appended to the first, and only its own text goes.
     let keyFieldCarried = 0;
     // The render the composition started on (paintNow, at its compositionstart), told with its
-    // text. The edit the text opens keeps what the cell paints when it opens (ADR-0142, rewritten
-    // 2026-10-07), so the core no longer reads it (ADR-0021's note of 2026-10-07).
+    // text. The edit the text opens keeps what the cell paints when it opens (ADR-0142), so the core
+    // depends on nothing of it; it is told as ADR-0021's note of 2026-10-07 has the readings stay.
     let keyFieldPaint = -1;
     // The editor's request for the keyboard, made while the field was composing or as a
     // composition ended: granted once the field has stopped composing (keyFieldEnded).
@@ -1797,8 +1797,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Server host: the `2` typed next went into F18). The core is told this just before Blazor
     // dispatches the event — at once, or at the replay of a held one — and resolves the cell
     // against it. With them, the render whose cells were on screen (data-ex-paint); the row order
-    // and the layout place the press, so the core no longer reads it (ADR-0142, rewritten
-    // 2026-10-07). Reads attributes and the scroll offset; nothing is measured.
+    // and the layout place the press, and the core depends on nothing of it (ADR-0142). Reads
+    // attributes and the scroll offset; nothing is measured.
     const takenAt = (event) => {
         const viewport = event.target;
         const number = (name) => {
@@ -2006,8 +2006,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // A press that focuses this grid's own Formula Bar carries the render the rows were
         // painted by (ADR-0021's note of 2026-10-05), told before the focus, the press's default
         // action, is dispatched, as a press on an action is told before its click (actionPress).
-        // The edit the focus opens keeps what the cell paints when it opens (ADR-0142, rewritten
-        // 2026-10-07), so the core no longer reads it. Reads an attribute; nothing measured.
+        // The edit the focus opens keeps what the cell paints when it opens (ADR-0142), so the core
+        // depends on nothing of it. Reads an attribute; nothing measured.
         if (core && !replaying && event.button === 0 && focusesOwnBar(event.target)) {
             core.invokeMethodAsync('BarPressTakenAt', paintNow()).catch((error) => {
                 if (core) {

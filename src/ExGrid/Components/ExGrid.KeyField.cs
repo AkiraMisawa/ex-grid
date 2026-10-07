@@ -95,8 +95,9 @@ public partial class ExGrid<TRow>
     /// </summary>
     /// <param name="text">The composition's text.</param>
     /// <param name="paint">The render the composition started on (<c>data-ex-paint</c>, read at
-    /// its <c>compositionstart</c>). The edit keeps what the cell paints when it opens (ADR-0142,
-    /// rewritten 2026-10-07), so the core no longer reads it; the listener still tells it.</param>
+    /// its <c>compositionstart</c>). The edit keeps what the cell paints when it opens (ADR-0142),
+    /// so nothing here depends on it; the listener tells it as ADR-0021's note of 2026-10-07 has
+    /// the readings stay.</param>
     [JSInvokable]
     public async Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold)
     {

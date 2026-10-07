@@ -113,9 +113,9 @@ public interface IGridSource<TRow>
     /// <summary>
     /// Puts out at once the changes this source has gathered and not yet published, so that its
     /// Window is the newest version it holds (ADR-0141/0142). The grid calls it on its own
-    /// synchronization context just before it judges a write — a commit, an Action, a paste, a
-    /// fill, a clear — and reads <see cref="Window"/> again, so the write is judged against, and
-    /// its Edit Intent carries, the newest version. A source with nothing it could publish without
+    /// synchronization context just before it handles a write — a commit, an Action, a paste, a
+    /// fill, a clear — and reads <see cref="Window"/> again, so the write is made on, and its Edit
+    /// Intent carries, the newest version. A source with nothing it could publish without
     /// waiting, such as one whose pending change is a question to a server, does nothing; that is
     /// the default.
     /// </summary>

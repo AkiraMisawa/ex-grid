@@ -7341,7 +7341,7 @@
         _editError = null;
         // The commit lands over whatever the cell paints now, and says so when that is not what the
         // editor opened over: the one change the user could not see (ADR-0142, LV-11).
-        var replaced = PaintedTextNow(cell.Row, cell.Column) ?? "";
+        var replaced = ReplacedTextAt(cell);
         var notice = OverwriteNoticeFor(cell, replaced);
         var intent = new GridEditIntent<TRow>(row, Columns[cell.Column].Name, text)
         {
@@ -7355,15 +7355,7 @@
             // behind its answer (ADR-0010), and an order move the Consumer's own write brings in is
             // this commit's, not a discard. The user's own write (D1), taken back if refused.
             var written = NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
-            _committingEdit = true;
-            try
-            {
-                await OnEdit.InvokeAsync(intent);
-            }
-            finally
-            {
-                _committingEdit = false;
-            }
+            await WhileCommittingAsync(() => OnEdit.InvokeAsync(intent));
             if (intent.RefusalMessage is { } refused)
             {
                 ForgetOwnWrite(written);
@@ -7446,7 +7438,7 @@
         }
         // The fill lands over its target as entered (ADR-0142, LV-13). The edited cell lay under
         // the editor: a change there is told once the fill lands (LV-11).
-        var notice = OverwriteNoticeFor(_editingCell, PaintedTextNow(_editingCell.Row, _editingCell.Column) ?? "");
+        var notice = OverwriteNoticeFor(_editingCell, ReplacedTextAt(_editingCell));
         // The Refusal judged the operation; the verdict judges the value, and only now
         // that there is still an operation to perform (ADR-0034's fill carve-out, ED-20).
         // It runs once, against the row the editor was opened on: a fill's target

@@ -25,6 +25,21 @@ public partial class ExGrid<TRow>
     private Task OnFormulaBarPressedAsync() => _pressAnswer = OnFormulaBarFocusAsync();
 
     /// <summary>
+    /// What the next press into this grid's Formula Bar was taken against: the paint the Viewport
+    /// named at its mousedown (ADR-0021, note of 2026-10-05). The edit the press opens keeps what
+    /// the cell paints when it opens (ADR-0142), so nothing here depends on it; the listener tells it
+    /// as ADR-0021's note of 2026-10-07 has the readings stay.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="paint">The paint the Viewport named at the press (<c>data-ex-paint</c>).</param>
+    [JSInvokable]
+    public void BarPressTakenAt(int paint)
+    {
+    }
+
+    /// <summary>
     /// A press into the Formula Bar, answered in its turn among the held keys (ADR-0051,
     /// ADR-0021/0010): completes once the edit its focus opens has been told to the key gate.
     /// The listener asks after the focus has been dispatched, when every press and key held
@@ -136,8 +151,8 @@ public partial class ExGrid<TRow>
     /// <param name="layout">The layout the Viewport was painted under (<c>data-ex-layout</c>).</param>
     /// <param name="paint">The render the Viewport's cells were painted by (<c>data-ex-paint</c>).
     /// The press lands by <paramref name="rowSequence"/> and <paramref name="layout"/>, and a write
-    /// it ends — a fill-handle drag — lands as made (ADR-0142, rewritten 2026-10-07), so the core no
-    /// longer reads it; the listener still tells it.</param>
+    /// it ends — a fill-handle drag — lands as made (ADR-0142), so nothing here depends on it; the
+    /// listener tells it as ADR-0021's note of 2026-10-07 has the readings stay.</param>
     [JSInvokable]
     public void PressTakenAt(string kind, double offsetX, double offsetY, int firstRow,
         double scrollLeftPx, int rowSequence, int layout, int paint = PaintNotTold)

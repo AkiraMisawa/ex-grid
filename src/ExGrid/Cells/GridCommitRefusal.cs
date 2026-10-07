@@ -7,8 +7,8 @@ namespace ExGrid.Cells;
 /// opened on (ADR-0142, LV-20): its Row Key no longer answers a row in the Window, or, with no Row
 /// Key, the order moved, so the position the editor stands at names another row. (Without a Row
 /// Key, a row that left the Window under the same order takes the typing with it instead, announced
-/// as <see cref="EditDiscardReason.RowLeftTheWindow"/>: ADR-0011, ED-21.) A commit is never refused because the cell's
-/// value changed under the editor: it lands, and an Overwrite Notice tells it. No Edit Intent was
+/// as <see cref="EditDiscardReason.RowLeftTheWindow"/>: ADR-0011, ED-21.) A commit is never refused
+/// because the cell's value changed under the editor: it lands, and an Overwrite Notice tells it. No Edit Intent was
 /// raised; the editor stays open with what was typed, and Escape leaves without writing. A Refusal:
 /// it judged the operation, never the typed text (as against an Edit Verdict's Reject, ADR-0034).
 ///
