@@ -1,0 +1,755 @@
+=== grid-1e5: before, 2026-10-06 13:40:52
+13:40:52 check 1: ok=1 load { 1.22 1.92 2.58 }
+13:41:23 check 2: ok=2 load { 1.49 1.92 2.56 }
+load { 1.49 1.92 2.56 }
+background:
+ %CPU     ELAPSED COMMAND
+ 18.2 35-02:44:23 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+ 11.5 36-07:04:23 /usr/libexec/sysmond
+  6.7 36-07:04:26 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  6.6 36-06:54:11 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  5.1 22-21:30:53 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.1 04-10:58:24 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+  2.1       41:46 claude
+=== grid-1e5: after, 2026-10-06 13:41:31, exit 0
+load { 1.45 1.90 2.55 }
+=== grid-1e6: before, 2026-10-06 13:41:31
+13:41:31 check 1: ok=1 load { 1.45 1.90 2.55 }
+13:42:01 check 2: ok=2 load { 2.39 2.07 2.59 }
+load { 2.39 2.07 2.59 }
+background:
+ %CPU     ELAPSED COMMAND
+  8.3 36-07:05:05 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  7.8 22-21:31:32 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  6.2 36-06:54:50 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  3.5 04-10:59:03 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.9 22-23:09:49 /System/Library/PrivateFrameworks/BackgroundTaskManagement.framework/Resources/backgroundtaskmanagementd -daemon
+  1.7 04-10:59:04 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper.app/Contents/MacOS/Wispr Flow Helper --type=gpu-process --user-da
+  1.4 04-10:59:03 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+=== grid-1e6: after, 2026-10-06 13:43:48, exit 0
+load { 2.16 2.09 2.53 }
+=== vouch: before, 2026-10-06 13:43:48
+13:43:48 check 1: ok=1 load { 2.16 2.09 2.53 }
+13:44:18 check 2: ok=2 load { 2.04 2.07 2.51 }
+load { 2.04 2.07 2.51 }
+background:
+ %CPU     ELAPSED COMMAND
+ 11.4 36-06:57:06 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  8.1 36-07:07:21 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  6.3 35-02:47:18 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  5.5 36-07:07:18 /usr/libexec/sysmond
+  3.7 22-21:33:48 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.0 04-11:01:19 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.9       44:41 claude
+=== vouch: after, 2026-10-06 13:44:20, exit 0
+load { 2.04 2.07 2.51 }
+=== pivot-1000x9: before, 2026-10-06 13:44:26
+13:44:26 check 1: ok=1 load { 1.96 2.06 2.50 }
+13:44:56 check 2: ok=2 load { 1.37 1.91 2.43 }
+load { 1.37 1.91 2.43 }
+background:
+ %CPU     ELAPSED COMMAND
+  5.2 36-07:08:00 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  5.2 36-06:57:45 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  4.7 22-21:34:27 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.4 36-06:57:45 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  3.0 36-07:08:01 /System/Library/CoreServices/launchservicesd
+  2.9       45:20 claude
+  2.5 22-23:12:44 /System/Library/PrivateFrameworks/BackgroundTaskManagement.framework/Resources/backgroundtaskmanagementd -daemon
+=== pivot-1000x9: after, 2026-10-06 13:45:19, exit 0
+load { 1.30 1.85 2.39 }
+=== pivot-1000x100: before, 2026-10-06 13:45:19
+13:45:20 check 1: ok=1 load { 1.30 1.85 2.39 }
+13:45:50 check 2: ok=2 load { 1.51 1.86 2.38 }
+load { 1.51 1.86 2.38 }
+background:
+ %CPU     ELAPSED COMMAND
+ 14.7 36-06:58:38 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  8.9 36-07:08:53 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  4.5 22-21:35:20 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.0 36-06:58:38 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  1.9 04-11:02:51 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.8 36-07:08:54 /System/Library/CoreServices/launchservicesd
+  1.7 36-07:08:30 /System/Library/CoreServices/WindowManager.app/Contents/MacOS/WindowManager
+=== pivot-1000x100: after, 2026-10-06 13:49:28, exit 0
+load { 2.82 2.55 2.57 }
+=== pivot-1000x400: before, 2026-10-06 13:49:28
+13:49:28 check 1: ok=1 load { 2.82 2.55 2.57 }
+13:49:58 check 2: ok=2 load { 2.45 2.48 2.55 }
+load { 2.45 2.48 2.55 }
+background:
+ %CPU     ELAPSED COMMAND
+  7.1 22-21:39:29 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  6.8 36-07:13:02 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  6.3 36-07:13:03 /System/Library/CoreServices/launchservicesd
+  5.4 36-07:02:47 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  3.8 36-07:02:47 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  1.9 04-11:07:00 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.6       50:22 claude
+=== pivot-1000x400: after, 2026-10-06 14:20:09, exit 0
+load { 4.86 4.65 4.31 }
+=== pivot-1000x100-rerun-1000-then-1: before, 2026-10-06 14:21:11
+14:21:11 check 1: ok=1 load { 3.75 4.37 4.22 }
+14:21:41 check 2: ok=2 load { 3.84 4.30 4.20 }
+load { 3.84 4.30 4.20 }
+background:
+ %CPU     ELAPSED COMMAND
+ 35.4 36-07:44:44 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.6       31:23 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.9 36-07:43:59 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  6.8 22-22:11:11 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  4.5    01:22:04 claude
+  3.4 04-11:38:42 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  2.6 36-07:34:29 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+=== pivot-1000x100-rerun-1000-then-1: after, 2026-10-06 14:23:37, exit 0
+load { 3.23 3.94 4.06 }
+=== pivot-1000x400-rerun-1000-then-1: before, 2026-10-06 14:23:58
+14:23:59 check 1: ok=1 load { 3.45 3.94 4.06 }
+14:24:29 check 2: ok=2 load { 2.62 3.69 3.97 }
+load { 2.62 3.69 3.97 }
+background:
+ %CPU     ELAPSED COMMAND
+ 38.6 36-07:47:32 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 14.5       34:11 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  8.9 36-07:47:33 /usr/libexec/corebrightnessd --launchd
+  6.9 36-07:46:47 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  6.5 22-22:13:59 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  4.4 36-07:47:05 /System/Library/CoreServices/ControlCenter.app/Contents/MacOS/ControlCenter
+  3.6 04-11:41:30 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+=== pivot-1000x400-rerun-1000-then-1: after, 2026-10-06 14:31:33, exit 0
+load { 7.89 5.51 4.65 }
+=== browser grid-wasm-100000-1: before, 2026-10-06 14:38:15
+14:38:16 quiet: top  45.1 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.91 5.42 4.99 }
+load { 4.91 5.42 4.99 }
+background:
+ %CPU     ELAPSED COMMAND
+ 37.1 36-08:01:19 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.9       47:58 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  8.9    01:38:39 claude
+  7.0 36-08:00:34 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  4.9 36-07:51:04 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+=== browser grid-wasm-100000-1: after, 2026-10-06 14:38:25, exit 0
+load { 4.53 5.32 4.96 }
+=== browser grid-wasm-100000-100: before, 2026-10-06 14:38:25
+14:38:25 quiet: top  34.5 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.53 5.32 4.96 }
+load { 4.53 5.32 4.96 }
+background:
+ %CPU     ELAPSED COMMAND
+ 29.9 36-08:01:28 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 10.9       48:07 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 10.5 36-08:01:29 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+ 10.4 35-03:41:25 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  9.6 36-08:01:25 /usr/libexec/sysmond
+=== browser grid-wasm-100000-100: after, 2026-10-06 14:38:34, exit 0
+load { 4.41 5.28 4.94 }
+=== browser grid-wasm-100000-1000: before, 2026-10-06 14:38:34
+14:38:34 quiet: top  32.2 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.41 5.28 4.94 }
+load { 4.41 5.28 4.94 }
+background:
+ %CPU     ELAPSED COMMAND
+ 32.9 36-08:01:38 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 12.4       48:17 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 12.3 24-16:47:12 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+ 10.5 36-08:01:39 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+  9.5    01:38:58 claude
+=== browser grid-wasm-100000-1000: after, 2026-10-06 14:38:44, exit 0
+load { 4.57 5.29 4.95 }
+=== browser grid-wasm-1000000-1: before, 2026-10-06 14:38:44
+14:38:44 quiet: top  32.3 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.57 5.29 4.95 }
+load { 4.57 5.29 4.95 }
+background:
+ %CPU     ELAPSED COMMAND
+ 31.8 36-08:01:47 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 12.0       48:26 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 11.0 36-08:01:48 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+  5.3 36-08:01:02 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  5.2 36-08:01:14 /System/Library/Frameworks/ApplicationServices.framework/Frameworks/ATS.framework/Support/fontd
+=== browser grid-wasm-1000000-1: after, 2026-10-06 14:38:56, exit 0
+load { 4.67 5.27 4.95 }
+=== browser grid-wasm-1000000-100: before, 2026-10-06 14:38:56
+14:38:56 quiet: top  35.4 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.67 5.27 4.95 }
+load { 4.67 5.27 4.95 }
+background:
+ %CPU     ELAPSED COMMAND
+ 35.8 36-08:01:59 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 12.3       48:38 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  9.6 36-08:02:00 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+  5.3 36-08:01:14 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  3.8 36-08:02:00 /usr/libexec/corebrightnessd --launchd
+=== browser grid-wasm-1000000-100: after, 2026-10-06 14:39:08, exit 0
+load { 4.88 5.30 4.96 }
+=== browser grid-wasm-1000000-1000: before, 2026-10-06 14:39:08
+14:39:08 quiet: top  33.1 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.88 5.30 4.96 }
+load { 4.88 5.30 4.96 }
+background:
+ %CPU     ELAPSED COMMAND
+ 33.0 36-08:02:11 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 12.1       48:50 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 10.3 36-08:02:12 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+  5.3 36-08:01:26 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  4.3 35-03:42:08 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+=== browser grid-wasm-1000000-1000: after, 2026-10-06 14:39:20, exit 0
+load { 4.61 5.22 4.94 }
+=== browser grid-wasm-probe-100000-1: before, 2026-10-06 14:39:20
+14:39:20 quiet: top  33.7 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.61 5.22 4.94 }
+load { 4.61 5.22 4.94 }
+background:
+ %CPU     ELAPSED COMMAND
+ 29.1 36-08:02:23 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 11.3 36-07:38:07 /usr/local/bin/determinate-nixd daemon
+ 11.3 12-13:03:37 /usr/libexec/trustd
+ 10.8       49:02 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  8.7 36-08:02:24 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+=== browser grid-wasm-probe-100000-1: after, 2026-10-06 14:39:29, exit 0
+load { 4.40 5.16 4.92 }
+=== browser grid-wasm-probe-100000-100: before, 2026-10-06 14:39:29
+14:39:30 quiet: top  31.9 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.40 5.16 4.92 }
+load { 4.21 5.11 4.90 }
+background:
+ %CPU     ELAPSED COMMAND
+ 31.3 36-08:02:33 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 13.4 24-16:48:07 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+ 11.6       49:12 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  8.9 36-08:02:34 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+  5.5 36-08:01:48 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+=== browser grid-wasm-probe-100000-100: after, 2026-10-06 14:39:39, exit 0
+load { 4.11 5.07 4.89 }
+=== browser grid-wasm-probe-100000-1000: before, 2026-10-06 14:39:39
+14:39:39 quiet: top  33.6 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.11 5.07 4.89 }
+load { 4.11 5.07 4.89 }
+background:
+ %CPU     ELAPSED COMMAND
+ 34.1 36-08:02:42 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 13.3 36-08:02:43 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+ 12.0       49:21 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  5.3 36-08:01:57 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  5.0 36-08:02:43 /System/Library/CoreServices/launchservicesd
+=== browser grid-wasm-probe-100000-1000: after, 2026-10-06 14:39:49, exit 0
+load { 3.70 4.96 4.85 }
+=== browser grid-wasm-probe-1000000-1: before, 2026-10-06 14:39:49
+14:39:49 quiet: top  31.2 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.70 4.96 4.85 }
+load { 3.70 4.96 4.85 }
+background:
+ %CPU     ELAPSED COMMAND
+ 32.5 36-08:02:52 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 11.8       49:31 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  9.7 36-08:02:53 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+  5.4 36-08:02:07 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  5.0 36-08:02:19 /System/Library/Frameworks/ApplicationServices.framework/Frameworks/ATS.framework/Support/fontd
+=== browser grid-wasm-probe-1000000-1: after, 2026-10-06 14:42:10, exit 0
+load { 3.72 4.53 4.69 }
+=== browser grid-wasm-probe-1000000-100: before, 2026-10-06 14:42:11
+14:42:11 quiet: top  52.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd; { 3.72 4.53 4.69 }
+load { 3.72 4.53 4.69 }
+background:
+ %CPU     ELAPSED COMMAND
+ 33.1 36-08:05:14 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 20.1 36-08:04:44 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+ 12.0       51:53 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  5.6 36-08:05:15 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+  5.3 36-08:04:29 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+=== browser grid-wasm-probe-1000000-100: after, 2026-10-06 14:44:18, exit 0
+other track: 50 raw result file(s) modified in the last 4 minutes
+other track: 8 README/harness file(s) edited lately (not a run)
+load { 3.01 4.12 4.52 }
+=== browser grid-wasm-probe-1000000-1000: before, 2026-10-06 14:44:18
+14:49:01 busy: top  49.8 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.51 4.15 4.45 }
+other track: 7 raw result file(s) modified in the last 4 minutes
+load { 3.14 4.02 4.39 }
+background:
+ %CPU     ELAPSED COMMAND
+ 36.0 36-08:12:25 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 16.5       59:04 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.4 36-08:11:40 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  5.4 22-22:38:52 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  5.0 35-03:52:22 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+=== browser grid-wasm-probe-1000000-1000: after, 2026-10-06 14:51:44, exit 0
+load { 4.77 4.43 4.51 }
+=== browser pivot-wasm-1000x9-1: before, 2026-10-06 14:51:44
+14:51:44 quiet: top  33.0 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.77 4.43 4.51 }
+load { 4.77 4.43 4.51 }
+background:
+ %CPU     ELAPSED COMMAND
+ 33.8 36-08:14:47 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 11.7    01:01:26 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  5.9 36-08:14:02 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  4.6 24-17:00:21 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+  3.2 36-08:14:48 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+=== browser pivot-wasm-1000x9-1: after, 2026-10-06 14:52:01, exit 0
+other-track processes:
+94375  93.8       00:04 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet publish samples/ExGrid.DemoHost -c Release -o /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bc
+other track: 1 raw result file(s) modified in the last 4 minutes
+other busy dotnet:
+94375  34.4 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet publish samples/ExGrid.DemoHost -c Release -o /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08
+94400  45.8 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+94401  84.7 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+94402  93.7 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+94403  75.9 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+94404  38.9 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+94406  81.6 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+94409  72.1 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+94410  91.8 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/Roslyn/bincore/VBCSCompiler -pipename:vRrOlI5PIG559aHH+4RlRmddtOf45Vrx0h9uouxwhtk
+load { 4.43 4.37 4.48 }
+=== browser pivot-wasm-1000x9-1000: before, 2026-10-06 14:52:02
+14:56:45 busy: top 104.6 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer); { 3.67 4.30 4.46 }
+other-track processes:
+96099   0.0       00:25 node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom/tests/ExGrid.Browser/node_modules/.bin/playwright test --config oom.co
+96102   0.0       00:24 node static-host.mjs /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom/.memory-hosts/instrumented/wasm/wwwroot 5499
+96103   1.8       00:24 /nix/store/va22g750kafjvkbwvhbnwqqmj9f9dm8m-nodejs-slim-24.14.1/bin/node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom/te
+other track: 20 raw result file(s) modified in the last 4 minutes
+load { 4.00 4.34 4.47 }
+background:
+ %CPU     ELAPSED COMMAND
+107.2 36-08:19:38 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+ 95.7       00:23 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome H
+ 25.4 36-08:20:08 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  9.5    01:06:47 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.9 36-08:20:05 /usr/libexec/sysmond
+=== browser pivot-wasm-1000x9-1000: after, 2026-10-06 14:57:21, exit 0
+other-track processes:
+96099   0.0       00:41 node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom/tests/ExGrid.Browser/node_modules/.bin/playwright test --config oom.co
+96102   0.0       00:40 node static-host.mjs /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom/.memory-hosts/instrumented/wasm/wwwroot 5499
+96103   1.2       00:40 /nix/store/va22g750kafjvkbwvhbnwqqmj9f9dm8m-nodejs-slim-24.14.1/bin/node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom/te
+other track: 22 raw result file(s) modified in the last 4 minutes
+load { 4.73 4.49 4.52 }
+=== browser pivot-wasm-1000x100-1: before, 2026-10-06 14:57:22
+15:02:04 busy: top  39.4 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.52 3.77 4.17 }
+other track: 13 raw result file(s) modified in the last 4 minutes
+other track: 1 README/harness file(s) edited lately (not a run)
+load { 3.65 3.79 4.16 }
+background:
+ %CPU     ELAPSED COMMAND
+150.4 36-08:24:58 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+ 33.9 36-08:25:28 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 26.9       33:20 /System/Library/PrivateFrameworks/ModelCatalogRuntime.framework/Versions/A/modelcatalogd
+ 20.9    12:26:30 /usr/libexec/spotlightknowledged.updater -u
+ 19.4 36-08:25:03 /System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd
+=== browser pivot-wasm-1000x100-1: after, 2026-10-06 15:02:49, exit 0
+other track: 13 raw result file(s) modified in the last 4 minutes
+other track: 2 README/harness file(s) edited lately (not a run)
+load { 4.10 3.91 4.20 }
+=== browser pivot-wasm-1000x100-1000: before, 2026-10-06 15:02:49
+15:07:33 busy: top  43.5 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.91 3.83 4.07 }
+other track: 50 raw result file(s) modified in the last 4 minutes
+other track: 9 README/harness file(s) edited lately (not a run)
+load { 3.60 3.78 4.05 }
+background:
+ %CPU     ELAPSED COMMAND
+ 36.1 36-08:30:56 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.3    01:17:35 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.1 36-08:30:11 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  6.7 22-22:57:23 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  5.1 36-08:20:41 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+=== browser pivot-wasm-1000x100-1000: after, 2026-10-06 15:08:17, exit 0
+other track: 50 raw result file(s) modified in the last 4 minutes
+other track: 9 README/harness file(s) edited lately (not a run)
+load { 4.04 3.88 4.08 }
+=== browser pivot-wasm-1000x400-1: before, 2026-10-06 15:08:17
+=== browser pivot-wasm-1000x9-1: before, 2026-10-06 15:26:27
+15:26:27 quiet: top  35.6 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.71 3.46 3.73 }
+idle
+load { 3.51 3.42 3.71 }
+background:
+ %CPU     ELAPSED COMMAND
+ 35.5 36-08:50:01 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 14.9    01:36:40 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.3 36-08:49:16 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  6.1 22-23:16:28 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.6    02:27:21 claude
+=== browser pivot-wasm-1000x9-1: after, 2026-10-06 15:27:11, exit 0
+load { 3.50 3.42 3.70 }
+=== browser pivot-wasm-1000x9-1000: before, 2026-10-06 15:27:11
+15:27:12 quiet: top  35.8 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.46 3.42 3.70 }
+idle
+load { 3.08 3.33 3.66 }
+background:
+ %CPU     ELAPSED COMMAND
+ 38.0 36-08:50:45 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.7    01:37:24 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.6 36-08:50:00 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  7.6 22-23:17:12 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  6.9 24-17:36:19 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+=== browser pivot-wasm-1000x9-1000: after, 2026-10-06 15:27:56, exit 0
+load { 3.08 3.32 3.65 }
+=== browser pivot-wasm-1000x100-1: before, 2026-10-06 15:27:56
+15:27:56 quiet: top  31.2 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.08 3.32 3.65 }
+idle
+load { 3.16 3.30 3.63 }
+background:
+ %CPU     ELAPSED COMMAND
+ 37.6 36-08:51:29 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 16.7    01:38:08 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.7 36-08:50:44 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  7.5 22-23:17:56 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.6 04-12:45:27 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+=== browser pivot-wasm-1000x100-1: after, 2026-10-06 15:28:51, exit 0
+load { 3.20 3.30 3.62 }
+=== browser pivot-wasm-1000x100-1000: before, 2026-10-06 15:28:51
+15:28:51 quiet: top  35.0 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.20 3.30 3.62 }
+idle
+load { 3.08 3.25 3.59 }
+background:
+ %CPU     ELAPSED COMMAND
+ 38.9 36-08:52:24 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 19.5 35-04:32:21 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+ 16.1    01:39:03 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 12.6 36-08:52:21 /usr/libexec/sysmond
+  7.6 36-08:51:39 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+=== browser pivot-wasm-1000x100-1000: after, 2026-10-06 15:29:45, exit 0
+load { 3.19 3.26 3.58 }
+=== browser pivot-wasm-1000x400-1: before, 2026-10-06 15:29:45
+15:29:46 quiet: top  31.3 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.19 3.26 3.58 }
+idle
+load { 3.32 3.30 3.58 }
+background:
+ %CPU     ELAPSED COMMAND
+ 35.0 36-08:53:19 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 14.9    01:39:58 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.4 36-08:52:34 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  6.5    02:30:39 claude
+  4.6 22-23:19:46 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+=== browser pivot-wasm-1000x400-1: after, 2026-10-06 15:45:43, exit 1
+load { 2.75 2.96 3.18 }
+=== browser pivot-wasm-1000x400-1000: before, 2026-10-06 15:45:43
+15:45:43 quiet: top  32.1 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 2.75 2.96 3.18 }
+idle
+load { 3.37 3.09 3.22 }
+background:
+ %CPU     ELAPSED COMMAND
+ 36.0 36-09:09:16 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.9    01:55:55 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.6 36-09:08:31 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  5.9 22-23:35:43 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.9 36-08:59:01 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+=== browser pivot-wasm-probe-1000x9-1: before, 2026-10-06 15:46:31
+15:46:52 quiet: top  58.8 /System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd; { 3.81 3.24 3.27 }
+=== note 2026-10-06 15:47:31: batch 2 stopped by hand after pivot-wasm-1000x400-1 ran out of memory (raw/browser-pivot-wasm-1000x400-1-out-of-memory.log); its 1000x400-1000 run and the probe it had begun were killed before any measurement; batch 3 follows
+=== browser pivot-wasm-1000x400-diagnostic: before, 2026-10-06 15:47:31
+15:47:31 quiet: top  57.1 /System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd; { 3.73 3.30 3.29 }
+idle
+load { 3.80 3.35 3.30 }
+background:
+ %CPU     ELAPSED COMMAND
+ 85.7    23:18:42 /System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd
+ 42.2 36-09:11:05 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 17.5    01:57:44 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 14.8       00:01 /System/Library/Frameworks/Contacts.framework/Support/contactsd
+  8.4 22-23:37:32 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+=== browser pivot-wasm-1000x400-diagnostic: after, 2026-10-06 15:48:13, exit 0
+load { 4.29 3.48 3.35 }
+=== browser pivot-wasm-1000x200-1: before, 2026-10-06 15:48:13
+15:49:13 quiet: top  38.6 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.35 3.65 3.42 }
+idle
+load { 3.92 3.60 3.41 }
+background:
+ %CPU     ELAPSED COMMAND
+ 36.5 36-09:12:47 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.6    01:59:26 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.0 36-09:12:02 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  5.7 22-23:39:14 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  5.3 36-09:02:32 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+=== browser pivot-wasm-1000x200-1: after, 2026-10-06 15:58:46, exit 143
+other track: 50 raw result file(s) modified in the last 4 minutes
+other track: 8 README/harness file(s) edited lately (not a run)
+load { 2.65 3.15 3.30 }
+=== browser pivot-wasm-probe-1000x9-1: before, 2026-10-06 15:58:46
+16:02:28 quiet: top  39.5 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.17 3.29 3.34 }
+idle
+load { 3.41 3.32 3.34 }
+background:
+ %CPU     ELAPSED COMMAND
+ 36.6 36-09:26:02 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.0    02:12:41 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  6.9 36-09:25:17 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  5.6 35-05:05:59 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  4.6 22-23:52:29 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+=== browser pivot-wasm-probe-1000x9-1: after, 2026-10-06 16:03:12, exit 0
+load { 3.27 3.29 3.33 }
+=== browser pivot-wasm-probe-1000x100-1: before, 2026-10-06 16:03:12
+16:03:13 quiet: top  33.4 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.27 3.29 3.33 }
+idle
+load { 3.22 3.26 3.32 }
+background:
+ %CPU     ELAPSED COMMAND
+ 41.2 36-09:26:46 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.8    02:13:25 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 12.9 36-09:26:47 /usr/libexec/corebrightnessd --launchd
+  7.2 36-09:26:19 /System/Library/CoreServices/ControlCenter.app/Contents/MacOS/ControlCenter
+  7.2 36-09:26:01 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+=== browser pivot-wasm-probe-1000x100-1: after, 2026-10-06 16:04:13, exit 0
+load { 4.32 3.50 3.40 }
+=== browser grid-wasm-probe-1000000-1: before, 2026-10-06 16:04:13
+16:04:13 quiet: top  30.1 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.13 3.47 3.39 }
+idle
+load { 4.05 3.52 3.41 }
+background:
+ %CPU     ELAPSED COMMAND
+ 36.3 36-09:27:46 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.4    02:14:25 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.7 35-05:07:43 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  7.5 24-18:13:20 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+  7.1 36-09:27:01 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+=== browser grid-wasm-probe-1000000-1: after, 2026-10-06 16:07:06, exit 0
+load { 3.85 3.58 3.44 }
+=== browser grid-wasm-probe-1000000-100: before, 2026-10-06 16:07:06
+16:07:06 quiet: top  33.0 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.85 3.58 3.44 }
+idle
+load { 3.44 3.50 3.42 }
+background:
+ %CPU     ELAPSED COMMAND
+109.4 36-09:30:10 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+ 26.5 36-09:30:40 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 11.3    02:17:19 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  5.0 36-09:29:55 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  3.3 22-23:57:07 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+=== browser grid-wasm-probe-1000000-100: after, 2026-10-06 16:09:44, exit 0
+load { 3.53 3.57 3.46 }
+=== browser grid-wasm-probe-1000000-1000: before, 2026-10-06 16:09:44
+16:09:44 quiet: top  32.1 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.53 3.57 3.46 }
+idle
+load { 3.18 3.50 3.44 }
+background:
+ %CPU     ELAPSED COMMAND
+ 34.5 36-09:33:18 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.1    02:19:57 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 14.5 36-09:33:15 /usr/libexec/sysmond
+ 11.7 35-05:13:15 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  6.6 36-09:32:33 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+=== browser grid-wasm-probe-1000000-1000: after, 2026-10-06 16:12:39, exit 0
+load { 4.22 3.61 3.47 }
+=== browser grid-wasm-first-100000-1: before, 2026-10-06 16:12:39
+16:12:59 quiet: top  39.8 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 3.86 3.57 3.46 }
+idle
+load { 4.06 3.63 3.49 }
+background:
+ %CPU     ELAPSED COMMAND
+ 90.3       00:07 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome H
+ 33.2 36-09:37:33 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 13.2    02:24:12 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.7 24-18:23:07 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+  6.3 36-09:36:48 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+=== browser grid-wasm-first-100000-1: after, 2026-10-06 16:14:43, exit 0
+load { 5.15 3.88 3.58 }
+=== browser grid-wasm-first-1000000-1: before, 2026-10-06 16:14:43
+16:19:26 quiet: top  39.4 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer; { 4.75 4.44 3.89 }
+idle
+load { 4.03 4.38 3.93 }
+background:
+ %CPU     ELAPSED COMMAND
+  3.2 23-00:10:27 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.8    03:21:20 claude
+  1.7 36-09:33:45 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  1.4 04-13:37:58 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.4 04-13:37:58 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+=== browser grid-wasm-first-1000000-1: after, 2026-10-06 16:21:12, exit 0
+load { 4.98 4.58 4.00 }
+=== browser grid-server-bytes-100000-1: before, 2026-10-06 16:21:12
+16:21:53 quiet: top  24.3 /usr/libexec/sysmond; { 3.64 4.30 3.93 }
+idle
+load { 3.33 3.95 3.83 }
+background:
+ %CPU     ELAPSED COMMAND
+  3.6 23-00:13:24 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.8    03:24:17 claude
+  2.4 36-09:36:42 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  1.7 04-13:40:55 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.5 36-09:46:58 /usr/libexec/locationd
+=== browser grid-server-bytes-100000-1: after, 2026-10-06 16:24:26, exit 0
+load { 2.66 3.73 3.76 }
+=== browser grid-server-bytes-100000-100: before, 2026-10-06 16:24:26
+16:24:26 quiet: top   9.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd; { 2.66 3.73 3.76 }
+idle
+load { 2.05 3.48 3.67 }
+background:
+ %CPU     ELAPSED COMMAND
+  4.4 23-00:14:26 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.3 36-09:37:44 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  2.1 36-09:48:00 /System/Library/CoreServices/launchservicesd
+  1.9 04-13:41:57 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.7 04-13:41:57 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+=== browser grid-server-bytes-100000-100: after, 2026-10-06 16:25:27, exit 0
+load { 2.29 3.39 3.62 }
+=== browser grid-server-bytes-100000-1000: before, 2026-10-06 16:25:27
+16:25:28 quiet: top  15.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd; { 2.29 3.39 3.62 }
+idle
+load { 2.05 3.22 3.56 }
+background:
+ %CPU     ELAPSED COMMAND
+  5.3 23-00:15:28 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.1 36-09:38:46 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  2.6 36-09:38:46 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  2.6 03-03:50:13 /Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex -c features.code_mode_host=true app-server 
+  2.6    03:26:21 claude
+=== note 2026-10-06 16:27:07: batch 3 stopped by hand during its Server runs (wire bytes read from the wrong connection; fixed in the spec); batch 4 follows
+=== browser grid-server-bytes-100000-1: before, 2026-10-06 16:27:07
+16:27:07 quiet: top  10.0 claude; { 1.80 2.91 3.41 }
+idle
+load { 2.45 2.92 3.39 }
+background:
+ %CPU     ELAPSED COMMAND
+ 26.9 36-09:50:11 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+  3.6 36-09:50:41 /usr/sbin/coreaudiod
+  3.6 23-00:17:08 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.8 36-09:40:26 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  2.6 04-13:44:39 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+=== browser grid-server-bytes-100000-1: after, 2026-10-06 16:28:08, exit 0
+load { 2.25 2.82 3.34 }
+=== browser grid-server-bytes-100000-100: before, 2026-10-06 16:28:08
+16:28:08 quiet: top  17.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd; { 2.25 2.82 3.34 }
+idle
+load { 1.99 2.71 3.28 }
+background:
+ %CPU     ELAPSED COMMAND
+  4.2 35-05:31:39 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  3.9 23-00:18:09 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.1 36-09:51:43 /System/Library/CoreServices/launchservicesd
+  1.8 04-13:45:40 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.8 24-18:37:16 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+=== browser grid-server-bytes-100000-100: after, 2026-10-06 16:29:10, exit 0
+load { 1.54 2.51 3.18 }
+=== browser grid-server-bytes-100000-1000: before, 2026-10-06 16:29:10
+16:29:10 quiet: top  15.1 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd; { 1.54 2.51 3.18 }
+idle
+load { 1.31 2.37 3.11 }
+background:
+ %CPU     ELAPSED COMMAND
+  5.1 23-00:19:10 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.0    03:30:03 claude
+  2.0 04-13:46:41 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.8 04-13:46:41 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+  1.2 36-09:42:28 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+=== browser grid-server-bytes-100000-1000: after, 2026-10-06 16:30:11, exit 0
+load { 1.72 2.39 3.09 }
+=== browser grid-server-bytes-1000000-1: before, 2026-10-06 16:30:11
+16:30:12 quiet: top  19.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd; { 1.72 2.39 3.09 }
+idle
+load { 1.50 2.27 3.02 }
+background:
+ %CPU     ELAPSED COMMAND
+ 23.0 36-09:53:42 /usr/libexec/sysmond
+  4.6 23-00:20:12 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.9 36-09:43:30 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  2.0 35-05:33:42 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  1.9 04-13:47:43 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+=== browser grid-server-bytes-1000000-1: after, 2026-10-06 16:31:14, exit 0
+load { 1.80 2.27 3.00 }
+=== browser grid-server-bytes-1000000-100: before, 2026-10-06 16:31:14
+16:31:14 quiet: top  40.0 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/151.0.7922.175/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer); { 1.80 2.27 3.00 }
+idle
+load { 2.34 2.36 3.00 }
+background:
+ %CPU     ELAPSED COMMAND
+  4.4 23-00:21:14 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  1.9 04-13:48:45 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.8 36-09:54:47 /usr/libexec/lsd runAsRoot
+  1.6 36-09:54:48 /System/Library/CoreServices/launchservicesd
+  1.6 36-09:54:48 /usr/libexec/timed
+=== browser grid-server-bytes-1000000-100: after, 2026-10-06 16:32:16, exit 0
+load { 2.12 2.30 2.95 }
+=== browser grid-server-bytes-1000000-1000: before, 2026-10-06 16:32:16
+16:32:16 quiet: top  19.7 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd; { 2.12 2.30 2.95 }
+idle
+load { 2.87 2.45 2.98 }
+background:
+ %CPU     ELAPSED COMMAND
+123.8 36-09:55:20 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+  3.6 36-09:45:35 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  2.9 23-00:22:17 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  1.8 36-09:45:35 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  1.8 24-18:41:24 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+=== browser grid-server-bytes-1000000-1000: after, 2026-10-06 16:33:18, exit 0
+load { 2.38 2.37 2.94 }
+=== browser pivot-wasm-1000x200-1: before, 2026-10-06 16:33:18
+16:33:18 quiet: top  17.9 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd; { 2.38 2.37 2.94 }
+idle
+load { 1.87 2.24 2.87 }
+background:
+ %CPU     ELAPSED COMMAND
+  6.2 36-09:56:53 /System/Library/CoreServices/launchservicesd
+  4.9 35-05:36:49 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  4.7 23-00:23:19 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.3 36-09:46:37 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  1.9 04-13:50:50 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+=== browser pivot-wasm-1000x200-1: after, 2026-10-06 16:34:16, exit 1
+load { 1.67 2.15 2.81 }
+=== browser pivot-wasm-1000x400-1: before, 2026-10-06 16:34:16
+16:34:16 quiet: top  13.1 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd; { 1.67 2.15 2.81 }
+idle
+load { 1.60 2.09 2.77 }
+background:
+ %CPU     ELAPSED COMMAND
+ 11.0 24-18:43:24 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+  4.5 23-00:24:17 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  1.8 04-13:51:48 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.6 36-09:47:35 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  1.6 04-13:51:48 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+=== browser pivot-wasm-1000x400-1: after, 2026-10-06 16:35:13, exit 1
+load { 1.57 2.05 2.73 }
+=== browser pivot-wasm-1000x400-1000: before, 2026-10-06 16:35:13
+16:35:13 quiet: top  12.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd; { 1.57 2.05 2.73 }
+idle
+load { 1.32 1.94 2.67 }
+background:
+ %CPU     ELAPSED COMMAND
+ 30.5 35-05:38:44 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+ 11.1 36-09:58:44 /usr/libexec/sysmond
+  4.8 23-00:25:14 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.6 36-09:48:32 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  2.8 36-09:58:48 /System/Library/CoreServices/launchservicesd
+=== browser pivot-wasm-1000x400-1000: after, 2026-10-06 16:36:10, exit 1
+load { 1.51 1.95 2.65 }
+=== browser pivot-wasm-probe-1000x400-1: before, 2026-10-06 16:36:10
+16:36:10 quiet: top  10.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd; { 1.51 1.95 2.65 }
+idle
+load { 3.10 2.26 2.73 }
+background:
+ %CPU     ELAPSED COMMAND
+  3.5 23-00:26:10 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.8 36-09:49:28 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  2.0    03:37:03 claude
+  1.7 04-13:53:41 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.7 04-13:53:41 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+=== browser pivot-wasm-probe-1000x400-1: after, 2026-10-06 16:37:13, exit 1
+load { 2.40 2.18 2.69 }
+=== pivot-memory-1000x200: before, 2026-10-06 16:38:07
+16:38:07 check 1: ok=1 load { 4.01 2.58 2.80 }
+16:38:37 check 2: ok=2 load { 3.09 2.49 2.76 }
+idle
+load { 3.09 2.49 2.76 }
+background:
+ %CPU     ELAPSED COMMAND
+  7.6 36-09:51:25 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+  5.4 23-00:28:07 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  5.4 36-01:52:42 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/151.0.7922.175/Helpers/Google Chrome 
+  3.4 36-09:51:25 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  3.3    03:39:00 claude
+  3.2 36-09:51:14 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/151.0.7922.175/Helpers/Google Chrome 
+  1.8 04-13:55:38 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+=== pivot-memory-1000x200: after, 2026-10-06 16:38:50, exit 0
+load { 3.08 2.51 2.76 }
+=== pivot-memory-1000x100-paths: before, 2026-10-06 16:39:50
+16:40:21 check 2: ok=1 load { 2.13 2.32 2.66 }
+16:40:51 check 3: ok=2 load { 1.74 2.21 2.60 }
+idle
+load { 1.74 2.21 2.60 }
+background:
+ %CPU     ELAPSED COMMAND
+ 90.4 01-00:11:31 /System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd
+  3.6 36-10:03:51 /usr/libexec/sysmond
+  2.9 23-00:30:21 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.3 35-05:43:51 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  2.1       02:55 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/Roslyn/bincore/VBCSCompiler -pipename:vRrO
+  1.2 04-13:57:52 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+  1.0 04-13:57:52 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+=== pivot-memory-1000x100-paths: after, 2026-10-06 16:40:58, exit 0
+load { 1.93 2.24 2.61 }
+=== note 2026-10-06 (written after the runs, from the team lead's messages):
+  - The five ExGrid.DemoApi processes (ports 8591-8594 and 8611) were stopped at about 13:10 BST with the user's OK. Every timed
+    batch in this file starts at 13:40:52 or later: none ran with that load. Only untimed smoke runs of the harness came before.
+  - The SIGTERM of pivot-wasm-1000x200-1 at 15:58:46 was the team lead's: the run had stalled (Chrome's renderer used 21.8 s of
+    CPU, then sat at 0% for over 8 minutes), and they stopped its Playwright process (PID 11244). Not the Codex track.
+  - From about 16:14 the team lead's own worktree (live-data-oom) existed, investigating the WebAssembly out-of-memory; this
+    file's idle check watched only the Codex track. Browser timings taken after 16:14 (grid-wasm-first-1000000-1, and the
+    pivot-wasm 1000x200 and 1000x400 runs of 16:33-16:37) are not reported as numbers in the README. The Server byte counts
+    (16:21-16:33) and the CoreCLR memory runs (16:38-16:41) are reported: load does not move bytes or heap sizes.
+  - After 16:41 no timed run was taken, by the team lead's instruction.

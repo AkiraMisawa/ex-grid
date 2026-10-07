@@ -1,0 +1,53 @@
+{
+ "label": "live-2-v1 (v1, contended no)",
+ "base": "http://localhost:5799",
+ "at": "2026-10-06T20:01:08.786Z",
+ "rows": 1000000,
+ "batch": 1000,
+ "load": "1,000,000 trades made in 1,755 ms; GridSource.From took 1,143 ms.",
+ "warmup": 3,
+ "appliedMs": {
+  "median": 31.7,
+  "min": 21.1,
+  "max": 91.2,
+  "n": 15
+ },
+ "applyToFrameMs": {
+  "median": 31.7,
+  "min": 21.2,
+  "max": 91.3,
+  "n": 15
+ },
+ "applyToPaintedMs": {
+  "median": 32.8,
+  "min": 22.7,
+  "max": 92.4,
+  "n": 15
+ },
+ "frameToPaintedMs": {
+  "median": 1.1,
+  "min": 0.8,
+  "max": 1.5,
+  "n": 15
+ },
+ "endOfTaskToFrameMs": {
+  "median": 0.1,
+  "min": 0,
+  "max": 0.1,
+  "n": 15
+ },
+ "taskStartToFrameMs": {
+  "median": 88,
+  "min": 84,
+  "max": 98,
+  "n": 3
+ },
+ "longestTaskMs": {
+  "median": 0,
+  "min": 0,
+  "max": 97,
+  "n": 15
+ },
+ "gridChanged": 15,
+ "consoleErrors": []
+}

@@ -1,0 +1,148 @@
+@page "/w2"
+@implements IDisposable
+@inject IState<TradesState> State
+@inject IDispatcher Dispatcher
+@inject TimeProvider Clock
+@inject Census Census
+
+@* W2: the store's list is handed whole to GridSource.From under a Row Key on every state change
+   (ReplaceAll, ADR-0141 D7, LV-4), and the source pairs the trades by key and reference, sorts,
+   gathers, marks, and vouches for its Windows. The page is not a FluxorComponent: it subscribes to
+   the feature itself, and a state change does not render it — the source tells the grid.
+
+   ?edits=store (the default) sends a user's write to the store only, and the source hears it back
+   through ReplaceAll like any other change. ?edits=source writes it to the source first, with
+   ReplaceRow, and then to the store with the same instance, so the source pairs the store's next
+   list as unchanged there. *@
+
+<h1>W2 — the store's list handed to GridSource.From</h1>
+<a id="home" href="">Home</a>
+<Instruments Feed="_feed" />
+<p class="fg-status">
+    <span id="edit-status">Grid: @_intents.EditStatus</span>
+    <span id="commit-refused" role="status">Commit refused: @_intents.CommitRefused</span>
+    <span id="paste-refused" role="status">Paste refused: @_intents.PasteRefused</span>
+    <span id="upstream-status">Upstream: @_intents.Upstream</span>
+    <span id="sequence">Sequence: @_source.RowSequenceVersion</span>
+    <span id="edits-mode">Edits: @(ThroughSource ? "source" : "store"); gather @_source.GatherInterval.TotalMilliseconds ms</span>
+    <span id="source-errors">Source errors: @_sourceErrors</span>
+</p>
+
+<ExGrid TRow="Trade"
+        Source="_source"
+        Columns="TradeColumns.All"
+        PinnedColumnCount="2"
+        RowHeight="24"
+        ViewportHeight="520"
+        ViewportWidth="880"
+        CellChangedAt="_changedAt"
+        ChangeHighlightDuration="Highlight"
+        ShowFillHandle="true"
+        OnEdit="_onEdit"
+        OnPaste="_onPaste"
+        OnFill="_onFill"
+        OnClear="_onClear"
+        OnCommitRefused="_onCommitRefused"
+        OnPasteRefused="_onPasteRefused"
+        DeclaredKeys="BlotterIntents.UpstreamKeys"
+        OnDeclaredKey="_onKey" />
+
+@code {
+    private static readonly TimeSpan Highlight = TimeSpan.FromSeconds(1);
+
+    [SupplyParameterFromQuery(Name = "interval")] public int? Interval { get; set; }
+    [SupplyParameterFromQuery(Name = "perTick")] public int? PerTick { get; set; }
+    [SupplyParameterFromQuery(Name = "ticks")] public int? Ticks { get; set; }
+    [SupplyParameterFromQuery(Name = "addEvery")] public int? AddEvery { get; set; }
+    [SupplyParameterFromQuery(Name = "edits")] public string? Edits { get; set; }
+    // ?gather=0 sets the source's GatherInterval in milliseconds: 0 publishes every change at once.
+    [SupplyParameterFromQuery(Name = "gather")] public int? Gather { get; set; }
+
+    private bool ThroughSource => Edits == "source";
+
+    private StartFeed _feed = default!;
+    private InMemoryGridSource<Trade> _source = default!;
+    private BlotterIntents _intents = default!;
+    private int _sourceErrors;
+
+    private CellChangeOf<Trade>? _changedAt;
+    private Action<GridEditIntent<Trade>> _onEdit = default!;
+    private Action<GridPasteIntent> _onPaste = default!;
+    private Action<GridFillIntent> _onFill = default!;
+    private Action<GridClearIntent> _onClear = default!;
+    private Action<GridCommitRefusal> _onCommitRefused = default!;
+    private Action<PasteRefusalReason> _onPasteRefused = default!;
+    private Action<GridDeclaredKeyPress> _onKey = default!;
+
+    protected override void OnInitialized()
+    {
+        Dispatcher.Dispatch(new TrackChanges(false));
+        _feed = new StartFeed(Interval ?? 100, PerTick ?? 20, Ticks ?? 0, AddEvery ?? 10, 20261006);
+        // Made on the renderer's context, where it replaces the Window the grid reads; a list handed
+        // over on the feed's thread is published there (InMemoryGridSource's threading note).
+        _source = GridSource.From(State.Value.Trades, TradeColumns.TradeKey, Clock);
+        _source.ChangeTimesKeptFor = TimeSpan.FromSeconds(5);
+        if (Gather is >= 0 and var gather)
+            _source.GatherInterval = TimeSpan.FromMilliseconds(gather);
+        _changedAt = _source.CellChangedAt;
+        State.StateChanged += OnStoreChanged;
+        Census.Track("w2-page", this);
+        Census.Track("w2-source", _source);
+        _intents = new BlotterIntents(Dispatcher, Clock, () => _source.Window, () => _source.RowSequenceVersion,
+            ThroughSource ? WriteToSource : null);
+        _onEdit = _intents.Edit;
+        _onPaste = _intents.Paste;
+        _onFill = _intents.Fill;
+        _onClear = _intents.Clear;
+        _onCommitRefused = _intents.OnCommitRefused;
+        _onPasteRefused = _intents.OnPasteRefused;
+        _onKey = _intents.Key;
+    }
+
+    /// <summary>Every state change hands the source the store's whole list: the source pairs it with
+    /// what it holds by key, and a trade whose instance did not change is unchanged. Raised on the
+    /// thread that dispatched — the feed's on Server — inside Fluxor's dispatch.</summary>
+    private void OnStoreChanged(object? sender, EventArgs e)
+    {
+        try
+        {
+            _source.ReplaceAll(State.Value.Trades);
+        }
+        catch (Exception error)
+        {
+            // Never into Fluxor's dispatch loop: reported as the page's own failure.
+            Interlocked.Increment(ref _sourceErrors);
+            _ = InvokeAsync(() => DispatchExceptionAsync(error));
+        }
+    }
+
+    /// <summary>?edits=source: each written row replaced in the source first, as the user's own edit
+    /// (not gathered, not marked), then the same instance handed to the store. A row the source no
+    /// longer holds in that version is left to the store's reducer to judge.</summary>
+    private IReadOnlyDictionary<string, Trade>? WriteToSource(IReadOnlyList<CellEdit> edits)
+    {
+        var replacements = new Dictionary<string, Trade>();
+        foreach (var row in edits.GroupBy(e => e.Id))
+        {
+            var basedOn = row.First().BasedOn;
+            Trade? next = basedOn;
+            foreach (var edit in row)
+                next = next is null ? null : TradeColumns.Written(next, edit.Column, edit.Text);
+            if (next is null || ReferenceEquals(next, basedOn))
+                continue;
+            try
+            {
+                _source.ReplaceRow(basedOn, next);
+                replacements[row.Key] = next;
+            }
+            catch (ArgumentException)
+            {
+                // A live change replaced the row since the grid judged the write: the reducer
+                // judges it against the store's version.
+            }
+        }
+        return replacements;
+    }
+
+    public void Dispose() => State.StateChanged -= OnStoreChanged;
+}

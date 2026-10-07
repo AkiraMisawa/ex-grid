@@ -1,0 +1,460 @@
+diff --git a/src/ExGrid/Components/ExGrid.SeenText.cs b/src/ExGrid/Components/ExGrid.SeenText.cs
+index 6c056c7b..d5b72615 100644
+--- a/src/ExGrid/Components/ExGrid.SeenText.cs
++++ b/src/ExGrid/Components/ExGrid.SeenText.cs
+@@ -17,9 +17,10 @@ namespace ExGrid.Components;
+ // (data-ex-paint, beside data-ex-sequence and data-ex-layout). The browser reads that name with
+ // each gesture — a press on the rows or on an action, a key, a paste — and tells it with the
+ // gesture (ADR-0021's notes of 2026-10-02 and 2026-10-05), and the gesture is judged against the
+-// paint it names. The grid keeps, for its last few paints, what it needs to recompute the painted
+-// text of the cells it painted: the row instances, the columns, their widths and the Consumer's
+-// painted-text and appearance lookups. Nothing per cell is kept, and nothing per cell reaches
++// paint it names. PROTOTYPE (A): the grid keeps, for its last few paints, the painted text of the
++// cells each painted; a row whose instance the previous paint painted at the same position, under
++// the same columns, widths, slice and lookups, shares that paint's texts. Only the newest paint
++// holds row instances (ADR-0140: the grid holds nothing between Windows). Nothing per cell reaches
+ // JavaScript. A gesture taken against a paint no longer kept is refused: the grid can no longer
+ // tell what the user saw.
+ //
+@@ -90,29 +91,41 @@ public partial class ExGrid<TRow>
+     private readonly List<Paint> _paints = [];
+     private int _paintId;
+ 
+-    /// <summary>What one paint painted, as much as recomputing its cells' painted text needs: the
+-    /// row instances of the painted rows (null where a position had no row in hand), the columns
+-    /// and their widths, which of them were painted, and the Consumer's lookups the text depends
+-    /// on. The row order is kept, because a position names a row only under one.</summary>
++    // PROTOTYPE (A): names an instance at a position. A position keeps its serial from one paint to
++    // the next while the same instance stays there, so equal serials at a position in two paints
++    // mean the same instance was painted there throughout.
++    private int _rowSerial;
++
++    /// <summary>What one paint painted: the painted text of every cell it painted (PROTOTYPE A),
++    /// row by row, pinned columns first and the scrollable slice after them; null for a position
++    /// with no row in hand. Only the newest paint also holds its row instances and the lookups the
++    /// next paint is compared with; an older paint holds no row. The row order is kept, because a
++    /// position names a row only under one.</summary>
+     private sealed class Paint
+     {
+         public required int Id { get; init; }
+         public required int SequenceVersion { get; init; }
+         public required int FirstRow { get; init; }
+-        public required TRow?[] Rows { get; init; }
++        public required int RowCount { get; init; }
++        public required string?[]?[] Texts { get; init; }
++        public required int[] Serials { get; init; }
+         public required IReadOnlyList<GridColumn<TRow>> Columns { get; init; }
+-        public required ColumnGeometry Geometry { get; init; }
++        public required int PinnedCount { get; init; }
+         public required ColumnRange? Scrollable { get; init; }
+         public required CellTextMetrics Metrics { get; init; }
+-        public required PaintedTextOf<TRow>? PaintedText { get; init; }
+-        public required CellAppearanceOf<TRow>? Appearance { get; init; }
++
++        // Held while this is the newest paint, and dropped when a newer one is noted.
++        public TRow?[]? Rows { get; set; }
++        public ColumnGeometry? Geometry { get; set; }
++        public PaintedTextOf<TRow>? PaintedText { get; set; }
++        public CellAppearanceOf<TRow>? Appearance { get; set; }
+ 
+         /// <summary>Whether column <paramref name="column"/> was painted: a Pinned Column always,
+         /// a scrollable one only inside the slice on screen, and none of those in a fling, whose
+         /// Placeholders paint their Pinned Columns alone (ADR-0004).</summary>
+         public bool Painted(int column)
+             => column >= 0 && column < Columns.Count
+-               && (column < Geometry.PinnedCount
++               && (column < PinnedCount
+                    || (Scrollable is { } scrollable && column >= scrollable.Start && column < scrollable.Start + scrollable.Count));
+ 
+         /// <summary>The painted text of a cell this paint painted, or null for one it did not
+@@ -120,9 +133,9 @@ public partial class ExGrid<TRow>
+         public string? TextAt(int row, int column)
+         {
+             var at = row - FirstRow;
+-            if (at < 0 || at >= Rows.Length || Rows[at] is not { } data || !Painted(column))
++            if (at < 0 || at >= RowCount || Texts[at] is not { } texts || !Painted(column))
+                 return null;
+-            return PaintedTextFor(data, Columns[column], column, Geometry, Metrics, PaintedText, Appearance);
++            return texts[column < PinnedCount ? column : PinnedCount + column - Scrollable!.Value.Start];
+         }
+     }
+ 
+@@ -143,35 +156,89 @@ public partial class ExGrid<TRow>
+         var geometry = _columnStyles.Geometry;
+         var metrics = _metrics.CellMetrics;
+         var last = _paints.Count > 0 ? _paints[^1] : null;
+-        if (last is not null && last.SequenceVersion == _sequenceVersion && last.FirstRow == first
+-            && last.Rows.Length == count && ReferenceEquals(last.Columns, Columns)
++        // Whether a row painted by the last paint paints the same text now: the same instance under
++        // the same columns, widths, slice and lookups.
++        var sameText = last is not null && ReferenceEquals(last.Columns, Columns)
+             && ReferenceEquals(last.Geometry, geometry) && last.Scrollable == scrollable && last.Metrics == metrics
+-            && ReferenceEquals(last.PaintedText, PaintedText) && ReferenceEquals(last.Appearance, CellAppearance)
+-            && PaintsTheSameRows(last))
++            && ReferenceEquals(last.PaintedText, PaintedText) && ReferenceEquals(last.Appearance, CellAppearance);
++        if (last is not null && sameText && last.SequenceVersion == _sequenceVersion && last.FirstRow == first
++            && last.RowCount == count && PaintsTheSameRows(last))
+         {
+             return last.Id;
+         }
++        var pinned = Math.Min(geometry.PinnedCount, Columns.Count);
++        var slots = pinned + (scrollable?.Count ?? 0);
+         var rows = new TRow?[count];
++        var texts = new string?[]?[count];
++        var serials = new int[count];
+         for (var i = 0; i < count; i++)
+-            rows[i] = RowInHand(first + i);
++        {
++            if (RowInHand(first + i) is not { } row)
++                continue;
++            rows[i] = row;
++            var then = last is null ? -1 : first + i - last.FirstRow;
++            if (then >= 0 && then < last!.RowCount && ReferenceEquals(last.Rows![then], row))
++            {
++                serials[i] = last.Serials[then];
++                if (sameText)
++                {
++                    texts[i] = last.Texts[then];
++                    continue;
++                }
++            }
++            else
++            {
++                serials[i] = ++_rowSerial;
++            }
++            texts[i] = PaintedTextsOf(row, pinned, scrollable, slots, geometry, metrics);
++        }
++        if (last is not null)
++        {
++            last.Rows = null;
++            last.Geometry = null;
++            last.PaintedText = null;
++            last.Appearance = null;
++        }
+         _paints.Add(new Paint
+         {
+-            Id = ++_paintId, SequenceVersion = _sequenceVersion, FirstRow = first, Rows = rows,
+-            Columns = Columns, Geometry = geometry, Scrollable = scrollable, Metrics = metrics,
+-            PaintedText = PaintedText, Appearance = CellAppearance,
++            Id = ++_paintId, SequenceVersion = _sequenceVersion, FirstRow = first, RowCount = count,
++            Texts = texts, Serials = serials, Columns = Columns, PinnedCount = pinned, Scrollable = scrollable,
++            Metrics = metrics, Rows = rows, Geometry = geometry, PaintedText = PaintedText, Appearance = CellAppearance,
+         });
+         if (_paints.Count > PaintsKept)
+             _paints.RemoveAt(0);
+         return _paintId;
+     }
+ 
++    /// <summary>The painted text of one row's painted cells, pinned columns first and the
++    /// scrollable slice after them (PROTOTYPE A).</summary>
++    private string?[] PaintedTextsOf(TRow row, int pinned, ColumnRange? scrollable, int slots, ColumnGeometry geometry,
++        CellTextMetrics metrics)
++    {
++        var texts = new string?[slots];
++        for (var column = 0; column < pinned; column++)
++            texts[column] = PaintedTextFor(row, Columns[column], column, geometry, metrics, PaintedText, CellAppearance);
++        if (scrollable is { } slice)
++        {
++            for (var j = 0; j < slice.Count; j++)
++            {
++                var column = slice.Start + j;
++                if (column < Columns.Count)
++                    texts[pinned + j] = PaintedTextFor(row, Columns[column], column, geometry, metrics, PaintedText, CellAppearance);
++            }
++        }
++        return texts;
++    }
++
+     /// <summary>Whether the rows now in hand at <paramref name="paint"/>'s positions are the
+-    /// instances it painted: a row's identity is its change signal (ADR-0003).</summary>
++    /// instances it painted: a row's identity is its change signal (ADR-0003). The newest paint
++    /// only, which holds its rows.</summary>
+     private bool PaintsTheSameRows(Paint paint)
+     {
+-        for (var i = 0; i < paint.Rows.Length; i++)
++        var rows = paint.Rows!;
++        for (var i = 0; i < rows.Length; i++)
+         {
+-            if (!ReferenceEquals(paint.Rows[i], RowInHand(paint.FirstRow + i)))
++            if (!ReferenceEquals(rows[i], RowInHand(paint.FirstRow + i)))
+                 return false;
+         }
+         return true;
+@@ -252,7 +319,7 @@ public partial class ExGrid<TRow>
+         // the target's cells showed other rows.
+         if (PaintNamed(told) is not { } paint || paint.SequenceVersion != _sequenceVersion)
+             return Seen.Unknown;
+-        var last = paint.FirstRow + paint.Rows.Length - 1;
++        var last = paint.FirstRow + paint.RowCount - 1;
+         foreach (var range in targets)
+         {
+             var right = Math.Min(range.RightColumn, paint.Columns.Count - 1);
+@@ -290,8 +357,15 @@ public partial class ExGrid<TRow>
+     /// as taken against a render no longer kept. <paramref name="atRow"/> is the press's position
+     /// where the gesture names it (Space on the Focus). A cell the user's own earlier gesture
+     /// wrote after that paint is not compared (D1, LV-17).
++    ///
++    /// <para>PROTOTYPE (A): an older paint holds no row, so it is paired by position, and only
++    /// under the order it was painted in, where a position names the same row (ADR-0011,
++    /// ADR-0141): <paramref name="pressedAt"/> is where the pressed row stood under that order —
++    /// the position the browser told, or where the pressed instance stood before the gathered
++    /// change was taken in. Under another order it cannot be paired, and is refused as taken
++    /// against a render no longer kept.</para>
+     /// </summary>
+-    private Seen JudgeActionRow(int told, TRow pressed, int? atRow, out int? judgedAt)
++    private Seen JudgeActionRow(int told, TRow pressed, int? atRow, out int? judgedAt, int? pressedAt = null)
+     {
+         judgedAt = null;
+         if (told == PaintNotTold && _paints.Count == 0)
+@@ -303,7 +377,39 @@ public partial class ExGrid<TRow>
+             return Seen.Unknown;
+         int thenRow;
+         int nowRow;
+-        if (_rowKey is { } rowKey)
++        if (paint.Rows is null)
++        {
++            // PROTOTYPE (A): an older paint, which holds no row.
++            if (paint.SequenceVersion != _sequenceVersion)
++                return Seen.Unknown;
++            int? now;
++            if (_rowKey is { } byKey)
++            {
++                var key = byKey(pressed);
++                now = atRow is { } at && RowInHand(at) is { } there && Equals(byKey(there), key)
++                    ? at
++                    : PositionInHandByKey(byKey, key);
++            }
++            else
++            {
++                now = atRow ?? PositionInHand(pressed);
++            }
++            var then = pressedAt ?? atRow ?? now;
++            if (then is null)
++                return Seen.Unknown;
++            thenRow = then.Value;
++            if (thenRow < paint.FirstRow || thenRow >= paint.FirstRow + paint.RowCount)
++            {
++                judgedAt = _rowKey is null ? PositionInHand(pressed) ?? now ?? thenRow : now;
++                return Seen.Unchanged;
++            }
++            if (_rowKey is not null && now is null)
++                return Seen.Unknown;
++            nowRow = now ?? thenRow;
++            if (RowInHand(nowRow) is null)
++                return Seen.Unknown;
++        }
++        else if (_rowKey is { } rowKey)
+         {
+             // Paired by key (ADR-0142, settled 2026-10-06): the key names the row across versions
+             // and orders, so neither the instance nor the position has to have stayed.
+@@ -326,7 +432,7 @@ public partial class ExGrid<TRow>
+         else
+         {
+             var sameOrder = paint.SequenceVersion == _sequenceVersion;
+-            var painted = Array.FindIndex(paint.Rows, r => ReferenceEquals(r, pressed));
++            var painted = Array.FindIndex(paint.Rows!, r => ReferenceEquals(r, pressed));
+             int? then = painted >= 0 ? paint.FirstRow + painted : null;
+             var now = atRow ?? PositionInHand(pressed);
+             if (then is null && now is null)
+@@ -342,7 +448,7 @@ public partial class ExGrid<TRow>
+             nowRow = now!.Value;
+             // A row the paint did not paint was not seen, and nothing of it is compared: Space on
+             // an action whose row the view has scrolled away from fires as before (ADR-0142).
+-            if (thenRow < paint.FirstRow || thenRow >= paint.FirstRow + paint.Rows.Length)
++            if (thenRow < paint.FirstRow || thenRow >= paint.FirstRow + paint.RowCount)
+             {
+                 judgedAt = PositionInHand(pressed) ?? nowRow;
+                 return Seen.Unchanged;
+@@ -364,12 +470,14 @@ public partial class ExGrid<TRow>
+     }
+ 
+     /// <summary>Where <paramref name="paint"/> painted the row under <paramref name="key"/>, or
+-    /// null for a row it did not paint. A pass over the painted rows only.</summary>
++    /// null for a row it did not paint. A pass over the painted rows only; the newest paint only,
++    /// which holds its rows.</summary>
+     private static int? PaintedPositionOf(Paint paint, Func<TRow, object> rowKey, object key)
+     {
+-        for (var i = 0; i < paint.Rows.Length; i++)
++        var rows = paint.Rows!;
++        for (var i = 0; i < rows.Length; i++)
+         {
+-            if (paint.Rows[i] is { } row && Equals(rowKey(row), key))
++            if (rows[i] is { } row && Equals(rowKey(row), key))
+                 return paint.FirstRow + i;
+         }
+         return null;
+@@ -536,24 +644,54 @@ public partial class ExGrid<TRow>
+         if (_disposed)
+             return;
+         _actionPressTold = paint;
++        _actionPressToldRow = row >= 0 ? row : null;
+         _actionPressPending = null;
+         if (row < 0 || column < 0 || action < 0 || PaintNamed(paint) is not { } painted
+-            || row < painted.FirstRow || row >= painted.FirstRow + painted.Rows.Length
+-            || painted.Rows[row - painted.FirstRow] is not { } pressed
++            || row < painted.FirstRow || row >= painted.FirstRow + painted.RowCount
++            || PressedRowOf(painted, row, out var exact) is not { } pressed
+             || column >= painted.Columns.Count || action >= painted.Columns[column].Actions.Count)
+         {
+             return;
+         }
+-        _actionPressPending = new ActionPressPending(paint, pressed, painted.Columns[column].Name,
+-            painted.Columns[column].Actions[action].Name);
++        _actionPressPending = new ActionPressPending(paint, row, painted.Serials[row - painted.FirstRow], exact, pressed,
++            painted.Columns[column].Name, painted.Columns[column].Actions[action].Name);
+         await AnswerActionPressWithNoClickAsync();
+     }
+ 
++    // PROTOTYPE (A): the row position the browser told with the press, for its click.
++    private int? _actionPressToldRow;
++
++    /// <summary>
++    /// PROTOTYPE (A): the row <paramref name="paint"/> painted at <paramref name="row"/>, or null
++    /// for a position with no row in hand. The newest paint holds its rows. An older one holds
++    /// none: its instance is found in the newest paint when the same instance has stayed at that
++    /// position since (<paramref name="exact"/>); otherwise the row the Window holds at that
++    /// position under the same order stands in for it — the same row by key, but another instance
++    /// without one, so a refusal carries the newest instance rather than the one pressed. With no
++    /// row there the press cannot be raised at all, and is dropped (a decision ADR-0142 does not
++    /// settle).
++    /// </summary>
++    private TRow? PressedRowOf(Paint paint, int row, out bool exact)
++    {
++        exact = true;
++        var at = row - paint.FirstRow;
++        if (paint.Rows is { } rows)
++            return rows[at];
++        if (paint.Texts[at] is null)
++            return default;
++        var newest = _paints[^1];
++        var there = row - newest.FirstRow;
++        if (there >= 0 && there < newest.RowCount && newest.Serials[there] == paint.Serials[at])
++            return newest.Rows![there];
++        exact = false;
++        return paint.SequenceVersion == _sequenceVersion ? RowInHand(row) : default;
++    }
++
+     // A pointer press on an action told with what it pressed, until its click is heard, or until
+     // the core answers it because no click can come (ActionPressTakenAt).
+     private ActionPressPending? _actionPressPending;
+ 
+-    private sealed record ActionPressPending(int Paint, TRow Pressed, string Column, string Action);
++    private sealed record ActionPressPending(int Paint, int Row, int Serial, bool Exact, TRow Pressed, string Column, string Action);
+ 
+     /// <summary>
+     /// Answers a told press whose click Blazor will not deliver, because the row component that
+@@ -564,11 +702,26 @@ public partial class ExGrid<TRow>
+     /// </summary>
+     private async Task AnswerActionPressWithNoClickAsync()
+     {
+-        if (_actionPressPending is not { } press || _disposed || RendersRowOf(press.Pressed))
++        if (_actionPressPending is not { } press || _disposed || RendersPressedRow(press))
+             return;
+         _actionPressPending = null;
+         _actionPressTold = null;
+-        await RaiseActionAsync(new GridActionEventArgs<TRow>(press.Pressed, press.Column, press.Action), press.Paint, atRow: null);
++        _actionPressToldRow = null;
++        await RaiseActionAsync(new GridActionEventArgs<TRow>(press.Pressed, press.Column, press.Action), press.Paint,
++            atRow: null, pressedAt: press.Row);
++    }
++
++    /// <summary>PROTOTYPE (A): whether the newest paint rendered the pressed row's component. With
++    /// a Row Key, or with the pressed instance in hand, as <see cref="RendersRowOf"/>; with a
++    /// stand-in and no key, whether the instance pressed still stands at its position — the newest
++    /// paint gives that position the press's serial.</summary>
++    private bool RendersPressedRow(ActionPressPending press)
++    {
++        if (_rowKey is not null || press.Exact || _paints.Count == 0)
++            return RendersRowOf(press.Pressed);
++        var newest = _paints[^1];
++        var there = press.Row - newest.FirstRow;
++        return there >= 0 && there < newest.RowCount && newest.Serials[there] == press.Serial;
+     }
+ 
+     /// <summary>Whether the newest paint rendered a row component for <paramref name="row"/>: one
+@@ -577,7 +730,7 @@ public partial class ExGrid<TRow>
+     {
+         if (_paints.Count == 0)
+             return true;
+-        var rows = _paints[^1].Rows;
++        var rows = _paints[^1].Rows!;
+         if (_rowKey is { } rowKey)
+         {
+             var key = rowKey(row);
+@@ -600,10 +753,12 @@ public partial class ExGrid<TRow>
+ 
+     /// <summary>The paint the press being heard was told, once: the next press is its own. Its
+     /// click has come, so the core has nothing left to answer for it.</summary>
+-    private int TakeActionPressTold()
++    private int TakeActionPressTold(out int? toldRow)
+     {
+         var told = _actionPressTold ?? PaintNotTold;
++        toldRow = _actionPressToldRow;
+         _actionPressTold = null;
++        _actionPressToldRow = null;
+         _actionPressPending = null;
+         return told;
+     }
+@@ -612,9 +767,9 @@ public partial class ExGrid<TRow>
+     /// Raises an Action press, or its refusal (ADR-0020, ADR-0142): judged on the painted text of
+     /// its row's painted cells in the paint it was taken against, against the row's now.
+     /// </summary>
+-    private async Task FireOrRefuseActionAsync(GridActionEventArgs<TRow> args, int told, int? atRow)
++    private async Task FireOrRefuseActionAsync(GridActionEventArgs<TRow> args, int told, int? atRow, int? pressedAt = null)
+     {
+-        var seen = JudgeActionRow(told, args.Row, atRow, out var judgedAt);
++        var seen = JudgeActionRow(told, args.Row, atRow, out var judgedAt, pressedAt);
+         if (seen != Seen.Unchanged)
+         {
+             if (OnActionRefused.HasDelegate)
+diff --git a/src/ExGrid/Components/ExGrid.razor b/src/ExGrid/Components/ExGrid.razor
+index 4ce77816..13d4ff09 100644
+--- a/src/ExGrid/Components/ExGrid.razor
++++ b/src/ExGrid/Components/ExGrid.razor
+@@ -5601,13 +5601,19 @@
+ 
+     /// <summary>An action pressed by pointer, through its row's button (ADR-0020): judged against
+     /// the paint the grid's listener said the press was taken against (ADR-0142, LV-12).</summary>
+-    private Task RaiseActionAsync(GridActionEventArgs<TRow> args) => RaiseActionAsync(args, TakeActionPressTold(), atRow: null);
++    private Task RaiseActionAsync(GridActionEventArgs<TRow> args)
++    {
++        var told = TakeActionPressTold(out var toldRow);
++        return RaiseActionAsync(args, told, atRow: null, pressedAt: toldRow);
++    }
+ 
+     /// <param name="args">The press.</param>
+     /// <param name="told">The paint the press was taken against (ADR-0142).</param>
+     /// <param name="atRow">The press's row position, where the gesture names one (Space on the
+     /// Focus); null for a press on a row's button, which names its row instance.</param>
+-    private async Task RaiseActionAsync(GridActionEventArgs<TRow> args, int told, int? atRow)
++    /// <param name="pressedAt">PROTOTYPE (A): where the pressed row stood under the order the press
++    /// was taken in, where that is known (the position the browser told).</param>
++    private async Task RaiseActionAsync(GridActionEventArgs<TRow> args, int told, int? atRow, int? pressedAt = null)
+     {
+         // Pointed at from outside, a press on the rows is handed over instead of acting (ADR-0058):
+         // the stylesheet lets it through to the rows, and this is the guard behind it.
+@@ -5626,10 +5632,15 @@
+         // moved the order, Space's position names another row now, and the press is paired by
+         // its row instead — by key, or by instance (ADR-0011).
+         var version = _sequenceVersion;
++        // PROTOTYPE (A): where the pressed instance stands before the gathered change can replace it.
++        pressedAt ??= _rowKey is null ? PositionInHand(args.Row) : null;
+         if (!await TakeInGatheredAsync())
+             return;
+         if (version != _sequenceVersion)
++        {
+             atRow = null;
++            pressedAt = null;
++        }
+         // And nothing else: no focus is moved (ADR-0037, amended). A press never focused the
+         // button, so the keyboard is still where it was — or in whatever the handler opened,
+         // which taking it back to the root would rob. A press on a row that changed since the
+@@ -5637,7 +5648,7 @@
+         // is not refused is raised with the newest version it was judged against — a row the
+         // gathered change replaced paints what the user saw, and a write built on it must not be
+         // refused as stale (D5, LV-16).
+-        await FireOrRefuseActionAsync(args, told, atRow);
++        await FireOrRefuseActionAsync(args, told, atRow, pressedAt);
+     }
+ 
+     /// <summary>

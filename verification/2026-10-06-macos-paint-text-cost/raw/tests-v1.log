@@ -1,0 +1,117 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExPivot.Engine/ExPivot.Engine.csproj (in 54 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj (in 89 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/samples/ExGrid.DemoApi/ExGrid.DemoApi.csproj (in 91 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/samples/ExGrid.DemoHost.Server/ExGrid.DemoHost.Server.csproj (in 91 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExSheet/ExSheet.csproj (in 82 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj (in 110 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj (in 50 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.Engine.Tests/ExSheet.Engine.Tests.csproj (in 118 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.Engine.Tests/ExPivot.Engine.Tests.csproj (in 18 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExSheet.Engine/ExSheet.Engine.csproj (in 0.5 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExPivot/ExPivot.csproj (in 1 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Data.Tests/ExGrid.Data.Tests.csproj (in 1 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Data.Arrow.Tests/ExGrid.Data.Arrow.Tests.csproj (in 11 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj (in 135 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Tests/ExGrid.Tests.csproj (in 2 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 135 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.Components/ExPivot.Components.csproj (in 27 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.Components/ExSheet.Components.csproj (in 46 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 40 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 135 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj (in 2 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/samples/ExGrid.Docs/ExGrid.Docs.csproj (in 143 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/samples/ExGrid.Docs.Generator/ExGrid.Docs.Generator.csproj (in 162 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj (in 32 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj (in 36 ms).
+  Restored /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.DemoApi.Tests/ExGrid.DemoApi.Tests.csproj (in 52 ms).
+  2 of 28 projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExGrid -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExPivot.Engine -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExSheet.Engine -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+  ExGrid.Data.Arrow -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid.Data.Tests -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll
+  ExPivot.Engine.Tests -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll' [net10.0|arm64]
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 365, Skipped: 2, Total: 367, Duration: 2s 205ms - ExGrid.Data.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll' [net10.0|arm64]
+  ExGrid.Data.Arrow.Tests -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll' [net10.0|arm64]
+  ExSheet.Engine.Tests -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 182, Skipped: 1, Total: 183, Duration: 344ms - ExGrid.Data.Arrow.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 321, Skipped: 4, Total: 325, Duration: 4s 918ms - ExPivot.Engine.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll' [net10.0|arm64]
+  ExGrid.Tests -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll' [net10.0|arm64]
+  ExPivot -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExGrid.MudBlazor -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExGrid.DemoApi -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoApi.dll
+  ExGrid.Components -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 3870, Skipped: 0, Total: 3870, Duration: 2s 465ms - ExSheet.Engine.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll' [net10.0|arm64]
+  ExSheet -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+  ExPivot.Components -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|arm64]
+  ExPivot.MudBlazor -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  ExGrid.MudBlazor.Tests -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|arm64]
+  ExSheet.Components -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll' [net10.0|arm64]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1638): error test failed: ExGrid.Components.Tests.WriteRefusalTests.With_a_row_key_a_press_whose_row_moved_is_paired_by_key_and_fires (41ms): Assert.Empty() Failure: Collection was not empty [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1638): error test failed: Collection: [GridActionRefusal { Action = GridActionEventArgs { Row = ExGrid.Components.Tests.Support.TestRow, ColumnName = Do, ActionName = approve }, Reason = RenderNoLongerKept }] [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1638): error test failed: Stack Trace: [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1638): error test failed:    at ExGrid.Components.Tests.WriteRefusalTests.With_a_row_key_a_press_whose_row_moved_is_paired_by_key_and_fires() in /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs:line 1638 [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1638): error test failed: --- End of stack trace from previous location --- [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1638): error test failed:  [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+  Passed! - Failed: 0, Passed: 221, Skipped: 0, Total: 221, Duration: 1s 532ms - ExGrid.MudBlazor.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|arm64]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1655): error test failed: ExGrid.Components.Tests.WriteRefusalTests.With_a_row_key_a_press_whose_row_moved_and_changed_is_refused_as_changed (45ms): Assert.Equal() Failure: Values differ [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1655): error test failed: Expected: RowChanged [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1655): error test failed: Actual:   RenderNoLongerKept [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1655): error test failed: Stack Trace: [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1655): error test failed:    at ExGrid.Components.Tests.WriteRefusalTests.With_a_row_key_a_press_whose_row_moved_and_changed_is_refused_as_changed() in /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs:line 1655 [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1655): error test failed: --- End of stack trace from previous location --- [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1655): error test failed:  [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+  ExPivot.MudBlazor.Tests -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 221, Skipped: 0, Total: 221, Duration: 3s 327ms - ExPivot.Components.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|arm64]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1446): error test failed: ExGrid.Components.Tests.WriteRefusalTests.A_told_press_whose_row_component_is_gone_is_refused_without_its_click (9ms): Assert.Same() Failure: Values are not the same instance [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1446): error test failed: Expected: TestRow { Active = True, Amount = 0, AsOf = 2026-01-01T00:00:00.0000000, Book = "Row 000000" } [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1446): error test failed: Actual:   TestRow { Active = True, Amount = 777, AsOf = 2026-01-01T00:00:00.0000000, Book = "Row 000000" } [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1446): error test failed: Stack Trace: [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1446): error test failed:    at ExGrid.Components.Tests.WriteRefusalTests.A_told_press_whose_row_component_is_gone_is_refused_without_its_click() in /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs:line 1446 [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1446): error test failed: --- End of stack trace from previous location --- [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(1446): error test failed:  [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+  Passed! - Failed: 0, Passed: 67, Skipped: 0, Total: 67, Duration: 1s 519ms - ExPivot.MudBlazor.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|arm64]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(359): error test failed: ExGrid.Components.Tests.WriteRefusalTests.An_action_press_heard_by_the_row_as_painted_is_refused_all_the_same (21ms): Assert.Equal() Failure: Values differ [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(359): error test failed: Expected: RowChanged [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(359): error test failed: Actual:   RenderNoLongerKept [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(359): error test failed: Stack Trace: [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(359): error test failed:    at ExGrid.Components.Tests.WriteRefusalTests.An_action_press_heard_by_the_row_as_painted_is_refused_all_the_same() in /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs:line 359 [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(359): error test failed: --- End of stack trace from previous location --- [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/WriteRefusalTests.cs(359): error test failed:  [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+  Passed! - Failed: 0, Passed: 1264, Skipped: 0, Total: 1264, Duration: 7s 414ms - ExGrid.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll' [net10.0|arm64]
+  Failed! - Failed: 4, Passed: 1638, Skipped: 1, Total: 1643, Duration: 7s 466ms - ExGrid.Components.dll (net10.0|arm64)
+/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll : error run failed: Tests failed: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/bin/Debug/net10.0/TestResults/ExGrid.Components_net10.0_arm64.log' [net10.0|arm64] [/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.Components/ExGrid.Components.csproj]
+  ExGrid.DemoApi.Tests -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 141, Skipped: 0, Total: 141, Duration: 6s 337ms - ExGrid.DemoApi.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 694, Skipped: 0, Total: 694, Duration: 17s 049ms - ExSheet.Components.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll' [net10.0|arm64]
+  ExSheet.MudBlazor -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+  ExSheet.MudBlazor.Tests -> /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 55, Skipped: 0, Total: 55, Duration: 9s 958ms - ExSheet.MudBlazor.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|arm64]
+exit 1

@@ -1,0 +1,9 @@
+{"step":"loaded","s":4.276,"heapMB":591,"managedMB":null,"oom":null}
+{"step":1,"s":2.371,"landed":true,"heapMB":783,"managedMB":null,"oom":null}
+{"step":2,"s":2.666,"landed":true,"heapMB":1081,"managedMB":null,"oom":null}
+{"step":3,"s":2.516,"landed":true,"heapMB":1273,"managedMB":null,"oom":null}
+{"step":4,"s":2.609,"landed":true,"heapMB":1465,"managedMB":null,"oom":null}
+{"step":5,"s":2.623,"landed":true,"heapMB":1758,"managedMB":null,"oom":null}
+{"step":6,"s":2.67,"landed":true,"heapMB":1958,"managedMB":null,"oom":null}
+{"step":7,"s":120.043,"landed":false,"heapMB":2048,"managedMB":null,"oom":"crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100] |       Unhandled exception rendering component: Out of memory | System.OutOfMemoryException: Out of memory |    at ExPivot.Engine.PartColumns..ctor(PivotParts parts, Int32 capacity)"}
+{"verdict":"RED","oom":"crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100] |       Unhandled exception rendering component: Out of memory | System.OutOfMemoryException: Out of memory |    at ExPivot.Engine.PartColumns..ctor(PivotParts parts, Int32 capacity)","errors":["crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]\n      Unhandled exception rendering component: Out of memory\nSystem.OutOfMemoryException: Out of memory\n   at ExPiv"]}

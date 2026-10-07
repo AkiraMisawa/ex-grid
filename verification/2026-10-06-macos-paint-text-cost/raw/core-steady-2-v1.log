@@ -1,0 +1,65 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+variant V1; load { 2.74 3.17 2.90 }; TieredCompilation=0
+== pivot-steady 1,000 x 100, 60 redraws, no forced collection ==
+   redraw   1:    96.83 ms, GC pause   25.15 ms, GCs 5, heap after last GC 195 MB, committed 196 MB
+   redraw   2:    97.44 ms, GC pause   21.61 ms, GCs 6, heap after last GC 271 MB, committed 271 MB
+   redraw   3:    70.24 ms, GC pause   19.84 ms, GCs 5, heap after last GC 328 MB, committed 329 MB
+   redraw   4:    73.49 ms, GC pause   22.36 ms, GCs 6, heap after last GC 408 MB, committed 408 MB
+   redraw   5:   149.54 ms, GC pause   41.48 ms, GCs 6, heap after last GC 469 MB, committed 490 MB
+   redraw   6:    72.77 ms, GC pause   22.14 ms, GCs 5, heap after last GC 514 MB, committed 514 MB
+   redraw   7:    73.11 ms, GC pause   19.76 ms, GCs 5, heap after last GC 580 MB, committed 580 MB
+   redraw   8:    72.49 ms, GC pause   22.38 ms, GCs 6, heap after last GC 665 MB, committed 666 MB
+   redraw   9:    77.16 ms, GC pause   26.51 ms, GCs 5, heap after last GC 742 MB, committed 743 MB
+   redraw  10:   139.15 ms, GC pause   30.26 ms, GCs 6, heap after last GC 766 MB, committed 789 MB
+   redraw  11:    96.48 ms, GC pause   29.89 ms, GCs 6, heap after last GC 766 MB, committed 790 MB
+   redraw  12:   114.79 ms, GC pause   35.92 ms, GCs 6, heap after last GC 753 MB, committed 767 MB
+   redraw  13:    91.44 ms, GC pause   38.61 ms, GCs 6, heap after last GC 745 MB, committed 763 MB
+   redraw  14:   130.88 ms, GC pause   36.14 ms, GCs 5, heap after last GC 673 MB, committed 697 MB
+   redraw  15:    77.13 ms, GC pause   29.42 ms, GCs 5, heap after last GC 678 MB, committed 701 MB
+   redraw  16:   140.01 ms, GC pause   33.42 ms, GCs 7, heap after last GC 678 MB, committed 689 MB
+   redraw  17:    92.74 ms, GC pause   38.70 ms, GCs 6, heap after last GC 670 MB, committed 686 MB
+   redraw  18:   125.89 ms, GC pause   36.14 ms, GCs 5, heap after last GC 670 MB, committed 693 MB
+   redraw  19:    78.73 ms, GC pause   29.98 ms, GCs 5, heap after last GC 675 MB, committed 698 MB
+   redraw  20:   141.52 ms, GC pause   33.06 ms, GCs 7, heap after last GC 676 MB, committed 687 MB
+   redraw  21:    91.29 ms, GC pause   38.56 ms, GCs 6, heap after last GC 668 MB, committed 684 MB
+   redraw  22:   129.46 ms, GC pause   36.09 ms, GCs 5, heap after last GC 654 MB, committed 677 MB
+   redraw  23:    77.32 ms, GC pause   30.25 ms, GCs 5, heap after last GC 667 MB, committed 689 MB
+   redraw  24:   138.73 ms, GC pause   32.80 ms, GCs 7, heap after last GC 693 MB, committed 703 MB
+   redraw  25:    92.01 ms, GC pause   38.96 ms, GCs 6, heap after last GC 685 MB, committed 700 MB
+   redraw  26:   137.01 ms, GC pause   40.37 ms, GCs 5, heap after last GC 663 MB, committed 685 MB
+   redraw  27:    77.26 ms, GC pause   29.95 ms, GCs 5, heap after last GC 663 MB, committed 686 MB
+   redraw  28:   141.80 ms, GC pause   33.76 ms, GCs 7, heap after last GC 698 MB, committed 708 MB
+   redraw  29:    88.06 ms, GC pause   38.19 ms, GCs 6, heap after last GC 690 MB, committed 706 MB
+   redraw  30:   134.08 ms, GC pause   36.82 ms, GCs 5, heap after last GC 690 MB, committed 713 MB
+   redraw  31:    77.32 ms, GC pause   29.70 ms, GCs 5, heap after last GC 690 MB, committed 713 MB
+   redraw  32:   135.08 ms, GC pause   31.35 ms, GCs 6, heap after last GC 702 MB, committed 725 MB
+   redraw  33:    79.39 ms, GC pause   32.56 ms, GCs 6, heap after last GC 710 MB, committed 722 MB
+   redraw  34:   143.66 ms, GC pause   38.77 ms, GCs 6, heap after last GC 676 MB, committed 692 MB
+   redraw  35:    78.26 ms, GC pause   29.69 ms, GCs 5, heap after last GC 676 MB, committed 700 MB
+   redraw  36:    98.48 ms, GC pause   29.79 ms, GCs 6, heap after last GC 689 MB, committed 712 MB
+   redraw  37:   109.12 ms, GC pause   35.42 ms, GCs 6, heap after last GC 707 MB, committed 719 MB
+   redraw  38:    92.72 ms, GC pause   37.72 ms, GCs 6, heap after last GC 699 MB, committed 715 MB
+   redraw  39:   125.11 ms, GC pause   36.30 ms, GCs 5, heap after last GC 684 MB, committed 709 MB
+   redraw  40:    76.11 ms, GC pause   29.08 ms, GCs 5, heap after last GC 684 MB, committed 709 MB
+   redraw  41:   141.47 ms, GC pause   33.80 ms, GCs 7, heap after last GC 704 MB, committed 717 MB
+   redraw  42:    94.81 ms, GC pause   38.60 ms, GCs 6, heap after last GC 696 MB, committed 714 MB
+   redraw  43:   121.51 ms, GC pause   35.71 ms, GCs 5, heap after last GC 673 MB, committed 696 MB
+   redraw  44:    75.44 ms, GC pause   29.19 ms, GCs 5, heap after last GC 673 MB, committed 696 MB
+   redraw  45:   141.74 ms, GC pause   34.02 ms, GCs 7, heap after last GC 702 MB, committed 712 MB
+   redraw  46:    90.62 ms, GC pause   38.28 ms, GCs 6, heap after last GC 694 MB, committed 710 MB
+   redraw  47:   129.12 ms, GC pause   35.67 ms, GCs 5, heap after last GC 689 MB, committed 711 MB
+   redraw  48:    76.11 ms, GC pause   28.76 ms, GCs 5, heap after last GC 689 MB, committed 711 MB
+   redraw  49:   133.79 ms, GC pause   32.66 ms, GCs 7, heap after last GC 709 MB, committed 719 MB
+   redraw  50:    91.59 ms, GC pause   38.05 ms, GCs 6, heap after last GC 701 MB, committed 717 MB
+   redraw  51:   127.98 ms, GC pause   35.92 ms, GCs 5, heap after last GC 682 MB, committed 705 MB
+   redraw  52:    76.54 ms, GC pause   29.68 ms, GCs 5, heap after last GC 682 MB, committed 705 MB
+   redraw  53:   134.08 ms, GC pause   32.23 ms, GCs 7, heap after last GC 708 MB, committed 717 MB
+   redraw  54:    91.95 ms, GC pause   38.62 ms, GCs 6, heap after last GC 700 MB, committed 715 MB
+   redraw  55:   129.58 ms, GC pause   36.94 ms, GCs 5, heap after last GC 687 MB, committed 709 MB
+   redraw  56:    77.29 ms, GC pause   30.16 ms, GCs 5, heap after last GC 687 MB, committed 709 MB
+   redraw  57:   139.21 ms, GC pause   33.19 ms, GCs 7, heap after last GC 712 MB, committed 722 MB
+   redraw  58:    91.08 ms, GC pause   38.47 ms, GCs 6, heap after last GC 704 MB, committed 719 MB
+   redraw  59:   127.95 ms, GC pause   35.40 ms, GCs 5, heap after last GC 686 MB, committed 709 MB
+   redraw  60:    77.68 ms, GC pause   29.55 ms, GCs 5, heap after last GC 686 MB, committed 709 MB
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/verification/2026-10-06-macos-paint-text-cost/raw/core-steady-2-v1.json

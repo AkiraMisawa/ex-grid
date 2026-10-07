@@ -1,6 +1,6 @@
 # 03: ExPivot keeps its report across live redraws
 
-Status: needs-triage — decisions for the user in a grilling, then an ADR; built after 01
+Status: done — decided 2026-10-07 as ADR-0161; built by tickets 09 to 12
 
 **The aim:** a live redraw costs what changed, not what the report holds. Today ExPivot builds its
 cube, its report and every report row again on every redraw, at most four times a second. At 401,001
@@ -107,3 +107,17 @@ beats. It is that a row node, its id and its rendered row outlive an update.
 2026-10-06: Opened by the user's request, after D10 showed that the Row Key's remaining cost and
 most of a large redraw's time come from building every row again, which ag-grid avoids by keeping its
 nodes.
+
+2026-10-07: Decided with the user (Q9 to Q14, and the marks of a redraw laid out afresh), recorded as
+[ADR-0161](../../../adr/0161-expivots-live-redraw-makes-the-next-report-from-the-last.md).
+1. **Where:** (a), the engine makes the next cube and report from the last.
+2. **What a row is:** a row holds no value and no report; a value cell is asked of a report; the contract
+   at `PivotReport.cs:239` is rewritten.
+3. **One delegate:** yes, and the history keeps change times, not reports.
+4. **When to start afresh:** ADR-0161's list.
+5. **The gate:** a property test, PV-44.
+6. **Ticket 02's vouch:** ExPivot vouches.
+
+Changed leaves come from the answer when the source knows them, otherwise from the engine's own
+comparison. A redraw laid out afresh under data compares every row for its marks. A redraw that runs
+out of memory leaves the report stale. Built by tickets 09 to 12, and measured after by ticket 13.

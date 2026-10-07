@@ -326,6 +326,14 @@ and how a result is finished from its parts — move to `ExGrid.Data`**, so a pi
 status bar cannot disagree. Their meaning here is unchanged. The columnar accumulator stays in
 `ExPivot.Engine` and produces the parts.
 
+## A next report may share rows *(2026-10-07)*
+
+[ADR-0161](./0161-expivots-live-redraw-makes-the-next-report-from-the-last.md) has a live redraw make the next cube and report from the last.
+- **A report stays immutable.** A next report shares the rows whose path did not change, and a next cube
+  shares the axis trees.
+- **A report row holds no value and no report**, and a value cell is asked of a report. The engine stays
+  the reference: a next report equals one built afresh, which a property test holds it to.
+
 ## Consequences
 
 - **`ExPivot.Engine`'s tests pin every rule here** (layer 1), and name this ADR. Readings are marked

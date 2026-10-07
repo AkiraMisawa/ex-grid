@@ -1,0 +1,2245 @@
+[
+  {
+    "name": "grid-wasm",
+    "at": "2026-10-06T13:42:10.499Z",
+    "rows": 1000000,
+    "batch": 1,
+    "probe": true,
+    "load": "1,000,000 trades made in 1,832 ms; GridSource.From took 1,122 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 95.9,
+      "min": 15.1,
+      "max": 127.3,
+      "n": 15
+    },
+    "applyToFrameMs": {
+      "median": 96,
+      "min": 15.2,
+      "max": 127.3,
+      "n": 15
+    },
+    "applyToPaintedMs": {
+      "median": 592.3,
+      "min": 101.5,
+      "max": 663.4,
+      "n": 15
+    },
+    "frameToPaintedMs": {
+      "median": 497.2,
+      "min": 0.5,
+      "max": 582.4,
+      "n": 15
+    },
+    "endOfTaskToFrameMs": {
+      "median": 0.1,
+      "min": 0,
+      "max": 0.2,
+      "n": 15
+    },
+    "taskStartToFrameMs": {
+      "median": 512,
+      "min": 420,
+      "max": 589,
+      "n": 15
+    },
+    "longestTaskMs": {
+      "median": 511,
+      "min": 420,
+      "max": 588,
+      "n": 15
+    },
+    "gridChanged": 0,
+    "probeSourceMs": {
+      "median": 1.4,
+      "min": 1.3,
+      "max": 66.3,
+      "n": 15
+    },
+    "probeKeysMs": {
+      "median": 262.5,
+      "min": 256.7,
+      "max": 331,
+      "n": 15
+    },
+    "probeRowsMs": {
+      "median": 131.9,
+      "min": 130.6,
+      "max": 198.4,
+      "n": 15
+    },
+    "lastStatus": "Batch 252: 1 trades amended, applied in 51 ms (exact 51.300). [probe source=1.400 keys=260.600 rows=136.800 window=1000000]",
+    "runs": [
+      {
+        "status": "Batch 56: 1 trades amended, applied in 101 ms (exact 101.000). [probe source=1.400 keys=322.000 rows=132.100 window=1000000]",
+        "appliedMs": 101,
+        "applyToFrameMs": 101,
+        "applyToPaintedMs": 101.5,
+        "frameToPaintedMs": 0.5,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": false,
+        "taskStartToFrameMs": 512,
+        "longestTaskMs": 511,
+        "probe": {
+          "source": 1.4,
+          "keys": 322,
+          "rows": 132.1,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 70: 1 trades amended, applied in 51 ms (exact 50.700). [probe source=1.400 keys=322.100 rows=131.400 window=1000000]",
+        "appliedMs": 50.7,
+        "applyToFrameMs": 50.8,
+        "applyToPaintedMs": 592.3,
+        "frameToPaintedMs": 541.5,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 506,
+        "longestTaskMs": 506,
+        "probe": {
+          "source": 1.4,
+          "keys": 322.1,
+          "rows": 131.4,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 84: 1 trades amended, applied in 56 ms (exact 55.600). [probe source=1.400 keys=331.000 rows=131.100 window=1000000]",
+        "appliedMs": 55.6,
+        "applyToFrameMs": 55.7,
+        "applyToPaintedMs": 477.9,
+        "frameToPaintedMs": 422.2,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 473,
+        "longestTaskMs": 472,
+        "probe": {
+          "source": 1.4,
+          "keys": 331,
+          "rows": 131.1,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 98: 1 trades amended, applied in 116 ms (exact 116.400). [probe source=1.400 keys=328.400 rows=130.700 window=1000000]",
+        "appliedMs": 116.4,
+        "applyToFrameMs": 116.5,
+        "applyToPaintedMs": 613.7,
+        "frameToPaintedMs": 497.2,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 566,
+        "longestTaskMs": 566,
+        "probe": {
+          "source": 1.4,
+          "keys": 328.4,
+          "rows": 130.7,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 112: 1 trades amended, applied in 121 ms (exact 120.800). [probe source=1.300 keys=317.200 rows=130.900 window=1000000]",
+        "appliedMs": 120.8,
+        "applyToFrameMs": 120.9,
+        "applyToPaintedMs": 543.2,
+        "frameToPaintedMs": 422.3,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 542,
+        "longestTaskMs": 541,
+        "probe": {
+          "source": 1.3,
+          "keys": 317.2,
+          "rows": 130.9,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 126: 1 trades amended, applied in 125 ms (exact 124.900). [probe source=1.500 keys=267.000 rows=196.500 window=1000000]",
+        "appliedMs": 124.9,
+        "applyToFrameMs": 125.1,
+        "applyToPaintedMs": 526.4,
+        "frameToPaintedMs": 401.3,
+        "endOfTaskToFrameMs": 0.2,
+        "gridChanged": false,
+        "taskStartToFrameMs": 564,
+        "longestTaskMs": 564,
+        "probe": {
+          "source": 1.5,
+          "keys": 267,
+          "rows": 196.5,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 140: 1 trades amended, applied in 127 ms (exact 127.300). [probe source=1.300 keys=256.700 rows=130.700 window=1000000]",
+        "appliedMs": 127.3,
+        "applyToFrameMs": 127.3,
+        "applyToPaintedMs": 593.9,
+        "frameToPaintedMs": 466.6,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": false,
+        "taskStartToFrameMs": 589,
+        "longestTaskMs": 588,
+        "probe": {
+          "source": 1.3,
+          "keys": 256.7,
+          "rows": 130.7,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 154: 1 trades amended, applied in 96 ms (exact 95.900). [probe source=1.300 keys=259.100 rows=131.900 window=1000000]",
+        "appliedMs": 95.9,
+        "applyToFrameMs": 96,
+        "applyToPaintedMs": 641.2,
+        "frameToPaintedMs": 545.2,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 436,
+        "longestTaskMs": 436,
+        "probe": {
+          "source": 1.3,
+          "keys": 259.1,
+          "rows": 131.9,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 168: 1 trades amended, applied in 16 ms (exact 16.400). [probe source=1.400 keys=274.100 rows=140.300 window=1000000]",
+        "appliedMs": 16.4,
+        "applyToFrameMs": 16.5,
+        "applyToPaintedMs": 495,
+        "frameToPaintedMs": 478.5,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 420,
+        "longestTaskMs": 420,
+        "probe": {
+          "source": 1.4,
+          "keys": 274.1,
+          "rows": 140.3,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 182: 1 trades amended, applied in 125 ms (exact 125.100). [probe source=1.400 keys=257.400 rows=197.800 window=1000000]",
+        "appliedMs": 125.1,
+        "applyToFrameMs": 125.2,
+        "applyToPaintedMs": 663.4,
+        "frameToPaintedMs": 538.2,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 523,
+        "longestTaskMs": 522,
+        "probe": {
+          "source": 1.4,
+          "keys": 257.4,
+          "rows": 197.8,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 196: 1 trades amended, applied in 26 ms (exact 25.600). [probe source=65.800 keys=259.500 rows=130.600 window=1000000]",
+        "appliedMs": 25.6,
+        "applyToFrameMs": 25.6,
+        "applyToPaintedMs": 608,
+        "frameToPaintedMs": 582.4,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": false,
+        "taskStartToFrameMs": 463,
+        "longestTaskMs": 463,
+        "probe": {
+          "source": 65.8,
+          "keys": 259.5,
+          "rows": 130.6,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 210: 1 trades amended, applied in 75 ms (exact 75.300). [probe source=1.300 keys=261.400 rows=132.900 window=1000000]",
+        "appliedMs": 75.3,
+        "applyToFrameMs": 75.4,
+        "applyToPaintedMs": 600.3,
+        "frameToPaintedMs": 524.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 499,
+        "longestTaskMs": 498,
+        "probe": {
+          "source": 1.3,
+          "keys": 261.4,
+          "rows": 132.9,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 224: 1 trades amended, applied in 15 ms (exact 15.100). [probe source=1.400 keys=259.400 rows=198.400 window=1000000]",
+        "appliedMs": 15.1,
+        "applyToFrameMs": 15.2,
+        "applyToPaintedMs": 558.9,
+        "frameToPaintedMs": 543.7,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 575,
+        "longestTaskMs": 575,
+        "probe": {
+          "source": 1.4,
+          "keys": 259.4,
+          "rows": 198.4,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 238: 1 trades amended, applied in 115 ms (exact 114.600). [probe source=66.300 keys=262.500 rows=131.300 window=1000000]",
+        "appliedMs": 114.6,
+        "applyToFrameMs": 114.7,
+        "applyToPaintedMs": 618.4,
+        "frameToPaintedMs": 503.7,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 458,
+        "longestTaskMs": 457,
+        "probe": {
+          "source": 66.3,
+          "keys": 262.5,
+          "rows": 131.3,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 252: 1 trades amended, applied in 51 ms (exact 51.300). [probe source=1.400 keys=260.600 rows=136.800 window=1000000]",
+        "appliedMs": 51.3,
+        "applyToFrameMs": 51.4,
+        "applyToPaintedMs": 499.5,
+        "frameToPaintedMs": 448.1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": false,
+        "taskStartToFrameMs": 565,
+        "longestTaskMs": 565,
+        "probe": {
+          "source": 1.4,
+          "keys": 260.6,
+          "rows": 136.8,
+          "window": 1000000
+        }
+      }
+    ],
+    "discarded": "ran while the other track was measuring (raw/contention.log, 14:39:49-15:08:17 local); superseded by a rerun"
+  },
+  {
+    "name": "grid-wasm",
+    "at": "2026-10-06T13:44:18.430Z",
+    "rows": 1000000,
+    "batch": 100,
+    "probe": true,
+    "load": "1,000,000 trades made in 1,774 ms; GridSource.From took 1,129 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 3.6,
+      "min": 3.2,
+      "max": 4.1,
+      "n": 15
+    },
+    "applyToFrameMs": {
+      "median": 3.8,
+      "min": 3.3,
+      "max": 471.3,
+      "n": 15
+    },
+    "applyToPaintedMs": {
+      "median": 475.5,
+      "min": 403.4,
+      "max": 942.3,
+      "n": 15
+    },
+    "frameToPaintedMs": {
+      "median": 471,
+      "min": 399.6,
+      "max": 488.4,
+      "n": 15
+    },
+    "endOfTaskToFrameMs": {
+      "median": 0,
+      "min": 0,
+      "max": 467.9,
+      "n": 15
+    },
+    "taskStartToFrameMs": {
+      "median": 491,
+      "min": 415,
+      "max": 896,
+      "n": 15
+    },
+    "longestTaskMs": {
+      "median": 486,
+      "min": 414,
+      "max": 512,
+      "n": 15
+    },
+    "gridChanged": 15,
+    "probeSourceMs": {
+      "median": 2.8,
+      "min": 2.6,
+      "max": 73.5,
+      "n": 15
+    },
+    "probeKeysMs": {
+      "median": 264.4,
+      "min": 257.8,
+      "max": 274.4,
+      "n": 15
+    },
+    "probeRowsMs": {
+      "median": 133.2,
+      "min": 129.4,
+      "max": 214.7,
+      "n": 15
+    },
+    "lastStatus": "Batch 252: 100 trades amended, applied in 4 ms (exact 3.600). [probe source=2.800 keys=265.400 rows=214.700 window=1000000]",
+    "runs": [
+      {
+        "status": "Batch 56: 100 trades amended, applied in 3 ms (exact 3.400). [probe source=73.300 keys=262.900 rows=129.400 window=1000000]",
+        "appliedMs": 3.4,
+        "applyToFrameMs": 471.3,
+        "applyToPaintedMs": 942.3,
+        "frameToPaintedMs": 471,
+        "endOfTaskToFrameMs": 467.9,
+        "gridChanged": true,
+        "taskStartToFrameMs": 896,
+        "longestTaskMs": 467,
+        "probe": {
+          "source": 73.3,
+          "keys": 262.9,
+          "rows": 129.4,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 70: 100 trades amended, applied in 4 ms (exact 3.600). [probe source=2.700 keys=257.800 rows=129.400 window=1000000]",
+        "appliedMs": 3.6,
+        "applyToFrameMs": 3.6,
+        "applyToPaintedMs": 407.8,
+        "frameToPaintedMs": 404.2,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 492,
+        "longestTaskMs": 492,
+        "probe": {
+          "source": 2.7,
+          "keys": 257.8,
+          "rows": 129.4,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 84: 100 trades amended, applied in 4 ms (exact 3.500). [probe source=2.900 keys=271.400 rows=200.300 window=1000000]",
+        "appliedMs": 3.5,
+        "applyToFrameMs": 3.6,
+        "applyToPaintedMs": 475.5,
+        "frameToPaintedMs": 471.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 493,
+        "longestTaskMs": 493,
+        "probe": {
+          "source": 2.9,
+          "keys": 271.4,
+          "rows": 200.3,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 98: 100 trades amended, applied in 4 ms (exact 3.600). [probe source=70.200 keys=258.900 rows=130.300 window=1000000]",
+        "appliedMs": 3.6,
+        "applyToFrameMs": 3.6,
+        "applyToPaintedMs": 472.3,
+        "frameToPaintedMs": 468.7,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 423,
+        "longestTaskMs": 423,
+        "probe": {
+          "source": 70.2,
+          "keys": 258.9,
+          "rows": 130.3,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 112: 100 trades amended, applied in 4 ms (exact 3.600). [probe source=2.600 keys=265.100 rows=130.200 window=1000000]",
+        "appliedMs": 3.6,
+        "applyToFrameMs": 3.7,
+        "applyToPaintedMs": 403.7,
+        "frameToPaintedMs": 400,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 482,
+        "longestTaskMs": 481,
+        "probe": {
+          "source": 2.6,
+          "keys": 265.1,
+          "rows": 130.2,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 126: 100 trades amended, applied in 4 ms (exact 4.000). [probe source=2.700 keys=260.700 rows=200.900 window=1000000]",
+        "appliedMs": 4,
+        "applyToFrameMs": 4.1,
+        "applyToPaintedMs": 486.1,
+        "frameToPaintedMs": 482,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 486,
+        "longestTaskMs": 486,
+        "probe": {
+          "source": 2.7,
+          "keys": 260.7,
+          "rows": 200.9,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 140: 100 trades amended, applied in 4 ms (exact 3.900). [probe source=72.300 keys=264.400 rows=142.000 window=1000000]",
+        "appliedMs": 3.9,
+        "applyToFrameMs": 3.9,
+        "applyToPaintedMs": 487.8,
+        "frameToPaintedMs": 483.9,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 415,
+        "longestTaskMs": 414,
+        "probe": {
+          "source": 72.3,
+          "keys": 264.4,
+          "rows": 142,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 154: 100 trades amended, applied in 4 ms (exact 3.800). [probe source=2.800 keys=262.900 rows=133.100 window=1000000]",
+        "appliedMs": 3.8,
+        "applyToFrameMs": 3.8,
+        "applyToPaintedMs": 403.4,
+        "frameToPaintedMs": 399.6,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 512,
+        "longestTaskMs": 512,
+        "probe": {
+          "source": 2.8,
+          "keys": 262.9,
+          "rows": 133.1,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 168: 100 trades amended, applied in 4 ms (exact 3.800). [probe source=2.900 keys=274.400 rows=202.000 window=1000000]",
+        "appliedMs": 3.8,
+        "applyToFrameMs": 3.8,
+        "applyToPaintedMs": 490.8,
+        "frameToPaintedMs": 487,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 491,
+        "longestTaskMs": 490,
+        "probe": {
+          "source": 2.9,
+          "keys": 274.4,
+          "rows": 202,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 182: 100 trades amended, applied in 4 ms (exact 3.600). [probe source=72.300 keys=265.800 rows=130.500 window=1000000]",
+        "appliedMs": 3.6,
+        "applyToFrameMs": 3.6,
+        "applyToPaintedMs": 480.9,
+        "frameToPaintedMs": 477.3,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 430,
+        "longestTaskMs": 429,
+        "probe": {
+          "source": 72.3,
+          "keys": 265.8,
+          "rows": 130.5,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 196: 100 trades amended, applied in 4 ms (exact 3.700). [probe source=2.600 keys=260.100 rows=137.800 window=1000000]",
+        "appliedMs": 3.7,
+        "applyToFrameMs": 3.8,
+        "applyToPaintedMs": 407.7,
+        "frameToPaintedMs": 403.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 502,
+        "longestTaskMs": 501,
+        "probe": {
+          "source": 2.6,
+          "keys": 260.1,
+          "rows": 137.8,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 210: 100 trades amended, applied in 4 ms (exact 4.100). [probe source=2.800 keys=264.800 rows=206.900 window=1000000]",
+        "appliedMs": 4.1,
+        "applyToFrameMs": 4.1,
+        "applyToPaintedMs": 482.5,
+        "frameToPaintedMs": 478.4,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 479,
+        "longestTaskMs": 478,
+        "probe": {
+          "source": 2.8,
+          "keys": 264.8,
+          "rows": 206.9,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 224: 100 trades amended, applied in 3 ms (exact 3.200). [probe source=73.500 keys=268.500 rows=130.900 window=1000000]",
+        "appliedMs": 3.2,
+        "applyToFrameMs": 3.3,
+        "applyToPaintedMs": 474,
+        "frameToPaintedMs": 470.7,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 424,
+        "longestTaskMs": 423,
+        "probe": {
+          "source": 73.5,
+          "keys": 268.5,
+          "rows": 130.9,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 238: 100 trades amended, applied in 4 ms (exact 3.700). [probe source=2.700 keys=260.500 rows=133.200 window=1000000]",
+        "appliedMs": 3.7,
+        "applyToFrameMs": 3.8,
+        "applyToPaintedMs": 413.2,
+        "frameToPaintedMs": 409.4,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 499,
+        "longestTaskMs": 498,
+        "probe": {
+          "source": 2.7,
+          "keys": 260.5,
+          "rows": 133.2,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 252: 100 trades amended, applied in 4 ms (exact 3.600). [probe source=2.800 keys=265.400 rows=214.700 window=1000000]",
+        "appliedMs": 3.6,
+        "applyToFrameMs": 3.6,
+        "applyToPaintedMs": 492,
+        "frameToPaintedMs": 488.4,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 496,
+        "longestTaskMs": 495,
+        "probe": {
+          "source": 2.8,
+          "keys": 265.4,
+          "rows": 214.7,
+          "window": 1000000
+        }
+      }
+    ],
+    "discarded": "ran while the other track was measuring (raw/contention.log, 14:39:49-15:08:17 local); superseded by a rerun"
+  },
+  {
+    "name": "grid-wasm",
+    "at": "2026-10-06T13:51:43.798Z",
+    "rows": 1000000,
+    "batch": 1000,
+    "probe": true,
+    "load": "1,000,000 trades made in 1,753 ms; GridSource.From took 1,121 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 16.6,
+      "min": 15.7,
+      "max": 124.4,
+      "n": 15
+    },
+    "applyToFrameMs": {
+      "median": 16.6,
+      "min": 15.8,
+      "max": 124.6,
+      "n": 15
+    },
+    "applyToPaintedMs": {
+      "median": 491.6,
+      "min": 465.8,
+      "max": 583.2,
+      "n": 15
+    },
+    "frameToPaintedMs": {
+      "median": 466.3,
+      "min": 429.7,
+      "max": 558.4,
+      "n": 15
+    },
+    "endOfTaskToFrameMs": {
+      "median": 0.1,
+      "min": 0,
+      "max": 0.2,
+      "n": 15
+    },
+    "taskStartToFrameMs": {
+      "median": 579,
+      "min": 461,
+      "max": 607,
+      "n": 15
+    },
+    "longestTaskMs": {
+      "median": 579,
+      "min": 460,
+      "max": 606,
+      "n": 15
+    },
+    "gridChanged": 15,
+    "probeSourceMs": {
+      "median": 15.4,
+      "min": 14.8,
+      "max": 124.6,
+      "n": 15
+    },
+    "probeKeysMs": {
+      "median": 274.9,
+      "min": 264.7,
+      "max": 389.3,
+      "n": 15
+    },
+    "probeRowsMs": {
+      "median": 153.5,
+      "min": 135.6,
+      "max": 168.2,
+      "n": 15
+    },
+    "lastStatus": "Batch 252: 1,000 trades amended, applied in 17 ms (exact 16.700). [probe source=15.300 keys=284.400 rows=154.600 window=1000000]",
+    "runs": [
+      {
+        "status": "Batch 56: 1,000 trades amended, applied in 16 ms (exact 16.200). [probe source=98.200 keys=274.900 rows=135.600 window=1000000]",
+        "appliedMs": 16.2,
+        "applyToFrameMs": 16.3,
+        "applyToPaintedMs": 531.2,
+        "frameToPaintedMs": 514.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 464,
+        "longestTaskMs": 463,
+        "probe": {
+          "source": 98.2,
+          "keys": 274.9,
+          "rows": 135.6,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 70: 1,000 trades amended, applied in 102 ms (exact 102.100). [probe source=14.900 keys=264.700 rows=136.400 window=1000000]",
+        "appliedMs": 102.1,
+        "applyToFrameMs": 102.2,
+        "applyToPaintedMs": 531.9,
+        "frameToPaintedMs": 429.7,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 539,
+        "longestTaskMs": 539,
+        "probe": {
+          "source": 14.9,
+          "keys": 264.7,
+          "rows": 136.4,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 84: 1,000 trades amended, applied in 16 ms (exact 15.900). [probe source=110.300 keys=265.600 rows=141.700 window=1000000]",
+        "appliedMs": 15.9,
+        "applyToFrameMs": 16,
+        "applyToPaintedMs": 547.8,
+        "frameToPaintedMs": 531.8,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 461,
+        "longestTaskMs": 460,
+        "probe": {
+          "source": 110.3,
+          "keys": 265.6,
+          "rows": 141.7,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 98: 1,000 trades amended, applied in 16 ms (exact 15.700). [probe source=14.800 keys=267.600 rows=143.000 window=1000000]",
+        "appliedMs": 15.7,
+        "applyToFrameMs": 15.8,
+        "applyToPaintedMs": 465.8,
+        "frameToPaintedMs": 450,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 541,
+        "longestTaskMs": 541,
+        "probe": {
+          "source": 14.8,
+          "keys": 267.6,
+          "rows": 143,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 112: 1,000 trades amended, applied in 16 ms (exact 15.700). [probe source=14.800 keys=365.600 rows=141.600 window=1000000]",
+        "appliedMs": 15.7,
+        "applyToFrameMs": 15.8,
+        "applyToPaintedMs": 556.8,
+        "frameToPaintedMs": 541,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 555,
+        "longestTaskMs": 554,
+        "probe": {
+          "source": 14.8,
+          "keys": 365.6,
+          "rows": 141.6,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 126: 1,000 trades amended, applied in 17 ms (exact 16.700). [probe source=15.300 keys=369.000 rows=153.500 window=1000000]",
+        "appliedMs": 16.7,
+        "applyToFrameMs": 16.8,
+        "applyToPaintedMs": 466.7,
+        "frameToPaintedMs": 449.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 579,
+        "longestTaskMs": 579,
+        "probe": {
+          "source": 15.3,
+          "keys": 369,
+          "rows": 153.5,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 140: 1,000 trades amended, applied in 17 ms (exact 16.900). [probe source=15.500 keys=389.300 rows=168.200 window=1000000]",
+        "appliedMs": 16.9,
+        "applyToFrameMs": 16.9,
+        "applyToPaintedMs": 466.4,
+        "frameToPaintedMs": 449.5,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 572,
+        "longestTaskMs": 571,
+        "probe": {
+          "source": 15.5,
+          "keys": 389.3,
+          "rows": 168.2,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 154: 1,000 trades amended, applied in 124 ms (exact 124.400). [probe source=15.400 keys=279.600 rows=159.500 window=1000000]",
+        "appliedMs": 124.4,
+        "applyToFrameMs": 124.6,
+        "applyToPaintedMs": 583.2,
+        "frameToPaintedMs": 458.6,
+        "endOfTaskToFrameMs": 0.2,
+        "gridChanged": true,
+        "taskStartToFrameMs": 579,
+        "longestTaskMs": 579,
+        "probe": {
+          "source": 15.4,
+          "keys": 279.6,
+          "rows": 159.5,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 168: 1,000 trades amended, applied in 16 ms (exact 16.200). [probe source=15.500 keys=274.600 rows=156.700 window=1000000]",
+        "appliedMs": 16.2,
+        "applyToFrameMs": 16.4,
+        "applyToPaintedMs": 574.8,
+        "frameToPaintedMs": 558.4,
+        "endOfTaskToFrameMs": 0.2,
+        "gridChanged": true,
+        "taskStartToFrameMs": 469,
+        "longestTaskMs": 469,
+        "probe": {
+          "source": 15.5,
+          "keys": 274.6,
+          "rows": 156.7,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 182: 1,000 trades amended, applied in 17 ms (exact 16.600). [probe source=15.500 keys=270.700 rows=149.100 window=1000000]",
+        "appliedMs": 16.6,
+        "applyToFrameMs": 16.6,
+        "applyToPaintedMs": 473.8,
+        "frameToPaintedMs": 457.2,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 587,
+        "longestTaskMs": 587,
+        "probe": {
+          "source": 15.5,
+          "keys": 270.7,
+          "rows": 149.1,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 196: 1,000 trades amended, applied in 16 ms (exact 16.200). [probe source=15.600 keys=274.400 rows=149.700 window=1000000]",
+        "appliedMs": 16.2,
+        "applyToFrameMs": 16.2,
+        "applyToPaintedMs": 476.1,
+        "frameToPaintedMs": 459.9,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 590,
+        "longestTaskMs": 590,
+        "probe": {
+          "source": 15.6,
+          "keys": 274.4,
+          "rows": 149.7,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 210: 1,000 trades amended, applied in 16 ms (exact 16.400). [probe source=124.600 keys=275.200 rows=154.100 window=1000000]",
+        "appliedMs": 16.4,
+        "applyToFrameMs": 16.5,
+        "applyToPaintedMs": 482.8,
+        "frameToPaintedMs": 466.3,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 587,
+        "longestTaskMs": 587,
+        "probe": {
+          "source": 124.6,
+          "keys": 275.2,
+          "rows": 154.1,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 224: 1,000 trades amended, applied in 17 ms (exact 16.900). [probe source=15.200 keys=273.400 rows=167.700 window=1000000]",
+        "appliedMs": 16.9,
+        "applyToFrameMs": 16.9,
+        "applyToPaintedMs": 490.7,
+        "frameToPaintedMs": 473.8,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 587,
+        "longestTaskMs": 586,
+        "probe": {
+          "source": 15.2,
+          "keys": 273.4,
+          "rows": 167.7,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 238: 1,000 trades amended, applied in 17 ms (exact 17.200). [probe source=15.400 keys=279.800 rows=155.400 window=1000000]",
+        "appliedMs": 17.2,
+        "applyToFrameMs": 17.3,
+        "applyToPaintedMs": 491.6,
+        "frameToPaintedMs": 474.3,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 599,
+        "longestTaskMs": 599,
+        "probe": {
+          "source": 15.4,
+          "keys": 279.8,
+          "rows": 155.4,
+          "window": 1000000
+        }
+      },
+      {
+        "status": "Batch 252: 1,000 trades amended, applied in 17 ms (exact 16.700). [probe source=15.300 keys=284.400 rows=154.600 window=1000000]",
+        "appliedMs": 16.7,
+        "applyToFrameMs": 16.8,
+        "applyToPaintedMs": 494.3,
+        "frameToPaintedMs": 477.5,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 607,
+        "longestTaskMs": 606,
+        "probe": {
+          "source": 15.3,
+          "keys": 284.4,
+          "rows": 154.6,
+          "window": 1000000
+        }
+      }
+    ],
+    "discarded": "ran while the other track was measuring (raw/contention.log, 14:39:49-15:08:17 local); superseded by a rerun"
+  },
+  {
+    "name": "pivot-wasm",
+    "at": "2026-10-06T13:52:01.615Z",
+    "a": 1000,
+    "b": 9,
+    "batch": 1,
+    "probe": false,
+    "load": "9,000 records made in 98 ms; PivotSource.From took 22 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 35.3,
+      "min": 26.5,
+      "max": 57.1,
+      "n": 15
+    },
+    "applyToReportFrameMs": {
+      "median": 73,
+      "min": 55,
+      "max": 94,
+      "n": 15
+    },
+    "applyToReportPaintedMs": {
+      "median": 73,
+      "min": 56,
+      "max": 94,
+      "n": 15
+    },
+    "longestTaskMs": {
+      "median": 0,
+      "min": 0,
+      "max": 57,
+      "n": 15
+    },
+    "longTasks": {
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "n": 15
+    },
+    "longTasksTotalMs": {
+      "median": 0,
+      "min": 0,
+      "max": 57,
+      "n": 15
+    },
+    "probeCubeMs": null,
+    "probeReportMs": null,
+    "probeKeysMs": null,
+    "probeRowsMs": null,
+    "reportRows": null,
+    "lastStatus": "Batch 18: 1 records amended, applied in 27 ms (exact 26.800).",
+    "runs": [
+      {
+        "status": "Batch 4: 1 records amended, applied in 43 ms (exact 43.000).",
+        "appliedMs": 43,
+        "applyToReportFrameMs": 89,
+        "applyToReportPaintedMs": 89,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 3251.399999976158,
+        "probe": null
+      },
+      {
+        "status": "Batch 5: 1 records amended, applied in 49 ms (exact 48.700).",
+        "appliedMs": 48.7,
+        "applyToReportFrameMs": 91,
+        "applyToReportPaintedMs": 91,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 4001.5,
+        "probe": null
+      },
+      {
+        "status": "Batch 6: 1 records amended, applied in 49 ms (exact 49.400).",
+        "appliedMs": 49.4,
+        "applyToReportFrameMs": 91,
+        "applyToReportPaintedMs": 91,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 4751.5,
+        "probe": null
+      },
+      {
+        "status": "Batch 7: 1 records amended, applied in 49 ms (exact 48.800).",
+        "appliedMs": 48.8,
+        "applyToReportFrameMs": 94,
+        "applyToReportPaintedMs": 94,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 5501.600000023842,
+        "probe": null
+      },
+      {
+        "status": "Batch 8: 1 records amended, applied in 57 ms (exact 57.100).",
+        "appliedMs": 57.1,
+        "applyToReportFrameMs": 86,
+        "applyToReportPaintedMs": 86,
+        "longestTaskMs": 57,
+        "longTasks": 1,
+        "longTasksTotalMs": 57,
+        "frameAt": 6245.100000023842,
+        "probe": null
+      },
+      {
+        "status": "Batch 9: 1 records amended, applied in 31 ms (exact 31.000).",
+        "appliedMs": 31,
+        "applyToReportFrameMs": 65,
+        "applyToReportPaintedMs": 65,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 6972.5,
+        "probe": null
+      },
+      {
+        "status": "Batch 10: 1 records amended, applied in 35 ms (exact 35.300).",
+        "appliedMs": 35.3,
+        "applyToReportFrameMs": 65,
+        "applyToReportPaintedMs": 67,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 7485.300000071526,
+        "probe": null
+      },
+      {
+        "status": "Batch 11: 1 records amended, applied in 45 ms (exact 45.000).",
+        "appliedMs": 45,
+        "applyToReportFrameMs": 90,
+        "applyToReportPaintedMs": 90,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 8251.5,
+        "probe": null
+      },
+      {
+        "status": "Batch 12: 1 records amended, applied in 48 ms (exact 47.900).",
+        "appliedMs": 47.9,
+        "applyToReportFrameMs": 90,
+        "applyToReportPaintedMs": 90,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 9001.399999976158,
+        "probe": null
+      },
+      {
+        "status": "Batch 13: 1 records amended, applied in 32 ms (exact 31.900).",
+        "appliedMs": 31.9,
+        "applyToReportFrameMs": 61,
+        "applyToReportPaintedMs": 61,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 9717.800000071526,
+        "probe": null
+      },
+      {
+        "status": "Batch 14: 1 records amended, applied in 26 ms (exact 26.500).",
+        "appliedMs": 26.5,
+        "applyToReportFrameMs": 60,
+        "applyToReportPaintedMs": 60,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 10224,
+        "probe": null
+      },
+      {
+        "status": "Batch 15: 1 records amended, applied in 27 ms (exact 26.900).",
+        "appliedMs": 26.9,
+        "applyToReportFrameMs": 69,
+        "applyToReportPaintedMs": 69,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 10737.600000023842,
+        "probe": null
+      },
+      {
+        "status": "Batch 16: 1 records amended, applied in 29 ms (exact 29.100).",
+        "appliedMs": 29.1,
+        "applyToReportFrameMs": 73,
+        "applyToReportPaintedMs": 73,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 11484.899999976158,
+        "probe": null
+      },
+      {
+        "status": "Batch 17: 1 records amended, applied in 32 ms (exact 31.800).",
+        "appliedMs": 31.8,
+        "applyToReportFrameMs": 70,
+        "applyToReportPaintedMs": 70,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 12234.700000047684,
+        "probe": null
+      },
+      {
+        "status": "Batch 18: 1 records amended, applied in 27 ms (exact 26.800).",
+        "appliedMs": 26.8,
+        "applyToReportFrameMs": 55,
+        "applyToReportPaintedMs": 56,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 12965.399999976158,
+        "probe": null
+      }
+    ],
+    "discarded": "ran while the other track was measuring (raw/contention.log, 14:39:49-15:08:17 local); superseded by a rerun"
+  },
+  {
+    "name": "pivot-wasm",
+    "at": "2026-10-06T13:57:21.596Z",
+    "a": 1000,
+    "b": 9,
+    "batch": 1000,
+    "probe": false,
+    "load": "9,000 records made in 96 ms; PivotSource.From took 22 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 34.1,
+      "min": 29.7,
+      "max": 41.2,
+      "n": 15
+    },
+    "applyToReportFrameMs": {
+      "median": 65,
+      "min": 56,
+      "max": 77,
+      "n": 15
+    },
+    "applyToReportPaintedMs": {
+      "median": 65,
+      "min": 57,
+      "max": 77,
+      "n": 15
+    },
+    "longestTaskMs": {
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "n": 15
+    },
+    "longTasks": {
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "n": 15
+    },
+    "longTasksTotalMs": {
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "n": 15
+    },
+    "probeCubeMs": null,
+    "probeReportMs": null,
+    "probeKeysMs": null,
+    "probeRowsMs": null,
+    "reportRows": null,
+    "lastStatus": "Batch 18: 1,000 records amended, applied in 31 ms (exact 31.200).",
+    "runs": [
+      {
+        "status": "Batch 4: 1,000 records amended, applied in 32 ms (exact 32.100).",
+        "appliedMs": 32.1,
+        "applyToReportFrameMs": 66,
+        "applyToReportPaintedMs": 66,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 2989.2999999523163,
+        "probe": null
+      },
+      {
+        "status": "Batch 5: 1,000 records amended, applied in 35 ms (exact 35.300).",
+        "appliedMs": 35.3,
+        "applyToReportFrameMs": 74,
+        "applyToReportPaintedMs": 74,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 3738.5,
+        "probe": null
+      },
+      {
+        "status": "Batch 6: 1,000 records amended, applied in 40 ms (exact 40.400).",
+        "appliedMs": 40.4,
+        "applyToReportFrameMs": 76,
+        "applyToReportPaintedMs": 76,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 4488.5,
+        "probe": null
+      },
+      {
+        "status": "Batch 7: 1,000 records amended, applied in 40 ms (exact 40.000).",
+        "appliedMs": 40,
+        "applyToReportFrameMs": 70,
+        "applyToReportPaintedMs": 70,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 5233.199999928474,
+        "probe": null
+      },
+      {
+        "status": "Batch 8: 1,000 records amended, applied in 39 ms (exact 39.000).",
+        "appliedMs": 39,
+        "applyToReportFrameMs": 64,
+        "applyToReportPaintedMs": 65,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 5737.399999976158,
+        "probe": null
+      },
+      {
+        "status": "Batch 9: 1,000 records amended, applied in 36 ms (exact 35.900).",
+        "appliedMs": 35.9,
+        "applyToReportFrameMs": 76,
+        "applyToReportPaintedMs": 76,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 6488.399999976158,
+        "probe": null
+      },
+      {
+        "status": "Batch 10: 1,000 records amended, applied in 36 ms (exact 36.100).",
+        "appliedMs": 36.1,
+        "applyToReportFrameMs": 65,
+        "applyToReportPaintedMs": 65,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 7227.099999904633,
+        "probe": null
+      },
+      {
+        "status": "Batch 11: 1,000 records amended, applied in 41 ms (exact 41.200).",
+        "appliedMs": 41.2,
+        "applyToReportFrameMs": 67,
+        "applyToReportPaintedMs": 67,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 7981.199999928474,
+        "probe": null
+      },
+      {
+        "status": "Batch 12: 1,000 records amended, applied in 30 ms (exact 30.400).",
+        "appliedMs": 30.4,
+        "applyToReportFrameMs": 59,
+        "applyToReportPaintedMs": 59,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 8481.199999928474,
+        "probe": null
+      },
+      {
+        "status": "Batch 13: 1,000 records amended, applied in 30 ms (exact 29.700).",
+        "appliedMs": 29.7,
+        "applyToReportFrameMs": 57,
+        "applyToReportPaintedMs": 58,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 8980.5,
+        "probe": null
+      },
+      {
+        "status": "Batch 14: 1,000 records amended, applied in 34 ms (exact 34.100).",
+        "appliedMs": 34.1,
+        "applyToReportFrameMs": 77,
+        "applyToReportPaintedMs": 77,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 9744.599999904633,
+        "probe": null
+      },
+      {
+        "status": "Batch 15: 1,000 records amended, applied in 34 ms (exact 33.700).",
+        "appliedMs": 33.7,
+        "applyToReportFrameMs": 62,
+        "applyToReportPaintedMs": 62,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 10482.899999976158,
+        "probe": null
+      },
+      {
+        "status": "Batch 16: 1,000 records amended, applied in 32 ms (exact 31.600).",
+        "appliedMs": 31.6,
+        "applyToReportFrameMs": 57,
+        "applyToReportPaintedMs": 57,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 10980,
+        "probe": null
+      },
+      {
+        "status": "Batch 17: 1,000 records amended, applied in 31 ms (exact 30.800).",
+        "appliedMs": 30.8,
+        "applyToReportFrameMs": 56,
+        "applyToReportPaintedMs": 57,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 11479.399999976158,
+        "probe": null
+      },
+      {
+        "status": "Batch 18: 1,000 records amended, applied in 31 ms (exact 31.200).",
+        "appliedMs": 31.2,
+        "applyToReportFrameMs": 56,
+        "applyToReportPaintedMs": 57,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 11979.299999952316,
+        "probe": null
+      }
+    ],
+    "discarded": "ran while the other track was measuring (raw/contention.log, 14:39:49-15:08:17 local); superseded by a rerun"
+  },
+  {
+    "name": "pivot-wasm",
+    "at": "2026-10-06T14:02:49.415Z",
+    "a": 1000,
+    "b": 100,
+    "batch": 1,
+    "probe": false,
+    "load": "100,000 records made in 226 ms; PivotSource.From took 102 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 1,
+      "min": 0.8,
+      "max": 1.9,
+      "n": 15
+    },
+    "applyToReportFrameMs": {
+      "median": -52,
+      "min": -274,
+      "max": 628,
+      "n": 15
+    },
+    "applyToReportPaintedMs": {
+      "median": -52,
+      "min": -274,
+      "max": 629,
+      "n": 15
+    },
+    "longestTaskMs": {
+      "median": 0,
+      "min": 0,
+      "max": 112,
+      "n": 15
+    },
+    "longTasks": {
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "n": 15
+    },
+    "longTasksTotalMs": {
+      "median": 0,
+      "min": 0,
+      "max": 112,
+      "n": 15
+    },
+    "probeCubeMs": null,
+    "probeReportMs": null,
+    "probeKeysMs": null,
+    "probeRowsMs": null,
+    "reportRows": null,
+    "lastStatus": "Batch 26: 1 records amended, applied in 2 ms (exact 1.600).",
+    "runs": [
+      {
+        "status": "Batch 10: 1 records amended, applied in 1 ms (exact 0.800).",
+        "appliedMs": 0.8,
+        "applyToReportFrameMs": 538,
+        "applyToReportPaintedMs": 538,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 6443.099999904633,
+        "probe": null
+      },
+      {
+        "status": "Batch 11: 1 records amended, applied in 1 ms (exact 1.000).",
+        "appliedMs": 1,
+        "applyToReportFrameMs": -52,
+        "applyToReportPaintedMs": -52,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 7316.799999952316,
+        "probe": null
+      },
+      {
+        "status": "Batch 12: 1 records amended, applied in 1 ms (exact 0.900).",
+        "appliedMs": 0.9,
+        "applyToReportFrameMs": -9,
+        "applyToReportPaintedMs": -8,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 8109.699999928474,
+        "probe": null
+      },
+      {
+        "status": "Batch 13: 1 records amended, applied in 1 ms (exact 1.400).",
+        "appliedMs": 1.4,
+        "applyToReportFrameMs": -155,
+        "applyToReportPaintedMs": -155,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 8965.699999928474,
+        "probe": null
+      },
+      {
+        "status": "Batch 14: 1 records amended, applied in 1 ms (exact 1.100).",
+        "appliedMs": 1.1,
+        "applyToReportFrameMs": -120,
+        "applyToReportPaintedMs": -120,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 9755,
+        "probe": null
+      },
+      {
+        "status": "Batch 15: 1 records amended, applied in 1 ms (exact 1.000).",
+        "appliedMs": 1,
+        "applyToReportFrameMs": -77,
+        "applyToReportPaintedMs": -77,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 10547.899999976158,
+        "probe": null
+      },
+      {
+        "status": "Batch 16: 1 records amended, applied in 2 ms (exact 1.800).",
+        "appliedMs": 1.8,
+        "applyToReportFrameMs": -204,
+        "applyToReportPaintedMs": -204,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 11421.099999904633,
+        "probe": null
+      },
+      {
+        "status": "Batch 17: 1 records amended, applied in 2 ms (exact 1.900).",
+        "appliedMs": 1.9,
+        "applyToReportFrameMs": 628,
+        "applyToReportPaintedMs": 629,
+        "longestTaskMs": 52,
+        "longTasks": 1,
+        "longTasksTotalMs": 52,
+        "frameAt": 12997.399999976158,
+        "probe": null
+      },
+      {
+        "status": "Batch 19: 1 records amended, applied in 1 ms (exact 0.800).",
+        "appliedMs": 0.8,
+        "applyToReportFrameMs": 527,
+        "applyToReportPaintedMs": 528,
+        "longestTaskMs": 112,
+        "longTasks": 1,
+        "longTasksTotalMs": 112,
+        "frameAt": 14262,
+        "probe": null
+      },
+      {
+        "status": "Batch 20: 1 records amended, applied in 1 ms (exact 0.800).",
+        "appliedMs": 0.8,
+        "applyToReportFrameMs": -56,
+        "applyToReportPaintedMs": -56,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 15063.599999904633,
+        "probe": null
+      },
+      {
+        "status": "Batch 21: 1 records amended, applied in 1 ms (exact 0.800).",
+        "appliedMs": 0.8,
+        "applyToReportFrameMs": -13,
+        "applyToReportPaintedMs": -13,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 15859.599999904633,
+        "probe": null
+      },
+      {
+        "status": "Batch 22: 1 records amended, applied in 1 ms (exact 1.100).",
+        "appliedMs": 1.1,
+        "applyToReportFrameMs": -90,
+        "applyToReportPaintedMs": -90,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 16785.599999904633,
+        "probe": null
+      },
+      {
+        "status": "Batch 23: 1 records amended, applied in 1 ms (exact 1.000).",
+        "appliedMs": 1,
+        "applyToReportFrameMs": -42,
+        "applyToReportPaintedMs": -42,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 17578,
+        "probe": null
+      },
+      {
+        "status": "Batch 25: 1 records amended, applied in 1 ms (exact 0.800).",
+        "appliedMs": 0.8,
+        "applyToReportFrameMs": -274,
+        "applyToReportPaintedMs": -274,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 18379,
+        "probe": null
+      },
+      {
+        "status": "Batch 26: 1 records amended, applied in 2 ms (exact 1.600).",
+        "appliedMs": 1.6,
+        "applyToReportFrameMs": 612,
+        "applyToReportPaintedMs": 612,
+        "longestTaskMs": 53,
+        "longTasks": 1,
+        "longTasksTotalMs": 53,
+        "frameAt": 19981.099999904633,
+        "probe": null
+      }
+    ],
+    "discarded": "ran while the other track was measuring (raw/contention.log, 14:39:49-15:08:17 local); superseded by a rerun"
+  },
+  {
+    "name": "pivot-wasm",
+    "at": "2026-10-06T14:08:17.469Z",
+    "a": 1000,
+    "b": 100,
+    "batch": 1000,
+    "probe": false,
+    "load": "100,000 records made in 232 ms; PivotSource.From took 101 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 9.6,
+      "min": 7.1,
+      "max": 42.5,
+      "n": 15
+    },
+    "applyToReportFrameMs": {
+      "median": -90,
+      "min": -284,
+      "max": 687,
+      "n": 15
+    },
+    "applyToReportPaintedMs": {
+      "median": -90,
+      "min": -284,
+      "max": 688,
+      "n": 15
+    },
+    "longestTaskMs": {
+      "median": 0,
+      "min": 0,
+      "max": 110,
+      "n": 15
+    },
+    "longTasks": {
+      "median": 0,
+      "min": 0,
+      "max": 2,
+      "n": 15
+    },
+    "longTasksTotalMs": {
+      "median": 0,
+      "min": 0,
+      "max": 110,
+      "n": 15
+    },
+    "probeCubeMs": null,
+    "probeReportMs": null,
+    "probeKeysMs": null,
+    "probeRowsMs": null,
+    "reportRows": null,
+    "lastStatus": "Batch 28: 1,000 records amended, applied in 41 ms (exact 40.700).",
+    "runs": [
+      {
+        "status": "Batch 11: 1,000 records amended, applied in 7 ms (exact 7.100).",
+        "appliedMs": 7.1,
+        "applyToReportFrameMs": -284,
+        "applyToReportPaintedMs": -284,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 5627.900000095367,
+        "probe": null
+      },
+      {
+        "status": "Batch 12: 1,000 records amended, applied in 9 ms (exact 9.100).",
+        "appliedMs": 9.1,
+        "applyToReportFrameMs": 687,
+        "applyToReportPaintedMs": 688,
+        "longestTaskMs": 55,
+        "longTasks": 1,
+        "longTasksTotalMs": 55,
+        "frameAt": 7308.800000071526,
+        "probe": null
+      },
+      {
+        "status": "Batch 14: 1,000 records amended, applied in 10 ms (exact 9.600).",
+        "appliedMs": 9.6,
+        "applyToReportFrameMs": 596,
+        "applyToReportPaintedMs": 597,
+        "longestTaskMs": 110,
+        "longTasks": 1,
+        "longTasksTotalMs": 110,
+        "frameAt": 8520.900000095367,
+        "probe": null
+      },
+      {
+        "status": "Batch 15: 1,000 records amended, applied in 8 ms (exact 7.500).",
+        "appliedMs": 7.5,
+        "applyToReportFrameMs": -42,
+        "applyToReportPaintedMs": -41,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 9328.400000095367,
+        "probe": null
+      },
+      {
+        "status": "Batch 16: 1,000 records amended, applied in 12 ms (exact 12.300).",
+        "appliedMs": 12.3,
+        "applyToReportFrameMs": -175,
+        "applyToReportPaintedMs": -174,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 10197.900000095367,
+        "probe": null
+      },
+      {
+        "status": "Batch 17: 1,000 records amended, applied in 11 ms (exact 11.200).",
+        "appliedMs": 11.2,
+        "applyToReportFrameMs": -134,
+        "applyToReportPaintedMs": -134,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 10990.5,
+        "probe": null
+      },
+      {
+        "status": "Batch 18: 1,000 records amended, applied in 9 ms (exact 9.400).",
+        "appliedMs": 9.4,
+        "applyToReportFrameMs": -91,
+        "applyToReportPaintedMs": -91,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 11784.700000047684,
+        "probe": null
+      },
+      {
+        "status": "Batch 19: 1,000 records amended, applied in 11 ms (exact 10.800).",
+        "appliedMs": 10.8,
+        "applyToReportFrameMs": -197,
+        "applyToReportPaintedMs": -196,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 12677.600000023842,
+        "probe": null
+      },
+      {
+        "status": "Batch 20: 1,000 records amended, applied in 11 ms (exact 11.000).",
+        "appliedMs": 11,
+        "applyToReportFrameMs": 645,
+        "applyToReportPaintedMs": 646,
+        "longestTaskMs": 54,
+        "longTasks": 2,
+        "longTasksTotalMs": 105,
+        "frameAt": 14271,
+        "probe": null
+      },
+      {
+        "status": "Batch 22: 1,000 records amended, applied in 8 ms (exact 7.700).",
+        "appliedMs": 7.7,
+        "applyToReportFrameMs": 535,
+        "applyToReportPaintedMs": 535,
+        "longestTaskMs": 51,
+        "longTasks": 2,
+        "longTasksTotalMs": 101,
+        "frameAt": 15439.400000095367,
+        "probe": null
+      },
+      {
+        "status": "Batch 23: 1,000 records amended, applied in 42 ms (exact 42.500).",
+        "appliedMs": 42.5,
+        "applyToReportFrameMs": -237,
+        "applyToReportPaintedMs": -237,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 16381.400000095367,
+        "probe": null
+      },
+      {
+        "status": "Batch 25: 1,000 records amended, applied in 8 ms (exact 8.000).",
+        "appliedMs": 8,
+        "applyToReportFrameMs": 48,
+        "applyToReportPaintedMs": 57,
+        "longestTaskMs": 51,
+        "longTasks": 1,
+        "longTasksTotalMs": 51,
+        "frameAt": 17221.400000095367,
+        "probe": null
+      },
+      {
+        "status": "Batch 26: 1,000 records amended, applied in 10 ms (exact 10.200).",
+        "appliedMs": 10.2,
+        "applyToReportFrameMs": -101,
+        "applyToReportPaintedMs": -101,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 18023.300000071526,
+        "probe": null
+      },
+      {
+        "status": "Batch 27: 1,000 records amended, applied in 8 ms (exact 8.100).",
+        "appliedMs": 8.1,
+        "applyToReportFrameMs": -41,
+        "applyToReportPaintedMs": -40,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 18827.800000071526,
+        "probe": null
+      },
+      {
+        "status": "Batch 28: 1,000 records amended, applied in 41 ms (exact 40.700).",
+        "appliedMs": 40.7,
+        "applyToReportFrameMs": -90,
+        "applyToReportPaintedMs": -90,
+        "longestTaskMs": 0,
+        "longTasks": 0,
+        "longTasksTotalMs": 0,
+        "frameAt": 19778.800000071526,
+        "probe": null
+      }
+    ],
+    "discarded": "ran while the other track was measuring (raw/contention.log, 14:39:49-15:08:17 local); superseded by a rerun"
+  },
+  {
+    "name": "grid-server-bytes",
+    "at": "2026-10-06T15:24:25.860Z",
+    "rows": 100000,
+    "batch": 1,
+    "warmup": 3,
+    "webSocketExtensions": "permessage-deflate; client_max_window_bits=15",
+    "payload": {
+      "median": 73,
+      "min": 73,
+      "max": 73,
+      "n": 15
+    },
+    "wire": {
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "n": 15
+    },
+    "renderBatches": {
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "n": 15
+    },
+    "clientPayload": {
+      "median": 396,
+      "min": 395,
+      "max": 396,
+      "n": 15
+    },
+    "laterRenderBatches": {
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "n": 15
+    },
+    "laterPayload": {
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "n": 15
+    },
+    "laterWire": {
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "n": 15
+    },
+    "samples": [
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 395,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 395,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 395,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      }
+    ],
+    "discarded": "wire bytes read from the wrong connection (the circuit chosen by the first press); payloads valid; superseded by a rerun"
+  },
+  {
+    "name": "grid-server-bytes",
+    "at": "2026-10-06T15:25:27.563Z",
+    "rows": 100000,
+    "batch": 100,
+    "warmup": 3,
+    "webSocketExtensions": "permessage-deflate; client_max_window_bits=15",
+    "payload": {
+      "median": 641,
+      "min": 73,
+      "max": 1161,
+      "n": 15
+    },
+    "wire": {
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "n": 15
+    },
+    "renderBatches": {
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "n": 15
+    },
+    "clientPayload": {
+      "median": 396,
+      "min": 395,
+      "max": 396,
+      "n": 15
+    },
+    "laterRenderBatches": {
+      "median": 1,
+      "min": 0,
+      "max": 1,
+      "n": 15
+    },
+    "laterPayload": {
+      "median": 301,
+      "min": 0,
+      "max": 537,
+      "n": 15
+    },
+    "laterWire": {
+      "median": 0,
+      "min": 0,
+      "max": 0,
+      "n": 15
+    },
+    "samples": [
+      {
+        "renderBatches": 1,
+        "payload": 602,
+        "wire": 0,
+        "clientPayload": 395,
+        "laterRenderBatches": 1,
+        "laterPayload": 256,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 395,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 442,
+        "wire": 0,
+        "clientPayload": 395,
+        "laterRenderBatches": 1,
+        "laterPayload": 192,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 840,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 1,
+        "laterPayload": 409,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 641,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 1,
+        "laterPayload": 301,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 73,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 602,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 1,
+        "laterPayload": 256,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 802,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 1,
+        "laterPayload": 365,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 641,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 1,
+        "laterPayload": 301,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 644,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 1,
+        "laterPayload": 301,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 106,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 0,
+        "laterPayload": 0,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 643,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 1,
+        "laterPayload": 301,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 803,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 1,
+        "laterPayload": 365,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 1161,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 1,
+        "laterPayload": 537,
+        "laterWire": 0
+      },
+      {
+        "renderBatches": 1,
+        "payload": 640,
+        "wire": 0,
+        "clientPayload": 396,
+        "laterRenderBatches": 1,
+        "laterPayload": 301,
+        "laterWire": 0
+      }
+    ],
+    "discarded": "wire bytes read from the wrong connection (the circuit chosen by the first press); payloads valid; superseded by a rerun"
+  }
+]

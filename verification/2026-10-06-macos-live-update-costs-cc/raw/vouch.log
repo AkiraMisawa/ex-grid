@@ -1,0 +1,6 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 2.04 2.07 2.51 }; TieredCompilation=0
+   source's own key, vouched: 0 key calls over a new Window of 100,000 rows; vouched True
+   a Row Key of the grid's own over the source: 100,000 key calls over a new Window of 100,000 rows; vouched False
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc/verification/2026-10-06-macos-live-update-costs-cc/raw/vouch.json

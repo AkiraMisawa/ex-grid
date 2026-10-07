@@ -123,6 +123,17 @@ learns it: SignalR, polling, or a message bus (Q57).
   unshowable. A user's gesture supersedes a question for newer data, and its own question brings
   the change; a data change never cancels the user's question.
 
+## A redraw that runs out of memory leaves the report stale *(2026-10-07)*
+
+A live redraw that throws `OutOfMemoryException` while the cube or the report is made is caught there.
+- What was being built is dropped.
+- The report on screen stays, as a Stale Report with the reason.
+- The next change asks again.
+
+Before this, the exception reached the renderer and the page stopped
+([`2026-10-06-macos-pivot-oom`](../../verification/2026-10-06-macos-pivot-oom/README.md);
+[ADR-0161](./0161-expivots-live-redraw-makes-the-next-report-from-the-last.md)).
+
 ## Considered options
 
 - **Only additions** (Q42, option a) — rejected: a blotter's trades are amended and cancelled.

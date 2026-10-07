@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ExGrid over Fluxor (Blazor Server)</title>
+    <base href="/" />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="@Assets["_content/ExGrid/ex-grid.min.css"]" />
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 16px; }
+        #blazor-error-ui { display: none; }
+        .fg-instruments, .fg-status { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; margin: 6px 0; }
+        .fg-instruments pre { flex-basis: 100%; margin: 0; max-height: 3em; overflow: hidden; font-size: 11px; }
+    </style>
+    <ImportMap />
+    <HeadOutlet @rendermode="Interactive" />
+</head>
+
+<body>
+    <Routes @rendermode="Interactive" />
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>
+
+@code {
+    // Interactive on the circuit and not prerendered: a prerender would make a store, and start
+    // nothing, for a scope that ends before the circuit's begins.
+    private static readonly IComponentRenderMode Interactive = new InteractiveServerRenderMode(prerender: false);
+}

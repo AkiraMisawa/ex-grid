@@ -845,7 +845,7 @@ from a CSV in 955 ms and 14.6 s; read from Arrow in 475 ms and 3.7 s.
 decisions D1 to D10, P1 and P2 of 2026-10-06:
 [ADR-0140](adr/0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md),
 [ADR-0141](adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md) and
-[ADR-0142](adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md). §32 of the
+[ADR-0142](adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md). §32 of the
 Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's key.)*
 
 **What exists.**
@@ -860,9 +860,15 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
 - **`GridSource.Fetch` hears that its data moved on**: `NotifyChanged`, with the added keys when the
   Consumer knows them; the server's order token; `/grid-live` is built on it.
 - **`/grid-live-local`**: a million trades in the browser, fed Change Batches.
-- **Writes refused when what the user saw changed** (ADR-0142): the Cell Editor's commit, Actions,
-  paste, fills and clears, each judged against the render it was taken against, keyboard gestures
-  included; the user's own writes count as seen.
+- **Writes refused when what the user saw changed** (ADR-0142 as decided on 2026-10-05): the Cell
+  Editor's commit, Actions, paste, fills and clears, each judged against the render it was taken
+  against, keyboard gestures included; the user's own writes count as seen.
+  - *(2026-10-07: decided, not yet built.)* ADR-0142 was rewritten: a write now lands as the user
+    entered it, and only a change under the open editor is told, by an Overwrite Notice. ADR-0160 has the
+    grid hold no row beyond its Window. ADR-0161 has ExPivot make its next report from the last. ADR-0141
+    lets a pushed Window be vouched for, and ADR-0130 narrows the Selection Summary's walk. Until tickets
+    04 to 13 of `docs/specs/live-data` are built, the code above follows the rule of 2026-10-05, and §32's
+    rewritten criteria stand failing, as an accepted, unbuilt decision does.
 
 **Found by building it, and fixed.**
 

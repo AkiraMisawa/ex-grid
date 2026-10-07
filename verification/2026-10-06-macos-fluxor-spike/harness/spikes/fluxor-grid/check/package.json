@@ -1,0 +1,10 @@
+{
+  "name": "fluxor-grid-check",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The Fluxor spike's browser check: drives W1 and W2 on the WebAssembly (5899) and Server (5898) hosts.",
+  "type": "module",
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

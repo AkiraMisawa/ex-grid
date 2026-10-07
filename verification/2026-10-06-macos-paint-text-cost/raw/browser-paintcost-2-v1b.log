@@ -1,0 +1,9 @@
+a: scroll by 1 row                         step 1.000 / 1.300 / 6.800   NotePaint -0.0100 / 0.0300 / 0.0700   bytes 1688   new paints 1
+b: scroll by a page                        step 8.000 / 10.200 / 14.000   NotePaint 0.4450 / 0.4450 / 0.5550   bytes 40768   new paints 1
+c: fling frame (Placeholders)              step 1.200 / 1.600 / 2.900   NotePaint 0.0050 / 0.0100 / 0.0350   bytes 1736   new paints 1
+c2: fling settles (full slice painted)     step 7.200 / 7.700 / 8.900   NotePaint 0.4200 / 0.4700 / 0.4850   bytes 40768   new paints 1
+d: horizontal scroll to a new slice        step 6.500 / 7.100 / 7.800   NotePaint 0.4900 / 0.5150 / 0.5250   bytes 51368   new paints 1
+e: live, 0 painted rows new                step 7.500 / 7.800 / 8.600   NotePaint 0.0000 / 0.0050 / 0.0150   bytes 0   new paints 0
+e: live, 3 painted rows new                step 5.300 / 5.700 / 6.600   NotePaint 0.0350 / 0.0400 / 0.0850   bytes 3560   new paints 1
+e: live, every painted row new             step 8.500 / 8.700 / 9.600   NotePaint 0.4350 / 0.4500 / 0.5150   bytes 40696   new paints 1
+{"label":"paintcost-2-v1b (v1b, contended no)","status":"Done.","consoleErrors":[]}

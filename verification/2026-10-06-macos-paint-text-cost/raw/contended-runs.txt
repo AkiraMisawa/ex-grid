@@ -1,0 +1,9 @@
+# Runs during which another agent was found working (from contention.log). Round 1, found after the
+# fact by reading each run's checks; from round 2 on, the wrappers append here themselves.
+core pivot-v1 2026-10-06 20:28:40 another Playwright-driven Chrome (up to 128%) at the after-check
+browser scroll-live-2-v1 2026-10-06 20:44:00 the Codex track's dotnet test ExGrid.slnx started about 2 s before the run ended
+browser scroll-live-3-v1 2026-10-06 20:46:13 another Playwright-driven Chrome (93%) at the after-check
+browser scroll-wide-3-v1 2026-10-06 20:53:13 other Chrome processes (26-45%) and a dev server (33%) at the after-check
+browser scroll-wide-4-v0 2026-10-06 20:55:34 the Codex track's layer-3 run (node, hosts, Chrome) for the whole run
+scroll-live-5-v0 2026-10-06 21:25:43 busy at the after-check
+scroll-wide-5-v0 2026-10-06 21:33:58 busy at the after-check

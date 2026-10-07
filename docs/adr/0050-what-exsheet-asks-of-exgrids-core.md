@@ -460,3 +460,9 @@ opt-in declaration:
 - **The Chrome's bar is told** through `FormulaBarTextContext.Borrowed`; the MudBlazor Chrome dims the
   text in `--mud-palette-text-disabled`.
 - Without the declaration, nothing changes.
+
+## The appearance cache forgets rows that left the Window *(2026-10-07)*
+
+[ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md): the grid holds no Consumer row beyond the Window it was given.
+- **Item 15's cache of appearances drops every entry whose row instance a new Window does not hold.**
+- **What it keeps for the rows it does hold is their appearance values.**

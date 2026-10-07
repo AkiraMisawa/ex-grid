@@ -1,0 +1,18 @@
+# node loop.mjs http://localhost:5799 1000 400 15 "" 1   (v1, 2026-10-06 21:04:40)
+{"step":"loaded","s":4.436,"managedAfterGcMB":"323.6 alive report=1/1,cube=1/1,snapshot=1/1","heapMB":591,"managedMB":"323.6 alive report=1/1,cube=1/1,snapshot=1/1","oom":null}
+{"step":1,"s":2.552,"landed":true,"managedAfterGcMB":"475.1 alive report=2/2,cube=2/2,snapshot=2/2","heapMB":783,"managedMB":"475.1 alive report=2/2,cube=2/2,snapshot=2/2","oom":null}
+{"step":2,"s":2.552,"landed":true,"managedAfterGcMB":"626.5 alive report=3/3,cube=3/3,snapshot=3/3","heapMB":988,"managedMB":"626.5 alive report=3/3,cube=3/3,snapshot=3/3","oom":null}
+{"step":3,"s":2.515,"landed":true,"managedAfterGcMB":"626.5 alive report=3/4,cube=3/4,snapshot=4/4","heapMB":1287,"managedMB":"626.5 alive report=3/4,cube=3/4,snapshot=4/4","oom":null}
+{"step":4,"s":2.498,"landed":true,"managedAfterGcMB":"626.5 alive report=3/5,cube=3/5,snapshot=4/5","heapMB":1287,"managedMB":"626.5 alive report=3/5,cube=3/5,snapshot=4/5","oom":null}
+{"step":5,"s":2.486,"landed":true,"managedAfterGcMB":"626.5 alive report=3/6,cube=3/6,snapshot=4/6","heapMB":1287,"managedMB":"626.5 alive report=3/6,cube=3/6,snapshot=4/6","oom":null}
+{"step":6,"s":2.496,"landed":true,"managedAfterGcMB":"626.5 alive report=3/7,cube=3/7,snapshot=4/7","heapMB":1287,"managedMB":"626.5 alive report=3/7,cube=3/7,snapshot=4/7","oom":null}
+{"step":7,"s":2.477,"landed":true,"managedAfterGcMB":"626.5 alive report=3/8,cube=3/8,snapshot=4/8","heapMB":1287,"managedMB":"626.5 alive report=3/8,cube=3/8,snapshot=4/8","oom":null}
+{"step":8,"s":2.49,"landed":true,"managedAfterGcMB":"644.9 alive report=3/9,cube=3/9,snapshot=4/9","heapMB":1287,"managedMB":"644.9 alive report=3/9,cube=3/9,snapshot=4/9","oom":null}
+{"step":9,"s":2.578,"landed":true,"managedAfterGcMB":"626.5 alive report=3/10,cube=3/10,snapshot=4/10","heapMB":1400,"managedMB":"626.5 alive report=3/10,cube=3/10,snapshot=4/10","oom":null}
+{"step":10,"s":2.542,"landed":true,"managedAfterGcMB":"662.7 alive report=3/11,cube=3/11,snapshot=4/11","heapMB":1400,"managedMB":"662.7 alive report=3/11,cube=3/11,snapshot=4/11","oom":null}
+{"step":11,"s":2.515,"landed":true,"managedAfterGcMB":"662.7 alive report=3/12,cube=3/12,snapshot=4/12","heapMB":1400,"managedMB":"662.7 alive report=3/12,cube=3/12,snapshot=4/12","oom":null}
+{"step":12,"s":2.521,"landed":true,"managedAfterGcMB":"662.7 alive report=3/13,cube=3/13,snapshot=4/13","heapMB":1400,"managedMB":"662.7 alive report=3/13,cube=3/13,snapshot=4/13","oom":null}
+{"step":13,"s":2.516,"landed":true,"managedAfterGcMB":"662.7 alive report=3/14,cube=3/14,snapshot=4/14","heapMB":1400,"managedMB":"662.7 alive report=3/14,cube=3/14,snapshot=4/14","oom":null}
+{"step":14,"s":2.493,"landed":true,"managedAfterGcMB":"662.7 alive report=3/15,cube=3/15,snapshot=4/15","heapMB":1400,"managedMB":"662.7 alive report=3/15,cube=3/15,snapshot=4/15","oom":null}
+{"step":15,"s":2.503,"landed":true,"managedAfterGcMB":"662.7 alive report=3/16,cube=3/16,snapshot=4/16","heapMB":1400,"managedMB":"662.7 alive report=3/16,cube=3/16,snapshot=4/16","oom":null}
+{"verdict":"GREEN","oom":null,"errors":[]}

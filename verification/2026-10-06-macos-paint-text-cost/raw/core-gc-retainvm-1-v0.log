@@ -1,0 +1,21 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+variant V0; load { 4.18 3.42 2.93 }; TieredCompilation=0
+== pivot-gc 1,000 x 100, pre-collection full, GC events verbose, GCRetainVM=1 ==
+   run  1:    65.54 ms, GC pause   16.62 ms, GCs 5, committed 310 -> 368 MB, fragmented after 35.1 MB
+   run  2:    79.58 ms, GC pause   27.01 ms, GCs 5, committed 376 -> 420 MB, fragmented after 30.3 MB
+   run  3:    71.32 ms, GC pause   22.14 ms, GCs 5, committed 427 -> 479 MB, fragmented after 33.5 MB
+   run  4:    71.68 ms, GC pause   22.58 ms, GCs 5, committed 486 -> 535 MB, fragmented after 37.2 MB
+   run  5:    68.99 ms, GC pause   16.92 ms, GCs 5, committed 537 -> 594 MB, fragmented after 43.7 MB
+   run  6:    65.21 ms, GC pause   16.00 ms, GCs 5, committed 598 -> 656 MB, fragmented after 52.7 MB
+   run  7:    65.86 ms, GC pause   16.14 ms, GCs 5, committed 660 -> 718 MB, fragmented after 61.8 MB
+   run  8:    66.13 ms, GC pause   16.15 ms, GCs 5, committed 722 -> 779 MB, fragmented after 70.8 MB
+   run  9:    76.60 ms, GC pause   27.07 ms, GCs 5, committed 784 -> 842 MB, fragmented after 66.6 MB
+   run 10:    71.22 ms, GC pause   21.87 ms, GCs 5, committed 845 -> 879 MB, fragmented after 64.5 MB
+   run 11:    67.80 ms, GC pause   16.63 ms, GCs 5, committed 886 -> 943 MB, fragmented after 76.1 MB
+   run 12:    65.99 ms, GC pause   15.97 ms, GCs 5, committed 948 -> 1005 MB, fragmented after 85.1 MB
+   run 13:    66.73 ms, GC pause   16.36 ms, GCs 5, committed 1010 -> 1067 MB, fragmented after 94.1 MB
+   run 14:    70.70 ms, GC pause   16.55 ms, GCs 5, committed 1071 -> 1129 MB, fragmented after 103.1 MB
+   run 15:    74.11 ms, GC pause   23.31 ms, GCs 5, committed 1133 -> 1191 MB, fragmented after 104.4 MB
+   redraw    65.213    68.990    79.580   GC pause    15.972    16.627    27.070
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/verification/2026-10-06-macos-paint-text-cost/raw/core-gc-retainvm-1-v0.json

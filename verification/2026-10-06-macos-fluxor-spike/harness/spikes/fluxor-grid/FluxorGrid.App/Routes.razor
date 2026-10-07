@@ -1,0 +1,12 @@
+@* The router both hosts mount, with Fluxor's store initializer: Fluxor activates the store when
+   this has rendered interactively, and queues what is dispatched before then. *@
+<Fluxor.Blazor.Web.StoreInitializer />
+<Router AppAssembly="@typeof(Routes).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" />
+    </Found>
+</Router>
+@if (RendererInfo.IsInteractive)
+{
+    <span id="fg-interactive" hidden></span>
+}

@@ -1,0 +1,21 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+variant V0; load { 3.22 3.19 2.80 }; TieredCompilation=0
+== pivot-gc 1,000 x 100, pre-collection compact, GC events verbose, GCRetainVM=(default) ==
+   run  1:    77.29 ms, GC pause   24.79 ms, GCs 5, committed 279 -> 341 MB, fragmented after 8.0 MB
+   run  2:    81.92 ms, GC pause   27.02 ms, GCs 5, committed 335 -> 398 MB, fragmented after 8.1 MB
+   run  3:    88.75 ms, GC pause   35.26 ms, GCs 5, committed 390 -> 446 MB, fragmented after 0.9 MB
+   run  4:    79.35 ms, GC pause   27.17 ms, GCs 5, committed 449 -> 506 MB, fragmented after 8.1 MB
+   run  5:    84.04 ms, GC pause   30.16 ms, GCs 5, committed 498 -> 559 MB, fragmented after 8.1 MB
+   run  6:    85.32 ms, GC pause   33.13 ms, GCs 5, committed 548 -> 611 MB, fragmented after 8.1 MB
+   run  7:    87.73 ms, GC pause   34.76 ms, GCs 5, committed 602 -> 664 MB, fragmented after 8.1 MB
+   run  8:    86.40 ms, GC pause   33.45 ms, GCs 5, committed 655 -> 718 MB, fragmented after 8.0 MB
+   run  9:    88.01 ms, GC pause   35.52 ms, GCs 5, committed 707 -> 770 MB, fragmented after 8.0 MB
+   run 10:    88.50 ms, GC pause   36.34 ms, GCs 5, committed 761 -> 823 MB, fragmented after 8.0 MB
+   run 11:   106.98 ms, GC pause   52.24 ms, GCs 5, committed 814 -> 875 MB, fragmented after 0.9 MB
+   run 12:    91.04 ms, GC pause   34.62 ms, GCs 5, committed 868 -> 929 MB, fragmented after 8.0 MB
+   run 13:    88.41 ms, GC pause   32.73 ms, GCs 5, committed 919 -> 982 MB, fragmented after 8.1 MB
+   run 14:    96.57 ms, GC pause   42.62 ms, GCs 5, committed 972 -> 1035 MB, fragmented after 8.0 MB
+   run 15:   101.87 ms, GC pause   45.73 ms, GCs 5, committed 1025 -> 1088 MB, fragmented after 8.0 MB
+   redraw    77.286    88.011   106.976   GC pause    24.787    34.617    52.239
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/verification/2026-10-06-macos-paint-text-cost/raw/core-gc-compact-1-v0.json

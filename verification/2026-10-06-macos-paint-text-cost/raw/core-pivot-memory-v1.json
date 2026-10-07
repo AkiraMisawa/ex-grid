@@ -1,0 +1,155 @@
+{
+  "mode": "pivot-memory",
+  "variant": "V1",
+  "machine": {
+    "at": "2026-10-06T21:12:23.4124290\u002B01:00",
+    "loadavg": "{ 2.38 2.48 2.69 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      "  9.2 36-14:35:26 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon",
+      "  6.3 36-14:25:11 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui",
+      "  3.1 03-08:36:41 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/154.0.8037.98/Helpers/Codex (Service).app/Contents/MacOS/Code",
+      "  2.7 03-08:36:37 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/154.0.8037.98/Helpers/Codex (Renderer).app/Contents/MacOS/Cod",
+      "  2.4 23-05:01:53 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  1.5 04-18:29:24 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  1.1 04-18:29:24 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "  1.0    08:12:46 claude",
+      "  0.6       53:28 /Applications/Claude.app/Contents/MacOS/Claude",
+      "  0.5 36-14:35:27 /usr/libexec/logd",
+      "  0.5 01-02:15:00 /usr/sbin/bluetoothd"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": {
+    "aCount": 1000,
+    "bCount": 100,
+    "k": 1,
+    "redraws": 20,
+    "baselineMB": 162,
+    "samples": [
+      {
+        "redraw": 1,
+        "heapMB": 256.5,
+        "aliveEarlierReports": 1,
+        "aliveEarlierCubes": 1
+      },
+      {
+        "redraw": 2,
+        "heapMB": 350.9,
+        "aliveEarlierReports": 2,
+        "aliveEarlierCubes": 2
+      },
+      {
+        "redraw": 3,
+        "heapMB": 445.4,
+        "aliveEarlierReports": 3,
+        "aliveEarlierCubes": 3
+      },
+      {
+        "redraw": 4,
+        "heapMB": 539.8,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 5,
+        "heapMB": 314.5,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 6,
+        "heapMB": 331.4,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 7,
+        "heapMB": 348.2,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 8,
+        "heapMB": 314.5,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 9,
+        "heapMB": 331.4,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 10,
+        "heapMB": 348.2,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 11,
+        "heapMB": 314.5,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 12,
+        "heapMB": 331.4,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 13,
+        "heapMB": 348.2,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 14,
+        "heapMB": 314.6,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 15,
+        "heapMB": 331.4,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 16,
+        "heapMB": 348.2,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 17,
+        "heapMB": 314.6,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 18,
+        "heapMB": 331.4,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 19,
+        "heapMB": 348.2,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      },
+      {
+        "redraw": 20,
+        "heapMB": 314.6,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4
+      }
+    ],
+    "paintsKept": 21
+  }
+}

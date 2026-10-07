@@ -1,0 +1,4 @@
+node race.mjs http://localhost:5898 <variant> 40 — the feed at 5 ms with every busy row ticked in
+every batch; 40 commits over T00000's Price, which every batch changes.
+{"variant":"w1","attempts":40,"refusedByGrid":40,"raisedToStore":0,"store":"Store write: —","storeRefused":"Store refused: 0 (—)","ticks":"Ticks: 302","problems":[]}
+{"variant":"w2","attempts":40,"refusedByGrid":40,"raisedToStore":0,"store":"Store write: —","storeRefused":"Store refused: 0 (—)","ticks":"Ticks: 289","problems":[]}

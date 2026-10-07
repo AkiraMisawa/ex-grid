@@ -1,6 +1,6 @@
 # 01: Measure what an update costs, end to end
 
-Status: ready-for-agent
+Status: done
 
 **What to do:** find out, step by step, where the time of one live update goes, in ExGrid and in
 ExPivot, so that tickets 02 and 03 are decided on numbers (CLAUDE.md, "Measure before claiming
@@ -73,3 +73,10 @@ observational and never gates.
 - [ ] What the numbers say about tickets 02 and 03, as a proposal — not a decision
 
 ## Comments
+
+2026-10-07: Done on `claude/live-data-next-cc`:
+[`2026-10-06-macos-live-update-costs-cc`](../../../../verification/2026-10-06-macos-live-update-costs-cc/README.md).
+The run found that a live ExPivot runs out of memory in the browser. Its cause is in
+[`2026-10-06-macos-pivot-oom`](../../../../verification/2026-10-06-macos-pivot-oom/README.md). The
+numbers decided tickets 02 and 03, and the rewrite of ADR-0142, with the user, as ADR-0141's note of
+2026-10-07, ADR-0160 and ADR-0161.

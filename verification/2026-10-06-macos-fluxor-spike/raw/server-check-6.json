@@ -1,0 +1,139 @@
+{
+  "host": "server",
+  "base": "http://localhost:5898",
+  "at": "2026-10-06T19:34:06.136Z",
+  "results": {
+    "w1": {
+      "6": {
+        "pass": true,
+        "evidence": {
+          "readings": [
+            {
+              "at": "start",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 10050960,
+              "statesSeen": 0,
+              "oldStatesAlive": 0,
+              "replacedSampled": 0,
+              "replacedAlive": 0,
+              "tradesNow": 1000,
+              "version": 0
+            },
+            {
+              "at": "after 200 ticks",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 11021600,
+              "statesSeen": 202,
+              "oldStatesAlive": 0,
+              "replacedSampled": 2000,
+              "replacedAlive": 630,
+              "tradesNow": 1002,
+              "version": 200
+            },
+            {
+              "at": "after 400 ticks",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 11159120,
+              "statesSeen": 404,
+              "oldStatesAlive": 0,
+              "replacedSampled": 4000,
+              "replacedAlive": 630,
+              "tradesNow": 1005,
+              "version": 400
+            },
+            {
+              "at": "grid gone (Home)",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 10758696,
+              "statesSeen": 404,
+              "oldStatesAlive": 0,
+              "replacedSampled": 4000,
+              "replacedAlive": 0,
+              "tradesNow": 1005,
+              "version": 400
+            }
+          ],
+          "problems": [],
+          "errorUi": false,
+          "heapGrowthSecondRound": 137520
+        }
+      }
+    },
+    "w2": {
+      "6": {
+        "pass": true,
+        "evidence": {
+          "readings": [
+            {
+              "at": "start",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 12330912,
+              "statesSeen": 0,
+              "oldStatesAlive": 0,
+              "replacedSampled": 0,
+              "replacedAlive": 0,
+              "tradesNow": 1000,
+              "version": 0
+            },
+            {
+              "at": "after 200 ticks",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 13506352,
+              "statesSeen": 201,
+              "oldStatesAlive": 0,
+              "replacedSampled": 2000,
+              "replacedAlive": 170,
+              "tradesNow": 1002,
+              "version": 200
+            },
+            {
+              "at": "after 400 ticks",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 13998152,
+              "statesSeen": 403,
+              "oldStatesAlive": 0,
+              "replacedSampled": 4000,
+              "replacedAlive": 340,
+              "tradesNow": 1005,
+              "version": 400
+            },
+            {
+              "at": "grid gone (Home)",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 13629696,
+              "statesSeen": 403,
+              "oldStatesAlive": 0,
+              "replacedSampled": 4000,
+              "replacedAlive": 0,
+              "tradesNow": 1005,
+              "version": 400
+            }
+          ],
+          "problems": [],
+          "errorUi": false,
+          "heapGrowthSecondRound": 491800
+        }
+      }
+    }
+  }
+}

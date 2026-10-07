@@ -1,0 +1,20 @@
+A probe on the WebAssembly host: from Home, open /w2, back to Home, open /w1, back to Home, four
+times, then collect and count on Home. Each page and W2's Grid Source are followed by a weak
+reference (Census.Track).
+after visit 1 {"w2-page":"0 of 1 alive","w2-source":"0 of 1 alive","w1-page":"1 of 1 alive"} heap 5839008
+after visit 2 {"w2-page":"0 of 2 alive","w2-source":"0 of 2 alive","w1-page":"1 of 2 alive"} heap 5866184
+after visit 3 {"w2-page":"0 of 3 alive","w2-source":"0 of 3 alive","w1-page":"1 of 3 alive"} heap 5866216
+after visit 4 {"w2-page":"0 of 4 alive","w2-source":"0 of 4 alive","w1-page":"1 of 4 alive"} heap 5866264
+problems []
+
+The control, with /blank — a page with no grid, no Fluxor and no query parameter
+(node retention.mjs http://localhost:5899 <order> 2):
+order blank, after visit 1: {"blank-page":"1 of 1 alive"} heap 4748240
+order blank, after visit 2: {"blank-page":"1 of 2 alive"} heap 4784880
+order w1,blank, after visit 1: {"w1-page":"0 of 1 alive","blank-page":"1 of 1 alive"} heap 5824032
+order w1,blank, after visit 2: {"w1-page":"0 of 2 alive","blank-page":"1 of 2 alive"} heap 5854424
+order w2,blank, after visit 1: {"w2-page":"0 of 1 alive","w2-source":"0 of 1 alive","blank-page":"1 of 1 alive"} heap 5824096
+order w2,blank, after visit 2: {"w2-page":"0 of 2 alive","w2-source":"0 of 2 alive","blank-page":"1 of 2 alive"} heap 5854552
+order blank,w2, after visit 1: {"blank-page":"0 of 1 alive","w2-page":"1 of 1 alive","w2-source":"1 of 1 alive"} heap 5898208
+order blank,w2, after visit 2: {"blank-page":"0 of 2 alive","w2-page":"1 of 2 alive","w2-source":"1 of 2 alive"} heap 5928664
+No console message in any run.

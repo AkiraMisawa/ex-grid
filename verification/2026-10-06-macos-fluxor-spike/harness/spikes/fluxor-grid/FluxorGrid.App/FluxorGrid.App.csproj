@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- The Fluxor spike's pages and store, shared by its WebAssembly and Server hosts: a trade
+       blotter whose state lives in a Fluxor feature, drawn by ExGrid two ways (W1 pushes the
+       Window, W2 hands the list to GridSource.From under a Row Key). Disposable, like every spike;
+       Fluxor is referenced here and never by anything under src/ or samples/ (AGENTS.md). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>FluxorGrid</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 6.11.0, the latest; Fluxor has a net10.0 build from 6.9.0 on. 6.5.2 targets net9.0
+         with Components.Web capped below 10.0.0. -->
+    <PackageReference Include="Fluxor.Blazor.Web" Version="6.11.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+</Project>

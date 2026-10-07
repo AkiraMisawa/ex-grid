@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- The Fluxor spike on Blazor Server, on port 5898: one store per circuit, the feed's batches
+       dispatched from a thread-pool thread. Not prerendered, so the store is made once per
+       circuit. Disposable. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FluxorGrid.App\FluxorGrid.App.csproj" />
+  </ItemGroup>
+
+</Project>

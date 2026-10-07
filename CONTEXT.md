@@ -141,6 +141,13 @@ says whether a row changed; Row Identity does
 _Avoid_: Row Identity (the test for sameness), id, primary key (the database's), Record Key (a
 Snapshot's declared column, from which a Snapshot's rows take their Row Key)
 
+**Vouch**:
+A source's or a Consumer's promise that a Window holds no Row Key twice. A bundled source vouches
+because it refuses a repeated key as each change comes; a Consumer that pushes its Window vouches
+by declaring it. The grid then does not walk the whole Window for a repeat, and still checks the
+rows it paints ([ADR-0141](./docs/adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md)).
+_Avoid_: guarantee, trust, validate (that is an Edit Verdict's)
+
 **Placeholder**:
 A row not yet painted with real data. Two reasons, one mechanism — waiting for data from the
 Consumer, and deliberate skipping during fast scrolling
@@ -494,14 +501,22 @@ _Avoid_: cancel (that is Escape), rollback, revert
 The grid's own "no", raised on **the operation** — its target, its shape, its size — and never on
 the value being written: a copy cap, a misaligned selection, a paste shape, a target covering a
 column that is not Editable, a paste past its size ceiling, a clipboard the browser would not let
-it write, a target whose painted text changed between what the user saw and the write landing
-([ADR-0142](./docs/adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md)). Because a Refusal never looked at what the user typed, it stops only
+it write, a write whose row is gone or whose order moved before it landed
+([ADR-0142](./docs/adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)). A value that changed under a write is not one: the write lands. Because a Refusal never looked at what the user typed, it stops only
 the operation it named: a fill refused for covering a non-editable column leaves the editor open
 and the single-cell Enter still available. Contrast an **Edit Verdict**'s Reject, which judges the
 value ([ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md),
 [ADR-0014](./docs/adr/0014-paste-shape-rules-and-selection-count.md),
 [ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
 _Avoid_: rejection, validation failure, error (that is a Cell State), denial
+
+**Overwrite Notice**:
+The grid's notice that a Cell Editor commit replaced text that changed while the editor was open —
+the one change a user cannot see, because the editor covers the cell. The commit lands. The notice
+names the cell, the text the user saw when the editor opened and the text the commit replaced, and
+Chrome words it ([ADR-0142](./docs/adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)).
+_Avoid_: conflict, warning, Refusal (nothing was refused), Change Highlight (that marks a change
+on screen)
 
 **Find**:
 Moving the Focus to the next cell whose displayed text matches what the user typed, searching

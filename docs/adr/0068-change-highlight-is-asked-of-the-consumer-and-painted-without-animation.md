@@ -131,6 +131,14 @@ CI's repeat of `grid-live.spec.mjs` found it: the unmarked cell beside a mark no
 nothing. Layer 2 now pins each marked rule's layers. Layer 3 reads a marked cell's layers against
 an unmarked cell of its kind, a Pinned Column's cell included.
 
+## ExPivot holds one delegate across data versions *(2026-10-07)*
+
+[ADR-0161](./0161-expivots-live-redraw-makes-the-next-report-from-the-last.md): ExPivot hands the grid one `CellChangedAt` for as long as a history lasts, and keeps
+the time each cell's painted text last changed, as the bundled sources do (LV-9).
+- **A row renders because its instance is new**, not because the delegate is.
+- **The history keeps no reports.**
+- **This ADR's rules for what is marked are unchanged.**
+
 ## Consequences
 
 - **§26 of the Definition of Done gains DC-64 to DC-66**, which gate ExGrid as every declaration
@@ -140,7 +148,9 @@ an unmarked cell of its kind, a Pinned Column's cell included.
   plus one timer while any mark is showing.
 - **ExSheet and plain Consumers can use the same declaration later.** For ExSheet, the obvious case
   is a cell whose value a recalculation changed.
-- *(2026-10-05, [ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md), [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).)* **A Consumer may now declare a
+- *(2026-10-05, [ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md), [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md).)* **A Consumer may now declare a
   Row Key**, and the grid pairs a row's versions by it to repaint the row in place. The grid still
   compares no values to mark a cell. ADR-0142 compares what the grid painted, to keep a write off a
-  cell the user did not see; that comparison marks nothing.
+  cell the user did not see; that comparison marks nothing. *(2026-10-07: ADR-0142, rewritten, no
+  longer compares a write's target; only the editor compares the text it opened on, and that marks
+  nothing either.)*

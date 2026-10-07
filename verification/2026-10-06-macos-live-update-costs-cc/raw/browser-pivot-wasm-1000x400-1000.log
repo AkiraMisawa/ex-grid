@@ -1,0 +1,117 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] Serving /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/wasm/wwwroot at http://localhost:5599
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.NWtTM6/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8599
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/api
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.1 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version e30b3dff-0 from /tmp/nix-shell.NWtTM6/exgrid-demo-api/runs/trades-v1-20000.28443.e30b3dff.sqlite.
+
+Running 3 tests using 1 worker
+
+  -  1 [chrome] › measure-live-costs.spec.mjs:133:1 › ticket 01: a live update on /grid-live-local, WebAssembly
+  -  2 [chrome] › measure-live-costs.spec.mjs:202:1 › ticket 01: the bytes of a live update on /grid-live-local, Server host
+  ✘  3 [chrome] › measure-live-costs.spec.mjs:319:1 › ticket 01: a live redraw on /pivot-live-costs, WebAssembly (21.8s)
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+
+  1) [chrome] › measure-live-costs.spec.mjs:319:1 › ticket 01: a live redraw on /pivot-live-costs, WebAssembly 
+
+    Error: run 6 (4 after the warm-up): crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100] |       Unhandled exception rendering component: Out of memory | System.OutOfMemoryException: Out of memory |    at ExPivot.Engine.PartColumns..ctor(PivotParts parts, Int32 capacity)
+
+      363 |                 fs.appendFileSync(PROGRESS, `${JSON.stringify({ a: A, b: B, batch: BATCH, run, outOfMemory })}\n`);
+      364 |             }
+    > 365 |             throw new Error(`run ${run} (${run - WARMUP + 1} after the warm-up): ${outOfMemory}`);
+          |                   ^
+      366 |         }
+      367 |         const r = await page.evaluate(() => {
+      368 |             const p = window.__costs;
+        at /Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc/tests/ExGrid.Browser/measure-live-costs.spec.mjs:365:19
+
+    Error: zero console errors (CON-1)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 9
+
+    - Array []
+    + Array [
+    +   "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+    +       Unhandled exception rendering component: Out of memory
+    + System.OutOfMemoryException: Out of memory
+    +    at ExPivot.Engine.PartColumns..ctor(PivotParts parts, Int32 capacity)
+    +    at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+    +    at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+    +    at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)",
+    + ]
+
+       at fixtures.mjs:229
+
+      227 |     });
+      228 |
+    > 229 |     expect.soft(errors.map((m) => m.text), 'zero console errors (CON-1)').toEqual([]);
+          |                                                                           ^
+      230 |     expect.soft(pageErrors, 'zero uncaught page errors (CON-2)').toEqual([]);
+      231 |     const named = (text) => expectedWarnings.some((pattern) => pattern.test(text));
+      232 |     for (const pattern of expectedWarnings) {
+        at verdict (/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc/tests/ExGrid.Browser/fixtures.mjs:229:75)
+        at ownPage (/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc/tests/ExGrid.Browser/fixtures.mjs:475:5)
+        at Object.page (/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc/tests/ExGrid.Browser/fixtures.mjs:650:13)
+
+    Error: no unhandled exception reaches the host log (CON-6)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 9
+
+    - Array []
+    + Array [
+    +   "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+    +       Unhandled exception rendering component: Out of memory
+    + System.OutOfMemoryException: Out of memory
+    +    at ExPivot.Engine.PartColumns..ctor(PivotParts parts, Int32 capacity)
+    +    at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+    +    at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+    +    at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)",
+    + ]
+
+       at fixtures.mjs:238
+
+      236 |     expect.soft(warnings.filter(isExGrids).filter((m) => !named(m.text)).map((m) => m.text),
+      237 |         'zero warnings from ExGrid\'s own code (CON-3)').toEqual([]);
+    > 238 |     expect.soft(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
+          |                                                                                   ^
+      239 | }
+      240 |
+      241 | // What a test changed through alterPage, per page, undone as the test ends (ADR-0056).
+        at verdict (/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc/tests/ExGrid.Browser/fixtures.mjs:238:83)
+        at ownPage (/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc/tests/ExGrid.Browser/fixtures.mjs:475:5)
+        at Object.page (/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc/tests/ExGrid.Browser/fixtures.mjs:650:13)
+
+    Error Context: test-results/measure-live-costs-ticket--8643b-ivot-live-costs-WebAssembly-chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/measure-live-costs-ticket--8643b-ivot-live-costs-WebAssembly-chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/measure-live-costs-ticket--8643b-ivot-live-costs-WebAssembly-chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chrome] › measure-live-costs.spec.mjs:319:1 › ticket 01: a live redraw on /pivot-live-costs, WebAssembly 
+  2 skipped

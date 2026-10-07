@@ -1,0 +1,882 @@
+[
+  {
+    "label": "live-1-v0 (v0, contended no)",
+    "base": "http://localhost:5799",
+    "at": "2026-10-06T20:00:14.514Z",
+    "rows": 1000000,
+    "batch": 1000,
+    "load": "1,000,000 trades made in 1,770 ms; GridSource.From took 1,143 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 29.5,
+      "min": 16.8,
+      "max": 88,
+      "n": 15
+    },
+    "applyToFrameMs": {
+      "median": 29.6,
+      "min": 16.9,
+      "max": 88.2,
+      "n": 15
+    },
+    "applyToPaintedMs": {
+      "median": 30.6,
+      "min": 17.6,
+      "max": 89.1,
+      "n": 15
+    },
+    "frameToPaintedMs": {
+      "median": 1,
+      "min": 0.7,
+      "max": 2.7,
+      "n": 15
+    },
+    "endOfTaskToFrameMs": {
+      "median": 0.1,
+      "min": 0,
+      "max": 0.2,
+      "n": 15
+    },
+    "taskStartToFrameMs": {
+      "median": 85,
+      "min": 84,
+      "max": 94,
+      "n": 3
+    },
+    "longestTaskMs": {
+      "median": 0,
+      "min": 0,
+      "max": 94,
+      "n": 15
+    },
+    "gridChanged": 15,
+    "consoleErrors": [],
+    "runs": [
+      {
+        "status": "Batch 4: 1,000 trades amended, applied in 30 ms (exact 29.900). [first=1]",
+        "appliedMs": 29.9,
+        "applyToFrameMs": 29.9,
+        "applyToPaintedMs": 30.9,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 5: 1,000 trades amended, applied in 30 ms (exact 29.900). [first=0]",
+        "appliedMs": 29.9,
+        "applyToFrameMs": 30,
+        "applyToPaintedMs": 32.7,
+        "frameToPaintedMs": 2.7,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 6: 1,000 trades amended, applied in 88 ms (exact 88.000). [first=3]",
+        "appliedMs": 88,
+        "applyToFrameMs": 88.2,
+        "applyToPaintedMs": 89.1,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.2,
+        "gridChanged": true,
+        "taskStartToFrameMs": 94,
+        "longestTaskMs": 94
+      },
+      {
+        "status": "Batch 7: 1,000 trades amended, applied in 27 ms (exact 27.400). [first=0]",
+        "appliedMs": 27.4,
+        "applyToFrameMs": 27.5,
+        "applyToPaintedMs": 28.5,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 8: 1,000 trades amended, applied in 28 ms (exact 28.000). [first=0]",
+        "appliedMs": 28,
+        "applyToFrameMs": 28,
+        "applyToPaintedMs": 29,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 9: 1,000 trades amended, applied in 17 ms (exact 16.800). [first=0]",
+        "appliedMs": 16.8,
+        "applyToFrameMs": 16.9,
+        "applyToPaintedMs": 17.6,
+        "frameToPaintedMs": 0.7,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 10: 1,000 trades amended, applied in 41 ms (exact 41.300). [first=0]",
+        "appliedMs": 41.3,
+        "applyToFrameMs": 41.4,
+        "applyToPaintedMs": 42.4,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 11: 1,000 trades amended, applied in 81 ms (exact 80.900). [first=2]",
+        "appliedMs": 80.9,
+        "applyToFrameMs": 81.1,
+        "applyToPaintedMs": 82,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.2,
+        "gridChanged": true,
+        "taskStartToFrameMs": 84,
+        "longestTaskMs": 83
+      },
+      {
+        "status": "Batch 12: 1,000 trades amended, applied in 21 ms (exact 21.000). [first=1]",
+        "appliedMs": 21,
+        "applyToFrameMs": 21.1,
+        "applyToPaintedMs": 22.1,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 13: 1,000 trades amended, applied in 28 ms (exact 27.800). [first=1]",
+        "appliedMs": 27.8,
+        "applyToFrameMs": 27.9,
+        "applyToPaintedMs": 29,
+        "frameToPaintedMs": 1.1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 14: 1,000 trades amended, applied in 30 ms (exact 29.500). [first=2]",
+        "appliedMs": 29.5,
+        "applyToFrameMs": 29.6,
+        "applyToPaintedMs": 30.6,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 15: 1,000 trades amended, applied in 39 ms (exact 38.800). [first=0]",
+        "appliedMs": 38.8,
+        "applyToFrameMs": 38.8,
+        "applyToPaintedMs": 39.8,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 16: 1,000 trades amended, applied in 21 ms (exact 20.800). [first=0]",
+        "appliedMs": 20.8,
+        "applyToFrameMs": 20.8,
+        "applyToPaintedMs": 21.8,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 17: 1,000 trades amended, applied in 83 ms (exact 82.700). [first=0]",
+        "appliedMs": 82.7,
+        "applyToFrameMs": 82.8,
+        "applyToPaintedMs": 83.6,
+        "frameToPaintedMs": 0.8,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 85,
+        "longestTaskMs": 85
+      },
+      {
+        "status": "Batch 18: 1,000 trades amended, applied in 23 ms (exact 22.800). [first=0]",
+        "appliedMs": 22.8,
+        "applyToFrameMs": 22.9,
+        "applyToPaintedMs": 23.8,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      }
+    ]
+  },
+  {
+    "label": "live-2-v1 (v1, contended no)",
+    "base": "http://localhost:5799",
+    "at": "2026-10-06T20:01:08.786Z",
+    "rows": 1000000,
+    "batch": 1000,
+    "load": "1,000,000 trades made in 1,755 ms; GridSource.From took 1,143 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 31.7,
+      "min": 21.1,
+      "max": 91.2,
+      "n": 15
+    },
+    "applyToFrameMs": {
+      "median": 31.7,
+      "min": 21.2,
+      "max": 91.3,
+      "n": 15
+    },
+    "applyToPaintedMs": {
+      "median": 32.8,
+      "min": 22.7,
+      "max": 92.4,
+      "n": 15
+    },
+    "frameToPaintedMs": {
+      "median": 1.1,
+      "min": 0.8,
+      "max": 1.5,
+      "n": 15
+    },
+    "endOfTaskToFrameMs": {
+      "median": 0.1,
+      "min": 0,
+      "max": 0.1,
+      "n": 15
+    },
+    "taskStartToFrameMs": {
+      "median": 88,
+      "min": 84,
+      "max": 98,
+      "n": 3
+    },
+    "longestTaskMs": {
+      "median": 0,
+      "min": 0,
+      "max": 97,
+      "n": 15
+    },
+    "gridChanged": 15,
+    "consoleErrors": [],
+    "runs": [
+      {
+        "status": "Batch 4: 1,000 trades amended, applied in 32 ms (exact 32.100). [first=1]",
+        "appliedMs": 32.1,
+        "applyToFrameMs": 32.2,
+        "applyToPaintedMs": 33.3,
+        "frameToPaintedMs": 1.1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 5: 1,000 trades amended, applied in 38 ms (exact 38.100). [first=0]",
+        "appliedMs": 38.1,
+        "applyToFrameMs": 38.2,
+        "applyToPaintedMs": 39.7,
+        "frameToPaintedMs": 1.5,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 6: 1,000 trades amended, applied in 91 ms (exact 91.200). [first=3]",
+        "appliedMs": 91.2,
+        "applyToFrameMs": 91.3,
+        "applyToPaintedMs": 92.4,
+        "frameToPaintedMs": 1.1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 98,
+        "longestTaskMs": 97
+      },
+      {
+        "status": "Batch 7: 1,000 trades amended, applied in 26 ms (exact 26.300). [first=0]",
+        "appliedMs": 26.3,
+        "applyToFrameMs": 26.4,
+        "applyToPaintedMs": 27.5,
+        "frameToPaintedMs": 1.1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 8: 1,000 trades amended, applied in 29 ms (exact 29.100). [first=0]",
+        "appliedMs": 29.1,
+        "applyToFrameMs": 29.2,
+        "applyToPaintedMs": 30.2,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 9: 1,000 trades amended, applied in 31 ms (exact 31.100). [first=0]",
+        "appliedMs": 31.1,
+        "applyToFrameMs": 31.2,
+        "applyToPaintedMs": 32.3,
+        "frameToPaintedMs": 1.1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 10: 1,000 trades amended, applied in 44 ms (exact 44.400). [first=0]",
+        "appliedMs": 44.4,
+        "applyToFrameMs": 44.5,
+        "applyToPaintedMs": 45.4,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 11: 1,000 trades amended, applied in 82 ms (exact 81.800). [first=2]",
+        "appliedMs": 81.8,
+        "applyToFrameMs": 81.8,
+        "applyToPaintedMs": 82.8,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 84,
+        "longestTaskMs": 84
+      },
+      {
+        "status": "Batch 12: 1,000 trades amended, applied in 23 ms (exact 23.200). [first=1]",
+        "appliedMs": 23.2,
+        "applyToFrameMs": 23.3,
+        "applyToPaintedMs": 24.3,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 13: 1,000 trades amended, applied in 31 ms (exact 31.200). [first=1]",
+        "appliedMs": 31.2,
+        "applyToFrameMs": 31.3,
+        "applyToPaintedMs": 32.4,
+        "frameToPaintedMs": 1.1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 14: 1,000 trades amended, applied in 32 ms (exact 31.700). [first=2]",
+        "appliedMs": 31.7,
+        "applyToFrameMs": 31.7,
+        "applyToPaintedMs": 32.8,
+        "frameToPaintedMs": 1.1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 15: 1,000 trades amended, applied in 35 ms (exact 35.000). [first=0]",
+        "appliedMs": 35,
+        "applyToFrameMs": 35.1,
+        "applyToPaintedMs": 36.2,
+        "frameToPaintedMs": 1.1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 16: 1,000 trades amended, applied in 22 ms (exact 22.500). [first=0]",
+        "appliedMs": 22.5,
+        "applyToFrameMs": 22.6,
+        "applyToPaintedMs": 23.6,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 17: 1,000 trades amended, applied in 85 ms (exact 84.600). [first=0]",
+        "appliedMs": 84.6,
+        "applyToFrameMs": 84.7,
+        "applyToPaintedMs": 85.5,
+        "frameToPaintedMs": 0.8,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 88,
+        "longestTaskMs": 87
+      },
+      {
+        "status": "Batch 18: 1,000 trades amended, applied in 21 ms (exact 21.100). [first=0]",
+        "appliedMs": 21.1,
+        "applyToFrameMs": 21.2,
+        "applyToPaintedMs": 22.7,
+        "frameToPaintedMs": 1.5,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      }
+    ]
+  },
+  {
+    "label": "live-3-v1 (v1, contended no)",
+    "base": "http://localhost:5799",
+    "at": "2026-10-06T20:02:03.046Z",
+    "rows": 1000000,
+    "batch": 1000,
+    "load": "1,000,000 trades made in 1,744 ms; GridSource.From took 1,143 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 29.3,
+      "min": 22,
+      "max": 87.7,
+      "n": 15
+    },
+    "applyToFrameMs": {
+      "median": 29.4,
+      "min": 22.1,
+      "max": 87.8,
+      "n": 15
+    },
+    "applyToPaintedMs": {
+      "median": 30.2,
+      "min": 23,
+      "max": 88.8,
+      "n": 15
+    },
+    "frameToPaintedMs": {
+      "median": 1,
+      "min": 0.8,
+      "max": 2.7,
+      "n": 15
+    },
+    "endOfTaskToFrameMs": {
+      "median": 0.1,
+      "min": 0,
+      "max": 0.1,
+      "n": 15
+    },
+    "taskStartToFrameMs": {
+      "median": 84,
+      "min": 51,
+      "max": 94,
+      "n": 4
+    },
+    "longestTaskMs": {
+      "median": 0,
+      "min": 0,
+      "max": 94,
+      "n": 15
+    },
+    "gridChanged": 15,
+    "consoleErrors": [],
+    "runs": [
+      {
+        "status": "Batch 4: 1,000 trades amended, applied in 30 ms (exact 30.500). [first=1]",
+        "appliedMs": 30.5,
+        "applyToFrameMs": 30.5,
+        "applyToPaintedMs": 31.5,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 5: 1,000 trades amended, applied in 24 ms (exact 24.400). [first=0]",
+        "appliedMs": 24.4,
+        "applyToFrameMs": 24.5,
+        "applyToPaintedMs": 27.2,
+        "frameToPaintedMs": 2.7,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 6: 1,000 trades amended, applied in 88 ms (exact 87.700). [first=3]",
+        "appliedMs": 87.7,
+        "applyToFrameMs": 87.8,
+        "applyToPaintedMs": 88.8,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 94,
+        "longestTaskMs": 94
+      },
+      {
+        "status": "Batch 7: 1,000 trades amended, applied in 26 ms (exact 26.500). [first=0]",
+        "appliedMs": 26.5,
+        "applyToFrameMs": 26.6,
+        "applyToPaintedMs": 27.6,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 8: 1,000 trades amended, applied in 31 ms (exact 30.900). [first=0]",
+        "appliedMs": 30.9,
+        "applyToFrameMs": 31,
+        "applyToPaintedMs": 32,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 9: 1,000 trades amended, applied in 22 ms (exact 22.500). [first=0]",
+        "appliedMs": 22.5,
+        "applyToFrameMs": 22.6,
+        "applyToPaintedMs": 23.5,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 10: 1,000 trades amended, applied in 47 ms (exact 47.200). [first=0]",
+        "appliedMs": 47.2,
+        "applyToFrameMs": 47.3,
+        "applyToPaintedMs": 48.3,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 51,
+        "longestTaskMs": 51
+      },
+      {
+        "status": "Batch 11: 1,000 trades amended, applied in 82 ms (exact 81.500). [first=2]",
+        "appliedMs": 81.5,
+        "applyToFrameMs": 81.5,
+        "applyToPaintedMs": 82.4,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 84,
+        "longestTaskMs": 84
+      },
+      {
+        "status": "Batch 12: 1,000 trades amended, applied in 23 ms (exact 23.200). [first=1]",
+        "appliedMs": 23.2,
+        "applyToFrameMs": 23.3,
+        "applyToPaintedMs": 24.2,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 13: 1,000 trades amended, applied in 22 ms (exact 22.000). [first=1]",
+        "appliedMs": 22,
+        "applyToFrameMs": 22.1,
+        "applyToPaintedMs": 23,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 14: 1,000 trades amended, applied in 29 ms (exact 29.100). [first=2]",
+        "appliedMs": 29.1,
+        "applyToFrameMs": 29.2,
+        "applyToPaintedMs": 30.2,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 15: 1,000 trades amended, applied in 29 ms (exact 29.300). [first=0]",
+        "appliedMs": 29.3,
+        "applyToFrameMs": 29.4,
+        "applyToPaintedMs": 30.2,
+        "frameToPaintedMs": 0.8,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 16: 1,000 trades amended, applied in 32 ms (exact 32.000). [first=0]",
+        "appliedMs": 32,
+        "applyToFrameMs": 32,
+        "applyToPaintedMs": 33.1,
+        "frameToPaintedMs": 1.1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 17: 1,000 trades amended, applied in 75 ms (exact 75.100). [first=0]",
+        "appliedMs": 75.1,
+        "applyToFrameMs": 75.2,
+        "applyToPaintedMs": 76.1,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 77,
+        "longestTaskMs": 77
+      },
+      {
+        "status": "Batch 18: 1,000 trades amended, applied in 25 ms (exact 25.300). [first=0]",
+        "appliedMs": 25.3,
+        "applyToFrameMs": 25.4,
+        "applyToPaintedMs": 26.4,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      }
+    ]
+  },
+  {
+    "label": "live-4-v0 (v0, contended no)",
+    "base": "http://localhost:5799",
+    "at": "2026-10-06T20:02:57.253Z",
+    "rows": 1000000,
+    "batch": 1000,
+    "load": "1,000,000 trades made in 1,732 ms; GridSource.From took 1,123 ms.",
+    "warmup": 3,
+    "appliedMs": {
+      "median": 31.6,
+      "min": 22.9,
+      "max": 86.5,
+      "n": 15
+    },
+    "applyToFrameMs": {
+      "median": 31.8,
+      "min": 22.9,
+      "max": 86.6,
+      "n": 15
+    },
+    "applyToPaintedMs": {
+      "median": 32.8,
+      "min": 24,
+      "max": 87.5,
+      "n": 15
+    },
+    "frameToPaintedMs": {
+      "median": 1,
+      "min": 0.9,
+      "max": 1.6,
+      "n": 15
+    },
+    "endOfTaskToFrameMs": {
+      "median": 0.1,
+      "min": 0,
+      "max": 0.2,
+      "n": 15
+    },
+    "taskStartToFrameMs": {
+      "median": 91,
+      "min": 83,
+      "max": 93,
+      "n": 3
+    },
+    "longestTaskMs": {
+      "median": 0,
+      "min": 0,
+      "max": 92,
+      "n": 15
+    },
+    "gridChanged": 15,
+    "consoleErrors": [],
+    "runs": [
+      {
+        "status": "Batch 4: 1,000 trades amended, applied in 32 ms (exact 31.600). [first=1]",
+        "appliedMs": 31.6,
+        "applyToFrameMs": 31.8,
+        "applyToPaintedMs": 32.8,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.2,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 5: 1,000 trades amended, applied in 33 ms (exact 33.100). [first=0]",
+        "appliedMs": 33.1,
+        "applyToFrameMs": 33.1,
+        "applyToPaintedMs": 34.7,
+        "frameToPaintedMs": 1.6,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 6: 1,000 trades amended, applied in 86 ms (exact 86.400). [first=3]",
+        "appliedMs": 86.4,
+        "applyToFrameMs": 86.5,
+        "applyToPaintedMs": 87.4,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 93,
+        "longestTaskMs": 92
+      },
+      {
+        "status": "Batch 7: 1,000 trades amended, applied in 27 ms (exact 27.100). [first=0]",
+        "appliedMs": 27.1,
+        "applyToFrameMs": 27.2,
+        "applyToPaintedMs": 28.1,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 8: 1,000 trades amended, applied in 25 ms (exact 25.200). [first=0]",
+        "appliedMs": 25.2,
+        "applyToFrameMs": 25.3,
+        "applyToPaintedMs": 26.2,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 9: 1,000 trades amended, applied in 34 ms (exact 34.100). [first=0]",
+        "appliedMs": 34.1,
+        "applyToFrameMs": 34.3,
+        "applyToPaintedMs": 35.2,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.2,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 10: 1,000 trades amended, applied in 43 ms (exact 42.600). [first=0]",
+        "appliedMs": 42.6,
+        "applyToFrameMs": 42.7,
+        "applyToPaintedMs": 43.7,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 11: 1,000 trades amended, applied in 80 ms (exact 80.300). [first=2]",
+        "appliedMs": 80.3,
+        "applyToFrameMs": 80.3,
+        "applyToPaintedMs": 81.3,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": 83,
+        "longestTaskMs": 83
+      },
+      {
+        "status": "Batch 12: 1,000 trades amended, applied in 24 ms (exact 23.600). [first=1]",
+        "appliedMs": 23.6,
+        "applyToFrameMs": 23.6,
+        "applyToPaintedMs": 24.6,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 13: 1,000 trades amended, applied in 33 ms (exact 33.100). [first=1]",
+        "appliedMs": 33.1,
+        "applyToFrameMs": 33.1,
+        "applyToPaintedMs": 34.3,
+        "frameToPaintedMs": 1.2,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 14: 1,000 trades amended, applied in 28 ms (exact 28.100). [first=2]",
+        "appliedMs": 28.1,
+        "applyToFrameMs": 28.2,
+        "applyToPaintedMs": 29.2,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 15: 1,000 trades amended, applied in 27 ms (exact 27.300). [first=0]",
+        "appliedMs": 27.3,
+        "applyToFrameMs": 27.4,
+        "applyToPaintedMs": 28.3,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 16: 1,000 trades amended, applied in 26 ms (exact 25.900). [first=0]",
+        "appliedMs": 25.9,
+        "applyToFrameMs": 26,
+        "applyToPaintedMs": 27,
+        "frameToPaintedMs": 1,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      },
+      {
+        "status": "Batch 17: 1,000 trades amended, applied in 86 ms (exact 86.500). [first=0]",
+        "appliedMs": 86.5,
+        "applyToFrameMs": 86.6,
+        "applyToPaintedMs": 87.5,
+        "frameToPaintedMs": 0.9,
+        "endOfTaskToFrameMs": 0.1,
+        "gridChanged": true,
+        "taskStartToFrameMs": 91,
+        "longestTaskMs": 90
+      },
+      {
+        "status": "Batch 18: 1,000 trades amended, applied in 23 ms (exact 22.900). [first=0]",
+        "appliedMs": 22.9,
+        "applyToFrameMs": 22.9,
+        "applyToPaintedMs": 24,
+        "frameToPaintedMs": 1.1,
+        "endOfTaskToFrameMs": 0,
+        "gridChanged": true,
+        "taskStartToFrameMs": null,
+        "longestTaskMs": 0
+      }
+    ]
+  }
+]

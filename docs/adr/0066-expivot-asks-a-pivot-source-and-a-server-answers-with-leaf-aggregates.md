@@ -261,6 +261,13 @@ A source that can be asked again, such as a server's, says so in its features (Q
   land. This holds across versions of one source only: a new source is new data, and its Items
   start from a loading listing.
 
+## An answer may say which leaves changed *(2026-10-07)*
+
+[ADR-0161](./0161-expivots-live-redraw-makes-the-next-report-from-the-last.md): an answer may carry the leaves that changed since an earlier Source Version the
+question names. It is optional.
+- The bundled `SnapshotPivotSource` supplies it from its fold.
+- A source that does not is answered correctly, the engine comparing the leaves itself.
+
 ## Consequences
 
 - **ExPivot's entry point is now `PivotSource.From`, not `PivotEngine`.** The engine is what the

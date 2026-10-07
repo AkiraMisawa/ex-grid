@@ -1,0 +1,82 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] Serving /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/wasm/wwwroot at http://localhost:5599
+
+Running 3 tests using 1 worker
+
+  -  1 [chrome] › measure-live-costs.spec.mjs:133:1 › ticket 01: a live update on /grid-live-local, WebAssembly
+  -  2 [chrome] › measure-live-costs.spec.mjs:202:1 › ticket 01: the bytes of a live update on /grid-live-local, Server host
+pivot-wasm {
+ "a": 1000,
+ "b": 100,
+ "batch": 1,
+ "probe": true,
+ "load": "100,000 records made in 228 ms; PivotSource.From took 100 ms.",
+ "warmup": 3,
+ "appliedMs": {
+  "median": 31.1,
+  "min": 30.9,
+  "max": 31.9,
+  "n": 15
+ },
+ "applyToReportFrameMs": {
+  "median": 548,
+  "min": 526,
+  "max": 644,
+  "n": 15
+ },
+ "applyToReportPaintedMs": {
+  "median": 548,
+  "min": 526,
+  "max": 644,
+  "n": 15
+ },
+ "longestTaskMs": {
+  "median": 394,
+  "min": 387,
+  "max": 503,
+  "n": 15
+ },
+ "longTasks": {
+  "median": 1,
+  "min": 1,
+  "max": 3,
+  "n": 15
+ },
+ "longTasksTotalMs": {
+  "median": 463,
+  "min": 387,
+  "max": 525,
+  "n": 15
+ },
+ "probeCubeMs": {
+  "median": 141.9,
+  "min": 135.7,
+  "max": 252.2,
+  "n": 15
+ },
+ "probeReportMs": {
+  "median": 193.9,
+  "min": 192.4,
+  "max": 198.2,
+  "n": 15
+ },
+ "probeKeysMs": {
+  "median": 14.5,
+  "min": 14.3,
+  "max": 96.3,
+  "n": 15
+ },
+ "probeRowsMs": {
+  "median": 9.2,
+  "min": 9,
+  "max": 9.5,
+  "n": 15
+ },
+ "reportRows": 101001,
+ "lastStatus": "Batch 18: 1 records amended, applied in 32 ms (exact 31.600). [probe cube=141.900 report=193.200 keys=14.500 rows=9.200 reportRows=101001]"
+}
+  ✓  3 [chrome] › measure-live-costs.spec.mjs:312:1 › ticket 01: a live redraw on /pivot-live-costs, WebAssembly (26.0s)
+
+  2 skipped
+  1 passed (28.1s)

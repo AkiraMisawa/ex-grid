@@ -192,3 +192,13 @@ The bundled stack keeps its trigger (the first scenario-backed Consumer, above);
 - **The grid does nothing else on the key.** No selection change, no refusal: what the history
   does and what the screen shows afterwards are the Consumer's, and the new row instances it
   returns reach the screen through the ordinary path.
+
+## The Edit Intent tells what the user saw, and may be refused *(2026-10-07)*
+
+[ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md), as rewritten, lets a write land as the user entered it.
+- **The Edit Intent carries the cell's painted text when the editor opened and the text the commit
+  replaced.** A Consumer that must not write over a change sees it there.
+- **The Consumer may decline the intent with `Refuse(message)`** before its handler completes, and the
+  editor stays open ([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)'s
+  note of the same day).
+- The line of this ADR is untouched: the grid applies nothing.

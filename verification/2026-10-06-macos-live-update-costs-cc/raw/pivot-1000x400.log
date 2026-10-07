@@ -1,0 +1,48 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 2.45 2.48 2.55 }; TieredCompilation=0
+== ExPivot, 1,000 x 400 leaves (400,000 records), made in 148 ms ==
+   first report: 401,001 rows, 1 value column(s), in 551 ms
+-- k = 1 changes a batch --
+   fold (SnapshotPivotSource.Apply)       0.230     0.243     1.416
+   answer (AggregateAsync, held)          9.592     9.787    10.306
+   CubeAsync                             80.067    82.459    88.544
+   ReportAsync                          157.212   158.854   162.900
+   HasSameRowsAsAsync                     4.033     4.126     4.212
+   LabelWidthsAsync                      12.950    13.646    14.436
+   Show                                   0.039     0.041     0.058
+   grid RequireDistinctKeys               8.210     8.563     9.670
+   grid RequireDistinctRows               9.831    10.128    10.460
+   grid ApplyState                        8.361     8.494     9.169
+   render (incl. grid ApplyState)         8.836     9.355    11.124
+   whole redraw                         268.518   280.065   300.951
+   painted 11, rendered 11 (min 11), mounted 0, with a changed value 0 (max 0); inline 15 of 15
+-- k = 100 changes a batch --
+   fold (SnapshotPivotSource.Apply)       0.441     0.466     0.716
+   answer (AggregateAsync, held)          9.693     9.778     9.982
+   CubeAsync                             83.499    86.873    90.918
+   ReportAsync                          160.322   162.301   166.448
+   HasSameRowsAsAsync                     4.055     4.144     4.241
+   LabelWidthsAsync                      13.612    13.709    15.250
+   Show                                   0.040     0.047     0.081
+   grid RequireDistinctKeys               8.157     8.338    10.889
+   grid RequireDistinctRows              12.165    12.364    13.221
+   grid ApplyState                        8.109     8.396     9.145
+   render (incl. grid ApplyState)         9.431    10.310    12.765
+   whole redraw                         288.149   301.267   315.601
+   painted 11, rendered 11 (min 11), mounted 0, with a changed value 0 (max 1); inline 15 of 15
+-- k = 1,000 changes a batch --
+   fold (SnapshotPivotSource.Apply)       1.604     1.735     4.163
+   answer (AggregateAsync, held)          9.723     9.858    13.848
+   CubeAsync                            138.303   154.267   179.763
+   ReportAsync                          209.981   222.069   237.631
+   HasSameRowsAsAsync                     9.976    14.837    25.334
+   LabelWidthsAsync                      14.381    19.396    26.215
+   Show                                   0.518     0.788     2.169
+   grid RequireDistinctKeys              11.086    13.540    21.142
+   grid RequireDistinctRows              10.369    12.593    19.616
+   grid ApplyState                       11.216    13.713    45.612
+   render (incl. grid ApplyState)         9.792    10.970    15.962
+   whole redraw                         306.485   352.509   377.682
+   painted 11, rendered 11 (min 11), mounted 0, with a changed value 1 (max 1); inline 15 of 15
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc/verification/2026-10-06-macos-live-update-costs-cc/raw/pivot-1000x400.json

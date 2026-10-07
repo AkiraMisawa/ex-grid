@@ -1,0 +1,392 @@
+=== core grid-v0 (V0): before, 2026-10-06 20:23:41
+idle
+their processes:
+72422   0.0       01:42 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+73027   0.0       00:12 /bin/zsh -c source /Users/akira338/.claude/shell-snapshots/snapshot-zsh-1791287996215-0wovxl.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || 
+load { 5.29 3.80 2.87 }
+=== core grid-v0 (V0): after, 2026-10-06 20:26:00, exit 0, contended no
+their processes:
+72422   0.0       01:46 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+73027   0.0       00:16 /bin/zsh -c source /Users/akira338/.claude/shell-snapshots/snapshot-zsh-1791287996215-0wovxl.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || 
+load { 6.46 4.07 2.97 }
+=== core grid-v1 (V1): before, 2026-10-06 20:26:00
+idle
+their processes:
+72422   0.0       02:31 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+73027   0.0       01:01 /bin/zsh -c source /Users/akira338/.claude/shell-snapshots/snapshot-zsh-1791287996215-0wovxl.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || 
+load { 3.45 3.60 2.86 }
+=== core grid-v1 (V1): after, 2026-10-06 20:26:48, exit 0, contended no
+their processes:
+72422   0.0       02:34 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+load { 3.33 3.58 2.85 }
+=== core pivot-v0 (V0): before, 2026-10-06 20:26:49
+idle
+their processes:
+72422   0.0       03:20 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+73929   0.0       00:11 /bin/zsh -c source /Users/akira338/.claude/shell-snapshots/snapshot-zsh-1791287996215-0wovxl.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || 
+load { 2.46 3.31 2.79 }
+=== core pivot-v0 (V0): after, 2026-10-06 20:27:47, exit 0, contended no
+their processes:
+72422   0.0       03:33 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+73929   0.0       00:24 /bin/zsh -c source /Users/akira338/.claude/shell-snapshots/snapshot-zsh-1791287996215-0wovxl.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || 
+load { 2.24 3.23 2.77 }
+=== core pivot-v1 (V1): before, 2026-10-06 20:27:47
+idle
+their processes:
+72422   0.0       04:18 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+load { 1.60 2.92 2.67 }
+=== core pivot-v1 (V1): after, 2026-10-06 20:28:40, exit 0, contended no
+their processes:
+72422  20.2       04:26 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+74519   0.0       00:01 /bin/zsh -c source /Users/akira338/.claude/shell-snapshots/snapshot-zsh-1791287996215-0wovxl.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || 
+busy playwright chrome:
+74537  54.1 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --disable-field-trial-config --disable-background-networking --disable-background-timer
+74543  18.2 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (GPU).app/
+74544  13.8 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper.app/Conten
+74547  15.3 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Renderer)
+74549 127.7 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Renderer)
+load { 1.88 2.94 2.68 }
+=== core grid-v1-r2 (V1): before, 2026-10-06 20:28:40
+idle
+their processes:
+75331   0.0       01:41 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+75914   0.1       00:02 /Users/akira338/github/ex-grid/.claude/worktrees/live-data-fluxor/spikes/fluxor-grid/FluxorGrid.Server/bin/Debug/net10.0/FluxorGrid.Server
+load { 2.90 3.02 2.79 }
+=== core grid-v1-r2 (V1): after, 2026-10-06 20:32:29, exit 0, contended no
+their processes:
+75331   0.0       01:45 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+75914   0.0       00:06 /Users/akira338/github/ex-grid/.claude/worktrees/live-data-fluxor/spikes/fluxor-grid/FluxorGrid.Server/bin/Debug/net10.0/FluxorGrid.Server
+load { 2.75 2.99 2.78 }
+=== core grid-v0-r2 (V0): before, 2026-10-06 20:32:30
+idle
+their processes:
+76501   0.0       02:13 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+76714   0.0       01:52 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet exec /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.c
+76788   0.0       01:44 /Users/akira338/github/ex-grid/.claude/worktrees/live-data-fluxor/spikes/fluxor-grid/FluxorGrid.Server/bin/Debug/net10.0/FluxorGrid.Server
+load { 4.29 3.81 3.17 }
+=== core grid-v0-r2 (V0): after, 2026-10-06 20:35:33, exit 0, contended no
+their processes:
+76501   0.0       02:16 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/github
+76714   0.0       01:55 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet exec /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.c
+76788   0.0       01:47 /Users/akira338/github/ex-grid/.claude/worktrees/live-data-fluxor/spikes/fluxor-grid/FluxorGrid.Server/bin/Debug/net10.0/FluxorGrid.Server
+load { 4.29 3.81 3.17 }
+=== browser scroll-live-1-v0 (v0): before, 2026-10-06 20:41:04
+idle
+load { 1.61 2.89 3.03 }
+=== browser scroll-live-1-v0 (v0): after, 2026-10-06 20:42:32, exit 0, contended no
+load { 1.49 2.72 2.95 }
+=== browser scroll-live-2-v1 (v1): before, 2026-10-06 20:42:32
+idle
+load { 1.78 2.63 2.91 }
+=== browser scroll-live-2-v1 (v1): after, 2026-10-06 20:44:00, exit 0, contended no
+their processes:
+80855 158.2       00:02 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet exec /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.c
+80859 102.7       00:02 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet exec /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.c
+80863 225.9       00:02 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet exec /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.c
+80880  63.3       00:01 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet exec /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.c
+other busy dotnet:
+80828  40.4 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet test ExGrid.slnx
+80842  34.0 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+80843  37.8 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+80844  37.9 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+80845  42.8 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+80846  35.5 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+80847  43.5 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+80849  32.3 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+80850  34.0 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+80851  49.8 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+80852  32.3 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/dotnet /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/MSBuild.dll /n
+80855 158.2 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet exec /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktr
+80859 102.7 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet exec /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktr
+80863 225.9 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet exec /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktr
+80880  63.3 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet exec /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktr
+load { 1.30 2.39 2.81 }
+=== browser scroll-live-3-v1 (v1): before, 2026-10-06 20:44:00
+idle
+load { 4.14 3.49 3.22 }
+=== browser scroll-live-3-v1 (v1): after, 2026-10-06 20:46:13, exit 0, contended no
+their processes:
+81698   0.0       00:31 node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Browser/node_modules/.bin/playwright
+81699   0.0       00:31 node static-host.mjs /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/wasm/wwwroot 
+81700   1.3       00:30 /nix/store/va22g750kafjvkbwvhbnwqqmj9f9dm8m-nodejs-slim-24.14.1/bin/node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktr
+busy playwright chrome:
+81711  92.9 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Renderer)
+load { 3.07 3.30 3.16 }
+=== browser scroll-live-4-v0 (v0): before, 2026-10-06 20:46:14
+idle
+load { 2.55 3.02 3.06 }
+=== browser scroll-live-4-v0 (v0): after, 2026-10-06 20:48:26, exit 0, contended no
+load { 1.76 2.75 2.96 }
+=== browser scroll-wide-1-v0 (v0): before, 2026-10-06 20:48:27
+idle
+load { 1.79 2.60 2.89 }
+=== browser scroll-wide-1-v0 (v0): after, 2026-10-06 20:50:02, exit 0, contended no
+load { 2.42 2.61 2.88 }
+=== browser scroll-wide-2-v1 (v1): before, 2026-10-06 20:50:02
+idle
+load { 2.43 2.60 2.86 }
+=== browser scroll-wide-2-v1 (v1): after, 2026-10-06 20:51:37, exit 0, contended no
+load { 2.38 2.53 2.81 }
+=== browser scroll-wide-3-v1 (v1): before, 2026-10-06 20:51:38
+idle
+load { 1.84 2.37 2.74 }
+=== browser scroll-wide-3-v1 (v1): after, 2026-10-06 20:53:13, exit 0, contended no
+their processes:
+83937   0.0       00:32 node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Browser/node_modules/.bin/playwright
+83969   0.0       00:27 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/.codex
+83982   0.0       00:24 /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoAp
+84075   4.0       00:01 /nix/store/va22g750kafjvkbwvhbnwqqmj9f9dm8m-nodejs-slim-24.14.1/bin/node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktr
+busy playwright chrome:
+84076  44.9 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --disable-field-trial-config --disable-background-networking --disable-background-timer
+84087   5.9 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (GPU).app/
+84088   5.5 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper.app/Conten
+84104  25.7 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Renderer)
+84112   7.1 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Renderer)
+84113   6.4 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Renderer)
+other busy dotnet:
+83969  33.3 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/.codex-workspaces/
+load { 2.92 2.56 2.79 }
+=== browser scroll-wide-4-v0 (v0): before, 2026-10-06 20:53:14
+idle
+their processes:
+84595   4.5       00:01 node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Browser/node_modules/.bin/playwright
+load { 2.96 2.73 2.83 }
+=== browser scroll-wide-4-v0 (v0): after, 2026-10-06 20:55:34, exit 0, contended no
+their processes:
+84595   0.9       00:50 node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Browser/node_modules/.bin/playwright
+84669  13.0       00:46 /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/ExGri
+84684  17.4       00:42 /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoAp
+84829  29.3       00:09 /nix/store/va22g750kafjvkbwvhbnwqqmj9f9dm8m-nodejs-slim-24.14.1/bin/node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktr
+busy playwright chrome:
+84830  15.2 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --disable-field-trial-config --disable-background-networking --disable-background-timer
+84856  27.7 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Renderer)
+load { 3.27 2.87 2.88 }
+=== browser live-1-v0 (v0): before, 2026-10-06 20:55:35
+idle
+load { 4.75 3.61 3.15 }
+=== browser live-1-v0 (v0): after, 2026-10-06 21:00:14, exit 0, contended no
+load { 4.63 3.63 3.16 }
+=== browser live-2-v1 (v1): before, 2026-10-06 21:00:15
+idle
+load { 3.35 3.43 3.11 }
+=== browser live-2-v1 (v1): after, 2026-10-06 21:01:08, exit 0, contended no
+load { 3.30 3.41 3.11 }
+=== browser live-3-v1 (v1): before, 2026-10-06 21:01:09
+idle
+load { 3.02 3.31 3.09 }
+=== browser live-3-v1 (v1): after, 2026-10-06 21:02:03, exit 0, contended no
+load { 2.93 3.28 3.08 }
+=== browser live-4-v0 (v0): before, 2026-10-06 21:02:03
+idle
+load { 2.49 3.13 3.03 }
+=== browser live-4-v0 (v0): after, 2026-10-06 21:02:57, exit 0, contended no
+load { 2.78 3.17 3.05 }
+=== oom v1-1000x100 (v1): before, 2026-10-06 21:02:57
+idle
+load { 2.17 2.95 2.97 }
+=== oom v1-1000x100 (v1): after, 2026-10-06 21:03:54, exit 0
+=== oom v1-1000x400 (v1): before, 2026-10-06 21:03:54
+idle
+load { 2.21 2.83 2.92 }
+=== oom v1-1000x400 (v1): after, 2026-10-06 21:05:23, exit 0
+=== oom v0-1000x100 (v0): before, 2026-10-06 21:05:23
+idle
+load { 2.85 2.80 2.90 }
+=== oom v0-1000x100 (v0): after, 2026-10-06 21:06:20, exit 0
+=== browser paintcost-1-v0b (v0b): before, 2026-10-06 21:06:36
+idle
+load { 2.15 2.56 2.79 }
+=== browser paintcost-1-v0b (v0b): after, 2026-10-06 21:08:11, exit 0, contended no
+load { 2.14 2.55 2.78 }
+=== browser paintcost-2-v1b (v1b): before, 2026-10-06 21:08:12
+idle
+load { 1.92 2.43 2.73 }
+=== browser paintcost-2-v1b (v1b): after, 2026-10-06 21:09:02, exit 0, contended no
+load { 2.89 2.62 2.79 }
+=== browser paintcost-3-v1b (v1b): before, 2026-10-06 21:09:03
+idle
+load { 1.98 2.41 2.70 }
+=== browser paintcost-3-v1b (v1b): after, 2026-10-06 21:09:53, exit 0, contended no
+load { 1.90 2.39 2.69 }
+=== browser paintcost-4-v0b (v0b): before, 2026-10-06 21:09:54
+idle
+load { 2.62 2.55 2.74 }
+=== browser paintcost-4-v0b (v0b): after, 2026-10-06 21:10:44, exit 0, contended no
+load { 2.65 2.56 2.74 }
+=== core pivot-memory-v0 (V0): before, 2026-10-06 21:10:44
+idle
+load { 2.38 2.50 2.71 }
+=== core pivot-memory-v0 (V0): after, 2026-10-06 21:11:36, exit 0, contended no
+load { 2.51 2.52 2.71 }
+=== core pivot-memory-v1 (V1): before, 2026-10-06 21:11:36
+idle
+load { 2.50 2.51 2.70 }
+=== core pivot-memory-v1 (V1): after, 2026-10-06 21:12:27, exit 0, contended no
+load { 2.38 2.48 2.69 }
+=== browser scroll-live-5-v0 (v0): before, 2026-10-06 21:15:14
+idle
+their processes:
+94060   0.0       00:27 node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Browser/node_modules/.bin/playwright
+94061   0.0       00:27 node static-host.mjs /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/wasm/wwwroot 
+94071   0.1       00:23 /nix/store/va22g750kafjvkbwvhbnwqqmj9f9dm8m-nodejs-slim-24.14.1/bin/node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktr
+load { 4.16 4.38 3.71 }
+=== browser scroll-live-5-v0 (v0): after, 2026-10-06 21:25:43, exit 0, contended no
+their processes:
+94422   0.0       00:08 node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Browser/node_modules/.bin/playwright
+94426   2.7       00:05 /nix/store/va22g750kafjvkbwvhbnwqqmj9f9dm8m-nodejs-slim-24.14.1/bin/node /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktr
+other busy dotnet:
+94423  26.6 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet ExGrid.DemoHost.Server.dll --urls http://localhost:6598
+load { 4.38 4.40 3.75 }
+AFTER-CHECK BUSY: the other agents were working when this run ended
+=== browser scroll-live-6-v1 (v1): before, 2026-10-06 21:25:44
+idle
+their processes:
+94872   0.1       01:38 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/.codex
+load { 3.39 3.80 3.61 }
+=== browser scroll-live-6-v1 (v1): after, 2026-10-06 21:29:27, exit 0, contended no
+their processes:
+94872   0.0       02:20 dotnet /Users/akira338/.nuget/packages/microsoft.aspnetcore.components.webassembly.devserver/10.0.7/build/../tools/blazor-devserver.dll --applicationpath /Users/akira338/.codex
+load { 3.21 3.71 3.58 }
+=== browser scroll-live-7-v1 (v1): before, 2026-10-06 21:29:27
+idle
+load { 3.33 3.68 3.58 }
+=== browser scroll-live-7-v1 (v1): after, 2026-10-06 21:30:55, exit 0, contended no
+load { 2.85 3.49 3.51 }
+=== browser scroll-live-8-v0 (v0): before, 2026-10-06 21:30:55
+idle
+load { 3.09 3.48 3.51 }
+=== browser scroll-live-8-v0 (v0): after, 2026-10-06 21:32:23, exit 0, contended no
+load { 3.21 3.45 3.49 }
+=== browser scroll-wide-5-v0 (v0): before, 2026-10-06 21:32:23
+idle
+load { 3.35 3.44 3.48 }
+=== browser scroll-wide-5-v0 (v0): after, 2026-10-06 21:33:58, exit 0, contended no
+their processes:
+97187  78.4       00:00 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet pack /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.c
+other busy dotnet:
+97187  92.3 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet pack /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktr
+load { 3.19 3.36 3.45 }
+AFTER-CHECK BUSY: the other agents were working when this run ended
+=== browser scroll-wide-6-v1 (v1): before, 2026-10-06 21:33:59
+idle
+load { 3.02 3.34 3.44 }
+=== browser scroll-wide-6-v1 (v1): after, 2026-10-06 21:36:19, exit 0, contended no
+load { 3.08 3.31 3.42 }
+=== browser scroll-wide-7-v1 (v1): before, 2026-10-06 21:36:20
+idle
+load { 2.73 3.19 3.37 }
+=== browser scroll-wide-7-v1 (v1): after, 2026-10-06 21:37:55, exit 0, contended no
+load { 2.70 3.10 3.32 }
+=== browser scroll-wide-8-v0 (v0): before, 2026-10-06 21:37:55
+idle
+load { 3.25 4.57 4.23 }
+=== browser scroll-wide-8-v0 (v0): after, 2026-10-06 21:45:31, exit 0, contended no
+load { 3.51 4.44 4.19 }
+=== core pivot-v1-r2 (V1): before, 2026-10-06 21:45:31
+idle
+load { 3.02 4.17 4.11 }
+=== core pivot-v1-r2 (V1): after, 2026-10-06 21:46:25, exit 0, contended no
+load { 3.09 4.15 4.10 }
+=== core pivot-v0-r2 (V0): before, 2026-10-06 21:46:25
+idle
+load { 3.36 4.05 4.06 }
+=== core pivot-v0-r2 (V0): after, 2026-10-06 21:47:24, exit 0, contended no
+load { 3.22 4.00 4.05 }
+=== core pivot-v0-r3-gc (V0): before, 2026-10-06 21:49:10
+idle
+load { 3.36 3.86 3.99 }
+=== core pivot-v0-r3-gc (V0): after, 2026-10-06 21:50:08, exit 0, contended no
+load { 3.07 3.79 3.96 }
+=== core pivot-v1-r3-gc (V1): before, 2026-10-06 21:50:08
+idle
+load { 3.10 3.69 3.91 }
+=== core pivot-v1-r3-gc (V1): after, 2026-10-06 21:51:01, exit 0, contended no
+load { 3.16 3.68 3.91 }
+=== core gc-full-1-v0 (V0): before, 2026-10-06 22:44:13
+idle
+load { 2.96 3.20 2.71 }
+=== core gc-full-1-v0 (V0): after, 2026-10-06 22:45:03, exit 0, contended no
+load { 3.04 3.21 2.71 }
+=== core gc-full-2-v1 (V1): before, 2026-10-06 22:45:03
+idle
+load { 2.83 3.14 2.71 }
+=== core gc-full-2-v1 (V1): after, 2026-10-06 22:45:53, exit 0, contended no
+load { 3.08 3.19 2.73 }
+=== core gc-full-3-v1 (V1): before, 2026-10-06 22:45:53
+idle
+load { 2.74 3.10 2.72 }
+=== core gc-full-3-v1 (V1): after, 2026-10-06 22:46:42, exit 0, contended no
+load { 2.76 3.10 2.72 }
+=== core gc-full-4-v0 (V0): before, 2026-10-06 22:46:42
+idle
+load { 3.53 3.23 2.79 }
+=== core gc-full-4-v0 (V0): after, 2026-10-06 22:47:33, exit 0, contended no
+load { 3.57 3.24 2.79 }
+=== core gc-compact-1-v0 (V0): before, 2026-10-06 22:47:33
+idle
+load { 3.22 3.19 2.80 }
+=== core gc-compact-1-v0 (V0): after, 2026-10-06 22:48:25, exit 0, contended no
+load { 3.19 3.18 2.80 }
+=== core gc-compact-2-v1 (V1): before, 2026-10-06 22:48:25
+idle
+load { 3.38 3.23 2.84 }
+=== core gc-compact-2-v1 (V1): after, 2026-10-06 22:49:15, exit 0, contended no
+load { 3.19 3.19 2.83 }
+=== core gc-retainvm-1-v0 (V0): before, 2026-10-06 22:49:15
+idle
+load { 4.18 3.42 2.93 }
+=== core gc-retainvm-1-v0 (V0): after, 2026-10-06 22:50:06, exit 0, contended no
+load { 4.09 3.42 2.93 }
+=== core gc-retainvm-2-v1 (V1): before, 2026-10-06 22:50:06
+idle
+load { 3.37 3.31 2.91 }
+=== core gc-retainvm-2-v1 (V1): after, 2026-10-06 22:50:55, exit 0, contended no
+load { 3.50 3.34 2.92 }
+=== core steady-1-v0 (V0): before, 2026-10-06 22:50:55
+idle
+load { 3.36 3.32 2.94 }
+=== core steady-1-v0 (V0): after, 2026-10-06 22:51:47, exit 0, contended no
+load { 3.33 3.31 2.94 }
+=== core steady-2-v1 (V1): before, 2026-10-06 22:51:47
+idle
+load { 2.74 3.17 2.90 }
+=== core steady-2-v1 (V1): after, 2026-10-06 22:52:40, exit 0, contended no
+load { 2.78 3.17 2.90 }
+=== browser pivot-redraws-1-v0 (v0): before, 2026-10-06 22:52:41
+idle
+load { 2.60 3.08 2.88 }
+=== browser pivot-redraws-1-v0 (v0): after, 2026-10-06 22:53:44, exit 0, contended no
+load { 3.02 3.15 2.91 }
+=== browser pivot-redraws-2-v1 (v1): before, 2026-10-06 22:53:44
+idle
+load { 4.84 3.56 3.07 }
+=== browser pivot-redraws-2-v1 (v1): after, 2026-10-06 22:54:46, exit 0, contended no
+load { 4.54 3.57 3.09 }
+=== browser pivot-redraws-3-v1 (v1): before, 2026-10-06 22:54:47
+idle
+load { 4.06 3.56 3.10 }
+=== browser pivot-redraws-3-v1 (v1): after, 2026-10-06 22:55:49, exit 0, contended no
+load { 4.09 3.59 3.13 }
+=== browser pivot-redraws-4-v0 (v0): before, 2026-10-06 22:55:50
+idle
+load { 3.25 3.44 3.09 }
+=== browser pivot-redraws-4-v0 (v0): after, 2026-10-06 22:56:52, exit 0, contended no
+load { 2.99 3.37 3.07 }
+=== oom v0-1000x100-15 (v0): before, 2026-10-06 22:56:52
+idle
+load { 2.57 3.20 3.03 }
+=== oom v0-1000x100-15 (v0): after, 2026-10-06 22:57:52, exit 0
+=== oom v1-1000x100-15 (v1): before, 2026-10-06 22:57:52
+idle
+load { 2.88 3.14 3.01 }
+=== oom v1-1000x100-15 (v1): after, 2026-10-06 22:58:51, exit 0
+=== core steady150-1-v0 (V0): before, 2026-10-06 22:59:23
+idle
+load { 4.11 3.53 3.18 }
+=== core steady150-1-v0 (V0): after, 2026-10-06 23:00:24, exit 0, contended no
+load { 4.10 3.56 3.19 }
+=== core steady150-2-v1 (V1): before, 2026-10-06 23:00:25
+idle
+load { 6.09 4.32 3.50 }
+=== core steady150-2-v1 (V1): after, 2026-10-06 23:01:28, exit 0, contended no
+load { 5.72 4.32 3.52 }

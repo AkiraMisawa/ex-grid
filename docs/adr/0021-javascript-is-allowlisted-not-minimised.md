@@ -544,7 +544,7 @@ reads.
   `FocusAsync`**, through Blazor, as it would without the grid. No script of the grid's is there to
   read where the keyboard is.
 
-*(2026-10-05, [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).)* **A keyboard gesture now carries the render it was taken
+*(2026-10-05, [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md).)* **A keyboard gesture now carries the render it was taken
 against, as a press on the rows does.** The capture-phase key listener and the clipboard read — the
 first and third entries — read what the painting render wrote, so that a write is judged against
 what the user saw. It is not a new use, and nothing is measured.
@@ -555,3 +555,6 @@ has, each told before Blazor dispatches what it carries: a press on an Action of
 entry), which opens the editor. No listener was added, and none reads layout. The action press
 also names the row, column and action of the cell it was on, read from the ids the render wrote, so
 the core can answer a press whose click Blazor will not deliver (ADR-0142).
+*(2026-10-07, ADR-0142 rewritten.)* A write is no longer judged against what the user saw: it lands
+as entered. The readings stay, and serve where a gesture lands and which order it was aimed under. No
+listener is added or removed, and nothing is measured.
