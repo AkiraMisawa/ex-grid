@@ -56,3 +56,6 @@ left the figures standing when a row was added above a Selection that neither Wi
 both, with a row added after the Selection and with a row count moving while the Selection is out of
 sight. The criterion is SM-15, not SM-14: the Definition of Done already had an SM-14
 (`ShowSelectionSummary`), and the orchestrator renumbers it there.
+
+2026-10-07, layer 3 again after the orchestrator's decisions (dc14cd63): the same four specs pass
+locally on WebAssembly under Chrome, headless, 20 of 20, with a clean console.

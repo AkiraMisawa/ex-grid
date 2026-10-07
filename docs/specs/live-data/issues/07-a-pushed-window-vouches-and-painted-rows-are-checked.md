@@ -71,3 +71,6 @@ take-in of a pushed keyed Window at 45.8–46.3 ms unvouched and 0.011–0.015 m
 re-records the browser figure. The map of painted keys is now also cleared when a new Window is taken in,
 so no Row Key of a row outside the current Window is held, even when the new Window paints no row
 (ADR-0160; a layer-2 test with weak references).
+
+2026-10-07, layer 3 again after the orchestrator's decisions (dc14cd63): the same four specs pass
+locally on WebAssembly under Chrome, headless, 20 of 20, with a clean console.
