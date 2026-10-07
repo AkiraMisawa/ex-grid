@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/06/2026 - 11:09:50 |
+| Generated on: | 10/07/2026 - 18:39:57 |
 | Parser: | MultiReport (12x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 740 |
-| Files: | 412 |
-| **Line coverage:** | 94.7% (50372 of 53185) |
-| Covered lines: | 50372 |
-| Uncovered lines: | 2813 |
-| Coverable lines: | 53185 |
-| Total lines: | 87430 |
-| **Branch coverage:** | 87.7% (28096 of 32023) |
-| Covered branches: | 28096 |
-| Total branches: | 32023 |
+| Classes: | 741 |
+| Files: | 413 |
+| **Line coverage:** | 94.7% (50497 of 53313) |
+| Covered lines: | 50497 |
+| Uncovered lines: | 2816 |
+| Coverable lines: | 53313 |
+| Total lines: | 87662 |
+| **Branch coverage:** | 87.7% (28165 of 32099) |
+| Covered branches: | 28165 |
+| Total branches: | 32099 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -136,6 +136,7 @@
 |ExGrid.Components.ColumnStyles|100%|100%|
 |ExGrid.Components.ExGrid.ActionPressPending<TRow>|100%||
 |ExGrid.Components.ExGrid.ConsumerPopover<TRow>|100%||
+|ExGrid.Components.ExGrid.CopiedRange<TRow>|100%||
 |ExGrid.Components.ExGrid.ExtentReveal<TRow>|100%||
 |ExGrid.Components.ExGrid.HandedOnPress<TRow>|100%||
 |ExGrid.Components.ExGrid.HeaderPress<TRow>|100%||
@@ -157,7 +158,7 @@
 |ExGrid.Components.RowAppearance|100%|78.5%|
 |ExGrid.Components.RowClasses|96.5%|92.8%|
 |ExGrid.Components.ScrollOffset|100%||
-|ExGrid.Components.SelectionStyles|100%|98.3%|
+|ExGrid.Components.SelectionStyles|100%|97%|
 |ExGrid.Components.SelectionStyles.OutlineCover|100%||
 |ExGrid.Components.Share|100%|100%|
 |ExGrid.Components.SummaryFiguresMenu|78.5%|91.6%|
