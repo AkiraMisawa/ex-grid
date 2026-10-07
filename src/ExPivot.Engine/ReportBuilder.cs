@@ -122,7 +122,7 @@ internal sealed class ReportBuilder
     public PivotReport Build() => Slicer.Run(BuildAsync(Slicer.Unsliced));
 
     /// <summary>The report, laid out in slices (PV-40): the value columns and their spans, then the
-    /// rows, each tree walked a step at a time, and the rows handed to the report.</summary>
+    /// rows, each tree walked a step at a time.</summary>
     public async ValueTask<PivotReport> BuildAsync(Slicer slicer)
     {
         var columns = new List<PivotReportColumn>();
@@ -134,9 +134,7 @@ internal sealed class ReportBuilder
             await EmitRowsAsync(rows, slicer).ConfigureAwait(false);
         }
         var tiers = ColumnLevels == 0 ? 0 : _valuesOnColumns ? ColumnLevels : ColumnLevels - 1;
-        var report = new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, rows);
-        await slicer.ForAsync(rows.Count, report.Attach).ConfigureAwait(false);
-        return report;
+        return new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, rows);
     }
 
     private string Word(string id) => _options.Word(id);

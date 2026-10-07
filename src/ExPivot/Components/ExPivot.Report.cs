@@ -393,12 +393,14 @@ public partial class ExPivot
         return _labelValues[column];
     }
 
+    // A value cell is asked of the report on screen (ADR-0161): a row holds no value, and may be
+    // shared by every report it did not change in.
     private Func<PivotReportRow, object?> ValueAccessor(int column)
     {
         while (_valueAccessors.Count <= column)
         {
             var index = _valueAccessors.Count;
-            _valueAccessors.Add(row => row.ValueAt(index));
+            _valueAccessors.Add(row => _report is { } report && index < report.ValueColumns.Count ? report.ValueAt(row, index) : null);
         }
         return _valueAccessors[column];
     }
@@ -504,25 +506,25 @@ public partial class ExPivot
             builder.AddComponentParameter(20, nameof(ExGrid<PivotReportRow>.Chrome), chrome);
         if (SelectionChanged.HasDelegate)
             builder.AddComponentParameter(21, nameof(ExGrid<PivotReportRow>.SelectionChanged), SelectionChanged);
-        // The Change Highlight (ADR-0067/0068): ExPivot says when a cell's painted value changed
-        // with the data, through a delegate that is new for each data version and null while
-        // nothing can be marked; the grid marks the cell for the duration, on ExPivot's clock.
+        // The Change Highlight (ADR-0067/0068/0161): ExPivot says when a cell's painted value changed
+        // with the data, through one delegate for as long as a history lasts — null while the
+        // duration is zero — so a row renders because its instance is new; the grid marks the cell
+        // for the duration, on ExPivot's clock.
         builder.AddComponentParameter(22, nameof(ExGrid<PivotReportRow>.CellChangedAt), _cellChangedAt);
         builder.AddComponentParameter(23, nameof(ExGrid<PivotReportRow>.ChangeHighlightDuration), ChangeHighlightDuration);
         builder.AddComponentParameter(24, nameof(ExGrid<PivotReportRow>.Clock), _time);
         builder.AddComponentParameter(25, nameof(ExGrid<PivotReportRow>.RowKey), ReportRowKey);
         // The report vouches that it holds no Row Key twice (ADR-0141, LV-10): the engine cannot build
         // one that does, because an axis node keeps its children by Item (AxisNode.Child). The grid
-        // then checks only the rows it paints, never the whole report on every redraw. Its sequence
-        // number follows the last one's, so the parameters around it keep theirs.
-        builder.AddComponentParameter(32, nameof(ExGrid<PivotReportRow>.VouchesDistinctRows), true);
-        builder.AddComponentParameter(26, nameof(ExGrid<PivotReportRow>.OnSummarize), _summarize);
-        builder.AddComponentParameter(27, nameof(ExGrid<PivotReportRow>.SummaryFigures), _summaryFigures.Shown);
-        builder.AddComponentParameter(28, nameof(ExGrid<PivotReportRow>.SummaryFiguresChanged), _summaryFiguresChanged);
-        builder.AddComponentParameter(29, nameof(ExGrid<PivotReportRow>.ShowSelectionSummary), _showSelectionSummary);
+        // then checks only the rows it paints, never the whole report on every redraw.
+        builder.AddComponentParameter(26, nameof(ExGrid<PivotReportRow>.VouchesDistinctRows), true);
+        builder.AddComponentParameter(27, nameof(ExGrid<PivotReportRow>.OnSummarize), _summarize);
+        builder.AddComponentParameter(28, nameof(ExGrid<PivotReportRow>.SummaryFigures), _summaryFigures.Shown);
+        builder.AddComponentParameter(29, nameof(ExGrid<PivotReportRow>.SummaryFiguresChanged), _summaryFiguresChanged);
+        builder.AddComponentParameter(30, nameof(ExGrid<PivotReportRow>.ShowSelectionSummary), _showSelectionSummary);
         if (OnSelectionSummaryChanged.HasDelegate)
-            builder.AddComponentParameter(30, nameof(ExGrid<PivotReportRow>.OnSelectionSummaryChanged), OnSelectionSummaryChanged);
-        builder.AddComponentReferenceCapture(31, grid => _grid = (ExGrid<PivotReportRow>)grid);
+            builder.AddComponentParameter(31, nameof(ExGrid<PivotReportRow>.OnSelectionSummaryChanged), OnSelectionSummaryChanged);
+        builder.AddComponentReferenceCapture(32, grid => _grid = (ExGrid<PivotReportRow>)grid);
         builder.CloseComponent();
     }
 
@@ -578,7 +580,7 @@ public partial class ExPivot
                 await ToggleAsync(toggle, cell.Column);
             return;
         }
-        await ShowDetailsAsync(row, cell.Column - labels);
+        await ShowDetailsOfAsync(report, row, cell.Column - labels);
     }
 
     private IReadOnlyList<PivotDetailItem> Items(PivotReport report, IReadOnlyList<(string Field, PivotItemKey Item)> path)
@@ -618,10 +620,11 @@ public partial class ExPivot
 
     private IEnumerable<GridCommand> ContextCommandsFor(ContextMenuContext<PivotReportRow> context)
     {
-        if (_report is not { } report || !ReferenceEquals(context.Row.Report, report))
+        // The commands act on the report on screen's row that stands for the one clicked (ADR-0161):
+        // compared by key, as a row may be shared by several reports.
+        if (_report is not { } report || report.RowFor(context.Row) is not { } row)
             return [];
         var layout = report.Layout;
-        var row = context.Row;
         var labelColumn = report.LabelColumns.ToList().FindIndex(c => c.Name == context.Column);
         var valueColumn = labelColumn >= 0 ? -1 : report.ValueColumns.ToList().FindIndex(c => c.Name == context.Column);
         var commands = new List<GridCommand>();
@@ -664,8 +667,8 @@ public partial class ExPivot
             }
             // Show Details is always offered: the tab, the dialog or the Consumer takes the
             // records (ADR-0059). An empty cell has none to show.
-            commands.Add(new GridCommand(PivotCommandIds.ShowDetails, row.ValueAt(valueColumn) is not null,
-                () => ShowDetailsAsync(row, valueColumn)));
+            commands.Add(new GridCommand(PivotCommandIds.ShowDetails, report.ValueAt(row, valueColumn) is not null,
+                () => ShowDetailsAsync(row, context.Column)));
             if (vf >= 0)
             {
                 // The panel opens in the pane, under the Value Field's entry: offered while the

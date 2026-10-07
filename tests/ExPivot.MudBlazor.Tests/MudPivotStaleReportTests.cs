@@ -178,4 +178,32 @@ public class MudPivotStaleReportTests : MudPivotTestContext
         mud.WaitForAssertion(() => Assert.False(mud.Instance.IsStale));
         Assert.Empty(mud.FindAll(".mud-ex-pivot-stale-notice"));
     }
+
+    /// <summary>A keyed sale, for Change Batches.</summary>
+    public sealed record Trade(long Id, string Region, decimal Amount);
+
+    [Theory] // ADR-0161/0067, ADR-0062 (PV-47): a redraw that runs out of memory is a Stale Report under MudBlazor too — the warning MudAlert says memory ran out, in ExPivot's words
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_redraw_out_of_memory_is_a_stale_report_under_mudblazor(bool japanese)
+    {
+        var starved = false;
+        // The engine asks a field's Order Key of each Item as it lays the report out.
+        var fields = PivotFields.Of<Trade>()
+            .Key("Id", t => t.Id)
+            .Text("Region", t => t.Region, orderKey: region => starved ? throw new OutOfMemoryException() : region)
+            .Number("Amount", t => t.Amount);
+        var source = PivotSource.From([new Trade(1, "East", 100m)], fields);
+        var mud = RenderPivot(RegionAmount, source: source, label: japanese ? PivotWords.Japanese : null);
+        starved = true;
+
+        await mud.InvokeAsync(() => source.Apply(fields.Batch(added: [new Trade(2, "West", 1m)])));
+
+        Assert.True(mud.Instance.IsStale);
+        Assert.Equal(Severity.Warning, mud.FindComponent<MudAlert>().Instance.Severity);
+        var reason = japanese ? PivotWords.Japanese("stale-out-of-memory") : "memory ran out while the newest data was laid out.";
+        Assert.EndsWith(": " + reason, mud.Find(".ex-pivot-stale[role=status] .mud-ex-pivot-stale-message").TextContent);
+        Assert.Equal(["East | 100", japanese ? "総計 | 100" : "Grand Total | 100"], RowTexts(mud));
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
 }

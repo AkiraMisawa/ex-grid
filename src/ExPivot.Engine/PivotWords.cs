@@ -276,6 +276,7 @@ public static class PivotWords
         ["stale-too-many-columns"] = "the newest data needs more than {0} columns.",
         ["stale-source-failed"] = "the source could not answer: {0}",
         ["stale-source-refused"] = "the source refused to answer: {0}",
+        ["stale-out-of-memory"] = "memory ran out while the newest data was laid out.",
         ["retry"] = "Retry",
     };
 
@@ -433,6 +434,7 @@ public static class PivotWords
         ["stale-too-many-columns"] = "最新のデータには {0} を超える列が必要です。",
         ["stale-source-failed"] = "ソースから応答を得られませんでした: {0}",
         ["stale-source-refused"] = "ソースが応答を拒否しました: {0}",
+        ["stale-out-of-memory"] = "最新のデータを配置する途中でメモリが不足しました。",
         ["retry"] = "再試行",
 
         // ExGrid's commands in the report's Context Menu (ExGrid.Chrome.GridCommandIds).

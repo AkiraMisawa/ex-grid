@@ -421,7 +421,7 @@ public class LiveDataTests : PivotTestContext
         await cut.InvokeAsync(layoutQuestion.AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 180 | 18", RowTexts(cut)[0]));
         Assert.Single(told);
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(ChangeHighlightTests.MarkedTexts(cut));
 
         // The change is asked for after it: the whole answer, for the user's layout.
         cut.WaitForAssertion(() => Assert.Equal(3, source.Questions.Count));
@@ -450,7 +450,7 @@ public class LiveDataTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal("East | 181 | 18", RowTexts(cut)[0]));
         Assert.Single(told);
         // A new layout marks nothing, even with new data in the same redraw.
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(ChangeHighlightTests.MarkedTexts(cut));
 
         await cut.InvokeAsync(live.AnswerAsync);
         Clock.Advance(TimeSpan.FromSeconds(1));

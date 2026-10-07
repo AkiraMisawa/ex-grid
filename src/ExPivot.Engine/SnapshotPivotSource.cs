@@ -28,6 +28,13 @@ namespace ExPivot.Engine;
 /// (<see cref="PivotSourceRefusalKind.SourceVersionNotHeld"/>): holding every version would hold
 /// every Snapshot a live feed ever made.
 /// </para>
+/// <para>
+/// <b>Changed leaves</b> (ADR-0161): a question that names the version of the last answer the
+/// source gave it (<see cref="PivotQuery.ChangedSince"/>) is answered with the leaves its fold
+/// touched since (<see cref="PivotAnswer.ChangedLeaves"/>); when the source could not fold — a
+/// compaction, a batch past the cap — it says the leaves were made afresh. A question naming any
+/// other version is answered without them.
+/// </para>
 /// </summary>
 public sealed class SnapshotPivotSource : PivotSource
 {
@@ -44,6 +51,8 @@ public sealed class SnapshotPivotSource : PivotSource
     private Snapshot _snapshot;
     private AggregationPass? _held;
     private PivotAnswer? _heldAnswer;
+    // The question the source last answered, and the version it answered under.
+    private (PivotQuery Query, string Version)? _lastAnswered;
 
     internal SnapshotPivotSource(Snapshot snapshot, IReadOnlyList<PivotField>? fields, PivotSlicing slicing)
     {
@@ -107,8 +116,11 @@ public sealed class SnapshotPivotSource : PivotSource
             return PivotAnswer.Refused(refusal);
         Snapshot snapshot;
         AggregationPass? assembling = null;
+        bool answeredSince;
         lock (_gate)
         {
+            answeredSince = query.ChangedSince is { } since && _lastAnswered is { } last
+                && last.Query.Equals(query) && string.Equals(last.Version, since, StringComparison.Ordinal);
             snapshot = _snapshot;
             if (!HeldUpToDate())
                 _held = null;
@@ -123,11 +135,15 @@ public sealed class SnapshotPivotSource : PivotSource
         }
         var slicer = Slicer.Of(_slicing, cancellationToken);
         if (assembling is not null)
-            return await AssembleHeldAsync(assembling, snapshot, slicer).ConfigureAwait(false);
+            return await AssembleHeldAsync(assembling, snapshot, slicer, query).ConfigureAwait(false);
         var pass = new AggregationPass(snapshot, _bindings, query, keepRows: snapshot.RecordKey is not null, _slicing.RowsRead);
         await slicer.PassAsync(pass.RowCount, pass.Step).ConfigureAwait(false);
         await pass.CompleteAsync(slicer).ConfigureAwait(false);
         var answer = await pass.AnswerAsync(VersionOf(snapshot), slicer).ConfigureAwait(false);
+        // Read afresh, the leaves were made afresh: the source could not fold what came since the
+        // version the question names, which it answered (ADR-0161).
+        if (answeredSince && !answer.IsRefused)
+            answer = answer.WithChangedLeaves(PivotLeafChanges.Remade(query.ChangedSince!));
         lock (_gate)
         {
             if (pass.Refusal is null && ReferenceEquals(_snapshot, snapshot))
@@ -136,7 +152,10 @@ public sealed class SnapshotPivotSource : PivotSource
                 _heldAnswer = answer;
             }
             if (pass.Refusal is null)
+            {
                 Remember(snapshot);
+                _lastAnswered = (query, answer.SourceVersion);
+            }
         }
         return answer;
     }
@@ -144,12 +163,12 @@ public sealed class SnapshotPivotSource : PivotSource
     // An answer assembled from the pass held for the current question, in slices (PV-40). Nothing
     // changes the pass meanwhile: a batch applied now waits (Apply), and is folded in once no
     // assembly reads the pass (ADR-0067).
-    private async ValueTask<PivotAnswer> AssembleHeldAsync(AggregationPass held, Snapshot snapshot, Slicer slicer)
+    private async ValueTask<PivotAnswer> AssembleHeldAsync(AggregationPass held, Snapshot snapshot, Slicer slicer, PivotQuery query)
     {
         PivotAnswer? answer = null;
         try
         {
-            answer = await held.AnswerAsync(VersionOf(snapshot), slicer).ConfigureAwait(false);
+            answer = await held.AnswerAsync(VersionOf(snapshot), slicer, query.ChangedSince).ConfigureAwait(false);
             return answer;
         }
         finally
@@ -157,6 +176,8 @@ public sealed class SnapshotPivotSource : PivotSource
             lock (_gate)
             {
                 held.Assembling--;
+                if (answer is { IsRefused: false })
+                    _lastAnswered = (query, answer.SourceVersion);
                 // Kept for the next asking, unless the source has moved on meanwhile.
                 if (answer is not null && ReferenceEquals(_held, held) && ReferenceEquals(_snapshot, snapshot))
                     _heldAnswer = answer;
