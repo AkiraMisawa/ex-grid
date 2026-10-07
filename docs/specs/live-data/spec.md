@@ -1,7 +1,7 @@
 # Live data in ExGrid and ExPivot
 
-Status: in progress — the first version is built and merged (#64). Tickets 01 to 03 were measured and
-decided on `claude/live-data-next-cc` (2026-10-07), and tickets 04 to 13 build what was decided
+Status: built on `claude/live-data-next-cc` (2026-10-07) — the first version merged as #64; tickets 01 to
+03 measured and decided; tickets 04 to 13 built, reviewed and measured, not yet merged to `main`
 
 Decided with the user in the grilling of 2026-10-05, and in the decisions D1 to D10, P1 and P2 of
 2026-10-06:

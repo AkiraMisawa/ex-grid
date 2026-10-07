@@ -863,12 +863,24 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
 - **Writes refused when what the user saw changed** (ADR-0142 as decided on 2026-10-05): the Cell
   Editor's commit, Actions, paste, fills and clears, each judged against the render it was taken
   against, keyboard gestures included; the user's own writes count as seen.
-  - *(2026-10-07: decided, not yet built.)* ADR-0142 was rewritten: a write now lands as the user
-    entered it, and only a change under the open editor is told, by an Overwrite Notice. ADR-0160 has the
-    grid hold no row beyond its Window. ADR-0161 has ExPivot make its next report from the last. ADR-0141
-    lets a pushed Window be vouched for, and ADR-0130 narrows the Selection Summary's walk. Until tickets
-    04 to 13 of `docs/specs/live-data` are built, the code above follows the rule of 2026-10-05, and §32's
-    rewritten criteria stand failing, as an accepted, unbuilt decision does.
+  - *(2026-10-07: replaced, and built on `claude/live-data-next-cc`, tickets 04 to 13 of
+    `docs/specs/live-data`.)* ADR-0142 was rewritten: a write lands as the user entered it, on the row it
+    was aimed at; only a change under the open editor is told, by an Overwrite Notice; an order move is
+    refused as `OrderMoved`; the editor outlives an order move and follows its row (ADR-0011's note).
+    ADR-0160: the grid holds no row beyond its Window, checked by weak references. ADR-0161: ExPivot makes
+    its next cube and report from the last, its rows hold no value and no report, its Change Highlight
+    keeps times, and a redraw out of memory leaves the report stale. ADR-0141: a pushed Window may vouch
+    (`VouchesDistinctRows`), and the painted rows are checked. ADR-0130: the Selection Summary walks only
+    while figures stand, over the Selection's positions.
+  - **Measured before and after**
+    ([`2026-10-07-macos-live-update-costs-after`](../verification/2026-10-07-macos-live-update-costs-after/README.md)):
+    - ExPivot's live redraw at 401,001 report rows went from 268.5 ms to 19.0 ms on CoreCLR, and from one
+      redraw at 2,338 ms followed by running out of memory to 532 ms in the browser.
+    - The heap stays flat.
+    - The collector's pause per redraw in steady state fell from 28.6 ms to 0.57 ms.
+    - **Slower:** a redraw laid out afresh (one in 64, at the source's compaction) costs more than every
+      redraw did before, 394.5 ms against 268.5 at 401,001 rows on CoreCLR. Most of it is comparing every
+      row for the Change Highlight, as ADR-0161 chose.
 
 **Found by building it, and fixed.**
 
