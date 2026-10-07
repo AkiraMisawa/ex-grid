@@ -511,6 +511,10 @@ public partial class ExPivot
         builder.AddComponentParameter(23, nameof(ExGrid<PivotReportRow>.ChangeHighlightDuration), ChangeHighlightDuration);
         builder.AddComponentParameter(24, nameof(ExGrid<PivotReportRow>.Clock), _time);
         builder.AddComponentParameter(25, nameof(ExGrid<PivotReportRow>.RowKey), ReportRowKey);
+        // The report vouches that it holds no Row Key twice (ADR-0141, LV-10): the engine cannot build
+        // one that does, because an axis node keeps its children by Item (AxisNode.Child). The grid
+        // then checks only the rows it paints, never the whole report on every redraw.
+        builder.AddComponentParameter(32, nameof(ExGrid<PivotReportRow>.VouchesDistinctRows), true);
         builder.AddComponentParameter(26, nameof(ExGrid<PivotReportRow>.OnSummarize), _summarize);
         builder.AddComponentParameter(27, nameof(ExGrid<PivotReportRow>.SummaryFigures), _summaryFigures.Shown);
         builder.AddComponentParameter(28, nameof(ExGrid<PivotReportRow>.SummaryFiguresChanged), _summaryFiguresChanged);

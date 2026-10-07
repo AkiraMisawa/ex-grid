@@ -440,6 +440,7 @@
                        same instances render after render. *@
                     var highlightNow = HighlightNow();
                     BeginAppearances();
+                    BeginPaintedKeys();
                     @for (var row = visible.Start; row < visible.Start + visible.Count; row++)
                     {
                         var slice = row - _windowStart;
@@ -449,7 +450,7 @@
                             @* A Placeholder is handed no slice at all, so a fling that keeps
                                moving sideways does not churn the rows through renders whose
                                output is the same pinned cells every time. *@
-                            <ExGridRow @key="RowComponentKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
+                            <ExGridRow @key="RowComponentKey(data, slice)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
                                        CellState="CellState" CellType="CellType" CellAlign="CellAlign" PaintedText="PaintedText" RowKind="RowKind"
@@ -2403,7 +2404,9 @@
          // The push mode's answer to a Find: beside a Source, two answers to one question (ADR-0055).
          nameof(OnFind),
          // The push mode's answer to a Selection Summary, likewise (ADR-0130).
-         nameof(OnSummarize)];
+         nameof(OnSummarize),
+         // A pushed Window's vouch: a Source vouches for its own Windows (ADR-0141).
+         nameof(VouchesDistinctRows)];
 
     /// <summary>
     /// Blazor's parameter entry point, overridden to refuse by name a Source passed

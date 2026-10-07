@@ -157,4 +157,13 @@ public class ReportRowKeyTests : PivotTestContext
         }
         Assert.Equal(first.Rows.Count, first.Rows.Select(row => key(row)).Distinct().Count());
     }
+
+    [Fact] // ADR-0141 / LV-10: ExPivot vouches that its report holds no Row Key twice, so the grid does not walk a redrawn report whole
+    public void The_report_grid_is_vouched_for()
+    {
+        var cut = RenderPivot(PnlByRegionAndDesk, source: PivotSource.From(Trades(), TradeFields, Whole));
+
+        Assert.NotNull(Grid(cut).Instance.RowKey);
+        Assert.True(Grid(cut).Instance.VouchesDistinctRows);
+    }
 }

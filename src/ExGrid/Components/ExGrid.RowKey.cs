@@ -12,7 +12,8 @@ namespace ExGrid.Components;
 // between Windows; the key pairs one render's rows with the next one's, and nothing else.
 //
 // Every new Window is taken in here: checked for a row that appears twice (ADR-0003), or a key
-// that does (ADR-0140, LV-2) — unless its source vouches for it (ADR-0141, LV-10).
+// that does (ADR-0140, LV-2) — unless its source, or the Consumer that pushes it, vouches for it
+// (ADR-0141, LV-10). The keys of the rows painted are checked on every render, vouched for or not.
 public partial class ExGrid<TRow>
 {
     /// <summary>
@@ -34,6 +35,23 @@ public partial class ExGrid<TRow>
     /// values, and is handed the new version.</para>
     /// </summary>
     [Parameter] public Func<TRow, object>? RowKey { get; set; }
+
+    /// <summary>
+    /// A Consumer that pushes its Window vouches that it holds no <see cref="RowKey"/> twice
+    /// (ADR-0141): a promise kept by construction — a report whose rows cannot repeat what they
+    /// stand for — or by the Consumer's own refusal of a repeated key. The grid then does not walk
+    /// each new Window for a repeat, a pass over every row that costs about 40 ms at a million rows
+    /// on CoreCLR (ADR-0141). It still checks the keys of the rows it paints, on every render, so a
+    /// repeat that reaches the screen is refused by name.
+    ///
+    /// <para>Meaningful only with a <see cref="RowKey"/>: without one there is no key to vouch for,
+    /// and the grid checks for a repeated row instance itself. A bound <see cref="Source"/> vouches
+    /// for its own Windows (<see cref="IGridSource{TRow}.VouchesDistinctRows"/>), and passing this
+    /// beside one is refused by name. A broken promise is the Consumer's off the screen: a repeated
+    /// key that is never painted is not seen, and a write aimed at a row by key finds the first row
+    /// under it.</para>
+    /// </summary>
+    [Parameter] public bool VouchesDistinctRows { get; set; }
 
     // One key object per row instance, so @key is reference identity even when TRow
     // overrides Equals (a record row model): value-equal rows are still different rows
@@ -65,9 +83,31 @@ public partial class ExGrid<TRow>
     //   is ADR-0142's to judge, by what that render painted.
     // RowKeyTests holds a test for each.
 
-    /// <summary>A painted row's component key: its Row Key while one is in force, else an object
-    /// that stands for its instance (ADR-0140/0003).</summary>
-    private object RowComponentKey(TRow row) => _rowKey is { } key ? key(row) : RowIdentityKeys.GetValue(row, static _ => new object());
+    // The Row Keys painted so far in this render, each with its place in the Window. One map for
+    // the grid's life, cleared as each render begins its rows, so a render allocates nothing for it.
+    private readonly Dictionary<object, int> _paintedKeys = [];
+
+    /// <summary>Begins a render's rows: none of their keys painted yet.</summary>
+    private void BeginPaintedKeys() => _paintedKeys.Clear();
+
+    /// <summary>
+    /// A painted row's component key: its Row Key while one is in force, else an object that stands
+    /// for its instance (ADR-0140/0003). A Row Key is checked against the keys painted before it in
+    /// this render, vouched for or not, so a repeat that reaches the screen is refused by name before
+    /// Blazor's own exception for clashing keys (ADR-0141, 2026-10-07; LV-10). The cost follows the
+    /// painted rows, a few dozen, not the Window.
+    /// </summary>
+    private object RowComponentKey(TRow row, int index)
+    {
+        if (_rowKey is not { } rowKey)
+            return RowIdentityKeys.GetValue(row, static _ => new object());
+        if (row is null)
+            throw NullRow(index);
+        var key = rowKey(row) ?? throw NullKey(index, _windowStart);
+        if (!_paintedKeys.TryAdd(key, index))
+            throw RepeatedKey(key, _paintedKeys[key], index, _windowStart);
+        return key;
+    }
 
     /// <summary>
     /// A Placeholder's component key: its position, in a type of the grid's own. A bare boxed index
@@ -81,21 +121,23 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// Takes in the Window in hand, under the Row Key in force: checked whole when it is new or the
-    /// key moved, and not at all when its source vouches for it (ADR-0141, LV-10). Refused up front
-    /// rather than failing strangely mid-render, and before Blazor's own exception for clashing
-    /// keys, which names neither the key nor the rows (LV-2).
+    /// key moved, and not at all when its source, or the Consumer that pushes it, vouches for it
+    /// (ADR-0141, LV-10). Refused up front rather than failing strangely mid-render, and before
+    /// Blazor's own exception for clashing keys, which names neither the key nor the rows (LV-2).
     /// </summary>
     private void TakeInWindow()
     {
         var own = Source?.RowKey;
         var key = RowKey ?? own;
-        // A vouch is taken only for the key the source refused repeats of: its own, whether the
-        // grid was handed it or left to take it. A key of the Consumer's own is checked here, as is a
-        // vouch with no Row Key behind it — "no row twice" is the source's word about its keys
-        // (IGridSource.VouchesDistinctRows), and with no key it has none to give, so the grid's
-        // check by instance stands. Delegates compare by method and target, so a source whose
-        // RowKey property hands out a fresh delegate each time is still recognised.
-        var vouched = key is not null && Source is { VouchesDistinctRows: true } && Equals(key, own);
+        // A vouch is taken only for the key whose repeats were refused: a source's own, whether the
+        // grid was handed it or left to take it, or a pushed Window's, which is the Consumer's. A key
+        // of the Consumer's own over a source is checked here, as is a vouch with no Row Key behind
+        // it — "no row twice" is a word about keys (IGridSource.VouchesDistinctRows), and with no key
+        // there is none to give, so the grid's check by instance stands. Delegates compare by method
+        // and target, so a source whose RowKey property hands out a fresh delegate each time is still
+        // recognised.
+        var vouched = key is not null
+            && (Source is null ? VouchesDistinctRows : Source.VouchesDistinctRows && Equals(key, own));
         if (ReferenceEquals(_observedWindow, _window) && Equals(key, _rowKey) && (vouched || !_windowVouched))
             return;
 
@@ -116,8 +158,8 @@ public partial class ExGrid<TRow>
     // a null is not a row (an absent row is a Placeholder, ADR-0004).
     //
     // A pass over the whole Window, which under GridSource.From is the whole result: 18.1 ms
-    // at 451,115 rows (ADR-0141). A source that refuses a repeated Row Key vouches for its
-    // Windows, and those skip it (TakeInWindow).
+    // at 451,115 rows (ADR-0141). A Window vouched for — by a source that refuses a repeated Row
+    // Key, or by the Consumer that pushes it — skips the pass (TakeInWindow).
     private static void RequireDistinctRows(IReadOnlyList<TRow> window)
     {
         var seen = new HashSet<object>(window.Count, ReferenceEqualityComparer.Instance);
@@ -125,10 +167,7 @@ public partial class ExGrid<TRow>
         {
             var row = window[i];
             if (row is null)
-            {
-                throw new InvalidOperationException(
-                    $"Window[{i}] is null; a Window holds rows, not gaps.");
-            }
+                throw NullRow(i);
             if (!seen.Add(row))
             {
                 throw new InvalidOperationException(
@@ -149,27 +188,24 @@ public partial class ExGrid<TRow>
         {
             var row = window[i];
             if (row is null)
-            {
-                throw new InvalidOperationException(
-                    $"Window[{i}] is null; a Window holds rows, not gaps.");
-            }
-            var key = rowKey(row);
-            if (key is null)
-            {
-                throw new InvalidOperationException(
-                    $"The Row Key of Window[{i}] (row {windowStart + i}) is null. A Row Key names its row across versions, " +
-                    "and a null names none (ADR-0140).");
-            }
+                throw NullRow(i);
+            var key = rowKey(row) ?? throw NullKey(i, windowStart);
             if (!seen.TryAdd(key, i))
-            {
-                var first = seen[key];
-                throw new InvalidOperationException(
-                    $"Window[{first}] and Window[{i}] (rows {windowStart + first} and {windowStart + i}) answer the same Row Key, " +
-                    $"{Describe(key)}. A Row Key tells a row from every other, and two rows under one key would be painted as " +
-                    "one (ADR-0140).");
-            }
+                throw RepeatedKey(key, seen[key], i, windowStart);
         }
     }
+
+    private static InvalidOperationException NullRow(int index) => new(
+        $"Window[{index}] is null; a Window holds rows, not gaps.");
+
+    private static InvalidOperationException NullKey(int index, int windowStart) => new(
+        $"The Row Key of Window[{index}] (row {windowStart + index}) is null. A Row Key names its row across versions, " +
+        "and a null names none (ADR-0140).");
+
+    private static InvalidOperationException RepeatedKey(object key, int first, int second, int windowStart) => new(
+        $"Window[{first}] and Window[{second}] (rows {windowStart + first} and {windowStart + second}) answer the same Row Key, " +
+        $"{Describe(key)}. A Row Key tells a row from every other, and two rows under one key would be painted as " +
+        "one (ADR-0140).");
 
     /// <summary>A key as a refusal names it: its text, culture-invariant, and its type.</summary>
     private static string Describe(object key)
