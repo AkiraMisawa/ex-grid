@@ -44,11 +44,15 @@ public partial class ExPivot
     private TimeProvider? _redrawTimerClock;
     private DateTimeOffset? _redrawDue;
 
-    // The Change Highlight (ADR-0068): the reports of the recent data versions under the layout on
-    // screen, and the delegate the grid is handed — a new one for each history that can mark, null
-    // while none can.
+    // The Change Highlight (ADR-0068/0161): the change times of the data versions under the layout
+    // on screen — never their reports — and the delegate the grid is handed, one for as long as a
+    // history lasts, null while the duration is zero.
     private ReportHistory? _history;
     private CellChangeOf<PivotReportRow>? _cellChangedAt;
+    private Func<TimeSpan>? _durationNow;
+
+    /// <summary>How long a mark lasts, read by the history when it is asked.</summary>
+    private Func<TimeSpan> ChangeHighlightDurationNow => _durationNow ??= () => ChangeHighlightDuration;
 
     // The Stale Report (ADR-0067): what happened, while the newest data cannot be shown; the
     // answer held whose layout a cap refused, which the notice goes with once a layout that fits

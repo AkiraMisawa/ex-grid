@@ -264,7 +264,11 @@ public sealed class PivotReport
         return _reader.Values.Length == 1 ? 0 : -1;
     }
 
-    internal PivotValue? Compute(PivotReportRow row, int valueColumn)
+    private PivotValue? Compute(PivotReportRow row, int valueColumn)
+        => ShownAt(row, valueColumn) is var (value, plan) ? ValueOf(value, plan) : null;
+
+    // A cell's value as shown and the plan that formats it; null for an empty cell.
+    private (AggregateValue Value, ValueFieldPlan Plan)? ShownAt(PivotReportRow row, int valueColumn)
     {
         if (!row.CarriesValues)
             return null;
@@ -272,11 +276,154 @@ public sealed class PivotReport
         if (vf < 0)
             return null;
         var value = _reader.Shown(row.Node, ValueColumns[valueColumn].Node, vf);
-        if (value.IsEmpty)
-            return null;
-        var plan = _reader.Values[vf];
-        return PivotValue.From(value, plan.NumberFormat, plan.ShowValuesAs != PivotShowValuesAs.NoCalculation, Culture);
+        return value.IsEmpty ? null : (value, _reader.Values[vf]);
     }
+
+    private PivotValue ValueOf(AggregateValue value, ValueFieldPlan plan)
+        => PivotValue.From(value, plan.NumberFormat, plan.ShowValuesAs != PivotShowValuesAs.NoCalculation, Culture);
+
+    // ---- What changed since an earlier report (ADR-0067/0161) ----------------------------------------
+
+    /// <summary>
+    /// What changed in the painted values since <paramref name="earlier"/>, a report of the same
+    /// layout (ADR-0067/0068/0161) — what the Change Highlight marks: every value cell whose painted
+    /// text differs from the earlier report's cell that stands for the same row and column, the rows
+    /// and the value columns the earlier report has not, whose every cell is new, and the rows and
+    /// columns that left. Rows are paired by their keys and columns by their names, so a row a sort by
+    /// value moved is compared with itself; a change the number format hides is no change.
+    /// </summary>
+    public PivotReportChanges ChangesSince(PivotReport earlier)
+    {
+        ArgumentNullException.ThrowIfNull(earlier);
+        return Slicer.Run(ChangesSinceAsync(earlier, Slicer.Unsliced));
+    }
+
+    /// <summary>
+    /// <see cref="ChangesSince"/> in slices (PV-40): the rows compared a piece at a time, the thread
+    /// yielded whenever a slice of <see cref="PivotSlicing.Budget"/> is spent — a redraw laid out
+    /// afresh compares every row. Cancelled, it throws at the next yield. A small report is compared
+    /// without reading the clock, and the task is complete when it returns.
+    /// </summary>
+    /// <param name="earlier">The report to compare with.</param>
+    /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
+    /// <param name="cancellationToken">Stops the work at the next yield.</param>
+    public ValueTask<PivotReportChanges> ChangesSinceAsync(PivotReport earlier, PivotSlicing? slicing = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(earlier);
+        return ChangesSinceAsync(earlier, Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken));
+    }
+
+    private async ValueTask<PivotReportChanges> ChangesSinceAsync(PivotReport earlier, Slicer slicer)
+    {
+        // The value columns by name: where they stood, or found among the earlier report's.
+        var columns = new int[ValueColumns.Count];
+        var newColumns = new List<int>();
+        var pairedColumns = new bool[earlier.ValueColumns.Count];
+        Dictionary<string, int>? earlierColumns = null;
+        for (var c = 0; c < columns.Length; c++)
+        {
+            var name = ValueColumns[c].Name;
+            int k;
+            if (c < earlier.ValueColumns.Count && string.Equals(earlier.ValueColumns[c].Name, name, StringComparison.Ordinal))
+            {
+                k = c;
+            }
+            else
+            {
+                earlierColumns ??= earlier.ValueColumns.Select((column, at) => (column.Name, at)).ToDictionary(p => p.Name, p => p.at, StringComparer.Ordinal);
+                k = earlierColumns.TryGetValue(name, out var found) ? found : -1;
+            }
+            columns[c] = k;
+            if (k < 0)
+                newColumns.Add(c);
+            else
+                pairedColumns[k] = true;
+        }
+
+        // The rows by key: where they stood, as almost every row does, or found among the earlier
+        // report's, indexed the first time one is not where it stood.
+        var newRows = new List<int>();
+        var cells = new List<(int Row, int Column)>();
+        Dictionary<PivotRowKey, int>? earlierRows = null;
+        bool[]? pairedRows = null;
+        await slicer.ForAsync(Rows.Count, (from, to) =>
+        {
+            for (var i = from; i < to; i++)
+            {
+                var row = Rows[i];
+                int j;
+                if (i < earlier.Rows.Count && (ReferenceEquals(earlier.Rows[i], row) || earlier.Rows[i].Key.Equals(row.Key)))
+                {
+                    j = i;
+                }
+                else
+                {
+                    if (earlierRows is null)
+                    {
+                        earlierRows = new Dictionary<PivotRowKey, int>(earlier.Rows.Count);
+                        for (var e = 0; e < earlier.Rows.Count; e++)
+                            earlierRows.TryAdd(earlier.Rows[e].Key, e);
+                        // Every row before this one stood where it stood.
+                        pairedRows = new bool[earlier.Rows.Count];
+                        pairedRows.AsSpan(0, Math.Min(i, pairedRows.Length)).Fill(true);
+                    }
+                    j = earlierRows.TryGetValue(row.Key, out var found) ? found : -1;
+                }
+                if (j < 0)
+                {
+                    newRows.Add(i);
+                    continue;
+                }
+                if (pairedRows is not null)
+                    pairedRows[j] = true;
+                var theirs = earlier.Rows[j];
+                for (var c = 0; c < columns.Length; c++)
+                {
+                    if (columns[c] >= 0 && !SameText(row, c, earlier, theirs, columns[c]))
+                        cells.Add((i, c));
+                }
+            }
+        }, weight: 1 + (2 * columns.Length)).ConfigureAwait(false);
+
+        var leftRows = new List<PivotRowKey>();
+        for (var j = pairedRows is null ? Rows.Count : 0; j < earlier.Rows.Count; j++)
+        {
+            if (pairedRows is null || !pairedRows[j])
+                leftRows.Add(earlier.Rows[j].Key);
+        }
+        var leftColumns = new List<string>();
+        for (var k = 0; k < pairedColumns.Length; k++)
+        {
+            if (!pairedColumns[k])
+                leftColumns.Add(earlier.ValueColumns[k].Name);
+        }
+        return new PivotReportChanges([.. newRows], [.. newColumns], [.. cells], [.. leftRows], [.. leftColumns]);
+    }
+
+    // Whether a cell paints the same text as a cell of the earlier report. Two values alike to the
+    // last bit, formatted alike, paint alike, so only cells whose values differ are formatted.
+    private bool SameText(PivotReportRow row, int column, PivotReport earlier, PivotReportRow theirRow, int theirColumn)
+    {
+        var mine = ShownAt(row, column);
+        var theirs = earlier.ShownAt(theirRow, theirColumn);
+        if (mine is null && theirs is null)
+            return true;
+        if (mine is { } a && theirs is { } b && SameValue(a.Value, b.Value) && SameFormat(a.Plan, b.Plan) && Equals(Culture, earlier.Culture))
+            return true;
+        var text = mine is { } m ? ValueOf(m.Value, m.Plan).Text : "";
+        var theirText = theirs is { } t ? earlier.ValueOf(t.Value, t.Plan).Text : "";
+        return string.Equals(text, theirText, StringComparison.Ordinal);
+    }
+
+    private static bool SameValue(AggregateValue a, AggregateValue b)
+        => a.IsEmpty == b.IsEmpty
+            && string.Equals(a.Error, b.Error, StringComparison.Ordinal)
+            && BitConverter.DoubleToInt64Bits(a.Number) == BitConverter.DoubleToInt64Bits(b.Number)
+            && (a.Exact is { } x ? b.Exact is { } y && decimal.GetBits(x).AsSpan().SequenceEqual(decimal.GetBits(y)) : b.Exact is null);
+
+    private static bool SameFormat(ValueFieldPlan a, ValueFieldPlan b)
+        => string.Equals(a.NumberFormat, b.NumberFormat, StringComparison.Ordinal)
+            && (a.ShowValuesAs == PivotShowValuesAs.NoCalculation) == (b.ShowValuesAs == PivotShowValuesAs.NoCalculation);
 
     /// <summary>A Value Field's value at a row's total across the columns, as shown — what an
     /// order by that Value Field compares (ADR-0060). Null for an empty or error value.</summary>
@@ -285,6 +432,44 @@ public sealed class PivotReport
         var value = _reader.Shown(row.Node, Cube.ColumnRoot, vf);
         return value.IsEmpty || value.IsError ? null : value.Number;
     }
+}
+
+/// <summary>
+/// What changed in a report's painted values since an earlier report of the same layout
+/// (<see cref="PivotReport.ChangesSince"/>, ADR-0067/0161): what the Change Highlight marks. Rows and
+/// columns are named by their positions in the later report, and those that left by the earlier
+/// report's keys and names.
+/// </summary>
+public sealed class PivotReportChanges
+{
+    internal PivotReportChanges(int[] newRows, int[] newColumns, (int Row, int Column)[] cells, PivotRowKey[] leftRows, string[] leftColumns)
+    {
+        NewRows = newRows;
+        NewColumns = newColumns;
+        Cells = cells;
+        LeftRows = leftRows;
+        LeftColumns = leftColumns;
+    }
+
+    /// <summary>The rows the earlier report has no row for, by index: every cell of each is new.</summary>
+    public IReadOnlyList<int> NewRows { get; }
+
+    /// <summary>The value columns the earlier report has no column for, by index: every cell of each
+    /// is new.</summary>
+    public IReadOnlyList<int> NewColumns { get; }
+
+    /// <summary>The value cells of rows and columns both reports have whose painted text differs, by
+    /// row index and value column index, row by row.</summary>
+    public IReadOnlyList<(int Row, int Column)> Cells { get; }
+
+    /// <summary>The keys of the earlier report's rows this report has not.</summary>
+    public IReadOnlyList<PivotRowKey> LeftRows { get; }
+
+    /// <summary>The names of the earlier report's value columns this report has not.</summary>
+    public IReadOnlyList<string> LeftColumns { get; }
+
+    /// <summary>Whether nothing changed: no cell, no row and no column.</summary>
+    public bool IsEmpty => NewRows.Count == 0 && NewColumns.Count == 0 && Cells.Count == 0 && LeftRows.Count == 0 && LeftColumns.Count == 0;
 }
 
 /// <summary>A resolved Value Field: the cube's accumulation it reads, its Aggregation, its unique

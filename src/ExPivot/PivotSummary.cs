@@ -74,7 +74,10 @@ internal static class PivotSummary
             {
                 var field = report.Layout.Values[valueField];
                 var format = field.NumberFormat ?? (field.ShowValuesAs != PivotShowValuesAs.NoCalculation ? "0.00%" : "G15");
-                textOf = figure => ((IFormattable)figure).ToString(format, report.Culture);
+                // The culture, not the report: the grid keeps the figures, and they must not hold a
+                // report the screen has moved on from (ADR-0160/0161).
+                var culture = report.Culture;
+                textOf = figure => ((IFormattable)figure).ToString(format, culture);
             }
         }
         return cells.Answer(request.Figures, textOf);

@@ -466,7 +466,7 @@ public partial class ExPivot
         Built built;
         try
         {
-            built = await BuildAsync(cube, layout, pace, working.Token);
+            built = await BuildAsync(cube, layout, pace, working.Token, data: fresh && kind != Question.Layout);
         }
         catch (OperationCanceledException) when (working.IsCancellationRequested)
         {
@@ -551,17 +551,21 @@ public partial class ExPivot
     private PivotSlicing Pacing => Slicing ?? PivotSlicing.Default;
 
     /// <summary>A report laid out, with what was measured of it on the way (PV-40): whether its rows
-    /// are those of the report it was compared with, and its label columns' widths under the metrics
-    /// they were sized by — none for a report a cap refuses, which is shown nowhere.</summary>
-    private sealed record Built(PivotReport Report, PivotReport? ComparedTo, bool SameRows, double[]? LabelWidths, GridMetrics Metrics);
+    /// are those of the report it was compared with, what changed in its painted values since that
+    /// report when it is newer data under the same layout and words — what the Change Highlight marks
+    /// — and its label columns' widths under the metrics they were sized by; none of these for a
+    /// report a cap refuses, which is shown nowhere.</summary>
+    private sealed record Built(
+        PivotReport Report, PivotReport? ComparedTo, bool SameRows, PivotReportChanges? Changes, double[]? LabelWidths, GridMetrics Metrics);
 
     /// <summary>
     /// Lays <paramref name="layout"/> out from <paramref name="cube"/> in slices (PV-40): the
-    /// report, then its rows compared with the report on screen, then its label columns sized from
-    /// their labels — in the words and the culture the report is in when it is done: words that
-    /// changed meanwhile lay it out again.
+    /// report, then its rows compared with the report on screen, then — for newer data under the
+    /// layout and words on screen — its painted values compared with that report's, then its label
+    /// columns sized from their labels; in the words and the culture the report is in when it is done:
+    /// words that changed meanwhile lay it out again.
     /// </summary>
-    private async Task<Built> BuildAsync(PivotCube cube, PivotLayout layout, Pace pace, CancellationToken token)
+    private async Task<Built> BuildAsync(PivotCube cube, PivotLayout layout, Pace pace, CancellationToken token, bool data = false)
     {
         while (true)
         {
@@ -572,6 +576,7 @@ public partial class ExPivot
             await pace.GoOnAsync(size);
             var comparedTo = _report;
             var sameRows = false;
+            PivotReportChanges? changes = null;
             double[]? widths = null;
             if (CapBrokenBy(report) is null)
             {
@@ -579,15 +584,26 @@ public partial class ExPivot
                 {
                     sameRows = await pace.AfterAsync(report.HasSameRowsAsAsync(comparedTo, Pacing, token));
                     await pace.GoOnAsync(size);
+                    if (data && ExtendsHistory(comparedTo, report))
+                    {
+                        changes = await pace.AfterAsync(report.ChangesSinceAsync(comparedTo, Pacing, token));
+                        await pace.GoOnAsync(size);
+                    }
                 }
                 widths = await LabelWidthsAsync(report, metrics, pace);
                 // What follows — the report put on screen, and painted — has a turn of its own.
                 await pace.GoOnAsync(size);
             }
             if (ReferenceEquals(options, _options))
-                return new Built(report, comparedTo, sameRows, widths, metrics);
+                return new Built(report, comparedTo, sameRows, changes, widths, metrics);
         }
     }
+
+    /// <summary>Whether newer data laid out as <paramref name="report"/> extends the history of
+    /// <paramref name="previous"/>'s: the same layout and words, so that only data can have changed a
+    /// cell (ADR-0067).</summary>
+    private static bool ExtendsHistory(PivotReport previous, PivotReport report)
+        => ReferenceEquals(previous.Layout, report.Layout) && Equals(previous.Options, report.Options);
 
     /// <summary>
     /// Shows a report laid out — unless it would pass a cap on its rows or columns, which refuses it
@@ -647,14 +663,15 @@ public partial class ExPivot
 
     /// <summary>
     /// Puts the report <paramref name="built"/> holds on screen. The order a selection is written in is kept when
-    /// only values moved (ADR-0011). The Change Highlight's history gains a version when the report
-    /// is newer data under the layout and words on screen, and starts again otherwise — a new
-    /// layout, a sort, a collapse, a form, new words — so that only data marks a cell
-    /// (ADR-0067/0068); the grid is handed a new delegate for each history that can mark.
+    /// only values moved (ADR-0011). The Change Highlight's history records what changed when the
+    /// report is newer data under the layout and words on screen, and starts again otherwise — a
+    /// new layout, a sort, a collapse, a form, new words — so that only data marks a cell
+    /// (ADR-0067/0068); the grid is handed one delegate for as long as a history lasts (ADR-0161).
+    /// The report before is let go here: the history keeps times, not reports.
     /// </summary>
-    /// <param name="built">The report, laid out, and what was measured of it: its rows compared
-    /// with the report on screen, which is compared again only when another was put up meanwhile,
-    /// and its label columns' widths.</param>
+    /// <param name="built">The report, laid out, and what was measured of it: its rows and its
+    /// painted values compared with the report on screen, which are compared again only when another
+    /// was put up meanwhile, and its label columns' widths.</param>
     /// <param name="layout">The layout it was laid out under.</param>
     /// <param name="arrivedAt">When the answer it was laid out from arrived; null to keep the time
     /// of the report on screen, whose answer it is laid out from again.</param>
@@ -674,11 +691,16 @@ public partial class ExPivot
         if (!sameRows)
             _rowSequenceVersion++;
         var at = arrivedAt ?? _shownAt;
-        _history = data && _history is { } history && _report is { } previous && ReferenceEquals(history.Current, previous)
-            && ReferenceEquals(previous.Layout, layout) && Equals(previous.Options, report.Options)
-            ? history.Extend(report, at, sameRows, ChangeHighlightDuration)
-            : ReportHistory.Start(report, at);
-        _cellChangedAt = _history.Answer;
+        if (data && _history is { } history && _report is { } previous && ExtendsHistory(previous, report))
+        {
+            var changes = ReferenceEquals(built.ComparedTo, previous) && built.Changes is { } measured ? measured : report.ChangesSince(previous);
+            history.Record(report, changes, at);
+        }
+        else
+        {
+            _history = ReportHistory.Start(report, Now, ChangeHighlightDurationNow);
+            _cellChangedAt = _history.Answer;
+        }
         _report = report;
         _shown = layout;
         _shownAt = at;

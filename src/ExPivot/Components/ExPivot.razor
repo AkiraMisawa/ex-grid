@@ -285,6 +285,14 @@
                 "A Change Highlight cannot last a negative time: it would end before the change it marks (ADR-0068).");
         }
         UseClock(Clock ?? Services.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System);
+        // A duration that becomes zero, or stops being zero, is no data: the history starts again,
+        // with a delegate for the grid when it can mark and none when it cannot (ADR-0068/0161).
+        if (_history is not null && _report is { } shown && (_history.Answer is not null) != (ChangeHighlightDuration > TimeSpan.Zero))
+        {
+            _history = ReportHistory.Start(shown, Now, ChangeHighlightDurationNow);
+            _cellChangedAt = _history.Answer;
+            _gridVersion++;
+        }
 
         var pursue = !_initialised;
         var force = false;
