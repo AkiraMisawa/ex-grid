@@ -200,18 +200,21 @@ public partial class ExGrid<TRow>
     {
         if (!AimedUnderAnotherOrder(told))
             return false;
+        // Aimed with nothing selected, and nothing selected since: the gate refuses it as the
+        // empty Selection it is, not as an order move.
+        if (_selection.Selection.IsEmpty && !AimedWithASelectionTheOrderDropped(told))
+            return false;
         await RefuseWriteUnderAMovedOrderAsync();
         return true;
     }
 
     /// <summary>Raises the refusal of a positional write whose positions an order move gave to
     /// other rows (ADR-0011, ADR-0142): a gesture aimed under another order, a fill-handle drag made
-    /// under one, or a Ctrl+Enter fill whose editor opened under one. The Selection it was aimed
-    /// with went with that order, so it is refused as aimed at no Selection.</summary>
+    /// under one, or a Ctrl+Enter fill whose editor opened under one.</summary>
     private async Task RefuseWriteUnderAMovedOrderAsync()
     {
         if (OnPasteRefused.HasDelegate)
-            await OnPasteRefused.InvokeAsync(PasteRefusalReason.EmptySelection);
+            await OnPasteRefused.InvokeAsync(PasteRefusalReason.OrderMoved);
     }
 
     // ---- The row components each paint painted ----

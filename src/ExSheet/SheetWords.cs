@@ -75,7 +75,14 @@ internal static class SheetWords
         PasteRefusalReason.TargetNotEditable => "Nothing was pasted: the selection covers cells that cannot be written.",
         PasteRefusalReason.TooLarge => "Nothing was pasted: the clipboard holds more than a paste reads at once.",
         PasteRefusalReason.SpillPastExtent => "Nothing was pasted: the block would run past the Sheet's edge (XFD1048576).",
-        _ => "Nothing was pasted.",
+        PasteRefusalReason.NothingToFillFrom =>
+            "Nothing was filled: there is no row above the selection, or column to its left, to fill from.",
+        PasteRefusalReason.MultipleRanges => "Nothing was filled: a fill works on one range. Select one range.",
+        PasteRefusalReason.SourceUnavailable => "Nothing was filled: the cells to fill from could not be read.",
+        PasteRefusalReason.OrderMoved =>
+            "Nothing was entered: the rows moved after the cells were selected, so it would land in other rows. Select the cells again.",
+        // A reason with no sentence here would be told as something it is not (principle 1).
+        _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A paste refusal the Sheet does not word."),
     };
 
     /// <summary>A commit refused because the row it was opened on can no longer be found (ADR-0142,

@@ -62,6 +62,14 @@ entered over cells whose painted text changed. The grid stops keeping what earli
   - Space on an action is refused as `OrderMoved`, naming no row, with or without a Row Key: the grid
     keeps no key of the dropped Selection (ADR-0160). It does not engage the Focus now in force.
 
-  The tests no longer select again before the gesture. A write refused for an order move still says
-  `EmptySelection`; whether `PasteRefusalReason` gains a reason of its own is with the orchestrator.
-  Layer 3 ran locally under the lock on the final code (see ticket 05's comment).
+  The tests no longer select again before the gesture. Layer 3 ran locally under the lock on the final
+  code (see ticket 05's comment).
+- 2026-10-07, on the orchestrator's decision (ADR-0142's Consequences, LV-13): a positional write
+  aimed under an order that has moved since is refused as the new `PasteRefusalReason.OrderMoved`.
+  That covers a paste, Delete, Ctrl+D or Ctrl+R told an earlier render, a Ctrl+Enter fill whose editor
+  opened before the move, and a fill-handle release after it. `EmptySelection` is left for a gesture
+  that had no Selection, an order move or not. The demo's and ExSheet's wordings name every reason and
+  throw on any other; ExSheet no longer says "Select a cell to paste into." for an order move.
+  - Layers 1 and 2: 9,163 passed, 9 skipped.
+  - Layer 3, `write-lands.spec.mjs` with `--repeat-each=3`: WebAssembly 21 passed and 27 skipped as
+    Server-only; Server 48 passed.

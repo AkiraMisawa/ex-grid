@@ -1548,8 +1548,8 @@
     /// D5). One aimed under an order that has moved since — a key or a paste taken before the
     /// move, even onto the empty Selection it left, a fill-handle drag released after it, a
     /// Ctrl+Enter fill whose editor opened before it — is refused as
-    /// <see cref="PasteRefusalReason.EmptySelection"/>: the Selection it was aimed with went with
-    /// that order (ADR-0011, ADR-0142).</summary>
+    /// <see cref="PasteRefusalReason.OrderMoved"/>: the Selection it was aimed with went with that
+    /// order (ADR-0011, ADR-0142).</summary>
     [Parameter] public EventCallback<PasteRefusalReason> OnPasteRefused { get; set; }
 
     /// <summary>Text the user had typed and not committed, thrown away because the grid
@@ -7453,7 +7453,7 @@
             return;
         }
         // A fill is positional: once the order has moved since the editor opened, the Selection it
-        // was aimed with no longer names those rows, and it is refused as aimed at none, the editor
+        // was aimed with no longer names those rows, and it is refused as OrderMoved, the editor
         // kept with the typing — even where the Focus followed its row (ADR-0142; ADR-0011's note
         // of 2026-10-07).
         if (_sequenceVersion != _editSequence)

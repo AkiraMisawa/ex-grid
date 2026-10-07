@@ -451,14 +451,32 @@
     private void OnPasteRefused(PasteRefusalReason reason)
         => Status(reason, reason switch
         {
-            PasteRefusalReason.TargetNotEditable =>
-                "TargetNotEditable — the selection covers a column that is not editable",
-            PasteRefusalReason.SingleCellTarget =>
-                "SingleCellTarget — reselect a target of the same shape",
-            // ADR-0142/0011: also a write aimed with a Selection the rows moving took away.
             PasteRefusalReason.EmptySelection =>
                 "EmptySelection — nothing was written: select the cells to write into",
-            _ => reason.ToString(),
+            PasteRefusalReason.SingleCellTarget =>
+                "SingleCellTarget — reselect a target of the same shape",
+            PasteRefusalReason.ShapeMismatch =>
+                "ShapeMismatch — the selection is not a whole multiple of the copied block",
+            PasteRefusalReason.DisjointTarget =>
+                "DisjointTarget — a block of several cells goes into one range only",
+            PasteRefusalReason.TargetNotEditable =>
+                "TargetNotEditable — the selection covers a column that is not editable",
+            PasteRefusalReason.TooLarge =>
+                "TooLarge — more than a paste or a fill reads at once",
+            PasteRefusalReason.SpillPastExtent =>
+                "SpillPastExtent — the block would run past the last row or column",
+            PasteRefusalReason.NothingToFillFrom =>
+                "NothingToFillFrom — there is no row above, or column to the left, to fill from",
+            PasteRefusalReason.MultipleRanges =>
+                "MultipleRanges — a fill works on one range",
+            PasteRefusalReason.SourceUnavailable =>
+                "SourceUnavailable — the cells to fill from could not be read whole",
+            // ADR-0142/0011: aimed with a Selection the rows moving took away.
+            PasteRefusalReason.OrderMoved =>
+                "OrderMoved — nothing was written: the rows moved after you aimed it; select the cells again",
+            // Every reason is worded above; one the page does not know is a defect to see, not a
+            // sentence to guess (principle 1).
+            _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A paste refusal this page does not word."),
         }, s => _pasteRefusedStatus = s);
 
     /// <summary>A commit whose row the grid could no longer find (ADR-0142, LV-20). The editor

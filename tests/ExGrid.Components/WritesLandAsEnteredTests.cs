@@ -831,7 +831,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Equal(SelectionRange.FromCorners(new CellPosition(0, 0), new CellPosition(0, 0)), Assert.Single(paste.Plan.Targets));
     }
 
-    [Fact] // ADR-0142 / LV-13, LV-14, ADR-0011: a paste aimed under an order that has moved since is refused: the Selection it was aimed with went with that order, and nothing is selected again before it
+    [Fact] // ADR-0142 / LV-13, LV-14, ADR-0011: a paste aimed under an order that has moved since is refused as OrderMoved: the Selection it was aimed with went with that order, and nothing is selected again before it
     public async Task A_paste_aimed_under_an_order_that_has_moved_since_is_refused()
     {
         var rows = TestRows.Many(50);
@@ -844,12 +844,27 @@ public class WritesLandAsEnteredTests : GridTestContext
         await PasteAsync(cut, pressedOn);
 
         Assert.Empty(heard.Pastes);
-        Assert.Equal([PasteRefusalReason.EmptySelection], heard.PasteRefusals);
+        Assert.Equal([PasteRefusalReason.OrderMoved], heard.PasteRefusals);
 
         // One aimed under the order in force, with a Selection made under it, lands.
         await ClickAsync(cut, 50, 10);
         await PasteAsync(cut, Paint(cut));
         Assert.Single(heard.Pastes);
+    }
+
+    [Fact] // ADR-0142 / LV-13, ADR-0014: a paste aimed with nothing selected under an order that has moved since is refused as EmptySelection — it had no Selection for the move to take
+    public async Task A_paste_aimed_with_nothing_selected_under_a_moved_order_is_an_empty_selection()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        var pressedOn = Paint(cut);
+        Reorder(cut, Moved(rows, 0, 2));
+
+        await PasteAsync(cut, pressedOn);
+
+        Assert.Empty(heard.Pastes);
+        Assert.Equal([PasteRefusalReason.EmptySelection], heard.PasteRefusals);
     }
 
     [Fact] // ADR-0142 / LV-13: a Ctrl+Enter fill whose target changed since the key's render lands; only the edited cell, under the editor, is the editor's to judge
@@ -946,7 +961,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.PasteRefusals);
     }
 
-    [Fact] // ADR-0142 / LV-13, ADR-0011: a fill-handle drag released after the order moved raises no intent, and is refused as a paste aimed under another order is — never silently
+    [Fact] // ADR-0142 / LV-13, ADR-0011: a fill-handle drag released after the order moved raises no intent, and is refused as OrderMoved — never silently
     public async Task A_fill_drag_released_after_the_order_moved_is_refused()
     {
         var rows = TestRows.Many(50);
@@ -960,7 +975,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await ReleaseFillAsync(cut, sequence, layout);
 
         Assert.Empty(heard.Fills);
-        Assert.Equal([PasteRefusalReason.EmptySelection], heard.PasteRefusals);
+        Assert.Equal([PasteRefusalReason.OrderMoved], heard.PasteRefusals);
     }
 
     [Fact] // ADR-0142 / LV-13, ADR-0054: Delete writes too — a Clear over a target changed since its key lands
@@ -1067,7 +1082,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.PasteRefusals);
     }
 
-    [Theory] // ADR-0142 / LV-13, LV-14, ADR-0011, ADR-0012: Delete, Ctrl+D and Ctrl+R taken under an order that has moved since are refused, as a paste is, and not taken as a first key on the empty Selection the move left
+    [Theory] // ADR-0142 / LV-13, LV-14, ADR-0011, ADR-0012: Delete, Ctrl+D and Ctrl+R taken under an order that has moved since are refused as OrderMoved, as a paste is, and not taken as a first key on the empty Selection the move left
     [InlineData("Delete", false)]
     [InlineData("d", true)]
     [InlineData("r", true)]
@@ -1086,7 +1101,7 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         Assert.Empty(heard.Pastes);
         Assert.Empty(heard.Clears);
-        Assert.Equal([PasteRefusalReason.EmptySelection], heard.PasteRefusals);
+        Assert.Equal([PasteRefusalReason.OrderMoved], heard.PasteRefusals);
         // Refused, not taken as a first key: no Focus is placed.
         Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
     }
@@ -1107,7 +1122,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.False(cut.Instance.ReadSelection().Selection.IsEmpty);
     }
 
-    [Theory] // ADR-0142 / LV-13, ADR-0011 (note of 2026-10-07): a Ctrl+Enter fill whose order moved since the editor opened is refused, the editor kept with the typing — with a Row Key too, where the Focus followed its row
+    [Theory] // ADR-0142 / LV-13, ADR-0011 (note of 2026-10-07): a Ctrl+Enter fill whose order moved since the editor opened is refused as OrderMoved, the editor kept with the typing — with a Row Key too, where the Focus followed its row
     [InlineData(false)]
     [InlineData(true)]
     public async Task A_ctrl_enter_fill_after_the_order_moved_is_refused_and_keeps_the_editor(bool rowKey)
@@ -1128,7 +1143,7 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         Assert.Empty(heard.Pastes);
         Assert.Empty(heard.Edits);
-        Assert.Equal([PasteRefusalReason.EmptySelection], heard.PasteRefusals);
+        Assert.Equal([PasteRefusalReason.OrderMoved], heard.PasteRefusals);
         Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
     }
 

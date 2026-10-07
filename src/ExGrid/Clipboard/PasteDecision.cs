@@ -9,6 +9,8 @@ namespace ExGrid.Clipboard;
 /// work. <see cref="ShapeMismatch"/>: the target is not a multiple of the copied block.
 /// <see cref="DisjointTarget"/>: a block cannot be pasted into multiple ranges.
 /// <see cref="EmptySelection"/>: nowhere to paste; nothing happens.
+/// <see cref="OrderMoved"/>: the gesture was aimed under an order that has moved since, so its
+/// positions name other rows now (ADR-0011, ADR-0142).
 /// <see cref="TargetNotEditable"/> is the one that is not about shape (ADR-0035): the
 /// target covers a column the Consumer declared non-editable, so the write may not land
 /// however it is shaped. Chrome must not offer the "reselect the same shape" advice for
@@ -23,9 +25,8 @@ namespace ExGrid.Clipboard;
 /// </summary>
 public enum PasteRefusalReason
 {
-    /// <summary>Nothing is selected: nowhere to paste, and nothing happens. Raised too for a write
-    /// whose gesture was aimed under an order that has moved since: the Selection it was aimed with
-    /// went with that order (ADR-0011, ADR-0142).</summary>
+    /// <summary>Nothing is selected: nowhere to paste, and nothing happens. A write aimed with a
+    /// Selection that an order move took away is <see cref="OrderMoved"/>, not this.</summary>
     EmptySelection,
 
     /// <summary>A block of several cells onto one cell, which would spill outside the
@@ -68,6 +69,14 @@ public enum PasteRefusalReason
     /// while they were asked for. The fill is refused rather than filled from a guess
     /// (ADR-0035). Component-level, never produced by the pure rules.</summary>
     SourceUnavailable,
+
+    /// <summary>The gesture was aimed under a Row Sequence Version that has moved since: the
+    /// Selection it was aimed with no longer names those rows, so nothing is written (ADR-0011,
+    /// ADR-0142). Raised for a paste, Delete, Ctrl+D or Ctrl+R taken before the order moved — even
+    /// onto the empty Selection the move left — for a Ctrl+Enter fill whose editor opened before it,
+    /// and for a fill-handle drag released after it. Component-level, never produced by the pure
+    /// rules.</summary>
+    OrderMoved,
 }
 
 /// <summary>
