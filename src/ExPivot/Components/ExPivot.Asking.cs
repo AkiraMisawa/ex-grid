@@ -308,6 +308,10 @@ public partial class ExPivot
         {
             throw new InvalidOperationException($"The layout cannot be asked: {error.Message}", error);
         }
+        // Newer data names the version of the answer on screen, so that the answer can say which of
+        // its leaves changed since (ADR-0161).
+        if (kind != Question.Layout && HeldOnScreen(source) is { } held)
+            query = query.WithChangedSince(held.SourceVersion);
         Supersede();
         var generation = _generation;
         var asking = new CancellationTokenSource();
@@ -389,7 +393,11 @@ public partial class ExPivot
                     if (answer.LeafCount >= LargeStep)
                         await pace.YieldAsync();
                 }
-                cube = await pace.AfterAsync(PivotEngine.CubeAsync(query, answer, source.Fields, Pacing, asking.Token));
+                // Newer data under the question on screen is made from the cube on screen (ADR-0161):
+                // the engine builds it afresh when the answer's leaves are not that cube's.
+                cube = await pace.AfterAsync(kind != Question.Layout && HeldOnScreen(source) is { } previous
+                    ? PivotEngine.NextCubeAsync(previous, query, answer, source.Fields, Pacing, asking.Token)
+                    : PivotEngine.CubeAsync(query, answer, source.Fields, Pacing, asking.Token));
                 await pace.GoOnAsync(answer.LeafCount);
             }
             catch (OperationCanceledException) when (asking.IsCancellationRequested)
@@ -513,6 +521,11 @@ public partial class ExPivot
         StateHasChanged();
     }
 
+    /// <summary>The answer held, when it is <paramref name="source"/>'s and the report on screen was
+    /// laid out from it: what a redraw for newer data is made from (ADR-0161).</summary>
+    private PivotCube? HeldOnScreen(PivotSource source)
+        => _cube is { } held && ReferenceEquals(_cubeSource, source) && ReferenceEquals(_report?.Cube, held) ? held : null;
+
     /// <summary>The question in flight has landed: nothing is out any more. Returns whether it
     /// carried changes of data.</summary>
     private bool FinishAsking()
@@ -571,7 +584,12 @@ public partial class ExPivot
         {
             var options = _options;
             var metrics = _metrics;
-            var report = await pace.AfterAsync(PivotEngine.ReportAsync(cube, layout, options, Pacing, token));
+            // Newer data is made from the report on screen (ADR-0161): the engine shares the rows
+            // whose painted text did not change, and lays it out afresh when it cannot.
+            var previous = _report;
+            var report = await pace.AfterAsync(data && previous is not null
+                ? PivotEngine.NextReportAsync(previous, cube, layout, options, Pacing, token)
+                : PivotEngine.ReportAsync(cube, layout, options, Pacing, token));
             var size = report.Rows.Count + report.ValueColumns.Count;
             await pace.GoOnAsync(size);
             var comparedTo = _report;
@@ -590,7 +608,10 @@ public partial class ExPivot
                         await pace.GoOnAsync(size);
                     }
                 }
-                widths = await LabelWidthsAsync(report, metrics, pace);
+                // A report made from the one on screen has its labels, and their widths.
+                widths = comparedTo is not null && report.WasMadeFrom(comparedTo) && ReferenceEquals(_labelWidthsOf, comparedTo) && _labelWidthsMetrics == metrics
+                    ? _labelWidths
+                    : await LabelWidthsAsync(report, metrics, pace);
                 // What follows — the report put on screen, and painted — has a turn of its own.
                 await pace.GoOnAsync(size);
             }

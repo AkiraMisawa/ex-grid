@@ -205,6 +205,32 @@ var answer = await source.AggregateAsync(query, ct);   // brought up to date, no
   versions of its last four answers** (`SnapshotPivotSource.AnswersHeld`), and refuses an older one:
   holding every version would hold every Snapshot a live feed ever made.
 
+### The next report from the last
+
+A live redraw makes the next cube and report from the ones on screen (ADR-0161):
+
+```csharp
+var asked = query.WithChangedSince(cube.SourceVersion);    // the version of the answer on screen
+var answer = await source.AggregateAsync(asked, ct);       // answer.ChangedLeaves: the leaves since
+var nextCube = PivotEngine.NextCube(cube, asked, answer, source.Fields);
+var nextReport = PivotEngine.NextReport(report, nextCube, layout, options);
+```
+
+- **An answer may say which of its leaves changed** since the version the question names
+  (`PivotAnswer.ChangedLeaves`). The bundled source says it from its fold, or that the leaves were made
+  afresh when it could not fold; a server's answer may say it (`WithChangedLeaves`), and one that does
+  not is compared with the answer before it, leaf by leaf.
+- **The next cube shares the axis trees and the cells**, and computes again only the cells on the
+  changed leaves' paths — a changed leaf's cell, every subtotal above it on both axes, and the grand
+  totals — each from its leaves, as a cube built afresh computes it. It takes its own copy of the values
+  that change; the cube on screen stays exactly as it was.
+- **The next report shares every row whose painted text did not change**, and makes the others anew,
+  so a grid repaints only those (ADR-0003). `ChangesSince` says which cells changed, for the Change
+  Highlight. A report row holds no value and no report, so sharing it holds no report alive.
+- **Some redraws are made afresh**, with the same result: another question or other fields, leaves
+  that came or went, a batch the source could not fold, an order by a Value Field, a Show Values As, or
+  so many changed leaves that building afresh is cheaper.
+
 ## The layout's rules and its saved form
 
 `PivotLayoutEdits` holds the Field List's rules as functions from one layout to the next: ticking

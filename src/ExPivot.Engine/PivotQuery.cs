@@ -3,9 +3,11 @@ namespace ExPivot.Engine;
 /// <summary>
 /// What ExPivot asks a Pivot Source to aggregate (ADR-0066): the row fields and the column
 /// fields, in order; the report filter's fields; the Hidden Items of every placed field; for
-/// each field in Values, the parts asked for; and the most leaves the answer may have. A
-/// serialisable value (<see cref="PivotJson"/>), so it crosses to a server unchanged
-/// (ADR-0002), and immutable. Two questions are equal when they ask the same thing.
+/// each field in Values, the parts asked for; and the most leaves the answer may have. It may name
+/// the Source Version the asker holds an answer of (<see cref="ChangedSince"/>), so that the answer
+/// can say which of its leaves changed since (ADR-0161). A serialisable value
+/// (<see cref="PivotJson"/>), so it crosses to a server unchanged (ADR-0002), and immutable. Two
+/// questions are equal when they ask for the same leaves, whatever version they name.
 /// </summary>
 public sealed class PivotQuery : IEquatable<PivotQuery>
 {
@@ -24,13 +26,17 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
     /// <param name="values">Each field in Values once, with the parts its Value Fields read.</param>
     /// <param name="maxLeaves">The most leaves the answer may have; a source that would need more
     /// refuses (ADR-0066).</param>
+    /// <param name="changedSince">The Source Version of an answer the asker holds, since which the
+    /// answer may name the leaves that changed (ADR-0161); null for none.</param>
     public PivotQuery(
         IReadOnlyList<PivotQueryField>? rows = null,
         IReadOnlyList<PivotQueryField>? columns = null,
         IReadOnlyList<PivotQueryField>? filters = null,
         IReadOnlyList<PivotQueryValue>? values = null,
-        int maxLeaves = DefaultMaxLeaves)
+        int maxLeaves = DefaultMaxLeaves,
+        string? changedSince = null)
     {
+        ChangedSince = changedSince;
         Rows = Copy(rows, nameof(rows));
         Columns = Copy(columns, nameof(columns));
         Filters = Copy(filters, nameof(filters));
@@ -67,6 +73,19 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
 
     /// <summary>The most leaves the answer may have.</summary>
     public int MaxLeaves { get; }
+
+    /// <summary>
+    /// The Source Version of an answer the asker holds to the same question, or null (ADR-0161): a
+    /// source that knows may say which of its answer's leaves changed since
+    /// (<see cref="PivotAnswer.ChangedLeaves"/>), and one that does not answers as it always does. It
+    /// asks for the same leaves, so it takes no part in the question's equality.
+    /// </summary>
+    public string? ChangedSince { get; }
+
+    /// <summary>The same question, naming <paramref name="version"/> as the one the asker holds an
+    /// answer of (<see cref="ChangedSince"/>); null names none.</summary>
+    public PivotQuery WithChangedSince(string? version)
+        => string.Equals(version, ChangedSince, StringComparison.Ordinal) ? this : new PivotQuery(Rows, Columns, Filters, Values, MaxLeaves, version);
 
     /// <summary>Every placed field — the rows, the columns, then the report filter's.</summary>
     public IEnumerable<PivotQueryField> Placed => Rows.Concat(Columns).Concat(Filters);

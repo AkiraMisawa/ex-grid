@@ -54,6 +54,16 @@ internal sealed class AggregationPass
     // While a batch is folded in, the leaves its rows went to.
     private HashSet<int>? _added;
 
+    // What the pass last answered (ADR-0161): the answer's Source Version, the leaves it held in its
+    // order — leaves of the pass, by index — and each axis field's Items as spelled; and the leaves
+    // the batches folded in since have touched. An answer that holds the same leaves under the same
+    // Items names the touched ones as changed since that version.
+    private readonly Lock _answeredGate = new();
+    private string? _answeredVersion;
+    private int[]? _answeredOrder;
+    private PivotItemKey[][]? _answeredItems;
+    private HashSet<int> _touched = [];
+
     public AggregationPass(Snapshot snapshot, IReadOnlyDictionary<string, FieldBinding> bindings, PivotQuery query, bool keepRows, Action<long>? rowsRead)
     {
         _snapshot = snapshot;
@@ -125,13 +135,28 @@ internal sealed class AggregationPass
     /// </summary>
     public PivotAnswer Answer(string sourceVersion) => Slicer.Run(AnswerAsync(sourceVersion, Slicer.Unsliced));
 
+    /// <summary>The Source Version of the last answer assembled from the pass, or null before the
+    /// first.</summary>
+    public string? AnsweredVersion
+    {
+        get
+        {
+            lock (_answeredGate)
+                return _answeredVersion;
+        }
+    }
+
     /// <summary>
     /// <see cref="Answer"/> assembled in slices (ADR-0066, PV-40): each step over the leaves, the
     /// Items or the finished parts a piece at a time, yielding whenever the slice is spent. It only
     /// reads the pass, which nothing may change meanwhile: a pass held for live data defers the
     /// batches applied while it is assembled (<see cref="Defer"/>).
+    /// <para>When <paramref name="changedSince"/> is the version of the last answer assembled from the
+    /// pass, the answer says which of its leaves changed since (ADR-0161): the leaves the batches
+    /// folded in since touched, when it holds the same leaves under the same Items spelled the same,
+    /// and that they were made afresh otherwise. The answer is remembered as the last.</para>
     /// </summary>
-    public async ValueTask<PivotAnswer> AnswerAsync(string sourceVersion, Slicer slicer)
+    public async ValueTask<PivotAnswer> AnswerAsync(string sourceVersion, Slicer slicer, string? changedSince = null)
     {
         if (Refusal is not null)
             return PivotAnswer.Refused(Refusal);
@@ -149,6 +174,7 @@ internal sealed class AggregationPass
             }
         }).ConfigureAwait(false);
         var axes = new PivotAnswerAxis[_axis.Length];
+        var spelled = new PivotItemKey[_axis.Length][];
         for (var level = 0; level < _axis.Length; level++)
         {
             var space = _axis[level];
@@ -179,7 +205,8 @@ internal sealed class AggregationPass
             }).ConfigureAwait(false);
             var field = level < _query.Rows.Count ? _query.Rows[level].Field : _query.Columns[level - _query.Rows.Count].Field;
             // Every leaf names one of the Items just listed, by construction.
-            axes[level] = PivotAnswerAxis.Made(field, [.. keys], leaves);
+            spelled[level] = [.. keys];
+            axes[level] = PivotAnswerAxis.Made(field, spelled[level], leaves);
         }
         var counts = new long[leafCount];
         await slicer.ForAsync(leafCount, (from, to) =>
@@ -193,7 +220,61 @@ internal sealed class AggregationPass
             var finished = await _values[v].FinishedAsync(order, leafCount, slicer).ConfigureAwait(false);
             values[v] = new PivotAnswerValues(_values[v].Field, finished, leafCount);
         }
-        return new PivotAnswer(sourceVersion, axes[.._query.Rows.Count], axes[_query.Rows.Count..], leafCount, counts, values);
+        var answer = new PivotAnswer(sourceVersion, axes[.._query.Rows.Count], axes[_query.Rows.Count..], leafCount, counts, values);
+        var changes = Remember(sourceVersion, changedSince, order.AsSpan(0, leafCount), spelled);
+        return changes is null ? answer : answer.WithChangedLeaves(changes);
+    }
+
+    // Says which leaves changed since the last answer, when that is the version asked, and makes
+    // this answer the last.
+    private PivotLeafChanges? Remember(string sourceVersion, string? changedSince, ReadOnlySpan<int> order, PivotItemKey[][] spelled)
+    {
+        lock (_answeredGate)
+        {
+            PivotLeafChanges? changes = null;
+            if (changedSince is not null && string.Equals(changedSince, _answeredVersion, StringComparison.Ordinal))
+            {
+                if (_answeredOrder is { } answered && order.SequenceEqual(answered) && SameSpelling(spelled, _answeredItems!))
+                {
+                    var changed = new List<int>(_touched.Count);
+                    foreach (var leaf in _touched)
+                    {
+                        var at = order.BinarySearch(leaf);
+                        if (at >= 0)
+                            changed.Add(at);
+                    }
+                    changed.Sort();
+                    changes = PivotLeafChanges.Of(changedSince, changed);
+                }
+                else
+                {
+                    changes = PivotLeafChanges.Remade(changedSince);
+                }
+            }
+            _answeredVersion = sourceVersion;
+            _answeredOrder = order.ToArray();
+            _answeredItems = spelled;
+            _touched = [];
+            return changes;
+        }
+    }
+
+    private static bool SameSpelling(PivotItemKey[][] one, PivotItemKey[][] other)
+    {
+        if (one.Length != other.Length)
+            return false;
+        for (var level = 0; level < one.Length; level++)
+        {
+            if (one[level].Length != other[level].Length)
+                return false;
+            for (var i = 0; i < one[level].Length; i++)
+            {
+                var (a, b) = (one[level][i], other[level][i]);
+                if (a.Kind != b.Kind || !string.Equals(a.Value, b.Value, StringComparison.Ordinal))
+                    return false;
+            }
+        }
+        return true;
     }
 
     // ---- Assembled while batches arrive (ADR-0067) ------------------------------------------------
@@ -410,6 +491,7 @@ internal sealed class AggregationPass
             _leafOf[number] = -1;
             if (leaf < 0)
                 continue;
+            Touch(leaf);
             _leaves.Records[leaf]--;
             for (var v = 0; v < _values.Length; v++)
             {
@@ -442,6 +524,8 @@ internal sealed class AggregationPass
         {
             _added = null;
         }
+        foreach (var leaf in added)
+            Touch(leaf);
 
         // 3. The leaves whose parts cannot be subtracted, from their rows. An exact sum is an
         // integer, which subtraction and addition keep exactly; one past 128 bits is a double,
@@ -465,6 +549,13 @@ internal sealed class AggregationPass
             Recompute(values, marked[v]);
         }
         return true;
+    }
+
+    // A leaf a batch took a row from or brought one to: changed since the last answer (ADR-0161).
+    private void Touch(int leaf)
+    {
+        lock (_answeredGate)
+            _touched.Add(leaf);
     }
 
     // A field's marked leaves, from nothing, over the rows each holds, in slice order — the

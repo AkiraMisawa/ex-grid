@@ -12,8 +12,14 @@ namespace ExPivot.Engine;
 public sealed class PivotReport
 {
     private static readonly object NoValue = new();
+    private static long s_made;
 
     private readonly CellReader _reader;
+
+    // A report made from another (ADR-0161): the other's number, and the cells whose painted text
+    // differs from the other's — every one of them on a row made anew.
+    private long _madeFrom;
+    private (int Row, int Column)[] _changedCells = [];
 
     // The cells read so far, by row, each kept as its value or NoValue for an empty cell; and the
     // rows by what they stand for, made the first time a row is looked up by its key.
@@ -45,6 +51,21 @@ public sealed class PivotReport
 
     /// <summary>The cube the report was laid out from.</summary>
     public PivotCube Cube { get; }
+
+    /// <summary>A number of its own, which a report made from this one names.</summary>
+    internal long Id { get; } = Interlocked.Increment(ref s_made);
+
+    /// <summary>
+    /// Whether this report was made from <paramref name="earlier"/> by
+    /// <see cref="PivotEngine.NextReport"/> (ADR-0161): its columns and its rows stand where the
+    /// earlier report's do, and it shares every row whose painted text did not change — so what was
+    /// measured of the earlier report's labels holds for this one.
+    /// </summary>
+    public bool WasMadeFrom(PivotReport earlier)
+    {
+        ArgumentNullException.ThrowIfNull(earlier);
+        return _madeFrom == earlier.Id;
+    }
 
     /// <summary>The layout the report was laid out under.</summary>
     public PivotLayout Layout { get; }
@@ -90,8 +111,11 @@ public sealed class PivotReport
     {
         if (other is null || other.Rows.Count != Rows.Count)
             return false;
-        return ReferenceEquals(other, this) || SameRows(other, 0, Rows.Count);
+        return ReferenceEquals(other, this) || MadeOneFromTheOther(other) || SameRows(other, 0, Rows.Count);
     }
+
+    // One report made from the other stands for what the other stands for, row by row.
+    private bool MadeOneFromTheOther(PivotReport other) => _madeFrom == other.Id || other._madeFrom == Id;
 
     /// <summary>
     /// <see cref="HasSameRowsAs"/> in slices (ADR-0066, PV-40): the rows compared a piece at a time,
@@ -107,7 +131,7 @@ public sealed class PivotReport
         var slicer = Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken);
         if (other is null || other.Rows.Count != Rows.Count)
             return ValueTask.FromResult(false);
-        return ReferenceEquals(other, this) ? ValueTask.FromResult(true) : SameRowsAsync(other, slicer);
+        return ReferenceEquals(other, this) || MadeOneFromTheOther(other) ? ValueTask.FromResult(true) : SameRowsAsync(other, slicer);
     }
 
     private async ValueTask<bool> SameRowsAsync(PivotReport other, Slicer slicer)
@@ -315,6 +339,11 @@ public sealed class PivotReport
 
     private async ValueTask<PivotReportChanges> ChangesSinceAsync(PivotReport earlier, Slicer slicer)
     {
+        // Made from the earlier report, the rows and columns stand where they stood, and the cells
+        // whose text changed were found as it was made.
+        if (_madeFrom == earlier.Id)
+            return new PivotReportChanges([], [], _changedCells, [], []);
+
         // The value columns by name: where they stood, or found among the earlier report's.
         var columns = new int[ValueColumns.Count];
         var newColumns = new List<int>();
@@ -425,6 +454,65 @@ public sealed class PivotReport
         => string.Equals(a.NumberFormat, b.NumberFormat, StringComparison.Ordinal)
             && (a.ShowValuesAs == PivotShowValuesAs.NoCalculation) == (b.ShowValuesAs == PivotShowValuesAs.NoCalculation);
 
+    // ---- The next report from the last (ADR-0161) ---------------------------------------------------
+
+    /// <summary>
+    /// The report of <paramref name="cube"/> made from <paramref name="previous"/>, or null when it
+    /// is to be laid out afresh: the cube was not made from the previous report's by
+    /// <see cref="PivotEngine.NextCube"/>, the layout or the words are not the same, the layout orders
+    /// Items by a Value Field — a changed value can move a row among its siblings — or shows a value as
+    /// a share of a total, which a change on one path moves on others.
+    /// <para>The columns and their spans are the previous report's, and so is every row: a row whose
+    /// Items are on a changed leaf's path, and which carries values, is compared cell by cell in the
+    /// columns on a changed path, and is made anew when a cell's painted text differs. The cells found
+    /// are kept, for the Change Highlight (<see cref="ChangesSince"/>).</para>
+    /// </summary>
+    internal static async ValueTask<PivotReport?> NextAsync(PivotReport previous, PivotCube cube, PivotLayout layout, PivotOptions options, Slicer slicer)
+    {
+        if (cube.MadeFrom != previous.Cube.Id || cube.AffectedRows is not { } affectedRows || cube.AffectedColumns is not { } affectedColumns
+            || !ReferenceEquals(previous.Layout, layout) || !Equals(previous.Options, options)
+            || layout.Rows.Concat(layout.Columns).Any(placement => placement.Sort.ByValue is not null)
+            || layout.Values.Any(value => value.ShowValuesAs != PivotShowValuesAs.NoCalculation))
+            return null;
+        var rows = new PivotReportRow[previous.Rows.Count];
+        var report = new PivotReport(
+            cube, layout, options, new CellReader(cube, previous._reader.Values),
+            previous.LabelColumns, previous.ValueColumns, previous.HeaderSpans, previous.HeaderTierCount, rows)
+        {
+            _madeFrom = previous.Id,
+        };
+        var columns = new List<int>();
+        for (var j = 0; j < previous.ValueColumns.Count; j++)
+        {
+            if (affectedColumns[previous.ValueColumns[j].Node.Id])
+                columns.Add(j);
+        }
+        var changed = new List<(int Row, int Column)>();
+        await slicer.ForAsync(rows.Length, (from, to) =>
+        {
+            for (var i = from; i < to; i++)
+            {
+                var row = previous.Rows[i];
+                rows[i] = row;
+                if (!row.CarriesValues || !affectedRows[row.Node.Id])
+                    continue;
+                var anew = false;
+                foreach (var j in columns)
+                {
+                    if (!report.SameText(row, j, previous, row, j))
+                    {
+                        changed.Add((i, j));
+                        anew = true;
+                    }
+                }
+                if (anew)
+                    rows[i] = new PivotReportRow(row);
+            }
+        }).ConfigureAwait(false);
+        report._changedCells = [.. changed];
+        return report;
+    }
+
     /// <summary>A Value Field's value at a row's total across the columns, as shown — what an
     /// order by that Value Field compares (ADR-0060). Null for an empty or error value.</summary>
     internal double? TotalOf(PivotReportRow row, int vf)
@@ -493,6 +581,18 @@ public sealed class PivotReportRow
         CarriesValues = carriesValues;
         Labels = labels;
         Key = new PivotRowKey(role, valueField, node);
+    }
+
+    /// <summary>A new instance of <paramref name="row"/>, standing for what it stands for — its key
+    /// and labels shared — for a next report in which its painted text changed (ADR-0161/0003).</summary>
+    internal PivotReportRow(PivotReportRow row)
+    {
+        Role = row.Role;
+        Node = row.Node;
+        ValueField = row.ValueField;
+        CarriesValues = row.CarriesValues;
+        Labels = row.Labels;
+        Key = row.Key;
     }
 
     /// <summary>What the row stands for.</summary>

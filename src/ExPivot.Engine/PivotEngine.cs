@@ -65,7 +65,7 @@ public static class PivotEngine
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(answer);
         ArgumentNullException.ThrowIfNull(fields);
-        return PivotCube.Build(query, answer, FieldMeta.Of(fields));
+        return PivotCube.Build(query, answer, FieldMeta.Of(fields), fields: fields);
     }
 
     /// <summary>
@@ -91,7 +91,104 @@ public static class PivotEngine
         ArgumentNullException.ThrowIfNull(answer);
         ArgumentNullException.ThrowIfNull(fields);
         var meta = FieldMeta.Of(fields);
-        return PivotCube.BuildAsync(query, answer, meta, Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken));
+        return PivotCube.BuildAsync(query, answer, meta, Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken), fields: fields);
+    }
+
+    /// <summary>
+    /// The cube of a live redraw's answer, made from the cube on screen (ADR-0161): under the same
+    /// question, when the answer's leaves are those of <paramref name="previous"/>'s answer and only
+    /// their values changed, it shares <paramref name="previous"/>'s axis trees and cells and computes
+    /// again only the cells on the changed leaves' paths — each changed leaf's cell, every subtotal
+    /// above it on both axes, and the grand totals — each from its leaves, as a cube built afresh
+    /// computes it. Which leaves changed is the answer's to say
+    /// (<see cref="PivotAnswer.ChangedLeaves"/>, since <paramref name="previous"/>'s Source Version);
+    /// when it does not, the leaves are compared with <paramref name="previous"/>'s. Otherwise — another
+    /// question, other fields, leaves that came or went, Items spelled anew, a batch the source could
+    /// not fold, or so many changed leaves that building afresh is cheaper — it is built afresh
+    /// (<see cref="Cube"/>). Either way it equals the cube built afresh, and
+    /// <paramref name="previous"/> is left exactly as it was.
+    /// </summary>
+    /// <param name="previous">The cube the report on screen was laid out from.</param>
+    /// <param name="query">The question the answer was given to.</param>
+    /// <param name="answer">The source's answer.</param>
+    /// <param name="fields">The source's fields: how Items are labelled and ordered.</param>
+    public static PivotCube NextCube(PivotCube previous, PivotQuery query, PivotAnswer answer, IReadOnlyList<PivotField> fields)
+    {
+        ArgumentNullException.ThrowIfNull(previous);
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(answer);
+        ArgumentNullException.ThrowIfNull(fields);
+        return Slicer.Run(PivotCube.NextAsync(previous, query, answer, fields, Slicer.Unsliced));
+    }
+
+    /// <summary><see cref="NextCube"/> in slices (PV-40): yielding whenever a slice of
+    /// <see cref="PivotSlicing.Budget"/> is spent, and throwing at the next yield once cancelled.</summary>
+    /// <param name="previous">The cube the report on screen was laid out from.</param>
+    /// <param name="query">The question the answer was given to.</param>
+    /// <param name="answer">The source's answer.</param>
+    /// <param name="fields">The source's fields: how Items are labelled and ordered.</param>
+    /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
+    /// <param name="cancellationToken">Stops the work at the next yield.</param>
+    public static ValueTask<PivotCube> NextCubeAsync(
+        PivotCube previous,
+        PivotQuery query,
+        PivotAnswer answer,
+        IReadOnlyList<PivotField> fields,
+        PivotSlicing? slicing = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(previous);
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(answer);
+        ArgumentNullException.ThrowIfNull(fields);
+        return PivotCube.NextAsync(previous, query, answer, fields, Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken));
+    }
+
+    /// <summary>
+    /// The report of a live redraw, made from the report on screen (ADR-0161): when
+    /// <paramref name="cube"/> was made from <paramref name="previous"/>'s cube by
+    /// <see cref="NextCube"/>, under the same layout and words, it shares <paramref name="previous"/>'s
+    /// columns and every row whose painted text did not change, and makes anew each row whose painted
+    /// text did. Otherwise it is laid out afresh (<see cref="Report"/>): a change that is not data, a
+    /// cube built afresh, an order that follows values (a sort by a Value Field), and a Show Values As,
+    /// whose shown values on other rows a change can move. Either way it equals the report laid out
+    /// afresh, and <paramref name="previous"/> is left exactly as it was.
+    /// </summary>
+    /// <param name="previous">The report on screen.</param>
+    /// <param name="cube">The cube to lay out, which must hold the layout.</param>
+    /// <param name="layout">The layout.</param>
+    /// <param name="options">The culture and the words; <see cref="PivotOptions.Default"/> when left out.</param>
+    public static PivotReport NextReport(PivotReport previous, PivotCube cube, PivotLayout layout, PivotOptions? options = null)
+    {
+        ArgumentNullException.ThrowIfNull(previous);
+        return Slicer.Run(NextReportAsync(previous, cube, layout, options, Slicer.Unsliced));
+    }
+
+    /// <summary><see cref="NextReport"/> in slices (PV-40): yielding whenever a slice of
+    /// <see cref="PivotSlicing.Budget"/> is spent, and throwing at the next yield once cancelled.</summary>
+    /// <param name="previous">The report on screen.</param>
+    /// <param name="cube">The cube to lay out, which must hold the layout.</param>
+    /// <param name="layout">The layout.</param>
+    /// <param name="options">The culture and the words; <see cref="PivotOptions.Default"/> when left out.</param>
+    /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
+    /// <param name="cancellationToken">Stops the work at the next yield.</param>
+    public static ValueTask<PivotReport> NextReportAsync(
+        PivotReport previous,
+        PivotCube cube,
+        PivotLayout layout,
+        PivotOptions? options = null,
+        PivotSlicing? slicing = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(previous);
+        return NextReportAsync(previous, cube, layout, options, Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken));
+    }
+
+    private static async ValueTask<PivotReport> NextReportAsync(PivotReport previous, PivotCube cube, PivotLayout layout, PivotOptions? options, Slicer slicer)
+    {
+        var builder = Builder(cube, layout, options);
+        return await PivotReport.NextAsync(previous, cube, layout, options ?? PivotOptions.Default, slicer).ConfigureAwait(false)
+            ?? await builder.BuildAsync(slicer).ConfigureAwait(false);
     }
 
     /// <summary>
