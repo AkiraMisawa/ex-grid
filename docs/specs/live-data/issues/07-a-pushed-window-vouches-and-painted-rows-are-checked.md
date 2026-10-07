@@ -21,7 +21,7 @@ whole. The painted rows' keys are checked on every render, vouched or not.
 ## Done when
 
 - [x] LV-10 as restated passes, counting the key function's calls (§32)
-- [x] The grid's check of a pushed 10⁶-row vouched Window is gone from ticket 01's measurement. Record the
+- [ ] The grid's check of a pushed 10⁶-row vouched Window is gone from ticket 01's measurement. Record the
   pushed-Window figure again beside [ticket 01's](../../../../verification/2026-10-06-macos-live-update-costs-cc/README.md): 40 ms on CoreCLR, 257 ms in the browser
 - [x] Layer 1 and 2 green
 
@@ -52,3 +52,11 @@ the render that checks the 18 painted rows. The browser's 257 ms was not re-reco
 2026-10-07, after the code review: the pass over a Window and the check of the painted rows now take
 their keys through one method, and the public doc no longer quotes a timing. The figure's box is ticked
 on the CoreCLR figure, as the brief allowed; the browser half of it (257 ms) stays open.
+
+2026-10-07, after the late reviews: the figure's box is unticked. The CoreCLR half is recorded above;
+the browser half (ticket 01's 257 ms, taken again with a vouched pushed Window) is not, and stays open.
+It needs a browser harness page with a pushed grid, and the layer-3 lock. The Docs Site now says the
+feature: `samples/ExGrid.Docs/Pages/Grid/GridData.razor`, "Pushing a Window", explains the Row Key and the
+vouch; the million-row Example declares both, under each Chrome (`MillionRows.razor`,
+`MillionRowsMud.razor`). The site was run and the Example used once under each Chrome: Ctrl+End painted
+the last trade, and the console stayed clean.

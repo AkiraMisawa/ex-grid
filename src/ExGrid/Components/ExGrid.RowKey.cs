@@ -59,8 +59,9 @@ public partial class ExGrid<TRow>
     private static readonly ConditionalWeakTable<TRow, object> RowIdentityKeys = new();
 
     // The Row Key in force for the rows painted — the grid's own, else the Source's, else none — and
-    // whether the Window in hand was taken on its source's word. Both are what the last Window taken
-    // in was checked under, so a new key over the same Window checks it again.
+    // whether the Window in hand was taken on the word of its source, or of the Consumer that pushed
+    // it. Both are what the last Window taken in was checked under, so a new key over the same Window
+    // checks it again, and so does a vouch withdrawn.
     private Func<TRow, object>? _rowKey;
     private bool _windowVouched;
 

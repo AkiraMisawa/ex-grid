@@ -65,6 +65,17 @@
             <li><strong>Bump <code>RowSequenceVersion</code></strong> when the order of the rows changes, so a selection that would now cover other rows is dropped.</li>
         </ul>
         <p>
+            <strong>Name your rows by a Row Key</strong> when you make them afresh — fetched again, or rebuilt from a
+            feed. <code>RowKey</code> is a function from a row to what tells it from every other row, such as a
+            trade's id, kept in a field like the columns. A row that comes back as a new instance under the same key
+            keeps its row component, and only the text that changed is written; without a key, a new instance is a
+            new row. The grid refuses a Window in which a key repeats, naming the key and its rows, and to find one
+            it reads every row's key in every new Window. When your Windows cannot repeat a key — cut, as here, from
+            a list whose ids are unique — say so with <code>VouchesDistinctRows="true"</code>. The grid then reads
+            only the keys of the rows it paints, on every render, which matters when you push a large Window at a
+            time. A repeat that breaks the promise is still refused the moment it reaches the screen.
+        </p>
+        <p>
             The DOM does not grow with the row count — a million rows paint the same few dozen elements as a hundred.
         </p>
         <DocsExample Title="A million rows, made on demand" Builtin="typeof(MillionRows)" Mud="typeof(MillionRowsMud)"
