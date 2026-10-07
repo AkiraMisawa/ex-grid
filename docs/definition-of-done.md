@@ -1298,7 +1298,7 @@ SM-11 and SM-14 gate ExGrid's release (§2); SM-12 and SM-13 judge ExSheet and E
 | **SM-14** | MUST | `ShowSelectionSummary` is on by default; off, no strip and no figure on the grid, and no request unless `OnSelectionSummaryChanged` has a delegate, which is still told; switched on again, the standing selection is asked about. ExSheet and ExPivot carry it to their grid (ADR-0130, 2026-10-06) | Layer 2 | as stated |
 | **SM-12** | MUST | ExSheet answers from its own cells: a formula's value, every cell of a spilled array, by the same table (ADR-0130) | Layer 1 | as stated |
 | **SM-13** | MUST | ExPivot answers from the cells it lays out, subtotals and grand totals summed with the rest (ADR-0130) | Layer 2 | as stated |
-| **SM-14** | MUST | The grid walks a new Window to learn whether the rows moved only while figures stand or are being asked for, and compares only the Selection's positions: with no figure the walk is not made, and a change outside the Selection moves no figure (ADR-0130, 2026-10-07) | Layer 2 counting the row comparisons | as stated |
+| **SM-15** | MUST | The grid walks a new Window to learn whether the rows moved only while figures stand or are being asked for, and compares only the Selection's positions: with no figure the walk is not made, and a change outside the Selection moves no figure (ADR-0130, 2026-10-07) | Layer 2 counting the row comparisons | as stated |
 
 ---
 

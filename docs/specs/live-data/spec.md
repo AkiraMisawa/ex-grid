@@ -24,7 +24,7 @@ And in the grilling of 2026-10-07, on ticket 01's numbers:
 - ADR-0141's section of 2026-10-07 (who may vouch, and a pushed Window) and ADR-0130's (the Selection
   Summary's walk).
 
-The criteria are §32 of `docs/definition-of-done.md` (LV-1 to LV-23), PV-42 to PV-48 in §29, SM-14
+The criteria are §32 of `docs/definition-of-done.md` (LV-1 to LV-23), PV-42 to PV-48 in §29, SM-15
 in §31, and two rows of §21.11. What is built, found and not done is in `docs/implementation-status.md`, "ExGrid's
 live data (2026-10-06)". This spec synthesises those decisions; where it and they disagree, they win.
 
