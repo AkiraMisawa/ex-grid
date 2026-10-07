@@ -1,0 +1,25 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExSheet.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid.Data.Arrow -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExSheet -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  ExPivot -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  ExSheet.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.MudBlazor/bin/Release/net10.0/ExSheet.MudBlazor.dll
+  ExPivot.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.MudBlazor/bin/Release/net10.0/ExPivot.MudBlazor.dll
+  ExGrid.DemoPages -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoPages/bin/Release/net10.0/ExGrid.DemoPages.dll
+  ExGrid.DemoHost.Server -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoHost.Server/bin/Release/net10.0/ExGrid.DemoHost.Server.dll
+  ExGrid.DemoHost.Server -> /tmp/exgrid-pr66-merge-hosts.btkEri/server/
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid.Data.Arrow -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.DemoApi -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoApi/bin/Release/net10.0/ExGrid.DemoApi.dll
+  ExGrid.DemoApi -> /tmp/exgrid-pr66-merge-hosts.btkEri/api/

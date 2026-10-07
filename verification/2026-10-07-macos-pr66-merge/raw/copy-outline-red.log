@@ -1,0 +1,15 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Discovering: ExGrid.Components
+  Discovered:  ExGrid.Components
+  Starting:    ExGrid.Components
+    ExGrid.Components.Tests.CopiedRangeTests.An_asynchronous_consumer_copy_is_outlined_only_when_it_lands [FAIL]
+      Assert.True() Failure
+      Expected: True
+      Actual:   False
+      Stack Trace:
+        tests/ExGrid.Components/CopiedRangeTests.cs(110,0): at ExGrid.Components.Tests.CopiedRangeTests.An_asynchronous_consumer_copy_is_outlined_only_when_it_lands()
+        --- End of stack trace from previous location ---
+  Finished:    ExGrid.Components
+=== TEST EXECUTION SUMMARY ===
+   ExGrid.Components  Total: 16, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 0.421s

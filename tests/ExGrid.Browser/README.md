@@ -357,6 +357,16 @@ nobody had asked for. What that means when writing a test:
   Server, a capture listener proves the delayed gesture preceded the upstream paint. Consecutive
   edits and paste keep their order at 0 and 150 ms. Existing row-order, column-layout and editable
   target refusal coverage stays in the editing, clipboard and declaration suites.
+- `copied-range.spec.mjs` — the Copied Range (ADR-0170, CP-26 to CP-32) on `/features`: a copy
+  outlined with dashes that stand still, read on the top edge of the Selection's outline as ink and
+  ground where it was solid before the copy; the real `clipboardchange` dropping one grid's outline
+  when the second instance copies, and the second's when a page script writes; Escape taking the
+  outline and leaving the keyboard on the grid, a Ctrl+V leaving it; under `?upstream=1`, F9
+  keeping the outline over a replaced row's Trader and dropping it over its moved Notional; and, in
+  a document of its own with `ClipboardChangeEvent` removed before the grid attaches, no outline
+  while the copy still lands; and on `/sheet`, with and without `?chrome=mud`, the dashes in the
+  colour of the Sheet's outline — Excel's green where nothing names it. A script's write waits for
+  its own `clipboardchange` before the next copy, so its event cannot be taken for the grid's.
 - `find.spec.mjs` — Find (ADR-0055), **run once per Chrome** on `/features`: Ctrl+F taken
   from the browser and the keys typed after it landing in the panel's field, Enter and
   Shift+Enter stepping, a match beyond the painted rows revealed, "no match" in a live
@@ -402,7 +412,8 @@ nobody had asked for. What that means when writing a test:
   Tokens beat the supported override routes (UX-2), painted geometry equals declared
   (UX-3/ST-3), Visual Tokens recolour from an ancestor (UX-5), nothing under the
   Viewport animates (UX-6), forced colors keep every state tellable (UX-7), a Stale or
-  Error state outranks a theme's tone colour on `/tones` (ADR-0006/0029), the dark
+  Error state outranks a theme's tone colour on `/tones` (ADR-0006/0029), the Modified mark a
+  triangle in the corner alone, in its token's colour, a pinned one still sticky (UX-20), the dark
   scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2/3), the
   editor's box is the cell's (ED-9), the runaway auto-scroll stops (SL-14/15), the
   Blazor error UI never shows (CON-5).

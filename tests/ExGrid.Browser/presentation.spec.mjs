@@ -203,6 +203,58 @@ test('a toned Stale or Error cell paints in its state\'s colour under a theme th
     }
 });
 
+// The Modified mark (ADR-0029's fourth correction, 2026-10-07). It was an inset box-shadow, which
+// drew a band along the whole top and right edges rather than a corner, and which a colour in its
+// token — ExGrid.MudBlazor's — turned into no mark at all.
+test('the Modified mark is a triangle in the top right corner alone, in the colour its token names (UX-20, ADR-0029, ADR-0006)', async ({ page }) => {
+    await page.goto('/tones');
+    const cellAt = (row, column) => page.locator(`.ex-grid [id$='r${row}c${column}']`);
+    await expect(cellAt(TONED.flat, STATE_COLUMN.modified)).toHaveClass(/ex-state-modified/);
+    await page.mouse.move(0, 0);
+
+    // Each spot read in the Modified cell and in the Normal cell of the same row, so a column rule,
+    // the row's ground or a stripe is the same in both and only the mark can differ.
+    const spots = {
+        corner: (box) => [box.x + box.width - 1.5, box.y + 1.5],
+        'top edge, halfway': (box) => [box.x + box.width / 2, box.y + 1.5],
+        'right edge, halfway': (box) => [box.x + box.width - 1.5, box.y + box.height / 2],
+        'below the triangle': (box) => [box.x + box.width - 1.5, box.y + 9],
+        'left of the triangle': (box) => [box.x + box.width - 9, box.y + 1.5],
+    };
+    const read = async (column) => {
+        const box = await cellAt(TONED.flat, column).boundingBox();
+        const region = await painted(page, box);
+        return Object.fromEntries(Object.entries(spots).map(([name, at]) => [name, region.at(...at(box))]));
+    };
+    const modified = await read(STATE_COLUMN.modified);
+    const normal = await read(STATE_COLUMN.normal);
+    expect(sameColour(modified.corner, normal.corner, 8), 'the corner carries the mark').toBe(false);
+    for (const name of ['top edge, halfway', 'right edge, halfway', 'below the triangle', 'left of the triangle']) {
+        expect(sameColour(modified[name], normal[name], 2), `${name}: ${modified[name]} against ${normal[name]}`).toBe(true);
+    }
+
+    // The token is a colour, as every Cell State token is, and the mark is painted in it. Set
+    // above the grid, where a Wrapper's stylesheet sets it, and taken back as the test ends.
+    await alterPage(page, () => {
+        document.body.style.setProperty('--ex-state-modified-mark', 'rgb(0, 160, 0)');
+        return () => document.body.style.removeProperty('--ex-state-modified-mark');
+    });
+    const box = await cellAt(TONED.flat, STATE_COLUMN.modified).boundingBox();
+    const region = await painted(page, box);
+    expect(sameColour(region.at(box.x + box.width - 1.5, box.y + 1.5), [0, 160, 0], 8), 'the mark takes its token\'s colour').toBe(true);
+
+    // The mark's cell is its containing block at no specificity: a Pinned Column's cell that is
+    // Modified stays sticky. Read in one synchronous step, so no render sees the class.
+    const position = await page.evaluate(() => {
+        const pinned = document.querySelector('.ex-grid .ex-cell.ex-pinned:not(.ex-state-modified)');
+        pinned.classList.add('ex-state-modified');
+        const value = getComputedStyle(pinned).position;
+        pinned.classList.remove('ex-state-modified');
+        return value;
+    });
+    expect(position).toBe('sticky');
+});
+
 test('under a dark scheme the untouched grid stays readable (UX-8)', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await open(page);

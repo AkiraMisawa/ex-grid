@@ -86,8 +86,10 @@ public class ShippedStylesheetTests
         // current resolution, which tells the grid its Device Pixel when the scale or the zoom moves.
         // And the clipboard entry once more: copy, cut and paste in the capture phase, taking the
         // event a clipboard key fires while a hold stands into its place among the held keys
-        // (ADR-0010's note of 2026-10-02) — the same events, no new use.
-        string[] allowed = ["change", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
+        // (ADR-0010's note of 2026-10-02) — the same events, no new use. And the clipboard entry a
+        // last time (ADR-0170): clipboardchange on navigator.clipboard, which tells the grid that the
+        // clipboard changed by a write other than its own copy, so the Copied Range can go.
+        string[] allowed = ["change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 

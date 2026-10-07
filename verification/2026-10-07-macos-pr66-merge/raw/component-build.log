@@ -1,0 +1,13 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExGrid.Components -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.38
