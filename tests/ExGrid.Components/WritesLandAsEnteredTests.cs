@@ -157,12 +157,12 @@ public class WritesLandAsEnteredTests : GridTestContext
     private static Task PasteAsync(IRenderedComponent<ExGrid<TestRow>> cut, int paint)
         => cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x", "<table><tr><td>x</td></tr></table>", paint));
 
-    /// <summary>Releases a fill-handle drag at (50, 70) — row 3 of Book — told the render
-    /// <paramref name="releasedOn"/>, as the listener tells it.</summary>
-    private static async Task ReleaseFillAsync(IRenderedComponent<ExGrid<TestRow>> cut, int releasedOn, int sequence, int layout)
+    /// <summary>Releases a fill-handle drag at (50, 70) — row 3 of Book — told the order and layout
+    /// it was taken under, as the listener tells them (ED-31).</summary>
+    private static async Task ReleaseFillAsync(IRenderedComponent<ExGrid<TestRow>> cut, int sequence, int layout)
     {
         await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mouseup", 50, 70, Attribute(cut, "data-ex-first-row"), 0,
-            sequence, layout, releasedOn));
+            sequence, layout));
         await UpAsync(cut, 50, 70);
     }
 
@@ -407,14 +407,13 @@ public class WritesLandAsEnteredTests : GridTestContext
         var rows = TestRows.Many(50);
         var heard = new Heard();
         var cut = RenderGrid(rows, heard);
-        var pressedOn = Paint(cut);
         var firstRow = Attribute(cut, "data-ex-first-row");
         var sequence = Attribute(cut, "data-ex-sequence");
         var layout = Attribute(cut, "data-ex-layout");
         Push(cut, Changed(rows, 0, book: "Moved upstream"));
 
         // The press of the double click is told the render it was made on, as the listener tells it.
-        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mousedown", 50, 10, firstRow, 0, sequence, layout, pressedOn));
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mousedown", 50, 10, firstRow, 0, sequence, layout));
         await DownAsync(cut, 50, 10);
         await UpAsync(cut, 50, 10);
         await cut.Find(".ex-viewport").DoubleClickAsync(new MouseEventArgs { Button = 0, OffsetX = 50, OffsetY = 10 });
@@ -433,11 +432,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         var heard = new Heard();
         var cut = RenderGrid(rows, heard, extra: ps => ps.Add(g => g.ShowFormulaBar, true));
         await ClickAsync(cut, 50, 10);
-        var pressedOn = Paint(cut);
         Push(cut, Changed(rows, 0, book: "Moved upstream"));
 
-        // The listener still tells the press's render before its focus is dispatched.
-        await cut.InvokeAsync(() => cut.Instance.BarPressTakenAt(pressedOn));
         await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
         await cut.Find(".ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = "Typed in the bar" });
         await KeyAsync(cut, "Enter", paint: Paint(cut));
@@ -454,10 +450,9 @@ public class WritesLandAsEnteredTests : GridTestContext
         var heard = new Heard();
         var cut = RenderGrid(rows, heard);
         await ClickAsync(cut, 50, 10);
-        var startedOn = Paint(cut);
         Push(cut, Changed(rows, 0, book: "Moved upstream"));
 
-        await cut.InvokeAsync(() => cut.Instance.OnKeyFieldTextAsync("かな", startedOn));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyFieldTextAsync("かな"));
         await KeyAsync(cut, "Enter", paint: Paint(cut));
 
         Assert.Empty(heard.CommitRefusals);
@@ -868,12 +863,11 @@ public class WritesLandAsEnteredTests : GridTestContext
         var heard = new Heard();
         var cut = RenderGrid(rows, heard, extra: ps => ps.Add(g => g.ShowFillHandle, true));
         await DragFillAsync(cut);
-        var releasedOn = Paint(cut);
         var sequence = Attribute(cut, "data-ex-sequence");
         var layout = Attribute(cut, "data-ex-layout");
         Push(cut, Changed(rows, 3, book: "Moved upstream"));
 
-        await ReleaseFillAsync(cut, releasedOn, sequence, layout);
+        await ReleaseFillAsync(cut, sequence, layout);
 
         Assert.Single(heard.Fills);
         Assert.Empty(heard.PasteRefusals);
@@ -886,13 +880,12 @@ public class WritesLandAsEnteredTests : GridTestContext
         var heard = new Heard();
         var cut = RenderGrid(rows, heard, extra: ps => ps.Add(g => g.ShowFillHandle, true));
         await DragFillAsync(cut);
-        var releasedOn = Paint(cut);
         var sequence = Attribute(cut, "data-ex-sequence");
         var layout = Attribute(cut, "data-ex-layout");
         // Row 0 is the source's, not the target's (rows 2 and 3).
         Push(cut, Changed(rows, 0, book: "Moved upstream"));
 
-        await ReleaseFillAsync(cut, releasedOn, sequence, layout);
+        await ReleaseFillAsync(cut, sequence, layout);
 
         var fill = Assert.Single(heard.Fills);
         Assert.Equal(SelectionRange.FromCorners(new CellPosition(2, 0), new CellPosition(3, 0)), fill.Target);
@@ -906,12 +899,11 @@ public class WritesLandAsEnteredTests : GridTestContext
         var heard = new Heard();
         var cut = RenderGrid(rows, heard, extra: ps => ps.Add(g => g.ShowFillHandle, true));
         await DragFillAsync(cut);
-        var releasedOn = Paint(cut);
         var sequence = Attribute(cut, "data-ex-sequence");
         var layout = Attribute(cut, "data-ex-layout");
         Reorder(cut, Moved(rows, 0, 2));
 
-        await ReleaseFillAsync(cut, releasedOn, sequence, layout);
+        await ReleaseFillAsync(cut, sequence, layout);
 
         Assert.Empty(heard.Fills);
     }
@@ -1789,12 +1781,11 @@ public class WritesLandAsEnteredTests : GridTestContext
         var heard = new Heard();
         var cut = RenderSourceGrid(source, heard, extra: ps => ps.Add(g => g.ShowFillHandle, true));
         await DragFillAsync(cut);
-        var releasedOn = Paint(cut);
         var sequence = Attribute(cut, "data-ex-sequence");
         var layout = Attribute(cut, "data-ex-layout");
         source.Gather(Changed(rows, 3, book: "Gathered upstream"));
 
-        await ReleaseFillAsync(cut, releasedOn, sequence, layout);
+        await ReleaseFillAsync(cut, sequence, layout);
 
         Assert.Equal(1, source.Asked);
         Assert.Single(heard.Fills);

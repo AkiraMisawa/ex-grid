@@ -12,11 +12,10 @@
 // that same mousedown and mouseup, and the keydown, selecting the Name Box's text for the press
 // that gives it the keyboard (ADR-0051, ticket 78); that same mousedown and mouseup telling the
 // core what each press on the rows was taken against, so a held one lands where it was made
-// (ED-31, ADR-0021's note of 2026-10-02); that same mousedown and mouseup, the keydown, the
-// paste and the Keyboard Field's compositionstart reading the render the rows on screen were
-// painted by (data-ex-paint), so that a write lands where it was aimed, under the order it was
-// aimed under, and a press on an action finds the row it was made on (ADR-0142; ADR-0021's notes
-// of 2026-10-05 and 2026-10-07);
+// (ED-31, ADR-0021's note of 2026-10-02); the keydown, the paste and that same mousedown and
+// mouseup on an action reading the render the rows on screen were painted by (data-ex-paint), so
+// that a write is checked against the order it was aimed under and a press on an action finds the
+// row it was made on (ADR-0142; ADR-0021's notes of 2026-10-05 and 2026-10-07);
 // and the editor listener keeping the coloured text beneath a field honest (ADR-0057). And the
 // seventh entry (ADR-0080): the Keyboard Field's composition and focus, heard on the root —
 // `compositionstart` and `compositionend`, always on, so a composition on a selected cell takes its
@@ -1209,7 +1208,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // the edit at its caret, as a held character is.
             if (k.text !== undefined) {
                 if (editing === 'none') {
-                    const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text, k.paint).catch((error) => {
+                    const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text).catch((error) => {
                         if (core) {
                             console.error('[ex-grid] the grid failed to take a composition', error);
                         }
@@ -1561,10 +1560,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // How much of the field's value has already been handed on: a second composition finished in
     // the field before the keyboard left it is appended to the first, and only its own text goes.
     let keyFieldCarried = 0;
-    // The render the composition started on (paintNow, at its compositionstart), told with its
-    // text. The edit the text opens keeps what the cell paints when it opens (ADR-0142), so the core
-    // depends on nothing of it; it is told as ADR-0021's note of 2026-10-07 has the readings stay.
-    let keyFieldPaint = -1;
     // The editor's request for the keyboard, made while the field was composing or as a
     // composition ended: granted once the field has stopped composing (keyFieldEnded).
     let deferredEditorFocus = null;
@@ -1596,7 +1591,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         keyFieldComposing = true;
-        keyFieldPaint = paintNow();
         event.target.classList.add('ex-key-field-composing');
         if (editing === 'none' && !answering) {
             core.invokeMethodAsync('OnKeyFieldCompositionStartAsync').catch((error) => {
@@ -1622,7 +1616,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         keyFieldEndTimer = setTimeout(keyFieldEnded, 0);
         const text = field.value.slice(keyFieldCarried);
         keyFieldCarried = field.value.length;
-        held.push({ text, paint: keyFieldPaint });
+        held.push({ text });
         if (!answering) {
             startHold();
         }
@@ -1723,11 +1717,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && !target.readOnly && !target.disabled && document.activeElement !== target
             && target.closest('.ex-formula-bar-text') !== null && root.contains(target);
     };
-    // A text field of this grid's own Formula Bar, not a nested grid's, that a press will focus:
-    // one that does not hold DOM focus already, which a press would not focus again.
-    const focusesOwnBar = (target) => (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
-        && document.activeElement !== target && target.closest('.ex-formula-bar-text') !== null
-        && target.closest('.ex-grid') === root;
     const holdBehindBarPress = () => {
         held.push({ barPress: true });
         if (!answering) {
@@ -1796,9 +1785,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the row the move brought there (`1` Enter PageDown `9` and a press on F6 at once, on the
     // Server host: the `2` typed next went into F18). The core is told this just before Blazor
     // dispatches the event — at once, or at the replay of a held one — and resolves the cell
-    // against it. With them, the render whose cells were on screen (data-ex-paint); the row order
-    // and the layout place the press, and the core depends on nothing of it (ADR-0142). Reads
-    // attributes and the scroll offset; nothing is measured.
+    // against it. Reads attributes and the scroll offset; nothing is measured.
     const takenAt = (event) => {
         const viewport = event.target;
         const number = (name) => {
@@ -1809,7 +1796,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             x: event.offsetX, y: event.offsetY, first: number('data-ex-first-row'),
             left: scroller ? scroller.scrollLeft : 0,
             sequence: number('data-ex-sequence'), layout: number('data-ex-layout'),
-            paint: number('data-ex-paint'),
         };
     };
     const tellTaken = (kind, taken) => {
@@ -1817,7 +1803,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left,
-            taken.sequence, taken.layout, taken.paint).catch((error) => {
+            taken.sequence, taken.layout).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear where a press was taken', error);
             }
@@ -2002,18 +1988,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // A press in an editor surface's text puts the caret where it lands: the user's move.
         if (event.button === 0 && !replaying && isTextField(event.target) && event.target.closest('.ex-editor') !== null) {
             noteCaretMove(event.target);
-        }
-        // A press that focuses this grid's own Formula Bar carries the render the rows were
-        // painted by (ADR-0021's note of 2026-10-05), told before the focus, the press's default
-        // action, is dispatched, as a press on an action is told before its click (actionPress).
-        // The edit the focus opens keeps what the cell paints when it opens (ADR-0142), so the core
-        // depends on nothing of it. Reads an attribute; nothing measured.
-        if (core && !replaying && event.button === 0 && focusesOwnBar(event.target)) {
-            core.invokeMethodAsync('BarPressTakenAt', paintNow()).catch((error) => {
-                if (core) {
-                    console.error('[ex-grid] the grid failed to hear where the Formula Bar was pressed', error);
-                }
-            });
         }
         if (holdsBarPress(event)) {
             holdBehindBarPress();
