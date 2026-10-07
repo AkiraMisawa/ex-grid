@@ -1,0 +1,51 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 3.71 3.93 3.77 }; TieredCompilation=0
+== ExPivot, 1,000 x 100 leaves (100,000 records): first report 101,001 rows, 1 value column(s), ready in 459 ms ==
+-- k = 1 changes a batch --
+   fold (SnapshotPivotSource.Apply)             0.082     0.097     2.314
+   answer (AggregateAsync, named)               4.276     4.359     4.667
+   leaves the answer named: median 1
+   NextCube (leaves named)                      2.323     2.425     2.476
+   NextCube (engine compares)                   4.097     4.135     4.363
+     CubeAsync afresh (before's path)          22.022    22.257    23.786
+   NextReport                                   0.416     0.444     0.576
+     ReportAsync afresh (before's path)        34.523    34.830    36.272
+   chain: 100,998 of 101,001 rows shared; made from: True
+   HasSameRowsAsAsync                           0.004     0.005     0.006
+   ChangesSinceAsync                            0.005     0.010     0.011
+     ChangesSince, both laid out afresh        17.696    18.148    19.363
+   LabelWidthsAsync (skipped if made from)      3.216     3.436     3.730
+   Show (history Record)                        0.027     0.044     0.048
+   grid RequireDistinctKeys (not run)           2.122     2.188     2.848
+   grid RequireDistinctRows (not run)           2.540     2.747     3.123
+   grid ApplyState (vouched True)               0.014     0.022     0.024
+   render (incl. painted keys)                  0.143     0.171     0.197
+   whole redraw                                 5.199     5.469     5.769
+     GC pause in it                             0.000     0.000     0.000
+   GCs per redraw gen0/1/2 median 0/0/0; allocated 9.4 MB; label widths skipped 15 of 15; rows shared 100,998
+   painted 11, rendered 0 (min 0, max 0), mounted 0, with a changed value 0 (max 0); inline 15 of 15
+-- k = 1,000 changes a batch --
+   fold (SnapshotPivotSource.Apply)             0.973     1.095     1.398
+   answer (AggregateAsync, named)               4.302     4.450     4.971
+   leaves the answer named: median 1000
+   NextCube (leaves named)                      5.059     5.232     5.296
+   NextCube (engine compares)                   7.512     7.616     7.707
+     CubeAsync afresh (before's path)          18.932    19.251    19.845
+   NextReport                                   1.549     1.592     1.709
+     ReportAsync afresh (before's path)        28.733    29.222    38.356
+   chain: 99,367 of 101,001 rows shared; made from: True
+   HasSameRowsAsAsync                           0.003     0.005     0.006
+   ChangesSinceAsync                            0.005     0.009     0.011
+     ChangesSince, both laid out afresh        19.937    20.306    21.173
+   LabelWidthsAsync (skipped if made from)      3.352     3.539     5.980
+   Show (history Record)                        0.238     0.258     0.316
+   grid RequireDistinctKeys (not run)           2.259     2.278     2.775
+   grid RequireDistinctRows (not run)           2.601     2.673     3.148
+   grid ApplyState (vouched True)               0.011     0.019     0.024
+   render (incl. painted keys)                  0.147     0.169     0.201
+   whole redraw                                 9.321    10.199    10.641
+     GC pause in it                             0.000     0.000     0.000
+   GCs per redraw gen0/1/2 median 0/0/0; allocated 11.2 MB; label widths skipped 15 of 15; rows shared 99,366
+   painted 11, rendered 1 (min 0, max 2), mounted 0, with a changed value 1 (max 2); inline 15 of 15
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-1000x100-r2.json

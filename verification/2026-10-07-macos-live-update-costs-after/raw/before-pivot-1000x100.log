@@ -1,0 +1,34 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 3.00 2.54 2.62 }; TieredCompilation=0
+== ExPivot, 1,000 x 100 leaves (100,000 records), made in 27 ms ==
+   first report: 101,001 rows, 1 value column(s), in 329 ms
+-- k = 1 changes a batch --
+   fold (SnapshotPivotSource.Apply)       0.089     0.096     2.351
+   answer (AggregateAsync, held)          2.281     2.372     3.329
+   CubeAsync                             17.578    18.259    18.862
+   ReportAsync                           30.703    31.154    32.100
+   HasSameRowsAsAsync                     1.435     1.451     1.524
+   LabelWidthsAsync                       3.168     3.257     3.383
+   Show                                   0.034     0.039     0.046
+   grid RequireDistinctKeys               1.642     1.704     1.835
+   grid RequireDistinctRows               2.089     2.228     2.410
+   grid ApplyState                        1.671     1.718     1.857
+   render (incl. grid ApplyState)         2.090     2.209     3.370
+   whole redraw                          62.631    64.720    76.911
+   painted 11, rendered 11 (min 11), mounted 0, with a changed value 0 (max 0); inline 15 of 15
+-- k = 1,000 changes a batch --
+   fold (SnapshotPivotSource.Apply)       0.955     1.066     1.445
+   answer (AggregateAsync, held)          2.293     2.435     2.507
+   CubeAsync                             34.728    35.492    37.946
+   ReportAsync                           46.796    47.482    49.514
+   HasSameRowsAsAsync                     1.318     1.349     1.491
+   LabelWidthsAsync                       3.235     3.369     3.566
+   Show                                   0.038     0.040     0.048
+   grid RequireDistinctKeys               1.668     1.731     1.801
+   grid RequireDistinctRows               2.172     2.292     2.451
+   grid ApplyState                        1.701     1.754     2.017
+   render (incl. grid ApplyState)         2.145     2.242     2.438
+   whole redraw                          66.734    94.504   108.148
+   painted 11, rendered 11 (min 11), mounted 0, with a changed value 1 (max 2); inline 15 of 15
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/before-pivot-1000x100.json

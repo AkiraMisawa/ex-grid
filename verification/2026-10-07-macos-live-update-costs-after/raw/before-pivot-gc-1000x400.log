@@ -1,0 +1,21 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+variant (unnamed); load { 2.41 2.34 2.57 }; TieredCompilation=0
+== pivot-gc 1,000 x 400, pre-collection full, GC events verbose, GCRetainVM=(default) ==
+   run  1:   277.89 ms, GC pause   68.24 ms, GCs 18, committed 1191 -> 1397 MB, fragmented after 129.6 MB
+   run  2:   273.98 ms, GC pause   61.94 ms, GCs 18, committed 1420 -> 1630 MB, fragmented after 153.2 MB
+   run  3:   289.59 ms, GC pause   74.73 ms, GCs 18, committed 1642 -> 1842 MB, fragmented after 154.7 MB
+   run  4:   274.30 ms, GC pause   63.39 ms, GCs 18, committed 1854 -> 2065 MB, fragmented after 180.4 MB
+   run  5:   278.47 ms, GC pause   66.84 ms, GCs 18, committed 2086 -> 2288 MB, fragmented after 205.6 MB
+   run  6:   276.48 ms, GC pause   62.90 ms, GCs 18, committed 2300 -> 2507 MB, fragmented after 227.2 MB
+   run  7:   285.56 ms, GC pause   74.24 ms, GCs 18, committed 2519 -> 2711 MB, fragmented after 234.5 MB
+   run  8:   287.93 ms, GC pause   65.86 ms, GCs 18, committed 2712 -> 2923 MB, fragmented after 249.8 MB
+   run  9:   299.31 ms, GC pause   79.41 ms, GCs 18, committed 2935 -> 3128 MB, fragmented after 256.8 MB
+   run 10:   291.55 ms, GC pause   68.77 ms, GCs 18, committed 3129 -> 3340 MB, fragmented after 267.6 MB
+   run 11:   296.50 ms, GC pause   74.27 ms, GCs 18, committed 3351 -> 3548 MB, fragmented after 282.2 MB
+   run 12:   295.37 ms, GC pause   72.91 ms, GCs 18, committed 3570 -> 3790 MB, fragmented after 312.9 MB
+   run 13:   289.58 ms, GC pause   67.13 ms, GCs 18, committed 3790 -> 3985 MB, fragmented after 324.2 MB
+   run 14:   307.55 ms, GC pause   79.09 ms, GCs 18, committed 3986 -> 4188 MB, fragmented after 329.4 MB
+   run 15:   292.24 ms, GC pause   69.15 ms, GCs 18, committed 4190 -> 4400 MB, fragmented after 344.3 MB
+   redraw   273.977   289.578   307.552   GC pause    61.941    68.768    79.405
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/before-pivot-gc-1000x400.json

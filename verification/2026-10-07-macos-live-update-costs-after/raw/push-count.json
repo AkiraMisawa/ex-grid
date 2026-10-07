@@ -1,0 +1,44 @@
+{
+  "mode": "push-count",
+  "machine": {
+    "at": "2026-10-07T13:52:46.1922280\u002B01:00",
+    "loadavg": "{ 3.35 3.56 3.64 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      " 45.2 37-07:15:49 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon",
+      " 11.5       00:01 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-af",
+      "  7.1    17:33:47 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/Users/akira338",
+      "  5.2    17:33:47 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --user-data-",
+      "  3.3 37-07:05:34 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui",
+      "  2.4 23-21:42:16 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  2.2 37-07:05:34 /Applications/Armored Client.app/Contents/MacOS/Armored Client",
+      "  1.9 37-07:15:50 /System/Library/CoreServices/launchservicesd",
+      "  1.7    13:32:50 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  1.2    13:32:50 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "  1.0 01-00:53:09 claude"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": [
+    {
+      "vouched": false,
+      "windowRows": 100000,
+      "keyCallsPerUpdate": [
+        100018,
+        100018,
+        100018
+      ]
+    },
+    {
+      "vouched": true,
+      "windowRows": 100000,
+      "keyCallsPerUpdate": [
+        18,
+        18,
+        18
+      ]
+    }
+  ]
+}

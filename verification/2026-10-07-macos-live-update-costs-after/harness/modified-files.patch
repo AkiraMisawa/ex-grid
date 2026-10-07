@@ -1,0 +1,230 @@
+diff --git a/samples/ExGrid.DemoHost.Server/Program.cs b/samples/ExGrid.DemoHost.Server/Program.cs
+index 449998db..cda8b022 100644
+--- a/samples/ExGrid.DemoHost.Server/Program.cs
++++ b/samples/ExGrid.DemoHost.Server/Program.cs
+@@ -5,6 +5,8 @@ using ExGrid.DemoPages;
+ using MudBlazor.Services;
+ 
+ var builder = WebApplication.CreateBuilder(args);
++// Harness (ticket 01): what Kestrel writes to each connection, read at GET /api/wire (M2's method).
++builder.WebHost.ConfigureKestrel(kestrel => kestrel.ConfigureEndpointDefaults(listen => listen.Use(WireCounters.Middleware)));
+ 
+ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+ // MudBlazor's services, for the /mud pages (ADR-0030).
+@@ -27,6 +29,7 @@ if (Environment.GetEnvironmentVariable("EXGRID_HOST_LOG") is { Length: > 0 } hos
+ var app = builder.Build();
+ 
+ app.UseAntiforgery();
++app.MapGet("/api/wire", () => WireCounters.Snapshot());
+ app.MapStaticAssets();
+ app.MapRazorComponents<App>()
+     .AddInteractiveServerRenderMode()
+diff --git a/samples/ExGrid.DemoPages/Pages/GridLiveLocalPage.razor b/samples/ExGrid.DemoPages/Pages/GridLiveLocalPage.razor
+index 32972c2f..449e67f8 100644
+--- a/samples/ExGrid.DemoPages/Pages/GridLiveLocalPage.razor
++++ b/samples/ExGrid.DemoPages/Pages/GridLiveLocalPage.razor
+@@ -1,5 +1,7 @@
+ @page "/grid-live-local"
+ @implements IAsyncDisposable
++@implements IHandleEvent
++@using System.Reflection
+ @using System.Diagnostics
+ @using System.Globalization
+ @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@@ -39,6 +41,12 @@
+ 
+ <div class="demo-toolbar">
+     <button id="grid-live-local-toggle" disabled="@(_source is null)" @onclick="Toggle">@(_on ? "Pause the page's changes" : "Resume the page's changes")</button>
++    @if (StepAsked == 1)
++    {
++        @* Harness (ticket 01): one batch per press, the page itself never rendering after it, so each
++           press is one render batch of the grid's on a circuit (M2's method). *@
++        <button id="grid-live-local-step" disabled="@(_source is null)" @onclick="StepOnce">Apply one batch</button>
++    }
+ </div>
+ 
+ <p class="demo-status">
+@@ -53,6 +61,15 @@
+        page is interactive. *@
+     <p class="demo-status">The grid appears once the trades are made.</p>
+ }
++else if (PushAsked == 1)
++{
++    @* Harness (ticket 13): the same source's Window pushed by the page, as a Consumer that holds its
++       rows itself would, under the same Row Key, vouched for or not (?vouch=1; ADR-0141, 2026-10-07). *@
++    <ExGrid TRow="DemoPivotTrade" Window="_pushed" TotalCount="_pushed.Count" RowSequenceVersion="_pushedVersion"
++            RowKey="PushedKey" VouchesDistinctRows="@(VouchAsked == 1)" Columns="Columns" PinnedColumnCount="1"
++            CellChangedAt="_cellChangedAt" ChangeHighlightDuration="Highlight"
++            ViewportHeight="480" ViewportWidth="1270" Chrome="_chrome" />
++}
+ else if (DemoChrome.IsMud(ChromeName))
+ {
+     <MudExGridPaper Elevation="1">@Grid</MudExGridPaper>
+@@ -103,6 +120,47 @@ else
+     [SupplyParameterFromQuery(Name = "interval")]
+     public int? IntervalAsked { get; set; }
+ 
++    // Harness (ticket 01): ?probe=1 times, before each batch is applied, the same batch applied to a
++    // second source bound to nothing (the source's share in this runtime) and the grid's two checks of
++    // a pushed Window over the Window in hand (ticket 02); ?step=1 applies a batch per press instead
++    // of the timer, the page not rendering after the press.
++    [SupplyParameterFromQuery(Name = "probe")]
++    public int? ProbeAsked { get; set; }
++
++    [SupplyParameterFromQuery(Name = "step")]
++    public int? StepAsked { get; set; }
++
++    // Harness (ticket 13): ?push=1 pushes the source's Window to the grid instead of binding the
++    // source, re-rendering the page whenever the source moves on; ?vouch=1 vouches for it.
++    [SupplyParameterFromQuery(Name = "push")]
++    public int? PushAsked { get; set; }
++
++    [SupplyParameterFromQuery(Name = "vouch")]
++    public int? VouchAsked { get; set; }
++
++    private IReadOnlyList<DemoPivotTrade> _pushed = [];
++    private int _pushedVersion;
++    private static readonly Func<DemoPivotTrade, object> PushedKey = t => t.Id;
++
++    private void OnPushedSourceChanged()
++    {
++        if (_source is not { } source)
++            return;
++        _pushed = source.Window;
++        _pushedVersion = source.RowSequenceVersion;
++        StateHasChanged();
++    }
++
++    private InMemoryGridSource<DemoPivotTrade>? _shadow;
++
++    private static readonly Action<IReadOnlyList<DemoPivotTrade>, int, Func<DemoPivotTrade, object>> RequireKeys =
++        typeof(global::ExGrid.Components.ExGrid<DemoPivotTrade>).GetMethod("RequireDistinctKeys", BindingFlags.NonPublic | BindingFlags.Static)!
++            .CreateDelegate<Action<IReadOnlyList<DemoPivotTrade>, int, Func<DemoPivotTrade, object>>>();
++
++    private static readonly Action<IReadOnlyList<DemoPivotTrade>> RequireRows =
++        typeof(global::ExGrid.Components.ExGrid<DemoPivotTrade>).GetMethod("RequireDistinctRows", BindingFlags.NonPublic | BindingFlags.Static)!
++            .CreateDelegate<Action<IReadOnlyList<DemoPivotTrade>>>();
++
+     private int RowCount => RowsAsked is > 0 and var count ? count : DefaultRows;
+ 
+     private int TradesPerBatch => Math.Min(BatchAsked is > 0 and var count ? count : DefaultTradesPerBatch, _trades.Length);
+@@ -127,6 +185,22 @@ else
+             return;
+         if (IntervalAsked is >= 0 and var interval && _source is { } source)
+             source.GatherInterval = TimeSpan.FromMilliseconds(interval);
++        if (ProbeAsked == 1 && _source is { } probed)
++        {
++            _shadow = GridSource.From(_trades, t => t.Id);
++            _shadow.OnColumnsChanged(Columns.Select(c => c.Info).ToArray());
++            _ = _shadow.CellChangedAt;
++            _shadow.GatherInterval = probed.GatherInterval;
++        }
++        if (StepAsked == 1)
++            _on = false;
++        if (PushAsked == 1 && _source is { } pushing)
++        {
++            pushing.OnColumnsChanged(Columns.Select(c => c.Info).ToArray());
++            _pushed = pushing.Window;
++            _pushedVersion = pushing.RowSequenceVersion;
++            pushing.StateChanged += OnPushedSourceChanged;
++        }
+         StateHasChanged();
+         _ticks = new PeriodicTimer(BatchEvery);
+         _ = Reported(AmendAsync(_ticks));
+@@ -181,9 +255,10 @@ else
+             if (!_on || _source is not { } source)
+                 continue;
+             var amended = Amend(TradesPerBatch);
++            var probe = Probe(source, amended) + First(amended);
+             var clock = Stopwatch.StartNew();
+             source.Apply(new GridChangeBatch<DemoPivotTrade>(changed: amended));
+-            Describe(amended, clock.Elapsed);
++            Describe(amended, clock.Elapsed, probe);
+         }
+     }
+ 
+@@ -249,13 +324,73 @@ else
+ 
+     private void Toggle() => _on = !_on;
+ 
++    // Harness (ticket 01): the shadow source's Apply of the same batch, and the two checks over the
++    // Window in hand, each timed, before the batch is applied to the grid's source.
++    private string Probe(InMemoryGridSource<DemoPivotTrade> source, DemoPivotTrade[] amended)
++    {
++        if (_shadow is not { } shadow)
++            return "";
++        var window = source.Window;
++        var clock = Stopwatch.StartNew();
++        shadow.Apply(new GridChangeBatch<DemoPivotTrade>(changed: amended));
++        var sourceMs = clock.Elapsed.TotalMilliseconds;
++        clock.Restart();
++        RequireKeys(window, 0, source.RowKey!);
++        var keysMs = clock.Elapsed.TotalMilliseconds;
++        clock.Restart();
++        RequireRows(window);
++        var rowsMs = clock.Elapsed.TotalMilliseconds;
++        return string.Create(CultureInfo.InvariantCulture, $" [probe source={sourceMs:F3} keys={keysMs:F3} rows={rowsMs:F3} window={window.Count}]");
++    }
++
++    // Harness (ticket 01): the first position a batch changed, with no Sort in force the smallest
++    // index among the trades it amended — where the grid's walk of a new Window stops.
++    private static string First(DemoPivotTrade[] amended)
++    {
++        var first = int.MaxValue;
++        foreach (var trade in amended)
++            first = Math.Min(first, int.Parse(trade.Id.AsSpan(1), CultureInfo.InvariantCulture) - 100000);
++        return string.Create(CultureInfo.InvariantCulture, $" [first={first}]");
++    }
++
++    private void StepOnce()
++    {
++        if (_source is not { } source)
++            return;
++        source.Apply(new GridChangeBatch<DemoPivotTrade>(changed: Amend(TradesPerBatch)));
++    }
++
++    // In step mode a press renders nothing of the page's own; otherwise as ComponentBase does.
++    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object? arg)
++    {
++        var task = item.InvokeAsync(arg);
++        if (StepAsked == 1)
++            return task;
++        var pending = task.Status != TaskStatus.RanToCompletion && task.Status != TaskStatus.Canceled;
++        StateHasChanged();
++        return pending ? RenderedAfter(task) : Task.CompletedTask;
++    }
++
++    private async Task RenderedAfter(Task task)
++    {
++        try
++        {
++            await task;
++        }
++        catch when (task.IsCanceled)
++        {
++            return;
++        }
++        StateHasChanged();
++    }
++
+     // The batch just applied, and how long Apply took. On WebAssembly that includes the grid's render
+     // of the change when the source showed it at once.
+-    private void Describe(IReadOnlyList<DemoPivotTrade> amended, TimeSpan applied)
++    private void Describe(IReadOnlyList<DemoPivotTrade> amended, TimeSpan applied, string probe = "")
+     {
+         _batches++;
+         _batchLine?.Show($"Batch {_batches.ToString("N0", Culture)}: {amended.Count.ToString("N0", Culture)} trades amended, "
+-            + $"applied in {applied.TotalMilliseconds.ToString("N0", Culture)} ms.");
++            + $"applied in {applied.TotalMilliseconds.ToString("N0", Culture)} ms (exact {applied.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture)}).{probe}");
+     }
+ 
+     // The page's own loop, which nothing awaits: a failure in it is reported as a render's is, never
+@@ -277,6 +412,8 @@ else
+     {
+         _leaving.Cancel();
+         _ticks?.Dispose();
++        if (PushAsked == 1 && _source is { } pushing)
++            pushing.StateChanged -= OnPushedSourceChanged;
+         return ValueTask.CompletedTask;
+     }
+ }

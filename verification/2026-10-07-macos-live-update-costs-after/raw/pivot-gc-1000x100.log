@@ -1,0 +1,21 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 1.53 2.18 2.55 }; TieredCompilation=0
+== pivot-gc 1,000 x 100, pre-collection full, GC events verbose, GCRetainVM=(default) ==
+   run  1:     5.56 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 123 -> 123 MB
+   run  2:     7.31 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 126 -> 126 MB
+   run  3:     5.03 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 122 -> 122 MB
+   run  4:     5.00 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 125 -> 125 MB
+   run  5:     5.17 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 121 -> 121 MB
+   run  6:     5.07 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 124 -> 124 MB
+   run  7:     5.07 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 125 -> 125 MB
+   run  8:     5.03 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 125 -> 125 MB
+   run  9:     5.08 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 121 -> 121 MB
+   run 10:     4.93 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 125 -> 125 MB
+   run 11:     5.11 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 125 -> 125 MB
+   run 12:     4.97 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 125 -> 125 MB
+   run 13:     5.01 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 121 -> 121 MB
+   run 14:     5.09 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 124 -> 124 MB
+   run 15:     5.09 ms, GC pause    0.00 ms, GCs 0, allocated    9.4 MB, committed 121 -> 121 MB
+   redraw     4.930     5.073     7.308   GC pause     0.000     0.000     0.000   allocated MB     9.420     9.430     9.430
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-gc-1000x100.json

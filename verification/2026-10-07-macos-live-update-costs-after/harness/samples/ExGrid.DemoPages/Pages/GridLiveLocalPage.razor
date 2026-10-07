@@ -1,0 +1,419 @@
+@page "/grid-live-local"
+@implements IAsyncDisposable
+@implements IHandleEvent
+@using System.Reflection
+@using System.Diagnostics
+@using System.Globalization
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+
+@* ?chrome=mud stands the grid on ExGrid.MudBlazor's paper under its Chrome and its stylesheet,
+   as /grid-live does; absent or builtin is the core's own. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" />
+
+<DemoNav />
+
+<h1>Live grid in this process — Change Batches over a million trades</h1>
+
+<p>
+    <strong>The use case:</strong> a blotter whose trades are held in this process — in the browser
+    on WebAssembly, in the circuit on the Server host — and amended several times a second. The page
+    makes a million trades and hands them to <code>GridSource.From</code> with the trade's id as the
+    Row Key (<code>GridSource.From(trades, t => t.Id)</code>, ADR-0140/0141). Its own timer amends a
+    few trades four times a second and hands each amendment to the source as one Change Batch
+    (<code>source.Apply(new GridChangeBatch&lt;DemoPivotTrade&gt;(changed: amended))</code>). Half of
+    every batch, up to 250 trades, falls on the first 500 trades, the busy ones the grid opens on, so
+    the rows in view change while you read them; the rest fall anywhere in the million.
+</p>
+<p>
+    The source pairs each amended trade with the one it holds by key, brings its result up to date
+    from the rows that changed rather than from the million again, and hands the grid the newest
+    version at most every 250 ms. It answers the grid's <code>CellChangedAt</code> with the cells
+    whose painted text changed, and the grid marks them for a second (ADR-0068). A click on a header
+    sorts the million by that column, and the order then follows the changes at once: a selection
+    stays while only values change, and goes when a row moves (ADR-0011). The page's changes stop
+    when you leave it. This is the in-process path of ADR-0141; <a href="grid-live">/grid-live</a> is
+    the same blotter over a server's trades.
+</p>
+
+<p><code>?rows=2000&amp;batch=1000</code> holds 2,000 trades and amends a thousand a batch, instead of a million and twenty.</p>
+
+<div class="demo-toolbar">
+    <button id="grid-live-local-toggle" disabled="@(_source is null)" @onclick="Toggle">@(_on ? "Pause the page's changes" : "Resume the page's changes")</button>
+    @if (StepAsked == 1)
+    {
+        @* Harness (ticket 01): one batch per press, the page itself never rendering after it, so each
+           press is one render batch of the grid's on a circuit (M2's method). *@
+        <button id="grid-live-local-step" disabled="@(_source is null)" @onclick="StepOnce">Apply one batch</button>
+    }
+</div>
+
+<p class="demo-status">
+    <DemoStatusLine @ref="_madeLine" Id="grid-live-local-made" Initial="Waiting for the page to be interactive…" />
+    <DemoStatusLine @ref="_batchLine" Id="grid-live-local-status" Initial="No batch applied yet." />
+</p>
+
+@if (_source is null)
+{
+    @* Interactive only: on the Server host the page is prerendered first, and a prerender that made a
+       million trades would do it for nothing. The trades are made, and the grid bound to them, once the
+       page is interactive. *@
+    <p class="demo-status">The grid appears once the trades are made.</p>
+}
+else if (PushAsked == 1)
+{
+    @* Harness (ticket 13): the same source's Window pushed by the page, as a Consumer that holds its
+       rows itself would, under the same Row Key, vouched for or not (?vouch=1; ADR-0141, 2026-10-07). *@
+    <ExGrid TRow="DemoPivotTrade" Window="_pushed" TotalCount="_pushed.Count" RowSequenceVersion="_pushedVersion"
+            RowKey="PushedKey" VouchesDistinctRows="@(VouchAsked == 1)" Columns="Columns" PinnedColumnCount="1"
+            CellChangedAt="_cellChangedAt" ChangeHighlightDuration="Highlight"
+            ViewportHeight="480" ViewportWidth="1270" Chrome="_chrome" />
+}
+else if (DemoChrome.IsMud(ChromeName))
+{
+    <MudExGridPaper Elevation="1">@Grid</MudExGridPaper>
+}
+else
+{
+    @Grid
+}
+
+<h2>The code</h2>
+<p>What this page runs, read from its source. <code>DemoPivotData</code> makes the trades /pivot pivots.</p>
+<DemoCodeBlock File="GridLiveLocalPage.razor" Region="trades" />
+<DemoCodeBlock File="GridLiveLocalPage.razor" Region="batch" />
+<DemoCodeBlock File="GridLiveLocalPage.razor" Region="grid" />
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    // How many trades the page holds unless ?rows= says, and how many a batch amends unless ?batch=
+    // says, and how often.
+    private const int DefaultRows = 1_000_000;
+    private const int DefaultTradesPerBatch = 20;
+    private static readonly TimeSpan BatchEvery = TimeSpan.FromMilliseconds(250);
+
+    // The trades the busy half of every batch falls on: the rows the grid opens on.
+    private const int BusyTrades = 500;
+
+    private readonly CancellationTokenSource _leaving = new();
+    private readonly Random _random = new(20261006);
+    private IGridChrome? _chrome;
+    private DemoStatusLine? _madeLine;
+    private DemoStatusLine? _batchLine;
+    private bool _on = true;
+    private int _batches;
+    private PeriodicTimer? _ticks;
+
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "rows")]
+    public int? RowsAsked { get; set; }
+
+    [SupplyParameterFromQuery(Name = "batch")]
+    public int? BatchAsked { get; set; }
+
+    // The source's gathering interval in milliseconds, for a measurement: LV-15 times Apply to the
+    // frame with 0, so that every batch is shown at once and no run waits on the clock to be quiet.
+    [SupplyParameterFromQuery(Name = "interval")]
+    public int? IntervalAsked { get; set; }
+
+    // Harness (ticket 01): ?probe=1 times, before each batch is applied, the same batch applied to a
+    // second source bound to nothing (the source's share in this runtime) and the grid's two checks of
+    // a pushed Window over the Window in hand (ticket 02); ?step=1 applies a batch per press instead
+    // of the timer, the page not rendering after the press.
+    [SupplyParameterFromQuery(Name = "probe")]
+    public int? ProbeAsked { get; set; }
+
+    [SupplyParameterFromQuery(Name = "step")]
+    public int? StepAsked { get; set; }
+
+    // Harness (ticket 13): ?push=1 pushes the source's Window to the grid instead of binding the
+    // source, re-rendering the page whenever the source moves on; ?vouch=1 vouches for it.
+    [SupplyParameterFromQuery(Name = "push")]
+    public int? PushAsked { get; set; }
+
+    [SupplyParameterFromQuery(Name = "vouch")]
+    public int? VouchAsked { get; set; }
+
+    private IReadOnlyList<DemoPivotTrade> _pushed = [];
+    private int _pushedVersion;
+    private static readonly Func<DemoPivotTrade, object> PushedKey = t => t.Id;
+
+    private void OnPushedSourceChanged()
+    {
+        if (_source is not { } source)
+            return;
+        _pushed = source.Window;
+        _pushedVersion = source.RowSequenceVersion;
+        StateHasChanged();
+    }
+
+    private InMemoryGridSource<DemoPivotTrade>? _shadow;
+
+    private static readonly Action<IReadOnlyList<DemoPivotTrade>, int, Func<DemoPivotTrade, object>> RequireKeys =
+        typeof(global::ExGrid.Components.ExGrid<DemoPivotTrade>).GetMethod("RequireDistinctKeys", BindingFlags.NonPublic | BindingFlags.Static)!
+            .CreateDelegate<Action<IReadOnlyList<DemoPivotTrade>, int, Func<DemoPivotTrade, object>>>();
+
+    private static readonly Action<IReadOnlyList<DemoPivotTrade>> RequireRows =
+        typeof(global::ExGrid.Components.ExGrid<DemoPivotTrade>).GetMethod("RequireDistinctRows", BindingFlags.NonPublic | BindingFlags.Static)!
+            .CreateDelegate<Action<IReadOnlyList<DemoPivotTrade>>>();
+
+    private int RowCount => RowsAsked is > 0 and var count ? count : DefaultRows;
+
+    private int TradesPerBatch => Math.Min(BatchAsked is > 0 and var count ? count : DefaultTradesPerBatch, _trades.Length);
+
+    protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        var token = _leaving.Token;
+        try
+        {
+            await MakeAsync(token);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // The page went first.
+            return;
+        }
+        if (token.IsCancellationRequested)
+            return;
+        if (IntervalAsked is >= 0 and var interval && _source is { } source)
+            source.GatherInterval = TimeSpan.FromMilliseconds(interval);
+        if (ProbeAsked == 1 && _source is { } probed)
+        {
+            _shadow = GridSource.From(_trades, t => t.Id);
+            _shadow.OnColumnsChanged(Columns.Select(c => c.Info).ToArray());
+            _ = _shadow.CellChangedAt;
+            _shadow.GatherInterval = probed.GatherInterval;
+        }
+        if (StepAsked == 1)
+            _on = false;
+        if (PushAsked == 1 && _source is { } pushing)
+        {
+            pushing.OnColumnsChanged(Columns.Select(c => c.Info).ToArray());
+            _pushed = pushing.Window;
+            _pushedVersion = pushing.RowSequenceVersion;
+            pushing.StateChanged += OnPushedSourceChanged;
+        }
+        StateHasChanged();
+        _ticks = new PeriodicTimer(BatchEvery);
+        _ = Reported(AmendAsync(_ticks));
+    }
+
+    #region The code: trades
+    // A million trades, each named by its id: the Row Key (ADR-0140). GridSource.From takes live data
+    // given one, and vouches that no Window holds a trade twice (ADR-0141).
+    private DemoPivotTrade[] _trades = [];
+    private InMemoryGridSource<DemoPivotTrade>? _source;
+
+    // The Change Highlight, answered by the source: one delegate for its life, held in a field, so
+    // only a row whose trade changed is a new instance that asks again (ADR-0068).
+    private CellChangeOf<DemoPivotTrade>? _cellChangedAt;
+
+    private async Task MakeAsync(CancellationToken token)
+    {
+        var clock = Stopwatch.StartNew();
+        var trades = new DemoPivotTrade[RowCount];
+        _madeLine?.Show($"Making {trades.Length.ToString("N0", Culture)} trades…");
+        var made = 0;
+        foreach (var trade in DemoPivotData.Generate(trades.Length))
+        {
+            trades[made++] = trade;
+            // A slice at a time, the browser given its turn between them, so the page can be read,
+            // and left, while a million are made.
+            if (made % 50_000 == 0 && made < trades.Length)
+            {
+                _madeLine?.Show($"Making trades: {made.ToString("N0", Culture)} of {trades.Length.ToString("N0", Culture)}…");
+                await Task.Delay(1, token);
+            }
+        }
+        var making = clock.Elapsed;
+        clock.Restart();
+        _trades = trades;
+        _source = GridSource.From(trades, t => t.Id);
+        _cellChangedAt = _source.CellChangedAt;
+        _madeLine?.Show($"{trades.Length.ToString("N0", Culture)} trades made in {making.TotalMilliseconds.ToString("N0", Culture)} ms; "
+            + $"GridSource.From took {clock.Elapsed.TotalMilliseconds.ToString("N0", Culture)} ms.");
+    }
+    #endregion
+
+    #region The code: batch
+    // Four times a second, a few trades amended and handed to the source as one Change Batch, by key.
+    // The source gathers what comes within 250 ms of the last change it showed, and brings its result
+    // up to date from the rows that changed (ADR-0141).
+    private async Task AmendAsync(PeriodicTimer ticks)
+    {
+        // A disposed timer ends the loop: the page owns it, and disposes it as it goes.
+        while (await ticks.WaitForNextTickAsync())
+        {
+            if (!_on || _source is not { } source)
+                continue;
+            var amended = Amend(TradesPerBatch);
+            var probe = Probe(source, amended) + First(amended);
+            var clock = Stopwatch.StartNew();
+            source.Apply(new GridChangeBatch<DemoPivotTrade>(changed: amended));
+            Describe(amended, clock.Elapsed, probe);
+        }
+    }
+
+    // Trades each picked once, half of them — up to half the busy ones — among the busy ones: the P&L
+    // moved by up to 0.1% of the notional, and one in four the notional amended by a million as well.
+    // Every amendment is a new instance (ADR-0003); the page keeps it as the trade's newest version.
+    private DemoPivotTrade[] Amend(int count)
+    {
+        var picked = new HashSet<int>();
+        var busy = Math.Min(Math.Min(count / 2, BusyTrades / 2), _trades.Length);
+        while (picked.Count < busy)
+            picked.Add(_random.Next(Math.Min(BusyTrades, _trades.Length)));
+        while (picked.Count < count)
+            picked.Add(_random.Next(_trades.Length));
+        var amended = new DemoPivotTrade[picked.Count];
+        var i = 0;
+        foreach (var at in picked)
+        {
+            var trade = _trades[at];
+            var move = Math.Round(trade.Notional * (decimal)(_random.NextDouble() - 0.5) / 500m, 2);
+            // Up or down by a million, down only from above a million, as the demo API server amends.
+            var notional = _random.Next(4) != 0 ? trade.Notional
+                : trade.Notional > 1_000_000m && _random.Next(2) == 0 ? trade.Notional - 1_000_000m
+                : trade.Notional + 1_000_000m;
+            amended[i++] = _trades[at] = trade with { Pnl = trade.Pnl + move, Notional = notional };
+        }
+        return amended;
+    }
+    #endregion
+
+    #region The code: grid
+    // The source, and the Change Highlight it answers. A header click sorts the source, which keeps
+    // the order as the values change.
+    private RenderFragment Grid => @<ExGrid TRow="DemoPivotTrade" Source="_source" Columns="Columns" PinnedColumnCount="1"
+                                            CellChangedAt="_cellChangedAt" ChangeHighlightDuration="Highlight"
+                                            ViewportHeight="480" ViewportWidth="1270" Chrome="_chrome" />;
+
+    private static readonly TimeSpan Highlight = TimeSpan.FromSeconds(1);
+
+    // One reference-stable array: a list rebuilt per render would repaint every row (ADR-0003).
+    private static readonly GridColumn<DemoPivotTrade>[] Columns =
+    [
+        new("Id", ColumnType.Text, t => t.Id, header: "Trade ID", width: Fixed(110)),
+        new("Region", ColumnType.Text, t => t.Region, width: Fixed(100)),
+        new("Desk", ColumnType.Text, t => t.Desk, width: Fixed(90)),
+        new("Book", ColumnType.Text, t => t.Book, width: Fixed(140)),
+        new("Product", ColumnType.Text, t => t.Product, width: Fixed(90)),
+        new("Currency", ColumnType.Text, t => t.Currency, width: Fixed(90)),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", width: Fixed(120), align: CellAlign.Left,
+            format: value => ((DateTime)value).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+        // A number that does not fit is #### rather than cut short (ADR-0016): the widths leave room
+        // for every digit the amendments can bring.
+        new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(170), format: Money),
+        new("Pnl", ColumnType.Number, t => t.Pnl, header: "P&L", width: Fixed(150), format: Money),
+        new("Quantity", ColumnType.Number, t => t.Quantity, width: Fixed(90)),
+        new("Confirmed", ColumnType.Boolean, t => t.Confirmed, width: Fixed(100)),
+    ];
+
+    private static ColumnWidthSpec Fixed(double width) => new(ColumnWidth.Fixed(width));
+
+    private static string Money(object value) => ((decimal)value).ToString("#,##0.00", CultureInfo.InvariantCulture);
+    #endregion
+
+    private void Toggle() => _on = !_on;
+
+    // Harness (ticket 01): the shadow source's Apply of the same batch, and the two checks over the
+    // Window in hand, each timed, before the batch is applied to the grid's source.
+    private string Probe(InMemoryGridSource<DemoPivotTrade> source, DemoPivotTrade[] amended)
+    {
+        if (_shadow is not { } shadow)
+            return "";
+        var window = source.Window;
+        var clock = Stopwatch.StartNew();
+        shadow.Apply(new GridChangeBatch<DemoPivotTrade>(changed: amended));
+        var sourceMs = clock.Elapsed.TotalMilliseconds;
+        clock.Restart();
+        RequireKeys(window, 0, source.RowKey!);
+        var keysMs = clock.Elapsed.TotalMilliseconds;
+        clock.Restart();
+        RequireRows(window);
+        var rowsMs = clock.Elapsed.TotalMilliseconds;
+        return string.Create(CultureInfo.InvariantCulture, $" [probe source={sourceMs:F3} keys={keysMs:F3} rows={rowsMs:F3} window={window.Count}]");
+    }
+
+    // Harness (ticket 01): the first position a batch changed, with no Sort in force the smallest
+    // index among the trades it amended — where the grid's walk of a new Window stops.
+    private static string First(DemoPivotTrade[] amended)
+    {
+        var first = int.MaxValue;
+        foreach (var trade in amended)
+            first = Math.Min(first, int.Parse(trade.Id.AsSpan(1), CultureInfo.InvariantCulture) - 100000);
+        return string.Create(CultureInfo.InvariantCulture, $" [first={first}]");
+    }
+
+    private void StepOnce()
+    {
+        if (_source is not { } source)
+            return;
+        source.Apply(new GridChangeBatch<DemoPivotTrade>(changed: Amend(TradesPerBatch)));
+    }
+
+    // In step mode a press renders nothing of the page's own; otherwise as ComponentBase does.
+    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object? arg)
+    {
+        var task = item.InvokeAsync(arg);
+        if (StepAsked == 1)
+            return task;
+        var pending = task.Status != TaskStatus.RanToCompletion && task.Status != TaskStatus.Canceled;
+        StateHasChanged();
+        return pending ? RenderedAfter(task) : Task.CompletedTask;
+    }
+
+    private async Task RenderedAfter(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch when (task.IsCanceled)
+        {
+            return;
+        }
+        StateHasChanged();
+    }
+
+    // The batch just applied, and how long Apply took. On WebAssembly that includes the grid's render
+    // of the change when the source showed it at once.
+    private void Describe(IReadOnlyList<DemoPivotTrade> amended, TimeSpan applied, string probe = "")
+    {
+        _batches++;
+        _batchLine?.Show($"Batch {_batches.ToString("N0", Culture)}: {amended.Count.ToString("N0", Culture)} trades amended, "
+            + $"applied in {applied.TotalMilliseconds.ToString("N0", Culture)} ms (exact {applied.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture)}).{probe}");
+    }
+
+    // The page's own loop, which nothing awaits: a failure in it is reported as a render's is, never
+    // lost with the task.
+    private async Task Reported(Task loop)
+    {
+        try
+        {
+            await loop;
+        }
+        catch (Exception error)
+        {
+            await DispatchExceptionAsync(error);
+        }
+    }
+
+    // The page's changes stop when it goes, and a million trades still being made are left unmade.
+    public ValueTask DisposeAsync()
+    {
+        _leaving.Cancel();
+        _ticks?.Dispose();
+        if (PushAsked == 1 && _source is { } pushing)
+            pushing.StateChanged -= OnPushedSourceChanged;
+        return ValueTask.CompletedTask;
+    }
+}

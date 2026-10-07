@@ -1,0 +1,342 @@
+@page "/pivot-live-costs"
+@implements IAsyncDisposable
+@implements IHandleEvent
+@using System.Diagnostics
+@using System.Globalization
+@using System.Reflection
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+
+@* Harness (ticket 01 of docs/specs/live-data), never committed: ExPivot's live redraw over D10's
+   report — two row fields, A00000… × B0000…, with A's subtotals — in the browser, at the sizes the
+   ticket asks for (?a=1000&b=9, 100 or 400), k changes a batch (?batch=). Each batch amends the
+   first record and k − 1 others picked uniformly, so a painted cell always changes and the redraw
+   shows in the DOM. ?probe=1 times, before each batch, the steps that can be run from outside on
+   the report on screen: the cube made again from the held answer, the report laid out again from
+   the cube, and the grid's two checks of its rows. *@
+
+<DemoChromeAssets Name="builtin" Paper="true">
+    <Head>
+        <link href="_content/ExPivot/ex-pivot.min.css" rel="stylesheet" />
+    </Head>
+</DemoChromeAssets>
+
+<h1>Harness: ExPivot's live redraw over a large report</h1>
+
+<div class="demo-toolbar">
+    <button id="pivot-live-costs-toggle" disabled="@(_source is null)" @onclick="Toggle">@(_on ? "Pause the page's changes" : "Resume the page's changes")</button>
+    @if (StepAsked == 1)
+    {
+        <button id="pivot-live-costs-step" disabled="@(_source is null)" @onclick="StepAsync">Apply one batch</button>
+    }
+    <button id="pivot-live-costs-gc" @onclick="Collect">[DEBUG-oom] collect</button>
+    <span id="pivot-live-costs-mem">@_mem</span>
+    <button id="pivot-live-costs-gen" @onclick="MeasureGenerationAsync">[DEBUG-oom] generation</button>
+    <span id="pivot-live-costs-genout">@_gen</span>
+</div>
+
+<p class="demo-status">
+    <DemoStatusLine @ref="_madeLine" Id="pivot-live-costs-made" Initial="Waiting for the page to be interactive…" />
+    <DemoStatusLine @ref="_batchLine" Id="pivot-live-costs-status" Initial="No batch applied yet." />
+    @* The first record's value as the batch sets it, written before the batch is applied: the
+       report shows it in its second row once the redraw lands. *@
+    <DemoStatusLine @ref="_expectLine" Id="pivot-live-costs-expect" Initial="" />
+</p>
+
+<section id="pivot-live-costs">
+    @if (_source is not null)
+    {
+        <ExPivot @ref="_pivot" Source="_source" Layout="Layout" Caps="Caps" Culture="Culture"
+                 ChangeHighlightDuration="Highlight" ViewportHeight="300" ViewportWidth="900" />
+    }
+</section>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+    private TimeSpan Highlight => TimeSpan.FromMilliseconds(HighlightAsked ?? 1000);
+    [SupplyParameterFromQuery(Name = "highlight")]
+    public int? HighlightAsked { get; set; }
+    // [DEBUG-oom] the managed heap after a full, compacting collection, in MB
+    private string _mem = "";
+    private readonly List<(string Kind, WeakReference Ref)> _watched = [];
+    private void Watch(string kind, object? o)
+    {
+        if (o is not null && !_watched.Exists(w => ReferenceEquals(w.Ref.Target, o)))
+            _watched.Add((kind, new WeakReference(o)));
+    }
+    private string _gen = "";
+    private static long Settled()
+    {
+        for (var i = 0; i < 2; i++)
+        {
+            GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+            GC.WaitForPendingFinalizers();
+        }
+        return GC.GetTotalMemory(false);
+    }
+    // [DEBUG-oom] what one generation is made of: a fresh answer, cube, report, every row's labels
+    // and value cells read, each measured as the managed heap it adds after a full collection
+    private async Task MeasureGenerationAsync()
+    {
+        if (_source is not { } source)
+            return;
+        // another cap than the page's, so the source answers afresh rather than from what it holds
+        var query = PivotQuery.For(Layout, Caps.MaxLeaves - 1);
+        var m0 = Settled();
+        var answer = await source.AggregateAsync(query);
+        var m1 = Settled();
+        var cube = PivotEngine.Cube(query, answer, source.Fields);
+        var m2 = Settled();
+        var report = PivotEngine.Report(cube, Layout, new PivotOptions { Culture = Culture });
+        var m3 = Settled();
+        var n = report.Rows.Count;
+        foreach (var row in report.Rows)
+            for (var c = 0; c < report.ValueColumns.Count; c++)
+                report.ValueAt(row, c);
+        var m4 = Settled();
+        var keys = new object[n];
+        for (var i = 0; i < n; i++) keys[i] = report.Rows[i].Key;
+        var m5 = Settled();
+        double Per(long bytes) => (double)bytes / n;
+        _gen = string.Create(CultureInfo.InvariantCulture,
+            $"rows={n} leaves={answer.LeafCount} answer={Per(m1 - m0):F0}B/row cube={Per(m2 - m1):F0}B/row report={Per(m3 - m2):F0}B/row cells={Per(m4 - m3):F0}B/row keysArray={Per(m5 - m4):F0}B/row total={(m4 - m0) / 1048576.0:F1}MB");
+        GC.KeepAlive(answer); GC.KeepAlive(cube); GC.KeepAlive(report); GC.KeepAlive(keys);
+        StateHasChanged();
+    }
+    private void Collect()
+    {
+        // [DEBUG-oom] every generation seen so far, held weakly
+        Watch("report", _pivot?.Report);
+        Watch("cube", _pivot?.Report?.Cube);
+        Watch("snapshot", _source?.Snapshot);
+        GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+        GC.WaitForPendingFinalizers();
+        GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+        _mem = (GC.GetTotalMemory(false) / 1048576.0).ToString("F1", CultureInfo.InvariantCulture)
+            + " alive " + string.Join(",", _watched.GroupBy(w => w.Kind).Select(g => g.Key + "=" + g.Count(w => w.Ref.IsAlive) + "/" + g.Count()));
+        StateHasChanged();
+    }
+    private static readonly TimeSpan BatchEvery = TimeSpan.FromMilliseconds(250);
+    private static readonly global::ExPivot.PivotCaps Caps = new() { MaxLeaves = 2_000_000 };
+
+    private static readonly PivotFields<CostCell> Fields = PivotFields.Of<CostCell>()
+        .Key("Id", c => c.Id)
+        .Text("A", c => c.A)
+        .Text("B", c => c.B)
+        .Number("Value", c => c.Value, format: "#,##0.00");
+
+    private static readonly PivotLayout Layout = new()
+    {
+        Rows = [new PivotFieldPlacement("A"), new PivotFieldPlacement("B")],
+        Values = [new PivotValueField("Value", PivotAggregation.Sum) { NumberFormat = "#,##0.00" }],
+    };
+
+    private static readonly Action<IReadOnlyList<PivotReportRow>, int, Func<PivotReportRow, object>> RequireKeys =
+        typeof(global::ExGrid.Components.ExGrid<PivotReportRow>).GetMethod("RequireDistinctKeys", BindingFlags.NonPublic | BindingFlags.Static)!
+            .CreateDelegate<Action<IReadOnlyList<PivotReportRow>, int, Func<PivotReportRow, object>>>();
+
+    private static readonly Action<IReadOnlyList<PivotReportRow>> RequireRows =
+        typeof(global::ExGrid.Components.ExGrid<PivotReportRow>).GetMethod("RequireDistinctRows", BindingFlags.NonPublic | BindingFlags.Static)!
+            .CreateDelegate<Action<IReadOnlyList<PivotReportRow>>>();
+
+    private static readonly Func<PivotReportRow, object> ReportKey = row => row.Key;
+
+    public sealed record CostCell(string Id, string A, string B, decimal Value);
+
+    private readonly CancellationTokenSource _leaving = new();
+    private readonly Random _random = new(20261006);
+    private DemoStatusLine? _madeLine;
+    private DemoStatusLine? _batchLine;
+    private DemoStatusLine? _expectLine;
+    private global::ExPivot.Components.ExPivot? _pivot;
+    private CostCell[] _cells = [];
+    private SnapshotPivotSource? _source;
+    private bool _on = true;
+    private int _batches;
+    private PeriodicTimer? _ticks;
+
+    [SupplyParameterFromQuery(Name = "a")]
+    public int? AAsked { get; set; }
+
+    [SupplyParameterFromQuery(Name = "b")]
+    public int? BAsked { get; set; }
+
+    [SupplyParameterFromQuery(Name = "batch")]
+    public int? BatchAsked { get; set; }
+
+    [SupplyParameterFromQuery(Name = "probe")]
+    public int? ProbeAsked { get; set; }
+
+    // ?step=1: a batch per press of the step button, the timer's batches off and the page not
+    // rendering after the press, so exactly one batch is out when a redraw is timed.
+    [SupplyParameterFromQuery(Name = "step")]
+    public int? StepAsked { get; set; }
+
+    private int PerBatch => Math.Min(BatchAsked is > 0 and var count ? count : 1, _cells.Length);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        var aCount = AAsked is > 0 and var a ? a : 1000;
+        var bCount = BAsked is > 0 and var b ? b : 9;
+        var clock = Stopwatch.StartNew();
+        var random = new Random(20261006);
+        var cells = new CostCell[aCount * bCount];
+        for (var i = 0; i < aCount; i++)
+        {
+            for (var j = 0; j < bCount; j++)
+            {
+                var at = (i * bCount) + j;
+                cells[at] = new CostCell("R" + at.ToString(CultureInfo.InvariantCulture), "A" + i.ToString("00000", CultureInfo.InvariantCulture),
+                    "B" + j.ToString("0000", CultureInfo.InvariantCulture), Math.Round((decimal)((random.NextDouble() - 0.45) * 100_000), 2));
+            }
+            if (i % 100 == 99)
+                await Task.Delay(1, _leaving.Token);
+        }
+        _cells = cells;
+        var making = clock.Elapsed;
+        clock.Restart();
+        _source = PivotSource.From(cells, Fields);
+        _madeLine?.Show($"{cells.Length.ToString("N0", Culture)} records made in {making.TotalMilliseconds.ToString("N0", Culture)} ms; "
+            + $"PivotSource.From took {clock.Elapsed.TotalMilliseconds.ToString("N0", Culture)} ms.");
+        if (StepAsked == 1)
+            _on = false;
+        StateHasChanged();
+        _ticks = new PeriodicTimer(BatchEvery);
+        _ = Reported(AmendAsync(_ticks));
+    }
+
+    private async Task AmendAsync(PeriodicTimer ticks)
+    {
+        while (await ticks.WaitForNextTickAsync())
+        {
+            if (!_on || _source is not { } source)
+                continue;
+            await OneBatchAsync(source);
+        }
+    }
+
+    private async Task OneBatchAsync(SnapshotPivotSource source)
+    {
+        var amended = Amend(PerBatch);
+        var probe = await ProbeAsync(source);
+        _expectLine?.Show(amended.First(c => c.Id == "R0").Value.ToString("#,##0.00", Culture));
+        var clock = Stopwatch.StartNew();
+        source.Apply(Fields.Batch(changed: amended));
+        var applied = clock.Elapsed;
+        _batches++;
+        _batchLine?.Show($"Batch {_batches.ToString("N0", Culture)}: {amended.Length.ToString("N0", Culture)} records amended, "
+            + $"applied in {applied.TotalMilliseconds.ToString("N0", Culture)} ms (exact {applied.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture)}).{probe}");
+    }
+
+    private Task StepAsync() => _source is { } source ? OneBatchAsync(source) : Task.CompletedTask;
+
+    // In step mode a press renders nothing of the page's own; otherwise as ComponentBase does.
+    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object? arg)
+    {
+        var task = item.InvokeAsync(arg);
+        if (StepAsked == 1)
+            return task;
+        var pending = task.Status != TaskStatus.RanToCompletion && task.Status != TaskStatus.Canceled;
+        StateHasChanged();
+        return pending ? RenderedAfter(task) : Task.CompletedTask;
+    }
+
+    private async Task RenderedAfter(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch when (task.IsCanceled)
+        {
+            return;
+        }
+        StateHasChanged();
+    }
+
+    // The first record and k − 1 others, each picked once, their value moved.
+    private CostCell[] Amend(int count)
+    {
+        var picked = new HashSet<int> { 0 };
+        while (picked.Count < count)
+            picked.Add(_random.Next(_cells.Length));
+        var amended = new CostCell[picked.Count];
+        var i = 0;
+        foreach (var at in picked)
+        {
+            var cell = _cells[at];
+            amended[i++] = _cells[at] = cell with { Value = cell.Value + Math.Round((decimal)((_random.NextDouble() - 0.5) * 200), 2) + 0.01m };
+        }
+        return amended;
+    }
+
+    // Ticket 13: the report the previous probe saw, so that this probe can make the report on screen
+    // again from it, as the redraw did (ADR-0161); held only under ?probe=1.
+    private PivotReport? _probedBefore;
+
+    private static readonly MethodInfo NextCubeMethod = typeof(PivotEngine).GetMethod("NextCube", BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo NextReportMethod = typeof(PivotEngine).GetMethod("NextReport", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    private async Task<string> ProbeAsync(SnapshotPivotSource source)
+    {
+        if (ProbeAsked != 1 || _pivot?.Report is not { } report)
+            return "";
+        var query = PivotQuery.For(Layout, Caps.MaxLeaves);
+        var next = "";
+        if (_probedBefore is { } earlier && !ReferenceEquals(earlier, report))
+        {
+            // The answer the redraw was made from: the source holds it, with the leaves it named.
+            var named = await source.AggregateAsync(query.WithChangedSince(earlier.Cube.SourceVersion));
+            var stopwatch = Stopwatch.StartNew();
+            var nextCube = (PivotCube)NextCubeMethod.Invoke(null, [earlier.Cube, query, named, source.Fields])!;
+            var nextCubeMs = stopwatch.Elapsed.TotalMilliseconds;
+            stopwatch.Restart();
+            var nextReport = (PivotReport)NextReportMethod.Invoke(null, [earlier, nextCube, Layout, earlier.Options])!;
+            var nextReportMs = stopwatch.Elapsed.TotalMilliseconds;
+            var shared = 0;
+            for (var i = 0; i < nextReport.Rows.Count && i < earlier.Rows.Count; i++)
+                shared += ReferenceEquals(nextReport.Rows[i], earlier.Rows[i]) ? 1 : 0;
+            next = string.Create(CultureInfo.InvariantCulture,
+                $" nextCube={nextCubeMs:F3} nextReport={nextReportMs:F3} named={(named.ChangedLeaves is { SameLeaves: true } c ? c.Leaves.Count : -1)} shared={shared}");
+        }
+        _probedBefore = report;
+        var answer = await source.AggregateAsync(query);
+        var clock = Stopwatch.StartNew();
+        var cube = PivotEngine.Cube(query, answer, source.Fields);
+        var cubeMs = clock.Elapsed.TotalMilliseconds;
+        clock.Restart();
+        var laidOut = PivotEngine.Report(cube, Layout, new PivotOptions { Culture = Culture });
+        var reportMs = clock.Elapsed.TotalMilliseconds;
+        clock.Restart();
+        RequireKeys(report.Rows, 0, ReportKey);
+        var keysMs = clock.Elapsed.TotalMilliseconds;
+        clock.Restart();
+        RequireRows(report.Rows);
+        var rowsMs = clock.Elapsed.TotalMilliseconds;
+        return string.Create(CultureInfo.InvariantCulture,
+            $" [probe cube={cubeMs:F3} report={reportMs:F3} keys={keysMs:F3} rows={rowsMs:F3} reportRows={laidOut.Rows.Count}{next}]");
+    }
+
+    private void Toggle() => _on = !_on;
+
+    private async Task Reported(Task loop)
+    {
+        try
+        {
+            await loop;
+        }
+        catch (Exception error)
+        {
+            await DispatchExceptionAsync(error);
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _leaving.Cancel();
+        _ticks?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

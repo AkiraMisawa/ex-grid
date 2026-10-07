@@ -1,0 +1,21 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+variant (unnamed); load { 1.89 2.20 2.54 }; TieredCompilation=0
+== pivot-gc 1,000 x 100, pre-collection full, GC events verbose, GCRetainVM=(default) ==
+   run  1:    63.56 ms, GC pause   15.09 ms, GCs 5, committed 310 -> 368 MB, fragmented after 35.1 MB
+   run  2:    75.13 ms, GC pause   25.72 ms, GCs 5, committed 376 -> 420 MB, fragmented after 30.3 MB
+   run  3:    69.99 ms, GC pause   21.84 ms, GCs 5, committed 427 -> 479 MB, fragmented after 33.5 MB
+   run  4:    68.61 ms, GC pause   21.68 ms, GCs 5, committed 486 -> 535 MB, fragmented after 37.2 MB
+   run  5:    70.89 ms, GC pause   18.00 ms, GCs 5, committed 537 -> 594 MB, fragmented after 43.7 MB
+   run  6:    65.30 ms, GC pause   16.16 ms, GCs 5, committed 598 -> 656 MB, fragmented after 52.7 MB
+   run  7:    66.37 ms, GC pause   15.94 ms, GCs 5, committed 660 -> 718 MB, fragmented after 61.7 MB
+   run  8:    67.15 ms, GC pause   16.71 ms, GCs 5, committed 722 -> 779 MB, fragmented after 70.7 MB
+   run  9:    77.06 ms, GC pause   27.55 ms, GCs 5, committed 784 -> 842 MB, fragmented after 66.6 MB
+   run 10:    69.95 ms, GC pause   21.15 ms, GCs 5, committed 845 -> 879 MB, fragmented after 64.5 MB
+   run 11:    69.73 ms, GC pause   17.71 ms, GCs 5, committed 886 -> 943 MB, fragmented after 76.0 MB
+   run 12:    67.92 ms, GC pause   17.83 ms, GCs 5, committed 948 -> 1005 MB, fragmented after 85.0 MB
+   run 13:    68.83 ms, GC pause   16.92 ms, GCs 5, committed 1010 -> 1067 MB, fragmented after 94.0 MB
+   run 14:    67.36 ms, GC pause   16.63 ms, GCs 5, committed 1071 -> 1129 MB, fragmented after 103.0 MB
+   run 15:    70.96 ms, GC pause   21.44 ms, GCs 5, committed 1133 -> 1191 MB, fragmented after 104.3 MB
+   redraw    63.558    68.832    77.057   GC pause    15.088    17.833    27.546
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/before-pivot-gc-1000x100.json

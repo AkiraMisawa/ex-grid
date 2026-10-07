@@ -1,0 +1,193 @@
+{
+  "mode": "pivot-memory",
+  "machine": {
+    "at": "2026-10-07T13:26:10.4516160\u002B01:00",
+    "loadavg": "{ 2.70 2.98 2.93 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      " 45.3 37-06:49:13 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon",
+      " 19.3    17:07:11 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/Users/akira338",
+      " 15.2       00:01 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-af",
+      " 12.4 25-15:34:47 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacOS/com.appl",
+      "  8.2 04-12:43:45 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+      "  6.1    17:07:11 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --user-data-",
+      "  2.3 23-21:15:40 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  2.2 37-06:38:58 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui",
+      "  1.7    13:06:14 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  1.3    13:06:14 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "  1.2 24-16:52:12 /Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice/Applications/Karabiner-VirtualHIDDevice-Daemon.app/Contents/MacOS/K"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": {
+    "aCount": 1000,
+    "bCount": 100,
+    "k": 1,
+    "redraws": 20,
+    "baselineMB": 152.5,
+    "samples": [
+      {
+        "redraw": 1,
+        "heapMB": 154.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 3,
+        "workingSetMB": 196.5
+      },
+      {
+        "redraw": 2,
+        "heapMB": 154.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 5,
+        "workingSetMB": 200.3
+      },
+      {
+        "redraw": 3,
+        "heapMB": 154.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 197
+      },
+      {
+        "redraw": 4,
+        "heapMB": 154.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 200.3
+      },
+      {
+        "redraw": 5,
+        "heapMB": 154.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.5
+      },
+      {
+        "redraw": 6,
+        "heapMB": 154.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.8
+      },
+      {
+        "redraw": 7,
+        "heapMB": 155.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 194.8
+      },
+      {
+        "redraw": 8,
+        "heapMB": 155.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.1
+      },
+      {
+        "redraw": 9,
+        "heapMB": 155.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.9
+      },
+      {
+        "redraw": 10,
+        "heapMB": 155.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.9
+      },
+      {
+        "redraw": 11,
+        "heapMB": 155.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 194.8
+      },
+      {
+        "redraw": 12,
+        "heapMB": 155.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.9
+      },
+      {
+        "redraw": 13,
+        "heapMB": 156,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.9
+      },
+      {
+        "redraw": 14,
+        "heapMB": 156.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.9
+      },
+      {
+        "redraw": 15,
+        "heapMB": 156.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 194.8
+      },
+      {
+        "redraw": 16,
+        "heapMB": 156.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.1
+      },
+      {
+        "redraw": 17,
+        "heapMB": 156.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 194.8
+      },
+      {
+        "redraw": 18,
+        "heapMB": 156.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.1
+      },
+      {
+        "redraw": 19,
+        "heapMB": 157,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 194.8
+      },
+      {
+        "redraw": 20,
+        "heapMB": 157.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.1
+      }
+    ]
+  }
+}

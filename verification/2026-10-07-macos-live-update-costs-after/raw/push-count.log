@@ -1,0 +1,6 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 3.35 3.56 3.64 }; TieredCompilation=0
+   pushed, vouched False: key calls per update over a Window of 100,000: 100,018, 100,018, 100,018
+   pushed, vouched True: key calls per update over a Window of 100,000: 18, 18, 18
+wrote verification/2026-10-07-macos-live-update-costs-after/raw/push-count.json

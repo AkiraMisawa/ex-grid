@@ -1,0 +1,826 @@
+=== core pivot-1000x9: before, 2026-10-07 12:57:51
+12:58:21 check 2: ok=2 load { 2.60 2.71 3.07 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+122.3 37-06:20:54 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+  3.6 23-20:47:51 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.0    23:58:44 claude
+  1.9 37-06:11:09 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  1.8 37-06:21:25 /System/Library/CoreServices/launchservicesd
+clean during the run (checked every 20 s)
+=== core pivot-1000x9: after, 2026-10-07 12:58:25, 4 s, exit 0
+clean: load { 2.63 2.71 3.07 }
+=== core pivot-1000x100: before, 2026-10-07 12:58:26
+12:58:56 check 2: ok=2 load { 2.21 2.61 3.02 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+  6.3    23:59:19 claude
+  5.2 37-06:11:44 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  4.9 23-20:48:26 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.5 36-02:01:56 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  2.3 37-06:21:56 /usr/libexec/sysmond
+clean during the run (checked every 20 s)
+=== core pivot-1000x100: after, 2026-10-07 12:59:25, 29 s, exit 0
+clean: load { 2.29 2.58 2.99 }
+=== core pivot-1000x400: before, 2026-10-07 12:59:25
+12:59:56 check 2: ok=2 load { 1.99 2.49 2.95 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+  4.1 23-20:49:26 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.3 01-00:00:19 claude
+  2.1 37-06:12:44 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  2.1 37-06:23:00 /System/Library/CoreServices/launchservicesd
+  1.5    12:40:00 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+clean during the run (checked every 20 s)
+=== core pivot-1000x400: after, 2026-10-07 13:01:38, 102 s, exit 0
+clean: load { 1.28 2.10 2.74 }
+=== core grid-1e5: before, 2026-10-07 13:01:38
+13:02:09 check 2: ok=2 load { 1.35 2.04 2.69 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 14.4 25-15:10:46 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+  8.1 23-20:51:39 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.7    12:42:13 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+  3.5 01-00:02:32 claude
+  3.4 37-06:25:12 /usr/sbin/coreaudiod
+clean during the run (checked every 20 s)
+=== core grid-1e5: after, 2026-10-07 13:02:18, 9 s, exit 0
+clean: load { 1.29 2.00 2.67 }
+=== core grid-1e6: before, 2026-10-07 13:02:18
+13:02:48 check 2: ok=2 load { 1.24 1.92 2.62 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 11.2 36-02:05:48 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  5.5 37-06:25:48 /usr/libexec/sysmond
+  4.6 23-20:52:18 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.7 37-06:25:52 /System/Library/CoreServices/launchservicesd
+  3.6 37-06:15:36 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+clean during the run (checked every 20 s)
+=== core grid-1e6: after, 2026-10-07 13:04:47, 119 s, exit 0
+clean: load { 3.50 2.38 2.70 }
+=== core vouch: before, 2026-10-07 13:04:47
+13:05:17 check 2: ok=2 load { 2.75 2.31 2.66 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+  7.7 23-20:54:47 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.7 37-06:18:05 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  2.4 37-06:28:21 /System/Library/CoreServices/launchservicesd
+  2.1 37-06:18:05 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  1.7    12:45:21 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+clean during the run (checked every 20 s)
+=== core vouch: after, 2026-10-07 13:05:19, 2 s, exit 0
+clean: load { 2.77 2.32 2.66 }
+=== core pivot-gc-1000x9: before, 2026-10-07 13:06:49, after build
+13:07:19 check 2: ok=2 load { 2.49 2.45 2.67 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 91.2       00:02 /System/Library/PrivateFrameworks/ModelCatalogRuntime.framework/Versions/A/ModelCatalogAgent
+ 10.5 23-20:56:50 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.6 01-00:07:43 claude
+  2.5 37-06:20:08 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  2.5 37-06:30:24 /usr/libexec/logd
+clean during the run (checked every 20 s)
+=== core pivot-gc-1000x9: after, 2026-10-07 13:07:21, 1 s, exit 0
+clean: load { 2.49 2.45 2.67 }
+=== core before-pivot-gc-1000x9: before, 2026-10-07 13:07:21, /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0/spikes/paint-text/PaintCosts/bin/Release/net10.0/PaintCosts.dll
+13:07:51 check 2: ok=2 load { 1.90 2.31 2.61 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+  8.9 01-00:08:14 claude
+  4.2 23-20:57:21 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.3 37-06:20:39 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  2.2    12:47:55 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+  2.1    12:47:55 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+clean during the run (checked every 20 s)
+=== core before-pivot-gc-1000x9: after, 2026-10-07 13:07:53, 2 s, exit 0
+clean: load { 1.91 2.31 2.61 }
+=== core pivot-gc-1000x100: before, 2026-10-07 13:07:53, after build
+13:08:23 check 2: ok=2 load { 1.53 2.18 2.55 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 11.3 25-15:17:00 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+ 11.1 36-02:11:23 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  5.2 23-20:57:53 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  4.3 37-06:31:27 /System/Library/CoreServices/launchservicesd
+  4.1 01-00:08:46 claude
+clean during the run (checked every 20 s)
+=== core pivot-gc-1000x100: after, 2026-10-07 13:08:25, 2 s, exit 0
+clean: load { 1.53 2.18 2.55 }
+=== core before-pivot-gc-1000x100: before, 2026-10-07 13:08:25, /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0/spikes/paint-text/PaintCosts/bin/Release/net10.0/PaintCosts.dll
+13:08:56 check 2: ok=2 load { 1.89 2.20 2.54 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+123.4 37-06:31:29 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+  3.3 23-20:58:26 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  1.6 37-06:21:44 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  1.1 01-00:09:19 claude
+  1.1    12:49:00 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+clean during the run (checked every 20 s)
+=== core before-pivot-gc-1000x100: after, 2026-10-07 13:09:01, 5 s, exit 0
+clean: load { 2.86 2.39 2.61 }
+=== core pivot-gc-1000x400: before, 2026-10-07 13:09:01, after build
+13:09:31 check 2: ok=2 load { 2.62 2.37 2.59 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 34.6 37-06:32:34 /usr/libexec/airportd
+ 32.7 01-00:09:54 claude
+ 12.3 37-06:32:35 /usr/libexec/configd
+ 10.8 23-20:59:01 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  5.4 37-06:32:34 /usr/sbin/mDNSResponder
+clean during the run (checked every 20 s)
+=== core pivot-gc-1000x400: after, 2026-10-07 13:09:35, 4 s, exit 0
+clean: load { 2.65 2.38 2.59 }
+=== core before-pivot-gc-1000x400: before, 2026-10-07 13:09:35, /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0/spikes/paint-text/PaintCosts/bin/Release/net10.0/PaintCosts.dll
+13:10:05 check 2: ok=2 load { 2.41 2.34 2.57 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+  4.4 23-20:59:35 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.4 37-06:22:53 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+  2.4 37-06:33:09 /System/Library/CoreServices/launchservicesd
+  2.1 37-06:22:53 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  2.0    12:50:09 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+clean during the run (checked every 20 s)
+=== core before-pivot-gc-1000x400: after, 2026-10-07 13:10:21, 16 s, exit 0
+clean: load { 2.10 2.28 2.54 }
+=== core before-pivot-1000x9: before, 2026-10-07 13:10:21, /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0/spikes/live-update/Costs/bin/Release/net10.0/Costs.dll
+13:10:52 check 2: ok=2 load { 2.87 2.45 2.60 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 43.3 37-06:33:55 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 11.2    16:51:53 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  9.3 37-06:33:55 /usr/sbin/coreaudiod
+  7.4 23-21:00:22 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  6.5    16:51:53 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+clean during the run (checked every 20 s)
+=== core before-pivot-1000x9: after, 2026-10-07 13:11:04, 12 s, exit 0
+clean: load { 2.75 2.45 2.59 }
+=== core before-pivot-1000x100: before, 2026-10-07 13:11:04, /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0/spikes/live-update/Costs/bin/Release/net10.0/Costs.dll
+13:11:34 check 2: ok=2 load { 3.00 2.54 2.62 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.2 37-06:34:37 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 26.4    16:52:35 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 15.8    16:52:35 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+ 11.1 37-06:34:38 /usr/libexec/corebrightnessd --launchd
+  6.3 37-06:24:22 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+clean during the run (checked every 20 s)
+=== core before-pivot-1000x100: after, 2026-10-07 13:13:23, 109 s, exit 0
+clean: load { 3.46 2.74 2.68 }
+=== core before-pivot-1000x400: before, 2026-10-07 13:13:23, /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0/spikes/live-update/Costs/bin/Release/net10.0/Costs.dll
+13:13:54 check 2: ok=2 load { 2.86 2.67 2.66 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 42.1 37-06:36:57 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 11.6    16:54:55 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 10.7 37-06:26:42 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  8.3    16:54:55 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  5.4 23-21:03:24 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+clean during the run (checked every 20 s)
+=== core before-pivot-1000x400: after, 2026-10-07 13:21:03, 429 s, exit 0
+clean: load { 3.13 3.26 2.96 }
+=== core before-grid-1e5: before, 2026-10-07 13:21:03, /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0/spikes/live-update/Costs/bin/Release/net10.0/Costs.dll
+13:21:33 check 2: ok=2 load { 2.97 3.20 2.95 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 41.2 37-06:44:36 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 10.3 37-06:34:21 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  9.6    17:02:34 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  9.4    17:02:34 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  5.8 23-21:11:03 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+clean during the run (checked every 20 s)
+=== core before-grid-1e5: after, 2026-10-07 13:21:42, 9 s, exit 0
+clean: load { 2.97 3.19 2.95 }
+=== core before-grid-1e6: before, 2026-10-07 13:21:42, /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0/spikes/live-update/Costs/bin/Release/net10.0/Costs.dll
+13:22:12 check 2: ok=2 load { 3.06 3.19 2.96 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 46.1 37-06:45:15 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 16.2    17:03:13 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 10.4 36-02:25:12 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+ 10.4    17:03:13 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  7.4 37-06:35:00 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+clean during the run (checked every 20 s)
+=== core before-grid-1e6: after, 2026-10-07 13:24:00, 108 s, exit 0
+clean: load { 3.01 3.19 2.99 }
+=== core pivot-steady-1000x100: before, 2026-10-07 13:24:00, after build
+13:24:31 check 2: ok=2 load { 2.89 3.14 2.97 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 45.7 37-06:47:34 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 20.4    17:05:32 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 16.8    17:05:32 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+ 15.3 37-06:47:31 /usr/libexec/sysmond
+ 13.3 36-02:27:31 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+clean during the run (checked every 20 s)
+=== core pivot-steady-1000x100: after, 2026-10-07 13:24:33, 2 s, exit 0
+clean: load { 2.89 3.14 2.97 }
+=== core pivot-steady-1000x9: before, 2026-10-07 13:24:33, after build
+13:25:04 check 2: ok=2 load { 2.68 3.06 2.95 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 42.3 37-06:48:07 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 22.1    17:06:05 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 18.5    17:06:05 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  6.1 23-21:14:34 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.7 23-22:52:51 /System/Library/PrivateFrameworks/BackgroundTaskManagement.framework/Resources/backgroundtaskmanagementd -daemon
+clean during the run (checked every 20 s)
+=== core pivot-steady-1000x9: after, 2026-10-07 13:25:05, 1 s, exit 0
+clean: load { 2.78 3.07 2.96 }
+=== core pivot-steady-1000x400: before, 2026-10-07 13:25:05, after build
+13:25:36 check 2: ok=2 load { 2.67 3.02 2.94 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 42.6 37-06:48:39 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 12.9    17:06:37 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  8.8    17:06:37 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  5.3 23-21:15:06 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  4.8 25-15:34:13 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+clean during the run (checked every 20 s)
+=== core pivot-steady-1000x400: after, 2026-10-07 13:25:39, 3 s, exit 0
+clean: load { 2.67 3.02 2.94 }
+=== core pivot-memory-1000x100: before, 2026-10-07 13:25:39, after build
+13:26:09 check 2: ok=2 load { 2.70 2.98 2.93 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+121.7 04-12:43:44 /Applications/NordVPN.app/Contents/MacOS/NordVPN
+ 45.6 37-06:49:12 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 23.7    17:07:10 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 11.9    17:07:10 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  8.6 23-21:15:39 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+clean during the run (checked every 20 s)
+=== core pivot-memory-1000x100: after, 2026-10-07 13:26:11, 2 s, exit 0
+clean: load { 2.70 2.98 2.93 }
+=== core pivot-memory-1000x400: before, 2026-10-07 13:26:11, after build
+13:26:42 check 2: ok=2 load { 2.13 2.82 2.87 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+  6.3 23-21:16:12 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  5.6 37-06:49:45 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  3.7 37-06:49:45 /usr/sbin/coreaudiod
+  3.3    13:06:46 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+  3.1 01-00:27:05 claude
+clean during the run (checked every 20 s)
+=== core pivot-memory-1000x400: after, 2026-10-07 13:26:46, 4 s, exit 0
+clean: load { 2.12 2.81 2.86 }
+=== core pivot-memory-1000x100-200: before, 2026-10-07 13:27:25, after build
+13:27:55 check 2: ok=2 load { 2.29 2.69 2.81 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 21.5 37-06:50:58 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 10.3    17:09:00 /Applications/Claude.app/Contents/MacOS/Claude
+  9.2    17:08:56 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  6.1    13:08:01 /Applications/Wispr Flow.app/Contents/MacOS/Wispr Flow
+  5.5 01-00:28:18 claude
+clean during the run (checked every 20 s)
+=== core pivot-memory-1000x100-200: after, 2026-10-07 13:28:04, 9 s, exit 0
+clean: load { 2.43 2.71 2.82 }
+=== browser pivot-wasm-1000x9-1: waiting for the layer-3 lock, 2026-10-07 13:30:20
+=== browser pivot-wasm-1000x9-1: lock taken, 2026-10-07 13:30:20, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=9 EXGRID_COSTS_BATCH=1 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+13:30:50 check 2: ok=2 load { 3.07 3.08 2.97 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 43.0 37-06:53:53 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  8.9    17:11:51 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  7.4    17:11:51 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  6.4 23-21:20:20 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.9 37-06:43:38 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+clean during the run (checked every 20 s)
+=== browser pivot-wasm-1000x9-1: after, 2026-10-07 13:31:03, 13 s, exit 0
+clean: load { 3.53 3.18 3.00 }
+=== browser pivot-wasm-1000x9-1000: waiting for the layer-3 lock, 2026-10-07 13:31:03
+=== browser pivot-wasm-1000x9-1000: lock taken, 2026-10-07 13:31:03, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=9 EXGRID_COSTS_BATCH=1000 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+13:31:33 check 2: ok=2 load { 4.50 3.46 3.11 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.6 37-06:54:36 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 17.1       00:02 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/151.0.7922.175/Helpers/Google Chrome 
+ 15.9       00:00 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/151.0.7922.175/Helpers/Google Chrome 
+ 11.9 37-06:44:21 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+  8.1    17:12:34 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+clean during the run (checked every 20 s)
+=== browser pivot-wasm-1000x9-1000: after, 2026-10-07 13:31:47, 13 s, exit 0
+clean: load { 4.18 3.44 3.11 }
+=== browser pivot-wasm-1000x100-1: waiting for the layer-3 lock, 2026-10-07 13:31:47
+=== browser pivot-wasm-1000x100-1: lock taken, 2026-10-07 13:31:47, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=100 EXGRID_COSTS_BATCH=1 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+13:32:17 check 2: ok=2 load { 3.43 3.31 3.07 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.8 37-06:55:20 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 23.9    17:13:18 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  8.0 23-21:21:47 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  6.9    17:13:18 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  6.5       03:54 /nix/store/1vmgr3dcj6mly896rnbxvfg8w641vwdc-dotnet-sdk-10.0.203/share/dotnet/sdk/10.0.203/Roslyn/bincore/VBCSCompiler -pipename:vRrO
+clean during the run (checked every 20 s)
+=== browser pivot-wasm-1000x100-1: after, 2026-10-07 13:32:33, 16 s, exit 0
+clean: load { 3.79 3.40 3.11 }
+=== browser pivot-wasm-1000x100-1000: waiting for the layer-3 lock, 2026-10-07 13:32:33
+=== browser pivot-wasm-1000x100-1000: lock taken, 2026-10-07 13:32:33, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=100 EXGRID_COSTS_BATCH=1000 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+13:33:03 check 2: ok=2 load { 3.21 3.31 3.08 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 42.9 37-06:56:06 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 23.6    17:14:04 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 10.4 23-21:22:33 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+ 10.3 25-15:41:40 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+  9.5 36-02:36:03 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+clean during the run (checked every 20 s)
+=== browser pivot-wasm-1000x100-1000: after, 2026-10-07 13:33:20, 16 s, exit 0
+clean: load { 2.93 3.24 3.06 }
+=== browser pivot-wasm-1000x400-1: waiting for the layer-3 lock, 2026-10-07 13:33:20
+=== browser pivot-wasm-1000x400-1: lock taken, 2026-10-07 13:33:20, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=400 EXGRID_COSTS_BATCH=1 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+13:33:50 check 2: ok=2 load { 2.75 3.18 3.05 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.1 37-06:56:53 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 29.1    17:14:51 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 12.7 23-21:23:20 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  8.3    17:14:51 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  3.4 23-23:01:37 /System/Library/PrivateFrameworks/BackgroundTaskManagement.framework/Resources/backgroundtaskmanagementd -daemon
+CONTENDED during the run:
+13:34:11 BUSY: playwright runners:  4373   0.0       00:21 npm exec playwright test measure-live-costs.spec.mjs --project=chrome      
+=== browser pivot-wasm-1000x400-1: after, 2026-10-07 13:34:16, 26 s, exit 0
+clean: load { 3.22 3.26 3.08 }
+=== browser pivot-wasm-1000x400-1000: waiting for the layer-3 lock, 2026-10-07 13:34:16
+=== browser pivot-wasm-1000x400-1000: lock taken, 2026-10-07 13:34:16, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=400 EXGRID_COSTS_BATCH=1000 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+13:34:47 check 2: ok=2 load { 3.43 3.32 3.11 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.7 37-06:57:50 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 29.5    17:15:48 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  9.1    17:15:48 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  4.6 23-21:24:17 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.9    13:14:51 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+CONTENDED during the run:
+13:35:07 BUSY: playwright runners:  4734   0.0       00:20 npm exec playwright test measure-live-costs.spec.mjs --project=chrome      
+=== browser pivot-wasm-1000x400-1000: after, 2026-10-07 13:35:14, 27 s, exit 0
+clean: load { 3.33 3.31 3.11 }
+=== browser pivot-wasm-probe-1000x9-1: waiting for the layer-3 lock, 2026-10-07 13:35:14
+=== browser pivot-wasm-probe-1000x9-1: lock taken, 2026-10-07 13:35:14, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=9 EXGRID_COSTS_BATCH=1 EXGRID_COSTS_PROBE=1 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+13:35:45 check 2: ok=2 load { 4.23 3.50 3.19 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.1 37-06:58:48 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  8.6    17:16:46 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  6.0    17:16:46 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  5.5 37-06:48:33 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+  4.9 23-21:25:15 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+clean during the run (checked every 20 s)
+=== browser pivot-wasm-probe-1000x9-1: after, 2026-10-07 13:35:59, 14 s, exit 0
+clean: load { 4.19 3.52 3.20 }
+=== browser pivot-wasm-probe-1000x100-1: waiting for the layer-3 lock, 2026-10-07 13:35:59
+=== browser pivot-wasm-probe-1000x100-1: lock taken, 2026-10-07 13:35:59, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=100 EXGRID_COSTS_BATCH=1 EXGRID_COSTS_PROBE=1 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+13:36:29 check 2: ok=2 load { 3.51 3.42 3.17 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 43.9 37-06:59:32 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 28.1    17:17:30 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  6.7 23-21:25:59 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  6.7    17:17:30 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  2.5    13:16:33 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+clean during the run (checked every 20 s)
+=== browser pivot-wasm-probe-1000x100-1: after, 2026-10-07 13:36:52, 23 s, exit 0
+clean: load { 3.80 3.50 3.20 }
+=== browser pivot-wasm-probe-1000x400-1: waiting for the layer-3 lock, 2026-10-07 13:36:52
+=== browser pivot-wasm-probe-1000x400-1: lock taken, 2026-10-07 13:36:52, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=400 EXGRID_COSTS_BATCH=1 EXGRID_COSTS_PROBE=1 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+13:37:23 check 2: ok=2 load { 3.02 3.34 3.16 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 46.1 37-07:00:26 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 28.8    17:18:24 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  7.6    17:18:24 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  6.1 23-21:26:53 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.9 01-00:37:46 claude
+clean during the run (checked every 20 s)
+=== browser pivot-wasm-probe-1000x400-1: after, 2026-10-07 13:38:21, 58 s, exit 0
+clean: load { 2.93 3.24 3.13 }
+=== browser grid-wasm-1000000-1000: waiting for the layer-3 lock, 2026-10-07 13:38:21
+=== browser grid-wasm-1000000-1000: lock taken, 2026-10-07 13:38:21, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=1000
+13:38:51 check 2: ok=2 load { 2.61 3.14 3.10 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 45.4 37-07:01:54 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  8.8 23-21:28:21 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  8.8    17:19:52 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  7.4    17:19:52 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  3.5 37-06:51:39 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+clean during the run (checked every 20 s)
+=== browser grid-wasm-1000000-1000: after, 2026-10-07 13:39:03, 12 s, exit 0
+clean: load { 3.48 3.31 3.16 }
+=== browser grid-wasm-1000000-1: waiting for the layer-3 lock, 2026-10-07 13:39:04
+=== browser grid-wasm-1000000-1: lock taken, 2026-10-07 13:39:04, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=1
+13:39:34 check 2: ok=2 load { 3.29 3.28 3.15 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.3 37-07:02:37 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 27.5    17:20:35 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  7.7    17:20:35 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  5.7 23-21:29:04 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  4.0 37-07:02:38 /System/Library/CoreServices/launchservicesd
+clean during the run (checked every 20 s)
+=== browser grid-wasm-1000000-1: after, 2026-10-07 13:39:46, 12 s, exit 0
+clean: load { 3.51 3.33 3.17 }
+=== browser grid-wasm-1000000-100: waiting for the layer-3 lock, 2026-10-07 13:39:46
+=== browser grid-wasm-1000000-100: lock taken, 2026-10-07 13:39:46, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=100
+13:40:16 check 2: ok=2 load { 2.81 3.19 3.13 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 43.6 37-07:03:20 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.6    17:21:18 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  9.8    17:21:18 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  7.2 23-21:29:47 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.1 01-00:40:40 claude
+clean during the run (checked every 20 s)
+=== browser grid-wasm-1000000-100: after, 2026-10-07 13:40:28, 11 s, exit 0
+clean: load { 8.21 4.37 3.55 }
+=== browser grid-wasm-100000-1: waiting for the layer-3 lock, 2026-10-07 13:40:29
+=== browser grid-wasm-100000-1: lock taken, 2026-10-07 13:40:29, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=100000 EXGRID_COSTS_BATCH=1
+13:40:59 check 2: ok=2 load { 6.02 4.21 3.52 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 45.5 37-07:04:02 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 18.1    17:22:00 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  7.5    17:22:00 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  5.4 23-21:30:29 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  5.2 37-06:53:47 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+clean during the run (checked every 20 s)
+=== browser grid-wasm-100000-1: after, 2026-10-07 13:41:08, 9 s, exit 0
+clean: load { 5.48 4.15 3.50 }
+=== browser grid-wasm-100000-100: waiting for the layer-3 lock, 2026-10-07 13:41:08
+=== browser grid-wasm-100000-100: lock taken, 2026-10-07 13:41:08, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=100000 EXGRID_COSTS_BATCH=100
+13:41:39 check 2: ok=2 load { 4.16 3.94 3.45 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+190.7 37-07:04:12 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+ 42.8 37-07:04:42 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 26.9    17:22:40 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  6.7    17:22:40 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  6.1 01-00:42:02 claude
+clean during the run (checked every 20 s)
+=== browser grid-wasm-100000-100: after, 2026-10-07 13:41:48, 9 s, exit 0
+clean: load { 11.72 5.63 4.06 }
+=== browser grid-wasm-100000-1000: waiting for the layer-3 lock, 2026-10-07 13:41:48
+=== browser grid-wasm-100000-1000: lock taken, 2026-10-07 13:41:48, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=100000 EXGRID_COSTS_BATCH=1000
+13:42:19 check 2: ok=2 load { 8.51 5.40 4.03 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 43.7 37-07:05:22 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 28.5    17:23:20 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  9.6    17:23:20 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  5.5 23-21:31:49 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  5.1 37-06:55:07 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+clean during the run (checked every 20 s)
+=== browser grid-wasm-100000-1000: after, 2026-10-07 13:42:28, 9 s, exit 0
+clean: load { 7.57 5.30 4.01 }
+=== browser grid-wasm-probe-1000000-1000: waiting for the layer-3 lock, 2026-10-07 13:42:28
+=== browser grid-wasm-probe-1000000-1000: lock taken, 2026-10-07 13:42:28, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=1000 EXGRID_COSTS_PROBE=1
+13:42:59 check 2: ok=2 load { 5.19 4.94 3.92 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 43.9 37-07:06:02 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 14.2    17:24:00 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  8.1    17:24:00 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  6.0 23-21:32:29 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.6    13:23:03 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow
+clean during the run (checked every 20 s)
+=== browser grid-wasm-probe-1000000-1000: after, 2026-10-07 13:45:19, 140 s, exit 0
+clean: load { 3.12 4.20 3.77 }
+=== browser grid-wasm-pushed-1000000-1000: waiting for the layer-3 lock, 2026-10-07 13:45:19
+=== browser grid-wasm-pushed-1000000-1000: lock taken, 2026-10-07 13:45:19, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=1000 EXGRID_COSTS_PUSH=1
+13:45:50 check 2: ok=2 load { 3.12 4.10 3.75 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+111.5    10:43:02 /usr/libexec/spotlightknowledged.updater -u
+ 61.5 23-21:35:20 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+ 44.8 37-07:08:53 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 22.2    17:26:51 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 16.4 37-07:08:23 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+clean during the run (checked every 20 s)
+=== browser grid-wasm-pushed-1000000-1000: after, 2026-10-07 13:47:25, 95 s, exit 0
+clean: load { 3.64 4.25 3.86 }
+=== browser grid-wasm-pushed-vouched-1000000-1000: waiting for the layer-3 lock, 2026-10-07 13:47:25
+=== browser grid-wasm-pushed-vouched-1000000-1000: lock taken, 2026-10-07 13:47:25, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=1000 EXGRID_COSTS_PUSH=1 EXGRID_COSTS_VOUCH=1
+13:47:55 check 2: ok=2 load { 3.40 4.13 3.83 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.2 37-07:10:58 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 28.5    17:28:56 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 10.8    17:28:56 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  9.0 01-00:48:18 claude
+  6.6 23-21:37:25 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+clean during the run (checked every 20 s)
+=== browser grid-wasm-pushed-vouched-1000000-1000: after, 2026-10-07 13:48:07, 12 s, exit 0
+clean: load { 3.47 4.11 3.83 }
+=== browser grid-wasm-pushed-1000000-1: waiting for the layer-3 lock, 2026-10-07 13:48:07
+=== browser grid-wasm-pushed-1000000-1: lock taken, 2026-10-07 13:48:07, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=1 EXGRID_COSTS_PUSH=1
+13:48:38 check 2: ok=2 load { 3.52 4.08 3.82 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 43.9 37-07:11:41 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 27.4    17:29:39 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  7.1    17:29:39 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  6.1 23-21:38:08 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.5    13:28:42 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+clean during the run (checked every 20 s)
+=== browser grid-wasm-pushed-1000000-1: after, 2026-10-07 13:50:06, 88 s, exit 0
+clean: load { 3.90 3.92 3.78 }
+=== browser grid-wasm-pushed-vouched-1000000-1: waiting for the layer-3 lock, 2026-10-07 13:50:06
+=== browser grid-wasm-pushed-vouched-1000000-1: lock taken, 2026-10-07 13:50:06, hosts after build, EXGRID_MEASURE=live-costs EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=1 EXGRID_COSTS_PUSH=1 EXGRID_COSTS_VOUCH=1
+13:50:36 check 2: ok=2 load { 2.82 3.66 3.69 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.9 37-07:13:39 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 13.9    17:31:37 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 11.3 25-15:59:13 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+  7.7    17:31:37 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  6.1 23-21:40:06 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+clean during the run (checked every 20 s)
+=== browser grid-wasm-pushed-vouched-1000000-1: after, 2026-10-07 13:50:48, 11 s, exit 0
+clean: load { 3.15 3.70 3.70 }
+=== browser grid-server-bytes-1000000-1: waiting for the layer-3 lock, 2026-10-07 13:50:49
+=== browser grid-server-bytes-1000000-1: lock taken, 2026-10-07 13:50:49, hosts after build, EXGRID_MEASURE=live-bytes EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=1
+13:51:19 check 2: ok=2 load { 3.05 3.62 3.67 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 45.5 37-07:14:22 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+  8.6    17:32:20 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  6.1    17:32:20 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  5.1 01-00:51:42 claude
+  4.5 23-21:40:49 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+clean during the run (checked every 20 s)
+=== browser grid-server-bytes-1000000-1: after, 2026-10-07 13:51:51, 32 s, exit 0
+clean: load { 3.84 3.72 3.70 }
+=== browser grid-server-bytes-1000000-100: waiting for the layer-3 lock, 2026-10-07 13:51:51
+=== browser grid-server-bytes-1000000-100: lock taken, 2026-10-07 13:51:51, hosts after build, EXGRID_MEASURE=live-bytes EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=100
+13:52:21 check 2: ok=2 load { 2.94 3.50 3.62 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.8 37-07:15:24 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 10.5    17:33:22 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  8.2    17:33:22 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  5.0 23-21:41:51 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.0 01-00:52:44 claude
+clean during the run (checked every 20 s)
+=== browser grid-server-bytes-1000000-100: after, 2026-10-07 13:52:53, 32 s, exit 0
+clean: load { 3.16 3.51 3.62 }
+=== browser grid-server-bytes-1000000-1000: waiting for the layer-3 lock, 2026-10-07 13:52:53
+=== browser grid-server-bytes-1000000-1000: lock taken, 2026-10-07 13:52:53, hosts after build, EXGRID_MEASURE=live-bytes EXGRID_COSTS_ROWS=1000000 EXGRID_COSTS_BATCH=1000
+13:53:23 check 2: ok=2 load { 3.23 3.50 3.61 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 46.1 37-07:16:26 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 12.4 25-16:02:00 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+  9.1    17:34:24 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  6.5 23-21:42:53 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  5.9    17:34:24 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+clean during the run (checked every 20 s)
+=== browser grid-server-bytes-1000000-1000: after, 2026-10-07 13:53:55, 32 s, exit 0
+clean: load { 3.24 3.46 3.59 }
+=== oom oom-1000x100-20: waiting for the layer-3 lock, 2026-10-07 13:53:55
+=== oom oom-1000x100-20: lock taken, 2026-10-07 13:53:55
+13:54:25 check 2: ok=2 load { 3.17 3.43 3.58 } 
+idle
+=== oom oom-1000x100-20: after, 2026-10-07 13:54:37, 11 s, exit 0; { 3.28 3.44 3.58 }
+=== oom oom-1000x400-15: waiting for the layer-3 lock, 2026-10-07 13:54:37
+=== oom oom-1000x400-15: lock taken, 2026-10-07 13:54:37
+13:55:07 check 2: ok=2 load { 2.84 3.32 3.53 } 
+idle
+=== oom oom-1000x400-15: after, 2026-10-07 13:55:25, 17 s, exit 0; { 2.80 3.29 3.51 }
+=== browser pv21-live-after: waiting for the layer-3 lock, 2026-10-07 13:55:25
+=== browser pv21-live-after: lock taken, 2026-10-07 13:55:25, hosts after build, EXGRID_MEASURE=pivot
+13:55:56 check 2: ok=2 load { 2.34 3.13 3.45 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 44.5 37-07:18:59 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 14.0    17:36:57 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  7.2    17:36:57 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  5.6 23-21:45:26 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  5.1 37-07:08:44 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui
+clean during the run (checked every 20 s)
+=== browser pv21-live-after: after, 2026-10-07 13:56:31, 35 s, exit 0
+clean: load { 2.49 3.07 3.41 }
+=== browser before-pv21-live: waiting for the layer-3 lock, 2026-10-07 13:56:31
+=== browser before-pv21-live: lock taken, 2026-10-07 13:56:31, hosts /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0hosts, EXGRID_MEASURE=pivot
+13:57:01 check 2: ok=2 load { 7.65 4.14 3.78 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 45.9 37-07:20:04 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 18.3    17:38:02 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 15.2 23-21:46:31 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  9.2 37-07:19:31 /System/Library/CoreServices/NotificationCenter.app/Contents/MacOS/NotificationCenter
+  7.0    17:38:02 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+clean during the run (checked every 20 s)
+=== browser before-pv21-live: after, 2026-10-07 13:57:36, 35 s, exit 0
+clean: load { 5.52 4.00 3.74 }
+=== browser before-pivot-wasm-1000x9-1: waiting for the layer-3 lock, 2026-10-07 13:57:37
+=== browser before-pivot-wasm-1000x9-1: lock taken, 2026-10-07 13:57:37, hosts /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0hosts, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=9 EXGRID_COSTS_BATCH=1
+13:58:07 check 2: ok=2 load { 4.40 3.87 3.70 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 41.7 37-07:21:10 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 26.0    17:39:08 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+ 17.6 36-03:01:07 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+  9.6 37-07:21:07 /usr/libexec/sysmond
+  9.1    17:39:08 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+clean during the run (checked every 20 s)
+=== browser before-pivot-wasm-1000x9-1: after, 2026-10-07 13:58:21, 14 s, exit 0
+clean: load { 4.26 3.85 3.70 }
+=== browser before-pivot-wasm-1000x100-1: waiting for the layer-3 lock, 2026-10-07 13:58:21
+=== browser before-pivot-wasm-1000x100-1: lock taken, 2026-10-07 13:58:21, hosts /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0hosts, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=100 EXGRID_COSTS_BATCH=1
+13:58:51 check 2: ok=2 load { 3.44 3.71 3.65 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 46.8 37-07:21:54 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 26.6    17:39:52 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/User
+  9.9 25-16:07:28 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+  9.4    17:39:52 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --
+  7.3 23-21:48:21 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+clean during the run (checked every 20 s)
+=== browser before-pivot-wasm-1000x100-1: after, 2026-10-07 13:59:14, 23 s, exit 0
+clean: load { 3.37 3.68 3.64 }
+=== oom oom-1000x400-80: waiting for the layer-3 lock, 2026-10-07 13:59:22
+=== oom oom-1000x400-80: lock taken, 2026-10-07 13:59:22
+13:59:53 check 2: ok=2 load { 2.70 3.48 3.57 } 
+idle
+=== oom oom-1000x400-80: after, 2026-10-07 14:01:05, 70 s, exit 0; { 3.66 3.59 3.60 }
+=== browser pivot-wasm-1000x100-1-long: waiting for the layer-3 lock, 2026-10-07 14:01:05
+=== browser pivot-wasm-1000x100-1-long: lock taken, 2026-10-07 14:01:05, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=100 EXGRID_COSTS_BATCH=1 EXGRID_COSTS_RUNS=80 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+14:01:35 check 2: ok=2 load { 3.44 3.54 3.58 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 92.1    02:51:39 /usr/libexec/mobileassetd
+ 43.4 37-07:24:38 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 17.2       01:23 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 11.5 23-21:51:05 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  7.9 37-07:23:53 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+clean during the run (checked every 20 s)
+=== browser pivot-wasm-1000x100-1-long: after, 2026-10-07 14:02:31, 55 s, exit 0
+clean: load { 4.48 3.84 3.69 }
+=== browser pivot-wasm-1000x400-1-long: waiting for the layer-3 lock, 2026-10-07 14:02:32
+=== browser pivot-wasm-1000x400-1-long: lock taken, 2026-10-07 14:02:32, hosts after build, EXGRID_MEASURE=pivot-costs EXGRID_COSTS_A=1000 EXGRID_COSTS_B=400 EXGRID_COSTS_BATCH=1 EXGRID_COSTS_RUNS=80 EXGRID_COSTS_PROGRESS=/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-wasm-progress.jsonl
+14:03:02 check 2: ok=2 load { 4.29 3.88 3.71 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 41.7 37-07:26:05 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 17.0       02:50 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 12.7 23-21:52:32 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  8.1 37-07:25:20 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  5.9 37-07:26:05 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow console
+clean during the run (checked every 20 s)
+=== browser pivot-wasm-1000x400-1-long: after, 2026-10-07 14:04:36, 94 s, exit 0
+clean: load { 4.19 3.86 3.71 }
+=== core pivot-1000x400-order: before, 2026-10-07 14:04:36, after build
+14:05:06 check 2: ok=2 load { 3.05 3.61 3.62 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 37.7 37-07:28:09 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 16.7       04:54 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 14.0 23-21:54:36 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  8.5 37-07:27:24 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  2.8    13:45:10 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+clean during the run (checked every 20 s)
+=== core pivot-1000x400-order: after, 2026-10-07 14:06:52, 106 s, exit 0
+clean: load { 3.59 3.67 3.65 }
+=== core pivot-1000x9-r2: before, 2026-10-07 14:08:15, after build
+14:08:46 check 2: ok=2 load { 4.86 4.13 3.83 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 40.3 37-07:31:49 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 17.1       08:34 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  8.2 23-21:58:16 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  8.2 37-07:31:04 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  3.4 37-07:21:34 /Applications/Armored Client.app/Contents/MacOS/Armored Client
+clean during the run (checked every 20 s)
+=== core pivot-1000x9-r2: after, 2026-10-07 14:08:51, 5 s, exit 0
+clean: load { 4.63 4.10 3.82 }
+=== core pivot-1000x100-r2: before, 2026-10-07 14:08:51, after build
+14:09:21 check 2: ok=2 load { 3.60 3.91 3.76 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 40.4 37-07:32:24 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 17.2       09:09 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+ 15.3 25-16:17:58 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+ 11.3 23-21:58:51 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  8.9 37-07:31:39 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+clean during the run (checked every 20 s)
+=== core pivot-1000x100-r2: after, 2026-10-07 14:09:58, 37 s, exit 0
+clean: load { 3.67 3.90 3.76 }
+=== core pivot-1000x400-r2: before, 2026-10-07 14:09:58, after build
+14:10:28 check 2: ok=2 load { 3.27 3.79 3.73 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 41.6 37-07:33:31 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 25.6 36-03:13:28 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor
+ 22.3 37-07:33:28 /usr/libexec/sysmond
+ 21.2 37-07:33:31 /usr/libexec/airportd
+ 16.9       10:16 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+clean during the run (checked every 20 s)
+=== core pivot-1000x400-r2: after, 2026-10-07 14:12:43, 134 s, exit 0
+clean: load { 3.63 3.73 3.71 }
+=== core pivot-steady-1000x400-70: before, 2026-10-07 14:12:43, after build
+14:13:13 check 2: ok=2 load { 3.00 3.56 3.65 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 36.7 37-07:36:16 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 15.2       13:01 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.7 37-07:35:31 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  6.5 23-22:02:43 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  3.1 23-23:41:00 /System/Library/PrivateFrameworks/BackgroundTaskManagement.framework/Resources/backgroundtaskmanagementd -daemon
+clean during the run (checked every 20 s)
+=== core pivot-steady-1000x400-70: after, 2026-10-07 14:13:17, 4 s, exit 0
+clean: load { 2.84 3.52 3.63 }
+=== core pivot-steady-1000x9-70: before, 2026-10-07 14:13:18, after build
+14:13:48 check 2: ok=2 load { 3.39 3.62 3.66 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 40.2 37-07:36:51 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 17.2       13:36 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  8.4 37-07:36:06 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  7.7 23-22:03:18 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  2.8    13:53:52 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type
+clean during the run (checked every 20 s)
+=== core pivot-steady-1000x9-70: after, 2026-10-07 14:13:49, 1 s, exit 0
+clean: load { 3.39 3.62 3.66 }
+=== core pivot-1000x100-r3: before, 2026-10-07 14:17:33, after build
+14:18:04 check 2: ok=2 load { 3.00 3.36 3.54 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 40.0 37-07:41:07 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 16.6       17:52 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  8.2 37-07:40:22 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  6.9 23-22:07:34 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+  4.3 25-16:26:41 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+clean during the run (checked every 20 s)
+=== core pivot-1000x100-r3: after, 2026-10-07 14:18:40, 36 s, exit 0
+clean: load { 2.88 3.29 3.50 }
+=== core pivot-1000x400-r3: before, 2026-10-07 14:18:41, after build
+14:19:11 check 2: ok=2 load { 3.30 3.35 3.52 } 
+idle
+background:
+ %CPU     ELAPSED COMMAND
+ 39.3 37-07:42:14 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 20.0 23-22:08:41 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio 
+ 15.3       18:59 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages ("en-GB")
+  7.6 37-07:41:29 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments ey
+  7.2 25-16:27:48 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacO
+clean during the run (checked every 20 s)
+=== core pivot-1000x400-r3: after, 2026-10-07 14:21:24, 133 s, exit 0
+clean: load { 3.74 3.44 3.52 }

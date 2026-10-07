@@ -1,0 +1,753 @@
+{
+  "mode": "pivot-memory",
+  "machine": {
+    "at": "2026-10-07T13:52:48.0554750\u002B01:00",
+    "loadavg": "{ 3.35 3.56 3.64 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      " 45.8 37-07:15:51 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon",
+      " 15.6       00:01 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-af",
+      "  7.2    17:33:49 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/Users/akira338",
+      "  5.5    17:33:49 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --user-data-",
+      "  2.0 23-21:42:18 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  1.7    13:32:52 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  1.3    13:32:52 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "  1.3 36-02:55:48 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor",
+      "  1.3 13-12:17:05 /usr/libexec/trustd",
+      "  1.0 37-07:15:48 /usr/libexec/sysmond",
+      "  0.9 23-23:20:35 /System/Library/PrivateFrameworks/BackgroundTaskManagement.framework/Resources/backgroundtaskmanagementd -daemon"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": {
+    "aCount": 1000,
+    "bCount": 100,
+    "k": 1,
+    "redraws": 80,
+    "baselineMB": 160.9,
+    "samples": [
+      {
+        "redraw": 1,
+        "madeFrom": true,
+        "heapMB": 162.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 3,
+        "workingSetMB": 196.8
+      },
+      {
+        "redraw": 2,
+        "madeFrom": true,
+        "heapMB": 162.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 5,
+        "workingSetMB": 200.8
+      },
+      {
+        "redraw": 3,
+        "madeFrom": true,
+        "heapMB": 162.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 196.5
+      },
+      {
+        "redraw": 4,
+        "madeFrom": true,
+        "heapMB": 163,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 200
+      },
+      {
+        "redraw": 5,
+        "madeFrom": true,
+        "heapMB": 163.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 196.9
+      },
+      {
+        "redraw": 6,
+        "madeFrom": true,
+        "heapMB": 163.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 200.3
+      },
+      {
+        "redraw": 7,
+        "madeFrom": true,
+        "heapMB": 163.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 197.2
+      },
+      {
+        "redraw": 8,
+        "madeFrom": true,
+        "heapMB": 163.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 200.7
+      },
+      {
+        "redraw": 9,
+        "madeFrom": true,
+        "heapMB": 163.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 197.5
+      },
+      {
+        "redraw": 10,
+        "madeFrom": true,
+        "heapMB": 164,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 201
+      },
+      {
+        "redraw": 11,
+        "madeFrom": true,
+        "heapMB": 164.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 197.8
+      },
+      {
+        "redraw": 12,
+        "madeFrom": true,
+        "heapMB": 164.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 201.3
+      },
+      {
+        "redraw": 13,
+        "madeFrom": true,
+        "heapMB": 164.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.1
+      },
+      {
+        "redraw": 14,
+        "madeFrom": true,
+        "heapMB": 164.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 201.6
+      },
+      {
+        "redraw": 15,
+        "madeFrom": true,
+        "heapMB": 164.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 16,
+        "madeFrom": true,
+        "heapMB": 164.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 201.9
+      },
+      {
+        "redraw": 17,
+        "madeFrom": true,
+        "heapMB": 165.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.8
+      },
+      {
+        "redraw": 18,
+        "madeFrom": true,
+        "heapMB": 165.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 202.2
+      },
+      {
+        "redraw": 19,
+        "madeFrom": true,
+        "heapMB": 165.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.1
+      },
+      {
+        "redraw": 20,
+        "madeFrom": true,
+        "heapMB": 165.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 202.5
+      },
+      {
+        "redraw": 21,
+        "madeFrom": true,
+        "heapMB": 165.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.4
+      },
+      {
+        "redraw": 22,
+        "madeFrom": true,
+        "heapMB": 165.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 202.9
+      },
+      {
+        "redraw": 23,
+        "madeFrom": true,
+        "heapMB": 166.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.7
+      },
+      {
+        "redraw": 24,
+        "madeFrom": true,
+        "heapMB": 166.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 203.2
+      },
+      {
+        "redraw": 25,
+        "madeFrom": true,
+        "heapMB": 166.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 200
+      },
+      {
+        "redraw": 26,
+        "madeFrom": true,
+        "heapMB": 166.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 203.5
+      },
+      {
+        "redraw": 27,
+        "madeFrom": true,
+        "heapMB": 166.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 200.4
+      },
+      {
+        "redraw": 28,
+        "madeFrom": true,
+        "heapMB": 166.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 203.8
+      },
+      {
+        "redraw": 29,
+        "madeFrom": true,
+        "heapMB": 167,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 200.7
+      },
+      {
+        "redraw": 30,
+        "madeFrom": true,
+        "heapMB": 167.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 204.2
+      },
+      {
+        "redraw": 31,
+        "madeFrom": true,
+        "heapMB": 167.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 201
+      },
+      {
+        "redraw": 32,
+        "madeFrom": true,
+        "heapMB": 167.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 204.5
+      },
+      {
+        "redraw": 33,
+        "madeFrom": true,
+        "heapMB": 167.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 201.4
+      },
+      {
+        "redraw": 34,
+        "madeFrom": true,
+        "heapMB": 167.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 204.8
+      },
+      {
+        "redraw": 35,
+        "madeFrom": true,
+        "heapMB": 168,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 201.7
+      },
+      {
+        "redraw": 36,
+        "madeFrom": true,
+        "heapMB": 168.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 205.2
+      },
+      {
+        "redraw": 37,
+        "madeFrom": true,
+        "heapMB": 168.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 202
+      },
+      {
+        "redraw": 38,
+        "madeFrom": true,
+        "heapMB": 168.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 205.5
+      },
+      {
+        "redraw": 39,
+        "madeFrom": true,
+        "heapMB": 168.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 202.3
+      },
+      {
+        "redraw": 40,
+        "madeFrom": true,
+        "heapMB": 168.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 205.8
+      },
+      {
+        "redraw": 41,
+        "madeFrom": true,
+        "heapMB": 169,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 202.7
+      },
+      {
+        "redraw": 42,
+        "madeFrom": true,
+        "heapMB": 169.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 206.2
+      },
+      {
+        "redraw": 43,
+        "madeFrom": true,
+        "heapMB": 169.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 203
+      },
+      {
+        "redraw": 44,
+        "madeFrom": true,
+        "heapMB": 169.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 206.5
+      },
+      {
+        "redraw": 45,
+        "madeFrom": true,
+        "heapMB": 169.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 203.3
+      },
+      {
+        "redraw": 46,
+        "madeFrom": true,
+        "heapMB": 169.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 206.8
+      },
+      {
+        "redraw": 47,
+        "madeFrom": true,
+        "heapMB": 170,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 203.7
+      },
+      {
+        "redraw": 48,
+        "madeFrom": true,
+        "heapMB": 170.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 207.1
+      },
+      {
+        "redraw": 49,
+        "madeFrom": true,
+        "heapMB": 170.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 204
+      },
+      {
+        "redraw": 50,
+        "madeFrom": true,
+        "heapMB": 170.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 207.5
+      },
+      {
+        "redraw": 51,
+        "madeFrom": true,
+        "heapMB": 170.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 204.3
+      },
+      {
+        "redraw": 52,
+        "madeFrom": true,
+        "heapMB": 170.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 207.8
+      },
+      {
+        "redraw": 53,
+        "madeFrom": true,
+        "heapMB": 154.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 196.6
+      },
+      {
+        "redraw": 54,
+        "madeFrom": true,
+        "heapMB": 154.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.5
+      },
+      {
+        "redraw": 55,
+        "madeFrom": true,
+        "heapMB": 154.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 196.2
+      },
+      {
+        "redraw": 56,
+        "madeFrom": true,
+        "heapMB": 154.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.5
+      },
+      {
+        "redraw": 57,
+        "madeFrom": true,
+        "heapMB": 154.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 196.2
+      },
+      {
+        "redraw": 58,
+        "madeFrom": true,
+        "heapMB": 154.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.5
+      },
+      {
+        "redraw": 59,
+        "madeFrom": true,
+        "heapMB": 155.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 196.2
+      },
+      {
+        "redraw": 60,
+        "madeFrom": true,
+        "heapMB": 155.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.5
+      },
+      {
+        "redraw": 61,
+        "madeFrom": true,
+        "heapMB": 155.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 196.2
+      },
+      {
+        "redraw": 62,
+        "madeFrom": true,
+        "heapMB": 155.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.5
+      },
+      {
+        "redraw": 63,
+        "madeFrom": true,
+        "heapMB": 155.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 196.2
+      },
+      {
+        "redraw": 64,
+        "madeFrom": true,
+        "heapMB": 155.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.5
+      },
+      {
+        "redraw": 65,
+        "madeFrom": false,
+        "heapMB": 228.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 270.6
+      },
+      {
+        "redraw": 66,
+        "madeFrom": true,
+        "heapMB": 186.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 261
+      },
+      {
+        "redraw": 67,
+        "madeFrom": true,
+        "heapMB": 170.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 253.4
+      },
+      {
+        "redraw": 68,
+        "madeFrom": true,
+        "heapMB": 170.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 250.8
+      },
+      {
+        "redraw": 69,
+        "madeFrom": true,
+        "heapMB": 170.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 250.9
+      },
+      {
+        "redraw": 70,
+        "madeFrom": true,
+        "heapMB": 170.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 251.6
+      },
+      {
+        "redraw": 71,
+        "madeFrom": true,
+        "heapMB": 154.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 244.5
+      },
+      {
+        "redraw": 72,
+        "madeFrom": true,
+        "heapMB": 154.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 238.8
+      },
+      {
+        "redraw": 73,
+        "madeFrom": true,
+        "heapMB": 154.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.7
+      },
+      {
+        "redraw": 74,
+        "madeFrom": true,
+        "heapMB": 154.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.7
+      },
+      {
+        "redraw": 75,
+        "madeFrom": true,
+        "heapMB": 154.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.7
+      },
+      {
+        "redraw": 76,
+        "madeFrom": true,
+        "heapMB": 154.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.7
+      },
+      {
+        "redraw": 77,
+        "madeFrom": true,
+        "heapMB": 155,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.7
+      },
+      {
+        "redraw": 78,
+        "madeFrom": true,
+        "heapMB": 155.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.7
+      },
+      {
+        "redraw": 79,
+        "madeFrom": true,
+        "heapMB": 155.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.7
+      },
+      {
+        "redraw": 80,
+        "madeFrom": true,
+        "heapMB": 155.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.7
+      }
+    ]
+  }
+}

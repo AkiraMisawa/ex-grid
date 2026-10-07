@@ -1,0 +1,21 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+variant (unnamed); load { 1.90 2.31 2.61 }; TieredCompilation=0
+== pivot-gc 1,000 x 9, pre-collection full, GC events verbose, GCRetainVM=(default) ==
+   run  1:     4.35 ms, GC pause    0.00 ms, GCs 0, committed 35 -> 35 MB, fragmented after 0.0 MB
+   run  2:     4.25 ms, GC pause    0.00 ms, GCs 0, committed 43 -> 43 MB, fragmented after 0.0 MB
+   run  3:     4.53 ms, GC pause    0.00 ms, GCs 0, committed 51 -> 51 MB, fragmented after 0.0 MB
+   run  4:     4.00 ms, GC pause    0.00 ms, GCs 0, committed 56 -> 56 MB, fragmented after 0.0 MB
+   run  5:     4.25 ms, GC pause    0.00 ms, GCs 0, committed 58 -> 58 MB, fragmented after 0.0 MB
+   run  6:     4.44 ms, GC pause    0.00 ms, GCs 0, committed 63 -> 63 MB, fragmented after 0.0 MB
+   run  7:     4.37 ms, GC pause    0.00 ms, GCs 0, committed 71 -> 71 MB, fragmented after 0.0 MB
+   run  8:     4.42 ms, GC pause    0.00 ms, GCs 0, committed 78 -> 78 MB, fragmented after 0.0 MB
+   run  9:     4.38 ms, GC pause    0.00 ms, GCs 0, committed 86 -> 86 MB, fragmented after 0.0 MB
+   run 10:     4.35 ms, GC pause    0.00 ms, GCs 0, committed 94 -> 94 MB, fragmented after 0.0 MB
+   run 11:     4.50 ms, GC pause    0.00 ms, GCs 0, committed 101 -> 101 MB, fragmented after 0.0 MB
+   run 12:     4.41 ms, GC pause    0.00 ms, GCs 0, committed 109 -> 109 MB, fragmented after 0.0 MB
+   run 13:     4.33 ms, GC pause    0.00 ms, GCs 0, committed 116 -> 116 MB, fragmented after 0.0 MB
+   run 14:     4.33 ms, GC pause    0.00 ms, GCs 0, committed 124 -> 124 MB, fragmented after 0.0 MB
+   run 15:     4.44 ms, GC pause    0.00 ms, GCs 0, committed 131 -> 131 MB, fragmented after 0.0 MB
+   redraw     3.999     4.368     4.531   GC pause     0.000     0.000     0.000
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/before-pivot-gc-1000x9.json
