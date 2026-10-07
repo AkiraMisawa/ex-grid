@@ -256,7 +256,8 @@
     public Exception? LastError => _lastError;
 
     /// <summary>Whether the report is a Stale Report (ADR-0067): the newest data could not be
-    /// shown — it broke a cap, the source refused or failed, or a Refresh failed — so the report
+    /// shown — it broke a cap, the source refused or failed, a Refresh failed, or memory ran out
+    /// while its report was made (ADR-0161) — so the report
     /// stays on the last version it could compute, and the notice under the Pivot Toolbar says what
     /// happened and as of when, with Retry.</summary>
     public bool IsStale => _stale is not null;

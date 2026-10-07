@@ -408,6 +408,11 @@ public partial class ExPivot
                 StateHasChanged();
                 return;
             }
+            catch (OutOfMemoryException) when (generation == _generation && !_disposed && IsStaleFor(kind, layout))
+            {
+                await OutOfMemoryAsync();
+                return;
+            }
             catch when (generation == _generation && !_disposed)
             {
                 FinishAsking();
@@ -467,6 +472,11 @@ public partial class ExPivot
         {
             return;
         }
+        catch (OutOfMemoryException) when (generation == _generation && !_disposed && fresh && IsStaleFor(kind, layout))
+        {
+            await OutOfMemoryAsync();
+            return;
+        }
         catch when (generation == _generation && !_disposed)
         {
             // A layout that failed — an Order Key that threw — is no longer out, and its failure
@@ -484,6 +494,22 @@ public partial class ExPivot
             await LandedAsync(carried, cube.SourceVersion);
         else
             await RegatherAsync(carried);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Memory ran out while the cube or the report of newer data was made (ADR-0161; ADR-0067's
+    /// note of 2026-10-07). What was being built is dropped — nothing of it was kept — and the report
+    /// on screen stays, as a Stale Report that says memory ran out rather than that the data is
+    /// wrong: a WebAssembly heap does not give memory back, so the redraw may fail again. The next
+    /// change asks again. It is not the source's failure, so <see cref="LastError"/> is left as it
+    /// was.
+    /// </summary>
+    private async Task OutOfMemoryAsync()
+    {
+        var carried = FinishAsking();
+        MarkStale(Word(StaleReportWords.OutOfMemory), error: null, newest: null);
+        await LandedAsync(carried, version: null);
         StateHasChanged();
     }
 
