@@ -43,3 +43,7 @@ append while the Selection was out of sight, against SM-14. A changed count move
 cuts through the Selection, as first built. The shortcut that skips the walk for the same list now also
 needs the same start. For the lead to confirm: ADR-0130's earlier "and the row count" reads, under SM-14,
 as "a row count that cuts through the Selection".
+
+2026-10-07, layer 3 on the final code (2fcec664 and dc2cd665): `selection-summary`, `grid-live-local`,
+`grid-live` and `pivot-live` pass locally on WebAssembly under Chrome, headless, 20 of 20, with a clean
+console.

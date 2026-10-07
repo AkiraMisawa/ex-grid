@@ -60,3 +60,7 @@ feature: `samples/ExGrid.Docs/Pages/Grid/GridData.razor`, "Pushing a Window", ex
 vouch; the million-row Example declares both, under each Chrome (`MillionRows.razor`,
 `MillionRowsMud.razor`). The site was run and the Example used once under each Chrome: Ctrl+End painted
 the last trade, and the console stayed clean.
+
+2026-10-07, layer 3 on the final code (2fcec664 and dc2cd665): `selection-summary`, `grid-live-local`,
+`grid-live` and `pivot-live` pass locally on WebAssembly under Chrome, headless, 20 of 20, with a clean
+console.
