@@ -1,6 +1,6 @@
 # Live data in ExGrid and ExPivot
 
-Status: continuation in progress under ADR-0154; previous report implementation verified locally — the first version from `claude/exgrid-live-data`
+Status: continuation implemented and verified locally under ADR-0150 to ADR-0154 — the first version from `claude/exgrid-live-data`
 merged into `main` in PR #64. Tickets 01 to 03 are complete on `claude/live-data-next`;
 feature push and PR await user confirmation, and full layer 3 remains CI's.
 
@@ -124,7 +124,8 @@ ADRs for this continuation take numbers from `claude/live-data-next`'s block, AD
 reserved on `main` on 2026-10-06 (`docs/agents/numbering.md`). ADR-0150 records the pushed Window's
 promise; ADR-0151 records the shared local/server report engine and server Window boundary.
 ADR-0152 records API freedom, remote policies and version recovery; ADR-0153 completes retained
-computation and detached display rows. ADR-0154 is the next number. The old
+computation and detached display rows. ADR-0154 records the accepted write-policy revision;
+ADR-0155 is the next number in this branch's block. The old
 branch's unused ADR-0143 to ADR-0149 stay unused; its reservation does not transfer with the work.
 
 ## Accepted policy revision, 2026-10-07
@@ -136,3 +137,12 @@ exemptions while preserving target/order validation, gathered publication, Consu
 exactly-once Action delivery. Copy/Details Report Versions and Change Highlight are separate.
 Repeat the relevant component/browser cases and memory measurements before requesting feature
 push/PR approval. Earlier completion and verification records describe the preceding policy.
+
+Implementation and local verification are complete in the
+[write-policy record](../../../verification/2026-10-07-macos-write-intent/README.md): layers 1/2,
+three targeted Chrome repetitions on both hosts, both Docs chromes, package consumption,
+component timings and normal-GC sustained updates. The 401,001-row report completed 1,000
+updates, but reached 2 GiB WASM capacity; the separate million-record/1,101-report-row fixture
+completed 200 updates at 412.3 MiB final capacity. These are measured workloads, not a guarantee
+against OOM for arbitrary report cardinality. Full layer 3 still belongs to CI, after the user
+approves feature push and PR creation.

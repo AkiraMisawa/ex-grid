@@ -1,0 +1,330 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+ExpectError: expect(locator).toHaveValue(expected) failed
+
+Locator: locator('.docs-example').filter({ has: getByRole('heading', { name: 'A feed, a user edit and a Consumer decision', exact: true }) }).locator('.ex-grid').locator('input.ex-editor')
+Expected: "125"
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "to.have.value" with timeout 5000ms
+  - waiting for locator('.docs-example').filter({ has: getByRole('heading', { name: 'A feed, a user edit and a Consumer decision', exact: true }) }).locator('.ex-grid').locator('input.ex-editor')
+
+    at captureRawStack (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Browser/node_modules/playwright-core/lib/coreBundle.js:9681:17)
+    at callMatcherAsStep (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Browser/node_modules/playwright/lib/matchers/expect.js:13310:57)
+    at Object.toHaveValue (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Browser/node_modules/playwright/lib/matchers/expect.js:13300:23)
+    at /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/verification/2026-10-07-macos-write-intent/harness/docs-smoke.mjs:28:30 {
+  matcherResult: {
+    name: 'toHaveValue',
+    expected: '125',
+    message: 'expect(locator).toHaveValue(expected) failed\n' +
+      '\n' +
+      "Locator: locator('.docs-example').filter({ has: getByRole('heading', { name: 'A feed, a user edit and a Consumer decision', exact: true }) }).locator('.ex-grid').locator('input.ex-editor')\n" +
+      'Expected: "125"\n' +
+      'Timeout: 5000ms\n' +
+      'Error: element(s) not found\n' +
+      '\n' +
+      'Call log:\n' +
+      '  - Expect "to.have.value" with timeout 5000ms\n' +
+      "  - waiting for locator('.docs-example').filter({ has: getByRole('heading', { name: 'A feed, a user edit and a Consumer decision', exact: true }) }).locator('.ex-grid').locator('input.ex-editor')\n",
+    pass: false,
+    actual: undefined,
+    log: [
+      '  - Expect "to.have.value" with timeout 5000ms',
+      "  - waiting for locator('.docs-example').filter({ has: getByRole('heading', { name: 'A feed, a user edit and a Consumer decision', exact: true }) }).locator('.ex-grid').locator('input.ex-editor')"
+    ],
+    timeout: 5000,
+    ariaSnapshot: '- banner:\n' +
+      '  - toolbar:\n' +
+      '    - button "Toggle navigation"\n' +
+      '    - link "Ex Grid":\n' +
+      '      - /url: ""\n' +
+      '    - text: dev\n' +
+      '    - group "Chrome":\n' +
+      '      - checkbox "Built-in"\n' +
+      '      - checkbox "MudBlazor" [checked]\n' +
+      '    - button "Toggle dark mode"\n' +
+      '    - link "GitHub":\n' +
+      '      - /url: https://github.com/AkiraMisawa/ex-grid\n' +
+      '- complementary:\n' +
+      '  - navigation:\n' +
+      '    - text: Getting started\n' +
+      '    - link "Introduction":\n' +
+      '      - /url: ""\n' +
+      '    - link "Installation":\n' +
+      '      - /url: getting-started\n' +
+      '    - link "Design":\n' +
+      '      - /url: design\n' +
+      '    - text: ExGrid\n' +
+      '    - link "Overview":\n' +
+      '      - /url: exgrid\n' +
+      '    - link "Columns":\n' +
+      '      - /url: exgrid/columns\n' +
+      '    - link "Selection and keyboard":\n' +
+      '      - /url: exgrid/selection\n' +
+      '    - link "Sorting, filtering and find":\n' +
+      '      - /url: exgrid/sorting-filtering\n' +
+      '    - link "Editing":\n' +
+      '      - /url: exgrid/editing\n' +
+      '    - link "Clipboard":\n' +
+      '      - /url: exgrid/clipboard\n' +
+      '    - link "Data sources":\n' +
+      '      - /url: exgrid/data\n' +
+      '    - link "Appearance":\n' +
+      '      - /url: exgrid/appearance\n' +
+      '    - text: ExSheet\n' +
+      '    - link "Overview":\n' +
+      '      - /url: exsheet\n' +
+      '    - link "Formulas":\n' +
+      '      - /url: exsheet/formulas\n' +
+      '    - link "Formatting":\n' +
+      '      - /url: exsheet/formatting\n' +
+      '    - link "Linked Tables":\n' +
+      '      - /url: exsheet/linked-tables\n' +
+      '    - text: ExPivot\n' +
+      '    - link "Overview":\n' +
+      '      - /url: expivot\n' +
+      '    - link "Layout":\n' +
+      '      - /url: expivot/layout\n' +
+      '    - link "Values":\n' +
+      '      - /url: expivot/values\n' +
+      '    - link "Sources":\n' +
+      '      - /url: expivot/sources\n' +
+      '    - link "Live data":\n' +
+      '      - /url: expivot/live\n' +
+      '    - text: Data\n' +
+      '    - link "Snapshot":\n' +
+      '      - /url: data\n' +
+      '    - link "Apache Arrow":\n' +
+      '      - /url: data/arrow\n' +
+      '    - text: Showcases\n' +
+      '    - link "Trade blotter":\n' +
+      '      - /url: showcase/blotter\n' +
+      '    - link "Budget sheet":\n' +
+      '      - /url: showcase/budget\n' +
+      '    - link "Sales analysis":\n' +
+      '      - /url: showcase/sales\n' +
+      '- banner:\n' +
+      '  - text: ExGrid\n' +
+      '  - heading "Editing" [level=1]\n' +
+      '  - paragraph: "ExGrid is display-first: nothing edits until you say so. When a column is editable, the grid runs the editor and reports what the user committed. It never writes the value itself — your application applies it, by handing back a new row."\n' +
+      '- heading "Editable columns and the Edit Intent" [level=2]:\n' +
+      '  - link "Editable columns and the Edit Intent":\n' +
+      '    - /url: exgrid/editing#editable-columns-and-the-edit-intent\n' +
+      '- paragraph:\n' +
+      '  - text: Declare\n' +
+      '  - code: "editable: true"\n' +
+      '  - text: on a column and wire\n' +
+      '  - code: OnEdit\n' +
+      '  - text: . On a selected cell, the user types to replace the value, or presses F2 (or double-clicks) to edit it with a caret. Enter and Tab commit and move on, cycling inside the selection, so a block can be filled by typing; Escape cancels.\n' +
+      '- paragraph:\n' +
+      '  - text: A commit arrives as a\n' +
+      '  - code: GridEditIntent<TRow>\n' +
+      `  - text: ": the row instance, the column's name and the text. Apply it by replacing the row with a"\n` +
+      '  - strong: new instance\n' +
+      '  - text: — with\n' +
+      '  - code: GridSource.From\n' +
+      '  - text: ","\n' +
+      '  - code: ReplaceRow(row, replacement)\n' +
+      '  - text: . A row repaints when its instance changes; a row object rewritten in place does not repaint, and the source refuses a "replacement" that is the same instance. Records and\n' +
+      '  - code: with\n' +
+      '  - text: make this one line.\n' +
+      '- paragraph:\n' +
+      '  - text: If the rows are reordered while the user is typing — a live update, a sort — the entry is dropped rather than written into whatever row now stands there, and\n' +
+      '  - code: OnEditDiscarded\n' +
+      '  - text: says why.\n' +
+      '- heading "Validation" [level=2]:\n' +
+      '  - link "Validation":\n' +
+      '    - /url: exgrid/editing#validation\n' +
+      '- paragraph:\n' +
+      "  - text: A column's\n" +
+      '  - code: validate\n' +
+      '  - text: delegate judges each commit and answers an\n' +
+      '  - code: EditVerdict\n' +
+      '  - text: ":"\n' +
+      '- list:\n' +
+      '  - listitem:\n' +
+      '    - code: EditVerdict.Accept\n' +
+      '    - text: — apply it.\n' +
+      '  - listitem:\n' +
+      '    - code: EditVerdict.Reject(message)\n' +
+      '    - text: — the editor stays open with the text, and nothing is raised. For text that cannot be read at all.\n' +
+      '  - listitem:\n' +
+      '    - code: EditVerdict.Flag(message)\n' +
+      '    - text: — the edit goes through, and the cell is marked as an error. For a value that can be read but needs a second look.\n' +
+      '- paragraph:\n' +
+      '  - code: GridRuleset<TRow>\n' +
+      '  - text: is a ready-made holder for these rules. Its\n' +
+      '  - code: ValidatorFor\n' +
+      "  - text: is what a column's\n" +
+      '  - code: validate\n' +
+      '  - text: is set to, and after you apply changes,\n' +
+      '  - code: Evaluate\n' +
+      '  - text: re-judges the rows so that a pasted value wears the same mark as a typed one. Bind its\n' +
+      '  - code: State\n' +
+      '  - text: and\n' +
+      '  - code: Message\n' +
+      "  - text: to the grid's\n" +
+      '  - code: CellState\n' +
+      '  - text: and\n' +
+      '  - code: CellMessageOf\n' +
+      '  - text: ; rest the pointer on a flagged cell to read why.\n' +
+      '- heading "Bulk changes, Delete and Undo" [level=2]:\n' +
+      '  - link "Bulk changes, Delete and Undo":\n' +
+      '    - /url: exgrid/editing#bulk-changes--delete-and-undo\n' +
+      '- list:\n' +
+      '  - listitem:\n' +
+      '    - strong: Paste and the fill keys\n' +
+      '    - text: — Ctrl+V, Ctrl+D (fill down), Ctrl+R (fill right) and Ctrl+Enter (type once, fill the selection) — all arrive as one\n' +
+      '    - code: OnPaste\n' +
+      '    - text: ", carrying a value for every target cell. See"\n' +
+      '    - link "Clipboard":\n' +
+      '      - /url: exgrid/clipboard\n' +
+      '    - text: for the shape rules.\n' +
+      '  - listitem:\n' +
+      '    - strong: The fill handle\n' +
+      '    - text: ", with"\n' +
+      '    - code: ShowFillHandle\n' +
+      '    - text: ", is the square at the corner of the selection. Drag it and the grid raises"\n' +
+      '    - code: OnFill\n' +
+      '    - text: with the source range and the target beside it; what a fill means — a copy, a series — is yours.\n' +
+      '  - listitem:\n' +
+      '    - strong: Delete\n' +
+      '    - text: raises\n' +
+      '    - code: OnClear\n' +
+      '    - text: ": these cells should hold no value. It is not a paste of empty text, which an amount column would read as zero. A column with no blank of its own can simply be left alone."\n' +
+      '  - listitem:\n' +
+      '    - strong: A gesture that touches a column that is not editable is refused whole\n' +
+      '    - text: through\n' +
+      '    - code: OnPasteRefused\n' +
+      '    - text: ", before anything is raised, never half-applied."\n' +
+      '  - listitem:\n' +
+      '    - strong: Ctrl+Z and Ctrl+Y\n' +
+      '    - text: are forwarded as\n' +
+      '    - code: OnUndo\n' +
+      '    - text: and\n' +
+      '    - code: OnRedo\n' +
+      '    - text: . The history is yours, because only your application sees every change, including those made outside the grid. Each gesture arrives as one intent, so keeping one step per intent makes a paste of a thousand cells one Ctrl+Z. While the editor is open, Ctrl+Z undoes the typing instead.\n' +
+      '- heading "An editable blotter with validation and undo" [level=3]\n' +
+      '- text: Type\n' +
+      '- code: "200000"\n' +
+      '- text: into a quantity to see a flag, or\n' +
+      '- code: abc\n' +
+      '- text: to see a rejection. Select a few cells and press Ctrl+D, drag the fill handle, press Delete on traders, then undo each step.\n' +
+      '- toolbar:\n' +
+      '  - button "Undo" [disabled]\n' +
+      '  - button "Redo" [disabled]\n' +
+      '  - paragraph: Type into Trader, Quantity or Price.\n' +
+      '- grid:\n' +
+      '  - row "Id Column menu Instrument Column menu Trader Column menu Quantity Column menu Price Column menu P&L Column menu":\n' +
+      '    - columnheader "Id Column menu":\n' +
+      '      - text: Id\n' +
+      '      - button "Column menu": ▾\n' +
+      '    - columnheader "Instrument Column menu":\n' +
+      '      - text: Instrument\n' +
+      '      - button "Column menu": ▾\n' +
+      '    - columnheader "Trader Column menu":\n' +
+      '      - text: Trader\n' +
+      '      - button "Column menu": ▾\n' +
+      '    - columnheader "Quantity Column menu":\n' +
+      '      - text: Quantity\n' +
+      '      - button "Column menu": ▾\n' +
+      '    - columnheader "Price Column menu":\n' +
+      '      - text: Price\n' +
+      '      - button "Column menu": ▾\n' +
+      '    - columnheader "P&L Column menu":\n' +
+      '      - text: P&L\n' +
+      '      - button "Column menu": ▾\n' +
+      '  - textbox\n' +
+      '  - row "5001 USD/JPY 1M Ishikawa -13,500 149.46 -51,165.00":\n' +
+      '    - gridcell "5001"\n' +
+      '    - gridcell "USD/JPY 1M"\n' +
+      '    - gridcell "Ishikawa"\n' +
+      '    - gridcell "-13,500"\n' +
+      '    - gridcell "149.46"\n' +
+      '    - gridcell "-51,165.00"\n' +
+      '  - row "5002 SPX Dec Novak -5,500 57.59 -13,860.00":\n' +
+      '    - gridcell "5002"\n' +
+      '    - gridcell "SPX Dec"\n' +
+      '    - gridcell "Novak"\n' +
+      '    - gridcell "-5,500"\n' +
+      '    - gridcell "57.59"\n' +
+      '    - gridcell "-13,860.00"\n' +
+      '  - row "5003 Gilt 30Y Laurent 75,500 85.09 -124,575.00":\n' +
+      '    - gridcell "5003"\n' +
+      '    - gridcell "Gilt 30Y"\n' +
+      '    - gridcell "Laurent"\n' +
+      '    - gridcell "75,500"\n' +
+      '    - gridcell "85.09"\n' +
+      '    - gridcell "-124,575.00"\n' +
+      '  - row "5004 EUR/USD 3M Brennan 78,250 106.39 -532,100.00":\n' +
+      '    - gridcell "5004"\n' +
+      '    - gridcell "EUR/USD 3M"\n' +
+      '    - gridcell "Brennan"\n' +
+      '    - gridcell "78,250"\n' +
+      '    - gridcell "106.39"\n' +
+      '    - gridcell "-532,100.00"\n' +
+      '  - row "5005 iTraxx Main Brennan -63,000 59.82 11,340.00":\n' +
+      '    - gridcell "5005"\n' +
+      '    - gridcell "iTraxx Main"\n' +
+      '    - gridcell "Brennan"\n' +
+      '    - gridcell "-63,000"\n' +
+      '    - gridcell "59.82"\n' +
+      '    - gridcell "11,340.00"\n' +
+      '  - row "5006 DAX Jun Osei -99,750 177.88 1,482,285.00":\n' +
+      '    - gridcell "5006"\n' +
+      '    - gridcell "DAX Jun"\n' +
+      '    - gridcell "Osei"\n' +
+      '    - gridcell "-99,750"\n' +
+      '    - gridcell "177.88"\n' +
+      '    - gridcell "1,482,285.00"\n' +
+      '  - row "5007 Gilt 30Y Sato -85,000 88.94 -36,550.00":\n' +
+      '    - gridcell "5007"\n' +
+      '    - gridcell "Gilt 30Y"\n' +
+      '    - gridcell "Sato"\n' +
+      '    - gridcell "-85,000"\n' +
+      '    - gridcell "88.94"\n' +
+      '    - gridcell "-36,550.00"\n' +
+      '  - row "5008 FTSE Sep Osei -23,750 80.84 -46,312.50":\n' +
+      '    - gridcell "5008"\n' +
+      '    - gridcell "FTSE Sep"\n' +
+      '    - gridcell "Osei"\n' +
+      '    - gridcell "-23,750"\n' +
+      '    - gridcell "80.84"\n' +
+      '    - gridcell "-46,312.50"\n' +
+      '  - row "5009 USD/JPY 1M Brennan 26,000 151.20 173,160.00":\n' +
+      '    - gridcell "5009"\n' +
+      '    - gridcell "USD/JPY 1M"\n' +
+      '    - gridcell "Brennan"\n' +
+      '    - gridcell "26,000"\n' +
+      '    - gridcell "151.20"\n' +
+      '    - gridcell "173,160.00"\n' +
+      '  - row "5010 Bund 5Y Haddad -64,000 100.03 -154,240.00":\n' +
+      '    - gridcell "5010"\n' +
+      '    - gridcell "Bund 5Y"\n' +
+      '    - gridcell "Haddad"\n' +
+      '    - gridcell "-64,000"\n' +
+      '    - gridcell "100.03"\n' +
+      '    - gridcell "-154,240.00"\n' +
+      '  - status\n' +
+      '- toolbar:\n' +
+      '  - group "Chrome":\n' +
+      '    - checkbox "Built-in"\n' +
+      '    - checkbox "MudBlazor" [checked]\n' +
+      '  - button "Show code"\n' +
+      '- heading "Editing while values change" [level=2]:\n' +
+      '  - link "Editing while values change":\n' +
+      '    - /url: exgrid/editing#editing-while-values-change\n' +
+      '- paragraph:\n' +
+      "  - text: A value changing upstream does not cancel your user's intent. If a cell showed 100, the feed changed it to 200 and the user commits 150,\n" +
+      '  - code: OnEdit\n' +
+      '  - text: receives 150 with the current row. Your Consumer validates and applies that '... 17611 more characters
+  }
+}
+
+Node.js v24.14.1

@@ -1,0 +1,101 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+== pack 0.0.0-smoke.1791331988
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/ExGrid.Data.csproj (in 84 ms).
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/ExGrid.csproj (in 86 ms).
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExGrid.0.0.0-smoke.1791331988.nupkg'.
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExGrid.0.0.0-smoke.1791331988.snupkg'.
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj (in 103 ms).
+  2 of 3 projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExGrid.MudBlazor.0.0.0-smoke.1791331988.nupkg'.
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExGrid.MudBlazor.0.0.0-smoke.1791331988.snupkg'.
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.Engine/ExSheet.Engine.csproj (in 39 ms).
+  ExSheet.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExSheet.Engine.0.0.0-smoke.1791331988.nupkg'.
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExSheet.Engine.0.0.0-smoke.1791331988.snupkg'.
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet/ExSheet.csproj (in 103 ms).
+  3 of 4 projects are up-to-date for restore.
+  ExSheet.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExSheet -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExSheet.0.0.0-smoke.1791331988.nupkg'.
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExSheet.0.0.0-smoke.1791331988.snupkg'.
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj (in 100 ms).
+  5 of 6 projects are up-to-date for restore.
+  ExSheet.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExSheet -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  ExGrid.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExSheet.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.MudBlazor/bin/Release/net10.0/ExSheet.MudBlazor.dll
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExSheet.MudBlazor.0.0.0-smoke.1791331988.nupkg'.
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExSheet.MudBlazor.0.0.0-smoke.1791331988.snupkg'.
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExGrid.Data.0.0.0-smoke.1791331988.nupkg'.
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExGrid.Data.0.0.0-smoke.1791331988.snupkg'.
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj (in 96 ms).
+  1 of 2 projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid.Data.Arrow -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExGrid.Data.Arrow.0.0.0-smoke.1791331988.nupkg'.
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExGrid.Data.Arrow.0.0.0-smoke.1791331988.snupkg'.
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/ExPivot.Engine.csproj (in 44 ms).
+  1 of 2 projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExPivot.Engine.0.0.0-smoke.1791331988.nupkg'.
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExPivot.Engine.0.0.0-smoke.1791331988.snupkg'.
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot/ExPivot.csproj (in 95 ms).
+  3 of 4 projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExPivot -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExPivot.0.0.0-smoke.1791331988.nupkg'.
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExPivot.0.0.0-smoke.1791331988.snupkg'.
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj (in 102 ms).
+  5 of 6 projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExPivot -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  ExPivot.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.MudBlazor/bin/Release/net10.0/ExPivot.MudBlazor.dll
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExPivot.MudBlazor.0.0.0-smoke.1791331988.nupkg'.
+  Successfully created package '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.feed/ExPivot.MudBlazor.0.0.0-smoke.1791331988.snupkg'.
+== what the packages declare
+== an application that takes them
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/ExGrid.PackageSmoke.csproj (in 1.92 sec).
+  ExGrid.PackageSmoke -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/bin/Release/net10.0/PackageSmoke.dll
+  ExGrid.PackageSmoke (Blazor output) -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/bin/Release/net10.0/wwwroot
+  Optimizing assemblies for size may change the behavior of the app. Be sure to test after publishing. See: https://aka.ms/dotnet-illink
+  Optimizing assemblies for size. This process might take a while.
+  Publishing without optimizations. Although it's optional for Blazor, we strongly recommend using `wasm-tools` workload! You can install it by running `dotnet workload install wasm-tools` from the command line.
+  ExGrid.PackageSmoke -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.publish/
+== trimmed packed Consumer: Arrow and report protocol round trips
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/RoundTrip/RoundTrip.csproj (in 99 ms).
+  RoundTrip -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/RoundTrip/bin/Release/net10.0/osx-arm64/PackageSmoke.RoundTrip.dll
+  Optimizing assemblies for size. This process might take a while.
+  RoundTrip -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.PackageSmoke/.publish/roundtrip/
+Arrow round trip: the Snapshot read back through the packed packages is the one written
+Report protocol: trimmed packed Consumer preserves Windows, deltas and every versioned operation
+package check: 0.0.0-smoke.1791331988 passed

@@ -1,0 +1,63 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExSheet.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExGrid.Data.Arrow -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid.Data.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll' [net10.0|arm64]
+  ExGrid.Data.Arrow.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll
+  ExSheet.Engine.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll' [net10.0|arm64]
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll' [net10.0|arm64]
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExGrid.Components -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 182, Skipped: 1, Total: 183, Duration: 859ms - ExGrid.Data.Arrow.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 365, Skipped: 2, Total: 367, Duration: 2s 427ms - ExGrid.Data.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 3870, Skipped: 0, Total: 3870, Duration: 3s 521ms - ExSheet.Engine.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll' [net10.0|arm64]
+  ExPivot.Engine.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 1678, Skipped: 1, Total: 1679, Duration: 6s 987ms - ExGrid.Components.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|arm64]
+  ExGrid.DemoApi -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoApi.dll
+  ExSheet -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+  ExGrid.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExPivot -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExGrid.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll' [net10.0|arm64]
+  ExGrid.DemoApi.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll' [net10.0|arm64]
+  ExPivot.Components -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|arm64]
+  ExSheet.Components -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 353, Skipped: 4, Total: 357, Duration: 5s 150ms - ExPivot.Engine.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 224, Skipped: 0, Total: 224, Duration: 3s 509ms - ExPivot.Components.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 1265, Skipped: 0, Total: 1265, Duration: 6s 522ms - ExGrid.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll' [net10.0|arm64]
+  ExGrid.MudBlazor.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+  ExPivot.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|arm64]
+  ExPivot.MudBlazor.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 142, Skipped: 0, Total: 142, Duration: 6s 947ms - ExGrid.DemoApi.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 221, Skipped: 0, Total: 221, Duration: 1s 086ms - ExGrid.MudBlazor.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 67, Skipped: 0, Total: 67, Duration: 1s 556ms - ExPivot.MudBlazor.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 694, Skipped: 0, Total: 694, Duration: 18s 153ms - ExSheet.Components.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll' [net10.0|arm64]
+  ExSheet.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+  ExSheet.MudBlazor.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 55, Skipped: 0, Total: 55, Duration: 10s 565ms - ExSheet.MudBlazor.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|arm64]

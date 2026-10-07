@@ -1,0 +1,13 @@
+node v24.14.1, dotnet 10.0.203
+[WebServer] (node:39737) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:39740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chrome] › oom.spec.mjs:3:40 › ADR-0154 live pivot has no display history during sustained updates (14.8s)
+  -  2 [chrome] › oom.spec.mjs:28:40 › ADR-0064 one million CSV records load and paint
+
+  1 skipped
+  1 passed (16.4s)

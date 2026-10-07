@@ -1,0 +1,49 @@
+import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
+(process.env.OOM_CSV ? test.skip : test)('ADR-0154 live pivot has no display history during sustained updates', async ({page}) => {
+ test.setTimeout(Number(process.env.OOM_TIMEOUT_MS ?? 300000));
+ const result={url:process.env.OOM_PATH??'/live-cost-pivot?b=400',completed:0,samples:[],memory:[],errors:[],browser:page.context().browser().version()};
+ const save=()=>fs.writeFileSync(`${process.env.OOM_OUTPUT}/result.json`,JSON.stringify(result,null,2));
+ const failure=new Promise((_,reject)=>{
+  page.on('console',m=>{if(m.text().startsWith('[DEBUG-oom-a4f2] ')){result.memory.push(JSON.parse(m.text().slice(17)));save();}if(m.type()==='error'||m.type()==='warning'){result.errors.push(m.text());save();reject(new Error(m.text()));}});
+  page.on('pageerror',e=>{result.errors.push(e.message);save();reject(e);});
+ });
+ try {
+  await page.goto(result.url);
+  await Promise.race([page.locator('.ex-row').first().waitFor(),failure]);
+  const inspect=async()=>{if(process.env.OOM_PROBE==='1'){const count=result.memory.length;await page.locator('#memory-probe').click();await expect.poll(()=>result.memory.length).toBeGreaterThan(count);result.runtime=await page.evaluate(()=>{const r=globalThis.getDotnetRuntime?.(0);return {keys:r?Object.keys(r):[],moduleKeys:r?.Module?Object.keys(r.Module).filter(k=>/heap|memory/i.test(k)):[],heapBytes:r?.Module?.HEAPU8?.buffer.byteLength};});result.memory.at(-1).wasmHeapBytes=result.runtime.heapBytes;save();}};
+  await inspect();
+  for(let i=0;i<Number(process.env.OOM_UPDATES??20);i++){
+   const before=await page.locator('.ex-pivot-sheet .ex-viewport').textContent();
+   await page.locator('#cost-tick').click();
+   await Promise.race([page.waitForFunction(old=>document.querySelector('.ex-pivot-sheet .ex-viewport')?.textContent!==old,before),failure]);
+   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));
+   result.completed=i+1;await inspect();
+   result.samples.push({update:i+1,status:await page.locator('#cost-status').textContent()});save();
+  }
+  expect(result.errors).toEqual([]);
+ } finally {save();}
+});
+
+(process.env.OOM_CSV ? test : test.skip)('ADR-0064 one million CSV records load and paint', async({page})=>{
+ test.setTimeout(Number(process.env.OOM_TIMEOUT_MS ?? 300000));
+ const result={records:1000000,sourceColumns:12,aggregateLeaves:1000,errors:[],browser:page.context().browser().version()};
+ const save=()=>fs.writeFileSync(`${process.env.OOM_OUTPUT}/result.json`,JSON.stringify(result,null,2));
+ const failure=new Promise((_,reject)=>{
+  page.on('console',m=>{if(m.type()==='error'||m.type()==='warning'){result.errors.push(m.text());save();reject(new Error(m.text()));}});
+  page.on('pageerror',e=>{result.errors.push(e.message);save();reject(e);});
+ });
+ try{
+  await page.goto('/pivot-csv');
+  const start=Date.now();await page.locator('#csv-file').setInputFiles(process.env.OOM_CSV);
+  await Promise.race([expect(page.locator('#csv-shown')).toContainText('1,000,000',{timeout:110000}),failure]);
+  await Promise.race([page.locator('.ex-row').first().waitFor(),failure]);
+  result.loadToRowsMs=Date.now()-start;
+  result.shown=await page.locator('#csv-shown').textContent();
+  result.status=await page.locator('#csv-status').textContent();
+  result.refusal=await page.locator('#csv-refusal').textContent();
+  result.grid=await page.locator('.ex-pivot-sheet .ex-grid').evaluate(e=>({rows:e.getAttribute('aria-rowcount'),columns:e.getAttribute('aria-colcount'),paintedRows:e.querySelectorAll('.ex-row').length,text:e.textContent}));
+  result.wasmHeapBytes=await page.evaluate(()=>getDotnetRuntime(0).Module.HEAPU8.buffer.byteLength);
+  expect(result.refusal).toBe('');expect(result.errors).toEqual([]);expect(result.grid.rows).toBe('111');
+ }finally{save();}
+});

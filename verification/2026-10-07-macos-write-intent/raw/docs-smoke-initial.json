@@ -1,0 +1,13 @@
+{
+  "browser": "154.0.8037.98",
+  "errors": [],
+  "observations": [
+    {
+      "chrome": "Built-in",
+      "commitAfterFeed": "125.00",
+      "rejectedInput": "abc",
+      "consumerActionDecision": "Not approved: position 5001 exceeds this desk's price limit of 150. Request 1.",
+      "generatedSourceShown": true
+    }
+  ]
+}

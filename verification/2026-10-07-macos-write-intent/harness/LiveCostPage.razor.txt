@@ -1,0 +1,104 @@
+@page "/live-cost-pivot"
+@using System.Reflection
+@using System.Collections
+@using System.Text.Json
+@using System.Diagnostics
+@using System.Globalization
+@using Microsoft.JSInterop
+@using global::ExPivot
+
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@inject IJSRuntime JS
+<link href="_content/ExPivot/ex-pivot.min.css" rel="stylesheet" />
+<h1>Disposable live update measurement</h1>
+<button id="cost-tick" @onclick="Tick">One batch</button>
+<span id="cost-status">@_status</span>
+<button id="memory-probe" @onclick="@(new EventCallback(null, (Action)Probe))">Memory probe</button>
+@if (_source is not null)
+{
+    <ExPivot @ref="_pivot" Source="_reports" Layout="_layout" Caps="_caps" ChangeHighlightDuration="TimeSpan.FromSeconds(1)" RedrawInterval="TimeSpan.Zero" ViewportHeight="480" ViewportWidth="1200" />
+}
+@code {
+    [SupplyParameterFromQuery(Name = "b")] public int Inner { get; set; } = 10;
+    [SupplyParameterFromQuery(Name = "records")] public int Records { get; set; }
+    [SupplyParameterFromQuery(Name = "outer")] public int? OuterParameter { get; set; }
+    private int Outer => OuterParameter ?? 1000;
+    [SupplyParameterFromQuery(Name = "batch")] public int? BatchParameter { get; set; }
+    private int BatchSize => BatchParameter ?? 1000;
+    private sealed record Row(int Id, string A, string B, decimal Value);
+    private Row[] _rows = [];
+    private readonly PivotFields<Row> _fields = PivotFields.Of<Row>().Key("Id", r => r.Id).Text("A", r => r.A).Text("B", r => r.B).Number("Value", r => r.Value);
+    private SnapshotPivotSource? _source;
+    private LocalPivotReportSource? _reports;
+    private ExPivot? _pivot;
+    private readonly PivotLayout _layout = new() { Rows = [new("A"), new("B")], Values = [new("Value")] };
+    private readonly PivotCaps _caps = new() { MaxLeaves = 1_000_000, MaxRows = 1_000_000 };
+    private string _status = "ready";
+    private int _batch;
+    private bool _lastCompacted;
+    private int _compactions;
+    protected override void OnInitialized()
+    {
+        _rows = Enumerable.Range(0, Records > 0 ? Records : Outer * Inner).Select(i => new Row(i, $"A{(i / Inner) % Outer:00000}", $"B{i % Inner:0000}", i)).ToArray();
+        _source = PivotSource.From(_fields.Build(_rows), _fields.Fields);
+        _reports = PivotReportSource.From(_source);
+    }
+    private void Tick()
+    {
+        var changed = Enumerable.Range(0, BatchSize).Select(i => { var j = i * Inner; return _rows[j] = _rows[j] with { Value = _rows[j].Value + 1 }; }).ToArray();
+        var batch = _fields.Batch(changed: changed);
+        ((IJSInProcessRuntime)JS).InvokeVoid("performance.mark", "cost-apply");
+        var clock = Stopwatch.StartNew();
+        var change = _source!.Apply(batch);
+        _lastCompacted = change.Compacted;
+        if (_lastCompacted) _compactions++;
+        _status = $"Batch {++_batch}: apply {clock.Elapsed.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture)} ms";
+    }
+    // [DEBUG-oom-a4f2] Disposable inspection only. Weak references do not keep old graphs alive.
+    private readonly Dictionary<string, List<WeakReference<object>>> _tracked = new();
+    private static object? Field(object? target, string name) => target?.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)?.GetValue(target);
+    private static object? Property(object? target, string name) => target?.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)?.GetValue(target);
+    private void Track(string kind, object? target)
+    {
+        if (target is null) return;
+        if (!_tracked.TryGetValue(kind, out var list)) _tracked[kind] = list = [];
+        if (!list.Any(w => w.TryGetTarget(out var prior) && ReferenceEquals(prior, target))) list.Add(new(target));
+    }
+    private void Probe()
+    {
+        var before = GC.GetTotalMemory(false);
+        var managed = GC.GetTotalMemory(false);
+        var versions = ((Field(_reports, "_versions") as IEnumerable)
+            ?? throw new InvalidOperationException("The operation-version probe requires the current storage field.")).Cast<object>().ToArray();
+        var report = versions.Select(v => Property(v, "Report")).OfType<PivotReport>().FirstOrDefault();
+        if (report is null || report.Cube.SourceVersion != _source?.SourceVersion)
+            throw new InvalidOperationException("Measure only after the current source version is published.");
+        Track("Report", report); Track("Cube", report?.Cube); Track("Snapshot", _source?.Snapshot);
+        var grid = Field(_pivot, "_grid") ?? throw new InvalidOperationException("The measured pivot must own its grid.");
+        // The exact Action evidence field is checked against the implementation before publication.
+        var paintField = grid.GetType().GetField("_paints", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Update this probe when the Action evidence representation changes.");
+        var heldPaints = ((IEnumerable)paintField.GetValue(grid)!).Cast<object>().ToArray();
+        var highlight = ((Field(_reports, "_highlight") as IEnumerable)
+            ?? throw new InvalidOperationException("The highlight probe requires the current storage field.")).Cast<object>().ToArray();
+        var highlightReports = highlight.Select(item => Property(Property(item, "Held"), "Report")).OfType<PivotReport>().ToArray();
+        var distinctRetainedReports = versions.Select(item => Property(item, "Report")).OfType<PivotReport>()
+            .Concat(highlightReports).Distinct(ReferenceEqualityComparer.Instance).Count();
+        if (heldPaints.Length != 0) throw new InvalidOperationException("A display-only pivot retained Action addresses.");
+        var sourceVersions = (Field(_source, "_answered") as IEnumerable)?.Cast<object>().ToArray() ?? [];
+        Console.WriteLine("[DEBUG-oom-a4f2] " + JsonSerializer.Serialize(new {
+            update = _batch, records = _rows.Length, reportRows = report?.Rows.Count, forcedGc = false,
+            compacted = _lastCompacted, compactions = _compactions, snapshotSlices = _source?.Snapshot.SliceCount,
+            managedBeforeGc = before, managedBytes = managed, allocatedBytes = GC.GetTotalAllocatedBytes(false), threadAllocatedBytes = GC.GetAllocatedBytesForCurrentThread(),
+            gc0 = GC.CollectionCount(0), gc1 = GC.CollectionCount(1), gc2 = GC.CollectionCount(2),
+            tracked = _tracked.ToDictionary(kv => kv.Key, kv => new { created = kv.Value.Count, alive = kv.Value.Count(w => w.TryGetTarget(out _)) }),
+            roots = new { heldReports = versions.Length, actionAddresses = heldPaints.Length, highlightReports = highlight.Length,
+                distinctRetainedReports,
+                highlights = highlight.Select(item => new { sourceVersion = (Property(Property(item, "Held"), "Report") as PivotReport)?.Cube.SourceVersion,
+                    at = Property(item, "At") }).ToArray(),
+                windowRows = _pivot?.Report?.Rows.Count, sourceAnsweredSnapshots = sourceVersions.Length }
+        }));
+    }
+
+}

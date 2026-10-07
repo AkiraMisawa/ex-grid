@@ -1,0 +1,54 @@
+{
+  "browser": "154.0.8037.98",
+  "errors": [],
+  "observations": [
+    {
+      "iteration": 1,
+      "chrome": "Built-in",
+      "commitAfterFeed": "125.00",
+      "rejectedInput": "abc",
+      "consumerActionDecision": "Not approved: position 5001 exceeds this desk's price limit of 150. Request 1.",
+      "generatedSourceShown": true
+    },
+    {
+      "iteration": 1,
+      "chrome": "MudBlazor",
+      "commitAfterFeed": "125.00",
+      "rejectedInput": "abc",
+      "consumerActionDecision": "Not approved: position 5001 exceeds this desk's price limit of 150. Request 1.",
+      "generatedSourceShown": true
+    },
+    {
+      "iteration": 2,
+      "chrome": "Built-in",
+      "commitAfterFeed": "125.00",
+      "rejectedInput": "abc",
+      "consumerActionDecision": "Not approved: position 5001 exceeds this desk's price limit of 150. Request 1.",
+      "generatedSourceShown": true
+    },
+    {
+      "iteration": 2,
+      "chrome": "MudBlazor",
+      "commitAfterFeed": "125.00",
+      "rejectedInput": "abc",
+      "consumerActionDecision": "Not approved: position 5001 exceeds this desk's price limit of 150. Request 1.",
+      "generatedSourceShown": true
+    },
+    {
+      "iteration": 3,
+      "chrome": "Built-in",
+      "commitAfterFeed": "125.00",
+      "rejectedInput": "abc",
+      "consumerActionDecision": "Not approved: position 5001 exceeds this desk's price limit of 150. Request 1.",
+      "generatedSourceShown": true
+    },
+    {
+      "iteration": 3,
+      "chrome": "MudBlazor",
+      "commitAfterFeed": "125.00",
+      "rejectedInput": "abc",
+      "consumerActionDecision": "Not approved: position 5001 exceeds this desk's price limit of 150. Request 1.",
+      "generatedSourceShown": true
+    }
+  ]
+}

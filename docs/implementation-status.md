@@ -912,6 +912,25 @@ full cross-platform/browser suite remains CI's. Feature push and PR await the us
 ADR-0154 replaces the original displayed-value conflict policy. Cell edits, paste, Delete,
 Ctrl+Enter and fills proceed when values alone change; Consumer validation and original-target
 checks remain. Actions resolve the original address to the current row and leave business
-conflicts to the Consumer. Implementation and local verification are in progress. Painted-value
-history is being removed; retained Action addresses must not own old Consumer row graphs.
-The earlier performance and memory results above describe the pre-revision implementation.
+conflicts to the Consumer. Painted-value history and own-write exemptions are removed. Delayed
+operations preserve their original address and command, including after asynchronous clipboard
+reads or keyed row moves. Replacing a Source cannot reuse its predecessor's sequence number to
+receive an old write; an open Cell Editor or Formula Bar is discarded as `SourceChanged` while
+ordinary Selection rebinding remains. Bounded Action addresses and current-column operation
+metadata retain no old row/Source/delegate-owner graphs. Display-only ExPivot has zero Action
+paint addresses. ExSheet, the examples and Docs Site use the revised API.
+
+The [verification record](../verification/2026-10-07-macos-write-intent/README.md) records 9,116
+passing layer-1/2 tests (eight existing skips), zero-warning build, package smoke, three targeted
+Chrome repetitions on each host (42 WASM passes with nine Server-only skips; 51 Server passes),
+and six Docs Site observations. Both final review axes have no remaining findings. Full layer 3
+remains CI's, after the user approves the feature push and PR.
+
+The 401,001-report-row component update median is 13.743 ms, versus the preceding record's
+14.979 ms with the same method. Its normal-GC browser run completed 1,000 updates and 15
+compactions; managed memory peaked at 1,256.9 MiB in the samples, and WASM capacity reached the
+unchanged 2 GiB ceiling at update 257. Compaction rebuilds the full computation and explains the
+roughly 930 MiB allocation intervals; this remains a limitation for high-cardinality local
+reports. A separate million-record source with 1,101 report rows completed 200 updates and three
+compactions at 412.3 MiB final WASM capacity. The earlier CSV import and browser timing numbers
+above remain measurements of the preceding revision, not new claims about this one.

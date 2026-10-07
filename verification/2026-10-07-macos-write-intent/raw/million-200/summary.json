@@ -1,0 +1,94 @@
+{
+  "file": "verification/2026-10-07-macos-write-intent/raw/million-200/result.json",
+  "completed": 200,
+  "errors": [],
+  "initialManagedMiB": 153.1870574951172,
+  "finalManagedMiB": 200.124267578125,
+  "maxObservedManagedMiB": 207.66150665283203,
+  "initialWasmMiB": 343.5,
+  "finalWasmMiB": 412.25,
+  "averageAllocatedMiBPerUpdate": 1.1133309173583985,
+  "maxActionAddresses": 0,
+  "maxOperationReports": 2,
+  "maxDistinctRetainedReports": 11,
+  "finalRoots": {
+    "heldReports": 2,
+    "actionAddresses": 0,
+    "highlightReports": 10,
+    "distinctRetainedReports": 10,
+    "highlights": [
+      {
+        "sourceVersion": "d7b08e33b04d40e0922301abf626beae:200",
+        "at": "2026-10-07T00:23:24.507+00:00"
+      },
+      {
+        "sourceVersion": "d7b08e33b04d40e0922301abf626beae:199",
+        "at": "2026-10-07T00:23:24.403+00:00"
+      },
+      {
+        "sourceVersion": "d7b08e33b04d40e0922301abf626beae:198",
+        "at": "2026-10-07T00:23:24.304+00:00"
+      },
+      {
+        "sourceVersion": "d7b08e33b04d40e0922301abf626beae:197",
+        "at": "2026-10-07T00:23:24.187+00:00"
+      },
+      {
+        "sourceVersion": "d7b08e33b04d40e0922301abf626beae:196",
+        "at": "2026-10-07T00:23:24.087+00:00"
+      },
+      {
+        "sourceVersion": "d7b08e33b04d40e0922301abf626beae:195",
+        "at": "2026-10-07T00:23:23.972+00:00"
+      },
+      {
+        "sourceVersion": "d7b08e33b04d40e0922301abf626beae:194",
+        "at": "2026-10-07T00:23:23.87+00:00"
+      },
+      {
+        "sourceVersion": "d7b08e33b04d40e0922301abf626beae:193",
+        "at": "2026-10-07T00:23:23.762+00:00"
+      },
+      {
+        "sourceVersion": "d7b08e33b04d40e0922301abf626beae:192",
+        "at": "2026-10-07T00:23:23.52+00:00"
+      },
+      {
+        "sourceVersion": "d7b08e33b04d40e0922301abf626beae:191",
+        "at": "2026-10-07T00:23:23.42+00:00"
+      }
+    ],
+    "windowRows": 64,
+    "sourceAnsweredSnapshots": 4
+  },
+  "capacityGrowth": [
+    {
+      "update": 193,
+      "wasmMiB": 412.25
+    }
+  ],
+  "compactions": [
+    {
+      "update": 65,
+      "intervalAllocatedMiB": 15.217811584472656,
+      "managedMiB": 156.4222183227539,
+      "wasmMiB": 343.5,
+      "retainedReports": 9
+    },
+    {
+      "update": 129,
+      "intervalAllocatedMiB": 0.0,
+      "managedMiB": 204.99591064453125,
+      "wasmMiB": 343.5,
+      "retainedReports": 9
+    },
+    {
+      "update": 193,
+      "intervalAllocatedMiB": 0.0,
+      "managedMiB": 197.24637603759766,
+      "wasmMiB": 412.25,
+      "retainedReports": 10
+    }
+  ],
+  "medianCompactionIntervalAllocatedMiB": 0.0
+}

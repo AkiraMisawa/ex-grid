@@ -1,0 +1,186 @@
+{
+  "file": "verification/2026-10-07-macos-write-intent/raw/large-1000/result.json",
+  "completed": 1000,
+  "errors": [],
+  "initialManagedMiB": 600.3237838745117,
+  "finalManagedMiB": 1116.3287887573242,
+  "maxObservedManagedMiB": 1256.8552474975586,
+  "initialWasmMiB": 1076.3125,
+  "finalWasmMiB": 2048.0,
+  "averageAllocatedMiBPerUpdate": 16.226189544677734,
+  "maxActionAddresses": 0,
+  "maxOperationReports": 2,
+  "maxDistinctRetainedReports": 8,
+  "finalRoots": {
+    "heldReports": 2,
+    "actionAddresses": 0,
+    "highlightReports": 7,
+    "distinctRetainedReports": 7,
+    "highlights": [
+      {
+        "sourceVersion": "8ab16c038dc64e24b0d6ec347e9a3391:1000",
+        "at": "2026-10-07T00:07:43.735+00:00"
+      },
+      {
+        "sourceVersion": "8ab16c038dc64e24b0d6ec347e9a3391:999",
+        "at": "2026-10-07T00:07:43.56+00:00"
+      },
+      {
+        "sourceVersion": "8ab16c038dc64e24b0d6ec347e9a3391:998",
+        "at": "2026-10-07T00:07:43.396+00:00"
+      },
+      {
+        "sourceVersion": "8ab16c038dc64e24b0d6ec347e9a3391:997",
+        "at": "2026-10-07T00:07:43.227+00:00"
+      },
+      {
+        "sourceVersion": "8ab16c038dc64e24b0d6ec347e9a3391:996",
+        "at": "2026-10-07T00:07:43.06+00:00"
+      },
+      {
+        "sourceVersion": "8ab16c038dc64e24b0d6ec347e9a3391:995",
+        "at": "2026-10-07T00:07:42.892+00:00"
+      },
+      {
+        "sourceVersion": "8ab16c038dc64e24b0d6ec347e9a3391:994",
+        "at": "2026-10-07T00:07:42.727+00:00"
+      }
+    ],
+    "windowRows": 64,
+    "sourceAnsweredSnapshots": 4
+  },
+  "capacityGrowth": [
+    {
+      "update": 9,
+      "wasmMiB": 1172.375
+    },
+    {
+      "update": 17,
+      "wasmMiB": 1268.4375
+    },
+    {
+      "update": 23,
+      "wasmMiB": 1364.5
+    },
+    {
+      "update": 65,
+      "wasmMiB": 1870.5
+    },
+    {
+      "update": 129,
+      "wasmMiB": 1969.4375
+    },
+    {
+      "update": 257,
+      "wasmMiB": 2048.0
+    }
+  ],
+  "compactions": [
+    {
+      "update": 65,
+      "intervalAllocatedMiB": 930.7169189453125,
+      "managedMiB": 1213.445198059082,
+      "wasmMiB": 1870.5,
+      "retainedReports": 2
+    },
+    {
+      "update": 129,
+      "intervalAllocatedMiB": 929.6897506713867,
+      "managedMiB": 953.1281509399414,
+      "wasmMiB": 1969.4375,
+      "retainedReports": 2
+    },
+    {
+      "update": 193,
+      "intervalAllocatedMiB": 933.6872940063477,
+      "managedMiB": 1089.6016082763672,
+      "wasmMiB": 1969.4375,
+      "retainedReports": 2
+    },
+    {
+      "update": 257,
+      "intervalAllocatedMiB": 929.3401947021484,
+      "managedMiB": 1072.8625259399414,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 321,
+      "intervalAllocatedMiB": 931.6414947509766,
+      "managedMiB": 1145.970558166504,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 385,
+      "intervalAllocatedMiB": 932.212890625,
+      "managedMiB": 952.731559753418,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 449,
+      "intervalAllocatedMiB": 930.7185592651367,
+      "managedMiB": 1106.9455261230469,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 513,
+      "intervalAllocatedMiB": 930.0142440795898,
+      "managedMiB": 953.6563262939453,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 577,
+      "intervalAllocatedMiB": 931.4383163452148,
+      "managedMiB": 1089.6429977416992,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 641,
+      "intervalAllocatedMiB": 929.8825302124023,
+      "managedMiB": 1070.007827758789,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 705,
+      "intervalAllocatedMiB": 930.4346923828125,
+      "managedMiB": 1089.6250915527344,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 769,
+      "intervalAllocatedMiB": 929.5679016113281,
+      "managedMiB": 952.7637100219727,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 833,
+      "intervalAllocatedMiB": 930.7400817871094,
+      "managedMiB": 1072.7157440185547,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 897,
+      "intervalAllocatedMiB": 929.2172622680664,
+      "managedMiB": 954.7977523803711,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    },
+    {
+      "update": 961,
+      "intervalAllocatedMiB": 930.0141677856445,
+      "managedMiB": 1089.6294784545898,
+      "wasmMiB": 2048.0,
+      "retainedReports": 2
+    }
+  ],
+  "medianCompactionIntervalAllocatedMiB": 930.4346923828125
+}

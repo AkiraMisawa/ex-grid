@@ -7,7 +7,9 @@ supersedes ADR-0142's value-conflict refusal. The diagnostic and implementation 
 describes the policy in force when those experiments ran. Its requirements to preserve historical
 seen-text evidence are superseded: explicit writes now prevail and Consumers decide Action
 business conflicts. Detached display ownership, versioned report operations and Change Highlight
-remain required. The follow-up removes painted-value history and remeasures sustained updates.
+remain required. The follow-up removes painted-value history and
+[records verified sustained updates](../../../../verification/2026-10-07-macos-write-intent/README.md),
+including the remaining high-cardinality compaction footprint.
 
 **The aim:** a live redraw costs what changed, not what the report holds. Today ExPivot builds its
 cube, its report and every report row again on every redraw, at most four times a second. At 401,001

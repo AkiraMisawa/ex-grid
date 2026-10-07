@@ -4,9 +4,8 @@ namespace ExGrid.Cells;
 /// Why the grid threw away text a user had typed and not yet committed (ADR-0011).
 /// The grid's own cases are the grid deciding it cannot place the value — a Refusal in the
 /// sense <c>CONTEXT.md</c> gives the word, judging the operation and never the text — and
-/// none is the user's own doing, which is why they are announced rather than assumed. The
-/// last is the Consumer's: a discard it asked for, with a reason of its own (ADR-0050
-/// section 6).
+/// none is the user's own doing, which is why they are announced rather than assumed. A
+/// Consumer may also ask for a discard with a reason of its own (ADR-0050 section 6).
 /// </summary>
 public enum EditDiscardReason
 {

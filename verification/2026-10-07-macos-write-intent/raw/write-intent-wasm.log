@@ -1,0 +1,86 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] (node:49667) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Serving /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/write-intent/wasm/wwwroot at http://localhost:5799
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.q6G4lz/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8799
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/write-intent/api
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.3 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version 7f7e35c0-0 from /tmp/nix-shell.q6G4lz/exgrid-demo-api/runs/trades-v1-20000.49668.7f7e35c0.sqlite.
+
+Running 51 tests using 1 worker
+
+(node:49676) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chrome] › write-intent.spec.mjs:87:1 › LV-11: one commit applies the typed value after upstream changes the edited cell (ADR-0154) (721ms)
+  ✓   2 [chrome] › write-intent.spec.mjs:106:1 › LV-11: Escape after an upstream change cancels the typing without writing (ADR-0154) (139ms)
+  ✓   3 [chrome] › write-intent.spec.mjs:124:1 › LV-11: editing another cell preserves the upstream value on the same row (ADR-0154) (144ms)
+  ✓   4 [chrome] › write-intent.spec.mjs:140:1 › LV-12: an Action reaches the current same row exactly once after an upstream change (ADR-0154, ADR-0020) (143ms)
+  ✓   5 [chrome] › write-intent.spec.mjs:168:1 › LV-12: an Action held across a keyed row move keeps its original target and fires once (ADR-0154) (192ms)
+  ✓   6 [chrome] › write-intent.spec.mjs:210:1 › LV-13/LV-14: one Ctrl+V overwrites targets changed upstream before the paste lands (ADR-0154) (145ms)
+  ✓   7 [chrome] › write-intent.spec.mjs:235:1 › LV-13: Ctrl+Enter writes the whole selection after a target changes upstream (ADR-0154, ADR-0035) (147ms)
+  ✓   8 [chrome] › write-intent.spec.mjs:259:1 › LV-13: a fill-handle drag copies the current source over upstream changes (ADR-0154, ADR-0050 item 5) (278ms)
+  ✓   9 [chrome] › write-intent.spec.mjs:300:5 › LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0154, 0 ms) (126ms)
+  ✓  10 [chrome] › write-intent.spec.mjs:330:5 › LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0154, 0 ms) (145ms)
+  -  11 [chrome] › write-intent.spec.mjs:300:5 › LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0154, 150 ms)
+  -  12 [chrome] › write-intent.spec.mjs:330:5 › LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0154, 150 ms)
+  -  13 [chrome] › write-intent.spec.mjs:357:1 › LV-11: an edit opening before an upstream paint still commits once (ADR-0154)
+  ✓  14 [chrome] › write-intent.spec.mjs:380:1 › LV-13: Delete clears the current targets after their values change upstream (ADR-0154) (162ms)
+  ✓  15 [chrome] › write-intent.spec.mjs:403:1 › LV-13: Ctrl+R overwrites a target changed upstream (ADR-0154) (144ms)
+  ✓  16 [chrome] › write-intent.spec.mjs:426:1 › LV-13: Ctrl+D acquires the current source after an upstream change (ADR-0154) (112ms)
+  ✓  17 [chrome] › write-intent.spec.mjs:447:1 › LV-11: Consumer validation still rejects an invalid edit after upstream changes (ADR-0154, ADR-0034) (144ms)
+(node:49770) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  18 [chrome] › write-intent.spec.mjs:87:1 › LV-11: one commit applies the typed value after upstream changes the edited cell (ADR-0154) (709ms)
+  ✓  19 [chrome] › write-intent.spec.mjs:106:1 › LV-11: Escape after an upstream change cancels the typing without writing (ADR-0154) (135ms)
+  ✓  20 [chrome] › write-intent.spec.mjs:124:1 › LV-11: editing another cell preserves the upstream value on the same row (ADR-0154) (142ms)
+  ✓  21 [chrome] › write-intent.spec.mjs:140:1 › LV-12: an Action reaches the current same row exactly once after an upstream change (ADR-0154, ADR-0020) (144ms)
+  ✓  22 [chrome] › write-intent.spec.mjs:168:1 › LV-12: an Action held across a keyed row move keeps its original target and fires once (ADR-0154) (195ms)
+  ✓  23 [chrome] › write-intent.spec.mjs:210:1 › LV-13/LV-14: one Ctrl+V overwrites targets changed upstream before the paste lands (ADR-0154) (143ms)
+  ✓  24 [chrome] › write-intent.spec.mjs:235:1 › LV-13: Ctrl+Enter writes the whole selection after a target changes upstream (ADR-0154, ADR-0035) (129ms)
+  ✓  25 [chrome] › write-intent.spec.mjs:259:1 › LV-13: a fill-handle drag copies the current source over upstream changes (ADR-0154, ADR-0050 item 5) (280ms)
+  ✓  26 [chrome] › write-intent.spec.mjs:300:5 › LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0154, 0 ms) (143ms)
+  ✓  27 [chrome] › write-intent.spec.mjs:330:5 › LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0154, 0 ms) (143ms)
+  -  28 [chrome] › write-intent.spec.mjs:300:5 › LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0154, 150 ms)
+  -  29 [chrome] › write-intent.spec.mjs:330:5 › LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0154, 150 ms)
+  -  30 [chrome] › write-intent.spec.mjs:357:1 › LV-11: an edit opening before an upstream paint still commits once (ADR-0154)
+  ✓  31 [chrome] › write-intent.spec.mjs:380:1 › LV-13: Delete clears the current targets after their values change upstream (ADR-0154) (160ms)
+  ✓  32 [chrome] › write-intent.spec.mjs:403:1 › LV-13: Ctrl+R overwrites a target changed upstream (ADR-0154) (144ms)
+  ✓  33 [chrome] › write-intent.spec.mjs:426:1 › LV-13: Ctrl+D acquires the current source after an upstream change (ADR-0154) (129ms)
+  ✓  34 [chrome] › write-intent.spec.mjs:447:1 › LV-11: Consumer validation still rejects an invalid edit after upstream changes (ADR-0154, ADR-0034) (144ms)
+(node:49817) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  35 [chrome] › write-intent.spec.mjs:87:1 › LV-11: one commit applies the typed value after upstream changes the edited cell (ADR-0154) (713ms)
+  ✓  36 [chrome] › write-intent.spec.mjs:106:1 › LV-11: Escape after an upstream change cancels the typing without writing (ADR-0154) (143ms)
+  ✓  37 [chrome] › write-intent.spec.mjs:124:1 › LV-11: editing another cell preserves the upstream value on the same row (ADR-0154) (144ms)
+  ✓  38 [chrome] › write-intent.spec.mjs:140:1 › LV-12: an Action reaches the current same row exactly once after an upstream change (ADR-0154, ADR-0020) (125ms)
+  ✓  39 [chrome] › write-intent.spec.mjs:168:1 › LV-12: an Action held across a keyed row move keeps its original target and fires once (ADR-0154) (194ms)
+  ✓  40 [chrome] › write-intent.spec.mjs:210:1 › LV-13/LV-14: one Ctrl+V overwrites targets changed upstream before the paste lands (ADR-0154) (148ms)
+  ✓  41 [chrome] › write-intent.spec.mjs:235:1 › LV-13: Ctrl+Enter writes the whole selection after a target changes upstream (ADR-0154, ADR-0035) (126ms)
+  ✓  42 [chrome] › write-intent.spec.mjs:259:1 › LV-13: a fill-handle drag copies the current source over upstream changes (ADR-0154, ADR-0050 item 5) (281ms)
+  ✓  43 [chrome] › write-intent.spec.mjs:300:5 › LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0154, 0 ms) (142ms)
+  ✓  44 [chrome] › write-intent.spec.mjs:330:5 › LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0154, 0 ms) (144ms)
+  -  45 [chrome] › write-intent.spec.mjs:300:5 › LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0154, 150 ms)
+  -  46 [chrome] › write-intent.spec.mjs:330:5 › LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0154, 150 ms)
+  -  47 [chrome] › write-intent.spec.mjs:357:1 › LV-11: an edit opening before an upstream paint still commits once (ADR-0154)
+  ✓  48 [chrome] › write-intent.spec.mjs:380:1 › LV-13: Delete clears the current targets after their values change upstream (ADR-0154) (162ms)
+  ✓  49 [chrome] › write-intent.spec.mjs:403:1 › LV-13: Ctrl+R overwrites a target changed upstream (ADR-0154) (143ms)
+  ✓  50 [chrome] › write-intent.spec.mjs:426:1 › LV-13: Ctrl+D acquires the current source after an upstream change (ADR-0154) (111ms)
+  ✓  51 [chrome] › write-intent.spec.mjs:447:1 › LV-11: Consumer validation still rejects an invalid edit after upstream changes (ADR-0154, ADR-0034) (128ms)
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  9 skipped
+  42 passed (14.5s)
