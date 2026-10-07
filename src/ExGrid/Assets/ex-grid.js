@@ -139,12 +139,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     //   E  as A, then the scroller repainted (opacity 0.999 for one frame), no scroll
     //   G  as A, with the scroller given `will-change: scroll-position`
     //   H  as A, with the scroller given an opaque background (the grid's own)
+    //   I  the offset written as soon as the core asks, before the rows land (same task on
+    //      WebAssembly): the order a write from the console has, which paints
+    //   J  as A, then the whole Viewport invalidated a frame later (a near-transparent background
+    //      for one frame), as a move of the Focus row's band invalidates its row
     //   F  the rows painted in one frame, the offset written in the frame after it (B, measured
     //      under Citrix, wrote in the very frame the rows landed in: the task that applied them
     //      outlasted a frame, so its animation frame came at once)
     const labMode = () => {
         const mode = new URLSearchParams(location.search).get('reveal');
-        return mode && 'ABCDEFGH'.includes(mode.toUpperCase()) ? mode.toUpperCase() : 'A';
+        return mode && 'ABCDEFGHIJ'.includes(mode.toUpperCase()) ? mode.toUpperCase() : 'A';
     };
     const labNudge = () => {
         const at = scroller.scrollTop;
@@ -161,6 +165,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             labNudge();
         } else if (mode === 'D') {
             setTimeout(labNudge, 300);
+        } else if (mode === 'J') {
+            const viewport = scroller.querySelector('.ex-viewport');
+            requestAnimationFrame(() => {
+                if (viewport) {
+                    viewport.style.backgroundColor = 'rgba(127, 127, 127, 0.004)';
+                    labTrace('  mode J: Viewport invalidated');
+                }
+                requestAnimationFrame(() => {
+                    if (viewport) {
+                        viewport.style.backgroundColor = '';
+                    }
+                });
+            });
         } else if (mode === 'E') {
             requestAnimationFrame(() => {
                 scroller.style.opacity = '0.999';
@@ -2834,6 +2851,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 labTrace(`setScrollOffset: drops held token ${pendingReveal.token} (top ${pendingReveal.top})`);
             }
             dropReveal();
+            if (token !== undefined && token !== null && labMode() === 'I') {
+                labTrace(`setScrollOffset top=${top} left=${left} token=${token} data-ex-reveal=${attribute} -> mode I, WRITE BEFORE THE ROWS`);
+                scroller.scrollTop = top;
+                scroller.scrollLeft = left;
+                labFollow();
+                return;
+            }
             if (token !== undefined && token !== null
                 && Number(root.getAttribute('data-ex-reveal')) < token) {
                 labTrace(`setScrollOffset top=${top} left=${left} token=${token} data-ex-reveal=${attribute} -> HOLD`);

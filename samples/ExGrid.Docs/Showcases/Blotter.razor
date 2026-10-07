@@ -356,7 +356,7 @@
         => Reveal is null && Trace is null ? "" : $" · LAB reveal {LabMode}{(Trace is null ? "" : " · trace")}";
 
     private string LabMode
-        => Reveal is { Length: 1 } mode && "ABCDEFGH".Contains(char.ToUpperInvariant(mode[0]))
+        => Reveal is { Length: 1 } mode && "ABCDEFGHIJ".Contains(char.ToUpperInvariant(mode[0]))
             ? mode.ToUpperInvariant()
             : "A";
 
