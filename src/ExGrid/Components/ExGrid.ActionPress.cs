@@ -10,14 +10,15 @@ namespace ExGrid.Components;
 // An Action press acts on the row it was pressed on, as that row is now (ADR-0142, LV-12, LV-20): with
 // a Row Key, the row under the pressed row's key while the Window holds it; without one, the pressed
 // instance, or — for a press whose button a render disposed — the row at the position the browser told,
-// while the order it was taken under holds. Otherwise it is refused: RowGone, or, without a Row Key,
-// OrderMoved. No press is lost to Blazor, and none fires twice.
+// while the order it was taken under holds. Otherwise it is refused: RowGone when its row is gone, and
+// OrderMoved when only a position under a moved order names it. No press is lost to Blazor, and none
+// fires twice.
 public partial class ExGrid<TRow>
 {
     /// <summary>
     /// An Action press refused (ADR-0142, LV-12, LV-20): its row is gone
-    /// (<see cref="ActionRefusalReason.RowGone"/>), or, without a Row Key, it named its row by a
-    /// position under an order that has moved since (<see cref="ActionRefusalReason.OrderMoved"/>).
+    /// (<see cref="ActionRefusalReason.RowGone"/>), or nothing but a position under an order that
+    /// has moved since names it (<see cref="ActionRefusalReason.OrderMoved"/>).
     /// A press never is refused because its row's values changed: it acts on the row it was pressed
     /// on, as that row is now. With a Row Key, that is the row under the pressed row's key, wherever
     /// the Window holds it, Space included. Without one, a press whose button a render has since
@@ -34,7 +35,11 @@ public partial class ExGrid<TRow>
     /// listener read them — its row's position, the serial of the row component that painted its
     /// button, and the column and action it stood for. <see cref="Pressed"/> is the row at that
     /// position when the press was told under the order it was taken under, else null.</summary>
-    private sealed record ActionPress(int Paint, int Row, int Serial, TRow? Pressed, string? Column, string? Action);
+    private sealed record ActionPress(int Paint, int Row, int Serial, TRow? Pressed, string? Column, string? Action)
+    {
+        /// <summary>A press told only the paint it was taken against: its click names the rest.</summary>
+        public static ActionPress PaintOnly(int paint) => new(paint, -1, 0, null, null, null);
+    }
 
     // The press being told, until its click is heard or the core answers it. Its row is one of the
     // three holdings that outlive a Window (ADR-0160): bounded to one, and dropped when the press is
@@ -81,7 +86,7 @@ public partial class ExGrid<TRow>
         if (painted is null || at < 0 || at >= painted.Serials.Length || painted.Serials[at] == 0
             || column < 0 || column >= painted.Columns.Count || action < 0 || action >= painted.Columns[column].Actions.Count)
         {
-            _actionPress = new ActionPress(paint, -1, 0, null, null, null);
+            _actionPress = ActionPress.PaintOnly(paint);
             return;
         }
         _actionPress = new ActionPress(paint, row, painted.Serials[at], AimedUnderAnotherOrder(paint) ? null : RowInHand(row),
@@ -157,7 +162,8 @@ public partial class ExGrid<TRow>
         var orderMoved = at is not null && AimedUnderAnotherOrder(told);
         if (orderMoved && byPosition && _rowKey is null)
         {
-            await RefuseActionAsync(pressed, column, action, ActionRefusalReason.OrderMoved);
+            // The row the Focus stands on now is a stranger's: none is named.
+            await RefuseActionAsync(null, column, action, ActionRefusalReason.OrderMoved);
             return;
         }
         if (orderMoved)
@@ -194,12 +200,16 @@ public partial class ExGrid<TRow>
         reason = ActionRefusalReason.RowGone;
         if (_rowKey is { } rowKey)
         {
+            // No row to take the key of: a press whose order moved before the core heard it, and
+            // whose row component is gone, cannot be paired with its row, since the grid keeps no
+            // key of an earlier render (ADR-0160). OrderMoved is true of it; RowGone may not be.
             if (pressed is null)
+            {
+                if (orderMoved)
+                    reason = ActionRefusalReason.OrderMoved;
                 return at is { } told ? RowInHand(told) : null;
-            var key = rowKey(pressed);
-            if (at is { } p && RowInHand(p) is { } there && Equals(rowKey(there), key))
-                return there;
-            return PositionInHandByKey(rowKey, key) is { } found ? RowInHand(found) : null;
+            }
+            return PositionOfKey(rowKey, rowKey(pressed), at) is { } found ? RowInHand(found) : null;
         }
         if (pressed is not null && PositionInHand(pressed) is not null)
             return pressed;

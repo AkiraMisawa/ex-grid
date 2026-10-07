@@ -2296,10 +2296,11 @@
     // the rows' current contents, so an in-place rewrite would grow a column and repaint
     // through the width path — the repaint ADR-0003 promises will not happen.
     //
-    // One of the two holdings that outlive a Window (ADR-0160), bounded to one: while a fling,
+    // One of the three holdings that outlive a Window (ADR-0160), bounded to one: while a fling,
     // or a hidden or zero-sized Viewport, defers the next measure, this is the Window last
-    // measured, and the next measure replaces it. The other is the row of an Action press in
-    // flight (ExGrid.SeenText.cs).
+    // measured, and the next measure replaces it. The others are the row of an Action press in
+    // flight (ExGrid.ActionPress.cs) and the Row Key of the row under an open editor
+    // (ExGrid.Commit.cs).
     private IReadOnlyList<TRow>? _measuredWindow;
     private int _measuredWindowStart;
     private RowRange? _measuredVisible;

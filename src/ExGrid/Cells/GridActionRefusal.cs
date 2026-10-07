@@ -13,9 +13,11 @@ public enum ActionRefusalReason
     /// answers its key; without one, the position it was pressed on holds no row.</summary>
     RowGone,
 
-    /// <summary>No Row Key is in force, and the press named its row by a position whose order has
-    /// moved since — a press whose button a render disposed, or Space on the Focus. The position
-    /// names another row now.</summary>
+    /// <summary>The press named its row by a position whose order has moved since, and nothing else
+    /// pairs it with its row: without a Row Key, a press whose button a render disposed, or Space on
+    /// the Focus; with one, a press whose order moved before the grid heard it and whose button a
+    /// render has since disposed, since the grid keeps no key of an earlier render (ADR-0160). The
+    /// position names another row now.</summary>
     OrderMoved,
 }
 

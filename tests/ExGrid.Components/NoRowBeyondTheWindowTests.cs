@@ -20,13 +20,10 @@ namespace ExGrid.Components.Tests;
 /// flight, the Viewport has a size and is never flung, so nothing defers the Auto widths' measure, and
 /// an open editor holds its row's Row Key, not the row.
 ///
-/// <para>Found while writing it (2026-10-07): Blazor keeps a component's previous render tree as its
-/// next buffer, and those frames still name the rows the render before the newest painted — here
-/// the six painted rows of the Window before — until the grid renders again
-/// (<c>ComponentState._nextRenderTree</c>). That is the renderer's, not a holding of the grid's,
-/// and ADR-0160 does not name it, so LV-22's exact check stands failing on it, skipped with that
-/// reason, until the orchestrator decides; the check beside it holds for every Window before that
-/// one.</para>
+/// <para>One more set of rows ADR-0160 names as the renderer's: Blazor keeps a component's previous
+/// render tree as its next buffer, and those frames still name the rows the render before the newest
+/// painted until the grid renders again (<c>ComponentState._nextRenderTree</c>). The checks name
+/// exactly those rows, read from the positions that render painted, and no others.</para>
 /// </summary>
 public class NoRowBeyondTheWindowTests : GridTestContext
 {
@@ -96,15 +93,17 @@ public class NoRowBeyondTheWindowTests : GridTestContext
         GC.Collect();
     }
 
-    private const string RendererKeepsThePreviousFrames =
-        "LV-22 as written fails on Blazor's previous render tree (ComponentState._nextRenderTree), which names " +
-        "the rows the render before the newest painted until the grid renders again; reported to the orchestrator " +
-        "on 2026-10-07, for ADR-0160 to name or for the grid to answer.";
+    /// <summary>The positions the newest render painted, read from the rows' own
+    /// <c>aria-rowindex</c>: numbers, so the test holds no row by reading them.</summary>
+    private static HashSet<int> PaintedPositions(IRenderedComponent<ExGrid<TestRow>> cut)
+        => [.. cut.FindAll(".ex-viewport [role=row]").Select(static row => int.Parse(row.GetAttribute("aria-rowindex")!,
+            System.Globalization.CultureInfo.InvariantCulture) - 1)];
 
     /// <summary>Hands the grid twelve new Windows, each in its own method, scrolling and selecting
-    /// between them, then the Window in hand, and answers weak references to each earlier one's rows
-    /// and to the current one's.</summary>
-    private async Task<(List<WeakReference[]> Earlier, WeakReference[] Current)> RunOfNewWindowsAsync(
+    /// between them, then the Window in hand. Answers weak references to each earlier Window's rows,
+    /// by position; the positions the render before the newest painted, which is the one that
+    /// painted the last of them; and weak references to the current Window's rows.</summary>
+    private async Task<(List<WeakReference[]> Earlier, HashSet<int> PaintedBefore, WeakReference[] Current)> RunOfNewWindowsAsync(
         IRenderedComponent<ExGrid<TestRow>> cut)
     {
         var earlier = new List<WeakReference[]>();
@@ -114,11 +113,12 @@ public class NoRowBeyondTheWindowTests : GridTestContext
             earlier.Add(HandOverANewWindow(cut, version: round / 3, reordered: round % 3 == 2));
             await ScrollAndSelectAsync(cut, round);
         }
-        // The Window in hand now, whose rows the grid may hold, taken in by the render that ends the run.
-        return (earlier, HandOverANewWindow(cut, version: 99, reordered: false));
+        var paintedBefore = PaintedPositions(cut);
+        // The Window in hand now, taken in by the render that ends the run.
+        return (earlier, paintedBefore, HandOverANewWindow(cut, version: 99, reordered: false));
     }
 
-    [Theory(Skip = RendererKeepsThePreviousFrames)] // ADR-0160 / LV-22: after a run of new Windows and a full collection, with the render that took in the last one and no other, no row of an earlier Window is alive — with CellAppearance declared and not, a Row Key declared and not
+    [Theory] // ADR-0160 / LV-22: after a run of new Windows and a full collection, with the render that took in the last one and no other, no row of an earlier Window is alive but the ones the render before it painted, which Blazor keeps — with CellAppearance declared and not, a Row Key declared and not
     [InlineData(false, false)]
     [InlineData(true, false)]
     [InlineData(false, true)]
@@ -126,30 +126,18 @@ public class NoRowBeyondTheWindowTests : GridTestContext
     public async Task No_row_of_an_earlier_window_is_alive_after_a_run_of_new_windows(bool appearance, bool rowKey)
     {
         var cut = RenderEmpty(appearance, rowKey);
-        var (earlier, current) = await RunOfNewWindowsAsync(cut);
-
-        Collect();
-
-        Assert.True(current.All(static r => r.IsAlive), "the Window in hand is held, as it is painted");
-        for (var round = 0; round < earlier.Count; round++)
-            AssertNoneAlive(earlier, round);
-    }
-
-    [Theory] // ADR-0160 / LV-22: after a run of new Windows and a full collection, no row of any Window before the one before is alive — the grid's own holdings, the appearance cache among them, keep none
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public async Task No_row_of_a_window_before_the_last_two_is_alive_after_a_run_of_new_windows(bool appearance, bool rowKey)
-    {
-        var cut = RenderEmpty(appearance, rowKey);
-        var (earlier, current) = await RunOfNewWindowsAsync(cut);
+        var (earlier, paintedBefore, current) = await RunOfNewWindowsAsync(cut);
 
         Collect();
 
         Assert.True(current.All(static r => r.IsAlive), "the Window in hand is held, as it is painted");
         for (var round = 0; round < earlier.Count - 1; round++)
             AssertNoneAlive(earlier, round);
+        // The last of the earlier Windows: alive only where the render before the newest painted it.
+        var last = earlier[^1];
+        var aliveElsewhere = Enumerable.Range(0, last.Length).Where(i => last[i].IsAlive && !paintedBefore.Contains(i)).ToArray();
+        Assert.True(aliveElsewhere.Length == 0,
+            $"rows {string.Join(", ", aliveElsewhere)} of the Window before are alive, and the render before painted only {string.Join(", ", paintedBefore.Order())} (ADR-0160)");
     }
 
     [Fact] // ADR-0160 / LV-22, ADR-0011 (note of 2026-10-07): an open editor holds the Row Key of its row, not the row — the rows of earlier Windows go while it stays open

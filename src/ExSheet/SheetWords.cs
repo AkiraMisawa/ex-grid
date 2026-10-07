@@ -53,7 +53,6 @@ internal static class SheetWords
     {
         EditDiscardReason.RowLeftTheWindow =>
             "What was typed was not entered: the row being edited was scrolled too far away to be written. Go back to it and type it again.",
-        EditDiscardReason.OrderChanged => "What was typed was not entered: the rows moved while the cell was being edited.",
         EditDiscardReason.ColumnsChanged => "What was typed was not entered: the columns changed while the cell was being edited.",
         EditDiscardReason.ColumnNoLongerEditable => "What was typed was not entered: the cell stopped taking entries while it was being edited.",
         _ => "What was typed was not entered.",
@@ -85,7 +84,9 @@ internal static class SheetWords
     {
         CommitRefusalReason.OrderMoved =>
             $"What was typed was not entered: the rows moved while {address} was being edited, so it would land in another row. Press Escape to leave it.",
-        _ => $"What was typed was not entered: the row of {address} is no longer there. Press Escape to leave it.",
+        CommitRefusalReason.RowGone =>
+            $"What was typed was not entered: the row of {address} is no longer there. Press Escape to leave it.",
+        _ => "What was typed was not entered. Press Escape to leave it.",
     };
 
     /// <summary>A commit that landed over a cell that changed while it was being edited (ADR-0142,

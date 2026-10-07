@@ -454,7 +454,9 @@
         {
             CommitRefusalReason.OrderMoved =>
                 $"OrderMoved — {refusal.Column} was not written: the rows moved while you were typing; press Escape to leave it",
-            _ => $"RowGone — {refusal.Column} was not written: the row is no longer there; press Escape to leave it",
+            CommitRefusalReason.RowGone =>
+                $"RowGone — {refusal.Column} was not written: the row is no longer there; press Escape to leave it",
+            _ => refusal.Reason.ToString(),
         }, s => _commitRefusedStatus = s);
 
     /// <summary>A commit that landed over a cell whose value moved while the user typed (ADR-0142,
@@ -544,8 +546,6 @@
     private void OnEditDiscarded(EditDiscardReason reason)
         => Status(reason, reason switch
         {
-            EditDiscardReason.OrderChanged =>
-                "OrderChanged — the rows were reordered while you were typing, so the entry was dropped",
             EditDiscardReason.RowLeftTheWindow =>
                 "RowLeftTheWindow — that row is no longer loaded, so the entry could not be placed",
             _ => reason.ToString(),

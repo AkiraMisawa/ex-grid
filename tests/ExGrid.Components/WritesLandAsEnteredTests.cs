@@ -468,7 +468,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         var cut = RenderGrid(rows, heard);
         await ClickAsync(cut, 50, 10);
         var pressedOn = Paint(cut);
-        // Far more renders than the grid ever kept, none of which changes the edited cell's text.
+        // Two hundred renders, none of which changes the edited cell's text.
         for (var i = 0; i < 200; i++)
         {
             rows = Changed(rows, 3);
@@ -541,7 +541,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Same(changed[0], Assert.Single(heard.Actions).Row);
     }
 
-    [Fact] // ADR-0142 / LV-12, ADR-0020: on a row that did not change, a press taken on an earlier render fires once, as before
+    [Fact] // ADR-0142 / LV-12, ADR-0020: on a row that did not change, a press taken on an earlier render fires once
     public async Task An_action_press_on_an_unchanged_row_fires_once()
     {
         var rows = TestRows.Many(50);
@@ -630,6 +630,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         var refusal = Assert.Single(heard.ActionRefusals);
         Assert.Equal(ActionRefusalReason.OrderMoved, refusal.Reason);
         Assert.Equal("approve", refusal.ActionName);
+        // The row the Focus stands on now is a stranger's: none is named.
+        Assert.Null(refusal.Row);
     }
 
     [Fact] // ADR-0142 / LV-12, LV-20, ADR-0140: with a Row Key, Space acts on the row under the key of the row the Focus stands on, whatever order its key was taken under
@@ -906,7 +908,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.PasteRefusals);
     }
 
-    [Fact] // ADR-0142 / LV-13, ADR-0011: a fill-handle drag released after the order moved raises nothing, as before
+    [Fact] // ADR-0142 / LV-13, ADR-0011: a fill-handle drag released after the order moved raises nothing
     public async Task A_fill_drag_released_after_the_order_moved_raises_nothing()
     {
         var rows = TestRows.Many(50);
@@ -1244,6 +1246,28 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.Notices);
     }
 
+    [Fact] // ADR-0142 D1 / LV-17: a change upstream to another cell of the same row is a new instance of the row, and still does not show the user's own write
+    public async Task A_change_to_another_cell_of_the_row_does_not_end_the_users_own_write()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+
+        await KeyAsync(cut, "5");
+        await KeyAsync(cut, "Enter");
+        // A tick on row 0's Amount: a new instance of the row, Book unchanged.
+        var ticked = Changed(rows, 0, amount: 33m);
+        Push(cut, ticked);
+        await KeyAsync(cut, "ArrowUp");
+        await KeyAsync(cut, "7");
+        Push(cut, Changed(ticked, 0, book: "5"));
+        await KeyAsync(cut, "Enter");
+
+        Assert.Equal(["5", "7"], heard.Edits.Select(e => e.Value));
+        Assert.Empty(heard.Notices);
+    }
+
     [Fact] // ADR-0142 D1 / LV-17: once the user's write is painted, an editor opened over it tells a change upstream that comes after
     public async Task An_editor_opened_after_the_users_write_was_painted_tells_a_change_after_it()
     {
@@ -1437,7 +1461,7 @@ public class WritesLandAsEnteredTests : GridTestContext
     // ---- LV-20: a commit goes to the row the editor was opened on ----
 
     [Fact] // ADR-0142 / LV-20, ADR-0011 / ED-21: without a Row Key, a row that left the Window under the same order is not RowGone — that is a key no longer in the Window — and takes the typing with it, announced as RowLeftTheWindow
-    public async Task Without_a_row_key_a_commit_whose_row_left_the_window_is_discarded_as_before()
+    public async Task Without_a_row_key_a_commit_whose_row_left_the_window_is_discarded_as_RowLeftTheWindow()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -1686,7 +1710,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         var intent = Assert.Single(heard.Edits);
         Assert.Same(gathered[0], intent.Row);
         Assert.Equal("5", intent.Value);
-        // The newest version is painted, not only judged.
+        // The newest version is painted as well as written over.
         Assert.Contains(cut.FindAll(".ex-row")[0].QuerySelectorAll("[role=gridcell]"), c => c.TextContent.Replace(",", "") == "999999");
     }
 
@@ -2150,8 +2174,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Equal(ActionRefusalReason.OrderMoved, Assert.Single(heard.ActionRefusals).Reason);
     }
 
-    [Fact] // ADR-0142 D5 / LV-16: with nothing gathered, a write is raised as before, and asks once
-    public async Task A_write_with_nothing_gathered_is_raised_as_before()
+    [Fact] // ADR-0142 D5 / LV-16: with nothing gathered, a commit lands on the row in hand, and asks once
+    public async Task A_write_with_nothing_gathered_lands_on_the_row_in_hand()
     {
         var rows = TestRows.Many(50);
         var source = new GatheringSource(rows);
@@ -2239,6 +2263,25 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowGone, Assert.Single(heard.ActionRefusals).Reason));
         Assert.Empty(heard.Actions);
+    }
+
+    [Fact] // ADR-0142 / LV-20 (2026-10-07): with a Row Key, a press whose order moved before the core heard it, and whose row component is gone, cannot be paired with its row, and is refused as OrderMoved — never RowGone, for its key is still in the Window
+    public async Task With_a_row_key_a_press_that_cannot_be_paired_is_refused_as_order_moved()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, WithAction(), extra: ps => ps.Add(g => g.RowKey, ByBook));
+        var pressedOn = Paint(cut);
+        // Row 0 moves to row 40, out of the painted rows: its component goes, and its key stays in
+        // the Window.
+        Reorder(cut, Moved(rows, 0, 40));
+
+        await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(pressedOn, row: 0, column: 2, action: 0));
+
+        Assert.Empty(heard.Actions);
+        var refusal = Assert.Single(heard.ActionRefusals);
+        Assert.Equal(ActionRefusalReason.OrderMoved, refusal.Reason);
+        Assert.Null(refusal.Row);
     }
 
     [Fact] // ADR-0142 / LV-12, ADR-0140: with a Row Key, a told press whose row only changed keeps its component, which hears the click and acts on the row as it is now

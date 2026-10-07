@@ -10,20 +10,15 @@ namespace ExGrid.Cells;
 /// </summary>
 public enum EditDiscardReason
 {
-    /// <summary>The row order changed under the open editor, so the coordinates the
-    /// editor floats over stopped naming the row they were opened on (ADR-0011).
-    /// Committing would put the value on a stranger.</summary>
-    OrderChanged,
-
     /// <summary>The visible columns changed under the open editor, so the coordinates
-    /// stopped naming the column they were opened on (ADR-0011). Distinct from
-    /// <see cref="OrderChanged"/> because telling a user their rows were reordered when
-    /// a column was hidden is a wrong reason, which is worse than none.</summary>
+    /// stopped naming the column they were opened on (ADR-0011). A change of the row order
+    /// discards nothing: the editor outlives it (ADR-0011's note of 2026-10-07).</summary>
     ColumnsChanged,
 
-    /// <summary>The row left the Window before the commit landed, so there is no row
-    /// instance left to carry the Edit Intent's identity (ADR-0003 / 0011). A
-    /// positional guess would land the value on a different row.</summary>
+    /// <summary>No Row Key is in force, and the row left the Window under the order the
+    /// editor was opened under before the commit landed, so there is no row instance left to
+    /// carry the Edit Intent's identity (ADR-0003 / 0011). A positional guess would land the
+    /// value on a different row. With a Row Key, the commit is refused instead (ADR-0142).</summary>
     RowLeftTheWindow,
 
     /// <summary>The column stopped being Editable while its editor was open — a

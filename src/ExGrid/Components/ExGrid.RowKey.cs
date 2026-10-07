@@ -79,8 +79,8 @@ public partial class ExGrid<TRow>
     //   core's, by position, and handed to whichever component paints that position.
     // - What a Template cell's own components hold survives a change of the row's values and is
     //   handed the new version: the consequence ADR-0140 names, and the Consumer's to handle.
-    // - A press on a kept row reads the row when it is handled. A press taken against an older render
-    //   is ADR-0142's to judge, by what that render painted.
+    // - A press on a kept row reads the row when it is handled, and acts on the row under its key
+    //   (ADR-0142, ExGrid.ActionPress.cs).
     // RowKeyTests holds a test for each.
 
     // The Row Keys painted so far in this render, each with its place in the Window. One map for

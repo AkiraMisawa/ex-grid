@@ -53,7 +53,7 @@ public partial class ExGrid<TRow>
 
     // Whether one of the user's own writes covered the edited cell, not yet painted, when the editor
     // opened (D1, LV-17): a change the commit finds there is the user's own, and is not told.
-    private bool _editOpenedBeforeOwnWrite;
+    private bool _editCellOwnWriteUnpainted;
 
     // The Row Sequence Version the editor was opened under: without a Row Key, the commit lands by
     // position while it holds, and is refused as OrderMoved once it has moved (ADR-0142).
@@ -72,7 +72,7 @@ public partial class ExGrid<TRow>
     private void NoteEditOpened(CellPosition cell)
     {
         _editSeenText = PaintedTextNow(cell.Row, cell.Column);
-        _editOpenedBeforeOwnWrite = OwnWriteUnpaintedAt(cell);
+        _editCellOwnWriteUnpainted = OwnWriteUnpaintedAt(cell);
         _editSequence = _sequenceVersion;
         _editKey = _rowKey is { } rowKey && RowInHand(cell.Row) is { } row ? rowKey(row) : null;
     }
@@ -89,10 +89,7 @@ public partial class ExGrid<TRow>
     {
         if (_editMode == EditMode.None || _rowKey is not { } rowKey || _editKey is not { } key)
             return;
-        var at = RowInHand(_editingCell.Row) is { } there && Equals(rowKey(there), key)
-            ? _editingCell.Row
-            : PositionInHandByKey(rowKey, key);
-        if (at is not { } row)
+        if (PositionOfKey(rowKey, key, _editingCell.Row) is not { } row)
             return;
         _editingCell = new CellPosition(row, _editingCell.Column);
         if (_selection.Selection.IsEmpty || _selection.Selection.Focus != _editingCell)
@@ -127,12 +124,8 @@ public partial class ExGrid<TRow>
         CommitRefusalReason reason;
         if (_rowKey is { } rowKey)
         {
-            if (_editKey is { } key && (RowInHand(cell.Row) is { } there && Equals(rowKey(there), key)
-                    ? cell.Row
-                    : PositionInHandByKey(rowKey, key)) is { } at)
-            {
+            if (_editKey is { } key && PositionOfKey(rowKey, key, cell.Row) is { } at)
                 return new CellPosition(at, cell.Column);
-            }
             reason = CommitRefusalReason.RowGone;
         }
         else if (_sequenceVersion != _editSequence)
@@ -157,7 +150,7 @@ public partial class ExGrid<TRow>
     /// paints now, when they differ and the change is not the user's own unpainted write (D1). Null
     /// when none is owed.</summary>
     private GridOverwriteNotice? OverwriteNoticeFor(CellPosition cell, string replaced)
-        => _editSeenText is { } seen && !string.Equals(seen, replaced, StringComparison.Ordinal) && !_editOpenedBeforeOwnWrite
+        => _editSeenText is { } seen && !string.Equals(seen, replaced, StringComparison.Ordinal) && !_editCellOwnWriteUnpainted
             ? new GridOverwriteNotice(cell, Columns[cell.Column].Name, seen, replaced)
             : null;
 
@@ -170,23 +163,22 @@ public partial class ExGrid<TRow>
     // ---- D1: the user's own writes count as seen, for the Overwrite Notice ----
 
     /// <summary>
-    /// A write the grid raised for one of the user's own gestures (ADR-0142, D1): the cells it named,
-    /// as positions, the order its positions are written in, and the rows among them the Window held
-    /// and the grid painted when it was raised that no paint has shown it on yet. Positions and
-    /// numbers only, never a row (ADR-0160). A class, so the one noted is the one taken back.
+    /// A write the grid raised for one of the user's own gestures (ADR-0142, D1): the order its
+    /// positions are written in, and the cells of it the Window held when it was raised, each with
+    /// the text it painted then — until a paint shows the cell otherwise. Positions and strings
+    /// only, never a row (ADR-0160). A class, so the one noted is the one taken back.
     /// </summary>
-    private sealed class OwnWrite(int sequenceVersion, IReadOnlyList<SelectionRange> cells, HashSet<int> unpainted)
+    private sealed class OwnWrite(int sequenceVersion, Dictionary<CellPosition, string> unpainted)
     {
         public int SequenceVersion { get; } = sequenceVersion;
 
-        public IReadOnlyList<SelectionRange> Cells { get; } = cells;
-
-        public HashSet<int> Unpainted { get; } = unpainted;
+        public Dictionary<CellPosition, string> Unpainted { get; } = unpainted;
     }
 
-    // The user's own writes not yet painted, oldest first. One goes once every row of it a paint
-    // could show has been painted with a new instance or has left the Window, or once the order its
-    // positions name has moved. A bound beside that, for a Consumer that never repaints a write.
+    // The user's own writes some cell of which no paint has shown yet, oldest first. A bound on the
+    // cells followed per write, the painted rows first, and on the writes, for a Consumer that never
+    // repaints what it is told to write: the grid holds nothing without one (ADR-0160).
+    private const int OwnWriteCellsFollowed = 1024;
     private const int OwnWritesKept = 64;
     private readonly List<OwnWrite> _ownWrites = [];
 
@@ -194,27 +186,16 @@ public partial class ExGrid<TRow>
     /// Notes a write the grid raises for the user's own gesture (ADR-0142, D1): an Edit Intent, a
     /// paste or fill intent, a Clear Intent, a Fill Intent. Noted as it is raised, before the
     /// Consumer hears it, so an edit the grid opens while the Consumer's handler awaits is opened
-    /// after it, as it was typed. Of its rows, those painted now are followed until a paint shows
-    /// them anew; a row off screen is never let off. An Action is not one: the grid cannot tell what
-    /// it writes.
+    /// after it, as it was typed. An Action is not one: the grid cannot tell what it writes.
     /// </summary>
     private OwnWrite NoteOwnWrite(IReadOnlyList<SelectionRange> cells)
     {
-        var unpainted = new HashSet<int>();
+        var unpainted = new Dictionary<CellPosition, string>();
+        // The painted rows first, then the rest of the Window, as far as the bound.
         if (_visible is { } visible)
-        {
-            foreach (var range in cells)
-            {
-                var top = Math.Max(range.TopRow, visible.Start);
-                var bottom = Math.Min(range.BottomRow, visible.Start + visible.Count - 1);
-                for (var row = top; row <= bottom; row++)
-                {
-                    if (RowInHand(row) is not null)
-                        unpainted.Add(row);
-                }
-            }
-        }
-        var write = new OwnWrite(_sequenceVersion, cells, unpainted);
+            FollowOwnWriteCells(cells, visible.Start, visible.Start + visible.Count - 1, unpainted);
+        FollowOwnWriteCells(cells, _windowStart, _windowStart + _window.Count - 1, unpainted);
+        var write = new OwnWrite(_sequenceVersion, unpainted);
         if (unpainted.Count > 0)
         {
             _ownWrites.Add(write);
@@ -224,16 +205,34 @@ public partial class ExGrid<TRow>
         return write;
     }
 
+    private void FollowOwnWriteCells(IReadOnlyList<SelectionRange> cells, int fromRow, int toRow,
+        Dictionary<CellPosition, string> unpainted)
+    {
+        foreach (var range in cells)
+        {
+            for (var row = Math.Max(range.TopRow, fromRow); row <= Math.Min(range.BottomRow, toRow); row++)
+            {
+                for (var column = Math.Max(range.LeftColumn, 0); column <= Math.Min(range.RightColumn, Columns.Count - 1); column++)
+                {
+                    if (unpainted.Count >= OwnWriteCellsFollowed)
+                        return;
+                    var cell = new CellPosition(row, column);
+                    if (!unpainted.ContainsKey(cell) && PaintedTextNow(row, column) is { } text)
+                        unpainted[cell] = text;
+                }
+            }
+        }
+    }
+
     /// <summary>Takes back a write the Consumer refused (ADR-0050, items 3 and 5; ADR-0142): it
     /// wrote nothing.</summary>
     private void ForgetOwnWrite(OwnWrite write) => _ownWrites.Remove(write);
 
     /// <summary>
-    /// Notes which of the user's own writes the Window just taken in shows (D1): a row whose instance
-    /// it replaced at the write's position, compared with <paramref name="previous"/>, the Window it
-    /// replaced, while both are in hand (ADR-0160). A row the Window no longer holds is let go too,
-    /// and a write whose order has moved goes whole. Neither a scroll nor a change to another row
-    /// shows a write, so neither lets it go.
+    /// Notes which cells of the user's own writes the Window just taken in shows (D1): a cell that
+    /// paints other text than when the write was raised has been painted with it, and a cell whose
+    /// row the Window no longer holds is let go too; a write whose order has moved goes whole. A
+    /// scroll, or a change to another cell, even of the same row, shows nothing, and lets nothing go.
     /// </summary>
     private void NoteOwnWritesShown(IReadOnlyList<TRow> previous, int previousStart)
     {
@@ -246,12 +245,17 @@ public partial class ExGrid<TRow>
                 return true;
             if (replaced)
             {
-                write.Unpainted.RemoveWhere(row =>
+                List<CellPosition>? shown = null;
+                foreach (var (cell, text) in write.Unpainted)
                 {
-                    var before = row - previousStart;
-                    var then = before >= 0 && before < previous.Count ? previous[before] : null;
-                    return RowInHand(row) is not { } now || !ReferenceEquals(then, now);
-                });
+                    if (!string.Equals(PaintedTextNow(cell.Row, cell.Column), text, StringComparison.Ordinal))
+                        (shown ??= []).Add(cell);
+                }
+                if (shown is not null)
+                {
+                    foreach (var cell in shown)
+                        write.Unpainted.Remove(cell);
+                }
             }
             return write.Unpainted.Count == 0;
         });
@@ -264,13 +268,8 @@ public partial class ExGrid<TRow>
     {
         foreach (var write in _ownWrites)
         {
-            if (write.SequenceVersion != _sequenceVersion || !write.Unpainted.Contains(cell.Row))
-                continue;
-            foreach (var range in write.Cells)
-            {
-                if (range.Contains(cell))
-                    return true;
-            }
+            if (write.SequenceVersion == _sequenceVersion && write.Unpainted.ContainsKey(cell))
+                return true;
         }
         return false;
     }

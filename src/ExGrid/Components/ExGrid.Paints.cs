@@ -8,14 +8,14 @@ using Microsoft.JSInterop;
 namespace ExGrid.Components;
 
 // The paints a gesture is told against (ADR-0142, rewritten 2026-10-07; ADR-0021's notes of
-// 2026-10-05 to 2026-10-07). Each render that can change what its painted cells show is a new paint,
-// named on the Viewport (data-ex-paint, beside data-ex-sequence and data-ex-layout); the browser reads
-// that name with a gesture and tells it with the gesture. The grid uses it for where a gesture lands
-// and which order it was aimed under, never for what: a positional write is checked against the order
-// its gesture was aimed under (ADR-0011), and an Action press finds the row component that painted its
-// button (ExGrid.ActionPress.cs). Of its last paints the grid keeps numbers only — the order each was
-// painted under, its first row, and a serial for each painted row's component — and never a row or a
-// Row Key: it holds no Consumer row beyond the Window it was given (ADR-0160).
+// 2026-10-05 to 2026-10-07). Each render that paints another order, other row instances or other
+// columns is a new paint, named on the Viewport (data-ex-paint, beside data-ex-sequence and
+// data-ex-layout); the browser reads that name with a key, a paste or a press on an action and tells it
+// with the gesture. The grid uses it for which order a gesture was aimed under (ADR-0011) and which row
+// component painted the button a press was made on (ExGrid.ActionPress.cs), never for what a cell
+// holds. Of its last paints it keeps the first paint under the order in force, and for each its first
+// row, its columns and a serial for each painted row's component; Row Keys only of the rows painted
+// now, and never a row (ADR-0160).
 public partial class ExGrid<TRow>
 {
     // What a gesture says when the browser told no paint: a press made by script with no mousedown
@@ -37,39 +37,34 @@ public partial class ExGrid<TRow>
     // the old Window and the new one are both in hand, never later.
     private int _paintedRowsVersion;
 
-    /// <summary>What a paint was painted from, as far as what its cells can show: the order, the
-    /// painted rows, the columns, their geometry, which slice of them, the metrics, and the
-    /// Consumer's lookups the text depends on. References and numbers only, never a row: the
-    /// painted rows are named by <see cref="RowsVersion"/>.</summary>
+    /// <summary>What a paint was painted from, as far as its order and its row components go: the
+    /// order, the painted rows, the columns their actions come from, and the Row Key the components
+    /// are keyed by. References and numbers only, never a row: the painted rows are named by
+    /// <see cref="RowsVersion"/>.</summary>
     private sealed record PaintBasis(
         int Sequence, int FirstRow, int Count, int RowsVersion, IReadOnlyList<GridColumn<TRow>> Columns,
-        ColumnGeometry Geometry, ColumnRange? Scrollable, CellTextMetrics Metrics, PaintedTextOf<TRow>? PaintedText,
-        CellAppearanceOf<TRow>? Appearance, Func<TRow, object>? RowKey)
+        Func<TRow, object>? RowKey)
     {
         /// <summary>Whether a render painted from <paramref name="other"/> paints what this one
-        /// painted. The columns, geometry and lookups compare by reference, as the rows render.</summary>
+        /// painted: the columns compare by reference, as the rows render, and the Row Key as Blazor
+        /// compares a delegate, by its method and target.</summary>
         public bool Paints(PaintBasis other)
             => Sequence == other.Sequence && FirstRow == other.FirstRow && Count == other.Count
-               && RowsVersion == other.RowsVersion && ReferenceEquals(Columns, other.Columns)
-               && ReferenceEquals(Geometry, other.Geometry) && Scrollable == other.Scrollable && Metrics == other.Metrics
-               && ReferenceEquals(PaintedText, other.PaintedText) && ReferenceEquals(Appearance, other.Appearance)
-               && Equals(RowKey, other.RowKey);
+               && RowsVersion == other.RowsVersion && ReferenceEquals(Columns, other.Columns) && Equals(RowKey, other.RowKey);
     }
 
     /// <summary>
-    /// Names the paint this render paints, starting a new one if what its cells can show changed
-    /// (ADR-0142). Called from the Viewport's own attribute, so whatever path led to the render, the
-    /// name is computed from the very state the rows below it are painted from. A render that changes
-    /// no painted cell's text — a Selection moved, a popover opened, a row off screen replaced — keeps
-    /// the name.
+    /// Names the paint this render paints, starting a new one if it paints another order, other row
+    /// instances, other columns or rows keyed otherwise (ADR-0142). Called from the Viewport's own
+    /// attribute, so whatever path led to the render, the name is computed from the very state the
+    /// rows below it are painted from. A render that changes none of them — a Selection moved, a
+    /// popover opened, a row off screen replaced — keeps the name.
     /// </summary>
     private int NotePaint()
     {
         EndRowComponents();
-        // A Placeholder paints its Pinned Columns only (ADR-0004).
         var basis = new PaintBasis(_sequenceVersion, _visible?.Start ?? 0, _visible?.Count ?? 0, _paintedRowsVersion,
-            Columns, _columnStyles.Geometry, _placeholderMode ? null : _scrollable, _metrics.CellMetrics, PaintedText,
-            CellAppearance, _rowKey);
+            Columns, _rowKey);
         if (_painted is { } last && last.Paints(basis))
             return _paintId;
         var id = ++_paintId;
@@ -91,14 +86,20 @@ public partial class ExGrid<TRow>
             return;
         for (var row = painted.FirstRow; row < painted.FirstRow + painted.Count; row++)
         {
-            var before = row - previousStart;
-            var then = before >= 0 && before < previous.Count ? previous[before] : null;
-            if (!ReferenceEquals(then, RowInHand(row)))
+            if (!ReferenceEquals(RowOf(previous, previousStart, row), RowInHand(row)))
             {
                 _paintedRowsVersion++;
                 return;
             }
         }
+    }
+
+    /// <summary>The row <paramref name="window"/>, starting at <paramref name="start"/>, holds at
+    /// absolute position <paramref name="row"/>, or null.</summary>
+    private static TRow? RowOf(IReadOnlyList<TRow> window, int start, int row)
+    {
+        var slice = row - start;
+        return slice >= 0 && slice < window.Count ? window[slice] : null;
     }
 
     /// <summary>Whether a gesture told the paint <paramref name="told"/> was aimed under an order
@@ -109,11 +110,7 @@ public partial class ExGrid<TRow>
            && (told < _orderPaintedFrom || _painted is not { } newest || newest.Sequence != _sequenceVersion);
 
     /// <summary>The row the Window holds at absolute position <paramref name="row"/>, or null.</summary>
-    private TRow? RowInHand(int row)
-    {
-        var slice = row - _windowStart;
-        return slice >= 0 && slice < _window.Count ? _window[slice] : null;
-    }
+    private TRow? RowInHand(int row) => RowOf(_window, _windowStart, row);
 
     /// <summary>
     /// The painted text of one value cell: the Consumer's painted text where it supplies one
@@ -199,6 +196,10 @@ public partial class ExGrid<TRow>
         _paintRows.Add(new PaintRows(id, first, _paintingSerials, Columns));
         if (_paintRows.Count > PaintRowsKept)
             _paintRows.RemoveAt(0);
+        // A paint of no rows paints no row components: the keys of the paint before go now, as no
+        // loop over the rows will end it.
+        if (count == 0)
+            EndRowComponents();
     }
 
     /// <summary>A painted row's component key (<see cref="RowComponentKey"/>), noting the
@@ -232,6 +233,12 @@ public partial class ExGrid<TRow>
     /// keys it, without checking it against the keys painted: for a lookup outside a render.</summary>
     private object ComponentIdentityOf(TRow row)
         => _rowKey is { } rowKey ? rowKey(row) : RowIdentityKeys.GetValue(row, static _ => new object());
+
+    /// <summary>Where the Window holds the row under <paramref name="key"/>: at
+    /// <paramref name="hint"/>, where it stood, if it still stands there, and wherever else it
+    /// is otherwise (<see cref="PositionInHandByKey"/>).</summary>
+    private int? PositionOfKey(Func<TRow, object> rowKey, object key, int? hint)
+        => hint is { } at && RowInHand(at) is { } there && Equals(rowKey(there), key) ? at : PositionInHandByKey(rowKey, key);
 
     /// <summary>Where the Window holds the row under <paramref name="key"/>: among the rows painted
     /// now first, where a pressed row almost always is, and across the whole Window otherwise —
