@@ -230,6 +230,32 @@ Rejected: **committing the text onto the row instance captured when the editor o
 nothing and is wrong for a different reason — the user never pressed Enter, and turning an
 abandoned draft into a commit is a worse failure than losing it loudly.
 
+## An open editor outlives an order move *(decided with the user, 2026-10-07)*
+
+*(The grilling of live data continued, after [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md) was rewritten so that a write lands as
+the user entered it, on the row the user aimed it at. Under live data the order can move several times
+a second, and the discard above threw the user's typing away each time.)*
+
+- **The Selection is still dropped when the order moves.** Nothing in this ADR's rule for the Selection
+  changes.
+- **An open editor is no longer discarded for it.**
+  - With a Row Key, the editor and the Focus follow the row they were opened on to its new position, and
+    a commit lands on that row.
+  - Without a Row Key, the editor stays where it is, and a commit is refused as `OrderMoved`, with the text
+    kept; Escape leaves without writing (ADR-0142).
+  - Either way nothing lands on a stranger, which is what the discard protected, and nothing typed is
+    thrown away.
+- **The grid does not scroll to follow the row.** If the row moves out of view, the editor stays open with
+  its row; the keys typed still reach it, and Enter still commits it. ag-grid does the same: it keeps the
+  row being edited rendered wherever it goes, and does not scroll
+  ([`rowRenderer.ts#L1553-L1580`](https://github.com/ag-grid/ag-grid/blob/0fee5b7b1e839ae23fe860e404042448f3c1375d/packages/ag-grid-community/src/rendering/rowRenderer.ts#L1553-L1580)). ExGrid has never moved the view for a change of data.
+- **`OrderChanged` is no longer raised for an open editor.** The other discards stand: a change of
+  columns, a column that stops being Editable, and, without a Row Key, a row that left the Window under the
+  same order (`RowLeftTheWindow`). With a Row Key, a row that left the Window refuses the commit as
+  `RowGone` and keeps the editor open (ADR-0142).
+- **The grid holds the Row Key of the row under an open editor while the editor is open**, the one row
+  reference [ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md) allows beyond the Window besides its two others.
+
 ## Consequences
 
 - **Selection is cleared when the Row Sequence Version changes — and the version names the

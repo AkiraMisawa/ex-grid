@@ -556,5 +556,7 @@ entry), which opens the editor. No listener was added, and none reads layout. Th
 also names the row, column and action of the cell it was on, read from the ids the render wrote, so
 the core can answer a press whose click Blazor will not deliver (ADR-0142).
 *(2026-10-07, ADR-0142 rewritten.)* A write is no longer judged against what the user saw: it lands
-as entered. The readings stay, and serve where a gesture lands and which order it was aimed under. No
-listener is added or removed, and nothing is measured.
+as entered. The readings that serve where a gesture lands and which order it was aimed under stay. A
+reading that served only the judgement of a write is no longer made: the Formula Bar's
+`BarPressTakenAt`, and the render the key field and the press listener passed along for it. No
+listener is added, and nothing is measured.

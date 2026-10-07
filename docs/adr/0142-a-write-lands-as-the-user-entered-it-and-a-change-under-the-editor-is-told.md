@@ -40,6 +40,10 @@ holds.
   - Without one, a press whose row component a render disposed is answered by the core from what the
     browser told it (below). It acts on the row at the told position while the Row Sequence Version is
     the one the press was taken under.
+- **The editor outlives an order move** ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s
+  note of 2026-10-07, decided with the user). With a Row Key, the editor and the Focus follow the row
+  they were opened on; without one, the editor stays where it is and its commit is refused as
+  `OrderMoved`. The grid does not scroll to follow a row that moved out of view.
 - **A paste and a fill stay positional**, as ADR-0014 has them, and are refused when the order moved
   (ADR-0011): the Selection they were aimed with no longer names those rows.
 - **When the row is gone, or the order moved, the write is refused, and says why.**

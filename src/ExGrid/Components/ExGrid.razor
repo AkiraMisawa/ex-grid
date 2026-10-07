@@ -427,8 +427,9 @@
                        key: a keyed component beside an unkeyed element degrades the diff
                        to positional matching, which would recreate the very row
                        components memoisation exists to keep (ADR-0003). A row's key is
-                       its Row Key while one is in force, else an identity object for its
-                       instance (ADR-0140); a Placeholder's is its position in a type of
+                       its Row Key while one is in force — checked against the keys painted
+                       before it (ADR-0141) — else an identity object for its instance
+                       (ADR-0140); a Placeholder's is its position in a type of
                        the grid's own, so the two can never collide — and a position
                        turning from Placeholder into a row correctly reads as a fresh
                        mount. *@
@@ -439,6 +440,7 @@
                        same instances render after render. *@
                     var highlightNow = HighlightNow();
                     BeginAppearances();
+                    BeginPaintedKeys();
                     @for (var row = visible.Start; row < visible.Start + visible.Count; row++)
                     {
                         var slice = row - _windowStart;
@@ -448,7 +450,7 @@
                             @* A Placeholder is handed no slice at all, so a fling that keeps
                                moving sideways does not churn the rows through renders whose
                                output is the same pinned cells every time. *@
-                            <ExGridRow @key="PaintedRowKey(row, data)" Row="data" Columns="Columns" Styles="_columnStyles"
+                            <ExGridRow @key="PaintedRowKey(row, data, slice)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
                                        CellState="CellState" CellType="CellType" CellAlign="CellAlign" PaintedText="PaintedText" RowKind="RowKind"
@@ -2416,7 +2418,9 @@
          // The push mode's answer to a Find: beside a Source, two answers to one question (ADR-0055).
          nameof(OnFind),
          // The push mode's answer to a Selection Summary, likewise (ADR-0130).
-         nameof(OnSummarize)];
+         nameof(OnSummarize),
+         // A pushed Window's vouch: a Source vouches for its own Windows (ADR-0141).
+         nameof(VouchesDistinctRows)];
 
     /// <summary>
     /// Blazor's parameter entry point, overridden to refuse by name a Source passed

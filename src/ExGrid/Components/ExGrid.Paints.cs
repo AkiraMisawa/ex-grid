@@ -204,9 +204,9 @@ public partial class ExGrid<TRow>
     /// <summary>A painted row's component key (<see cref="RowComponentKey"/>), noting the
     /// component's serial while a new paint is painted: the same key as in the paint before is the
     /// same component, which Blazor keeps (ADR-0140/0003).</summary>
-    private object PaintedRowKey(int position, TRow row)
+    private object PaintedRowKey(int position, TRow row, int index)
     {
-        var key = RowComponentKey(row);
+        var key = RowComponentKey(row, index);
         if (_paintingSerials is { } serials && position - _paintingFirstRow is var at && at >= 0 && at < serials.Length)
         {
             if (!_previousRowSerials.TryGetValue(key, out var serial))
@@ -226,7 +226,12 @@ public partial class ExGrid<TRow>
 
     /// <summary>Whether the newest paint rendered a row component for <paramref name="row"/>: under
     /// its Row Key, or, with none, for the instance itself — by reference, never by value (ADR-0003).</summary>
-    private bool RendersRowComponentOf(TRow row) => _rowSerials.ContainsKey(RowComponentKey(row));
+    private bool RendersRowComponentOf(TRow row) => _rowSerials.ContainsKey(ComponentIdentityOf(row));
+
+    /// <summary>What names <paramref name="row"/>'s component, as <see cref="RowComponentKey"/>
+    /// keys it, without checking it against the keys painted: for a lookup outside a render.</summary>
+    private object ComponentIdentityOf(TRow row)
+        => _rowKey is { } rowKey ? rowKey(row) : RowIdentityKeys.GetValue(row, static _ => new object());
 
     /// <summary>Where the Window holds the row under <paramref name="key"/>: among the rows painted
     /// now first, where a pressed row almost always is, and across the whole Window otherwise —

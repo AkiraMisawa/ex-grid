@@ -10,7 +10,7 @@ using Xunit;
 namespace ExGrid.Components.Tests;
 
 /// <summary>
-/// The Selection Summary (ADR-0130, SM-1..SM-5, SM-9, SM-10): the grid asks and shows only the
+/// The Selection Summary (ADR-0130, SM-1..SM-5, SM-9, SM-10, SM-14, SM-15): the grid asks and shows only the
 /// answer to the current question; the Consumer sums. 20px rows in a 120px Viewport, three 100px
 /// columns: Book, Amount, AsOf. Row i's Amount is i.
 /// </summary>
@@ -68,7 +68,8 @@ public class SelectionSummaryTests : GridTestContext
     private static Task PressAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, bool shift = false)
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, false, shift, false, false, false));
 
-    private static Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y, bool shift = false)
+    private static Task ClickCellAsync<TRow>(IRenderedComponent<ExGrid<TRow>> cut, double x, double y, bool shift = false)
+        where TRow : class
         => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y, ShiftKey = shift });
 
     // The reference, over the rendered rows: what InMemoryGridSource would answer.
@@ -191,6 +192,203 @@ public class SelectionSummaryTests : GridTestContext
         changed[1] = new TestRow { Book = "Row 000001", Amount = 100m };
         cut.Render(ps => ps.Add(g => g.Window, changed));
         Assert.Equal(2, heard.Requests.Count);
+    }
+
+    // ---- SM-15: the walk of a new Window (ADR-0130, 2026-10-07) ----------------------------------
+
+    /// <summary>Counts the comparisons the grid makes of one row with another.</summary>
+    private sealed class Comparisons
+    {
+        public int Count { get; set; }
+    }
+
+    /// <summary>A row with value equality that counts each comparison: the grid learns whether the
+    /// rows moved by the row type's equality (ADR-0130).</summary>
+    private sealed class CountedRow(int id, decimal amount, Comparisons comparisons) : IEquatable<CountedRow>
+    {
+        public int Id { get; } = id;
+
+        public decimal Amount { get; } = amount;
+
+        public CountedRow WithAmount(decimal value) => new(Id, value, comparisons);
+
+        public bool Equals(CountedRow? other)
+        {
+            comparisons.Count++;
+            return other is not null && other.Id == Id && other.Amount == Amount;
+        }
+
+        public override bool Equals(object? obj) => Equals(obj as CountedRow);
+
+        public override int GetHashCode() => HashCode.Combine(Id, Amount);
+    }
+
+    private static CountedRow[] CountedRows(int count, Comparisons comparisons)
+    {
+        var rows = new CountedRow[count];
+        for (var i = 0; i < count; i++)
+            rows[i] = new CountedRow(i, i, comparisons);
+        return rows;
+    }
+
+    private IRenderedComponent<ExGrid<CountedRow>> RenderCounted(CountedRow[] rows, List<GridSummaryRequest> requests)
+        => Render<ExGrid<CountedRow>>(ps => ps
+            .Add(g => g.Window, rows)
+            .Add(g => g.TotalCount, rows.Length)
+            .Add(g => g.Columns, new GridColumn<CountedRow>[]
+            {
+                new("Id", ColumnType.Number, r => r.Id, width: Fixed100),
+                new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100),
+            })
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 250)
+            .Add(g => g.OnSummarize, (request, _) =>
+            {
+                requests.Add(request);
+                return Task.FromResult(Answer(sum: 0m));
+            }));
+
+    [Fact] // ADR-0130 / SM-15: with no figure standing or asked for, a new Window is not walked
+    public async Task ADR0130_with_no_figure_a_new_window_is_not_walked()
+    {
+        var comparisons = new Comparisons();
+        var requests = new List<GridSummaryRequest>();
+        var rows = CountedRows(500, comparisons);
+        var cut = RenderCounted(rows, requests);
+        await ClickCellAsync(cut, 150, 10); // one cell: nothing to sum
+        comparisons.Count = 0;
+
+        var changed = rows.ToArray();
+        changed[^1] = changed[^1].WithAmount(-1m);
+        cut.Render(ps => ps.Add(g => g.Window, changed));
+
+        Assert.Equal(0, comparisons.Count);
+        Assert.Empty(requests);
+    }
+
+    [Fact] // ADR-0130 / SM-15: a row changing outside the Selection moves no figure, and only the selected positions are compared
+    public async Task ADR0130_a_change_outside_the_selection_moves_no_figure()
+    {
+        var comparisons = new Comparisons();
+        var requests = new List<GridSummaryRequest>();
+        var rows = CountedRows(500, comparisons);
+        var cut = RenderCounted(rows, requests);
+        await ClickCellAsync(cut, 150, 30);              // (1, 1)
+        await ClickCellAsync(cut, 150, 50, shift: true); // to (2, 1): rows 1 and 2
+        Assert.Single(requests);
+        comparisons.Count = 0;
+
+        var changed = rows.ToArray();
+        changed[4] = changed[4].WithAmount(-1m);
+        changed[0] = changed[0].WithAmount(-1m);
+        cut.Render(ps => ps.Add(g => g.Window, changed));
+
+        Assert.Single(requests);
+        Assert.Equal(2, comparisons.Count);
+    }
+
+    [Fact] // ADR-0130 / SM-15: a row changing inside the Selection still asks again
+    public async Task ADR0130_a_change_inside_the_selection_asks_again()
+    {
+        var comparisons = new Comparisons();
+        var requests = new List<GridSummaryRequest>();
+        var rows = CountedRows(500, comparisons);
+        var cut = RenderCounted(rows, requests);
+        await ClickCellAsync(cut, 150, 30);
+        await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
+
+        var changed = rows.ToArray();
+        changed[2] = changed[2].WithAmount(-1m);
+        cut.Render(ps => ps.Add(g => g.Window, changed));
+
+        Assert.Equal(2, requests.Count);
+        Assert.Equal(requests[0].Ranges, requests[1].Ranges);
+    }
+
+    [Fact] // ADR-0130 / SM-15: a changed row count under a standing figure asks again, even a row added after the Selection
+    public async Task ADR0130_a_changed_row_count_asks_again()
+    {
+        var comparisons = new Comparisons();
+        var requests = new List<GridSummaryRequest>();
+        var rows = CountedRows(500, comparisons);
+        var cut = RenderCounted(rows, requests);
+        await ClickCellAsync(cut, 150, 30);
+        await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
+
+        CountedRow[] added = [.. rows, new CountedRow(500, 500m, comparisons)];
+        cut.Render(ps => ps.Add(g => g.Window, added).Add(g => g.TotalCount, added.Length));
+
+        Assert.Equal(2, requests.Count);
+    }
+
+    [Fact] // ADR-0130 / SM-15: a row count that no longer holds a selected row asks again
+    public async Task ADR0130_a_row_count_cutting_into_the_selection_asks_again()
+    {
+        var comparisons = new Comparisons();
+        var requests = new List<GridSummaryRequest>();
+        var rows = CountedRows(5, comparisons);
+        var cut = RenderCounted(rows, requests);
+        await ClickCellAsync(cut, 150, 50);
+        await ClickCellAsync(cut, 150, 90, shift: true); // rows 2 to 4
+
+        var fewer = rows[..4];
+        cut.Render(ps => ps.Add(g => g.Window, fewer).Add(g => g.TotalCount, fewer.Length));
+
+        Assert.Equal(2, requests.Count);
+    }
+
+    [Fact] // ADR-0130 / SM-15: a row count that moves while the Selection is outside both Windows asks again — a row added above may have shifted it
+    public async Task ADR0130_a_row_count_moving_under_a_selection_the_window_left_asks_again()
+    {
+        var comparisons = new Comparisons();
+        var requests = new List<GridSummaryRequest>();
+        var rows = CountedRows(500, comparisons);
+        var cut = RenderCounted(rows, requests);
+        await ClickCellAsync(cut, 150, 30);
+        await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
+        cut.Render(ps => ps.Add(g => g.Window, rows[100..150]).Add(g => g.WindowStart, 100));
+        Assert.Single(requests);
+
+        // A row added before row 1 would shift both selected rows, and neither Window holds them to
+        // show whether one was.
+        cut.Render(ps => ps.Add(g => g.Window, rows[100..150]).Add(g => g.TotalCount, 501));
+
+        Assert.Equal(2, requests.Count);
+    }
+
+    [Fact] // ADR-0130 / SM-15: the same list handed over at another start holds other rows at the selected positions, and asks again
+    public async Task ADR0130_the_same_list_at_another_start_asks_again()
+    {
+        var comparisons = new Comparisons();
+        var requests = new List<GridSummaryRequest>();
+        var rows = CountedRows(500, comparisons);
+        var cut = RenderCounted(rows, requests);
+        await ClickCellAsync(cut, 150, 30);
+        await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
+        var slice = rows[..50];
+        cut.Render(ps => ps.Add(g => g.Window, slice));
+
+        cut.Render(ps => ps.Add(g => g.WindowStart, 1));
+
+        Assert.Equal(2, requests.Count);
+    }
+
+    [Fact] // ADR-0130 / SM-15 / ADR-0011: an order that moved drops the Selection and its figures, so the new Window is not walked
+    public async Task ADR0130_a_window_in_a_new_order_is_not_walked()
+    {
+        var comparisons = new Comparisons();
+        var requests = new List<GridSummaryRequest>();
+        var rows = CountedRows(500, comparisons);
+        var cut = RenderCounted(rows, requests);
+        await ClickCellAsync(cut, 150, 30);
+        await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
+        comparisons.Count = 0;
+
+        cut.Render(ps => ps.Add(g => g.Window, rows.Reverse().ToArray()).Add(g => g.RowSequenceVersion, 1));
+
+        Assert.Equal(0, comparisons.Count);
+        Assert.Single(requests);
     }
 
     [Fact] // ADR-0130 / SM-4: a decline shows its reason, never a figure
