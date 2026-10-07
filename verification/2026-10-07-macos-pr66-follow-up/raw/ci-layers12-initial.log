@@ -1,0 +1,330 @@
+﻿2026-10-07T00:30:18.6016722Z Current runner version: '2.337.0'
+2026-10-07T00:30:18.6037770Z ##[group]Runner Image Provisioner
+2026-10-07T00:30:18.6038516Z Hosted Compute Agent
+2026-10-07T00:30:18.6038998Z Version: 20260901.588
+2026-10-07T00:30:18.6039590Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-07T00:30:18.6040175Z Build Date: 2026-09-01T19:56:44Z
+2026-10-07T00:30:18.6040710Z Worker ID: {4bf8e318-a848-48d2-b19c-e069efcdd60b}
+2026-10-07T00:30:18.6041338Z Azure Region: westus3
+2026-10-07T00:30:18.6041809Z ##[endgroup]
+2026-10-07T00:30:18.6043278Z ##[group]Operating System
+2026-10-07T00:30:18.6043789Z Ubuntu
+2026-10-07T00:30:18.6044202Z 24.04.5
+2026-10-07T00:30:18.6044681Z LTS
+2026-10-07T00:30:18.6045105Z ##[endgroup]
+2026-10-07T00:30:18.6045604Z ##[group]Runner Image
+2026-10-07T00:30:18.6046113Z Image: ubuntu-24.04
+2026-10-07T00:30:18.6046583Z Version: 20260927.320.1
+2026-10-07T00:30:18.6047643Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-07T00:30:18.6048985Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+2026-10-07T00:30:18.6049800Z ##[endgroup]
+2026-10-07T00:30:18.6050744Z ##[group]GITHUB_TOKEN Permissions
+2026-10-07T00:30:18.6052435Z Contents: read
+2026-10-07T00:30:18.6052952Z Metadata: read
+2026-10-07T00:30:18.6053524Z ##[endgroup]
+2026-10-07T00:30:18.6055663Z Secret source: Actions
+2026-10-07T00:30:18.6056482Z Cache mode: write
+2026-10-07T00:30:18.6057085Z Prepare workflow directory
+2026-10-07T00:30:18.6483602Z Prepare all required actions
+2026-10-07T00:30:18.6523541Z Getting action download info
+2026-10-07T00:30:18.9666520Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-07T00:30:19.1229836Z Download action repository 'actions/setup-dotnet@v6' (SHA:a98b56852c35b8e3190ac28c8c2271da59106c68)
+2026-10-07T00:30:19.9685529Z Download action repository 'actions/upload-artifact@v7' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-10-07T00:30:20.1644116Z Complete job name: Build, layers 1 and 2, coverage
+2026-10-07T00:30:20.2250641Z ##[group]Run actions/checkout@v7
+2026-10-07T00:30:20.2251384Z with:
+2026-10-07T00:30:20.2251801Z   repository: AkiraMisawa/ex-grid
+2026-10-07T00:30:20.2255457Z   token: ***
+2026-10-07T00:30:20.2255842Z   ssh-strict: true
+2026-10-07T00:30:20.2256229Z   ssh-user: git
+2026-10-07T00:30:20.2256611Z   persist-credentials: true
+2026-10-07T00:30:20.2257023Z   clean: true
+2026-10-07T00:30:20.2257402Z   sparse-checkout-cone-mode: true
+2026-10-07T00:30:20.2257849Z   fetch-depth: 1
+2026-10-07T00:30:20.2258223Z   fetch-tags: false
+2026-10-07T00:30:20.2258612Z   show-progress: true
+2026-10-07T00:30:20.2259062Z   lfs: false
+2026-10-07T00:30:20.2259434Z   submodules: false
+2026-10-07T00:30:20.2259831Z   set-safe-directory: true
+2026-10-07T00:30:20.2260267Z   allow-unsafe-pr-checkout: false
+2026-10-07T00:30:20.2260939Z env:
+2026-10-07T00:30:20.2261336Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-07T00:30:20.2261791Z   DOTNET_NOLOGO: 1
+2026-10-07T00:30:20.2262327Z   LONG_RUN: false
+2026-10-07T00:30:20.2262763Z ##[endgroup]
+2026-10-07T00:30:20.3093545Z Syncing repository: AkiraMisawa/ex-grid
+2026-10-07T00:30:20.3095495Z ##[group]Getting Git version info
+2026-10-07T00:30:20.3096175Z Working directory is '/home/runner/work/ex-grid/ex-grid'
+2026-10-07T00:30:20.3097336Z [command]/usr/bin/git version
+2026-10-07T00:30:20.3135597Z git version 2.55.0
+2026-10-07T00:30:20.3151076Z ##[endgroup]
+2026-10-07T00:30:20.3160188Z Temporarily overriding HOME='/home/runner/work/_temp/6d332ff0-c5fe-47aa-8fff-70c8808defa6' before making global git config changes
+2026-10-07T00:30:20.3161861Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-07T00:30:20.3164339Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-10-07T00:30:20.3201967Z Deleting the contents of '/home/runner/work/ex-grid/ex-grid'
+2026-10-07T00:30:20.3205073Z ##[group]Determining repository object format
+2026-10-07T00:30:20.3206842Z ##[endgroup]
+2026-10-07T00:30:20.3207709Z ##[group]Initializing the repository
+2026-10-07T00:30:20.3209992Z [command]/usr/bin/git init /home/runner/work/ex-grid/ex-grid
+2026-10-07T00:30:20.3285419Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-07T00:30:20.3287198Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-07T00:30:20.3288759Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-07T00:30:20.3289975Z hint: call:
+2026-10-07T00:30:20.3290715Z hint:
+2026-10-07T00:30:20.3291751Z hint: 	git config --global init.defaultBranch <name>
+2026-10-07T00:30:20.3292934Z hint:
+2026-10-07T00:30:20.3293830Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-07T00:30:20.3295340Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-07T00:30:20.3296481Z hint:
+2026-10-07T00:30:20.3297351Z hint: 	git branch -m <name>
+2026-10-07T00:30:20.3298396Z hint:
+2026-10-07T00:30:20.3299078Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-07T00:30:20.3300115Z Initialized empty Git repository in /home/runner/work/ex-grid/ex-grid/.git/
+2026-10-07T00:30:20.3302238Z [command]/usr/bin/git remote add origin https://github.com/AkiraMisawa/ex-grid
+2026-10-07T00:30:20.3332447Z ##[endgroup]
+2026-10-07T00:30:20.3333770Z ##[group]Disabling automatic garbage collection
+2026-10-07T00:30:20.3335699Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-07T00:30:20.3364819Z ##[endgroup]
+2026-10-07T00:30:20.3366141Z ##[group]Setting up auth
+2026-10-07T00:30:20.3367142Z Removing SSH command configuration
+2026-10-07T00:30:20.3370599Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-07T00:30:20.3399033Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-07T00:30:20.3665671Z Removing HTTP extra header
+2026-10-07T00:30:20.3670739Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-07T00:30:20.3699710Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-07T00:30:20.3888789Z Removing includeIf entries pointing to credentials config files
+2026-10-07T00:30:20.3889844Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-07T00:30:20.3915939Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-07T00:30:20.4106553Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-d46006a4-90ac-4bde-b85f-05697fa19378.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-07T00:30:20.4137318Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path /home/runner/work/_temp/git-credentials-d46006a4-90ac-4bde-b85f-05697fa19378.config
+2026-10-07T00:30:20.4164750Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-d46006a4-90ac-4bde-b85f-05697fa19378.config
+2026-10-07T00:30:20.4194684Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-d46006a4-90ac-4bde-b85f-05697fa19378.config
+2026-10-07T00:30:20.4222726Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-d46006a4-90ac-4bde-b85f-05697fa19378.config
+2026-10-07T00:30:20.4246777Z ##[endgroup]
+2026-10-07T00:30:20.4247726Z ##[group]Fetching the repository
+2026-10-07T00:30:20.4252931Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +857202e5d1390013d0d667c379e0222e16360814:refs/remotes/pull/66/merge
+2026-10-07T00:30:25.6569100Z From https://github.com/AkiraMisawa/ex-grid
+2026-10-07T00:30:25.6570557Z  * [new ref]         857202e5d1390013d0d667c379e0222e16360814 -> pull/66/merge
+2026-10-07T00:30:25.6577614Z ##[endgroup]
+2026-10-07T00:30:25.6638615Z ##[group]Determining the checkout info
+2026-10-07T00:30:25.6639921Z ##[endgroup]
+2026-10-07T00:30:25.6644942Z [command]/usr/bin/git sparse-checkout disable
+2026-10-07T00:30:25.6646130Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-07T00:30:25.6651831Z ##[group]Checking out the ref
+2026-10-07T00:30:25.6655982Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/66/merge
+2026-10-07T00:30:26.6280630Z Note: switching to 'refs/remotes/pull/66/merge'.
+2026-10-07T00:30:26.6281149Z
+2026-10-07T00:30:26.6281481Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-07T00:30:26.6282257Z changes and commit them, and you can discard any commits you make in this
+2026-10-07T00:30:26.6282974Z state without impacting any branches by switching back to a branch.
+2026-10-07T00:30:26.6283497Z
+2026-10-07T00:30:26.6284293Z If you want to create a new branch to retain commits you create, you may
+2026-10-07T00:30:26.6284935Z do so (now or later) by using -c with the switch command. Example:
+2026-10-07T00:30:26.6285278Z
+2026-10-07T00:30:26.6285423Z   git switch -c <new-branch-name>
+2026-10-07T00:30:26.6285646Z
+2026-10-07T00:30:26.6285786Z Or undo this operation with:
+2026-10-07T00:30:26.6286004Z
+2026-10-07T00:30:26.6286140Z   git switch -
+2026-10-07T00:30:26.6286341Z
+2026-10-07T00:30:26.6286661Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-07T00:30:26.6287122Z
+2026-10-07T00:30:26.6287575Z HEAD is now at 857202e Merge b8823f7b48489db5356ba624e8dba8ff785c9b7a into 41c8d8c8ee33a06be19a804628db7d49a637e171
+2026-10-07T00:30:26.6340013Z ##[endgroup]
+2026-10-07T00:30:26.6739349Z [command]/usr/bin/git log -1 --format=%H
+2026-10-07T00:30:26.6763454Z 857202e5d1390013d0d667c379e0222e16360814
+2026-10-07T00:30:26.6970260Z ##[group]Run actions/setup-dotnet@v6
+2026-10-07T00:30:26.6970508Z with:
+2026-10-07T00:30:26.6970688Z   global-json-file: global.json
+2026-10-07T00:30:26.6970896Z   cache: false
+2026-10-07T00:30:26.6971063Z env:
+2026-10-07T00:30:26.6971231Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-07T00:30:26.6971430Z   DOTNET_NOLOGO: 1
+2026-10-07T00:30:26.6971628Z   LONG_RUN: false
+2026-10-07T00:30:26.6971796Z ##[endgroup]
+2026-10-07T00:30:26.8029538Z [command]/home/runner/work/_actions/actions/setup-dotnet/v6/externals/install-dotnet.sh --skip-non-versioned-files --runtime dotnet --channel LTS
+2026-10-07T00:30:26.9942341Z dotnet-install: .NET Core Runtime with version '10.0.12' is already installed.
+2026-10-07T00:30:26.9961275Z [command]/home/runner/work/_actions/actions/setup-dotnet/v6/externals/install-dotnet.sh --skip-non-versioned-files --channel 10.0
+2026-10-07T00:30:27.1641575Z dotnet-install: .NET Core SDK with version '10.0.401' is already installed.
+2026-10-07T00:30:27.1779343Z ##[group]Run dotnet tool restore
+2026-10-07T00:30:27.1779644Z [36;1mdotnet tool restore[0m
+2026-10-07T00:30:27.2016141Z shell: /usr/bin/bash -e {0}
+2026-10-07T00:30:27.2016387Z env:
+2026-10-07T00:30:27.2016581Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-07T00:30:27.2016796Z   DOTNET_NOLOGO: 1
+2026-10-07T00:30:27.2016966Z   LONG_RUN: false
+2026-10-07T00:30:27.2017150Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-07T00:30:27.2017360Z ##[endgroup]
+2026-10-07T00:30:32.6902526Z Tool 'dotnet-reportgenerator-globaltool' (version '5.5.11') was restored. Available commands: reportgenerator
+2026-10-07T00:30:32.6905218Z
+2026-10-07T00:30:32.6906710Z Restore was successful.
+2026-10-07T00:30:32.7032969Z ##[group]Run dotnet build ExGrid.slnx
+2026-10-07T00:30:32.7033266Z [36;1mdotnet build ExGrid.slnx[0m
+2026-10-07T00:30:32.7088611Z shell: /usr/bin/bash -e {0}
+2026-10-07T00:30:32.7088833Z env:
+2026-10-07T00:30:32.7089015Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-07T00:30:32.7089426Z   DOTNET_NOLOGO: 1
+2026-10-07T00:30:32.7089599Z   LONG_RUN: false
+2026-10-07T00:30:32.7089782Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-07T00:30:32.7089977Z ##[endgroup]
+2026-10-07T00:30:35.3386438Z   Determining projects to restore...
+2026-10-07T00:30:38.4156175Z   Restored /home/runner/work/ex-grid/ex-grid/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj (in 1.47 sec).
+2026-10-07T00:30:39.3790659Z   Restored /home/runner/work/ex-grid/ex-grid/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj (in 1.84 sec).
+2026-10-07T00:30:39.4695381Z   Restored /home/runner/work/ex-grid/ex-grid/samples/ExGrid.DemoApi/ExGrid.DemoApi.csproj (in 2.3 sec).
+2026-10-07T00:30:40.0336429Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExGrid.Tests/ExGrid.Tests.csproj (in 3.07 sec).
+2026-10-07T00:30:40.9666860Z   Restored /home/runner/work/ex-grid/ex-grid/samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj (in 1.34 sec).
+2026-10-07T00:30:41.0314167Z   Restored /home/runner/work/ex-grid/ex-grid/samples/ExGrid.DemoHost.Server/ExGrid.DemoHost.Server.csproj (in 12 ms).
+2026-10-07T00:30:41.1811677Z   Restored /home/runner/work/ex-grid/ex-grid/samples/ExGrid.Docs/ExGrid.Docs.csproj (in 2.61 sec).
+2026-10-07T00:30:41.1944074Z   Restored /home/runner/work/ex-grid/ex-grid/samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj (in 1.1 sec).
+2026-10-07T00:30:41.2531095Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExSheet.Engine.Tests/ExSheet.Engine.Tests.csproj (in 3 ms).
+2026-10-07T00:30:41.4203754Z   Restored /home/runner/work/ex-grid/ex-grid/samples/ExGrid.Docs.Generator/ExGrid.Docs.Generator.csproj (in 2.03 sec).
+2026-10-07T00:30:41.6962877Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Engine.Tests/ExPivot.Engine.Tests.csproj (in 4 ms).
+2026-10-07T00:30:42.0753909Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 961 ms).
+2026-10-07T00:30:42.0766502Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj (in 257 ms).
+2026-10-07T00:30:42.0809796Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExSheet.Components/ExSheet.Components.csproj (in 796 ms).
+2026-10-07T00:30:42.1134628Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 737 ms).
+2026-10-07T00:30:42.1193201Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 6 ms).
+2026-10-07T00:30:42.1697970Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExGrid.Data.Tests/ExGrid.Data.Tests.csproj (in 2 ms).
+2026-10-07T00:30:42.1770246Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExGrid.Components/ExGrid.Components.csproj (in 5 ms).
+2026-10-07T00:30:42.2053807Z   Restored /home/runner/work/ex-grid/ex-grid/src/ExSheet/ExSheet.csproj (in 5 ms).
+2026-10-07T00:30:42.2293676Z   Restored /home/runner/work/ex-grid/ex-grid/src/ExSheet.Engine/ExSheet.Engine.csproj (in 2 ms).
+2026-10-07T00:30:42.2481841Z   Restored /home/runner/work/ex-grid/ex-grid/src/ExPivot/ExPivot.csproj (in 9 ms).
+2026-10-07T00:30:42.2613803Z   Restored /home/runner/work/ex-grid/ex-grid/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj (in 5 ms).
+2026-10-07T00:30:42.2798556Z   Restored /home/runner/work/ex-grid/ex-grid/src/ExPivot.Engine/ExPivot.Engine.csproj (in 2 ms).
+2026-10-07T00:30:42.3307483Z   Restored /home/runner/work/ex-grid/ex-grid/src/ExGrid/ExGrid.csproj (in 3 ms).
+2026-10-07T00:30:42.4027603Z   Restored /home/runner/work/ex-grid/ex-grid/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj (in 3 ms).
+2026-10-07T00:30:42.4474685Z   Restored /home/runner/work/ex-grid/ex-grid/src/ExGrid.Data/ExGrid.Data.csproj (in 2 ms).
+2026-10-07T00:30:42.6512592Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExGrid.Data.Arrow.Tests/ExGrid.Data.Arrow.Tests.csproj (in 419 ms).
+2026-10-07T00:30:42.7110404Z   Restored /home/runner/work/ex-grid/ex-grid/tests/ExGrid.DemoApi.Tests/ExGrid.DemoApi.Tests.csproj (in 598 ms).
+2026-10-07T00:30:47.3124007Z   ExGrid.Docs.Generator -> /home/runner/work/ex-grid/ex-grid/samples/ExGrid.Docs.Generator/bin/Debug/netstandard2.0/ExGrid.Docs.Generator.dll
+2026-10-07T00:30:51.2143790Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-10-07T00:30:53.4921429Z   ExSheet.Engine -> /home/runner/work/ex-grid/ex-grid/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+2026-10-07T00:30:54.5485679Z   ExGrid.Data.Arrow -> /home/runner/work/ex-grid/ex-grid/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+2026-10-07T00:31:00.8352964Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-10-07T00:31:00.9416661Z   ExSheet.Engine.Tests -> /home/runner/work/ex-grid/ex-grid/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll
+2026-10-07T00:31:03.4623824Z   ExPivot.Engine.Tests -> /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll
+2026-10-07T00:31:05.2178031Z   ExGrid.Data.Tests -> /home/runner/work/ex-grid/ex-grid/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll
+2026-10-07T00:31:05.3453820Z   ExGrid.Data.Arrow.Tests -> /home/runner/work/ex-grid/ex-grid/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll
+2026-10-07T00:31:05.4504972Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-10-07T00:31:20.6528943Z   ExGrid.Components -> /home/runner/work/ex-grid/ex-grid/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll
+2026-10-07T00:31:20.8993678Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-10-07T00:31:20.9561849Z   ExSheet -> /home/runner/work/ex-grid/ex-grid/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+2026-10-07T00:31:23.3933785Z   ExGrid.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+2026-10-07T00:31:25.5974634Z   ExGrid.Tests -> /home/runner/work/ex-grid/ex-grid/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll
+2026-10-07T00:31:29.8577163Z   ExSheet.Components -> /home/runner/work/ex-grid/ex-grid/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll
+2026-10-07T00:31:29.9255902Z   ExSheet.MudBlazor -> /home/runner/work/ex-grid/ex-grid/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+2026-10-07T00:31:29.9369250Z   ExGrid.DemoApi -> /home/runner/work/ex-grid/ex-grid/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoApi.dll
+2026-10-07T00:31:29.9526325Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-10-07T00:31:32.0855606Z   ExGrid.DemoApi.Tests -> /home/runner/work/ex-grid/ex-grid/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll
+2026-10-07T00:31:32.9693406Z   ExSheet.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+2026-10-07T00:31:35.0617087Z   ExPivot.Components -> /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll
+2026-10-07T00:31:35.1045376Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-10-07T00:31:36.5314256Z   ExPivot.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+2026-10-07T00:31:42.3446314Z   ExGrid.DemoPages -> /home/runner/work/ex-grid/ex-grid/samples/ExGrid.DemoPages/bin/Debug/net10.0/ExGrid.DemoPages.dll
+2026-10-07T00:31:44.7027297Z   ExGrid.Docs -> /home/runner/work/ex-grid/ex-grid/samples/ExGrid.Docs/bin/Debug/net10.0/ExGrid.Docs.dll
+2026-10-07T00:31:44.7053827Z   ExGrid.Docs (Blazor output) -> /home/runner/work/ex-grid/ex-grid/samples/ExGrid.Docs/bin/Debug/net10.0/wwwroot
+2026-10-07T00:31:46.1295001Z   ExGrid.DemoHost -> /home/runner/work/ex-grid/ex-grid/samples/ExGrid.DemoHost/bin/Debug/net10.0/ExGrid.DemoHost.dll
+2026-10-07T00:31:46.1313177Z   ExGrid.DemoHost (Blazor output) -> /home/runner/work/ex-grid/ex-grid/samples/ExGrid.DemoHost/bin/Debug/net10.0/wwwroot
+2026-10-07T00:31:46.3333367Z   ExGrid.DemoHost.Server -> /home/runner/work/ex-grid/ex-grid/samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/ExGrid.DemoHost.Server.dll
+2026-10-07T00:31:46.3661629Z
+2026-10-07T00:31:46.3662511Z Build succeeded.
+2026-10-07T00:31:46.3663125Z     0 Warning(s)
+2026-10-07T00:31:46.3663623Z     0 Error(s)
+2026-10-07T00:31:46.3663883Z
+2026-10-07T00:31:46.3664190Z Time Elapsed 00:01:13.08
+2026-10-07T00:31:46.4071976Z ##[group]Run dotnet test ExGrid.slnx --no-build -p:TestingPlatformCommandLineArguments="--coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml --coverage-settings /home/runner/work/ex-grid/ex-grid/tests/coverage.settings.xml"
+2026-10-07T00:31:46.4073610Z [36;1mdotnet test ExGrid.slnx --no-build -p:TestingPlatformCommandLineArguments="--coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml --coverage-settings /home/runner/work/ex-grid/ex-grid/tests/coverage.settings.xml"[0m
+2026-10-07T00:31:46.4128405Z shell: /usr/bin/bash -e {0}
+2026-10-07T00:31:46.4128609Z env:
+2026-10-07T00:31:46.4128781Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-07T00:31:46.4128988Z   DOTNET_NOLOGO: 1
+2026-10-07T00:31:46.4129165Z   LONG_RUN: false
+2026-10-07T00:31:46.4129343Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-07T00:31:46.4129544Z   EXGRID_ST1_MILLION:
+2026-10-07T00:31:46.4129716Z ##[endgroup]
+2026-10-07T00:31:47.8789427Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|x64]
+2026-10-07T00:31:47.9017081Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll' [net10.0|x64]
+2026-10-07T00:31:47.9284976Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll' [net10.0|x64]
+2026-10-07T00:31:48.0609179Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll' [net10.0|x64]
+2026-10-07T00:31:52.6053934Z   Passed! - Failed: 0, Passed: 182, Skipped: 1, Total: 183, Duration: 2s 243ms - ExGrid.Data.Arrow.Tests.dll (net10.0|x64)
+2026-10-07T00:31:53.0444948Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll' [net10.0|x64]
+2026-10-07T00:31:53.1887258Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-10-07T00:31:59.0449415Z   Passed! - Failed: 0, Passed: 365, Skipped: 2, Total: 367, Duration: 8s 501ms - ExGrid.Data.Tests.dll (net10.0|x64)
+2026-10-07T00:31:59.5640335Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll' [net10.0|x64]
+2026-10-07T00:31:59.6793658Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:07.3294064Z   Passed! - Failed: 0, Passed: 221, Skipped: 0, Total: 221, Duration: 7s 131ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+2026-10-07T00:32:08.1854020Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:08.4477859Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:23.6887095Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/DetailsAndVersionTests.cs(367): error test failed: ExPivot.Components.Tests.DetailsAndVersionTests.The_search_asks_the_source_beyond_the_list (194ms): Assert.Equal() Failure: Values differ [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:23.6944091Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/DetailsAndVersionTests.cs(367): error test failed: Expected: 10000 [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:23.6956989Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/DetailsAndVersionTests.cs(367): error test failed: Actual:   -1 [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:23.7011528Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/DetailsAndVersionTests.cs(367): error test failed: Stack Trace: [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:23.7044677Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/DetailsAndVersionTests.cs(367): error test failed:    at ExPivot.Components.Tests.DetailsAndVersionTests.The_search_asks_the_source_beyond_the_list() in /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/DetailsAndVersionTests.cs:line 367 [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:23.7103968Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/DetailsAndVersionTests.cs(367): error test failed: --- End of stack trace from previous location --- [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:23.7133610Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/DetailsAndVersionTests.cs(367): error test failed:  [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:26.5994737Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/SlicedBuildTests.cs(216): error test failed: ExPivot.Components.Tests.SlicedBuildTests.A_gesture_during_the_build_supersedes_the_question (759ms): Assert.Single() Failure: The collection was empty [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:26.6067607Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/SlicedBuildTests.cs(216): error test failed: Stack Trace: [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:26.6176658Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/SlicedBuildTests.cs(216): error test failed:    at ExPivot.Components.Tests.SlicedBuildTests.A_gesture_during_the_build_supersedes_the_question() in /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/SlicedBuildTests.cs:line 216 [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:26.6233814Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/SlicedBuildTests.cs(216): error test failed: --- End of stack trace from previous location --- [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:26.6323686Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/SlicedBuildTests.cs(216): error test failed:  [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:27.6883786Z   Failed! - Failed: 2, Passed: 222, Skipped: 0, Total: 224, Duration: 10s 253ms - ExPivot.Components.Tests.dll (net10.0|x64)
+2026-10-07T00:32:28.5105612Z /home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll : error run failed: Tests failed: '/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/bin/Debug/net10.0/TestResults/ExPivot.Components.Tests_net10.0_x64.log' [net10.0|x64] [/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Components/ExPivot.Components.csproj]
+2026-10-07T00:32:28.5644753Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:28.7503680Z   Passed! - Failed: 0, Passed: 1678, Skipped: 1, Total: 1679, Duration: 35s 778ms - ExGrid.Components.dll (net10.0|x64)
+2026-10-07T00:32:29.2885031Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|x64]
+2026-10-07T00:32:29.3813733Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:32.4177107Z   Passed! - Failed: 0, Passed: 142, Skipped: 0, Total: 142, Duration: 35s 352ms - ExGrid.DemoApi.Tests.dll (net10.0|x64)
+2026-10-07T00:32:32.5364600Z   Passed! - Failed: 0, Passed: 1265, Skipped: 0, Total: 1265, Duration: 24s 883ms - ExGrid.Tests.dll (net10.0|x64)
+2026-10-07T00:32:33.2373975Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:33.3645180Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:33.5086872Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:33.6724311Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:44.4403824Z   Passed! - Failed: 0, Passed: 67, Skipped: 0, Total: 67, Duration: 8s 931ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+2026-10-07T00:32:45.9554463Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:46.1375721Z   Run tests: '/home/runner/work/ex-grid/ex-grid/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:54.9084251Z   Passed! - Failed: 0, Passed: 3870, Skipped: 0, Total: 3870, Duration: 16s 889ms - ExSheet.Engine.Tests.dll (net10.0|x64)
+2026-10-07T00:32:55.3367890Z   Passed! - Failed: 0, Passed: 353, Skipped: 4, Total: 357, Duration: 23s 387ms - ExPivot.Engine.Tests.dll (net10.0|x64)
+2026-10-07T00:32:55.5319954Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll' [net10.0|x64]
+2026-10-07T00:32:55.9713875Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll' [net10.0|x64]
+2026-10-07T00:33:12.6225450Z   Passed! - Failed: 0, Passed: 55, Skipped: 0, Total: 55, Duration: 16s 193ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+2026-10-07T00:33:13.3733694Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-10-07T00:33:40.9357389Z   Passed! - Failed: 0, Passed: 694, Skipped: 0, Total: 694, Duration: 1m 00s 187ms - ExSheet.Components.Tests.dll (net10.0|x64)
+2026-10-07T00:33:41.3838099Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll' [net10.0|x64]
+2026-10-07T00:33:41.4202555Z ##[error]Process completed with exit code 1.
+2026-10-07T00:33:41.4325755Z Post job cleanup.
+2026-10-07T00:33:41.4984297Z [command]/usr/bin/git version
+2026-10-07T00:33:41.5013407Z git version 2.55.0
+2026-10-07T00:33:41.5038944Z Temporarily overriding HOME='/home/runner/work/_temp/81626a06-15f7-4845-b2ae-0a64a9d10f4d' before making global git config changes
+2026-10-07T00:33:41.5040347Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-07T00:33:41.5043324Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-10-07T00:33:41.5067326Z Removing SSH command configuration
+2026-10-07T00:33:41.5071586Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-07T00:33:41.5098916Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-07T00:33:41.5291065Z Removing HTTP extra header
+2026-10-07T00:33:41.5294981Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-07T00:33:41.5320438Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-07T00:33:41.5508152Z Removing includeIf entries pointing to credentials config files
+2026-10-07T00:33:41.5512495Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-07T00:33:41.5535541Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-10-07T00:33:41.5535997Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-10-07T00:33:41.5536399Z includeif.gitdir:/github/workspace/.git.path
+2026-10-07T00:33:41.5536714Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-07T00:33:41.5542506Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-10-07T00:33:41.5559688Z /home/runner/work/_temp/git-credentials-d46006a4-90ac-4bde-b85f-05697fa19378.config
+2026-10-07T00:33:41.5567047Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-d46006a4\-90ac\-4bde\-b85f\-05697fa19378\.config
+2026-10-07T00:33:41.5594871Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-10-07T00:33:41.5618119Z /home/runner/work/_temp/git-credentials-d46006a4-90ac-4bde-b85f-05697fa19378.config
+2026-10-07T00:33:41.5624543Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-d46006a4\-90ac\-4bde\-b85f\-05697fa19378\.config
+2026-10-07T00:33:41.5649920Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-07T00:33:41.5666808Z /github/runner_temp/git-credentials-d46006a4-90ac-4bde-b85f-05697fa19378.config
+2026-10-07T00:33:41.5672251Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-d46006a4\-90ac\-4bde\-b85f\-05697fa19378\.config
+2026-10-07T00:33:41.5697508Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-07T00:33:41.5714829Z /github/runner_temp/git-credentials-d46006a4-90ac-4bde-b85f-05697fa19378.config
+2026-10-07T00:33:41.5721854Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-d46006a4\-90ac\-4bde\-b85f\-05697fa19378\.config
+2026-10-07T00:33:41.5748318Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-07T00:33:41.5937257Z Removing credentials config '/home/runner/work/_temp/git-credentials-d46006a4-90ac-4bde-b85f-05697fa19378.config'
+2026-10-07T00:33:41.6070701Z Cleaning up orphan processes
+2026-10-07T00:33:41.6326965Z Terminate orphan process: pid (2325) (dotnet)
+2026-10-07T00:33:41.6359323Z Terminate orphan process: pid (2326) (dotnet)
+2026-10-07T00:33:41.6378228Z Terminate orphan process: pid (2327) (dotnet)
+2026-10-07T00:33:41.6410539Z Terminate orphan process: pid (2426) (VBCSCompiler)

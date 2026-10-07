@@ -213,7 +213,7 @@ public class SlicedBuildTests : PivotTestContext
         Assert.Equal(["Product", "Region", "Online"], report.Metadata.Layout.Rows.Select(p => p.Field));
         Assert.Equal(1 + 3 + 3_000 + 3_000, report.Metadata.RowCount);
         // Only the layout shown is raised; the superseded one never is.
-        Assert.Single(told);
+        cut.WaitForAssertion(() => Assert.Single(told));
         Assert.Same(report.Metadata.Layout, told[0]);
     }
 

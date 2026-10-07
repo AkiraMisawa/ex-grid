@@ -364,7 +364,7 @@ public class DetailsAndVersionTests : PivotTestContext
         var source = new OnDemandSource(Bundled(many)) { AnswersAtOnce = true };
         var cut = RenderPivot(new PivotLayout { Filters = [P("Region")], Values = [Sum("Amount")] }, source: source);
         await cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs());
-        Assert.Equal(PivotComponent.ItemListCap, cut.FindAll(".ex-pivot-item").Count - 1);
+        cut.WaitForAssertion(() => Assert.Equal(PivotComponent.ItemListCap, cut.FindAll(".ex-pivot-item").Count - 1));
         Assert.Contains("More than 10,000 items.", cut.Find(".ex-pivot-item-filter .ex-pivot-note").TextContent);
 
         await cut.Find(".ex-pivot-item-filter .ex-pivot-search").InputAsync(new ChangeEventArgs { Value = "r1000" });

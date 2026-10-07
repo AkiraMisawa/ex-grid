@@ -1,0 +1,12 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExPivot -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExPivot.Components -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll
+  Run tests: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 224, Skipped: 0, Total: 224, Duration: 2s 438ms - ExPivot.Components.Tests.dll (net10.0|arm64)
+  Tests succeeded: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|arm64]
