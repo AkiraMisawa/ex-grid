@@ -60,8 +60,7 @@ public partial class ExGrid<TRow>
     private bool _summaryRaiseOwed;
 
     // How many times the rows under a standing selection may have moved: a changed row at a
-    // selected position the Window held before, a row count that holds a selected row the previous
-    // one did not, or the reverse, or an edit the grid handed over.
+    // selected position the Window held before, a changed row count, or an edit the grid handed over.
     private int _summaryRowsStamp;
     private IReadOnlyList<TRow>? _summaryRows;
     private int _summaryRowsStart;
@@ -76,8 +75,8 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// Notes whether the rows moved under the figures (ADR-0130): a selected position the Window
-    /// held before now holding a different row, or the row count changing under the Selection. A
-    /// Window that only scrolled shows the same rows where both hold them, and moves nothing.
+    /// held before now holding a different row, or a different row count. A Window that only
+    /// scrolled shows the same rows where both hold them, and moves nothing.
     ///
     /// <para>Walked only while a question stands — figures shown, or being asked for — and only
     /// over the positions it asks about, so the cost follows the Selection's rows in the Window,
@@ -97,27 +96,16 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>Whether a row the figures were taken over moved, between the Window taken over them
-    /// and the one in hand: a selected position both hold now holding a different row, by the row
-    /// type's equality; or the row count now holding a selected row the previous one did not, or the
-    /// reverse.</summary>
+    /// and the one in hand: a different row count, or a selected position both hold now holding a
+    /// different row, by the row type's equality.</summary>
     private bool SelectedRowsMoved(IReadOnlyList<SelectionRange> ranges)
     {
         var rows = _window!;
         var previous = _summaryRows!;
+        // A row added or removed anywhere may have shifted the selected rows, and a selected row
+        // neither Window holds cannot show that it stayed (ADR-0130).
         if (_total != _summaryRowsTotal)
-        {
-            // Under the same Row Sequence Version a new count moved no row (ADR-0011, LV-7): rows
-            // came or went after every other, and only a selected row among them changes a figure. A
-            // count unknown on either side could cut through any of them.
-            if (_total is not { } total || _summaryRowsTotal is not { } before)
-                return true;
-            var held = Math.Min(total, before);
-            for (var i = 0; i < ranges.Count; i++)
-            {
-                if (ranges[i].BottomRow >= held)
-                    return true;
-            }
-        }
+            return true;
         if (ReferenceEquals(previous, rows) && _windowStart == _summaryRowsStart)
             return false;
         var from = Math.Max(_windowStart, _summaryRowsStart);

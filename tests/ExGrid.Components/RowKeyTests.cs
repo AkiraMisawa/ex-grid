@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Bunit;
 using ExGrid.Cells;
 using ExGrid.Columns;
@@ -589,6 +590,38 @@ public class RowKeyTests : GridTestContext
 
         Assert.Contains("Window[4000]", refusal.Message);
         Assert.Contains("Window[4001]", refusal.Message);
+    }
+
+    [Fact] // ADR-0160 / ADR-0141: a new Window lets go of the Row Keys painted from the last one, even one that paints no row
+    public void A_new_window_holds_no_row_key_painted_from_the_last()
+    {
+        var (cut, keys) = RenderUnderFreshKeys();
+
+        cut.Render(ps => ps.Add(g => g.Window, Array.Empty<Trade>()));
+        // Blazor keeps the previous render's frames, the last rows' keys among them, until the next.
+        cut.Render();
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        Assert.All(keys, key => Assert.False(key.IsAlive, "a Row Key painted from an earlier Window is still held"));
+    }
+
+    // A Row Key that makes a new key object at every call, so only whoever was handed one holds it.
+    // Kept out of line, so no local of the test keeps a key alive.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private (IRenderedComponent<ExGrid<Trade>> Cut, WeakReference[] Keys) RenderUnderFreshKeys()
+    {
+        var made = new List<WeakReference>();
+        Func<Trade, object> fresh = _ =>
+        {
+            var key = new object();
+            made.Add(new WeakReference(key));
+            return key;
+        };
+        var cut = RenderGrid(Trades(50), fresh, ps => ps.Add(g => g.ViewportHeight, 300));
+        Assert.NotEmpty(Rows(cut));
+        return (cut, [.. made]);
     }
 
     // ---- A component that now outlives its instance (ADR-0140, Consequences) ---------------------

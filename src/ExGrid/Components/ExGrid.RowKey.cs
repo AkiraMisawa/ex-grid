@@ -84,7 +84,9 @@ public partial class ExGrid<TRow>
     // RowKeyTests holds a test for each.
 
     // The Row Keys painted so far in this render, each with its place in the Window. One map for
-    // the grid's life, cleared as each render begins its rows, so a render allocates nothing for it.
+    // the grid's life, cleared as each render begins its rows, so a render allocates nothing for it,
+    // and as each new Window is taken in, so no key of a row outside the Window is held (ADR-0160):
+    // a Window that paints no row begins no rows.
     private readonly Dictionary<object, int> _paintedKeys = [];
 
     /// <summary>Begins a render's rows: none of their keys painted yet.</summary>
@@ -133,6 +135,7 @@ public partial class ExGrid<TRow>
             && (Source is null ? VouchesDistinctRows : (Source.VouchesDistinctRows && Equals(key, own)));
         if (ReferenceEquals(_observedWindow, _window) && Equals(key, _rowKey) && (vouched || !_windowVouched))
             return;
+        _paintedKeys.Clear();
 
         if (!vouched)
         {

@@ -10,7 +10,7 @@ using Xunit;
 namespace ExGrid.Components.Tests;
 
 /// <summary>
-/// The Selection Summary (ADR-0130, SM-1..SM-5, SM-9, SM-10, SM-14): the grid asks and shows only the
+/// The Selection Summary (ADR-0130, SM-1..SM-5, SM-9, SM-10, SM-14, SM-15): the grid asks and shows only the
 /// answer to the current question; the Consumer sums. 20px rows in a 120px Viewport, three 100px
 /// columns: Book, Amount, AsOf. Row i's Amount is i.
 /// </summary>
@@ -194,7 +194,7 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Equal(2, heard.Requests.Count);
     }
 
-    // ---- SM-14: the walk of a new Window (ADR-0130, 2026-10-07) ----------------------------------
+    // ---- SM-15: the walk of a new Window (ADR-0130, 2026-10-07) ----------------------------------
 
     /// <summary>Counts the comparisons the grid makes of one row with another.</summary>
     private sealed class Comparisons
@@ -249,7 +249,7 @@ public class SelectionSummaryTests : GridTestContext
                 return Task.FromResult(Answer(sum: 0m));
             }));
 
-    [Fact] // ADR-0130 / SM-14: with no figure standing or asked for, a new Window is not walked
+    [Fact] // ADR-0130 / SM-15: with no figure standing or asked for, a new Window is not walked
     public async Task ADR0130_with_no_figure_a_new_window_is_not_walked()
     {
         var comparisons = new Comparisons();
@@ -267,7 +267,7 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Empty(requests);
     }
 
-    [Fact] // ADR-0130 / SM-14: a row changing outside the Selection moves no figure, and only the selected positions are compared
+    [Fact] // ADR-0130 / SM-15: a row changing outside the Selection moves no figure, and only the selected positions are compared
     public async Task ADR0130_a_change_outside_the_selection_moves_no_figure()
     {
         var comparisons = new Comparisons();
@@ -288,7 +288,7 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Equal(2, comparisons.Count);
     }
 
-    [Fact] // ADR-0130 / SM-14: a row changing inside the Selection still asks again
+    [Fact] // ADR-0130 / SM-15: a row changing inside the Selection still asks again
     public async Task ADR0130_a_change_inside_the_selection_asks_again()
     {
         var comparisons = new Comparisons();
@@ -306,8 +306,8 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Equal(requests[0].Ranges, requests[1].Ranges);
     }
 
-    [Fact] // ADR-0130 / SM-14: a row added after the Selection changes the row count outside it, and moves no figure
-    public async Task ADR0130_a_row_added_after_the_selection_moves_no_figure()
+    [Fact] // ADR-0130 / SM-15: a changed row count under a standing figure asks again, even a row added after the Selection
+    public async Task ADR0130_a_changed_row_count_asks_again()
     {
         var comparisons = new Comparisons();
         var requests = new List<GridSummaryRequest>();
@@ -319,10 +319,10 @@ public class SelectionSummaryTests : GridTestContext
         CountedRow[] added = [.. rows, new CountedRow(500, 500m, comparisons)];
         cut.Render(ps => ps.Add(g => g.Window, added).Add(g => g.TotalCount, added.Length));
 
-        Assert.Single(requests);
+        Assert.Equal(2, requests.Count);
     }
 
-    [Fact] // ADR-0130 / SM-14: a row count that no longer holds a selected row asks again
+    [Fact] // ADR-0130 / SM-15: a row count that no longer holds a selected row asks again
     public async Task ADR0130_a_row_count_cutting_into_the_selection_asks_again()
     {
         var comparisons = new Comparisons();
@@ -338,8 +338,8 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Equal(2, requests.Count);
     }
 
-    [Fact] // ADR-0130 / SM-14: a row added after the Selection moves no figure while the Window is elsewhere either
-    public async Task ADR0130_a_row_added_after_a_selection_out_of_sight_moves_no_figure()
+    [Fact] // ADR-0130 / SM-15: a row count that moves while the Selection is outside both Windows asks again — a row added above may have shifted it
+    public async Task ADR0130_a_row_count_moving_under_a_selection_the_window_left_asks_again()
     {
         var comparisons = new Comparisons();
         var requests = new List<GridSummaryRequest>();
@@ -348,15 +348,16 @@ public class SelectionSummaryTests : GridTestContext
         await ClickCellAsync(cut, 150, 30);
         await ClickCellAsync(cut, 150, 50, shift: true); // rows 1 and 2
         cut.Render(ps => ps.Add(g => g.Window, rows[100..150]).Add(g => g.WindowStart, 100));
+        Assert.Single(requests);
 
-        // A row added before the Selection would have moved the order, and the Row Sequence
-        // Version with it (ADR-0011, LV-7); under the same version a new count is a row at the end.
+        // A row added before row 1 would shift both selected rows, and neither Window holds them to
+        // show whether one was.
         cut.Render(ps => ps.Add(g => g.Window, rows[100..150]).Add(g => g.TotalCount, 501));
 
-        Assert.Single(requests);
+        Assert.Equal(2, requests.Count);
     }
 
-    [Fact] // ADR-0130 / SM-14: the same list handed over at another start holds other rows at the selected positions, and asks again
+    [Fact] // ADR-0130 / SM-15: the same list handed over at another start holds other rows at the selected positions, and asks again
     public async Task ADR0130_the_same_list_at_another_start_asks_again()
     {
         var comparisons = new Comparisons();
@@ -373,7 +374,7 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Equal(2, requests.Count);
     }
 
-    [Fact] // ADR-0130 / SM-14 / ADR-0011: an order that moved drops the Selection and its figures, so the new Window is not walked
+    [Fact] // ADR-0130 / SM-15 / ADR-0011: an order that moved drops the Selection and its figures, so the new Window is not walked
     public async Task ADR0130_a_window_in_a_new_order_is_not_walked()
     {
         var comparisons = new Comparisons();

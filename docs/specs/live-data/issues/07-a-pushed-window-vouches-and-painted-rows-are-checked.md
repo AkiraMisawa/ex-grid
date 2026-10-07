@@ -64,3 +64,10 @@ the last trade, and the console stayed clean.
 2026-10-07, layer 3 on the final code (2fcec664 and dc2cd665): `selection-summary`, `grid-live-local`,
 `grid-live` and `pivot-live` pass locally on WebAssembly under Chrome, headless, 20 of 20, with a clean
 console.
+
+2026-10-07, the orchestrator's decisions on the reviews: the figure's box stays unticked. What was
+measured is the CoreCLR figure, recorded above: ticket 01's harness and method, 10⁶ rows, the grid's
+take-in of a pushed keyed Window at 45.8–46.3 ms unvouched and 0.011–0.015 ms vouched. Ticket 13
+re-records the browser figure. The map of painted keys is now also cleared when a new Window is taken in,
+so no Row Key of a row outside the current Window is held, even when the new Window paints no row
+(ADR-0160; a layer-2 test with weak references).
