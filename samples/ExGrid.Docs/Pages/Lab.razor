@@ -1,0 +1,71 @@
+@page "/lab"
+
+@* LAB ONLY (branch lab/vdi-reveal, never merged): the page that names the reveal modes and how to
+   try each under Citrix. ex-grid.js reads the mode from the blotter's ?reveal= query. *@
+
+<PageTitle>VDI reveal lab</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1">VDI reveal lab</MudText>
+<MudText Typo="Typo.body1" Class="mt-2">
+    Ctrl+Down leaves the grid white under the company's VDI. Each link below opens the trade blotter
+    with one way of painting a jump. The mode is shown at the end of the blotter's status line.
+</MudText>
+
+<MudSimpleTable Dense="true" Class="mt-4" Style="max-width: 900px">
+    <thead>
+        <tr><th>Mode</th><th>How the jump is painted</th><th>Open</th><th>With the trace</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var mode in Modes)
+        {
+            <tr>
+                <td><b>@mode.Name</b></td>
+                <td>@mode.Description</td>
+                <td><MudLink Href="@($"showcase/blotter?reveal={mode.Name}")" Target="_blank">blotter, mode @mode.Name</MudLink></td>
+                <td><MudLink Href="@($"showcase/blotter?reveal={mode.Name}&trace=1")" Target="_blank">mode @mode.Name, traced</MudLink></td>
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+
+<MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6">First: mode A, traced</MudText>
+<MudText Typo="Typo.body2" Class="mt-2">
+    The trace opens a panel at the bottom right that records, with times, each scroll write the grid
+    asks for, when it is made, where the scroller stands right after it, a frame later, 0.5 s and
+    2 s later, and every scroll event.
+</MudText>
+<ol class="mt-2">
+    <li>Click a cell near the top of the grid.</li>
+    <li>Press Ctrl+Down once and wait three seconds.</li>
+    <li>Press Copy in the panel and paste the text somewhere you can send. If Copy says
+        "selected", press Ctrl+C. If neither works, take a screenshot of the panel.</li>
+    <li>Press Clear, then do the same with Ctrl+Up, and with PageDown.</li>
+</ol>
+
+<MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6">In each mode</MudText>
+<ol class="mt-2">
+    <li>Click a cell near the top of the grid.</li>
+    <li>Press Ctrl+Down. Note: white, or the last row shown.</li>
+    <li>Press Ctrl+Up. Note the same.</li>
+    <li>Press PageDown three times. Note whether any press leaves it white.</li>
+</ol>
+
+<MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6">Once, in mode A</MudText>
+<ol class="mt-2">
+    <li>Drag the scrollbar's thumb to the bottom in one quick movement. White, or rows?</li>
+    <li>Press Ctrl+Down until it is white, then Alt+Tab away and back without scrolling. Does the last row appear?</li>
+    <li>Make it white again, then resize the Citrix window a little. Does the last row appear?</li>
+</ol>
+
+@code {
+    private sealed record Mode(string Name, string Description);
+
+    private static readonly Mode[] Modes =
+    [
+        new("A", "As shipped: the new rows and the scroll offset in the same frame."),
+        new("B", "The new rows in one frame, the scroll offset written in the next."),
+        new("C", "As A, then the offset nudged by 1px and back over the next two frames."),
+        new("D", "As A, then the same 1px nudge 300 ms later."),
+        new("E", "As A, then the scroller repainted for one frame without scrolling."),
+    ];
+}

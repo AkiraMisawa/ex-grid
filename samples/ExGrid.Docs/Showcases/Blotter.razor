@@ -340,8 +340,25 @@
     {
         var sorted = _source.Sorts.Count == 0 ? "" : " · sorted by " + string.Join(", ", _source.Sorts.Select(s => Columns.First(c => c.Name == s.Column).Header));
         var filtered = _source.Filter is null ? "" : " · filtered";
-        return $"{_source.Window.Count:N0} of {_source.All.Count:N0} trades{filtered}{sorted} · {_ticks:N0} price updates";
+        return $"{_source.Window.Count:N0} of {_source.All.Count:N0} trades{filtered}{sorted} · {_ticks:N0} price updates{LabNote}";
     }
+
+    // LAB ONLY (branch lab/vdi-reveal, never merged): the reveal mode ex-grid.js reads from the
+    // same query, shown so a screenshot says which mode it was taken under. Without the query the
+    // page is the published one.
+    [SupplyParameterFromQuery(Name = "reveal")]
+    public string? Reveal { get; set; }
+
+    [SupplyParameterFromQuery(Name = "trace")]
+    public string? Trace { get; set; }
+
+    private string LabNote
+        => Reveal is null && Trace is null ? "" : $" · LAB reveal {LabMode}{(Trace is null ? "" : " · trace")}";
+
+    private string LabMode
+        => Reveal is { Length: 1 } mode && "ABCDE".Contains(char.ToUpperInvariant(mode[0]))
+            ? mode.ToUpperInvariant()
+            : "A";
 
     private sealed record Kpi(string Label, string Value, string Tone);
 

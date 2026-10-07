@@ -51,6 +51,62 @@
  *   (ADR-0122): only then is it read, once, and reported
  * @returns a handle owned by that one grid
  */
+// LAB ONLY (branch lab/vdi-reveal, never merged): ?trace=1 records what a reveal's scroll write
+// meets, with times, in a panel on the page and in the console, so one visit to a machine where
+// the fault cannot be reproduced says where the write goes. No layout is read before a write.
+const labQuery = new URLSearchParams(location.search);
+const labTraceOn = labQuery.has('trace');
+const labT0 = performance.now();
+let labPanel = null;
+const labTrace = (text) => {
+    if (!labTraceOn) {
+        return;
+    }
+    const line = `${(performance.now() - labT0).toFixed(1).padStart(9)}  ${text}`;
+    console.log('[ex-grid trace]', line);
+    if (!labPanel) {
+        labPanel = document.createElement('div');
+        labPanel.style.cssText = 'position:fixed;right:8px;bottom:8px;width:560px;height:300px;z-index:2147483647;'
+            + 'background:#fff;color:#000;border:1px solid #888;font:11px/1.35 ui-monospace,Consolas,monospace;'
+            + 'display:flex;flex-direction:column;opacity:.96';
+        const bar = document.createElement('div');
+        bar.style.cssText = 'display:flex;gap:6px;padding:3px;border-bottom:1px solid #ccc;align-items:center';
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'margin:0;padding:4px;overflow:auto;flex:1;white-space:pre;user-select:text';
+        const button = (label, action) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.style.cssText = 'border:1px solid #777;border-radius:3px;background:#eee;color:#000;padding:1px 10px;cursor:pointer;font:inherit';
+            b.textContent = label;
+            b.onclick = action;
+            bar.append(b);
+        };
+        const selectAll = () => {
+            const range = document.createRange();
+            range.selectNodeContents(pre);
+            const selection = getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        };
+        button('Copy', () => {
+            (navigator.clipboard?.writeText(pre.textContent) ?? Promise.reject())
+                .then(() => { bar.lastChild.textContent = 'copied'; })
+                .catch(() => { selectAll(); bar.lastChild.textContent = 'selected: press Ctrl+C'; });
+        });
+        button('Select', selectAll);
+        button('Clear', () => { pre.textContent = ''; });
+        button('Hide', () => { labPanel.style.display = 'none'; });
+        const note = document.createElement('span');
+        note.textContent = 'ex-grid trace';
+        bar.append(note);
+        labPanel.append(bar, pre);
+        labPanel.pre = pre;
+        document.body.append(labPanel);
+    }
+    labPanel.pre.textContent += line + '\n';
+    labPanel.pre.scrollTop = labPanel.pre.scrollHeight;
+};
+
 export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone) {
     let taken = new Set(takenKeys);
     // The Consumer's declared keys (ADR-0050, item 14), handed by C# like the core's own. With no
@@ -70,21 +126,108 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // stands for every read and every conditional write.
     let pendingReveal = null;
     let revealTimer = 0;
-    const revealObserver = new MutationObserver(() => applyReveal(false));
+    const revealObserver = new MutationObserver(() => {
+        labTrace(`observer: data-ex-reveal=${root.getAttribute('data-ex-reveal')} held=${pendingReveal?.token}`);
+        applyReveal(false);
+    });
+    // LAB ONLY (branch lab/vdi-reveal, never merged): how a reveal's write is painted, chosen by
+    // the page's ?reveal= query so one build can be tried several ways under Citrix.
+    //   A  as shipped: the rows and the offset in the same frame
+    //   B  the rows in one frame, the offset written in the next
+    //   C  as A, then the offset nudged by 1px and back over the next two frames
+    //   D  as A, then the same nudge 300 ms later
+    //   E  as A, then the scroller repainted (opacity 0.999 for one frame), no scroll
+    const labMode = () => {
+        const mode = new URLSearchParams(location.search).get('reveal');
+        return mode && 'ABCDE'.includes(mode.toUpperCase()) ? mode.toUpperCase() : 'A';
+    };
+    const labNudge = () => {
+        const at = scroller.scrollTop;
+        const by = at > 0 ? -1 : 1;
+        requestAnimationFrame(() => {
+            scroller.scrollTop = at + by;
+            requestAnimationFrame(() => {
+                scroller.scrollTop = at;
+            });
+        });
+    };
+    const labAfterWrite = (mode) => {
+        if (mode === 'C') {
+            labNudge();
+        } else if (mode === 'D') {
+            setTimeout(labNudge, 300);
+        } else if (mode === 'E') {
+            requestAnimationFrame(() => {
+                scroller.style.opacity = '0.999';
+                requestAnimationFrame(() => {
+                    scroller.style.opacity = '';
+                });
+            });
+        }
+    };
+    if (labQuery.has('reveal') || labTraceOn) {
+        console.info(`[ex-grid lab] reveal mode ${labMode()}`);
+    }
+    labTrace(`attach: mode ${labMode()} dpr=${window.devicePixelRatio} ua=${navigator.userAgent}`);
+    const labAfterRead = (what) => {
+        // After a write the layout is already clean, so these reads cost nothing new.
+        labTrace(`${what}: scrollTop=${scroller.scrollTop} max=${scroller.scrollHeight - scroller.clientHeight} `
+            + `data-ex-reveal=${root.getAttribute('data-ex-reveal')} first-row=${scroller.querySelector('.ex-viewport')?.getAttribute('data-ex-first-row')}`);
+    };
+    const labFollow = () => {
+        if (!labTraceOn) {
+            return;
+        }
+        requestAnimationFrame(() => labAfterRead('  next frame'));
+        setTimeout(() => labAfterRead('  +500ms'), 500);
+        setTimeout(() => labAfterRead('  +2000ms'), 2000);
+    };
+    if (labTraceOn) {
+        scroller.addEventListener('scroll', () => labTrace(`scroll event: scrollTop=${scroller.scrollTop}`), { passive: true });
+        new MutationObserver((records) => {
+            for (const record of records) {
+                labTrace(`painted: data-ex-first-row=${record.target.getAttribute('data-ex-first-row')} (was ${record.oldValue})`);
+            }
+        }).observe(root, { subtree: true, attributes: true, attributeOldValue: true, attributeFilter: ['data-ex-first-row'] });
+        root.addEventListener('focusin', (event) => labTrace(`focusin: ${event.target.className || event.target.tagName}`));
+    }
     const applyReveal = (anyway) => {
         const reveal = pendingReveal;
         if (!reveal || (!anyway && Number(root.getAttribute('data-ex-reveal')) < reveal.token)) {
             return;
         }
+        const mode = labMode();
+        if (mode === 'B' && !reveal.deferred) {
+            // The rows are in the DOM now; the offset waits a frame. The write stays held, so a
+            // read of the offset meanwhile answers where the scroller is going.
+            reveal.deferred = true;
+            labTrace(`apply: mode B, write deferred a frame (token ${reveal.token})`);
+            revealObserver.disconnect();
+            requestAnimationFrame(() => {
+                if (pendingReveal === reveal) {
+                    applyReveal(true);
+                }
+            });
+            return;
+        }
         dropReveal();
         scroller.scrollTop = reveal.top;
         scroller.scrollLeft = reveal.left;
+        labTrace(`apply: wrote top=${reveal.top} token=${reveal.token}${anyway ? ' (anyway)' : ''}`);
+        if (labTraceOn) {
+            labAfterRead('  right after');
+        }
+        labFollow();
+        labAfterWrite(mode);
     };
     const holdReveal = (reveal) => {
         pendingReveal = reveal;
         revealObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-reveal'] });
         // A batch that never comes — the circuit went — must not hold the write forever.
-        revealTimer = setTimeout(() => applyReveal(true), 2000);
+        revealTimer = setTimeout(() => {
+            labTrace(`hold: two-second fallback fired (token ${pendingReveal?.token})`);
+            applyReveal(true);
+        }, 2000);
     };
     const dropReveal = () => {
         pendingReveal = null;
@@ -1291,6 +1434,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core) {
             return;
         }
+        if (labTraceOn && /^(Arrow|Page|Home|End)/.test(event.key)) {
+            labTrace(`keydown ${event.ctrlKey ? 'Ctrl+' : ''}${event.shiftKey ? 'Shift+' : ''}${event.key}${event.repeat ? ' (repeat)' : ''} on ${event.target.className || event.target.tagName}`);
+        }
         // The keyboard is in use: whatever puts it in the Keyboard Field next did not come of a
         // press on the grid (KB-12, onFocused).
         keyboardByPress = false;
@@ -2398,6 +2544,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && content.inlineSize === contentWidth && content.blockSize === contentHeight) {
             return;
         }
+        labTrace(`resize: content ${content.inlineSize}x${content.blockSize} gutter ${width}x${height}`);
         gutterWidth = width;
         gutterHeight = height;
         contentWidth = content.inlineSize;
@@ -2627,11 +2774,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             canFind = findable;
             declared = new Set(declaredKeys ?? []);
         },
-        getScrollOffset: () => (pendingReveal
-            ? { top: pendingReveal.top, left: pendingReveal.left }
-            : scroller
-                ? { top: scroller.scrollTop, left: scroller.scrollLeft }
-                : { top: 0, left: 0 }),
+        getScrollOffset: () => {
+            const offset = pendingReveal
+                ? { top: pendingReveal.top, left: pendingReveal.left }
+                : scroller
+                    ? { top: scroller.scrollTop, left: scroller.scrollLeft }
+                    : { top: 0, left: 0 };
+            labTrace(`getScrollOffset -> top=${offset.top}${pendingReveal ? ` (held token ${pendingReveal.token})` : ''}`);
+            return offset;
+        },
         // Where the Focus is kept visible (ADR-0012). The offsets are computed in C#,
         // which is what keeps scrollIntoView out of it: that would tuck the cell under the
         // sticky header or the Pinned Columns, neither of which it knows about. A reveal
@@ -2642,14 +2793,28 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (!scroller) {
                 return;
             }
+            const attribute = root.getAttribute('data-ex-reveal');
+            if (pendingReveal) {
+                labTrace(`setScrollOffset: drops held token ${pendingReveal.token} (top ${pendingReveal.top})`);
+            }
             dropReveal();
             if (token !== undefined && token !== null
                 && Number(root.getAttribute('data-ex-reveal')) < token) {
+                labTrace(`setScrollOffset top=${top} left=${left} token=${token} data-ex-reveal=${attribute} -> HOLD`);
                 holdReveal({ top, left, token });
                 return;
             }
+            labTrace(`setScrollOffset top=${top} left=${left} token=${token} data-ex-reveal=${attribute} -> WRITE NOW`);
             scroller.scrollTop = top;
             scroller.scrollLeft = left;
+            if (labTraceOn) {
+                labAfterRead('  right after');
+            }
+            labFollow();
+            // LAB ONLY: a reveal whose render had already landed takes the same after-write.
+            if (token !== undefined && token !== null) {
+                labAfterWrite(labMode());
+            }
         },
         // The first visible row kept across a change of the row height or the Layout Ceiling
         // (ADR-0028/0053), written only while the scroller still stands where the core last
@@ -2659,6 +2824,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // write and the user's scroll ordered.
         anchorScrollTop: (top, fromTop) => {
             const standing = pendingReveal ? pendingReveal.top : scroller?.scrollTop;
+            labTrace(`anchorScrollTop top=${top} fromTop=${fromTop} standing=${standing}${pendingReveal ? ` (held token ${pendingReveal.token})` : ''}`);
             if (!scroller || Math.abs(standing - fromTop) > 1) {
                 return false;
             }
@@ -2667,6 +2833,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return true;
             }
             scroller.scrollTop = top;
+            labFollow();
             return true;
         },
         // The keyboard back to this grid's root — to its Keyboard Field where it has one, the
