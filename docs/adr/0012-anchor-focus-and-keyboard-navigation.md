@@ -488,3 +488,9 @@ tell a click from the start of a drag, and here it differs from a Heading:
   reorder: the two readings of a header drag collided, and the one a Consumer asked for by wiring it
   wins. Google Sheets' way, where a drag on a column already selected moves it and any other drag
   selects, was not taken: it would change the reorder gesture every existing Consumer has.)*
+
+*(2026-10-07, [ADR-0170](./0170-a-copy-outlines-its-range-with-dashes-while-the-clipboard-still-holds-it.md).)*
+**The Copied Range is one more layer Escape peels.** It comes after an open popover, a control inside
+a cell and an Interactive cell, and before the way out: with a copy outlined, Escape removes the
+outline and does nothing else, and the next Escape releases Tab and raises `OnLeave` as before.
+Excel's Escape ends copy mode in the same place.

@@ -264,6 +264,17 @@
                                 {
                                     <div class="ex-focus" style="@pinnedFocus"></div>
                                 }
+                                @* The Copied Range (ADR-0170): dashes round each rectangle the clipboard
+                                   holds as the grid copied it, after the Focus, so they lie over the
+                                   Selection's outline that a copy usually shares, and before the fill
+                                   handle, which stays above them. *@
+                                @foreach (var copiedRange in CopiedRectangles)
+                                {
+                                    @if (SelectionStyles.Copied(copiedRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedCopied)
+                                    {
+                                        <div class="ex-copied-range" style="@pinnedCopied"></div>
+                                    }
+                                }
                                 @* The fill handle and its target outline (ADR-0050, item 5): one
                                    more rectangle each, painted last so they stand over the
                                    ranges. The handle sits in whichever layer its corner does. *@
@@ -332,6 +343,13 @@
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } focus)
                                 {
                                     <div class="ex-focus" style="@focus"></div>
+                                }
+                                @foreach (var copiedRange in CopiedRectangles)
+                                {
+                                    @if (SelectionStyles.Copied(copiedRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } copied)
+                                    {
+                                        <div class="ex-copied-range" style="@copied"></div>
+                                    }
                                 }
                                 @if (FillOutlineRange is { } fillRange && SelectionStyles.Scrollable(fillRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } fillOutline)
                                 {
@@ -2820,7 +2838,8 @@
         var reconciled = _selection.Under(_sequenceVersion);
         if (!held.IsEmpty && reconciled.Selection.IsEmpty)
             _selectionEmptiedBy = EditDiscardReason.OrderChanged;
-        if (!ColumnsAreAsBefore())
+        var columnsAsBefore = ColumnsAreAsBefore();
+        if (!columnsAsBefore)
         {
             if (!held.IsEmpty)
                 _selectionEmptiedBy ??= EditDiscardReason.ColumnsChanged;
@@ -2830,6 +2849,9 @@
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
         _selection = reconciled;
+        // The Copied Range is written in the same coordinates, and dropped on the same two
+        // triggers; it also goes when a copied cell comes to read otherwise (ADR-0170).
+        ReconcileCopiedRange(columnsMoved: !columnsAsBefore);
     }
 
     private bool ColumnsAreAsBefore()
@@ -5754,7 +5776,7 @@
             return ClipboardPayload.None;
         }
         if (CopyAnswer is not null)
-            return AskCopyAnswer(decision.Plan, withHeaders: false) ?? ClipboardPayload.None;
+            return Outlined(AskCopyAnswer(decision.Plan, withHeaders: false) ?? ClipboardPayload.None, decision.Plan, WindowRowAt);
         if (!WindowCovers(decision.Plan))
         {
             // The async route needs somebody to ask. Without one, refuse by name
@@ -5771,7 +5793,7 @@
             decision.Plan,
             (row, column) => ExGridRow<TRow>.CellText(Columns[column], _window[row - _windowStart]),
             (row, column) => RawText(Columns[column], _window[row - _windowStart]));
-        return ClipboardPayload.Data(text, html);
+        return Outlined(ClipboardPayload.Data(text, html), decision.Plan, WindowRowAt);
     }
 
     /// <summary>
@@ -5807,7 +5829,7 @@
             return null;
         }
         if (CopyAnswer is not null)
-            return AskCopyAnswer(decision.Plan, withHeaders);
+            return AskCopyAnswer(decision.Plan, withHeaders) is { } answered ? Outlined(answered, decision.Plan, WindowRowAt) : null;
 
         var rows = await GatherRowsAsync(decision.Plan);
         if (_disposed)
@@ -5823,7 +5845,7 @@
             (row, column) => ExGridRow<TRow>.CellText(Columns[column], rows[row]),
             (row, column) => RawText(Columns[column], rows[row]),
             withHeaders ? column => Columns[column].Header : null);
-        return ClipboardPayload.Data(text, html);
+        return Outlined(ClipboardPayload.Data(text, html), decision.Plan, row => rows.GetValueOrDefault(row));
     }
 
     /// <summary>
@@ -6305,6 +6327,14 @@
                 // the way out: Tab released (ADR-0012, rewritten 2026-10-01) — and, where
                 // the Consumer listens, its OnLeave raised beside the release (ADR-0070).
                 if (EndInteractive())
+                {
+                    _suppressRender = false;
+                    StateHasChanged();
+                    return;
+                }
+                // The Copied Range is the last layer before the way out (ADR-0170, ADR-0012):
+                // with a copy outlined, Escape removes the outline and does nothing else.
+                if (DropCopiedRange())
                 {
                     _suppressRender = false;
                     StateHasChanged();
@@ -7080,6 +7110,8 @@
     /// D2), or <c>PaintNotTold</c> for the newest.</param>
     private async Task StartEditingAsync(CellPosition cell, EditMode mode, string initialText, int told)
     {
+        // An edit opening ends the Copied Range, as an edit ends Excel's copy mode (ADR-0170).
+        DropCopiedRange();
         _editSurface = EditSurface.Cell;
         _editMode = mode;
         _editingCell = cell;
@@ -7608,6 +7640,7 @@
         EndInteractive();
         var focus = _selection.Selection.Focus;
         var shown = FormulaBarText();
+        DropCopiedRange();
         _editSurface = EditSurface.Bar;
         _editMode = EditMode.Caret;
         _editingCell = focus;

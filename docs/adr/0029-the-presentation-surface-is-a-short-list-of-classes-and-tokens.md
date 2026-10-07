@@ -102,7 +102,7 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Hover | `--ex-row-hover-background` *(unimplementable as stated — see the correction below)* |
 | Pinned | `--ex-pinned-background` *(exists)* |
 | Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(the border Excel draws around the range's perimeter, reserved here and taken up by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-09-29; it defaults to `--ex-focus-outline`)*, `--ex-focus-outline` *(exists)*, `--ex-grid-focus-outline` *(exists)* |
-| Cell State | the six `--ex-state-*` *(exist)* |
+| Cell State | the six `--ex-state-*` *(exist)* — each a colour; `--ex-state-modified-mark` is the corner mark's *(a whole `box-shadow` until 2026-10-07; see the fourth correction below)* |
 | Tone | `--ex-tone-positive-color`, `--ex-tone-negative-color` — default `inherit`, so a declared tone paints nothing until a theme says what colour it is ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | Row Kind | the four `--ex-row-group/total-*` *(exist)* |
 | Row Stripe | `--ex-row-stripe-background` — a faint neutral by default, so turning stripes on shows them; unpainted under `forced-colors`, because a stripe carries no meaning ([ADR-0038](./0038-row-stripes-are-painted-from-the-rows-absolute-position.md)) |
@@ -359,3 +359,36 @@ is painted in two more ways while a Sheet points at it.
     Outline is.
 - **No new token.** The dashes take `--ex-focus-outline`, as ADR-0057's dashes over Point's outline
   do. The column outlines are ADR-0057's own Reference Outlines.
+
+## A fourth correction: the Modified mark is a corner, and its token a colour *(2026-10-07, decided with the user)*
+
+The stylesheet said the Modified mark was "a corner mark rather than a fill", and drew it as
+`box-shadow: var(--ex-state-modified-mark, inset -6px 6px 0 -3px …)`. An inset shadow cannot paint
+a corner: its offset and negative spread drew a 3px band along the whole top edge and the whole
+right edge, which read on the Docs site's Blotter as a stray border with no pattern to it. And the
+token was the whole shadow, while `ExGrid.MudBlazor` set it to a colour (`--mud-palette-info`), as
+every other Cell State token is one. A colour is no `box-shadow`, so the declaration was invalid at
+computed-value time and **under the Wrapper a Modified cell looked exactly like a Normal one**, from
+the day the Wrapper was written (2026-09-02). A state is the one thing that must never disappear
+(ADR-0006), and nothing said so: no test asked what a Modified cell paints.
+
+**The decision:** the mark is a right-angled triangle in the cell's top right corner, where Excel
+marks a cell that carries a note: the cell's `::after`, out of flow, so the markup and the text's
+room are unchanged and the cell keeps its column rule. **`--ex-state-modified-mark` is the
+triangle's colour**, and the Wrapper's existing setting now paints. The triangle's size is paint,
+read by nothing in C#, so it stays in the stylesheet. Forced colours keep the outline they already
+restated the state with.
+
+The considered alternative was to keep the band as the design, and have the Wrapper pass a whole
+shadow. It was set aside: the band was never what was meant, and a token that is a colour
+everywhere but one place is the defect that made the Wrapper's mark vanish.
+
+## Added by ADR-0170 *(2026-10-07, decided with the user)*
+
+- **Internal class**, which may change without notice: `ex-copied-range`, the dashes around a
+  rectangle the grid copied while the clipboard still holds it
+  ([ADR-0170](./0170-a-copy-outlines-its-range-with-dashes-while-the-clipboard-still-holds-it.md)).
+  One element per rectangle in each overlay layer, cut to the painted rows.
+- **No new token.** The dashes take `--ex-focus-outline`, as ADR-0058's do, over a band of
+  `--ex-background`, so they read on the Selection's own outline; `--ex-selection-outline` stays
+  the range outline's alone. Forced colours restate them in `Highlight` over `Canvas`.

@@ -11,7 +11,9 @@ namespace ExGrid.Clipboard;
 /// <param name="Kind"><c>"none"</c>, <c>"data"</c> or <c>"async"</c>.</param>
 /// <param name="Text">The TSV for <c>text/plain</c>; present only with <c>"data"</c>.</param>
 /// <param name="Html">The HTML table for <c>text/html</c>; present only with <c>"data"</c>.</param>
-public sealed record ClipboardPayload(string Kind, string? Text = null, string? Html = null)
+/// <param name="Landing">The number the grid's script hands back once the write has landed, so the
+/// grid outlines the copy that landed and no other (ADR-0170); 0 when there is nothing to outline.</param>
+public sealed record ClipboardPayload(string Kind, string? Text = null, string? Html = null, int Landing = 0)
 {
     /// <summary><c>"none"</c>: the copy is refused, and the clipboard stays untouched.</summary>
     public static ClipboardPayload None { get; } = new("none");
