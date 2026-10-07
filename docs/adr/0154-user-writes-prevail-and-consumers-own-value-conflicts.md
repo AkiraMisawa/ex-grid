@@ -40,7 +40,10 @@ replacement Source. An operation captured under the old binding keeps a detached
 identity and refuses if that binding is replaced before delivery. This makes the original-target
 rule concrete when two sources both report sequence zero. Ordinary Selection rebinding and new
 gestures on the new Source are unchanged; publications by the same Source remain governed by
-the value-only rule above.
+the value-only rule above. An open Cell Editor or Formula Bar edit is likewise bound to its
+original Source. Replacing that Source discards the edit with `EditDiscardReason.SourceChanged`,
+while ordinary Selection rebinding is preserved. This added reason describes the actual loss of
+the target; reporting a row reordering would be false when both sources have sequence zero.
 
 An Action names its original row and command. With a Row Key, it resolves to the current row
 under that key, including after reordering. Without one, the existing instance/unchanged-order
