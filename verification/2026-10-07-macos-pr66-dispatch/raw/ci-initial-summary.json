@@ -1,0 +1,188 @@
+{
+  "conclusion": "failure",
+  "headSha": "9bafd3096d98a1a46689cacc8f31e02cb2a4c27e",
+  "jobs": [
+    {
+      "conclusion": "failure",
+      "name": "Build, layers 1 and 2, coverage",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112574813086"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3's hosts, published in Release",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112574813329"
+    },
+    {
+      "conclusion": "success",
+      "name": "Packages, taken as a Consumer takes them",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112574813341"
+    },
+    {
+      "conclusion": "success",
+      "name": "Changed specs, three times, against wasm on chrome (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335404"
+    },
+    {
+      "conclusion": "success",
+      "name": "Changed specs, three times, against server on chrome (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335410"
+    },
+    {
+      "conclusion": "success",
+      "name": "Changed specs, three times, against wasm on msedge (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335419"
+    },
+    {
+      "conclusion": "success",
+      "name": "Changed specs, three times, against server on msedge (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335422"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on chrome, shard 2/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335565"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 against the Server host on chrome, shard 2/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335575"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on chrome-150, shard 2/2 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335587"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on chrome, shard 4/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335595"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 against the Server host on msedge, shard 1/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335609"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 against the Server host on chrome, shard 3/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335615"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on msedge, shard 1/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335618"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on msedge, shard 4/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335625"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on chrome, shard 3/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335629"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 against the Server host on msedge, shard 4/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335639"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on msedge, shard 3/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335640"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 against the Server host on chrome, shard 1/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335648"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on msedge, shard 2/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335657"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 against the Server host on chrome-150, shard 1/2 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335673"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on chrome-150, shard 1/2 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335678"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 against the Server host on msedge, shard 3/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335693"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 against the Server host on msedge, shard 2/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335722"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on chrome, shard 1/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335752"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 against the Server host on chrome-150, shard 2/2 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335754"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 against the Server host on chrome, shard 4/4 (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112575335823"
+    },
+    {
+      "conclusion": "skipped",
+      "name": "Publish the coverage badges",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112576022953"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on Chrome and Edge (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112578120341"
+    },
+    {
+      "conclusion": "success",
+      "name": "Layer 3 on Chrome and Edge against the Server host (Linux, headed)",
+      "status": "completed",
+      "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057/job/112578460641"
+    }
+  ],
+  "status": "completed",
+  "url": "https://github.com/AkiraMisawa/ex-grid/actions/runs/37553676057"
+}

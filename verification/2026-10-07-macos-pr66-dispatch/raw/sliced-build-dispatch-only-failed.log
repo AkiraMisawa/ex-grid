@@ -1,0 +1,48 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Discovering: ExPivot.Components.Tests
+  Discovered:  ExPivot.Components.Tests
+  Starting:    ExPivot.Components.Tests
+  Finished:    ExPivot.Components.Tests
+=== TEST EXECUTION SUMMARY ===
+   ExPivot.Components.Tests  Total: 7, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 1.666s
+  Discovering: ExPivot.Components.Tests
+  Discovered:  ExPivot.Components.Tests
+  Starting:    ExPivot.Components.Tests
+  Finished:    ExPivot.Components.Tests
+=== TEST EXECUTION SUMMARY ===
+   ExPivot.Components.Tests  Total: 7, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 1.690s
+  Discovering: ExPivot.Components.Tests
+  Discovered:  ExPivot.Components.Tests
+  Starting:    ExPivot.Components.Tests
+    ExPivot.Components.Tests.SlicedBuildTests.A_long_layout_of_the_answer_held_is_sliced_and_superseded [FAIL]
+      Bunit.Rendering.UnknownEventHandlerIdException : There is no event handler with ID '220' associated with the 'onclick' event in the current render tree.
+
+      This can happen, for example, when using `cut.FindAll()`, and calling event trigger methods on the found elements after a re-render of the render tree. The workaround is to use re-issue the `cut.FindAll()` call after each render of a component, this ensures you have the latest version of the render tree and DOM tree available in your test code.
+
+      This can happen with code like this, `cut.Find("button").Click()`, where the buttons event handler can be removed between the time button is found with the Find method and the Click method is triggered. The workaround is to use wrap the Find and Click method calls in InvokeAsync, i.e. `cut.InvokeAsync(() => cut.Find("button").Click());`. This ensures that there are no changes to the DOM between Find method and the Click method calls.
+      ---- System.ArgumentException : There is no event handler associated with this event. EventId: '220'. (Parameter 'eventHandlerId')
+      Stack Trace:
+        /_/src/bunit/Rendering/BunitRenderer.cs(751,0): at Bunit.Rendering.BunitRenderer.AssertNoUnhandledExceptions()
+        /_/src/bunit/Rendering/BunitRenderer.cs(249,0): at Bunit.Rendering.BunitRenderer.DispatchEventAsync(UInt64 eventHandlerId, EventFieldInfo fieldInfo, EventArgs eventArgs, Boolean ignoreUnknownEventHandlers)
+        /_/src/bunit/EventDispatchExtensions/TriggerEventDispatchExtensions.cs(135,0): at Bunit.TriggerEventDispatchExtensions.GetDispatchEventTasks(BunitRenderer renderer, IElement element, String eventName, EventArgs eventArgs)
+        /_/src/bunit/EventDispatchExtensions/TriggerEventDispatchExtensions.cs(110,0): at Bunit.TriggerEventDispatchExtensions.TriggerBubblingEventAsync(BunitRenderer renderer, IElement element, String eventName, EventArgs eventArgs)
+        /_/src/bunit/EventDispatchExtensions/TriggerEventDispatchExtensions.cs(86,0): at Bunit.TriggerEventDispatchExtensions.TriggerEventsAsync(BunitRenderer renderer, IElement element, String eventName, EventArgs eventArgs)
+        /_/src/bunit/EventDispatchExtensions/TriggerEventDispatchExtensions.cs(73,0): at Bunit.TriggerEventDispatchExtensions.<>c__DisplayClass3_0.<TriggerEventAsync>b__0()
+           at Microsoft.AspNetCore.Components.Rendering.RendererSynchronizationContextDispatcher.InvokeAsync(Func`1 workItem)
+        /_/src/bunit/EventDispatchExtensions/TriggerEventDispatchExtensions.cs(72,0): at Bunit.TriggerEventDispatchExtensions.TriggerEventAsync(IElement element, String eventName, EventArgs eventArgs)
+        /_/src/bunit/obj/Release/net10.0/bunit.generators.internal/Bunit.Blazor.EventDispatcherExtensionGenerator/EventHandlerDispatchExtensions.g.cs(1209,0): at Bunit.EventHandlerDispatchExtensions.ClickAsync(IElement element, MouseEventArgs eventArgs)
+        tests/ExPivot.Components/Support/PivotTestContext.cs(196,0): at ExPivot.Components.Tests.Support.PivotTestContext.<>c__DisplayClass28_0.<OpenMenuAsync>b__0()
+           at Microsoft.AspNetCore.Components.Rendering.RendererSynchronizationContext.<>c.<<InvokeAsync>b__10_0>d.MoveNext()
+        --- End of stack trace from previous location ---
+        tests/ExPivot.Components/SlicedBuildTests.cs(284,0): at ExPivot.Components.Tests.SlicedBuildTests.A_long_layout_of_the_answer_held_is_sliced_and_superseded()
+        --- End of stack trace from previous location ---
+        ----- Inner Stack Trace -----
+           at Microsoft.AspNetCore.Components.RenderTree.Renderer.GetRequiredEventBindingEntry(UInt64 eventHandlerId)
+           at Microsoft.AspNetCore.Components.RenderTree.Renderer.DispatchEventAsync(UInt64 eventHandlerId, EventFieldInfo fieldInfo, EventArgs eventArgs, Boolean waitForQuiescence)
+           at Microsoft.AspNetCore.Components.RenderTree.Renderer.DispatchEventAsync(UInt64 eventHandlerId, EventFieldInfo fieldInfo, EventArgs eventArgs)
+           at Bunit.Rendering.BunitRenderer.<>n__0(UInt64 eventHandlerId, EventFieldInfo fieldInfo, EventArgs eventArgs)
+        /_/src/bunit/Rendering/BunitRenderer.cs(230,0): at Bunit.Rendering.BunitRenderer.<>c__DisplayClass37_0.<DispatchEventAsync>b__0()
+  Finished:    ExPivot.Components.Tests
+=== TEST EXECUTION SUMMARY ===
+   ExPivot.Components.Tests  Total: 7, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 2.064s
