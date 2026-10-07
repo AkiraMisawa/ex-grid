@@ -34,10 +34,42 @@ public partial class ExGrid<TRow>
     private int _paintSequence;
     private object? _paintSourceIdentity;
     private string[] _paintColumns = [];
+    private enum SpaceOperation { None, Action, Mark, Template, Edit }
+    private readonly record struct SpaceColumn(string Name, SpaceOperation Operation, int FirstPaint);
+    // Current declarations only, without rows, accessors, or former command names. When
+    // Action history is gone, these distinguish unchanged editing from a different operation.
+    private object? _spaceColumnsIdentity;
+    private SpaceColumn[] _spaceColumns = [];
+
+    private bool NoteSpaceColumns(object identity)
+    {
+        if (ReferenceEquals(_spaceColumnsIdentity, identity)) return false;
+        _spaceColumnsIdentity = identity;
+        var current = new SpaceColumn[Columns.Count];
+        var changed = false;
+        for (var i = 0; i < current.Length; i++)
+        {
+            var column = Columns[i];
+            var operation = column.Actions.Count != 0 ? SpaceOperation.Action
+                : column.IsMarkColumn ? SpaceOperation.Mark : column.Template is not null ? SpaceOperation.Template
+                : column.Editable ? SpaceOperation.Edit : SpaceOperation.None;
+            if (i < _spaceColumns.Length && _spaceColumns[i].Name == column.Name && _spaceColumns[i].Operation == operation)
+                current[i] = _spaceColumns[i];
+            else
+            {
+                current[i] = new(column.Name, operation, _paintId + 1);
+                changed = true;
+            }
+        }
+        _spaceColumns = current;
+        return changed;
+    }
 
     // The DOM attribute keeps its existing name. Its token identifies addresses only.
     private int NotePaint()
     {
+        var columnsIdentity = PaintIdentityOf(Columns)!;
+        var spaceChanged = NoteSpaceColumns(columnsIdentity);
         var sourceIdentity = PaintIdentityOf(Source);
         var sameAddress = ReferenceEquals(_paintSourceIdentity, sourceIdentity)
             && _paintSequence == _sequenceVersion && SameNames(_paintColumns);
@@ -46,7 +78,7 @@ public partial class ExGrid<TRow>
         var hasActions = Columns.Any(column => column.Actions.Count != 0);
         if (!hasActions)
         {
-            if (!sameAddress || _paintId == 0 || _paints.Count != 0) _paintId++;
+            if (!sameAddress || spaceChanged || _paintId == 0 || _paints.Count != 0) _paintId++;
             _paints.Clear();
             _paintSequence = _sequenceVersion;
             if (!sameAddress) _paintColumns = Columns.Select(column => column.Name).ToArray();
@@ -55,7 +87,6 @@ public partial class ExGrid<TRow>
         var first = _visible?.Start ?? _windowStart;
         var count = _visible?.Count ?? 0;
         var last = _paints.LastOrDefault();
-        var columnsIdentity = PaintIdentityOf(Columns)!;
         var keyIdentity = PaintIdentityOf(_rowKey);
         if (sameAddress && last is not null && last.FirstRow == first && last.Rows.Length == count
             && ReferenceEquals(last.ColumnsIdentity, columnsIdentity) && ReferenceEquals(last.KeyIdentity, keyIdentity)

@@ -998,6 +998,123 @@ public class WriteRefusalTests : GridTestContext
         }
     }
 
+    [Theory] // ADR-0154: losing the last Action declaration cannot turn its Space into another operation.
+    [InlineData("editable")]
+    [InlineData("mark")]
+    [InlineData("template")]
+    public async Task ADR0154_a_delayed_action_space_never_engages_a_replacement_column(string replacement)
+    {
+        var rows = TestRows.Many(50);
+        var source = GridSource.From(rows, ByBook, Clock);
+        var heard = new Heard();
+        var focusRequests = new List<int>();
+        RenderFragment<TemplateCellContext<TestRow>> template = cell =>
+        {
+            focusRequests.Add(cell.FocusRequest);
+            return builder => builder.AddContent(0, "Content");
+        };
+        var cut = RenderSourceGrid(source, heard, WithAction());
+        await ClickAsync(cut, 250, 10);
+        var taken = Paint(cut);
+        var declared = replacement switch
+        {
+            "mark" => GridColumn<TestRow>.MarkColumn("Do", width: Fixed100),
+            "template" => GridColumn<TestRow>.TemplateColumn("Do", ColumnType.Text, row => row.Book, template, width: Fixed100),
+            _ => new GridColumn<TestRow>("Do", ColumnType.Text, row => row.Book, width: Fixed100, editable: true),
+        };
+        cut.Render(ps => ps.Add(g => g.Columns, [.. Columns(), declared]));
+
+        await KeyAsync(cut, " ", paint: taken);
+
+        Assert.Empty(heard.Actions);
+        Assert.Equal(ActionRefusalReason.RenderNoLongerKept, Assert.Single(heard.ActionRefusals).Reason);
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.False(source.Marks.IsMarked(rows[0]));
+        Assert.DoesNotContain(focusRequests, request => request != 0);
+
+        // A fresh Space belongs to the new declaration and keeps its ordinary meaning.
+        await KeyAsync(cut, " ");
+        Assert.Single(heard.ActionRefusals);
+        if (replacement == "editable") Assert.Equal(" ", cut.Find(".ex-editor").GetAttribute("value"));
+        else if (replacement == "mark") Assert.True(source.Marks.IsMarked(rows[0]));
+        else Assert.Contains(focusRequests, request => request != 0);
+    }
+
+    [Fact] // ADR-0154: unrelated Action metadata expiry does not expire an unchanged editable column.
+    public async Task ADR0154_an_editable_space_survives_action_history_eviction()
+    {
+        var rows = TestRows.Many(50);
+        var source = GridSource.From(rows, ByBook, Clock);
+        var heard = new Heard();
+        var cut = RenderSourceGrid(source, heard, WithAction());
+        await ClickAsync(cut, 50, 10);
+        var taken = Paint(cut);
+        for (var i = 0; i < 100; i++)
+        {
+            var current = source.Window[0];
+            await cut.InvokeAsync(() => source.ReplaceRow(current, new TestRow { Book = current.Book, Amount = i }));
+        }
+
+        await KeyAsync(cut, " ", paint: taken);
+
+        Assert.Empty(heard.ActionRefusals);
+        Assert.Equal(" ", cut.Find(".ex-editor").GetAttribute("value"));
+    }
+
+    [Theory] // ADR-0154: values do not refuse Space; a lost Action address does.
+    [InlineData(1)]
+    [InlineData(100)]
+    public async Task ADR0154_an_action_space_uses_current_values_while_its_address_is_known(int updates)
+    {
+        var rows = TestRows.Many(50);
+        var source = GridSource.From(rows, ByBook, Clock);
+        var heard = new Heard();
+        var cut = RenderSourceGrid(source, heard, WithAction());
+        await ClickAsync(cut, 250, 10);
+        var taken = Paint(cut);
+        for (var i = 0; i < updates; i++)
+        {
+            var current = source.Window[0];
+            await cut.InvokeAsync(() => source.ReplaceRow(current, new TestRow { Book = current.Book, Amount = i + 100m }));
+        }
+
+        await KeyAsync(cut, " ", paint: taken);
+
+        if (updates == 1)
+        {
+            Assert.Empty(heard.ActionRefusals);
+            Assert.Same(source.Window[0], Assert.Single(heard.Actions).Row);
+        }
+        else
+        {
+            Assert.Empty(heard.Actions);
+            var refusal = Assert.Single(heard.ActionRefusals);
+            Assert.Equal(ActionRefusalReason.RenderNoLongerKept, refusal.Reason);
+            Assert.Null(refusal.ActionName);
+        }
+    }
+
+    [Fact] // ADR-0154 / ADR-0037: a refused firing leaves Interactive just as a successful one does.
+    public async Task ADR0154_an_expired_space_leaves_interactive_before_the_next_space()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, [.. Columns(), GridColumn<TestRow>.ActionColumn("Do",
+            [new("inspect", "Inspect"), new("approve", "Approve")], width: Fixed100)]);
+        await ClickAsync(cut, 250, 10);
+        await KeyAsync(cut, " ");
+        await KeyAsync(cut, "ArrowRight");
+        var taken = Paint(cut);
+        for (var i = 0; i < 100; i++) { rows = Changed(rows, 0, amount: i + 100m); Push(cut, rows); }
+
+        await KeyAsync(cut, " ", paint: taken);
+        Assert.Single(heard.ActionRefusals);
+        await KeyAsync(cut, " ");
+
+        Assert.Empty(heard.Actions);
+        Assert.Equal("Inspect", Assert.Single(cut.FindAll(".ex-action-chosen")).TextContent);
+    }
+
     [Theory] // ADR-0154: asynchronous clipboard reads keep the selection from the paste event.
     [InlineData(false)]
     [InlineData(true)]

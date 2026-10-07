@@ -7947,6 +7947,16 @@
         // Space identifies a command from the declaration it was pressed against. A later
         // declaration may move that command or remove it; it must never substitute another.
         var paintedColumn = PaintNamed(paint)?.Columns.ElementAtOrDefault(focus.Column);
+        if (paint != PaintNotTold && paintedColumn is null
+            && (column.Actions.Count != 0 || focus.Column >= _spaceColumns.Length || paint < _spaceColumns[focus.Column].FirstPaint))
+        {
+            // The old declaration is unavailable. An unchanged editable column needs no
+            // Action history, but a different Space operation must never inherit this key.
+            if (EndInteractive()) { _suppressRender = false; StateHasChanged(); }
+            if (OnActionRefused.HasDelegate)
+                await OnActionRefused.InvokeAsync(new(null, null, ActionRefusalReason.RenderNoLongerKept, RowIndex: focus.Row));
+            return;
+        }
         var actions = paintedColumn?.Actions ?? column.Actions.Select(action => action.Name).ToArray();
         var actionColumnName = paintedColumn?.Name ?? column.Name;
 
