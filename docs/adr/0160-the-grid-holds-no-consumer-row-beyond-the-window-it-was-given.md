@@ -34,12 +34,16 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
   cell it was made on (ED-31).
 - **The Cell Appearance cache forgets a row once it leaves the Window.** A new Window drops every entry
   whose row instance it does not hold; what is kept for the rows it does hold is their appearance values.
-- **Two holdings outlive a Window, bounded to one each, and are named here so they are not mistaken for
+- **Three holdings outlive a Window, bounded to one each, and are named here so they are not mistaken for
   leaks:**
   - **The Window last measured for Auto widths** (ADR-0016), while a fling or a hidden or zero-sized
     Viewport defers the next measure. It is replaced at the next measure.
   - **The row of an Action press in flight**, until its click is heard or the core answers the press
     (ADR-0142, "No press is lost to Blazor").
+  - **The Row Key of the row under an open editor**, while the editor is open, so that the editor can
+    follow its row through an order move and a commit can tell that the row is gone
+    ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of
+    2026-10-07). *(Added the same day.)*
 - **What a Consumer hands the grid as its own object is the Consumer's to hold**: a Row Mark adapter, a
   Pointed At's dashes (ADR-0058), a popover's content. The grid keeps the reference, not rows of its own.
 
@@ -48,7 +52,7 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
 - **By reachability, not by megabytes.** A heap size moves with the runtime and the machine, as a time
   does, so it never gates (§1).
 - **Layer 2, a MUST**: after a run of new Windows, with weak references taken to the row instances of
-  each earlier one and a full collection made, none of them is alive, apart from the two holdings above.
+  each earlier one and a full collection made, none of them is alive, apart from the three holdings above.
   For ExPivot, after a run of live redraws, no report but the one on screen is alive
   ([ADR-0161](./0161-expivots-live-redraw-makes-the-next-report-from-the-last.md) keeps none).
 - **Observational**: the loop of the out-of-memory record — 101,001 report rows, 20 live redraws in the
