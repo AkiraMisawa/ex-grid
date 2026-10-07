@@ -189,7 +189,10 @@ against, so the window is near zero.
   - `CommitRefusalReason` loses `CellChanged` and `RenderNoLongerKept`, and gains `RowGone` and
     `OrderMoved`.
   - `ActionRefusalReason` loses `RowChanged` and `RenderNoLongerKept`, and gains the same two.
-  - `PasteRefusalReason` loses `TargetChanged` and `RenderNoLongerKept`.
+  - `PasteRefusalReason` loses `TargetChanged` and `RenderNoLongerKept`, and gains `OrderMoved`: a paste,
+    Delete, Ctrl+D, Ctrl+R, a Ctrl+Enter fill or a fill-handle release aimed under a Row Sequence Version
+    that has moved since. Until then such a gesture was reported as `EmptySelection`, or not at all, which
+    is not what is true of it. *(Settled while building it, 2026-10-07.)*
 - **The Edit Intent gains the text the user saw and the text the commit replaced, and `Refuse(message)`.**
   ADR-0034 and [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md) are noted.
 - **`CONTEXT.md` gains Overwrite Notice.**
