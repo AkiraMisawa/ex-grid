@@ -33,9 +33,9 @@
        a live region where the confirmations above are not: they report what did happen. *@
     <span id="paste-refused-status" role="status">Paste refused: @_pasteRefusedStatus</span>
     <span id="edit-discarded-status" role="status">Edit discarded: @_editDiscardedStatus</span>
-    @* A write refused because what the user saw of its target changed before it landed
-       (ADR-0142): announced as every refusal is (A11Y-16). The commit's sentence carries the
-       cell's new text, because the editor covers the cell. *@
+    @* A write refused because its row is gone, its order moved, or the cell under the editor
+       changed (ADR-0142): announced as every refusal is (A11Y-16). The commit's sentence carries
+       the cell's new text, because the editor covers the cell. *@
     <span id="commit-refused-status" role="status">Commit refused: @_commitRefusedStatus</span>
     <span id="action-refused-status" role="status">Action refused: @_actionRefusedStatus</span>
     <span id="find-refused-status" role="status">Find: @_findStatus</span>
@@ -436,13 +436,9 @@
                 "TargetNotEditable — the selection covers a column that is not editable",
             PasteRefusalReason.SingleCellTarget =>
                 "SingleCellTarget — reselect a target of the same shape",
-            // ADR-0142: the data under the target moved after the user saw it. Nothing was written,
-            // and the user, who has not seen the new values, is told to look before trying again.
-            PasteRefusalReason.TargetChanged =>
-                "TargetChanged — nothing was written: the cells changed before the write landed; check them and try again",
-            // Not "changed": the grid cannot tell whether they did, only that it no longer knows what was shown.
-            PasteRefusalReason.RenderNoLongerKept =>
-                "RenderNoLongerKept — nothing was written: the grid could no longer tell what the cells showed; try again",
+            // ADR-0142/0011: also a write aimed with a Selection the rows moving took away.
+            PasteRefusalReason.EmptySelection =>
+                "EmptySelection — nothing was written: select the cells to write into",
             _ => reason.ToString(),
         }, s => _pasteRefusedStatus = s);
 
@@ -459,15 +455,16 @@
                  "press Enter again to write over it, or Escape to keep it",
         }, s => _commitRefusedStatus = s);
 
-    /// <summary>An action pressed on a row that moved before the press landed (ADR-0142, LV-12).
-    /// Nothing was done; one more press, on the row as it is now, does it.</summary>
+    /// <summary>An action whose row the grid could no longer find when the press landed (ADR-0142,
+    /// LV-12, LV-20): gone, or named by a place the rows moving gave to another row. Nothing was
+    /// done; the row's values changing never refuses one.</summary>
     private void OnActionRefused(GridActionRefusal<DemoTrade> refusal)
         => Status(refusal.Reason, refusal.Reason switch
         {
-            ActionRefusalReason.RowChanged =>
-                $"RowChanged — {refusal.Action.ActionName} was not done: the row changed before the press landed; check it and press again",
-            ActionRefusalReason.RenderNoLongerKept =>
-                $"RenderNoLongerKept — {refusal.Action.ActionName} was not done: the grid could no longer tell what the row showed; press again",
+            ActionRefusalReason.RowGone =>
+                $"RowGone — {refusal.Action.ActionName} was not done: the row is no longer there",
+            ActionRefusalReason.OrderMoved =>
+                $"OrderMoved — {refusal.Action.ActionName} was not done: the rows moved before the press landed; press it on the row again",
             _ => refusal.Reason.ToString(),
         }, s => _actionRefusedStatus = s);
 

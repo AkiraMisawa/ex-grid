@@ -2,11 +2,11 @@ import { test, expect, alterPage, circuitQuiet, setRoundTrip } from './fixtures.
 import { SERVER } from './hosting.mjs';
 import { expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
-// A write is refused when what the user saw of its target changed before it lands (ADR-0142,
-// LV-11 to LV-14), driven on /features?upstream=1. There F9, declared to the grid, moves the
-// Notional of the first five rows up by one, as a live feed would: it reaches the host in its
-// turn among the keys and presses, so on the Server host a gesture made straight after it is
-// taken on the render from before the change and handled after it. Columns: Book 0, Trader 1,
+// A write lands as the user entered it, on the row the user aimed it at (ADR-0142, rewritten
+// 2026-10-07; LV-11 to LV-14, LV-17), driven on /features?upstream=1. There F9, declared to the
+// grid, moves the Notional of the first five rows up by one, as a live feed would: it reaches the
+// host in its turn among the keys and presses, so on the Server host a gesture made straight after
+// it is taken on the render from before the change and handled after it. Columns: Book 0, Trader 1,
 // Notional 2, Act 3 (one action, Approve), Narrow 4, …
 //
 // What the user saw at a gesture is read by a capture listener on the document, ahead of the
@@ -150,7 +150,7 @@ test('LV-11: a change to another cell of the row refuses nothing (ADR-0142)', as
     await expect(page.locator('#commit-refused-status')).toHaveText('Commit refused: —');
 });
 
-test('LV-12: an Action press taken on a render whose row has changed since is refused, and says why; the next press fires once (ADR-0142, ADR-0020)', async ({ page }) => {
+test('LV-12: an Action press taken on a render whose row has changed since acts on that row as it is now, once (ADR-0142, ADR-0020)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before the next press can be taken: no press can be taken on the render before it');
     await expect(page.locator('#action-refused-status')).toHaveAttribute('role', 'status');
     const notional = cell(page, 0, NOTIONAL);
@@ -166,24 +166,17 @@ test('LV-12: an Action press taken on a render whose row has changed since is re
     await page.mouse.click(button.x + button.width / 2, button.y + button.height / 2);
 
     expect((await seenAt(page, 'mousedown')).text, 'the press was taken on the render before F9\'s change').toBe(before);
-    await expect(page.locator('#action-refused-status')).toContainText('RowChanged');
-    await circuitQuiet();
-    await expect(page.locator('#action-status')).toHaveText('Action: —');
-
-    // Pressed again on the row as it shows now: it fires, once. Measured again: the refusal's
-    // sentence above the grid may wrap, and move the grid down.
+    await expect(page.locator('#upstream-status')).toContainText('(×1)');
+    await expect(notional).not.toHaveText(before);
     const moved = (await notional.textContent()).trim();
-    expect(moved).not.toBe(before);
-    const again = await boxOf(cell(page, 0, ACT).locator('.ex-action'));
-    await page.mouse.click(again.x + again.width / 2, again.y + again.height / 2);
-    await expect(page.locator('#action-status')).toContainText(`approve Alpha/`);
-    await expect(page.locator('#action-status')).toContainText(moved);
+    // Acted on the row as it is now: at the Notional F9 moved it to.
+    await expect(page.locator('#action-status')).toContainText('approve Alpha/');
+    await expect(page.locator('#action-status')).toContainText(moved.replace(/,/g, ''));
     await circuitQuiet();
-    await expect(page.locator('#action-refused-status')).toContainText('RowChanged');
-    await expect(page.locator('#action-refused-status')).not.toContainText('×2');
+    await expect(page.locator('#action-refused-status')).toHaveText('Action refused: —');
 });
 
-test('LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it landed is judged against the older one, and refused; pressed again, it pastes (ADR-0142)', async ({ page }) => {
+test('LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it landed, under the same order, pastes where it was aimed (ADR-0142)', async ({ page }) => {
     await page.evaluate(() => navigator.clipboard.write([new ClipboardItem({
         'text/html': new Blob(['<table><tr><td>5</td></tr></table>'], { type: 'text/html' }),
         'text/plain': new Blob(['5\r\n'], { type: 'text/plain' }),
@@ -200,28 +193,22 @@ test('LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it l
     await page.keyboard.press('ControlOrMeta+v');
 
     const atPaste = await seenAt(page, 'paste');
-    await expect(page.locator('#upstream-status')).toContainText('(×1)');
-    await circuitQuiet();
-    if (atPaste.text === before) {
-        // Taken on the render before the change, handled after it: refused, nothing written.
-        await expect(page.locator('#paste-refused-status')).toContainText('TargetChanged');
-        await expect(page.locator('#paste-status')).toHaveText('Pasted: —');
-        expect(await grid(page).locator('.ex-viewport').first().getAttribute('data-ex-paint'),
-            'a newer render replaced the one the paste was taken on').not.toBe(atPaste.paint);
-    } else {
-        // Taken on the render that already showed the change: the change was seen, and it pastes.
-        expect(SERVER, 'on the Server host the paste is taken before the change\'s render comes back').toBe(false);
-        await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
-        return;
+    if (SERVER) {
+        expect(atPaste.text, 'on the Server host the paste is taken before the change\'s render comes back').toBe(before);
     }
-
-    // Pressed again, on what the page shows now: it pastes.
-    await page.keyboard.press('ControlOrMeta+v');
+    await expect(page.locator('#upstream-status')).toContainText('(×1)');
     await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
     await expect(notional).toHaveText('5');
+    await expect(cell(page, 1, NOTIONAL)).toHaveText('5');
+    await circuitQuiet();
+    await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
+    if (SERVER) {
+        expect(await grid(page).locator('.ex-viewport').first().getAttribute('data-ex-paint'),
+            'a newer render replaced the one the paste was taken on').not.toBe(atPaste.paint);
+    }
 });
 
-test('LV-13: a Ctrl+Enter fill whose target changed since the key was pressed is refused, and the editor stays with the typing (ADR-0142, ADR-0035)', async ({ page }) => {
+test('LV-13: a Ctrl+Enter fill whose target changed since the key was pressed lands as entered (ADR-0142, ADR-0035)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before Ctrl+Enter can be taken on the render before it');
     // Notional rows 4 and 5, the Focus on 5 (ADR-0052): F9 moves row 4, not the edited cell.
     await clickCell(page, 5, NOTIONAL);
@@ -238,13 +225,14 @@ test('LV-13: a Ctrl+Enter fill whose target changed since the key was pressed is
     await page.keyboard.press('ControlOrMeta+Enter');
 
     expect((await seenAt(page, 'keydown', 'Enter')).text, 'Ctrl+Enter was taken on the render before F9\'s change').toBe(before);
-    await expect(page.locator('#paste-refused-status')).toContainText('TargetChanged');
-    await expect(editor).toHaveValue('7');
+    await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
+    await expect(editor).toHaveCount(0);
+    await expect(cell(page, 4, NOTIONAL)).toHaveText('7');
     await circuitQuiet();
-    await expect(page.locator('#paste-status')).toHaveText('Pasted: —');
+    await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
 });
 
-test('LV-13: a fill-handle drag released on a render whose target has changed since is refused (ADR-0142, ADR-0050 item 5)', async ({ page }) => {
+test('LV-13: a fill-handle drag released on a render whose target has changed since lands (ADR-0142, ADR-0050 item 5)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before the release can be taken on the render before it');
     await clickCell(page, 0, NOTIONAL);
     await circuitQuiet();
@@ -276,17 +264,16 @@ test('LV-13: a fill-handle drag released on a render whose target has changed si
     await page.mouse.up();
 
     expect((await seenAt(page, 'mouseup')).text, 'the release was taken on the render before F9\'s change').toBe(before);
-    await expect(page.locator('#paste-refused-status')).toContainText('TargetChanged');
+    await expect(page.locator('#fill-status')).not.toHaveText('Filled: —');
     await circuitQuiet();
-    await expect(page.locator('#fill-status')).toHaveText('Filled: —');
+    await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
 });
 
-// The user's own writes count as seen (ADR-0142, D1; LV-17): the same keys give the same outcome on
-// both hosts. On the Server host the keys after Enter are taken on the render from before the
-// commit was painted — at 150 ms always, at 0 ms as the wire allows — and the cell the commit wrote
-// is not compared for them. On WebAssembly the commit is painted before the next key is taken.
+// The same keys give the same outcome on both hosts (LV-17, principle 6). On the Server host the
+// keys after Enter are taken on the render from before the commit was painted — at 150 ms always,
+// at 0 ms as the wire allows. On WebAssembly the commit is painted before the next key is taken.
 for (const rtt of [0, 150]) {
-    test(`LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0142 D1, ${rtt} ms)`, async ({ page }) => {
+    test(`LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0142, ${rtt} ms)`, async ({ page }) => {
         test.skip(!SERVER && rtt !== 0, 'WebAssembly has no round trip to set');
         await page.evaluate(() => navigator.clipboard.write([new ClipboardItem({
             'text/html': new Blob(['<table><tr><td>7</td></tr></table>'], { type: 'text/html' }),
@@ -316,7 +303,7 @@ for (const rtt of [0, 150]) {
         await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
     });
 
-    test(`LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0142 D1/D2, ${rtt} ms)`, async ({ page }) => {
+    test(`LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0142, ${rtt} ms)`, async ({ page }) => {
         test.skip(!SERVER && rtt !== 0, 'WebAssembly has no round trip to set');
         const notional = cell(page, 0, NOTIONAL);
         const before = (await notional.textContent()).trim();
@@ -344,7 +331,7 @@ for (const rtt of [0, 150]) {
     });
 }
 
-test('LV-11: a change in the round trip between the key that opens the editor and the open refuses the commit, with the new value (ADR-0142 D2)', async ({ page }) => {
+test('LV-11: a change in the round trip between the key that opens the editor and the open is not compared, and the commit lands (ADR-0142)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before the next key can be taken on the render before it');
     const notional = cell(page, 0, NOTIONAL);
     const before = (await notional.textContent()).trim();
@@ -355,27 +342,21 @@ test('LV-11: a change in the round trip between the key that opens the editor an
     await setRoundTrip(150);
 
     // F9 moves the cell upstream; the 5 that opens the editor over it is taken before that change
-    // is painted, and the editor covers the cell once it opens.
+    // is painted. The editor opens over the moved cell: the round trip the rule accepts.
     await page.keyboard.press('F9');
     await page.keyboard.type('5');
     await page.keyboard.press('Enter');
 
     expect((await seenAt(page, 'keydown', '5')).text, 'the 5 was taken on the render before F9\'s change').toBe(before);
     await expect(page.locator('#upstream-status')).toContainText('(×1)');
-    const moved = (await notional.textContent()).trim();
-    expect(moved).not.toBe(before);
-    await expect(page.locator('#commit-refused-status')).toContainText(`Notional changed to ${moved}`);
-    await expect(grid(page).locator('input.ex-editor')).toHaveValue('5');
-    await circuitQuiet();
-    await expect(page.locator('#edit-status')).toHaveText('Edited: —');
-
-    // Judged against the value the notice showed: it lands.
-    await page.keyboard.press('Enter');
     await expect(page.locator('#edit-status')).toContainText('Notional=5');
     await expect(notional).toHaveText('5');
+    await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
+    await circuitQuiet();
+    await expect(page.locator('#commit-refused-status')).toHaveText('Commit refused: —');
 });
 
-test('LV-13: a Delete whose target changed since the key was pressed is refused, and clears nothing (ADR-0142 D3)', async ({ page }) => {
+test('LV-13: a Delete whose target changed since the key was pressed clears it (ADR-0142, ADR-0054)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before Delete can be taken on the render before it');
     // Notional rows 0 and 1, both moved by F9.
     await clickCell(page, 0, NOTIONAL);
@@ -389,12 +370,12 @@ test('LV-13: a Delete whose target changed since the key was pressed is refused,
     await page.keyboard.press('Delete');
 
     expect((await seenAt(page, 'keydown', 'Delete')).text, 'Delete was taken on the render before F9\'s change').toBe(before);
-    await expect(page.locator('#paste-refused-status')).toContainText('TargetChanged');
+    await expect(page.locator('#clear-status')).toContainText('2 cells');
     await circuitQuiet();
-    await expect(page.locator('#clear-status')).toHaveText('Cleared: —');
+    await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
 });
 
-test('LV-13: a Ctrl+R whose target changed since the key was pressed is refused (ADR-0142 D3)', async ({ page }) => {
+test('LV-13: a Ctrl+R whose target changed since the key was pressed fills it (ADR-0142, ADR-0035)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before Ctrl+R can be taken on the render before it');
     // Row 0, Trader to Notional: Trader is the source, and F9 moves Notional, the target. Notional's
     // right is the Action column, which no fill can write (ADR-0035), so the fill runs rightward into it.
@@ -409,12 +390,12 @@ test('LV-13: a Ctrl+R whose target changed since the key was pressed is refused 
     await page.keyboard.press('ControlOrMeta+r');
 
     expect((await seenAt(page, 'keydown', 'r')).text, 'Ctrl+R was taken on the render before F9\'s change').toBe(before);
-    await expect(page.locator('#paste-refused-status')).toContainText('TargetChanged');
+    await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1');
     await circuitQuiet();
-    await expect(page.locator('#paste-status')).toHaveText('Pasted: —');
+    await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
 });
 
-test('LV-13: a Ctrl+D whose source changed since the key was pressed is refused, though its target did not change (ADR-0142 D4)', async ({ page }) => {
+test('LV-13: a Ctrl+D whose source changed since the key was pressed fills with the source as it is now (ADR-0142, ADR-0035)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before Ctrl+D can be taken on the render before it');
     // Notional rows 4 to 6: F9 moves row 4, the source, and not rows 5 and 6, the target.
     await clickCell(page, 4, NOTIONAL);
@@ -422,7 +403,6 @@ test('LV-13: a Ctrl+D whose source changed since the key was pressed is refused,
     await page.keyboard.press('Shift+ArrowDown');
     await circuitQuiet();
     const before = (await cell(page, 4, NOTIONAL).textContent()).trim();
-    const target = (await cell(page, 5, NOTIONAL).textContent()).trim();
     await watchWhatIsSeen(page, 4, NOTIONAL);
     await setRoundTrip(150);
 
@@ -430,8 +410,11 @@ test('LV-13: a Ctrl+D whose source changed since the key was pressed is refused,
     await page.keyboard.press('ControlOrMeta+d');
 
     expect((await seenAt(page, 'keydown', 'd')).text, 'Ctrl+D was taken on the render before F9\'s change').toBe(before);
-    await expect(page.locator('#paste-refused-status')).toContainText('TargetChanged');
+    await expect(cell(page, 4, NOTIONAL)).not.toHaveText(before);
+    const moved = (await cell(page, 4, NOTIONAL).textContent()).trim();
+    await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
+    await expect(cell(page, 5, NOTIONAL)).toHaveText(moved);
+    await expect(cell(page, 6, NOTIONAL)).toHaveText(moved);
     await circuitQuiet();
-    await expect(page.locator('#paste-status')).toHaveText('Pasted: —');
-    await expect(cell(page, 5, NOTIONAL)).toHaveText(target);
+    await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
 });

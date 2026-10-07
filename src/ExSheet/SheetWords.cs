@@ -76,11 +76,6 @@ internal static class SheetWords
         PasteRefusalReason.TargetNotEditable => "Nothing was pasted: the selection covers cells that cannot be written.",
         PasteRefusalReason.TooLarge => "Nothing was pasted: the clipboard holds more than a paste reads at once.",
         PasteRefusalReason.SpillPastExtent => "Nothing was pasted: the block would run past the Sheet's edge (XFD1048576).",
-        // ADR-0142: raised for a paste, a fill and Delete alike, so the sentence says written.
-        PasteRefusalReason.TargetChanged =>
-            "Nothing was written: cells it would have written changed before it landed. Check them and try again.",
-        PasteRefusalReason.RenderNoLongerKept =>
-            "Nothing was written: the Sheet could no longer tell what those cells showed when you acted. Try again.",
         _ => "Nothing was pasted.",
     };
 

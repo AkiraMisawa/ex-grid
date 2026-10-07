@@ -95,15 +95,15 @@ public partial class ExGrid<TRow>
     /// </summary>
     /// <param name="text">The composition's text.</param>
     /// <param name="paint">The render the composition started on (<c>data-ex-paint</c>, read at
-    /// its <c>compositionstart</c>): the field covers the cell from then on, so the edit keeps
-    /// what that render showed of it (ADR-0142, LV-11, D2).</param>
+    /// its <c>compositionstart</c>). The edit keeps what the cell paints when it opens (ADR-0142,
+    /// rewritten 2026-10-07), so the core no longer reads it; the listener still tells it.</param>
     [JSInvokable]
     public async Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold)
     {
         if (_disposed)
             return false;
         if (_editMode == EditMode.None)
-            await TryStartEditingAsync(EditMode.Overwrite, text, paint);
+            await TryStartEditingAsync(EditMode.Overwrite, text);
         return _editMode != EditMode.None;
     }
 }

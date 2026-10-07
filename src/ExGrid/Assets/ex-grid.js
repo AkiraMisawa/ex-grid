@@ -14,9 +14,9 @@
 // core what each press on the rows was taken against, so a held one lands where it was made
 // (ED-31, ADR-0021's note of 2026-10-02); that same mousedown and mouseup, the keydown, the
 // paste and the Keyboard Field's compositionstart reading the render the rows on screen were
-// painted by (data-ex-paint), so that a write — and an edit, from the gesture that opens it, a
-// press into the Formula Bar among them — is judged against what the user saw of its target
-// (ADR-0142, D2; ADR-0021's note of 2026-10-05);
+// painted by (data-ex-paint), so that a write lands where it was aimed, under the order it was
+// aimed under, and a press on an action finds the row it was made on (ADR-0142; ADR-0021's notes
+// of 2026-10-05 and 2026-10-07);
 // and the editor listener keeping the coloured text beneath a field honest (ADR-0057). And the
 // seventh entry (ADR-0080): the Keyboard Field's composition and focus, heard on the root —
 // `compositionstart` and `compositionend`, always on, so a composition on a selected cell takes its
@@ -424,8 +424,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the painting render wrote on this grid's own Viewport (data-ex-paint), the first in the
     // scroller, ahead of any grid nested in a cell. A key and a paste carry it from the moment they
     // are taken, held or not, as a press on the rows carries its own (takenAt): a write they make
-    // is judged against what the user saw then, never against a render that replaced it before the
-    // write landed. Reads an attribute; nothing is measured, and nothing per cell crosses.
+    // by position is checked against the order it was aimed under, never against one a render
+    // brought in before the write landed; what the cells hold is never judged (ADR-0142, rewritten
+    // 2026-10-07). Reads an attribute; nothing is measured, and nothing per cell crosses.
     const paintNow = () => {
         const viewport = scroller ? scroller.querySelector('.ex-viewport') : null;
         const value = viewport ? viewport.getAttribute('data-ex-paint') : null;
@@ -1560,9 +1561,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // How much of the field's value has already been handed on: a second composition finished in
     // the field before the keyboard left it is appended to the first, and only its own text goes.
     let keyFieldCarried = 0;
-    // The render the composition started on (paintNow, at its compositionstart): the field covers
-    // the cell from then on, so the edit its text opens keeps what that render showed of the cell
-    // (ADR-0142, D2).
+    // The render the composition started on (paintNow, at its compositionstart), told with its
+    // text. The edit the text opens keeps what the cell paints when it opens (ADR-0142, rewritten
+    // 2026-10-07), so the core no longer reads it (ADR-0021's note of 2026-10-07).
     let keyFieldPaint = -1;
     // The editor's request for the keyboard, made while the field was composing or as a
     // composition ended: granted once the field has stopped composing (keyFieldEnded).
@@ -1778,11 +1779,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const isOwnRows = (target) => inOwnScroller(target) && target.classList.contains('ex-viewport');
     // An action's button on this grid's own rows, not a nested grid's (ADR-0020), or null.
     const ownAction = (target) => (inOwnScroller(target) ? target.closest('.ex-action') : null);
-    // A press on an action carries the render its row was painted by (ADR-0142, LV-12): the paint
-    // the Viewport named at the press, told to the core at the release on the same button — the
-    // click that fires the action follows that release, and Blazor dispatches it after this
-    // message, so the press the core hears next is the one it was told of. A release elsewhere is
-    // no click, and tells nothing. Reads an attribute, as takenAt does; nothing is measured.
+    // A press on an action carries the render its row was painted by (ADR-0142, LV-12), so the core
+    // finds the row component that painted the button: the paint the Viewport named at the press,
+    // told to the core at the release on the same button — the click that fires the action follows
+    // that release, and Blazor dispatches it after this message, so the press the core hears next
+    // is the one it was told of. A release elsewhere is no click, and tells nothing. Reads an
+    // attribute, as takenAt does; nothing is measured.
     let actionPress = null;
     const isOwnRowsOrHeadings = (target) => isOwnRows(target)
         || (inOwnScroller(target) && target.closest('.ex-header') !== null);
@@ -1794,9 +1796,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the row the move brought there (`1` Enter PageDown `9` and a press on F6 at once, on the
     // Server host: the `2` typed next went into F18). The core is told this just before Blazor
     // dispatches the event — at once, or at the replay of a held one — and resolves the cell
-    // against it. With them, the render whose cells were on screen (data-ex-paint), which a
-    // fill-handle drag released here is judged against (ADR-0142). Reads attributes and the scroll
-    // offset; nothing is measured.
+    // against it. With them, the render whose cells were on screen (data-ex-paint); the row order
+    // and the layout place the press, so the core no longer reads it (ADR-0142, rewritten
+    // 2026-10-07). Reads attributes and the scroll offset; nothing is measured.
     const takenAt = (event) => {
         const viewport = event.target;
         const number = (name) => {
@@ -2002,10 +2004,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             noteCaretMove(event.target);
         }
         // A press that focuses this grid's own Formula Bar carries the render the rows were
-        // painted by (ADR-0142, LV-11, D2): the focus opens an edit on the Focus cell, which keeps
-        // what that render showed of the cell. Told before the focus, the press's default action,
-        // is dispatched, so the focus the core hears next is the one it describes, as a press on
-        // an action is told before its click (actionPress). Reads an attribute; nothing measured.
+        // painted by (ADR-0021's note of 2026-10-05), told before the focus, the press's default
+        // action, is dispatched, as a press on an action is told before its click (actionPress).
+        // The edit the focus opens keeps what the cell paints when it opens (ADR-0142, rewritten
+        // 2026-10-07), so the core no longer reads it. Reads an attribute; nothing measured.
         if (core && !replaying && event.button === 0 && focusesOwnBar(event.target)) {
             core.invokeMethodAsync('BarPressTakenAt', paintNow()).catch((error) => {
                 if (core) {
@@ -2122,8 +2124,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!replaying) {
             askAboutPress();
         }
-        // The click this release makes on an action is judged against the render it was pressed
-        // on (actionPress).
+        // The click this release makes on an action is told the render it was pressed on
+        // (actionPress).
         const action = replaying ? null : actionPress;
         if (!replaying) {
             actionPress = null;
@@ -2316,8 +2318,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Blazor's own route for large interop data and is not subject to that limit;
     // its length travels with it, so C# can refuse a paste past the grid's ceiling
     // without reading a byte. An empty flavour is sent as nothing at all. With them goes the
-    // render the paste was taken against, read at its event (paintNow): its target is judged
-    // against what that render painted (ADR-0142, LV-13/LV-14).
+    // render the paste was taken against, read at its event (paintNow): the paste is refused when
+    // the order that render was painted under has moved since (ADR-0142, LV-13/LV-14).
     const sendPaste = (plain, markup, paint) => {
         const encoder = new TextEncoder();
         const stream = (value) => (value

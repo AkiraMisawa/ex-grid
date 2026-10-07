@@ -1,6 +1,6 @@
 # 04: Bulk writes and Action presses land, and the kept paints go
 
-Status: ready-for-agent
+Status: done
 
 **What to do:** build the half of [ADR-0142](../../../adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md) (rewritten 2026-10-07) that is not the Cell Editor.
 A paste, a Ctrl+Enter fill, a fill-handle drag, Delete, Ctrl+D, Ctrl+R and an Action press land as
@@ -36,9 +36,19 @@ entered over cells whose painted text changed. The grid stops keeping what earli
 
 ## Done when
 
-- [ ] LV-12, LV-13, LV-14 and LV-20's Action half pass (§32), each test named with its ADR
-- [ ] No `Paint` keeps a row instance; `PaintsKept` and the painted-text judgement are gone
+- [x] LV-12, LV-13, LV-14 and LV-20's Action half pass (§32), each test named with its ADR
+- [x] No `Paint` keeps a row instance; `PaintsKept` and the painted-text judgement are gone
 - [ ] Layer 1 and 2 green; the layer-3 specs that cover writes under live data (`write-refusal`,
   `grid-live`, `grid-live-local`) rewritten and run locally before the push (CLAUDE.md)
 
 ## Comments
+
+- 2026-10-07: built on `claude/live-data-next-cc-grid-writes`. Paste, the fills, Delete and an Action
+  press land as entered; no write compares painted text, and `_paints`, `_ownWrites` and D2 are gone.
+  Of its last paints the grid keeps numbers only: the order each was painted under, and a serial
+  per painted row component, so a told press finds the component that painted its button. A write
+  aimed under an order that has moved since is refused as `EmptySelection`, as aimed with a
+  Selection that went with that order; an Action press says `RowGone` or `OrderMoved`. Layer 2:
+  `WritesLandAsEnteredTests` (renamed from `WriteRefusalTests`). Layer 3: `write-lands.spec.mjs`
+  (renamed from `write-refusal.spec.mjs`) is rewritten; it runs locally with ticket 05, before the
+  push. The editor's commit still refuses a change under it until ticket 05.
