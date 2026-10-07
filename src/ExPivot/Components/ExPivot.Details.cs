@@ -33,16 +33,24 @@ public partial class ExPivot
     private Func<ElementReference, Task>? _takeKeyboard;
 
     /// <summary>
-    /// The records behind a value cell (ADR-0059/0063): an empty cell has none. They are asked of the
-    /// source the report came from, under its Source Version, so they add up to the cell. The
-    /// Consumer takes them when it listens; otherwise they open in a tab at the report's foot, or in
-    /// a dialog when the Consumer asked for one.
+    /// The records behind a value cell (ADR-0059/0063), asked from a command made earlier: of the
+    /// report on screen's row that stands for <paramref name="row"/> — compared by key, as a row may
+    /// be shared by several reports (ADR-0161) — and nothing when the report on screen has none.
     /// </summary>
-    private async Task ShowDetailsAsync(PivotReportRow row, int valueColumn)
+    private Task ShowDetailsAsync(PivotReportRow row, int valueColumn)
+        => _report is { } report && report.RowFor(row.Key) is { } own ? ShowDetailsOfAsync(report, own, valueColumn) : Task.CompletedTask;
+
+    /// <summary>
+    /// The records behind a value cell of the report on screen (ADR-0059/0063): an empty cell has
+    /// none. They are asked of the source the report came from, under its Source Version, so they add
+    /// up to the cell. The Consumer takes them when it listens; otherwise they open in a tab at the
+    /// report's foot, or in a dialog when the Consumer asked for one.
+    /// </summary>
+    private async Task ShowDetailsOfAsync(PivotReport report, PivotReportRow row, int valueColumn)
     {
-        if (_report is not { } report || !ReferenceEquals(row.Report, report) || _reportSource is not { } source)
+        if (!ReferenceEquals(report, _report) || _reportSource is not { } source)
             return;
-        if (row.ValueAt(valueColumn) is null)
+        if (report.ValueAt(row, valueColumn) is null)
             return;
         var rowItems = Items(report, report.RowPath(row));
         var columnItems = Items(report, report.ColumnPath(valueColumn));

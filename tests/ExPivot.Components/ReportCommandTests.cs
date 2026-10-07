@@ -86,6 +86,34 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, shown.SourceVersion);
     }
 
+    [Fact] // ADR-0161/0063: a command of a menu opened before a live redraw acts on the report on screen's row that stands for the one clicked — compared by key — and on none once that row has left
+    public async Task A_command_made_before_a_redraw_acts_on_the_row_on_screen()
+    {
+        PivotDetails? shown = null;
+        var source = new LiveSource();
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Product")], Values = [Sum("Amount")] },
+            ps => ps.Add(p => p.OnShowDetails, (PivotDetails details) => shown = details), source: source);
+        var apples = Grid(cut).Instance.Columns[1].Name;
+        var showEast = ContextCommands(cut, 0, apples).Single(c => c.Id == PivotCommandIds.ShowDetails);
+        var showNorth = ContextCommands(cut, 1, apples).Single(c => c.Id == PivotCommandIds.ShowDetails);
+        var first = cut.Instance.Report!;
+
+        // East's Apples change, and North's only sale leaves: a new report is on screen.
+        await cut.InvokeAsync(() => source.Publish([Sales[0] with { Amount = 101m }, .. Sales[1..5], Sales[6]]));
+        Assert.NotSame(first, cut.Instance.Report);
+
+        await cut.InvokeAsync(showEast.Invoke);
+        Assert.NotNull(shown);
+        Assert.Equal("Details: East / Apples", shown!.Title);
+        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, shown.SourceVersion);
+        var page = await shown.DetailsAsync(0, 100, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(131m, page.Records.Sum(record => ((Sale)record.Record!).Amount));
+
+        shown = null;
+        await cut.InvokeAsync(showNorth.Invoke);
+        Assert.Null(shown);
+    }
+
     [Fact] // ADR-0063: an empty cell has no records to show, and a double click there shows nothing
     public async Task A_double_click_on_an_empty_cell_shows_nothing()
     {

@@ -393,12 +393,14 @@ public partial class ExPivot
         return _labelValues[column];
     }
 
+    // A value cell is asked of the report on screen (ADR-0161): a row holds no value, and may be
+    // shared by every report it did not change in.
     private Func<PivotReportRow, object?> ValueAccessor(int column)
     {
         while (_valueAccessors.Count <= column)
         {
             var index = _valueAccessors.Count;
-            _valueAccessors.Add(row => row.ValueAt(index));
+            _valueAccessors.Add(row => _report!.ValueAt(row, index));
         }
         return _valueAccessors[column];
     }
@@ -573,7 +575,7 @@ public partial class ExPivot
                 await ToggleAsync(toggle, cell.Column);
             return;
         }
-        await ShowDetailsAsync(row, cell.Column - labels);
+        await ShowDetailsOfAsync(report, row, cell.Column - labels);
     }
 
     private IReadOnlyList<PivotDetailItem> Items(PivotReport report, IReadOnlyList<(string Field, PivotItemKey Item)> path)
@@ -613,10 +615,11 @@ public partial class ExPivot
 
     private IEnumerable<GridCommand> ContextCommandsFor(ContextMenuContext<PivotReportRow> context)
     {
-        if (_report is not { } report || !ReferenceEquals(context.Row.Report, report))
+        // The commands act on the report on screen's row that stands for the one clicked (ADR-0161):
+        // compared by key, as a row may be shared by several reports.
+        if (_report is not { } report || report.RowFor(context.Row.Key) is not { } row)
             return [];
         var layout = report.Layout;
-        var row = context.Row;
         var labelColumn = report.LabelColumns.ToList().FindIndex(c => c.Name == context.Column);
         var valueColumn = labelColumn >= 0 ? -1 : report.ValueColumns.ToList().FindIndex(c => c.Name == context.Column);
         var commands = new List<GridCommand>();
@@ -659,7 +662,7 @@ public partial class ExPivot
             }
             // Show Details is always offered: the tab, the dialog or the Consumer takes the
             // records (ADR-0059). An empty cell has none to show.
-            commands.Add(new GridCommand(PivotCommandIds.ShowDetails, row.ValueAt(valueColumn) is not null,
+            commands.Add(new GridCommand(PivotCommandIds.ShowDetails, report.ValueAt(row, valueColumn) is not null,
                 () => ShowDetailsAsync(row, valueColumn)));
             if (vf >= 0)
             {

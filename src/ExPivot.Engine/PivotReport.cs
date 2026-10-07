@@ -5,13 +5,20 @@ namespace ExPivot.Engine;
 /// <summary>
 /// A Pivot Report (ADR-0059/0060): the rows, the label columns, the value columns and the
 /// Header Group spans over them, laid out from a <see cref="PivotCube"/> under a
-/// <see cref="PivotLayout"/>. Immutable. A value cell is computed when it is first read
-/// (<see cref="PivotReportRow.ValueAt"/>), so a report of many rows costs its rows, not its
-/// cells.
+/// <see cref="PivotLayout"/>. Immutable. A value cell is asked of the report
+/// (<see cref="ValueAt"/>), which computes it when it is first read and keeps it, so a report of
+/// many rows costs its rows, not its cells; a row holds no value and no report (ADR-0161).
 /// </summary>
 public sealed class PivotReport
 {
+    private static readonly object NoValue = new();
+
     private readonly CellReader _reader;
+
+    // The cells read so far, by row, each kept as its value or NoValue for an empty cell; and the
+    // rows by what they stand for, made the first time a row is looked up by its key.
+    private readonly Dictionary<PivotReportRow, object?[]> _cells = [];
+    private Dictionary<PivotRowKey, PivotReportRow>? _rowsByKey;
 
     internal PivotReport(
         PivotCube cube,
@@ -34,14 +41,6 @@ public sealed class PivotReport
         HeaderTierCount = headerTierCount;
         Rows = rows;
         ValueCaptions = reader.Values.Select(v => v.Caption).ToArray();
-    }
-
-    /// <summary>Makes rows [<paramref name="from"/>, <paramref name="to"/>) this report's — every
-    /// row before the report is handed out, a piece at a time when it is laid out in slices.</summary>
-    internal void Attach(int from, int to)
-    {
-        for (var i = from; i < to; i++)
-            Rows[i].Attach(this);
     }
 
     /// <summary>The cube the report was laid out from.</summary>
@@ -146,6 +145,67 @@ public sealed class PivotReport
         }
     }
 
+    /// <summary>
+    /// The value in <paramref name="valueColumn"/> of <paramref name="row"/>, or null for an empty
+    /// cell (ADR-0161): computed on the first read, and kept by this report. A row is read by what it
+    /// stands for in this report's cube, so a row this report shares with the report before it reads
+    /// this report's value. A row of a report laid out from another answer is refused by name, never
+    /// read as another cell.
+    /// </summary>
+    /// <param name="row">A row of this report.</param>
+    /// <param name="valueColumn">A value column's index in <see cref="ValueColumns"/>.</param>
+    public PivotValue? ValueAt(PivotReportRow row, int valueColumn)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        if ((uint)valueColumn >= (uint)ValueColumns.Count)
+            throw new ArgumentOutOfRangeException(nameof(valueColumn), valueColumn, $"The report has {ValueColumns.Count} value columns.");
+        if (!_cells.TryGetValue(row, out var cells))
+        {
+            if (!Holds(row))
+                throw new ArgumentException("The row is not of this report's answer: it was laid out from another (ADR-0161).", nameof(row));
+            cells = new object?[ValueColumns.Count];
+            _cells[row] = cells;
+        }
+        var cell = cells[valueColumn];
+        if (cell is null)
+        {
+            cell = (object?)Compute(row, valueColumn) ?? NoValue;
+            cells[valueColumn] = cell;
+        }
+        return cell as PivotValue;
+    }
+
+    // Whether the row's Items are a node of this report's cube, and its Value Field one of the
+    // report's: what reading its cells needs.
+    private bool Holds(PivotReportRow row)
+    {
+        if (row.ValueField >= ValueCaptions.Count)
+            return false;
+        var node = row.Node;
+        while (node.Parent is { } parent)
+            node = parent;
+        return ReferenceEquals(node, Cube.RowRoot);
+    }
+
+    /// <summary>
+    /// This report's row that stands for what <paramref name="key"/> names — the same role, Value
+    /// Field and Items — or null when it has none (ADR-0161). A row of another report of the layout
+    /// finds the row standing for the same thing here. The rows are indexed by their keys the first
+    /// time one is looked up.
+    /// </summary>
+    public PivotReportRow? RowFor(PivotRowKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        if (_rowsByKey is null)
+        {
+            var rows = new Dictionary<PivotRowKey, PivotReportRow>(Rows.Count);
+            foreach (var row in Rows)
+                rows.TryAdd(row.Key, row);
+            _rowsByKey = rows;
+        }
+        return _rowsByKey.TryGetValue(key, out var found) ? found : null;
+    }
+
     /// <summary>The Items a row stands for, outermost first: each row field's name and Item.</summary>
     public IReadOnlyList<(string Field, PivotItemKey Item)> RowPath(PivotReportRow row)
     {
@@ -173,15 +233,14 @@ public sealed class PivotReport
     /// <paramref name="valueColumn"/> −1, and asks for every record of its row. A row that stands
     /// for no records — a Value Field's row — asks for its Item's.
     /// </summary>
-    /// <param name="row">A row of this report.</param>
+    /// <param name="row">A row of this report, or one that stands for a row of it (<see cref="RowFor"/>).</param>
     /// <param name="valueColumn">A value column's index, or −1 for the row's label cell.</param>
     /// <param name="start">The first record wanted.</param>
     /// <param name="count">How many records are wanted.</param>
     public PivotDetailsQuery DetailsQuery(PivotReportRow row, int valueColumn, int start = 0, int count = int.MaxValue)
     {
         ArgumentNullException.ThrowIfNull(row);
-        if (!ReferenceEquals(row.Report, this))
-            throw new ArgumentException("The row belongs to another report.", nameof(row));
+        row = RowFor(row.Key) ?? throw new ArgumentException("The row stands for no row of this report.", nameof(row));
         if (valueColumn < -1 || valueColumn >= ValueColumns.Count)
             throw new ArgumentOutOfRangeException(nameof(valueColumn), valueColumn, "Not a value column of the report, nor −1.");
         var rowItems = RowPath(row).Select(step => new PivotFieldItem(step.Field, step.Item)).ToArray();
@@ -234,16 +293,13 @@ internal sealed record ValueFieldPlan(
     int Source, PivotAggregation Aggregation, string Caption, PivotShowValuesAs ShowValuesAs, string? NumberFormat);
 
 /// <summary>
-/// One row of a Pivot Report (ADR-0060): what it stands for, its labels — one per label column —
-/// and its value cells, computed when first read. The report is the row's owner; the row's
-/// identity is the grid's change signal (ADR-0003), and a new report is new rows.
+/// One row of a Pivot Report (ADR-0060/0161): what it stands for — its role, its Value Field, its
+/// Items, which make its key — and its labels, one per label column. It holds no value and no
+/// report: a value cell is asked of a report (<see cref="PivotReport.ValueAt"/>). The row's identity
+/// is the grid's change signal (ADR-0003), and a next report shares the rows it did not change.
 /// </summary>
 public sealed class PivotReportRow
 {
-    private static readonly object NoValue = new();
-    private object?[]? _cells;
-    private PivotReport? _report;
-
     internal PivotReportRow(PivotRowRole role, AxisNode node, int valueField, bool carriesValues, PivotRowLabel[] labels)
     {
         Role = role;
@@ -272,27 +328,7 @@ public sealed class PivotReportRow
     /// bottom or off, and for an Item's row whose values stand in rows beneath it.</summary>
     public bool CarriesValues { get; }
 
-    /// <summary>The report the row belongs to.</summary>
-    public PivotReport Report => _report ?? throw new InvalidOperationException("The row has not been attached to its report.");
-
     internal AxisNode Node { get; }
-
-    internal void Attach(PivotReport report) => _report = report;
-
-    /// <summary>The value in <paramref name="valueColumn"/>, or null for an empty cell. Computed on
-    /// the first read and kept.</summary>
-    public PivotValue? ValueAt(int valueColumn)
-    {
-        var report = Report;
-        _cells ??= new object?[report.ValueColumns.Count];
-        var cell = _cells[valueColumn];
-        if (cell is null)
-        {
-            cell = (object?)report.Compute(this, valueColumn) ?? NoValue;
-            _cells[valueColumn] = cell;
-        }
-        return cell as PivotValue;
-    }
 }
 
 /// <summary>One label cell of a row (ADR-0060).</summary>

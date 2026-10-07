@@ -253,7 +253,7 @@ public class SnapshotSourceTests
                 var value = layout.Values[report.ValueFieldAt(row, column)];
                 object? Read(Row r) => value.Field switch { "Money" => r.Money, "Count" => r.Count, _ => r.Measure };
                 var expected = Expected(records.Select(Read).Where(v => v is not null).ToArray(), records.Length, value.Aggregation);
-                var actual = row.ValueAt(column);
+                var actual = report.ValueAt(row, column);
                 var where = $"{value.Aggregation} of {value.Field} at [{string.Join(", ", path.Select(p => p.Item))}]";
                 switch (expected)
                 {

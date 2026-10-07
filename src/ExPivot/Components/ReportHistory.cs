@@ -76,12 +76,12 @@ internal sealed class ReportHistory
     {
         var versions = _versions;
         var v = 0;
+        var i = -1;
         // The report on screen, normally; a row of an older one only while the grid catches up.
-        while (v < versions.Length && !ReferenceEquals(versions[v].Report, row.Report))
+        while (v < versions.Length - 1 && (i = versions[v].IndexOf(row)) < 0)
             v++;
         if (v >= versions.Length - 1)
             return null;
-        var i = versions[v].IndexOf(row);
         var j = versions[v].ColumnIndexOf(column);
         if (i < 0 || j < 0)
             return null;
@@ -153,7 +153,7 @@ internal sealed class ReportVersion
 
     /// <summary>The painted text of a value cell: its engine text, and nothing for an empty
     /// cell, as the grid paints it.</summary>
-    public string TextAt(int row, int column) => Report.Rows[row].ValueAt(column)?.Text ?? "";
+    public string TextAt(int row, int column) => Report.ValueAt(Report.Rows[row], column)?.Text ?? "";
 
     /// <summary>A grid column's index among the value columns, or −1 for one that is not.</summary>
     public int ColumnIndexOf(GridColumn<PivotReportRow> column)

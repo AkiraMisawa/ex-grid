@@ -133,9 +133,13 @@ var cube = PivotEngine.Cube(query, answer, source.Fields);
 var report = PivotEngine.Report(cube, layout,
     new PivotOptions { Culture = CultureInfo.GetCultureInfo("en-US") });
 
-report.Rows[0].Labels[0].Text;    // the first region
-report.Rows[^1].ValueAt(0)!.Text; // the grand total of January
+report.Rows[0].Labels[0].Text;                 // the first region
+report.ValueAt(report.Rows[^1], 0)!.Text;      // the grand total of January
 ```
+
+A report row says what it stands for — its role, its Value Field, its Items (its `Key`) and its labels —
+and holds no value and no report: a value cell is asked of a report, which computes it when it is first
+read and keeps it (ADR-0161).
 
 A layout that changes only how the result is laid out — collapsing an Item, sorting, the form, the
 totals, a format, or an Aggregation whose parts the cube holds (Sum and Average share one) — is laid

@@ -170,7 +170,7 @@ static bool Unchanged(PivotReport report, PivotReportRow row, PivotReport previo
     }
     for (var j = 0; j < report.ValueColumns.Count; j++)
     {
-        if (!string.Equals(row.ValueAt(j)?.Text ?? "", before.ValueAt(j)?.Text ?? "", StringComparison.Ordinal))
+        if (!string.Equals(report.ValueAt(row, j)?.Text ?? "", previous.ValueAt(before, j)?.Text ?? "", StringComparison.Ordinal))
             return false;
     }
     return true;

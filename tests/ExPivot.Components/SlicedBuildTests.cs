@@ -347,14 +347,14 @@ public class SlicedBuildTests : PivotTestContext
         // The report built is the answer's, whole: the data before the batch.
         var report = cut.Instance.Report!;
         Assert.Equal(["Product", "Region"], report.Layout.Rows.Select(p => p.Field));
-        Assert.Equal("1", report.Rows[1].ValueAt(0)!.Text);
-        Assert.Equal("3000", report.Rows[^1].ValueAt(0)!.Text);
+        Assert.Equal("1", report.ValueAt(report.Rows[1], 0)!.Text);
+        Assert.Equal("3000", report.ValueAt(report.Rows[^1], 0)!.Text);
 
         // The batch was gathered, not lost, and asked for once the report was shown: quietly, as
         // newer data is, and shown whole once its report is complete.
         await cut.InvokeAsync(() => Clock.Advance(PivotComponent.DefaultRedrawInterval));
-        await ReleaseAllAsync(cut, yields, done: () => cut.Instance.Report!.Rows[^1].ValueAt(0)!.Text == "6000");
-        Assert.Equal("2", cut.Instance.Report!.Rows[1].ValueAt(0)!.Text);
+        await ReleaseAllAsync(cut, yields, done: () => cut.Instance.Report!.ValueAt(cut.Instance.Report.Rows[^1], 0)!.Text == "6000");
+        Assert.Equal("2", cut.Instance.Report!.ValueAt(cut.Instance.Report.Rows[1], 0)!.Text);
         Assert.Equal(["Product", "Region"], cut.Instance.Report.Layout.Rows.Select(p => p.Field));
     }
 

@@ -48,7 +48,7 @@ internal static class PivotSummary
                     cells.AddOther();
                 continue;
             }
-            switch (row.ValueAt(column.Index))
+            switch (report.ValueAt(row, column.Index))
             {
                 case null:
                     break;
