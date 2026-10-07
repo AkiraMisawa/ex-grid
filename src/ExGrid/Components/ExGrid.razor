@@ -2193,6 +2193,8 @@
     // The painted rows' appearances (ADR-0050, item 15), resolved outside the rows' renders;
     // made the first time a Consumer declares one, and its rules kept for the grid's life.
     private CellAppearances<TRow>? _appearances;
+    // RowInHand as the one delegate the appearance cache is told to read a new Window through.
+    private Func<int, TRow?>? _rowInHand;
 
     /// <summary>Starts the rows' render for their appearances: which columns are painted, so
     /// which a row is resolved for. A Placeholder paints its Pinned Columns only.</summary>
@@ -2286,6 +2288,11 @@
     // What the widths were last measured from. Re-measuring on every render would read
     // the rows' current contents, so an in-place rewrite would grow a column and repaint
     // through the width path — the repaint ADR-0003 promises will not happen.
+    //
+    // One of the two holdings that outlive a Window (ADR-0160), bounded to one: while a fling,
+    // or a hidden or zero-sized Viewport, defers the next measure, this is the Window last
+    // measured, and the next measure replaces it. The other is the row of an Action press in
+    // flight (ExGrid.SeenText.cs).
     private IReadOnlyList<TRow>? _measuredWindow;
     private int _measuredWindowStart;
     private RowRange? _measuredVisible;
@@ -2578,6 +2585,9 @@
         _windowStart = Source?.WindowStart ?? WindowStart;
         // While the Window it replaces is still in hand, never later (ADR-0160).
         NotePaintedRowsReplaced(previousWindow, previousStart);
+        // The appearances kept for rows this Window does not hold go with them (ADR-0160).
+        if (_appearances is { } appearances && (!ReferenceEquals(previousWindow, _window) || previousStart != _windowStart))
+            appearances.KeepOnly(_rowInHand ??= RowInHand, _visible?.Start ?? 0, _visible?.Count ?? 0);
         _total = Source is null ? TotalCount : Source.TotalCount;
         _loading = Source?.IsLoading ?? IsLoading;
         _sequenceVersion = Source?.RowSequenceVersion ?? RowSequenceVersion;

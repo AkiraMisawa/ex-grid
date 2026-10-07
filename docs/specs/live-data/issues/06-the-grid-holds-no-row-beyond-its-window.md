@@ -1,6 +1,6 @@
 # 06: The grid holds no row beyond its Window
 
-Status: ready-for-agent
+Status: done
 
 **What to do:** make [ADR-0160](../../../adr/0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md) hold and be checked. The grid holds a Consumer's row instance and
 its Row Key only while it is in the Window it was last given, apart from the two named holdings.
@@ -24,6 +24,18 @@ its Row Key only while it is in the Window it was last given, apart from the two
 ## Done when
 
 - [ ] LV-22 passes; LV-23 recorded
-- [ ] Layer 1 and 2 green
+- [x] Layer 1 and 2 green
 
 ## Comments
+
+- 2026-10-07: built on `claude/live-data-next-cc-grid-writes`. `CellAppearances` forgets, at each new
+  Window, the positions whose row it no longer holds there and the answers of rows it no longer holds
+  around the painted rows; a held row whose neighbour went keeps its appearance value (DC-58). The
+  two named holdings carry ADR-0160 comments (`_measuredWindow`, the Action press in flight). LV-22's
+  grid half is `NoRowBeyondTheWindowTests`: twelve new Windows, with and without `CellAppearance` and
+  a Row Key, then a full collection, and no earlier row alive; it failed on the cache before the fix.
+  Found while building it: Blazor's render tree keeps the previous render's frames as its next
+  buffer, so the rows the render before the newest painted (six here) stay reachable until the grid
+  renders again. That is the renderer's, not a grid holding; the test ends with one more render and
+  asserts that boundary as found. LV-22's ExPivot half is Track C's (tickets 09 to 12). LV-23, the
+  browser observation, is left to ticket 13, as this ticket allows.

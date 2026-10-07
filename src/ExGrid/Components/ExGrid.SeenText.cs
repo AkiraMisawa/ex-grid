@@ -463,7 +463,8 @@ public partial class ExGrid<TRow>
     private sealed record ActionPress(int Paint, int Row, int Serial, TRow? Pressed, string? Column, string? Action);
 
     // The press being told, until its click is heard or the core answers it. Its row is one of the two
-    // holdings that outlive a Window (ADR-0160): bounded to one, and dropped when the press is answered.
+    // holdings that outlive a Window (ADR-0160): bounded to one, and dropped when the press is heard
+    // or answered. The other is the Window last measured for Auto widths (_measuredWindow).
     private ActionPress? _actionPress;
 
     // Whether the core answered a told press whose click had not come. A click such a press's
