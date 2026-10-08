@@ -8,12 +8,14 @@ namespace ExPivot.Engine;
 /// <para>
 /// A source marks each changed cell with the Report Version whose data changed it
 /// (<see cref="PivotDisplayRow.ChangedIn"/>), and lists the changes it still marks
-/// (<see cref="PivotReportMetadata.ChangeMarks"/>). A change is stamped the first time a Window of
-/// a report listing it is adopted — whether or not that Window holds one of its cells — so a row
-/// first requested later, by a scroll, shows it as of that first time, and its highlight ends with
-/// the others of the same change. A stamp is kept while the source still lists its change, or its
-/// highlight has not ended, and once forgotten the change is never listed again: no change is ever
-/// stamped twice. One instance serves a view for its lifetime, across new sources.
+/// (<see cref="PivotReportMetadata.ChangeMarks"/>). A listed change is stamped the first time a
+/// Window of a report listing it is adopted — whether or not that Window holds one of its cells —
+/// so a row first requested later, by a scroll, shows it as of that first time, and its highlight
+/// ends with the others of the same change. A change no longer listed is never stamped: a cell may
+/// keep its mark while its text does not change, and the mark then says nothing new. A stamp is
+/// kept while the source still lists its change, or its highlight has not ended, and once
+/// forgotten the change is never listed again: no change is ever stamped twice. One instance
+/// serves a view for its lifetime, across new sources.
 /// </para>
 /// </summary>
 public sealed class PivotChangeTimes
@@ -21,9 +23,9 @@ public sealed class PivotChangeTimes
     private readonly Dictionary<PivotReportVersion, DateTimeOffset> _stamps = [];
 
     /// <summary>
-    /// Takes a Window up as it is shown: each change its report lists, or its rows carry, that is not
-    /// stamped yet is stamped <paramref name="now"/>, and each stamp whose change the source no
-    /// longer lists and whose highlight has ended is forgotten.
+    /// Takes a Window up as it is shown: each change its report lists that is not stamped yet is
+    /// stamped <paramref name="now"/>, and each stamp whose change the source no longer lists and
+    /// whose highlight has ended is forgotten.
     /// </summary>
     /// <param name="state">The Window adopted.</param>
     /// <param name="now">The Consumer's own time, as it shows the Window.</param>
@@ -48,14 +50,6 @@ public sealed class PivotChangeTimes
         }
         foreach (var mark in state.Metadata.ChangeMarks)
             _stamps.TryAdd(mark, now);
-        foreach (var row in state.Rows)
-        {
-            foreach (var mark in row.ChangedIn)
-            {
-                if (mark is not null)
-                    _stamps.TryAdd(mark, now);
-            }
-        }
     }
 
     /// <summary>When the change <paramref name="mark"/> names was first shown, or null when it names

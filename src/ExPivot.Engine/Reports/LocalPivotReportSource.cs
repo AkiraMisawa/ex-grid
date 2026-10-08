@@ -239,13 +239,12 @@ public sealed class LocalPivotReportSource : PivotReportSource
             var rows = new PivotDisplayRow[count];
             var changes = new List<PivotReportRowChange>();
             PruneHighlight(_clock.GetUtcNow(), request.Settings.ChangeHighlightDuration);
-            var listed = Marks().ToHashSet();
             for (var i = 0; i < count; i++)
             {
                 var row = last.Report.Rows[request.Window.Start + i];
                 var prior = priorByKey?.GetValueOrDefault(row.Key);
                 rows[i] = Project(last.Report, row, request.Window.Start + i, prior,
-                    keepMarks: comparable && request.MarkChanges, previous?.Metadata.ValueColumns, listed);
+                    keepMarks: comparable && request.MarkChanges, previous?.Metadata.ValueColumns);
                 if (previous is null || i >= previous.Rows.Count || !ReferenceEquals(previous.Rows[i], rows[i]))
                     changes.Add(new(i, rows[i]));
             }
@@ -310,8 +309,12 @@ public sealed class LocalPivotReportSource : PivotReportSource
         return null;
     }
 
+    // A row of the Window, made from the report: the prior row itself when nothing it paints
+    // changed. A cell keeps the mark it had while its text does not change, though the source no
+    // longer lists that change: the mark says nothing new, and the row keeps its instance rather
+    // than render again for a highlight that has ended.
     private PivotDisplayRow Project(PivotReport report, PivotReportRow row, int rowIndex, PivotDisplayRow? prior,
-        bool keepMarks, IReadOnlyList<PivotDisplayColumn>? priorColumns, HashSet<PivotReportVersion> listed)
+        bool keepMarks, IReadOnlyList<PivotDisplayColumn>? priorColumns)
     {
         var path = report.RowPath(row).Select(p => new PivotFieldItem(p.Field, p.Item)).ToArray();
         var values = new PivotDisplayValue?[report.ValueColumns.Count];
@@ -330,7 +333,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
                     if (priorColumns[j].Name == report.ValueColumns[c].Name) { oldColumn = j; break; }
             if (prior is not null && oldColumn >= 0 && oldColumn < prior.Values.Count)
             {
-                changed[c] ??= keepMarks && prior.ChangedIn[oldColumn] is { } mark && listed.Contains(mark) ? mark : null;
+                changed[c] ??= keepMarks ? prior.ChangedIn[oldColumn] : null;
                 same &= oldColumn == c && prior.Values[oldColumn] == values[c] && prior.ChangedIn[oldColumn] == changed[c];
             }
         }

@@ -135,11 +135,12 @@ public sealed class PivotDisplayRow
     public IReadOnlyList<PivotFieldItem> RowPath { get; }
     /// <summary>
     /// Per value cell, the change that last moved its shown text: the Report Version whose data
-    /// changed it, while the source still marks that change (<see cref="PivotReportMetadata.ChangeMarks"/>);
-    /// null for a cell with no recent change, and for every cell of a report a layout gesture made.
-    /// It says which change, never when: the time a Change Highlight starts is the Consumer's, on its
-    /// own clock, when it first shows the change (<see cref="PivotChangeTimes"/>) — a server's clock
-    /// need not agree with the browser's (ADR-0068).
+    /// changed it; null for a cell with no recent change, and for every cell of a report a layout
+    /// gesture made. A cell keeps its mark while its text does not change, after the source stops
+    /// listing the change (<see cref="PivotReportMetadata.ChangeMarks"/>), so that its row keeps
+    /// its instance. It says which change, never when: the time a Change Highlight starts is the
+    /// Consumer's, on its own clock, when it first shows a listed change (<see cref="PivotChangeTimes"/>)
+    /// — a server's clock need not agree with the browser's (ADR-0068).
     /// </summary>
     public IReadOnlyList<PivotReportVersion?> ChangedIn { get; }
     /// <summary>A value cell by its value-column index.</summary>
@@ -174,10 +175,11 @@ public sealed record PivotReportMetadata(PivotReportVersion Version, string Sour
 {
     /// <summary>Maximum label widths computed at the report source under the requested metrics.</summary>
     public IReadOnlyList<double> LabelWidths { get; init; } = [];
-    /// <summary>The changes the source still marks, newest first: every
-    /// <see cref="PivotDisplayRow.ChangedIn"/> of this report names one of them. A change leaves the
-    /// list once the source's evidence for it has aged past
-    /// <see cref="PivotReportSettings.ChangeHighlightDuration"/>, and is never marked again.</summary>
+    /// <summary>The changes the source still marks, newest first: a cell marked with one of them
+    /// changed recently, and a Consumer stamps each the first time it shows it
+    /// (<see cref="PivotChangeTimes"/>). A change leaves the list once the source's evidence for it
+    /// has aged past <see cref="PivotReportSettings.ChangeHighlightDuration"/>, and is never listed
+    /// again.</summary>
     public IReadOnlyList<PivotReportVersion> ChangeMarks { get; init; } = [];
     /// <summary>The explicitly selected culture.</summary>
     [JsonIgnore] public CultureInfo Culture => CultureInfo.GetCultureInfo(Settings.CultureName);
