@@ -128,6 +128,22 @@ new trade on a live screen — is not marked, and the header turns to "some". Re
 click and was swept into a bulk action is the outcome this component exists to prevent; the
 header turning to "some" says, honestly, that something new has come in.
 
+**A press is judged against what it was made on** *(2026-10-08, decided while merging the two tracks
+of live data; [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)'s
+section of that date)*. A press on a mark carries the paint it was made on, read as the button went down
+([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of that date). On a circuit the
+click is judged a round trip later, against whatever the grid holds by then.
+- **A press made on what a replaced Source painted marks nothing.** The rows it was aimed at belong to
+  data that is no longer shown. As first built, a row's checkbox marked the new source's row under the
+  same key, and the header marked the new source's result or page.
+- **The header's checkbox and "Mark all N rows" name rows by position.** They also mark nothing when the
+  order has moved since, or, under a pager, the page has been turned since. Lining up rows the user never
+  saw there is the quietly wrong answer.
+- **A row's checkbox names its row by identity**, which an order move leaves as it was.
+- **A dropped press raises no notification and says nothing**, as Space aimed with a dropped Selection
+  does ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of
+  2026-10-08). The checkbox shows that nothing changed.
+
 ## The header has three states, and the Consumer counts
 
 None, some, all — decided by comparing **the number of marked Detail rows in the current result**

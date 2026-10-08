@@ -143,8 +143,19 @@ Action press aimed at the old source landed on the new one's row. Now:
   `ActionRefusalReason.SourceChanged`, naming no row;
 - an open Cell Editor or Formula Bar edit is discarded as `EditDiscardReason.SourceChanged`: its row
   belongs to data that is no longer shown, as a change of columns discards one. No Edit Intent is raised;
-- a Find answer, a placement, the Selection Summary and a Mark intent from the old binding move nothing in
-  the new one;
+- a replacement that a commit's own handler makes, while the grid hears its Edit Intent, is that
+  commit's. Accepted, the edit ends as committed, with no discard and no Overwrite Notice. As first built,
+  it was then also said discarded, after the typing had been handed over. Refused, the editor cannot be
+  held over a row that left with the old source, so it is discarded as `SourceChanged`, once. ExSheet
+  treats a foreign Sheet Document handed in as the answer to a commit the same way;
+- a Find answer from the old binding is refused as `FindRefusalReason.SourceChanged`, and the panel says
+  the data was replaced. As first built, the answer moved the Focus within the new source;
+- a placement and the Selection Summary compare the binding as well as the version, and a Mark intent
+  from the old binding moves nothing in the new one;
+- a press on a mark carries the paint it was made on, as an Action press does
+  ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of 2026-10-08). One made on what
+  the old source painted marks nothing
+  ([ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)'s note of 2026-10-08);
 - ExSheet, which pushes its Window, moves the Row Sequence Version it hands its grid when it opens a Sheet
   Document it did not emit itself, so a paste, Delete or fill aimed at the old document is refused, and
   its words say that another Sheet Document was opened
@@ -154,6 +165,11 @@ Action press aimed at the old source landed on the new one's row. Now:
 The binding is compared by reference, and no old source is held to compare it
 ([ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md)). The Codex track
 found the same hole and closed it with the same rule for its own grid.
+
+Accepted limit: a placement asked after the replacement, with a Row Sequence Version the Consumer
+computed under the old source, places when both sources stand at that version. The grid cannot tell such
+a call from one computed under the new source. The version is the Consumer's to move, and
+`PlaceSelectionAsync` says so.
 
 **Keys aimed with a dropped Selection open nothing** *(decided with the user)*: see
 [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of

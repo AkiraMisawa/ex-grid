@@ -562,7 +562,7 @@ reading that served only the judgement of a write is no longer made: the Formula
 listener is added, and nothing is measured.
 
 *(2026-10-08, merging the two tracks of live data; [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)'s
-section of that date.)* Three readings changed. No listener was added, and nothing is measured.
+section of that date.)* Four readings changed. No listener was added, and nothing is measured.
 - **An action press reads its whole address at the mousedown.** The note of 2026-10-06 read the
   paint at the mousedown, but the row, column and action from the cell's ids at the release. A keyed
   row ([ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md))
@@ -579,3 +579,10 @@ section of that date.)* Three readings changed. No listener was added, and nothi
   ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of
   2026-10-08). `compositionstart` reads the paint, an attribute, and the field hands it over with the
   text, as a key carries its own.
+- **A press on a mark carries its paint**, as an Action press does. The marks are a row's checkbox, the
+  header's, and "Mark all N rows". At the mousedown on one of this grid's own marks, the existing listener
+  reads the paint the Viewport names. For the header's checkbox under a pager, it also reads the first row
+  of the page that the render wrote (`data-ex-page`). At the release on the same mark it tells the core
+  (`MarkPressTakenAt`), before Blazor dispatches the click
+  ([ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)'s note of 2026-10-08).
+  A press the platform makes a context menu of tells nothing.
