@@ -10,15 +10,18 @@ namespace ExGrid.Components;
 // An Action press acts on the row it was pressed on, as that row is now (ADR-0142, LV-12, LV-20): with
 // a Row Key, the row under the pressed row's key while the Window holds it; without one, the pressed
 // instance, or — for a press whose button a render disposed — the row at the position the browser told,
-// while the order it was taken under holds. Otherwise it is refused: RowGone when its row is gone, and
-// OrderMoved when only a position under a moved order names it. No press is lost to Blazor, and none
-// fires twice.
+// while the order it was taken under holds. Otherwise it is refused: RowLeftTheWindow when the Window no
+// longer holds its row, OrderMoved when only a position under a moved order names it, and SourceChanged
+// when it was made on what a Source since replaced painted. No press is lost to Blazor, and none fires
+// twice.
 public partial class ExGrid<TRow>
 {
     /// <summary>
-    /// An Action press refused (ADR-0142, LV-12, LV-20): its row is gone
-    /// (<see cref="ActionRefusalReason.RowGone"/>), or nothing but a position under an order that
-    /// has moved since names it (<see cref="ActionRefusalReason.OrderMoved"/>).
+    /// An Action press refused (ADR-0142, LV-12, LV-20): the Window no longer holds its row
+    /// (<see cref="ActionRefusalReason.RowLeftTheWindow"/>), nothing but a position under an order that
+    /// has moved since names it (<see cref="ActionRefusalReason.OrderMoved"/>), or it was made on what
+    /// a <see cref="Source"/> since replaced by another instance painted
+    /// (<see cref="ActionRefusalReason.SourceChanged"/>), whatever the new source holds there.
     /// A press never is refused because its row's values changed: it acts on the row it was pressed
     /// on, as that row is now. With a Row Key, that is the row under the pressed row's key, wherever
     /// the Window holds it. Without one, a press whose button a render has since disposed acts on
@@ -57,9 +60,14 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// What the next press on an action of this grid's own rows was taken against (ADR-0142,
     /// LV-12): the paint the Viewport named at its mousedown, and the row, column and action the
-    /// button stood for in it. Told by the grid's listener at the release on the same button, just
+    /// button stood for in that paint, read from the ids the render wrote at the same mousedown — a
+    /// keyed row can move the same button before the release, and ids read then would name another
+    /// row of that paint. Told by the grid's listener at the release on the same button, just
     /// before Blazor dispatches the click, so the click the core hears next is the one it
-    /// describes. Reading what the render wrote is not a measurement, and nothing per cell crosses
+    /// describes. A press the platform makes a context menu of instead — Control with the primary
+    /// button where Meta is the primary modifier (macOS) — is not told: no click follows it, and a
+    /// told press waiting for one would act, once a render disposed its row, for a click nobody
+    /// made. Reading what the render wrote is not a measurement, and nothing per cell crosses
     /// (ADR-0021, notes of 2026-10-05 to 2026-10-07).
     ///
     /// <para>Blazor does not deliver an event whose attribute a component since disposed had
@@ -155,6 +163,14 @@ public partial class ExGrid<TRow>
             _suppressRender = false;
             StateHasChanged();
         }
+        // Made on what a Source since replaced painted: its row is another source's, whatever the
+        // new one holds at that position or under that key, so nothing is done, and the refusal
+        // names no row — the button may hold the new source's row by now (ADR-0142, ADR-0160).
+        if (AimedAtAReplacedSource(told))
+        {
+            await RefuseActionAsync(null, column, action, ActionRefusalReason.SourceChanged);
+            return;
+        }
         // A position names its row only under the order it was taken against (ADR-0011): under
         // another, a press whose button held its row still has the row to go by. Space taken under
         // another order never comes here (RefuseSpaceAimedUnderAnotherOrderAsync).
@@ -190,12 +206,12 @@ public partial class ExGrid<TRow>
     /// </summary>
     private TRow? PressedRowNow(TRow? pressed, int? at, bool orderMoved, out ActionRefusalReason reason)
     {
-        reason = ActionRefusalReason.RowGone;
+        reason = ActionRefusalReason.RowLeftTheWindow;
         if (_rowKey is { } rowKey)
         {
             // No row to take the key of: a press whose order moved before the core heard it, and
             // whose row component is gone, cannot be paired with its row, since the grid keeps no
-            // key of an earlier render (ADR-0160). OrderMoved is true of it; RowGone may not be.
+            // key of an earlier render (ADR-0160). OrderMoved is true of it; RowLeftTheWindow may not be.
             if (pressed is null)
             {
                 if (orderMoved)

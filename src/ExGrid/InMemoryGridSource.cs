@@ -808,7 +808,10 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     /// <summary>
     /// Puts out at once the live changes gathered and not yet published (ADR-0141/0142, LV-16), so
     /// the Window is the newest version this source holds: the grid calls it just before it judges a
-    /// write, and a <see cref="ReplaceRow"/> built on the row it then reads is taken. It is a
+    /// write, and a <see cref="ReplaceRow"/> built on the row it then reads is taken; and again as the
+    /// handler of the write intent it raised completes, so a write the Consumer handed this source
+    /// through <see cref="Apply(GridChangeBatch{TRow})"/> or <see cref="ReplaceAll"/>, and this
+    /// source gathered, is put out before the next gesture is handled (ADR-0142, D1). It is a
     /// publication like the one at an interval's end: the next live change waits
     /// <see cref="GatherInterval"/> from it, and the publication that interval would have made has
     /// nothing left to make. Nothing gathered, or no Row Key, and it does nothing.

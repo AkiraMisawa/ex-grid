@@ -1,5 +1,6 @@
 using System.Globalization;
 using Bunit;
+using ExGrid.Clipboard;
 using ExSheet.Components.Tests.Support;
 using ExSheet.Engine;
 using Xunit;
@@ -175,5 +176,86 @@ public class SheetDocumentWiringTests : SheetTestContext
         var error = Assert.Throws<InvalidOperationException>(() =>
             cut.Render(ps => ps.Add(s => s.Culture, CultureInfo.GetCultureInfo("ja-JP"))));
         Assert.Contains("en-US", error.Message);
+    }
+
+    // ---- Another document opened in place of the one shown (ADR-0142, ADR-0011, ADR-0046) ----
+    //
+    // A Sheet's rows are places, so its own edits never move the Row Sequence Version it hands its
+    // grid; another Sheet Document opened in place of the one shown does, so that a gesture taken on
+    // what the old document painted is refused rather than written into the new one at the same place.
+
+    private static readonly CultureInfo EnUs = CultureInfo.GetCultureInfo("en-US");
+
+    private static int Paint(IRenderedComponent<global::ExSheet.Components.ExSheet> cut)
+        => int.Parse(Grid(cut).Find(".ex-viewport").GetAttribute("data-ex-paint")!, CultureInfo.InvariantCulture);
+
+    private static string Notice(IRenderedComponent<global::ExSheet.Components.ExSheet> cut) => cut.Find(".ex-sheet-notice").TextContent;
+
+    [Fact] // ADR-0142 / ADR-0011, ADR-0046: another Sheet Document opened in place of the one shown drops the Selection: its cells stand at the old one's places
+    public async Task A_replaced_document_drops_the_selection()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"))));
+        await GoToAsync(cut, "A1");
+        Assert.False(Grid(cut).Instance.ReadSelection().Selection.IsEmpty);
+
+        cut.Render(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "keep"))));
+
+        Assert.True(Grid(cut).Instance.ReadSelection().Selection.IsEmpty);
+    }
+
+    [Fact] // ADR-0142 / LV-13, ADR-0011: a paste taken on A1 of the old document and released after another was opened is refused as OrderMoved, said as the document replaced, and writes nothing into the new one
+    public async Task A_paste_aimed_at_the_replaced_document_is_refused()
+    {
+        var raised = new List<SheetDocument>();
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"))).Add(s => s.DocumentChanged, raised.Add));
+        await GoToAsync(cut, "A1");
+        var pressedOn = Paint(cut);
+
+        cut.Render(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "keep"))));
+        var grid = Grid(cut);
+        await grid.InvokeAsync(() => grid.Instance.OnPasteAsync("x", "<table><tr><td>x</td></tr></table>", pressedOn));
+
+        Assert.Equal("keep", CellText(cut, "A1"));
+        Assert.Empty(raised);
+        Assert.Equal(SheetWords.PasteRefused(PasteRefusalReason.OrderMoved), Notice(cut));
+    }
+
+    [Theory] // ADR-0142 / LV-13, ADR-0054, ADR-0035: Delete and Ctrl+D taken on A1:A2 of the old document are refused after another was opened — neither clears the new one's cells nor fills A2 from its A1
+    [InlineData("Delete", false)]
+    [InlineData("d", true)]
+    public async Task A_write_key_aimed_at_the_replaced_document_is_refused(string key, bool ctrl)
+    {
+        var raised = new List<SheetDocument>();
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"), ("A2", "below"))).Add(s => s.DocumentChanged, raised.Add));
+        await GoToAsync(cut, "A1:A2");
+        var pressedOn = Paint(cut);
+
+        cut.Render(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "keep"), ("A2", "stays"))));
+        var grid = Grid(cut);
+        await grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, ctrl, false, false, false, false, paint: pressedOn));
+
+        Assert.Equal("keep", CellText(cut, "A1"));
+        Assert.Equal("stays", CellText(cut, "A2"));
+        Assert.Empty(raised);
+        Assert.Equal(SheetWords.PasteRefused(PasteRefusalReason.OrderMoved), Notice(cut));
+    }
+
+    [Fact] // ADR-0142 / ADR-0048: a document this Sheet raised, handed back as a two-way binding does, is no replacement: the Selection stays, and a paste taken before it came back lands
+    public async Task The_sheets_own_document_coming_back_moves_nothing()
+    {
+        SheetDocument? raised = null;
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"))).Add(s => s.DocumentChanged, d => raised = d));
+        await EnterAsync(cut, "B1", "2");
+        Assert.NotNull(raised);
+        await GoToAsync(cut, "A1");
+        var pressedOn = Paint(cut);
+
+        cut.Render(ps => ps.Add(s => s.Document, raised));
+        var grid = Grid(cut);
+        Assert.False(grid.Instance.ReadSelection().Selection.IsEmpty);
+        await grid.InvokeAsync(() => grid.Instance.OnPasteAsync("x", "<table><tr><td>x</td></tr></table>", pressedOn));
+
+        Assert.Equal("x", CellText(cut, "A1"));
+        Assert.Equal("", Notice(cut));
     }
 }

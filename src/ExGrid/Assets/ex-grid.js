@@ -1834,11 +1834,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // An action's button on this grid's own rows, not a nested grid's (ADR-0020), or null.
     const ownAction = (target) => (inOwnScroller(target) ? target.closest('.ex-action') : null);
     // A press on an action carries the render its row was painted by (ADR-0142, LV-12), so the core
-    // finds the row component that painted the button: the paint the Viewport named at the press,
-    // told to the core at the release on the same button — the click that fires the action follows
-    // that release, and Blazor dispatches it after this message, so the press the core hears next
-    // is the one it was told of. A release elsewhere is no click, and tells nothing. Reads an
-    // attribute, as takenAt does; nothing is measured.
+    // finds the row component that painted the button, and its address in that render: the paint the
+    // Viewport named at the press, and the row and column the button's cell id names and which of
+    // the cell's actions it is, all read together at the mousedown. A keyed row can move the same
+    // button between the press and the release (ADR-0140): ids read at the release would be the row's
+    // new place, which in the old paint names another row. They are told to the core at the release
+    // on the same button — the click that fires the action follows that release, and Blazor
+    // dispatches it after this message, so the press the core hears next is the one it was told of.
+    // A release elsewhere is no click, and tells nothing. Nor does a press the platform makes a
+    // context menu of instead of a click — Control with the primary button where Meta is the primary
+    // modifier (macOS): no click follows it, and told, it would wait for one until a render disposed
+    // its row, then act for a click nobody made (principle 1). Reads attributes and ids the render
+    // wrote, as takenAt does; nothing is measured.
     let actionPress = null;
     const isOwnRowsOrHeadings = (target) => isOwnRows(target)
         || (inOwnScroller(target) && target.closest('.ex-header') !== null);
@@ -2043,10 +2050,20 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const nameBox = event.button === 0 && !replaying ? ownNameBox(event.target) : null;
         nameBoxPressed = nameBox !== document.activeElement ? nameBox : null;
         nameBoxSelected = null;
-        // A press on an action of this grid's rows keeps the render it was made on (actionPress).
+        // A press on an action of this grid's rows keeps the render it was made on and its address
+        // in that render (actionPress); one the platform makes a context menu of keeps nothing.
         if (!replaying) {
-            const button = event.button === 0 ? ownAction(event.target) : null;
-            actionPress = button !== null ? { button, paint: paintNow() } : null;
+            const contextPress = metaIsPrimary && event.ctrlKey;
+            const button = event.button === 0 && !contextPress ? ownAction(event.target) : null;
+            const cell = button !== null ? button.closest('[role=gridcell]') : null;
+            const at = cell !== null ? /r(\d+)c(\d+)$/.exec(cell.id) : null;
+            actionPress = button !== null ? {
+                button,
+                paint: paintNow(),
+                row: at ? Number(at[1]) : -1,
+                column: at ? Number(at[2]) : -1,
+                index: cell !== null ? Array.prototype.indexOf.call(cell.querySelectorAll('.ex-action'), button) : -1,
+            } : null;
         }
         // A press into an editor surface puts the keyboard there.
         noteSurface(event.target);
@@ -2163,22 +2180,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!replaying) {
             askAboutPress();
         }
-        // The click this release makes on an action is told the render it was pressed on
-        // (actionPress).
+        // The click this release makes on an action is told the render it was pressed on, and the
+        // address the press read in it (actionPress).
         const action = replaying ? null : actionPress;
         if (!replaying) {
             actionPress = null;
         }
         if (core && action !== null && event.button === 0 && ownAction(event.target) === action.button) {
-            // And what it pressed — the row and column its cell's id names, and which of the cell's
-            // actions — so that the core can answer a press whose click Blazor will not deliver:
-            // one whose row component a render the browser has not seen yet has disposed (ADR-0142,
-            // 2026-10-06). Read from the ids the render wrote; nothing is measured.
-            const cell = action.button.closest('[role=gridcell]');
-            const at = cell !== null ? /r(\d+)c(\d+)$/.exec(cell.id) : null;
-            const index = cell !== null ? Array.prototype.indexOf.call(cell.querySelectorAll('.ex-action'), action.button) : -1;
-            core.invokeMethodAsync('ActionPressTakenAt', action.paint,
-                at ? Number(at[1]) : -1, at ? Number(at[2]) : -1, index).catch((error) => {
+            // What it pressed — the row and column its cell's id named at the press, and which of the
+            // cell's actions — so that the core can answer a press whose click Blazor will not
+            // deliver: one whose row component a render the browser has not seen yet has disposed
+            // (ADR-0142, 2026-10-06). Read at the press, not now: a keyed row's button may stand
+            // elsewhere by now, and its ids would name another row in the paint it was pressed on.
+            core.invokeMethodAsync('ActionPressTakenAt', action.paint, action.row, action.column, action.index).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to hear where an action was pressed', error);
                 }

@@ -73,18 +73,20 @@ public partial class ExGrid<TRow>
     private TakenAt? _taken;
 
     // The layouts the rows were painted under lately, the newest last: the column geometry, the
-    // columns' names in order, and the row height. A press names the one it was painted under
-    // (data-ex-layout), and is resolved against it. A press is answered a few round trips after it
-    // is made at most, so a short memory is enough; one older than it lands on no cell.
+    // columns' names in order, the row height, and the binding — which Source the rows were painted
+    // from (_binding). A press names the one it was painted under (data-ex-layout), and is resolved
+    // against it. A press is answered a few round trips after it is made at most, so a short memory
+    // is enough; one older than it lands on no cell.
     private const int PaintLayoutsKept = 16;
     private readonly List<PaintLayout> _paintLayouts = [];
     private int _paintLayoutId;
 
-    private sealed record PaintLayout(int Id, ColumnGeometry Columns, string[] ColumnNames, double RowHeightPx);
+    private sealed record PaintLayout(int Id, ColumnGeometry Columns, string[] ColumnNames, double RowHeightPx, int Binding);
 
     /// <summary>Keeps the layout the next render paints the rows under, if it is a new one
     /// (ED-31). The columns' names are kept as one array while they are unchanged, so two layouts
-    /// share an index space exactly when they share that array.</summary>
+    /// share an index space exactly when they share that array. A replaced Source is a new layout:
+    /// its rows are another source's (ADR-0142).</summary>
     private void NotePaintLayout()
     {
         var geometry = _columnStyles.Geometry;
@@ -92,11 +94,11 @@ public partial class ExGrid<TRow>
         var last = _paintLayouts.Count > 0 ? _paintLayouts[^1] : null;
         var names = last is not null && SameNames(last.ColumnNames) ? last.ColumnNames : [.. Columns.Select(c => c.Name)];
         if (last is not null && ReferenceEquals(last.Columns, geometry)
-            && ReferenceEquals(last.ColumnNames, names) && last.RowHeightPx == rowHeight)
+            && ReferenceEquals(last.ColumnNames, names) && last.RowHeightPx == rowHeight && last.Binding == _binding)
         {
             return;
         }
-        _paintLayouts.Add(new PaintLayout(++_paintLayoutId, geometry, names, rowHeight));
+        _paintLayouts.Add(new PaintLayout(++_paintLayoutId, geometry, names, rowHeight, _binding));
         if (_paintLayouts.Count > PaintLayoutsKept)
             _paintLayouts.RemoveAt(0);
     }
@@ -119,8 +121,8 @@ public partial class ExGrid<TRow>
     /// or at the replay of a press it held. The core resolves the event against this, not against
     /// the slice, scroll and layout it holds when the event arrives, so a press held behind keys
     /// that moved the view lands where it was made. One taken under another row order, under
-    /// columns since renamed, reordered, added or removed, or on rows that are no longer there,
-    /// lands on no cell.
+    /// columns since renamed, reordered, added or removed, on rows that are no longer there, or on
+    /// the rows of a Source since replaced by another instance (ADR-0142), lands on no cell.
     ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
@@ -169,7 +171,7 @@ public partial class ExGrid<TRow>
             return e;
         var layout = _paintLayouts.FindLast(l => l.Id == told.Layout);
         var held = layout is not null && ReferenceEquals(layout.ColumnNames, _paintLayouts[^1].ColumnNames)
-            && told.RowSequence == _sequenceVersion
+            && layout.Binding == _binding && told.RowSequence == _sequenceVersion
             && told.FirstRow >= _pageStartRow && told.FirstRow < _pageStartRow + _geometry.TotalRowCount;
         return new TakenMouseEventArgs
         {

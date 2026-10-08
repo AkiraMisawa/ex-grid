@@ -3,9 +3,9 @@ using ExGrid.Selection;
 namespace ExGrid.Cells;
 
 /// <summary>
-/// A Cell Editor commit the grid refused because it can no longer find the row the editor was
-/// opened on (ADR-0142, LV-20): its Row Key no longer answers a row in the Window, or, with no Row
-/// Key, the order moved, so the position the editor stands at names another row. (Without a Row
+/// A Cell Editor commit the grid refused because it cannot find, in the rows it holds now, the row
+/// the editor was opened on (ADR-0142, LV-20): its Row Key answers no row in the Window, or, with no
+/// Row Key, the order moved, so the position the editor stands at names another row. (Without a Row
 /// Key, a row that left the Window under the same order takes the typing with it instead, announced
 /// as <see cref="EditDiscardReason.RowLeftTheWindow"/>: ADR-0011, ED-21.) A commit is never refused
 /// because the cell's value changed under the editor: it lands, and an Overwrite Notice tells it. No Edit Intent was
@@ -24,10 +24,13 @@ public readonly record struct GridCommitRefusal(CellPosition Cell, string Column
 /// <summary>Why a Cell Editor commit was refused (ADR-0142, LV-20).</summary>
 public enum CommitRefusalReason
 {
-    /// <summary>A Row Key is in force, and no row in the Window answers the key of the row the
-    /// editor was opened on: the row is gone. The editor holds the key while it is open (ADR-0160),
-    /// so a later commit lands if the row comes back.</summary>
-    RowGone,
+    /// <summary>A Row Key is in force, and no row in the Window the grid holds now answers the key of
+    /// the row the editor was opened on. The row has left the Window: it may have left the data, or
+    /// only the rows a pushed or fetched Window holds — scrolled far away — and the grid cannot tell
+    /// which, since it holds no row beyond its Window (ADR-0160). The editor holds the key while it is
+    /// open, so a commit made once the row is back in the Window lands; Escape leaves without
+    /// writing.</summary>
+    RowLeftTheWindow,
 
     /// <summary>No Row Key is in force, and the Row Sequence Version moved while the editor was
     /// open: the position the editor stands at names another row now (ADR-0011's note of

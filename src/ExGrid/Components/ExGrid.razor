@@ -987,6 +987,11 @@
     /// open edit (ADR-0011). An order move does not (ADR-0011's note of 2026-10-07).</summary>
     private bool _columnsMoved;
 
+    /// <summary>Whether the last reconciliation found the Source replaced by another instance: what
+    /// drops the Selection whatever the Row Sequence Versions are, and discards an open edit
+    /// (ADR-0011, ADR-0142).</summary>
+    private bool _sourceReplaced;
+
     /// <summary>How often the edge band scrolls while a drag holds the pointer in it
     /// (ADR-0008). Provisional the way the band's own numbers are — the shape is the
     /// decision, the period is not.</summary>
@@ -1016,6 +1021,15 @@
     /// <para>Passing a Source alongside any of the push parameters it replaces is
     /// refused by name: one of the two would silently win, and which one is not
     /// something a Consumer should have to know.</para>
+    ///
+    /// <para>Replacing it with another instance is a new binding (ADR-0011, ADR-0142): whatever
+    /// the two sources' Row Sequence Versions are — two fresh sources both start at 0 — the
+    /// positions the old one painted name the new one's rows. The Selection is dropped, as an
+    /// order move drops it; an open edit is discarded and <see cref="OnEditDiscarded"/> says
+    /// <see cref="EditDiscardReason.SourceChanged"/>; and a gesture taken on what the old one
+    /// painted is refused, <see cref="PasteRefusalReason.SourceChanged"/> for a write and
+    /// <see cref="ActionRefusalReason.SourceChanged"/> for an Action. The grid tells the two
+    /// apart by reference and holds no replaced source to do it (ADR-0160).</para>
     /// </summary>
     [Parameter] public IGridSource<TRow>? Source { get; set; }
 
@@ -1567,15 +1581,19 @@
     /// move, even onto the empty Selection it left, a fill-handle drag released after it, a
     /// Ctrl+Enter fill whose editor opened before it — is refused as
     /// <see cref="PasteRefusalReason.OrderMoved"/>: the Selection it was aimed with went with that
-    /// order (ADR-0011, ADR-0142).</summary>
+    /// order (ADR-0011, ADR-0142). One aimed at what a <see cref="Source"/> since replaced by
+    /// another instance painted is refused as <see cref="PasteRefusalReason.SourceChanged"/>,
+    /// whatever the two sources' Row Sequence Versions are.</summary>
     [Parameter] public EventCallback<PasteRefusalReason> OnPasteRefused { get; set; }
 
     /// <summary>Text the user had typed and not committed, thrown away because the grid
-    /// could no longer place it (ADR-0011): the visible columns changed under the editor, or,
-    /// with no Row Key, its row left the Window under the order it was opened under. An order
-    /// move discards nothing: the editor outlives it (ADR-0011's note of 2026-10-07). Neither
-    /// is the user's own doing — a Consumer's new columns or refresh lands and the typing goes
-    /// — so the grid says so rather than leaving the loss to be guessed at. Chrome writes the
+    /// could no longer place it (ADR-0011): the visible columns changed under the editor; the
+    /// <see cref="Source"/> was replaced by another instance, whose rows are not the one the edit
+    /// was opened on (<see cref="EditDiscardReason.SourceChanged"/>, ADR-0142); or, with no Row
+    /// Key, its row left the Window under the order it was opened under. An order move discards
+    /// nothing: the editor outlives it (ADR-0011's note of 2026-10-07). None is the user's own
+    /// doing — a Consumer's new columns, new source or refresh lands and the typing goes — so the
+    /// grid says so rather than leaving the loss to be guessed at. Chrome writes the
     /// sentence and announces it (A11Y-16); the grid holds no strings. A discard the Consumer
     /// asked for through <see cref="DiscardEditAsync"/> is raised here too, as
     /// <see cref="EditDiscardReason.DiscardedByConsumer"/>, its sentence already announced
@@ -1866,6 +1884,14 @@
     private Action<bool>? _innerPopupChanged;
 
     private IGridSource<TRow>? _boundSource;
+    // Which Source instance the grid is bound to, as a number: moved whenever the Source parameter
+    // becomes another instance, compared by reference — or is set or cleared. A gesture aimed at what
+    // one binding painted names other rows under the next, whatever the two sources' Row Sequence
+    // Versions are: two fresh sources both start at 0 (ADR-0011, ADR-0142). A number, so that no
+    // replaced source is held to compare with (ADR-0160).
+    private int _binding;
+    // The binding the Selection was last reconciled under (ReconcileSelection).
+    private int _reconciledBinding;
     private IReadOnlyList<GridColumn<TRow>>? _boundColumns;
     private bool _applying;
     private bool _bound;
@@ -2032,6 +2058,7 @@
     private SelectionRange? _fillSource;
     private CellPosition? _fillPointer;
     private int _fillVersion;
+    private int _fillBinding;
     private bool _selectionChanged;
 
     // The Cell Editor (ADR-0007/0010): one floating input, its uncommitted text the
@@ -2542,6 +2569,8 @@
                 (_boundSource as IBindsToOneCircuit)?.Binding.Detach(this);
             }
             _boundSource = Source;
+            // Another binding: what the last one painted names other rows now (ADR-0142).
+            _binding++;
             _boundColumns = null;
             if (_boundSource is not null)
                 _boundSource.StateChanged += OnSourceStateChanged;
@@ -2623,8 +2652,9 @@
         _total = Source is null ? TotalCount : Source.TotalCount;
         _loading = Source?.IsLoading ?? IsLoading;
         _sequenceVersion = Source?.RowSequenceVersion ?? RowSequenceVersion;
-        // Under the order just taken in, so a write aimed under another goes now (D1).
-        NoteOwnWritesShown(previousWindow, previousStart);
+        // Under the order and the binding just taken in, so a write aimed under another goes now, and
+        // one a new Window answers settles (D1).
+        NoteOwnWritesTakenIn(previousWindow, previousStart);
         _sorts = Source is not null ? Source.Sorts : Sorts ?? [];
         _filter = Source is not null ? Source.Filter : Filters;
         NoteRowsForSummary();
@@ -2829,10 +2859,12 @@
         ReconcileSelection();
         // A change of the visible columns mid-edit means the cell the editor floats over no
         // longer names the same column (ADR-0011): the uncommitted text is discarded rather than
-        // committed into a stranger. The gate learns after this render. An order move discards
-        // nothing: the editor outlives it, and with a Row Key it and the Focus follow their row
-        // (ADR-0011's note of 2026-10-07).
-        if (_editMode != EditMode.None && _columnsMoved)
+        // committed into a stranger. A Source replaced by another instance takes the row the editor
+        // was opened on with it, whatever the two sources' versions are, and discards it the same way
+        // (ADR-0142). The gate learns after this render. An order move discards nothing: the editor
+        // outlives it, and with a Row Key it and the Focus follow their row (ADR-0011's note of
+        // 2026-10-07).
+        if (_editMode != EditMode.None && (_columnsMoved || _sourceReplaced))
         {
             CloseCompletion();
             EndPointing();
@@ -2845,15 +2877,20 @@
             _editorNeedsFocus = false;
             _editorFocusAsked = false;
             _jsEditingDirty = true;
+            ForgetEditBaseline();
             // Announced, not silent: the user typed and something they did not do took
             // it away. Raised from OnAfterRenderAsync for the reason the Range Request
             // is — a Consumer handler run inside this render stack would re-enter the
             // same batch.
-            _pendingDiscard = EditDiscardReason.ColumnsChanged;
+            _pendingDiscard = _sourceReplaced ? EditDiscardReason.SourceChanged : EditDiscardReason.ColumnsChanged;
         }
         else
         {
             FollowEditedRow();
+            // A write of the user's own the editor awaited went with this Window: the baseline is
+            // what the cell paints now, read where the editor stands after following its row (D1).
+            if (_editRebaseOwed)
+                RebaseEdit();
         }
         PrepareRender();
     }
@@ -2876,19 +2913,30 @@
         var reconciled = _selection.Under(_sequenceVersion);
         // Noted for an open edit, which a change of columns discards (ADR-0011).
         _columnsMoved = !ColumnsAreAsBefore();
-        if (_columnsMoved)
+        // A Source replaced by another instance: its positions are another source's rows, whatever
+        // the two Row Sequence Versions are (ADR-0011, ADR-0142). Noted for an open edit too, which
+        // it discards.
+        _sourceReplaced = _reconciledBinding != _binding;
+        _reconciledBinding = _binding;
+        if (_sourceReplaced)
+        {
+            // Noted for the gestures on their way that were aimed with it (ADR-0142).
+            NoteSelectionDropped(_selection.Selection);
+            reconciled = HeldSelection.Empty(_sequenceVersion);
+        }
+        else if (_columnsMoved)
             reconciled = HeldSelection.Empty(_sequenceVersion);
         // A Selection the order took, under the same columns: noted for the gestures on their way
         // that were aimed with it (ADR-0142).
         else if (reconciled.RowSequenceVersion != _selection.RowSequenceVersion)
-            NoteSelectionTheOrderDropped(_selection.Selection);
+            NoteSelectionDropped(_selection.Selection);
 
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
         _selection = reconciled;
-        // The Copied Range is written in the same coordinates, and dropped on the same two
-        // triggers; it also goes when a copied cell comes to read otherwise (ADR-0170).
-        ReconcileCopiedRange(columnsMoved: _columnsMoved);
+        // The Copied Range is written in the same coordinates, and dropped on the same triggers; it
+        // also goes when a copied cell comes to read otherwise (ADR-0170).
+        ReconcileCopiedRange(columnsMoved: _columnsMoved || _sourceReplaced);
     }
 
     private bool ColumnsAreAsBefore()
@@ -3590,6 +3638,7 @@
             _fillSource = fillSource;
             _fillPointer = null;
             _fillVersion = _sequenceVersion;
+            _fillBinding = _binding;
             SetDragging(true);
             return;
         }
@@ -3760,6 +3809,7 @@
         var source = _fillSource;
         var pointer = releasedOn ?? _fillPointer;
         var version = _fillVersion;
+        var binding = _fillBinding;
         SetDragging(false);
         if (_disposed || source is not { } from || pointer is not { } to)
             return;
@@ -3768,12 +3818,18 @@
             return;
         // Before the order is checked: a gathered change that moved it leaves the drag's
         // positions naming other rows, and the drag is refused, as a paste aimed under another
-        // order is (ADR-0011, ADR-0142; D5).
+        // order is (ADR-0011, ADR-0142; D5). A drag made on what a Source since replaced painted
+        // names another source's rows, whatever the versions (ADR-0142).
         if (!await TakeInGatheredAsync())
             return;
+        if (binding != _binding)
+        {
+            await RefuseWriteAsync(PasteRefusalReason.SourceChanged);
+            return;
+        }
         if (version != _sequenceVersion)
         {
-            await RefuseWriteUnderAMovedOrderAsync();
+            await RefuseWriteAsync(PasteRefusalReason.OrderMoved);
             return;
         }
         if (decision.IsRefused)
@@ -3786,15 +3842,15 @@
         if (!OnFill.HasDelegate)
             return;
         var intent = new GridFillIntent(from, decision.Extension, version);
-        // The user's own write (ADR-0142 D1): an editor opened before it is painted does not tell
-        // it as a change.
+        // The user's own write (ADR-0142 D1): an editor opened over it before it settles does not
+        // tell it as a change. The bound source puts out what it gathered as the handler completes
+        // (D5).
         var written = NoteOwnWrite([intent.Target]);
         await OnFill.InvokeAsync(intent);
+        await OwnWriteAnsweredAsync(written, intent.IsRefused);
         AskSummaryAgain();
-        if (intent.IsRefused)
-            ForgetOwnWrite(written);
-        else
-            SelectFilledRange(from, intent.Target, version);
+        if (!intent.IsRefused)
+            SelectFilledRange(from, intent.Target, version, binding);
     }
 
     /// <summary>
@@ -3806,9 +3862,9 @@
     /// Selection is the user's: if the order moved while the Consumer handled the intent,
     /// or the Selection is no longer the source, nothing is placed (ADR-0011).
     /// </summary>
-    private void SelectFilledRange(SelectionRange source, SelectionRange target, int version)
+    private void SelectFilledRange(SelectionRange source, SelectionRange target, int version, int binding)
     {
-        if (_disposed || version != _sequenceVersion)
+        if (_disposed || version != _sequenceVersion || binding != _binding)
             return;
         var current = _selection.Selection;
         if (current.IsEmpty || current.Ranges.Count != 1 || current.Ranges[0] != source || !source.Contains(current.Focus))
@@ -5946,23 +6002,24 @@
             return;
         }
         var version = _sequenceVersion;
+        var binding = _binding;
         var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
         if (OnPaste.HasDelegate)
         {
-            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound
+            // source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite(decision.Plan.Targets);
             await OnPaste.InvokeAsync(intent);
-            if (intent.IsRefused)
-                ForgetOwnWrite(written);
+            await OwnWriteAnsweredAsync(written, intent.IsRefused);
         }
         AskSummaryAgain();
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
         if (intent.IsRefused)
             return;
         if (decision.Plan.CollapsesSelection)
-            SelectPastedCell(decision.Plan, version);
+            SelectPastedCell(decision.Plan, version, binding);
         else if (PasteMaySpill)
-            SelectSpilledBlock(target, decision.Plan, version);
+            SelectSpilledBlock(target, decision.Plan, version, binding);
     }
 
     /// <summary>
@@ -5973,9 +6030,9 @@
     /// handling moved the Row Sequence Version, or took the cell away, nothing is placed
     /// (ADR-0011).
     /// </summary>
-    private void SelectPastedCell(PastePlan plan, int version)
+    private void SelectPastedCell(PastePlan plan, int version, int binding)
     {
-        if (_disposed || version != _sequenceVersion)
+        if (_disposed || version != _sequenceVersion || binding != _binding)
             return;
         var cell = plan.Targets[0];
         var extent = Extent;
@@ -5995,12 +6052,12 @@
     /// were written in: if the Consumer's handling of the intent moved the Row Sequence
     /// Version, or took the block's cells away, nothing is placed (ADR-0011).
     /// </summary>
-    private void SelectSpilledBlock(GridSelection target, PastePlan plan, int version)
+    private void SelectSpilledBlock(GridSelection target, PastePlan plan, int version, int binding)
     {
         if (_disposed || plan.Targets.Count != 1 || target.Ranges.Count != 1)
             return;
         var block = plan.Targets[0];
-        if (block == target.Ranges[0] || version != _sequenceVersion)
+        if (block == target.Ranges[0] || version != _sequenceVersion || binding != _binding)
             return;
         var extent = Extent;
         if (block.BottomRow >= extent.RowCount || block.RightColumn >= extent.ColumnCount)
@@ -6300,9 +6357,10 @@
             case GridKeyKind.FillRight:
                 // With no Focus these name nothing yet: the key only places one, the
                 // first-key rule (ADR-0012), on the general path below — unless it was aimed
-                // with a Selection an order move has dropped since, and is refused below as a
-                // write aimed under another order (ADR-0142).
-                if (_selection.Selection.IsEmpty && !AimedWithASelectionTheOrderDropped(paint))
+                // with a Selection an order move or a replaced Source has dropped since, and is
+                // refused below as a write aimed under another order or at another Source
+                // (ADR-0142).
+                if (_selection.Selection.IsEmpty && !AimedWithADroppedSelection(paint))
                     break;
                 if (action.Kind == GridKeyKind.Clear)
                     await RaiseClearIntentAsync(paint);
@@ -6365,9 +6423,9 @@
                 await LeaveAsync();
                 return;
             case GridKeyKind.Engage:
-                // Aimed under an order that has moved since, Space never engages the Focus in
-                // force, which the user did not aim at; an action it was aimed at is refused
-                // (ADR-0142, LV-12).
+                // Aimed under an order that has moved since, or at a Source since replaced, Space
+                // never engages the Focus in force, which the user did not aim at; an action it was
+                // aimed at is refused (ADR-0142, LV-12).
                 if (AimedUnderAnotherOrder(paint))
                 {
                     if (await RefuseSpaceAimedUnderAnotherOrderAsync(paint) || !_selection.Selection.IsEmpty)
@@ -6969,9 +7027,11 @@
         }
         if (OnClear.HasDelegate)
         {
-            // The user's own write (ADR-0142 D1).
-            NoteOwnWrite(decision.Plan.Targets);
+            // The user's own write (ADR-0142 D1), followed until it settles; the bound source puts out
+            // what it gathered as the handler completes (D5).
+            var written = NoteOwnWrite(decision.Plan.Targets);
             await OnClear.InvokeAsync(new GridClearIntent(decision.Plan.Targets, _sequenceVersion));
+            await OwnWriteAnsweredAsync(written, refused: false);
         }
         AskSummaryAgain();
     }
@@ -7003,9 +7063,17 @@
 
         var plan = decision.Plan;
         var version = _sequenceVersion;
+        var binding = _binding;
         var rows = await GatherRangeAsync(plan.Source.RowSpan);
         if (_disposed)
             return;
+        // A Source replaced while the rows were asked for: they were read from the source the key
+        // was aimed at, and its positions are another source's rows now (ADR-0142).
+        if (binding != _binding)
+        {
+            await RefuseWriteAsync(PasteRefusalReason.SourceChanged);
+            return;
+        }
         // An order that moved while the rows were asked for makes both the rows and the
         // positions they were asked by someone else's (ADR-0011).
         if (rows is null || version != _sequenceVersion)
@@ -7026,11 +7094,11 @@
         if (OnPaste.HasDelegate)
         {
             var intent = new GridPasteIntent(plan.Paste, block, version, fillSource: source);
-            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound
+            // source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite(plan.Paste.Targets);
             await OnPaste.InvokeAsync(intent);
-            if (intent.IsRefused)
-                ForgetOwnWrite(written);
+            await OwnWriteAnsweredAsync(written, intent.IsRefused);
         }
         AskSummaryAgain();
     }
@@ -7423,12 +7491,13 @@
         // back through the display channels when the Consumer answers them (ADR-0034).
         _editError = null;
         // The commit lands over whatever the cell paints now, and says so when that is not what the
-        // editor opened over: the one change the user could not see (ADR-0142, LV-11).
+        // user saw — the editor's baseline (D1): the one change the user could not see (ADR-0142,
+        // LV-11). The intent carries the same two texts the notice would.
         var replaced = ReplacedTextAt(cell);
         var notice = OverwriteNoticeFor(cell, replaced);
         var intent = new GridEditIntent<TRow>(row, Columns[cell.Column].Name, text)
         {
-            SeenText = _editSeenText ?? replaced,
+            SeenText = SeenTextFor(replaced),
             ReplacedText = replaced,
         };
         if (OnEdit.HasDelegate)
@@ -7436,12 +7505,13 @@
             // Heard while the editor still stands, so that a refusal holds it as a Reject does
             // (ADR-0142, ADR-0034's note of 2026-10-07; LV-19). The keys typed after the commit wait
             // behind its answer (ADR-0010), and an order move the Consumer's own write brings in is
-            // this commit's, not a discard. The user's own write (D1), taken back if refused.
+            // this commit's, not a discard. The user's own write (D1), taken back if refused; the
+            // bound source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
             await OnEdit.InvokeAsync(intent);
+            await OwnWriteAnsweredAsync(written, intent.IsRefused);
             if (intent.RefusalMessage is { } refused)
             {
-                ForgetOwnWrite(written);
                 if (_editMode != EditMode.None)
                     HoldEditWith(refused);
                 return false;
@@ -7507,7 +7577,7 @@
         // of 2026-10-07).
         if (_sequenceVersion != _editSequence)
         {
-            await RefuseWriteUnderAMovedOrderAsync();
+            await RefuseWriteAsync(PasteRefusalReason.OrderMoved);
             return;
         }
         // The same gate as a paste, over the whole selection — not the one cell the
@@ -7548,12 +7618,13 @@
         // Copied before the editor is torn down: the intent names the cell the text was
         // entered in, which a clipboard paste of the same field does not (ADR-0050 item 5).
         var intent = new GridPasteIntent(decision.Plan, [[_editText]], _sequenceVersion, enteredAt: _editingCell);
-        // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+        // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound source
+        // puts out what it gathered as the handler completes (D5).
         var written = OnPaste.HasDelegate ? NoteOwnWrite(decision.Plan.Targets) : null;
         await EndEditingAsync(endedIn: OnPaste.HasDelegate ? () => OnPaste.InvokeAsync(intent) : null);
-        if (written is not null && intent.IsRefused)
-            ForgetOwnWrite(written);
-        else
+        if (written is not null)
+            await OwnWriteAnsweredAsync(written, intent.IsRefused);
+        if (written is null || !intent.IsRefused)
             await RaiseOverwriteNoticeAsync(notice);
         AskSummaryAgain();
         StateHasChanged();
@@ -7581,8 +7652,7 @@
         _editSurface = EditSurface.Cell;
         _editMode = EditMode.None;
         _editText = "";
-        _editSeenText = null;
-        _editKey = null;
+        ForgetEditBaseline();
         _reportedText = null;
         ForgetCaretPlacement();
         _editError = null;

@@ -1316,56 +1316,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.CommitRefusals);
     }
 
-    [Fact] // ADR-0142 D1 / LV-17, principle 6: a paint of something else in between — a change upstream to another row, a scroll — does not end the user's own write; `5` Enter, then ↑ `7` Enter, tells nothing
-    public async Task An_unrelated_paint_in_between_does_not_end_the_users_own_write()
-    {
-        var rows = TestRows.Many(50);
-        var heard = new Heard();
-        var cut = RenderGrid(rows, heard);
-        await ClickAsync(cut, 50, 30);
-
-        await KeyAsync(cut, "5");
-        await KeyAsync(cut, "Enter");
-        // A live change to another painted row, and a scroll of one row and back: new paints, none
-        // of which shows the 5.
-        var ticked = Changed(rows, 3, amount: 33m);
-        Push(cut, ticked);
-        await ScrollToAsync(cut.Find(".ex-scroller"), 20);
-        await ScrollToAsync(cut.Find(".ex-scroller"), 0);
-        await KeyAsync(cut, "ArrowUp");
-        await KeyAsync(cut, "7");
-        // The store writes the 5 back only now, under the open editor.
-        Push(cut, Changed(ticked, 1, book: "5"));
-        await KeyAsync(cut, "Enter");
-
-        Assert.Equal(["5", "7"], heard.Edits.Select(e => e.Value));
-        Assert.Empty(heard.Notices);
-    }
-
-    [Fact] // ADR-0142 D1 / LV-17: a change upstream to another cell of the same row is a new instance of the row, and still does not show the user's own write
-    public async Task A_change_to_another_cell_of_the_row_does_not_end_the_users_own_write()
-    {
-        var rows = TestRows.Many(50);
-        var heard = new Heard();
-        var cut = RenderGrid(rows, heard);
-        await ClickAsync(cut, 50, 10);
-
-        await KeyAsync(cut, "5");
-        await KeyAsync(cut, "Enter");
-        // A tick on row 0's Amount: a new instance of the row, Book unchanged.
-        var ticked = Changed(rows, 0, amount: 33m);
-        Push(cut, ticked);
-        await KeyAsync(cut, "ArrowUp");
-        await KeyAsync(cut, "7");
-        Push(cut, Changed(ticked, 0, book: "5"));
-        await KeyAsync(cut, "Enter");
-
-        Assert.Equal(["5", "7"], heard.Edits.Select(e => e.Value));
-        Assert.Empty(heard.Notices);
-    }
-
-    [Fact] // ADR-0142 D1 / LV-17: the written row scrolled out of the painted rows stays covered — ticks to it and to the rows painted meanwhile end nothing — until the write paints; `5` Enter, scroll away and back, ↑ `7`, the 5 written back under the editor, Enter tells nothing
-    public async Task The_users_own_write_stays_covered_while_its_row_is_off_screen()
+    [Fact] // ADR-0142 D1 / LV-17, principle 6: a scroll away from the written row and back, and renders of the same Window, settle nothing — `5` Enter, scroll, ↑ `7`, the 5 written back under the editor, Enter tells nothing
+    public async Task A_scroll_away_and_back_settles_nothing_and_the_write_back_settles_the_users_own_write()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -1374,19 +1326,50 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "5");
         await KeyAsync(cut, "Enter");
 
-        // Row 0 leaves the painted rows. The feed ticks a row painted now, and row 0's Amount.
+        // Row 0 leaves the painted rows and comes back: the Window holds every row, so no new Window
+        // is taken in, and the write is still the user's own, unsettled.
         await ScrollAndSettleAsync(cut, 30 * 20);
         Assert.NotEqual(0, Attribute(cut, "data-ex-first-row"));
-        var ticked = Changed(Changed(rows, 31, amount: 33m), 0, amount: 44m);
-        Push(cut, ticked);
         await ScrollAndSettleAsync(cut, 0);
         await KeyAsync(cut, "ArrowUp");
         await KeyAsync(cut, "7");
-        Push(cut, Changed(ticked, 0, book: "5"));
+        // The store writes the 5 back only now, under the open editor: the write settles, and the
+        // baseline is what the cell paints then.
+        Push(cut, Changed(rows, 0, book: "5"));
         await KeyAsync(cut, "Enter");
 
         Assert.Equal(["5", "7"], heard.Edits.Select(e => e.Value));
         Assert.Empty(heard.Notices);
+        Assert.Equal("5", heard.Edits[1].SeenText);
+        Assert.Equal("5", heard.Edits[1].ReplacedText);
+    }
+
+    [Theory] // ADR-0142 D1 / LV-17, principle 6: the user's own write settles with the first new Window taken in after its handler completed — whatever that Window changed — so a value the Consumer writes back later, under an editor opened after it, is a change like any other, and told
+    [InlineData(3)]
+    [InlineData(0)]
+    public async Task The_first_new_window_after_the_handler_settles_the_users_own_write(int tickedRow)
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+        await KeyAsync(cut, "Enter");
+
+        // A live tick to another row, or to another cell of the written row: the first new Window
+        // after the 5's handler completed. The 5 has settled, without the 5 in it.
+        var ticked = Changed(rows, tickedRow, amount: 33m);
+        Push(cut, ticked);
+        await KeyAsync(cut, "ArrowUp");
+        await KeyAsync(cut, "7");
+        Push(cut, Changed(ticked, 0, book: "5"));
+        await KeyAsync(cut, "Enter");
+
+        var notice = Assert.Single(heard.Notices);
+        Assert.Equal("Row 000000", notice.SeenText);
+        Assert.Equal("5", notice.ReplacedText);
+        Assert.Equal(notice.SeenText, heard.Edits[1].SeenText);
+        Assert.Equal(notice.ReplacedText, heard.Edits[1].ReplacedText);
     }
 
     [Fact] // ADR-0142 D1 / LV-17: a fill reaching past the painted rows covers the cells it wrote there too, while the Window holds them — Ctrl+D down ten rows, scroll to the last, `7`, its fill written back under the editor, Enter tells nothing
@@ -1609,7 +1592,7 @@ public class WritesLandAsEnteredTests : GridTestContext
 
     // ---- LV-20: a commit goes to the row the editor was opened on ----
 
-    [Fact] // ADR-0142 / LV-20, ADR-0011 / ED-21: without a Row Key, a row that left the Window under the same order is not RowGone — that is a key no longer in the Window — and takes the typing with it, announced as RowLeftTheWindow
+    [Fact] // ADR-0142 / LV-20, ADR-0011 / ED-21: without a Row Key, a row that left the Window under the same order is no commit refusal — that is a key no longer in the Window — and takes the typing with it, announced as the discard RowLeftTheWindow
     public async Task Without_a_row_key_a_commit_whose_row_left_the_window_is_discarded_as_RowLeftTheWindow()
     {
         var rows = TestRows.Many(50);
@@ -1747,7 +1730,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Same(back[1], Assert.Single(heard.Edits).Row);
     }
 
-    [Fact] // ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a row whose key left the Window refuses the commit as RowGone with the editor kept, and the commit lands once the row is back
+    [Fact] // ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a row whose key left the Window refuses the commit as RowLeftTheWindow with the editor kept, and the commit lands once the row is back
     public async Task With_a_row_key_a_row_that_left_the_window_refuses_the_commit_until_it_is_back()
     {
         var rows = TestRows.Many(50);
@@ -1760,7 +1743,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter");
 
         Assert.Empty(heard.Edits);
-        Assert.Equal(CommitRefusalReason.RowGone, Assert.Single(heard.CommitRefusals).Reason);
+        Assert.Equal(CommitRefusalReason.RowLeftTheWindow, Assert.Single(heard.CommitRefusals).Reason);
         Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
         Assert.Empty(heard.Discards);
 
@@ -1888,7 +1871,8 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         await KeyAsync(cut, "Enter");
 
-        Assert.Equal(1, source.Asked);
+        // Asked before the write is handled, and again as its handler completes (D5, D1).
+        Assert.Equal(2, source.Asked);
         Assert.Empty(heard.CommitRefusals);
         Assert.Empty(heard.Notices);
         var intent = Assert.Single(heard.Edits);
@@ -2047,8 +2031,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.Notices);
     }
 
-    [Fact] // ADR-0142 D5 / LV-16, LV-20: with a Row Key, a commit whose row a gathered change took out of the Window is refused as RowGone, the editor kept, and refused again while the key stays out
-    public async Task With_a_row_key_a_commit_whose_row_left_the_window_is_refused_as_row_gone()
+    [Fact] // ADR-0142 D5 / LV-16, LV-20: with a Row Key, a commit whose row a gathered change took out of the Window is refused as RowLeftTheWindow, the editor kept, and refused again while the key stays out
+    public async Task With_a_row_key_a_commit_whose_row_left_the_window_is_refused_as_row_left_the_window()
     {
         var rows = TestRows.Many(50);
         var source = new GatheringSource(rows);
@@ -2061,13 +2045,13 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter");
 
         Assert.Empty(heard.Edits);
-        Assert.Equal(CommitRefusalReason.RowGone, Assert.Single(heard.CommitRefusals).Reason);
+        Assert.Equal(CommitRefusalReason.RowLeftTheWindow, Assert.Single(heard.CommitRefusals).Reason);
         Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
 
         // The editor holds the row's key: whatever stands at its place now, the commit is refused again.
         await KeyAsync(cut, "Enter");
         Assert.Empty(heard.Edits);
-        Assert.Equal([CommitRefusalReason.RowGone, CommitRefusalReason.RowGone], heard.CommitRefusals.Select(r => r.Reason));
+        Assert.Equal([CommitRefusalReason.RowLeftTheWindow, CommitRefusalReason.RowLeftTheWindow], heard.CommitRefusals.Select(r => r.Reason));
         Assert.Empty(heard.Discards);
     }
 
@@ -2084,7 +2068,8 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         await PasteAsync(cut, pressedOn);
 
-        Assert.Equal(1, source.Asked);
+        // Asked before the write is handled, and again as its handler completes (D5, D1).
+        Assert.Equal(2, source.Asked);
         Assert.Empty(heard.PasteRefusals);
         Assert.Single(heard.Pastes);
         Assert.Equal("Gathered upstream", source.Window[0].Book);
@@ -2108,7 +2093,8 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         await KeyAsync(cut, key, ctrl: ctrl, paint: pressedOn);
 
-        Assert.Equal(1, source.Asked);
+        // Asked before the write is handled, and again as its handler completes (D5, D1).
+        Assert.Equal(2, source.Asked);
         Assert.Equal(1, heard.Pastes.Count + heard.Clears.Count);
         Assert.Empty(heard.PasteRefusals);
     }
@@ -2127,7 +2113,8 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         await ReleaseFillAsync(cut, sequence, layout);
 
-        Assert.Equal(1, source.Asked);
+        // Asked before the write is handled, and again as its handler completes (D5, D1).
+        Assert.Equal(2, source.Asked);
         Assert.Single(heard.Fills);
         Assert.Empty(heard.PasteRefusals);
     }
@@ -2147,7 +2134,8 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         await KeyAsync(cut, "Enter", ctrl: true, paint: pressedOn);
 
-        Assert.Equal(1, source.Asked);
+        // Asked before the write is handled, and again as its handler completes (D5, D1).
+        Assert.Equal(2, source.Asked);
         Assert.Single(heard.Pastes);
         Assert.Empty(heard.PasteRefusals);
         Assert.Empty(cut.FindAll(".ex-editor"));
@@ -2246,8 +2234,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Null(refusal.Row);
     }
 
-    [Fact] // ADR-0142 / LV-20, LV-12: without a Row Key, a told press whose row left the Window, under the same order, is refused as RowGone after the render that took it away
-    public async Task Without_a_row_key_a_told_press_whose_row_left_the_window_is_refused_as_row_gone()
+    [Fact] // ADR-0142 / LV-20, LV-12: without a Row Key, a told press whose row left the Window, under the same order, is refused as RowLeftTheWindow after the render that took it away
+    public async Task Without_a_row_key_a_told_press_whose_row_left_the_window_is_refused_as_row_left_the_window()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -2258,7 +2246,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         // The Window slides past row 0, the order unmoved.
         cut.Render(ps => ps.Add(g => g.Window, rows[1..]).Add(g => g.WindowStart, 1));
 
-        cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowGone, Assert.Single(heard.ActionRefusals).Reason));
+        cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowLeftTheWindow, Assert.Single(heard.ActionRefusals).Reason));
         // The row is gone from the Window, so the refusal names none (ADR-0160).
         Assert.Null(heard.ActionRefusals[0].Row);
         Assert.Empty(heard.Actions);
@@ -2358,7 +2346,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Equal(ActionRefusalReason.OrderMoved, Assert.Single(heard.ActionRefusals).Reason);
     }
 
-    [Fact] // ADR-0142 D5 / LV-16: with nothing gathered, a commit lands on the row in hand, and asks once
+    [Fact] // ADR-0142 D5 / LV-16: with nothing gathered, a commit lands on the row in hand, and asks before and after its handler
     public async Task A_write_with_nothing_gathered_lands_on_the_row_in_hand()
     {
         var rows = TestRows.Many(50);
@@ -2370,7 +2358,8 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         await KeyAsync(cut, "Enter");
 
-        Assert.Equal(1, source.Asked);
+        // Asked before the write is handled, and again as its handler completes (D5, D1).
+        Assert.Equal(2, source.Asked);
         Assert.Same(rows[0], Assert.Single(heard.Edits).Row);
     }
 
@@ -2413,8 +2402,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Same(moved[2], Assert.Single(heard.Actions).Row);
     }
 
-    [Fact] // ADR-0142 / LV-20, LV-12: with a Row Key, a press whose row has left the Window is refused as RowGone
-    public async Task With_a_row_key_a_press_whose_row_left_the_window_is_refused_as_row_gone()
+    [Fact] // ADR-0142 / LV-20, LV-12: with a Row Key, a press whose row has left the Window is refused as RowLeftTheWindow
+    public async Task With_a_row_key_a_press_whose_row_left_the_window_is_refused_as_row_left_the_window()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -2429,12 +2418,12 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         Assert.Empty(heard.Actions);
         var refusal = Assert.Single(heard.ActionRefusals);
-        Assert.Equal(ActionRefusalReason.RowGone, refusal.Reason);
+        Assert.Equal(ActionRefusalReason.RowLeftTheWindow, refusal.Reason);
         Assert.Null(refusal.Row);
     }
 
-    [Fact] // ADR-0142 / LV-20, LV-12, "No press is lost to Blazor": with a Row Key, a told press whose row a later render takes out of the Window is answered after that render, as RowGone
-    public async Task With_a_row_key_a_told_press_whose_row_a_later_render_removes_is_refused_as_row_gone()
+    [Fact] // ADR-0142 / LV-20, LV-12, "No press is lost to Blazor": with a Row Key, a told press whose row a later render takes out of the Window is answered after that render, as RowLeftTheWindow
+    public async Task With_a_row_key_a_told_press_whose_row_a_later_render_removes_is_refused_as_row_left_the_window()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -2445,11 +2434,11 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         cut.Render(ps => ps.Add(g => g.Window, rows[1..]).Add(g => g.TotalCount, rows.Length - 1).Add(g => g.RowSequenceVersion, 1));
 
-        cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowGone, Assert.Single(heard.ActionRefusals).Reason));
+        cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowLeftTheWindow, Assert.Single(heard.ActionRefusals).Reason));
         Assert.Empty(heard.Actions);
     }
 
-    [Fact] // ADR-0142 / LV-20 (2026-10-07): with a Row Key, a press whose order moved before the core heard it, and whose row component is gone, cannot be paired with its row, and is refused as OrderMoved — never RowGone, for its key is still in the Window
+    [Fact] // ADR-0142 / LV-20 (2026-10-07): with a Row Key, a press whose order moved before the core heard it, and whose row component is gone, cannot be paired with its row, and is refused as OrderMoved — never RowLeftTheWindow, for its key is still in the Window
     public async Task With_a_row_key_a_press_that_cannot_be_paired_is_refused_as_order_moved()
     {
         var rows = TestRows.Many(50);
@@ -2530,5 +2519,25 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Contains("'OnPasteStreamsAsync', stream(plain), stream(markup), paint)", script);
         // A press on an action carries it with the row, column and action it pressed.
         Assert.Contains("'ActionPressTakenAt'", script);
+    }
+
+    [Fact] // ADR-0142 / LV-12, ADR-0021: an action press reads its whole address — the paint, and the row, column and action its cell's id names — at the mousedown, and tells that at the release, so a keyed row's button moved in between still names the row it was pressed on; a press the platform makes a context menu of (Control with the primary button on macOS), which no click follows, is not told at all
+    public void The_script_reads_an_action_press_address_at_the_mousedown()
+    {
+        var script = AssetSources.Read("ExGrid", "ex-grid.js");
+
+        var press = Regex.Match(script, @"const onPress = \(event\) => \{(?<body>.*?)\n    \};", RegexOptions.Singleline);
+        Assert.True(press.Success, "onPress is defined");
+        var pressed = press.Groups["body"].Value;
+        Assert.Contains("const contextPress = metaIsPrimary && event.ctrlKey;", pressed);
+        Assert.Contains("event.button === 0 && !contextPress ? ownAction(event.target) : null", pressed);
+        Assert.Matches(new Regex(@"actionPress = button !== null \? \{\s*button,\s*paint: paintNow\(\),\s*row: [^\n]+\s*column: [^\n]+\s*index: "), pressed);
+
+        var release = Regex.Match(script, @"const onRelease = \(event\) => \{(?<body>.*?)\n    \};", RegexOptions.Singleline);
+        Assert.True(release.Success, "onRelease is defined");
+        var released = release.Groups["body"].Value;
+        Assert.Contains("'ActionPressTakenAt', action.paint, action.row, action.column, action.index)", released);
+        // Nothing of the address is read again at the release.
+        Assert.DoesNotContain("closest('[role=gridcell]')", released);
     }
 }
