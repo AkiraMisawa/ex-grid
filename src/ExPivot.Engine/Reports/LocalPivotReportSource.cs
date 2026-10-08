@@ -39,6 +39,29 @@ public sealed class LocalPivotReportSource : PivotReportSource
     private int _maxLeaves;
     private volatile bool _dirty = true;
     private bool _disposed;
+    // What the computation returned that no published version shows yet: a request cancelled
+    // after its computation returned and before its version was published, or a version laid
+    // out aside. The next computation's result is merged into it, and published with it.
+    private Unpublished? _unpublished;
+
+    private sealed class Unpublished
+    {
+        public bool Reset { get; set; }
+        public bool RowSequenceChanged { get; private set; }
+        public List<(IReadOnlyList<PivotReportRow> Labels, IReadOnlyList<PivotRowKey> Removed)> Batches { get; } = [];
+
+        public void Add(PivotComputationResult result)
+        {
+            RowSequenceChanged |= result.RowSequenceChanged;
+            if (result.IsReset)
+            {
+                Reset = true;
+                Batches.Clear();
+            }
+            else if (!Reset)
+                Batches.Add((result.LabelChanges, result.RemovedRows));
+        }
+    }
     private IReadOnlyList<PivotField> _effectiveFields;
     private sealed record HeldReport(PivotReportMetadata Metadata, PivotReport Report, PivotSource Provider, IReadOnlyList<PivotField> Fields);
 
@@ -107,7 +130,8 @@ public sealed class LocalPivotReportSource : PivotReportSource
             if (_settings != settings && ResolveFields(request.Settings) is { } policyRefusal)
                 return PivotReportUpdate.Refused(request, policyRefusal);
             var last = _versions.First?.Value;
-            if (request.RefreshData || _dirty || _settings != settings || _layout != layout || _maxLeaves != request.MaxLeaves || last is null)
+            if (request.RefreshData || _dirty || _unpublished is not null || _settings != settings || _layout != layout
+                || _maxLeaves != request.MaxLeaves || last is null)
             {
                 // Cleared before awaiting: a newer source notification keeps the next read dirty.
                 var wasDirty = _dirty;
@@ -120,22 +144,46 @@ public sealed class LocalPivotReportSource : PivotReportSource
                     _policies = policies;
                 }
                 if (_settings != settings) _options = request.Settings.ToOptions();
-                var result = await _computation.ComputeAsync(request.Layout, _options, request.MaxLeaves,
-                    _slicing, cancellationToken, request.RefreshData, preferHeld: !request.MarkChanges).ConfigureAwait(false);
-                if (result.IsRefused)
+                PivotReport report;
+                var detached = false;
+                if (Shown(request, policies) is { } shown)
                 {
-                    _dirty = true;
-                    return PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.SourceRefused, result.Refusal!.Message, result.Refusal.Field) { SourceRefusal = result.Refusal });
+                    // A layout gesture lays out the data the Consumer shows — the request's
+                    // baseline — and that is older than what the computation holds: a version
+                    // computed for a request the Consumer discarded. Laid out aside, that version
+                    // is what the gesture shows, whenever the discarded request's cancellation
+                    // landed; the newer data comes with the next request that marks changes.
+                    report = await PivotEngine.ReportAsync(shown, request.Layout, _options, _slicing, cancellationToken)
+                        .ConfigureAwait(false);
+                    (_unpublished ??= new()).Reset = true;
+                    detached = true;
                 }
-                var report = result.Report!;
+                else
+                {
+                    var result = await _computation.ComputeAsync(request.Layout, _options, request.MaxLeaves,
+                        _slicing, cancellationToken, request.RefreshData, preferHeld: !request.MarkChanges).ConfigureAwait(false);
+                    if (result.IsRefused)
+                    {
+                        _dirty = true;
+                        return PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.SourceRefused, result.Refusal!.Message, result.Refusal.Field) { SourceRefusal = result.Refusal });
+                    }
+                    // Kept until a version publishes it: a cancellation below must not lose the
+                    // computation's changes, which it returns once (PivotComputationSession).
+                    (_unpublished ??= new()).Add(result);
+                    report = result.Report!;
+                }
+                var unpublished = _unpublished!;
                 var cube = report.Cube;
                 if (!request.MarkChanges && wasDirty && last?.Metadata.SourceVersion == cube.SourceVersion) _dirty = true;
                 var sameRows = last is not null && (ReferenceEquals(last.Report.Rows, report.Rows)
-                    || (!result.IsReset ? !result.RowSequenceChanged
+                    || (!unpublished.Reset ? !unpublished.RowSequenceChanged
                         : await report.HasSameRowsAsAsync(last.Report, _slicing, cancellationToken).ConfigureAwait(false)));
-                var widths = request.Settings.LabelMetrics is { } metrics
-                    ? await _labelSizing.WidthsAsync(report, metrics, result.LabelChanges, result.RemovedRows, result.IsReset,
-                        Slicer.Of(_slicing, cancellationToken)).ConfigureAwait(false) : [];
+                IReadOnlyList<double> widths = [];
+                if (request.Settings.LabelMetrics is { } metrics)
+                    widths = await _labelSizing.WidthsAsync(report, metrics, unpublished.Batches, unpublished.Reset,
+                        Slicer.Of(_slicing, cancellationToken)).ConfigureAwait(false);
+                else
+                    _labelSizing.Forget();
                 var metadata = new PivotReportMetadata(new(Guid.NewGuid().ToString("N")), cube.SourceVersion,
                     sameRows ? last!.Metadata.RowSequenceVersion : Guid.NewGuid().ToString("N"),
                     request.Layout, request.Settings, report.Rows.Count, report.LabelColumns,
@@ -159,6 +207,15 @@ public sealed class LocalPivotReportSource : PivotReportSource
                 _settings = settings;
                 _layout = layout;
                 _maxLeaves = request.MaxLeaves;
+                _unpublished = null;
+                if (detached)
+                {
+                    // The computation holds newer data than this version, under the layout it last
+                    // laid out: its next result is compared with this version afresh, and the next
+                    // request computes.
+                    _unpublished = new() { Reset = true };
+                    _dirty = true;
+                }
             }
             _windows.TryGetValue(request.Baseline ?? new(""), out var previous);
             if (previous?.Window != request.Window) previous = null;
@@ -191,6 +248,20 @@ public sealed class LocalPivotReportSource : PivotReportSource
             throw;
         }
         finally { _gate.Release(); }
+    }
+
+    // The cube of the version the request names as its baseline — the data the Consumer shows —
+    // when a layout gesture should lay it out rather than the computation's newer data: held,
+    // from this provider under the same Order Key policies, older than the computation's cube,
+    // and holding the requested layout.
+    private PivotCube? Shown(PivotReportRequest request, string policies)
+    {
+        if (request.MarkChanges || request.Baseline is not { } baseline || _computation?.HeldCube is not { } held
+            || Held(baseline) is not { } shown || ReferenceEquals(shown.Report.Cube, held) || !ReferenceEquals(shown.Provider, _source)
+            || PivotReportJson.Write(shown.Metadata.Settings.OrderKeyPolicies) != policies)
+            return null;
+        var cube = shown.Report.Cube;
+        return cube.Holds(request.Layout) && cube.Query.MaxLeaves == request.MaxLeaves ? cube : null;
     }
 
     private PivotReportRefusal? ResolveFields(PivotReportSettings settings)

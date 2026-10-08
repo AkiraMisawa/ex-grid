@@ -37,7 +37,9 @@ public sealed class PivotReportClient
             generation = ++_generation;
             previous = _current;
         }
-        var baseline = previous?.Window == window ? previous.Metadata.Version : null;
+        // The version this client holds is named whatever Window is asked: a delta is answered only
+        // for the Window it holds, and a layout gesture lays out the data it shows (ADR-0152).
+        var baseline = previous?.Metadata.Version;
         var request = new PivotReportRequest(Guid.NewGuid().ToString("N"), layout, settings, window, baseline, maxLeaves)
             { MarkChanges = markChanges, RefreshData = refreshData };
         var recovered = false;

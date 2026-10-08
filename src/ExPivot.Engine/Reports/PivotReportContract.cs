@@ -59,7 +59,11 @@ public sealed record PivotReportSettings
 /// <param name="Layout">The report's View State.</param>
 /// <param name="Settings">Its explicit culture, words and registered policies.</param>
 /// <param name="Window">The requested rows.</param>
-/// <param name="Baseline">A retained complete Window's Report Version, or null for a complete response.</param>
+/// <param name="Baseline">The Report Version the Consumer holds — the data it shows — or null when it
+/// holds none. A source answers a delta only from it, and only when its Window is the requested
+/// Window; otherwise a complete Window. A request that marks no changes (a layout gesture) lays out
+/// the data of this version, when the source still holds it, rather than newer data the Consumer
+/// has not been shown.</param>
 /// <param name="MaxLeaves">The existing leaf cap.</param>
 public sealed record PivotReportRequest(string RequestId, PivotLayout Layout, PivotReportSettings Settings,
     PivotReportWindow Window, PivotReportVersion? Baseline = null, int MaxLeaves = PivotQuery.DefaultMaxLeaves)
