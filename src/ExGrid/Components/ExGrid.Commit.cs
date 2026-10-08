@@ -101,7 +101,9 @@ public partial class ExGrid<TRow>
 
     /// <summary>The baseline moves to what the edited cell paints now: a write of the user's own that
     /// it awaited has settled, or was dropped by the Window that brought it (D1). Called once the
-    /// editor has followed its row, so a keyed row that moved is read where it stands now.</summary>
+    /// editor has followed its row, so a keyed row that moved is read where it stands now. A row the
+    /// Window does not hold at that moment paints nothing: the baseline is then the text the commit
+    /// finds, and no change is told for what the grid could not see.</summary>
     private void RebaseEdit()
     {
         _editRebaseOwed = false;
@@ -298,7 +300,8 @@ public partial class ExGrid<TRow>
                 {
                     if (followed.Count >= OwnWriteCellsFollowed)
                         return;
-                    if (RowInHand(row) is not null)
+                    // Only a cell an editor can open over: one that paints a value, of a row in hand.
+                    if (Columns[column].PaintsValue && RowInHand(row) is not null)
                         followed.Add(new CellPosition(row, column));
                 }
             }
