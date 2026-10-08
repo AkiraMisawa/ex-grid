@@ -96,7 +96,7 @@ public class OrderKeyTests
     {
         var source = PivotSource.From([new Delta("1Y", 1m), new Delta("7Y", 2m)], Fields(tenor => tenor == "7Y" ? throw new FormatException("no 7Y bucket") : Tenor(tenor)));
 
-        var refusal = await Assert.ThrowsAsync<InvalidOperationException>(() => Order(source));
+        var refusal = await Assert.ThrowsAnyAsync<InvalidOperationException>(() => Order(source));
 
         Assert.Equal("The Order Key of Tenor failed on '7Y'.", refusal.Message);
         Assert.IsType<FormatException>(refusal.InnerException);
@@ -179,7 +179,7 @@ public class OrderKeyTests
 
         Assert.Equal(["-1", "2", "-3", "4"], report.Rows.Where(r => r.Role == PivotRowRole.Item).Select(r => r.Labels[0].Text!));
         var mixed = PivotSource.From(Deltas, Fields(tenor => tenor == "ON" ? "zero" : Tenor(tenor)));
-        var refusal = await Assert.ThrowsAsync<InvalidOperationException>(() => Order(mixed));
+        var refusal = await Assert.ThrowsAnyAsync<InvalidOperationException>(() => Order(mixed));
         Assert.Contains("The Order Key of Tenor", refusal.Message);
         Assert.Contains("one type", refusal.Message);
     }

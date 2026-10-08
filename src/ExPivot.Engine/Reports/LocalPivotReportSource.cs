@@ -260,6 +260,13 @@ public sealed class LocalPivotReportSource : PivotReportSource
                     PivotReportDigest.Of(last.Metadata, request.Window.Start, state.Rows));
             return PivotReportUpdate.Complete(request, last.Metadata, state.Rows);
         }
+        catch (OrderKeyFailedException failed)
+        {
+            // A refusal, by name, that a remote Consumer receives as one: thrown, it would reach a
+            // server's transport as an error and lose the field and the Item it names.
+            _dirty = true;
+            return PivotReportUpdate.Refused(request, OrderKeyFailed(failed));
+        }
         catch
         {
             _dirty = true;
@@ -267,6 +274,9 @@ public sealed class LocalPivotReportSource : PivotReportSource
         }
         finally { _gate.Release(); }
     }
+
+    private static PivotReportRefusal OrderKeyFailed(OrderKeyFailedException failed)
+        => new(PivotReportRefusalKind.OrderKeyFailed, failed.Message, failed.Field);
 
     // The cube of the version the request names as its baseline — the data the Consumer shows —
     // when a layout gesture should lay it out rather than the computation's newer data: held,
@@ -422,8 +432,15 @@ public sealed class LocalPivotReportSource : PivotReportSource
         if (page.IsRefused)
             return new(query.Version, held.Metadata.SourceVersion, [], 0,
                 new(PivotReportRefusalKind.SourceRefused, page.Refusal!.Message) { SourceRefusal = page.Refusal });
-        return new(query.Version, page.SourceVersion,
-            PivotEngine.ItemsOf(page, held.Report.Layout, field, held.Report.Options), page.Total);
+        try
+        {
+            return new(query.Version, page.SourceVersion,
+                PivotEngine.ItemsOf(page, held.Report.Layout, field, held.Report.Options), page.Total);
+        }
+        catch (OrderKeyFailedException failed)
+        {
+            return new(query.Version, held.Metadata.SourceVersion, [], 0, OrderKeyFailed(failed));
+        }
     }
 
     /// <inheritdoc />

@@ -104,7 +104,7 @@ internal sealed class ItemOrder(FieldMeta meta, ItemLabels labels, CultureInfo c
                 // report to say so (ADR-0067's note of 2026-10-07).
                 catch (Exception e) when (e is not OutOfMemoryException)
                 {
-                    throw new InvalidOperationException(
+                    throw new OrderKeyFailedException(meta.Info.Name,
                         $"The Order Key of {meta.Info.Caption} failed on '{labels.Of(item, meta)}'.", e);
                 }
             }
@@ -118,7 +118,7 @@ internal sealed class ItemOrder(FieldMeta meta, ItemLabels labels, CultureInfo c
         }
         else if (item.OrderKey.GetType() != first.OrderKey!.GetType())
         {
-            throw new InvalidOperationException(
+            throw new OrderKeyFailedException(meta.Info.Name,
                 $"The Order Key of {meta.Info.Caption} gave '{labels.Of(first, meta)}' a key of type {first.OrderKey.GetType().Name} "
                 + $"and '{labels.Of(item, meta)}' one of type {item.OrderKey.GetType().Name}; a field's keys are of one type.");
         }
@@ -246,4 +246,14 @@ internal static class SpanDigits
         }
         return true;
     }
+}
+
+/// <summary>A field's Order Key failed on an Item, or gave its Items keys of two types: the order
+/// is refused, naming the field and the value (ADR-0060), and a report source answers the refusal
+/// by name (<see cref="PivotReportRefusalKind.OrderKeyFailed"/>, ADR-0152) rather than fail.</summary>
+internal sealed class OrderKeyFailedException(string field, string message, Exception? inner = null)
+    : InvalidOperationException(message, inner)
+{
+    /// <summary>The field whose Order Key failed.</summary>
+    public string Field { get; } = field;
 }

@@ -231,8 +231,8 @@ public class SlicedWorkTests
         var failing = PivotSource.From(Sales, throwing);
         var failingQuery = PivotQuery.For(layout with { Rows = [P("Region")] });
         var failingCube = PivotEngine.Cube(failingQuery, await failing.AggregateAsync(failingQuery, Ct), failing.Fields);
-        var message = Assert.Throws<InvalidOperationException>(() => PivotEngine.Report(failingCube, layout with { Rows = [P("Region")] }, EnUs)).Message;
-        var sliceMessage = (await Assert.ThrowsAsync<InvalidOperationException>(() => PivotEngine.ReportAsync(failingCube, layout with { Rows = [P("Region")] }, EnUs, new EveryPiece().Slicing, Ct).AsTask())).Message;
+        var message = Assert.ThrowsAny<InvalidOperationException>(() => PivotEngine.Report(failingCube, layout with { Rows = [P("Region")] }, EnUs)).Message;
+        var sliceMessage = (await Assert.ThrowsAnyAsync<InvalidOperationException>(() => PivotEngine.ReportAsync(failingCube, layout with { Rows = [P("Region")] }, EnUs, new EveryPiece().Slicing, Ct).AsTask())).Message;
         Assert.Equal(message, sliceMessage);
     }
 

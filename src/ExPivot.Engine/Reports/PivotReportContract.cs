@@ -228,6 +228,11 @@ public enum PivotReportRefusalKind
     SourceRefused,
     /// <summary>The request itself cannot be answered.</summary>
     InvalidRequest,
+    /// <summary>A field's Order Key — a registered policy's function on a server, or a local field's
+    /// own — failed on an Item, or gave its Items keys of two types. The refusal names the field
+    /// (<see cref="PivotReportRefusal.Field"/>) and the Item; the Items are never ordered by their
+    /// labels instead (ADR-0060, ADR-0152).</summary>
+    OrderKeyFailed,
 }
 
 /// <summary>A named refusal; an empty successful result is never used in its place.</summary>

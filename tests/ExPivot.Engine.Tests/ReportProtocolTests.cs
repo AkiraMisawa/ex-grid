@@ -171,6 +171,40 @@ public class ReportProtocolTests
         Assert.Equal("Label", denied.Refusal.Field);
     }
 
+    [Fact] // ADR-0152/0060 (LV-23): a server-registered Order Key that throws is refused by name across JSON — the field and the Item — never a transport failure, never label order
+    public async Task ADR0152_a_throwing_registered_order_key_is_refused_by_name_over_json()
+    {
+        var fields = EntryFields();
+        var data = PivotSource.From<Entry>([new(1, "A", 1m), new(2, "BB", 2m), new(3, "C", 3m)], fields);
+        await using var server = PivotReportSource.From(data, new Dictionary<string, Func<object, IComparable?>>
+        {
+            ["picky"] = item => (string)item == "BB" ? throw new FormatException("no BB") : (string)item,
+        });
+        static T Wire<T>(T value) => PivotReportJson.Read<T>(PivotReportJson.Write(value));
+        var remote = PivotReportSource.Fetch(server.Fields, server.Features, server.UpdateMode,
+            async (request, ct) => Wire(await server.WindowAsync(Wire(request), ct)),
+            reportItems: async (query, ct) => Wire(await server.ItemsAsync(Wire(query), ct)));
+        var client = new PivotReportClient(remote);
+        var ct = TestContext.Current.CancellationToken;
+        var settings = PivotReportSettings.Invariant with { OrderKeyPolicies = new Dictionary<string, string> { ["Label"] = "picky" } };
+
+        Assert.False(await client.ReadAsync(EntryLayout(), settings, new(0, 10), cancellationToken: ct));
+        Assert.Null(client.Current);
+        Assert.Equal(PivotReportRefusalKind.OrderKeyFailed, client.Refusal!.Kind);
+        Assert.Equal("Label", client.Refusal.Field);
+        Assert.Equal("The Order Key of Label failed on 'BB'.", client.Refusal.Message);
+
+        // BB hidden: the report orders A and C only, and is answered; Filter's Items list BB as
+        // well, and are refused by name in turn.
+        var hidden = EntryLayout() with { Rows = [new("Label") { HiddenItems = [PivotItemKey.Text("BB")] }] };
+        Assert.True(await client.ReadAsync(hidden, settings, new(0, 10), cancellationToken: ct), client.Refusal?.Message);
+        Assert.Equal(["A", "C", "Grand Total"], client.Current!.Rows.Select(row => row.Labels[0].Text));
+        var items = await remote.ItemsAsync(new(client.Current.Metadata.Version, "Label"), ct);
+        Assert.Equal(PivotReportRefusalKind.OrderKeyFailed, items.Refusal!.Kind);
+        Assert.Equal("Label", items.Refusal.Field);
+        Assert.Contains("'BB'", items.Refusal.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task ADR0153_unchanged_child_label_keeps_the_current_parent_spelling_in_details()
     {
