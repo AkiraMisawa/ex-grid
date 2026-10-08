@@ -13,7 +13,7 @@ namespace ExPivot.Engine;
 /// node from its parent's and its Item's — and an Item's own hash is computed once per Item. Reading
 /// a key, hashing it and comparing it within one report allocate nothing and walk nothing (PV-43).
 /// The detached Item path owns no branching axis tree. ExPivot vouches for its requested Window
-/// (ADR-0150/0153), so the grid does not validate the full report's keys on every redraw.
+/// (ADR-0141's section of 2026-10-07; ADR-0153), so the grid does not validate the full report's keys on every redraw.
 /// A comparison between distinct paths walks their Items, including comparisons across reports.</para>
 /// </summary>
 public sealed class PivotRowKey : IEquatable<PivotRowKey>

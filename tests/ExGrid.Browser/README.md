@@ -716,10 +716,13 @@ nobody had asked for. What that means when writing a test:
   desk, the account numbers keeping their zeros; the page's two samples, one under the declared
   Schema and one under a suggested Schema, reading the same trades to the same total — a second
   file read while a report stands; and the code shown under "The code" equal to its source.
-- `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069), **run once per Chrome**, against the
-  demo API server from either host: its trades read over Arrow into a Snapshot the page pivots in
-  its own process, at the version `/api/status` names, and asked of the server through
-  `PivotSource.Fetch`, which answers in SQL, show the same numbers painted row for row — and
+- `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069, ADR-0151/0152), against the demo API server
+  from either host. A server report scrolls beyond its first Window with a bounded number of rendered
+  rows (LV-24), and a whole-column Copy and Selection Summary of a remote report include the rows
+  outside the Window and equal the local report's (LV-28). **Run once per Chrome**: its trades read over
+  Arrow into a Snapshot the page pivots in its own process, at the version `/api/status` names, and
+  asked of the server through `PivotReportSource.Fetch`, whose server computes the report and returns
+  the requested Window, show the same numbers painted row for row — and
   again after a layout changed in one pane is shown on the other pivot; Refresh is offered by the
   server's source alone, and asks again; Show Details opens the same records behind a cell in
   both, and the server's come a page at a time as the Details tab scrolls to its end (PV-20);

@@ -881,6 +881,32 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
     - **Slower:** a redraw laid out afresh (one in 64, at the source's compaction) costs more than every
       redraw did before, 394.5 ms against 268.5 at 401,001 rows on CoreCLR. Most of it is comparing every
       row for the Change Highlight, as ADR-0161 chose.
+  - *(2026-10-06 on the Codex track, `claude/live-data-next`.)* The same tickets, decided separately:
+    ADR-0151 to ADR-0153 — a server computes the Pivot Report and sends Windows and deltas, the browser runs
+    the same incremental engine for local data, Report Versions and versioned Copy, Summary and Details,
+    and detached display rows. Its records:
+    [the costs](../verification/2026-10-06-macos-live-update-costs/README.md),
+    [the memory diagnosis](../verification/2026-10-06-macos-pivot-memory/README.md),
+    [the boundary A/B](../verification/2026-10-06-macos-pivot-boundary-bench/README.md) and
+    [after](../verification/2026-10-06-macos-live-report-after/README.md).
+  - *(2026-10-08: merged on `claude/live-data-best`.)* Comparing the two tracks, the user took this
+    track's grid and the Codex track's ExPivot; ADR-0161 kept only its out-of-memory rule. The comparison's
+    review found, and the merge fixed:
+    - a replaced Source took writes aimed at the old one, on both tracks for ExSheet's documents and on
+      this one for every grid: now refused as `SourceChanged`, the open editor discarded, the Selection
+      dropped (LV-32);
+    - keys aimed with a dropped Selection typed into the first painted cell: now they open nothing (LV-33);
+    - D1 let an upstream change through after a write that left the text as it was, and gave the notice
+      on one host and not the other: now it settles at the first Window after the write's handler (LV-17);
+    - `RowGone` named a row that had only left the Window: now `RowLeftTheWindow` (LV-20);
+    - an action press read its row at the release, and a macOS Ctrl+click fired later for nobody (LV-12);
+    - ExPivot's cancelled computation threw its incremental state away (150,002 rows read for a
+      one-record update after one cancellation), its Details stopped after two layout gestures, its
+      Change Highlight ran on the server's clock, a delta was trusted whole, a row of another report was
+      read as this one's, and a throwing server Order Key lost its name: each fixed (LV-26 to LV-30);
+    - `SlicedBuildTests` failed one run in four on a race in its helper: fixed, 25 runs of 25.
+  - **Not measured on the merged code.** Neither track's after-record measured this branch; PV-48 asks for
+    it.
 
 **Found by building it, and fixed.**
 
@@ -892,8 +918,9 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
 
 **Not done.**
 
-- **Layer 3 has not run** the new and changed specs (`write-refusal.spec.mjs`,
-  `grid-live.spec.mjs`, `grid-live-local.spec.mjs`, `measure-live.spec.mjs`); CI runs them.
+- **Layer 3 had not run** the specs of the first version (`write-refusal.spec.mjs`,
+  `grid-live.spec.mjs`, `grid-live-local.spec.mjs`, `measure-live.spec.mjs`) when it was written; CI ran
+  them. The merged branch's changed specs are listed with its pull request.
 - **LV-15 is observed only in part**: apply to frame has a spec; the bytes per update on the Server
   host, and the requery and the grid's pass per update in the browser, are not recorded yet.
 
