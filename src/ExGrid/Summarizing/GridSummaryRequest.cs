@@ -18,7 +18,8 @@ public sealed record GridSummaryRequest
     public required IReadOnlyList<string> Columns { get; init; }
 
     /// <summary>The order the ranges were read in (ADR-0011). An answer the grid receives under
-    /// another version is shown nowhere.</summary>
+    /// another version is shown nowhere, and neither is one that arrives after the grid's
+    /// <c>Source</c> was replaced by another instance, whatever its version (ADR-0142).</summary>
     public required int RowSequenceVersion { get; init; }
 
     /// <summary>The figures shown, the only ones asked for: an answerer computes these alone.</summary>

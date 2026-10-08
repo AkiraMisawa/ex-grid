@@ -48,6 +48,7 @@ public static class BuiltInCommandLabels
         FindPanelLabelIds.Previous => "Find previous",
         FindPanelLabelIds.NotFound => "No match",
         FindPanelLabelIds.OrderChanged => "The rows moved; find again",
+        FindPanelLabelIds.SourceChanged => "The data was replaced; find again",
         _ => id,
     };
 }

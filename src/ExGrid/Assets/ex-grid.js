@@ -1273,7 +1273,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // the edit at its caret, as a held character is.
             if (k.text !== undefined) {
                 if (editing === 'none') {
-                    const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text).catch((error) => {
+                    const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text, k.paint).catch((error) => {
                         if (core) {
                             console.error('[ex-grid] the grid failed to take a composition', error);
                         }
@@ -1625,6 +1625,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // How much of the field's value has already been handed on: a second composition finished in
     // the field before the keyboard left it is appended to the first, and only its own text goes.
     let keyFieldCarried = 0;
+    // The render the composition was typed against, read at its compositionstart (paintNow), as a
+    // key carries the one its keydown was typed against: a composition aimed with a Selection that an
+    // order move or a replaced Source has dropped since opens nothing (ADR-0142, 2026-10-08). Reads an
+    // attribute; nothing is measured.
+    let keyFieldPaint = -1;
     // The editor's request for the keyboard, made while the field was composing or as a
     // composition ended: granted once the field has stopped composing (keyFieldEnded).
     let deferredEditorFocus = null;
@@ -1656,6 +1661,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         keyFieldComposing = true;
+        keyFieldPaint = paintNow();
         event.target.classList.add('ex-key-field-composing');
         if (editing === 'none' && !answering) {
             core.invokeMethodAsync('OnKeyFieldCompositionStartAsync').catch((error) => {
@@ -1681,7 +1687,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         keyFieldEndTimer = setTimeout(keyFieldEnded, 0);
         const text = field.value.slice(keyFieldCarried);
         keyFieldCarried = field.value.length;
-        held.push({ text });
+        held.push({ text, paint: keyFieldPaint });
         if (!answering) {
             startHold();
         }

@@ -604,6 +604,9 @@
                 "RowLeftTheWindow — that row is no longer loaded, so the entry could not be placed",
             EditDiscardReason.SourceChanged =>
                 "SourceChanged — the data the grid shows was replaced while you were typing; the entry was not written",
+            // Decided 2026-10-08: typing that reached the grid after the rows moved opens nothing.
+            EditDiscardReason.OrderMoved =>
+                "OrderMoved — the rows moved before your typing reached the grid; nothing was written",
             _ => reason.ToString(),
         }, s => _editDiscardedStatus = s);
 

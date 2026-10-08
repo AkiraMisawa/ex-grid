@@ -35,10 +35,22 @@ public enum EditDiscardReason
     /// true of what happened.</summary>
     DiscardedByConsumer,
 
-    /// <summary>The grid's <c>Source</c> parameter was replaced by another instance while the editor
-    /// was open — a Cell Editor or a Formula Bar edit. The row it was opened on belongs to a source the
-    /// grid no longer shows, so the text is thrown away rather than committed into whatever row the
-    /// new source holds there, and no Edit Intent is raised (ADR-0011, ADR-0142). Whatever the two
-    /// sources' Row Sequence Versions are.</summary>
+    /// <summary>The grid's <c>Source</c> parameter was replaced by another instance, whatever the two
+    /// sources' Row Sequence Versions are (ADR-0011, ADR-0142). Either an edit was open — a Cell Editor
+    /// or a Formula Bar edit — and the row it was opened on belongs to a source the grid no longer
+    /// shows, so the text is thrown away rather than committed into whatever row the new source holds
+    /// there; or typing that would have opened an edit — a character, F2, Backspace, a composition's
+    /// text — reached the grid after the replacement, aimed with the Selection it dropped, and opened
+    /// nothing. No Edit Intent is raised, and nothing is written anywhere. Raised once for all the keys
+    /// typed against that Selection.</summary>
     SourceChanged,
+
+    /// <summary>Typing that would have opened an edit — a character, F2, Backspace, a composition's
+    /// text — reached the grid after the Row Sequence Version it was typed under had moved: the rows
+    /// moved before the typing reached the grid, and the Selection it was aimed with went with the old
+    /// order (ADR-0011). Nothing opens and nothing is written anywhere, rather than the first key's
+    /// rule placing a Focus the user did not aim at and the typing landing there (ADR-0012; ADR-0142,
+    /// decided 2026-10-08). Raised once for all the keys typed against that Selection. An edit already
+    /// open is not discarded by an order move: it outlives it (ADR-0011's note of 2026-10-07).</summary>
+    OrderMoved,
 }

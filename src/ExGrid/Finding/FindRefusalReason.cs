@@ -17,6 +17,12 @@ public enum FindRefusalReason
     /// <summary>The order moved while the question was out, so the answer names a position
     /// in an order that no longer stands, and is discarded (ADR-0011).</summary>
     OrderChanged,
+
+    /// <summary>The grid's <c>Source</c> was replaced by another instance while the question was
+    /// out, so the answer names a position among the rows of a source the grid no longer shows —
+    /// whatever the two sources' Row Sequence Versions are, as two fresh sources both start at 0 —
+    /// and is discarded (ADR-0011, ADR-0142).</summary>
+    SourceChanged,
 }
 
 /// <summary>What the last Find step came to, for the panel to show (ADR-0055).</summary>
@@ -33,4 +39,8 @@ public enum FindOutcome
 
     /// <summary>The order changed while the step was out; nothing moved.</summary>
     OrderChanged,
+
+    /// <summary>The <c>Source</c> was replaced by another instance while the step was out; nothing
+    /// moved.</summary>
+    SourceChanged,
 }

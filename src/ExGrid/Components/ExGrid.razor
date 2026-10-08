@@ -1026,10 +1026,14 @@
     /// the two sources' Row Sequence Versions are — two fresh sources both start at 0 — the
     /// positions the old one painted name the new one's rows. The Selection is dropped, as an
     /// order move drops it; an open edit is discarded and <see cref="OnEditDiscarded"/> says
-    /// <see cref="EditDiscardReason.SourceChanged"/>; and a gesture taken on what the old one
-    /// painted is refused, <see cref="PasteRefusalReason.SourceChanged"/> for a write and
-    /// <see cref="ActionRefusalReason.SourceChanged"/> for an Action. The grid tells the two
-    /// apart by reference and holds no replaced source to do it (ADR-0160).</para>
+    /// <see cref="EditDiscardReason.SourceChanged"/>, as it does for typing aimed at what the old
+    /// one painted, which opens nothing; and a gesture taken on what the old one painted is
+    /// refused, <see cref="PasteRefusalReason.SourceChanged"/> for a write and
+    /// <see cref="ActionRefusalReason.SourceChanged"/> for an Action. A Find answer the old one
+    /// gives after it was replaced moves nothing (<see cref="FindRefusalReason.SourceChanged"/>),
+    /// a placement whose commit brought the new one in places nothing
+    /// (<see cref="PlaceSelectionAsync"/>), and figures it summed are shown nowhere. The grid tells
+    /// the two apart by reference and holds no replaced source to do it (ADR-0160).</para>
     /// </summary>
     [Parameter] public IGridSource<TRow>? Source { get; set; }
 
@@ -1563,7 +1567,8 @@
     [Parameter] public Func<GridFindRequest, CancellationToken, Task<GridFindResult>>? OnFind { get; set; }
 
     /// <summary>A Find step that moved nothing, saying why (ADR-0055): nothing can search,
-    /// nothing matched, or the order moved while the step was out. Chrome words it.</summary>
+    /// nothing matched, the order moved while the step was out, or the <see cref="Source"/> was
+    /// replaced by another instance while it was out (ADR-0142). Chrome words it.</summary>
     [Parameter] public EventCallback<FindRefusalReason> OnFindRefused { get; set; }
 
     /// <summary>A refused copy, saying which rule it hit (ADR-0005): the clipboard was
@@ -1591,7 +1596,11 @@
     /// <see cref="Source"/> was replaced by another instance, whose rows are not the one the edit
     /// was opened on (<see cref="EditDiscardReason.SourceChanged"/>, ADR-0142); or, with no Row
     /// Key, its row left the Window under the order it was opened under. An order move discards
-    /// nothing: the editor outlives it (ADR-0011's note of 2026-10-07). None is the user's own
+    /// no open editor: the editor outlives it (ADR-0011's note of 2026-10-07). Typing that would
+    /// have opened an edit but reached the grid aimed with a Selection that an order move or a
+    /// replaced Source had dropped since opens nothing, and is said here too, once for the keys
+    /// typed against that Selection (<see cref="EditDiscardReason.OrderMoved"/>,
+    /// <see cref="EditDiscardReason.SourceChanged"/>; decided 2026-10-08). None is the user's own
     /// doing — a Consumer's new columns, new source or refresh lands and the typing goes — so the
     /// grid says so rather than leaving the loss to be guessed at. Chrome writes the
     /// sentence and announces it (A11Y-16); the grid holds no strings. A discard the Consumer
@@ -2883,6 +2892,10 @@
             // is — a Consumer handler run inside this render stack would re-enter the
             // same batch.
             _pendingDiscard = _sourceReplaced ? EditDiscardReason.SourceChanged : EditDiscardReason.ColumnsChanged;
+            // The keys typed after it against the Selection the replacement dropped are that same
+            // typing: said once, by this discard (DropKeyAimedWithADroppedSelectionAsync).
+            if (_sourceReplaced && _droppedSelection is { } dropped)
+                dropped.TypingTold = true;
         }
         else
         {
@@ -6317,6 +6330,10 @@
         switch (action.Kind)
         {
             case GridKeyKind.None:
+                // Typed against a Selection an order move or a replaced Source has dropped since: it
+                // opens nothing, and typing is said to be thrown away (ADR-0142, 2026-10-08).
+                if (await DropKeyAimedWithADroppedSelectionAsync(paint, OpensAnEdit(key, ctrl, alt, meta)))
+                    return;
                 // F2 and a printable character open the Cell Editor (ADR-0010) — the
                 // gate forwarded them; whether this cell edits is decided here.
                 await TryStartEditingAsync(key, ctrl, alt, meta, metaIsPrimary);
@@ -6349,7 +6366,10 @@
                 return;
             case GridKeyKind.ClearAndEdit:
                 // Backspace: an editor entry like a printable key, minus the character
-                // (ADR-0035) — judged where every entry is, on the Focus.
+                // (ADR-0035) — judged where every entry is, on the Focus — and, typed against a
+                // Selection dropped since, thrown away as a typed key is (ADR-0142, 2026-10-08).
+                if (await DropKeyAimedWithADroppedSelectionAsync(paint, opensAnEdit: true))
+                    return;
                 await TryStartEditingAsync(EditMode.Overwrite, "");
                 return;
             case GridKeyKind.Clear:
@@ -6430,6 +6450,10 @@
                 {
                     if (await RefuseSpaceAimedUnderAnotherOrderAsync(paint) || !_selection.Selection.IsEmpty)
                         return;
+                    // Aimed with the Selection the move dropped, at a cell with no action: nothing
+                    // to engage, and not a first key either (ADR-0142, 2026-10-08).
+                    if (await DropKeyAimedWithADroppedSelectionAsync(paint, opensAnEdit: false))
+                        return;
                     break;
                 }
                 // With no Focus, Space is a first key like any other: it only places the
@@ -6440,6 +6464,12 @@
                 await EngageAsync(paint);
                 return;
         }
+
+        // A key that moves or selects, aimed with a Selection an order move or a replaced Source has
+        // dropped since: it named a Focus that is gone, and moves nothing — never taken as the first
+        // key on the empty Selection the drop left (ADR-0012; ADR-0142, 2026-10-08).
+        if (await DropKeyAimedWithADroppedSelectionAsync(paint, opensAnEdit: false))
+            return;
 
         var extent = Extent;
         if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
@@ -6601,7 +6631,11 @@
     /// announced once it settles (ADR-0033). The Selection stays the grid's — the Consumer
     /// asks and the grid places — and positions only mean something under the order they
     /// were written in: a request made under a <paramref name="rowSequenceVersion"/> other
-    /// than the grid's is dropped, and changes nothing (ADR-0011).
+    /// than the grid's is dropped, and changes nothing (ADR-0011). So is one whose commit of the
+    /// open edit brought in another <see cref="Source"/> instance, whatever the two sources'
+    /// versions are: the positions were asked for among the rows of the one replaced (ADR-0142).
+    /// The version is all a request carries, so a request made after the replacement is taken as
+    /// written for the new one.
     /// </summary>
     /// <returns>Whether the placement was made: false when it was dropped as stale, or when
     /// a Reject held an open edit (ADR-0034).</returns>
@@ -6620,6 +6654,9 @@
     {
         if (_disposed || rowSequenceVersion != _sequenceVersion)
             return false;
+        // The binding the request was made under: the version alone cannot tell a replaced Source, as
+        // two fresh sources both start at 0 (ADR-0142).
+        var binding = _binding;
         // Validated before anything changes: a refused request commits nothing.
         _ = _selection.Selection.Place(range, focus, Extent);
         if (_editMode != EditMode.None && !await CommitEditAsync())
@@ -6631,8 +6668,10 @@
         if (_menuColumn >= 0 || _contextCell is not null)
             CloseMenus();
         EndInteractive();
-        // The version can have moved while the commit's intent was handled.
-        if (rowSequenceVersion != _sequenceVersion)
+        // The version can have moved while the commit's intent was handled, or the Consumer's handling
+        // of it can have handed over another Source: the positions name other rows now (ADR-0011,
+        // ADR-0142).
+        if (rowSequenceVersion != _sequenceVersion || binding != _binding)
         {
             _suppressRender = false;
             StateHasChanged();
@@ -6753,7 +6792,8 @@
     /// One Find step (ADR-0055): asked of the Source or the push-mode delegate, with the
     /// Focus to start from, the selection as the scope when it is more than one cell, the
     /// visible columns in their current order and the version they were read in. An answer
-    /// under another version moves nothing; a found cell becomes the Focus and is revealed.
+    /// under another version, or from a Source since replaced by another instance, moves nothing
+    /// (ADR-0011, ADR-0142); a found cell becomes the Focus and is revealed.
     /// </summary>
     private async Task FindStepAsync(bool backward)
     {
@@ -6761,6 +6801,9 @@
             return;
         _findCancellation?.Cancel();
         var cancellation = _findCancellation = new CancellationTokenSource();
+        // The binding the question is asked of: the version alone cannot tell a replaced Source, as
+        // two fresh sources both start at 0 (ADR-0142).
+        var binding = _binding;
 
         var selection = _selection.Selection;
         var names = new string[Columns.Count];
@@ -6795,6 +6838,14 @@
             return;
         _findCancellation = null;
 
+        // Another Source was handed over while the question was out: the answer, found or not, is
+        // about the rows of a source the grid no longer shows, whatever the two versions are, and
+        // never moves the Focus among the new one's (ADR-0011, ADR-0142).
+        if (binding != _binding)
+        {
+            await RefuseFindAsync(FindRefusalReason.SourceChanged);
+            return;
+        }
         // The order moved while the question was out: the answer, found or not, is about
         // positions that no longer stand (ADR-0011).
         if (request.RowSequenceVersion != _sequenceVersion)
@@ -6860,6 +6911,7 @@
         {
             FindRefusalReason.NotFound => FindOutcome.NotFound,
             FindRefusalReason.OrderChanged => FindOutcome.OrderChanged,
+            FindRefusalReason.SourceChanged => FindOutcome.SourceChanged,
             _ => FindOutcome.None,
         };
         _suppressRender = false;
@@ -6954,6 +7006,14 @@
         return slice >= 0 && slice < _window.Count && !_placeholderMode;
     }
 
+    /// <summary>Whether <paramref name="key"/>, pressed with no edit open, would open one: F2, or a
+    /// character typed — not a chorded key, except AltGr, which Windows reports as Control and Alt
+    /// held together and is how the German, French and Nordic layouts type @ { [ €. Either modifier
+    /// alone is a shortcut and stays out; both together is a character. A Meta held where it is not
+    /// primary was never forwarded, but the guard costs nothing to keep honest.</summary>
+    private static bool OpensAnEdit(string key, bool ctrl, bool alt, bool meta)
+        => !meta && ctrl == alt && ((key == "F2" && !ctrl) || key.Length == 1);
+
     /// <param name="key">The key as the browser named it.</param>
     /// <param name="ctrl">Whether Control was held.</param>
     /// <param name="alt">Whether Alt was held.</param>
@@ -6961,16 +7021,9 @@
     /// <param name="metaIsPrimary">Whether Meta is the platform's primary modifier.</param>
     private async Task TryStartEditingAsync(string key, bool ctrl, bool alt, bool meta, bool metaIsPrimary)
     {
-        // A chorded key is not typing — except AltGr, which Windows reports as Control
-        // and Alt held together and is how the German, French and Nordic layouts type
-        // @ { [ €. Either modifier alone is a shortcut and stays out; both together is
-        // a character. A Meta held where it is not primary was never forwarded, but
-        // the guard costs nothing to keep honest.
-        if (meta || ctrl != alt)
+        if (!OpensAnEdit(key, ctrl, alt, meta))
             return;
         var caret = key == "F2" && !ctrl;
-        if (!caret && key.Length != 1)
-            return;
         // The character that started Overwrite mode is not lost (ADR-0010): it was
         // pressed before the editor existed, so the core holds it and the editor opens
         // containing it. Caret keeps the current value, with the caret inside it.

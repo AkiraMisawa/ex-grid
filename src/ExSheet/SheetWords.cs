@@ -55,9 +55,13 @@ internal static class SheetWords
             "What was typed was not entered: the row being edited was scrolled too far away to be written. Go back to it and type it again.",
         EditDiscardReason.ColumnsChanged => "What was typed was not entered: the columns changed while the cell was being edited.",
         EditDiscardReason.ColumnNoLongerEditable => "What was typed was not entered: the cell stopped taking entries while it was being edited.",
+        // ADR-0142, decided 2026-10-08: typing that reached the Sheet after another Sheet Document was
+        // opened, the one move of order a Sheet has (ADR-0046).
+        EditDiscardReason.OrderMoved =>
+            "What was typed was not entered: another Sheet Document was opened before the typing reached the Sheet, so nothing was written.",
         // ADR-0142: a grid Source replaced by another instance. ExSheet binds none, so it is said for truth's sake.
         EditDiscardReason.SourceChanged =>
-            "What was typed was not entered: the data the Sheet shows was replaced while the cell was being edited, so nothing was written.",
+            "What was typed was not entered: the data the Sheet shows was replaced while it was being typed, so nothing was written.",
         _ => "What was typed was not entered.",
     };
 

@@ -36,6 +36,7 @@ public sealed record GridFindRequest
     public required IReadOnlyList<string> Columns { get; init; }
 
     /// <summary>The order the positions above were read in (ADR-0011). An answer the grid
-    /// receives under another version is discarded.</summary>
+    /// receives under another version is discarded, and so is one that arrives after the grid's
+    /// <c>Source</c> was replaced by another instance, whatever its version (ADR-0142).</summary>
     public required int RowSequenceVersion { get; init; }
 }
