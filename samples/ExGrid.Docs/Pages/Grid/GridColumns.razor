@@ -105,6 +105,15 @@
                 <code>OnAction</code> with the row and the action's name. With the keyboard, Space presses a single
                 action, or enters a cell with several, where ← and → choose.
             </li>
+            <li>
+                <strong>Under live data</strong>, a press acts on the row it was made on, as that row is now: a value
+                the feed changed since the button was painted refuses nothing, and whether the action is still
+                allowed is your rule in <code>OnAction</code>. With a Row Key, a press finds its row wherever the order
+                has moved it. A press the grid can no longer pair with its row is refused through
+                <code>OnActionRefused</code>, naming why: <code>OrderMoved</code>, <code>RowLeftTheWindow</code>, or
+                <code>SourceChanged</code> when the <code>Source</code> was replaced. See
+                <a href="exgrid/editing#editing-while-values-change">Editing while values change</a>.
+            </li>
         </ul>
         <DocsExample Title="Marks, a template and actions" Builtin="typeof(SpecialColumns)" Mud="typeof(SpecialColumnsMud)"
                      Files="@(["Examples/Grid/Position.cs"])" />

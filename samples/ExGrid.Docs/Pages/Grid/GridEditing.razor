@@ -19,8 +19,13 @@
             "replacement" that is the same instance. Records and <code>with</code> make this one line.
         </p>
         <p>
-            If the rows are reordered while the user is typing — a live update, a sort — the entry is dropped
-            rather than written into whatever row now stands there, and <code>OnEditDiscarded</code> says why.
+            The editor outlives a change of order. If the rows are reordered while the user is typing — a live
+            update, a sort — the editor stays open with the text. With a Row Key it moves with its row, the Focus
+            with it, and <kbd>Enter</kbd> writes to that row wherever it stands now; the grid does not scroll to
+            follow it. Without a Row Key the editor stays where it is, and <kbd>Enter</kbd> is refused through
+            <code>OnCommitRefused</code> as <code>OrderMoved</code>, the text kept, because the position now names
+            another row; <kbd>Escape</kbd> leaves without writing. See
+            <a href="exgrid/editing#editing-while-values-change">Editing while values change</a>.
         </p>
     </DocsSection>
 
@@ -33,6 +38,11 @@
             <li><code>EditVerdict.Reject(message)</code> — the editor stays open with the text, and nothing is raised. For text that cannot be read at all.</li>
             <li><code>EditVerdict.Flag(message)</code> — the edit goes through, and the cell is marked as an error. For a value that can be read but needs a second look.</li>
         </ul>
+        <p>
+            A verdict judges the typed text before anything is raised. A rule that has to be checked against your
+            newest data — a limit, a permission, a version — is answered after, in <code>OnEdit</code>, with
+            <code>GridEditIntent.Refuse(message)</code>: see below.
+        </p>
         <p>
             <code>GridRuleset&lt;TRow&gt;</code> is a ready-made holder for these rules. Its
             <code>ValidatorFor</code> is what a column's <code>validate</code> is set to, and after you apply
@@ -80,10 +90,84 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="Editing while values change">
+        <p>
+            Under live data a value can change between the moment the user sees it and the moment their write
+            lands. ExGrid's rule is that <strong>a write lands as the user entered it, on the row they aimed it
+            at</strong>. If a cell showed 100, the feed moved it to 110, and the user commits 125, <code>OnEdit</code>
+            receives 125 with the row as it is now. The same holds for a paste, <kbd>Ctrl</kbd>+<kbd>Enter</kbd>,
+            <kbd>Delete</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd>, <kbd>Ctrl</kbd>+<kbd>R</kbd>, the fill handle and an
+            Action press: no write is refused because a value changed. The cells were on screen, and a live change
+            there wears the Change Highlight.
+        </p>
+        <p>
+            <strong>The one change the user cannot see is the one under the open editor</strong>, which covers the
+            cell. When a commit lands over a cell whose text changed while the editor was open, the grid raises
+            <code>OnOverwriteNotice</code> with the cell, the text the user saw and the text the commit replaced.
+            The grid holds no sentence for it: your Chrome or your page words it, into a live region or a toast,
+            and may offer to put the replaced value back. The user's own earlier writes count as seen — typing
+            <code>5</code> <kbd>Enter</kbd> <kbd>↑</kbd> <code>7</code> <kbd>Enter</kbd> never reports the 5 as a
+            change, however fast it is typed and whether the 5 comes back before the <code>7</code> or under it.
+            A write of the user's settles with the first new Window the grid takes in after your handler for it
+            has completed; with a bound source, the grid asks the source to put out what it gathered at that
+            moment, so a write your handler handed it is in the Window before the next key is handled.
+        </p>
+        <p>
+            <strong>The Edit Intent carries the same two texts</strong>, <code>SeenText</code> and
+            <code>ReplacedText</code>; the notice is raised exactly when they differ. A Consumer that must not write
+            over a change — or whose store, a reducer or a server, is where writes are ordered — calls
+            <code>Refuse(message)</code> before its handler completes: the editor stays open with the typing, the
+            message is shown at the editor and announced, and the gesture moves nothing. A later commit raises the
+            intent again.
+        </p>
+        <p>
+            <strong>Target identity still matters</strong>, so a write is refused when the grid can no longer find
+            what it was aimed at, and the callback names which of these happened. The grid holds no string for any
+            of them.
+        </p>
+        <ul>
+            <li>
+                <code>OrderMoved</code> — the Row Sequence Version moved after the gesture was aimed: the Selection a
+                paste, a fill or <kbd>Delete</kbd> was aimed with no longer names those rows
+                (<code>OnPasteRefused</code>); without a Row Key, an editor's position names another row
+                (<code>OnCommitRefused</code>); a press on an Action that only a position names
+                (<code>OnActionRefused</code>).
+            </li>
+            <li>
+                <code>RowLeftTheWindow</code> — the row is not in the rows the grid holds now: with a Row Key, no row
+                in the Window answers the key of the edited or pressed row. It may have left the data or only been
+                scrolled out of a pushed or fetched Window; bring it back into view and commit or press again, or
+                press <kbd>Escape</kbd>. Without a Row Key, an open edit whose row left the Window goes, and
+                <code>OnEditDiscarded</code> says <code>RowLeftTheWindow</code>.
+            </li>
+            <li>
+                <code>SourceChanged</code> — the <code>Source</code> was replaced by another instance. That is a new
+                binding whatever the two sources' Row Sequence Versions are: the Selection is dropped, an open edit is
+                discarded and <code>OnEditDiscarded</code> says <code>SourceChanged</code>, and a paste, a fill,
+                <kbd>Delete</kbd> or an Action aimed at what the old source painted is refused rather than landing
+                on the new source's row at the same place.
+            </li>
+        </ul>
+        <p>
+            An Action reaches <code>OnAction</code> once, with the row as it is now. Whether the command is still
+            allowed — a price limit, a status — is your business rule there, and your page says why it declines.
+        </p>
+        <DocsExample Title="A feed, a user's write and the Consumer's decisions" Builtin="typeof(LiveWrites)" Mud="typeof(LiveWritesMud)"
+                     Files="@(["Examples/Grid/Position.cs"])">
+            Select a Price and type <code>125</code>, press <kbd>F9</kbd> to advance the feed while the editor stays
+            open, then <kbd>Enter</kbd>: 125 is written, and the page says what it replaced. Type <code>175</code>:
+            this Consumer refuses prices above 150 with <code>Refuse(message)</code>, and the editor keeps your
+            typing; <kbd>Escape</kbd> leaves it. Press <kbd>F9</kbd> until a price passes 150 and press its
+            Approve: the grid delivers the Action, and this page declines it, saying why.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="API">
         <ApiTable Type="typeof(ExGrid.Cells.EditVerdict)" />
         <ApiTable Type="typeof(ExGrid.Validation.GridRuleset<>)" />
         <ApiTable Type="typeof(ExGrid.Selection.GridFillIntent)" />
         <ApiTable Type="typeof(ExGrid.Clipboard.GridClearIntent)" />
+        <ApiTable Type="typeof(ExGrid.Cells.GridEditIntent<>)" />
+        <ApiTable Type="typeof(ExGrid.Cells.GridOverwriteNotice)" />
     </DocsSection>
 </DocsPage>
