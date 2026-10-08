@@ -5781,6 +5781,8 @@
         }
         if (CopyAnswer is not null)
             return Outlined(AskCopyAnswer(decision.Plan, withHeaders: false) ?? ClipboardPayload.None, decision.Plan, WindowRowAt);
+        if (CopyAnswerAsync is not null)
+            return ClipboardPayload.Async;
         if (!WindowCovers(decision.Plan))
         {
             // The async route needs somebody to ask. Without one, refuse by name
@@ -5834,6 +5836,15 @@
         }
         if (CopyAnswer is not null)
             return AskCopyAnswer(decision.Plan, withHeaders) is { } answered ? Outlined(answered, decision.Plan, WindowRowAt) : null;
+        if (CopyAnswerAsync is { } answerAsync)
+        {
+            var request = new GridCopyRequest(decision.Plan, withHeaders, _sequenceVersion);
+            var landing = PrepareCopyOutline(decision.Plan, WindowRowAt);
+            var answer = await answerAsync(request, CancellationToken.None);
+            if (_disposed)
+                return null;
+            return UseCopyAnswer(answer) is { } payload ? payload with { Landing = landing } : null;
+        }
 
         var rows = await GatherRowsAsync(decision.Plan);
         if (_disposed)
@@ -6085,6 +6096,13 @@
     private ClipboardPayload? AskCopyAnswer(CopyPlan plan, bool withHeaders)
     {
         var answer = CopyAnswer!(new GridCopyRequest(plan, withHeaders, _sequenceVersion));
+        return UseCopyAnswer(answer);
+    }
+
+    /// <summary>A copy answer, synchronous or asynchronous (ADR-0050 item 9, ADR-0152), turned into
+    /// the payload it writes, or null when it refused.</summary>
+    private ClipboardPayload? UseCopyAnswer(GridCopyAnswer? answer)
+    {
         if (answer is null)
             throw new InvalidOperationException(
                 "CopyAnswer returned null. Answer GridCopyAnswer.Write with both flavours, or GridCopyAnswer.Refuse " +

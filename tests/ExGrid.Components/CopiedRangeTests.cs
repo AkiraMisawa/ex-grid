@@ -93,6 +93,54 @@ public class CopiedRangeTests : GridTestContext
         Assert.Contains("width: 200px", Assert.Single(Outlines(cut)));
     }
 
+    [Fact] // ADR-0152 / ADR-0170 / CP-26: an asynchronous Consumer answer carries the same landing contract as a synchronous one
+    public async Task An_asynchronous_consumer_copy_is_outlined_only_when_it_lands()
+    {
+        var answer = new TaskCompletionSource<GridCopyAnswer>();
+        var cut = RenderGrid(ps => ps.Add(g => g.CopyAnswerAsync,
+            (GridCopyRequest _, CancellationToken __) => answer.Task));
+        await ClickCellAsync(cut, 0, 0);
+
+        var copying = cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync());
+        Assert.False(copying.IsCompleted);
+        Assert.Empty(Outlines(cut));
+        await cut.InvokeAsync(() => answer.SetResult(GridCopyAnswer.Write("Alpha", "<table><tr><td>Alpha</td></tr></table>")));
+        var payload = Assert.IsType<ClipboardPayload>(await copying);
+
+        Assert.True(payload.Landing > 0);
+        Assert.Empty(Outlines(cut));
+        await cut.InvokeAsync(() => cut.Instance.OnCopyLandedAsync(payload.Landing));
+        Assert.Single(Outlines(cut));
+    }
+
+    [Theory] // ADR-0152 / ADR-0170 / CP-29 / CP-30: a delayed answer cannot outline changed coordinates or text as if they were copied
+    [InlineData("order")]
+    [InlineData("columns")]
+    [InlineData("text")]
+    public async Task An_asynchronous_copy_keeps_the_coordinates_and_text_it_was_asked_for(string change)
+    {
+        var answer = new TaskCompletionSource<GridCopyAnswer>();
+        var rows = TestRows.Window();
+        var cut = RenderGrid(window: rows, extra: ps => ps.Add(g => g.CopyAnswerAsync,
+            (GridCopyRequest _, CancellationToken __) => answer.Task));
+        await ClickCellAsync(cut, 0, 0);
+        var copying = cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync());
+        Assert.False(copying.IsCompleted);
+
+        if (change == "order")
+            cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 1));
+        else if (change == "columns")
+            cut.Render(ps => ps.Add(g => g.Columns, Columns().Reverse().ToArray()));
+        else
+            cut.Render(ps => ps.Add(g => g.Window, new TestRow[] { new() { Book = "Changed" }, rows[1], rows[2] }));
+        await cut.InvokeAsync(() => answer.SetResult(GridCopyAnswer.Write("Alpha", "<table><tr><td>Alpha</td></tr></table>")));
+        var payload = Assert.IsType<ClipboardPayload>(await copying);
+
+        Assert.Equal("Alpha", payload.Text);
+        await cut.InvokeAsync(() => cut.Instance.OnCopyLandedAsync(payload.Landing));
+        Assert.Empty(Outlines(cut));
+    }
+
     [Fact] // ADR-0170 / CP-26: a refused copy lands nothing, carries nothing to outline, and leaves the outline the clipboard still matches
     public async Task A_refused_copy_leaves_the_outline_it_found()
     {

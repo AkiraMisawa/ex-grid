@@ -292,6 +292,18 @@ public readonly record struct CellTextMetrics
             BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx, DigitWidthPx, BoldDigitWidthPx,
             glyphs: null, glyphScale: 1, _glyphBold);
 
+    /// <summary>Copies the explicit glyph table as resolved widths at this instance's scale and
+    /// weight, for a Consumer that sizes labels in another process (ADR-0151). Character classes
+    /// still take precedence; an absent table yields an empty immutable dictionary.</summary>
+    public IReadOnlyDictionary<int, double> ExportGlyphWidths()
+    {
+        var widths = new Dictionary<int, double>();
+        if (GlyphWidths is { } table)
+            foreach (var point in table.CodePoints)
+                widths.Add(point, WidthOf(point));
+        return new System.Collections.ObjectModel.ReadOnlyDictionary<int, double>(widths);
+    }
+
     /// <summary>One character's charge (ADR-0016): its class's, or its own width where the glyph
     /// table holds it (ticket 83). Anything no class names and no table holds is the other class —
     /// the widest glyph measured, so a glyph nobody listed errs toward <c>####</c>. A surrogate

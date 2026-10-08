@@ -32,6 +32,14 @@ public partial class ExGrid<TRow>
     {
         if (payload.Kind != "data")
             return payload;
+        return payload with { Landing = PrepareCopyOutline(plan, rowAt) };
+    }
+
+    /// <summary>Captures the copy's coordinates and painted text before an asynchronous Consumer
+    /// answer can yield (ADR-0152, ADR-0170): a later render or copy invalidates this landing by the
+    /// same rules as a payload waiting for the browser's write.</summary>
+    private int PrepareCopyOutline(CopyPlan plan, Func<int, TRow?> rowAt)
+    {
         var rectangles = plan.Segments.ToArray();
         var fingerprints = new int[rectangles.Length][];
         for (var k = 0; k < rectangles.Length; k++)
@@ -45,7 +53,7 @@ public partial class ExGrid<TRow>
             }
         }
         _builtCopy = new CopiedRange(++_copyLandings, rectangles, _sequenceVersion, fingerprints);
-        return payload with { Landing = _copyLandings };
+        return _copyLandings;
     }
 
     /// <summary>
