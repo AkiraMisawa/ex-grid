@@ -168,12 +168,16 @@ can serve independent report computations without one layout replacing another's
 `PivotReportSource.Fetch` carries the application's Window, Items, Copy, Summary and Details
 transports. `PivotReportJson` preserves exact values, layout, culture, display words and versions.
 The server retains its `LocalPivotReportSource`; the browser receives detached display rows,
-not all aggregate leaves. `PivotReportClient` checks replies and recovers a missing baseline with
-a complete Window. Failed recovery retains the last complete report as stale.
+not all aggregate leaves. `PivotReportClient` checks replies, a delta against the digest of the
+Window it produces, and recovers a missing baseline, or a delta that does not reproduce the
+source's Window, with a complete Window. Failed recovery retains the last complete report as stale.
 
-Copy, Summary and Details name a Report Version, including selections outside the Window. The
-local adapter retains two versions by default (`versionsKept`); an unavailable version refuses
-instead of switching data. The Consumer manages transport and server state lifetime. Remote
+Copy and Summary name a Report Version, including selections outside the Window. Details names
+the cell's Source Version (`PivotReportMetadata.DetailsQuery`), so its pages keep answering after
+later layouts while the provider holds that data. The local adapter retains two versions by
+default (`versionsKept`); an unavailable version refuses instead of switching data. A delta is
+made against the Window a request names as its baseline even when the version it publishes
+evicts that baseline. The Consumer manages transport and server state lifetime. Remote
 Order Keys name server-registered policies; culture does not select display words.
 
 `UpdateMode` distinguishes incremental Snapshot calculations from providers that can only

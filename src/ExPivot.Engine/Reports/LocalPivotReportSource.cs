@@ -142,6 +142,11 @@ public sealed class LocalPivotReportSource : PivotReportSource
             if (_settings != settings && ResolveFields(request.Settings) is { } policyRefusal)
                 return PivotReportUpdate.Refused(request, policyRefusal);
             var last = _versions.First?.Value;
+            // The Window the request names as its baseline, read before a publication below evicts
+            // its Report Version: a delta is made against what the Consumer holds, however few
+            // versions are kept. Once evicted, only this call holds it.
+            _windows.TryGetValue(request.Baseline ?? new(""), out var previous);
+            if (previous?.Window != request.Window) previous = null;
             if (request.RefreshData || _dirty || _unpublished is not null || _settings != settings || _layout != layout
                 || _maxLeaves != request.MaxLeaves || last is null)
             {
@@ -230,8 +235,6 @@ public sealed class LocalPivotReportSource : PivotReportSource
                     _dirty = true;
                 }
             }
-            _windows.TryGetValue(request.Baseline ?? new(""), out var previous);
-            if (previous?.Window != request.Window) previous = null;
             var comparable = previous is not null && PivotReportJson.SameSettings(previous.Metadata.Settings, request.Settings)
                 && PivotLayoutJson.Write(previous.Metadata.Layout) == layout;
             var priorByKey = comparable ? previous!.Rows.ToDictionary(row => row.Key) : null;
