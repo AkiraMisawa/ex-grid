@@ -35,8 +35,8 @@ async function api(path, init) {
 async function open(page, chrome) {
     await api('/api/reset', { method: 'POST' });
     await page.goto(`/pivot-db?chrome=${chrome}`);
-    await expect(rows(page, 'snapshot').first()).toBeVisible({ timeout: 60_000 });
-    await expect(rows(page, 'server').first()).toBeVisible({ timeout: 60_000 });
+    await expect(rows(page, 'snapshot').first()).toBeVisible();
+    await expect(rows(page, 'server').first()).toBeVisible();
     // ExPivot's stylesheet has landed when its root lays the report and the pane out side by
     // side; a Wrapper's, when one of its tokens reaches the paper.
     await expect.poll(() => pivot(page, 'snapshot').evaluate((p) => getComputedStyle(p).display)).toBe('flex');
@@ -60,7 +60,7 @@ async function expectSameReports(page) {
         return JSON.stringify(snapshot) === JSON.stringify(server) && snapshot.text.length > 3
             ? 'the same'
             : JSON.stringify({ snapshot, server });
-    }, { timeout: 30_000 }).toBe('the same');
+    }).toBe('the same');
 }
 
 /** How many questions of a kind the page has asked the server, as its status line counts them. */
@@ -148,7 +148,6 @@ for (const chrome of ['builtin', 'mud']) {
         });
 
         test(`PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (${chrome})`, async ({ page }) => {
-            test.setTimeout(90_000);
             await open(page, chrome);
             await expectSameReports(page);
             const cell = await firstValue(page, 'server').textContent();
@@ -160,7 +159,7 @@ for (const chrome of ['builtin', 'mud']) {
                 const tab = pivot(page, side).getByRole('tablist').getByRole('tab', { name: /^Details: Americas \/ / });
                 await expect(tab).toHaveAttribute('aria-selected', 'true');
                 const grid = pivot(page, side).getByRole('tabpanel').locator('.ex-grid');
-                await expect(grid.locator('.ex-viewport .ex-row').first()).toBeVisible({ timeout: 30_000 });
+                await expect(grid.locator('.ex-viewport .ex-row').first()).toBeVisible();
                 // Trade ID first, then Region: every record behind the cell is Americas'.
                 await expect(grid.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').nth(1)).toHaveText('Americas');
                 details[side] = { grid, rows: Number(await grid.getAttribute('aria-rowcount')) };
@@ -174,7 +173,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(pages).toBeGreaterThanOrEqual(1);
             const last = details.server.rows - 5;
             await scrollRowToTop(details.server.grid, last);
-            await expect(details.server.grid.locator(`[id$='-r${last}c1']`)).toHaveText('Americas', { timeout: 30_000 });
+            await expect(details.server.grid.locator(`[id$='-r${last}c1']`)).toHaveText('Americas');
             expect(await asked(page, 'details')).toBeGreaterThan(pages);
         });
     });

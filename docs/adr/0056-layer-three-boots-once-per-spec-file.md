@@ -227,7 +227,11 @@ where a test reads, never what it accepts. No requirement and no threshold is re
    - A test still waits for the state it expects (rule 1), and reads the moment it holds.
    - A bound shorter than the default is written only where the shortness is the point: a probe
      that expects nothing to be there, or the harness's own tests of its tools.
-   - The other spec files' bounds shorter than the default are left to a pass of their own.
+   - `pivot-db.spec.mjs`, the file that showed it, has no bound of its own left. The other spec
+     files' bounds shorter than the default are left to a pass of their own. On 2026-10-08, outside
+     the measuring specs, there were 88 for a wait in 29 files and 12 for a test in 7. Made in the
+     same pull request, that pass would have put every one of those files into its `browser-repeat`
+     (rule 4).
 
 `tests/ExGrid.Browser/README.md` says how to use each, and `harness-reading.spec.mjs` pins them.
 
