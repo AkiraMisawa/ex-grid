@@ -26,7 +26,7 @@ entered over cells whose painted text changed. The grid stops keeping what earli
   - With a Row Key, it acts on the row under that key.
   - Without one, a told press whose component was disposed acts on the row at the told position while
     the Row Sequence Version is the one it was taken under.
-  - Otherwise it is refused as `RowGone` or `OrderMoved`. No press is lost to Blazor.
+  - Otherwise it is refused as `RowLeftTheWindow` or `OrderMoved`. No press is lost to Blazor.
 - **The kept paints go.** Keep the layouts of recent renders, as positions and geometry, so a press lands
   on the cell it was made on (ED-31), and the row order a gesture was taken under.
 - **The reasons change** as ADR-0142's Consequences list. Update their XML docs and every Consumer that
@@ -48,7 +48,7 @@ entered over cells whose painted text changed. The grid stops keeping what earli
   Of its last paints the grid keeps numbers only: the order each was painted under, and a serial
   per painted row component, so a told press finds the component that painted its button. A write
   aimed under an order that has moved since is refused as `EmptySelection`, as aimed with a
-  Selection that went with that order; an Action press says `RowGone` or `OrderMoved`. Layer 2:
+  Selection that went with that order; an Action press says `RowLeftTheWindow` or `OrderMoved`. Layer 2:
   `WritesLandAsEnteredTests` (renamed from `WriteRefusalTests`). Layer 3: `write-lands.spec.mjs`
   (renamed from `write-refusal.spec.mjs`) is rewritten; it runs locally with ticket 05, before the
   push. The editor's commit still refuses a change under it until ticket 05.

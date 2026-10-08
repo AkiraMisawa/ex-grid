@@ -24,9 +24,9 @@ intent. A commit whose row is gone, or whose order moved, is refused with the ed
     with the typing, and the message is shown at the editor and in the live region as a Reject's is
     (ADR-0034).
 - **The commit goes to the row the editor was opened on**: by Row Key, or by position under the Row
-  Sequence Version it opened under. Otherwise it is refused as `RowGone` or `OrderMoved`, the editor stays
+  Sequence Version it opened under. Otherwise it is refused as `RowLeftTheWindow` or `OrderMoved`, the editor stays
   open, and Escape writes nothing.
-- **`CommitRefusalReason`** loses `CellChanged` and `RenderNoLongerKept`, and gains `RowGone` and
+- **`CommitRefusalReason`** loses `CellChanged` and `RenderNoLongerKept`, and gains `RowLeftTheWindow` and
   `OrderMoved`. ExSheet's `_commitRefused` and the DemoPages' handler follow.
 - **The notice reaches Chrome** through a grid event, and Chrome words it into the root's live region
   (A11Y-16). The grid holds no string for it.
@@ -46,11 +46,11 @@ intent. A commit whose row is gone, or whose order moved, is refused with the ed
   and the Edit Intent carries `SeenText` and `ReplacedText`. `GridEditIntent.Refuse(message)` holds
   the editor as a Reject does: the intent is now raised while the editor still stands, and the edit
   ends once the handler has accepted. D1 for the notice keeps the user's own writes as positions
-  and the paint they were raised after. `CommitRefusalReason` is `RowGone` or `OrderMoved`.
+  and the paint they were raised after. `CommitRefusalReason` is `RowLeftTheWindow` or `OrderMoved`.
   - Read conservatively, pending the user (reported to the lead): ADR-0011's discard stays for an
     order move outside a commit; `OrderMoved` and a row followed by key come from the commit's own
     D5 ask, after which the editor is held. Without a Row Key, a row that left the Window under the
-    same order is still discarded as `RowLeftTheWindow` (ED-21): `RowGone` names a key.
+    same order is still discarded as `RowLeftTheWindow` (ED-21): `RowLeftTheWindow` names a key.
   - The DemoHost and ExSheet word the notice into a live region. Layer 3 and the Fluxor spike's
     check 2 run before the push; their results are added here.
 - 2026-10-07, later: rebuilt on the user's decision (ADR-0011's note of 2026-10-07, option A). An open

@@ -252,9 +252,31 @@ a second, and the discard above threw the user's typing away each time.)*
 - **`OrderChanged` is no longer raised for an open editor.** The other discards stand: a change of
   columns, a column that stops being Editable, and, without a Row Key, a row that left the Window under the
   same order (`RowLeftTheWindow`). With a Row Key, a row that left the Window refuses the commit as
-  `RowGone` and keeps the editor open (ADR-0142).
+  `RowLeftTheWindow` (named `RowGone` until 2026-10-08) and keeps the editor open (ADR-0142).
 - **The grid holds the Row Key of the row under an open editor while the editor is open**, the one row
   reference [ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md) allows beyond the Window besides its two others.
+
+## Keys aimed with a Selection that was dropped open nothing *(decided with the user, 2026-10-08)*
+
+*(Merging the two tracks of live data continued. Both kept the first-key rule of
+[ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md) for keys that arrive after a drop, and the
+review of both found what it does to keys that were on their way.)*
+
+- **A replaced Source drops the Selection too**, whatever the two sources' Row Sequence Versions: the
+  positions now name rows of other data (ADR-0142's section of 2026-10-08).
+- **A key typed at a cell, and the drop overtakes it**: on a circuit, or held behind a key being answered,
+  `5` `0` `0` Enter can reach the grid after an order move or a replaced Source dropped the Selection it
+  was aimed with. Taken by the first-key rule, the keys placed a Focus on the first painted cell and
+  typed into it — a cell the user never aimed at.
+- **Now such a key opens nothing and writes nothing anywhere.** A printable key, a composition's text, or
+  any gesture that would open an edit, told a paint under which the Selection it was aimed with has since
+  been dropped, is thrown away and said through `OnEditDiscarded`: `OrderMoved` for an order move,
+  `SourceChanged` for a replaced Source. It is not a first key on the empty Selection. Space and Delete
+  aimed the same way were already refused (ADR-0142).
+- **Keys told a newer paint follow the first-key rule**, as before: the user has seen the new rows.
+- Each key carries the paint it was typed against, so the outcome is the same at any speed
+  (principle 6); the composition's text carries the paint its `compositionstart` read
+  ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of 2026-10-08).
 
 ## Consequences
 

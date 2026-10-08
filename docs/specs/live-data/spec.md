@@ -1,7 +1,10 @@
 # Live data in ExGrid and ExPivot
 
-Status: built on `claude/live-data-next-cc` (2026-10-07) — the first version merged as #64; tickets 01 to
-03 measured and decided; tickets 04 to 13 built, reviewed and measured, not yet merged to `main`
+Status: built on `claude/live-data-best` (2026-10-08) — the first version merged as #64. Tickets 01 to 03
+were worked twice, side by side: by a Claude Code session on `claude/live-data-next-cc` (tickets 04 to 13
+below, #67) and by a Codex session on `claude/live-data-next` (#66). On 2026-10-08 the user compared the
+two and took the best of each: **the grid from the Claude Code track, ExPivot from the Codex track**, and
+the fixes the comparison's review found in both. Not yet merged to `main`.
 
 Decided with the user in the grilling of 2026-10-05, and in the decisions D1 to D10, P1 and P2 of
 2026-10-06:
@@ -20,12 +23,30 @@ And in the grilling of 2026-10-07, on ticket 01's numbers:
 - [ADR-0160](../../adr/0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md): the grid
   holds no Consumer row beyond the Window it was given;
 - [ADR-0161](../../adr/0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md): ExPivot's live
-  redraw makes the next report from the last;
+  redraw made the next report from the last — narrowed on 2026-10-08 to its out-of-memory rule;
 - ADR-0141's section of 2026-10-07 (who may vouch, and a pushed Window) and ADR-0130's (the Selection
   Summary's walk).
 
-The criteria are §32 of `docs/definition-of-done.md` (LV-1 to LV-23), PV-42 to PV-48 in §29, SM-15
-in §31, and two rows of §21.11. What is built, found and not done is in `docs/implementation-status.md`, "ExGrid's
+Decided with the user on the Codex track, 2026-10-06, and taken on 2026-10-08 for ExPivot:
+
+- [ADR-0151](../../adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md): a server
+  computes the Pivot Report and sends the requested Window and its changes; local data runs the same
+  engine in the browser;
+- [ADR-0152](../../adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md): Report
+  Versions, deltas that name their baseline, automatic recovery, versioned operations;
+- [ADR-0153](../../adr/0153-reports-share-unchanged-computation-and-display-rows-own-no-report.md):
+  computation follows dependencies, and display rows own no report.
+
+And on 2026-10-08, merging the two (each recorded in the ADR it changes): a replaced Source refuses
+what was aimed at the old one, and keys aimed with a dropped Selection open nothing (ADR-0142's and
+ADR-0011's notes); the D1 rule settles at the first Window after a write's handler; `RowGone` is
+`RowLeftTheWindow`; a delta is checked against its Window Digest before it is shown (ADR-0152);
+Details are asked by Source Version; the Change Highlight is timed by the component's clock; a
+cancelled computation keeps its state (ADR-0153); and a layer-3 wait's bound tells a hang, never a
+speed (ADR-0056).
+
+The criteria are §32 of `docs/definition-of-done.md` (LV-1 to LV-33; the Codex track's LV-20 to LV-28
+are LV-24 to LV-31 here), PV-2 and PV-42 to PV-48 in §29, SM-15 in §31, and two rows of §21.11. What is built, found and not done is in `docs/implementation-status.md`, "ExGrid's
 live data (2026-10-06)". This spec synthesises those decisions; where it and they disagree, they win.
 
 ## Where it started
@@ -101,7 +122,8 @@ git -C <scratchpad>/ag-grid rev-parse HEAD   # 0fee5b7b1e839ae23fe860e404042448f
   — done.
 - [02: A pushed Window vouches for its rows](issues/02-a-pushed-window-vouches-for-its-rows.md) — decided.
 - [03: ExPivot keeps its report across live redraws](issues/03-expivot-keeps-its-report-across-live-redraws.md)
-  — decided, as ADR-0161.
+  — decided as ADR-0161 on the Claude Code track and as ADR-0151 to ADR-0153 on the Codex track; the
+  latter was taken on 2026-10-08.
 - **Building what was decided** (`claude/live-data-next-cc`):
   - [04: Bulk writes and Action presses land, and the kept paints go](issues/04-bulk-writes-and-action-presses-land-and-the-kept-paints-go.md)
   - [05: The editor's commit lands, with an Overwrite Notice](issues/05-the-editor-commit-lands-with-an-overwrite-notice.md)
@@ -109,13 +131,22 @@ git -C <scratchpad>/ag-grid rev-parse HEAD   # 0fee5b7b1e839ae23fe860e404042448f
   - [07: A pushed Window vouches, and the painted rows are checked](issues/07-a-pushed-window-vouches-and-painted-rows-are-checked.md)
   - [08: The Selection Summary walks only what it needs](issues/08-the-selection-summary-walks-only-what-it-needs.md)
   - [09: A report row holds no value and no report](issues/09-a-report-row-holds-no-value-and-no-report.md)
+    — replaced on 2026-10-08 by ADR-0153's detached display rows
   - [10: The report's Change Highlight keeps times, not reports](issues/10-the-reports-change-highlight-keeps-times.md)
+    — replaced on 2026-10-08 by ADR-0153's stable lookup, timed by the component's clock
   - [11: The engine makes the next cube and report from the last](issues/11-the-engine-makes-the-next-report-from-the-last.md)
+    — replaced on 2026-10-08 by ADR-0153's incremental computation
   - [12: A redraw that runs out of memory leaves the report stale](issues/12-a-redraw-out-of-memory-leaves-the-report-stale.md)
-  - [13: Measure after the changes](issues/13-measure-after-the-changes.md)
+    — kept, ported onto the report-Window design (ADR-0161, PV-47)
+  - [13: Measure after the changes](issues/13-measure-after-the-changes.md) — measured the Claude Code
+    track's code; the Codex track's own after-record is
+    [`2026-10-06-macos-live-report-after`](../../../verification/2026-10-06-macos-live-report-after/README.md).
+    Neither measured the merged code; PV-48 asks for it.
 
 ## Numbers for the next decisions
 
-ADRs for this work take numbers from `claude/live-data-next-cc`'s block, ADR-0160 to ADR-0169
-(`docs/agents/numbering.md`): 0162 is the next. A Codex session works the same tickets on
-`claude/live-data-next` with ADR-0150 to ADR-0159, for comparison; its tickets may share these numbers.
+This branch carries ADRs from two blocks (`docs/agents/numbering.md`): ADR-0151 to ADR-0153 from
+`claude/live-data-next`'s, ADR-0160 and ADR-0161 from `claude/live-data-next-cc`'s. ADR-0150 and ADR-0154
+were not taken — ExPivot's vouch is ADR-0141's section of 2026-10-07, and the write policy is ADR-0142 as
+rewritten — and stay unused. A next decision for this work takes 0162, the next of the Claude Code
+track's block, which this branch continues.

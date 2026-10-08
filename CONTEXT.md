@@ -503,7 +503,8 @@ _Avoid_: cancel (that is Escape), rollback, revert
 The grid's own "no", raised on **the operation** — its target, its shape, its size — and never on
 the value being written: a copy cap, a misaligned selection, a paste shape, a target covering a
 column that is not Editable, a paste past its size ceiling, a clipboard the browser would not let
-it write, a write whose row is gone or whose order moved before it landed
+it write, a write whose row left the Window, whose order moved, or whose Source was replaced before it
+landed
 ([ADR-0142](./docs/adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)). A value that changed under a write is not one: the write lands. Because a Refusal never looked at what the user typed, it stops only
 the operation it named: a fill refused for covering a non-editable column leaves the editor open
 and the single-cell Enter still available. Contrast an **Edit Verdict**'s Reject, which judges the
@@ -830,6 +831,14 @@ values or settings
 ([ADR-0152](./docs/adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
 _Avoid_: Source Version (that names the data alone), Row Sequence Version (that names row order),
 timestamp
+
+**Window Digest**:
+A digest of a Pivot Report's Window as it stands after a delta — every row of the Window, its key,
+labels and shown texts, with the Window's extent and Report Version — that the delta carries, and that
+the component computes again before it shows the result. A delta whose digest is missing or differs is
+never painted: the complete Window is asked for instead
+([ADR-0152](./docs/adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+_Avoid_: checksum, hash (the mechanism, not the term), signature (it proves no sender)
 
 **Leaf Aggregate**:
 For each combination of the row and column fields' Items that has records, the parts each Value

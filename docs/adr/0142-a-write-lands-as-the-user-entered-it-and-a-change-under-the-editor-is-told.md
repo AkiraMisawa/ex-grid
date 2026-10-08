@@ -46,16 +46,18 @@ holds.
   `OrderMoved`. The grid does not scroll to follow a row that moved out of view.
 - **A paste and a fill stay positional**, as ADR-0014 has them, and are refused when the order moved
   (ADR-0011): the Selection they were aimed with no longer names those rows.
-- **When the row is gone, or the order moved, the write is refused, and says why.**
+- **When the row left the Window, or the order moved, the write is refused, and says why.**
   - A commit is refused with the editor left open and the text typed kept; Escape leaves without
-    writing. The reason is `RowGone` (the key is no longer in the Window) or `OrderMoved` (no Row Key,
-    and the Row Sequence Version moved).
+    writing. The reason is `RowLeftTheWindow` (the key is not in the Window; the commit lands once it is
+    back) or `OrderMoved` (no Row Key, and the Row Sequence Version moved). *(`RowLeftTheWindow` was
+    `RowGone` until 2026-10-08. A row scrolled out of a pushed or fetched Window is not gone, and the
+    reference Chrome's "the row is no longer there; press Escape" lost typing that would have landed.)*
   - An Action press is refused for the same two reasons. With a Row Key, a press whose order moved
     before the core heard it, and whose row component a render has since disposed, cannot be paired with
     its row: the grid keeps no key of an earlier render
     ([ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md)). It is refused
-    as `OrderMoved`, which is true of it, and never as `RowGone`, which may not be. *(Settled while
-    building it, 2026-10-07.)*
+    as `OrderMoved`, which is true of it, and never as `RowLeftTheWindow`, which may not be. *(Settled
+    while building it, 2026-10-07.)*
   - Throwing the typed text away was rejected on 2026-10-05 (Q5b, option B) and stays rejected: the user
     would lose what they typed for something that was not their doing.
 - **ag-grid does the same for the editor and for actions.** Its editor belongs to the row node: the row
@@ -120,7 +122,64 @@ see. Everything else a write lands on was on screen, and a live change there wea
 - **No press is lost to Blazor** (found by the first layer-3 run, 2026-10-06). Blazor does not deliver an
   event whose attribute a component since disposed had rendered. The listener tells the core which row,
   column and action a press was on, with the render it was taken against, and the core answers a press
-  whose row component is gone: it acts, or refuses for one of the two reasons above.
+  whose row component is gone: it acts, or refuses for one of the two reasons above. The row, column and
+  action are read at the mousedown, with the render, so a keyed row whose button moved before the
+  release cannot name another row; and a press no click follows — a macOS Ctrl+click, which opens the
+  context menu — is not told at all, so it never acts later for a click nobody made. *(2026-10-08.)*
+
+## Settled while merging the two tracks *(2026-10-08)*
+
+On 2026-10-08 the user compared this track with the Codex track of live data continued and took this
+track's grid. The review of both found what follows; each was decided with the user or follows from a
+rule above.
+
+**A replaced Source is a new binding** *(decided with the user)*. A Consumer that hands the grid another
+`IGridSource` instance has replaced what the positions name, even when the two report the same Row
+Sequence Version — two fresh `GridSource.From` both start at 0, and until then a paste, a commit or an
+Action press aimed at the old source landed on the new one's row. Now:
+- the Selection is dropped, as for an order move (ADR-0011);
+- a paste, Delete, Ctrl+D, Ctrl+R, a fill-handle release or a fill key told a paint under the old
+  binding is refused as `PasteRefusalReason.SourceChanged`, and an Action press as
+  `ActionRefusalReason.SourceChanged`, naming no row;
+- an open Cell Editor or Formula Bar edit is discarded as `EditDiscardReason.SourceChanged`: its row
+  belongs to data that is no longer shown, as a change of columns discards one. No Edit Intent is raised;
+- a Find answer, a placement, the Selection Summary and a Mark intent from the old binding move nothing in
+  the new one;
+- ExSheet, which pushes its Window, moves the Row Sequence Version it hands its grid when it opens a Sheet
+  Document it did not emit itself, so a paste, Delete or fill aimed at the old document is refused, and
+  its words say that another Sheet Document was opened
+  ([ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)'s rule that an edit is never
+  committed into a new document, kept for every write).
+
+The binding is compared by reference, and no old source is held to compare it
+([ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md)). The Codex track
+found the same hole and closed it with the same rule for its own grid.
+
+**Keys aimed with a dropped Selection open nothing** *(decided with the user)*: see
+[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of
+2026-10-08.
+
+**D1 settles at a point in the grid's order of events.** As first built, the user's own write stayed
+"unpainted" until a later paint showed the cell with other text. A write that left the text as it was —
+a value retyped, F2 and Enter, a figure the format paints the same — never cleared, and the next editor
+on that cell let the first upstream change under it through with no notice. The flag was also taken
+once, when the editor opened, so the same keys gave a notice on one host and none on the other. Now:
+- the grid asks its bound source to put out what it gathered also once the handler of any write it
+  raised has completed, refused or not (D5 widened);
+- a write settles once its handler has completed unrefused and a new Window has been taken in since it
+  was raised: for a bound source, what the source puts out after the handler; for a pushed Window, the
+  first new Window after the handler. A scroll, a re-render of the same list or a loading flip settles
+  nothing. An order move, a replaced Source, or its rows leaving the Window let it go;
+- an editor keeps the painted text when it opened as what it saw, and while one of the user's own writes
+  to that cell is unsettled, the cell's painted text at that write's settling becomes what it saw;
+- the Edit Intent's `SeenText` is what it saw and `ReplacedText` the text now, and the Overwrite Notice is
+  raised exactly when they differ.
+
+Accepted limits: a write a Consumer declines without `Refuse` counts as accepted, as LV-19 says, so it
+settles at the next new Window; a Consumer that writes back only after a later Window has its own value
+told as a change; and a fetching source's range answer already on its way when a handler completes can
+settle a write it does not carry. Each errs, if at all, towards a notice, except the first, which is the
+Consumer's contract.
 
 ## What changed on 2026-10-07
 
@@ -159,7 +218,7 @@ required". Write onto the newest version was considered and rejected then: "it i
 | D2, the editor keeps the text of the render its opening gesture was taken against | The editor keeps the text when it opens; the round trip before is accepted |
 | D5, a bound source puts out what it gathered before a write is judged | Kept |
 | P1, a cell derived from the user's own write is still compared | Gone with the comparison |
-| P2, `RenderNoLongerKept` is never worded as a change | Gone: no render is kept to be lost. A refusal now says `RowGone` or `OrderMoved` |
+| P2, `RenderNoLongerKept` is never worded as a change | Gone: no render is kept to be lost. A refusal now says `RowLeftTheWindow` (then `RowGone`) or `OrderMoved` |
 | No press is lost to Blazor | Kept |
 
 **The quietness that remains, accepted by the user:** on a circuit, a value that changes in the round trip
@@ -186,15 +245,22 @@ against, so the window is near zero.
 ## Consequences
 
 - **The refusal reasons change.**
-  - `CommitRefusalReason` loses `CellChanged` and `RenderNoLongerKept`, and gains `RowGone` and
-    `OrderMoved`.
-  - `ActionRefusalReason` loses `RowChanged` and `RenderNoLongerKept`, and gains the same two.
+  - `CommitRefusalReason` loses `CellChanged` and `RenderNoLongerKept`, and gains `RowLeftTheWindow`
+    (named `RowGone` until 2026-10-08) and `OrderMoved`.
+  - `ActionRefusalReason` loses `RowChanged` and `RenderNoLongerKept`, and gains the same two, and
+    `SourceChanged` (2026-10-08). `GridActionRefusal` names the row only when it has one in hand
+    (`Row?`), with the column's and the action's names; `GridCommitRefusal` no longer carries painted
+    text.
   - `PasteRefusalReason` loses `TargetChanged` and `RenderNoLongerKept`, and gains `OrderMoved`: a paste,
     Delete, Ctrl+D, Ctrl+R, a Ctrl+Enter fill or a fill-handle release aimed under a Row Sequence Version
     that has moved since. Until then such a gesture was reported as `EmptySelection`, or not at all, which
-    is not what is true of it. *(Settled while building it, 2026-10-07.)*
+    is not what is true of it. *(Settled while building it, 2026-10-07.)* It gains `SourceChanged` on
+    2026-10-08.
+  - `EditDiscardReason` gains `SourceChanged` and, for keys aimed with a dropped Selection, `OrderMoved`
+    (2026-10-08).
 - **The Edit Intent gains the text the user saw and the text the commit replaced, and `Refuse(message)`.**
   ADR-0034 and [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md) are noted.
 - **`CONTEXT.md` gains Overwrite Notice.**
 - **The Definition of Done's LV-11 to LV-14, LV-16 and LV-17 are rewritten** (§32), and LV-19 to LV-21
-  are added.
+  are added. LV-32 and LV-33 judge the section of 2026-10-08; LV-12, LV-16, LV-17 and LV-20 were restated
+  with it.
