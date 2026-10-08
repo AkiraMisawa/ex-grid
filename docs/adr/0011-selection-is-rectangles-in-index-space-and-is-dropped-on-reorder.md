@@ -268,11 +268,14 @@ review of both found what it does to keys that were on their way.)*
   `5` `0` `0` Enter can reach the grid after an order move or a replaced Source dropped the Selection it
   was aimed with. Taken by the first-key rule, the keys placed a Focus on the first painted cell and
   typed into it — a cell the user never aimed at.
-- **Now such a key opens nothing and writes nothing anywhere.** A printable key, a composition's text, or
-  any gesture that would open an edit, told a paint under which the Selection it was aimed with has since
-  been dropped, is thrown away and said through `OnEditDiscarded`: `OrderMoved` for an order move,
-  `SourceChanged` for a replaced Source. It is not a first key on the empty Selection. Space and Delete
-  aimed the same way were already refused (ADR-0142).
+- **Now such a key opens nothing and writes nothing anywhere.** A printable key, F2, Backspace or a
+  composition's text, told a paint under which the Selection it was aimed with has since been dropped, is
+  thrown away. The run of them is said once through `OnEditDiscarded`: `OrderMoved` for an order move,
+  `SourceChanged` for a replaced Source. An edit that the replacement itself discarded has already said
+  it. Typing aimed at a cell that does not edit would have opened nothing, and goes unsaid.
+- **A key that moves or selects, aimed the same way, moves nothing and says nothing.** None of these keys
+  is a first key on the empty Selection. Delete and the fill keys aimed the same way are refused as
+  writes, and Space aimed at an action is refused as the action's press is (ADR-0142).
 - **Keys told a newer paint follow the first-key rule**, as before: the user has seen the new rows.
 - Each key carries the paint it was typed against, so the outcome is the same at any speed
   (principle 6); the composition's text carries the paint its `compositionstart` read

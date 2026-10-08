@@ -560,3 +560,22 @@ as entered. The readings that serve where a gesture lands and which order it was
 reading that served only the judgement of a write is no longer made: the Formula Bar's
 `BarPressTakenAt`, and the render the key field and the press listener passed along for it. No
 listener is added, and nothing is measured.
+
+*(2026-10-08, merging the two tracks of live data; [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)'s
+section of that date.)* Three readings changed. No listener was added, and nothing is measured.
+- **An action press reads its whole address at the mousedown.** The note of 2026-10-06 read the
+  paint at the mousedown, but the row, column and action from the cell's ids at the release. A keyed
+  row ([ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md))
+  can move the same button between the two, and the old paint with the new ids named another row.
+  The ids are now read with the paint and told at the release.
+- **A press the platform makes a context menu of is not told.** Where Meta is the primary modifier
+  (macOS), Control with the primary button sends `mousedown` and `mouseup` with button 0 and no
+  `click`. Told, it stayed pending in the core. Once a later render disposed its row's component, it
+  acted for a click nobody made. The existing `mousedown` reads `ctrlKey` beside the platform it
+  already knows.
+- **A composition carries its paint again.** The note of 2026-10-07 stopped passing a render with
+  the key field's text, because the render served only the judgement of a write. It now serves which
+  Selection the text was aimed with
+  ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of
+  2026-10-08). `compositionstart` reads the paint, an attribute, and the field hands it over with the
+  text, as a key carries its own.
