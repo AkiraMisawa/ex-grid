@@ -42,7 +42,10 @@ public enum EditDiscardReason
     /// there; or typing that would have opened an edit — a character, F2, Backspace, a composition's
     /// text — reached the grid after the replacement, aimed with the Selection it dropped, and opened
     /// nothing. No Edit Intent is raised, and nothing is written anywhere. Raised once for all the keys
-    /// typed against that Selection.</summary>
+    /// typed against that Selection. A Source the Consumer hands over while it hears the open edit's
+    /// own Edit Intent is that commit's doing: accepted, the edit ends as committed and nothing is
+    /// discarded; refused, the editor cannot be held over a row that went with the old source, and
+    /// the edit is discarded with this reason, once.</summary>
     SourceChanged,
 
     /// <summary>Typing that would have opened an edit — a character, F2, Backspace, a composition's

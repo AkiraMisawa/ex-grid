@@ -900,7 +900,7 @@
             }
             @if (PageSize is not null && _markColumn >= 0)
             {
-                <button type="button" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
+                <button type="button" class="ex-mark-result" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
             }
             @* Excel's status-bar figures over the selection (ADR-0130). *@
             @if (ShowsSummaryStrip)
@@ -1027,7 +1027,9 @@
     /// positions the old one painted name the new one's rows. The Selection is dropped, as an
     /// order move drops it; an open edit is discarded and <see cref="OnEditDiscarded"/> says
     /// <see cref="EditDiscardReason.SourceChanged"/>, as it does for typing aimed at what the old
-    /// one painted, which opens nothing; and a gesture taken on what the old one painted is
+    /// one painted, which opens nothing — unless the new one was handed over while the Consumer heard
+    /// that edit's own commit, which then ends as committed, or, refused, is discarded and said once,
+    /// with no Overwrite Notice either way; and a gesture taken on what the old one painted is
     /// refused, <see cref="PasteRefusalReason.SourceChanged"/> for a write and
     /// <see cref="ActionRefusalReason.SourceChanged"/> for an Action. A Find answer the old one
     /// gives after it was replaced moves nothing (<see cref="FindRefusalReason.SourceChanged"/>),
@@ -1600,7 +1602,10 @@
     /// have opened an edit but reached the grid aimed with a Selection that an order move or a
     /// replaced Source had dropped since opens nothing, and is said here too, once for the keys
     /// typed against that Selection (<see cref="EditDiscardReason.OrderMoved"/>,
-    /// <see cref="EditDiscardReason.SourceChanged"/>; decided 2026-10-08). None is the user's own
+    /// <see cref="EditDiscardReason.SourceChanged"/>; decided 2026-10-08). A Source the Consumer
+    /// hands over while it hears the edit's own <see cref="OnEdit"/> is that commit's doing: never
+    /// said here when the Consumer accepted the intent, since the typing was handed over, and said
+    /// once as <see cref="EditDiscardReason.SourceChanged"/> when it refused it. None is the user's own
     /// doing — a Consumer's new columns, new source or refresh lands and the typing goes — so the
     /// grid says so rather than leaving the loss to be guessed at. Chrome writes the
     /// sentence and announces it (A11Y-16); the grid holds no strings. A discard the Consumer
@@ -2873,31 +2878,37 @@
         // (ADR-0142). The gate learns after this render. An order move discards nothing: the editor
         // outlives it, and with a Row Key it and the Focus follow their row (ADR-0011's note of
         // 2026-10-07).
-        if (_editMode != EditMode.None && (_columnsMoved || _sourceReplaced))
+        //
+        // A Source the Consumer hands over while it hears the open edit's own commit — the Edit
+        // Intent, raised while the editor stands (CommitEditAsync) — is that commit's doing, and no
+        // discard: the typing was handed over (ADR-0142, LV-32; decided 2026-10-08). What becomes of
+        // the edit is decided as the handler completes. Until then the editor stands where it is,
+        // its row gone with the old source: it follows no key into the new one and reads no baseline
+        // there. Should the columns have moved with it, it cannot stand over them, and is taken down
+        // now, unsaid until the handler completes.
+        if (_sourceReplaced && _hearingCommit)
+            _sourceReplacedUnderCommit = true;
+        if (_editMode != EditMode.None && (_columnsMoved || (_sourceReplaced && !_sourceReplacedUnderCommit)))
         {
-            CloseCompletion();
-            EndPointing();
-            _editMode = EditMode.None;
-            _editSurface = EditSurface.Cell;
-            _editText = "";
-            _reportedText = null;
-            ForgetCaretPlacement();
-            _editError = null;
-            _editorNeedsFocus = false;
-            _editorFocusAsked = false;
-            _jsEditingDirty = true;
-            ForgetEditBaseline();
-            // Announced, not silent: the user typed and something they did not do took
-            // it away. Raised from OnAfterRenderAsync for the reason the Range Request
-            // is — a Consumer handler run inside this render stack would re-enter the
-            // same batch.
-            _pendingDiscard = _sourceReplaced ? EditDiscardReason.SourceChanged : EditDiscardReason.ColumnsChanged;
-            // The keys typed after it against the Selection the replacement dropped are that same
-            // typing: said once, by this discard (DropKeyAimedWithADroppedSelectionAsync).
-            if (_sourceReplaced && _droppedSelection is { } dropped)
-                dropped.TypingTold = true;
+            TakeDownEdit();
+            if (_sourceReplacedUnderCommit)
+            {
+                _editTakenDownUnderCommit = true;
+            }
+            else
+            {
+                // Announced, not silent: the user typed and something they did not do took
+                // it away. Raised from OnAfterRenderAsync for the reason the Range Request
+                // is — a Consumer handler run inside this render stack would re-enter the
+                // same batch.
+                _pendingDiscard = _sourceReplaced ? EditDiscardReason.SourceChanged : EditDiscardReason.ColumnsChanged;
+                // The keys typed after it against the Selection the replacement dropped are that same
+                // typing: said once, by this discard (DropKeyAimedWithADroppedSelectionAsync).
+                if (_sourceReplaced && _droppedSelection is { } dropped)
+                    dropped.TypingTold = true;
+            }
         }
-        else
+        else if (!_sourceReplacedUnderCommit)
         {
             FollowEditedRow();
             // A write of the user's own the editor awaited went with this Window: the baseline is
@@ -2906,6 +2917,24 @@
                 RebaseEdit();
         }
         PrepareRender();
+    }
+
+    /// <summary>Takes the open edit down with nothing committed: a parameter change took away what
+    /// it stood over (ADR-0011, ADR-0142). The gate and the Consumer learn after the render.</summary>
+    private void TakeDownEdit()
+    {
+        CloseCompletion();
+        EndPointing();
+        _editMode = EditMode.None;
+        _editSurface = EditSurface.Cell;
+        _editText = "";
+        _reportedText = null;
+        ForgetCaretPlacement();
+        _editError = null;
+        _editorNeedsFocus = false;
+        _editorFocusAsked = false;
+        _jsEditingDirty = true;
+        ForgetEditBaseline();
     }
 
 
@@ -7561,8 +7590,27 @@
             // this commit's, not a discard. The user's own write (D1), taken back if refused; the
             // bound source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
-            await OnEdit.InvokeAsync(intent);
+            // A Source the Consumer hands over while it hears this is the commit's own doing
+            // (ApplyState): noted while it is heard, and answered once the handler has completed.
+            var hearing = _hearingCommit;
+            _hearingCommit = true;
+            var heard = false;
+            try
+            {
+                await OnEdit.InvokeAsync(intent);
+                heard = true;
+            }
+            finally
+            {
+                _hearingCommit = hearing;
+                if (!heard)
+                    TakeDownEditTheFailedHandlerOutlived();
+            }
+            var sourceReplaced = _sourceReplacedUnderCommit;
+            _sourceReplacedUnderCommit = false;
             await OwnWriteAnsweredAsync(written, intent.IsRefused);
+            if (sourceReplaced)
+                return await EndCommitTheSourceOutlivedAsync(intent.IsRefused, reclaimFocus, byPress);
             if (intent.RefusalMessage is { } refused)
             {
                 if (_editMode != EditMode.None)
@@ -7674,10 +7722,14 @@
         // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound source
         // puts out what it gathered as the handler completes (D5).
         var written = OnPaste.HasDelegate ? NoteOwnWrite(decision.Plan.Targets) : null;
+        // The editor is down before the Consumer hears the fill, so a Source it hands over meanwhile
+        // discards nothing; it is the fill's own doing, and no Overwrite Notice follows it, which
+        // would name a position among the rows of a source the grid no longer shows (ADR-0142, LV-32).
+        var binding = _binding;
         await EndEditingAsync(endedIn: OnPaste.HasDelegate ? () => OnPaste.InvokeAsync(intent) : null);
         if (written is not null)
             await OwnWriteAnsweredAsync(written, intent.IsRefused);
-        if (written is null || !intent.IsRefused)
+        if (binding == _binding && (written is null || !intent.IsRefused))
             await RaiseOverwriteNoticeAsync(notice);
         AskSummaryAgain();
         StateHasChanged();
@@ -8849,10 +8901,68 @@
     /// exists, so a grid without one asks nothing.</summary>
     private bool MarkedAt(TRow row) => _marks is not null && _marks.IsMarked(row);
 
-    // Pointed at from outside, neither checkbox marks anything (ADR-0058): as for an action.
+    /// <summary>A press on one of this grid's marks, told by its listener until its click is heard: the
+    /// paint it was taken against, and, for the header's checkbox under a pager, the first row of the
+    /// page it named, or −1 (ADR-0142, LV-32).</summary>
+    private readonly record struct MarkPress(int Paint, int PageStart);
+
+    // The press being told, until its click is heard. Numbers only (ADR-0160).
+    private MarkPress? _markPress;
+
+    /// <summary>
+    /// What the next press on one of this grid's marks — a row's checkbox, the header's, or "Mark all
+    /// N rows" — was taken against (ADR-0142, LV-32): the paint the Viewport named at its mousedown,
+    /// and, for the header's checkbox under a pager, the first row of the page it named, read at the
+    /// same mousedown from the attribute the render wrote. Told by the grid's listener at the release
+    /// on the same mark, just before Blazor dispatches the click, so the click the core hears next is
+    /// the one it describes, as for an action (<see cref="ActionPressTakenAt"/>). A mark press made on
+    /// what a <see cref="Source"/> since replaced painted is dropped, and so is one that names rows by
+    /// position — the header's page or result, "Mark all N rows" — under an order that has moved since,
+    /// or a page turned since: it marks nothing and raises no Row Mark intent, silently, as Space aimed
+    /// with a dropped Selection does. A row's checkbox names its row by identity, which an order move
+    /// leaves it. Reading what the render wrote is not a measurement, and nothing per cell crosses
+    /// (ADR-0021).
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="paint">The paint the Viewport named at the press (<c>data-ex-paint</c>).</param>
+    /// <param name="pageStart">The first row of the page the header's checkbox named under a pager
+    /// (<c>data-ex-page</c>), or −1.</param>
+    [JSInvokable]
+    public Task MarkPressTakenAt(int paint, int pageStart = -1)
+    {
+        if (!_disposed)
+            _markPress = new MarkPress(paint, pageStart);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>The told press a mark's click completes, taken; one nobody told of is taken as aimed
+    /// at the newest paint.</summary>
+    private MarkPress TakeMarkPress()
+    {
+        var press = _markPress ?? new MarkPress(PaintNotTold, -1);
+        _markPress = null;
+        return press;
+    }
+
+    /// <summary>Whether a mark press that names rows by position — the header's page or result, "Mark
+    /// all N rows" — names other rows now: it was taken under an order that has moved since, or on
+    /// what a Source since replaced painted, or on a page turned since (ADR-0011, ADR-0142, LV-32).</summary>
+    private bool NamesOtherRowsNow(MarkPress press)
+        => AimedUnderAnotherOrder(press.Paint)
+           || (PageSize is not null && press.PageStart >= 0 && press.PageStart != _pageStartRow);
+
+    // Pointed at from outside, neither checkbox marks anything (ADR-0058): as for an action. A press on a
+    // row's checkbox made on what a Source since replaced painted is dropped: the checkbox holds the new
+    // source's row now, which nobody pressed (ADR-0142, LV-32).
     private Task RaiseRowMarkAsync(TRow row, bool marked)
-        => PointedAtNow ? Task.CompletedTask
-            : _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.OneRow(row, marked)) ?? Task.CompletedTask;
+    {
+        var press = TakeMarkPress();
+        if (PointedAtNow || AimedAtAReplacedSource(press.Paint))
+            return Task.CompletedTask;
+        return _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.OneRow(row, marked)) ?? Task.CompletedTask;
+    }
 
     /// <summary>The Detail rows "Mark all N rows" offers: the Consumer's count where it
     /// has answered, the result's row count until then.</summary>
@@ -8935,6 +9045,10 @@
         builder.AddEventStopPropagationAttribute(8, "onmousedown", true);
         builder.AddEventStopPropagationAttribute(9, "onclick", true);
         builder.AddAttribute(10, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _onHeaderMark));
+        // Under a pager the press names the page's rows: the listener reads which page with the paint
+        // at the press, and the core drops a press whose page was turned since (ADR-0142, LV-32).
+        if (PageSize is not null)
+            builder.AddAttribute(11, "data-ex-page", _pageStartRow);
         builder.CloseElement();
     };
 
@@ -8946,7 +9060,8 @@
     /// </summary>
     private Task PressHeaderMarkAsync()
     {
-        if (_marks is null || PointedAtNow)
+        // Taken on a result, or a page, that the rows no longer are: dropped (ADR-0142, LV-32).
+        if (NamesOtherRowsNow(TakeMarkPress()) || _marks is null || PointedAtNow)
             return Task.CompletedTask;
         if (PageSize is not null)
         {
@@ -8958,9 +9073,11 @@
         return _marks.OnMarkIntentAsync(new RowMarkIntent<TRow>.AllRows(RowMarkRules.HeaderPress(state), _sequenceVersion));
     }
 
-    /// <summary>"Mark all N rows", under a pager: the explicit step past the page.</summary>
+    /// <summary>"Mark all N rows", under a pager: the explicit step past the page. Taken on a result
+    /// that the rows no longer are, it is dropped (ADR-0142, LV-32).</summary>
     private Task MarkWholeResultAsync()
-        => _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.AllRows(true, _sequenceVersion)) ?? Task.CompletedTask;
+        => NamesOtherRowsNow(TakeMarkPress()) ? Task.CompletedTask
+            : _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.AllRows(true, _sequenceVersion)) ?? Task.CompletedTask;
 
     /// <summary>
     /// Space with the Focus in the Mark Column (ADR-0043): every row with a selected cell
