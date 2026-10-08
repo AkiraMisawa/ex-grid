@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using Bunit;
 using ExGrid.Components;
 using ExPivot.Components.Tests.Support;
@@ -12,8 +13,10 @@ namespace ExPivot.Components.Tests;
 /// A live redraw on <c>/pivot-live</c>'s generator (ADR-0153; PV-42, PV-45; LV-27): P&amp;L by
 /// region and desk across products, its trades amended a few at a time and handed to the bundled
 /// source as Change Batches. The rows that render per redraw are exactly the painted rows whose
-/// painted text changed, and no row component is built for a key painted before. The clock is the
-/// test's.
+/// painted text changed, and no row component is built for a key painted before. And what a run of
+/// redraws leaves alive (ADR-0160; LV-22), checked by reachability: weak references to each
+/// redraw's engine report, Report Version, Window and display rows, and a full collection. The
+/// clock is the test's.
 /// </summary>
 public class LiveRedrawTests : PivotTestContext
 {
@@ -133,5 +136,152 @@ public class LiveRedrawTests : PivotTestContext
         // The run changed rows and kept rows alike, so neither half of the rule went untested.
         Assert.True(changedRows > 10, $"{changedRows} painted rows changed");
         Assert.True(keptRows > changedRows, $"{keptRows} painted rows kept against {changedRows} changed");
+    }
+
+    // ---- What a run of live redraws leaves alive (ADR-0160, ADR-0153; LV-22) ----
+
+    /// <summary>One redraw's Window on screen, by weak reference only: the engine report its Report
+    /// Version was laid out as, and that report's cube; the Window state ExPivot holds, and its Report
+    /// Version's metadata; and the display rows.</summary>
+    private sealed record Shown(WeakReference Report, WeakReference Cube, WeakReference State, WeakReference Metadata,
+        WeakReference[] Rows);
+
+    /// <summary>Reads the Window on screen, and the engine report <paramref name="source"/> laid its
+    /// Report Version out as, and answers weak references to them. Read here, in a frame of its own:
+    /// a local of the test, hoisted into its state machine, would keep what it read alive.</summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static Shown TakeShown(IRenderedComponent<PivotComponent> cut, LocalPivotReportSource source)
+    {
+        var state = cut.Instance.Report!;
+        var report = source.ReportOf(state.Metadata.Version)
+            ?? throw new InvalidOperationException("The report source no longer holds the Report Version on screen.");
+        return new(new(report), new(report.Cube), new(state), new(state.Metadata),
+            [.. state.Rows.Select(static row => new WeakReference(row))]);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static string ShownVersion(IRenderedComponent<PivotComponent> cut) => cut.Instance.Report!.Metadata.Version.Value;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static LocalPivotReportSource AskedSource(IRenderedComponent<PivotComponent> cut)
+        => (LocalPivotReportSource)cut.Instance.AskedSource!;
+
+    /// <summary>A live redraw: three trades amended, and the next Report Version on screen.</summary>
+    private static async Task RedrawAsync(IRenderedComponent<PivotComponent> cut, SnapshotPivotSource data, LiveTrade[] trades, Random random)
+    {
+        var before = ShownVersion(cut);
+        await cut.InvokeAsync(() => data.Apply(TradeFields.Batch(changed: Amend(trades, 3, random))));
+        cut.WaitForAssertion(() => Assert.NotEqual(before, ShownVersion(cut)));
+    }
+
+    /// <summary>Twelve live redraws, <paramref name="spacing"/> apart on the clock: the Window on
+    /// screen first and after each.</summary>
+    private async Task<List<Shown>> RunOfRedrawsAsync(IRenderedComponent<PivotComponent> cut, LocalPivotReportSource source,
+        SnapshotPivotSource data, LiveTrade[] trades, TimeSpan spacing)
+    {
+        var random = new Random(20261008);
+        var shown = new List<Shown> { TakeShown(cut, source) };
+        for (var redraw = 0; redraw < 12; redraw++)
+        {
+            Clock.Advance(spacing);
+            await RedrawAsync(cut, data, trades, random);
+            shown.Add(TakeShown(cut, source));
+        }
+        return shown;
+    }
+
+    private static void Collect()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
+
+    private static int[] Alive(IEnumerable<WeakReference> references)
+        => [.. references.Select((reference, at) => (reference, at)).Where(p => p.reference.IsAlive).Select(p => p.at)];
+
+    /// <summary>The rows of the Windows before <paramref name="newest"/> still alive that are none of
+    /// <paramref name="among"/>' rows, as "Window: rows" — empty when there are none.</summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static string[] AliveBeyond(List<Shown> shown, int newest, params int[] among)
+    {
+        var allowed = among.SelectMany(at => shown[at].Rows).Select(row => row.Target).Where(row => row is not null)
+            .ToHashSet(ReferenceEqualityComparer.Instance);
+        return [.. Enumerable.Range(0, newest)
+            .Select(at => (at, rows: Alive(shown[at].Rows).Where(i => !allowed.Contains(shown[at].Rows[i].Target!)).ToArray()))
+            .Where(p => p.rows.Length > 0)
+            .Select(p => $"Window {p.at}: rows {string.Join(", ", p.rows)}")];
+    }
+
+    // /pivot-live's settings: a redraw at most every 250 ms, a Change Highlight of one second.
+    private static void LiveSettings(ComponentParameterCollectionBuilder<PivotComponent> ps) => ps
+        .Add(p => p.RedrawInterval, TimeSpan.FromMilliseconds(250))
+        .Add(p => p.ChangeHighlightDuration, TimeSpan.FromSeconds(1));
+
+    [Theory] // ADR-0160/0153 (LV-22): after a run of live redraws on /pivot-live's generator, no engine report, Report Version, Window or display row of an earlier redraw is alive but exactly what the report source keeps by design — the two newest Report Versions (versionsKept) with the Window last served under each, and the reports the Change Highlight compares: each published less than ChangeHighlightDuration before the newest, and the one before them
+    [InlineData(1_000, new[] { 11, 12 })] // a highlight apart: the newest, and the one before it — its marks' baseline, and the version kept beside it
+    [InlineData(250, new[] { 8, 9, 10, 11, 12 })] // at /pivot-live's RedrawInterval: the four published within the second a mark lasts, and the one before them
+    public async Task ADR0160_ADR0153_LV22_after_live_redraws_only_what_the_report_source_keeps_is_alive(int spacingMs, int[] reportsKept)
+    {
+        var trades = Generate(2_000);
+        var data = PivotSource.From(trades, TradeFields, Whole);
+        var cut = RenderPivot(PnlByRegionAndDesk, ps => LiveSettings(ps.Add(p => p.Slicing, Whole)), source: data);
+        var shown = await RunOfRedrawsAsync(cut, AskedSource(cut), data, trades, TimeSpan.FromMilliseconds(spacingMs));
+        var newest = shown.Count - 1;
+        // The Consumer renders the page again: Blazor's buffer of the render before the newest then
+        // names nothing of an earlier Window, so what stays is what the report source keeps.
+        cut.Render();
+
+        Collect();
+
+        // The engine's reports, and their cubes: the ones the Change Highlight compares — which
+        // include the two newest Report Versions, which versioned operations read — and no other.
+        Assert.Equal(reportsKept, Alive(shown.Select(s => s.Report)));
+        Assert.Equal(reportsKept, Alive(shown.Select(s => s.Cube)));
+        // The Report Versions held (versionsKept, 2 by default), and only the Window on screen.
+        Assert.Equal([newest - 1, newest], Alive(shown.Select(s => s.Metadata)));
+        Assert.Equal([newest], Alive(shown.Select(s => s.State)));
+        // The display rows: the Window on screen, and every row of the Window last served under the
+        // Report Version before it — a delta's baseline (ADR-0152) — and of earlier Windows only the
+        // rows those two share with them (ADR-0153).
+        Assert.True(shown[newest].Rows.All(static row => row.IsAlive) && shown[newest - 1].Rows.All(static row => row.IsAlive),
+            "the Window on screen, and the one the Report Version before it was served, are held");
+        Assert.Empty(AliveBeyond(shown, newest, newest, newest - 1));
+    }
+
+    [Fact] // ADR-0160 / LV-22, ADR-0153: the grid holds no display row of an earlier Window — over the wire, as /pivot-live's server pivot, where the rows on screen are ExPivot's own copies that nothing of the server's holds, no row of an earlier Window is alive but the ones Blazor keeps for the render before the newest, and none once the pivot renders again
+    public async Task ADR0160_LV22_the_grid_holds_no_display_row_of_an_earlier_window()
+    {
+        var trades = Generate(2_000);
+        var data = PivotSource.From(trades, TradeFields, Whole);
+        await using var server = PivotReportSource.From(data, timeProvider: Clock, slicing: Whole);
+        // Every Window crosses JSON, both ways.
+        var remote = PivotReportSource.Fetch(server.Fields, server.Features, server.UpdateMode,
+            async (request, ct) => PivotReportJson.Read<PivotReportUpdate>(PivotReportJson.Write(
+                await server.WindowAsync(PivotReportJson.Read<PivotReportRequest>(PivotReportJson.Write(request)), ct))));
+        server.Changed += change => remote.NotifyChanged(change.SourceVersion);
+        var cut = RenderPivot(PnlByRegionAndDesk, LiveSettings, reportSource: remote);
+        var shown = await RunOfRedrawsAsync(cut, server, data, trades, TimeSpan.FromSeconds(1));
+        var newest = shown.Count - 1;
+
+        Collect();
+
+        // The server keeps its reports as the local source does; ExPivot keeps one Window, and one
+        // Report Version's metadata: the ones on screen.
+        Assert.Equal([newest - 1, newest], Alive(shown.Select(s => s.Report)));
+        Assert.Equal([newest - 1, newest], Alive(shown.Select(s => s.Cube)));
+        Assert.Equal([newest], Alive(shown.Select(s => s.Metadata)));
+        Assert.Equal([newest], Alive(shown.Select(s => s.State)));
+        Assert.True(shown[newest].Rows.All(static row => row.IsAlive), "the Window on screen is held");
+        // Blazor keeps the render before the newest as the buffer it renders into next (ADR-0160):
+        // the pivot's grid host names the Window it handed the grid then, and the grid the rows it
+        // painted. No row of a Window before that one.
+        Assert.Empty(AliveBeyond(shown, newest, newest, newest - 1));
+
+        // The Consumer renders the page again, and the grid takes its parameters again.
+        cut.Render();
+        Collect();
+
+        Assert.Empty(AliveBeyond(shown, newest, newest));
     }
 }

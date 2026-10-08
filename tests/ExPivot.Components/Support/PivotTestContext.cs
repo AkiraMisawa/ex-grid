@@ -125,18 +125,23 @@ public abstract class PivotTestContext : BunitContext
 
     /// <summary>Renders an ExPivot as a connected, interactive component, in en-US, over
     /// <paramref name="source"/> — the bundled source over <paramref name="records"/> unless told
-    /// otherwise.</summary>
+    /// otherwise — or, when <paramref name="reportSource"/> is given, asking that report source
+    /// instead.</summary>
     internal IRenderedComponent<PivotComponent> RenderPivot(
         PivotLayout? layout = null,
         Action<ComponentParameterCollectionBuilder<PivotComponent>>? parameters = null,
         IReadOnlyList<Sale>? records = null,
-        PivotSource? source = null)
+        PivotSource? source = null,
+        PivotReportSource? reportSource = null)
     {
         Interactive();
         return Render<PivotComponent>(ps =>
         {
-            ps.Add(p => p.DataSource, source ?? Bundled(records))
-              .Add(p => p.Culture, CultureInfo.GetCultureInfo("en-US"))
+            if (reportSource is not null)
+                ps.Add(p => p.Source, reportSource);
+            else
+                ps.Add(p => p.DataSource, source ?? Bundled(records));
+            ps.Add(p => p.Culture, CultureInfo.GetCultureInfo("en-US"))
               .Add(p => p.ViewportHeight, (ViewportSize)400)
               .Add(p => p.ViewportWidth, (ViewportSize)700);
             if (layout is not null)

@@ -414,6 +414,11 @@ public sealed class LocalPivotReportSource : PivotReportSource
             return _versions.FirstOrDefault(value => value.Metadata.Version == version);
         }
     }
+    /// <summary>The engine report a held Report Version was laid out as; null once the version is
+    /// no longer held. What a test follows to see which reports a live report keeps alive
+    /// (ADR-0160, LV-22).</summary>
+    internal PivotReport? ReportOf(PivotReportVersion version) => Held(version)?.Report;
+
     private static PivotReportRefusal NotHeld(PivotReportVersion version)
         => new(PivotReportRefusalKind.ReportVersionNotHeld, $"Report Version '{version.Value}' is no longer held.");
     /// <inheritdoc />
