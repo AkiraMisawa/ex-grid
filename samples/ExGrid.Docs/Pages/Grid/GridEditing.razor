@@ -151,9 +151,10 @@
                 aimed at what the old source painted, which opens nothing — and a paste, a fill,
                 <kbd>Delete</kbd> or an Action aimed at what the old source painted is refused rather than landing
                 on the new source's row at the same place. A <code>Source</code> your own <code>OnEdit</code> handler
-                hands over is that commit's doing: the edit ends as committed and nothing is said discarded, and only
-                an intent you refused is discarded as <code>SourceChanged</code>. No Overwrite Notice follows such a
-                commit; the intent you handled carried both texts.
+                hands over is that commit's doing, and so are other visible columns it shows: the edit ends as
+                committed and nothing is said discarded, and only an intent you refused is discarded, as
+                <code>SourceChanged</code> or <code>ColumnsChanged</code>. No Overwrite Notice follows such a commit;
+                the intent you handled carried both texts.
             </li>
         </ul>
         <p>

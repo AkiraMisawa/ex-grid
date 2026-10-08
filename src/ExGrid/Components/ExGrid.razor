@@ -1602,10 +1602,11 @@
     /// have opened an edit but reached the grid aimed with a Selection that an order move or a
     /// replaced Source had dropped since opens nothing, and is said here too, once for the keys
     /// typed against that Selection (<see cref="EditDiscardReason.OrderMoved"/>,
-    /// <see cref="EditDiscardReason.SourceChanged"/>; decided 2026-10-08). A Source the Consumer
-    /// hands over while it hears the edit's own <see cref="OnEdit"/> is that commit's doing: never
-    /// said here when the Consumer accepted the intent, since the typing was handed over, and said
-    /// once as <see cref="EditDiscardReason.SourceChanged"/> when it refused it. None is the user's own
+    /// <see cref="EditDiscardReason.SourceChanged"/>; decided 2026-10-08). A Source, or visible
+    /// columns, the Consumer hands over while it hears the edit's own <see cref="OnEdit"/> are that
+    /// commit's doing: never said here when the Consumer accepted the intent, since the typing was
+    /// handed over, and said once — <see cref="EditDiscardReason.SourceChanged"/>, else
+    /// <see cref="EditDiscardReason.ColumnsChanged"/> — when it refused it. None is the user's own
     /// doing — a Consumer's new columns, new source or refresh lands and the typing goes — so the
     /// grid says so rather than leaving the loss to be guessed at. Chrome writes the
     /// sentence and announces it (A11Y-16); the grid holds no strings. A discard the Consumer
@@ -2886,14 +2887,22 @@
         // its row gone with the old source: it follows no key into the new one and reads no baseline
         // there. Should the columns have moved with it, it cannot stand over them, and is taken down
         // now, unsaid until the handler completes.
+        //
+        // The visible columns the Consumer changes while it hears that commit are the commit's doing in
+        // the same way (ADR-0142, ED-21; decided 2026-10-08): the editor cannot stand over new columns,
+        // so it is taken down now, the keyboard asked back first, and nothing is said until the handler
+        // completes — a discard as ColumnsChanged only if the commit was refused.
         if (_sourceReplaced && _hearingCommit)
             _sourceReplacedUnderCommit = true;
+        if (_columnsMoved && _hearingCommit)
+            _columnsMovedUnderCommit = true;
         if (_editMode != EditMode.None && (_columnsMoved || (_sourceReplaced && !_sourceReplacedUnderCommit)))
         {
             TakeDownEdit();
-            if (_sourceReplacedUnderCommit)
+            if (_hearingCommit)
             {
                 _editTakenDownUnderCommit = true;
+                HandBackKeyboardUnderCommit();
             }
             else
             {
@@ -7590,10 +7599,14 @@
             // this commit's, not a discard. The user's own write (D1), taken back if refused; the
             // bound source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
-            // A Source the Consumer hands over while it hears this is the commit's own doing
-            // (ApplyState): noted while it is heard, and answered once the handler has completed.
+            // A Source, or visible columns, the Consumer hands over while it hears this are the
+            // commit's own doing (ApplyState): noted while it is heard, and answered once the handler
+            // has completed. Should the editor have to go meanwhile, the keyboard goes where this
+            // commit's own end would send it (EndEditingAsync).
             var hearing = _hearingCommit;
+            var handBack = _commitHandBack;
             _hearingCommit = true;
+            _commitHandBack = reclaimFocus ? _editSurface == EditSurface.Bar && !byPress : null;
             var heard = false;
             try
             {
@@ -7603,14 +7616,21 @@
             finally
             {
                 _hearingCommit = hearing;
+                _commitHandBack = handBack;
                 if (!heard)
                     TakeDownEditTheFailedHandlerOutlived();
             }
             var sourceReplaced = _sourceReplacedUnderCommit;
+            var columnsMoved = _columnsMovedUnderCommit;
             _sourceReplacedUnderCommit = false;
+            _columnsMovedUnderCommit = false;
             await OwnWriteAnsweredAsync(written, intent.IsRefused);
-            if (sourceReplaced)
-                return await EndCommitTheSourceOutlivedAsync(intent.IsRefused, reclaimFocus, byPress);
+            // The Source first, as a discard under no commit says it (ApplyState).
+            if (sourceReplaced || columnsMoved)
+            {
+                return await EndCommitTheHandlerOutlivedAsync(intent.IsRefused,
+                    sourceReplaced ? EditDiscardReason.SourceChanged : EditDiscardReason.ColumnsChanged, reclaimFocus, byPress);
+            }
             if (intent.RefusalMessage is { } refused)
             {
                 if (_editMode != EditMode.None)

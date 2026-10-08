@@ -12,7 +12,11 @@ public enum EditDiscardReason
 {
     /// <summary>The visible columns changed under the open editor, so the coordinates
     /// stopped naming the column they were opened on (ADR-0011). A change of the row order
-    /// discards nothing: the editor outlives it (ADR-0011's note of 2026-10-07).</summary>
+    /// discards nothing: the editor outlives it (ADR-0011's note of 2026-10-07). Columns the
+    /// Consumer changes while it hears the open edit's own Edit Intent are that commit's doing:
+    /// accepted, the edit ends as committed and nothing is discarded; refused, the editor cannot
+    /// stand over the new columns, and the edit is discarded with this reason, once (ADR-0142,
+    /// decided 2026-10-08).</summary>
     ColumnsChanged,
 
     /// <summary>No Row Key is in force, and the row left the Window under the order the

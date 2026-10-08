@@ -49,8 +49,9 @@ public partial class ExGrid<TRow>
     /// (D5) — never at a time and never by comparing text. The grid holds no string for it; Chrome
     /// words it into the root's live region, as it words a refusal (A11Y-16), and nothing is added to
     /// the row (ADR-0013). Not raised for a commit whose handler handed over another
-    /// <see cref="Source"/>: its cell would name a position among the rows of a source the grid no
-    /// longer shows, and the intent the Consumer heard carried both texts (ADR-0142, LV-32).
+    /// <see cref="Source"/>, or other visible columns: its cell would name a position among rows or
+    /// columns the grid no longer shows, and the intent the Consumer heard carried both texts
+    /// (ADR-0142, LV-32, ED-21).
     /// </summary>
     [Parameter] public EventCallback<GridOverwriteNotice> OnOverwriteNotice { get; set; }
 
@@ -226,28 +227,44 @@ public partial class ExGrid<TRow>
     // as at a settle. A write the Consumer refused is taken back: it wrote nothing, and moves nothing.
 
     // Whether the Consumer is hearing the open edit's own commit — its Edit Intent, raised while the
-    // editor stands (CommitEditAsync) — and whether a Source it handed over meanwhile is that
-    // commit's (ADR-0142, LV-32; decided 2026-10-08): no discard, decided as the handler completes.
-    // _editTakenDownUnderCommit says the editor could not stand until then, the columns having moved
-    // with the Source.
+    // editor stands (CommitEditAsync) — and whether a Source, or visible columns, it handed over
+    // meanwhile are that commit's (ADR-0142, LV-32 and ED-21; decided 2026-10-08): no discard,
+    // decided as the handler completes. _editTakenDownUnderCommit says the editor could not stand until
+    // then, the columns having moved; _commitHandBack is where the keyboard goes should it have to go
+    // meanwhile — as the commit's own end would send it: null to stay, else whether it is taken from
+    // the Formula Bar too.
     private bool _hearingCommit;
     private bool _sourceReplacedUnderCommit;
+    private bool _columnsMovedUnderCommit;
     private bool _editTakenDownUnderCommit;
+    private bool? _commitHandBack;
+
+    /// <summary>The editor goes in this render while the Consumer hears its commit: the keyboard is
+    /// asked back now, before the render that removes the editor holding it, as the commit's own end
+    /// asks (<see cref="EndEditingAsync"/>). Asked later, it would come back a round trip after DOM
+    /// focus had fallen to the page, where the root hears no key.</summary>
+    private void HandBackKeyboardUnderCommit()
+    {
+        if (_commitHandBack is { } fromField)
+            _ = ReclaimFocusAsync(fromField);
+    }
 
     /// <summary>
-    /// A commit whose Edit Intent the Consumer handled by handing over another Source (ADR-0142, LV-32;
-    /// decided 2026-10-08): the replacement is the commit's own doing. Accepted, the edit ends as
-    /// committed — the typing was handed over, and no discard is said. Refused, the editor cannot be
-    /// held over a row that went with the old source: it is discarded, said once as
-    /// <see cref="EditDiscardReason.SourceChanged"/>, and the gesture keeps no meaning of its own. No
-    /// Overwrite Notice either way: it would name a position among the rows of a source the grid no
-    /// longer shows, and the intent the Consumer heard carried both texts.
+    /// A commit whose Edit Intent the Consumer handled by handing over another Source, or other
+    /// visible columns (ADR-0142, LV-32 and ED-21; decided 2026-10-08): the change is the commit's own
+    /// doing. Accepted, the edit ends as committed — the typing was handed over, and no discard is
+    /// said. Refused, the editor cannot be held over a row that went with the old source, nor over
+    /// new columns: it is discarded, said once with <paramref name="reason"/>, and the gesture keeps
+    /// no meaning of its own. No Overwrite Notice either way: it would name a position among rows or
+    /// columns the grid no longer shows, and the intent the Consumer heard carried both texts.
     /// </summary>
     /// <param name="refused">Whether the Consumer refused the intent.</param>
+    /// <param name="reason">What it is discarded as, refused: <see cref="EditDiscardReason.SourceChanged"/>
+    /// or <see cref="EditDiscardReason.ColumnsChanged"/>.</param>
     /// <param name="reclaimFocus">Whether the keyboard comes back to the root as the edit ends.</param>
     /// <param name="byPress">Whether a press past the editor asked for the commit.</param>
     /// <returns>Whether the commit went through: false when it was refused.</returns>
-    private async Task<bool> EndCommitTheSourceOutlivedAsync(bool refused, bool reclaimFocus, bool byPress)
+    private async Task<bool> EndCommitTheHandlerOutlivedAsync(bool refused, EditDiscardReason reason, bool reclaimFocus, bool byPress)
     {
         var takenDown = _editTakenDownUnderCommit;
         _editTakenDownUnderCommit = false;
@@ -255,9 +272,9 @@ public partial class ExGrid<TRow>
         {
             // The keys typed after it against the Selection the replacement dropped are the same
             // typing: said once, here (DropKeyAimedWithADroppedSelectionAsync).
-            if (_droppedSelection is { } dropped)
+            if (reason == EditDiscardReason.SourceChanged && _droppedSelection is { } dropped)
                 dropped.TypingTold = true;
-            var discarded = DiscardedIn(EditDiscardReason.SourceChanged);
+            var discarded = DiscardedIn(reason);
             if (_editMode != EditMode.None)
                 await EndEditingAsync(reclaimFocus, byPress, discarded);
             // Taken down while the handler ran, the edit is said as it would have been; one the
@@ -273,22 +290,25 @@ public partial class ExGrid<TRow>
         return true;
     }
 
-    /// <summary>A commit's handler failed after it handed over another Source: whether the typing
-    /// was handed over is not known, and the editor cannot stand over the new source's row. It goes as
-    /// under any replacement of the Source, and is said so (ADR-0011, ADR-0142).</summary>
+    /// <summary>A commit's handler failed after it handed over another Source, or other visible
+    /// columns: whether the typing was handed over is not known, and the editor cannot stand over the
+    /// new source's row or the new columns. It goes as under any such change, and is said so
+    /// (ADR-0011, ADR-0142).</summary>
     private void TakeDownEditTheFailedHandlerOutlived()
     {
-        if (!_sourceReplacedUnderCommit)
+        var sourceReplaced = _sourceReplacedUnderCommit;
+        if (!sourceReplaced && !_columnsMovedUnderCommit)
             return;
         _sourceReplacedUnderCommit = false;
+        _columnsMovedUnderCommit = false;
         var takenDown = _editTakenDownUnderCommit;
         _editTakenDownUnderCommit = false;
         if (_editMode == EditMode.None && !takenDown)
             return;
         if (_editMode != EditMode.None)
             TakeDownEdit();
-        _pendingDiscard = EditDiscardReason.SourceChanged;
-        if (_droppedSelection is { } dropped)
+        _pendingDiscard = sourceReplaced ? EditDiscardReason.SourceChanged : EditDiscardReason.ColumnsChanged;
+        if (sourceReplaced && _droppedSelection is { } dropped)
             dropped.TypingTold = true;
         _suppressRender = false;
         StateHasChanged();
