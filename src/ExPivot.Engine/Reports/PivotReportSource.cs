@@ -7,7 +7,10 @@ public abstract class PivotReportSource : IAsyncDisposable
     public abstract IReadOnlyList<PivotField> Fields { get; }
     /// <summary>Offered Aggregations and Refresh capability.</summary>
     public abstract PivotSourceFeatures Features { get; }
-    /// <summary>Whether changed contributions can be calculated incrementally.</summary>
+    /// <summary>Whether changed contributions can be calculated incrementally, or the provider
+    /// recomputes in full — declared, never claimed silently (ADR-0153). A component answers a
+    /// full-refresh source's notice of newer data by asking it to refresh
+    /// (<see cref="PivotReportRequest.RefreshData"/>).</summary>
     public abstract PivotReportUpdateMode UpdateMode { get; }
     /// <summary>A complete report Window or a delta from its named baseline.</summary>
     public abstract ValueTask<PivotReportUpdate> WindowAsync(PivotReportRequest request, CancellationToken cancellationToken = default);

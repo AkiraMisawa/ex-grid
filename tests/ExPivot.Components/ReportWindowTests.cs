@@ -82,4 +82,54 @@ public sealed class ReportWindowTests : PivotTestContext
         Assert.False(cut.Instance.IsStale);
         Assert.Equal(["181", "286"], ChangeHighlightTests.MarkedTexts(cut));
     }
+    [Theory] // ADR-0153 (LV-28): a source that declares it refreshes in full is asked to refresh when it says its data moved on, so a server whose provider cannot tell still answers with the newest; an incremental source is asked for its changes
+    [InlineData(PivotReportUpdateMode.FullRefresh)]
+    [InlineData(PivotReportUpdateMode.Incremental)]
+    public async Task ADR0153_A_full_refresh_source_is_asked_to_refresh_on_a_notice(PivotReportUpdateMode mode)
+    {
+        // The server's provider answers from the records as they are when asked, and never says
+        // they changed: a SQL query with no change tracking.
+        var records = Sales.ToArray();
+        var provider = PivotSource.Fetch(Bundled().Fields, PivotSourceFeatures.All,
+            (query, ct) => Bundled(records).AggregateAsync(query, ct),
+            (query, ct) => Bundled(records).ItemsAsync(query, ct),
+            (query, ct) => Bundled(records).DetailsAsync(query, ct));
+        await using var server = PivotReportSource.From(provider, timeProvider: Clock);
+        Assert.Equal(PivotReportUpdateMode.FullRefresh, server.UpdateMode);
+        static T Wire<T>(T value) => PivotReportJson.Read<T>(PivotReportJson.Write(value));
+        var requests = new List<PivotReportRequest>();
+        var remote = PivotReportSource.Fetch(server.Fields, server.Features, mode,
+            async (request, ct) =>
+            {
+                requests.Add(request);
+                return Wire(await server.WindowAsync(Wire(request), ct));
+            },
+            items: server.RawItemsAsync, reportItems: async (query, ct) => Wire(await server.ItemsAsync(Wire(query), ct)));
+        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Server", true));
+        var cut = Render<PivotComponent>(ps => ps.Add(p => p.Source, remote)
+            .Add(p => p.Layout, new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] })
+            .Add(p => p.Culture, System.Globalization.CultureInfo.GetCultureInfo("en-US"))
+            .Add(p => p.ViewportHeight, (ViewportSize)400).Add(p => p.ViewportWidth, (ViewportSize)700));
+        cut.WaitForAssertion(() => Assert.Equal("East | 180", RowTexts(cut)[0]));
+        Assert.All(requests, request => Assert.False(request.RefreshData));
+
+        // The data moves on; only the Consumer's channel hears of it.
+        records[0] = records[0] with { Amount = 101m };
+        Clock.Advance(TimeSpan.FromSeconds(1));
+        var asked = requests.Count;
+        await cut.InvokeAsync(() => remote.NotifyChanged());
+        cut.WaitForAssertion(() => Assert.True(requests.Count > asked));
+
+        if (mode == PivotReportUpdateMode.FullRefresh)
+        {
+            Assert.True(requests[^1].RefreshData);
+            cut.WaitForAssertion(() => Assert.Equal("East | 181", RowTexts(cut)[0]));
+        }
+        else
+        {
+            // Asked for its changes, of which its server knows none.
+            Assert.False(requests[^1].RefreshData);
+            Assert.Equal("East | 180", RowTexts(cut)[0]);
+        }
+    }
 }

@@ -76,7 +76,12 @@
             aggregate answer; the browser still receives only report Windows.
         </p>
         <ul>
-            <li><code>UpdateMode</code> declares incremental changes or full refresh. The bundled Snapshot source is incremental.</li>
+            <li>
+                <code>UpdateMode</code> declares incremental changes or full refresh. The bundled Snapshot source is incremental:
+                a notice that its data moved on asks for its changes. A full-refresh source, such as a SQL query that can only say
+                that something changed, is asked to recompute its whole aggregate on every notice, so its server answers with the
+                newest even when its provider cannot tell; the browser still receives only the Window and its changes.
+            </li>
             <li>Culture, formats and display words are explicit; custom Order Keys select policies registered on the server.</li>
             <li>The Consumer owns transport and report-state disposal. A missing baseline is recovered automatically; an unavailable older operation refuses by name.</li>
             <li>

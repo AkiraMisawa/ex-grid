@@ -12,12 +12,20 @@ public sealed record PivotReportVersion(string Value);
 /// <param name="Count">The maximum number of rows.</param>
 public sealed record PivotReportWindow(int Start, int Count);
 
-/// <summary>How a report provider learns data changes (ADR-0153).</summary>
+/// <summary>
+/// How a report provider learns data changes (ADR-0153), declared explicitly: a provider that can
+/// only announce that its data changed does not claim to update incrementally. Both use the same
+/// Windows, deltas, versions and recovery; what differs is what a notice of newer data asks.
+/// </summary>
 public enum PivotReportUpdateMode
 {
-    /// <summary>The provider can identify changes and update the affected calculation.</summary>
+    /// <summary>The provider identifies its changes — Change Batches, leaf changes — and the
+    /// computation updates only what they affect. A notice of newer data asks for those changes.</summary>
     Incremental,
-    /// <summary>The provider explicitly recalculates after a data-changed notification.</summary>
+    /// <summary>The provider cannot identify its changes, and recomputes its complete aggregate
+    /// result. A notice of newer data asks it to (<see cref="PivotReportRequest.RefreshData"/>), so
+    /// a server whose provider cannot tell its data moved still answers with the newest; the
+    /// browser still receives only the Window and its changes.</summary>
     FullRefresh,
 }
 
@@ -70,7 +78,9 @@ public sealed record PivotReportRequest(string RequestId, PivotLayout Layout, Pi
 {
     /// <summary>Whether this gesture can mark data changes; layout and display-setting gestures cannot.</summary>
     public bool MarkChanges { get; init; } = true;
-    /// <summary>Explicit Refresh/Retry asks a full-refresh provider again even without a notification.</summary>
+    /// <summary>Asks a full-refresh provider again even without a notification of its own: set by an
+    /// explicit Refresh or Retry, and by a notice of newer data from a source that declared
+    /// <see cref="PivotReportUpdateMode.FullRefresh"/>.</summary>
     public bool RefreshData { get; init; }
 }
 

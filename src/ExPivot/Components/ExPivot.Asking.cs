@@ -332,7 +332,13 @@ public partial class ExPivot
                 LabelMetrics = new(metrics.WideWidthPx, metrics.DigitWidthPx, metrics.NarrowWidthPx,
                     metrics.FullWidthPx, metrics.OtherWidthPx, metrics.CellHorizontalPaddingPx, metrics.ExportGlyphWidths()),
             };
-            var adopted = await client.ReadAsync(layout, settings, _wantedWindow, _caps.MaxLeaves, asking.Token, markChanges: kind != Question.Layout, refreshData: kind == Question.Data);
+            // Refresh and Retry ask the provider again. So does a notice of newer data from a source
+            // that declared it refreshes in full (ADR-0153): it cannot name its changes, and the
+            // notice may be all its server knows of them; an incremental source is asked for them.
+            var refreshData = kind == Question.Data
+                || (kind == Question.Live && source.UpdateMode == PivotReportUpdateMode.FullRefresh);
+            var adopted = await client.ReadAsync(layout, settings, _wantedWindow, _caps.MaxLeaves, asking.Token,
+                markChanges: kind != Question.Layout, refreshData: refreshData);
             if (_disposed || generation != _generation) return;
             var carried = FinishAsking();
             if (!adopted || client.Current is not { } state)
