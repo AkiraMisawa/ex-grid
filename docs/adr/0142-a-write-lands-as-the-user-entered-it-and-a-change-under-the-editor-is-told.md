@@ -147,7 +147,10 @@ Action press aimed at the old source landed on the new one's row. Now:
   commit's. Accepted, the edit ends as committed, with no discard and no Overwrite Notice. As first built,
   it was then also said discarded, after the typing had been handed over. Refused, the editor cannot be
   held over a row that left with the old source, so it is discarded as `SourceChanged`, once. ExSheet
-  treats a foreign Sheet Document handed in as the answer to a commit the same way;
+  treats a foreign Sheet Document handed in as the answer to a commit the same way. Columns that the
+  commit's own handler changes are the commit's in the same way: accepted, no `ColumnsChanged` follows,
+  and refused, the edit is discarded once as `ColumnsChanged`, or as `SourceChanged` when the source
+  was replaced too. Columns changed by anything else still discard an open editor;
 - a Find answer from the old binding is refused as `FindRefusalReason.SourceChanged`, and the panel says
   the data was replaced. As first built, the answer moved the Focus within the new source;
 - a placement and the Selection Summary compare the binding as well as the version, and a Mark intent
