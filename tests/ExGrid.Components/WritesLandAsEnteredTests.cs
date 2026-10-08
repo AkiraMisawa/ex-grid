@@ -1609,7 +1609,7 @@ public class WritesLandAsEnteredTests : GridTestContext
 
     // ---- LV-20: a commit goes to the row the editor was opened on ----
 
-    [Fact] // ADR-0142 / LV-20, ADR-0011 / ED-21: without a Row Key, a row that left the Window under the same order is not RowGone — that is a key no longer in the Window — and takes the typing with it, announced as RowLeftTheWindow
+    [Fact] // ADR-0142 / LV-20, ADR-0011 / ED-21: without a Row Key, a row that left the Window under the same order is no commit refusal — that is a key no longer in the Window — and takes the typing with it, announced as the discard RowLeftTheWindow
     public async Task Without_a_row_key_a_commit_whose_row_left_the_window_is_discarded_as_RowLeftTheWindow()
     {
         var rows = TestRows.Many(50);
@@ -1747,7 +1747,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Same(back[1], Assert.Single(heard.Edits).Row);
     }
 
-    [Fact] // ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a row whose key left the Window refuses the commit as RowGone with the editor kept, and the commit lands once the row is back
+    [Fact] // ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a row whose key left the Window refuses the commit as RowLeftTheWindow with the editor kept, and the commit lands once the row is back
     public async Task With_a_row_key_a_row_that_left_the_window_refuses_the_commit_until_it_is_back()
     {
         var rows = TestRows.Many(50);
@@ -1760,7 +1760,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter");
 
         Assert.Empty(heard.Edits);
-        Assert.Equal(CommitRefusalReason.RowGone, Assert.Single(heard.CommitRefusals).Reason);
+        Assert.Equal(CommitRefusalReason.RowLeftTheWindow, Assert.Single(heard.CommitRefusals).Reason);
         Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
         Assert.Empty(heard.Discards);
 
@@ -2047,8 +2047,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Empty(heard.Notices);
     }
 
-    [Fact] // ADR-0142 D5 / LV-16, LV-20: with a Row Key, a commit whose row a gathered change took out of the Window is refused as RowGone, the editor kept, and refused again while the key stays out
-    public async Task With_a_row_key_a_commit_whose_row_left_the_window_is_refused_as_row_gone()
+    [Fact] // ADR-0142 D5 / LV-16, LV-20: with a Row Key, a commit whose row a gathered change took out of the Window is refused as RowLeftTheWindow, the editor kept, and refused again while the key stays out
+    public async Task With_a_row_key_a_commit_whose_row_left_the_window_is_refused_as_row_left_the_window()
     {
         var rows = TestRows.Many(50);
         var source = new GatheringSource(rows);
@@ -2061,13 +2061,13 @@ public class WritesLandAsEnteredTests : GridTestContext
         await KeyAsync(cut, "Enter");
 
         Assert.Empty(heard.Edits);
-        Assert.Equal(CommitRefusalReason.RowGone, Assert.Single(heard.CommitRefusals).Reason);
+        Assert.Equal(CommitRefusalReason.RowLeftTheWindow, Assert.Single(heard.CommitRefusals).Reason);
         Assert.Equal("5", cut.Find("input.ex-editor").GetAttribute("value"));
 
         // The editor holds the row's key: whatever stands at its place now, the commit is refused again.
         await KeyAsync(cut, "Enter");
         Assert.Empty(heard.Edits);
-        Assert.Equal([CommitRefusalReason.RowGone, CommitRefusalReason.RowGone], heard.CommitRefusals.Select(r => r.Reason));
+        Assert.Equal([CommitRefusalReason.RowLeftTheWindow, CommitRefusalReason.RowLeftTheWindow], heard.CommitRefusals.Select(r => r.Reason));
         Assert.Empty(heard.Discards);
     }
 
@@ -2246,8 +2246,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Null(refusal.Row);
     }
 
-    [Fact] // ADR-0142 / LV-20, LV-12: without a Row Key, a told press whose row left the Window, under the same order, is refused as RowGone after the render that took it away
-    public async Task Without_a_row_key_a_told_press_whose_row_left_the_window_is_refused_as_row_gone()
+    [Fact] // ADR-0142 / LV-20, LV-12: without a Row Key, a told press whose row left the Window, under the same order, is refused as RowLeftTheWindow after the render that took it away
+    public async Task Without_a_row_key_a_told_press_whose_row_left_the_window_is_refused_as_row_left_the_window()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -2258,7 +2258,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         // The Window slides past row 0, the order unmoved.
         cut.Render(ps => ps.Add(g => g.Window, rows[1..]).Add(g => g.WindowStart, 1));
 
-        cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowGone, Assert.Single(heard.ActionRefusals).Reason));
+        cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowLeftTheWindow, Assert.Single(heard.ActionRefusals).Reason));
         // The row is gone from the Window, so the refusal names none (ADR-0160).
         Assert.Null(heard.ActionRefusals[0].Row);
         Assert.Empty(heard.Actions);
@@ -2413,8 +2413,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Same(moved[2], Assert.Single(heard.Actions).Row);
     }
 
-    [Fact] // ADR-0142 / LV-20, LV-12: with a Row Key, a press whose row has left the Window is refused as RowGone
-    public async Task With_a_row_key_a_press_whose_row_left_the_window_is_refused_as_row_gone()
+    [Fact] // ADR-0142 / LV-20, LV-12: with a Row Key, a press whose row has left the Window is refused as RowLeftTheWindow
+    public async Task With_a_row_key_a_press_whose_row_left_the_window_is_refused_as_row_left_the_window()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -2429,12 +2429,12 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         Assert.Empty(heard.Actions);
         var refusal = Assert.Single(heard.ActionRefusals);
-        Assert.Equal(ActionRefusalReason.RowGone, refusal.Reason);
+        Assert.Equal(ActionRefusalReason.RowLeftTheWindow, refusal.Reason);
         Assert.Null(refusal.Row);
     }
 
-    [Fact] // ADR-0142 / LV-20, LV-12, "No press is lost to Blazor": with a Row Key, a told press whose row a later render takes out of the Window is answered after that render, as RowGone
-    public async Task With_a_row_key_a_told_press_whose_row_a_later_render_removes_is_refused_as_row_gone()
+    [Fact] // ADR-0142 / LV-20, LV-12, "No press is lost to Blazor": with a Row Key, a told press whose row a later render takes out of the Window is answered after that render, as RowLeftTheWindow
+    public async Task With_a_row_key_a_told_press_whose_row_a_later_render_removes_is_refused_as_row_left_the_window()
     {
         var rows = TestRows.Many(50);
         var heard = new Heard();
@@ -2445,11 +2445,11 @@ public class WritesLandAsEnteredTests : GridTestContext
 
         cut.Render(ps => ps.Add(g => g.Window, rows[1..]).Add(g => g.TotalCount, rows.Length - 1).Add(g => g.RowSequenceVersion, 1));
 
-        cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowGone, Assert.Single(heard.ActionRefusals).Reason));
+        cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowLeftTheWindow, Assert.Single(heard.ActionRefusals).Reason));
         Assert.Empty(heard.Actions);
     }
 
-    [Fact] // ADR-0142 / LV-20 (2026-10-07): with a Row Key, a press whose order moved before the core heard it, and whose row component is gone, cannot be paired with its row, and is refused as OrderMoved — never RowGone, for its key is still in the Window
+    [Fact] // ADR-0142 / LV-20 (2026-10-07): with a Row Key, a press whose order moved before the core heard it, and whose row component is gone, cannot be paired with its row, and is refused as OrderMoved — never RowLeftTheWindow, for its key is still in the Window
     public async Task With_a_row_key_a_press_that_cannot_be_paired_is_refused_as_order_moved()
     {
         var rows = TestRows.Many(50);

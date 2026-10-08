@@ -91,8 +91,8 @@ internal static class SheetWords
     {
         CommitRefusalReason.OrderMoved =>
             $"What was typed was not entered: the rows moved while {address} was being edited, so it would land in another row. Press Escape to leave it.",
-        CommitRefusalReason.RowGone =>
-            $"What was typed was not entered: the row of {address} is no longer there. Press Escape to leave it.",
+        CommitRefusalReason.RowLeftTheWindow =>
+            $"What was typed was not entered: the row of {address} is not among the rows the Sheet holds now. Bring it back into view and press Enter again, or press Escape to leave it.",
         // A reason with no sentence here would be told as something it is not (principle 1).
         _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A commit refusal the Sheet does not word."),
     };

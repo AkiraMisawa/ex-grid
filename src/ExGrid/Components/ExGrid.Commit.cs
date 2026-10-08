@@ -16,9 +16,9 @@ namespace ExGrid.Components;
 public partial class ExGrid<TRow>
 {
     /// <summary>
-    /// A Cell Editor commit refused because the grid can no longer find the row the editor was
-    /// opened on (ADR-0142, LV-20): with a Row Key, no row in the Window answers its key
-    /// (<see cref="CommitRefusalReason.RowGone"/>); without one, the Row Sequence Version moved
+    /// A Cell Editor commit refused because the grid cannot find, in the rows it holds now, the row
+    /// the editor was opened on (ADR-0142, LV-20): with a Row Key, no row in the Window answers its key
+    /// (<see cref="CommitRefusalReason.RowLeftTheWindow"/>); without one, the Row Sequence Version moved
     /// since the editor opened (<see cref="CommitRefusalReason.OrderMoved"/>). Without a Row Key, a
     /// row that left the Window under the same order takes the typing with it, raised through
     /// <see cref="OnEditDiscarded"/> as <see cref="EditDiscardReason.RowLeftTheWindow"/> (ADR-0011,
@@ -82,7 +82,7 @@ public partial class ExGrid<TRow>
     /// of 2026-10-07): after a new Window is taken in, the editor stands where the Window holds its
     /// row now, and the Focus with it, while the Selection the order move dropped stays dropped. The
     /// grid does not scroll to follow it. A row the Window no longer holds leaves the editor where it
-    /// is; its commit is refused as <c>RowGone</c>. Without a Row Key the editor stays where it is,
+    /// is; its commit is refused as <c>RowLeftTheWindow</c>. Without a Row Key the editor stays where it is,
     /// and its commit is refused as <c>OrderMoved</c> once the order has moved.
     /// </summary>
     private void FollowEditedRow()
@@ -114,7 +114,7 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// Where a commit lands (ADR-0142, LV-20): on the row the editor was opened on — by its Row Key
     /// wherever the Window holds it now, or, without one, at the editor's position while the order it
-    /// was opened under holds. Otherwise the commit is refused, <c>RowGone</c> or <c>OrderMoved</c>,
+    /// was opened under holds. Otherwise the commit is refused, <c>RowLeftTheWindow</c> or <c>OrderMoved</c>,
     /// the editor stays, and null is answered. Without a Row Key, the caller has already taken a row
     /// that left the Window under the same order (ED-21).
     /// </summary>
@@ -126,7 +126,7 @@ public partial class ExGrid<TRow>
         {
             if (_editKey is { } key && PositionOfKey(rowKey, key, cell.Row) is { } at)
                 return new CellPosition(at, cell.Column);
-            reason = CommitRefusalReason.RowGone;
+            reason = CommitRefusalReason.RowLeftTheWindow;
         }
         else if (_sequenceVersion != _editSequence)
         {

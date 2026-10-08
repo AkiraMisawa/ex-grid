@@ -479,15 +479,15 @@
             _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A paste refusal this page does not word."),
         }, s => _pasteRefusedStatus = s);
 
-    /// <summary>A commit whose row the grid could no longer find (ADR-0142, LV-20). The editor
-    /// still stands with the typing; Escape leaves it.</summary>
+    /// <summary>A commit whose row the grid could not find in the rows it holds now (ADR-0142,
+    /// LV-20). The editor still stands with the typing; Escape leaves it.</summary>
     private void OnCommitRefused(GridCommitRefusal refusal)
         => Status(refusal, refusal.Reason switch
         {
             CommitRefusalReason.OrderMoved =>
                 $"OrderMoved — {refusal.Column} was not written: the rows moved while you were typing; press Escape to leave it",
-            CommitRefusalReason.RowGone =>
-                $"RowGone — {refusal.Column} was not written: the row is no longer there; press Escape to leave it",
+            CommitRefusalReason.RowLeftTheWindow =>
+                $"RowLeftTheWindow — {refusal.Column} was not written: the row is not in the rows the grid holds now; bring it back into view and commit again, or press Escape",
             // Every reason is worded above; one the page does not know is a defect to see, not a
             // sentence to guess (principle 1).
             _ => throw new ArgumentOutOfRangeException(nameof(refusal), refusal.Reason, "A commit refusal this page does not word."),
@@ -500,14 +500,14 @@
         => Status(notice, $"{notice.Column} written over {notice.ReplacedText}; it showed {notice.SeenText} when you started typing",
             s => _overwriteStatus = s);
 
-    /// <summary>An action whose row the grid could no longer find when the press landed (ADR-0142,
-    /// LV-12, LV-20): gone, or named by a place the rows moving gave to another row. Nothing was
-    /// done; the row's values changing never refuses one.</summary>
+    /// <summary>An action whose row the grid could not find in the rows it holds when the press
+    /// landed (ADR-0142, LV-12, LV-20): out of the Window, or named by a place the rows moving gave
+    /// to another row. Nothing was done; the row's values changing never refuses one.</summary>
     private void OnActionRefused(GridActionRefusal<DemoTrade> refusal)
         => Status(refusal.Reason, refusal.Reason switch
         {
-            ActionRefusalReason.RowGone =>
-                $"RowGone — {refusal.ActionName} was not done: the row is no longer there",
+            ActionRefusalReason.RowLeftTheWindow =>
+                $"RowLeftTheWindow — {refusal.ActionName} was not done: the row is not in the rows the grid holds now; bring it back into view and press it again",
             ActionRefusalReason.OrderMoved =>
                 $"OrderMoved — {refusal.ActionName} was not done: the rows moved before the press landed; press it on the row again",
             _ => throw new ArgumentOutOfRangeException(nameof(refusal), refusal.Reason, "An action refusal this page does not word."),

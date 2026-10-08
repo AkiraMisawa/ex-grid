@@ -10,14 +10,14 @@ namespace ExGrid.Components;
 // An Action press acts on the row it was pressed on, as that row is now (ADR-0142, LV-12, LV-20): with
 // a Row Key, the row under the pressed row's key while the Window holds it; without one, the pressed
 // instance, or — for a press whose button a render disposed — the row at the position the browser told,
-// while the order it was taken under holds. Otherwise it is refused: RowGone when its row is gone, and
-// OrderMoved when only a position under a moved order names it. No press is lost to Blazor, and none
-// fires twice.
+// while the order it was taken under holds. Otherwise it is refused: RowLeftTheWindow when the Window no
+// longer holds its row, and OrderMoved when only a position under a moved order names it. No press is
+// lost to Blazor, and none fires twice.
 public partial class ExGrid<TRow>
 {
     /// <summary>
-    /// An Action press refused (ADR-0142, LV-12, LV-20): its row is gone
-    /// (<see cref="ActionRefusalReason.RowGone"/>), or nothing but a position under an order that
+    /// An Action press refused (ADR-0142, LV-12, LV-20): the Window no longer holds its row
+    /// (<see cref="ActionRefusalReason.RowLeftTheWindow"/>), or nothing but a position under an order that
     /// has moved since names it (<see cref="ActionRefusalReason.OrderMoved"/>).
     /// A press never is refused because its row's values changed: it acts on the row it was pressed
     /// on, as that row is now. With a Row Key, that is the row under the pressed row's key, wherever
@@ -190,12 +190,12 @@ public partial class ExGrid<TRow>
     /// </summary>
     private TRow? PressedRowNow(TRow? pressed, int? at, bool orderMoved, out ActionRefusalReason reason)
     {
-        reason = ActionRefusalReason.RowGone;
+        reason = ActionRefusalReason.RowLeftTheWindow;
         if (_rowKey is { } rowKey)
         {
             // No row to take the key of: a press whose order moved before the core heard it, and
             // whose row component is gone, cannot be paired with its row, since the grid keeps no
-            // key of an earlier render (ADR-0160). OrderMoved is true of it; RowGone may not be.
+            // key of an earlier render (ADR-0160). OrderMoved is true of it; RowLeftTheWindow may not be.
             if (pressed is null)
             {
                 if (orderMoved)
