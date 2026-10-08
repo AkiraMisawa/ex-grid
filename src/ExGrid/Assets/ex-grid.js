@@ -143,12 +143,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     //      WebAssembly): the order a write from the console has, which paints
     //   J  as A, then the whole Viewport invalidated a frame later (a near-transparent background
     //      for one frame), as a move of the Focus row's band invalidates its row
+    //   K  as A, with the Viewport (the rows' layer) composited: will-change: transform
+    //   L  as A, with the Viewport placed by `top` instead of its transform
     //   F  the rows painted in one frame, the offset written in the frame after it (B, measured
     //      under Citrix, wrote in the very frame the rows landed in: the task that applied them
     //      outlasted a frame, so its animation frame came at once)
     const labMode = () => {
         const mode = new URLSearchParams(location.search).get('reveal');
-        return mode && 'ABCDEFGHIJ'.includes(mode.toUpperCase()) ? mode.toUpperCase() : 'A';
+        return mode && 'ABCDEFGHIJKL'.includes(mode.toUpperCase()) ? mode.toUpperCase() : 'A';
     };
     const labNudge = () => {
         const at = scroller.scrollTop;
@@ -197,7 +199,28 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const labCss = {
         G: '.ex-grid > .ex-scroller { will-change: scroll-position; }',
         H: '.ex-grid > .ex-scroller { background-color: var(--ex-background, Canvas); }',
+        K: '.ex-grid > .ex-scroller > .ex-spacer > .ex-viewport { will-change: transform; }',
     }[labMode()];
+    // L: the Viewport's own inline transform is the core's, so the offset it carries is read from
+    // each change of the inline style and moved into `top` by a stylesheet the page owns; the
+    // observer's callback runs before the browser paints, so the two never stand apart in a frame.
+    if (labMode() === 'L') {
+        const viewport = scroller.querySelector('.ex-viewport');
+        const sheet = document.createElement('style');
+        sheet.id = 'ex-lab-l';
+        document.head.append(sheet);
+        const place = () => {
+            const inline = viewport.getAttribute('style') ?? '';
+            const offset = Number(/translateY\(round\(nearest, (-?[\d.]+)px/.exec(inline)?.[1] ?? 0);
+            const band = /(?:^|;)\s*top:\s*(-?[\d.]+)px/.exec(inline)?.[1];
+            const top = band !== undefined ? `${band}px` : 'var(--ex-header-height)';
+            sheet.textContent = `.ex-grid > .ex-scroller > .ex-spacer > .ex-viewport { transform: none !important; `
+                + `top: calc(${top} + ${Math.round(offset)}px) !important; }`;
+        };
+        place();
+        new MutationObserver(place).observe(viewport, { attributes: true, attributeFilter: ['style'] });
+        labTrace('lab L: the Viewport is placed by top');
+    }
     if (labCss && !document.getElementById('ex-lab-style')) {
         const style = document.createElement('style');
         style.id = 'ex-lab-style';
