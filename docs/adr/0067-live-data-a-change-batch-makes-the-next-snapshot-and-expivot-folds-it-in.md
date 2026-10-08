@@ -43,6 +43,13 @@ does not start again from a million records.
 
 ## A server's source says the data moved on
 
+**Extended 2026-10-06:**
+[ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md) chooses
+server-computed report Windows and their changes for the new server path. The whole-answer
+behavior below describes the existing Leaf Aggregate API; deferring delta transport is no
+longer the decision for that new path. Its exact delta/recovery contract is still to be settled.
+The complete-batch, Source Version, Selection and Stale Report rules remain in force.
+
 The Consumer tells its `PivotSource.Fetch` that the server's data changed, however the Consumer
 learns it: SignalR, polling, or a message bus (Q57).
 

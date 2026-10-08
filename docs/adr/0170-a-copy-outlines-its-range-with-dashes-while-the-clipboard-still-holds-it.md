@@ -136,6 +136,10 @@ tell one grid's write from another's.
   dashes the green it gives its outline where no Theme or Wrapper names `--ex-focus-outline`, so
   they are never the core's CanvasText round Excel's green outline. A Consumer that answers the copy
   itself (`CopyAnswer`) gets the outline over the rectangles it was asked for.
+- **Integration clarification, 2026-10-07:** an asynchronous Consumer answer (ADR-0152) uses
+  the coordinates and available painted-text fingerprints from when it was asked. Its eventual
+  landing is checked against the current Window by the same rules; answering later cannot
+  relabel changed coordinates or values as the contents of the clipboard.
 - **What a `CopyAnswer` copies past the Window has no fingerprint** for the rows outside it, because
   the grid never held them. Those rows are not compared, and the other five rules still apply. A
   Sheet changes only through edits and pastes, and an edit already ends the outline.
