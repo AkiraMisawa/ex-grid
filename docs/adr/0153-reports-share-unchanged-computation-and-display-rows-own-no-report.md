@@ -1,7 +1,10 @@
 # Reports share unchanged computation, and display rows own no Report
 
 *(Decided with the user, 2026-10-06, continuation Q8 and Q9: both recommendations accepted.
-This completes the design in ADR-0150 to ADR-0152; implementation and verification follow.)*
+This completed the Codex track's design with ADR-0151 and ADR-0152, and ExPivot's vouch for its
+report — that track's ADR-0150, which is ADR-0141's section of 2026-10-07 on `claude/live-data-best`.
+Built there, and taken on `claude/live-data-best` on 2026-10-08, when the user compared the two tracks
+of live data continued; the sections of that day below say what the comparison changed.)*
 
 **Separate report computation from the rows handed to ExGrid.** Published Report Versions are
 immutable and share unchanged state. A display row contains its detached Row Key, labels and
@@ -43,21 +46,15 @@ shared. The engine's private working indexes may be mutable; published versions 
   layout/display changes rebuild what they depend on; collapse/expand does not reaggregate
   the input. Running totals, rank and difference are not added by this work.
 
-## Historical display and Change Highlight remain correct
+## The Change Highlight remains correct
 
-**Amended 2026-10-07:** [ADR-0154](./0154-user-writes-prevail-and-consumers-own-value-conflicts.md)
-removes the displayed-text conflict policy. The historical-text paragraphs below describe the
-previous requirement: their instruction not to shorten history no longer applies to value
-history. Remove that history; retain only target/gesture evidence still needed under ADR-0154.
-Detached ownership, immutable versions and the Change Highlight rules below remain current.
-
-
-The grid's evidence records the text a historical paint compared, with detached identity and
-position evidence where possible. A delayed gesture never recomputes its old value through a
-mutable current report. Preserve ADR-0142's comparison, including the accessible number behind
-`####`, the user's own writes and lost Action clicks. Do not shorten history or depend on when
-GC runs. Required Action payloads and arbitrary Consumer Row Keys may still hold Consumer-owned
-objects; this is not a promise of graph-free history for every possible Consumer.
+*(When this was decided, ExGrid kept what it had painted, to judge a write against what the user had
+seen, and this section required that history to stay whole while it stopped holding obsolete Reports.
+On `claude/live-data-best` the grid no longer judges a write by what it painted
+([ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md), as
+rewritten on 2026-10-07) and keeps no paint history at all
+([ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md)). Detached ownership,
+immutable versions and the Change Highlight rules below remain.)*
 
 ExPivot uses one stable Change Highlight lookup with immutable per-row change information, so
 unchanged rows skip rendering. A new lookup is not created for every data version. A changed
@@ -65,15 +62,40 @@ raw value hidden by formatting still updates the semantic value without a false 
 Highlight expiry retains the grid's existing timer behavior. The required historical state is
 bounded to its purpose and must not retain an unbounded chain of obsolete reports.
 
+**The time a change is marked is the component's own** *(settled while merging, 2026-10-08)*. A display
+row carries, for each value cell, the Report Version its shown text last changed in
+(`PivotDisplayRow.ChangedIn`), and the report's metadata lists the changes still being shown
+(`ChangeMarks`). ExPivot stamps each listed change with its own `TimeProvider` when it first adopts a
+report that lists it. As first built, the server stamped the time with its clock and the browser expired
+the mark on its own: a server five seconds behind showed no mark at all
+([ADR-0068](./0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)'s note of
+2026-10-08).
+
 This refines ADR-0068's delegate change signal for ExPivot: a row's replacement carries its new
 immutable state. An unchanged delegate with silently rewritten answers for an unchanged row
 would still be wrong. Report Version changes alone do not replace rows, and versioned operations
 still use the newest complete envelope or the version their gesture captured.
 
+## A cancelled computation leaves the incremental state whole *(settled while merging, 2026-10-08)*
+
+Every ExPivot gesture supersedes the question in flight, a scroll that needs a new Window among them. As
+first built, a cancelled computation threw its incremental state away, so the next update read every
+record again: over 100,000 records, a one-record update read 1 row, and the same update after one
+cancellation read 150,002. Now cancellation is observed only in work built aside. Once the pending batches are folded in
+place, the update runs to a whole state and is adopted at once; results computed and never published
+are carried by the next delta. A layout gesture after a discarded update lays out the cube the client
+was last shown, so the next update marks the change.
+
+One case keeps a residue, and it is accepted as ADR-0068's rule that a layout gesture marks nothing: when
+the cube on screen cannot lay out the new layout (a field newly placed), or its Report Version was already
+let go, the gesture brings the newest data with no mark for the change the user never saw. The values are
+right.
+
 ## Full refresh is an explicit provider capability
 
 **A provider unable to identify changes may explicitly declare that it refreshes the complete
-aggregate result.** The user accepts this fallback for sources, such as an existing SQL query,
+aggregate result** (`PivotReportUpdateMode.FullRefresh`; a notice of newer data asks it to refresh,
+settled while merging, 2026-10-08, when the declaration was found to be read by nothing). The user accepts this fallback for sources, such as an existing SQL query,
 that can only announce that data changed. Partial-recomputation guarantees apply to the sources
 that supply Change Batches or leaf changes. A full-refresh provider must not silently claim them.
 
@@ -96,8 +118,9 @@ against unavailable old versions refuse rather than silently switching data.
 
 ## Verification
 
-LV-20 to LV-25 remain required. LV-26 to LV-28 add incremental dependency coverage, unchanged-row
-rendering and explicit full-refresh behavior. Test at the public engine/source boundary against
+Section 32 judges this ADR with LV-29 to LV-31 (LV-26 to LV-28 on the Codex track), LV-22's ExPivot
+clause and PV-45; LV-24 to LV-28 judge the boundary it completes. LV-29 adds a cancellation at every
+yield, and LV-30 server clocks behind and ahead. Test at the public engine/source boundary against
 fresh computation, at the component boundary for render counts/retention/gesture correctness,
 and in targeted real-browser scenarios. Repeat the recorded update-cost and memory experiments;
 timings remain observations, never pass/fail thresholds. The diagnosed OOM is a functional failure.

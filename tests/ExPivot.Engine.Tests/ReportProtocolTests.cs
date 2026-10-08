@@ -171,7 +171,7 @@ public class ReportProtocolTests
         Assert.Equal("Label", denied.Refusal.Field);
     }
 
-    [Fact] // ADR-0152/0060 (LV-23): a server-registered Order Key that throws is refused by name across JSON — the field and the Item — never a transport failure, never label order
+    [Fact] // ADR-0152/0060 (LV-26): a server-registered Order Key that throws is refused by name across JSON — the field and the Item — never a transport failure, never label order
     public async Task ADR0152_a_throwing_registered_order_key_is_refused_by_name_over_json()
     {
         var fields = EntryFields();

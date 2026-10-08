@@ -135,13 +135,20 @@ CI's repeat of `grid-live.spec.mjs` found it: the unmarked cell beside a mark no
 nothing. Layer 2 now pins each marked rule's layers. Layer 3 reads a marked cell's layers against
 an unmarked cell of its kind, a Pinned Column's cell included.
 
-## ExPivot holds one delegate across data versions *(2026-10-07)*
+## ExPivot's marks are timed by ExPivot's clock *(2026-10-08)*
 
-[ADR-0161](./0161-expivots-live-redraw-makes-the-next-report-from-the-last.md): ExPivot hands the grid one `CellChangedAt` for as long as a history lasts, and keeps
-the time each cell's painted text last changed, as the bundled sources do (LV-9).
-- **A row renders because its instance is new**, not because the delegate is.
-- **The history keeps no reports.**
-- **This ADR's rules for what is marked are unchanged.**
+Under [ADR-0153](./0153-reports-share-unchanged-computation-and-display-rows-own-no-report.md) a report
+can be computed on a server. Its changes travel as the Report Version each value cell last changed in
+(`PivotDisplayRow.ChangedIn`), with the changes still being shown listed in the report's metadata
+(`ChangeMarks`). ExPivot stamps each listed change with its own `TimeProvider` when it first adopts a
+report that lists it, and the grid ends the mark on that clock. The server's clock never reaches the
+browser: under the Codex track's first version, a server five seconds behind the browser showed no mark
+at all, and one ahead showed them for longer. A layout gesture marks nothing, as a sort or a filter does,
+even when it brings the newest data with it.
+
+*(The Claude Code track's section of 2026-10-07, "ExPivot holds one delegate across data versions", went
+with its ADR-0161 design on 2026-10-08. The bullet of 2026-10-06 above, from ADR-0153, says what holds
+now.)*
 
 ## Consequences
 

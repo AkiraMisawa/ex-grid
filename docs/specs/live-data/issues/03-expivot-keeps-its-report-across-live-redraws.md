@@ -109,7 +109,7 @@ most of a large redraw's time come from building every row again, which ag-grid 
 nodes.
 
 2026-10-07: Decided with the user (Q9 to Q14, and the marks of a redraw laid out afresh), recorded as
-[ADR-0161](../../../adr/0161-expivots-live-redraw-makes-the-next-report-from-the-last.md).
+[ADR-0161](../../../adr/0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md).
 1. **Where:** (a), the engine makes the next cube and report from the last.
 2. **What a row is:** a row holds no value and no report; a value cell is asked of a report; the contract
    at `PivotReport.cs:239` is rewritten.

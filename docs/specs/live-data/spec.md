@@ -19,7 +19,7 @@ And in the grilling of 2026-10-07, on ticket 01's numbers:
 
 - [ADR-0160](../../adr/0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md): the grid
   holds no Consumer row beyond the Window it was given;
-- [ADR-0161](../../adr/0161-expivots-live-redraw-makes-the-next-report-from-the-last.md): ExPivot's live
+- [ADR-0161](../../adr/0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md): ExPivot's live
   redraw makes the next report from the last;
 - ADR-0141's section of 2026-10-07 (who may vouch, and a pushed Window) and ADR-0130's (the Selection
   Summary's walk).

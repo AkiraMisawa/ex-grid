@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to do:** build the core of [ADR-0161](../../../adr/0161-expivots-live-redraw-makes-the-next-report-from-the-last.md). Under the same layout, a data redraw starts from the
+**What to do:** build the core of [ADR-0161](../../../adr/0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md). Under the same layout, a data redraw starts from the
 cube and report on screen and the leaves that changed. It keeps the axis nodes, computes again the cells
 on the changed paths, and shares every row whose path did not change. Nothing is rewritten in place.
 

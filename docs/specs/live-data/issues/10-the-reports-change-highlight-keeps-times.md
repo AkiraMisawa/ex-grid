@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to do:** build the Change Highlight part of [ADR-0161](../../../adr/0161-expivots-live-redraw-makes-the-next-report-from-the-last.md).
+**What to do:** build the Change Highlight part of [ADR-0161](../../../adr/0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md).
 - ExPivot hands the grid one `CellChangedAt` for as long as a history lasts.
 - The history holds the time each cell's painted text last changed, by row key and value column, and no
   report.

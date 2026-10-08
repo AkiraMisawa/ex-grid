@@ -4,7 +4,7 @@ using Xunit;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// The incremental computation against a fresh one (ADR-0153; LV-20, LV-26, LV-27). Over recorded
+/// The incremental computation against a fresh one (ADR-0153; LV-24, LV-29, LV-30). Over recorded
 /// seeds, layouts are drawn at random — one or two row fields, none to two column fields, number,
 /// date, Boolean and blank Items, subtotals on, off and at the bottom, each form, collapsed and
 /// hidden Items, a report filter, grand totals off, Values on rows or columns, an order by label or
@@ -130,7 +130,7 @@ public class IncrementalOracleTests
 
     public static TheoryData<int> Seeds() => [20261008, 153, 4242, 7, 99991, 31337];
 
-    [Theory] // ADR-0153 (LV-20/LV-26/LV-27): over random layouts and Change Batches, the incremental Window equals a fresh computation, keeps the instance of every row it did not change, and moves the Row Sequence Version exactly when the order moves
+    [Theory] // ADR-0153 (LV-24/LV-29/LV-30): over random layouts and Change Batches, the incremental Window equals a fresh computation, keeps the instance of every row it did not change, and moves the Row Sequence Version exactly when the order moves
     [MemberData(nameof(Seeds))]
     public async Task Incremental_windows_equal_fresh_reports(int seed)
     {

@@ -309,7 +309,7 @@ public class ChangeHighlightTests : PivotTestContext
 
     // ---- ADR-0153: immutable rows carry changes through one stable delegate ------------------
 
-    [Fact] // ADR-0153 (LV-27): row replacement carries change information; the delegate remains stable
+    [Fact] // ADR-0153 (LV-30): row replacement carries change information; the delegate remains stable
     public async Task ADR0153_One_stable_delegate_reads_immutable_row_changes()
     {
         var source = new LiveSource();

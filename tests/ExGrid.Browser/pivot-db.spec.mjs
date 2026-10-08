@@ -69,7 +69,7 @@ async function asked(page, kind) {
     return Number(new RegExp(`(\\d+) ${kind}`).exec(text)?.[1] ?? NaN);
 }
 
-test('LV-20/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows', async ({ page }) => {
+test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows', async ({ page }) => {
     await open(page, 'builtin');
     const grid = report(page, 'server');
     await section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
@@ -84,7 +84,7 @@ test('LV-20/ADR-0151: a server report scrolls beyond its first Window with bound
     expect(await asked(page, 'Window')).toBeGreaterThan(1);
 });
 
-test('LV-25/ADR-0152: remote whole-column Copy and Summary include rows outside the Window', async ({ page, context }) => {
+test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside the Window', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await open(page, 'builtin');
     await section(page, 'snapshot').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();

@@ -82,7 +82,7 @@ public sealed class ReportWindowTests : PivotTestContext
         Assert.False(cut.Instance.IsStale);
         Assert.Equal(["181", "286"], ChangeHighlightTests.MarkedTexts(cut));
     }
-    [Theory] // ADR-0153 (LV-28): a source that declares it refreshes in full is asked to refresh when it says its data moved on, so a server whose provider cannot tell still answers with the newest; an incremental source is asked for its changes
+    [Theory] // ADR-0153 (LV-31): a source that declares it refreshes in full is asked to refresh when it says its data moved on, so a server whose provider cannot tell still answers with the newest; an incremental source is asked for its changes
     [InlineData(PivotReportUpdateMode.FullRefresh)]
     [InlineData(PivotReportUpdateMode.Incremental)]
     public async Task ADR0153_A_full_refresh_source_is_asked_to_refresh_on_a_notice(PivotReportUpdateMode mode)

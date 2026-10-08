@@ -9,7 +9,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// A live redraw on <c>/pivot-live</c>'s generator (ADR-0153; PV-42, PV-45; LV-27): P&amp;L by
+/// A live redraw on <c>/pivot-live</c>'s generator (ADR-0153; PV-42, PV-45; LV-30): P&amp;L by
 /// region and desk across products, its trades amended a few at a time and handed to the bundled
 /// source as Change Batches. The rows that render per redraw are exactly the painted rows whose
 /// painted text changed, and no row component is built for a key painted before. The clock is the

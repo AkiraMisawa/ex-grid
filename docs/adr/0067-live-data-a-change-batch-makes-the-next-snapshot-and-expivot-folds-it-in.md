@@ -47,7 +47,9 @@ does not start again from a million records.
 [ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md) chooses
 server-computed report Windows and their changes for the new server path. The whole-answer
 behavior below describes the existing Leaf Aggregate API; deferring delta transport is no
-longer the decision for that new path. Its exact delta/recovery contract is still to be settled.
+longer the decision for that new path. [ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)
+settles its delta and recovery contract: a delta names its baseline, carries the digest of the
+Window it produces, and is never painted unverified.
 The complete-batch, Source Version, Selection and Stale Report rules remain in force.
 
 The Consumer tells its `PivotSource.Fetch` that the server's data changed, however the Consumer
@@ -130,16 +132,16 @@ learns it: SignalR, polling, or a message bus (Q57).
   unshowable. A user's gesture supersedes a question for newer data, and its own question brings
   the change; a data change never cancels the user's question.
 
-## A redraw that runs out of memory leaves the report stale *(2026-10-07)*
+## A redraw that runs out of memory leaves the report stale *(2026-10-07; widened 2026-10-08)*
 
-A live redraw that throws `OutOfMemoryException` while the cube or the report is made is caught there.
-- What was being built is dropped.
-- The report on screen stays, as a Stale Report with the reason.
-- The next change asks again.
+An `OutOfMemoryException` while the report of the newest data is computed is caught where the redraw is
+asked for ([ADR-0161](./0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md)).
+- For a live or data redraw, what was being computed is dropped, the report on screen stays as a Stale
+  Report with the reason, and the next change asks again.
+- A user's layout change is refused instead, and the layout goes back.
 
 Before this, the exception reached the renderer and the page stopped
-([`2026-10-06-macos-pivot-oom`](../../verification/2026-10-06-macos-pivot-oom/README.md);
-[ADR-0161](./0161-expivots-live-redraw-makes-the-next-report-from-the-last.md)).
+([`2026-10-06-macos-pivot-oom`](../../verification/2026-10-06-macos-pivot-oom/README.md)).
 
 ## Considered options
 

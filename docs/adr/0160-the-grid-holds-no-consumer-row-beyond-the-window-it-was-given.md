@@ -61,8 +61,10 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
 - **Layer 2, a MUST**: after a run of new Windows, with weak references taken to the row instances of
   each earlier one and a full collection made, none of them is alive, apart from the three holdings above and the rows the render before the newest
   painted, which Blazor's renderer keeps.
-  For ExPivot, after a run of live redraws, no report but the one on screen is alive
-  ([ADR-0161](./0161-expivots-live-redraw-makes-the-next-report-from-the-last.md) keeps none).
+  For ExPivot, after a run of live redraws, no earlier Window's display rows are alive, and no report
+  but those its report source keeps by design: the Report Versions kept for versioned operations
+  and the one on screen ([ADR-0153](./0153-reports-share-unchanged-computation-and-display-rows-own-no-report.md);
+  until 2026-10-08, under the Claude Code track's ADR-0161, it kept none).
 - **Observational**: the loop of the out-of-memory record — 101,001 report rows, 20 live redraws in the
   browser, the managed heap after a full collection after each — is recorded in `metrics.json`. It
   levels off.
@@ -74,8 +76,10 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
 - **Keep row instances by weak reference.** Rejected: whether a paint could still be judged would then
   depend on when the collector ran, and an outcome never depends on timing (principle 6).
 - **Have ExPivot's rows stop pointing at their report, and keep the grid as it was.** Taken for its own
-  reasons in ADR-0161, but not instead of this rule: it mends one Consumer, and the next row type that
-  points at its container meets the same leak.
+  reasons — in ADR-0161 first, and in ADR-0153's detached display rows since 2026-10-08 — but not
+  instead of this rule: it mends one Consumer, and the next row type that points at its container meets
+  the same leak. The Codex track took only that path, and its grid still held about 256 rows in the Cell
+  Appearance cache when the two tracks were compared.
 
 ## Consequences
 

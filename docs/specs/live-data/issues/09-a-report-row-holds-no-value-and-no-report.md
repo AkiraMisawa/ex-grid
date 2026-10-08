@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to do:** build the "What a report row is" part of [ADR-0161](../../../adr/0161-expivots-live-redraw-makes-the-next-report-from-the-last.md). A `PivotReportRow` holds what
+**What to do:** build the "What a report row is" part of [ADR-0161](../../../adr/0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md). A `PivotReportRow` holds what
 it stands for (role, Value Field, Items, labels, its key) and no value and no report. A value cell is
 asked of a report.
 
