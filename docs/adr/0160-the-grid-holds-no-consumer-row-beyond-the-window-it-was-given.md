@@ -51,6 +51,10 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
   once more after each new Window to clear it was considered and not taken: it is a render of the whole
   grid per live update, to free a few dozen rows. *(Found while building it, 2026-10-07: the rows were
   traced to `ComponentState`'s next render tree, and to nothing of the grid's.)*
+  - **Under ExPivot the same holds one level up.** The frames of `PivotGridHost`'s render before the
+    newest name the whole Window list it handed the grid, painted or not, until ExPivot renders
+    again. A highlight that ends renders only the grid. The holding is bounded to one Window, and its
+    rows reach no report (ADR-0153). *(Found while building LV-22's ExPivot test, 2026-10-08.)*
 - **What a Consumer hands the grid as its own object is the Consumer's to hold**: a Row Mark adapter, a
   Pointed At's dashes (ADR-0058), a popover's content. The grid keeps the reference, not rows of its own.
 
@@ -61,10 +65,18 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
 - **Layer 2, a MUST**: after a run of new Windows, with weak references taken to the row instances of
   each earlier one and a full collection made, none of them is alive, apart from the three holdings above and the rows the render before the newest
   painted, which Blazor's renderer keeps.
-  For ExPivot, after a run of live redraws, no earlier Window's display rows are alive, and no report
-  but those its report source keeps by design: the Report Versions kept for versioned operations
-  and the one on screen ([ADR-0153](./0153-reports-share-unchanged-computation-and-display-rows-own-no-report.md);
-  until 2026-10-08, under the Claude Code track's ADR-0161, it kept none).
+  For ExPivot, after a run of live redraws, nothing is alive but what its report source keeps by
+  design ([ADR-0153](./0153-reports-share-unchanged-computation-and-display-rows-own-no-report.md)'s
+  "What the history holds"):
+  - the reports the Change Highlight compares, and the `versionsKept` newest;
+  - the display rows of the Window on screen;
+  - the display rows of the Window last served under the Report Version before it, which is the
+    baseline of the next delta ([ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+
+  Once the pivot renders again, the grid holds no display row of an earlier Window. *(Restated on
+  2026-10-08, when LV-22's ExPivot test was built. The first wording promised no earlier Window's rows,
+  and no report beyond the versions kept and the one on screen; the design taken that day promises
+  neither. Under the Claude Code track's ADR-0161 the highlight kept no report.)*
 - **Observational**: the loop of the out-of-memory record — 101,001 report rows, 20 live redraws in the
   browser, the managed heap after a full collection after each — is recorded in `metrics.json`. It
   levels off.

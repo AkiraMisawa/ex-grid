@@ -49,7 +49,7 @@ user took that track's ExPivot and this track's grid
 |---|---|
 | The engine makes the next cube and report from the last; afresh on structure, value sorts and Show Values As that reads other rows | ADR-0153: computation follows dependencies, structural changes and value sorts included |
 | A report row holds no value and no report | ADR-0153: detached display rows and keys own no Report |
-| The Change Highlight keeps times, not reports | ADR-0153's stable lookup; the time is the component's own, taken when it adopts a report that lists the change (ADR-0068's note of 2026-10-08) |
+| The Change Highlight keeps times, not reports | ADR-0153's stable lookup. The source keeps the reports the highlight compares, bounded by its duration over the time between redraws ("What the history holds"). The time is the component's own, taken when it adopts a report that lists the change (ADR-0068's note of 2026-10-08) |
 | An answer may name the leaves that changed | Not taken. The engine took a source's list as given, and a source naming too few leaves painted totals that did not add up, with nothing to say so (found in review, 2026-10-07). Under ADR-0151 only the bundled Snapshot source computes incrementally, from its own fold, and a server sends report Windows whose deltas are checked against a digest (ADR-0152) |
 | A redraw that runs out of memory leaves the report stale | Kept: this ADR, widened to a layout change |
 

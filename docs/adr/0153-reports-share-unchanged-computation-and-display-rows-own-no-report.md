@@ -62,6 +62,23 @@ raw value hidden by formatting still updates the semantic value without a false 
 Highlight expiry retains the grid's existing timer behavior. The required historical state is
 bounded to its purpose and must not retain an unbounded chain of obsolete reports.
 
+**What the history holds** *(measured while merging, 2026-10-08)*. The report source keeps the
+reports the Change Highlight compares:
+- every data version published less than `ChangeHighlightDuration` before the newest, by the
+  source's clock;
+- the version before the oldest of those, as their baseline.
+
+These always include the `versionsKept` newest, two by default. At most max(`versionsKept`,
+⌈`ChangeHighlightDuration` / the time between redraws⌉ + 1) reports are alive. With /pivot-live's
+one-second highlight that is two when redraws come a second apart, and five when they come every
+250 ms. A layout gesture clears the history back to the newest.
+
+Versions share what an incremental update did not change, but a redraw built afresh is a whole copy.
+A long highlight over fast redraws therefore costs memory in proportion, and
+[ADR-0161](./0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md) says what
+happens when it runs out. LV-22 checks the bound by reachability. The Claude Code track's first
+ADR-0161 kept times in place of reports, and was not taken with this design.
+
 **The time a change is marked is the component's own** *(settled while merging, 2026-10-08)*. A display
 row carries, for each value cell, the Report Version its shown text last changed in
 (`PivotDisplayRow.ChangedIn`), and the report's metadata lists the changes still being shown
