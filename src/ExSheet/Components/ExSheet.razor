@@ -29,7 +29,7 @@
     <SheetToolbar Context="_toolbar" Content="ToolbarContent" HeightPx="ToolbarPx" />
 }
 <ExGrid TRow="SheetRow" @ref="_grid"
-        Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount"
+        Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount" RowSequenceVersion="_sequence"
         Columns="_columns" OnColumnWidthChanged="_columnWidthChanged" HideColumnMenu="true"
         RowHeight="RowHeight" ViewportHeight="GridViewportHeight" ViewportWidth="ViewportWidth"
         PinnedColumnCount="PinnedColumnCount" Chrome="Chrome"
@@ -167,6 +167,13 @@
     // Set when a new Sheet Document was opened in place of the one shown, until any edit open
     // over it has been discarded (ADR-0048).
     private bool _documentReplaced;
+    // The Row Sequence Version this Sheet hands its grid. A Sheet's rows are places, so its own edits,
+    // inserts and deletes never move it (ADR-0046); it moves only when another Sheet Document is opened
+    // in place of the one shown — one of the documents this instance handed out coming back is not
+    // that — so that the grid drops the Selection, and refuses a paste, Delete or fill aimed at what
+    // the old document painted rather than writing it into the new one at the same place (ADR-0011,
+    // ADR-0142).
+    private int _sequence;
     // ExSheet's own sentence for a discard it asked of the grid, said when the grid raises it.
     private string? _ownDiscard;
     private CultureInfo? _cultureParameter;
@@ -184,8 +191,8 @@
         // Asked synchronously on both copy routes (ADR-0050 item 9).
         _copyAnswer = AnswerCopy;
         // Find over the Sheet's own cells (ADR-0055): answered from the engine at once, since the
-        // Sheet is in hand; a step on another Row Sequence Version names nothing here, as a
-        // Sheet's rows never move (ADR-0046).
+        // Sheet is in hand; a step on another Row Sequence Version names nothing here: a Sheet's
+        // rows never move (ADR-0046), and the version moves only when another document is opened.
         // Rows the grid reads outside the Window: a fill key's source row scrolled away
         // (ADR-0035). Every row is in hand, so the answer is whole and at once; a copy never asks
         // it, since CopyAnswer answers every copy (ADR-0050 item 9).
@@ -196,10 +203,10 @@
             for (var i = 0; i < rows.Length; i++) rows[i] = new SheetRow(sheet, range.Start + i);
             return Task.FromResult<IReadOnlyList<SheetRow>>(rows);
         };
-        _find = (request, _) => Task.FromResult(request.RowSequenceVersion == 0 && _sheet is { } sheet
+        _find = (request, _) => Task.FromResult(request.RowSequenceVersion == _sequence && _sheet is { } sheet
             ? SheetFind.Step(sheet, request)
             : global::ExGrid.Finding.GridFindResult.NotFound);
-        _summarize = (request, _) => Task.FromResult(request.RowSequenceVersion == 0 && _sheet is { } sheet
+        _summarize = (request, _) => Task.FromResult(request.RowSequenceVersion == _sequence && _sheet is { } sheet
             ? SheetSummary.Answer(sheet, request)
             : new global::ExGrid.Summarizing.GridSummaryCells().Answer(request.Figures));
         _summaryFiguresChanged = new EventCallback<global::ExGrid.Summarizing.SummaryFigures>(null,
@@ -233,8 +240,12 @@
             // Selection: a Selection moved under it, by the Name Box or a Consumer, ends it.
             if (moved && _formatCells is not null) _ = InvokeAsync(EndFormatCellsAsync);
             // A selection change is the user's own action, and clears the notice — except the
-            // move that completes the commit gesture whose refusal the notice reports.
-            if (_noticeOutlivesCommitMove) _noticeOutlivesCommitMove = false;
+            // move that completes the commit gesture whose refusal the notice reports, and a
+            // Selection the grid dropped: no gesture of the user's empties it (ADR-0052), only
+            // another Sheet Document opened under it (ADR-0011, ADR-0142), and the notice that
+            // says so stands.
+            if (selection.IsEmpty) { }
+            else if (_noticeOutlivesCommitMove) _noticeOutlivesCommitMove = false;
             else if (_notice is not null)
             {
                 ClearNotice();
@@ -513,6 +524,8 @@
             {
                 Open(Document);
                 _documentReplaced = true;
+                // Another document's cells stand at the old one's places (ADR-0142).
+                _sequence++;
             }
         }
         // Widths are recorded in characters; the pixels they paint at follow the Cell Metrics.
@@ -702,8 +715,8 @@
             return;
         }
         if (SheetFormatKeys.KindOf(press.Key) is not { } kind) return;
-        // Rows are places, so the Selection is written in version 0 (ADR-0046).
-        if (press.RowSequenceVersion == 0) _selection = press.Selection;
+        // Rows are places, so the Selection is written in the version of the document shown (ADR-0046).
+        if (press.RowSequenceVersion == _sequence) _selection = press.Selection;
         if (press.EditOpen || IsEditing)
         {
             var refusal = new SheetRefusal(SheetRefusalReason.EditIsOpen, SheetWords.FormatKeyWhileEditing);
@@ -737,8 +750,8 @@
     private async Task OnStructureKeyAsync(GridDeclaredKeyPress press, SheetStructureKeys.Kind kind)
     {
         var insert = kind == SheetStructureKeys.Kind.Insert;
-        // Rows are places, so the Selection is written in version 0 (ADR-0046).
-        if (press.RowSequenceVersion == 0) _selection = press.Selection;
+        // Rows are places, so the Selection is written in the version of the document shown (ADR-0046).
+        if (press.RowSequenceVersion == _sequence) _selection = press.Selection;
         if (press.EditOpen || IsEditing)
         {
             Tell(SheetWords.StructureKeyWhileEditing(insert));
@@ -796,12 +809,12 @@
     /// a circuit, so a command given straight after Shift+arrow would otherwise act on the Selection
     /// last heard: fewer cells than are selected, or others, with nothing to say so. Adopted, the
     /// late notification names the Selection already held, which is no move. Rows are places, so the
-    /// Selection is written in version 0 (ADR-0046), and under any other it names nothing here
-    /// (ADR-0011).
+    /// Selection is written in the version of the document shown (ADR-0046), and under any other it
+    /// names nothing here (ADR-0011).
     /// </summary>
     private void AdoptGridSelection()
     {
-        if (_grid is { } grid) _selection = grid.ReadSelection().Under(0).Selection;
+        if (_grid is { } grid) _selection = grid.ReadSelection().Under(_sequence).Selection;
     }
 
     private async Task<bool> ShowFormatCellsAsync()
@@ -1156,8 +1169,8 @@
         }
         ClearNotice();
         var place = new SelectionRange(range.First.Row, range.First.Column, range.RowCount, range.ColumnCount);
-        // Rows are places, so the Row Sequence Version never moves from 0 (ADR-0046).
-        if (_grid is { } grid) await grid.PlaceSelectionAsync(place, new CellPosition(range.First.Row, range.First.Column), 0);
+        // Rows are places, so the Row Sequence Version is the document's (ADR-0046).
+        if (_grid is { } grid) await grid.PlaceSelectionAsync(place, new CellPosition(range.First.Row, range.First.Column), _sequence);
     }
 
     /// <summary>
@@ -1215,9 +1228,10 @@
     /// </summary>
     private async Task OnPasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
     {
-        // Rows are places, so the order never moves (ADR-0046); an intent written under any
-        // other version names positions that mean something else, and is dropped (ADR-0011).
-        if (intent.RowSequenceVersion != 0)
+        // Rows are places, so the order moves only when another document is opened (ADR-0046); an
+        // intent written under any other version names positions that mean something else, and is
+        // dropped (ADR-0011).
+        if (intent.RowSequenceVersion != _sequence)
         {
             intent.Refuse();
             return;
@@ -1356,7 +1370,7 @@
     /// </summary>
     private async Task OnFillAsync(GridFillIntent intent)
     {
-        if (intent.RowSequenceVersion != 0)
+        if (intent.RowSequenceVersion != _sequence)
         {
             intent.Refuse();
             return;
@@ -1435,7 +1449,7 @@
     /// </summary>
     private async Task OnClearAsync(global::ExGrid.Clipboard.GridClearIntent intent)
     {
-        if (intent.RowSequenceVersion != 0) return;
+        if (intent.RowSequenceVersion != _sequence) return;
         var cleared = new List<KeyValuePair<CellAddress, Entry?>>();
         foreach (var address in CurrentSheet.EntryAddresses)
         {
