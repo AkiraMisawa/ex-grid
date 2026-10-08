@@ -96,7 +96,7 @@ internal sealed class ComputationReport
 
     public async ValueTask<PivotReport> InitializeAsync(PivotReport report, Slicer slicer)
     {
-        Prepare(report.Cube, report.Layout, report.Options, slicer);
+        Prepare(report.Cube, report.Layout, report.Options, report.Lineage, slicer);
         // Seed the initial structure with the already laid-out rows, preserving identity.
         var original = new Dictionary<PivotRowKey, PivotReportRow>();
         foreach (var row in report.Rows)
@@ -109,10 +109,10 @@ internal sealed class ComputationReport
         return await _builder.WithRowsAsync(report, rows, false, slicer).ConfigureAwait(false);
     }
 
-    private void Prepare(PivotCube cube, PivotLayout layout, PivotOptions options, Slicer slicer)
+    private void Prepare(PivotCube cube, PivotLayout layout, PivotOptions options, ReportLineage lineage, Slicer slicer)
     {
         _cube = cube; _layout = layout; _slicer = slicer;
-        _builder = new(cube, layout, options);
+        _builder = new(cube, layout, options, lineage);
         _dirtyChildren.Clear(); _reorder.Clear(); _relabel.Clear(); _labels.Clear(); _removed.Clear();
         RowSequenceChanged = false;
     }
@@ -130,7 +130,7 @@ internal sealed class ComputationReport
     public async ValueTask<PivotReport> UpdateAsync(PivotReport previous, PivotCube cube,
         ComputationCube computation, Slicer slicer)
     {
-        Prepare(cube, previous.Layout, previous.Options, slicer);
+        Prepare(cube, previous.Layout, previous.Options, previous.Lineage, slicer);
         foreach (var id in computation.ChangedRowNodes)
         {
             var node = cube.RowNode(id);

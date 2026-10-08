@@ -74,8 +74,14 @@ internal sealed class ReportBuilder
     private readonly int _labelColumnCount;
     private readonly AxisNode?[] _pending;
 
-    public ReportBuilder(PivotCube cube, PivotLayout layout, PivotOptions options)
+    // The rows this builder makes, and the report it hands them to, share one lineage: a report
+    // answers the values of its own rows, and refuses another report's (PivotReport.ValueAt). An
+    // update of a report continues its lineage, so the rows the versions share stay answerable.
+    private readonly ReportLineage _lineage;
+
+    public ReportBuilder(PivotCube cube, PivotLayout layout, PivotOptions options, ReportLineage? lineage = null)
     {
+        _lineage = lineage ?? new ReportLineage();
         _cube = cube;
         _layout = layout;
         _options = options;
@@ -134,9 +140,12 @@ internal sealed class ReportBuilder
             await EmitRowsAsync(rows, slicer).ConfigureAwait(false);
         }
         var tiers = ColumnLevels == 0 ? 0 : _valuesOnColumns ? ColumnLevels : ColumnLevels - 1;
-        var report = new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, rows);
+        var report = new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, rows, _lineage);
         return report;
     }
+
+    private PivotReportRow NewRow(PivotRowRole role, AxisNode node, int valueField, bool carriesValues, PivotRowLabel[] labels)
+        => new(role, node, valueField, carriesValues, labels, _lineage);
 
     // The same layout rules used by a complete walk, applied to one affected axis node.
     // Tabular pending labels always form a suffix of the ancestor path: a later sibling
@@ -155,7 +164,7 @@ internal sealed class ReportBuilder
             }
             if (_layout.GrandTotalRow && ValueCount > 0)
                 for (var vf = _valuesOnRows ? 0 : -1; vf < (_valuesOnRows ? ValueCount : 0); vf++)
-                    after.Add(new(PivotRowRole.GrandTotal, node, vf, true, GrandTotalLabels(vf)));
+                    after.Add(NewRow(PivotRowRole.GrandTotal, node, vf, true, GrandTotalLabels(vf)));
             return ([], [.. after], true);
         }
         Array.Clear(_pending);
@@ -189,7 +198,7 @@ internal sealed class ReportBuilder
     {
         if (!columnsChanged)
             return new(_cube, _layout, _options, _reader, previous.LabelColumns, previous.ValueColumns,
-                previous.HeaderSpans, previous.HeaderTierCount, rows);
+                previous.HeaderSpans, previous.HeaderTierCount, rows, _lineage);
         var columns = new List<PivotReportColumn>();
         var spans = new List<PivotHeaderSpan>();
         if (!Empty) await EmitColumnsAsync(columns, spans, slicer).ConfigureAwait(false);
@@ -198,7 +207,7 @@ internal sealed class ReportBuilder
             if (old.TryGetValue(columns[i].Name, out var held) && held.Header == columns[i].Header)
                 columns[i] = held;
         return new(_cube, _layout, _options, _reader, previous.LabelColumns, columns, spans,
-            previous.HeaderTierCount, rows);
+            previous.HeaderTierCount, rows, _lineage);
     }
 
     private string Word(string id) => _options.Word(id);
@@ -458,12 +467,12 @@ internal sealed class ReportBuilder
                 {
                     var labels = NewLabels();
                     labels[_labelColumnCount - 1] = new PivotRowLabel(_values[vf].Caption);
-                    rows.Add(new PivotReportRow(PivotRowRole.Item, root, vf, carriesValues: true, labels));
+                    rows.Add(NewRow(PivotRowRole.Item, root, vf, carriesValues: true, labels));
                 }
             }
             else
             {
-                rows.Add(new PivotReportRow(PivotRowRole.GrandTotal, root, -1, carriesValues: true, NewLabels()));
+                rows.Add(NewRow(PivotRowRole.GrandTotal, root, -1, carriesValues: true, NewLabels()));
             }
             return;
         }
@@ -478,11 +487,11 @@ internal sealed class ReportBuilder
             if (_valuesOnRows)
             {
                 for (var vf = 0; vf < ValueCount; vf++)
-                    rows.Add(new PivotReportRow(PivotRowRole.GrandTotal, root, vf, carriesValues: true, GrandTotalLabels(vf)));
+                    rows.Add(NewRow(PivotRowRole.GrandTotal, root, vf, carriesValues: true, GrandTotalLabels(vf)));
             }
             else
             {
-                rows.Add(new PivotReportRow(PivotRowRole.GrandTotal, root, -1, carriesValues: true, GrandTotalLabels(-1)));
+                rows.Add(NewRow(PivotRowRole.GrandTotal, root, -1, carriesValues: true, GrandTotalLabels(-1)));
             }
         }
     }
@@ -541,20 +550,20 @@ internal sealed class ReportBuilder
         {
             if (_valuesOnRows)
             {
-                rows.Add(new PivotReportRow(PivotRowRole.Group, node, -1, carriesValues: false, ItemLabels(node)));
+                rows.Add(NewRow(PivotRowRole.Group, node, -1, carriesValues: false, ItemLabels(node)));
                 for (var vf = 0; vf < ValueCount; vf++)
-                    rows.Add(new PivotReportRow(PivotRowRole.Item, node, vf, carriesValues: true, CaptionLabels(node, vf)));
+                    rows.Add(NewRow(PivotRowRole.Item, node, vf, carriesValues: true, CaptionLabels(node, vf)));
             }
             else
             {
-                rows.Add(new PivotReportRow(innermost ? PivotRowRole.Item : PivotRowRole.Group, node, -1,
+                rows.Add(NewRow(innermost ? PivotRowRole.Item : PivotRowRole.Group, node, -1,
                     carriesValues: true, ItemLabels(node)));
             }
             return -1;
         }
 
         var (_, atTop) = SubtotalsOf(level);
-        rows.Add(new PivotReportRow(PivotRowRole.Group, node, -1, carriesValues: atTop, ItemLabels(node)));
+        rows.Add(NewRow(PivotRowRole.Group, node, -1, carriesValues: atTop, ItemLabels(node)));
         return 0;
     }
 
@@ -568,11 +577,11 @@ internal sealed class ReportBuilder
         if (_valuesOnRows)
         {
             for (var vf = 0; vf < ValueCount; vf++)
-                rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, SubtotalLabels(node, vf)));
+                rows.Add(NewRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, SubtotalLabels(node, vf)));
         }
         else
         {
-            rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, -1, carriesValues: true, SubtotalLabels(node, -1)));
+            rows.Add(NewRow(PivotRowRole.Subtotal, node, -1, carriesValues: true, SubtotalLabels(node, -1)));
         }
     }
 
@@ -662,12 +671,12 @@ internal sealed class ReportBuilder
             {
                 var labels = TabularLabels(node, level);
                 labels[_labelColumnCount - 1] = new PivotRowLabel(_values[vf].Caption);
-                rows.Add(new PivotReportRow(role, node, vf, carriesValues: true, labels));
+                rows.Add(NewRow(role, node, vf, carriesValues: true, labels));
             }
         }
         else
         {
-            rows.Add(new PivotReportRow(role, node, -1, carriesValues: true, TabularLabels(node, level)));
+            rows.Add(NewRow(role, node, -1, carriesValues: true, TabularLabels(node, level)));
         }
         return -1;
     }
@@ -686,7 +695,7 @@ internal sealed class ReportBuilder
             labels[level] = new PivotRowLabel(total);
             if (vf >= 0)
                 labels[_labelColumnCount - 1] = new PivotRowLabel(_values[vf].Caption);
-            rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, labels));
+            rows.Add(NewRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, labels));
         }
     }
 

@@ -22,8 +22,10 @@ public sealed class PivotReport
         IReadOnlyList<PivotReportColumn> valueColumns,
         IReadOnlyList<PivotHeaderSpan> headerSpans,
         int headerTierCount,
-        IReadOnlyList<PivotReportRow> rows)
+        IReadOnlyList<PivotReportRow> rows,
+        ReportLineage lineage)
     {
+        Lineage = lineage;
         Cube = cube;
         Layout = layout;
         Options = options;
@@ -38,6 +40,10 @@ public sealed class PivotReport
 
     /// <summary>The cube the report was laid out from.</summary>
     public PivotCube Cube { get; }
+
+    // What this report's rows were made under: the layout, and the reports of it an update made
+    // from this one or this one from (ADR-0153). Another report's row is refused, not read.
+    internal ReportLineage Lineage { get; }
 
     /// <summary>The layout the report was laid out under.</summary>
     public PivotLayout Layout { get; }
@@ -139,9 +145,10 @@ public sealed class PivotReport
     }
 
     /// <summary>The Items a row stands for, outermost first: each row field's name and Item.</summary>
+    /// <exception cref="ArgumentException"><paramref name="row"/> is another report's row.</exception>
     public IReadOnlyList<(string Field, PivotItemKey Item)> RowPath(PivotReportRow row)
     {
-        ArgumentNullException.ThrowIfNull(row);
+        Own(row);
         return Path(row.Node, Layout.Rows, rows: true);
     }
 
@@ -186,9 +193,10 @@ public sealed class PivotReport
 
     /// <summary>The Value Field a cell of <paramref name="row"/> in <paramref name="valueColumn"/>
     /// shows, or −1 where no Value Field is placed.</summary>
+    /// <exception cref="ArgumentException"><paramref name="row"/> is another report's row.</exception>
     public int ValueFieldAt(PivotReportRow row, int valueColumn)
     {
-        ArgumentNullException.ThrowIfNull(row);
+        Own(row);
         if (row.ValueField >= 0)
             return row.ValueField;
         var column = ValueColumns[valueColumn];
@@ -197,18 +205,41 @@ public sealed class PivotReport
         return _reader.Values.Length == 1 ? 0 : -1;
     }
 
-    /// <summary>The value of a row in this immutable report version, computed when requested.</summary>
+    /// <summary>
+    /// The value of one of this report's rows in a value column, as this immutable report version
+    /// shows it, computed when requested. A row this report shares with the versions it was made
+    /// from, or that were made from it, under the same layout (ADR-0153), is this report's row too,
+    /// and answers this version's value. A row of any other report — another layout, another
+    /// computation — is refused: its Value Field and its axis node mean something else here, and
+    /// reading them would answer another cell's figure as if it were this one's.
+    /// </summary>
+    /// <param name="row">A row of this report.</param>
+    /// <param name="valueColumn">A value column's index.</param>
+    /// <exception cref="ArgumentException"><paramref name="row"/> is another report's row; the
+    /// message names its key.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="valueColumn"/> is not a value
+    /// column of this report.</exception>
     public PivotValue? ValueAt(PivotReportRow row, int valueColumn)
     {
-        ArgumentNullException.ThrowIfNull(row);
+        Own(row);
         if ((uint)valueColumn >= (uint)ValueColumns.Count)
             throw new ArgumentOutOfRangeException(nameof(valueColumn));
         return Compute(row, valueColumn);
     }
 
+    // A row of this report's lineage, or the refusal that names it. One reference comparison: a
+    // report of hundreds of thousands of rows answers each cell without looking its row up.
+    private void Own(PivotReportRow row)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        if (!ReferenceEquals(row.Lineage, Lineage))
+            throw new ArgumentException($"The row {row.Key} is not a row of this report: it was laid out by another report, " +
+                "whose Value Fields and Items it names. Read a row through the report it came from.", nameof(row));
+    }
+
     internal PivotReport WithCube(PivotCube cube)
         => new(cube, Layout, Options, new CellReader(cube, _reader.Values), LabelColumns, ValueColumns,
-            HeaderSpans, HeaderTierCount, Rows);
+            HeaderSpans, HeaderTierCount, Rows, Lineage);
 
     internal PivotValue? Compute(PivotReportRow row, int valueColumn)
     {
@@ -245,8 +276,10 @@ internal sealed record ValueFieldPlan(
 /// </summary>
 public sealed class PivotReportRow
 {
-    internal PivotReportRow(PivotRowRole role, AxisNode node, int valueField, bool carriesValues, PivotRowLabel[] labels)
+    internal PivotReportRow(PivotRowRole role, AxisNode node, int valueField, bool carriesValues, PivotRowLabel[] labels,
+        ReportLineage lineage)
     {
+        Lineage = lineage;
         Role = role;
         Node = node;
         ValueField = valueField;
@@ -275,7 +308,14 @@ public sealed class PivotReportRow
 
     internal AxisNode Node { get; }
 
+    // The reports that may read this row: the one it was laid out for and the versions sharing it.
+    internal ReportLineage Lineage { get; }
 }
+
+/// <summary>An identity, and nothing more: the rows a report builder made, and the reports made
+/// of them, share one (<see cref="PivotReport.ValueAt"/>). It holds no report, cube or row, so a
+/// row that outlives its report keeps nothing of it alive (ADR-0153).</summary>
+internal sealed class ReportLineage;
 
 /// <summary>One label cell of a row (ADR-0060).</summary>
 /// <param name="Text">The label; null for an empty cell.</param>
