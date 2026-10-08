@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, revealRepainted } from './fixtures.mjs';
 
 // A classic (non-overlay) scrollbar takes a strip out of the box the element declares.
 // macOS draws overlay scrollbars, which take nothing, so on the machine this component
@@ -221,6 +221,9 @@ async function pressAndAwaitCorner(page, key) {
         return at(scroller.scrollTop, scroller.scrollHeight - scroller.clientHeight)
             && at(scroller.scrollLeft, scroller.scrollWidth - scroller.clientWidth);
     }, { corner: key, settled: SETTLED_PX }, { polling: 'raf', timeout: 5000 });
+    // Landed, but a reveal is repainted over the next two frames: the offset a pixel away and back
+    // (ADR-0012, 2026-10-08). The Focus is measured where it stays, not in the pixel between.
+    await revealRepainted(page);
 }
 
 test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {

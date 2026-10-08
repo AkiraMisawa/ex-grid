@@ -494,3 +494,57 @@ tell a click from the start of a drag, and here it differs from a Heading:
 a cell and an Interactive cell, and before the way out: with a copy outlined, Escape removes the
 outline and does nothing else, and the next Escape releases Tab and raises `OnLeave` as before.
 Excel's Escape ends copy mode in the same place.
+
+## Added after a run under Citrix: a reveal is repainted *(2026-10-08, decided with the user)*
+
+**What happened.** On a Windows PC reached through Citrix, with the browser's hardware acceleration
+disabled by the organisation (`edge://gpu`: Compositing and Rasterization "Software only. Hardware
+acceleration disabled"; Edge 151 and Chrome 152, at a scale of 1), Ctrl+↓, Ctrl+↑ and PageDown on the
+Docs Site's blotter left the Viewport white. The Focus had moved, and the DOM was right after every
+reveal: a trace of each scroll write (`spikes/vdi-reveal-lab` on the branch `lab/vdi-reveal`) read the
+offset written, the slice painted at it, and both still there two seconds later. The screen was not.
+Price updates inside the slice were not drawn either. As ArrowUp moved the Focus row's band, the rows
+under it appeared one by one, in their right places. A scroll by the user, a resize, or any later move
+of the offset painted everything. A scroll written from the console, where the offset moves first and
+the core places the rows after it on the scroll event, painted at once.
+
+**What was tried there and did not help:** writing the offset a frame after the rows (twice: the first
+try landed in the same frame, because the key's task outlasted a frame, and the second waited two);
+writing it before the rows land; repainting the scroller (opacity for a frame) or the Viewport (a
+background for a frame); making the scroller a layer of its own (`will-change: scroll-position`) or
+opaque; compositing the Viewport (`will-change: transform`) or placing it by `top` instead of its
+transform. **What helped:** moving the offset again after the reveal — one pixel and back over the
+next two frames, or the same 300 ms later.
+
+**Not reproduced anywhere else.** At home every condition that could be matched was matched, one at a
+time and together: Chrome for Testing 152, the installed Edge with `--disable-gpu` showing the same
+`edge://gpu` status, a real scale of 1, field trials on (the browser launched by hand, not by
+Playwright), the CPU slowed tenfold, and the window captured with `PrintWindow` rather than through
+the browser, which redraws for a screenshot. All of them painted. What is left is Citrix's own display
+path, which this project cannot run.
+
+**The decision: a reveal is repainted.** In the frame after the reveal's, the offset moves one pixel
+away from the edge it stands at (across, where the rows cannot scroll), and in the frame after that it
+moves back. That is the move that painted the rows there.
+
+- **Ordered by frames, never by a wait.** The 300 ms form also helped and is rejected: a delay that
+  works is a window that happened to be wide enough (the spine's sixth principle).
+- **The core hears nothing of it.** A read of the offset in between answers where the reveal left the
+  scroller, so the core paints no slice for the pixel and the reveal's echo still renders nothing
+  (above).
+- **The user's scroll stands.** If the offset is not where the repaint left it, the user has scrolled.
+  The move back is then not made, and the core is told to read the offset again, through the
+  scroller's own scroll event, because a read it already made may have answered the reveal's offset.
+- **Only reveals are repainted.** The page turn, the edge auto-scroll of a drag and the anchor kept
+  across a geometry change write the offset too. None was seen white, so none is repainted. Any that
+  is seen white joins.
+- **It is a remedy for a fault outside the grid, and recorded as one.** It hides the symptom on the one
+  environment where it was seen, and nothing explains why that environment drops the paint. Elsewhere
+  the frame after a reveal is drawn one pixel off and the next one back. A test that reads `scrollTop`
+  within those two frames sees the pixel, so layer 3 waits for them where it measures right after a
+  reveal (`revealRepainted`). If a later run under Citrix shows the repaint no longer needed, it
+  comes out.
+- **Only that PC can verify it.** Layer 3 checks the mechanism: the order of the writes, that the core
+  paints nothing for them, and that a scroll in between stands. Whether it paints under Citrix is
+  checked by hand there (VZ-18). *(Checked 2026-10-08 on that PC, with a build of v0.1.0-beta.2
+  carrying only this change published to the Docs Site: Ctrl+↓, Ctrl+↑ and PageDown painted.)*

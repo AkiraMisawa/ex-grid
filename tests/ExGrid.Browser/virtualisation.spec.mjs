@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, revealRepainted } from './fixtures.mjs';
 
 // The structural invariants that produce the timing (Definition of Done §1), at the
 // Definition of Done's own scenario (§12): /wide, 1,000,000 rows × 100 columns, 28px
@@ -48,6 +48,103 @@ test('the far corner is reachable and painted at 10⁶ rows (BIG-1)', async ({ p
 
     await page.keyboard.press('ControlOrMeta+Home');
     await expect(cell(page, 0, 0)).toBeVisible({ timeout: 15_000 });
+});
+
+// ADR-0012, 2026-10-08: under Citrix with the browser's hardware acceleration off, a far reveal
+// left the Viewport white until the offset moved again. Every reveal is now followed by a repaint:
+// the offset a pixel away in the next frame and back in the one after. The core must hear nothing
+// of it, and a scroll the user makes in between must stand. Whether it paints under Citrix is
+// checked by hand there (VZ-18); these check the mechanism.
+
+/** The wire (if any) quiet, and a reveal's repaint over: what the grid does next is done. */
+async function settled(page) {
+    await circuitQuiet();
+    await revealRepainted(page);
+}
+
+/** Rows cover the readable height of the Viewport where the scroller stands: nothing white. */
+async function paintedWhereItStands(page) {
+    return page.evaluate(() => {
+        const scroller = document.querySelector('.ex-grid > .ex-scroller');
+        const box = scroller.getBoundingClientRect();
+        const top = box.top + scroller.querySelector('.ex-header').getBoundingClientRect().height;
+        const bottom = box.top + scroller.clientHeight;
+        const rows = [...scroller.querySelectorAll('.ex-viewport > .ex-row')].map((row) => row.getBoundingClientRect());
+        return rows.length > 0
+            && Math.min(...rows.map((r) => r.top)) <= top + 0.5
+            && Math.max(...rows.map((r) => r.bottom)) >= bottom - 0.5;
+    });
+}
+
+test('a reveal is repainted: the offset moves a pixel and back, and the core paints nothing for it (VZ-18, ADR-0012)', async ({ page }) => {
+    await openWide(page);
+    await cell(page, 0, 2).click({ force: true });
+    await alterPage(page, () => {
+        const scroller = document.querySelector('.ex-grid > .ex-scroller');
+        const viewport = scroller.querySelector('.ex-viewport');
+        const record = { offsets: [], slices: 0 };
+        const onScroll = () => record.offsets.push(scroller.scrollTop);
+        const slices = new MutationObserver((changes) => { record.slices += changes.length; });
+        scroller.addEventListener('scroll', onScroll, { passive: true });
+        slices.observe(viewport, { attributes: true, attributeFilter: ['data-ex-first-row'] });
+        window.vz18 = record;
+        return () => {
+            scroller.removeEventListener('scroll', onScroll);
+            slices.disconnect();
+            delete window.vz18;
+        };
+    });
+
+    // PageDown lands on a row's edge, so a pixel back is the row before it: a core that heard
+    // the repaint would paint another slice.
+    await page.keyboard.press('PageDown');
+    await expect.poll(() => page.evaluate(() => {
+        const o = window.vz18.offsets;
+        return o.length >= 3 && o.at(-3) === o.at(-1) && o.at(-2) < o.at(-1) && o.at(-2) >= o.at(-1) - 1.5;
+    }), { message: 'the offset moved a pixel back and returned (T, T − 1, T)' }).toBe(true);
+    await settled(page);
+
+    const { offsets, slices } = await page.evaluate(() => window.vz18);
+    expect(offsets.at(-1)).toBeGreaterThan(0);
+    expect(slices, 'one slice painted: the reveal\'s, none for the pixel').toBe(1);
+    expect(await paintedWhereItStands(page)).toBe(true);
+});
+
+test('a scroll the user makes during a reveal\'s repaint stands, and the grid paints where it stands (VZ-18, ADR-0012)', async ({ page }) => {
+    await openWide(page);
+    await cell(page, 0, 2).click({ force: true });
+    // As the reveal lands, a scroll of the user's own to the middle, made in the frame the repaint
+    // moves the offset away in: its scroll event is read while the repaint still answers for the
+    // reveal, and nothing moves after it unless the grid is told to read again.
+    await alterPage(page, () => {
+        const root = document.querySelector('.ex-grid');
+        const scroller = root.querySelector(':scope > .ex-scroller');
+        const landed = new MutationObserver(() => {
+            landed.disconnect();
+            requestAnimationFrame(() => {
+                scroller.scrollTop = Math.round(scroller.scrollHeight / 2);
+                window.vz18user = scroller.scrollTop;
+            });
+        });
+        landed.observe(root, { attributes: true, attributeFilter: ['data-ex-reveal'] });
+        return () => {
+            landed.disconnect();
+            delete window.vz18user;
+        };
+    });
+
+    await page.keyboard.press('ControlOrMeta+ArrowDown');
+    await expect.poll(() => page.evaluate(() => window.vz18user ?? null)).not.toBeNull();
+    await settled(page);
+
+    const [user, standing, first] = await page.evaluate(() => {
+        const scroller = document.querySelector('.ex-grid > .ex-scroller');
+        return [window.vz18user, scroller.scrollTop, Number(scroller.querySelector('.ex-viewport').getAttribute('data-ex-first-row'))];
+    });
+    expect(standing, 'the user\'s scroll stands').toBe(user);
+    expect(first, 'the slice is the middle\'s, not the last rows\'').toBeLessThan(ROWS - 1000);
+    expect(first).toBeGreaterThan(1000);
+    await expect.poll(() => paintedWhereItStands(page), { message: 'rows cover the Viewport where it stands' }).toBe(true);
 });
 
 // ADR-0053: a million rows of 28 px are 28,000,000 px, and at 150% Chrome lays out nothing
