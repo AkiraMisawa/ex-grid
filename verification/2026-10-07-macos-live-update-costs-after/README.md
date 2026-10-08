@@ -7,7 +7,7 @@ reflection where it is private. The harness is recreated, not committed: a copy 
 
 This is ticket 13 of [the live-data spec](../../docs/specs/live-data/issues/13-measure-after-the-changes.md):
 [ticket 01's measurement](../2026-10-06-macos-live-update-costs-cc/README.md) repeated after
-[ADR-0161](../../docs/adr/0161-expivots-live-redraw-makes-the-next-report-from-the-last.md) (the next report
+[ADR-0161](../../docs/adr/0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md) (the next report
 made from the last), [ADR-0160](../../docs/adr/0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md)
 (no row beyond the Window), ADR-0141's note of 2026-10-07 (`VouchesDistinctRows`), the rewrite of ADR-0142
 and ADR-0130's note of 2026-10-07 (the Selection Summary walks only what it needs). It decides nothing: no

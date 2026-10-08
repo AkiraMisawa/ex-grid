@@ -17,7 +17,7 @@ Performance never gates (AGENTS.md). Every number here is observational.
 paints held row instances, and a report row holds its whole report and cube —
 [`2026-10-06-macos-pivot-oom`](../2026-10-06-macos-pivot-oom/README.md). What was decided on these numbers
 is [ADR-0160](../../docs/adr/0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md),
-[ADR-0161](../../docs/adr/0161-expivots-live-redraw-makes-the-next-report-from-the-last.md), ADR-0141's
+[ADR-0161](../../docs/adr/0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md), ADR-0141's
 note of 2026-10-07 and the rewrite of
 [ADR-0142](../../docs/adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md).
 Where this record says the cause is under investigation, that is the state it was written in.)*

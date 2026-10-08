@@ -6,7 +6,7 @@ lands as the user entered it, so the grid keeps no paints at all
 rewritten; [ADR-0160](../../docs/adr/0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md)).
 The record stands for what it measured: the cost of a paint, the memory, and the collector's cost of
 reclaiming a generation, which bears on
-[ADR-0161](../../docs/adr/0161-expivots-live-redraw-makes-the-next-report-from-the-last.md).)*
+[ADR-0161](../../docs/adr/0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md).)*
 
 Date: 2026-10-06. Worktree `live-data-paint-text`, detached at `41c8d8c8` (branch
 `claude/live-data-next-cc`). The prototype is left uncommitted in the worktree; `prototype.patch` is
