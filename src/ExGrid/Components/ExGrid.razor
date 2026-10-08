@@ -1026,10 +1026,14 @@
     /// the two sources' Row Sequence Versions are — two fresh sources both start at 0 — the
     /// positions the old one painted name the new one's rows. The Selection is dropped, as an
     /// order move drops it; an open edit is discarded and <see cref="OnEditDiscarded"/> says
-    /// <see cref="EditDiscardReason.SourceChanged"/>; and a gesture taken on what the old one
-    /// painted is refused, <see cref="PasteRefusalReason.SourceChanged"/> for a write and
-    /// <see cref="ActionRefusalReason.SourceChanged"/> for an Action. The grid tells the two
-    /// apart by reference and holds no replaced source to do it (ADR-0160).</para>
+    /// <see cref="EditDiscardReason.SourceChanged"/>, as it does for typing aimed at what the old
+    /// one painted, which opens nothing; and a gesture taken on what the old one painted is
+    /// refused, <see cref="PasteRefusalReason.SourceChanged"/> for a write and
+    /// <see cref="ActionRefusalReason.SourceChanged"/> for an Action. A Find answer the old one
+    /// gives after it was replaced moves nothing (<see cref="FindRefusalReason.SourceChanged"/>),
+    /// a placement whose commit brought the new one in places nothing
+    /// (<see cref="PlaceSelectionAsync"/>), and figures it summed are shown nowhere. The grid tells
+    /// the two apart by reference and holds no replaced source to do it (ADR-0160).</para>
     /// </summary>
     [Parameter] public IGridSource<TRow>? Source { get; set; }
 
@@ -1563,7 +1567,8 @@
     [Parameter] public Func<GridFindRequest, CancellationToken, Task<GridFindResult>>? OnFind { get; set; }
 
     /// <summary>A Find step that moved nothing, saying why (ADR-0055): nothing can search,
-    /// nothing matched, or the order moved while the step was out. Chrome words it.</summary>
+    /// nothing matched, the order moved while the step was out, or the <see cref="Source"/> was
+    /// replaced by another instance while it was out (ADR-0142). Chrome words it.</summary>
     [Parameter] public EventCallback<FindRefusalReason> OnFindRefused { get; set; }
 
     /// <summary>A refused copy, saying which rule it hit (ADR-0005): the clipboard was
@@ -6626,7 +6631,11 @@
     /// announced once it settles (ADR-0033). The Selection stays the grid's — the Consumer
     /// asks and the grid places — and positions only mean something under the order they
     /// were written in: a request made under a <paramref name="rowSequenceVersion"/> other
-    /// than the grid's is dropped, and changes nothing (ADR-0011).
+    /// than the grid's is dropped, and changes nothing (ADR-0011). So is one whose commit of the
+    /// open edit brought in another <see cref="Source"/> instance, whatever the two sources'
+    /// versions are: the positions were asked for among the rows of the one replaced (ADR-0142).
+    /// The version is all a request carries, so a request made after the replacement is taken as
+    /// written for the new one.
     /// </summary>
     /// <returns>Whether the placement was made: false when it was dropped as stale, or when
     /// a Reject held an open edit (ADR-0034).</returns>
@@ -6645,6 +6654,9 @@
     {
         if (_disposed || rowSequenceVersion != _sequenceVersion)
             return false;
+        // The binding the request was made under: the version alone cannot tell a replaced Source, as
+        // two fresh sources both start at 0 (ADR-0142).
+        var binding = _binding;
         // Validated before anything changes: a refused request commits nothing.
         _ = _selection.Selection.Place(range, focus, Extent);
         if (_editMode != EditMode.None && !await CommitEditAsync())
@@ -6656,8 +6668,10 @@
         if (_menuColumn >= 0 || _contextCell is not null)
             CloseMenus();
         EndInteractive();
-        // The version can have moved while the commit's intent was handled.
-        if (rowSequenceVersion != _sequenceVersion)
+        // The version can have moved while the commit's intent was handled, or the Consumer's handling
+        // of it can have handed over another Source: the positions name other rows now (ADR-0011,
+        // ADR-0142).
+        if (rowSequenceVersion != _sequenceVersion || binding != _binding)
         {
             _suppressRender = false;
             StateHasChanged();
@@ -6778,7 +6792,8 @@
     /// One Find step (ADR-0055): asked of the Source or the push-mode delegate, with the
     /// Focus to start from, the selection as the scope when it is more than one cell, the
     /// visible columns in their current order and the version they were read in. An answer
-    /// under another version moves nothing; a found cell becomes the Focus and is revealed.
+    /// under another version, or from a Source since replaced by another instance, moves nothing
+    /// (ADR-0011, ADR-0142); a found cell becomes the Focus and is revealed.
     /// </summary>
     private async Task FindStepAsync(bool backward)
     {
@@ -6786,6 +6801,9 @@
             return;
         _findCancellation?.Cancel();
         var cancellation = _findCancellation = new CancellationTokenSource();
+        // The binding the question is asked of: the version alone cannot tell a replaced Source, as
+        // two fresh sources both start at 0 (ADR-0142).
+        var binding = _binding;
 
         var selection = _selection.Selection;
         var names = new string[Columns.Count];
@@ -6820,6 +6838,14 @@
             return;
         _findCancellation = null;
 
+        // Another Source was handed over while the question was out: the answer, found or not, is
+        // about the rows of a source the grid no longer shows, whatever the two versions are, and
+        // never moves the Focus among the new one's (ADR-0011, ADR-0142).
+        if (binding != _binding)
+        {
+            await RefuseFindAsync(FindRefusalReason.SourceChanged);
+            return;
+        }
         // The order moved while the question was out: the answer, found or not, is about
         // positions that no longer stand (ADR-0011).
         if (request.RowSequenceVersion != _sequenceVersion)
@@ -6885,6 +6911,7 @@
         {
             FindRefusalReason.NotFound => FindOutcome.NotFound,
             FindRefusalReason.OrderChanged => FindOutcome.OrderChanged,
+            FindRefusalReason.SourceChanged => FindOutcome.SourceChanged,
             _ => FindOutcome.None,
         };
         _suppressRender = false;
