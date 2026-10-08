@@ -153,9 +153,21 @@ public partial class ExGrid<TRow>
 
     /// <summary>What a gesture aimed with a Selection an order move or a replaced Source dropped
     /// needs of it (ADR-0011, ADR-0142): its Focus, the action chosen in that cell if one was
-    /// (ADR-0037), and the newest paint when it was dropped. Positions and numbers, never a row or a
-    /// Row Key (ADR-0160).</summary>
-    private sealed record DroppedSelection(int UpToPaint, CellPosition Focus, int? ChosenAction);
+    /// (ADR-0037), the newest paint when it was dropped, and whether the typing aimed with it has
+    /// been said to be thrown away. Positions and numbers, never a row or a Row Key (ADR-0160).</summary>
+    private sealed class DroppedSelection(int upToPaint, CellPosition focus, int? chosenAction)
+    {
+        public int UpToPaint { get; } = upToPaint;
+
+        public CellPosition Focus { get; } = focus;
+
+        public int? ChosenAction { get; } = chosenAction;
+
+        /// <summary>Whether typing aimed with it has been thrown away and said, through
+        /// <c>OnEditDiscarded</c>: once for all the keys of the run (<see cref="DropKeyAimedWithADroppedSelectionAsync"/>),
+        /// or by the discard of an edit that was open as a replaced Source dropped it.</summary>
+        public bool TypingTold { get; set; }
+    }
 
     // The Selection the last order move or Source replacement dropped, while no newer one has been
     // dropped. A gesture told its paint or an earlier one was aimed with it — gestures are told in the
@@ -178,6 +190,39 @@ public partial class ExGrid<TRow>
     /// an order move or a replaced Source has dropped since (ADR-0011, ADR-0142).</summary>
     private bool AimedWithADroppedSelection(int told)
         => AimedUnderAnotherOrder(told) && _droppedSelection is { } dropped && told <= dropped.UpToPaint;
+
+    /// <summary>
+    /// A key, or a composition's text, aimed with a Selection that an order move or a replaced Source
+    /// has dropped since (ADR-0011, ADR-0012, ADR-0142; decided with the user 2026-10-08). It was aimed
+    /// at a Focus that went with that order or that source, and the user has not yet seen the state
+    /// it left: it opens nothing, moves nothing and writes nothing anywhere, and it is never taken as
+    /// the first key on the empty Selection the drop left. Each key carries the paint it was typed
+    /// against, so all the keys of one run aimed with that Selection go alike, and a key typed after
+    /// the user saw the new state — told a newer paint — keeps the first-key rule.
+    /// <para>Where it would have opened an edit — <paramref name="opensAnEdit"/>, over a column that
+    /// edits — the typing is thrown away and said, once for all the keys aimed with that Selection,
+    /// through <see cref="OnEditDiscarded"/>: <see cref="EditDiscardReason.OrderMoved"/>, or
+    /// <see cref="EditDiscardReason.SourceChanged"/> when the Source was replaced. Answers whether the
+    /// key was such a key, and is gone.</para>
+    /// </summary>
+    /// <param name="told">The paint the key or the composition was typed against.</param>
+    /// <param name="opensAnEdit">Whether it would have opened an edit: a typed character, F2,
+    /// Backspace, a composition's text.</param>
+    private async Task<bool> DropKeyAimedWithADroppedSelectionAsync(int told, bool opensAnEdit)
+    {
+        if (!AimedWithADroppedSelection(told) || _droppedSelection is not { } dropped)
+            return false;
+        if (opensAnEdit && !dropped.TypingTold && ColumnIsEditable(dropped.Focus.Column))
+        {
+            dropped.TypingTold = true;
+            if (OnEditDiscarded.HasDelegate)
+            {
+                await OnEditDiscarded.InvokeAsync(
+                    AimedAtAReplacedSource(told) ? EditDiscardReason.SourceChanged : EditDiscardReason.OrderMoved);
+            }
+        }
+        return true;
+    }
 
     /// <summary>
     /// Space told a paint under an order that has moved since, or of a Source since replaced

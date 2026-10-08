@@ -20,6 +20,12 @@
             inserted — the same positions would name other rows, so the grid <strong>drops the selection</strong>
             rather than leave it on rows you did not choose.
         </p>
+        <p>
+            Keys typed against the dropped selection that were still on their way when the order changed go with
+            it: typing opens no editor and writes nothing, and the grid says so through <code>OnEditDiscarded</code>,
+            once for the whole run of keys; an arrow moves nothing. A key pressed once the new order is on screen
+            places the Focus on the first cell in view, as the first key on an empty selection always does.
+        </p>
         <DocsExample Title="Reading the selection" Builtin="typeof(SelectionStatus)" Mud="typeof(SelectionStatusMud)"
                      Files="@(["Examples/Data/Trade.cs"])">
             <code>SelectionChanged</code> hands over a <code>GridSelection</code>: its ranges, the Focus, and the cell

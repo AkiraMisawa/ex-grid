@@ -240,6 +240,52 @@ public class SheetDocumentWiringTests : SheetTestContext
         Assert.Equal(SheetWords.PasteRefused(PasteRefusalReason.OrderMoved), Notice(cut));
     }
 
+    [Fact] // ADR-0142 / ADR-0011, ADR-0012 (decided 2026-10-08): `5` `0` `0` Enter typed on A1 of the old document and reaching the Sheet after another was opened opens nothing, writes nothing into the new one, and is said once, as typing that reached the Sheet after another document was opened
+    public async Task Typing_aimed_at_the_replaced_document_writes_nothing_and_is_said()
+    {
+        var raised = new List<SheetDocument>();
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"))).Add(s => s.DocumentChanged, raised.Add));
+        await GoToAsync(cut, "A1");
+        var typedOn = Paint(cut);
+
+        cut.Render(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "keep"))));
+        var grid = Grid(cut);
+        foreach (var key in new[] { "5", "0", "0", "Enter" })
+            await grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, false, false, false, false, false, paint: typedOn));
+
+        Assert.False(cut.Instance.IsEditing);
+        Assert.Equal("keep", CellText(cut, "A1"));
+        Assert.Equal("", CellText(cut, "A2"));
+        Assert.Empty(raised);
+        Assert.True(grid.Instance.ReadSelection().Selection.IsEmpty);
+        Assert.Equal(SheetWords.EditDiscarded(global::ExGrid.Cells.EditDiscardReason.OrderMoved), Notice(cut));
+    }
+
+    [Fact] // ADR-0142 / ADR-0012: a key typed after the new document is on screen keeps the first-key rule: it places the Focus on A1 and the editor opens there holding it
+    public async Task Typing_on_the_new_document_opens_an_edit_by_the_first_key_rule()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"))));
+        await GoToAsync(cut, "A1");
+
+        cut.Render(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "keep"))));
+        var grid = Grid(cut);
+        await grid.InvokeAsync(() => grid.Instance.OnKeyAsync("5", false, false, false, false, false, paint: Paint(cut)));
+
+        Assert.True(cut.Instance.IsEditing);
+        Assert.Equal("", Notice(cut));
+    }
+
+    [Fact] // ADR-0142, principle 1 (decided 2026-10-08): every edit discard the grid can raise has a sentence of its own, and typing that reached the Sheet after another document was opened — the one order move a Sheet has — says so, and that nothing was written
+    public void Every_edit_discard_is_worded_and_an_order_move_is_told_as_another_document_opened()
+    {
+        var sentences = Enum.GetValues<global::ExGrid.Cells.EditDiscardReason>().Select(SheetWords.EditDiscarded).ToArray();
+
+        Assert.Equal(sentences.Length, sentences.Distinct().Count());
+        var orderMoved = SheetWords.EditDiscarded(global::ExGrid.Cells.EditDiscardReason.OrderMoved);
+        Assert.Contains("another Sheet Document was opened", orderMoved);
+        Assert.Contains("nothing was written", orderMoved);
+    }
+
     [Fact] // ADR-0142 / ADR-0048: a document this Sheet raised, handed back as a two-way binding does, is no replacement: the Selection stays, and a paste taken before it came back lands
     public async Task The_sheets_own_document_coming_back_moves_nothing()
     {

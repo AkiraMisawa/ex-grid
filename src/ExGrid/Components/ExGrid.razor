@@ -1591,7 +1591,11 @@
     /// <see cref="Source"/> was replaced by another instance, whose rows are not the one the edit
     /// was opened on (<see cref="EditDiscardReason.SourceChanged"/>, ADR-0142); or, with no Row
     /// Key, its row left the Window under the order it was opened under. An order move discards
-    /// nothing: the editor outlives it (ADR-0011's note of 2026-10-07). None is the user's own
+    /// no open editor: the editor outlives it (ADR-0011's note of 2026-10-07). Typing that would
+    /// have opened an edit but reached the grid aimed with a Selection that an order move or a
+    /// replaced Source had dropped since opens nothing, and is said here too, once for the keys
+    /// typed against that Selection (<see cref="EditDiscardReason.OrderMoved"/>,
+    /// <see cref="EditDiscardReason.SourceChanged"/>; decided 2026-10-08). None is the user's own
     /// doing — a Consumer's new columns, new source or refresh lands and the typing goes — so the
     /// grid says so rather than leaving the loss to be guessed at. Chrome writes the
     /// sentence and announces it (A11Y-16); the grid holds no strings. A discard the Consumer
@@ -2883,6 +2887,10 @@
             // is — a Consumer handler run inside this render stack would re-enter the
             // same batch.
             _pendingDiscard = _sourceReplaced ? EditDiscardReason.SourceChanged : EditDiscardReason.ColumnsChanged;
+            // The keys typed after it against the Selection the replacement dropped are that same
+            // typing: said once, by this discard (DropKeyAimedWithADroppedSelectionAsync).
+            if (_sourceReplaced && _droppedSelection is { } dropped)
+                dropped.TypingTold = true;
         }
         else
         {
@@ -6317,6 +6325,10 @@
         switch (action.Kind)
         {
             case GridKeyKind.None:
+                // Typed against a Selection an order move or a replaced Source has dropped since: it
+                // opens nothing, and typing is said to be thrown away (ADR-0142, 2026-10-08).
+                if (await DropKeyAimedWithADroppedSelectionAsync(paint, OpensAnEdit(key, ctrl, alt, meta)))
+                    return;
                 // F2 and a printable character open the Cell Editor (ADR-0010) — the
                 // gate forwarded them; whether this cell edits is decided here.
                 await TryStartEditingAsync(key, ctrl, alt, meta, metaIsPrimary);
@@ -6349,7 +6361,10 @@
                 return;
             case GridKeyKind.ClearAndEdit:
                 // Backspace: an editor entry like a printable key, minus the character
-                // (ADR-0035) — judged where every entry is, on the Focus.
+                // (ADR-0035) — judged where every entry is, on the Focus — and, typed against a
+                // Selection dropped since, thrown away as a typed key is (ADR-0142, 2026-10-08).
+                if (await DropKeyAimedWithADroppedSelectionAsync(paint, opensAnEdit: true))
+                    return;
                 await TryStartEditingAsync(EditMode.Overwrite, "");
                 return;
             case GridKeyKind.Clear:
@@ -6430,6 +6445,10 @@
                 {
                     if (await RefuseSpaceAimedUnderAnotherOrderAsync(paint) || !_selection.Selection.IsEmpty)
                         return;
+                    // Aimed with the Selection the move dropped, at a cell with no action: nothing
+                    // to engage, and not a first key either (ADR-0142, 2026-10-08).
+                    if (await DropKeyAimedWithADroppedSelectionAsync(paint, opensAnEdit: false))
+                        return;
                     break;
                 }
                 // With no Focus, Space is a first key like any other: it only places the
@@ -6440,6 +6459,12 @@
                 await EngageAsync(paint);
                 return;
         }
+
+        // A key that moves or selects, aimed with a Selection an order move or a replaced Source has
+        // dropped since: it named a Focus that is gone, and moves nothing — never taken as the first
+        // key on the empty Selection the drop left (ADR-0012; ADR-0142, 2026-10-08).
+        if (await DropKeyAimedWithADroppedSelectionAsync(paint, opensAnEdit: false))
+            return;
 
         var extent = Extent;
         if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
@@ -6954,6 +6979,14 @@
         return slice >= 0 && slice < _window.Count && !_placeholderMode;
     }
 
+    /// <summary>Whether <paramref name="key"/>, pressed with no edit open, would open one: F2, or a
+    /// character typed — not a chorded key, except AltGr, which Windows reports as Control and Alt
+    /// held together and is how the German, French and Nordic layouts type @ { [ €. Either modifier
+    /// alone is a shortcut and stays out; both together is a character. A Meta held where it is not
+    /// primary was never forwarded, but the guard costs nothing to keep honest.</summary>
+    private static bool OpensAnEdit(string key, bool ctrl, bool alt, bool meta)
+        => !meta && ctrl == alt && ((key == "F2" && !ctrl) || key.Length == 1);
+
     /// <param name="key">The key as the browser named it.</param>
     /// <param name="ctrl">Whether Control was held.</param>
     /// <param name="alt">Whether Alt was held.</param>
@@ -6961,16 +6994,9 @@
     /// <param name="metaIsPrimary">Whether Meta is the platform's primary modifier.</param>
     private async Task TryStartEditingAsync(string key, bool ctrl, bool alt, bool meta, bool metaIsPrimary)
     {
-        // A chorded key is not typing — except AltGr, which Windows reports as Control
-        // and Alt held together and is how the German, French and Nordic layouts type
-        // @ { [ €. Either modifier alone is a shortcut and stays out; both together is
-        // a character. A Meta held where it is not primary was never forwarded, but
-        // the guard costs nothing to keep honest.
-        if (meta || ctrl != alt)
+        if (!OpensAnEdit(key, ctrl, alt, meta))
             return;
         var caret = key == "F2" && !ctrl;
-        if (!caret && key.Length != 1)
-            return;
         // The character that started Overwrite mode is not lost (ADR-0010): it was
         // pressed before the editor existed, so the core holds it and the editor opens
         // containing it. Caret keeps the current value, with the caret inside it.

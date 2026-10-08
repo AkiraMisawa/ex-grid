@@ -131,7 +131,11 @@
                 paste, a fill or <kbd>Delete</kbd> was aimed with no longer names those rows
                 (<code>OnPasteRefused</code>); without a Row Key, an editor's position names another row
                 (<code>OnCommitRefused</code>); a press on an Action that only a position names
-                (<code>OnActionRefused</code>).
+                (<code>OnActionRefused</code>). Typing — a character, <kbd>F2</kbd>, <kbd>Backspace</kbd>, an IME's
+                text — that reaches the grid after the order moved, typed against the Selection the move dropped,
+                opens no editor and writes nothing anywhere, rather than landing on the first cell of the new order:
+                <code>OnEditDiscarded</code> says <code>OrderMoved</code>, once for the run of keys. A key typed once
+                the new order is on screen opens an edit as the first key always does.
             </li>
             <li>
                 <code>RowLeftTheWindow</code> — the row is not in the rows the grid holds now: with a Row Key, no row
@@ -143,7 +147,8 @@
             <li>
                 <code>SourceChanged</code> — the <code>Source</code> was replaced by another instance. That is a new
                 binding whatever the two sources' Row Sequence Versions are: the Selection is dropped, an open edit is
-                discarded and <code>OnEditDiscarded</code> says <code>SourceChanged</code>, and a paste, a fill,
+                discarded and <code>OnEditDiscarded</code> says <code>SourceChanged</code> — as it does for typing
+                aimed at what the old source painted, which opens nothing — and a paste, a fill,
                 <kbd>Delete</kbd> or an Action aimed at what the old source painted is refused rather than landing
                 on the new source's row at the same place.
             </li>

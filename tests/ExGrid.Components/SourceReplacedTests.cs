@@ -330,53 +330,7 @@ public class SourceReplacedTests : GridTestContext
         Assert.Empty(heard.Edits);
     }
 
-    // ---- Keys and IME text aimed with the Selection the replacement dropped ----
-
-    [Theory] // ADR-0142 / ADR-0012: a printable key taken on the replaced Source's paint is not dropped: as after an order move, the first key places the Focus on the first painted cell and opens the editor there holding it, so the keys after it commit the whole of what was typed, never its tail
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task A_typed_key_aimed_with_the_dropped_selection_behaves_as_after_an_order_move(bool sourceReplaced)
-    {
-        var rows = TestRows.Many(50);
-        var heard = new Heard();
-        var source = new SwappableSource(rows);
-        var cut = RenderGrid(source, heard);
-        await ClickAsync(cut, 50, 50);
-        var typedOn = Paint(cut);
-        if (sourceReplaced)
-            Replace(cut, GridSource.From(Copies(rows)));
-        else
-            await cut.InvokeAsync(() => source.Reorder([rows[1], rows[0], .. rows[2..]]));
-        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
-
-        await KeyAsync(cut, "5", paint: typedOn);
-        await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "500" });
-        await KeyAsync(cut, "Enter", paint: Paint(cut));
-
-        var edit = Assert.Single(heard.Edits);
-        Assert.Equal("500", edit.Value);
-        Assert.Equal(sourceReplaced ? "Row 000000" : "Row 000001", edit.Row.Book);
-        Assert.Empty(heard.PasteRefusals);
-    }
-
-    [Fact] // ADR-0142 / ADR-0080, ADR-0012: IME text ending after the Source was replaced opens the editor as a typed key does, on the first painted cell, holding the whole text
-    public async Task Ime_text_after_the_source_was_replaced_opens_the_editor_holding_it()
-    {
-        var rows = TestRows.Many(50);
-        var heard = new Heard();
-        var cut = RenderGrid(GridSource.From(rows), heard);
-        await ClickAsync(cut, 50, 50);
-        Replace(cut, GridSource.From(Copies(rows)));
-
-        await cut.InvokeAsync(() => cut.Instance.OnKeyFieldTextAsync("かな"));
-        await KeyAsync(cut, "Enter", paint: Paint(cut));
-
-        var edit = Assert.Single(heard.Edits);
-        Assert.Equal("かな", edit.Value);
-        // On the new source's first painted row, as a first key places it: not the row the
-        // Selection the replacement dropped stood on (row 2).
-        Assert.Equal("Row 000000", edit.Row.Book);
-    }
+    // Keys and IME text aimed with the Selection the replacement dropped: TypingAimedWithADroppedSelectionTests.
 
     // ---- An Action press ----
 
@@ -499,54 +453,6 @@ public class SourceReplacedTests : GridTestContext
 
         public Task<IReadOnlyList<TestRow>> GetRowsAsync(RowRange range, CancellationToken cancellationToken)
             => (Asked = new TaskCompletionSource<IReadOnlyList<TestRow>>()).Task;
-
-        public Task<Chrome.DistinctValues> GetDistinctValuesAsync(string column, CancellationToken cancellationToken)
-            => Task.FromResult(Chrome.DistinctValues.Of([]));
-    }
-
-    /// <summary>A source whose order the test moves, under a new Row Sequence Version.</summary>
-    private sealed class SwappableSource(IReadOnlyList<TestRow> rows) : IGridSource<TestRow>
-    {
-        public IReadOnlyList<TestRow> Window { get; private set; } = rows;
-
-        public int WindowStart => 0;
-
-        public int? TotalCount => Window.Count;
-
-        public bool IsLoading => false;
-
-        public int RowSequenceVersion { get; private set; }
-
-        public IReadOnlyList<SortSpec> Sorts => [];
-
-        public GridFilter? Filter => null;
-
-        public event Action? StateChanged;
-
-        /// <summary>The rows in another order: the version moves.</summary>
-        public void Reorder(IReadOnlyList<TestRow> reordered)
-        {
-            Window = reordered;
-            RowSequenceVersion++;
-            StateChanged?.Invoke();
-        }
-
-        public void OnSortChanged(IReadOnlyList<SortSpec> sorts)
-        {
-        }
-
-        public void OnFilterChanged(GridFilter? filter)
-        {
-        }
-
-        public void OnColumnsChanged(IReadOnlyList<ColumnInfo<TestRow>> columns)
-        {
-        }
-
-        public Task OnRangeNeededAsync(RowRange range) => Task.CompletedTask;
-
-        public Task<IReadOnlyList<TestRow>> GetRowsAsync(RowRange range, CancellationToken cancellationToken)
-            => Task.FromResult<IReadOnlyList<TestRow>>([.. Window.Skip(range.Start).Take(range.Count)]);
 
         public Task<Chrome.DistinctValues> GetDistinctValuesAsync(string column, CancellationToken cancellationToken)
             => Task.FromResult(Chrome.DistinctValues.Of([]));
