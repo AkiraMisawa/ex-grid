@@ -83,6 +83,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         dropReveal();
         scroller.scrollTop = reveal.top;
         scroller.scrollLeft = reveal.left;
+        repaintAfterReveal(reveal.top, reveal.left);
     };
     const holdReveal = (reveal) => {
         pendingReveal = reveal;
@@ -95,6 +96,70 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         revealObserver.disconnect();
         clearTimeout(revealTimer);
         revealTimer = 0;
+    };
+
+    // A reveal's repaint (ADR-0012, 2026-10-08). Under Citrix with the browser's hardware
+    // acceleration off, a far reveal left the Viewport white: the DOM, the offset and the slice
+    // were all right, and the rows stayed unpainted on screen until the offset moved once more.
+    // So the offset moves on by one pixel in the frame after the reveal's and back in the frame
+    // after that, which is the move that painted them there. The core hears nothing of it: a read
+    // meanwhile answers where the reveal left the scroller, so no slice is painted for it. A
+    // scroll the user makes in between stands: the move back is not made, and the core is told to
+    // read the offset again, through the scroller's own scroll event, since one it already read
+    // answered the reveal's offset. The move back writes the value the reveal wrote, on the moved
+    // axis only: at a fractional scale an offset read back and written again can land a fraction of
+    // a pixel elsewhere. It reads and writes scroll offsets only (ADR-0021).
+    let repaint = null;
+    const dropRepaint = () => {
+        if (repaint) {
+            cancelAnimationFrame(repaint.frame);
+            repaint = null;
+        }
+    };
+    const yieldRepaint = () => {
+        dropRepaint();
+        scroller.dispatchEvent(new Event('scroll'));
+    };
+    const repaintAfterReveal = (writtenTop, writtenLeft) => {
+        dropRepaint();
+        const current = { top: scroller.scrollTop, left: scroller.scrollLeft, frame: 0 };
+        repaint = current;
+        current.frame = requestAnimationFrame(() => {
+            if (repaint !== current) {
+                return;
+            }
+            if (scroller.scrollTop !== current.top || scroller.scrollLeft !== current.left) {
+                yieldRepaint();
+                return;
+            }
+            // Away from the edge the offset stands at, so the move is never clamped to nothing;
+            // across, where the rows cannot scroll at all.
+            scroller.scrollTop = current.top + (current.top > 0 ? -1 : 1);
+            const across = scroller.scrollTop === current.top;
+            if (across) {
+                scroller.scrollLeft = current.left + (current.left > 0 ? -1 : 1);
+            }
+            const moved = { top: scroller.scrollTop, left: scroller.scrollLeft };
+            if (moved.top === current.top && moved.left === current.left) {
+                dropRepaint();
+                return;
+            }
+            current.frame = requestAnimationFrame(() => {
+                if (repaint !== current) {
+                    return;
+                }
+                if (scroller.scrollTop !== moved.top || scroller.scrollLeft !== moved.left) {
+                    yieldRepaint();
+                    return;
+                }
+                if (across) {
+                    scroller.scrollLeft = writtenLeft;
+                } else {
+                    scroller.scrollTop = writtenTop;
+                }
+                repaint = null;
+            });
+        });
     };
 
     // Whether the synchronous channel exists — WebAssembly has it, a server circuit
@@ -2766,29 +2831,38 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             canFind = findable;
             declared = new Set(declaredKeys ?? []);
         },
-        getScrollOffset: () => (pendingReveal
-            ? { top: pendingReveal.top, left: pendingReveal.left }
-            : scroller
-                ? { top: scroller.scrollTop, left: scroller.scrollLeft }
-                : { top: 0, left: 0 }),
+        getScrollOffset: () => {
+            if (pendingReveal) {
+                return { top: pendingReveal.top, left: pendingReveal.left };
+            }
+            // A reveal's repaint is the browser's business, not the core's (repaintAfterReveal).
+            if (repaint) {
+                return { top: repaint.top, left: repaint.left };
+            }
+            return scroller ? { top: scroller.scrollTop, left: scroller.scrollLeft } : { top: 0, left: 0 };
+        },
         // Where the Focus is kept visible (ADR-0012). The offsets are computed in C#,
         // which is what keeps scrollIntoView out of it: that would tuck the cell under the
         // sticky header or the Pinned Columns, neither of which it knows about. A reveal
         // names the render that paints it (token), and is written as that render lands
-        // (pendingReveal above); any other write is made at once, and replaces a reveal
-        // still held.
+        // (pendingReveal above), then repainted (repaintAfterReveal); any other write is made at
+        // once, and replaces a reveal still held or a repaint still under way.
         setScrollOffset: (top, left, token) => {
             if (!scroller) {
                 return;
             }
             dropReveal();
-            if (token !== undefined && token !== null
-                && Number(root.getAttribute('data-ex-reveal')) < token) {
+            dropRepaint();
+            const reveal = token !== undefined && token !== null;
+            if (reveal && Number(root.getAttribute('data-ex-reveal')) < token) {
                 holdReveal({ top, left, token });
                 return;
             }
             scroller.scrollTop = top;
             scroller.scrollLeft = left;
+            if (reveal) {
+                repaintAfterReveal(top, left);
+            }
         },
         // The first visible row kept across a change of the row height or the Layout Ceiling
         // (ADR-0028/0053), written only while the scroller still stands where the core last
@@ -2797,7 +2871,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // core reads the offset instead. The comparison is here because only here are the
         // write and the user's scroll ordered.
         anchorScrollTop: (top, fromTop) => {
-            const standing = pendingReveal ? pendingReveal.top : scroller?.scrollTop;
+            const standing = pendingReveal ? pendingReveal.top : repaint ? repaint.top : scroller?.scrollTop;
             if (!scroller || Math.abs(standing - fromTop) > 1) {
                 return false;
             }
@@ -2805,6 +2879,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 pendingReveal.top = top;
                 return true;
             }
+            dropRepaint();
             scroller.scrollTop = top;
             return true;
         },
@@ -2936,6 +3011,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             resolutionQuery?.removeEventListener('change', armResolution);
             resolutionQuery = null;
             dropReveal();
+            dropRepaint();
             clearTimeout(restTimer);
             root.removeEventListener('mousemove', onPointerMove);
             root.removeEventListener('mouseleave', onPointerLeave);
