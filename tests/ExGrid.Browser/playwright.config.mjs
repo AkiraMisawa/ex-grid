@@ -116,6 +116,12 @@ const webServer = [...hostServers, apiServer];
 
 export default defineConfig({
     testDir: '.',
+    // A wait's bound tells a hang, never a speed (ADR-0056, rule 5): performance never gates, so a
+    // test fails on what the app did, never on how long it took. Playwright's defaults, 5 s for a
+    // wait and 30 s for a test, failed a correct pivot laid out again on a Debug build of the hosts.
+    // A test still waits for the state it expects, and reads the moment it holds.
+    timeout: 300_000,
+    expect: { timeout: 60_000 },
     // One worker, because a run shares what one machine has only one of: the OS clipboard
     // (one per display, and these browsers are headed), the records fixtures.mjs
     // read-modify-writes, and on the Server host the latency proxy's round trip and the
