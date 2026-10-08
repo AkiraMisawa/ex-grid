@@ -699,6 +699,17 @@ export const keySeenUntouched = (page) => page.evaluate(() => window.__keySeen);
 // still 28,000,028 px when Ctrl+End was pressed. A test about what a grid does once it knows its
 // geometry waits here first. At scale 1 nothing is compressed and this returns at once. The
 // length is read from the style attribute, never the CSSOM, which rounds it (ADR-0053).
+/**
+ * Returns once a reveal's repaint is over (ADR-0012, 2026-10-08): after a reveal's write the grid
+ * moves the offset a pixel in the next animation frame and back in the one after. A measurement
+ * made as soon as the offset reads the target can land between the two and see the pixel. Called
+ * once the reveal's write has been seen, the two frames awaited here come after the repaint's
+ * own, since animation frame callbacks run in the order they were asked for.
+ */
+export async function revealRepainted(page) {
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
+
 export async function layoutCeilingTold(grid) {
     await expect.poll(() => grid.evaluate((root) => {
         const spacer = root.querySelector(':scope > .ex-scroller > .ex-spacer');

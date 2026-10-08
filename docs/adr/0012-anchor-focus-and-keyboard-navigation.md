@@ -541,8 +541,10 @@ moves back. That is the move that painted the rows there.
 - **It is a remedy for a fault outside the grid, and recorded as one.** It hides the symptom on the one
   environment where it was seen, and nothing explains why that environment drops the paint. Elsewhere
   the frame after a reveal is drawn one pixel off and the next one back. A test that reads `scrollTop`
-  within those two frames sees the pixel; layer 3 reads after the grid has painted. If a later run
-  under Citrix shows the repaint no longer needed, it comes out.
+  within those two frames sees the pixel, so layer 3 waits for them where it measures right after a
+  reveal (`revealRepainted`). If a later run under Citrix shows the repaint no longer needed, it
+  comes out.
 - **Only that PC can verify it.** Layer 3 checks the mechanism: the order of the writes, that the core
   paints nothing for them, and that a scroll in between stands. Whether it paints under Citrix is
-  checked by hand there (VZ-18).
+  checked by hand there (VZ-18). *(Checked 2026-10-08 on that PC, with a build of v0.1.0-beta.2
+  carrying only this change published to the Docs Site: Ctrl+↓, Ctrl+↑ and PageDown painted.)*

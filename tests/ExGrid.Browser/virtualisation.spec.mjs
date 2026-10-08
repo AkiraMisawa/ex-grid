@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, revealRepainted } from './fixtures.mjs';
 
 // The structural invariants that produce the timing (Definition of Done §1), at the
 // Definition of Done's own scenario (§12): /wide, 1,000,000 rows × 100 columns, 28px
@@ -56,10 +56,10 @@ test('the far corner is reachable and painted at 10⁶ rows (BIG-1)', async ({ p
 // of it, and a scroll the user makes in between must stand. Whether it paints under Citrix is
 // checked by hand there (VZ-18); these check the mechanism.
 
-/** Two frames painted, after the wire (if any) has gone quiet: what the grid does next is done. */
+/** The wire (if any) quiet, and a reveal's repaint over: what the grid does next is done. */
 async function settled(page) {
     await circuitQuiet();
-    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await revealRepainted(page);
 }
 
 /** Rows cover the readable height of the Viewport where the scroller stands: nothing white. */

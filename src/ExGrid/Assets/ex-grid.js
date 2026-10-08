@@ -83,7 +83,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         dropReveal();
         scroller.scrollTop = reveal.top;
         scroller.scrollLeft = reveal.left;
-        repaintAfterReveal();
+        repaintAfterReveal(reveal.top, reveal.left);
     };
     const holdReveal = (reveal) => {
         pendingReveal = reveal;
@@ -106,7 +106,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // meanwhile answers where the reveal left the scroller, so no slice is painted for it. A
     // scroll the user makes in between stands: the move back is not made, and the core is told to
     // read the offset again, through the scroller's own scroll event, since one it already read
-    // answered the reveal's offset. It reads and writes scroll offsets only (ADR-0021).
+    // answered the reveal's offset. The move back writes the value the reveal wrote, on the moved
+    // axis only: at a fractional scale an offset read back and written again can land a fraction of
+    // a pixel elsewhere. It reads and writes scroll offsets only (ADR-0021).
     let repaint = null;
     const dropRepaint = () => {
         if (repaint) {
@@ -118,7 +120,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         dropRepaint();
         scroller.dispatchEvent(new Event('scroll'));
     };
-    const repaintAfterReveal = () => {
+    const repaintAfterReveal = (writtenTop, writtenLeft) => {
         dropRepaint();
         const current = { top: scroller.scrollTop, left: scroller.scrollLeft, frame: 0 };
         repaint = current;
@@ -133,7 +135,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // Away from the edge the offset stands at, so the move is never clamped to nothing;
             // across, where the rows cannot scroll at all.
             scroller.scrollTop = current.top + (current.top > 0 ? -1 : 1);
-            if (scroller.scrollTop === current.top) {
+            const across = scroller.scrollTop === current.top;
+            if (across) {
                 scroller.scrollLeft = current.left + (current.left > 0 ? -1 : 1);
             }
             const moved = { top: scroller.scrollTop, left: scroller.scrollLeft };
@@ -149,8 +152,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     yieldRepaint();
                     return;
                 }
-                scroller.scrollTop = current.top;
-                scroller.scrollLeft = current.left;
+                if (across) {
+                    scroller.scrollLeft = writtenLeft;
+                } else {
+                    scroller.scrollTop = writtenTop;
+                }
                 repaint = null;
             });
         });
@@ -2855,7 +2861,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             scroller.scrollTop = top;
             scroller.scrollLeft = left;
             if (reveal) {
-                repaintAfterReveal();
+                repaintAfterReveal(top, left);
             }
         },
         // The first visible row kept across a change of the row height or the Layout Ceiling
