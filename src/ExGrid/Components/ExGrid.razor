@@ -900,7 +900,7 @@
             }
             @if (PageSize is not null && _markColumn >= 0)
             {
-                <button type="button" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
+                <button type="button" class="ex-mark-result" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
             }
             @* Excel's status-bar figures over the selection (ADR-0130). *@
             @if (ShowsSummaryStrip)
@@ -8901,10 +8901,68 @@
     /// exists, so a grid without one asks nothing.</summary>
     private bool MarkedAt(TRow row) => _marks is not null && _marks.IsMarked(row);
 
-    // Pointed at from outside, neither checkbox marks anything (ADR-0058): as for an action.
+    /// <summary>A press on one of this grid's marks, told by its listener until its click is heard: the
+    /// paint it was taken against, and, for the header's checkbox under a pager, the first row of the
+    /// page it named, or −1 (ADR-0142, LV-32).</summary>
+    private readonly record struct MarkPress(int Paint, int PageStart);
+
+    // The press being told, until its click is heard. Numbers only (ADR-0160).
+    private MarkPress? _markPress;
+
+    /// <summary>
+    /// What the next press on one of this grid's marks — a row's checkbox, the header's, or "Mark all
+    /// N rows" — was taken against (ADR-0142, LV-32): the paint the Viewport named at its mousedown,
+    /// and, for the header's checkbox under a pager, the first row of the page it named, read at the
+    /// same mousedown from the attribute the render wrote. Told by the grid's listener at the release
+    /// on the same mark, just before Blazor dispatches the click, so the click the core hears next is
+    /// the one it describes, as for an action (<see cref="ActionPressTakenAt"/>). A mark press made on
+    /// what a <see cref="Source"/> since replaced painted is dropped, and so is one that names rows by
+    /// position — the header's page or result, "Mark all N rows" — under an order that has moved since,
+    /// or a page turned since: it marks nothing and raises no Row Mark intent, silently, as Space aimed
+    /// with a dropped Selection does. A row's checkbox names its row by identity, which an order move
+    /// leaves it. Reading what the render wrote is not a measurement, and nothing per cell crosses
+    /// (ADR-0021).
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="paint">The paint the Viewport named at the press (<c>data-ex-paint</c>).</param>
+    /// <param name="pageStart">The first row of the page the header's checkbox named under a pager
+    /// (<c>data-ex-page</c>), or −1.</param>
+    [JSInvokable]
+    public Task MarkPressTakenAt(int paint, int pageStart = -1)
+    {
+        if (!_disposed)
+            _markPress = new MarkPress(paint, pageStart);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>The told press a mark's click completes, taken; one nobody told of is taken as aimed
+    /// at the newest paint.</summary>
+    private MarkPress TakeMarkPress()
+    {
+        var press = _markPress ?? new MarkPress(PaintNotTold, -1);
+        _markPress = null;
+        return press;
+    }
+
+    /// <summary>Whether a mark press that names rows by position — the header's page or result, "Mark
+    /// all N rows" — names other rows now: it was taken under an order that has moved since, or on
+    /// what a Source since replaced painted, or on a page turned since (ADR-0011, ADR-0142, LV-32).</summary>
+    private bool NamesOtherRowsNow(MarkPress press)
+        => AimedUnderAnotherOrder(press.Paint)
+           || (PageSize is not null && press.PageStart >= 0 && press.PageStart != _pageStartRow);
+
+    // Pointed at from outside, neither checkbox marks anything (ADR-0058): as for an action. A press on a
+    // row's checkbox made on what a Source since replaced painted is dropped: the checkbox holds the new
+    // source's row now, which nobody pressed (ADR-0142, LV-32).
     private Task RaiseRowMarkAsync(TRow row, bool marked)
-        => PointedAtNow ? Task.CompletedTask
-            : _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.OneRow(row, marked)) ?? Task.CompletedTask;
+    {
+        var press = TakeMarkPress();
+        if (PointedAtNow || AimedAtAReplacedSource(press.Paint))
+            return Task.CompletedTask;
+        return _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.OneRow(row, marked)) ?? Task.CompletedTask;
+    }
 
     /// <summary>The Detail rows "Mark all N rows" offers: the Consumer's count where it
     /// has answered, the result's row count until then.</summary>
@@ -8987,6 +9045,10 @@
         builder.AddEventStopPropagationAttribute(8, "onmousedown", true);
         builder.AddEventStopPropagationAttribute(9, "onclick", true);
         builder.AddAttribute(10, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _onHeaderMark));
+        // Under a pager the press names the page's rows: the listener reads which page with the paint
+        // at the press, and the core drops a press whose page was turned since (ADR-0142, LV-32).
+        if (PageSize is not null)
+            builder.AddAttribute(11, "data-ex-page", _pageStartRow);
         builder.CloseElement();
     };
 
@@ -8998,7 +9060,8 @@
     /// </summary>
     private Task PressHeaderMarkAsync()
     {
-        if (_marks is null || PointedAtNow)
+        // Taken on a result, or a page, that the rows no longer are: dropped (ADR-0142, LV-32).
+        if (NamesOtherRowsNow(TakeMarkPress()) || _marks is null || PointedAtNow)
             return Task.CompletedTask;
         if (PageSize is not null)
         {
@@ -9010,9 +9073,11 @@
         return _marks.OnMarkIntentAsync(new RowMarkIntent<TRow>.AllRows(RowMarkRules.HeaderPress(state), _sequenceVersion));
     }
 
-    /// <summary>"Mark all N rows", under a pager: the explicit step past the page.</summary>
+    /// <summary>"Mark all N rows", under a pager: the explicit step past the page. Taken on a result
+    /// that the rows no longer are, it is dropped (ADR-0142, LV-32).</summary>
     private Task MarkWholeResultAsync()
-        => _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.AllRows(true, _sequenceVersion)) ?? Task.CompletedTask;
+        => NamesOtherRowsNow(TakeMarkPress()) ? Task.CompletedTask
+            : _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.AllRows(true, _sequenceVersion)) ?? Task.CompletedTask;
 
     /// <summary>
     /// Space with the Focus in the Mark Column (ADR-0043): every row with a selected cell
