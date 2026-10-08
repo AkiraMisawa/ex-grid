@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using ExPivot.Engine;
 using Xunit;
 
@@ -474,6 +475,74 @@ public class ReportProtocolTests
         await ReadAsync(1);
         Assert.Equal(shownAt, times.ChangedAt(client.Current!.Rows[0], 0));
         Assert.Equal(25m, row.Values[0]!.Exact);
+    }
+
+    // A Window of the three entries and the grand total, through a client, every update the source
+    // answers recorded as it crosses.
+    private static (PivotReportClient Client, List<PivotReportUpdate> Updates) RecordedClient(LocalPivotReportSource source)
+    {
+        var updates = new List<PivotReportUpdate>();
+        var recorded = PivotReportSource.Fetch(source.Fields, source.Features, source.UpdateMode, async (request, ct) =>
+        {
+            var update = await source.WindowAsync(request, ct);
+            updates.Add(update);
+            return update;
+        });
+        return (new PivotReportClient(recorded), updates);
+    }
+
+    [Theory] // ADR-0152/0153: a change of one leaf is sent as a delta against the Window the client holds, however few Report Versions the source keeps — publishing the new version evicts the baseline only after the delta is made against it — and the rows it did not change are neither in the delta nor new instances
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task ADR0152_ADR0153_a_one_leaf_change_is_a_delta_however_few_versions_are_kept(int versionsKept)
+    {
+        var fields = EntryFields();
+        var data = PivotSource.From<Entry>([new(1, "A", 10m), new(2, "B", 20m), new(3, "C", 30m)], fields);
+        await using var source = PivotReportSource.From(data, versionsKept: versionsKept);
+        var (client, updates) = RecordedClient(source);
+        var ct = TestContext.Current.CancellationToken;
+        Assert.True(await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 10), cancellationToken: ct));
+        var before = client.Current!;
+
+        data.Apply(fields.Batch(changed: [new(2, "B", 25m)]));
+        Assert.True(await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 10), cancellationToken: ct));
+        var after = client.Current!;
+
+        var delta = updates[^1];
+        Assert.True(delta.Rows is null, $"the change of one leaf was sent as a whole Window of {delta.Rows?.Count} rows");
+        Assert.Equal(before.Metadata.Version, delta.Baseline);
+        // B's row and the grand total, and nothing else.
+        Assert.Equal([1, 3], delta.Changes.Select(change => change.Offset));
+        Assert.Equal(["25", "65"], [after.Rows[1].Values[0]!.Text, after.Rows[3].Values[0]!.Text]);
+        Assert.Same(before.Rows[0], after.Rows[0]);
+        Assert.Same(before.Rows[2], after.Rows[2]);
+        Assert.Equal(2, updates.Count);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference[] BAndGrandTotal(PivotReportClient client) => [new(client.Current!.Rows[1]), new(client.Current.Rows[3])];
+
+    [Theory] // ADR-0153 (LV-22): the baseline Window a delta is made against is kept no longer than the Report Version it was served under — evicted by the publication the delta goes with, it does not outlive that call
+    [InlineData(1, false)]
+    [InlineData(2, true)]
+    public async Task ADR0153_a_baseline_window_evicted_by_publication_does_not_outlive_the_call(int versionsKept, bool kept)
+    {
+        var fields = EntryFields();
+        var data = PivotSource.From<Entry>([new(1, "A", 10m), new(2, "B", 20m), new(3, "C", 30m)], fields);
+        await using var source = PivotReportSource.From(data, versionsKept: versionsKept);
+        var client = new PivotReportClient(source);
+        var ct = TestContext.Current.CancellationToken;
+        Assert.True(await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 10), cancellationToken: ct));
+        var replaced = BAndGrandTotal(client);
+
+        data.Apply(fields.Batch(changed: [new(2, "B", 25m)]));
+        Assert.True(await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 10), cancellationToken: ct));
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        // The rows the change replaced live on only in the Window of a Report Version still held.
+        Assert.Equal([kept, kept], replaced.Select(row => row.IsAlive));
     }
 
     private static PivotDisplayRow DisplayRow(string label, decimal value) => new(
