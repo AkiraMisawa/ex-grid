@@ -60,9 +60,14 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// What the next press on an action of this grid's own rows was taken against (ADR-0142,
     /// LV-12): the paint the Viewport named at its mousedown, and the row, column and action the
-    /// button stood for in it. Told by the grid's listener at the release on the same button, just
+    /// button stood for in that paint, read from the ids the render wrote at the same mousedown — a
+    /// keyed row can move the same button before the release, and ids read then would name another
+    /// row of that paint. Told by the grid's listener at the release on the same button, just
     /// before Blazor dispatches the click, so the click the core hears next is the one it
-    /// describes. Reading what the render wrote is not a measurement, and nothing per cell crosses
+    /// describes. A press the platform makes a context menu of instead — Control with the primary
+    /// button where Meta is the primary modifier (macOS) — is not told: no click follows it, and a
+    /// told press waiting for one would act, once a render disposed its row, for a click nobody
+    /// made. Reading what the render wrote is not a measurement, and nothing per cell crosses
     /// (ADR-0021, notes of 2026-10-05 to 2026-10-07).
     ///
     /// <para>Blazor does not deliver an event whose attribute a component since disposed had

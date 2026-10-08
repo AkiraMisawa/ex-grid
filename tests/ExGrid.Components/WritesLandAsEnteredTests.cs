@@ -2520,4 +2520,24 @@ public class WritesLandAsEnteredTests : GridTestContext
         // A press on an action carries it with the row, column and action it pressed.
         Assert.Contains("'ActionPressTakenAt'", script);
     }
+
+    [Fact] // ADR-0142 / LV-12, ADR-0021: an action press reads its whole address — the paint, and the row, column and action its cell's id names — at the mousedown, and tells that at the release, so a keyed row's button moved in between still names the row it was pressed on; a press the platform makes a context menu of (Control with the primary button on macOS), which no click follows, is not told at all
+    public void The_script_reads_an_action_press_address_at_the_mousedown()
+    {
+        var script = AssetSources.Read("ExGrid", "ex-grid.js");
+
+        var press = Regex.Match(script, @"const onPress = \(event\) => \{(?<body>.*?)\n    \};", RegexOptions.Singleline);
+        Assert.True(press.Success, "onPress is defined");
+        var pressed = press.Groups["body"].Value;
+        Assert.Contains("const contextPress = metaIsPrimary && event.ctrlKey;", pressed);
+        Assert.Contains("event.button === 0 && !contextPress ? ownAction(event.target) : null", pressed);
+        Assert.Matches(new Regex(@"actionPress = button !== null \? \{\s*button,\s*paint: paintNow\(\),\s*row: [^\n]+\s*column: [^\n]+\s*index: "), pressed);
+
+        var release = Regex.Match(script, @"const onRelease = \(event\) => \{(?<body>.*?)\n    \};", RegexOptions.Singleline);
+        Assert.True(release.Success, "onRelease is defined");
+        var released = release.Groups["body"].Value;
+        Assert.Contains("'ActionPressTakenAt', action.paint, action.row, action.column, action.index)", released);
+        // Nothing of the address is read again at the release.
+        Assert.DoesNotContain("closest('[role=gridcell]')", released);
+    }
 }
