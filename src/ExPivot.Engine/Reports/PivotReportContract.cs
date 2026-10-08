@@ -240,29 +240,86 @@ public sealed record PivotReportRefusal(PivotReportRefusalKind Kind, string Mess
     public PivotSourceRefusal? SourceRefusal { get; init; }
 }
 
-/// <summary>A replacement at one zero-based position within the requested Window.</summary>
+/// <summary>
+/// A replacement at one zero-based position within the requested Window. A delta carries one for
+/// every row of the Window whose key, labels or shown values differ from its baseline — a subtotal
+/// or grand total row whose total moved, a row whose percentage moved with its denominator, as much
+/// as the row whose data changed. A row left out keeps its old values on the client; the delta's
+/// <see cref="PivotReportUpdate.WindowDigest"/> is what catches it.
+/// </summary>
 /// <param name="Offset">Its position within the Window.</param>
 /// <param name="Row">The complete detached replacement row.</param>
 public sealed record PivotReportRowChange(int Offset, PivotDisplayRow Row);
 
-/// <summary>One atomic report update: complete Window, baseline delta, or explicit refusal.</summary>
+/// <summary>
+/// One atomic report update: a complete Window, a delta from the requested baseline Window, or an
+/// explicit refusal (ADR-0152).
+/// <para>
+/// <b>A delta is verified, not trusted.</b> It names the digest of the Window it produces
+/// (<see cref="WindowDigest"/>, <see cref="PivotReportDigest"/>). The client applies the delta to
+/// the Window it holds, computes the digest of the result and compares — before anything of it is
+/// shown. A delta whose result differs, or that names no digest, is discarded, and a complete
+/// current Window is asked for in its place; if that cannot be had, the last complete report stays,
+/// as a Stale Report.
+/// </para>
+/// <para>
+/// <b>Building deltas yourself.</b> A Consumer that builds deltas — a server that does not run
+/// <see cref="LocalPivotReportSource"/>, a relay that coalesces or drops deltas, a delegate that
+/// turns push messages into deltas — includes a change for every row of the requested Window whose
+/// shown values changed, subtotals, grand totals and rows whose percentage changed included, and
+/// computes the digest over the whole Window as it stands after the delta, from its own complete
+/// copy of it: a digest computed over only the rows it sends, or by applying its own delta, would
+/// match its own mistake. <see cref="LocalPivotReportSource"/> builds complete deltas and their
+/// digests by construction; a relay passes them through untouched.
+/// </para>
+/// </summary>
 /// <param name="RequestId">The echoed request identity.</param>
 /// <param name="Window">The echoed Window identity.</param>
 /// <param name="Metadata">The resulting whole-report metadata, absent on refusal.</param>
 /// <param name="Baseline">The required baseline; null for a complete Window.</param>
 /// <param name="Rows">The complete Window, or null for a delta.</param>
-/// <param name="Changes">Complete replacement rows for a delta.</param>
+/// <param name="Changes">Complete replacement rows for a delta: every row of the Window whose
+/// shown values changed, never only the rows whose data did.</param>
 /// <param name="Refusal">Why it was not answered.</param>
 public sealed record PivotReportUpdate(string RequestId, PivotReportWindow Window, PivotReportMetadata? Metadata,
     PivotReportVersion? Baseline, IReadOnlyList<PivotDisplayRow>? Rows,
     IReadOnlyList<PivotReportRowChange> Changes, PivotReportRefusal? Refusal = null)
 {
-    /// <summary>A complete Window, also used when a retained baseline has expired.</summary>
+    /// <summary>
+    /// The digest of the Window this update produces (<see cref="PivotReportDigest.Of"/>): for a
+    /// delta, of the baseline Window with the changes applied — every row of it, not only the
+    /// rows changed — which the client checks before it shows anything of the delta, and without
+    /// which it does not apply one; for a complete Window, of its rows, checked when present.
+    /// </summary>
+    public string? WindowDigest { get; init; }
+
+    /// <summary>A complete Window, also used when a retained baseline has expired. Its digest is
+    /// computed from <paramref name="rows"/>.</summary>
     public static PivotReportUpdate Complete(PivotReportRequest request, PivotReportMetadata metadata, IReadOnlyList<PivotDisplayRow> rows)
-        => new(request.RequestId, request.Window, metadata, null, rows, []);
-    /// <summary>A delta from the exact requested baseline.</summary>
-    public static PivotReportUpdate Delta(PivotReportRequest request, PivotReportMetadata metadata, IReadOnlyList<PivotReportRowChange> changes)
-        => new(request.RequestId, request.Window, metadata, request.Baseline, null, changes);
+        => new(request.RequestId, request.Window, metadata, null, rows, [])
+        {
+            WindowDigest = PivotReportDigest.Of(metadata, request.Window.Start, rows),
+        };
+
+    /// <summary>
+    /// A delta from the exact requested baseline. <paramref name="changes"/> replaces every row of
+    /// the Window whose key, labels or shown values changed — subtotal and grand total rows, and rows
+    /// whose percentage changed, included — and <paramref name="windowDigest"/> is the digest of
+    /// the whole Window after them (<see cref="PivotReportDigest.Of"/>), computed from the source's
+    /// own complete Window, never from the changes: the client refuses a delta whose result does
+    /// not reproduce it.
+    /// </summary>
+    /// <param name="request">The request answered.</param>
+    /// <param name="metadata">The resulting whole-report metadata.</param>
+    /// <param name="changes">Every row of the Window that differs from the baseline.</param>
+    /// <param name="windowDigest">The digest of the whole Window after the changes.</param>
+    public static PivotReportUpdate Delta(PivotReportRequest request, PivotReportMetadata metadata,
+        IReadOnlyList<PivotReportRowChange> changes, string windowDigest)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(windowDigest);
+        return new(request.RequestId, request.Window, metadata, request.Baseline, null, changes) { WindowDigest = windowDigest };
+    }
+
     /// <summary>An explicit refusal.</summary>
     public static PivotReportUpdate Refused(PivotReportRequest request, PivotReportRefusal refusal)
         => new(request.RequestId, request.Window, null, null, null, [], refusal);

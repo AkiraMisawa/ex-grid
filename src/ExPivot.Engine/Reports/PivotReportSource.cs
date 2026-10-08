@@ -52,6 +52,25 @@ public abstract class PivotReportSource : IAsyncDisposable
         => new(source, orderKeys, versionsKept, timeProvider ?? TimeProvider.System, slicing ?? PivotSlicing.Default);
 
     /// <summary>Uses the Consumer's transport. Authentication, connection and server report lifetime remain the Consumer's.</summary>
+    /// <param name="fields">The fields the server's report offers.</param>
+    /// <param name="features">Its Aggregations and whether it refreshes.</param>
+    /// <param name="updateMode">How the server's provider learns of changes.</param>
+    /// <param name="window">Asks the server for a Window: a complete one, or a delta from the
+    /// request's baseline. A delta replaces every row of the Window whose shown values changed —
+    /// subtotal and grand total rows, and rows whose percentage changed, included — and names the
+    /// digest of the whole Window it produces (<see cref="PivotReportUpdate.WindowDigest"/>). A
+    /// server running <see cref="LocalPivotReportSource"/> builds such deltas by construction; a
+    /// transport that coalesces, filters or builds deltas itself must keep that promise, computing
+    /// the digest from its own complete Window. A delta that does not reproduce its digest is never
+    /// shown: a complete Window is asked for in its place.</param>
+    /// <param name="items">Answers a field's Items at a Source Version.</param>
+    /// <param name="copy">Answers a versioned Copy.</param>
+    /// <param name="summary">Answers a versioned Selection Summary.</param>
+    /// <param name="details">Answers a page of the Source Records behind a cell, under the Source
+    /// Version the question names (ADR-0151).</param>
+    /// <param name="refresh">Asks the server to refresh.</param>
+    /// <param name="reportItems">Answers Items labelled and ordered by the report.</param>
+    /// <param name="dispose">Releases the server's report state.</param>
     public static FetchingPivotReportSource Fetch(IReadOnlyList<PivotField> fields, PivotSourceFeatures features,
         PivotReportUpdateMode updateMode,
         Func<PivotReportRequest, CancellationToken, ValueTask<PivotReportUpdate>> window,
@@ -65,7 +84,15 @@ public abstract class PivotReportSource : IAsyncDisposable
         => new(fields, features, updateMode, window, items, copy, summary, details, refresh, reportItems, dispose);
 }
 
-/// <summary>A transport-neutral report source; delegates carry the complete versioned questions.</summary>
+/// <summary>
+/// A transport-neutral report source; delegates carry the complete versioned questions. It checks
+/// each answer against its question — another request's reply, another Report Version, records of
+/// another Source Version are refused or rejected, never shown. A Window's delta is checked by the
+/// client that applies it (<see cref="PivotReportClient"/>), against the digest of the Window it
+/// produces: whatever relays the server's deltas must pass them on whole, or build them complete
+/// — every row of the Window whose shown values changed, totals and percentages included — with
+/// the digest of the whole resulting Window (<see cref="PivotReportUpdate"/>).
+/// </summary>
 public sealed class FetchingPivotReportSource : PivotReportSource
 {
     private readonly Func<PivotReportRequest, CancellationToken, ValueTask<PivotReportUpdate>> _window;

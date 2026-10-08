@@ -148,6 +148,14 @@ public sealed class PivotReportClient
                 || row.Values.Any(value => value is not null && (value.Text is null || !double.IsFinite(value.Number))))
                 return Invalid("The report Window contains an invalid or duplicate row.");
         }
+        // A delta's result must be the source's Window, every row of it: a delta that left out a
+        // row whose shown values changed — a total, a percentage — would show its old values.
+        if (update.Rows is null && update.WindowDigest is null)
+            return Invalid("The report delta names no digest of the Window it produces.");
+        if (update.WindowDigest is { } digest && PivotReportDigest.Of(metadata, request.Window.Start, rows) != digest)
+            return Invalid(update.Rows is null
+                ? "The report delta does not reproduce the source's Window: it leaves out a changed row."
+                : "The complete report Window does not match its digest.");
         if (metadata.LabelWidths.Count != 0 && metadata.LabelWidths.Count != metadata.LabelColumns.Count
             || metadata.LabelWidths.Any(width => !double.IsFinite(width) || width < 0))
             return Invalid("The report label widths do not match its columns.");

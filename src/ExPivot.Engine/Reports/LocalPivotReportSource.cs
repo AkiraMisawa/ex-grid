@@ -3,7 +3,14 @@ using ExGrid.Data;
 
 namespace ExPivot.Engine;
 
-/// <summary>One report's bounded calculation and display state over a separately owned data provider.</summary>
+/// <summary>
+/// One report's bounded calculation and display state over a separately owned data provider. Run in
+/// the browser for local data, or on a server behind the Consumer's transport (ADR-0151). Its deltas
+/// are complete by construction: every row of the requested Window is projected afresh from the
+/// newest report and compared with the baseline Window's, so a subtotal, a grand total or a
+/// percentage that moved with the data is in the delta as surely as the row whose data changed, and
+/// each delta names the digest of the whole Window it produces (<see cref="PivotReportUpdate"/>).
+/// </summary>
 public sealed class LocalPivotReportSource : PivotReportSource
 {
     private readonly PivotSource _source;
@@ -244,9 +251,13 @@ public sealed class LocalPivotReportSource : PivotReportSource
             }
             var state = new PivotReportState(last.Metadata, request.Window, Array.AsReadOnly(rows));
             _windows[last.Metadata.Version] = state;
+            // A delta carries every row of the Window that differs from the baseline's — totals and
+            // percentages included, as each row is projected afresh — and the digest of the whole
+            // Window it produces.
             if (previous is not null && previous.Rows.Count == rows.Length
                 && previous.Metadata.RowSequenceVersion == last.Metadata.RowSequenceVersion)
-                return PivotReportUpdate.Delta(request, last.Metadata, changes);
+                return PivotReportUpdate.Delta(request, last.Metadata, changes,
+                    PivotReportDigest.Of(last.Metadata, request.Window.Start, state.Rows));
             return PivotReportUpdate.Complete(request, last.Metadata, state.Rows);
         }
         catch

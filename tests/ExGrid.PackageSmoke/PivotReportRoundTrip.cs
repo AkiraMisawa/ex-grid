@@ -41,6 +41,9 @@ internal static class PivotReportRoundTrip
         data.Apply(fields.Batch(changed: [new(1, "Rates", 0.4m)]));
         var delta = Wire(await source.WindowAsync(query with { RequestId = "next", Baseline = first.Metadata!.Version }));
         Require(delta.Rows is null && delta.Changes.Count == 1 && delta.Changes[0].Row.ValueAt(0)!.Exact == 0.6m, "the delta changed");
+        Require(delta.WindowDigest is { Length: 16 } && first.WindowDigest is { Length: 16 }
+            && PivotReportDigest.Of(delta.Metadata!, 0, [delta.Changes[0].Row]) == delta.WindowDigest
+            && PivotReportDigest.Of(first.Metadata!, 0, first.Rows!) == first.WindowDigest, "the Window digest changed");
         var version = delta.Metadata!.Version;
         string[] columns = [delta.Metadata.ValueColumns[0].Name];
         PivotReportRange[] ranges = [new(0, 0, 1, 0)];

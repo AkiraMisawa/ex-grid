@@ -218,7 +218,8 @@ public class ReportProtocolTests
             (request, _) => ValueTask.FromResult(++call switch
             {
                 1 => PivotReportUpdate.Complete(request, OneRowMetadata("v1"), [row]),
-                2 => PivotReportUpdate.Delta(request, OneRowMetadata("v2"), [new(0, DisplayRow("A", 2m)), new(0, DisplayRow("A", 3m))]),
+                2 => PivotReportUpdate.Delta(request, OneRowMetadata("v2"), [new(0, DisplayRow("A", 2m)), new(0, DisplayRow("A", 3m))],
+                    PivotReportDigest.Of(OneRowMetadata("v2"), 0, [DisplayRow("A", 3m)])),
                 _ => PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.SourceRefused, "Recovery unavailable.")),
             }));
         var client = new PivotReportClient(source);
