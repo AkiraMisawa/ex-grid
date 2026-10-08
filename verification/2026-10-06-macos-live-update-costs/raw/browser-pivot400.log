@@ -1,0 +1,304 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] (node:66711) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:66712) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 400 (17.6s)
+(node:66815) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 400 (17.7s)
+(node:66916) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 400 (17.5s)
+
+
+  1) [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 400 ─────────────────────
+
+    Error: crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+          Unhandled exception rendering component: Out of memory
+    System.OutOfMemoryException: Out of memory
+       at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+       at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+       at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+       at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+       at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)
+
+      60 |         await page.addInitScript(probe);
+      61 |         const errors=[];
+    > 62 |         const failure = new Promise((_,reject)=>page.on('console',m=>{if(m.type()==='error'){errors.push(m.text());fs.writeFileSync(`${out}/pivot-browser-${inner}-repeat${info.repeatEachIndex}-errors.json`,JSON.stringify(errors,null,2));reject(new Error(m.text()));}}));
+         |                                                                                                                                                                                                                                                     ^
+      63 |         await page.goto(`/live-cost-pivot?b=${inner}`);
+      64 |         await Promise.race([expect(page.locator('.ex-row').first()).toBeVisible({timeout:600000}),failure]);
+      65 |         const runs=[];
+        at _Page.<anonymous> (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/measure-cost.spec.mjs:62:245)
+
+    Error: zero console errors (CON-1)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 10
+
+    - Array []
+    + Array [
+    +   "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+    +       Unhandled exception rendering component: Out of memory
+    + System.OutOfMemoryException: Out of memory
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+    +    at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+    +    at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+    +    at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)",
+    + ]
+
+       at fixtures.mjs:229
+
+      227 |     });
+      228 |
+    > 229 |     expect.soft(errors.map((m) => m.text), 'zero console errors (CON-1)').toEqual([]);
+          |                                                                           ^
+      230 |     expect.soft(pageErrors, 'zero uncaught page errors (CON-2)').toEqual([]);
+      231 |     const named = (text) => expectedWarnings.some((pattern) => pattern.test(text));
+      232 |     for (const pattern of expectedWarnings) {
+        at verdict (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:229:75)
+        at ownPage (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:475:5)
+        at Object.page (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:650:13)
+
+    Error: no unhandled exception reaches the host log (CON-6)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 10
+
+    - Array []
+    + Array [
+    +   "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+    +       Unhandled exception rendering component: Out of memory
+    + System.OutOfMemoryException: Out of memory
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+    +    at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+    +    at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+    +    at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)",
+    + ]
+
+       at fixtures.mjs:238
+
+      236 |     expect.soft(warnings.filter(isExGrids).filter((m) => !named(m.text)).map((m) => m.text),
+      237 |         'zero warnings from ExGrid\'s own code (CON-3)').toEqual([]);
+    > 238 |     expect.soft(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
+          |                                                                                   ^
+      239 | }
+      240 |
+      241 | // What a test changed through alterPage, per page, undone as the test ends (ADR-0056).
+        at verdict (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:238:83)
+        at ownPage (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:475:5)
+        at Object.page (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:650:13)
+
+    Error Context: test-results/measure-cost-ADR-0067-measure-pivot-1000-x-400-chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/measure-cost-ADR-0067-measure-pivot-1000-x-400-chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/measure-cost-ADR-0067-measure-pivot-1000-x-400-chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 400 ─────────────────────
+
+    Error: crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+          Unhandled exception rendering component: Out of memory
+    System.OutOfMemoryException: Out of memory
+       at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+       at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+       at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+       at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+       at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)
+
+      60 |         await page.addInitScript(probe);
+      61 |         const errors=[];
+    > 62 |         const failure = new Promise((_,reject)=>page.on('console',m=>{if(m.type()==='error'){errors.push(m.text());fs.writeFileSync(`${out}/pivot-browser-${inner}-repeat${info.repeatEachIndex}-errors.json`,JSON.stringify(errors,null,2));reject(new Error(m.text()));}}));
+         |                                                                                                                                                                                                                                                     ^
+      63 |         await page.goto(`/live-cost-pivot?b=${inner}`);
+      64 |         await Promise.race([expect(page.locator('.ex-row').first()).toBeVisible({timeout:600000}),failure]);
+      65 |         const runs=[];
+        at _Page.<anonymous> (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/measure-cost.spec.mjs:62:245)
+
+    Error: zero console errors (CON-1)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 10
+
+    - Array []
+    + Array [
+    +   "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+    +       Unhandled exception rendering component: Out of memory
+    + System.OutOfMemoryException: Out of memory
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+    +    at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+    +    at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+    +    at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)",
+    + ]
+
+       at fixtures.mjs:229
+
+      227 |     });
+      228 |
+    > 229 |     expect.soft(errors.map((m) => m.text), 'zero console errors (CON-1)').toEqual([]);
+          |                                                                           ^
+      230 |     expect.soft(pageErrors, 'zero uncaught page errors (CON-2)').toEqual([]);
+      231 |     const named = (text) => expectedWarnings.some((pattern) => pattern.test(text));
+      232 |     for (const pattern of expectedWarnings) {
+        at verdict (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:229:75)
+        at ownPage (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:475:5)
+        at Object.page (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:650:13)
+
+    Error: no unhandled exception reaches the host log (CON-6)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 10
+
+    - Array []
+    + Array [
+    +   "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+    +       Unhandled exception rendering component: Out of memory
+    + System.OutOfMemoryException: Out of memory
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+    +    at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+    +    at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+    +    at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)",
+    + ]
+
+       at fixtures.mjs:238
+
+      236 |     expect.soft(warnings.filter(isExGrids).filter((m) => !named(m.text)).map((m) => m.text),
+      237 |         'zero warnings from ExGrid\'s own code (CON-3)').toEqual([]);
+    > 238 |     expect.soft(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
+          |                                                                                   ^
+      239 | }
+      240 |
+      241 | // What a test changed through alterPage, per page, undone as the test ends (ADR-0056).
+        at verdict (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:238:83)
+        at ownPage (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:475:5)
+        at Object.page (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:650:13)
+
+    Error Context: test-results/measure-cost-ADR-0067-measure-pivot-1000-x-400-chrome-repeat1/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/measure-cost-ADR-0067-measure-pivot-1000-x-400-chrome-repeat1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/measure-cost-ADR-0067-measure-pivot-1000-x-400-chrome-repeat1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 400 ─────────────────────
+
+    Error: crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+          Unhandled exception rendering component: Out of memory
+    System.OutOfMemoryException: Out of memory
+       at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+       at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+       at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+       at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+       at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)
+
+      60 |         await page.addInitScript(probe);
+      61 |         const errors=[];
+    > 62 |         const failure = new Promise((_,reject)=>page.on('console',m=>{if(m.type()==='error'){errors.push(m.text());fs.writeFileSync(`${out}/pivot-browser-${inner}-repeat${info.repeatEachIndex}-errors.json`,JSON.stringify(errors,null,2));reject(new Error(m.text()));}}));
+         |                                                                                                                                                                                                                                                     ^
+      63 |         await page.goto(`/live-cost-pivot?b=${inner}`);
+      64 |         await Promise.race([expect(page.locator('.ex-row').first()).toBeVisible({timeout:600000}),failure]);
+      65 |         const runs=[];
+        at _Page.<anonymous> (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/measure-cost.spec.mjs:62:245)
+
+    Error: zero console errors (CON-1)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 10
+
+    - Array []
+    + Array [
+    +   "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+    +       Unhandled exception rendering component: Out of memory
+    + System.OutOfMemoryException: Out of memory
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+    +    at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+    +    at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+    +    at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)",
+    + ]
+
+       at fixtures.mjs:229
+
+      227 |     });
+      228 |
+    > 229 |     expect.soft(errors.map((m) => m.text), 'zero console errors (CON-1)').toEqual([]);
+          |                                                                           ^
+      230 |     expect.soft(pageErrors, 'zero uncaught page errors (CON-2)').toEqual([]);
+      231 |     const named = (text) => expectedWarnings.some((pattern) => pattern.test(text));
+      232 |     for (const pattern of expectedWarnings) {
+        at verdict (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:229:75)
+        at ownPage (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:475:5)
+        at Object.page (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:650:13)
+
+    Error: no unhandled exception reaches the host log (CON-6)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 10
+
+    - Array []
+    + Array [
+    +   "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+    +       Unhandled exception rendering component: Out of memory
+    + System.OutOfMemoryException: Out of memory
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+    +    at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+    +    at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+    +    at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+    +    at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)",
+    + ]
+
+       at fixtures.mjs:238
+
+      236 |     expect.soft(warnings.filter(isExGrids).filter((m) => !named(m.text)).map((m) => m.text),
+      237 |         'zero warnings from ExGrid\'s own code (CON-3)').toEqual([]);
+    > 238 |     expect.soft(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
+          |                                                                                   ^
+      239 | }
+      240 |
+      241 | // What a test changed through alterPage, per page, undone as the test ends (ADR-0056).
+        at verdict (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:238:83)
+        at ownPage (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:475:5)
+        at Object.page (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/fixtures.mjs:650:13)
+
+    Error Context: test-results/measure-cost-ADR-0067-measure-pivot-1000-x-400-chrome-repeat2/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/measure-cost-ADR-0067-measure-pivot-1000-x-400-chrome-repeat2/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/measure-cost-ADR-0067-measure-pivot-1000-x-400-chrome-repeat2/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 400 ──────────────────────
+    [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 400 ──────────────────────
+    [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 400 ──────────────────────

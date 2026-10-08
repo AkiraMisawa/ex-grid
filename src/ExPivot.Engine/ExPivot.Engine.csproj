@@ -17,9 +17,6 @@
     <!-- Layer 1 reaches the cell index's hash and the slices' row counter, which have no public
          surface (ADR-0066). -->
     <InternalsVisibleTo Include="ExPivot.Engine.Tests" />
-    <!-- ExPivot makes a live redraw's next cube and report from the last (ADR-0161). -->
-    <InternalsVisibleTo Include="ExPivot" />
-    <InternalsVisibleTo Include="ExPivot.Components.Tests" />
   </ItemGroup>
 
   <!-- The engine depends on exactly the ExGrid.Data it was built with (PV-1), as ExPivot depends

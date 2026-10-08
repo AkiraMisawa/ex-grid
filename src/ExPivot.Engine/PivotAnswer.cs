@@ -12,10 +12,6 @@ namespace ExPivot.Engine;
 /// object per leaf, since an answer may hold hundreds of thousands of them. The order of the
 /// leaves and of a field's Items is the source's own; the report orders Items itself. Immutable
 /// and serialisable (<see cref="PivotJson"/>).</para>
-///
-/// <para>An answer may say which of its leaves changed since the Source Version the question named
-/// (<see cref="ChangedLeaves"/>, ADR-0161), so that a live redraw recomputes only the cells on their
-/// paths. It is optional: an answer that says nothing is compared with the one before it.</para>
 /// </summary>
 public sealed class PivotAnswer
 {
@@ -38,17 +34,6 @@ public sealed class PivotAnswer
         LeafCount = leafCount;
         Records = records;
         _values = values;
-    }
-
-    private PivotAnswer(PivotAnswer answer, PivotLeafChanges? changedLeaves)
-    {
-        _sourceVersion = answer._sourceVersion;
-        _rows = answer._rows;
-        _columns = answer._columns;
-        LeafCount = answer.LeafCount;
-        Records = answer.Records;
-        _values = answer._values;
-        ChangedLeaves = changedLeaves;
     }
 
     private PivotAnswer(PivotSourceRefusal refusal)
@@ -80,37 +65,6 @@ public sealed class PivotAnswer
 
     /// <summary>How many leaves the answer holds; none for a refusal.</summary>
     public int LeafCount { get; }
-
-    /// <summary>
-    /// Which of the answer's leaves changed since an earlier Source Version, when the source says
-    /// (ADR-0161; ADR-0066's note of 2026-10-07); null when it does not, and whoever lays the answer
-    /// out compares its leaves with those of the answer before it. The bundled source says it for
-    /// the version the question named (<see cref="PivotQuery.ChangedSince"/>), from its fold.
-    /// </summary>
-    public PivotLeafChanges? ChangedLeaves { get; }
-
-    /// <summary>
-    /// The same answer, saying which of its leaves changed since an earlier version — or, with
-    /// null, saying nothing. Shares the leaves; refuses a leaf the answer has not, and a refusal,
-    /// which has no leaves.
-    /// </summary>
-    /// <param name="changedLeaves">What changed since an earlier version, or null.</param>
-    public PivotAnswer WithChangedLeaves(PivotLeafChanges? changedLeaves)
-    {
-        if (IsRefused)
-            throw RefusedError();
-        if (changedLeaves is not null)
-        {
-            var previous = -1;
-            foreach (var leaf in changedLeaves.Leaves)
-            {
-                if (leaf <= previous || leaf >= LeafCount)
-                    throw new ArgumentException($"Leaf {leaf} is not one of the answer's {LeafCount}, in ascending order.", nameof(changedLeaves));
-                previous = leaf;
-            }
-        }
-        return new PivotAnswer(this, changedLeaves);
-    }
 
     /// <summary>The row fields, outermost first, each with its Items and each leaf's Item.</summary>
     public IReadOnlyList<PivotAnswerAxis> Rows => IsRefused ? throw RefusedError() : _rows;
@@ -161,54 +115,6 @@ public sealed class PivotAnswer
 
     private InvalidOperationException RefusedError()
         => new($"The source refused to answer: {Refusal!.Message}");
-}
-
-/// <summary>
-/// Which of an answer's leaves changed since an earlier Source Version (ADR-0161): either the
-/// answer's leaves are those of the answer under <see cref="Since"/> — the same leaves, in the same
-/// order, under the same Items spelled the same — and <see cref="Leaves"/> names the ones whose
-/// records or parts changed; or the leaves were made afresh (<see cref="SameLeaves"/> false) — a
-/// batch the source could not fold, an Item that appeared or left — and nothing can be carried over.
-/// </summary>
-public sealed class PivotLeafChanges
-{
-    private PivotLeafChanges(string since, bool sameLeaves, int[] leaves)
-    {
-        Since = since;
-        SameLeaves = sameLeaves;
-        Leaves = leaves;
-    }
-
-    /// <summary>The leaves of the answer under <paramref name="since"/>, the ones named having
-    /// changed, in ascending order.</summary>
-    /// <param name="since">The Source Version they changed since.</param>
-    /// <param name="leaves">The changed leaves' indexes, ascending, each once.</param>
-    public static PivotLeafChanges Of(string since, IReadOnlyList<int> leaves)
-    {
-        ArgumentNullException.ThrowIfNull(since);
-        ArgumentNullException.ThrowIfNull(leaves);
-        return new PivotLeafChanges(since, sameLeaves: true, [.. leaves]);
-    }
-
-    /// <summary>Leaves made afresh since <paramref name="since"/>: none of them is said to be the
-    /// leaf it was.</summary>
-    /// <param name="since">The Source Version they were made afresh since.</param>
-    public static PivotLeafChanges Remade(string since)
-    {
-        ArgumentNullException.ThrowIfNull(since);
-        return new PivotLeafChanges(since, sameLeaves: false, []);
-    }
-
-    /// <summary>The Source Version the changes are since.</summary>
-    public string Since { get; }
-
-    /// <summary>Whether the leaves are those of the answer under <see cref="Since"/>, in the same
-    /// order under the same Items; false when they were made afresh.</summary>
-    public bool SameLeaves { get; }
-
-    /// <summary>The leaves whose records or parts changed, ascending; none when the leaves were made
-    /// afresh.</summary>
-    public IReadOnlyList<int> Leaves { get; }
 }
 
 /// <summary>One row or column field of an answer (ADR-0066): its Items and each leaf's Item.</summary>

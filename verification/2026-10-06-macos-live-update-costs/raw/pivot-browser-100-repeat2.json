@@ -1,0 +1,134 @@
+{
+  "records": 100000,
+  "changes": 1000,
+  "runs": [
+    {
+      "status": "Batch 1: apply 48.300 ms",
+      "reportRows": "101001",
+      "applyStart": 1270.6000000238419,
+      "gridAt": 1786,
+      "frameAt": 1786.1000000238419,
+      "applyToFrameMs": 515.5,
+      "gridMutationRecords": 4,
+      "longTasks": [
+        {
+          "start": 1264.7000000476837,
+          "duration": 58
+        },
+        {
+          "start": 1341.2999999523163,
+          "duration": 55
+        },
+        {
+          "start": 1456.8999999761581,
+          "duration": 51
+        }
+      ]
+    },
+    {
+      "status": "Batch 2: apply 36.400 ms",
+      "reportRows": "101001",
+      "applyStart": 1816.6000000238419,
+      "gridAt": 2288,
+      "frameAt": 2288.100000023842,
+      "applyToFrameMs": 471.5,
+      "gridMutationRecords": 2,
+      "longTasks": [
+        {
+          "start": 1856.2000000476837,
+          "duration": 59
+        }
+      ]
+    },
+    {
+      "status": "Batch 3: apply 35.500 ms",
+      "reportRows": "101001",
+      "applyStart": 2316.100000023842,
+      "gridAt": 2790.7999999523163,
+      "frameAt": 2790.899999976158,
+      "applyToFrameMs": 474.7999999523163,
+      "gridMutationRecords": 2,
+      "longTasks": []
+    },
+    {
+      "status": "Batch 4: apply 35.500 ms",
+      "reportRows": "101001",
+      "applyStart": 2816.5,
+      "gridAt": 3295.7000000476837,
+      "frameAt": 3295.7000000476837,
+      "applyToFrameMs": 479.2000000476837,
+      "gridMutationRecords": 2,
+      "longTasks": [
+        {
+          "start": 2854.5,
+          "duration": 51
+        }
+      ]
+    },
+    {
+      "status": "Batch 5: apply 34.900 ms",
+      "reportRows": "101001",
+      "applyStart": 3332.7999999523163,
+      "gridAt": 3829.100000023842,
+      "frameAt": 3829.100000023842,
+      "applyToFrameMs": 496.3000000715256,
+      "gridMutationRecords": 2,
+      "longTasks": [
+        {
+          "start": 3416.600000023842,
+          "duration": 51
+        }
+      ]
+    },
+    {
+      "status": "Batch 6: apply 37.300 ms",
+      "reportRows": "101001",
+      "applyStart": 3867.399999976158,
+      "gridAt": 4322.299999952316,
+      "frameAt": 4322.399999976158,
+      "applyToFrameMs": 455,
+      "gridMutationRecords": 2,
+      "longTasks": []
+    },
+    {
+      "status": "Batch 7: apply 36.300 ms",
+      "reportRows": "101001",
+      "applyStart": 4349.700000047684,
+      "gridAt": 4850,
+      "frameAt": 4850,
+      "applyToFrameMs": 500.2999999523163,
+      "gridMutationRecords": 2,
+      "longTasks": [
+        {
+          "start": 4388.600000023842,
+          "duration": 66
+        }
+      ]
+    },
+    {
+      "status": "Batch 8: apply 35.000 ms",
+      "reportRows": "101001",
+      "applyStart": 4883.100000023842,
+      "gridAt": 5331,
+      "frameAt": 5331.100000023842,
+      "applyToFrameMs": 448,
+      "gridMutationRecords": 2,
+      "longTasks": []
+    },
+    {
+      "status": "Batch 9: apply 34.700 ms",
+      "reportRows": "101001",
+      "applyStart": 5365.700000047684,
+      "gridAt": 5880.899999976158,
+      "frameAt": 5881,
+      "applyToFrameMs": 515.2999999523163,
+      "gridMutationRecords": 2,
+      "longTasks": [
+        {
+          "start": 5403.100000023842,
+          "duration": 87
+        }
+      ]
+    }
+  ]
+}

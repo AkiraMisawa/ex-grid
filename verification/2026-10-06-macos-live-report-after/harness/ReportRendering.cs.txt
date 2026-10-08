@@ -1,0 +1,73 @@
+#pragma warning disable xUnit1051
+using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json;
+using Bunit;
+using ExGrid;
+using ExGrid.Components;
+using ExPivot.Engine;
+using ExPivot.Components.Tests.Support;
+using Microsoft.AspNetCore.Components;
+using Xunit;
+using PC = ExPivot.Components.ExPivot;
+
+namespace ExPivot.Components.Tests;
+
+public sealed class ReportRendering : PivotTestContext
+{
+    private sealed record Row(int Id, string A, string B, decimal Value);
+    [Fact]
+    public async Task ADR0153_actual_component_update()
+    {
+        SetRendererInfo(new RendererInfo("Server", true));
+        var results = new List<object>();
+        var whole = new PivotSlicing { Budget = TimeSpan.FromDays(1) };
+        foreach (var inner in new[] { 10, 100, 400 })
+        {
+            var records = Enumerable.Range(0, 1000 * inner).Select(i => new Row(i, $"A{i / inner:00000}", $"B{i % inner:0000}", i)).ToArray();
+            var fields = PivotFields.Of<Row>().Key("Id", r => r.Id).Text("A", r => r.A).Text("B", r => r.B).Number("Value", r => r.Value);
+            var source = PivotSource.From(fields.Build(records), fields.Fields, whole);
+            var layout = new PivotLayout { Rows = [new("A"), new("B")], Values = [new("Value")] };
+            var cut = Render<PC>(p => p.Add(c => c.DataSource, source).Add(c => c.Layout, layout)
+                .Add(c => c.Culture, CultureInfo.GetCultureInfo("en-US")).Add(c => c.Slicing, whole)
+                .Add(c => c.Caps, new PivotCaps { MaxLeaves = 1_000_000, MaxRows = 1_000_000 })
+                .Add(c => c.RedrawInterval, TimeSpan.Zero).Add(c => c.Clock, Clock)
+                .Add(c => c.ViewportHeight, (ViewportSize)480).Add(c => c.ViewportWidth, (ViewportSize)1200));
+            cut.WaitForState(() => cut.Instance.Report?.Metadata.RowCount == records.Length + 1001);
+            var runs = new List<object>();
+            for (var iteration = -2; iteration < 9; iteration++)
+            {
+                var changed = Enumerable.Range(0, 1000).Select(i => { var at = i * inner; return records[at] = records[at] with { Value = records[at].Value + 1 }; }).ToArray();
+                var batch = fields.Batch(changed: changed);
+                GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+                Clock.Advance(TimeSpan.FromMilliseconds(1));
+                var before = cut.FindComponents<ExGridRow<PivotDisplayRow>>().ToDictionary(x => x.Instance, x => x.RenderCount);
+                var textBefore = RowTexts(cut);
+                var version = cut.Instance.Report!.Metadata.SourceVersion;
+                var start = Stopwatch.GetTimestamp();
+                await cut.InvokeAsync(() => source.Apply(batch));
+                cut.WaitForState(() => cut.Instance.Report!.Metadata.SourceVersion != version);
+                var elapsed = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+                var painted = cut.FindComponents<ExGridRow<PivotDisplayRow>>().Where(x => !x.Instance.Placeholder).ToArray();
+                var rendered = painted.Count(x => !before.TryGetValue(x.Instance, out var old) || old != x.RenderCount);
+                var mounted = painted.Count(x => !before.ContainsKey(x.Instance));
+                var textChanged = RowTexts(cut).Zip(textBefore).Count(x => x.First != x.Second);
+                var grid = cut.FindComponent<ExGrid<PivotDisplayRow>>().Instance;
+                const System.Reflection.BindingFlags hidden = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                var take = grid.GetType().GetMethod("TakeInWindow", hidden)!;
+                grid.GetType().GetField("_observedWindow", hidden)!.SetValue(grid, null);
+                var admissionStart = Stopwatch.GetTimestamp();
+                take.Invoke(grid, null);
+                var vouchedWindowAdmissionMs = Stopwatch.GetElapsedTime(admissionStart).TotalMilliseconds;
+                Assert.Equal(0, mounted); Assert.True(textChanged > 0); Assert.True(rendered < painted.Length);
+                if (iteration >= 0) runs.Add(new { applyThroughComponentRenderMs = elapsed, painted = painted.Length,
+                    rendered, mounted, paintedTextRowsChanged = textChanged, vouchedWindowAdmissionMs, windowRows = cut.Instance.Report.Rows.Count });
+            }
+            results.Add(new { records = records.Length, reportRows = cut.Instance.Report!.Metadata.RowCount,
+                changes = 1000, scope = "Whole update from Snapshot Apply through report computation, Window projection, component render/diff and bUnit DOM; no browser layout or paint.", runs });
+            File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("LIVE_COST_OUTPUT")!, "pivot-component.json"),
+                JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+            cut.Dispose();
+        }
+    }
+}

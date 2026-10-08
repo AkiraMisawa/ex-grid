@@ -1,0 +1,22 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+  Discovering: ExPivot.Components.Tests
+  Discovered:  ExPivot.Components.Tests
+  Starting:    ExPivot.Components.Tests
+    ExPivot.Components.Tests.LiveFullRenderMeasurement.Actual_ExPivot_render_after_Show [FAIL]
+      System.ArgumentException : The parameter with the name 'ViewportHeight' was added more than once. This parameter can only be added one time.
+      Stack Trace:
+        /_/src/bunit/ComponentParameterCollection.cs(166,0): at Bunit.ComponentParameterCollection.<>c__DisplayClass17_0`1.<ToRenderFragment>g__AddAttributes|2(RenderTreeBuilder builder)
+        /_/src/bunit/ComponentParameterCollection.cs(110,0): at Bunit.ComponentParameterCollection.<>c__DisplayClass17_0`1.<ToRenderFragment>g__AddComponent|1(RenderTreeBuilder builder)
+           at Microsoft.AspNetCore.Components.Rendering.ComponentState.RenderIntoBatch(RenderBatchBuilder batchBuilder, RenderFragment renderFragment, Exception& renderFragmentException)
+        --- End of stack trace from previous location ---
+        /_/src/bunit/Rendering/BunitRenderer.cs(755,0): at Bunit.Rendering.BunitRenderer.AssertNoUnhandledExceptions()
+        /_/src/bunit/Rendering/BunitRenderer.cs(645,0): at Bunit.Rendering.BunitRenderer.Render(RenderFragment renderFragment)
+        /_/src/bunit/BunitContext.cs(247,0): at Bunit.BunitContext.RenderInsideRenderTree(RenderFragment renderFragment)
+        /_/src/bunit/BunitContext.cs(231,0): at Bunit.BunitContext.RenderInsideRenderTree[TComponent](RenderFragment renderFragment)
+        tests/ExPivot.Components/LiveFullRenderMeasurement.cs(34,0): at ExPivot.Components.Tests.LiveFullRenderMeasurement.Actual_ExPivot_render_after_Show()
+        --- End of stack trace from previous location ---
+  Finished:    ExPivot.Components.Tests
+=== TEST EXECUTION SUMMARY ===
+   ExPivot.Components.Tests  Total: 1, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 0.456s

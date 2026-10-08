@@ -1,0 +1,93 @@
+import { test, expect, record } from './fixtures.mjs';
+import fs from 'node:fs';
+const out = process.env.LIVE_COST_OUTPUT;
+test.use({ viewport: { width: 1400, height: 1100 }, freshDocument: true, actionTimeout: 60_000 });
+function probe() {
+    const p = window.cost = { watches: {}, gridMutations: 0, longTasks: [] };
+    const keep = entries => p.longTasks.push(...entries.map(t=>({start:t.startTime,duration:t.duration})));
+    const observer = new PerformanceObserver(list=>keep(list.getEntries()));
+    observer.observe({type:'longtask',buffered:true});
+    p.flush = ()=>keep(observer.takeRecords());
+    p.arm = selectors => {
+        p.watches = Object.fromEntries(Object.entries(selectors).map(([key, selector]) => [key,{selector,before:document.querySelector(selector)?.textContent,at:null,frame:null,text:null}]));
+        p.gridMutations = 0;
+    };
+    new MutationObserver(records => {
+        const at = performance.now();
+        for (const rec of records) if (rec.target.parentElement?.closest('.ex-viewport')) p.gridMutations++;
+        for (const w of Object.values(p.watches)) {
+            const text = document.querySelector(w.selector)?.textContent;
+            if (w.at === null && text !== undefined && text !== w.before) {
+                w.at = at; w.text = text;
+                requestAnimationFrame(() => { w.frame = performance.now(); });
+            }
+        }
+    }).observe(document,{subtree:true,childList:true,characterData:true,attributes:true});
+}
+for (const rows of [100000,1000000]) for (const batch of [1,100,1000]) {
+    test(`ADR-0141 measure grid ${rows} ${batch}`, async ({page},info) => {
+        test.setTimeout(900000);
+        await page.addInitScript(probe);
+        await page.goto(`/grid-live-local?rows=${rows}&batch=${batch}&interval=0`);
+        await expect(page.locator('#grid-live-local-made')).toContainText('trades made in',{timeout:600000});
+        await expect(page.locator('.ex-row').first()).toBeVisible({timeout:300000});
+        const toggle = page.locator('#grid-live-local-toggle');
+        await toggle.click();
+        await expect(toggle).toHaveText("Resume the page's changes");
+        const runs=[];
+        for(let r=0;r<12;r++) {
+            await page.evaluate(()=>window.cost.arm({status:'#grid-live-local-status',grid:'.ex-grid .ex-viewport'}));
+            await toggle.click();
+            await page.waitForFunction(()=>window.cost.watches.status.frame!==null,null,{timeout:60000});
+            const sample=await page.evaluate(()=>{
+                const p=window.cost,w=p.watches.status;p.flush();
+                const apply=Number(/applied in ([\d,]+) ms/.exec(w.text)[1].replaceAll(',',''));
+                return {status:w.text,statusBefore:w.before,statusAt:w.at,statusFrame:w.frame,appliedMsRounded:apply,applyToFrameMs:w.frame-w.at+apply,gridMutationRecords:p.gridMutations,gridChangedAt:p.watches.grid.at,gridFrame:p.watches.grid.frame,longTasks:p.longTasks.filter(t=>t.start<w.frame&&t.start+t.duration>w.at-apply)};
+            });
+            await toggle.click();
+            await expect(toggle).toHaveText("Resume the page's changes");
+            sample.statusAfterPause=await page.locator('#grid-live-local-status').textContent();
+            runs.push(sample);
+        }
+        const result={rows,batch,runs};
+        fs.writeFileSync(`${out}/grid-browser-${rows}-${batch}-repeat${info.repeatEachIndex}.json`,JSON.stringify(result,null,2));
+        record(info.project.name,{[`live cost grid ${rows} ${batch}`]:result});
+    });
+}
+for (const inner of (process.env.COST_PIVOT_INNER ? [Number(process.env.COST_PIVOT_INNER)] : [10,100])) {
+    test(`ADR-0067 measure pivot 1000 x ${inner}`, async({page},info)=>{
+        test.setTimeout(900000);
+        await page.addInitScript(probe);
+        const errors=[];
+        const failure = new Promise((_,reject)=>page.on('console',m=>{if(m.type()==='error'){errors.push(m.text());fs.writeFileSync(`${out}/pivot-browser-${inner}-repeat${info.repeatEachIndex}-errors.json`,JSON.stringify(errors,null,2));reject(new Error(m.text()));}}));
+        await page.goto(`/live-cost-pivot?b=${inner}`);
+        await Promise.race([expect(page.locator('.ex-row').first()).toBeVisible({timeout:600000}),failure]);
+        const runs=[];
+        for(let r=0;r<9;r++) {
+            await page.evaluate(()=>window.cost.arm({status:'#cost-status',grid:'.ex-pivot-sheet .ex-viewport'}));
+            await page.locator('#cost-tick').click();
+            await Promise.race([page.waitForFunction(()=>window.cost.watches.grid.frame!==null,null,{timeout:300000}),failure]);
+            runs.push(await page.evaluate(()=>{
+                const p=window.cost,w=p.watches.grid;p.flush();
+                const start=performance.getEntriesByName('cost-apply').at(-1).startTime;
+                return {status:document.querySelector('#cost-status').textContent,reportRows:document.querySelector('.ex-pivot-sheet .ex-grid').getAttribute('aria-rowcount'),applyStart:start,gridAt:w.at,frameAt:w.frame,applyToFrameMs:w.frame-start,gridMutationRecords:p.gridMutations,longTasks:p.longTasks.filter(t=>t.start<w.frame&&t.start+t.duration>start)};
+            }));
+            fs.writeFileSync(`${out}/pivot-browser-${inner}-repeat${info.repeatEachIndex}.json`,JSON.stringify({records:1000*inner,changes:1000,runs},null,2));
+        }
+        const result={records:1000*inner,changes:1000,runs};
+        fs.writeFileSync(`${out}/pivot-browser-${inner}-repeat${info.repeatEachIndex}.json`,JSON.stringify(result,null,2));
+        record(info.project.name,{[`live cost pivot ${inner}`]:result});
+    });
+}
+
+if (process.env.COST_OOM_CHECK === '1') test('ADR-0067 observational pivot 400k memory limit', async ({page},info)=>{
+    test.setTimeout(120000);
+    const errors=[];page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+    await page.goto('/live-cost-pivot?b=400');
+    const outcome=await Promise.race([
+        page.locator('.ex-row').first().waitFor({timeout:90000}).then(()=>({painted:true})),
+        new Promise(resolve=>page.on('console',m=>{if(m.type()==='error')resolve({painted:false,error:m.text()});}))
+    ]);
+    fs.writeFileSync(`${out}/pivot-browser-400-fresh.json`,JSON.stringify({outcome,errors,browser:page.context().browser().version(),body:await page.locator('body').innerText()},null,2));
+    expect(outcome.painted,'the large report must paint to be measurable').toBe(true);
+});

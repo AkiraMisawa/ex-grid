@@ -1,0 +1,148 @@
+@using System.Diagnostics
+@using System.Text.Json
+@inject HttpClient Http
+@inject IJSRuntime JS
+@implements IDisposable
+
+<h1>Disposable pivot boundary experiment</h1>
+<p id="status" data-sequence="@_sequence">@_mode; version @_version; @_rows.Length painted rows</p>
+<table id="report"><tbody>
+@foreach (var row in _rows) { <RowView @key="row.Id" Value="row" /> }
+</tbody></table>
+
+@code {
+    private string _mode = "";
+    private string _session = "";
+    private int _version;
+    private int _sequence;
+    private Row[] _rows = [];
+    private Report? _report;
+    private DotNetObjectReference<App>? _reference;
+    private Dictionary<string, object?>? _pending;
+    private long _renderStart;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _reference = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("bench.attach", _reference);
+        }
+        if (_pending is { } result)
+        {
+            _pending = null;
+            result["clientRenderMs"] = Stopwatch.GetElapsedTime(_renderStart).TotalMilliseconds;
+            await JS.InvokeVoidAsync("bench.complete", result);
+        }
+    }
+
+    [JSInvokable]
+    public async Task<object> Prepare(string mode, int leaves, int records)
+    {
+        _mode = mode;
+        _report = null;
+        _rows = [];
+        _version = 0;
+        var json = await Http.GetStringAsync($"api/prepare?mode={mode}&leaves={leaves}&records={records}");
+        using var parsed = JsonDocument.Parse(json);
+        _session = parsed.RootElement.GetProperty("session").GetString()!;
+        return parsed.RootElement.Clone();
+    }
+
+    [JSInvokable]
+    public async Task Run(string action, int batch, bool visible)
+    {
+        var result = new Dictionary<string, object?> { ["action"] = action, ["mode"] = _mode, ["batch"] = batch, ["visible"] = visible };
+        var allocationStart = GC.GetTotalAllocatedBytes();
+        var start = Stopwatch.GetTimestamp();
+        var before = _rows;
+        if (_mode == "A" && action is "expand" or "sort")
+        {
+            if (action == "expand") _report!.ToggleExpand(); else _report!.Sort();
+            result["clientComputeMs"] = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+            var windowStart = Stopwatch.GetTimestamp();
+            _rows = _report!.Window();
+            result["clientWindowApplyMs"] = Stopwatch.GetElapsedTime(windowStart).TotalMilliseconds;
+            result["networkToBodyMs"] = 0d;
+            result["clientParseMs"] = 0d;
+            result["rawBytes"] = 0L;
+            result["gzipBytes"] = 0L;
+            result["sentRows"] = 0;
+        }
+        else
+        {
+            var url = $"api/run?session={_session}&action={action}&batch={batch}&visible={visible}";
+            using var response = await Http.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            var body = await response.Content.ReadAsByteArrayAsync();
+            result["networkToBodyMs"] = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+            foreach (var header in response.Headers)
+                if (header.Key.StartsWith("X-Bench-", StringComparison.OrdinalIgnoreCase))
+                    result[header.Key[8..]] = double.Parse(header.Value.Single(), System.Globalization.CultureInfo.InvariantCulture);
+            var parse = Stopwatch.GetTimestamp();
+            var answer = JsonSerializer.Deserialize(body, BenchJsonContext.Default.Answer)!;
+            result["clientParseMs"] = Stopwatch.GetElapsedTime(parse).TotalMilliseconds;
+            if (action != "initial" && action == "update" && answer.Version != _version + 1)
+                throw new InvalidOperationException("Delta baseline mismatch.");
+            var compute = Stopwatch.GetTimestamp();
+            if (_mode == "A")
+            {
+                if (answer.Reset) _report = new Report(answer.Leaves!);
+                else _report!.Apply(answer.Changes!);
+                result["clientComputeMs"] = Stopwatch.GetElapsedTime(compute).TotalMilliseconds;
+                var windowStart = Stopwatch.GetTimestamp();
+                _rows = _report!.Window();
+                result["clientWindowApplyMs"] = Stopwatch.GetElapsedTime(windowStart).TotalMilliseconds;
+            }
+            else
+            {
+                if (answer.Reset) _rows = answer.Rows!;
+                else
+                {
+                    _rows = (Row[])_rows.Clone();
+                    foreach (var patch in answer.Patches!) _rows[patch.Index] = patch.Row;
+                }
+                result["clientComputeMs"] = 0d;
+                result["clientWindowApplyMs"] = Stopwatch.GetElapsedTime(compute).TotalMilliseconds;
+            }
+            result["sentRows"] = answer.Rows?.Length ?? answer.Patches?.Length ?? 0;
+            result["sentLeaves"] = answer.Leaves?.Length ?? answer.Changes?.Length ?? 0;
+            result["reportRows"] = answer.ReportRows;
+            _version = answer.Version;
+        }
+        result["changedPaintedRows"] = _rows.Where((row, i) => i >= before.Length || !Equals(row, before[i])).Count();
+        result["paintedCells"] = _rows.Length;
+        result["grandTotalInWindow"] = _rows.Any(r => r.Kind == "grand");
+        result["managedAllocatedBytes"] = GC.GetTotalAllocatedBytes() - allocationStart;
+        result["clientBeforeRenderMs"] = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+        _pending = result;
+        _sequence++;
+        _renderStart = Stopwatch.GetTimestamp();
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task<object> Verify()
+    {
+        var json = await Http.GetStringAsync($"api/verify?session={_session}&collapsed={_report?.Collapsed ?? false}&sorted={_report?.Sorted ?? false}");
+        var oracle = JsonSerializer.Deserialize(json, BenchJsonContext.Default.Oracle)!;
+        var window = Codec.Hash(_rows);
+        var full = _report?.FullHash();
+        if (window != oracle.WindowHash || (full != null && full != oracle.FullHash))
+            throw new InvalidOperationException($"Incorrect result: {window}, {oracle.WindowHash}, {full}, {oracle.FullHash}.");
+        return new { oracle.FullHash, oracle.WindowHash, oracle.ReportRows };
+    }
+
+    [JSInvokable]
+    public string WindowHash() => Codec.Hash(_rows);
+
+    [JSInvokable]
+    public object Memory()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        return new { managedLiveBytes = GC.GetTotalMemory(false), managedHeapBytes = GC.GetGCMemoryInfo().HeapSizeBytes };
+    }
+    public void Dispose() => _reference?.Dispose();
+}

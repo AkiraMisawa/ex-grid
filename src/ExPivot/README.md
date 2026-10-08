@@ -41,7 +41,7 @@ Link both stylesheets in your host page:
 @using ExPivot.Components
 @using ExPivot.Engine
 
-<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="420" />
+<ExPivot DataSource="_source" @bind-Layout="_layout" ViewportHeight="420" />
 
 @code {
     private static readonly PivotField<Sale>[] Fields =
@@ -62,10 +62,13 @@ Link both stylesheets in your host page:
 }
 ```
 
-- **Source** is what the report is computed from. `PivotSource.From(records, fields)` answers in
-  the process; `PivotSource.Fetch` carries your own transport to a server. Hand over a new source
-  to refresh the report. ExPivot asks without blocking: a slow answer leaves the report as it was
-  under a loading indication, and a newer question cancels the old one.
+- **DataSource** accepts local data: `PivotSource.From(records, fields)` or a Snapshot. ExPivot
+  owns an independent report computation over that provider. For a server report, use **Source**
+  with `PivotReportSource.Fetch`: its delegates obtain report Windows and versioned operations
+  through your transport. `PivotReportSource.From(data)` runs that same calculation on the server.
+  Hand exactly one of `Source` and `DataSource`. A slow answer leaves the report under its loading
+  indication, and a newer question cancels the old one. The Consumer disposes a `Source` it owns;
+  the component disposes the report adapter it creates for `DataSource`, leaving the data alive.
 - **Layout** is View State. `PivotLayoutJson.Write` and `Read` give it a versioned JSON form to
   store as a user's setting. `LayoutChanged` is raised for the layout the report shows.
 - **Show Details**, from a double click on a value or the Context Menu, opens the records behind
@@ -80,17 +83,14 @@ Link both stylesheets in your host page:
   supersedes the work.
 - **Live data.** ExPivot listens to the source's `Changed` — a server's source raises it when you
   call `NotifyChanged`, however you learn of the change (SignalR, polling, a message bus) — and
-  asks again for the whole answer. Changes are gathered and the report is redrawn at most every
-  `RedrawInterval` (250 ms; zero redraws on every change). When only values changed, a redraw is
-  made from the report on screen: only the cells on the changed leaves' paths are computed again,
-  and only the rows whose painted text changed are new rows, which the grid repaints (ADR-0161). A
-  change of values keeps the Selection and any open menu or panel. A value cell whose shown text
-  changed is marked for `ChangeHighlightDuration` (one second); a new layout, a sort or a collapse
-  marks nothing. When the newest data cannot be shown — it breaks a cap, the source fails, a
-  Refresh fails, or memory runs out while its report is made — the report stays as it was, and a
-  notice under the Pivot Toolbar says what happened and as of when, with Retry. While a new
-  version's Items are on their way, the report filter band and Filter… keep the ones they listed.
-  `Clock` takes a `TimeProvider` for tests.
+  requests the current report Window and its changes. Changes are gathered and the report is redrawn at most every
+  `RedrawInterval` (250 ms; zero redraws on every change). A change of values keeps the Selection
+  and any open menu or panel. A value cell whose shown text changed is marked for
+  `ChangeHighlightDuration` (one second); a new layout, a sort or a collapse marks nothing. When
+  the newest data cannot be shown — it breaks a cap, the source fails, or a Refresh fails — the
+  report stays as it was, and a notice under the Pivot Toolbar says what happened and as of when,
+  with Retry. While a new version's Items are on their way, the report filter band and Filter… keep
+  the ones they listed. `Clock` takes a `TimeProvider` for tests.
 - **ShowFieldList** can be bound (`@bind-ShowFieldList`) to remember the pane the user hid or
   showed from the Pivot Toolbar.
 - **Label** replaces any word by its id. `Label="PivotWords.Japanese"` speaks the words of

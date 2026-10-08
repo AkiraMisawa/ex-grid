@@ -25,7 +25,7 @@ public partial class ExPivot
 
     // The source whose Changed this ExPivot listens to, and the handler it listens with, held so
     // that the same one is removed.
-    private PivotSource? _listened;
+    private PivotReportSource? _listened;
     private Action<PivotSourceChanged>? _onChanged;
 
     // A change of data no question asked since answers, and the Source Version the latest notice
@@ -44,59 +44,18 @@ public partial class ExPivot
     private TimeProvider? _redrawTimerClock;
     private DateTimeOffset? _redrawDue;
 
-    // The Change Highlight (ADR-0068/0161): when the cells under the layout on screen changed with
-    // the data — times, never reports — and the delegate the grid is handed, one for as long as a
-    // history lasts, null while the duration is zero.
-    private ReportHistory? _history;
-    private CellChangeOf<PivotReportRow>? _cellChangedAt;
-    private Func<TimeSpan>? _durationNow;
-
-    /// <summary>How many rows and columns the Change Highlight keeps a time for, for layer 2.</summary>
-    internal int ChangeTimesKept => _history?.Kept ?? 0;
-
-    /// <summary>How long a mark lasts, read by the history when it is asked.</summary>
-    private Func<TimeSpan> ChangeHighlightDurationNow => _durationNow ??= () => ChangeHighlightDuration;
-
-    // The one timer that lets the history's times go as their marks end, made on the clock it runs on
-    // (ADR-0161: an entry goes when its time is over, though no further data comes).
-    private ITimer? _letGoTimer;
-    private TimeProvider? _letGoTimerClock;
-
-    /// <summary>Times the history's next letting go, or stops the timer when nothing is kept.</summary>
-    private void ArmLetGo()
-    {
-        if (_history?.NextLetGo is not { } due)
-        {
-            _letGoTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-            return;
-        }
-        if (_letGoTimer is null || !ReferenceEquals(_letGoTimerClock, _time))
-        {
-            _letGoTimer?.Dispose();
-            _letGoTimerClock = _time;
-            _letGoTimer = _time.CreateTimer(OnLetGoDue, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-        }
-        var wait = due - Now();
-        _letGoTimer.Change(wait > TimeSpan.Zero ? wait : TimeSpan.Zero, Timeout.InfiniteTimeSpan);
-    }
-
-    private void OnLetGoDue(object? state)
-    {
-        // Off the renderer's synchronisation context, like the redraw's timer.
-        _ = InvokeAsync(() =>
-        {
-            if (_disposed)
-                return;
-            _history?.LetGo();
-            ArmLetGo();
-        });
-    }
+    // One delegate for the component's lifetime; replacement rows carry immutable timestamps.
+    private readonly CellChangeOf<PivotDisplayRow> _cellChangedAt;
+    private readonly Dictionary<string, int> _valueColumnIndexes = new(StringComparer.Ordinal);
+    private DateTimeOffset? CellChangedAt(PivotDisplayRow row, ExGrid.GridColumn<PivotDisplayRow> column)
+        => _valueColumnIndexes.TryGetValue(column.Name, out var index) && index < row.ChangedAt.Count
+            ? row.ChangedAt[index] : null;
 
     // The Stale Report (ADR-0067): what happened, while the newest data cannot be shown; the
     // answer held whose layout a cap refused, which the notice goes with once a layout that fits
     // lays it out; and whether what failed was a Refresh, which Retry then asks for again.
     private string? _stale;
-    private PivotCube? _staleNewest;
+    private PivotReportState? _staleNewest;
     private bool _staleRetryRefreshes;
 
     private DateTimeOffset Now() => _time.GetUtcNow();
@@ -117,20 +76,13 @@ public partial class ExPivot
             _redrawTimerClock = null;
             _redrawDue = null;
         }
-        if (_letGoTimer is not null)
-        {
-            _letGoTimer.Dispose();
-            _letGoTimer = null;
-            _letGoTimerClock = null;
-            ArmLetGo();
-        }
     }
 
     // ---- Listening (ADR-0067) ---------------------------------------------------------------
 
     /// <summary>Listens to <paramref name="source"/>'s <c>Changed</c>, and no longer to the one
     /// before it: a source handed over is a refresh, whose question answers whatever was gathered.</summary>
-    private void Listen(PivotSource source)
+    private void Listen(PivotReportSource source)
     {
         StopListening();
         _changed = false;
@@ -152,7 +104,7 @@ public partial class ExPivot
 
     /// <summary>The source's data moved on. Raised on whatever thread the change was learned on,
     /// so it is marshalled to the renderer's; nothing it does throws back into the source.</summary>
-    private void OnSourceChanged(PivotSource source, PivotSourceChanged change)
+    private void OnSourceChanged(PivotReportSource source, PivotSourceChanged change)
     {
         if (_disposed)
             return;
@@ -180,7 +132,7 @@ public partial class ExPivot
         // A notice of the very version on screen, with nothing out, has nothing to bring: the latest
         // notice says where the data stands now.
         if (_asking is null && _stale is null && _changedTo is not null && _report is { } report
-            && ReferenceEquals(_reportSource, _source) && string.Equals(report.Cube.SourceVersion, _changedTo, StringComparison.Ordinal))
+            && ReferenceEquals(_reportSource, _source) && string.Equals(report.SourceVersion, _changedTo, StringComparison.Ordinal))
         {
             _changed = false;
             DisarmRedraw();
@@ -298,7 +250,7 @@ public partial class ExPivot
     /// than the report is held.</param>
     /// <param name="retryRefreshes">Whether what failed was the source's Refresh itself, which
     /// Retry then asks for again rather than the report alone.</param>
-    private void MarkStale(string reason, Exception? error, PivotCube? newest, bool retryRefreshes = false)
+    private void MarkStale(string reason, Exception? error, PivotReportState? newest, bool retryRefreshes = false)
     {
         _stale = reason;
         _staleNewest = newest;

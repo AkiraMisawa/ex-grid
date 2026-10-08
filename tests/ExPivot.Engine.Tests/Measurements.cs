@@ -228,42 +228,6 @@ public class Measurements
         Values = [new PivotValueField("Notional"), new PivotValueField("Pnl")],
     };
 
-    [Fact(Explicit = true)] // ADR-0161 (ticket 11): a live redraw's next cube at 400,000 leaves — the leaves compared when the answer names none, against named, and against a cube built afresh
-    public void The_next_cube_at_four_hundred_thousand_leaves()
-    {
-        // One record per leaf: a thousand books by four hundred trade dates.
-        var start = new DateOnly(2026, 1, 2);
-        var trades = Enumerable.Range(0, 400_000).Select(i => new Trade(
-            i, "Americas", "Rates", "BK-" + (i % 1000).ToString("000", CultureInfo.InvariantCulture), "Swap", "USD", start.AddDays(i / 1000),
-            10_000m * (1 + (i % 7)), (i % 977) / 100m, 1, true, 100.0)).ToArray();
-        var fields = Fields();
-        var source = PivotSource.From(fields.Build(trades), fields.Fields, Whole);
-        var query = new PivotQuery(rows: [F("Book")], columns: [F("TradeDate")], values: [V("Notional", PivotParts.Sum), V("Pnl", PivotParts.Sum)], maxLeaves: int.MaxValue);
-        var first = Ask(source, query);
-        var cube = PivotEngine.Cube(query, first, fields.Fields);
-        Assert.Equal(400_000, first.LeafCount);
-
-        // One trade amended: the source names its leaf; a source that says nothing leaves the engine
-        // to compare every leaf.
-        source.Apply(fields.Batch(changed: [trades[123_456] with { Pnl = -1m }]));
-        var asked = query.WithChangedSince(cube.SourceVersion);
-        var named = Ask(source, asked);
-        Assert.Single(named.ChangedLeaves!.Leaves);
-        var unnamed = named.WithChangedLeaves(null);
-        PivotCube next = cube;
-        foreach (var (what, answer) in new[] { ("named by the source", named), ("compared by the engine", unnamed) })
-        {
-            for (var warm = 0; warm < 3; warm++)
-                next = PivotEngine.NextCube(cube, asked, answer, fields.Fields);
-            Assert.Equal(cube.Id, next.MadeFrom);
-            Report($"next cube, one leaf changed, {what}", [.. Enumerable.Range(0, 15).Select(_ => Time(() => next = PivotEngine.NextCube(cube, asked, answer, fields.Fields)))],
-                "400,000 leaves");
-        }
-        for (var warm = 0; warm < 3; warm++)
-            next = PivotEngine.Cube(asked, named, fields.Fields);
-        Report("the cube built afresh", [.. Enumerable.Range(0, 15).Select(_ => Time(() => next = PivotEngine.Cube(asked, named, fields.Fields)))], "400,000 leaves");
-    }
-
     [Fact(Explicit = true)] // PV-21 / ADR-0067: 1,000 changes to a million records, folded into the held answer
     public void Folding_a_thousand_changes_into_a_million_records()
     {

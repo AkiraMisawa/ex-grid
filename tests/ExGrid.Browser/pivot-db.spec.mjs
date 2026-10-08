@@ -1,11 +1,12 @@
 import { test, expect, scrollRowToTop } from './fixtures.mjs';
+import { readClipboard } from './sheet-helpers.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
 // /pivot-db (ADR-0065/0066/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // the demo API server's SQLite trades two ways, side by side. "Database → Snapshot" reads the
 // trades over Arrow into a Snapshot the page pivots in its own process; "database → server Pivot
-// Source" asks the server each question through PivotSource.Fetch, and the server answers in SQL.
+// Source" asks the server each question through PivotReportSource.Fetch, and the server computes the report and returns its requested Window.
 // What only a browser can say: that both reach the server from either host, read the same trades
 // and show the same numbers for the same layout; that the server's Details are paged from it as
 // the Details tab scrolls; and that the console stays clean throughout (PV-20).
@@ -68,25 +69,66 @@ async function asked(page, kind) {
     return Number(new RegExp(`(\\d+) ${kind}`).exec(text)?.[1] ?? NaN);
 }
 
+test('LV-20/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows', async ({ page }) => {
+    await open(page, 'builtin');
+    const grid = report(page, 'server');
+    await section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
+    const status = await api('/api/status');
+    await expect.poll(async () => Number(await grid.getAttribute('aria-rowcount'))).toBeGreaterThanOrEqual(status.trades);
+    const count = Number(await grid.getAttribute('aria-rowcount'));
+    expect(await rows(page, 'server').count()).toBeLessThan(100);
+    const last = count - 1;
+    await scrollRowToTop(grid, last);
+    await expect(grid.locator(`[id$='-r${last}c0']`)).toContainText('Grand Total');
+    expect(await rows(page, 'server').count()).toBeLessThan(100);
+    expect(await asked(page, 'Window')).toBeGreaterThan(1);
+});
+
+test('LV-25/ADR-0152: remote whole-column Copy and Summary include rows outside the Window', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await open(page, 'builtin');
+    await section(page, 'snapshot').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
+    await expect.poll(async () => Number(await report(page, 'snapshot').getAttribute('aria-rowcount'))).toBeGreaterThan(1000);
+    await page.locator('#pivot-db-same-layout').click();
+    await expectSameReports(page);
+    const copies = {}, summaries = {};
+    for (const side of ['snapshot', 'server']) {
+        const grid = report(page, side);
+        const count = Number(await grid.getAttribute('aria-rowcount'));
+        expect(await rows(page, side).count()).toBeLessThan(100);
+        await grid.locator("[id$='-r1c1']").click({ force: true });
+        await page.keyboard.press('Control+Space');
+        await expect(grid.locator('.ex-summary')).toContainText('Sum:');
+        summaries[side] = await grid.locator('.ex-summary').innerText();
+        await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+        await page.keyboard.press('ControlOrMeta+C');
+        await expect.poll(async () => (await readClipboard(page))['text/plain'] ?? 'SENTINEL').not.toBe('SENTINEL');
+        copies[side] = (await readClipboard(page))['text/plain'];
+        expect(copies[side].replace(/\r?\n$/, '').split(/\r?\n/)).toHaveLength(count);
+    }
+    expect(copies.server).toBe(copies.snapshot);
+    expect(summaries.server).toBe(summaries.snapshot);
+});
+
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`PV-20/ADR-0069: the database read over Arrow and asked through PivotSource.Fetch shows the same numbers (${chrome})`, async ({ page }) => {
+        test(`PV-20/ADR-0069: the database read over Arrow and asked through PivotReportSource.Fetch shows the same numbers (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const status = await api('/api/status');
             // The whole database, read into the page's own Snapshot at the server's version.
             await expect(page.locator('#pivot-db-snapshot-status'))
                 .toContainText(`Read ${status.trades.toLocaleString('en-US')} trades at version ${status.version} `);
             await expectSameReports(page);
-            expect(await asked(page, 'aggregate')).toBeGreaterThanOrEqual(1);
+            expect(await asked(page, 'Window')).toBeGreaterThanOrEqual(1);
             // A server's source can be refreshed; the bundled source is refreshed by a new source
             // instead, and shows no Refresh (ADR-0066).
             await expect(toolbarButton(page, 'server', 'Refresh')).toBeVisible();
             await expect(toolbarButton(page, 'snapshot', 'Refresh')).toHaveCount(0);
             // The server's data holds still while live updates are off: a Refresh asks again and
             // shows the same numbers.
-            const aggregates = await asked(page, 'aggregate');
+            const aggregates = await asked(page, 'Window');
             await toolbarButton(page, 'server', 'Refresh').click();
-            await expect.poll(() => asked(page, 'aggregate')).toBe(aggregates + 1);
+            await expect.poll(() => asked(page, 'Window')).toBe(aggregates + 1);
             await expectSameReports(page);
         });
 
@@ -98,9 +140,9 @@ for (const chrome of ['builtin', 'mud']) {
             await section(page, 'snapshot').getByRole('checkbox', { name: 'Month', exact: true }).check();
             await expect.poll(async () => (await painted(page, 'snapshot')).rows).toBeGreaterThan(before.rows);
             // The same layout on the server's pivot: a GROUP BY over three fields, answered in SQL.
-            const aggregates = await asked(page, 'aggregate');
+            const aggregates = await asked(page, 'Window');
             await page.locator('#pivot-db-same-layout').click();
-            await expect.poll(() => asked(page, 'aggregate')).toBeGreaterThan(aggregates);
+            await expect.poll(() => asked(page, 'Window')).toBeGreaterThan(aggregates);
             await expectSameReports(page);
             await expect(section(page, 'server').getByRole('checkbox', { name: 'Month', exact: true })).toBeChecked();
         });
@@ -145,6 +187,6 @@ test('ADR-0069/0065: the code the page shows is the code it runs, the Arrow requ
     expect(code['PivotDbPage.razor#snapshot']).toContain('request.SetBrowserResponseStreamingEnabled(false);');
     expect(code['PivotDbPage.razor#snapshot']).toContain('SnapshotArrow.ReadAsync(');
     expect(code['PivotDbPage.razor#snapshot']).toContain('PivotSource.From(snapshot, fields)');
-    expect(code['DemoServerPivot.cs#fetch']).toContain('PivotSource.Fetch(fields, features,');
+    expect(code['DemoServerPivot.cs#fetch']).toContain('PivotReportSource.Fetch(fields, features,');
     expect(code['DemoServerPivot.cs#fetch']).toContain('MaxDetailsPage = 10_000');
 });

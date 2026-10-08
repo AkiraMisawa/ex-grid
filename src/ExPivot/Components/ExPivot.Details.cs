@@ -33,42 +33,28 @@ public partial class ExPivot
     private Func<ElementReference, Task>? _takeKeyboard;
 
     /// <summary>
-    /// The records behind a value cell (ADR-0059/0063), asked from a command made earlier: of the
-    /// report on screen's row that stands for <paramref name="row"/> — compared by key, as a row may
-    /// be shared by several reports (ADR-0161) — in its value column named
-    /// <paramref name="column"/>, which a redraw may have moved; and nothing when the report on
-    /// screen has neither.
+    /// The records behind a value cell (ADR-0059/0063): an empty cell has none. They are asked of the
+    /// source the report came from, under its Source Version, so they add up to the cell. The
+    /// Consumer takes them when it listens; otherwise they open in a tab at the report's foot, or in
+    /// a dialog when the Consumer asked for one.
     /// </summary>
-    private Task ShowDetailsAsync(PivotReportRow row, string column)
+    private Task ShowDetailsAsync(PivotDisplayRow row, int valueColumn)
     {
-        if (_report is not { } report || report.RowFor(row) is not { } own)
+        if (_report is not { } report || (_state is null || !_state.Rows.Contains(row)) || _reportSource is not { } source)
             return Task.CompletedTask;
-        for (var j = 0; j < report.ValueColumns.Count; j++)
-        {
-            if (string.Equals(report.ValueColumns[j].Name, column, StringComparison.Ordinal))
-                return ShowDetailsOfAsync(report, own, j);
-        }
-        return Task.CompletedTask;
+        return ShowDetailsAsync(report, source, row, valueColumn);
     }
 
-    /// <summary>
-    /// The records behind a value cell of the report on screen (ADR-0059/0063): an empty cell has
-    /// none. They are asked of the source the report came from, under its Source Version, so they add
-    /// up to the cell. The Consumer takes them when it listens; otherwise they open in a tab at the
-    /// report's foot, or in a dialog when the Consumer asked for one.
-    /// </summary>
-    private async Task ShowDetailsOfAsync(PivotReport report, PivotReportRow row, int valueColumn)
+    private async Task ShowDetailsAsync(PivotReportMetadata report, PivotReportSource source, PivotDisplayRow row, int valueColumn)
     {
-        if (!ReferenceEquals(report, _report) || _reportSource is not { } source)
+        if (row.ValueAt(valueColumn) is null)
             return;
-        if (report.ValueAt(row, valueColumn) is null)
-            return;
-        var rowItems = Items(report, report.RowPath(row));
-        var columnItems = Items(report, report.ColumnPath(valueColumn));
-        var valueField = report.ValueFieldAt(row, valueColumn) is var vf and >= 0 ? report.ValueCaptions[vf] : null;
+        var rowItems = Items(report, row.RowPath);
+        var columnItems = Items(report, report.ValueColumns[valueColumn].ColumnPath);
+        var valueField = ValueFieldAt(report, row, valueColumn) is var vf and >= 0 ? report.ValueCaptions[vf] : null;
         var path = rowItems.Concat(columnItems).Select(item => item.Item).ToArray();
         var title = PivotWords.Fill(Word("details-title"), path.Length == 0 ? Word(PivotWords.GrandTotal) : string.Join(" / ", path));
-        var details = new PivotDetails(source, report.DetailsQuery(row, valueColumn), rowItems, columnItems, valueField, title);
+        var details = new PivotDetails(source, new PivotReportDetailsQuery(report.Version, row.Key, valueColumn), report.SourceVersion, rowItems, columnItems, valueField, title);
         if (OnShowDetails.HasDelegate)
         {
             await OnShowDetails.InvokeAsync(details);

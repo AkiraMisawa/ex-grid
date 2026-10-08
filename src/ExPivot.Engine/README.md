@@ -133,13 +133,9 @@ var cube = PivotEngine.Cube(query, answer, source.Fields);
 var report = PivotEngine.Report(cube, layout,
     new PivotOptions { Culture = CultureInfo.GetCultureInfo("en-US") });
 
-report.Rows[0].Labels[0].Text;                 // the first region
-report.ValueAt(report.Rows[^1], 0)!.Text;      // the grand total of January
+report.Rows[0].Labels[0].Text;    // the first region
+report.ValueAt(report.Rows[^1], 0)!.Text; // the grand total of January
 ```
-
-A report row says what it stands for — its role, its Value Field, its Items (its `Key`) and its
-labels — and holds no value and no report: a value cell is asked of a report, which computes it when
-it is first read and keeps it (ADR-0161).
 
 A layout that changes only how the result is laid out — collapsing an Item, sorting, the form, the
 totals, a format, or an Aggregation whose parts the cube holds (Sum and Average share one) — is laid
@@ -160,6 +156,30 @@ var report = await PivotEngine.ReportAsync(cube, layout, options, slicing: null,
 
 Over records in memory, `PivotEngine.Compute(records, fields, layout)` does all of it in one step,
 on the calling thread.
+
+## Local and remote report Windows
+
+`PivotReportSource.From(data)` owns one independent report computation over a `PivotSource`.
+`WindowAsync` answers the requested rows and complete report metadata, or changed rows against
+its named baseline. Published reports are immutable; ordinary Snapshot batches update affected
+leaves, totals, axis paths and report portions while sharing unchanged structure. A data provider
+can serve independent report computations without one layout replacing another's held state.
+
+`PivotReportSource.Fetch` carries the application's Window, Items, Copy, Summary and Details
+transports. `PivotReportJson` preserves exact values, layout, culture, display words and versions.
+The server retains its `LocalPivotReportSource`; the browser receives detached display rows,
+not all aggregate leaves. `PivotReportClient` checks replies and recovers a missing baseline with
+a complete Window. Failed recovery retains the last complete report as stale.
+
+Copy, Summary and Details name a Report Version, including selections outside the Window. The
+local adapter retains two versions by default (`versionsKept`); an unavailable version refuses
+instead of switching data. The Consumer manages transport and server state lifetime. Remote
+Order Keys name server-registered policies; culture does not select display words.
+
+`UpdateMode` distinguishes incremental Snapshot calculations from providers that can only
+refresh their complete aggregate answer. Both use the same report semantics and Window boundary.
+The low-level `PivotSource.Fetch` API below remains useful behind a server report calculation;
+using it alone does not move report construction to the server.
 
 ## Asking a Pivot Source
 
@@ -204,33 +224,6 @@ var answer = await source.AggregateAsync(query, ct);   // brought up to date, no
 - **The source answers a field's Items and a cell's records under its current version and the
   versions of its last four answers** (`SnapshotPivotSource.AnswersHeld`), and refuses an older one:
   holding every version would hold every Snapshot a live feed ever made.
-
-### The next report from the last
-
-ExPivot makes a live redraw's cube and report from the ones on screen (ADR-0161). What a source
-does for it is public:
-
-```csharp
-var asked = query.WithChangedSince(versionOnScreen);   // the version of the answer the asker holds
-var answer = await source.AggregateAsync(asked, ct);
-answer.ChangedLeaves;   // the leaves that changed since, the leaves made afresh, or null
-```
-
-- **An answer may say which of its leaves changed** since the version the question names
-  (`PivotAnswer.ChangedLeaves`, `PivotLeafChanges`). The bundled source says it from its fold, or
-  that the leaves were made afresh when it could not fold. A server's answer may say it
-  (`WithChangedLeaves`; `PivotJson` carries it), and one that does not is compared with the answer
-  before it, leaf by leaf.
-- **The next cube shares the axis trees and the cells**, and computes again only the cells on the
-  changed leaves' paths — a changed leaf's cell, every subtotal above it on both axes, and the grand
-  totals — each from its leaves, as a cube built afresh computes it. It takes its own copy of the
-  values that change; the cube on screen stays exactly as it was.
-- **The next report shares every row whose painted text did not change**, and makes the others
-  anew, so a grid repaints only those (ADR-0003). A report row holds no value and no report, so
-  sharing it holds no report alive.
-- **Some redraws are made afresh**, with every row a new instance and the same result: another
-  question or other fields, leaves that came or went, a batch the source could not fold, an order by
-  a Value Field or a Show Values As, or so many changed leaves that building afresh is cheaper.
 
 ## The layout's rules and its saved form
 

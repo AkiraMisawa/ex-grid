@@ -8,4 +8,5 @@ foreach (var difference in differences)
 if (differences.Count > 0)
     return 1;
 Console.WriteLine("Arrow round trip: the Snapshot read back through the packed packages is the one written");
+await PivotReportRoundTrip.RunAsync();
 return 0;

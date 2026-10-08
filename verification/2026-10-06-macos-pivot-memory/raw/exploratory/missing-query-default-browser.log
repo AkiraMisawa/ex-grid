@@ -1,0 +1,29 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] (node:94652) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:94660) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chrome] › oom.spec.mjs:3:1 › ADR-0067 live pivot does not exhaust memory (1.5m)
+
+
+  1) [chrome] › oom.spec.mjs:3:1 › ADR-0067 live pivot does not exhaust memory ─────────────────────
+
+    Error: page.waitForFunction: Target page, context or browser has been closed
+
+      17 |    const before=await page.locator('.ex-pivot-sheet .ex-viewport').textContent();
+      18 |    await page.locator('#cost-tick').click();
+    > 19 |    await Promise.race([page.waitForFunction(old=>document.querySelector('.ex-pivot-sheet .ex-viewport')?.textContent!==old,before),failure]);
+         |                             ^
+      20 |    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));
+      21 |    result.completed=i+1;await inspect();
+      22 |    result.samples.push({update:i+1,status:await page.locator('#cost-status').textContent()});save();
+        at /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom/tests/ExGrid.Browser/oom.spec.mjs:19:29
+
+    Error Context: test-results/oom-ADR-0067-live-pivot-does-not-exhaust-memory-chrome/error-context.md
+
+  1 failed
+    [chrome] › oom.spec.mjs:3:1 › ADR-0067 live pivot does not exhaust memory ──────────────────────

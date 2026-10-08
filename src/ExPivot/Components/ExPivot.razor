@@ -99,22 +99,18 @@
     private bool _initialised;
     private bool _disposed;
 
-    /// <summary>
-    /// What the report is computed from (ADR-0066): <c>PivotSource.From</c> over the Consumer's
-    /// records — the reference, answered in the process — or a server's, through
-    /// <c>PivotSource.Fetch</c>. Its fields are what the Field List offers. ExPivot asks it without
-    /// ever blocking: a slow answer leaves the report as it was under a loading indication, and a
-    /// newer question cancels the old one. A new instance is a refresh.
-    ///
-    /// <para>ExPivot listens to the source's <c>Changed</c> — a Change Batch the bundled source
-    /// folded in, a server's notice through <c>NotifyChanged</c>, Refresh — and asks again for the
-    /// whole answer (ADR-0067). The changes are gathered, and the report redrawn at most once per
-    /// <see cref="RedrawInterval"/>; a cell whose painted value changed is marked for
-    /// <see cref="ChangeHighlightDuration"/>; and when the newest data cannot be shown, the report
-    /// stays on the last version it could compute and says so under the Pivot Toolbar,
-    /// with Retry.</para>
-    /// </summary>
-    [Parameter, EditorRequired] public PivotSource Source { get; set; } = default!;
+    /// <summary>The asynchronous report source, local or remote (ADR-0151). It owns computation;
+    /// this component receives metadata and requested Windows. Its lifetime belongs to the Consumer.</summary>
+    [Parameter] public PivotReportSource? Source { get; set; }
+
+    /// <summary>Server-registered Order Key identifiers by field name (ADR-0152). Local fields
+    /// keep their declared delegates. An unknown registered identifier is refused by the source.</summary>
+    [Parameter] public IReadOnlyDictionary<string, string>? OrderKeyPolicies { get; set; }
+
+    /// <summary>A local data provider, as a convenience instead of Source. This component creates
+    /// and disposes one report computation session over it. A remote server should expose a
+    /// report source through Source, so leaves and unrequested rows stay on that server.</summary>
+    [Parameter] public PivotSource? DataSource { get; set; }
 
     /// <summary>
     /// How often, at most, the report is redrawn for changes of data (ADR-0067): 250 ms by default.
@@ -239,7 +235,7 @@
     public PivotLayout CurrentLayout => _shown;
 
     /// <summary>The report on screen, or null before the source first answered.</summary>
-    public PivotReport? Report => _report;
+    public PivotReportState? Report => _state;
 
     /// <summary>Whether a question the report waits on is out to the source — a layout's, Refresh's,
     /// Retry's or a new source's — or its answer's report is being made, in slices, as is a layout
@@ -256,10 +252,9 @@
     public Exception? LastError => _lastError;
 
     /// <summary>Whether the report is a Stale Report (ADR-0067): the newest data could not be
-    /// shown — it broke a cap, the source refused or failed, a Refresh failed, or memory ran out
-    /// while its report was made (ADR-0161) — so the report stays on the last version it could
-    /// compute, and the notice under the Pivot Toolbar says what happened and as of when, with
-    /// Retry.</summary>
+    /// shown — it broke a cap, the source refused or failed, or a Refresh failed — so the report
+    /// stays on the last version it could compute, and the notice under the Pivot Toolbar says what
+    /// happened and as of when, with Retry.</summary>
     public bool IsStale => _stale is not null;
 
     // The Consumer's word, the engine's English, then the English of the words the engine does not
@@ -272,8 +267,8 @@
         AdoptSummaryFigures();
         if (FieldListWidth is not (> 0 and < 10_000) || !double.IsFinite(FieldListWidth))
             throw new ArgumentOutOfRangeException(nameof(FieldListWidth), FieldListWidth, "A width in pixels, above zero.");
-        if (Source is null)
-            throw new InvalidOperationException("ExPivot needs a Source: PivotSource.From over the records, or a server's through PivotSource.Fetch (ADR-0066).");
+        if ((Source is null) == (DataSource is null))
+            throw new InvalidOperationException("ExPivot needs exactly one report Source or local DataSource (ADR-0151).");
         ArgumentNullException.ThrowIfNull(Caps);
         if (!Enum.IsDefined(DetailsView))
             throw new ArgumentOutOfRangeException(nameof(DetailsView), DetailsView, "Unknown PivotDetailsView.");
@@ -285,17 +280,8 @@
                 "A Change Highlight cannot last a negative time: it would end before the change it marks (ADR-0068).");
         }
         UseClock(Clock ?? Services.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System);
-        // A duration that becomes zero, or stops being zero, is no data: the history starts again,
-        // with a delegate for the grid when it can mark and none when it cannot (ADR-0068/0161).
-        var canMark = ChangeHighlightDuration > TimeSpan.Zero;
-        if (_history is not null && _report is { } shown && (_history.Answer is not null) != canMark)
-        {
-            _history = ReportHistory.Start(shown, Now, ChangeHighlightDurationNow);
-            _cellChangedAt = _history.Answer;
-            _gridVersion++;
-            ArmLetGo();
-        }
 
+        var offeredSource = await ResolveReportSourceAsync();
         var pursue = !_initialised;
         var force = false;
         var refresh = false;
@@ -305,16 +291,17 @@
             && !_emitted.TryGetValue(Layout, out _) && !ReferenceEquals(Layout, _layout)
             ? Layout
             : null;
-        if (!ReferenceEquals(Source, _source))
+        if (!ReferenceEquals(offeredSource, _source))
         {
             // A new source is a refresh: nothing it says can come from the answer held, and the
             // one before it is no longer listened to (ADR-0066/0067). It is held to the layout it
             // will be asked under: the one it came with, when data of another shape and its layout
             // arrive together, and otherwise the one on screen.
-            CheckFields(Source, consumerLayout ?? _layout);
+            CheckFields(offeredSource, consumerLayout ?? _layout);
             refresh = _source is not null;
-            _source = Source;
-            Listen(Source);
+            _source = offeredSource;
+            _client = new PivotReportClient(offeredSource, _state);
+            Listen(offeredSource);
             pursue = true;
             force = true;
         }
@@ -325,7 +312,7 @@
             // A layout this instance raised and the Consumer bound back is the one on screen.
             if (consumerLayout is not null)
             {
-                CheckFields(Source, consumerLayout);
+                CheckFields(offeredSource, consumerLayout);
                 _layout = consumerLayout;
                 // The Consumer's layout replaces the user's: it is never raised back.
                 _raisePending = false;
@@ -392,13 +379,12 @@
         StopListening();
         _redrawTimer?.Dispose();
         _redrawTimer = null;
-        _letGoTimer?.Dispose();
-        _letGoTimer = null;
         _generation++;
         _asking?.Cancel();
         _asking = null;
-        _relabelling?.Cancel();
-        _relabelling = null;
+        if (_ownedSource is { } owned)
+            _ = owned.DisposeAsync();
+        _ownedSource = null;
         foreach (var sheet in _sheets)
             sheet.Dispose();
         _sheets.Clear();

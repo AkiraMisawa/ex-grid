@@ -122,7 +122,7 @@ internal sealed class ReportBuilder
     public PivotReport Build() => Slicer.Run(BuildAsync(Slicer.Unsliced));
 
     /// <summary>The report, laid out in slices (PV-40): the value columns and their spans, then the
-    /// rows, each tree walked a step at a time.</summary>
+    /// rows, each tree walked a step at a time, and the rows handed to the report.</summary>
     public async ValueTask<PivotReport> BuildAsync(Slicer slicer)
     {
         var columns = new List<PivotReportColumn>();
@@ -134,7 +134,71 @@ internal sealed class ReportBuilder
             await EmitRowsAsync(rows, slicer).ConfigureAwait(false);
         }
         var tiers = ColumnLevels == 0 ? 0 : _valuesOnColumns ? ColumnLevels : ColumnLevels - 1;
-        return new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, rows);
+        var report = new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, rows);
+        return report;
+    }
+
+    // The same layout rules used by a complete walk, applied to one affected axis node.
+    // Tabular pending labels always form a suffix of the ancestor path: a later sibling
+    // starts a new suffix, while a first child inherits its parent's pending ancestors.
+    internal (PivotReportRow[] Before, PivotReportRow[] After, bool Descend) RowsOf(AxisNode node, int pendingFrom)
+    {
+        var before = new List<PivotReportRow>();
+        var after = new List<PivotReportRow>();
+        if (Empty) return ([], [], false);
+        if (node.Item is null)
+        {
+            if (RowLevels == 0)
+            {
+                Slicer.Run(EmitRowsAsync(before, Slicer.Unsliced));
+                return ([.. before], [], false);
+            }
+            if (_layout.GrandTotalRow && ValueCount > 0)
+                for (var vf = _valuesOnRows ? 0 : -1; vf < (_valuesOnRows ? ValueCount : 0); vf++)
+                    after.Add(new(PivotRowRole.GrandTotal, node, vf, true, GrandTotalLabels(vf)));
+            return ([], [.. after], true);
+        }
+        Array.Clear(_pending);
+        for (var level = pendingFrom; level < node.Level; level++)
+            _pending[level] = AncestorAt(node, level);
+        var tabular = _layout.Form == PivotReportForm.Tabular;
+        var descend = (tabular ? EnterTabular(node, before) : EnterGrouped(node, before)) >= 0;
+        Array.Clear(_pending);
+        if (descend)
+        {
+            if (tabular) LeaveTabular(node, after);
+            else LeaveGrouped(node, after);
+        }
+        return ([.. before], [.. after], descend);
+    }
+
+    internal async ValueTask<List<AxisNode>> OrderedChildrenAsync(AxisNode node, Slicer slicer)
+    {
+        var order = Order(node, rows: true);
+        while (true)
+        {
+            var budget = Slicer.PieceUnits;
+            var done = order.Step(ref budget);
+            if (slicer.Done(Slicer.PieceUnits - budget)) await slicer.PauseAsync().ConfigureAwait(false);
+            if (done) return order.Result!;
+        }
+    }
+
+    internal async ValueTask<PivotReport> WithRowsAsync(PivotReport previous, IReadOnlyList<PivotReportRow> rows,
+        bool columnsChanged, Slicer slicer)
+    {
+        if (!columnsChanged)
+            return new(_cube, _layout, _options, _reader, previous.LabelColumns, previous.ValueColumns,
+                previous.HeaderSpans, previous.HeaderTierCount, rows);
+        var columns = new List<PivotReportColumn>();
+        var spans = new List<PivotHeaderSpan>();
+        if (!Empty) await EmitColumnsAsync(columns, spans, slicer).ConfigureAwait(false);
+        var old = previous.ValueColumns.ToDictionary(c => c.Name);
+        for (var i = 0; i < columns.Count; i++)
+            if (old.TryGetValue(columns[i].Name, out var held) && held.Header == columns[i].Header)
+                columns[i] = held;
+        return new(_cube, _layout, _options, _reader, previous.LabelColumns, columns, spans,
+            previous.HeaderTierCount, rows);
     }
 
     private string Word(string id) => _options.Word(id);
@@ -460,7 +524,7 @@ internal sealed class ReportBuilder
         var at = node;
         while (at.Level > level)
             at = at.Parent!;
-        return at;
+        return _cube.NodeOf(at, rows: true);
     }
 
     // The Compact and Outline forms: a group row heads each outer Item's block (ADR-0060). An
@@ -658,7 +722,7 @@ internal sealed class ReportBuilder
         var level = node.Level + 1;
         var placement = rows ? _rowPlacements[level] : _columnPlacements[level];
         var meta = rows ? _rowMeta[level] : _columnMeta[level];
-        var children = node.Children;
+        var children = _cube.ChildrenOf(node, rows).ToList();
         var descending = placement.Sort.Direction == PivotSortDirection.Descending;
         if (placement.Sort.ByValue is { } vf)
         {

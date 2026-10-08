@@ -1,0 +1,40 @@
+{
+  "browser": "154.0.8037.98",
+  "errors": [],
+  "observations": [
+    {
+      "page": "sources",
+      "chrome": "Built-in",
+      "detailsRows": 14
+    },
+    {
+      "page": "live",
+      "chrome": "Built-in",
+      "example": 0,
+      "changed": true
+    },
+    {
+      "page": "live",
+      "chrome": "Built-in",
+      "example": 1,
+      "changed": true
+    },
+    {
+      "page": "sources",
+      "chrome": "MudBlazor",
+      "detailsRows": 12
+    },
+    {
+      "page": "live",
+      "chrome": "MudBlazor",
+      "example": 0,
+      "changed": true
+    },
+    {
+      "page": "live",
+      "chrome": "MudBlazor",
+      "example": 1,
+      "changed": true
+    }
+  ]
+}

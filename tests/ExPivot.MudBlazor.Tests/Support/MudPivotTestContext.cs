@@ -97,7 +97,7 @@ public abstract class MudPivotTestContext : BunitContext
             builder.AddComponentParameter(1, nameof(MudExGridPaper.ChildContent), (RenderFragment)(inner =>
             {
                 inner.OpenComponent<PivotComponent>(0);
-                inner.AddComponentParameter(1, nameof(PivotComponent.Source), source ?? PivotSource.From(Sales, Fields));
+                inner.AddComponentParameter(1, nameof(PivotComponent.DataSource), source ?? PivotSource.From(Sales, Fields));
                 inner.AddComponentParameter(3, nameof(PivotComponent.Culture), CultureInfo.GetCultureInfo("en-US"));
                 inner.AddComponentParameter(4, nameof(PivotComponent.ViewportHeight), (ViewportSize)400);
                 inner.AddComponentParameter(5, nameof(PivotComponent.ViewportWidth), (ViewportSize)700);
@@ -123,8 +123,8 @@ public abstract class MudPivotTestContext : BunitContext
 
     private sealed class BuiltInMarker : IPivotChrome;
 
-    internal static IRenderedComponent<ExGrid<PivotReportRow>> Grid(IRenderedComponent<PivotComponent> cut)
-        => cut.FindComponent<ExGrid<PivotReportRow>>();
+    internal static IRenderedComponent<ExGrid<PivotDisplayRow>> Grid(IRenderedComponent<PivotComponent> cut)
+        => cut.FindComponent<ExGrid<PivotDisplayRow>>();
 
     /// <summary>Each painted row's cells as text, label cells first, joined with " | ".</summary>
     internal static string[] RowTexts(IRenderedComponent<PivotComponent> cut)
@@ -180,12 +180,12 @@ public abstract class MudPivotTestContext : BunitContext
     internal static IReadOnlyList<GridCommand> ContextCommands(IRenderedComponent<PivotComponent> cut, int row, string column)
         => Grid(cut).Instance.ContextCommands!(ContextAt(cut, row, column)).ToArray();
 
-    internal static ContextMenuContext<PivotReportRow> ContextAt(IRenderedComponent<PivotComponent> cut, int row, string column)
+    internal static ContextMenuContext<PivotDisplayRow> ContextAt(IRenderedComponent<PivotComponent> cut, int row, string column)
     {
         var grid = Grid(cut).Instance;
-        return new ContextMenuContext<PivotReportRow>(
+        return new ContextMenuContext<PivotDisplayRow>(
             grid.Window[row], column, ColumnType.Number, [new SelectionRange(row, 0, 1, 1)], grid.RowSequenceVersion,
-            grid.ContextCommands!(new ContextMenuContext<PivotReportRow>(
+            grid.ContextCommands!(new ContextMenuContext<PivotDisplayRow>(
                 grid.Window[row], column, ColumnType.Number, [new SelectionRange(row, 0, 1, 1)], grid.RowSequenceVersion, [], () => { }))
                 .ToArray(),
             () => { });
@@ -232,7 +232,7 @@ public abstract class MudPivotTestContext : BunitContext
         var module = JSInterop.SetupModule("./_content/ExGrid/ex-grid.min.js");
         module.SetupModule("attach", _ => true);
         return module.SetupModule("attach",
-            invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotReportRow>>);
+            invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotDisplayRow>>);
     }
 
     /// <summary>How many times the report grid behind <paramref name="handle"/> has asked for the

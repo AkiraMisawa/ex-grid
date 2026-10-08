@@ -6,7 +6,7 @@
     <button @onclick="Restore" disabled="@(_saved is null)">Restore the saved layout</button>
 </p>
 
-<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="320" />
+<ExPivot DataSource="_source" @bind-Layout="_layout" ViewportHeight="320" />
 
 @if (_saved is not null)
 {

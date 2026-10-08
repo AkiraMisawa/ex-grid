@@ -54,8 +54,6 @@ public static class PivotJson
             }
             json.WriteEndArray();
             json.WriteNumber("maxLeaves", query.MaxLeaves);
-            if (query.ChangedSince is { } since)
-                json.WriteString("changedSince", since);
         });
     }
 
@@ -82,17 +80,6 @@ public static class PivotJson
             foreach (var values in answer.ValueColumns)
                 WriteValues(json, values, leaves);
             json.WriteEndArray();
-            if (answer.ChangedLeaves is { } changes)
-            {
-                json.WriteStartObject("changedLeaves");
-                json.WriteString("since", changes.Since);
-                json.WriteBoolean("sameLeaves", changes.SameLeaves);
-                json.WriteStartArray("leaves");
-                foreach (var leaf in changes.Leaves)
-                    json.WriteNumberValue(leaf);
-                json.WriteEndArray();
-                json.WriteEndObject();
-            }
         });
     }
 
@@ -437,8 +424,7 @@ public static class PivotJson
         ReadFields(root, "columns"),
         ReadFields(root, "filters"),
         Array(root, "values").Select(value => new PivotQueryValue(String(value, "field"), ReadParts(value))).ToArray(),
-        Int(root, "maxLeaves"),
-        OptionalString(root, "changedSince")));
+        Int(root, "maxLeaves")));
 
     /// <summary>
     /// An answer read back from <see cref="Write(PivotAnswer)"/>'s JSON. Refuses by name a leaf
@@ -461,27 +447,8 @@ public static class PivotJson
         var rows = ReadAxes(root, "rows", leaves);
         var columns = ReadAxes(root, "columns", leaves);
         var values = Array(root, "values").Select(element => ReadValues(element, records)).ToArray();
-        var answer = new PivotAnswer(sourceVersion, rows, columns, leaves, records, values);
-        return root.TryGetProperty("changedLeaves", out var changed) ? answer.WithChangedLeaves(ReadChangedLeaves(changed, leaves)) : answer;
+        return new PivotAnswer(sourceVersion, rows, columns, leaves, records, values);
     });
-
-    // An answer's changed leaves (ADR-0161): since a version, the same leaves with the ones named
-    // changed, or leaves made afresh. Refuses by name a leaf the answer has not, out of order or twice.
-    private static PivotLeafChanges ReadChangedLeaves(JsonElement element, int leafCount)
-    {
-        var since = String(element, "since");
-        if (!element.TryGetProperty("sameLeaves", out var same) || same.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
-            throw new FormatException("'sameLeaves' is a Boolean, and is required.");
-        var leaves = Array(element, "leaves").Select(leaf => IntValue(leaf, "leaves")).ToArray();
-        if (!same.GetBoolean())
-            return leaves.Length == 0 ? PivotLeafChanges.Remade(since) : throw new FormatException("Leaves made afresh name no changed leaf.");
-        for (var i = 0; i < leaves.Length; i++)
-        {
-            if (leaves[i] < 0 || leaves[i] >= leafCount || (i > 0 && leaves[i] <= leaves[i - 1]))
-                throw new FormatException($"Changed leaf {leaves[i]} is not one of the answer's {leafCount}, in ascending order.");
-        }
-        return PivotLeafChanges.Of(since, leaves);
-    }
 
     /// <summary>A question for a field's Items read back from <see cref="Write(PivotItemsQuery)"/>'s JSON.</summary>
     public static PivotItemsQuery ReadItemsQuery(string json) => Read(json, ItemsQueryType, root => new PivotItemsQuery(

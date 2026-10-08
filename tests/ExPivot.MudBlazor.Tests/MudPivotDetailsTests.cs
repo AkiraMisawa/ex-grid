@@ -162,7 +162,7 @@ public class MudPivotDetailsTests : MudPivotTestContext
         Assert.Empty(cut.FindAll(".mud-ex-pivot-tabs"));
         Assert.Empty(cut.FindComponents<MudTabs>());
         Assert.Null(ShownRecords(cut));
-        Assert.Single(cut.FindComponents<ExGrid<PivotReportRow>>());
+        Assert.Single(cut.FindComponents<ExGrid<PivotDisplayRow>>());
     }
 
     [Fact] // ADR-0061/0062 (PV-9, PV-14): the same Show Details and tab gestures leave the same tabs, the same selection and the same layout under the built-in markup and MudPivotChrome

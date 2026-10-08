@@ -1,0 +1,115 @@
+{
+  "cases": [
+    {
+      "case": "instrumented",
+      "completed": 6,
+      "outcome": "OOM on update 7",
+      "managedFirstMiB": 311.7245635986328,
+      "managedLastMiB": 1229.9236297607422,
+      "wasmLastMiB": 1889.9375,
+      "paintReports": 7,
+      "reportWeakAlive": 7,
+      "historyVersions": 2,
+      "threadAllocatedTotalMiB": 1690.7353591918945,
+      "threadAllocatedMedianPerUpdateMiB": 214.63621520996094
+    },
+    {
+      "case": "gc-only",
+      "completed": 6,
+      "outcome": "OOM on update 7",
+      "managedFirstMiB": 302.7658462524414,
+      "managedLastMiB": 1211.9346542358398,
+      "wasmLastMiB": 2008.4375,
+      "paintReports": 7,
+      "reportWeakAlive": 7,
+      "historyVersions": 2,
+      "threadAllocatedTotalMiB": 1690.7419509887695,
+      "threadAllocatedMedianPerUpdateMiB": 214.63595581054688
+    },
+    {
+      "case": "no-highlight",
+      "completed": 6,
+      "outcome": "OOM on update 7",
+      "managedFirstMiB": 311.7027816772461,
+      "managedLastMiB": 1227.8959197998047,
+      "wasmLastMiB": 1889.75,
+      "paintReports": 7,
+      "reportWeakAlive": 7,
+      "historyVersions": 2,
+      "threadAllocatedTotalMiB": 1690.7375183105469,
+      "threadAllocatedMedianPerUpdateMiB": 214.63642120361328
+    },
+    {
+      "case": "batch-one",
+      "completed": 6,
+      "outcome": "OOM on update 7",
+      "managedFirstMiB": 311.723876953125,
+      "managedLastMiB": 1227.4303894042969,
+      "wasmLastMiB": 1888.9375,
+      "paintReports": 7,
+      "reportWeakAlive": 7,
+      "historyVersions": 2,
+      "threadAllocatedTotalMiB": 1688.7894744873047,
+      "threadAllocatedMedianPerUpdateMiB": 214.3141860961914
+    },
+    {
+      "case": "drop-paints",
+      "completed": 20,
+      "outcome": "completed requested updates",
+      "managedFirstMiB": 311.72464752197266,
+      "managedLastMiB": 657.4072189331055,
+      "wasmLastMiB": 1200.9375,
+      "paintReports": 0,
+      "reportWeakAlive": 3,
+      "historyVersions": 2,
+      "threadAllocatedTotalMiB": 4695.326850891113,
+      "threadAllocatedMedianPerUpdateMiB": 214.61677932739258
+    },
+    {
+      "case": "drop-paints-gc",
+      "completed": 12,
+      "outcome": "completed requested updates",
+      "managedFirstMiB": 302.76578521728516,
+      "managedLastMiB": 606.6501312255859,
+      "wasmLastMiB": 1306.9375,
+      "paintReports": 0,
+      "reportWeakAlive": 3,
+      "historyVersions": 2,
+      "threadAllocatedTotalMiB": 2978.436996459961,
+      "threadAllocatedMedianPerUpdateMiB": 214.62483978271484
+    },
+    {
+      "case": "million-low-cardinality",
+      "completed": 70,
+      "outcome": "completed requested updates",
+      "managedFirstMiB": 147.0633773803711,
+      "managedLastMiB": 191.03472137451172,
+      "wasmLastMiB": 412.25,
+      "paintReports": 64,
+      "reportWeakAlive": 70,
+      "historyVersions": 10,
+      "threadAllocatedTotalMiB": 261.4855728149414,
+      "threadAllocatedMedianPerUpdateMiB": 0.9915771484375
+    }
+  ],
+  "retainedSlopeMiBPerGeneration": 151.52813466389975,
+  "matchedExtraReportMiB": 151.43688201904297,
+  "csv": {
+    "records": 1000000,
+    "sourceColumns": 12,
+    "aggregateLeaves": 1000,
+    "errors": [],
+    "browser": "154.0.8037.98",
+    "loadToRowsMs": 2545,
+    "shown": "The report shows one-million-trades.csv: 1,000,000 rows, read under the declared Schema.",
+    "status": "one-million-trades.csv: 1,000,000 rows read in 1.9 s.",
+    "refusal": "",
+    "grid": {
+      "rows": "111",
+      "columns": "12",
+      "paintedRows": 17,
+      "text": "Row LabelsProduct0Product1Product2Product3Product4Product5Product6Product7\u2212Region010,00010,00010,00010,00010,00010,00010,00010,000Desk01,0001,0001,0001,0001,0001,0001,0001,000Desk11,0001,0001,0001,0001,0001,0001,0001,000Desk21,0001,0001,0001,0001,0001,0001,0001,000Desk31,0001,0001,0001,0001,0001,0001,0001,000Desk41,0001,0001,0001,0001,0001,0001,0001,000Desk51,0001,0001,0001,0001,0001,0001,0001,000Desk61,0001,0001,0001,0001,0001,0001,0001,000Desk71,0001,0001,0001,0001,0001,0001,0001,000Desk81,0001,0001,0001,0001,0001,0001,0001,000Desk91,0001,0001,0001,0001,0001,0001,0001,000\u2212Region110,00010,00010,00010,00010,00010,00010,00010,000Desk01,0001,0001,0001,0001,0001,0001,0001,000Desk11,0001,0001,0001,0001,0001,0001,0001,000Desk21,0001,0001,0001,0001,0001,0001,0001,000Desk31,0001,0001,0001,0001,0001,0001,0001,000Desk41,0001,0001,0001,0001,0001,0001,0001,000\n    "
+    },
+    "wasmHeapBytes": 300154880
+  }
+}

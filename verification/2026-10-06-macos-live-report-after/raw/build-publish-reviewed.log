@@ -1,0 +1,83 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExSheet.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+  ExGrid.Docs.Generator -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.Docs.Generator/bin/Debug/netstandard2.0/ExGrid.Docs.Generator.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExGrid.Data.Arrow -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+  ExSheet.Engine.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll
+  ExGrid.Data.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll
+  ExPivot.Engine.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll
+  ExGrid.Data.Arrow.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExGrid.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll
+  ExGrid.Components -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll
+  ExPivot -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExGrid.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExSheet -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+  ExGrid.MudBlazor.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+  ExGrid.DemoApi -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoApi.dll
+  ExSheet.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+  ExPivot.Components -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll
+  ExSheet.MudBlazor.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+  ExPivot.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  ExGrid.DemoApi.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll
+  ExSheet.Components -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll
+  ExPivot.MudBlazor.Tests -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+  ExGrid.DemoPages -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoPages/bin/Debug/net10.0/ExGrid.DemoPages.dll
+  ExGrid.DemoHost.Server -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/ExGrid.DemoHost.Server.dll
+  ExGrid.DemoHost -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoHost/bin/Debug/net10.0/ExGrid.DemoHost.dll
+  ExGrid.DemoHost (Blazor output) -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoHost/bin/Debug/net10.0/wwwroot
+  ExGrid.Docs -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.Docs/bin/Debug/net10.0/ExGrid.Docs.dll
+  ExGrid.Docs (Blazor output) -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.Docs/bin/Debug/net10.0/wwwroot
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:05.56
+  Determining projects to restore...
+  Restored /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj (in 139 ms).
+  11 of 12 projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExSheet.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid.Data.Arrow -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExSheet -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  ExGrid.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExPivot -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  ExPivot.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.MudBlazor/bin/Release/net10.0/ExPivot.MudBlazor.dll
+  ExSheet.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.MudBlazor/bin/Release/net10.0/ExSheet.MudBlazor.dll
+  ExGrid.DemoPages -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoPages/bin/Release/net10.0/ExGrid.DemoPages.dll
+  ExGrid.DemoHost -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoHost/bin/Release/net10.0/ExGrid.DemoHost.dll
+  ExGrid.DemoHost (Blazor output) -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoHost/bin/Release/net10.0/wwwroot
+  Optimizing assemblies for size may change the behavior of the app. Be sure to test after publishing. See: https://aka.ms/dotnet-illink
+  Optimizing assemblies for size. This process might take a while.
+  Publishing without optimizations. Although it's optional for Blazor, we strongly recommend using `wasm-tools` workload! You can install it by running `dotnet workload install wasm-tools` from the command line.
+  ExGrid.DemoHost -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/wasm/
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid.Data.Arrow -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.DemoApi -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoApi/bin/Release/net10.0/ExGrid.DemoApi.dll
+  ExGrid.DemoApi -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/api/
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExSheet.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid.Data -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid.Data.Arrow -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExPivot.Engine -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExSheet -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  ExSheet.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExSheet.MudBlazor/bin/Release/net10.0/ExSheet.MudBlazor.dll
+  ExPivot -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  ExPivot.MudBlazor -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/src/ExPivot.MudBlazor/bin/Release/net10.0/ExPivot.MudBlazor.dll
+  ExGrid.DemoPages -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoPages/bin/Release/net10.0/ExGrid.DemoPages.dll
+  ExGrid.DemoHost.Server -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/samples/ExGrid.DemoHost.Server/bin/Release/net10.0/ExGrid.DemoHost.Server.dll
+  ExGrid.DemoHost.Server -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server/

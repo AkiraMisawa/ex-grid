@@ -115,9 +115,4 @@ public sealed record PivotItemKey
     public override string ToString() => Value is null ? Kind.ToString() : Kind + ":" + Value;
 
     internal DateTime DateValue => DateTime.ParseExact(Value!, DateFormat, CultureInfo.InvariantCulture);
-
-    /// <summary>Whether two keys are the same Item spelled the same: the kind, and the text to the
-    /// letter — the label it paints (ADR-0060/0161).</summary>
-    internal static bool SameSpelling(PivotItemKey one, PivotItemKey other)
-        => one.Kind == other.Kind && string.Equals(one.Value, other.Value, StringComparison.Ordinal);
 }

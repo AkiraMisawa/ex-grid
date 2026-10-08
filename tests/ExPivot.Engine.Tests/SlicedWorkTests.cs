@@ -647,6 +647,7 @@ public class SlicedWorkTests
         for (var i = 0; i < expected.Rows.Count; i++)
         {
             Assert.Equal(expected.Rows[i].Labels, actual.Rows[i].Labels);
+            Assert.Equal(expected.Rows[i].Key, actual.Rows[i].Key);
             Assert.Equal(expected.RowPath(expected.Rows[i]), actual.RowPath(actual.Rows[i]));
         }
         Assert.True(expected.HasSameRowsAs(actual));

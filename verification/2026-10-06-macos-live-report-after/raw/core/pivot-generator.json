@@ -1,0 +1,1218 @@
+[
+  {
+    "subtotals": true,
+    "trades": 2000,
+    "batch": 5,
+    "reportRows": 14,
+    "runs": [
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 7,
+        "mounted": 0,
+        "paintedTextRowsChanged": 7
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 8,
+        "mounted": 0,
+        "paintedTextRowsChanged": 8
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      },
+      {
+        "painted": 11,
+        "rendered": 6,
+        "mounted": 0,
+        "paintedTextRowsChanged": 6
+      }
+    ]
+  },
+  {
+    "subtotals": false,
+    "trades": 2000,
+    "batch": 5,
+    "reportRows": 14,
+    "runs": [
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 1,
+        "mounted": 0,
+        "paintedTextRowsChanged": 1
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2
+      },
+      {
+        "painted": 11,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 1,
+        "mounted": 0,
+        "paintedTextRowsChanged": 1
+      },
+      {
+        "painted": 11,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 5,
+        "mounted": 0,
+        "paintedTextRowsChanged": 5
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      },
+      {
+        "painted": 11,
+        "rendered": 3,
+        "mounted": 0,
+        "paintedTextRowsChanged": 3
+      }
+    ]
+  }
+]

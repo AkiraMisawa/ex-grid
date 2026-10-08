@@ -92,37 +92,6 @@ internal sealed class PartColumns
             Variances[cell] = other.Variances![from];
     }
 
-    /// <summary>
-    /// Whether cell <paramref name="cell"/> holds what <paramref name="other"/>'s cell
-    /// <paramref name="from"/> holds, of the parts this one keeps (ADR-0161): the same counts, an
-    /// exact part of the same value whatever its scale, and a <c>double</c> of the same bits.
-    /// </summary>
-    public bool SameAs(int cell, PartColumns other, int from)
-    {
-        var (mine, theirs) = (Counts[cell], other.Counts[from]);
-        if (mine.Values != theirs.Values || mine.Numbers != theirs.Numbers || mine.NonFinite != theirs.NonFinite)
-            return false;
-        if (Sums is not null)
-        {
-            var (a, b) = (Sums[cell], other.Sums![from]);
-            if (a.Inexact != b.Inexact || (a.Inexact ? !SameBits(a.Double, b.Double) || !SameBits(a.Compensation, b.Compensation) : a.Exact != b.Exact))
-                return false;
-        }
-        if (Extremes is not null)
-        {
-            var (a, b) = (Extremes[cell], other.Extremes![from]);
-            if (a.Inexact != b.Inexact
-                || (a.Inexact ? !SameBits(a.Min, b.Min) || !SameBits(a.Max, b.Max) : a.ExactMin != b.ExactMin || a.ExactMax != b.ExactMax))
-                return false;
-        }
-        if (Products is not null && !SameBits(Products[cell], other.Products![from]))
-            return false;
-        return Variances is null
-            || (SameBits(Variances[cell].Mean, other.Variances![from].Mean) && SameBits(Variances[cell].M2, other.Variances![from].M2));
-    }
-
-    private static bool SameBits(double a, double b) => BitConverter.DoubleToInt64Bits(a) == BitConverter.DoubleToInt64Bits(b);
-
     /// <summary>A cell back to no value at all, as a new cell starts.</summary>
     public void ResetCell(int cell)
     {

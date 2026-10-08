@@ -54,7 +54,7 @@ public abstract class PivotTestContext : BunitContext
     internal BunitJSModuleInterop ReportGridHandle()
     {
         var handle = _module.SetupModule("attach",
-            invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotReportRow>>);
+            invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotDisplayRow>>);
         StandIn(handle);
         return handle;
     }
@@ -135,7 +135,7 @@ public abstract class PivotTestContext : BunitContext
         Interactive();
         return Render<PivotComponent>(ps =>
         {
-            ps.Add(p => p.Source, source ?? Bundled(records))
+            ps.Add(p => p.DataSource, source ?? Bundled(records))
               .Add(p => p.Culture, CultureInfo.GetCultureInfo("en-US"))
               .Add(p => p.ViewportHeight, (ViewportSize)400)
               .Add(p => p.ViewportWidth, (ViewportSize)700);
@@ -160,12 +160,13 @@ public abstract class PivotTestContext : BunitContext
         SetRendererInfo(new RendererInfo("Server", isInteractive: true));
     }
 
-    internal static IRenderedComponent<ExGrid<PivotReportRow>> Grid(IRenderedComponent<PivotComponent> cut)
-        => cut.FindComponent<ExGrid<PivotReportRow>>();
+    internal static IRenderedComponent<ExGrid<PivotDisplayRow>> Grid(IRenderedComponent<PivotComponent> cut)
+        => cut.FindComponent<ExGrid<PivotDisplayRow>>();
 
-    /// <summary>Each painted row's cells as text, label cells first, joined with " | ".</summary>
+    /// <summary>Each painted row's cells as text, label cells first, joined with " | ". Read on the
+    /// renderer so parsing the DOM cannot race an asynchronous report's markup update.</summary>
     internal static string[] RowTexts(IRenderedComponent<PivotComponent> cut)
-        => RowTextsOf(cut.FindAll(".ex-pivot-sheet > .ex-grid .ex-viewport .ex-row"));
+        => cut.InvokeAsync(() => RowTextsOf(cut.FindAll(".ex-pivot-sheet > .ex-grid .ex-viewport .ex-row"))).GetAwaiter().GetResult();
 
     /// <summary>Each painted row's cells as text, joined with " | ".</summary>
     internal static string[] RowTextsOf(IEnumerable<IElement> rows)
@@ -188,17 +189,18 @@ public abstract class PivotTestContext : BunitContext
 
     /// <summary>Ticks or unticks a field in the list of fields.</summary>
     internal static Task TickFieldAsync(IRenderedComponent<PivotComponent> cut, string caption, bool tick)
-        => FieldItem(cut, caption).QuerySelector("input")!.ChangeAsync(new ChangeEventArgs { Value = tick });
+        => cut.InvokeAsync(() => FieldItem(cut, caption).QuerySelector("input")!.ChangeAsync(new ChangeEventArgs { Value = tick }));
 
-    /// <summary>Opens the menu of the Area's entry captioned <paramref name="caption"/>.</summary>
+    /// <summary>Opens the menu of the Area's entry captioned <paramref name="caption"/>. Lookup and
+    /// dispatch share the renderer's turn so a concurrent render cannot retire the event handler.</summary>
     internal static Task OpenMenuAsync(IRenderedComponent<PivotComponent> cut, string area, string caption)
-        => AreaElement(cut, area).QuerySelectorAll(".ex-pivot-entry-button")
+        => cut.InvokeAsync(() => AreaElement(cut, area).QuerySelectorAll(".ex-pivot-entry-button")
             .Single(b => b.QuerySelector(".ex-pivot-entry-caption")!.TextContent.Trim() == caption)
-            .ClickAsync(new MouseEventArgs());
+            .ClickAsync(new MouseEventArgs()));
 
     /// <summary>Runs the open menu's command called <paramref name="label"/>.</summary>
     internal static Task RunMenuAsync(IRenderedComponent<PivotComponent> cut, string label)
-        => MenuItem(cut, label).ClickAsync(new MouseEventArgs());
+        => cut.InvokeAsync(() => MenuItem(cut, label).ClickAsync(new MouseEventArgs()));
 
     /// <summary>The open menu's command called <paramref name="label"/>, a choice's mark aside.</summary>
     internal static IElement MenuItem(IRenderedComponent<PivotComponent> cut, string label)
@@ -211,7 +213,7 @@ public abstract class PivotTestContext : BunitContext
     internal static IReadOnlyList<GridCommand> ContextCommands(IRenderedComponent<PivotComponent> cut, int row, string column)
     {
         var grid = Grid(cut).Instance;
-        var context = new ContextMenuContext<PivotReportRow>(
+        var context = new ContextMenuContext<PivotDisplayRow>(
             grid.Window[row], column, ColumnType.Number, [new SelectionRange(row, 0, 1, 1)], grid.RowSequenceVersion, [], () => { });
         return grid.ContextCommands!(context).ToArray();
     }

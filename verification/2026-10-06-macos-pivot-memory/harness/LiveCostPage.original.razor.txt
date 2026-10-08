@@ -1,0 +1,43 @@
+@page "/live-cost-pivot"
+@using System.Diagnostics
+@using System.Globalization
+@using Microsoft.JSInterop
+@using global::ExPivot
+
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@inject IJSRuntime JS
+<link href="_content/ExPivot/ex-pivot.min.css" rel="stylesheet" />
+<h1>Disposable live update measurement</h1>
+<button id="cost-tick" @onclick="Tick">One batch</button>
+<span id="cost-status">@_status</span>
+@if (_source is not null)
+{
+    <ExPivot @ref="_pivot" Source="_source" Layout="_layout" Caps="_caps" RedrawInterval="TimeSpan.Zero" ViewportHeight="480" ViewportWidth="1200" />
+}
+@code {
+    [SupplyParameterFromQuery(Name = "b")] public int Inner { get; set; } = 10;
+    private sealed record Row(int Id, string A, string B, decimal Value);
+    private Row[] _rows = [];
+    private readonly PivotFields<Row> _fields = PivotFields.Of<Row>().Key("Id", r => r.Id).Text("A", r => r.A).Text("B", r => r.B).Number("Value", r => r.Value);
+    private SnapshotPivotSource? _source;
+    private ExPivot? _pivot;
+    private readonly PivotLayout _layout = new() { Rows = [new("A"), new("B")], Values = [new("Value")] };
+    private readonly PivotCaps _caps = new() { MaxLeaves = 1_000_000, MaxRows = 1_000_000 };
+    private string _status = "ready";
+    private int _batch;
+    protected override void OnInitialized()
+    {
+        _rows = Enumerable.Range(0, 1000 * Inner).Select(i => new Row(i, $"A{i / Inner:00000}", $"B{i % Inner:0000}", i)).ToArray();
+        _source = PivotSource.From(_fields.Build(_rows), _fields.Fields);
+    }
+    private void Tick()
+    {
+        var changed = Enumerable.Range(0, 1000).Select(i => { var j = i * Inner; return _rows[j] = _rows[j] with { Value = _rows[j].Value + 1 }; }).ToArray();
+        var batch = _fields.Batch(changed: changed);
+        ((IJSInProcessRuntime)JS).InvokeVoid("performance.mark", "cost-apply");
+        var clock = Stopwatch.StartNew();
+        _source!.Apply(batch);
+        _status = $"Batch {++_batch}: apply {clock.Elapsed.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture)} ms";
+    }
+}

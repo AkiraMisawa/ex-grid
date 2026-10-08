@@ -83,55 +83,25 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal([new PivotDetailItem("Product", "Apples")], shown.ColumnItems);
         Assert.Equal("Sum of Amount", shown.ValueField);
         Assert.Equal("Details: East / Apples", shown.Title);
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, shown.SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, shown.SourceVersion);
     }
 
-    [Fact] // ADR-0161/0063 (principles 1, 6): a command of a menu opened before a live redraw acts on the report on screen's row that stands for the one clicked — compared by key — in the column of the same name, which may have moved; and on none once the row has left
-    public async Task A_command_made_before_a_redraw_acts_on_the_row_on_screen()
+    [Fact] // ADR-0152: a menu command keeps the report it was offered for across a live update
+    public async Task Details_from_an_open_menu_keeps_its_captured_report_version()
     {
         PivotDetails? shown = null;
         var source = new LiveSource();
-        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Product")], Values = [Sum("Amount")] },
-            ps => ps.Add(p => p.OnShowDetails, (PivotDetails details) => shown = details), source: source);
-        var apples = Grid(cut).Instance.Columns[1].Name;
-        var showEast = ContextCommands(cut, 0, apples).Single(c => c.Id == PivotCommandIds.ShowDetails);
-        var showNorth = ContextCommands(cut, 1, apples).Single(c => c.Id == PivotCommandIds.ShowDetails);
-        var first = cut.Instance.Report!;
-
-        // East's Apples change, North's only sale leaves, and Almonds come before Apples: a new
-        // report is on screen, its Apples one column further right.
-        await cut.InvokeAsync(() => source.Publish([Sales[0] with { Amount = 101m }, .. Sales[1..5], Sales[6], new Sale("West", "Almonds", 3m, 1, true)]));
-        Assert.NotSame(first, cut.Instance.Report);
-        Assert.Equal(["Row Labels", "Almonds", "Apples", "Pears", "Plums", "Grand Total"], HeaderTexts(cut));
-
-        await cut.InvokeAsync(showEast.Invoke);
+        var cut = RenderPivot(RegionProduct, ps => ps.Add(p => p.OnShowDetails, (PivotDetails details) => shown = details), source: source);
+        var before = cut.Instance.Report!.Metadata;
+        var command = ContextCommands(cut, 1, Grid(cut).Instance.Columns[1].Name).Single(c => c.Id == PivotCommandIds.ShowDetails);
+        await cut.InvokeAsync(() => source.Publish([Sales[0] with { Amount = 999m }, .. Sales[1..]]));
+        cut.WaitForState(() => cut.Instance.Report!.Metadata.SourceVersion != before.SourceVersion);
+        await cut.InvokeAsync(command.Invoke);
         Assert.NotNull(shown);
-        Assert.Equal("Details: East / Apples", shown!.Title);
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, shown.SourceVersion);
+        Assert.Equal(before.Version, shown.Query.Version);
+        Assert.Equal(before.SourceVersion, shown.SourceVersion);
         var page = await shown.DetailsAsync(0, 100, Xunit.TestContext.Current.CancellationToken);
-        Assert.Equal(131m, page.Records.Sum(record => ((Sale)record.Record!).Amount));
-
-        shown = null;
-        await cut.InvokeAsync(showNorth.Invoke);
-        Assert.Null(shown);
-    }
-
-    [Fact] // ADR-0161/0063 (principle 1): a command of a menu opened before a live redraw on a column whose Item has since left does nothing, rather than show another column's records
-    public async Task A_command_on_a_column_that_left_does_nothing()
-    {
-        PivotDetails? shown = null;
-        var source = new LiveSource();
-        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Product")], Values = [Sum("Amount")] },
-            ps => ps.Add(p => p.OnShowDetails, (PivotDetails details) => shown = details), source: source);
-        Assert.Equal(["Row Labels", "Apples", "Pears", "Plums", "Grand Total"], HeaderTexts(cut));
-        var westPlums = ContextCommands(cut, 2, Grid(cut).Instance.Columns[3].Name).Single(c => c.Id == PivotCommandIds.ShowDetails);
-
-        // Plums leave: Grand Total is the value column that index names now.
-        await cut.InvokeAsync(() => source.Publish(Sales.Where(s => s.Product != "Plums").ToArray()));
-        Assert.Equal(["Row Labels", "Apples", "Pears", "Grand Total"], HeaderTexts(cut));
-
-        await cut.InvokeAsync(westPlums.Invoke);
-        Assert.Null(shown);
+        Assert.Equal([Sales[0], Sales[2]], page.Records.Select(row => row.Record));
     }
 
     [Fact] // ADR-0063: an empty cell has no records to show, and a double click there shows nothing
@@ -263,7 +233,7 @@ public class ReportCommandTests : PivotTestContext
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
             builder.OpenComponent<PivotComponent>(0);
-            builder.AddComponentParameter(1, nameof(PivotComponent.Source), _source);
+            builder.AddComponentParameter(1, nameof(PivotComponent.DataSource), _source);
             builder.AddComponentParameter(3, nameof(PivotComponent.Layout), Layout);
             builder.AddComponentParameter(4, nameof(PivotComponent.LayoutChanged),
                 EventCallback.Factory.Create<PivotLayout>(this, layout => Layout = layout));
@@ -284,7 +254,7 @@ public class ReportCommandTests : PivotTestContext
             for (var i = 0; i < 2; i++)
             {
                 builder.OpenComponent<PivotComponent>(0);
-                builder.AddComponentParameter(1, nameof(PivotComponent.Source), _source);
+                builder.AddComponentParameter(1, nameof(PivotComponent.DataSource), _source);
                 builder.AddComponentParameter(3, nameof(PivotComponent.Layout), new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
                 builder.AddComponentParameter(4, nameof(PivotComponent.ViewportHeight), (ExGrid.ViewportSize)300);
                 builder.AddComponentParameter(5, nameof(PivotComponent.ViewportWidth), (ExGrid.ViewportSize)600);

@@ -1,0 +1,36 @@
+{
+  "note": "Untimed encoding-only reference; custom parallel arrays, not shipped PivotJson. No browser parse measurement.",
+  "zlib": "1.3.2",
+  "results": [
+    {
+      "leaves": 2976,
+      "records": 1000000,
+      "rowRaw": 182259,
+      "rowActualHttpGzip": 41966,
+      "rowPythonGzipLevel1": 31840,
+      "columnarRaw": 90040,
+      "columnarPythonGzipLevel1": 26924,
+      "identicalValues": true
+    },
+    {
+      "leaves": 100000,
+      "records": 1000000,
+      "rowRaw": 6178989,
+      "rowActualHttpGzip": 1226290,
+      "rowPythonGzipLevel1": 790944,
+      "columnarRaw": 3079026,
+      "columnarPythonGzipLevel1": 658572,
+      "identicalValues": true
+    },
+    {
+      "leaves": 400000,
+      "records": 1000000,
+      "rowRaw": 24648989,
+      "rowActualHttpGzip": 4853763,
+      "rowPythonGzipLevel1": 3218981,
+      "columnarRaw": 12249026,
+      "columnarPythonGzipLevel1": 2719782,
+      "identicalValues": true
+    }
+  ]
+}

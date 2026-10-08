@@ -1,0 +1,28 @@
+diff --git a/spikes/render-bench/Bench.Server/App.razor b/spikes/render-bench/Bench.Server/App.razor
+index 63c5a274..ff1b03e7 100644
+--- a/spikes/render-bench/Bench.Server/App.razor
++++ b/spikes/render-bench/Bench.Server/App.razor
+@@ -6,0 +7 @@
++    <link rel="icon" href="data:," />
+diff --git a/spikes/render-bench/Bench.Server/Bench.Server.csproj b/spikes/render-bench/Bench.Server/Bench.Server.csproj
+index 644c92f5..29112b82 100644
+--- a/spikes/render-bench/Bench.Server/Bench.Server.csproj
++++ b/spikes/render-bench/Bench.Server/Bench.Server.csproj
+@@ -14,0 +15 @@
++    <ProjectReference Include="../../../samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj" />
+diff --git a/spikes/render-bench/Bench.Server/Program.cs b/spikes/render-bench/Bench.Server/Program.cs
+index 153f9f25..ec70224c 100644
+--- a/spikes/render-bench/Bench.Server/Program.cs
++++ b/spikes/render-bench/Bench.Server/Program.cs
+@@ -14,0 +15,5 @@ var app = builder.Build();
++app.Use((context, next) =>
++{
++    context.Response.Headers["X-Bench-Connection"] = context.Connection.Id;
++    return next(context);
++});
+diff --git a/tests/ExPivot.Components/ExPivot.Components.csproj b/tests/ExPivot.Components/ExPivot.Components.csproj
+index 7e0e8234..be575861 100644
+--- a/tests/ExPivot.Components/ExPivot.Components.csproj
++++ b/tests/ExPivot.Components/ExPivot.Components.csproj
+@@ -28,0 +29 @@
++<ItemGroup><Compile Include="../../samples/ExGrid.DemoPages/DemoPivotData.cs" Link="DemoPivotData.cs" /></ItemGroup>

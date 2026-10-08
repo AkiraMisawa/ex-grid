@@ -1,0 +1,155 @@
+[
+  {
+    "records": 10000,
+    "reportRows": 11001,
+    "runs": [
+      {
+        "rowTreeMs": 0.6617,
+        "columnTreeMs": 0.137,
+        "cachedKeyConstructionMs": 0.0805
+      },
+      {
+        "rowTreeMs": 0.6185,
+        "columnTreeMs": 0.1135,
+        "cachedKeyConstructionMs": 0.0853
+      },
+      {
+        "rowTreeMs": 0.7111,
+        "columnTreeMs": 0.1679,
+        "cachedKeyConstructionMs": 0.0899
+      },
+      {
+        "rowTreeMs": 0.7434,
+        "columnTreeMs": 0.163,
+        "cachedKeyConstructionMs": 0.0859
+      },
+      {
+        "rowTreeMs": 0.6937,
+        "columnTreeMs": 0.1466,
+        "cachedKeyConstructionMs": 0.0839
+      },
+      {
+        "rowTreeMs": 0.6736,
+        "columnTreeMs": 0.1291,
+        "cachedKeyConstructionMs": 0.0821
+      },
+      {
+        "rowTreeMs": 0.7116,
+        "columnTreeMs": 0.1881,
+        "cachedKeyConstructionMs": 0.0882
+      },
+      {
+        "rowTreeMs": 0.6879,
+        "columnTreeMs": 0.1435,
+        "cachedKeyConstructionMs": 0.0738
+      },
+      {
+        "rowTreeMs": 0.6667,
+        "columnTreeMs": 0.1275,
+        "cachedKeyConstructionMs": 0.0826
+      }
+    ]
+  },
+  {
+    "records": 100000,
+    "reportRows": 101001,
+    "runs": [
+      {
+        "rowTreeMs": 12.7447,
+        "columnTreeMs": 0.2378,
+        "cachedKeyConstructionMs": 5.5039
+      },
+      {
+        "rowTreeMs": 13.9914,
+        "columnTreeMs": 0.2467,
+        "cachedKeyConstructionMs": 5.7137
+      },
+      {
+        "rowTreeMs": 11.7547,
+        "columnTreeMs": 0.2604,
+        "cachedKeyConstructionMs": 5.7482
+      },
+      {
+        "rowTreeMs": 11.3806,
+        "columnTreeMs": 0.2947,
+        "cachedKeyConstructionMs": 5.4198
+      },
+      {
+        "rowTreeMs": 11.1974,
+        "columnTreeMs": 0.2652,
+        "cachedKeyConstructionMs": 5.4786
+      },
+      {
+        "rowTreeMs": 12.4035,
+        "columnTreeMs": 0.2383,
+        "cachedKeyConstructionMs": 5.3987
+      },
+      {
+        "rowTreeMs": 12.0244,
+        "columnTreeMs": 0.2502,
+        "cachedKeyConstructionMs": 5.963
+      },
+      {
+        "rowTreeMs": 11.4115,
+        "columnTreeMs": 0.2505,
+        "cachedKeyConstructionMs": 5.8362
+      },
+      {
+        "rowTreeMs": 12.1368,
+        "columnTreeMs": 0.2732,
+        "cachedKeyConstructionMs": 6.2102
+      }
+    ]
+  },
+  {
+    "records": 400000,
+    "reportRows": 401001,
+    "runs": [
+      {
+        "rowTreeMs": 57.4374,
+        "columnTreeMs": 0.6048,
+        "cachedKeyConstructionMs": 13.0036
+      },
+      {
+        "rowTreeMs": 69.2012,
+        "columnTreeMs": 0.6652,
+        "cachedKeyConstructionMs": 13.3847
+      },
+      {
+        "rowTreeMs": 55.2116,
+        "columnTreeMs": 0.5936,
+        "cachedKeyConstructionMs": 12.962
+      },
+      {
+        "rowTreeMs": 58.6815,
+        "columnTreeMs": 0.6379,
+        "cachedKeyConstructionMs": 13.6338
+      },
+      {
+        "rowTreeMs": 56.3377,
+        "columnTreeMs": 0.5868,
+        "cachedKeyConstructionMs": 13.5453
+      },
+      {
+        "rowTreeMs": 75.9545,
+        "columnTreeMs": 0.6293,
+        "cachedKeyConstructionMs": 15.9423
+      },
+      {
+        "rowTreeMs": 61.5874,
+        "columnTreeMs": 0.6147,
+        "cachedKeyConstructionMs": 14.967
+      },
+      {
+        "rowTreeMs": 61.9842,
+        "columnTreeMs": 0.6472,
+        "cachedKeyConstructionMs": 14.0538
+      },
+      {
+        "rowTreeMs": 58.5371,
+        "columnTreeMs": 0.6418,
+        "cachedKeyConstructionMs": 13.3229
+      }
+    ]
+  }
+]

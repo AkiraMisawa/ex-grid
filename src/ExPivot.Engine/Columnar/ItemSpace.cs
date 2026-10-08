@@ -64,6 +64,8 @@ internal sealed class ItemSpace
         Refresh(snapshot);
     }
 
+    internal HashSet<int> ChangedItems { get; } = [];
+
     public FieldBinding Binding => _binding;
 
     /// <summary>How many Items the space has handed out.</summary>
@@ -181,7 +183,10 @@ internal sealed class ItemSpace
                 continue;
             var code = slice.Codes((TextColumn)column.Column)[offset];
             if (code >= 0)
+            {
+                ChangedItems.Add(_itemOfCode[code]);
                 _presence[code]--;
+            }
         }
     }
 
@@ -340,6 +345,7 @@ internal sealed class ItemSpace
                     continue;
                 }
                 items[i] = itemOfCode[code];
+                ChangedItems.Add(itemOfCode[code]);
                 presence[code]++;
             }
             return;
@@ -356,7 +362,10 @@ internal sealed class ItemSpace
             }
             items[i] = itemOfCode[code];
             if (!Exactly.IsSet(removed, o))
+            {
+                ChangedItems.Add(itemOfCode[code]);
                 presence[code]++;
+            }
         }
     }
 

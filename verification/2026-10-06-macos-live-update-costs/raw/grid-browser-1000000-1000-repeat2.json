@@ -1,0 +1,182 @@
+{
+  "rows": 1000000,
+  "batch": 1000,
+  "runs": [
+    {
+      "status": "Batch 1: 1,000 trades amended, applied in 62 ms.",
+      "statusBefore": "No batch applied yet.",
+      "statusAt": 3606.2999999523163,
+      "statusFrame": 3606.399999976158,
+      "appliedMsRounded": 62,
+      "applyToFrameMs": 62.10000002384186,
+      "gridMutationRecords": 20,
+      "gridChangedAt": 3606.2999999523163,
+      "gridFrame": 3606.399999976158,
+      "longTasks": [
+        {
+          "start": 3540.0999999046326,
+          "duration": 66
+        }
+      ],
+      "statusAfterPause": "Batch 1: 1,000 trades amended, applied in 62 ms."
+    },
+    {
+      "status": "Batch 2: 1,000 trades amended, applied in 34 ms.",
+      "statusBefore": "Batch 1: 1,000 trades amended, applied in 62 ms.",
+      "statusAt": 3826.6999999284744,
+      "statusFrame": 3826.7999999523163,
+      "appliedMsRounded": 34,
+      "applyToFrameMs": 34.10000002384186,
+      "gridMutationRecords": 17,
+      "gridChangedAt": 3826.6999999284744,
+      "gridFrame": 3826.7999999523163,
+      "longTasks": [],
+      "statusAfterPause": "Batch 2: 1,000 trades amended, applied in 34 ms."
+    },
+    {
+      "status": "Batch 3: 1,000 trades amended, applied in 42 ms.",
+      "statusBefore": "Batch 2: 1,000 trades amended, applied in 34 ms.",
+      "statusAt": 4085.399999976158,
+      "statusFrame": 4085.5,
+      "appliedMsRounded": 42,
+      "applyToFrameMs": 42.10000002384186,
+      "gridMutationRecords": 22,
+      "gridChangedAt": 4085.399999976158,
+      "gridFrame": 4085.5,
+      "longTasks": [],
+      "statusAfterPause": "Batch 3: 1,000 trades amended, applied in 42 ms."
+    },
+    {
+      "status": "Batch 4: 1,000 trades amended, applied in 33 ms.",
+      "statusBefore": "Batch 3: 1,000 trades amended, applied in 42 ms.",
+      "statusAt": 4327.899999976158,
+      "statusFrame": 4328.099999904633,
+      "appliedMsRounded": 33,
+      "applyToFrameMs": 33.199999928474426,
+      "gridMutationRecords": 12,
+      "gridChangedAt": 4327.899999976158,
+      "gridFrame": 4328.099999904633,
+      "longTasks": [],
+      "statusAfterPause": "Batch 4: 1,000 trades amended, applied in 33 ms."
+    },
+    {
+      "status": "Batch 5: 1,000 trades amended, applied in 34 ms.",
+      "statusBefore": "Batch 4: 1,000 trades amended, applied in 33 ms.",
+      "statusAt": 4577.699999928474,
+      "statusFrame": 4577.899999976158,
+      "appliedMsRounded": 34,
+      "applyToFrameMs": 34.200000047683716,
+      "gridMutationRecords": 18,
+      "gridChangedAt": 4577.699999928474,
+      "gridFrame": 4577.899999976158,
+      "longTasks": [],
+      "statusAfterPause": "Batch 5: 1,000 trades amended, applied in 34 ms."
+    },
+    {
+      "status": "Batch 6: 1,000 trades amended, applied in 90 ms.",
+      "statusBefore": "Batch 5: 1,000 trades amended, applied in 34 ms.",
+      "statusAt": 4883.699999928474,
+      "statusFrame": 4883.799999952316,
+      "appliedMsRounded": 90,
+      "applyToFrameMs": 90.10000002384186,
+      "gridMutationRecords": 17,
+      "gridChangedAt": 4883.699999928474,
+      "gridFrame": 4883.799999952316,
+      "longTasks": [
+        {
+          "start": 4790.199999928474,
+          "duration": 93
+        }
+      ],
+      "statusAfterPause": "Batch 6: 1,000 trades amended, applied in 90 ms."
+    },
+    {
+      "status": "Batch 7: 1,000 trades amended, applied in 28 ms.",
+      "statusBefore": "Batch 6: 1,000 trades amended, applied in 90 ms.",
+      "statusAt": 5071.399999976158,
+      "statusFrame": 5071.5,
+      "appliedMsRounded": 28,
+      "applyToFrameMs": 28.100000023841858,
+      "gridMutationRecords": 20,
+      "gridChangedAt": 5071.399999976158,
+      "gridFrame": 5071.5,
+      "longTasks": [],
+      "statusAfterPause": "Batch 7: 1,000 trades amended, applied in 28 ms."
+    },
+    {
+      "status": "Batch 8: 1,000 trades amended, applied in 25 ms.",
+      "statusBefore": "Batch 7: 1,000 trades amended, applied in 28 ms.",
+      "statusAt": 5318.099999904633,
+      "statusFrame": 5318.099999904633,
+      "appliedMsRounded": 25,
+      "applyToFrameMs": 25,
+      "gridMutationRecords": 14,
+      "gridChangedAt": 5318.099999904633,
+      "gridFrame": 5318.099999904633,
+      "longTasks": [],
+      "statusAfterPause": "Batch 8: 1,000 trades amended, applied in 25 ms."
+    },
+    {
+      "status": "Batch 9: 1,000 trades amended, applied in 30 ms.",
+      "statusBefore": "Batch 8: 1,000 trades amended, applied in 25 ms.",
+      "statusAt": 5573.199999928474,
+      "statusFrame": 5573.299999952316,
+      "appliedMsRounded": 30,
+      "applyToFrameMs": 30.100000023841858,
+      "gridMutationRecords": 12,
+      "gridChangedAt": 5573.199999928474,
+      "gridFrame": 5573.299999952316,
+      "longTasks": [],
+      "statusAfterPause": "Batch 9: 1,000 trades amended, applied in 30 ms."
+    },
+    {
+      "status": "Batch 10: 1,000 trades amended, applied in 48 ms.",
+      "statusBefore": "Batch 9: 1,000 trades amended, applied in 30 ms.",
+      "statusAt": 5841.299999952316,
+      "statusFrame": 5841.399999976158,
+      "appliedMsRounded": 48,
+      "applyToFrameMs": 48.10000002384186,
+      "gridMutationRecords": 14,
+      "gridChangedAt": 5841.299999952316,
+      "gridFrame": 5841.399999976158,
+      "longTasks": [
+        {
+          "start": 5791,
+          "duration": 50
+        }
+      ],
+      "statusAfterPause": "Batch 10: 1,000 trades amended, applied in 48 ms."
+    },
+    {
+      "status": "Batch 11: 1,000 trades amended, applied in 82 ms.",
+      "statusBefore": "Batch 10: 1,000 trades amended, applied in 48 ms.",
+      "statusAt": 6125.5,
+      "statusFrame": 6125.599999904633,
+      "appliedMsRounded": 82,
+      "applyToFrameMs": 82.09999990463257,
+      "gridMutationRecords": 20,
+      "gridChangedAt": 6125.5,
+      "gridFrame": 6125.599999904633,
+      "longTasks": [
+        {
+          "start": 6041.199999928474,
+          "duration": 84
+        }
+      ],
+      "statusAfterPause": "Batch 11: 1,000 trades amended, applied in 82 ms."
+    },
+    {
+      "status": "Batch 12: 1,000 trades amended, applied in 23 ms.",
+      "statusBefore": "Batch 11: 1,000 trades amended, applied in 82 ms.",
+      "statusAt": 6314.799999952316,
+      "statusFrame": 6314.899999976158,
+      "appliedMsRounded": 23,
+      "applyToFrameMs": 23.100000023841858,
+      "gridMutationRecords": 14,
+      "gridChangedAt": 6314.799999952316,
+      "gridFrame": 6314.899999976158,
+      "longTasks": [],
+      "statusAfterPause": "Batch 12: 1,000 trades amended, applied in 23 ms."
+    }
+  ]
+}
