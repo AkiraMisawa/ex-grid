@@ -7,11 +7,13 @@ namespace ExGrid.Cells;
 /// override recorded in its Overlay.
 ///
 /// <para>A commit lands as the user entered it (ADR-0142, rewritten 2026-10-07). The intent
-/// carries what the cell painted when the editor opened, <see cref="SeenText"/>, and what it
-/// painted as the commit landed, <see cref="ReplacedText"/>: when the two differ, the value changed
-/// under the editor, and the grid raises an Overwrite Notice once the intent is accepted. A
-/// Consumer that must not write over a change — or whose store, a reducer or a server, is where
-/// writes are ordered — declines the intent with <see cref="Refuse"/> before its handler
+/// carries the text the user saw of the cell, <see cref="SeenText"/>, and what it painted as the
+/// commit landed, <see cref="ReplacedText"/>: when the two differ, the value changed under the
+/// editor, and the grid raises an Overwrite Notice with the same two texts once the intent is
+/// accepted; when they are equal it raises none. The user's own earlier writes count as seen (D1),
+/// on every host alike, so a Consumer comparing the two never finds its user's own value given as a
+/// change. A Consumer that must not write over a change — or whose store, a reducer or a server,
+/// is where writes are ordered — declines the intent with <see cref="Refuse"/> before its handler
 /// completes, and the editor stays open with the typing (ADR-0034's note of 2026-10-07).</para>
 /// </summary>
 /// <param name="Row">The row instance the edit lands on — Row Identity, not a position:
@@ -22,13 +24,17 @@ namespace ExGrid.Cells;
 /// Consumer's (ADR-0007).</param>
 public sealed record GridEditIntent<TRow>(TRow Row, string Column, string Value)
 {
-    /// <summary>The text the edited cell painted when the editor opened over it (ADR-0142), or
-    /// null where the grid raised the intent without one.</summary>
+    /// <summary>The text the user saw of the edited cell (ADR-0142, D1): what it painted when the
+    /// editor opened over it — or, where one of the user's own earlier writes to the cell had not
+    /// settled then, what it painted once that write settled, the user's own value. The text the
+    /// edited cell painted when the commit landed, where it painted none at the open. Null where the
+    /// grid raised the intent without one.</summary>
     public string? SeenText { get; init; }
 
     /// <summary>The text the edited cell painted as the commit landed: what the commit replaces
     /// (ADR-0142). Equal to <see cref="SeenText"/> unless the value changed while the editor
-    /// covered the cell.</summary>
+    /// covered the cell, and then the grid raises an Overwrite Notice with the same two texts once
+    /// the intent is accepted.</summary>
     public string? ReplacedText { get; init; }
 
     /// <summary>The message the Consumer refused the intent with (<see cref="Refuse"/>), or null

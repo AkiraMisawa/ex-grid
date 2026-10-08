@@ -2652,8 +2652,9 @@
         _total = Source is null ? TotalCount : Source.TotalCount;
         _loading = Source?.IsLoading ?? IsLoading;
         _sequenceVersion = Source?.RowSequenceVersion ?? RowSequenceVersion;
-        // Under the order just taken in, so a write aimed under another goes now (D1).
-        NoteOwnWritesShown(previousWindow, previousStart);
+        // Under the order and the binding just taken in, so a write aimed under another goes now, and
+        // one a new Window answers settles (D1).
+        NoteOwnWritesTakenIn(previousWindow, previousStart);
         _sorts = Source is not null ? Source.Sorts : Sorts ?? [];
         _filter = Source is not null ? Source.Filter : Filters;
         NoteRowsForSummary();
@@ -2886,6 +2887,10 @@
         else
         {
             FollowEditedRow();
+            // A write of the user's own the editor awaited went with this Window: the baseline is
+            // what the cell paints now, read where the editor stands after following its row (D1).
+            if (_editRebaseOwed)
+                RebaseEdit();
         }
         PrepareRender();
     }
@@ -3837,14 +3842,14 @@
         if (!OnFill.HasDelegate)
             return;
         var intent = new GridFillIntent(from, decision.Extension, version);
-        // The user's own write (ADR-0142 D1): an editor opened before it is painted does not tell
-        // it as a change.
+        // The user's own write (ADR-0142 D1): an editor opened over it before it settles does not
+        // tell it as a change. The bound source puts out what it gathered as the handler completes
+        // (D5).
         var written = NoteOwnWrite([intent.Target]);
         await OnFill.InvokeAsync(intent);
+        await OwnWriteAnsweredAsync(written, intent.IsRefused);
         AskSummaryAgain();
-        if (intent.IsRefused)
-            ForgetOwnWrite(written);
-        else
+        if (!intent.IsRefused)
             SelectFilledRange(from, intent.Target, version, binding);
     }
 
@@ -6001,11 +6006,11 @@
         var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
         if (OnPaste.HasDelegate)
         {
-            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound
+            // source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite(decision.Plan.Targets);
             await OnPaste.InvokeAsync(intent);
-            if (intent.IsRefused)
-                ForgetOwnWrite(written);
+            await OwnWriteAnsweredAsync(written, intent.IsRefused);
         }
         AskSummaryAgain();
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
@@ -7022,9 +7027,11 @@
         }
         if (OnClear.HasDelegate)
         {
-            // The user's own write (ADR-0142 D1).
-            NoteOwnWrite(decision.Plan.Targets);
+            // The user's own write (ADR-0142 D1), followed until it settles; the bound source puts out
+            // what it gathered as the handler completes (D5).
+            var written = NoteOwnWrite(decision.Plan.Targets);
             await OnClear.InvokeAsync(new GridClearIntent(decision.Plan.Targets, _sequenceVersion));
+            await OwnWriteAnsweredAsync(written, refused: false);
         }
         AskSummaryAgain();
     }
@@ -7087,11 +7094,11 @@
         if (OnPaste.HasDelegate)
         {
             var intent = new GridPasteIntent(plan.Paste, block, version, fillSource: source);
-            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+            // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound
+            // source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite(plan.Paste.Targets);
             await OnPaste.InvokeAsync(intent);
-            if (intent.IsRefused)
-                ForgetOwnWrite(written);
+            await OwnWriteAnsweredAsync(written, intent.IsRefused);
         }
         AskSummaryAgain();
     }
@@ -7484,12 +7491,13 @@
         // back through the display channels when the Consumer answers them (ADR-0034).
         _editError = null;
         // The commit lands over whatever the cell paints now, and says so when that is not what the
-        // editor opened over: the one change the user could not see (ADR-0142, LV-11).
+        // user saw — the editor's baseline (D1): the one change the user could not see (ADR-0142,
+        // LV-11). The intent carries the same two texts the notice would.
         var replaced = ReplacedTextAt(cell);
         var notice = OverwriteNoticeFor(cell, replaced);
         var intent = new GridEditIntent<TRow>(row, Columns[cell.Column].Name, text)
         {
-            SeenText = _editSeenText ?? replaced,
+            SeenText = SeenTextFor(replaced),
             ReplacedText = replaced,
         };
         if (OnEdit.HasDelegate)
@@ -7497,12 +7505,13 @@
             // Heard while the editor still stands, so that a refusal holds it as a Reject does
             // (ADR-0142, ADR-0034's note of 2026-10-07; LV-19). The keys typed after the commit wait
             // behind its answer (ADR-0010), and an order move the Consumer's own write brings in is
-            // this commit's, not a discard. The user's own write (D1), taken back if refused.
+            // this commit's, not a discard. The user's own write (D1), taken back if refused; the
+            // bound source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
             await OnEdit.InvokeAsync(intent);
+            await OwnWriteAnsweredAsync(written, intent.IsRefused);
             if (intent.RefusalMessage is { } refused)
             {
-                ForgetOwnWrite(written);
                 if (_editMode != EditMode.None)
                     HoldEditWith(refused);
                 return false;
@@ -7609,12 +7618,13 @@
         // Copied before the editor is torn down: the intent names the cell the text was
         // entered in, which a clipboard paste of the same field does not (ADR-0050 item 5).
         var intent = new GridPasteIntent(decision.Plan, [[_editText]], _sequenceVersion, enteredAt: _editingCell);
-        // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it.
+        // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound source
+        // puts out what it gathered as the handler completes (D5).
         var written = OnPaste.HasDelegate ? NoteOwnWrite(decision.Plan.Targets) : null;
         await EndEditingAsync(endedIn: OnPaste.HasDelegate ? () => OnPaste.InvokeAsync(intent) : null);
-        if (written is not null && intent.IsRefused)
-            ForgetOwnWrite(written);
-        else
+        if (written is not null)
+            await OwnWriteAnsweredAsync(written, intent.IsRefused);
+        if (written is null || !intent.IsRefused)
             await RaiseOverwriteNoticeAsync(notice);
         AskSummaryAgain();
         StateHasChanged();

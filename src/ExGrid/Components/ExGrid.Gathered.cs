@@ -8,7 +8,10 @@ using Microsoft.JSInterop;
 namespace ExGrid.Components;
 
 // Before a write is handled, the bound source puts out what it has gathered, so the write is made on,
-// and carries, the newest version (ADR-0141/0142, D5 of 2026-10-06; LV-16).
+// and carries, the newest version (ADR-0141/0142, D5 of 2026-10-06; LV-16). It is asked again as the
+// handler of a write intent the grid raised completes, so a write the Consumer handed it, and it
+// gathered, is in the Window before the next gesture is handled, and the user's own write settles
+// there (D1; ExGrid.Commit.cs).
 public partial class ExGrid<TRow>
 {
     // Set while the grid asks its bound source to put out what it has gathered (ADR-0141/0142,
@@ -23,8 +26,10 @@ public partial class ExGrid<TRow>
     /// context, and takes its Window in again through the state application, as a change it
     /// announced is taken in (ADR-0141/0142, D5; LV-16). Called just before a write is handled — a
     /// commit, an Action, a paste, a fill, a clear — so the write is made on, and carries, the
-    /// newest version. A change gathered while the user typed is brought forward by the gesture, as
-    /// in ExPivot (ADR-0067), never waited for. Without a source, or with nothing gathered, nothing
+    /// newest version; and as the handler of a write intent the grid raised completes, so the write
+    /// the Consumer handed the source is in the Window before the next gesture is handled (D1). A
+    /// change gathered while the user typed is brought forward by the gesture, as in ExPivot
+    /// (ADR-0067), never waited for. Without a source, or with nothing gathered, nothing
     /// happens. A gathered change that moved the order drops the Selection (ADR-0011), and an open
     /// edit outlives it as it outlives any order move (ADR-0011's note of 2026-10-07). The caller
     /// reads the state again before it goes on.
