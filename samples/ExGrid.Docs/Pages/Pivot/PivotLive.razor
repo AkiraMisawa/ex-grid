@@ -53,6 +53,13 @@
             change the number format hides. The mark's colour is the Visual Token
             <code>--ex-change-highlight-background</code>, which <code>ExGrid.MudBlazor</code>'s stylesheet maps to the theme.
         </p>
+        <p>
+            The time a mark starts is ExPivot's own, on its <code>Clock</code>. A report source says which cells
+            changed in which Report Version, never when; ExPivot starts the mark when it first shows that version,
+            so a server whose clock is ahead of the browser's, or behind it, changes nothing on screen. A changed
+            row first scrolled into view a moment later is marked as of when the change was first shown, and its
+            mark ends with the others.
+        </p>
     </DocsSection>
 
     <DocsSection Title="A server whose data moves on">

@@ -262,15 +262,15 @@ public class CancelledComputationTests
         Assert.True(await client.ReadAsync(sorted, Settings, Window, cancellationToken: Ct, markChanges: false));
         Assert.Equal(Enumerable.Reverse(shownBefore).Skip(1).Concat(shownBefore[^1..]).Select(Values),
             Texts(client.Current!.Rows).Select(Values));
-        Assert.All(client.Current.Rows, row => Assert.All(row.ChangedAt, mark => Assert.Null(mark)));
+        Assert.All(client.Current.Rows, row => Assert.All(row.ChangedIn, mark => Assert.Null(mark)));
 
         // The next update shows the change, and marks the cells it moved.
         Assert.True(await client.ReadAsync(sorted, Settings, Window, cancellationToken: Ct));
         var desk0 = client.Current!.Rows.Single(row => row.Labels[0].Text == "Desk0");
-        Assert.NotNull(desk0.ChangedAt[0]);
-        Assert.NotNull(client.Current.Rows[^1].ChangedAt[0]);
+        Assert.NotNull(desk0.ChangedIn[0]);
+        Assert.NotNull(client.Current.Rows[^1].ChangedIn[0]);
         Assert.All(client.Current.Rows.Where(row => row.Labels[0].Text is not ("Desk0" or "Grand Total")),
-            row => Assert.Null(row.ChangedAt[0]));
+            row => Assert.Null(row.ChangedIn[0]));
 
         static string Values(string text) => text[(text.LastIndexOf("::", StringComparison.Ordinal) + 2)..];
     }

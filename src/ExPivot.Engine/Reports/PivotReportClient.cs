@@ -136,11 +136,13 @@ public sealed class PivotReportClient
             }
         }
         var keys = new HashSet<PivotRowKey>();
+        var marks = metadata.ChangeMarks.ToHashSet();
         foreach (var row in rows)
         {
             if (row is null || row.Key is null || !keys.Add(row.Key)
                 || row.Labels.Count != metadata.LabelColumns.Count || row.Values.Count != metadata.ValueColumns.Count
-                || row.ChangedAt.Count != row.Values.Count || row.Role != row.Key.Role || row.ValueField != row.Key.ValueField
+                || row.ChangedIn.Count != row.Values.Count || row.ChangedIn.Any(mark => mark is not null && !marks.Contains(mark))
+                || row.Role != row.Key.Role || row.ValueField != row.Key.ValueField
                 || !Enum.IsDefined(row.Role) || row.RowPath.Count != row.Key.Items.Count
                 || !row.RowPath.Select(p => p.Item).SequenceEqual(row.Key.Items)
                 || row.Values.Any(value => value is not null && (value.Text is null || !double.IsFinite(value.Number))))

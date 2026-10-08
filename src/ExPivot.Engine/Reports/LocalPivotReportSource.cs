@@ -13,18 +13,23 @@ public sealed class LocalPivotReportSource : PivotReportSource
     private readonly PivotSlicing _slicing;
     private PivotLabelSizing _labelSizing = new();
     private readonly List<HighlightVersion> _highlight = [];
-    private sealed class HighlightVersion(HeldReport held, DateTimeOffset at)
+    // A data version whose changes are marked: the report that shows it, the change's mark — the
+    // Report Version that first published it, kept when the same data is laid out again — and when
+    // this source published it, on this source's clock, which only bounds how long it is kept. The
+    // time a change is shown is the Consumer's (PivotChangeTimes).
+    private sealed class HighlightVersion(PivotReport report, PivotReportVersion mark, DateTimeOffset at)
     {
-        public HeldReport Held { get; } = held;
+        public PivotReport Report { get; } = report;
+        public PivotReportVersion Mark { get; } = mark;
         public DateTimeOffset At { get; } = at;
         private Dictionary<PivotRowKey, PivotReportRow>? _byKey;
         public PivotReportRow? Row(PivotRowKey key, int hint)
         {
-            if ((uint)hint < (uint)Held.Report.Rows.Count && Held.Report.Rows[hint].Key.Equals(key))
-                return Held.Report.Rows[hint];
-            return (_byKey ??= Held.Report.Rows.ToDictionary(row => row.Key)).GetValueOrDefault(key);
+            if ((uint)hint < (uint)Report.Rows.Count && Report.Rows[hint].Key.Equals(key))
+                return Report.Rows[hint];
+            return (_byKey ??= Report.Rows.ToDictionary(row => row.Key)).GetValueOrDefault(key);
         }
-        public Dictionary<string, int> Columns { get; } = held.Metadata.ValueColumns
+        public Dictionary<string, int> Columns { get; } = report.ValueColumns
             .Select((column, index) => (column.Name, index)).ToDictionary(c => c.Name, c => c.index, StringComparer.Ordinal);
     }
     private readonly SemaphoreSlim _gate = new(1);
@@ -184,15 +189,16 @@ public sealed class LocalPivotReportSource : PivotReportSource
                         Slicer.Of(_slicing, cancellationToken)).ConfigureAwait(false);
                 else
                     _labelSizing.Forget();
-                var metadata = new PivotReportMetadata(new(Guid.NewGuid().ToString("N")), cube.SourceVersion,
+                var version = new PivotReportVersion(Guid.NewGuid().ToString("N"));
+                var marks = RememberHighlight(version, report, request, last);
+                var metadata = new PivotReportMetadata(version, cube.SourceVersion,
                     sameRows ? last!.Metadata.RowSequenceVersion : Guid.NewGuid().ToString("N"),
                     request.Layout, request.Settings, report.Rows.Count, report.LabelColumns,
                     report.ValueColumns.Select((column, index) => new PivotDisplayColumn(column.Name, column.Header,
                         column.Role, column.ValueField, report.ColumnPath(index).Select(p => new PivotFieldItem(p.Field, p.Item)).ToArray())).ToArray(),
                     report.HeaderSpans, report.HeaderTierCount, report.ValueCaptions)
-                { LabelWidths = widths };
+                { LabelWidths = widths, ChangeMarks = marks };
                 var next = new HeldReport(metadata, report, _source, _effectiveFields);
-                RememberHighlight(next, last, request.MarkChanges);
                 last = next;
                 lock (_published)
                 {
@@ -226,12 +232,13 @@ public sealed class LocalPivotReportSource : PivotReportSource
             var rows = new PivotDisplayRow[count];
             var changes = new List<PivotReportRowChange>();
             PruneHighlight(_clock.GetUtcNow(), request.Settings.ChangeHighlightDuration);
+            var listed = Marks().ToHashSet();
             for (var i = 0; i < count; i++)
             {
                 var row = last.Report.Rows[request.Window.Start + i];
                 var prior = priorByKey?.GetValueOrDefault(row.Key);
                 rows[i] = Project(last.Report, row, request.Window.Start + i, prior,
-                    keepMarks: comparable && request.MarkChanges, previous?.Metadata.ValueColumns);
+                    keepMarks: comparable && request.MarkChanges, previous?.Metadata.ValueColumns, listed);
                 if (previous is null || i >= previous.Rows.Count || !ReferenceEquals(previous.Rows[i], rows[i]))
                     changes.Add(new(i, rows[i]));
             }
@@ -283,11 +290,11 @@ public sealed class LocalPivotReportSource : PivotReportSource
     }
 
     private PivotDisplayRow Project(PivotReport report, PivotReportRow row, int rowIndex, PivotDisplayRow? prior,
-        bool keepMarks, IReadOnlyList<PivotDisplayColumn>? priorColumns)
+        bool keepMarks, IReadOnlyList<PivotDisplayColumn>? priorColumns, HashSet<PivotReportVersion> listed)
     {
         var path = report.RowPath(row).Select(p => new PivotFieldItem(p.Field, p.Item)).ToArray();
         var values = new PivotDisplayValue?[report.ValueColumns.Count];
-        var changed = new DateTimeOffset?[values.Length];
+        var changed = new PivotReportVersion?[values.Length];
         var same = prior is not null && prior.Role == row.Role && prior.ValueField == row.ValueField
             && prior.CarriesValues == row.CarriesValues && prior.Labels.SequenceEqual(row.Labels) && prior.Values.Count == values.Length
             && prior.RowPath.Select(p => (p.Field, p.Item.Kind, p.Item.Value))
@@ -295,15 +302,15 @@ public sealed class LocalPivotReportSource : PivotReportSource
         for (var c = 0; c < values.Length; c++)
         {
             values[c] = PivotDisplayValue.From(report.ValueAt(row, c));
-            changed[c] = ChangedAt(row.Key, rowIndex, report.ValueColumns[c].Name);
+            changed[c] = ChangedIn(row.Key, rowIndex, report.ValueColumns[c].Name);
             var oldColumn = -1;
             if (priorColumns is not null)
                 for (var j = 0; j < priorColumns.Count; j++)
                     if (priorColumns[j].Name == report.ValueColumns[c].Name) { oldColumn = j; break; }
             if (prior is not null && oldColumn >= 0 && oldColumn < prior.Values.Count)
             {
-                changed[c] ??= keepMarks ? prior.ChangedAt[oldColumn] : null;
-                same &= oldColumn == c && prior.Values[oldColumn] == values[c] && prior.ChangedAt[oldColumn] == changed[c];
+                changed[c] ??= keepMarks && prior.ChangedIn[oldColumn] is { } mark && listed.Contains(mark) ? mark : null;
+                same &= oldColumn == c && prior.Values[oldColumn] == values[c] && prior.ChangedIn[oldColumn] == changed[c];
             }
         }
         if (same) return prior!;
@@ -313,22 +320,32 @@ public sealed class LocalPivotReportSource : PivotReportSource
 
     // Retain only the data versions whose marks can still be shown, plus their baseline.
     // Versions share unchanged calculation state and point to no predecessor. Display rows own
-    // only their resolved timestamps, so grid paint history cannot extend this lifetime.
-    private void RememberHighlight(HeldReport next, HeldReport? previous, bool markChanges)
+    // only their marks, so grid paint history cannot extend this lifetime. Answers the marks the
+    // source keeps now, newest first: every mark a cell will carry is one of them.
+    private PivotReportVersion[] RememberHighlight(PivotReportVersion version, PivotReport report,
+        PivotReportRequest request, HeldReport? previous)
     {
         var at = _clock.GetUtcNow();
-        if (!markChanges || previous is null
-            || PivotLayoutJson.Write(previous.Metadata.Layout) != PivotLayoutJson.Write(next.Metadata.Layout)
-            || !PivotReportJson.SameSettings(previous.Metadata.Settings, next.Metadata.Settings))
+        if (!request.MarkChanges || previous is null
+            || PivotLayoutJson.Write(previous.Metadata.Layout) != PivotLayoutJson.Write(request.Layout)
+            || !PivotReportJson.SameSettings(previous.Metadata.Settings, request.Settings))
             _highlight.Clear();
-        else if (previous.Metadata.SourceVersion == next.Metadata.SourceVersion && _highlight.Count > 0)
+        else if (previous.Metadata.SourceVersion == report.Cube.SourceVersion && _highlight.Count > 0)
         {
-            _highlight[0] = new(next, _highlight[0].At);
-            return;
+            // The same data laid out again: its changes keep the mark and the time they were
+            // first published with.
+            _highlight[0] = new(report, _highlight[0].Mark, _highlight[0].At);
+            return Marks();
         }
-        _highlight.Insert(0, new(next, at));
-        PruneHighlight(at, next.Metadata.Settings.ChangeHighlightDuration);
+        _highlight.Insert(0, new(report, version, at));
+        PruneHighlight(at, request.Settings.ChangeHighlightDuration);
+        return Marks();
     }
+
+    // The versions a cell can be marked with: each but the oldest, which is only the baseline the
+    // next newer one is compared with.
+    private PivotReportVersion[] Marks()
+        => [.. _highlight.Take(Math.Max(0, _highlight.Count - 1)).Select(h => h.Mark)];
 
     private void PruneHighlight(DateTimeOffset now, TimeSpan duration)
     {
@@ -345,7 +362,9 @@ public sealed class LocalPivotReportSource : PivotReportSource
             }
     }
 
-    private DateTimeOffset? ChangedAt(PivotRowKey key, int rowIndex, string column)
+    // The change that last moved a cell's shown text, among the versions still kept: the newest
+    // whose text differs from the version before it.
+    private PivotReportVersion? ChangedIn(PivotRowKey key, int rowIndex, string column)
     {
         for (var i = 0; i + 1 < _highlight.Count; i++)
         {
@@ -355,8 +374,8 @@ public sealed class LocalPivotReportSource : PivotReportSource
             if (newRow is null || !newer.Columns.TryGetValue(column, out var nc)) continue;
             var oldRow = older.Row(key, rowIndex);
             if (oldRow is null || !older.Columns.TryGetValue(column, out var oc)
-                || (newer.Held.Report.ValueAt(newRow, nc)?.Text ?? "") != (older.Held.Report.ValueAt(oldRow, oc)?.Text ?? ""))
-                return newer.At;
+                || (newer.Report.ValueAt(newRow, nc)?.Text ?? "") != (older.Report.ValueAt(oldRow, oc)?.Text ?? ""))
+                return newer.Mark;
         }
         return null;
     }

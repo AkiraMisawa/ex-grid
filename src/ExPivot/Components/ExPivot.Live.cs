@@ -44,12 +44,15 @@ public partial class ExPivot
     private TimeProvider? _redrawTimerClock;
     private DateTimeOffset? _redrawDue;
 
-    // One delegate for the component's lifetime; replacement rows carry immutable timestamps.
+    // One delegate for the component's lifetime (ADR-0153). A row carries which change last moved
+    // each cell — the Report Version that published it — and the time it is shown is this
+    // component's: stamped on its own clock as it adopts the Window that first carries the change
+    // (ADR-0068), whether the report is computed here or on a server whose clock need not agree.
     private readonly CellChangeOf<PivotDisplayRow> _cellChangedAt;
+    private readonly PivotChangeTimes _changeTimes = new();
     private readonly Dictionary<string, int> _valueColumnIndexes = new(StringComparer.Ordinal);
     private DateTimeOffset? CellChangedAt(PivotDisplayRow row, ExGrid.GridColumn<PivotDisplayRow> column)
-        => _valueColumnIndexes.TryGetValue(column.Name, out var index) && index < row.ChangedAt.Count
-            ? row.ChangedAt[index] : null;
+        => _valueColumnIndexes.TryGetValue(column.Name, out var index) ? _changeTimes.ChangedAt(row, index) : null;
 
     // The Stale Report (ADR-0067): what happened, while the newest data cannot be shown; the
     // answer held whose layout a cap refused, which the notice goes with once a layout that fits

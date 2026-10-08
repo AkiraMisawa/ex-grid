@@ -206,7 +206,7 @@ public class ReportProtocolTests
         Assert.NotSame(before, after);
         Assert.Equal("1", after.Values[0]!.Text);
         Assert.Equal(1.2m, after.Values[0]!.Exact);
-        Assert.Null(after.ChangedAt[0]);
+        Assert.Null(after.ChangedIn[0]);
     }
 
     [Fact]
@@ -402,30 +402,42 @@ public class ReportProtocolTests
         public override DateTimeOffset GetUtcNow() => Now;
     }
 
-    [Fact]
-    public async Task ADR0153_scrolling_keeps_offscreen_changes_at_their_data_change_time()
+    [Fact] // ADR-0153/0068: a change is stamped on the client's clock when a report listing it is first adopted; scrolling to an off-screen changed row later shows it as of that time, on any server clock
+    public async Task ADR0153_scrolling_keeps_offscreen_changes_at_their_first_shown_time()
     {
         var fields = EntryFields();
         var data = PivotSource.From<Entry>([new(1, "A", 10m), new(2, "B", 20m)], fields);
-        var clock = new ManualClock();
-        await using var source = PivotReportSource.From(data, timeProvider: clock);
+        // The server's clock is a day and a bit away from the client's: neither is read for the other.
+        var server = new ManualClock { Now = new(2026, 10, 7, 11, 59, 55, TimeSpan.Zero) };
+        var now = new DateTimeOffset(2026, 10, 8, 12, 0, 0, TimeSpan.Zero);
+        await using var source = PivotReportSource.From(data, timeProvider: server);
         var client = new PivotReportClient(source);
+        var times = new PivotChangeTimes();
         var ct = TestContext.Current.CancellationToken;
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
-        clock.Now += TimeSpan.FromMilliseconds(100);
-        var changedAt = clock.Now;
+        async Task ReadAsync(int start)
+        {
+            Assert.True(await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(start, 1), cancellationToken: ct));
+            times.Adopt(client.Current!, now, TimeSpan.FromSeconds(1));
+        }
+        await ReadAsync(0);
+        server.Now += TimeSpan.FromMilliseconds(100);
+        now += TimeSpan.FromMilliseconds(100);
+        var shownAt = now;
         data.Apply(fields.Batch(changed: [new(2, "B", 25m)]));
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
-        clock.Now += TimeSpan.FromMilliseconds(100);
+        await ReadAsync(0);
+        server.Now += TimeSpan.FromMilliseconds(100);
+        now += TimeSpan.FromMilliseconds(100);
         data.Apply(fields.Batch(changed: [new(1, "A", 11m)]));
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(1, 1), cancellationToken: ct);
-        Assert.Equal(changedAt, client.Current!.Rows[0].ChangedAt[0]);
+        await ReadAsync(0);
+        Assert.Equal(now, times.ChangedAt(client.Current!.Rows[0], 0));
+        await ReadAsync(1);
+        Assert.Equal(shownAt, times.ChangedAt(client.Current!.Rows[0], 0));
         var row = client.Current.Rows[0];
-        clock.Now += TimeSpan.FromMilliseconds(100);
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(1, 1), cancellationToken: ct);
-        Assert.Equal(changedAt, client.Current!.Rows[0].ChangedAt[0]);
+        server.Now += TimeSpan.FromMilliseconds(100);
+        now += TimeSpan.FromMilliseconds(100);
+        await ReadAsync(0);
+        await ReadAsync(1);
+        Assert.Equal(shownAt, times.ChangedAt(client.Current!.Rows[0], 0));
         Assert.Equal(25m, row.Values[0]!.Exact);
     }
 

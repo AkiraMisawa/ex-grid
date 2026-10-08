@@ -361,6 +361,8 @@ public partial class ExPivot
             var previous = _report;
             if (previous is null || previous.RowSequenceVersion != state.Metadata.RowSequenceVersion)
                 _rowSequenceVersion++;
+            // The changes this Window carries are shown from now, on this component's clock.
+            _changeTimes.Adopt(state, Now(), ChangeHighlightDuration);
             _state = state;
             _report = state.Metadata;
             _reportSource = source;
