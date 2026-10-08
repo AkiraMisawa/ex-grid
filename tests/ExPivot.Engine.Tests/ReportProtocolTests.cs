@@ -134,8 +134,12 @@ public class ReportProtocolTests
         Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct));
         var expired = await source.CopyAsync(new(before.Metadata.Version, columns, ranges), ct);
         Assert.Equal(PivotReportRefusalKind.ReportVersionNotHeld, expired.Refusal!.Kind);
-        var details = await source.DetailsAsync(new(before.Metadata.Version, before.Rows[0].Key, 0), ct);
-        Assert.Equal(PivotReportRefusalKind.ReportVersionNotHeld, details.Refusal!.Kind);
+        // Details names the Source Version, not the Report Version (ADR-0151): the provider still
+        // holds the data the earlier report was computed from, so its records still add up to it.
+        var details = await source.DetailsAsync(before.Metadata.DetailsQuery(before.Rows[0], 0), ct);
+        Assert.False(details.IsRefused);
+        Assert.Equal(before.Metadata.SourceVersion, details.SourceVersion);
+        Assert.Equal(10m, Assert.Single(details.Records).Values[^1]);
     }
 
     [Fact]
@@ -165,6 +169,40 @@ public class ReportProtocolTests
             OrderKeyPolicies = new Dictionary<string, string> { ["Label"] = "missing" } } }, TestContext.Current.CancellationToken);
         Assert.Equal(PivotReportRefusalKind.UnknownOrderKeyPolicy, denied.Refusal!.Kind);
         Assert.Equal("Label", denied.Refusal.Field);
+    }
+
+    [Fact] // ADR-0152/0060 (LV-23): a server-registered Order Key that throws is refused by name across JSON — the field and the Item — never a transport failure, never label order
+    public async Task ADR0152_a_throwing_registered_order_key_is_refused_by_name_over_json()
+    {
+        var fields = EntryFields();
+        var data = PivotSource.From<Entry>([new(1, "A", 1m), new(2, "BB", 2m), new(3, "C", 3m)], fields);
+        await using var server = PivotReportSource.From(data, new Dictionary<string, Func<object, IComparable?>>
+        {
+            ["picky"] = item => (string)item == "BB" ? throw new FormatException("no BB") : (string)item,
+        });
+        static T Wire<T>(T value) => PivotReportJson.Read<T>(PivotReportJson.Write(value));
+        var remote = PivotReportSource.Fetch(server.Fields, server.Features, server.UpdateMode,
+            async (request, ct) => Wire(await server.WindowAsync(Wire(request), ct)),
+            reportItems: async (query, ct) => Wire(await server.ItemsAsync(Wire(query), ct)));
+        var client = new PivotReportClient(remote);
+        var ct = TestContext.Current.CancellationToken;
+        var settings = PivotReportSettings.Invariant with { OrderKeyPolicies = new Dictionary<string, string> { ["Label"] = "picky" } };
+
+        Assert.False(await client.ReadAsync(EntryLayout(), settings, new(0, 10), cancellationToken: ct));
+        Assert.Null(client.Current);
+        Assert.Equal(PivotReportRefusalKind.OrderKeyFailed, client.Refusal!.Kind);
+        Assert.Equal("Label", client.Refusal.Field);
+        Assert.Equal("The Order Key of Label failed on 'BB'.", client.Refusal.Message);
+
+        // BB hidden: the report orders A and C only, and is answered; Filter's Items list BB as
+        // well, and are refused by name in turn.
+        var hidden = EntryLayout() with { Rows = [new("Label") { HiddenItems = [PivotItemKey.Text("BB")] }] };
+        Assert.True(await client.ReadAsync(hidden, settings, new(0, 10), cancellationToken: ct), client.Refusal?.Message);
+        Assert.Equal(["A", "C", "Grand Total"], client.Current!.Rows.Select(row => row.Labels[0].Text));
+        var items = await remote.ItemsAsync(new(client.Current.Metadata.Version, "Label"), ct);
+        Assert.Equal(PivotReportRefusalKind.OrderKeyFailed, items.Refusal!.Kind);
+        Assert.Equal("Label", items.Refusal.Field);
+        Assert.Contains("'BB'", items.Refusal.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -202,7 +240,7 @@ public class ReportProtocolTests
         Assert.NotSame(before, after);
         Assert.Equal("1", after.Values[0]!.Text);
         Assert.Equal(1.2m, after.Values[0]!.Exact);
-        Assert.Null(after.ChangedAt[0]);
+        Assert.Null(after.ChangedIn[0]);
     }
 
     [Fact]
@@ -214,7 +252,8 @@ public class ReportProtocolTests
             (request, _) => ValueTask.FromResult(++call switch
             {
                 1 => PivotReportUpdate.Complete(request, OneRowMetadata("v1"), [row]),
-                2 => PivotReportUpdate.Delta(request, OneRowMetadata("v2"), [new(0, DisplayRow("A", 2m)), new(0, DisplayRow("A", 3m))]),
+                2 => PivotReportUpdate.Delta(request, OneRowMetadata("v2"), [new(0, DisplayRow("A", 2m)), new(0, DisplayRow("A", 3m))],
+                    PivotReportDigest.Of(OneRowMetadata("v2"), 0, [DisplayRow("A", 3m)])),
                 _ => PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.SourceRefused, "Recovery unavailable.")),
             }));
         var client = new PivotReportClient(source);
@@ -271,11 +310,12 @@ public class ReportProtocolTests
             (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("x"), [])),
             copy: (_, _) => ValueTask.FromResult(new PivotReportCopyResult(wrong, [])),
             summary: (_, _) => ValueTask.FromResult(new PivotReportSummaryResult(wrong, default, default, default, false, null, "")),
-            details: (_, _) => ValueTask.FromResult(new PivotReportDetailsResult(wrong, null)));
+            details: (query, _) => ValueTask.FromResult(new PivotDetailPage("another-source-version", [], query.Start, 0, [])));
         var ct = TestContext.Current.CancellationToken;
         Assert.Equal(PivotReportRefusalKind.InvalidResponse, (await source.CopyAsync(new(requested, [], []), ct)).Refusal!.Kind);
         Assert.Equal(PivotReportRefusalKind.InvalidResponse, (await source.SummaryAsync(new(requested, [], []), ct)).Refusal!.Kind);
-        Assert.Equal(PivotReportRefusalKind.InvalidResponse, (await source.DetailsAsync(new(requested, DisplayRow("A", 1m).Key, -1), ct)).Refusal!.Kind);
+        // Records of another Source Version would not add up to the cell: never shown.
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await source.DetailsAsync(new PivotDetailsQuery("source-1"), ct));
     }
 
     [Theory]
@@ -333,12 +373,12 @@ public class ReportProtocolTests
         var summary = PivotReportJson.Read<PivotReportSummaryResult>(PivotReportJson.Write(await source.SummaryAsync(new(version, columns, [new(1, 0, 3, 0)]), ct)));
         Assert.Equal(105m, summary.Sum.Exact);
         Assert.Equal(3, summary.Counts.Numbers);
-        var query = new PivotReportDetailsQuery(version, window.Rows![0].Key, 0, 0, 10);
-        var details = PivotReportJson.Read<PivotReportDetailsResult>(PivotReportJson.Write(await source.DetailsAsync(
-            PivotReportJson.Read<PivotReportDetailsQuery>(PivotReportJson.Write(query)), ct)));
-        Assert.Equal(3, details.Page!.Total);
-        Assert.All(details.Page.Records, row => Assert.Null(row.Record));
-        Assert.Equal(100m, details.Page.Records[0].Values[3]);
+        var query = window.Metadata.DetailsQuery(window.Rows![0], 0, 0, 10);
+        var details = PivotReportJson.Read<PivotDetailPage>(PivotReportJson.Write(await source.DetailsAsync(
+            PivotReportJson.Read<PivotDetailsQuery>(PivotReportJson.Write(query)), ct)));
+        Assert.Equal(3, details.Total);
+        Assert.All(details.Records, row => Assert.Null(row.Record));
+        Assert.Equal(100m, details.Records[0].Values[3]);
         var items = PivotReportJson.Read<PivotItemPage>(PivotReportJson.Write(await source.RawItemsAsync(
             new("Region", window.Metadata.SourceVersion), ct)));
         Assert.Equal(4, items.Total);
@@ -385,8 +425,8 @@ public class ReportProtocolTests
             Assert.True(copying.IsCompleted, "A published report must be readable while its successor waits for data.");
             Assert.Equal("10", (await copying).Blocks[0].Rows[1][0].Raw);
             Assert.Equal(20m, (await source.SummaryAsync(new(version, columns, [new(0, 0, 1, 0)]), ct)).Sum.Exact);
-            var details = await source.DetailsAsync(new(version, first.Rows![0].Key, 0), ct);
-            Assert.Equal(first.Metadata.SourceVersion, details.Page!.SourceVersion);
+            var details = await source.DetailsAsync(first.Metadata.DetailsQuery(first.Rows![0], 0), ct);
+            Assert.Equal(first.Metadata.SourceVersion, details.SourceVersion);
         }
         finally { release.TrySetResult(); await newer; }
     }
@@ -397,30 +437,42 @@ public class ReportProtocolTests
         public override DateTimeOffset GetUtcNow() => Now;
     }
 
-    [Fact]
-    public async Task ADR0153_scrolling_keeps_offscreen_changes_at_their_data_change_time()
+    [Fact] // ADR-0153/0068: a change is stamped on the client's clock when a report listing it is first adopted; scrolling to an off-screen changed row later shows it as of that time, on any server clock
+    public async Task ADR0153_scrolling_keeps_offscreen_changes_at_their_first_shown_time()
     {
         var fields = EntryFields();
         var data = PivotSource.From<Entry>([new(1, "A", 10m), new(2, "B", 20m)], fields);
-        var clock = new ManualClock();
-        await using var source = PivotReportSource.From(data, timeProvider: clock);
+        // The server's clock is a day and a bit away from the client's: neither is read for the other.
+        var server = new ManualClock { Now = new(2026, 10, 7, 11, 59, 55, TimeSpan.Zero) };
+        var now = new DateTimeOffset(2026, 10, 8, 12, 0, 0, TimeSpan.Zero);
+        await using var source = PivotReportSource.From(data, timeProvider: server);
         var client = new PivotReportClient(source);
+        var times = new PivotChangeTimes();
         var ct = TestContext.Current.CancellationToken;
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
-        clock.Now += TimeSpan.FromMilliseconds(100);
-        var changedAt = clock.Now;
+        async Task ReadAsync(int start)
+        {
+            Assert.True(await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(start, 1), cancellationToken: ct));
+            times.Adopt(client.Current!, now, TimeSpan.FromSeconds(1));
+        }
+        await ReadAsync(0);
+        server.Now += TimeSpan.FromMilliseconds(100);
+        now += TimeSpan.FromMilliseconds(100);
+        var shownAt = now;
         data.Apply(fields.Batch(changed: [new(2, "B", 25m)]));
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
-        clock.Now += TimeSpan.FromMilliseconds(100);
+        await ReadAsync(0);
+        server.Now += TimeSpan.FromMilliseconds(100);
+        now += TimeSpan.FromMilliseconds(100);
         data.Apply(fields.Batch(changed: [new(1, "A", 11m)]));
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(1, 1), cancellationToken: ct);
-        Assert.Equal(changedAt, client.Current!.Rows[0].ChangedAt[0]);
+        await ReadAsync(0);
+        Assert.Equal(now, times.ChangedAt(client.Current!.Rows[0], 0));
+        await ReadAsync(1);
+        Assert.Equal(shownAt, times.ChangedAt(client.Current!.Rows[0], 0));
         var row = client.Current.Rows[0];
-        clock.Now += TimeSpan.FromMilliseconds(100);
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
-        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(1, 1), cancellationToken: ct);
-        Assert.Equal(changedAt, client.Current!.Rows[0].ChangedAt[0]);
+        server.Now += TimeSpan.FromMilliseconds(100);
+        now += TimeSpan.FromMilliseconds(100);
+        await ReadAsync(0);
+        await ReadAsync(1);
+        Assert.Equal(shownAt, times.ChangedAt(client.Current!.Rows[0], 0));
         Assert.Equal(25m, row.Values[0]!.Exact);
     }
 

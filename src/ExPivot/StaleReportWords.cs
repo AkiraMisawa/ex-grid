@@ -24,4 +24,8 @@ internal static class StaleReportWords
 
     /// <summary>The source refused for another reason: {0} its sentence.</summary>
     public const string SourceRefused = "stale-source-refused";
+
+    /// <summary>Memory ran out while the report of the newest data was computed (ADR-0067's note
+    /// of 2026-10-07): what was being built is dropped, and the next change asks again.</summary>
+    public const string OutOfMemory = "stale-out-of-memory";
 }

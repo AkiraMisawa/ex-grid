@@ -341,4 +341,56 @@ public class ChangeHighlightTests : PivotTestContext
         await PublishAsync(cut, source, EastApples(102));
         Assert.Same(second, Grid(cut).Instance.CellChangedAt);
     }
+    // ---- A server's clock -----------------------------------------------------------------------
+
+    /// <summary>A keyed sale, for a server's Change Batches.</summary>
+    public sealed record KeyedSale(long Id, string? Region, string Product, decimal Amount, int Quantity, bool Online);
+
+    [Theory] // ADR-0068/0153: a report computed by a server whose clock is behind the browser's, or ahead of it, is marked from when ExPivot shows the change, for ChangeHighlightDuration on ExPivot's own clock
+    [InlineData(-5)]
+    [InlineData(0)]
+    [InlineData(5)]
+    public async Task A_servers_clock_changes_nothing_of_the_highlight(int skewSeconds)
+    {
+        var fields = PivotFields.Of<KeyedSale>().Key("Id", s => s.Id).Text("Region", s => s.Region).Text("Product", s => s.Product)
+            .Number("Amount", s => s.Amount).Number("Quantity", s => s.Quantity).Boolean("Online", s => s.Online);
+        var sales = Sales.Select((s, i) => new KeyedSale(i, s.Region, s.Product, s.Amount, s.Quantity, s.Online)).ToArray();
+        var data = PivotSource.From(sales, fields);
+        var serverClock = new Microsoft.Extensions.Time.Testing.FakeTimeProvider(Clock.GetUtcNow() + TimeSpan.FromSeconds(skewSeconds));
+        await using var server = PivotReportSource.From(data, timeProvider: serverClock);
+        // The server's answers cross JSON, as over HTTP: nothing but what the protocol carries.
+        static T Wire<T>(T value) => PivotReportJson.Read<T>(PivotReportJson.Write(value));
+        var remote = PivotReportSource.Fetch(server.Fields, server.Features, server.UpdateMode,
+            async (request, ct) => Wire(await server.WindowAsync(Wire(request), ct)),
+            items: server.RawItemsAsync, reportItems: async (query, ct) => Wire(await server.ItemsAsync(Wire(query), ct)),
+            copy: server.CopyAsync, summary: server.SummaryAsync, details: server.DetailsAsync);
+        data.Changed += change => remote.NotifyChanged(change.SourceVersion);
+        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+        var cut = Render<PivotComponent>(ps => ps
+            .Add(p => p.Source, remote)
+            .Add(p => p.Layout, RegionAmount)
+            .Add(p => p.Culture, System.Globalization.CultureInfo.GetCultureInfo("en-US"))
+            .Add(p => p.ViewportHeight, (ViewportSize)400)
+            .Add(p => p.ViewportWidth, (ViewportSize)700));
+        cut.WaitForAssertion(() => Assert.Equal("East | 180", RowTexts(cut)[0]));
+        void Advance(TimeSpan by)
+        {
+            serverClock.Advance(by);
+            Clock.Advance(by);
+        }
+
+        Advance(TimeSpan.FromSeconds(3));
+        var shownAt = Clock.GetUtcNow();
+        await cut.InvokeAsync(() => data.Apply(fields.Batch(changed: [sales[0] with { Amount = 101m }])));
+
+        cut.WaitForAssertion(() => Assert.Equal("East | 181", RowTexts(cut)[0]));
+        Assert.Equal(shownAt, ChangedAt(cut, 0, 1));
+        Assert.Equal(shownAt, ChangedAt(cut, 4, 1));
+        Assert.Equal(["181", "286"], MarkedTexts(cut));
+        // Shown for ChangeHighlightDuration on ExPivot's clock: a moment before it ends, and then not.
+        Advance(TimeSpan.FromMilliseconds(999));
+        Assert.Equal(["181", "286"], MarkedTexts(cut));
+        Advance(TimeSpan.FromMilliseconds(1));
+        cut.WaitForAssertion(() => Assert.Empty(MarkedTexts(cut)));
+    }
 }

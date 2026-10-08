@@ -3,7 +3,14 @@ using ExGrid.Data;
 
 namespace ExPivot.Engine;
 
-/// <summary>One report's bounded calculation and display state over a separately owned data provider.</summary>
+/// <summary>
+/// One report's bounded calculation and display state over a separately owned data provider. Run in
+/// the browser for local data, or on a server behind the Consumer's transport (ADR-0151). Its deltas
+/// are complete by construction: every row of the requested Window is projected afresh from the
+/// newest report and compared with the baseline Window's, so a subtotal, a grand total or a
+/// percentage that moved with the data is in the delta as surely as the row whose data changed, and
+/// each delta names the digest of the whole Window it produces (<see cref="PivotReportUpdate"/>).
+/// </summary>
 public sealed class LocalPivotReportSource : PivotReportSource
 {
     private readonly PivotSource _source;
@@ -13,18 +20,23 @@ public sealed class LocalPivotReportSource : PivotReportSource
     private readonly PivotSlicing _slicing;
     private PivotLabelSizing _labelSizing = new();
     private readonly List<HighlightVersion> _highlight = [];
-    private sealed class HighlightVersion(HeldReport held, DateTimeOffset at)
+    // A data version whose changes are marked: the report that shows it, the change's mark — the
+    // Report Version that first published it, kept when the same data is laid out again — and when
+    // this source published it, on this source's clock, which only bounds how long it is kept. The
+    // time a change is shown is the Consumer's (PivotChangeTimes).
+    private sealed class HighlightVersion(PivotReport report, PivotReportVersion mark, DateTimeOffset at)
     {
-        public HeldReport Held { get; } = held;
+        public PivotReport Report { get; } = report;
+        public PivotReportVersion Mark { get; } = mark;
         public DateTimeOffset At { get; } = at;
         private Dictionary<PivotRowKey, PivotReportRow>? _byKey;
         public PivotReportRow? Row(PivotRowKey key, int hint)
         {
-            if ((uint)hint < (uint)Held.Report.Rows.Count && Held.Report.Rows[hint].Key.Equals(key))
-                return Held.Report.Rows[hint];
-            return (_byKey ??= Held.Report.Rows.ToDictionary(row => row.Key)).GetValueOrDefault(key);
+            if ((uint)hint < (uint)Report.Rows.Count && Report.Rows[hint].Key.Equals(key))
+                return Report.Rows[hint];
+            return (_byKey ??= Report.Rows.ToDictionary(row => row.Key)).GetValueOrDefault(key);
         }
-        public Dictionary<string, int> Columns { get; } = held.Metadata.ValueColumns
+        public Dictionary<string, int> Columns { get; } = report.ValueColumns
             .Select((column, index) => (column.Name, index)).ToDictionary(c => c.Name, c => c.index, StringComparer.Ordinal);
     }
     private readonly SemaphoreSlim _gate = new(1);
@@ -39,6 +51,29 @@ public sealed class LocalPivotReportSource : PivotReportSource
     private int _maxLeaves;
     private volatile bool _dirty = true;
     private bool _disposed;
+    // What the computation returned that no published version shows yet: a request cancelled
+    // after its computation returned and before its version was published, or a version laid
+    // out aside. The next computation's result is merged into it, and published with it.
+    private Unpublished? _unpublished;
+
+    private sealed class Unpublished
+    {
+        public bool Reset { get; set; }
+        public bool RowSequenceChanged { get; private set; }
+        public List<(IReadOnlyList<PivotReportRow> Labels, IReadOnlyList<PivotRowKey> Removed)> Batches { get; } = [];
+
+        public void Add(PivotComputationResult result)
+        {
+            RowSequenceChanged |= result.RowSequenceChanged;
+            if (result.IsReset)
+            {
+                Reset = true;
+                Batches.Clear();
+            }
+            else if (!Reset)
+                Batches.Add((result.LabelChanges, result.RemovedRows));
+        }
+    }
     private IReadOnlyList<PivotField> _effectiveFields;
     private sealed record HeldReport(PivotReportMetadata Metadata, PivotReport Report, PivotSource Provider, IReadOnlyList<PivotField> Fields);
 
@@ -107,7 +142,8 @@ public sealed class LocalPivotReportSource : PivotReportSource
             if (_settings != settings && ResolveFields(request.Settings) is { } policyRefusal)
                 return PivotReportUpdate.Refused(request, policyRefusal);
             var last = _versions.First?.Value;
-            if (request.RefreshData || _dirty || _settings != settings || _layout != layout || _maxLeaves != request.MaxLeaves || last is null)
+            if (request.RefreshData || _dirty || _unpublished is not null || _settings != settings || _layout != layout
+                || _maxLeaves != request.MaxLeaves || last is null)
             {
                 // Cleared before awaiting: a newer source notification keeps the next read dirty.
                 var wasDirty = _dirty;
@@ -120,31 +156,56 @@ public sealed class LocalPivotReportSource : PivotReportSource
                     _policies = policies;
                 }
                 if (_settings != settings) _options = request.Settings.ToOptions();
-                var result = await _computation.ComputeAsync(request.Layout, _options, request.MaxLeaves,
-                    _slicing, cancellationToken, request.RefreshData, preferHeld: !request.MarkChanges).ConfigureAwait(false);
-                if (result.IsRefused)
+                PivotReport report;
+                var detached = false;
+                if (Shown(request, policies) is { } shown)
                 {
-                    _dirty = true;
-                    return PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.SourceRefused, result.Refusal!.Message, result.Refusal.Field) { SourceRefusal = result.Refusal });
+                    // A layout gesture lays out the data the Consumer shows — the request's
+                    // baseline — and that is older than what the computation holds: a version
+                    // computed for a request the Consumer discarded. Laid out aside, that version
+                    // is what the gesture shows, whenever the discarded request's cancellation
+                    // landed; the newer data comes with the next request that marks changes.
+                    report = await PivotEngine.ReportAsync(shown, request.Layout, _options, _slicing, cancellationToken)
+                        .ConfigureAwait(false);
+                    (_unpublished ??= new()).Reset = true;
+                    detached = true;
                 }
-                var report = result.Report!;
+                else
+                {
+                    var result = await _computation.ComputeAsync(request.Layout, _options, request.MaxLeaves,
+                        _slicing, cancellationToken, request.RefreshData, preferHeld: !request.MarkChanges).ConfigureAwait(false);
+                    if (result.IsRefused)
+                    {
+                        _dirty = true;
+                        return PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.SourceRefused, result.Refusal!.Message, result.Refusal.Field) { SourceRefusal = result.Refusal });
+                    }
+                    // Kept until a version publishes it: a cancellation below must not lose the
+                    // computation's changes, which it returns once (PivotComputationSession).
+                    (_unpublished ??= new()).Add(result);
+                    report = result.Report!;
+                }
+                var unpublished = _unpublished!;
                 var cube = report.Cube;
                 if (!request.MarkChanges && wasDirty && last?.Metadata.SourceVersion == cube.SourceVersion) _dirty = true;
                 var sameRows = last is not null && (ReferenceEquals(last.Report.Rows, report.Rows)
-                    || (!result.IsReset ? !result.RowSequenceChanged
+                    || (!unpublished.Reset ? !unpublished.RowSequenceChanged
                         : await report.HasSameRowsAsAsync(last.Report, _slicing, cancellationToken).ConfigureAwait(false)));
-                var widths = request.Settings.LabelMetrics is { } metrics
-                    ? await _labelSizing.WidthsAsync(report, metrics, result.LabelChanges, result.RemovedRows, result.IsReset,
-                        Slicer.Of(_slicing, cancellationToken)).ConfigureAwait(false) : [];
-                var metadata = new PivotReportMetadata(new(Guid.NewGuid().ToString("N")), cube.SourceVersion,
+                IReadOnlyList<double> widths = [];
+                if (request.Settings.LabelMetrics is { } metrics)
+                    widths = await _labelSizing.WidthsAsync(report, metrics, unpublished.Batches, unpublished.Reset,
+                        Slicer.Of(_slicing, cancellationToken)).ConfigureAwait(false);
+                else
+                    _labelSizing.Forget();
+                var version = new PivotReportVersion(Guid.NewGuid().ToString("N"));
+                var marks = RememberHighlight(version, report, request, last);
+                var metadata = new PivotReportMetadata(version, cube.SourceVersion,
                     sameRows ? last!.Metadata.RowSequenceVersion : Guid.NewGuid().ToString("N"),
                     request.Layout, request.Settings, report.Rows.Count, report.LabelColumns,
                     report.ValueColumns.Select((column, index) => new PivotDisplayColumn(column.Name, column.Header,
                         column.Role, column.ValueField, report.ColumnPath(index).Select(p => new PivotFieldItem(p.Field, p.Item)).ToArray())).ToArray(),
                     report.HeaderSpans, report.HeaderTierCount, report.ValueCaptions)
-                { LabelWidths = widths };
+                { LabelWidths = widths, ChangeMarks = marks };
                 var next = new HeldReport(metadata, report, _source, _effectiveFields);
-                RememberHighlight(next, last, request.MarkChanges);
                 last = next;
                 lock (_published)
                 {
@@ -159,6 +220,15 @@ public sealed class LocalPivotReportSource : PivotReportSource
                 _settings = settings;
                 _layout = layout;
                 _maxLeaves = request.MaxLeaves;
+                _unpublished = null;
+                if (detached)
+                {
+                    // The computation holds newer data than this version, under the layout it last
+                    // laid out: its next result is compared with this version afresh, and the next
+                    // request computes.
+                    _unpublished = new() { Reset = true };
+                    _dirty = true;
+                }
             }
             _windows.TryGetValue(request.Baseline ?? new(""), out var previous);
             if (previous?.Window != request.Window) previous = null;
@@ -180,10 +250,21 @@ public sealed class LocalPivotReportSource : PivotReportSource
             }
             var state = new PivotReportState(last.Metadata, request.Window, Array.AsReadOnly(rows));
             _windows[last.Metadata.Version] = state;
+            // A delta carries every row of the Window that differs from the baseline's — totals and
+            // percentages included, as each row is projected afresh — and the digest of the whole
+            // Window it produces.
             if (previous is not null && previous.Rows.Count == rows.Length
                 && previous.Metadata.RowSequenceVersion == last.Metadata.RowSequenceVersion)
-                return PivotReportUpdate.Delta(request, last.Metadata, changes);
+                return PivotReportUpdate.Delta(request, last.Metadata, changes,
+                    PivotReportDigest.Of(last.Metadata, request.Window.Start, state.Rows));
             return PivotReportUpdate.Complete(request, last.Metadata, state.Rows);
+        }
+        catch (OrderKeyFailedException failed)
+        {
+            // A refusal, by name, that a remote Consumer receives as one: thrown, it would reach a
+            // server's transport as an error and lose the field and the Item it names.
+            _dirty = true;
+            return PivotReportUpdate.Refused(request, OrderKeyFailed(failed));
         }
         catch
         {
@@ -191,6 +272,23 @@ public sealed class LocalPivotReportSource : PivotReportSource
             throw;
         }
         finally { _gate.Release(); }
+    }
+
+    private static PivotReportRefusal OrderKeyFailed(OrderKeyFailedException failed)
+        => new(PivotReportRefusalKind.OrderKeyFailed, failed.Message, failed.Field);
+
+    // The cube of the version the request names as its baseline — the data the Consumer shows —
+    // when a layout gesture should lay it out rather than the computation's newer data: held,
+    // from this provider under the same Order Key policies, older than the computation's cube,
+    // and holding the requested layout.
+    private PivotCube? Shown(PivotReportRequest request, string policies)
+    {
+        if (request.MarkChanges || request.Baseline is not { } baseline || _computation?.HeldCube is not { } held
+            || Held(baseline) is not { } shown || ReferenceEquals(shown.Report.Cube, held) || !ReferenceEquals(shown.Provider, _source)
+            || PivotReportJson.Write(shown.Metadata.Settings.OrderKeyPolicies) != policies)
+            return null;
+        var cube = shown.Report.Cube;
+        return cube.Holds(request.Layout) && cube.Query.MaxLeaves == request.MaxLeaves ? cube : null;
     }
 
     private PivotReportRefusal? ResolveFields(PivotReportSettings settings)
@@ -211,12 +309,16 @@ public sealed class LocalPivotReportSource : PivotReportSource
         return null;
     }
 
+    // A row of the Window, made from the report: the prior row itself when nothing it paints
+    // changed. A cell keeps the mark it had while its text does not change, though the source no
+    // longer lists that change: the mark says nothing new, and the row keeps its instance rather
+    // than render again for a highlight that has ended.
     private PivotDisplayRow Project(PivotReport report, PivotReportRow row, int rowIndex, PivotDisplayRow? prior,
         bool keepMarks, IReadOnlyList<PivotDisplayColumn>? priorColumns)
     {
         var path = report.RowPath(row).Select(p => new PivotFieldItem(p.Field, p.Item)).ToArray();
         var values = new PivotDisplayValue?[report.ValueColumns.Count];
-        var changed = new DateTimeOffset?[values.Length];
+        var changed = new PivotReportVersion?[values.Length];
         var same = prior is not null && prior.Role == row.Role && prior.ValueField == row.ValueField
             && prior.CarriesValues == row.CarriesValues && prior.Labels.SequenceEqual(row.Labels) && prior.Values.Count == values.Length
             && prior.RowPath.Select(p => (p.Field, p.Item.Kind, p.Item.Value))
@@ -224,15 +326,15 @@ public sealed class LocalPivotReportSource : PivotReportSource
         for (var c = 0; c < values.Length; c++)
         {
             values[c] = PivotDisplayValue.From(report.ValueAt(row, c));
-            changed[c] = ChangedAt(row.Key, rowIndex, report.ValueColumns[c].Name);
+            changed[c] = ChangedIn(row.Key, rowIndex, report.ValueColumns[c].Name);
             var oldColumn = -1;
             if (priorColumns is not null)
                 for (var j = 0; j < priorColumns.Count; j++)
                     if (priorColumns[j].Name == report.ValueColumns[c].Name) { oldColumn = j; break; }
             if (prior is not null && oldColumn >= 0 && oldColumn < prior.Values.Count)
             {
-                changed[c] ??= keepMarks ? prior.ChangedAt[oldColumn] : null;
-                same &= oldColumn == c && prior.Values[oldColumn] == values[c] && prior.ChangedAt[oldColumn] == changed[c];
+                changed[c] ??= keepMarks ? prior.ChangedIn[oldColumn] : null;
+                same &= oldColumn == c && prior.Values[oldColumn] == values[c] && prior.ChangedIn[oldColumn] == changed[c];
             }
         }
         if (same) return prior!;
@@ -242,22 +344,32 @@ public sealed class LocalPivotReportSource : PivotReportSource
 
     // Retain only the data versions whose marks can still be shown, plus their baseline.
     // Versions share unchanged calculation state and point to no predecessor. Display rows own
-    // only their resolved timestamps, so grid paint history cannot extend this lifetime.
-    private void RememberHighlight(HeldReport next, HeldReport? previous, bool markChanges)
+    // only their marks, so grid paint history cannot extend this lifetime. Answers the marks the
+    // source keeps now, newest first: every mark a cell will carry is one of them.
+    private PivotReportVersion[] RememberHighlight(PivotReportVersion version, PivotReport report,
+        PivotReportRequest request, HeldReport? previous)
     {
         var at = _clock.GetUtcNow();
-        if (!markChanges || previous is null
-            || PivotLayoutJson.Write(previous.Metadata.Layout) != PivotLayoutJson.Write(next.Metadata.Layout)
-            || !PivotReportJson.SameSettings(previous.Metadata.Settings, next.Metadata.Settings))
+        if (!request.MarkChanges || previous is null
+            || PivotLayoutJson.Write(previous.Metadata.Layout) != PivotLayoutJson.Write(request.Layout)
+            || !PivotReportJson.SameSettings(previous.Metadata.Settings, request.Settings))
             _highlight.Clear();
-        else if (previous.Metadata.SourceVersion == next.Metadata.SourceVersion && _highlight.Count > 0)
+        else if (previous.Metadata.SourceVersion == report.Cube.SourceVersion && _highlight.Count > 0)
         {
-            _highlight[0] = new(next, _highlight[0].At);
-            return;
+            // The same data laid out again: its changes keep the mark and the time they were
+            // first published with.
+            _highlight[0] = new(report, _highlight[0].Mark, _highlight[0].At);
+            return Marks();
         }
-        _highlight.Insert(0, new(next, at));
-        PruneHighlight(at, next.Metadata.Settings.ChangeHighlightDuration);
+        _highlight.Insert(0, new(report, version, at));
+        PruneHighlight(at, request.Settings.ChangeHighlightDuration);
+        return Marks();
     }
+
+    // The versions a cell can be marked with: each but the oldest, which is only the baseline the
+    // next newer one is compared with.
+    private PivotReportVersion[] Marks()
+        => [.. _highlight.Take(Math.Max(0, _highlight.Count - 1)).Select(h => h.Mark)];
 
     private void PruneHighlight(DateTimeOffset now, TimeSpan duration)
     {
@@ -274,7 +386,9 @@ public sealed class LocalPivotReportSource : PivotReportSource
             }
     }
 
-    private DateTimeOffset? ChangedAt(PivotRowKey key, int rowIndex, string column)
+    // The change that last moved a cell's shown text, among the versions still kept: the newest
+    // whose text differs from the version before it.
+    private PivotReportVersion? ChangedIn(PivotRowKey key, int rowIndex, string column)
     {
         for (var i = 0; i + 1 < _highlight.Count; i++)
         {
@@ -284,8 +398,8 @@ public sealed class LocalPivotReportSource : PivotReportSource
             if (newRow is null || !newer.Columns.TryGetValue(column, out var nc)) continue;
             var oldRow = older.Row(key, rowIndex);
             if (oldRow is null || !older.Columns.TryGetValue(column, out var oc)
-                || (newer.Held.Report.ValueAt(newRow, nc)?.Text ?? "") != (older.Held.Report.ValueAt(oldRow, oc)?.Text ?? ""))
-                return newer.At;
+                || (newer.Report.ValueAt(newRow, nc)?.Text ?? "") != (older.Report.ValueAt(oldRow, oc)?.Text ?? ""))
+                return newer.Mark;
         }
         return null;
     }
@@ -321,21 +435,27 @@ public sealed class LocalPivotReportSource : PivotReportSource
         if (page.IsRefused)
             return new(query.Version, held.Metadata.SourceVersion, [], 0,
                 new(PivotReportRefusalKind.SourceRefused, page.Refusal!.Message) { SourceRefusal = page.Refusal });
-        return new(query.Version, page.SourceVersion,
-            PivotEngine.ItemsOf(page, held.Report.Layout, field, held.Report.Options), page.Total);
+        try
+        {
+            return new(query.Version, page.SourceVersion,
+                PivotEngine.ItemsOf(page, held.Report.Layout, field, held.Report.Options), page.Total);
+        }
+        catch (OrderKeyFailedException failed)
+        {
+            return new(query.Version, held.Metadata.SourceVersion, [], 0, OrderKeyFailed(failed));
+        }
     }
 
     /// <inheritdoc />
-    public override async ValueTask<PivotReportDetailsResult> DetailsAsync(PivotReportDetailsQuery query, CancellationToken cancellationToken = default)
+    /// <remarks>Asked of the data provider under the question's Source Version: answered while the
+    /// provider holds it, however many layouts and Report Versions came since, and refused by the
+    /// provider once it does not. The provider is not this report's to dispose, so a Details tab
+    /// opened before the report was replaced still pages its records.</remarks>
+    public override ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(query);
         cancellationToken.ThrowIfCancellationRequested();
-        var held = Held(query.Version);
-        if (held is null) return new(query.Version, null, NotHeld(query.Version));
-        var row = held.Report.Rows.FirstOrDefault(row => row.Key.Equals(query.Row));
-        if (row is null || query.ValueColumn < -1 || query.ValueColumn >= held.Report.ValueColumns.Count)
-            return new(query.Version, null, new(PivotReportRefusalKind.InvalidRequest, "The requested cell is not in this report."));
-        var page = await held.Provider.DetailsAsync(held.Report.DetailsQuery(row, query.ValueColumn, query.Start, query.Count), cancellationToken).ConfigureAwait(false);
-        return new(query.Version, page);
+        return _source.DetailsAsync(query, cancellationToken);
     }
 
     /// <inheritdoc />

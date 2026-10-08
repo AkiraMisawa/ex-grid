@@ -37,7 +37,9 @@ public sealed class PivotReportClient
             generation = ++_generation;
             previous = _current;
         }
-        var baseline = previous?.Window == window ? previous.Metadata.Version : null;
+        // The version this client holds is named whatever Window is asked: a delta is answered only
+        // for the Window it holds, and a layout gesture lays out the data it shows (ADR-0152).
+        var baseline = previous?.Metadata.Version;
         var request = new PivotReportRequest(Guid.NewGuid().ToString("N"), layout, settings, window, baseline, maxLeaves)
             { MarkChanges = markChanges, RefreshData = refreshData };
         var recovered = false;
@@ -49,6 +51,9 @@ public sealed class PivotReportClient
                 update = await _source.WindowAsync(request, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) { throw; }
+            // Memory running out is not the source's answer, nor its failure: it goes on as itself,
+            // the Window held unchanged, for the Consumer to say what happened.
+            catch (OutOfMemoryException) { throw; }
             catch (Exception error)
             {
                 lock (_publication)
@@ -138,12 +143,21 @@ public sealed class PivotReportClient
         {
             if (row is null || row.Key is null || !keys.Add(row.Key)
                 || row.Labels.Count != metadata.LabelColumns.Count || row.Values.Count != metadata.ValueColumns.Count
-                || row.ChangedAt.Count != row.Values.Count || row.Role != row.Key.Role || row.ValueField != row.Key.ValueField
+                || row.ChangedIn.Count != row.Values.Count
+                || row.Role != row.Key.Role || row.ValueField != row.Key.ValueField
                 || !Enum.IsDefined(row.Role) || row.RowPath.Count != row.Key.Items.Count
                 || !row.RowPath.Select(p => p.Item).SequenceEqual(row.Key.Items)
                 || row.Values.Any(value => value is not null && (value.Text is null || !double.IsFinite(value.Number))))
                 return Invalid("The report Window contains an invalid or duplicate row.");
         }
+        // A delta's result must be the source's Window, every row of it: a delta that left out a
+        // row whose shown values changed — a total, a percentage — would show its old values.
+        if (update.Rows is null && update.WindowDigest is null)
+            return Invalid("The report delta names no digest of the Window it produces.");
+        if (update.WindowDigest is { } digest && PivotReportDigest.Of(metadata, request.Window.Start, rows) != digest)
+            return Invalid(update.Rows is null
+                ? "The report delta does not reproduce the source's Window: it leaves out a changed row."
+                : "The complete report Window does not match its digest.");
         if (metadata.LabelWidths.Count != 0 && metadata.LabelWidths.Count != metadata.LabelColumns.Count
             || metadata.LabelWidths.Any(width => !double.IsFinite(width) || width < 0))
             return Invalid("The report label widths do not match its columns.");

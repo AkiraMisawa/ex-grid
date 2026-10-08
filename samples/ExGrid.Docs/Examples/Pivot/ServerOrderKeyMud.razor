@@ -4,18 +4,33 @@
 @using ExPivot.MudBlazor
 
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
-    <ExPivot Source="_source" @bind-Layout="_layout" PivotChrome="MudPivotChrome.Default" ViewportHeight="300" />
+    <ExPivot Source="_source" @bind-Layout="_layout" OrderKeyPolicies="_policies" PivotChrome="MudPivotChrome.Default" ViewportHeight="300" />
 </MudExGridPaper>
 
 @code {
-    private readonly SalesServer _server = new();
+    // The server registers its Order Keys by name. This one orders the regions by the size of
+    // their market, largest first, rather than by their names.
+    private readonly SalesServer _server = new(new Dictionary<string, Func<object, IComparable?>>
+    {
+        ["market-size"] = region => (string)region switch
+        {
+            "North America" => 0,
+            "Europe" => 1,
+            "Asia Pacific" => 2,
+            _ => 3,
+        },
+    });
+
+    // The browser names the policy each field is ordered by; nothing but the name crosses the wire.
+    private readonly Dictionary<string, string> _policies = new() { ["Region"] = "market-size" };
+
     private FetchingPivotReportSource _source = default!;
 
     private PivotLayout _layout = new()
     {
-        Rows = [new PivotFieldPlacement("Category")],
-        Columns = [new PivotFieldPlacement("Region")],
-        Values = [new PivotValueField("Units", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+        Rows = [new PivotFieldPlacement("Region")],
+        Columns = [new PivotFieldPlacement("Year")],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
     };
 
     protected override void OnInitialized()
@@ -26,15 +41,7 @@
             summary: async (query, token) => PivotReportJson.Read<PivotReportSummaryResult>(await _server.SummaryAsync(PivotReportJson.Write(query), token)),
             details: async (query, token) => PivotReportJson.Read<PivotDetailPage>(await _server.DetailsAsync(PivotReportJson.Write(query), token)),
             reportItems: async (query, token) => PivotReportJson.Read<PivotReportItemsResult>(await _server.ItemsAsync(PivotReportJson.Write(query), token)));
-        // However the news arrives — SignalR, polling, a message bus — pass it on: ExPivot asks
-        // the current report Window again.
-        _server.VersionChanged += _source.NotifyChanged;
-        _server.StartTrading(TimeSpan.FromSeconds(1));
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        _server.VersionChanged -= _source.NotifyChanged;
-        await _server.DisposeAsync();
-    }
+    public ValueTask DisposeAsync() => _server.DisposeAsync();
 }

@@ -332,7 +332,13 @@ public partial class ExPivot
                 LabelMetrics = new(metrics.WideWidthPx, metrics.DigitWidthPx, metrics.NarrowWidthPx,
                     metrics.FullWidthPx, metrics.OtherWidthPx, metrics.CellHorizontalPaddingPx, metrics.ExportGlyphWidths()),
             };
-            var adopted = await client.ReadAsync(layout, settings, _wantedWindow, _caps.MaxLeaves, asking.Token, markChanges: kind != Question.Layout, refreshData: kind == Question.Data);
+            // Refresh and Retry ask the provider again. So does a notice of newer data from a source
+            // that declared it refreshes in full (ADR-0153): it cannot name its changes, and the
+            // notice may be all its server knows of them; an incremental source is asked for them.
+            var refreshData = kind == Question.Data
+                || (kind == Question.Live && source.UpdateMode == PivotReportUpdateMode.FullRefresh);
+            var adopted = await client.ReadAsync(layout, settings, _wantedWindow, _caps.MaxLeaves, asking.Token,
+                markChanges: kind != Question.Layout, refreshData: refreshData);
             if (_disposed || generation != _generation) return;
             var carried = FinishAsking();
             if (!adopted || client.Current is not { } state)
@@ -361,6 +367,8 @@ public partial class ExPivot
             var previous = _report;
             if (previous is null || previous.RowSequenceVersion != state.Metadata.RowSequenceVersion)
                 _rowSequenceVersion++;
+            // The changes this Window carries are shown from now, on this component's clock.
+            _changeTimes.Adopt(state, Now(), ChangeHighlightDuration);
             _state = state;
             _report = state.Metadata;
             _reportSource = source;
@@ -390,6 +398,10 @@ public partial class ExPivot
             StateHasChanged();
         }
         catch (OperationCanceledException) when (asking.IsCancellationRequested) { }
+        catch (OutOfMemoryException) when (!_disposed && generation == _generation)
+        {
+            await OutOfMemoryAsync(kind, layout);
+        }
         catch (Exception error)
         {
             if (!_disposed && generation == _generation)
@@ -401,6 +413,28 @@ public partial class ExPivot
             }
         }
         finally { asking.Dispose(); }
+    }
+
+    /// <summary>
+    /// Memory ran out while the report was computed (ADR-0067's note of 2026-10-07). What was being
+    /// built is dropped — nothing of it was kept — and the report on screen stays. For newer data
+    /// it is a Stale Report whose reason says memory ran out, not that the data is wrong: a
+    /// WebAssembly heap does not give memory back, so a redraw may fail again, and the next change
+    /// asks again. For a layout the user asked for, the layout is refused and goes back to the one
+    /// the report shows, and the Pivot Toolbar says memory ran out. It is not the source's
+    /// failure, so <see cref="LastError"/> is left as it was.
+    /// </summary>
+    private async Task OutOfMemoryAsync(Question kind, PivotLayout layout)
+    {
+        var carried = FinishAsking();
+        if (IsStaleFor(kind, layout))
+            MarkStale(Word(StaleReportWords.OutOfMemory), error: null, newest: null);
+        else if (_report is not null)
+            Refuse(Word("refused-out-of-memory"));
+        else
+            _refusal = Word("refused-out-of-memory");
+        await LandedAsync(carried, null);
+        StateHasChanged();
     }
 
     private Task WindowNeededAsync(RowRange range)

@@ -37,11 +37,11 @@
     <DocsSection Title="Reading a changing report">
         <p>
             ExPivot's report is display-only. ExGrid's rule that values changing alone do not
-            refuse a user's write adds no write-back operation to a pivot report. Copy, Summary
-            and Details still name the Report Version the user acted on. If that version is no
-            longer available, the source refuses by name instead of silently returning newer
-            numbers. These read operations and the timed Change Highlight keep their own version
-            evidence as the report changes.
+            refuse a user's write adds no write-back operation to a pivot report. Copy and Summary
+            still name the Report Version the user acted on, and Show Details the Source Version
+            its records add up under. If that version is no longer available, the source refuses
+            by name instead of silently returning newer numbers. These read operations and the
+            timed Change Highlight keep their own version evidence as the report changes.
         </p>
     </DocsSection>
 
@@ -53,6 +53,13 @@
             change the number format hides. The mark's colour is the Visual Token
             <code>--ex-change-highlight-background</code>, which <code>ExGrid.MudBlazor</code>'s stylesheet maps to the theme.
         </p>
+        <p>
+            The time a mark starts is ExPivot's own, on its <code>Clock</code>. A report source says which cells
+            changed in which Report Version, never when; ExPivot starts the mark when it first shows that version,
+            so a server whose clock is ahead of the browser's, or behind it, changes nothing on screen. A changed
+            row first scrolled into view a moment later is marked as of when the change was first shown, and its
+            mark ends with the others.
+        </p>
     </DocsSection>
 
     <DocsSection Title="A server whose data moves on">
@@ -63,9 +70,12 @@
             refreshed.
         </p>
         <p>
-            When the newest data cannot be shown (it breaks a cap, the source fails, or a Refresh fails), the report
-            stays on the last version it could compute, and a notice under the Pivot Toolbar says what happened and as of
-            when, with Retry. The report never shows half a change.
+            When the newest data cannot be shown (it breaks a cap, the source fails, a Refresh fails, or memory runs out
+            while its report is laid out), the report stays on the last version it could compute, and a notice under the
+            Pivot Toolbar says what happened and as of when, with Retry. The report never shows half a change. Memory running
+            out is said as such, not as the source's failure: in WebAssembly the heap does not shrink again, so the next change
+            asks again rather than assume it will fit. A layout you ask for that runs out of memory is refused instead, and the
+            Field List goes back to the layout the report shows.
         </p>
         <DocsExample Builtin="typeof(LiveServer)" Mud="typeof(LiveServerMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
             The simulated server amends eight sales a second and announces each new Source Version.

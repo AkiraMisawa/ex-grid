@@ -58,8 +58,6 @@ internal static class PivotEndpoints
             (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportCopyResult(query.Version, [], PivotReportStore.NotHeld())) : source.CopyAsync(query, ct));
         MapReport<PivotReportSummaryQuery, PivotReportSummaryResult>(app, "summary", false,
             (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportSummaryResult(query.Version, default, default, default, false, null, "", PivotReportStore.NotHeld())) : source.SummaryAsync(query, ct));
-        MapReport<PivotReportDetailsQuery, PivotReportDetailsResult>(app, "details", false,
-            (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportDetailsResult(query.Version, null, PivotReportStore.NotHeld())) : source.DetailsAsync(query, ct));
         app.MapDelete("/api/pivot/reports/{id}", async (string id, PivotReportStore reports, CancellationToken ct) =>
         {
             await reports.RemoveAsync(id, ct);
@@ -75,10 +73,7 @@ internal static class PivotEndpoints
                 Answer(request, store, document =>
                 {
                     if (!Guid.TryParseExact(id, "N", out _)) throw new FormatException("A report identity must be a UUID in N format.");
-                    var query = PivotReportJson.Read<TQuery>(document);
-                    if (query is PivotReportDetailsQuery details && details.Count > MaxDetailsPage)
-                        throw new FormatException($"A Details page holds at most {MaxDetailsPage:N0} records; ask in pages.");
-                    return query;
+                    return PivotReportJson.Read<TQuery>(document);
                 }, (query, token) => reports.AnswerAsync(id, create,
                     async source => PivotReportJson.Write(await answer(source, query, token)), token), ct));
 

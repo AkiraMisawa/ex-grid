@@ -17,10 +17,13 @@ public sealed class SalesServer : IAsyncDisposable
     private readonly Random _random = new(7);
     private PeriodicTimer? _trading;
 
-    public SalesServer()
+    /// <summary>A server, with the Order Keys it registers by name: a report computed here cannot
+    /// carry a delegate from the browser, so a field's custom order is one of these, selected by
+    /// <c>ExPivot.OrderKeyPolicies</c>.</summary>
+    public SalesServer(IReadOnlyDictionary<string, Func<object, IComparable?>>? orderKeys = null)
     {
         _data = PivotSource.From(_sales, Sales.Fields);
-        _report = PivotReportSource.From(_data);
+        _report = PivotReportSource.From(_data, orderKeys);
         _data.Changed += change => VersionChanged?.Invoke(change.SourceVersion!);
     }
 
@@ -55,11 +58,12 @@ public sealed class SalesServer : IAsyncDisposable
         return PivotReportJson.Write(await _report.SummaryAsync(PivotReportJson.Read<PivotReportSummaryQuery>(question), token));
     }
 
-    /// <summary>The source records behind the selected report version's cell.</summary>
+    /// <summary>The source records behind a cell, under the Source Version its report was computed
+    /// from: answered while the Snapshot source still holds that version, whatever layouts followed.</summary>
     public async Task<string> DetailsAsync(string question, CancellationToken token)
     {
         await Task.Delay(Latency, token);
-        return PivotReportJson.Write(await _report.DetailsAsync(PivotReportJson.Read<PivotReportDetailsQuery>(question), token));
+        return PivotReportJson.Write(await _report.DetailsAsync(PivotReportJson.Read<PivotDetailsQuery>(question), token));
     }
 
     /// <summary>What a SignalR hub would push: the Source Version the data has moved on to.</summary>

@@ -7,7 +7,10 @@ public abstract class PivotReportSource : IAsyncDisposable
     public abstract IReadOnlyList<PivotField> Fields { get; }
     /// <summary>Offered Aggregations and Refresh capability.</summary>
     public abstract PivotSourceFeatures Features { get; }
-    /// <summary>Whether changed contributions can be calculated incrementally.</summary>
+    /// <summary>Whether changed contributions can be calculated incrementally, or the provider
+    /// recomputes in full — declared, never claimed silently (ADR-0153). A component answers a
+    /// full-refresh source's notice of newer data by asking it to refresh
+    /// (<see cref="PivotReportRequest.RefreshData"/>).</summary>
     public abstract PivotReportUpdateMode UpdateMode { get; }
     /// <summary>A complete report Window or a delta from its named baseline.</summary>
     public abstract ValueTask<PivotReportUpdate> WindowAsync(PivotReportRequest request, CancellationToken cancellationToken = default);
@@ -19,8 +22,18 @@ public abstract class PivotReportSource : IAsyncDisposable
     public abstract ValueTask<PivotReportCopyResult> CopyAsync(PivotReportCopyQuery query, CancellationToken cancellationToken = default);
     /// <summary>The selected cells' summary at the requested Report Version.</summary>
     public abstract ValueTask<PivotReportSummaryResult> SummaryAsync(PivotReportSummaryQuery query, CancellationToken cancellationToken = default);
-    /// <summary>The source records contributing to the requested version's cell.</summary>
-    public abstract ValueTask<PivotReportDetailsResult> DetailsAsync(PivotReportDetailsQuery query, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// A page of the Source Records behind a cell — Show Details — under the Source Version the
+    /// report showing it was computed from (ADR-0151: Details refers to the Source Version, not to a
+    /// Report Version). The question is resolved from the cell the user acted on
+    /// (<see cref="PivotReportMetadata.DetailsQuery"/>), so it holds whatever layouts follow; it is
+    /// answered while the data provider still holds that Source Version, and refused by the provider
+    /// (<see cref="PivotSourceRefusalKind.SourceVersionNotHeld"/>) once it does not — never answered
+    /// from newer data.
+    /// </summary>
+    /// <param name="query">The cell's Items, the Hidden Items, the range of records, and the Source Version.</param>
+    /// <param name="cancellationToken">Cancels the question.</param>
+    public abstract ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default);
     /// <summary>Asks the provider to refresh.</summary>
     public abstract ValueTask RefreshAsync(CancellationToken cancellationToken = default);
     /// <summary>Releases this report's calculation state; it does not own the underlying data provider.</summary>
@@ -42,27 +55,54 @@ public abstract class PivotReportSource : IAsyncDisposable
         => new(source, orderKeys, versionsKept, timeProvider ?? TimeProvider.System, slicing ?? PivotSlicing.Default);
 
     /// <summary>Uses the Consumer's transport. Authentication, connection and server report lifetime remain the Consumer's.</summary>
+    /// <param name="fields">The fields the server's report offers.</param>
+    /// <param name="features">Its Aggregations and whether it refreshes.</param>
+    /// <param name="updateMode">How the server's provider learns of changes.</param>
+    /// <param name="window">Asks the server for a Window: a complete one, or a delta from the
+    /// request's baseline. A delta replaces every row of the Window whose shown values changed —
+    /// subtotal and grand total rows, and rows whose percentage changed, included — and names the
+    /// digest of the whole Window it produces (<see cref="PivotReportUpdate.WindowDigest"/>). A
+    /// server running <see cref="LocalPivotReportSource"/> builds such deltas by construction; a
+    /// transport that coalesces, filters or builds deltas itself must keep that promise, computing
+    /// the digest from its own complete Window. A delta that does not reproduce its digest is never
+    /// shown: a complete Window is asked for in its place.</param>
+    /// <param name="items">Answers a field's Items at a Source Version.</param>
+    /// <param name="copy">Answers a versioned Copy.</param>
+    /// <param name="summary">Answers a versioned Selection Summary.</param>
+    /// <param name="details">Answers a page of the Source Records behind a cell, under the Source
+    /// Version the question names (ADR-0151).</param>
+    /// <param name="refresh">Asks the server to refresh.</param>
+    /// <param name="reportItems">Answers Items labelled and ordered by the report.</param>
+    /// <param name="dispose">Releases the server's report state.</param>
     public static FetchingPivotReportSource Fetch(IReadOnlyList<PivotField> fields, PivotSourceFeatures features,
         PivotReportUpdateMode updateMode,
         Func<PivotReportRequest, CancellationToken, ValueTask<PivotReportUpdate>> window,
         Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>>? items = null,
         Func<PivotReportCopyQuery, CancellationToken, ValueTask<PivotReportCopyResult>>? copy = null,
         Func<PivotReportSummaryQuery, CancellationToken, ValueTask<PivotReportSummaryResult>>? summary = null,
-        Func<PivotReportDetailsQuery, CancellationToken, ValueTask<PivotReportDetailsResult>>? details = null,
+        Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>>? details = null,
         Func<CancellationToken, ValueTask>? refresh = null,
         Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? reportItems = null,
         Func<ValueTask>? dispose = null)
         => new(fields, features, updateMode, window, items, copy, summary, details, refresh, reportItems, dispose);
 }
 
-/// <summary>A transport-neutral report source; delegates carry the complete versioned questions.</summary>
+/// <summary>
+/// A transport-neutral report source; delegates carry the complete versioned questions. It checks
+/// each answer against its question — another request's reply, another Report Version, records of
+/// another Source Version are refused or rejected, never shown. A Window's delta is checked by the
+/// client that applies it (<see cref="PivotReportClient"/>), against the digest of the Window it
+/// produces: whatever relays the server's deltas must pass them on whole, or build them complete
+/// — every row of the Window whose shown values changed, totals and percentages included — with
+/// the digest of the whole resulting Window (<see cref="PivotReportUpdate"/>).
+/// </summary>
 public sealed class FetchingPivotReportSource : PivotReportSource
 {
     private readonly Func<PivotReportRequest, CancellationToken, ValueTask<PivotReportUpdate>> _window;
     private readonly Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>>? _items;
     private readonly Func<PivotReportCopyQuery, CancellationToken, ValueTask<PivotReportCopyResult>>? _copy;
     private readonly Func<PivotReportSummaryQuery, CancellationToken, ValueTask<PivotReportSummaryResult>>? _summary;
-    private readonly Func<PivotReportDetailsQuery, CancellationToken, ValueTask<PivotReportDetailsResult>>? _details;
+    private readonly Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>>? _details;
     private readonly Func<CancellationToken, ValueTask>? _refresh;
     private readonly Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? _reportItems;
     private readonly Dictionary<PivotReportVersion, string> _reportedVersions = [];
@@ -73,7 +113,7 @@ public sealed class FetchingPivotReportSource : PivotReportSource
         Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>>? items,
         Func<PivotReportCopyQuery, CancellationToken, ValueTask<PivotReportCopyResult>>? copy,
         Func<PivotReportSummaryQuery, CancellationToken, ValueTask<PivotReportSummaryResult>>? summary,
-        Func<PivotReportDetailsQuery, CancellationToken, ValueTask<PivotReportDetailsResult>>? details,
+        Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>>? details,
         Func<CancellationToken, ValueTask>? refresh,
         Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? reportItems, Func<ValueTask>? dispose)
     {
@@ -162,19 +202,21 @@ public sealed class FetchingPivotReportSource : PivotReportSource
             : new(query.Version, default, default, default, false, null, "", WrongVersion());
     }
     /// <inheritdoc />
-    public override async ValueTask<PivotReportDetailsResult> DetailsAsync(PivotReportDetailsQuery query, CancellationToken cancellationToken = default)
+    /// <exception cref="InvalidOperationException">The page answers another Source Version, another
+    /// range or other fields than the question asked: records that would not add up to the cell are
+    /// never shown.</exception>
+    public override async ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default)
     {
-        var result = await (_details ?? throw Missing("Details"))(query, cancellationToken).ConfigureAwait(false);
-        if (result is null || result.Version != query.Version) return new(query.Version, null, WrongVersion());
-        if (result.Refusal is not null) return result;
-        if (result.Page is not { } page) return new(query.Version, null, Invalid("Details returned no page."));
-        if (page.IsRefused) return result;
-        string? sourceVersion;
-        lock (_reportedVersions) _reportedVersions.TryGetValue(query.Version, out sourceVersion);
-        if (sourceVersion is not null && page.SourceVersion != sourceVersion || page.Start != query.Start || page.Records.Count > query.Count
+        ArgumentNullException.ThrowIfNull(query);
+        var page = await (_details ?? throw Missing("Details"))(query, cancellationToken).ConfigureAwait(false);
+        if (page is null)
+            throw new InvalidOperationException("Details returned no page.");
+        if (page.IsRefused)
+            return page;
+        if (page.SourceVersion != query.SourceVersion || page.Start != query.Start || page.Records.Count > query.Count
             || !page.Fields.Select(field => field.Info).SequenceEqual(Fields.Select(field => field.Info)))
-            return new(query.Version, null, Invalid("Details returned another report's source records or a different extent."));
-        return result;
+            throw new InvalidOperationException("Details answered another Source Version, range or fields than the question asked.");
+        return page;
     }
     /// <inheritdoc />
     public override async ValueTask RefreshAsync(CancellationToken cancellationToken = default)

@@ -21,7 +21,7 @@
             async (query, token) => PivotReportJson.Read<PivotReportUpdate>(await _server.WindowAsync(PivotReportJson.Write(query), token)),
             copy: async (query, token) => PivotReportJson.Read<PivotReportCopyResult>(await _server.CopyAsync(PivotReportJson.Write(query), token)),
             summary: async (query, token) => PivotReportJson.Read<PivotReportSummaryResult>(await _server.SummaryAsync(PivotReportJson.Write(query), token)),
-            details: async (query, token) => PivotReportJson.Read<PivotReportDetailsResult>(await _server.DetailsAsync(PivotReportJson.Write(query), token)),
+            details: async (query, token) => PivotReportJson.Read<PivotDetailPage>(await _server.DetailsAsync(PivotReportJson.Write(query), token)),
             reportItems: async (query, token) => PivotReportJson.Read<PivotReportItemsResult>(await _server.ItemsAsync(PivotReportJson.Write(query), token)));
         // However the news arrives — SignalR, polling, a message bus — pass it on: ExPivot asks
         // the current report Window again.

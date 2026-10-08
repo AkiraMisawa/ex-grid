@@ -10,7 +10,8 @@
             ExPivot requests a report Window and the metadata describing its full extent. Local data is
             calculated by the same engine that a server uses. A slow answer leaves the report under its loading
             indication, and a newer question cancels the older one. Copy and Selection Summary can include rows
-            outside the Window; every operation names the Report Version it answers.
+            outside the Window, and name the Report Version they answer; Show Details names the Source Version
+            the report was computed from.
         </p>
         <ul>
             <li><strong><code>DataSource</code></strong> accepts <code>PivotSource.From</code> over local records or a Snapshot, including a CSV that stays in the browser.</li>
@@ -75,9 +76,21 @@
             aggregate answer; the browser still receives only report Windows.
         </p>
         <ul>
-            <li><code>UpdateMode</code> declares incremental changes or full refresh. The bundled Snapshot source is incremental.</li>
+            <li>
+                <code>UpdateMode</code> declares incremental changes or full refresh. The bundled Snapshot source is incremental:
+                a notice that its data moved on asks for its changes. A full-refresh source, such as a SQL query that can only say
+                that something changed, is asked to recompute its whole aggregate on every notice, so its server answers with the
+                newest even when its provider cannot tell; the browser still receives only the Window and its changes.
+            </li>
             <li>Culture, formats and display words are explicit; custom Order Keys select policies registered on the server.</li>
             <li>The Consumer owns transport and report-state disposal. A missing baseline is recovered automatically; an unavailable older operation refuses by name.</li>
+            <li>
+                A delta names the digest of the whole Window it produces (<code>PivotReportUpdate.WindowDigest</code>). ExPivot applies
+                it to the Window it holds and compares before showing anything; a delta that does not match, or names no digest, is
+                discarded and the complete Window asked for instead. <code>PivotReportSource.From</code> builds complete deltas. If you
+                build or relay deltas yourself, include every row whose shown values changed (subtotals, grand totals and percentages
+                too) and compute the digest with <code>PivotReportDigest.Of</code> over your whole resulting Window, never over the rows you send.
+            </li>
         </ul>
         <DocsExample Builtin="typeof(ServerSource)" Mud="typeof(ServerSourceMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
             The server here is simulated in the page, with half a second of latency: change the layout and watch the

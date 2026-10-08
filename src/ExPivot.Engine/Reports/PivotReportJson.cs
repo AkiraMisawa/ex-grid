@@ -11,7 +11,7 @@ public static class PivotReportJson
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         IncludeFields = true,
-        Converters = { new LayoutConverter(), new DetailPageConverter(), new ItemPageConverter() },
+        Converters = { new LayoutConverter(), new DetailPageConverter(), new ItemPageConverter(), new DetailsQueryConverter() },
     };
     private static readonly PivotReportJsonContext Context = new(Options);
     private static JsonTypeInfo<T> TypeInfo<T>() => Context.GetTypeInfo(typeof(T)) as JsonTypeInfo<T>
@@ -44,6 +44,16 @@ public static class PivotReportJson
             return PivotJson.ReadItemPage(document.RootElement.GetRawText());
         }
         public override void Write(Utf8JsonWriter writer, PivotItemPage value, JsonSerializerOptions options)
+            => writer.WriteRawValue(PivotJson.Write(value));
+    }
+    internal sealed class DetailsQueryConverter : JsonConverter<PivotDetailsQuery>
+    {
+        public override PivotDetailsQuery Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            using var document = JsonDocument.ParseValue(ref reader);
+            return PivotJson.ReadDetailsQuery(document.RootElement.GetRawText());
+        }
+        public override void Write(Utf8JsonWriter writer, PivotDetailsQuery value, JsonSerializerOptions options)
             => writer.WriteRawValue(PivotJson.Write(value));
     }
     internal sealed class DetailPageConverter : JsonConverter<PivotDetailPage>

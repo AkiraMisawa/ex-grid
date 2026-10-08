@@ -86,7 +86,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, shown.SourceVersion);
     }
 
-    [Fact] // ADR-0152: a menu command keeps the report it was offered for across a live update
+    [Fact] // ADR-0152/0151: a menu command keeps the report it was offered for across a live update: its Details name that report's Source Version
     public async Task Details_from_an_open_menu_keeps_its_captured_report_version()
     {
         PivotDetails? shown = null;
@@ -98,7 +98,7 @@ public class ReportCommandTests : PivotTestContext
         cut.WaitForState(() => cut.Instance.Report!.Metadata.SourceVersion != before.SourceVersion);
         await cut.InvokeAsync(command.Invoke);
         Assert.NotNull(shown);
-        Assert.Equal(before.Version, shown.Query.Version);
+        Assert.Equal(before.SourceVersion, shown.Query.SourceVersion);
         Assert.Equal(before.SourceVersion, shown.SourceVersion);
         var page = await shown.DetailsAsync(0, 100, Xunit.TestContext.Current.CancellationToken);
         Assert.Equal([Sales[0], Sales[2]], page.Records.Select(row => row.Record));

@@ -54,7 +54,9 @@ public partial class ExPivot
         var valueField = ValueFieldAt(report, row, valueColumn) is var vf and >= 0 ? report.ValueCaptions[vf] : null;
         var path = rowItems.Concat(columnItems).Select(item => item.Item).ToArray();
         var title = PivotWords.Fill(Word("details-title"), path.Length == 0 ? Word(PivotWords.GrandTotal) : string.Join(" / ", path));
-        var details = new PivotDetails(source, new PivotReportDetailsQuery(report.Version, row.Key, valueColumn), report.SourceVersion, rowItems, columnItems, valueField, title);
+        // Resolved now, from the cell the user acted on: the question names its Items and the
+        // Source Version, so a collapse or a sort that follows leaves it the same question.
+        var details = new PivotDetails(source, report.DetailsQuery(row, valueColumn), rowItems, columnItems, valueField, title);
         if (OnShowDetails.HasDelegate)
         {
             await OnShowDetails.InvokeAsync(details);

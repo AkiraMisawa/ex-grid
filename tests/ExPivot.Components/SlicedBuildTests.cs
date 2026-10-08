@@ -120,18 +120,27 @@ public class SlicedBuildTests : PivotTestContext
 
     /// <summary>Releases one yield after another until nothing waits and <paramref name="done"/>
     /// holds — by default, until nothing is out — checking <paramref name="between"/> at each yield;
-    /// answers how many were released.</summary>
+    /// answers how many were released.
+    /// <para>
+    /// <paramref name="done"/> and <paramref name="between"/> are read on the renderer, between its
+    /// turns, never from the test's thread: a question superseded and released can finish on a pool
+    /// thread, whose turn clears <c>IsLoading</c> before it hands the grid the new report and renders
+    /// it. Read from the test's thread, the condition can hold in the middle of that turn, and the
+    /// grid be asserted before it rendered. On the renderer, the turn has ended whole first.
+    /// </para></summary>
     private static async Task<int> ReleaseAllAsync(
         IRenderedComponent<PivotComponent> cut, HeldYields yields, Action? between = null, Func<bool>? done = null)
     {
         done ??= () => !cut.Instance.IsLoading;
+        bool DoneOnRenderer() => cut.InvokeAsync(done).GetAwaiter().GetResult();
         var released = 0;
         while (true)
         {
-            Until(() => yields.Waiting > 0 || done(), "a yield or the end of the work");
+            Until(() => yields.Waiting > 0 || DoneOnRenderer(), "a yield or the end of the work");
             if (yields.Waiting == 0)
                 return released;
-            between?.Invoke();
+            if (between is not null)
+                await cut.InvokeAsync(between);
             await cut.InvokeAsync(yields.ReleaseOne);
             released++;
         }

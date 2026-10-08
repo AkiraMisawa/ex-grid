@@ -100,39 +100,55 @@ public sealed class PivotReportLabelMetrics
 }
 
 // Keeps only detached keys and width counts. A numeric-only update touches no labels.
+// Every step sets a row's entry to what one batch says of it, so a pass cancelled half way and
+// begun again from the first batch ends where one uncancelled pass would have.
 internal sealed class PivotLabelSizing
 {
     private PivotReportLabelMetrics? _metrics;
     private readonly Dictionary<PivotRowKey, double[]> _rows = [];
     private SortedDictionary<double, int>[] _widths = [];
 
+    /// <summary>The widest label of each label column of <paramref name="report"/>: every row
+    /// measured again on a reset or new metrics, otherwise the rows the batches added or relabelled
+    /// measured, and the rows they removed forgotten, batch by batch in order.</summary>
     internal async ValueTask<IReadOnlyList<double>> WidthsAsync(PivotReport report, PivotReportLabelMetrics metrics,
-        IReadOnlyList<PivotReportRow> labelChanges, IReadOnlyList<PivotRowKey> removed, bool reset, Slicer slicer)
+        IReadOnlyList<(IReadOnlyList<PivotReportRow> Labels, IReadOnlyList<PivotRowKey> Removed)> batches, bool reset, Slicer slicer)
     {
         if (reset || _metrics is null || !_metrics.SameAs(metrics) || _widths.Length != report.LabelColumns.Count)
         {
             _rows.Clear();
             _widths = Enumerable.Range(0, report.LabelColumns.Count).Select(_ => new SortedDictionary<double, int>()).ToArray();
-            _metrics = metrics;
+            // Not the metrics until every row is measured: a pass cancelled before then is begun
+            // again whole.
+            _metrics = null;
             foreach (var row in report.Rows)
             {
                 Add(row, metrics);
                 if (slicer.Done(4)) await slicer.PauseAsync().ConfigureAwait(false);
             }
+            _metrics = metrics;
         }
         else
         {
-            foreach (var key in removed)
-                Remove(key);
-            foreach (var row in labelChanges)
+            foreach (var (labels, removed) in batches)
             {
-                Remove(row.Key);
-                Add(row, metrics);
-                if (slicer.Done(4)) await slicer.PauseAsync().ConfigureAwait(false);
+                foreach (var key in removed)
+                    Remove(key);
+                foreach (var row in labels)
+                {
+                    Remove(row.Key);
+                    Add(row, metrics);
+                    if (slicer.Done(4)) await slicer.PauseAsync().ConfigureAwait(false);
+                }
             }
         }
         return Array.AsReadOnly(_widths.Select(column => column.Count == 0 ? 0d : column.Last().Key).ToArray());
     }
+
+    /// <summary>A version published without widths: the next one asked for measures every row,
+    /// since the batches between were not counted.</summary>
+    internal void Forget() => _metrics = null;
+
     private void Add(PivotReportRow row, PivotReportLabelMetrics metrics)
     {
         var widths = new double[_widths.Length];
