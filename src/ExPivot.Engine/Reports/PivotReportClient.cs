@@ -51,6 +51,9 @@ public sealed class PivotReportClient
                 update = await _source.WindowAsync(request, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) { throw; }
+            // Memory running out is not the source's answer, nor its failure: it goes on as itself,
+            // the Window held unchanged, for the Consumer to say what happened.
+            catch (OutOfMemoryException) { throw; }
             catch (Exception error)
             {
                 lock (_publication)

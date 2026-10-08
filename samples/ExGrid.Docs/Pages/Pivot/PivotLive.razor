@@ -70,9 +70,12 @@
             refreshed.
         </p>
         <p>
-            When the newest data cannot be shown (it breaks a cap, the source fails, or a Refresh fails), the report
-            stays on the last version it could compute, and a notice under the Pivot Toolbar says what happened and as of
-            when, with Retry. The report never shows half a change.
+            When the newest data cannot be shown (it breaks a cap, the source fails, a Refresh fails, or memory runs out
+            while its report is laid out), the report stays on the last version it could compute, and a notice under the
+            Pivot Toolbar says what happened and as of when, with Retry. The report never shows half a change. Memory running
+            out is said as such, not as the source's failure: in WebAssembly the heap does not shrink again, so the next change
+            asks again rather than assume it will fit. A layout you ask for that runs out of memory is refused instead, and the
+            Field List goes back to the layout the report shows.
         </p>
         <DocsExample Builtin="typeof(LiveServer)" Mud="typeof(LiveServerMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
             The simulated server amends eight sales a second and announces each new Source Version.
