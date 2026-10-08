@@ -103,8 +103,11 @@
     /// this component receives metadata and requested Windows. Its lifetime belongs to the Consumer.</summary>
     [Parameter] public PivotReportSource? Source { get; set; }
 
-    /// <summary>Server-registered Order Key identifiers by field name (ADR-0152). Local fields
-    /// keep their declared delegates. An unknown registered identifier is refused by the source.</summary>
+    /// <summary>Server-registered Order Key identifiers by field name (ADR-0152): a report computed
+    /// on a server orders a field's Items by the function the server registered under that name
+    /// (<c>PivotReportSource.From(data, orderKeys)</c>); only the name crosses the wire. Local fields
+    /// keep their declared delegates. An unknown identifier, and a function that throws, are refused
+    /// by name, never replaced by label order.</summary>
     [Parameter] public IReadOnlyDictionary<string, string>? OrderKeyPolicies { get; set; }
 
     /// <summary>A local data provider, as a convenience instead of Source. This component creates

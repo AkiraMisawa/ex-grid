@@ -17,10 +17,13 @@ public sealed class SalesServer : IAsyncDisposable
     private readonly Random _random = new(7);
     private PeriodicTimer? _trading;
 
-    public SalesServer()
+    /// <summary>A server, with the Order Keys it registers by name: a report computed here cannot
+    /// carry a delegate from the browser, so a field's custom order is one of these, selected by
+    /// <c>ExPivot.OrderKeyPolicies</c>.</summary>
+    public SalesServer(IReadOnlyDictionary<string, Func<object, IComparable?>>? orderKeys = null)
     {
         _data = PivotSource.From(_sales, Sales.Fields);
-        _report = PivotReportSource.From(_data);
+        _report = PivotReportSource.From(_data, orderKeys);
         _data.Changed += change => VersionChanged?.Invoke(change.SourceVersion!);
     }
 

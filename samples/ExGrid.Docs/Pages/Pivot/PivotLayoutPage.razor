@@ -101,6 +101,22 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="An Order Key on a server">
+        <p>
+            An Order Key orders a field's Items by a key it gives each one, rather than by label: over local data,
+            the field declares the function (<code>orderKey:</code>). A report a server computes cannot be handed a
+            function from the browser, so the server registers its Order Keys by name,
+            <code>PivotReportSource.From(data, orderKeys: new Dictionary&lt;string, Func&lt;object, IComparable?&gt;&gt; { ["market-size"] = … })</code>,
+            and ExPivot's <code>OrderKeyPolicies</code> names the one each field is ordered by
+            (<code>["Region"] = "market-size"</code>). Only the name crosses the wire. A name the server has not
+            registered, and a function that throws, are refused by name, field and Item included; the Items are
+            never ordered by label instead.
+        </p>
+        <DocsExample Builtin="typeof(ServerOrderKey)" Mud="typeof(ServerOrderKeyMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
+            The regions in order of their market's size, largest first, by a function the simulated server registered.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotFieldPlacement)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotSort)" />
