@@ -474,6 +474,9 @@
             // ADR-0142/0011: aimed with a Selection the rows moving took away.
             PasteRefusalReason.OrderMoved =>
                 "OrderMoved — nothing was written: the rows moved after you aimed it; select the cells again",
+            // ADR-0142: aimed at what a Source since replaced painted.
+            PasteRefusalReason.SourceChanged =>
+                "SourceChanged — nothing was written: the data the grid shows was replaced before it landed; select the cells again",
             // Every reason is worded above; one the page does not know is a defect to see, not a
             // sentence to guess (principle 1).
             _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A paste refusal this page does not word."),
@@ -510,6 +513,8 @@
                 $"RowLeftTheWindow — {refusal.ActionName} was not done: the row is not in the rows the grid holds now; bring it back into view and press it again",
             ActionRefusalReason.OrderMoved =>
                 $"OrderMoved — {refusal.ActionName} was not done: the rows moved before the press landed; press it on the row again",
+            ActionRefusalReason.SourceChanged =>
+                $"SourceChanged — {refusal.ActionName} was not done: the data the grid shows was replaced before the press landed",
             _ => throw new ArgumentOutOfRangeException(nameof(refusal), refusal.Reason, "An action refusal this page does not word."),
         }, s => _actionRefusedStatus = s);
 
@@ -597,6 +602,8 @@
         {
             EditDiscardReason.RowLeftTheWindow =>
                 "RowLeftTheWindow — that row is no longer loaded, so the entry could not be placed",
+            EditDiscardReason.SourceChanged =>
+                "SourceChanged — the data the grid shows was replaced while you were typing; the entry was not written",
             _ => reason.ToString(),
         }, s => _editDiscardedStatus = s);
 

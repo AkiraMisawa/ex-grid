@@ -26,7 +26,8 @@ namespace ExGrid.Clipboard;
 public enum PasteRefusalReason
 {
     /// <summary>Nothing is selected: nowhere to paste, and nothing happens. A write aimed with a
-    /// Selection that an order move took away is <see cref="OrderMoved"/>, not this.</summary>
+    /// Selection that an order move took away is <see cref="OrderMoved"/>, and one a replaced
+    /// Source took away is <see cref="SourceChanged"/>, not this.</summary>
     EmptySelection,
 
     /// <summary>A block of several cells onto one cell, which would spill outside the
@@ -77,6 +78,17 @@ public enum PasteRefusalReason
     /// and for a fill-handle drag released after it. Component-level, never produced by the pure
     /// rules.</summary>
     OrderMoved,
+
+    /// <summary>The gesture was aimed at what the grid painted from a Grid Source it has since been
+    /// unbound from: the <c>Source</c> parameter was replaced by another instance, so the positions
+    /// it was aimed at name the new source's rows, and nothing is written (ADR-0011, ADR-0142). Raised
+    /// whatever the two sources' Row Sequence Versions are — two fresh sources both start at 0 — for
+    /// a paste, Delete, Ctrl+D or Ctrl+R taken before the replacement, even onto the empty Selection
+    /// it left; for Ctrl+D or Ctrl+R whose source rows were being read when it came; and for a
+    /// fill-handle drag released after it. An edit open across it is discarded instead
+    /// (<see cref="Cells.EditDiscardReason.SourceChanged"/>), so a Ctrl+Enter fill never reaches it.
+    /// Component-level, never produced by the pure rules.</summary>
+    SourceChanged,
 }
 
 /// <summary>

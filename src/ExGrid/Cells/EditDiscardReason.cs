@@ -34,4 +34,11 @@ public enum EditDiscardReason
     /// the root's live region, as a refused copy's is; the reason is the Consumer's, so it is
     /// true of what happened.</summary>
     DiscardedByConsumer,
+
+    /// <summary>The grid's <c>Source</c> parameter was replaced by another instance while the editor
+    /// was open — a Cell Editor or a Formula Bar edit. The row it was opened on belongs to a source the
+    /// grid no longer shows, so the text is thrown away rather than committed into whatever row the
+    /// new source holds there, and no Edit Intent is raised (ADR-0011, ADR-0142). Whatever the two
+    /// sources' Row Sequence Versions are.</summary>
+    SourceChanged,
 }

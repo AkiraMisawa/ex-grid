@@ -77,6 +77,14 @@ public partial class ExGrid<TRow>
         _editKey = _rowKey is { } rowKey && RowInHand(cell.Row) is { } row ? rowKey(row) : null;
     }
 
+    /// <summary>Forgets what the edit that is ending started from: its baseline text and its row's
+    /// Row Key, which ADR-0160 lets the grid hold only while the editor is open.</summary>
+    private void ForgetEditBaseline()
+    {
+        _editSeenText = null;
+        _editKey = null;
+    }
+
     /// <summary>
     /// With a Row Key, the editor and the Focus follow the row they were opened on (ADR-0011's note
     /// of 2026-10-07): after a new Window is taken in, the editor stands where the Window holds its

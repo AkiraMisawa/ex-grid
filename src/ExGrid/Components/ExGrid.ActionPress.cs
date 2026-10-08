@@ -11,14 +11,17 @@ namespace ExGrid.Components;
 // a Row Key, the row under the pressed row's key while the Window holds it; without one, the pressed
 // instance, or — for a press whose button a render disposed — the row at the position the browser told,
 // while the order it was taken under holds. Otherwise it is refused: RowLeftTheWindow when the Window no
-// longer holds its row, and OrderMoved when only a position under a moved order names it. No press is
-// lost to Blazor, and none fires twice.
+// longer holds its row, OrderMoved when only a position under a moved order names it, and SourceChanged
+// when it was made on what a Source since replaced painted. No press is lost to Blazor, and none fires
+// twice.
 public partial class ExGrid<TRow>
 {
     /// <summary>
     /// An Action press refused (ADR-0142, LV-12, LV-20): the Window no longer holds its row
-    /// (<see cref="ActionRefusalReason.RowLeftTheWindow"/>), or nothing but a position under an order that
-    /// has moved since names it (<see cref="ActionRefusalReason.OrderMoved"/>).
+    /// (<see cref="ActionRefusalReason.RowLeftTheWindow"/>), nothing but a position under an order that
+    /// has moved since names it (<see cref="ActionRefusalReason.OrderMoved"/>), or it was made on what
+    /// a <see cref="Source"/> since replaced by another instance painted
+    /// (<see cref="ActionRefusalReason.SourceChanged"/>), whatever the new source holds there.
     /// A press never is refused because its row's values changed: it acts on the row it was pressed
     /// on, as that row is now. With a Row Key, that is the row under the pressed row's key, wherever
     /// the Window holds it. Without one, a press whose button a render has since disposed acts on
@@ -154,6 +157,14 @@ public partial class ExGrid<TRow>
         {
             _suppressRender = false;
             StateHasChanged();
+        }
+        // Made on what a Source since replaced painted: its row is another source's, whatever the
+        // new one holds at that position or under that key, so nothing is done, and the refusal
+        // names no row — the button may hold the new source's row by now (ADR-0142, ADR-0160).
+        if (AimedAtAReplacedSource(told))
+        {
+            await RefuseActionAsync(null, column, action, ActionRefusalReason.SourceChanged);
+            return;
         }
         // A position names its row only under the order it was taken against (ADR-0011): under
         // another, a press whose button held its row still has the row to go by. Space taken under
