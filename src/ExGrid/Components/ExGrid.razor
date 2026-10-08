@@ -1027,7 +1027,9 @@
     /// positions the old one painted name the new one's rows. The Selection is dropped, as an
     /// order move drops it; an open edit is discarded and <see cref="OnEditDiscarded"/> says
     /// <see cref="EditDiscardReason.SourceChanged"/>, as it does for typing aimed at what the old
-    /// one painted, which opens nothing; and a gesture taken on what the old one painted is
+    /// one painted, which opens nothing — unless the new one was handed over while the Consumer heard
+    /// that edit's own commit, which then ends as committed, or, refused, is discarded and said once,
+    /// with no Overwrite Notice either way; and a gesture taken on what the old one painted is
     /// refused, <see cref="PasteRefusalReason.SourceChanged"/> for a write and
     /// <see cref="ActionRefusalReason.SourceChanged"/> for an Action. A Find answer the old one
     /// gives after it was replaced moves nothing (<see cref="FindRefusalReason.SourceChanged"/>),
@@ -1600,7 +1602,10 @@
     /// have opened an edit but reached the grid aimed with a Selection that an order move or a
     /// replaced Source had dropped since opens nothing, and is said here too, once for the keys
     /// typed against that Selection (<see cref="EditDiscardReason.OrderMoved"/>,
-    /// <see cref="EditDiscardReason.SourceChanged"/>; decided 2026-10-08). None is the user's own
+    /// <see cref="EditDiscardReason.SourceChanged"/>; decided 2026-10-08). A Source the Consumer
+    /// hands over while it hears the edit's own <see cref="OnEdit"/> is that commit's doing: never
+    /// said here when the Consumer accepted the intent, since the typing was handed over, and said
+    /// once as <see cref="EditDiscardReason.SourceChanged"/> when it refused it. None is the user's own
     /// doing — a Consumer's new columns, new source or refresh lands and the typing goes — so the
     /// grid says so rather than leaving the loss to be guessed at. Chrome writes the
     /// sentence and announces it (A11Y-16); the grid holds no strings. A discard the Consumer
@@ -2873,31 +2878,37 @@
         // (ADR-0142). The gate learns after this render. An order move discards nothing: the editor
         // outlives it, and with a Row Key it and the Focus follow their row (ADR-0011's note of
         // 2026-10-07).
-        if (_editMode != EditMode.None && (_columnsMoved || _sourceReplaced))
+        //
+        // A Source the Consumer hands over while it hears the open edit's own commit — the Edit
+        // Intent, raised while the editor stands (CommitEditAsync) — is that commit's doing, and no
+        // discard: the typing was handed over (ADR-0142, LV-32; decided 2026-10-08). What becomes of
+        // the edit is decided as the handler completes. Until then the editor stands where it is,
+        // its row gone with the old source: it follows no key into the new one and reads no baseline
+        // there. Should the columns have moved with it, it cannot stand over them, and is taken down
+        // now, unsaid until the handler completes.
+        if (_sourceReplaced && _hearingCommit)
+            _sourceReplacedUnderCommit = true;
+        if (_editMode != EditMode.None && (_columnsMoved || (_sourceReplaced && !_sourceReplacedUnderCommit)))
         {
-            CloseCompletion();
-            EndPointing();
-            _editMode = EditMode.None;
-            _editSurface = EditSurface.Cell;
-            _editText = "";
-            _reportedText = null;
-            ForgetCaretPlacement();
-            _editError = null;
-            _editorNeedsFocus = false;
-            _editorFocusAsked = false;
-            _jsEditingDirty = true;
-            ForgetEditBaseline();
-            // Announced, not silent: the user typed and something they did not do took
-            // it away. Raised from OnAfterRenderAsync for the reason the Range Request
-            // is — a Consumer handler run inside this render stack would re-enter the
-            // same batch.
-            _pendingDiscard = _sourceReplaced ? EditDiscardReason.SourceChanged : EditDiscardReason.ColumnsChanged;
-            // The keys typed after it against the Selection the replacement dropped are that same
-            // typing: said once, by this discard (DropKeyAimedWithADroppedSelectionAsync).
-            if (_sourceReplaced && _droppedSelection is { } dropped)
-                dropped.TypingTold = true;
+            TakeDownEdit();
+            if (_sourceReplacedUnderCommit)
+            {
+                _editTakenDownUnderCommit = true;
+            }
+            else
+            {
+                // Announced, not silent: the user typed and something they did not do took
+                // it away. Raised from OnAfterRenderAsync for the reason the Range Request
+                // is — a Consumer handler run inside this render stack would re-enter the
+                // same batch.
+                _pendingDiscard = _sourceReplaced ? EditDiscardReason.SourceChanged : EditDiscardReason.ColumnsChanged;
+                // The keys typed after it against the Selection the replacement dropped are that same
+                // typing: said once, by this discard (DropKeyAimedWithADroppedSelectionAsync).
+                if (_sourceReplaced && _droppedSelection is { } dropped)
+                    dropped.TypingTold = true;
+            }
         }
-        else
+        else if (!_sourceReplacedUnderCommit)
         {
             FollowEditedRow();
             // A write of the user's own the editor awaited went with this Window: the baseline is
@@ -2906,6 +2917,24 @@
                 RebaseEdit();
         }
         PrepareRender();
+    }
+
+    /// <summary>Takes the open edit down with nothing committed: a parameter change took away what
+    /// it stood over (ADR-0011, ADR-0142). The gate and the Consumer learn after the render.</summary>
+    private void TakeDownEdit()
+    {
+        CloseCompletion();
+        EndPointing();
+        _editMode = EditMode.None;
+        _editSurface = EditSurface.Cell;
+        _editText = "";
+        _reportedText = null;
+        ForgetCaretPlacement();
+        _editError = null;
+        _editorNeedsFocus = false;
+        _editorFocusAsked = false;
+        _jsEditingDirty = true;
+        ForgetEditBaseline();
     }
 
 
@@ -7561,8 +7590,27 @@
             // this commit's, not a discard. The user's own write (D1), taken back if refused; the
             // bound source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
-            await OnEdit.InvokeAsync(intent);
+            // A Source the Consumer hands over while it hears this is the commit's own doing
+            // (ApplyState): noted while it is heard, and answered once the handler has completed.
+            var hearing = _hearingCommit;
+            _hearingCommit = true;
+            var heard = false;
+            try
+            {
+                await OnEdit.InvokeAsync(intent);
+                heard = true;
+            }
+            finally
+            {
+                _hearingCommit = hearing;
+                if (!heard)
+                    TakeDownEditTheFailedHandlerOutlived();
+            }
+            var sourceReplaced = _sourceReplacedUnderCommit;
+            _sourceReplacedUnderCommit = false;
             await OwnWriteAnsweredAsync(written, intent.IsRefused);
+            if (sourceReplaced)
+                return await EndCommitTheSourceOutlivedAsync(intent.IsRefused, reclaimFocus, byPress);
             if (intent.RefusalMessage is { } refused)
             {
                 if (_editMode != EditMode.None)
@@ -7674,10 +7722,14 @@
         // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound source
         // puts out what it gathered as the handler completes (D5).
         var written = OnPaste.HasDelegate ? NoteOwnWrite(decision.Plan.Targets) : null;
+        // The editor is down before the Consumer hears the fill, so a Source it hands over meanwhile
+        // discards nothing; it is the fill's own doing, and no Overwrite Notice follows it, which
+        // would name a position among the rows of a source the grid no longer shows (ADR-0142, LV-32).
+        var binding = _binding;
         await EndEditingAsync(endedIn: OnPaste.HasDelegate ? () => OnPaste.InvokeAsync(intent) : null);
         if (written is not null)
             await OwnWriteAnsweredAsync(written, intent.IsRefused);
-        if (written is null || !intent.IsRefused)
+        if (binding == _binding && (written is null || !intent.IsRefused))
             await RaiseOverwriteNoticeAsync(notice);
         AskSummaryAgain();
         StateHasChanged();

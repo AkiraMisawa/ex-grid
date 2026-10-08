@@ -1,8 +1,11 @@
 using System.Globalization;
 using Bunit;
+using ExGrid;
 using ExGrid.Clipboard;
 using ExSheet.Components.Tests.Support;
 using ExSheet.Engine;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 using Xunit;
 
 namespace ExSheet.Components.Tests;
@@ -284,6 +287,88 @@ public class SheetDocumentWiringTests : SheetTestContext
         var orderMoved = SheetWords.EditDiscarded(global::ExGrid.Cells.EditDiscardReason.OrderMoved);
         Assert.Contains("another Sheet Document was opened", orderMoved);
         Assert.Contains("nothing was written", orderMoved);
+    }
+
+    // ---- Another document opened by the Consumer's answer to a commit (ADR-0142, LV-32) ----
+    //
+    // A discard is never said for typing that was handed over (principle 1): the commit raised
+    // DocumentChanged with the entry in it, and another document handed in as the answer to it is the
+    // commit's own doing. The edit ends as committed, and no Overwrite Notice names a cell of the
+    // document no longer shown.
+
+    [Theory] // ADR-0142 / LV-32, ADR-0048, principle 1: `5` Enter in A1, answered with another Sheet Document — the raised one read back from a store, or another altogether — is entered and ends as committed, and is never said to be discarded
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_commit_answered_with_another_document_is_never_said_discarded(bool readBack)
+    {
+        var page = RenderPage<AnsweringPage>();
+        var cut = page.FindComponent<global::ExSheet.Components.ExSheet>();
+        page.Instance.AnswerWith = raised => readBack ? SheetDocument.FromJson(raised.ToJson()) : DocumentOf(EnUs, ("A1", "elsewhere"));
+
+        await EnterAsync(cut, "A1", "5");
+
+        Assert.Equal(1, page.Instance.Answered);
+        Assert.False(cut.Instance.IsEditing);
+        Assert.Equal(readBack ? "5" : "elsewhere", CellText(cut, "A1"));
+        Assert.Equal("", Notice(cut));
+    }
+
+    [Theory] // ADR-0142 D1 / LV-32, LV-11: a commit over a cell whose Value changed under the editor — a Linked Table's snapshot recalculating it — is told; but not when the Consumer answers the commit with another Sheet Document, whose cells stand at the old one's places
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task No_overwrite_notice_follows_a_commit_answered_with_another_document(bool answered)
+    {
+        var page = RenderPage<AnsweringPage>();
+        var cut = page.FindComponent<global::ExSheet.Components.ExSheet>();
+        await EnterAsync(cut, "A1", "=SUM(Positions[PV])");
+        await cut.Instance.DeclareLinkedTableAsync("Positions", ["Id", "Book", "PV"]);
+        await cut.Instance.PushLinkedTableAsync("Positions", [[Value.FromText("R-1"), Value.FromText("Rates"), Value.FromNumber(100)],
+            [Value.FromText("R-2"), Value.FromText("FX"), Value.FromNumber(250)]]);
+        await GoToAsync(cut, "A1");
+        await PressAsync(cut, "F2");
+        Assert.True(cut.Instance.IsEditing);
+        await cut.Instance.PushLinkedTableAsync("Positions", [[Value.FromText("R-2"), Value.FromText("FX"), Value.FromNumber(10)]]);
+        if (answered)
+            page.Instance.AnswerWith = raised => SheetDocument.FromJson(raised.ToJson());
+
+        await PressAsync(cut, "Enter");
+
+        Assert.False(cut.Instance.IsEditing);
+        Assert.Equal(answered ? "" : SheetWords.Overwritten("A1", "350", "10"), Notice(cut));
+    }
+
+    /// <summary>A Consumer's page that answers the Sheet's DocumentChanged by handing in the document
+    /// <see cref="AnswerWith"/> makes of the one raised, as a page that saves each change to a store and
+    /// shows what it reads back does.</summary>
+    private sealed class AnsweringPage : ComponentBase
+    {
+        private SheetDocument? _document;
+
+        /// <summary>What the page hands in for a document the Sheet raised; null hands in nothing.</summary>
+        public Func<SheetDocument, SheetDocument>? AnswerWith { get; set; }
+
+        /// <summary>How many raised documents the page answered.</summary>
+        public int Answered { get; private set; }
+
+        private void OnDocumentChanged(SheetDocument raised)
+        {
+            if (AnswerWith is not { } answer)
+                return;
+            Answered++;
+            _document = answer(raised);
+        }
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenComponent<global::ExSheet.Components.ExSheet>(0);
+            builder.AddComponentParameter(1, nameof(global::ExSheet.Components.ExSheet.Document), _document);
+            builder.AddComponentParameter(2, nameof(global::ExSheet.Components.ExSheet.DocumentChanged),
+                EventCallback.Factory.Create<SheetDocument>(this, OnDocumentChanged));
+            builder.AddComponentParameter(3, nameof(global::ExSheet.Components.ExSheet.Culture), EnUs);
+            builder.AddComponentParameter(4, nameof(global::ExSheet.Components.ExSheet.ViewportHeight), (ViewportSize)400);
+            builder.AddComponentParameter(5, nameof(global::ExSheet.Components.ExSheet.ViewportWidth), (ViewportSize)700);
+            builder.CloseComponent();
+        }
     }
 
     [Fact] // ADR-0142 / ADR-0048: a document this Sheet raised, handed back as a two-way binding does, is no replacement: the Selection stays, and a paste taken before it came back lands
