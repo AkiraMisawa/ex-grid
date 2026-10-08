@@ -72,19 +72,3 @@ public sealed record PivotReportSummaryQuery(PivotReportVersion Version, IReadOn
 public sealed record PivotReportSummaryResult(PivotReportVersion Version, AggregateCounts Counts, AggregateSum Sum,
     AggregateExtremes Extremes, bool HasError, string? NumberFormat, string CultureName,
     PivotReportRefusal? Refusal = null);
-
-/// <summary>A versioned Show Details request addressed by an immutable row identity.</summary>
-/// <param name="Version">The report the gesture was taken against.</param>
-/// <param name="Row">Its row identity.</param>
-/// <param name="ValueColumn">The value-column index, or minus one for the row label.</param>
-/// <param name="Start">The first source record.</param>
-/// <param name="Count">The maximum source records requested.</param>
-public sealed record PivotReportDetailsQuery(PivotReportVersion Version, PivotRowKey Row, int ValueColumn,
-    int Start = 0, int Count = int.MaxValue);
-
-/// <summary>A versioned Show Details answer, or an explicit refusal.</summary>
-/// <param name="Version">The report answered.</param>
-/// <param name="Page">The source records; absent on report refusal.</param>
-/// <param name="Refusal">The report refusal, if any.</param>
-public sealed record PivotReportDetailsResult(PivotReportVersion Version, PivotDetailPage? Page,
-    PivotReportRefusal? Refusal = null);

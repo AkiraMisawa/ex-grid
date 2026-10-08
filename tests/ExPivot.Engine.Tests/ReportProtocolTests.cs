@@ -134,8 +134,12 @@ public class ReportProtocolTests
         Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct));
         var expired = await source.CopyAsync(new(before.Metadata.Version, columns, ranges), ct);
         Assert.Equal(PivotReportRefusalKind.ReportVersionNotHeld, expired.Refusal!.Kind);
-        var details = await source.DetailsAsync(new(before.Metadata.Version, before.Rows[0].Key, 0), ct);
-        Assert.Equal(PivotReportRefusalKind.ReportVersionNotHeld, details.Refusal!.Kind);
+        // Details names the Source Version, not the Report Version (ADR-0151): the provider still
+        // holds the data the earlier report was computed from, so its records still add up to it.
+        var details = await source.DetailsAsync(before.Metadata.DetailsQuery(before.Rows[0], 0), ct);
+        Assert.False(details.IsRefused);
+        Assert.Equal(before.Metadata.SourceVersion, details.SourceVersion);
+        Assert.Equal(10m, Assert.Single(details.Records).Values[^1]);
     }
 
     [Fact]
@@ -271,11 +275,12 @@ public class ReportProtocolTests
             (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("x"), [])),
             copy: (_, _) => ValueTask.FromResult(new PivotReportCopyResult(wrong, [])),
             summary: (_, _) => ValueTask.FromResult(new PivotReportSummaryResult(wrong, default, default, default, false, null, "")),
-            details: (_, _) => ValueTask.FromResult(new PivotReportDetailsResult(wrong, null)));
+            details: (query, _) => ValueTask.FromResult(new PivotDetailPage("another-source-version", [], query.Start, 0, [])));
         var ct = TestContext.Current.CancellationToken;
         Assert.Equal(PivotReportRefusalKind.InvalidResponse, (await source.CopyAsync(new(requested, [], []), ct)).Refusal!.Kind);
         Assert.Equal(PivotReportRefusalKind.InvalidResponse, (await source.SummaryAsync(new(requested, [], []), ct)).Refusal!.Kind);
-        Assert.Equal(PivotReportRefusalKind.InvalidResponse, (await source.DetailsAsync(new(requested, DisplayRow("A", 1m).Key, -1), ct)).Refusal!.Kind);
+        // Records of another Source Version would not add up to the cell: never shown.
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await source.DetailsAsync(new PivotDetailsQuery("source-1"), ct));
     }
 
     [Theory]
@@ -333,12 +338,12 @@ public class ReportProtocolTests
         var summary = PivotReportJson.Read<PivotReportSummaryResult>(PivotReportJson.Write(await source.SummaryAsync(new(version, columns, [new(1, 0, 3, 0)]), ct)));
         Assert.Equal(105m, summary.Sum.Exact);
         Assert.Equal(3, summary.Counts.Numbers);
-        var query = new PivotReportDetailsQuery(version, window.Rows![0].Key, 0, 0, 10);
-        var details = PivotReportJson.Read<PivotReportDetailsResult>(PivotReportJson.Write(await source.DetailsAsync(
-            PivotReportJson.Read<PivotReportDetailsQuery>(PivotReportJson.Write(query)), ct)));
-        Assert.Equal(3, details.Page!.Total);
-        Assert.All(details.Page.Records, row => Assert.Null(row.Record));
-        Assert.Equal(100m, details.Page.Records[0].Values[3]);
+        var query = window.Metadata.DetailsQuery(window.Rows![0], 0, 0, 10);
+        var details = PivotReportJson.Read<PivotDetailPage>(PivotReportJson.Write(await source.DetailsAsync(
+            PivotReportJson.Read<PivotDetailsQuery>(PivotReportJson.Write(query)), ct)));
+        Assert.Equal(3, details.Total);
+        Assert.All(details.Records, row => Assert.Null(row.Record));
+        Assert.Equal(100m, details.Records[0].Values[3]);
         var items = PivotReportJson.Read<PivotItemPage>(PivotReportJson.Write(await source.RawItemsAsync(
             new("Region", window.Metadata.SourceVersion), ct)));
         Assert.Equal(4, items.Total);
@@ -385,8 +390,8 @@ public class ReportProtocolTests
             Assert.True(copying.IsCompleted, "A published report must be readable while its successor waits for data.");
             Assert.Equal("10", (await copying).Blocks[0].Rows[1][0].Raw);
             Assert.Equal(20m, (await source.SummaryAsync(new(version, columns, [new(0, 0, 1, 0)]), ct)).Sum.Exact);
-            var details = await source.DetailsAsync(new(version, first.Rows![0].Key, 0), ct);
-            Assert.Equal(first.Metadata.SourceVersion, details.Page!.SourceVersion);
+            var details = await source.DetailsAsync(first.Metadata.DetailsQuery(first.Rows![0], 0), ct);
+            Assert.Equal(first.Metadata.SourceVersion, details.SourceVersion);
         }
         finally { release.TrySetResult(); await newer; }
     }

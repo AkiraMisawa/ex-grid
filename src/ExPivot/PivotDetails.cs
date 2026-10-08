@@ -15,8 +15,7 @@ public sealed class PivotDetails
 {
     internal PivotDetails(
         PivotReportSource source,
-        PivotReportDetailsQuery query,
-        string sourceVersion,
+        PivotDetailsQuery query,
         IReadOnlyList<PivotDetailItem> rowItems,
         IReadOnlyList<PivotDetailItem> columnItems,
         string? valueField,
@@ -24,7 +23,6 @@ public sealed class PivotDetails
     {
         Source = source;
         Query = query;
-        SourceVersion = sourceVersion;
         RowItems = rowItems;
         ColumnItems = columnItems;
         ValueField = valueField;
@@ -44,12 +42,15 @@ public sealed class PivotDetails
     public string Title { get; }
 
     /// <summary>The question for every record behind the cell, from the first — serialisable
-    /// (<see cref="PivotJson"/>), so a Consumer can carry it elsewhere.</summary>
-    public PivotReportDetailsQuery Query { get; }
+    /// (<see cref="PivotJson"/>, <see cref="PivotReportJson"/>), so a Consumer can carry it
+    /// elsewhere. It names the cell by its Items and the Source Version the report was computed
+    /// from, not by a Report Version: a later layout — a collapse, a sort — does not change it
+    /// (ADR-0151).</summary>
+    public PivotDetailsQuery Query { get; }
 
     /// <summary>The Source Version the report was computed from, which the records are asked
     /// under.</summary>
-    public string SourceVersion { get; }
+    public string SourceVersion => Query.SourceVersion;
 
     /// <summary>The fields each record's values are in, in order: the source's.</summary>
     public IReadOnlyList<PivotField> Fields => Source.Fields;
@@ -60,21 +61,15 @@ public sealed class PivotDetails
     /// <summary>
     /// One page of the records behind the cell, in the data's order, with how many there are — or
     /// the source's refusal, which a Consumer shows rather than records that would not add up
-    /// (ADR-0066). Asked under <see cref="SourceVersion"/>.
+    /// (ADR-0066). Asked under <see cref="SourceVersion"/>, whatever layouts the report has had since:
+    /// answered while the data provider holds that version, and refused, as the data having
+    /// changed, once it does not.
     /// </summary>
     /// <param name="start">The first record wanted, counted among the records behind the cell.</param>
     /// <param name="count">How many records are wanted.</param>
     /// <param name="cancellationToken">Cancels the question.</param>
-    public async ValueTask<PivotDetailPage> DetailsAsync(int start, int count, CancellationToken cancellationToken = default)
-    {
-        var result = await Source.DetailsAsync(Query with { Start = start, Count = count }, cancellationToken);
-        if (result.Version != Query.Version)
-            throw new InvalidOperationException("Show Details answered another Report Version (ADR-0152).");
-        if (result.Refusal is { } refusal)
-            return refusal.SourceRefusal is { } sourceRefusal ? PivotDetailPage.Refused(sourceRefusal)
-                : refusal.Kind == PivotReportRefusalKind.ReportVersionNotHeld
-                    ? PivotDetailPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(SourceVersion))
-                    : throw new InvalidOperationException(refusal.Message);
-        return result.Page ?? throw new InvalidOperationException("Show Details returned neither a page nor a refusal.");
-    }
+    public ValueTask<PivotDetailPage> DetailsAsync(int start, int count, CancellationToken cancellationToken = default)
+        => Source.DetailsAsync(
+            new PivotDetailsQuery(Query.SourceVersion, Query.RowItems, Query.ColumnItems, Query.HiddenItems, start, count),
+            cancellationToken);
 }

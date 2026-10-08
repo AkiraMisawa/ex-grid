@@ -397,16 +397,15 @@ public sealed class LocalPivotReportSource : PivotReportSource
     }
 
     /// <inheritdoc />
-    public override async ValueTask<PivotReportDetailsResult> DetailsAsync(PivotReportDetailsQuery query, CancellationToken cancellationToken = default)
+    /// <remarks>Asked of the data provider under the question's Source Version: answered while the
+    /// provider holds it, however many layouts and Report Versions came since, and refused by the
+    /// provider once it does not. The provider is not this report's to dispose, so a Details tab
+    /// opened before the report was replaced still pages its records.</remarks>
+    public override ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(query);
         cancellationToken.ThrowIfCancellationRequested();
-        var held = Held(query.Version);
-        if (held is null) return new(query.Version, null, NotHeld(query.Version));
-        var row = held.Report.Rows.FirstOrDefault(row => row.Key.Equals(query.Row));
-        if (row is null || query.ValueColumn < -1 || query.ValueColumn >= held.Report.ValueColumns.Count)
-            return new(query.Version, null, new(PivotReportRefusalKind.InvalidRequest, "The requested cell is not in this report."));
-        var page = await held.Provider.DetailsAsync(held.Report.DetailsQuery(row, query.ValueColumn, query.Start, query.Count), cancellationToken).ConfigureAwait(false);
-        return new(query.Version, page);
+        return _source.DetailsAsync(query, cancellationToken);
     }
 
     /// <inheritdoc />

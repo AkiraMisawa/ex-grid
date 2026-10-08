@@ -75,6 +75,12 @@
             show records that do not add up to the cell.
         </p>
         <p>
+            The question names the cell by its Items and that Source Version, not by the report it was shown
+            in, so a collapse, a sort or a new form leaves an open tab paging the same records. It is refused,
+            as the data having changed, only once the source no longer holds that version; the bundled source
+            holds its last four.
+        </p>
+        <p>
             To take the records yourself, listen to <code>OnShowDetails</code>. ExPivot then opens neither tab
             nor dialog, and hands you a <code>PivotDetails</code> naming the cell's Items and Value Field, whose
             <code>DetailsAsync(start, count)</code> pages its records. A source over your own objects hands back

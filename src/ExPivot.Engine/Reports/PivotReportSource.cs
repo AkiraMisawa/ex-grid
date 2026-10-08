@@ -19,8 +19,18 @@ public abstract class PivotReportSource : IAsyncDisposable
     public abstract ValueTask<PivotReportCopyResult> CopyAsync(PivotReportCopyQuery query, CancellationToken cancellationToken = default);
     /// <summary>The selected cells' summary at the requested Report Version.</summary>
     public abstract ValueTask<PivotReportSummaryResult> SummaryAsync(PivotReportSummaryQuery query, CancellationToken cancellationToken = default);
-    /// <summary>The source records contributing to the requested version's cell.</summary>
-    public abstract ValueTask<PivotReportDetailsResult> DetailsAsync(PivotReportDetailsQuery query, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// A page of the Source Records behind a cell — Show Details — under the Source Version the
+    /// report showing it was computed from (ADR-0151: Details refers to the Source Version, not to a
+    /// Report Version). The question is resolved from the cell the user acted on
+    /// (<see cref="PivotReportMetadata.DetailsQuery"/>), so it holds whatever layouts follow; it is
+    /// answered while the data provider still holds that Source Version, and refused by the provider
+    /// (<see cref="PivotSourceRefusalKind.SourceVersionNotHeld"/>) once it does not — never answered
+    /// from newer data.
+    /// </summary>
+    /// <param name="query">The cell's Items, the Hidden Items, the range of records, and the Source Version.</param>
+    /// <param name="cancellationToken">Cancels the question.</param>
+    public abstract ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default);
     /// <summary>Asks the provider to refresh.</summary>
     public abstract ValueTask RefreshAsync(CancellationToken cancellationToken = default);
     /// <summary>Releases this report's calculation state; it does not own the underlying data provider.</summary>
@@ -48,7 +58,7 @@ public abstract class PivotReportSource : IAsyncDisposable
         Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>>? items = null,
         Func<PivotReportCopyQuery, CancellationToken, ValueTask<PivotReportCopyResult>>? copy = null,
         Func<PivotReportSummaryQuery, CancellationToken, ValueTask<PivotReportSummaryResult>>? summary = null,
-        Func<PivotReportDetailsQuery, CancellationToken, ValueTask<PivotReportDetailsResult>>? details = null,
+        Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>>? details = null,
         Func<CancellationToken, ValueTask>? refresh = null,
         Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? reportItems = null,
         Func<ValueTask>? dispose = null)
@@ -62,7 +72,7 @@ public sealed class FetchingPivotReportSource : PivotReportSource
     private readonly Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>>? _items;
     private readonly Func<PivotReportCopyQuery, CancellationToken, ValueTask<PivotReportCopyResult>>? _copy;
     private readonly Func<PivotReportSummaryQuery, CancellationToken, ValueTask<PivotReportSummaryResult>>? _summary;
-    private readonly Func<PivotReportDetailsQuery, CancellationToken, ValueTask<PivotReportDetailsResult>>? _details;
+    private readonly Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>>? _details;
     private readonly Func<CancellationToken, ValueTask>? _refresh;
     private readonly Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? _reportItems;
     private readonly Dictionary<PivotReportVersion, string> _reportedVersions = [];
@@ -73,7 +83,7 @@ public sealed class FetchingPivotReportSource : PivotReportSource
         Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>>? items,
         Func<PivotReportCopyQuery, CancellationToken, ValueTask<PivotReportCopyResult>>? copy,
         Func<PivotReportSummaryQuery, CancellationToken, ValueTask<PivotReportSummaryResult>>? summary,
-        Func<PivotReportDetailsQuery, CancellationToken, ValueTask<PivotReportDetailsResult>>? details,
+        Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>>? details,
         Func<CancellationToken, ValueTask>? refresh,
         Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? reportItems, Func<ValueTask>? dispose)
     {
@@ -162,19 +172,21 @@ public sealed class FetchingPivotReportSource : PivotReportSource
             : new(query.Version, default, default, default, false, null, "", WrongVersion());
     }
     /// <inheritdoc />
-    public override async ValueTask<PivotReportDetailsResult> DetailsAsync(PivotReportDetailsQuery query, CancellationToken cancellationToken = default)
+    /// <exception cref="InvalidOperationException">The page answers another Source Version, another
+    /// range or other fields than the question asked: records that would not add up to the cell are
+    /// never shown.</exception>
+    public override async ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default)
     {
-        var result = await (_details ?? throw Missing("Details"))(query, cancellationToken).ConfigureAwait(false);
-        if (result is null || result.Version != query.Version) return new(query.Version, null, WrongVersion());
-        if (result.Refusal is not null) return result;
-        if (result.Page is not { } page) return new(query.Version, null, Invalid("Details returned no page."));
-        if (page.IsRefused) return result;
-        string? sourceVersion;
-        lock (_reportedVersions) _reportedVersions.TryGetValue(query.Version, out sourceVersion);
-        if (sourceVersion is not null && page.SourceVersion != sourceVersion || page.Start != query.Start || page.Records.Count > query.Count
+        ArgumentNullException.ThrowIfNull(query);
+        var page = await (_details ?? throw Missing("Details"))(query, cancellationToken).ConfigureAwait(false);
+        if (page is null)
+            throw new InvalidOperationException("Details returned no page.");
+        if (page.IsRefused)
+            return page;
+        if (page.SourceVersion != query.SourceVersion || page.Start != query.Start || page.Records.Count > query.Count
             || !page.Fields.Select(field => field.Info).SequenceEqual(Fields.Select(field => field.Info)))
-            return new(query.Version, null, Invalid("Details returned another report's source records or a different extent."));
-        return result;
+            throw new InvalidOperationException("Details answered another Source Version, range or fields than the question asked.");
+        return page;
     }
     /// <inheritdoc />
     public override async ValueTask RefreshAsync(CancellationToken cancellationToken = default)

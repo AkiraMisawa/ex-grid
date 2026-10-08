@@ -162,6 +162,32 @@ public sealed record PivotReportMetadata(PivotReportVersion Version, string Sour
     [JsonIgnore] public CultureInfo Culture => CultureInfo.GetCultureInfo(Settings.CultureName);
     /// <summary>Whether the layout asks for no report.</summary>
     [JsonIgnore] public bool IsEmpty => Layout.Rows.Count == 0 && Layout.Columns.Count == 0 && Layout.Values.Count == 0;
+
+    /// <summary>
+    /// The question for the Source Records behind a cell of this report — Show Details (ADR-0063,
+    /// ADR-0151) — resolved from the detached row and this report's own layout and columns: the
+    /// row's Items, the value column's Items (none for a label cell), the Hidden Items the report
+    /// was computed under, the range, and its <see cref="SourceVersion"/>, under which the records
+    /// add up to the cell. Being made of values only, it stays the same question after any later
+    /// layout, and is answered while the data provider holds that Source Version.
+    /// </summary>
+    /// <param name="row">A row of this report's Window.</param>
+    /// <param name="valueColumn">A value column's index, or −1 for the row's label cell.</param>
+    /// <param name="start">The first record wanted.</param>
+    /// <param name="count">How many records are wanted.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="valueColumn"/> is not a value
+    /// column of this report, nor −1.</exception>
+    public PivotDetailsQuery DetailsQuery(PivotDisplayRow row, int valueColumn, int start = 0, int count = int.MaxValue)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        if (valueColumn < -1 || valueColumn >= ValueColumns.Count)
+            throw new ArgumentOutOfRangeException(nameof(valueColumn), valueColumn, "Not a value column of the report, nor -1.");
+        if (row.Values.Count != ValueColumns.Count)
+            throw new ArgumentException("The row is not a row of this report's columns.", nameof(row));
+        var columnItems = valueColumn < 0 ? [] : ValueColumns[valueColumn].ColumnPath;
+        var hidden = PivotQuery.For(Layout).Placed.Where(field => field.HiddenItems.Count > 0).ToArray();
+        return new PivotDetailsQuery(SourceVersion, row.RowPath, columnItems, hidden, start, count);
+    }
 }
 
 /// <summary>Why a report-source operation could not be answered.</summary>

@@ -52,8 +52,8 @@ internal static class PivotReportRoundTrip
         Require(items.Items is [{ Label: "Rates" }], "Items changed");
         var rawItems = Wire(await source.RawItemsAsync(Wire(new PivotItemsQuery("Desk", delta.Metadata.SourceVersion))));
         Require(rawItems.Items.Count == 1, "raw Items changed");
-        var details = Wire(await source.DetailsAsync(Wire(new PivotReportDetailsQuery(version, delta.Changes[0].Row.Key, 0, 0, 10))));
-        Require(details.Page?.Records.Count == 2 && details.Page.SourceVersion == delta.Metadata.SourceVersion, "Details changed");
+        var details = Wire(await source.DetailsAsync(Wire(delta.Metadata.DetailsQuery(delta.Changes[0].Row, 0, 0, 10))));
+        Require(details.Records.Count == 2 && details.SourceVersion == delta.Metadata.SourceVersion, "Details changed");
         var refused = Wire(PivotReportUpdate.Refused(query, new(PivotReportRefusalKind.ReportVersionNotHeld, "Expired")));
         Require(refused.Refusal?.Kind == PivotReportRefusalKind.ReportVersionNotHeld, "the refusal changed");
         Console.WriteLine("Report protocol: trimmed packed Consumer preserves Windows, deltas and every versioned operation");

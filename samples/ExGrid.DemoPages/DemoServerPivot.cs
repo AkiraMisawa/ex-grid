@@ -49,20 +49,27 @@ public static class DemoServerPivot
             response.EnsureSuccessStatusCode();
             return PivotReportJson.Read<TAnswer>(await response.Content.ReadAsStringAsync(token));
         }
-        async ValueTask<PivotReportDetailsResult> DetailsAsync(PivotReportDetailsQuery query, CancellationToken token)
+        // Show Details names the cell's Items and its Source Version (ADR-0151), and the server's Pivot
+        // Source answers it, in pages of at most MaxDetailsPage records: no report state is needed,
+        // so a Details tab keeps paging after any layout, while the server holds that version.
+        async ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken token)
         {
             var records = new List<PivotDetailRecord>();
-            PivotReportDetailsResult result;
+            PivotDetailPage page;
             do
             {
-                var next = query with { Start = query.Start + records.Count, Count = Math.Min(MaxDetailsPage, query.Count - records.Count) };
-                result = await PostAsync<PivotReportDetailsQuery, PivotReportDetailsResult>("details", next, token);
-                if (result.Refusal is not null || result.Page is not { } page || page.IsRefused) return result;
+                var next = new PivotDetailsQuery(query.SourceVersion, query.RowItems, query.ColumnItems, query.HiddenItems,
+                    query.Start + records.Count, Math.Min(MaxDetailsPage, query.Count - records.Count));
+                asked?.Invoke("api/pivot/details");
+                using var content = new StringContent(PivotJson.Write(next), Encoding.UTF8, "application/json");
+                using var response = await http.PostAsync("api/pivot/details", content, token);
+                response.EnsureSuccessStatusCode();
+                page = PivotJson.ReadDetailPage(await response.Content.ReadAsStringAsync(token));
+                if (page.IsRefused) return page;
                 records.AddRange(page.Records);
                 if (page.Records.Count == 0 || records.Count >= query.Count || query.Start + records.Count >= page.Total) break;
             } while (true);
-            var last = result.Page!;
-            return result with { Page = new PivotDetailPage(last.SourceVersion, last.Fields, query.Start, last.Total, records) };
+            return new PivotDetailPage(page.SourceVersion, page.Fields, query.Start, page.Total, records);
         }
         return PivotReportSource.Fetch(fields, features, PivotReportUpdateMode.FullRefresh,
             (query, token) => PostAsync<PivotReportRequest, PivotReportUpdate>("window", query, token),
