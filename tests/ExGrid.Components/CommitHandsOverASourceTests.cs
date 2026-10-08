@@ -216,6 +216,26 @@ public class CommitHandsOverASourceTests : GridTestContext
         Assert.Equal(["edit 5", "discard SourceChanged"], host.Instance.Heard);
     }
 
+    [Theory] // ADR-0142 / LV-32, ED-21: a handler that hands over another Source and other columns at once: accepted, the edit ends as committed and nothing is said; refused, it is discarded once, as SourceChanged — the Source first, as a discard under no commit says it
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_commit_whose_handler_hands_over_another_source_and_other_columns_is_said_at_most_once(bool refused)
+    {
+        var rows = TestRows.Many(50);
+        var host = RenderHost(GridSource.From(rows), GridSource.From(Copies(rows)), ps => ps
+            .Add(h => h.ChangeColumns, true)
+            .Add(h => h.Refuse, refused));
+        var cut = GridOf(host);
+        await TypeFiveAsync(cut);
+        var reclaimed = Js.FocusReclaimed.Invocations.Count;
+
+        await KeyAsync(cut, "Enter", paint: Paint(cut));
+
+        Assert.Equal(refused ? ["edit 5", "discard SourceChanged"] : ["edit 5"], host.Instance.Heard);
+        Assert.False(EditorOpen(cut));
+        Assert.True(Js.FocusReclaimed.Invocations.Count > reclaimed);
+    }
+
     /// <summary>A page holding the grid, whose handlers hand it <see cref="Second"/> in place of
     /// <see cref="First"/> as they hear a commit or a fill — Blazor renders the page, and so the grid's new
     /// Source, as each handler completes.</summary>
@@ -236,10 +256,14 @@ public class CommitHandsOverASourceTests : GridTestContext
 
         [Parameter] public bool ShowFormulaBar { get; set; }
 
+        /// <summary>Whether the edit's handler also shows other columns.</summary>
+        [Parameter] public bool ChangeColumns { get; set; }
+
         /// <summary>What the page heard, in order.</summary>
         public List<string> Heard { get; } = [];
 
         private IGridSource<TestRow>? _source;
+        private GridColumn<TestRow>[] _columns = Columns();
 
         protected override void OnInitialized() => _source = First;
 
@@ -255,6 +279,8 @@ public class CommitHandsOverASourceTests : GridTestContext
             if (Refuse)
                 intent.Refuse("Not above 150");
             HandOver();
+            if (ChangeColumns)
+                _columns = [Columns()[0], new("AsOf", ColumnType.Date, r => r.AsOf, width: Fixed100)];
             if (Fail)
             {
                 StateHasChanged();
@@ -272,7 +298,7 @@ public class CommitHandsOverASourceTests : GridTestContext
         {
             builder.OpenComponent<ExGrid<TestRow>>(0);
             builder.AddComponentParameter(1, nameof(ExGrid<TestRow>.Source), _source);
-            builder.AddComponentParameter(2, nameof(ExGrid<TestRow>.Columns), (IReadOnlyList<GridColumn<TestRow>>)Columns());
+            builder.AddComponentParameter(2, nameof(ExGrid<TestRow>.Columns), (IReadOnlyList<GridColumn<TestRow>>)_columns);
             builder.AddComponentParameter(3, nameof(ExGrid<TestRow>.RowHeight), 20d);
             builder.AddComponentParameter(4, nameof(ExGrid<TestRow>.ViewportHeight), (ViewportSize)120);
             builder.AddComponentParameter(5, nameof(ExGrid<TestRow>.ViewportWidth), (ViewportSize)350);
