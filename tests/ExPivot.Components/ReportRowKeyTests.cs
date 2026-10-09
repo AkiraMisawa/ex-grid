@@ -10,11 +10,11 @@ namespace ExPivot.Components.Tests;
 
 /// <summary>
 /// ExPivot's Row Key for its report grid (ADR-0140, PV-42): a report row is named by what it stands
-/// for — its role, its Value Field and its Items, the pairing <c>ReportHistory</c> makes — so a live
-/// redraw repaints the rows that changed in place, and builds no row component for a key it painted
-/// before. The data is <c>/pivot-live</c>'s shape: keyed trades amended a few at a time and handed
-/// to the bundled source as Change Batches, P&amp;L by region and desk across products. The clock is
-/// the test's.
+/// for — its role, its Value Field and its Items, the key the report source pairs rows by for the
+/// Change Highlight (ADR-0153) — so a live redraw repaints the rows that changed in place, and builds
+/// no row component for a key it painted before. The data is <c>/pivot-live</c>'s shape: keyed
+/// trades amended a few at a time and handed to the bundled source as Change Batches, P&amp;L by
+/// region and desk across products. The clock is the test's.
 /// </summary>
 public class ReportRowKeyTests : PivotTestContext
 {

@@ -45,21 +45,21 @@ public partial class ExPivot
         static (row, column) => column.Value(row) is PivotDisplayValue { IsError: true } ? CellAlign.Center : CellAlign.Auto;
 
     // The report grid's Row Key (ADR-0140, PV-42): what a row stands for — its role, its Value Field
-    // and its Items — the key ReportHistory pairs by for the Change Highlight, so a live redraw
-    // repaints a changed row in place instead of building its component again. A PivotRowKey is
-    // value-equal across reports, and the engine builds no two rows of one report that stand for the
-    // same thing, so the grid's own check never refuses a report. The engine makes it with the row,
-    // hash included, so the grid's check of a whole report's keys on every redraw reads keys and
-    // hashes nothing (PV-43). A key built here per check cost 82.6 ms at 401,001 rows against 9.5 ms
-    // for the instances; the engine's keys are checked in 8.3 ms, and cost 13.3 ms to make with a
-    // report built in 337 ms (2026-10-06, D10; ADR-0140). One instance for every ExPivot: its
-    // identity reaches the grid (ADR-0003).
+    // and its Items — so a live redraw repaints a changed row in place instead of building its
+    // component again. A PivotRowKey is value-equal across Windows and Report Versions; the report
+    // source pairs rows by it too, to tell which value cells changed (PivotDisplayRow.ChangedIn,
+    // ADR-0153). The engine builds no two rows of one report that stand for the same thing, and the
+    // client refuses a Window that repeats a key (PivotReportClient), so ExPivot vouches for its
+    // Windows (VouchesDistinctRows, ADR-0141): the grid takes a Window in without walking it, and
+    // checks only the keys of the rows it paints, a few dozen, on every render. The key is detached
+    // from any report and made with the row, hash included, so reading it allocates and hashes
+    // nothing (PV-43). One instance for every ExPivot: its identity reaches the grid (ADR-0003).
     //
-    // The key leaves the row fields out, as ReportHistory's does. Under a layout whose row fields
-    // differ, a row may pair with a row of the previous report whose Items happen to coincide. That is
-    // safe: a pairing only keeps a component, which renders the new row because it is a new instance
-    // (Row Identity), and a report row's cells keep no state of their own across renders — the
-    // Interactive toggle button is a component only on the one render that hands it a focus request.
+    // The key leaves the row fields out. Under a layout whose row fields differ, a row may pair with a
+    // row of the previous Window whose Items happen to coincide. That is safe: a pairing only keeps a
+    // component, which renders the new row because it is a new instance (Row Identity), and a report
+    // row's cells keep no state of their own across renders — the Interactive toggle button is a
+    // component only on the one render that hands it a focus request.
     private static readonly Func<PivotDisplayRow, object> ReportRowKey = static row => row.Key;
 
     // A value cell paints the text the engine formatted; its raw form is the number (ADR-0005/0060).
