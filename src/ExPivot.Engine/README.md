@@ -159,28 +159,32 @@ on the calling thread.
 
 ## Local and remote report Windows
 
-`PivotReportSource.From(data)` owns one independent report computation over a `PivotSource`.
-`WindowAsync` answers the requested rows and complete report metadata, or changed rows against
-its named baseline. Published reports are immutable; ordinary Snapshot batches update affected
-leaves, totals, axis paths and report portions while sharing unchanged structure. A data provider
-can serve independent report computations without one layout replacing another's held state.
+`PivotReportSource.From(data)` is a report source: it owns one independent report computation over
+a `PivotSource`. `WindowAsync` answers the requested rows and complete report metadata, or the
+**Window Changes** — the rows of the Window that changed since the Baseline Window the request
+names, sent with the digest of the Window they make, in place of the whole Window
+(`PivotReportUpdate.Changed`). Published reports are immutable; ordinary Snapshot batches update
+affected leaves, totals, axis paths and report portions while sharing unchanged structure. One
+Pivot Source can serve independent report computations without one layout replacing another's held
+state.
 
 `PivotReportSource.Fetch` carries the application's Window, Items, Copy, Summary and Details
 transports. `PivotReportJson` preserves exact values, layout, culture, display words and versions.
 The server retains its `LocalPivotReportSource`; the browser receives detached display rows,
-not all aggregate leaves. `PivotReportClient` checks replies, a delta against the digest of the
-Window it produces, and recovers a missing baseline, or a delta that does not reproduce the
-source's Window, with a complete Window. Failed recovery retains the last complete report as stale.
+not all aggregate leaves. `PivotReportClient` checks replies, Window Changes against the digest of
+the Window they make, and recovers a missing Baseline Window, or Window Changes that do not
+reproduce the source's Window, with a complete Window. Failed recovery retains the last complete
+report as stale.
 
 Copy and Summary name a Report Version, including selections outside the Window. Details names
 the cell's Source Version (`PivotReportMetadata.DetailsQuery`), so its pages keep answering after
-later layouts while the provider holds that data. The local adapter retains two versions by
-default (`versionsKept`); an unavailable version refuses instead of switching data. A delta is
-made against the Window a request names as its baseline even when the version it publishes
-evicts that baseline. The Consumer manages transport and server state lifetime. Remote
-Order Keys name server-registered policies; culture does not select display words.
+later layouts while the Pivot Source holds that data. The local adapter retains two versions by
+default (`versionsKept`); an unavailable version refuses instead of switching data. Window Changes
+are made against the Baseline Window a request names even when the version they publish evicts
+it. The Consumer manages transport and server state lifetime. Remote Order Keys name
+server-registered policies; culture does not select display words.
 
-`UpdateMode` distinguishes incremental Snapshot calculations from providers that can only
+`UpdateMode` distinguishes incremental Snapshot calculations from Pivot Sources that can only
 refresh their complete aggregate answer. Both use the same report semantics and Window boundary.
 The low-level `PivotSource.Fetch` API below remains useful behind a server report calculation;
 using it alone does not move report construction to the server.

@@ -99,9 +99,26 @@
     private bool _initialised;
     private bool _disposed;
 
-    /// <summary>The asynchronous report source, local or remote (ADR-0151). It owns computation;
-    /// this component receives metadata and requested Windows. Its lifetime belongs to the Consumer.</summary>
-    [Parameter] public PivotReportSource? Source { get; set; }
+    /// <summary>
+    /// The Pivot Source the report is computed from (ADR-0066/0151): <c>PivotSource.From</c> over
+    /// the Consumer's records or a Snapshot — a CSV read in the browser among them — or
+    /// <c>PivotSource.Fetch</c> over a server's Leaf Aggregates. Its fields are what the Field List
+    /// offers. ExPivot computes the report over it with the engine a server runs
+    /// (<c>PivotReportSource.From</c>), one computation for this ExPivot, which it disposes; the
+    /// source itself is the Consumer's, and a new instance is a refresh. Hand this or
+    /// <see cref="ReportSource"/>, not both.
+    /// </summary>
+    [Parameter] public PivotSource? Source { get; set; }
+
+    /// <summary>
+    /// A report source, in place of <see cref="Source"/> (ADR-0151): <c>PivotReportSource.Fetch</c>
+    /// over the Consumer's transport to a server that computes the report and sends the Window asked
+    /// for and its Window Changes, so the leaves and the rows outside the Window stay on that server,
+    /// or a <c>PivotReportSource.From</c> the Consumer keeps itself. It owns the computation; ExPivot
+    /// receives the report's metadata and the Windows it asks for. Its lifetime is the Consumer's.
+    /// Hand this or <see cref="Source"/>, not both.
+    /// </summary>
+    [Parameter] public PivotReportSource? ReportSource { get; set; }
 
     /// <summary>Server-registered Order Key identifiers by field name (ADR-0152): a report computed
     /// on a server orders a field's Items by the function the server registered under that name
@@ -109,11 +126,6 @@
     /// keep their declared delegates. An unknown identifier, and a function that throws, are refused
     /// by name, never replaced by label order.</summary>
     [Parameter] public IReadOnlyDictionary<string, string>? OrderKeyPolicies { get; set; }
-
-    /// <summary>A local data provider, as a convenience instead of Source. This component creates
-    /// and disposes one report computation session over it. A remote server should expose a
-    /// report source through Source, so leaves and unrequested rows stay on that server.</summary>
-    [Parameter] public PivotSource? DataSource { get; set; }
 
     /// <summary>
     /// How often, at most, the report is redrawn for changes of data (ADR-0067): 250 ms by default.
@@ -240,7 +252,7 @@
     /// <summary>The report on screen, or null before the source first answered.</summary>
     public PivotReportState? Report => _state;
 
-    // The report source asked — the Source handed in, or the one made over DataSource — for a
+    // The report source asked — the ReportSource handed in, or the one made over Source — for a
     // test that follows what it keeps alive (ADR-0160, LV-22).
     internal PivotReportSource? AskedSource => _source;
 
@@ -274,8 +286,10 @@
         AdoptSummaryFigures();
         if (FieldListWidth is not (> 0 and < 10_000) || !double.IsFinite(FieldListWidth))
             throw new ArgumentOutOfRangeException(nameof(FieldListWidth), FieldListWidth, "A width in pixels, above zero.");
-        if ((Source is null) == (DataSource is null))
-            throw new InvalidOperationException("ExPivot needs exactly one report Source or local DataSource (ADR-0151).");
+        if (Source is null && ReportSource is null)
+            throw new InvalidOperationException("ExPivot needs a Pivot Source (Source) or a report source (ReportSource) to compute its report from (ADR-0151).");
+        if (Source is not null && ReportSource is not null)
+            throw new InvalidOperationException("ExPivot takes a Pivot Source (Source) or a report source (ReportSource), not both: the report is computed from one of them (ADR-0151).");
         ArgumentNullException.ThrowIfNull(Caps);
         if (!Enum.IsDefined(DetailsView))
             throw new ArgumentOutOfRangeException(nameof(DetailsView), DetailsView, "Unknown PivotDetailsView.");

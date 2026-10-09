@@ -5,6 +5,7 @@ using ExPivot.Components.Tests.Support;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
+using PivotComponent = ExPivot.Components.ExPivot;
 
 namespace ExPivot.Components.Tests;
 
@@ -129,11 +130,11 @@ public class PivotRenderingTests : PivotTestContext
         var cut = RenderPivot(RegionProduct);
         var version = Grid(cut).Instance.RowSequenceVersion;
 
-        cut.Render(ps => ps.Add(p => p.DataSource, Bundled(Sales.Select(s => s with { Amount = s.Amount + 1 }).ToArray())));
+        cut.Render(ps => ps.Add(p => p.Source, Bundled(Sales.Select(s => s with { Amount = s.Amount + 1 }).ToArray())));
 
         Assert.Equal(version, Grid(cut).Instance.RowSequenceVersion);
         Assert.Equal("−East | 183", RowTexts(cut)[0]);
-        cut.Render(ps => ps.Add(p => p.DataSource, Bundled(Sales[..6])));
+        cut.Render(ps => ps.Add(p => p.Source, Bundled(Sales[..6])));
         Assert.NotEqual(version, Grid(cut).Instance.RowSequenceVersion);
     }
 
@@ -144,14 +145,33 @@ public class PivotRenderingTests : PivotTestContext
         var cut = RenderPivot(new PivotLayout { Values = [Sum("Amount")] }, source: first);
         Assert.Single(first.Questions);
 
-        cut.Render(ps => ps.Add(p => p.DataSource, first));
+        cut.Render(ps => ps.Add(p => p.Source, first));
         Assert.Single(first.Questions);
         Assert.Equal("285", RowTexts(cut)[0]);
 
         var second = new OnDemandSource(Bundled([.. Sales, new Sale("South", "Apples", 1000m, 1, true)])) { AnswersAtOnce = true };
-        cut.Render(ps => ps.Add(p => p.DataSource, second));
+        cut.Render(ps => ps.Add(p => p.Source, second));
         Assert.Single(second.Questions);
         Assert.Equal("1285", RowTexts(cut)[0]);
+    }
+
+    [Fact] // ADR-0151: ExPivot is handed exactly one of its Pivot Source (Source) and a report source (ReportSource): neither, or both, is refused, naming the two; either alone draws the report
+    public async Task ADR0151_Exactly_one_of_Source_and_ReportSource_is_handed()
+    {
+        var neither = Assert.Throws<InvalidOperationException>(() => Render<PivotComponent>(ps => ps.Add(p => p.Layout, RegionProduct)));
+        Assert.Contains("(Source)", neither.Message);
+        Assert.Contains("(ReportSource)", neither.Message);
+
+        await using var reports = PivotReportSource.From(Bundled());
+        var both = Assert.Throws<InvalidOperationException>(() => RenderPivot(RegionProduct, ps => ps.Add(p => p.ReportSource, reports)));
+        Assert.Contains("(Source)", both.Message);
+        Assert.Contains("(ReportSource)", both.Message);
+        Assert.Contains("not both", both.Message);
+
+        var computedHere = RenderPivot(RegionProduct);
+        var reported = RenderPivot(RegionProduct, reportSource: reports);
+        reported.WaitForAssertion(() => Assert.Equal(RowTexts(computedHere), RowTexts(reported)));
+        Assert.Equal("−East | 180", RowTexts(reported)[0]);
     }
 
     private sealed record Position(string Desk, decimal Pnl);
@@ -171,7 +191,7 @@ public class PivotRenderingTests : PivotTestContext
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
 
         cut.Render(ps => ps
-            .Add(p => p.DataSource, Positions())
+            .Add(p => p.Source, Positions())
             .Add(p => p.Layout, new PivotLayout { Rows = [P("Desk")], Values = [Sum("Pnl")] }));
 
         Assert.Equal(["Credit | 2", "Rates | 5", "Grand Total | 7"], RowTexts(cut));
@@ -182,7 +202,7 @@ public class PivotRenderingTests : PivotTestContext
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
 
-        var refusal = Assert.Throws<InvalidOperationException>(() => cut.Render(ps => ps.Add(p => p.DataSource, Positions())));
+        var refusal = Assert.Throws<InvalidOperationException>(() => cut.Render(ps => ps.Add(p => p.Source, Positions())));
 
         Assert.Contains("'Region'", refusal.Message);
     }
@@ -218,7 +238,7 @@ public class PivotRenderingTests : PivotTestContext
         var name = Grid(cut).Instance.Columns[1].Name;
 
         await cut.InvokeAsync(() => Grid(cut).Instance.OnColumnWidthChanged.InvokeAsync(new ExGrid.ColumnWidthChange(name, 150)));
-        cut.Render(ps => ps.Add(p => p.DataSource, Bundled()));
+        cut.Render(ps => ps.Add(p => p.Source, Bundled()));
 
         var column = Grid(cut).Instance.Columns[1];
         Assert.Equal(150, column.Width.Width.FixedPx);

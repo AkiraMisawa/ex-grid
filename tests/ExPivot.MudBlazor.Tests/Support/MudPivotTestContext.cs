@@ -97,7 +97,7 @@ public abstract class MudPivotTestContext : BunitContext
             builder.AddComponentParameter(1, nameof(MudExGridPaper.ChildContent), (RenderFragment)(inner =>
             {
                 inner.OpenComponent<PivotComponent>(0);
-                inner.AddComponentParameter(1, nameof(PivotComponent.DataSource), source ?? PivotSource.From(Sales, Fields));
+                inner.AddComponentParameter(1, nameof(PivotComponent.Source), source ?? PivotSource.From(Sales, Fields));
                 inner.AddComponentParameter(3, nameof(PivotComponent.Culture), CultureInfo.GetCultureInfo("en-US"));
                 inner.AddComponentParameter(4, nameof(PivotComponent.ViewportHeight), (ViewportSize)400);
                 inner.AddComponentParameter(5, nameof(PivotComponent.ViewportWidth), (ViewportSize)700);

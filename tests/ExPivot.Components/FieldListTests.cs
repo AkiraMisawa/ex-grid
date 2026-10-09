@@ -161,7 +161,7 @@ public class FieldListTests : PivotTestContext
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")] });
         await AreaElement(cut, "Rows").QuerySelector(".ex-pivot-entry")!.DragStartAsync(new DragEventArgs());
-        cut.Render(ps => ps.Add(p => p.DataSource, Bundled()));
+        cut.Render(ps => ps.Add(p => p.Source, Bundled()));
         await cut.Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
         Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
     }

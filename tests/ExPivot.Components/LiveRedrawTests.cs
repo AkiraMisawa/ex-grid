@@ -242,8 +242,8 @@ public class LiveRedrawTests : PivotTestContext
         Assert.Equal([newest - 1, newest], Alive(shown.Select(s => s.Metadata)));
         Assert.Equal([newest], Alive(shown.Select(s => s.State)));
         // The display rows: the Window on screen, and every row of the Window last served under the
-        // Report Version before it — a delta's baseline (ADR-0152) — and of earlier Windows only the
-        // rows those two share with them (ADR-0153).
+        // Report Version before it — the Baseline Window of the next Window Changes (ADR-0152) — and
+        // of earlier Windows only the rows those two share with them (ADR-0153).
         Assert.True(shown[newest].Rows.All(static row => row.IsAlive) && shown[newest - 1].Rows.All(static row => row.IsAlive),
             "the Window on screen, and the one the Report Version before it was served, are held");
         Assert.Empty(AliveBeyond(shown, newest, newest, newest - 1));

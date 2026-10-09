@@ -12,17 +12,18 @@ namespace ExPivot.Components;
 public partial class ExPivot
 {
     /// <summary>
-    /// How the local DataSource calculation shares the thread while it makes an answer's cube and lays out its report
-    /// (ADR-0066, PV-40): in slices of about 30 ms, yielding between them, so that a browser keeps
-    /// painting, the report on screen stays as it was — under the loading indication — until the
-    /// new one is complete, and a newer gesture supersedes the work. A quick layout yields nothing.
-    /// Null, the default, is <see cref="PivotSlicing.Default"/>; a test hands in its own to count
-    /// the yields, or to hold the work at one. An explicit Source owns its calculation policy.
+    /// How the computation ExPivot makes over <see cref="Source"/> shares the thread while it makes
+    /// an answer's cube and lays out its report (ADR-0066, PV-40): in slices of about 30 ms, yielding
+    /// between them, so that a browser keeps painting, the report on screen stays as it was — under
+    /// the loading indication — until the new one is complete, and a newer gesture supersedes the
+    /// work. A quick layout yields nothing. Null, the default, is <see cref="PivotSlicing.Default"/>;
+    /// a test hands in its own to count the yields, or to hold the work at one. A
+    /// <see cref="ReportSource"/> shares the thread as it was made to.
     /// </summary>
     [Parameter] public PivotSlicing? Slicing { get; set; }
 
     private PivotReportSource? _source;
-    private PivotSource? _dataSource;
+    private PivotSource? _pivotSource;
     private LocalPivotReportSource? _ownedSource;
     private TimeProvider? _ownedClock;
     private PivotSlicing? _ownedSlicing;
@@ -31,21 +32,21 @@ public partial class ExPivot
     private PivotReportWindow _wantedWindow = new(0, 64);
     private async ValueTask<PivotReportSource> ResolveReportSourceAsync()
     {
-        if (Source is { } reports)
+        if (ReportSource is { } reports)
         {
             if (_ownedSource is { } previous) _ = previous.DisposeAsync();
             _ownedSource = null;
-            _dataSource = null;
+            _pivotSource = null;
             return reports;
         }
-        if (_ownedSource is null || !ReferenceEquals(_dataSource, DataSource)
+        if (_ownedSource is null || !ReferenceEquals(_pivotSource, Source)
             || !ReferenceEquals(_ownedClock, _time) || !Equals(_ownedSlicing, Pacing))
         {
             var previous = _ownedSource;
-            _dataSource = DataSource;
+            _pivotSource = Source;
             _ownedClock = _time;
             _ownedSlicing = Pacing;
-            var next = PivotReportSource.From(DataSource!, timeProvider: _time, slicing: Pacing);
+            var next = PivotReportSource.From(Source!, timeProvider: _time, slicing: Pacing);
             if (previous is not null)
                 await next.ContinueFromAsync(previous);
             _ownedSource = next;
@@ -62,7 +63,7 @@ public partial class ExPivot
 
     // When the answer held arrived, and when the answer the report on screen was laid out from did:
     // the time a Stale Report says it shows the data as of, and the change time of the cells a
-    // data version marks (ADR-0067/0068).
+    // new Source Version marks (ADR-0067/0068).
     private DateTimeOffset _shownAt;
 
     // The layout the report shows; the one it is on its way to — what the Field List shows, and
@@ -127,7 +128,7 @@ public partial class ExPivot
     /// </summary>
     public Task RefreshAsync() => InvokeAsync(async () =>
     {
-        var source = _source ?? throw new InvalidOperationException("ExPivot has no Source yet.");
+        var source = _source ?? throw new InvalidOperationException("ExPivot has no Pivot Source or report source yet.");
         var generation = _generation;
         // A source that refreshes says its data moved on: the question below answers that notice,
         // so it is not asked twice. A Stale Report's Retry is not offered meanwhile: the refresh is
@@ -332,7 +333,7 @@ public partial class ExPivot
                 LabelMetrics = new(metrics.WideWidthPx, metrics.DigitWidthPx, metrics.NarrowWidthPx,
                     metrics.FullWidthPx, metrics.OtherWidthPx, metrics.CellHorizontalPaddingPx, metrics.ExportGlyphWidths()),
             };
-            // Refresh and Retry ask the provider again. So does a notice of newer data from a source
+            // Refresh and Retry ask the Pivot Source again. So does a notice of newer data from a source
             // that declared it refreshes in full (ADR-0153): it cannot name its changes, and the
             // notice may be all its server knows of them; an incremental source is asked for them.
             var refreshData = kind == Question.Data
@@ -343,7 +344,7 @@ public partial class ExPivot
             // a filter or newer data shrank it under the Window the grid was scrolled to — the Window
             // clamped into it is asked for, so the grid is never handed rows past the report's row
             // count (ADR-0151). The question goes on as itself: the report on screen stays until the
-            // clamped Window lands, and the provider is not asked to refresh twice. A report that
+            // clamped Window lands, and the Pivot Source is not asked to refresh twice. A report that
             // shrank again meanwhile is clamped again; each clamp starts the Window earlier, so
             // this ends.
             while (adopted && client.Current is { } answered && ClampedInto(answered) is { } clamped)

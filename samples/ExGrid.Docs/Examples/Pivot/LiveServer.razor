@@ -2,7 +2,7 @@
 @using ExPivot.Components
 @using ExPivot.Engine
 
-<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="300" />
+<ExPivot ReportSource="_source" @bind-Layout="_layout" ViewportHeight="300" />
 
 @code {
     private readonly SalesServer _server = new();

@@ -173,7 +173,7 @@ else
         Describe();
     }
 
-    private RenderFragment Pivot => @<ExPivot DataSource="_source" @bind-Layout="_layout" @bind-Layout:after="Changed"
+    private RenderFragment Pivot => @<ExPivot Source="_source" @bind-Layout="_layout" @bind-Layout:after="Changed"
                                                @bind-ShowFieldList="_showFieldList"
                                                PivotChrome="_pivotChrome" Chrome="_gridChrome"
                                                OnShowDetails="_showDetails" DetailsView="DetailsView" Label="Words"

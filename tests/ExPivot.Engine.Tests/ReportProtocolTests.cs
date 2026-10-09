@@ -35,7 +35,7 @@ public class ReportProtocolTests
         Assert.Equal(2, requests);
     }
 
-    // A provider may complete another request while an older response's lists are validated.
+    // A report source may complete another request while an older response's lists are validated.
     // This deterministically interleaves that publication without delays or scheduler races.
     private sealed class InterleavedWidths(double[] values, Action interleave) : IReadOnlyList<double>
     {
@@ -135,7 +135,7 @@ public class ReportProtocolTests
         Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct));
         var expired = await source.CopyAsync(new(before.Metadata.Version, columns, ranges), ct);
         Assert.Equal(PivotReportRefusalKind.ReportVersionNotHeld, expired.Refusal!.Kind);
-        // Details names the Source Version, not the Report Version (ADR-0151): the provider still
+        // Details names the Source Version, not the Report Version (ADR-0151): the Pivot Source still
         // holds the data the earlier report was computed from, so its records still add up to it.
         var details = await source.DetailsAsync(before.Metadata.DetailsQuery(before.Rows[0], 0), ct);
         Assert.False(details.IsRefused);
@@ -245,7 +245,7 @@ public class ReportProtocolTests
     }
 
     [Fact]
-    public async Task ADR0152_malformed_delta_and_failed_recovery_keep_the_previous_window_atomically()
+    public async Task ADR0152_malformed_Window_Changes_and_failed_recovery_keep_the_previous_window_atomically()
     {
         var call = 0;
         var row = DisplayRow("A", 1m);
@@ -253,7 +253,7 @@ public class ReportProtocolTests
             (request, _) => ValueTask.FromResult(++call switch
             {
                 1 => PivotReportUpdate.Complete(request, OneRowMetadata("v1"), [row]),
-                2 => PivotReportUpdate.Delta(request, OneRowMetadata("v2"), [new(0, DisplayRow("A", 2m)), new(0, DisplayRow("A", 3m))],
+                2 => PivotReportUpdate.Changed(request, OneRowMetadata("v2"), [new(0, DisplayRow("A", 2m)), new(0, DisplayRow("A", 3m))],
                     PivotReportDigest.Of(OneRowMetadata("v2"), 0, [DisplayRow("A", 3m)])),
                 _ => PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.SourceRefused, "Recovery unavailable.")),
             }));
@@ -386,7 +386,7 @@ public class ReportProtocolTests
     }
 
     [Fact]
-    public async Task ADR0153_disposing_the_report_does_not_dispose_its_provider_and_rejects_more_report_work()
+    public async Task ADR0153_disposing_the_report_does_not_dispose_its_Pivot_Source_and_rejects_more_report_work()
     {
         var fields = EntryFields();
         var data = PivotSource.From<Entry>([new(1, "A", 1m)], fields);
@@ -407,12 +407,12 @@ public class ReportProtocolTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var calls = 0;
-        var provider = PivotSource.Fetch(data.Fields, data.Features, async (query, ct) =>
+        var pivotSource = PivotSource.Fetch(data.Fields, data.Features, async (query, ct) =>
         {
             if (++calls > 1) { entered.SetResult(); await release.Task.WaitAsync(ct); }
             return await data.AggregateAsync(query, ct);
         }, data.ItemsAsync, data.DetailsAsync);
-        await using var source = PivotReportSource.From(provider);
+        await using var source = PivotReportSource.From(pivotSource);
         var ct = TestContext.Current.CancellationToken;
         var request = new PivotReportRequest("first", EntryLayout(), PivotReportSettings.Invariant, new(0, 1));
         var first = await source.WindowAsync(request, ct);
@@ -491,10 +491,10 @@ public class ReportProtocolTests
         return (new PivotReportClient(recorded), updates);
     }
 
-    [Theory] // ADR-0152/0153: a change of one leaf is sent as a delta against the Window the client holds, however few Report Versions the source keeps — publishing the new version evicts the baseline only after the delta is made against it — and the rows it did not change are neither in the delta nor new instances
+    [Theory] // ADR-0152/0153: a change of one leaf is sent as Window Changes against the Baseline Window the client holds, however few Report Versions the source keeps — publishing the new version evicts the baseline only after the changes are made against it — and the rows it did not change are neither among the changes nor new instances
     [InlineData(1)]
     [InlineData(2)]
-    public async Task ADR0152_ADR0153_a_one_leaf_change_is_a_delta_however_few_versions_are_kept(int versionsKept)
+    public async Task ADR0152_ADR0153_a_one_leaf_change_is_sent_as_Window_Changes_however_few_versions_are_kept(int versionsKept)
     {
         var fields = EntryFields();
         var data = PivotSource.From<Entry>([new(1, "A", 10m), new(2, "B", 20m), new(3, "C", 30m)], fields);
@@ -508,11 +508,11 @@ public class ReportProtocolTests
         Assert.True(await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 10), cancellationToken: ct));
         var after = client.Current!;
 
-        var delta = updates[^1];
-        Assert.True(delta.Rows is null, $"the change of one leaf was sent as a whole Window of {delta.Rows?.Count} rows");
-        Assert.Equal(before.Metadata.Version, delta.Baseline);
+        var changed = updates[^1];
+        Assert.True(changed.Rows is null, $"the change of one leaf was sent as a whole Window of {changed.Rows?.Count} rows");
+        Assert.Equal(before.Metadata.Version, changed.Baseline);
         // B's row and the grand total, and nothing else.
-        Assert.Equal([1, 3], delta.Changes.Select(change => change.Offset));
+        Assert.Equal([1, 3], changed.Changes.Select(change => change.Offset));
         Assert.Equal(["25", "65"], [after.Rows[1].Values[0]!.Text, after.Rows[3].Values[0]!.Text]);
         Assert.Same(before.Rows[0], after.Rows[0]);
         Assert.Same(before.Rows[2], after.Rows[2]);
@@ -522,7 +522,7 @@ public class ReportProtocolTests
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference[] BAndGrandTotal(PivotReportClient client) => [new(client.Current!.Rows[1]), new(client.Current.Rows[3])];
 
-    [Theory] // ADR-0153 (LV-22): the baseline Window a delta is made against is kept no longer than the Report Version it was served under — evicted by the publication the delta goes with, it does not outlive that call
+    [Theory] // ADR-0153 (LV-22): the Baseline Window that Window Changes are made against is kept no longer than the Report Version it was served under — evicted by the publication the changes go with, it does not outlive that call
     [InlineData(1, false)]
     [InlineData(2, true)]
     public async Task ADR0153_a_baseline_window_evicted_by_publication_does_not_outlive_the_call(int versionsKept, bool kept)

@@ -5,7 +5,7 @@
 # takes them from the packed files alone (ADR-0042; the family ships at one version since its note
 # of 2026-10-03). A Snapshot is written to an Arrow stream and read back through the packed data
 # packages, and the check fails if it comes back different (DA-16). A trimmed Consumer also
-# round-trips report Windows, deltas and versioned operations with reflection disabled (ADR-0152).
+# round-trips report Windows, Window Changes and versioned operations with reflection disabled (ADR-0152).
 #
 #   tests/ExGrid.PackageSmoke/check.sh [version]
 #

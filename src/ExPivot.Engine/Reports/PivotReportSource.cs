@@ -1,18 +1,21 @@
 namespace ExPivot.Engine;
 
-/// <summary>The asynchronous report boundary shared by a local browser and a remote server (ADR-0151).</summary>
+/// <summary>A report source: the asynchronous report boundary shared by a local browser and a remote
+/// server (ADR-0151). It computes a Pivot Report over a Pivot Source and answers the Window asked for,
+/// in full or as Window Changes, and the operations versioned by it.</summary>
 public abstract class PivotReportSource : IAsyncDisposable
 {
     /// <summary>Fields offered to the Field List.</summary>
     public abstract IReadOnlyList<PivotField> Fields { get; }
     /// <summary>Offered Aggregations and Refresh capability.</summary>
     public abstract PivotSourceFeatures Features { get; }
-    /// <summary>Whether changed contributions can be calculated incrementally, or the provider
+    /// <summary>Whether changed contributions can be calculated incrementally, or the Pivot Source
     /// recomputes in full — declared, never claimed silently (ADR-0153). A component answers a
     /// full-refresh source's notice of newer data by asking it to refresh
     /// (<see cref="PivotReportRequest.RefreshData"/>).</summary>
     public abstract PivotReportUpdateMode UpdateMode { get; }
-    /// <summary>A complete report Window or a delta from its named baseline.</summary>
+    /// <summary>A complete report Window, or Window Changes from the Baseline Window the request
+    /// names.</summary>
     public abstract ValueTask<PivotReportUpdate> WindowAsync(PivotReportRequest request, CancellationToken cancellationToken = default);
     /// <summary>A field's Items at the requested Source Version.</summary>
     public abstract ValueTask<PivotItemPage> RawItemsAsync(PivotItemsQuery query, CancellationToken cancellationToken = default);
@@ -27,24 +30,25 @@ public abstract class PivotReportSource : IAsyncDisposable
     /// report showing it was computed from (ADR-0151: Details refers to the Source Version, not to a
     /// Report Version). The question is resolved from the cell the user acted on
     /// (<see cref="PivotReportMetadata.DetailsQuery"/>), so it holds whatever layouts follow; it is
-    /// answered while the data provider still holds that Source Version, and refused by the provider
+    /// answered while the Pivot Source still holds that Source Version, and refused by it
     /// (<see cref="PivotSourceRefusalKind.SourceVersionNotHeld"/>) once it does not — never answered
     /// from newer data.
     /// </summary>
     /// <param name="query">The cell's Items, the Hidden Items, the range of records, and the Source Version.</param>
     /// <param name="cancellationToken">Cancels the question.</param>
     public abstract ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default);
-    /// <summary>Asks the provider to refresh.</summary>
+    /// <summary>Asks the Pivot Source to refresh.</summary>
     public abstract ValueTask RefreshAsync(CancellationToken cancellationToken = default);
-    /// <summary>Releases this report's calculation state; it does not own the underlying data provider.</summary>
+    /// <summary>Releases this report's calculation state; it does not own the Pivot Source it computes over.</summary>
     public abstract ValueTask DisposeAsync();
-    /// <summary>The provider learned that its data changed.</summary>
+    /// <summary>The Pivot Source learned that its data changed.</summary>
     public event Action<PivotSourceChanged>? Changed;
     /// <summary>Raises the data-change notification.</summary>
     protected void OnChanged(PivotSourceChanged change) => Changed?.Invoke(change);
 
-    /// <summary>Runs a report over a local data provider, or on a server behind the Consumer's transport.</summary>
-    /// <param name="source">The data provider; this report does not own its lifetime.</param>
+    /// <summary>Runs a report over a Pivot Source: in the browser over local data, or on a server
+    /// behind the Consumer's transport.</summary>
+    /// <param name="source">The Pivot Source; this report does not own its lifetime.</param>
     /// <param name="orderKeys">Server-registered Order Key functions, by policy identifier.</param>
     /// <param name="versionsKept">Bounded number of immutable reports available to versioned operations.</param>
     /// <param name="slicing">How calculation work shares the calling thread.</param>
@@ -57,15 +61,15 @@ public abstract class PivotReportSource : IAsyncDisposable
     /// <summary>Uses the Consumer's transport. Authentication, connection and server report lifetime remain the Consumer's.</summary>
     /// <param name="fields">The fields the server's report offers.</param>
     /// <param name="features">Its Aggregations and whether it refreshes.</param>
-    /// <param name="updateMode">How the server's provider learns of changes.</param>
-    /// <param name="window">Asks the server for a Window: a complete one, or a delta from the
-    /// request's baseline. A delta replaces every row of the Window whose shown values changed —
-    /// subtotal and grand total rows, and rows whose percentage changed, included — and names the
-    /// digest of the whole Window it produces (<see cref="PivotReportUpdate.WindowDigest"/>). A
-    /// server running <see cref="LocalPivotReportSource"/> builds such deltas by construction; a
-    /// transport that coalesces, filters or builds deltas itself must keep that promise, computing
-    /// the digest from its own complete Window. A delta that does not reproduce its digest is never
-    /// shown: a complete Window is asked for in its place.</param>
+    /// <param name="updateMode">How the server's Pivot Source learns of changes.</param>
+    /// <param name="window">Asks the server for a Window: a complete one, or Window Changes from the
+    /// request's Baseline Window. Window Changes replace every row of the Window whose shown values
+    /// changed — subtotal and grand total rows, and rows whose percentage changed, included — and
+    /// name the digest of the whole Window they make (<see cref="PivotReportUpdate.WindowDigest"/>).
+    /// A server running <see cref="LocalPivotReportSource"/> builds them so by construction; a
+    /// transport that coalesces, filters or builds Window Changes itself must keep that promise,
+    /// computing the digest from its own complete Window. Window Changes that do not reproduce their
+    /// digest are never shown: a complete Window is asked for in their place.</param>
     /// <param name="items">Answers a field's Items at a Source Version.</param>
     /// <param name="copy">Answers a versioned Copy.</param>
     /// <param name="summary">Answers a versioned Selection Summary.</param>
@@ -90,11 +94,11 @@ public abstract class PivotReportSource : IAsyncDisposable
 /// <summary>
 /// A transport-neutral report source; delegates carry the complete versioned questions. It checks
 /// each answer against its question — another request's reply, another Report Version, records of
-/// another Source Version are refused or rejected, never shown. A Window's delta is checked by the
-/// client that applies it (<see cref="PivotReportClient"/>), against the digest of the Window it
-/// produces: whatever relays the server's deltas must pass them on whole, or build them complete
-/// — every row of the Window whose shown values changed, totals and percentages included — with
-/// the digest of the whole resulting Window (<see cref="PivotReportUpdate"/>).
+/// another Source Version are refused or rejected, never shown. Window Changes are checked by the
+/// client that applies them (<see cref="PivotReportClient"/>), against the digest of the Window they
+/// make: whatever relays the server's Window Changes must pass them on whole, or build them
+/// complete — every row of the Window whose shown values changed, totals and percentages included —
+/// with the digest of the whole resulting Window (<see cref="PivotReportUpdate"/>).
 /// </summary>
 public sealed class FetchingPivotReportSource : PivotReportSource
 {

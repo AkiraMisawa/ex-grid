@@ -41,7 +41,7 @@ Link both stylesheets in your host page:
 @using ExPivot.Components
 @using ExPivot.Engine
 
-<ExPivot DataSource="_source" @bind-Layout="_layout" ViewportHeight="420" />
+<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="420" />
 
 @code {
     private static readonly PivotField<Sale>[] Fields =
@@ -62,13 +62,14 @@ Link both stylesheets in your host page:
 }
 ```
 
-- **DataSource** accepts local data: `PivotSource.From(records, fields)` or a Snapshot. ExPivot
-  owns an independent report computation over that provider. For a server report, use **Source**
-  with `PivotReportSource.Fetch`: its delegates obtain report Windows and versioned operations
-  through your transport. `PivotReportSource.From(data)` runs that same calculation on the server.
-  Hand exactly one of `Source` and `DataSource`. A slow answer leaves the report under its loading
-  indication, and a newer question cancels the old one. The Consumer disposes a `Source` it owns;
-  the component disposes the report adapter it creates for `DataSource`, leaving the data alive.
+- **Source** takes the Pivot Source: `PivotSource.From(records, fields)` or a Snapshot. ExPivot
+  owns an independent report computation over it. For a report computed on a server, hand
+  **ReportSource** a report source instead, `PivotReportSource.Fetch`: its delegates obtain report
+  Windows, their Window Changes and versioned operations through your transport, and
+  `PivotReportSource.From(data)` runs the same calculation on the server. Hand exactly one of
+  `Source` and `ReportSource`. A slow answer leaves the report under its loading indication, and a
+  newer question cancels the old one. The Consumer disposes a `ReportSource` it owns; the component
+  disposes the computation it makes over `Source`, leaving the Pivot Source alive.
 - **Layout** is View State. `PivotLayoutJson.Write` and `Read` give it a versioned JSON form to
   store as a user's setting. `LayoutChanged` is raised for the layout the report shows.
 - **Show Details**, from a double click on a value or the Context Menu, opens the records behind

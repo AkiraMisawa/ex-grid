@@ -5,15 +5,15 @@ using System.Text;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// The digest of a report Window (ADR-0152): what a delta says its baseline Window becomes, so that
-/// a client which applies the delta to the Window it holds can tell whether the result is the
-/// source's Window — before anything of it is shown. A delta that leaves out a row whose shown
-/// values changed — a subtotal, a grand total, a row whose percentage moved — produces a Window
+/// The digest of a report Window (ADR-0152): what Window Changes say their Baseline Window becomes,
+/// so that a client which applies them to the Window it holds can tell whether the result is the
+/// source's Window — before anything of it is shown. Window Changes that leave out a row whose
+/// shown values changed — a subtotal, a grand total, a row whose percentage moved — make a Window
 /// whose digest differs, and the client asks for a complete Window instead
 /// (<see cref="PivotReportClient"/>).
 /// <para>
 /// <b>What it covers.</b> The Window as it stands after the update, every row of it in order, not
-/// the rows a delta carries: its Report Version; its first row, its row count and the whole
+/// the rows Window Changes carry: its Report Version; its first row, its row count and the whole
 /// report's row count; and per row its key (role, Value Field and Items), its Item path (field and
 /// Item), its label cells (text, indent and expand/collapse button) and each value cell's shown
 /// text. A cell's change mark (<see cref="PivotDisplayRow.ChangedIn"/>) and its raw values are not

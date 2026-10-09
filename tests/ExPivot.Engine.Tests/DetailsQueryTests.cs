@@ -7,7 +7,7 @@ namespace ExPivot.Engine.Tests;
 /// Show Details is a Source Version question (ADR-0151): resolved from the detached cell the user
 /// acted on — its row's Items, its value column's Items, the Hidden Items and the Source Version —
 /// it is the question the engine itself asks for the same cell, and it stays answerable after any
-/// number of later layouts, while the data provider holds that version.
+/// number of later layouts, while the Pivot Source holds that version.
 /// </summary>
 public class DetailsQueryTests
 {
@@ -62,7 +62,7 @@ public class DetailsQueryTests
 
     private sealed record Trade(long Id, string Desk, decimal Amount);
 
-    [Fact] // ADR-0151 (PV-14): Details keep answering after layouts that evicted their Report Version, and are refused — as the data having changed — only once the provider no longer holds their Source Version
+    [Fact] // ADR-0151 (PV-14): Details keep answering after layouts that evicted their Report Version, and are refused — as the data having changed — only once the Pivot Source no longer holds their Source Version
     public async Task Details_outlive_the_report_version_and_end_with_their_source_version()
     {
         var fields = PivotFields.Of<Trade>().Key("Id", t => t.Id).Text("Desk", t => t.Desk).Number("Amount", t => t.Amount);
@@ -88,7 +88,7 @@ public class DetailsQueryTests
         Assert.Equal(2, page.Total);
         Assert.Equal(20m, Assert.Single(page.Records).Values[^1]);
 
-        // Data that moved on further than the provider holds: refused, naming the data's change.
+        // Data that moved on further than the Pivot Source holds: refused, naming the data's change.
         for (var i = 0; i < SnapshotPivotSource.AnswersHeld + 1; i++)
         {
             data.Apply(fields.Batch(changed: [trades[2] = trades[2] with { Amount = trades[2].Amount + 1 }]));

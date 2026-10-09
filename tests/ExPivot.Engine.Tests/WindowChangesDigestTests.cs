@@ -4,13 +4,14 @@ using static ExPivot.Engine.Tests.Pivot;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// A delta is verified, not trusted (ADR-0152): it names the digest of the Window it produces, the
-/// client computes the digest of what the delta makes of the Window it holds, and a delta whose
-/// result differs — one that left out a subtotal's or a grand total's change, say — or that names no
-/// digest is discarded before anything of it becomes current: a complete Window is asked for in its
-/// place, and if that cannot be had the last complete report stays, as a Stale Report.
+/// Window Changes are verified, not trusted (ADR-0152): they name the digest of the Window they make,
+/// the client computes the digest of what they make of the Baseline Window it holds, and Window
+/// Changes whose result differs — ones that left out a subtotal's or a grand total's change, say —
+/// or that name no digest are discarded before anything of them becomes current: a complete Window
+/// is asked for in their place, and if that cannot be had the last complete report stays, as a
+/// Stale Report.
 /// </summary>
-public class DeltaDigestTests
+public class WindowChangesDigestTests
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -68,9 +69,9 @@ public class DeltaDigestTests
         Values = [Sum("Amount"), Sum("Amount") with { ShowValuesAs = PivotShowValuesAs.PercentOfGrandTotal }],
     };
 
-    /// <summary>A server's report, and a relay to it over JSON whose delta can be made wrong, as a
-    /// transport that coalesces or rebuilds deltas could make it. Each request it relays, and each
-    /// answer it passes on, is kept.</summary>
+    /// <summary>A server's report, and a relay to it over JSON whose Window Changes can be made
+    /// wrong, as a transport that coalesces or rebuilds them could make them. Each request it relays,
+    /// and each answer it passes on, is kept.</summary>
     private sealed class Relayed : IAsyncDisposable
     {
         private readonly PivotFields<Trade> _fields = PivotFields.Of<Trade>().Key("Id", t => t.Id)
@@ -83,7 +84,7 @@ public class DeltaDigestTests
         private readonly SnapshotPivotSource _data;
         private readonly LocalPivotReportSource _server;
 
-        public Relayed(Func<PivotReportUpdate, PivotReportUpdate>? delta = null, Func<PivotReportRequest, PivotReportUpdate?>? recovery = null)
+        public Relayed(Func<PivotReportUpdate, PivotReportUpdate>? changes = null, Func<PivotReportRequest, PivotReportUpdate?>? recovery = null)
         {
             _data = PivotSource.From(_trades, _fields);
             _server = PivotReportSource.From(_data);
@@ -93,8 +94,8 @@ public class DeltaDigestTests
                 if (request.Baseline is null && Asked.Count > 1 && recovery?.Invoke(request) is { } refused)
                     return refused;
                 var update = Wire(await _server.WindowAsync(Wire(request), ct));
-                if (update.Rows is null && delta is not null)
-                    update = Wire(delta(update));
+                if (update.Rows is null && changes is not null)
+                    update = Wire(changes(update));
                 Answers.Add(update);
                 return update;
             });
@@ -124,15 +125,15 @@ public class DeltaDigestTests
 
     private static readonly PivotReportWindow Window = new(0, 20);
 
-    [Theory] // ADR-0152: a delta that leaves out a subtotal's, a grand total's or a percentage's change is detected by its digest, discarded unseen, and a complete Window shown in its place, equal to a fresh computation
+    [Theory] // ADR-0152: Window Changes that leave out a subtotal's, a grand total's or a percentage's change are detected by their digest, discarded unseen, and a complete Window shown in their place, equal to a fresh computation
     [InlineData(PivotRowRole.Group)]
     [InlineData(PivotRowRole.GrandTotal)]
     [InlineData(PivotRowRole.Item)]
-    public async Task A_delta_missing_a_rows_change_is_detected_and_recovered(PivotRowRole dropped)
+    public async Task Window_Changes_missing_a_rows_change_are_detected_and_recovered(PivotRowRole dropped)
     {
         // East / Credit changes: its row, East's subtotal and the grand total change, and every
         // row's percentage of the grand total with them.
-        await using var relayed = new Relayed(delta: update => update with
+        await using var relayed = new Relayed(changes: update => update with
         {
             Changes = [.. update.Changes.Where(change => change.Row.Role != dropped || change.Row.Labels[0].Text is "Rates")],
         });
@@ -144,7 +145,7 @@ public class DeltaDigestTests
         var adopted = await client.ReadAsync(ByRegionAndDesk, PivotReportSettings.Invariant, Window, cancellationToken: Ct);
 
         Assert.True(adopted, client.Refusal?.Message);
-        // The delta, then the complete Window asked for in its place.
+        // The Window Changes, then the complete Window asked for in their place.
         Assert.Equal(3, relayed.Asked.Count);
         Assert.NotNull(relayed.Asked[1].Baseline);
         Assert.Null(relayed.Answers[1].Rows);
@@ -155,10 +156,10 @@ public class DeltaDigestTests
         Assert.Null(client.Refusal);
     }
 
-    [Fact] // ADR-0152: a delta that names no digest is not applied: a complete Window is asked for in its place
-    public async Task A_delta_with_no_digest_is_recovered()
+    [Fact] // ADR-0152: Window Changes that name no digest are not applied: a complete Window is asked for in their place
+    public async Task Window_Changes_with_no_digest_are_recovered()
     {
-        await using var relayed = new Relayed(delta: update => update with { WindowDigest = null });
+        await using var relayed = new Relayed(changes: update => update with { WindowDigest = null });
         var client = new PivotReportClient(relayed.Source);
         Assert.True(await client.ReadAsync(ByRegionAndDesk, PivotReportSettings.Invariant, Window, cancellationToken: Ct));
 
@@ -170,8 +171,8 @@ public class DeltaDigestTests
         Assert.Equal(await relayed.FreshAsync(Window), Texts(client.Current!.Rows));
     }
 
-    [Fact] // ADR-0152: a complete delta is adopted as it is, with no further request
-    public async Task A_correct_delta_is_adopted_with_no_extra_request()
+    [Fact] // ADR-0152: complete Window Changes are adopted as they are, with no further request
+    public async Task Correct_Window_Changes_are_adopted_with_no_extra_request()
     {
         await using var relayed = new Relayed();
         var client = new PivotReportClient(relayed.Source);
@@ -188,11 +189,11 @@ public class DeltaDigestTests
         Assert.NotSame(before, client.Current);
     }
 
-    [Fact] // ADR-0152/0067: a delta that fails its digest, and a complete Window that cannot be had, leave the last complete report current, as a Stale Report — nothing of the delta shown
+    [Fact] // ADR-0152/0067: Window Changes that fail their digest, and a complete Window that cannot be had, leave the last complete report current, as a Stale Report — nothing of the changes shown
     public async Task A_failed_recovery_leaves_a_stale_report()
     {
         await using var relayed = new Relayed(
-            delta: update => update with { Changes = [.. update.Changes.Where(change => change.Row.Role != PivotRowRole.GrandTotal)] },
+            changes: update => update with { Changes = [.. update.Changes.Where(change => change.Row.Role != PivotRowRole.GrandTotal)] },
             recovery: request => PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.SourceRefused, "The server is restarting.")));
         var client = new PivotReportClient(relayed.Source);
         Assert.True(await client.ReadAsync(ByRegionAndDesk, PivotReportSettings.Invariant, Window, cancellationToken: Ct));

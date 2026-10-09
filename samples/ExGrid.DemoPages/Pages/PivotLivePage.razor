@@ -260,12 +260,12 @@
     // ExPivot listens to its source's Changed, gathers the changes and redraws at most every
     // RedrawInterval from the newest data, and marks each value whose painted text changed for
     // ChangeHighlightDuration (ADR-0067/0068). Both are the defaults, written out.
-    private RenderFragment LocalPivot => @<ExPivot DataSource="_local" @bind-Layout="_localLayout"
+    private RenderFragment LocalPivot => @<ExPivot Source="_local" @bind-Layout="_localLayout"
                                                     RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
                                                     PivotChrome="_pivotChrome" Chrome="_gridChrome"
                                                     Culture="Culture" ViewportHeight="300" />;
 
-    private RenderFragment ServerPivot => @<ExPivot Source="_server" @bind-Layout="_serverLayout"
+    private RenderFragment ServerPivot => @<ExPivot ReportSource="_server" @bind-Layout="_serverLayout"
                                                      RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
                                                      PivotChrome="_pivotChrome" Chrome="_gridChrome"
                                                      Culture="Culture" ViewportHeight="300" />;

@@ -132,7 +132,7 @@
                 }
             </div>
             <MudExGridPaper Elevation="1" Hover="true" Class="sales-report">
-                <ExPivot DataSource="_source" @bind-Layout="_layout" @bind-ShowFieldList="_showFieldList"
+                <ExPivot Source="_source" @bind-Layout="_layout" @bind-ShowFieldList="_showFieldList"
                          PivotChrome="MudPivotChrome.Default" Culture="Culture"
                          ViewportWidth="ReportWidth" ViewportHeight="ReportHeight" FieldListWidth="FieldListWidth" />
             </MudExGridPaper>
@@ -169,7 +169,7 @@
                 }
             </div>
             <div class="sales-report">
-                <ExPivot DataSource="_source" @bind-Layout="_layout" @bind-ShowFieldList="_showFieldList" Culture="Culture"
+                <ExPivot Source="_source" @bind-Layout="_layout" @bind-ShowFieldList="_showFieldList" Culture="Culture"
                          ViewportWidth="ReportWidth" ViewportHeight="ReportHeight" FieldListWidth="FieldListWidth" />
             </div>
         }
