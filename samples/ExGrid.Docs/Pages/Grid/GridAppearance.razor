@@ -56,6 +56,15 @@
             changes it also passes matching <code>CellMetrics</code>. <code>MudExGridPaper</code> does this for
             Roboto.
         </p>
+        <p>
+            Those metrics are a <code>CellTextMetrics</code>: a width per class of character, and a table of single
+            glyphs measured on their own. When something that is not the grid sizes text that the grid will show —
+            a server that computes a report and decides its label widths, as ExPivot's server source does — hand it
+            the same numbers. <code>CellTextMetrics.ExportGlyphWidths()</code> copies the glyph table as plain widths,
+            already scaled to these metrics' font size and weight, so the other process charges each glyph exactly
+            what the grid charges it. The character classes still come first there, as they do in the grid; metrics
+            with no table export an empty one.
+        </p>
         <h3 class="mud-typography mud-typography-h6 docs-example-title">Cell States</h3>
         <p>
             A tone is derived from the value. A <strong>Cell State</strong> is what only your application knows

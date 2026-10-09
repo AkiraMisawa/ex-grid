@@ -25,6 +25,20 @@
                 columns — as in Excel.
             </li>
             <li>
+                <strong>Your application can answer a copy itself.</strong> Set <code>CopyAnswer</code> and, once the
+                grid's own rules have approved a copy, it is handed the ranges being copied
+                (<code>GridCopyRequest</code>, with the Row Sequence Version their positions are read under) and the
+                grid writes exactly what it returns: <code>GridCopyAnswer.Write(text, html)</code>, or
+                <code>GridCopyAnswer.Refuse(sentence)</code>, which leaves the clipboard as it was, announces your
+                sentence and raises <code>OnCopyRefused</code> as <code>RefusedByConsumer</code>. It is asked
+                synchronously, in the same process, so it answers from data you hold — ExSheet answers its copies
+                this way, from the values its formulas give. <code>CopyAnswerAsync</code> is the same answer for data
+                you must ask for first, such as a report a server computes, which is how ExPivot copies: the copy
+                then always takes the clipboard's asynchronous route, even when its cells are on screen. Note the
+                version of your data before you await, and answer from that version or refuse — the grid never fills
+                a gap with what it happens to hold now. When both are set, <code>CopyAnswer</code> is the one asked.
+            </li>
+            <li>
                 <strong>What you copied stays outlined with dashes</strong> while the clipboard still holds it, as
                 Excel's moving border does, but standing still. It goes when anything else is copied — in another
                 application, another grid or a text field — when you press <kbd>Esc</kbd> or start an edit, and
