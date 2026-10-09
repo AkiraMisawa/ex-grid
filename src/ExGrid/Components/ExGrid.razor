@@ -8979,17 +8979,12 @@
     }
 
     /// <summary>The rows of the current page, as positions in the whole result.</summary>
-    private RowRange? PageRows() => PageFrom(_pageStartRow);
-
-    /// <summary>The rows of the page that starts at <paramref name="start"/>, as positions in the whole
-    /// result: the page shown now, or one a press on the header's checkbox named before the page turned
-    /// (ADR-0043, MK-9).</summary>
-    private RowRange? PageFrom(int start)
+    private RowRange? PageRows()
     {
         if (PageSize is not { } size)
             return null;
-        var count = Math.Min(size, TotalRows - start);
-        return count > 0 ? new RowRange(start, count) : null;
+        var count = Math.Min(size, TotalRows - _pageStartRow);
+        return count > 0 ? new RowRange(_pageStartRow, count) : null;
     }
 
     /// <summary>
@@ -9045,10 +9040,14 @@
         builder.AddEventStopPropagationAttribute(8, "onmousedown", true);
         builder.AddEventStopPropagationAttribute(9, "onclick", true);
         builder.AddAttribute(10, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _onHeaderMark));
-        // Under a pager the press names the page's rows: the listener reads which page with the paint
-        // at the press, and the core lines up that page though it was turned since (ADR-0043, MK-9).
+        // Under a pager the press names the page's rows: the listener reads which page — its first row
+        // and how many rows it holds — with the paint at the press, and the core lines up that page
+        // though it was turned, resized or the pager removed since (ADR-0043, MK-9).
         if (PageSize is not null)
+        {
             builder.AddAttribute(11, "data-ex-page", _pageStartRow);
+            builder.AddAttribute(12, "data-ex-page-rows", PageRows()?.Count ?? 0);
+        }
         builder.CloseElement();
     };
 
@@ -9059,8 +9058,12 @@
     /// now, unless all are marked already.
     /// <para>It names rows by position, so it is judged against the paint it was made on (ADR-0142,
     /// MK-9): under an order that has moved since, or on what a Source since replaced painted, it marks
-    /// nothing and is refused (<see cref="OnMarkRefused"/>). Under a pager it lines up the page it was
-    /// pressed on, as positions under the order it was pressed in, though the page was turned since.</para>
+    /// nothing and is refused (<see cref="OnMarkRefused"/>). Otherwise it marks what it named, by the mode
+    /// in force at the press, whatever the grid pages by now: made under a pager, the page it was pressed
+    /// on — its first row and the rows it held, read at the press — as positions under the order it was
+    /// pressed in, though the page has been turned or resized, or the pager removed, since; made with no
+    /// pager, the whole result, though a pager has been added since. A press nobody told of names what
+    /// the header names now.</para>
     /// </summary>
     private async Task PressHeaderMarkAsync()
     {
@@ -9072,9 +9075,9 @@
             await RefuseMarkAsync(away);
             return;
         }
-        if (PageSize is not null)
+        if (press?.NamedAPage ?? PageSize is not null)
         {
-            if ((press is { PageStart: >= 0 } told ? PageFrom(told.PageStart) : PageRows()) is { } page)
+            if ((press is { } told ? told.Page : PageRows()) is { } page)
                 await _marks.OnMarkIntentAsync(new RowMarkIntent<TRow>.Positions([page], _sequenceVersion));
             return;
         }

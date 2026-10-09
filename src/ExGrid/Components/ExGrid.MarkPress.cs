@@ -6,12 +6,13 @@ namespace ExGrid.Components;
 
 // A press on a mark — a row's checkbox, the header's, or "Mark all N rows" — is judged against the paint
 // it was made on (ADR-0043's note of 2026-10-08, decided with the user on 2026-10-09; MK-9; ADR-0142).
-// What it can still name exactly is honoured: a row's checkbox names its row by identity, and the header's
-// checkbox under a pager names the page it was pressed on, as positions under the order it was pressed
-// in. The rest marks nothing and is refused through OnMarkRefused, once: SourceChanged for a press made on
-// what a replaced Source painted, OrderMoved for one naming rows by position under an order that has moved
-// since. A press on a row's checkbox whose click Blazor will not deliver is answered by the core, as an
-// Action press is (ExGrid.ActionPress.cs), and a told press never reaches the next one.
+// What it can still name exactly is honoured: a row's checkbox names its row by identity, and the
+// header's checkbox what it named by the mode in force at the press — under a pager, the page it was
+// pressed on, as positions under the order it was pressed in; with none, the whole result — whatever the
+// grid pages by now. The rest marks nothing and is refused through OnMarkRefused, once: SourceChanged for
+// a press made on what a replaced Source painted, OrderMoved for one naming rows by position under an
+// order that has moved since. A press on a row's checkbox whose click Blazor will not deliver is answered
+// by the core, as an Action press is (ExGrid.ActionPress.cs), and a told press never reaches the next one.
 public partial class ExGrid<TRow>
 {
     /// <summary>
@@ -19,9 +20,11 @@ public partial class ExGrid<TRow>
     /// user on 2026-10-09; MK-9). A press on a row's checkbox, the header's or "Mark all N rows" is judged
     /// against the paint it was made on (<see cref="MarkPressTakenAt"/>), and what it can still name
     /// exactly is honoured: a row's checkbox marks its row by identity wherever the order has moved it,
-    /// and the header's checkbox under a pager marks the page it was pressed on — as positions under the
-    /// order it was pressed in, which the marks resolve whether or not the page is on screen — after the
-    /// page has turned. The rest marks nothing, raises no Row Mark intent, and is raised here once:
+    /// and the header's checkbox marks what it named, by the mode in force at the press — under a pager,
+    /// the page it was pressed on, as positions under the order it was pressed in, which the marks resolve
+    /// whether or not the page is on screen, though the page has turned or the pager gone since; with
+    /// none, the whole result, though a pager has come since. The rest marks nothing, raises no Row Mark
+    /// intent, and is raised here once:
     /// <see cref="MarkRefusalReason.SourceChanged"/> for a press made on what a <see cref="Source"/> since
     /// replaced by another instance painted, a row's checkbox included, and
     /// <see cref="MarkRefusalReason.OrderMoved"/> for the header's checkbox or "Mark all N rows" pressed
@@ -37,14 +40,23 @@ public partial class ExGrid<TRow>
 
     /// <summary>A press on one of this grid's marks, told by its listener, until its click is heard or the
     /// core answers it (ADR-0142, MK-9): the paint it was taken against; for the header's checkbox under a
-    /// pager, the first row of the page it named, or −1; and for a row's checkbox, the row its cell's id
-    /// named in that paint and the serial of the row component that painted the checkbox there — or −1,
-    /// and 0 where the grid kept no serial for that paint. Numbers only (ADR-0160).</summary>
-    private readonly record struct MarkPress(int Paint, int PageStart, int Row, int Serial)
+    /// pager, the first row of the page it named and how many rows that page held, or −1 and −1; and for a
+    /// row's checkbox, the row its cell's id named in that paint and the serial of the row component that
+    /// painted the checkbox there — or −1, and 0 where the grid kept no serial for that paint. Numbers only
+    /// (ADR-0160).</summary>
+    private readonly record struct MarkPress(int Paint, int PageStart, int PageRows, int Row, int Serial)
     {
         /// <summary>Whether it was made on a row's checkbox, rather than the header's or "Mark all N
         /// rows", which the root renders and whose click always comes.</summary>
         public bool OnARow => Row >= 0;
+
+        /// <summary>Whether it named a page: made on the header's checkbox while a pager was in force. Made
+        /// on it with none, it named the whole result (ADR-0043, MK-9).</summary>
+        public bool NamedAPage => PageStart >= 0;
+
+        /// <summary>The rows of the page it named, as positions in the whole result — its first row and the
+        /// rows it held at the press — or null where it named none, or a page of no rows.</summary>
+        public RowRange? Page => PageStart >= 0 && PageRows > 0 ? new RowRange(PageStart, PageRows) : null;
     }
 
     // The press being told, until its click is heard or the core answers it or lets it go.
@@ -58,16 +70,18 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// What the next press on one of this grid's marks — a row's checkbox, the header's, or "Mark all
     /// N rows" — was taken against (ADR-0142, MK-9): the paint the Viewport named at its mousedown; for the
-    /// header's checkbox under a pager, the first row of the page it named; and for a row's checkbox, the
-    /// row its cell's id named, all read at that mousedown from what the render wrote. Told by the grid's
+    /// header's checkbox under a pager, the first row of the page it named and how many rows it held; and
+    /// for a row's checkbox, the row its cell's id named, all read at that mousedown from what the render
+    /// wrote. Told by the grid's
     /// listener at the release on the same mark, just before Blazor dispatches the click, so the click the
     /// core hears next is the one it describes, as for an action (<see cref="ActionPressTakenAt"/>). The
     /// click is judged against that paint (<see cref="OnMarkRefused"/>): a press made on what a
     /// <see cref="Source"/> since replaced painted marks nothing; the header's checkbox and "Mark all N
     /// rows", which name rows by position, mark nothing under an order that has moved since; a row's
-    /// checkbox names its row by identity, which an order move leaves it; and the header's checkbox under
-    /// a pager marks the page it named, though the page has turned since. Reading what the render wrote is
-    /// not a measurement, and nothing per cell crosses (ADR-0021).
+    /// checkbox names its row by identity, which an order move leaves it; and the header's checkbox marks
+    /// what it named, by the mode in force at the press — under a pager, the page it named, though the page
+    /// has turned, or the pager gone, since; with none, the whole result, though a pager has come since.
+    /// Reading what the render wrote is not a measurement, and nothing per cell crosses (ADR-0021).
     ///
     /// <para>Blazor does not deliver an event whose attribute a component since disposed had rendered. A
     /// row's checkbox is rendered by its row's component, which a render disposes when the row leaves the
@@ -86,14 +100,16 @@ public partial class ExGrid<TRow>
     /// <param name="pageStart">The first row of the page the header's checkbox named under a pager
     /// (<c>data-ex-page</c>), or −1.</param>
     /// <param name="row">The row a row's checkbox stood in, as its cell's id names it, or −1.</param>
+    /// <param name="pageRows">How many rows the page the header's checkbox named under a pager held
+    /// (<c>data-ex-page-rows</c>), or −1.</param>
     [JSInvokable]
-    public async Task MarkPressTakenAt(int paint, int pageStart = -1, int row = -1)
+    public async Task MarkPressTakenAt(int paint, int pageStart = -1, int row = -1, int pageRows = -1)
     {
         if (_disposed)
             return;
         await LetGoOfMarkPressAsync();
         _markPressAnswered = false;
-        _markPress = new MarkPress(paint, pageStart, row, row >= 0 ? SerialPaintedAt(paint, row) : 0);
+        _markPress = new MarkPress(paint, pageStart, pageRows, row, row >= 0 ? SerialPaintedAt(paint, row) : 0);
         await AnswerMarkPressWithNoClickAsync();
     }
 

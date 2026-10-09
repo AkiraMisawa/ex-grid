@@ -99,8 +99,10 @@
                 <strong>Under live data</strong>, a press on a mark is judged against what was on screen when it was
                 made, which over a slow connection may have changed by the time it arrives. What the press can still
                 name exactly is honoured: a row's checkbox marks the row it was pressed on, wherever the order has
-                moved it, and under a pager the header's checkbox marks the page it was pressed on, even when the page
-                has been turned since. The rest marks nothing, so no mark lands on a row nobody pressed, and
+                moved it, and the header's checkbox marks what it named when it was pressed — under a pager, the page
+                it was pressed on, even when the page has been turned or the pager taken away since; with no pager, the
+                whole result, even when a pager has been added since. The rest marks nothing, so no mark lands on a
+                row nobody pressed, and
                 <code>OnMarkRefused</code> says why, once per press: <code>OrderMoved</code> when the header's checkbox
                 or "Mark all N rows" was pressed before a sort, a filter or a live reorder moved the rows it named,
                 and <code>SourceChanged</code> when any mark, a row's checkbox included, was pressed on what a

@@ -130,10 +130,16 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
     private static int PageOf(IRenderedComponent<ExGrid<TestRow>> cut)
         => HeaderBox(cut).GetAttribute("data-ex-page") is { } page ? int.Parse(page, CultureInfo.InvariantCulture) : -1;
 
-    /// <summary>What the listener tells at the release on a mark: the paint, the page and, for a row's
-    /// checkbox, the row read at its press.</summary>
-    private static Task TellAsync(IRenderedComponent<ExGrid<TestRow>> cut, int paint, int page = -1, int row = -1)
-        => cut.InvokeAsync(() => cut.Instance.MarkPressTakenAt(paint, page, row));
+    /// <summary>How many rows the page the header's checkbox names holds, as the listener reads it at the
+    /// press, or −1.</summary>
+    private static int PageRowsOf(IRenderedComponent<ExGrid<TestRow>> cut)
+        => HeaderBox(cut).GetAttribute("data-ex-page-rows") is { } rows ? int.Parse(rows, CultureInfo.InvariantCulture) : -1;
+
+    /// <summary>What the listener tells at the release on a mark: the paint; for the header's checkbox
+    /// under a pager, the page's first row and its row count; and for a row's checkbox, the row — all
+    /// read at its press.</summary>
+    private static Task TellAsync(IRenderedComponent<ExGrid<TestRow>> cut, int paint, int page = -1, int row = -1, int pageRows = -1)
+        => cut.InvokeAsync(() => cut.Instance.MarkPressTakenAt(paint, page, row, pageRows));
 
     private static IReadOnlyList<AngleSharp.Dom.IElement> RowBoxes(IRenderedComponent<ExGrid<TestRow>> cut)
         => cut.FindAll(".ex-row .ex-mark");
@@ -256,11 +262,12 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         var cut = RenderPushed(marks, window, pageSize: 10, rowKey: rowKey);
         var pressedOn = Paint(cut);
         var page = PageOf(cut);
+        var pageRows = PageRowsOf(cut);
         Assert.Equal(0, page);
 
         await ClickAsync(cut.FindAll(".ex-pager button")[1]);
         Assert.Equal(10, PageOf(cut));
-        await TellAsync(cut, pressedOn, page);
+        await TellAsync(cut, pressedOn, page, pageRows: pageRows);
         await ClickAsync(HeaderBox(cut));
 
         var pressed = Assert.IsType<RowMarkIntent<TestRow>.Positions>(Assert.Single(marks.Intents));
@@ -268,7 +275,7 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         Assert.Equal(0, pressed.RowSequenceVersion);
         Assert.Empty(Refusals);
 
-        await TellAsync(cut, Paint(cut), PageOf(cut));
+        await TellAsync(cut, Paint(cut), PageOf(cut), pageRows: PageRowsOf(cut));
         await ClickAsync(HeaderBox(cut));
         var shown = Assert.IsType<RowMarkIntent<TestRow>.Positions>(marks.Intents[1]);
         Assert.Equal([new RowRange(10, 10)], shown.Ranges);
@@ -285,12 +292,113 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         var cut = RenderBound(source, pageSize: 10);
         var pressedOn = Paint(cut);
         var page = PageOf(cut);
+        var pageRows = PageRowsOf(cut);
 
         await ClickAsync(cut.FindAll(".ex-pager button")[1]);
-        await TellAsync(cut, pressedOn, page);
+        await TellAsync(cut, pressedOn, page, pageRows: pageRows);
         await ClickAsync(HeaderBox(cut));
 
         Assert.Equal(rows[..10].Select(r => r.Book), source.Marks.MarkedRows.Select(r => r.Book));
+        Assert.Empty(Refusals);
+    }
+
+    // ---- What the header's checkbox named: its own mode, whatever the grid pages by now ----
+
+    [Theory] // ADR-0043 / MK-9 (follow-up of 2026-10-09): a header press told a paint is judged by what it named: made under a pager, the page it was pressed on — its first row and its row count, read at the press — though the pager was removed before the click: that page is marked as positions under the order it was pressed in, not the whole result; a press nobody told of names what the header names now — with a Row Key and without
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_header_press_made_under_a_pager_marks_its_page_after_the_pager_is_removed(bool rowKey)
+    {
+        var window = TestRows.Many(30);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, pageSize: 10, rowKey: rowKey);
+        await ClickAsync(cut.FindAll(".ex-pager button")[1]);
+        var pressedOn = Paint(cut);
+        var page = PageOf(cut);
+        var pageRows = PageRowsOf(cut);
+        Assert.Equal((10, 10), (page, pageRows));
+
+        cut.Render(ps => ps.Add(g => g.PageSize, (int?)null));
+        Assert.Equal(-1, PageOf(cut));
+        await TellAsync(cut, pressedOn, page, pageRows: pageRows);
+        await ClickAsync(HeaderBox(cut));
+
+        var pressed = Assert.IsType<RowMarkIntent<TestRow>.Positions>(Assert.Single(marks.Intents));
+        Assert.Equal([new RowRange(10, 10)], pressed.Ranges);
+        Assert.Equal(0, pressed.RowSequenceVersion);
+        Assert.Empty(Refusals);
+
+        await ClickAsync(HeaderBox(cut));
+        Assert.Equal(new RowMarkIntent<TestRow>.AllRows(true, 0), marks.Intents[1]);
+        Assert.Empty(Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9 (follow-up of 2026-10-09): a header press told a paint with no pager in force named the whole result as it stood: a pager added before the click does not narrow it to the page now shown — it marks all, under the order it was pressed in; a press nobody told of names the page the header names now — with a Row Key and without
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_header_press_made_with_no_pager_marks_the_whole_result_after_a_pager_is_added(bool rowKey)
+    {
+        var window = TestRows.Many(30);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, rowKey: rowKey);
+        var pressedOn = Paint(cut);
+        var page = PageOf(cut);
+        var pageRows = PageRowsOf(cut);
+        Assert.Equal((-1, -1), (page, pageRows));
+
+        cut.Render(ps => ps.Add(g => g.PageSize, 10));
+        Assert.Equal(0, PageOf(cut));
+        await TellAsync(cut, pressedOn, page, pageRows: pageRows);
+        await ClickAsync(HeaderBox(cut));
+
+        Assert.Equal([new RowMarkIntent<TestRow>.AllRows(true, 0)], marks.Intents);
+        Assert.Empty(Refusals);
+
+        await ClickAsync(HeaderBox(cut));
+        Assert.Equal([new RowRange(0, 10)], Assert.IsType<RowMarkIntent<TestRow>.Positions>(marks.Intents[1]).Ranges);
+        Assert.Empty(Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9: a header press told a paint names its page by the rows it held at the press: the page size changed before the click — the same first row, more rows now — and the press lines up the rows it was made on, not the larger page shown now — with a Row Key and without
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_header_press_marks_the_rows_its_page_held_after_the_page_size_changes(bool rowKey)
+    {
+        var window = TestRows.Many(30);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, pageSize: 10, rowKey: rowKey);
+        var pressedOn = Paint(cut);
+        var page = PageOf(cut);
+        var pageRows = PageRowsOf(cut);
+
+        cut.Render(ps => ps.Add(g => g.PageSize, 20));
+        Assert.Equal((0, 20), (PageOf(cut), PageRowsOf(cut)));
+        await TellAsync(cut, pressedOn, page, pageRows: pageRows);
+        await ClickAsync(HeaderBox(cut));
+
+        var pressed = Assert.IsType<RowMarkIntent<TestRow>.Positions>(Assert.Single(marks.Intents));
+        Assert.Equal([new RowRange(0, 10)], pressed.Ranges);
+        Assert.Empty(Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9: through GridSource.From, a header press made on page 2 and heard after the pager was removed marks page 2's rows, which the source resolves by position under the same order with no pager in force, and no other row — with a Row Key and without
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Through_GridSource_From_a_press_on_a_page_marks_its_rows_after_the_pager_is_removed(bool rowKey)
+    {
+        var rows = TestRows.Many(30);
+        var source = rowKey ? GridSource.From(rows, ByBook) : GridSource.From(rows);
+        var cut = RenderBound(source, pageSize: 10);
+        await ClickAsync(cut.FindAll(".ex-pager button")[1]);
+        var pressedOn = Paint(cut);
+        var page = PageOf(cut);
+        var pageRows = PageRowsOf(cut);
+
+        cut.Render(ps => ps.Add(g => g.PageSize, (int?)null));
+        await TellAsync(cut, pressedOn, page, pageRows: pageRows);
+        await ClickAsync(HeaderBox(cut));
+
+        Assert.Equal(rows[10..20].Select(r => r.Book), source.Marks.MarkedRows.Select(r => r.Book));
         Assert.Empty(Refusals);
     }
 
@@ -310,11 +418,12 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         var cut = RenderPushed(marks, window, pager ? 10 : null, rowKey);
         var pressedOn = Paint(cut);
         var page = PageOf(cut);
+        var pageRows = PageRowsOf(cut);
         Assert.Equal(pager ? 0 : -1, page);
 
         if (moved)
             Reorder(cut, Swapped(window, 0, 1), version: 1);
-        await TellAsync(cut, pressedOn, page);
+        await TellAsync(cut, pressedOn, page, pageRows: pageRows);
         await ClickAsync(HeaderBox(cut));
 
         if (moved)
@@ -343,10 +452,11 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         var cut = RenderPushed(marks, window, pageSize: 10, rowKey: rowKey);
         var pressedOn = Paint(cut);
         var page = PageOf(cut);
+        var pageRows = PageRowsOf(cut);
 
         await ClickAsync(cut.FindAll(".ex-pager button")[1]);
         Reorder(cut, Swapped(window, 0, 1), version: 1);
-        await TellAsync(cut, pressedOn, page);
+        await TellAsync(cut, pressedOn, page, pageRows: pageRows);
         await ClickAsync(HeaderBox(cut));
 
         Assert.Empty(marks.Intents);
@@ -366,9 +476,10 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         var cut = RenderBound(old, pager ? 10 : null);
         var pressedOn = Paint(cut);
         var page = PageOf(cut);
+        var pageRows = PageRowsOf(cut);
 
         cut.Render(ps => ps.Add(g => g.Source, replacement));
-        await TellAsync(cut, pressedOn, page);
+        await TellAsync(cut, pressedOn, page, pageRows: pageRows);
         await ClickAsync(HeaderBox(cut));
 
         Assert.Empty(old.Heard.Intents);
@@ -617,7 +728,7 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
 
     // ---- The listener ----
 
-    [Fact] // ADR-0043 / MK-9, ADR-0142, ADR-0021: the listener reads a mark press's paint, the header's page and a row's checkbox's row — from its own cell's id, never a cell of an outer grid — at the mousedown on one of this grid's own marks, not a nested grid's, and tells them at the release on the same mark, as it does for an action; no listener is added
+    [Fact] // ADR-0043 / MK-9, ADR-0142, ADR-0021: the listener reads a mark press's paint, the header's page — its first row and its row count — and a row's checkbox's row — from its own cell's id, never a cell of an outer grid — at the mousedown on one of this grid's own marks, not a nested grid's, and tells them at the release on the same mark, as it does for an action; no listener is added
     public void The_script_tells_a_mark_press_its_paint()
     {
         var script = AssetSources.Read("ExGrid", "ex-grid.js");
@@ -627,25 +738,32 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         Assert.Contains("const mark = event.button === 0 && !contextPress ? ownMark(event.target) : null;", script);
         Assert.Contains("const markCell = mark !== null ? mark.closest('[role=gridcell]') : null;", script);
         Assert.Contains("const markAt = markCell !== null && root.contains(markCell) ? /r(\\d+)c(\\d+)$/.exec(markCell.id) : null;", script);
-        Assert.Contains("markPress = mark !== null ? { mark, paint: paintNow(), page: page === null ? -1 : Number(page), row: markAt ? Number(markAt[1]) : -1 } : null;", script);
+        Assert.Contains("const pageRows = mark !== null ? mark.getAttribute('data-ex-page-rows') : null;", script);
+        Assert.Contains("markPress = mark !== null ? {", script);
+        Assert.Contains("page: page === null ? -1 : Number(page),", script);
+        Assert.Contains("pageRows: pageRows === null ? -1 : Number(pageRows),", script);
+        Assert.Contains("row: markAt ? Number(markAt[1]) : -1,", script);
         Assert.Contains("if (core && mark !== null && event.button === 0 && ownMark(event.target) === mark.mark) {", script);
-        Assert.Contains("core.invokeMethodAsync('MarkPressTakenAt', mark.paint, mark.page, mark.row)", script);
+        Assert.Contains("core.invokeMethodAsync('MarkPressTakenAt', mark.paint, mark.page, mark.row, mark.pageRows)", script);
         Assert.Single(System.Text.RegularExpressions.Regex.Matches(script, @"addEventListener\('mousedown'"));
         Assert.Single(System.Text.RegularExpressions.Regex.Matches(script, @"addEventListener\('mouseup'"));
     }
 
-    [Fact] // ADR-0043 / MK-9, ADR-0142: what the listener reads is written by the render: the header's checkbox names its page under a pager, "Mark all N rows" is marked as a mark, and a row's checkbox stands in the cell whose id names its row
+    [Fact] // ADR-0043 / MK-9, ADR-0142: what the listener reads is written by the render: the header's checkbox names its page under a pager — its first row and its row count — and nothing without one, "Mark all N rows" is marked as a mark, and a row's checkbox stands in the cell whose id names its row
     public void The_render_writes_what_a_mark_press_reads()
     {
         var window = TestRows.Many(30);
         var cut = RenderPushed(new RecordingMarks(), window, pageSize: 10);
 
         Assert.Equal("0", HeaderBox(cut).GetAttribute("data-ex-page"));
+        Assert.Equal("10", HeaderBox(cut).GetAttribute("data-ex-page-rows"));
         Assert.StartsWith("Mark all ", MarkAll(cut).TextContent, StringComparison.Ordinal);
         var cell = RowBoxes(cut)[2].ParentElement!;
         Assert.Equal("gridcell", cell.GetAttribute("role"));
         Assert.EndsWith("r2c0", cell.Id, StringComparison.Ordinal);
-        Assert.Null(RenderPushed(new RecordingMarks(), window).Find(".ex-header .ex-mark").GetAttribute("data-ex-page"));
+        var unpaged = RenderPushed(new RecordingMarks(), window).Find(".ex-header .ex-mark");
+        Assert.Null(unpaged.GetAttribute("data-ex-page"));
+        Assert.Null(unpaged.GetAttribute("data-ex-page-rows"));
     }
 
     /// <summary>A Consumer's marks, recorded: every intent the grid reports is kept.</summary>
