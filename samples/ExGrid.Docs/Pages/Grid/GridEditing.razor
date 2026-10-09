@@ -151,7 +151,8 @@
                 <code>SourceChanged</code> — the <code>Source</code> was replaced by another instance. That is a new
                 binding whatever the two sources' Row Sequence Versions are: the Selection is dropped, an open edit is
                 discarded and <code>OnEditDiscarded</code> says <code>SourceChanged</code> — as it does for typing
-                aimed at what the old source painted, which opens nothing — and a paste, a fill,
+                aimed at what the old source painted, with a cell selected or none, which opens nothing — and a
+                paste, a fill,
                 <kbd>Delete</kbd> or an Action aimed at what the old source painted is refused rather than landing
                 on the new source's row at the same place. A <code>Source</code> your own <code>OnEdit</code> handler
                 hands over is that commit's doing, and so are other visible columns it shows: the edit ends as

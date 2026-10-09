@@ -154,12 +154,17 @@ public partial class ExGrid<TRow>
     /// <summary>What a gesture aimed with a Selection an order move or a replaced Source dropped
     /// needs of it (ADR-0011, ADR-0142): its Focus, the action chosen in that cell if one was
     /// (ADR-0037), the newest paint when it was dropped, and whether the typing aimed with it has
-    /// been said to be thrown away. Positions and numbers, never a row or a Row Key (ADR-0160).</summary>
-    private sealed class DroppedSelection(int upToPaint, CellPosition focus, int? chosenAction)
+    /// been said to be thrown away. Positions and numbers, never a row or a Row Key (ADR-0160).
+    /// A Source replaced with nothing selected is noted the same way, with the cell the first key
+    /// would have placed the Focus on as its Focus (<see cref="_replacedUnselected"/>).</summary>
+    private sealed class DroppedSelection(int upToPaint, CellPosition? focus, int? chosenAction)
     {
         public int UpToPaint { get; } = upToPaint;
 
-        public CellPosition Focus { get; } = focus;
+        /// <summary>The cell typing aimed with it would have opened an edit on: the dropped Selection's
+        /// Focus, always there for one; for a Source replaced with nothing selected, the first cell the
+        /// first-key rule would have placed the Focus on (ADR-0012), null where none was painted.</summary>
+        public CellPosition? Focus { get; } = focus;
 
         public int? ChosenAction { get; } = chosenAction;
 
@@ -176,12 +181,30 @@ public partial class ExGrid<TRow>
     // the empty Selection the drop left (ADR-0012).
     private DroppedSelection? _droppedSelection;
 
+    // The last Source replaced while nothing was selected (ADR-0142's section of 2026-10-08; LV-32, LV-33),
+    // and the newest paint it painted. A key typed with nothing selected is a first key on the paint it
+    // was typed against (ADR-0012): told a paint of the replaced source, the cell it would have placed the
+    // Focus on, and typed into, is that source's, and the key goes as one aimed with a dropped Selection does
+    // (DropKeyAimedWithADroppedSelectionAsync). Kept apart from _droppedSelection, which a Selection dropped
+    // earlier may still hold for the writes aimed with it.
+    private DroppedSelection? _replacedUnselected;
+
     /// <summary>Notes the Selection an order move or a replaced Source is dropping (ADR-0011), for
-    /// the gestures still on their way that were aimed with it.</summary>
-    private void NoteSelectionDropped(GridSelection dropped)
+    /// the gestures still on their way that were aimed with it. A Source replaced with nothing selected
+    /// is noted too (<see cref="_replacedUnselected"/>): nothing was dropped, but what the old source
+    /// painted was what a key typed then was aimed at. An order move with nothing selected is not: under
+    /// the same Source, a key typed then keeps the first-key rule (ADR-0012).</summary>
+    /// <param name="dropped">The Selection in force as it is dropped.</param>
+    /// <param name="sourceReplaced">Whether a replaced Source drops it, rather than an order move.</param>
+    private void NoteSelectionDropped(GridSelection dropped, bool sourceReplaced)
     {
         if (dropped.IsEmpty)
+        {
+            // Before anything was painted, no key was aimed at the source.
+            if (sourceReplaced && _painted is not null)
+                _replacedUnselected = new DroppedSelection(_paintId, FirstVisibleCell(), chosenAction: null);
             return;
+        }
         var chosen = _interactive is { } interactive && interactive.Cell == dropped.Focus ? interactive.Action : (int?)null;
         _droppedSelection = new DroppedSelection(_paintId, dropped.Focus, chosen);
     }
@@ -191,6 +214,11 @@ public partial class ExGrid<TRow>
     private bool AimedWithADroppedSelection(int told)
         => AimedUnderAnotherOrder(told) && _droppedSelection is { } dropped && told <= dropped.UpToPaint;
 
+    /// <summary>Whether a key told the paint <paramref name="told"/> was typed with nothing selected at
+    /// what a Source since replaced painted (<see cref="_replacedUnselected"/>; ADR-0142, LV-33).</summary>
+    private bool AimedAtASourceReplacedUnselected(int told)
+        => AimedAtAReplacedSource(told) && _replacedUnselected is { } replaced && told <= replaced.UpToPaint;
+
     /// <summary>
     /// A key, or a composition's text, aimed with a Selection that an order move or a replaced Source
     /// has dropped since (ADR-0011, ADR-0012, ADR-0142; decided with the user 2026-10-08). It was aimed
@@ -199,6 +227,10 @@ public partial class ExGrid<TRow>
     /// the first key on the empty Selection the drop left. Each key carries the paint it was typed
     /// against, so all the keys of one run aimed with that Selection go alike, and a key typed after
     /// the user saw the new state — told a newer paint — keeps the first-key rule.
+    /// <para>A key typed with nothing selected at what a Source since replaced painted goes the same way
+    /// (<see cref="_replacedUnselected"/>; ADR-0142, LV-33): it was a first key on the old source's
+    /// rows, and the cell it would have placed the Focus on, and typed into, is that source's. Not so a
+    /// key typed with nothing selected under an order since moved, which keeps the first-key rule.</para>
     /// <para>Where it would have opened an edit — <paramref name="opensAnEdit"/>, over a column that
     /// edits — the typing is thrown away and said, once for all the keys aimed with that Selection,
     /// through <see cref="OnEditDiscarded"/>: <see cref="EditDiscardReason.OrderMoved"/>, or
@@ -210,9 +242,12 @@ public partial class ExGrid<TRow>
     /// Backspace, a composition's text.</param>
     private async Task<bool> DropKeyAimedWithADroppedSelectionAsync(int told, bool opensAnEdit)
     {
-        if (!AimedWithADroppedSelection(told) || _droppedSelection is not { } dropped)
+        var dropped = AimedWithADroppedSelection(told) ? _droppedSelection
+            : AimedAtASourceReplacedUnselected(told) ? _replacedUnselected
+            : null;
+        if (dropped is null)
             return false;
-        if (opensAnEdit && !dropped.TypingTold && ColumnIsEditable(dropped.Focus.Column))
+        if (opensAnEdit && !dropped.TypingTold && dropped.Focus is { } focus && ColumnIsEditable(focus.Column))
         {
             dropped.TypingTold = true;
             if (OnEditDiscarded.HasDelegate)
@@ -235,12 +270,12 @@ public partial class ExGrid<TRow>
     /// </summary>
     private async Task<bool> RefuseSpaceAimedUnderAnotherOrderAsync(int told)
     {
-        if (!AimedWithADroppedSelection(told) || _droppedSelection is not { } dropped
-            || dropped.Focus.Column >= Columns.Count)
+        if (!AimedWithADroppedSelection(told) || _droppedSelection is not { Focus: { } focus } dropped
+            || focus.Column >= Columns.Count)
         {
             return false;
         }
-        var column = Columns[dropped.Focus.Column];
+        var column = Columns[focus.Column];
         // One action fires on Space; of several, the one chosen in the cell, and none before one is.
         var action = column.Actions.Count == 1 ? 0 : dropped.ChosenAction;
         if (column.IsMarkColumn || action is not { } fired || fired >= column.Actions.Count)

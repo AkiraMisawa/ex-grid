@@ -2971,8 +2971,9 @@
         _reconciledBinding = _binding;
         if (_sourceReplaced)
         {
-            // Noted for the gestures on their way that were aimed with it (ADR-0142).
-            NoteSelectionDropped(_selection.Selection);
+            // Noted for the gestures on their way that were aimed with it, or, with nothing selected, at
+            // what the old source painted (ADR-0142).
+            NoteSelectionDropped(_selection.Selection, sourceReplaced: true);
             reconciled = HeldSelection.Empty(_sequenceVersion);
         }
         else if (_columnsMoved)
@@ -2980,7 +2981,7 @@
         // A Selection the order took, under the same columns: noted for the gestures on their way
         // that were aimed with it (ADR-0142).
         else if (reconciled.RowSequenceVersion != _selection.RowSequenceVersion)
-            NoteSelectionDropped(_selection.Selection);
+            NoteSelectionDropped(_selection.Selection, sourceReplaced: false);
 
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
