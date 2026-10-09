@@ -91,9 +91,9 @@ Link both stylesheets in your host page:
   nothing. When the newest data cannot be shown — it breaks a cap, the source fails, or a Refresh
   fails — the report stays as it was, and a notice under the Pivot Toolbar says what happened and
   as of when, with Retry; meanwhile its value cells are painted in a muted colour, still readable,
-  the Visual Token `--ex-pivot-stale-value-color`. While a new version's Items are on their way,
-  the report filter band and Filter… keep the ones they listed. `Clock` takes a `TimeProvider` for
-  tests.
+  the Visual Token `--ex-pivot-stale-value-color`, and Copy is refused, saying as of when the data
+  is, since a paste would lose that. While a new version's Items are on their way, the report
+  filter band and Filter… keep the ones they listed. `Clock` takes a `TimeProvider` for tests.
 - **ShowFieldList** can be bound (`@bind-ShowFieldList`) to remember the pane the user hid or
   showed from the Pivot Toolbar.
 - **Label** replaces any word by its id. `Label="PivotWords.Japanese"` speaks the words of

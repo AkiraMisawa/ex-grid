@@ -277,7 +277,9 @@
     /// so the report stays on the last version it could compute, and the notice under the Pivot
     /// Toolbar says what happened and as of when, with Retry. Meanwhile the report carries the class
     /// <c>ex-pivot-report-stale</c>, and its value cells are painted in the Visual Token
-    /// <c>--ex-pivot-stale-value-color</c>: muted, still readable, never animated.</summary>
+    /// <c>--ex-pivot-stale-value-color</c>: muted, still readable, never animated. Copy is refused,
+    /// saying as of when the data is, since a paste elsewhere would lose that; the Selection Summary,
+    /// on screen beside the notice, still answers.</summary>
     public bool IsStale => _stale is not null;
 
     // The Consumer's word, the engine's English, then the English of the words the engine does not

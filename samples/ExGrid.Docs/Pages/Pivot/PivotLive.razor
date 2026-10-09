@@ -53,6 +53,12 @@
             <code>copy-incomplete-range</code>, <code>summary-another-version</code>,
             <code>summary-inconsistent-errors</code>), never written to the clipboard or summed.
         </p>
+        <p>
+            Copy from a Stale Report is refused too. The report shows the data as of its time, and says so beside it; pasted
+            into another application the numbers would lose that and look current. So while the report is stale, Copy says
+            the time the data is as of and asks for Retry first (<code>copy-stale-report</code>), and writes nothing to the
+            clipboard. The Selection Summary still answers: it stands on screen beside the notice that says as of when.
+        </p>
     </DocsSection>
 
     <DocsSection Title="The Change Highlight">
@@ -97,8 +103,8 @@
         </p>
         <DocsExample Builtin="typeof(LiveServer)" Mud="typeof(LiveServerMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
             The simulated server amends eight sales a second and announces each new Source Version. Cut it off: the next
-            question fails, and the report stays as it was, stale, with its notice and its numbers muted, until you reconnect
-            and press Retry.
+            question fails, and the report stays as it was, stale, with its notice and its numbers muted, and Copy refused,
+            until you reconnect and press Retry.
         </DocsExample>
     </DocsSection>
 </DocsPage>

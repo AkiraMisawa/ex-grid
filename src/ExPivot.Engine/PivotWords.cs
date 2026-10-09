@@ -270,6 +270,10 @@ public static class PivotWords
         ["summary-another-version"] = "The summary answered another Report Version.",
         ["summary-inconsistent-errors"] = "The summary returned inconsistent error counts.",
 
+        // A Copy from a Stale Report, refused: pasted elsewhere, its numbers would lose the time they
+        // are as of (ADR-0067/0152). {0} the time of the version shown, as the notice writes it.
+        ["copy-stale-report"] = "The report shows the data as of {0}: Retry before copying.",
+
         // Show Details: the tabs at the report's foot and the dialog (ADR-0059).
         ["details-title"] = "Details: {0}",
         ["report-tab"] = "PivotTable",
@@ -437,6 +441,7 @@ public static class PivotWords
         ["copy-incomplete-range"] = "コピーへの応答に、欠けのある選択範囲が含まれていました。",
         ["summary-another-version"] = "集計への応答が、別のバージョンのレポートのものでした。",
         ["summary-inconsistent-errors"] = "集計への応答で、エラーの数が食い違っていました。",
+        ["copy-stale-report"] = "レポートは {0} 時点のデータを表示しています。コピーする前に再試行してください。",
 
         ["details-title"] = "詳細: {0}",
         ["report-tab"] = "ピボットテーブル",

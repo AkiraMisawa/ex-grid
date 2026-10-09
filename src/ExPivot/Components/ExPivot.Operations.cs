@@ -20,6 +20,12 @@ public partial class ExPivot
         // Capture the entire question before yielding; a new Window never rebinds this gesture.
         if (_report is not { } report || _reportSource is not { } source || request.RowSequenceVersion != _rowSequenceVersion)
             return GridCopyAnswer.Refuse(Word("data-changed"));
+        // A Stale Report shows the data as of its time, and says so beside it; pasted elsewhere, the
+        // numbers would lose that and look current. So Copy is refused, saying as of when, until
+        // Retry brings the newest (ADR-0067/0152, decided 2026-10-09). The Selection Summary still
+        // answers: it stands on screen beside the notice.
+        if (_stale is not null)
+            return GridCopyAnswer.Refuse(PivotWords.Fill(Word("copy-stale-report"), AsOf().Text));
         var columns = _columns.Select(column => column.Name).ToArray();
         var plan = request.Plan;
         var query = new PivotReportCopyQuery(report.Version, columns, plan.Segments.Select(ReportRange).ToArray());
