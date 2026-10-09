@@ -442,9 +442,11 @@ test('ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a live amendment th
     const editor = grid(page).locator('input.ex-editor');
     await expect(editor).toHaveClass(/ex-editor-away/);
     await expect(editor).toBeFocused();
+    await circuitQuiet();
     expect(await scroller.evaluate((el) => el.scrollTop)).toBe(scrollTop);
     await page.keyboard.type('x');
     await expect(editor).toHaveValue('Zedx');
+    await circuitQuiet();
     expect(await scroller.evaluate((el) => el.scrollTop)).toBe(scrollTop);
 
     await page.keyboard.press('Enter');

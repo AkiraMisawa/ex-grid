@@ -93,11 +93,22 @@
                 <strong><code>GridColumn.MarkColumn()</code></strong> puts a checkbox on every row and one in the header
                 that marks the whole result. The marks belong to the rows, not to the data:
                 <code>GridSource.From</code> keeps them for you in <code>Marks</code>, by row instance, across sorting,
-                filtering and edits. Under live data a press on a mark keeps what it was made on: a row's checkbox
-                marks the row it was pressed on wherever the order has moved it, and the header's checkbox and
-                "Mark all N rows" mark the result, or the page, as it stood at the press. A press made before the
-                <code>Source</code> was replaced, or one that would mark rows by place after the order moved or the
-                page turned, marks nothing — no mark lands on a row nobody pressed. Press again on what is shown.
+                filtering and edits.
+            </li>
+            <li>
+                <strong>Under live data</strong>, a press on a mark is judged against what was on screen when it was
+                made, which over a slow connection may have changed by the time it arrives. What the press can still
+                name exactly is honoured: a row's checkbox marks the row it was pressed on, wherever the order has
+                moved it, and the header's checkbox marks what it named when it was pressed — under a pager, the page
+                it was pressed on, even when the page has been turned or the pager taken away since; with no pager, the
+                whole result, even when a pager has been added since. The rest marks nothing, so no mark lands on a
+                row nobody pressed, and
+                <code>OnMarkRefused</code> says why, once per press: <code>OrderMoved</code> when the header's checkbox
+                or "Mark all N rows" was pressed before a sort, a filter or a live reorder moved the rows it named,
+                and <code>SourceChanged</code> when any mark, a row's checkbox included, was pressed on what a
+                <code>Source</code> since replaced showed. The grid holds no words for it; the Example below writes
+                its own. A press on a row's checkbox whose row a live update re-rendered before the click arrived is
+                still heard: the grid answers it itself, marking the row or saying why it cannot.
             </li>
             <li>
                 <strong><code>GridColumn.TemplateColumn(...)</code></strong> paints its cells with your markup. It still
