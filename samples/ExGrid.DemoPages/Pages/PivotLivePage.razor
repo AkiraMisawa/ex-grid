@@ -15,7 +15,7 @@
 
 @* ?chrome=mud stands both pivots on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's
    Chrome, as /pivot does; absent or builtin is ExPivot's own markup. *@
-<DemoChromeAssets Name="@ChromeName" Paper="true">
+<DemoChromeAssets Name="@ChromeName" Paper="true" Dark="Dark">
     <Head>
         <link href="_content/ExPivot/ex-pivot.min.css" rel="stylesheet" />
         @if (DemoChrome.IsMud(ChromeName))
@@ -66,7 +66,7 @@
     until the server answers again (ADR-0067).
 </p>
 
-<p><code>?trades=1000000&amp;batch=1000</code> holds a million trades in this process and amends a thousand a batch, instead of 2,000 and five.</p>
+<p><code>?trades=1000000&amp;batch=1000</code> holds a million trades in this process and amends a thousand a batch, instead of 2,000 and five. <code>?scheme=dark</code> shows the page in the dark scheme.</p>
 
 <div class="demo-toolbar">
     <button id="pivot-live-local-toggle" @onclick="ToggleLocal">@(_localOn ? "Pause the page's changes" : "Resume the page's changes")</button>
@@ -131,6 +131,12 @@
 
     [SupplyParameterFromQuery(Name = "batch")]
     public int? BatchAsked { get; set; }
+
+    /// <summary><c>dark</c> shows the page in the dark scheme (<see cref="DemoChrome.IsDark"/>).</summary>
+    [SupplyParameterFromQuery(Name = "scheme")]
+    public string? Scheme { get; set; }
+
+    private bool Dark => DemoChrome.IsDark(Scheme);
 
     // The trades the page holds — ?trades=, or /pivot's 2,000 — and how many a batch amends, never
     // more than there are.
