@@ -1,7 +1,9 @@
 @using System.Globalization
 @using ExGrid.Cells
 @using ExGrid.Columns
+@using ExGrid.Rows
 @implements IDisposable
+@inject ISnackbar Snackbar
 
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
     <ToolBarContent>
@@ -10,8 +12,8 @@
         <MudText Typo="Typo.body2">@_lastAction</MudText>
     </ToolBarContent>
     <ChildContent>
-        <ExGrid TRow="Position" Source="_source" Columns="_columns" OnAction="OnAction" PinnedColumnCount="2"
-                Chrome="_chrome" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+        <ExGrid TRow="Position" Source="_source" Columns="_columns" OnAction="OnAction" OnMarkRefused="OnMarkRefused"
+                PinnedColumnCount="2" Chrome="_chrome" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
     </ChildContent>
 </MudExGridPaper>
 
@@ -48,6 +50,15 @@
 
     private void OnAction(GridActionEventArgs<Position> action)
         => _lastAction = $"{action.ActionName} asked for position {action.Row.Id} ({action.Row.Instrument}).";
+
+    // A press made on rows that moved, or on data since replaced, marks nothing; the grid names why,
+    // and the words are yours. Under live data that is a press the network was slower than.
+    private void OnMarkRefused(MarkRefusalReason reason) => Snackbar.Add(reason switch
+    {
+        MarkRefusalReason.OrderMoved => "Nothing marked: the rows moved before your press arrived. Press again on the rows as they are now.",
+        MarkRefusalReason.SourceChanged => "Nothing marked: the data was replaced before your press arrived. Press again on what is shown now.",
+        _ => $"Nothing marked: {reason}.",
+    }, Severity.Warning);
 
     public void Dispose() => _source.Marks.Changed -= StateHasChanged;
 }

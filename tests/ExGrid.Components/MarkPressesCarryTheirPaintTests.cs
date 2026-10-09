@@ -9,16 +9,20 @@ using Xunit;
 namespace ExGrid.Components.Tests;
 
 /// <summary>
-/// A press on a mark carries the render it was made on, as a press on an action does (ADR-0142, LV-32;
-/// ADR-0043; decided 2026-10-08). The grid's listener reads the paint the Viewport named at the
-/// mousedown on a row's checkbox, the header's checkbox or "Mark all N rows" — and, for the header's
-/// under a pager, the page it named — and tells them at the release, before Blazor dispatches the
-/// click. A press made on what a Source since replaced painted is dropped; so is one that names rows
-/// by position — the header's page or result, "Mark all N rows" — under an order that has moved since,
-/// or on a page turned since. Dropped, it marks nothing and raises no Row Mark intent, silently: there
-/// is no refusal channel for marks. A row's checkbox names its row by identity, which an order move
-/// leaves it. A press told the current paint marks as before. Here a test tells the press as the
-/// listener does, then clicks.
+/// A press on a mark carries the render it was made on, as a press on an action does, and is judged
+/// against it (ADR-0043's note of 2026-10-08, decided with the user on 2026-10-09; MK-9; ADR-0142). The
+/// grid's listener reads the paint the Viewport named at the mousedown on a row's checkbox, the header's
+/// checkbox or "Mark all N rows" — and, for the header's under a pager, the page it named — and tells them
+/// at the release, before Blazor dispatches the click. What the press can still name exactly is honoured: a row's checkbox marks its row by identity
+/// wherever the order has moved it, and the header's checkbox under a pager marks the page it was pressed
+/// on after the page has turned, as positions under the order it was pressed in. The rest marks nothing
+/// and is refused once, through <c>OnMarkRefused</c>: <c>SourceChanged</c> for a press made on what a
+/// replaced Source painted, a row's checkbox included; <c>OrderMoved</c> for the header's checkbox or
+/// "Mark all N rows" pressed under an order that has moved since. A press told the current paint, or
+/// told none, marks as before. Here a test tells the press as the listener does, then clicks.
+///
+/// <para>Where a test delivers the click of a checkbox whose row component a render disposed, it calls
+/// the handler that component held, as the renderer would.</para>
 ///
 /// Mark 0–100, Book 100–200, Amount 200–300; 20px rows in a 120px Viewport.
 /// </summary>
@@ -35,8 +39,13 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100),
     ];
 
-    /// <summary>A pushed Window, its marks held by <paramref name="marks"/>.</summary>
-    private IRenderedComponent<ExGrid<TestRow>> RenderPushed(RecordingMarks marks, TestRow[] window, int? pageSize = null)
+    /// <summary>Every refusal the grid raised through <c>OnMarkRefused</c>, in order.</summary>
+    private List<MarkRefusalReason> Refusals { get; } = [];
+
+    /// <summary>A pushed Window, its marks held by <paramref name="marks"/>, keyed by its Book where
+    /// <paramref name="rowKey"/> says so.</summary>
+    private IRenderedComponent<ExGrid<TestRow>> RenderPushed(
+        RecordingMarks marks, TestRow[] window, int? pageSize = null, bool rowKey = false)
         => Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Window, window)
@@ -45,20 +54,24 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
               .Add(g => g.Marks, marks)
               .Add(g => g.RowHeight, 20d)
               .Add(g => g.ViewportHeight, 120)
-              .Add(g => g.ViewportWidth, 600);
+              .Add(g => g.ViewportWidth, 600)
+              .Add(g => g.OnMarkRefused, (MarkRefusalReason reason) => Refusals.Add(reason));
             if (pageSize is { } size)
                 ps.Add(g => g.PageSize, size);
+            if (rowKey)
+                ps.Add(g => g.RowKey, ByBook);
         });
 
     /// <summary>A bound Source that keeps its own marks.</summary>
-    private IRenderedComponent<ExGrid<TestRow>> RenderBound(MarkingSource source, int? pageSize = null)
+    private IRenderedComponent<ExGrid<TestRow>> RenderBound(IGridSource<TestRow> source, int? pageSize = null)
         => Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Source, source)
               .Add(g => g.Columns, Columns)
               .Add(g => g.RowHeight, 20d)
               .Add(g => g.ViewportHeight, 120)
-              .Add(g => g.ViewportWidth, 600);
+              .Add(g => g.ViewportWidth, 600)
+              .Add(g => g.OnMarkRefused, (MarkRefusalReason reason) => Refusals.Add(reason));
             if (pageSize is { } size)
                 ps.Add(g => g.PageSize, size);
         });
@@ -101,36 +114,51 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
     private static Task ClickAsync(AngleSharp.Dom.IElement element)
         => element.ClickAsync(new MouseEventArgs { Button = 0 });
 
-    // ---- A row's checkbox: dropped under another binding, never under another order ----
+    /// <summary>The handler the row component painting <paramref name="row"/> holds for its checkbox: what
+    /// a click on it would still reach, were the renderer to deliver it once a render disposed that
+    /// component.</summary>
+    private static Func<TestRow, bool, Task> CheckboxHandlerOf(IRenderedComponent<ExGrid<TestRow>> cut, TestRow row)
+        => cut.FindComponents<ExGridRow<TestRow>>().Single(r => ReferenceEquals(r.Instance.Row, row)).Instance.OnMark!;
 
-    [Theory] // ADR-0142 / LV-32, ADR-0043: a press on a row's checkbox made on what a Source since replaced painted — both at version 0 — marks nothing in either source's marks; with a Row Key the checkbox survives holding the new source's row, without one another row's stands in its place
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task A_row_checkbox_pressed_on_the_replaced_sources_paint_marks_nothing(bool rowKey)
+    // ---- A row's checkbox: refused under another binding, never under another order ----
+
+    [Theory] // ADR-0043 (note of 2026-10-08, decided 2026-10-09) / MK-9, ADR-0142: a press on a row's checkbox made on what a Source since replaced painted — both at version 0 — marks nothing in either source's marks and is refused once as SourceChanged, under a pager and not; with a Row Key the checkbox survives holding the new source's row and hears the click, without one its component is gone and the click its handler held is delivered
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task A_row_checkbox_pressed_on_the_replaced_sources_paint_marks_nothing_and_is_refused_as_source_changed(bool rowKey, bool pager)
     {
         var rows = TestRows.Many(50);
         var old = new MarkingSource(rows, rowKey);
         var replacement = new MarkingSource(Copies(rows), rowKey);
-        var cut = RenderBound(old);
+        var cut = RenderBound(old, pager ? 20 : null);
         var pressedOn = Paint(cut);
+        var held = CheckboxHandlerOf(cut, rows[2]);
 
         cut.Render(ps => ps.Add(g => g.Source, replacement));
         await TellAsync(cut, pressedOn);
-        await ClickAsync(RowBoxes(cut)[2]);
+        if (rowKey)
+            await ClickAsync(RowBoxes(cut)[2]);
+        else
+            await cut.InvokeAsync(() => held(rows[2], true));
 
         Assert.Empty(old.Heard.Intents);
         Assert.Empty(replacement.Heard.Intents);
+        Assert.Equal([MarkRefusalReason.SourceChanged], Refusals);
     }
 
-    [Theory] // ADR-0142 / LV-32, ADR-0043: a press on a row's checkbox told the new Source's paint marks its row, as before
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task A_row_checkbox_pressed_on_the_new_sources_paint_marks_its_row(bool rowKey)
+    [Theory] // ADR-0043 / MK-9, ADR-0142: a press on a row's checkbox told the new Source's paint marks its row, as before, and is refused for nothing — under a pager and not, with a Row Key and without
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task A_row_checkbox_pressed_on_the_new_sources_paint_marks_its_row(bool rowKey, bool pager)
     {
         var rows = TestRows.Many(50);
         var old = new MarkingSource(rows, rowKey);
         var replacement = new MarkingSource(Copies(rows), rowKey);
-        var cut = RenderBound(old);
+        var cut = RenderBound(old, pager ? 20 : null);
         cut.Render(ps => ps.Add(g => g.Source, replacement));
 
         await TellAsync(cut, Paint(cut));
@@ -139,38 +167,99 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         Assert.Empty(old.Heard.Intents);
         var intent = Assert.IsType<RowMarkIntent<TestRow>.OneRow>(Assert.Single(replacement.Heard.Intents));
         Assert.Same(replacement.Window[2], intent.Row);
+        Assert.Empty(Refusals);
     }
 
-    [Fact] // ADR-0142 / LV-32, ADR-0043: a row's checkbox names its row by identity, which an order move leaves it: pressed under an order since moved, it marks the row it was pressed on
-    public async Task A_row_checkbox_pressed_under_a_moved_order_marks_its_row()
+    [Theory] // ADR-0043 / MK-9, ADR-0142: a row's checkbox names its row by identity, which an order move leaves it: pressed under an order since moved, it marks the row it was pressed on, wherever the order took it, and is refused for nothing — under a pager and not, with a Row Key and without
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task A_row_checkbox_pressed_under_a_moved_order_marks_its_row(bool rowKey, bool pager)
     {
         var window = TestRows.Many(50);
         var marks = new RecordingMarks();
-        var cut = RenderPushed(marks, window);
+        var cut = RenderPushed(marks, window, pager ? 20 : null, rowKey);
         var pressedOn = Paint(cut);
-        var reordered = Swapped(window, 0, 2);
 
-        Reorder(cut, reordered, version: 1);
+        // Rows 0 and 2 change places: the checkbox pressed at row 0 stands at row 2, holding its row.
+        Reorder(cut, Swapped(window, 0, 2), version: 1);
         await TellAsync(cut, pressedOn);
         await ClickAsync(RowBoxes(cut)[2]);
 
         var intent = Assert.IsType<RowMarkIntent<TestRow>.OneRow>(Assert.Single(marks.Intents));
-        Assert.Same(reordered[2], intent.Row);
+        Assert.Same(window[0], intent.Row);
+        Assert.True(intent.Marked);
+        Assert.Empty(Refusals);
     }
 
-    // ---- The header's checkbox and "Mark all N rows": dropped under another order or binding ----
+    // ---- The header's checkbox and "Mark all N rows": by position ----
 
-    [Theory] // ADR-0142 / LV-32, ADR-0043/0015: under a pager the header's checkbox names the page's rows; pressed under an order that has moved since, it marks nothing, and pressed on the current paint it lines up the page as before
+    [Theory] // ADR-0043 / MK-9, ADR-0015: under a pager the header's checkbox names the page it was pressed on; heard after the page was turned, under the same order and Source, it lines up that page — as positions under the order it was pressed in — and is refused for nothing; one told the page shown now lines that page up, as before
     [InlineData(false)]
     [InlineData(true)]
-    public async Task The_header_checkbox_under_a_pager_pressed_under_a_moved_order_marks_nothing(bool moved)
+    public async Task The_header_checkbox_pressed_on_a_page_turned_since_marks_the_page_it_was_pressed_on(bool rowKey)
     {
         var window = TestRows.Many(30);
         var marks = new RecordingMarks();
-        var cut = RenderPushed(marks, window, pageSize: 10);
+        var cut = RenderPushed(marks, window, pageSize: 10, rowKey: rowKey);
         var pressedOn = Paint(cut);
         var page = PageOf(cut);
         Assert.Equal(0, page);
+
+        await ClickAsync(cut.FindAll(".ex-pager button")[1]);
+        Assert.Equal(10, PageOf(cut));
+        await TellAsync(cut, pressedOn, page);
+        await ClickAsync(HeaderBox(cut));
+
+        var pressed = Assert.IsType<RowMarkIntent<TestRow>.Positions>(Assert.Single(marks.Intents));
+        Assert.Equal([new RowRange(0, 10)], pressed.Ranges);
+        Assert.Equal(0, pressed.RowSequenceVersion);
+        Assert.Empty(Refusals);
+
+        await TellAsync(cut, Paint(cut), PageOf(cut));
+        await ClickAsync(HeaderBox(cut));
+        var shown = Assert.IsType<RowMarkIntent<TestRow>.Positions>(marks.Intents[1]);
+        Assert.Equal([new RowRange(10, 10)], shown.Ranges);
+        Assert.Empty(Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9: through GridSource.From, the header's checkbox pressed on page 1 and heard after the page was turned to page 2 marks page 1's rows, which the source resolves by position under the same order though they are no longer on screen, and none of page 2's — with a Row Key and without
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Through_GridSource_From_a_press_on_a_page_turned_since_marks_that_pages_rows(bool rowKey)
+    {
+        var rows = TestRows.Many(30);
+        var source = rowKey ? GridSource.From(rows, ByBook) : GridSource.From(rows);
+        var cut = RenderBound(source, pageSize: 10);
+        var pressedOn = Paint(cut);
+        var page = PageOf(cut);
+
+        await ClickAsync(cut.FindAll(".ex-pager button")[1]);
+        await TellAsync(cut, pressedOn, page);
+        await ClickAsync(HeaderBox(cut));
+
+        Assert.Equal(rows[..10].Select(r => r.Book), source.Marks.MarkedRows.Select(r => r.Book));
+        Assert.Empty(Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9, ADR-0011: the header's checkbox — under a pager, naming its page, and without one, naming the result — pressed under an order that has moved since marks nothing and is refused once as OrderMoved; on the current paint it marks as before, refused for nothing — with a Row Key and without
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public async Task The_header_checkbox_pressed_under_a_moved_order_marks_nothing_and_is_refused_as_order_moved(bool rowKey, bool pager, bool moved)
+    {
+        var window = TestRows.Many(30);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, pager ? 10 : null, rowKey);
+        var pressedOn = Paint(cut);
+        var page = PageOf(cut);
+        Assert.Equal(pager ? 0 : -1, page);
 
         if (moved)
             Reorder(cut, Swapped(window, 0, 1), version: 1);
@@ -180,19 +269,50 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         if (moved)
         {
             Assert.Empty(marks.Intents);
+            Assert.Equal([MarkRefusalReason.OrderMoved], Refusals);
+            return;
+        }
+        Assert.Empty(Refusals);
+        if (!pager)
+        {
+            Assert.Equal([new RowMarkIntent<TestRow>.AllRows(true, 0)], marks.Intents);
             return;
         }
         var intent = Assert.IsType<RowMarkIntent<TestRow>.Positions>(Assert.Single(marks.Intents));
         Assert.Equal([new RowRange(0, 10)], intent.Ranges);
     }
 
-    [Fact] // ADR-0142 / LV-32, ADR-0043/0015: the header's checkbox under a pager, pressed on what a Source since replaced painted — both at version 0 — marks nothing in either source's marks
-    public async Task The_header_checkbox_under_a_pager_pressed_on_the_replaced_sources_paint_marks_nothing()
+    [Theory] // ADR-0043 / MK-9, ADR-0011: a page turned since and an order moved since: the press named the page's rows under an order that no longer stands, so it marks nothing and is refused once as OrderMoved
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The_header_checkbox_on_a_page_turned_since_under_a_moved_order_is_refused_as_order_moved(bool rowKey)
+    {
+        var window = TestRows.Many(30);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, pageSize: 10, rowKey: rowKey);
+        var pressedOn = Paint(cut);
+        var page = PageOf(cut);
+
+        await ClickAsync(cut.FindAll(".ex-pager button")[1]);
+        Reorder(cut, Swapped(window, 0, 1), version: 1);
+        await TellAsync(cut, pressedOn, page);
+        await ClickAsync(HeaderBox(cut));
+
+        Assert.Empty(marks.Intents);
+        Assert.Equal([MarkRefusalReason.OrderMoved], Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9, ADR-0142: the header's checkbox — under a pager and not — pressed on what a Source since replaced painted, both at version 0, marks nothing in either source's marks and is refused once as SourceChanged — with a Row Key and without
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task The_header_checkbox_pressed_on_the_replaced_sources_paint_marks_nothing_and_is_refused_as_source_changed(bool rowKey, bool pager)
     {
         var rows = TestRows.Many(30);
-        var old = new MarkingSource(rows, keyed: false);
-        var replacement = new MarkingSource(Copies(rows), keyed: false);
-        var cut = RenderBound(old, pageSize: 10);
+        var old = new MarkingSource(rows, rowKey);
+        var replacement = new MarkingSource(Copies(rows), rowKey);
+        var cut = RenderBound(old, pager ? 10 : null);
         var pressedOn = Paint(cut);
         var page = PageOf(cut);
 
@@ -202,56 +322,19 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
 
         Assert.Empty(old.Heard.Intents);
         Assert.Empty(replacement.Heard.Intents);
+        Assert.Equal([MarkRefusalReason.SourceChanged], Refusals);
     }
 
-    [Fact] // ADR-0142 / LV-32, ADR-0015: the header's checkbox names the page it was pressed on: a press whose page was turned since marks nothing; one told the page shown now lines that page up
-    public async Task The_header_checkbox_pressed_on_a_page_turned_since_marks_nothing()
+    [Theory] // ADR-0043 / MK-9, ADR-0015: "Mark all N rows" names the result as it stood at the press: pressed under an order that has moved since, it marks nothing and is refused once as OrderMoved; on the current paint it marks all as before, refused for nothing — with a Row Key and without
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Mark_all_rows_pressed_under_a_moved_order_marks_nothing_and_is_refused_as_order_moved(bool rowKey, bool moved)
     {
         var window = TestRows.Many(30);
         var marks = new RecordingMarks();
-        var cut = RenderPushed(marks, window, pageSize: 10);
-        var pressedOn = Paint(cut);
-        var page = PageOf(cut);
-
-        await ClickAsync(cut.FindAll(".ex-pager button")[1]);
-        Assert.Equal(10, PageOf(cut));
-        await TellAsync(cut, pressedOn, page);
-        await ClickAsync(HeaderBox(cut));
-        Assert.Empty(marks.Intents);
-
-        await TellAsync(cut, Paint(cut), PageOf(cut));
-        await ClickAsync(HeaderBox(cut));
-        var intent = Assert.IsType<RowMarkIntent<TestRow>.Positions>(Assert.Single(marks.Intents));
-        Assert.Equal([new RowRange(10, 10)], intent.Ranges);
-    }
-
-    [Theory] // ADR-0142 / LV-32, ADR-0043: without a pager the header's checkbox names the whole result as it stood at the press: pressed under an order that has moved since, it marks nothing; on the current paint it marks all as before
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task The_header_checkbox_pressed_under_a_moved_order_marks_nothing(bool moved)
-    {
-        var window = TestRows.Many(50);
-        var marks = new RecordingMarks();
-        var cut = RenderPushed(marks, window);
-        var pressedOn = Paint(cut);
-        Assert.Equal(-1, PageOf(cut));
-
-        if (moved)
-            Reorder(cut, Swapped(window, 0, 1), version: 1);
-        await TellAsync(cut, pressedOn);
-        await ClickAsync(HeaderBox(cut));
-
-        Assert.Equal(moved ? [] : [new RowMarkIntent<TestRow>.AllRows(true, 0)], marks.Intents);
-    }
-
-    [Theory] // ADR-0142 / LV-32, ADR-0043/0015: "Mark all N rows" names the result as it stood at the press: pressed under an order that has moved since, it marks nothing; on the current paint it marks all as before
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Mark_all_rows_pressed_under_a_moved_order_marks_nothing(bool moved)
-    {
-        var window = TestRows.Many(30);
-        var marks = new RecordingMarks();
-        var cut = RenderPushed(marks, window, pageSize: 10);
+        var cut = RenderPushed(marks, window, pageSize: 10, rowKey: rowKey);
         var pressedOn = Paint(cut);
 
         if (moved)
@@ -260,19 +343,43 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         await ClickAsync(MarkAll(cut));
 
         Assert.Equal(moved ? [] : [new RowMarkIntent<TestRow>.AllRows(true, 0)], marks.Intents);
+        Assert.Equal(moved ? [MarkRefusalReason.OrderMoved] : [], Refusals);
     }
 
-    [Fact] // ADR-0142 / LV-32, ADR-0043: a mark press nobody told of — made by script, with no mousedown before it — is taken as aimed at the newest paint, and marks
-    public async Task An_untold_mark_press_marks_as_before()
+    [Theory] // ADR-0043 / MK-9, ADR-0142: "Mark all N rows" pressed on what a Source since replaced painted, both at version 0, marks nothing in either source's marks and is refused once as SourceChanged — with a Row Key and without
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Mark_all_rows_pressed_on_the_replaced_sources_paint_marks_nothing_and_is_refused_as_source_changed(bool rowKey)
+    {
+        var rows = TestRows.Many(30);
+        var old = new MarkingSource(rows, rowKey);
+        var replacement = new MarkingSource(Copies(rows), rowKey);
+        var cut = RenderBound(old, pageSize: 10);
+        var pressedOn = Paint(cut);
+
+        cut.Render(ps => ps.Add(g => g.Source, replacement));
+        await TellAsync(cut, pressedOn);
+        await ClickAsync(MarkAll(cut));
+
+        Assert.Empty(old.Heard.Intents);
+        Assert.Empty(replacement.Heard.Intents);
+        Assert.Equal([MarkRefusalReason.SourceChanged], Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9, ADR-0142: a mark press nobody told of — made by key or by script, with no mousedown before it — is taken as aimed at the newest paint, and marks, refused for nothing
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task An_untold_mark_press_marks_as_before(bool rowKey)
     {
         var window = TestRows.Many(50);
         var marks = new RecordingMarks();
-        var cut = RenderPushed(marks, window);
+        var cut = RenderPushed(marks, window, rowKey: rowKey);
         Reorder(cut, Swapped(window, 0, 1), version: 1);
 
         await ClickAsync(HeaderBox(cut));
 
         Assert.Equal([new RowMarkIntent<TestRow>.AllRows(true, 1)], marks.Intents);
+        Assert.Empty(Refusals);
     }
 
     // ---- The listener ----
