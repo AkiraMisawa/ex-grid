@@ -156,6 +156,12 @@ the kind that still look correct on screen**, so review will not catch them.
   is emitted with a bare `ExSheet.X` inside, and on a Consumer's page that imports
   `ExSheet.Components`, `ExSheet` is the component class: CS0426, and no handler binds. Give such
   a parameter a non-generic argument type of its own (`LinkedColumnColours`, ADR-0057).
+- **MudBlazor 9 ignores `DialogOptions.DefaultFocus` on a dialog shown through `IDialogService`.**
+  The dialog's focus trap reads the `MudDialog` component's own `DefaultFocus`, or the provider's
+  default, and otherwise takes `Element`. With `Element`, its first render puts the keyboard on an
+  empty element of its own. Set `DefaultFocus` on the `MudDialog` itself. Format Cells set it only
+  in the options, so a key typed as the dialog appeared landed on that element and was lost. Every
+  test still passed, until CI's Edge on the Server host typed an End at the wrong moment (PR #70).
 
 ### Specific to this component
 
