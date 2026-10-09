@@ -1,4 +1,4 @@
-import { test, expect, scrollRowToTop } from './fixtures.mjs';
+import { test, expect, scrollRowToTop, circuitQuiet } from './fixtures.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
@@ -82,6 +82,41 @@ test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bound
     await expect(grid.locator(`[id$='-r${last}c0']`)).toContainText('Grand Total');
     expect(await rows(page, 'server').count()).toBeLessThan(100);
     expect(await asked(page, 'Window')).toBeGreaterThan(1);
+});
+
+test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows its last rows, and scrolls on', async ({ page }) => {
+    await open(page, 'builtin');
+    // Computed in the page over the Snapshot, and on the server: the same Window, asked of each.
+    for (const side of ['snapshot', 'server']) {
+        const grid = report(page, side);
+        const rowCount = async () => Number(await grid.getAttribute('aria-rowcount'));
+        // The first layout's rows: the regions and their desks, and the Grand Total.
+        const first = await rowCount();
+        const tradeId = section(page, side).getByRole('checkbox', { name: 'Trade ID', exact: true });
+        await tradeId.check();
+        await expect.poll(rowCount).toBeGreaterThan(1000);
+        const count = await rowCount();
+        // Scrolled to the last row, thousands of rows below the end of the first layout's report.
+        await scrollRowToTop(grid, count - 1);
+        await expect(grid.locator(`[id$='-r${count - 1}c0']`)).toContainText('Grand Total');
+
+        // Trade ID out of the rows again: the report shrinks to the first layout's, which ends long
+        // before the Window the grid stands on. The grid shows the new report's last rows, its Grand
+        // Total among them — not an error, and not an empty Window.
+        await tradeId.uncheck();
+        await expect.poll(rowCount).toBe(first);
+        await expect(grid.locator(`[id$='-r${first - 1}c0']`)).toContainText('Grand Total');
+        await circuitQuiet();
+        await expect(grid.locator(`[id$='-r${first - 1}c0']`)).toContainText('Grand Total');
+        expect(await rows(page, side).count()).toBeGreaterThan(0);
+
+        // And it scrolls on: back at the top, the first region's row is painted where it belongs.
+        await scrollRowToTop(grid, 0);
+        await expect(grid.locator("[id$='-r0c0']")).toContainText('Americas');
+    }
+    // Whatever the host still had to say has been said before the console's verdict is read: no
+    // console error, no page error, no unhandled exception in the host's log (CON-1, CON-2, CON-6).
+    await circuitQuiet();
 });
 
 test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside the Window', async ({ page, context }) => {

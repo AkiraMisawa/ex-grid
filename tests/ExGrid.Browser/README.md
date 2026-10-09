@@ -718,7 +718,9 @@ nobody had asked for. What that means when writing a test:
   file read while a report stands; and the code shown under "The code" equal to its source.
 - `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069, ADR-0151/0152), against the demo API server
   from either host. A server report scrolls beyond its first Window with a bounded number of rendered
-  rows (LV-24), and a whole-column Copy and Selection Summary of a remote report include the rows
+  rows (LV-24); a report scrolled to its last row and then shrunk by a layout, computed in the page
+  and on the server alike, shows the new report's last rows, breaks nothing, and scrolls back to its
+  top (LV-24, ADR-0151); and a whole-column Copy and Selection Summary of a remote report include the rows
   outside the Window and equal the local report's (LV-28). **Run once per Chrome**: its trades read over
   Arrow into a Snapshot the page pivots in its own process, at the version `/api/status` names, and
   asked of the server through `PivotReportSource.Fetch`, whose server computes the report and returns
