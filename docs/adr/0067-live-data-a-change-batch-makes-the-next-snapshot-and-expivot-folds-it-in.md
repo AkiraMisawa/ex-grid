@@ -149,10 +149,16 @@ The notice under the Pivot Toolbar says what happened and as of when, and that k
 from being a plausible wrong answer. Two places stayed quiet. A cell read far from the notice looked
 current. And a copy carried the old values to wherever it was pasted, where nothing says as of when.
 - **While the report is stale, its value cells carry a stale appearance** — static, the values still
-  readable, nothing animated (P8) — from a Visual Token beside the notice's own. The notice stays. The
-  appearance goes when the report recovers.
-- **Copy from a Stale Report is refused**, in ExPivot's words, saying the time of the version shown and
-  to Retry first. The Selection Summary still answers: it is on screen, beside the notice.
+  readable, nothing animated (P8). The report carries `ex-pivot-report-stale`, and its value cells take
+  `--ex-pivot-stale-value-color`, a Visual Token beside the notice's own. By default it mixes 60% of the
+  ink into the ground, which keeps a contrast of 5.7:1 on white; under forced colours it is `GrayText`;
+  the MudBlazor wrapper mixes its own palette's text and surface so that both of its palettes keep at
+  least the 4.5:1 that UX-8 asks of body text. Labels, Details and the rows' components are untouched,
+  and the notice stays. The appearance goes when the report recovers.
+- **Copy from a Stale Report is refused** before the source is asked, in ExPivot's words
+  (`copy-stale-report`: "The report shows the data as of {0}: Retry before copying.", with its Japanese),
+  saying the time of the version shown and to Retry first. The Selection Summary still answers: it is on
+  screen, beside the notice.
 
 Rejected: **the notice alone**, for the two quiet places above; **Copy allowed with a sentence through
 the live region**, because the clipboard cannot carry the time with the values; **dimming the report

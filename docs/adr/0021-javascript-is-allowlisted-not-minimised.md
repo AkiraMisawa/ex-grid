@@ -585,4 +585,7 @@ section of that date.)* Four readings changed. No listener was added, and nothin
   of the page that the render wrote (`data-ex-page`). At the release on the same mark it tells the core
   (`MarkPressTakenAt`), before Blazor dispatches the click
   ([ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)'s note of 2026-10-08).
-  A press the platform makes a context menu of tells nothing.
+  A press the platform makes a context menu of tells nothing. *(2026-10-09.)* A press on a row's checkbox
+  also names its row, read from its own cell's id at the mousedown, so that the core can answer a press
+  whose click Blazor will not deliver (ADR-0043's note as rewritten that day). No listener was added and
+  nothing is measured: it is an attribute the render wrote.

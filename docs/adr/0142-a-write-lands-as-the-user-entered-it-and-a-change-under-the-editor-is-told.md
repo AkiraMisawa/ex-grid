@@ -168,8 +168,9 @@ Action press aimed at the old source landed on the new one's row. Now:
   from the old source moves nothing in the new one;
 - a press on a mark carries the paint it was made on, as an Action press does
   ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of 2026-10-08). One made on what
-  the old source painted marks nothing
-  ([ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)'s note of 2026-10-08);
+  the old source painted marks nothing and is refused as `MarkRefusalReason.SourceChanged`, said once
+  through `OnMarkRefused`
+  ([ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)'s note, rewritten with the user on 2026-10-09);
 - ExSheet, which pushes its Window, moves the Row Sequence Version it hands its grid when it opens a Sheet
   Document it did not emit itself, so a paste, Delete or fill aimed at the old document is refused, and
   its words say that another Sheet Document was opened
