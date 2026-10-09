@@ -25,7 +25,14 @@ public sealed record Sale(string? Region, string Product, decimal Amount, int Qu
 public abstract class PivotTestContext : BunitContext
 {
     private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
+
+    /// <summary>ExGrid's settle delay: once a scroll has been still this long, the grid paints the
+    /// rows it landed on and asks for them (ADR-0004).</summary>
+    private static readonly TimeSpan SettleDelay = TimeSpan.FromMilliseconds(150);
+
     private readonly BunitJSModuleInterop _module;
+    // Where each handle says its scroller stands, as the browser would (ScrollReportAsync).
+    private readonly List<JSRuntimeInvocationHandler<ScrollOffset>> _scrollOffsets = [];
     private bool _rendererInfoSet;
 
     protected PivotTestContext()
@@ -39,10 +46,12 @@ public abstract class PivotTestContext : BunitContext
 
     // Every call a grid makes to the handle its listener's attach gave it, answered as the
     // browser would answer it.
-    private static void StandIn(BunitJSModuleInterop handle)
+    private void StandIn(BunitJSModuleInterop handle)
     {
         handle.Setup<bool>("metaIsPrimary").SetResult(false);
-        handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
+        var offset = handle.Setup<ScrollOffset>("getScrollOffset");
+        offset.SetResult(default);
+        _scrollOffsets.Add(offset);
         handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
         foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handKeyboardTo", "dispose" })
             handle.SetupVoid(name, _ => true).SetVoidResult();
@@ -87,6 +96,20 @@ public abstract class PivotTestContext : BunitContext
     }
 
     internal FakeTimeProvider Clock { get; } = new();
+
+    /// <summary>
+    /// Scrolls the report grid as a user does: its scroller stands <paramref name="topPx"/> down and
+    /// says so, and the grid's settle delay passes on the test's clock, after which the grid paints
+    /// the rows it landed on and asks for them (ADR-0004, ADR-0001). Every grid's handle answers the
+    /// same offset, so the pivot is rendered without a details grid open.
+    /// </summary>
+    internal async Task ScrollReportAsync(IRenderedComponent<PivotComponent> cut, double topPx)
+    {
+        foreach (var offset in _scrollOffsets)
+            offset.SetResult(new ScrollOffset(topPx, 0));
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-sheet > .ex-grid > .ex-scroller").ScrollAsync(EventArgs.Empty));
+        Clock.Advance(SettleDelay);
+    }
 
     //  Region  Product  Amount  Quantity  Online
     //  East    Apples   100     10        TRUE

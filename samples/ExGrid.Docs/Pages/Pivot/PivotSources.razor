@@ -13,6 +13,15 @@
             outside the Window, and name the Report Version they answer; Show Details names the Source Version
             the report was computed from.
         </p>
+        <p>
+            The Window asked for is the one the grid is scrolled to. When a layout, a collapse, a filter or newer
+            data makes a report that ends before that Window does, ExPivot asks again for a Window of the same
+            height ending at the new report's last row, and shows that one, as the grid moves its own view to the
+            end of a result that shrank. The report you were reading stays on screen until it lands, and later
+            questions ask for that Window until you scroll elsewhere. A source therefore needs nothing of its own
+            for a shrinking report: it answers the Window it is asked for, with no rows when the report ends
+            before it.
+        </p>
         <ul>
             <li><strong><code>DataSource</code></strong> accepts <code>PivotSource.From</code> over local records or a Snapshot, including a CSV that stays in the browser.</li>
             <li><strong><code>Source</code></strong> accepts a <code>PivotReportSource</code>. Its <code>Fetch</code> factory uses your delegates to request server report Windows and operations.</li>

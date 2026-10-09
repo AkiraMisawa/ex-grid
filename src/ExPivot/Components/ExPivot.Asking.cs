@@ -339,6 +339,19 @@ public partial class ExPivot
                 || (kind == Question.Live && source.UpdateMode == PivotReportUpdateMode.FullRefresh);
             var adopted = await client.ReadAsync(layout, settings, _wantedWindow, _caps.MaxLeaves, asking.Token,
                 markChanges: kind != Question.Layout, refreshData: refreshData);
+            // When the report answered ends before the Window asked for ends — a layout, a collapse,
+            // a filter or newer data shrank it under the Window the grid was scrolled to — the Window
+            // clamped into it is asked for, so the grid is never handed rows past the report's row
+            // count (ADR-0151). The question goes on as itself: the report on screen stays until the
+            // clamped Window lands, and the provider is not asked to refresh twice. A report that
+            // shrank again meanwhile is clamped again; each clamp starts the Window earlier, so
+            // this ends.
+            while (adopted && client.Current is { } answered && ClampedInto(answered) is { } clamped)
+            {
+                if (_disposed || generation != _generation) return;
+                adopted = await client.ReadAsync(layout, settings, clamped, _caps.MaxLeaves, asking.Token,
+                    markChanges: kind != Question.Layout);
+            }
             if (_disposed || generation != _generation) return;
             var carried = FinishAsking();
             if (!adopted || client.Current is not { } state)
@@ -371,6 +384,9 @@ public partial class ExPivot
             _changeTimes.Adopt(state, Now(), ChangeHighlightDuration);
             _state = state;
             _report = state.Metadata;
+            // Later questions ask for the Window shown — the one clamped into the report, when it
+            // shrank below the one asked for — until the grid asks for another (ADR-0151).
+            _wantedWindow = state.Window;
             _reportSource = source;
             _shown = layout;
             if (previous is null || previous.SourceVersion != _report.SourceVersion) _shownAt = Now();
@@ -435,6 +451,23 @@ public partial class ExPivot
             _refusal = Word("refused-out-of-memory");
         await LandedAsync(carried, null);
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// The Window clamped into the report <paramref name="answered"/> holds, when the Window it was
+    /// asked for runs past that report's last row: the same height, ending at the last row — from
+    /// row 0 when the report is shorter than that — as the grid clamps its own slice when its total
+    /// shrinks (ExGrid's <c>ViewportGeometry.SliceAt</c>), so the Window shown covers what the grid
+    /// paints. Null when the Window lies within the report. A clamped Window starts earlier than the
+    /// one it replaces, and one starting at row 0 is never clamped again.
+    /// </summary>
+    private static PivotReportWindow? ClampedInto(PivotReportState answered)
+    {
+        var window = answered.Window;
+        var rows = answered.Metadata.RowCount;
+        if (window.Start == 0 || (long)window.Start + window.Count <= rows)
+            return null;
+        return new PivotReportWindow(Math.Max(0, rows - window.Count), window.Count);
     }
 
     private Task WindowNeededAsync(RowRange range)
