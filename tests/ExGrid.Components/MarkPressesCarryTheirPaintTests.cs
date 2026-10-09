@@ -12,8 +12,9 @@ namespace ExGrid.Components.Tests;
 /// A press on a mark carries the render it was made on, as a press on an action does, and is judged
 /// against it (ADR-0043's note of 2026-10-08, decided with the user on 2026-10-09; MK-9; ADR-0142). The
 /// grid's listener reads the paint the Viewport named at the mousedown on a row's checkbox, the header's
-/// checkbox or "Mark all N rows" — and, for the header's under a pager, the page it named — and tells them
-/// at the release, before Blazor dispatches the click. What the press can still name exactly is honoured: a row's checkbox marks its row by identity
+/// checkbox or "Mark all N rows" — for the header's under a pager, the page it named, and for a row's
+/// checkbox, the row its cell's id names — and tells them at the release, before Blazor dispatches the
+/// click. What the press can still name exactly is honoured: a row's checkbox marks its row by identity
 /// wherever the order has moved it, and the header's checkbox under a pager marks the page it was pressed
 /// on after the page has turned, as positions under the order it was pressed in. The rest marks nothing
 /// and is refused once, through <c>OnMarkRefused</c>: <c>SourceChanged</c> for a press made on what a
@@ -21,8 +22,12 @@ namespace ExGrid.Components.Tests;
 /// "Mark all N rows" pressed under an order that has moved since. A press told the current paint, or
 /// told none, marks as before. Here a test tells the press as the listener does, then clicks.
 ///
-/// <para>Where a test delivers the click of a checkbox whose row component a render disposed, it calls
-/// the handler that component held, as the renderer would.</para>
+/// <para>Blazor does not deliver an event whose attribute a component since disposed had rendered, so a
+/// row's checkbox whose row component a render disposed before its click was heard never hears it. The
+/// core answers such a press itself, as the click would have been, after the render that disposed it —
+/// or at once, when it is told after — and a press whose click a later press overtook is let go, so that
+/// a told press never reaches the next one (principle 6). Where a test delivers the click of a disposed
+/// checkbox, it calls the handler that component held, as the renderer would.</para>
 ///
 /// Mark 0–100, Book 100–200, Amount 200–300; 20px rows in a 120px Viewport.
 /// </summary>
@@ -37,6 +42,13 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         GridColumn<TestRow>.MarkColumn("Mark", width: Fixed100),
         new("Book", ColumnType.Text, r => r.Book, width: Fixed100),
         new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100),
+    ];
+
+    /// <summary>The same, with an Action Column after them, Do 300–400.</summary>
+    private static readonly GridColumn<TestRow>[] WithAnAction =
+    [
+        .. Columns,
+        GridColumn<TestRow>.ActionColumn("Do", [new GridAction("approve", "Approve")], width: Fixed100),
     ];
 
     /// <summary>Every refusal the grid raised through <c>OnMarkRefused</c>, in order.</summary>
@@ -87,6 +99,26 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         return next;
     }
 
+    /// <summary>The same instances, the one at <paramref name="from"/> moved to <paramref name="to"/>.</summary>
+    private static TestRow[] Moved(TestRow[] rows, int from, int to)
+    {
+        var list = rows.ToList();
+        var row = list[from];
+        list.RemoveAt(from);
+        list.Insert(to, row);
+        return [.. list];
+    }
+
+    /// <summary>The rows with a new instance of the one at <paramref name="at"/>, equal in every value:
+    /// the same row, as a live feed hands it over again.</summary>
+    private static TestRow[] Renewed(TestRow[] rows, int at)
+    {
+        var next = (TestRow[])rows.Clone();
+        var row = rows[at];
+        next[at] = new TestRow { Book = row.Book, Amount = row.Amount, AsOf = row.AsOf, Active = row.Active };
+        return next;
+    }
+
     /// <summary>Another source's rows: new instances with the same values, and so the same keys.</summary>
     private static TestRow[] Copies(TestRow[] rows)
         => [.. rows.Select(r => new TestRow { Book = r.Book, Amount = r.Amount, AsOf = r.AsOf, Active = r.Active })];
@@ -98,9 +130,10 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
     private static int PageOf(IRenderedComponent<ExGrid<TestRow>> cut)
         => HeaderBox(cut).GetAttribute("data-ex-page") is { } page ? int.Parse(page, CultureInfo.InvariantCulture) : -1;
 
-    /// <summary>What the listener tells at the release on a mark: the paint and the page read at its press.</summary>
-    private static Task TellAsync(IRenderedComponent<ExGrid<TestRow>> cut, int paint, int page = -1)
-        => cut.InvokeAsync(() => cut.Instance.MarkPressTakenAt(paint, page));
+    /// <summary>What the listener tells at the release on a mark: the paint, the page and, for a row's
+    /// checkbox, the row read at its press.</summary>
+    private static Task TellAsync(IRenderedComponent<ExGrid<TestRow>> cut, int paint, int page = -1, int row = -1)
+        => cut.InvokeAsync(() => cut.Instance.MarkPressTakenAt(paint, page, row));
 
     private static IReadOnlyList<AngleSharp.Dom.IElement> RowBoxes(IRenderedComponent<ExGrid<TestRow>> cut)
         => cut.FindAll(".ex-row .ex-mark");
@@ -120,9 +153,27 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
     private static Func<TestRow, bool, Task> CheckboxHandlerOf(IRenderedComponent<ExGrid<TestRow>> cut, TestRow row)
         => cut.FindComponents<ExGridRow<TestRow>>().Single(r => ReferenceEquals(r.Instance.Row, row)).Instance.OnMark!;
 
+    /// <summary>
+    /// A render that disposes the component painting row 2's checkbox, the order unmoved: without a Row
+    /// Key, a new instance of that row, which is a new component (ADR-0140); with one, a scroll that
+    /// takes the row out of the painted rows. Answers the rows in force after it.
+    /// </summary>
+    private async Task<TestRow[]> TakeRowTwosCheckboxAwayAsync(IRenderedComponent<ExGrid<TestRow>> cut, TestRow[] window, bool rowKey)
+    {
+        if (rowKey)
+        {
+            await ScrollToAsync(cut.Find(".ex-scroller"), 600);
+            Assert.DoesNotContain(cut.FindComponents<ExGridRow<TestRow>>(), r => ReferenceEquals(r.Instance.Row, window[2]));
+            return window;
+        }
+        var renewed = Renewed(window, 2);
+        cut.Render(ps => ps.Add(g => g.Window, renewed));
+        return renewed;
+    }
+
     // ---- A row's checkbox: refused under another binding, never under another order ----
 
-    [Theory] // ADR-0043 (note of 2026-10-08, decided 2026-10-09) / MK-9, ADR-0142: a press on a row's checkbox made on what a Source since replaced painted — both at version 0 — marks nothing in either source's marks and is refused once as SourceChanged, under a pager and not; with a Row Key the checkbox survives holding the new source's row and hears the click, without one its component is gone and the click its handler held is delivered
+    [Theory] // ADR-0043 (note of 2026-10-08, decided 2026-10-09) / MK-9, ADR-0142: a press on a row's checkbox made on what a Source since replaced painted — both at version 0 — marks nothing in either source's marks and is refused once as SourceChanged, under a pager and not; with a Row Key the checkbox survives holding the new source's row and hears the click, without one its component is gone and the core answers the press
     [InlineData(false, false)]
     [InlineData(true, false)]
     [InlineData(false, true)]
@@ -137,7 +188,7 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         var held = CheckboxHandlerOf(cut, rows[2]);
 
         cut.Render(ps => ps.Add(g => g.Source, replacement));
-        await TellAsync(cut, pressedOn);
+        await TellAsync(cut, pressedOn, row: 2);
         if (rowKey)
             await ClickAsync(RowBoxes(cut)[2]);
         else
@@ -161,7 +212,7 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         var cut = RenderBound(old, pager ? 20 : null);
         cut.Render(ps => ps.Add(g => g.Source, replacement));
 
-        await TellAsync(cut, Paint(cut));
+        await TellAsync(cut, Paint(cut), row: 2);
         await ClickAsync(RowBoxes(cut)[2]);
 
         Assert.Empty(old.Heard.Intents);
@@ -184,7 +235,7 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
 
         // Rows 0 and 2 change places: the checkbox pressed at row 0 stands at row 2, holding its row.
         Reorder(cut, Swapped(window, 0, 2), version: 1);
-        await TellAsync(cut, pressedOn);
+        await TellAsync(cut, pressedOn, row: 0);
         await ClickAsync(RowBoxes(cut)[2]);
 
         var intent = Assert.IsType<RowMarkIntent<TestRow>.OneRow>(Assert.Single(marks.Intents));
@@ -382,9 +433,191 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         Assert.Empty(Refusals);
     }
 
+    // ---- A told press whose click never comes ----
+
+    [Theory] // ADR-0043 / MK-9, ADR-0142: a told press on a row's checkbox whose row component is still rendered waits for its click, and marks once — a render after the click answers nothing more
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_told_row_checkbox_press_whose_row_is_still_rendered_waits_for_its_click(bool rowKey)
+    {
+        var window = TestRows.Many(50);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, rowKey: rowKey);
+
+        await TellAsync(cut, Paint(cut), row: 2);
+        Assert.Empty(marks.Intents);
+        await ClickAsync(RowBoxes(cut)[2]);
+        await TakeRowTwosCheckboxAwayAsync(cut, window, rowKey);
+
+        var intent = Assert.IsType<RowMarkIntent<TestRow>.OneRow>(Assert.Single(marks.Intents));
+        Assert.Same(window[2], intent.Row);
+        Assert.Empty(Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9, ADR-0142 "no press is lost to Blazor": a press on a row's checkbox whose row component is already gone when the press is told — a new instance of its row without a Row Key, a scroll with one — never hears its click, and is answered at once, as the click would have been: the row at its position under the same order is marked
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_told_row_checkbox_press_whose_component_is_gone_is_answered_at_once_on_the_row_at_its_position(bool rowKey)
+    {
+        var window = TestRows.Many(50);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, rowKey: rowKey);
+        var pressedOn = Paint(cut);
+        var now = await TakeRowTwosCheckboxAwayAsync(cut, window, rowKey);
+
+        await TellAsync(cut, pressedOn, row: 2);
+
+        var intent = Assert.IsType<RowMarkIntent<TestRow>.OneRow>(Assert.Single(marks.Intents));
+        Assert.Same(now[2], intent.Row);
+        Assert.True(intent.Marked);
+        Assert.Empty(Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9, principle 6 (review of 2026-10-09): a told press on a row's checkbox whose row component a later render disposes before its click is answered after that render, as the click would have been — and never reaches the next press: "Mark all N rows" pressed by key after an order move, told nothing, marks all and is refused for nothing — with a Row Key and without
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_told_row_checkbox_press_whose_click_never_comes_is_answered_and_never_reaches_the_next_press(bool rowKey)
+    {
+        var window = TestRows.Many(50);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, pageSize: 40, rowKey: rowKey);
+        await TellAsync(cut, Paint(cut), row: 2);
+
+        var now = await TakeRowTwosCheckboxAwayAsync(cut, window, rowKey);
+
+        cut.WaitForAssertion(() => Assert.Single(marks.Intents));
+        var answered = Assert.IsType<RowMarkIntent<TestRow>.OneRow>(marks.Intents[0]);
+        Assert.Same(now[2], answered.Row);
+        Assert.True(answered.Marked);
+
+        Reorder(cut, Swapped(now, 0, 1), version: 1);
+        await ClickAsync(MarkAll(cut));
+
+        Assert.Equal(2, marks.Intents.Count);
+        Assert.Equal(new RowMarkIntent<TestRow>.AllRows(true, 1), marks.Intents[1]);
+        Assert.Empty(Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9, principle 6: a told press on a row's checkbox told a paint older than every paint the grid keeps a row serial for waits for its click; overtaken by another mark press — "Mark all N rows" pressed by key after an order move, told nothing — it is let go, and never reaches that press, which marks all and is refused for nothing
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_told_row_checkbox_press_overtaken_by_another_mark_press_never_reaches_it(bool rowKey)
+    {
+        var window = TestRows.Many(50);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, pageSize: 40, rowKey: rowKey);
+        var pressedOn = Paint(cut);
+        // Far more paints than the grid keeps serials for, each a new instance of a painted row.
+        for (var i = 0; i < 100; i++)
+        {
+            window = Renewed(window, 1);
+            cut.Render(ps => ps.Add(g => g.Window, window));
+        }
+        await TellAsync(cut, pressedOn, row: 2);
+        Assert.Empty(marks.Intents);
+
+        Reorder(cut, Swapped(window, 0, 1), version: 1);
+        await ClickAsync(MarkAll(cut));
+
+        Assert.Equal([new RowMarkIntent<TestRow>.AllRows(true, 1)], marks.Intents);
+        Assert.Empty(Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9, principle 6: a told press on a row's checkbox whose component a render disposed is answered before a marking gesture heard after that render — Space in the Mark Column, or "Mark all N rows" by key — even while the grid's after-render pass, which answers it otherwise, has not run yet, as on a circuit until the browser acknowledges the render: the two land in the order they were made
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_lost_row_checkbox_press_is_answered_before_a_marking_gesture_made_after_it(bool markAll)
+    {
+        var window = TestRows.Many(50);
+        var marks = new RecordingMarks();
+        var acting = new TaskCompletionSource();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, window)
+            .Add(g => g.TotalCount, window.Length)
+            .Add(g => g.Columns, WithAnAction)
+            .Add(g => g.Marks, marks)
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 600)
+            .Add(g => g.PageSize, 40)
+            .Add(g => g.OnAction, (Cells.GridActionEventArgs<TestRow> _) => acting.Task)
+            .Add(g => g.OnMarkRefused, (MarkRefusalReason reason) => Refusals.Add(reason)));
+        // Rows 0 to 3 selected in the Mark Column, for Space.
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 10 });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, OffsetX = 50, OffsetY = 10 });
+        for (var i = 0; i < 3; i++)
+            await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, alt: false, meta: false, metaIsPrimary: false));
+        var paint = Paint(cut);
+        // A press on row 2's checkbox and one on its action, both told, neither clicked.
+        await TellAsync(cut, paint, row: 2);
+        await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(paint, row: 2, column: 3, action: 0));
+
+        // A new instance of row 2 disposes its component. After that render the grid answers the action
+        // first, and its handler has not returned: the after-render pass has not reached the mark press.
+        var renewed = Renewed(window, 2);
+        cut.Render(ps => ps.Add(g => g.Window, renewed));
+        Assert.Empty(marks.Intents);
+
+        if (markAll)
+            await ClickAsync(MarkAll(cut));
+        else
+            await cut.InvokeAsync(() => cut.Instance.OnKeyAsync(" ", false, false, alt: false, meta: false, metaIsPrimary: false));
+
+        Assert.Equal(2, marks.Intents.Count);
+        var answered = Assert.IsType<RowMarkIntent<TestRow>.OneRow>(marks.Intents[0]);
+        Assert.Same(renewed[2], answered.Row);
+        Assert.True(answered.Marked);
+        if (markAll)
+            Assert.Equal(new RowMarkIntent<TestRow>.AllRows(true, 0), marks.Intents[1]);
+        else
+            Assert.Equal([new RowRange(0, 4)], Assert.IsType<RowMarkIntent<TestRow>.Positions>(marks.Intents[1]).Ranges);
+
+        // The action's handler returns, and the after-render pass finds nothing more to answer.
+        await cut.InvokeAsync(acting.SetResult);
+        Assert.Equal(2, marks.Intents.Count);
+        Assert.Empty(Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9, ADR-0160: a told press on a row's checkbox whose component is gone, and whose order moved before the core heard it, cannot be paired with its row — the grid keeps no row and no Row Key of the render it was pressed on — so it marks nothing and is refused once as OrderMoved
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_told_row_checkbox_press_whose_component_is_gone_under_a_moved_order_is_refused_as_order_moved(bool rowKey)
+    {
+        var window = TestRows.Many(50);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, rowKey: rowKey);
+        var pressedOn = Paint(cut);
+        // Row 2 moves to row 40, out of the painted rows: its component goes, and position 2 names another row.
+        Reorder(cut, Moved(window, 2, 40), version: 1);
+
+        await TellAsync(cut, pressedOn, row: 2);
+
+        Assert.Empty(marks.Intents);
+        Assert.Equal([MarkRefusalReason.OrderMoved], Refusals);
+    }
+
+    [Theory] // ADR-0043 / MK-9, ADR-0142: a press on a row's checkbox the core answered marks once, even when the component a render disposed still delivers its click
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task An_answered_row_checkbox_press_marks_once_even_when_its_click_is_delivered(bool rowKey)
+    {
+        var window = TestRows.Many(50);
+        var marks = new RecordingMarks();
+        var cut = RenderPushed(marks, window, rowKey: rowKey);
+        var held = CheckboxHandlerOf(cut, window[2]);
+        await TellAsync(cut, Paint(cut), row: 2);
+        await TakeRowTwosCheckboxAwayAsync(cut, window, rowKey);
+        cut.WaitForAssertion(() => Assert.Single(marks.Intents));
+
+        await cut.InvokeAsync(() => held(window[2], true));
+
+        Assert.IsType<RowMarkIntent<TestRow>.OneRow>(Assert.Single(marks.Intents));
+        Assert.Empty(Refusals);
+    }
+
     // ---- The listener ----
 
-    [Fact] // ADR-0142 / LV-32, ADR-0021: the listener reads a mark press's paint, and the header's page, at the mousedown on one of this grid's own marks — not a nested grid's — and tells them at the release on the same mark, as it does for an action; no listener is added
+    [Fact] // ADR-0043 / MK-9, ADR-0142, ADR-0021: the listener reads a mark press's paint, the header's page and a row's checkbox's row — from its own cell's id, never a cell of an outer grid — at the mousedown on one of this grid's own marks, not a nested grid's, and tells them at the release on the same mark, as it does for an action; no listener is added
     public void The_script_tells_a_mark_press_its_paint()
     {
         var script = AssetSources.Read("ExGrid", "ex-grid.js");
@@ -392,14 +625,16 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
         Assert.Contains("const mark = target instanceof Element ? target.closest('.ex-mark, .ex-mark-result') : null;", script);
         Assert.Contains("return mark !== null && root !== null && mark.closest('.ex-grid') === root ? mark : null;", script);
         Assert.Contains("const mark = event.button === 0 && !contextPress ? ownMark(event.target) : null;", script);
-        Assert.Contains("markPress = mark !== null ? { mark, paint: paintNow(), page: page === null ? -1 : Number(page) } : null;", script);
+        Assert.Contains("const markCell = mark !== null ? mark.closest('[role=gridcell]') : null;", script);
+        Assert.Contains("const markAt = markCell !== null && root.contains(markCell) ? /r(\\d+)c(\\d+)$/.exec(markCell.id) : null;", script);
+        Assert.Contains("markPress = mark !== null ? { mark, paint: paintNow(), page: page === null ? -1 : Number(page), row: markAt ? Number(markAt[1]) : -1 } : null;", script);
         Assert.Contains("if (core && mark !== null && event.button === 0 && ownMark(event.target) === mark.mark) {", script);
-        Assert.Contains("core.invokeMethodAsync('MarkPressTakenAt', mark.paint, mark.page)", script);
+        Assert.Contains("core.invokeMethodAsync('MarkPressTakenAt', mark.paint, mark.page, mark.row)", script);
         Assert.Single(System.Text.RegularExpressions.Regex.Matches(script, @"addEventListener\('mousedown'"));
         Assert.Single(System.Text.RegularExpressions.Regex.Matches(script, @"addEventListener\('mouseup'"));
     }
 
-    [Fact] // ADR-0142 / LV-32: what the listener reads is written by the render: the header's checkbox names its page under a pager, and "Mark all N rows" is marked as a mark
+    [Fact] // ADR-0043 / MK-9, ADR-0142: what the listener reads is written by the render: the header's checkbox names its page under a pager, "Mark all N rows" is marked as a mark, and a row's checkbox stands in the cell whose id names its row
     public void The_render_writes_what_a_mark_press_reads()
     {
         var window = TestRows.Many(30);
@@ -407,6 +642,9 @@ public class MarkPressesCarryTheirPaintTests : GridTestContext
 
         Assert.Equal("0", HeaderBox(cut).GetAttribute("data-ex-page"));
         Assert.StartsWith("Mark all ", MarkAll(cut).TextContent, StringComparison.Ordinal);
+        var cell = RowBoxes(cut)[2].ParentElement!;
+        Assert.Equal("gridcell", cell.GetAttribute("role"));
+        Assert.EndsWith("r2c0", cell.Id, StringComparison.Ordinal);
         Assert.Null(RenderPushed(new RecordingMarks(), window).Find(".ex-header .ex-mark").GetAttribute("data-ex-page"));
     }
 

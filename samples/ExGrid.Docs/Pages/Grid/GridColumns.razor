@@ -105,7 +105,8 @@
                 or "Mark all N rows" was pressed before a sort, a filter or a live reorder moved the rows it named,
                 and <code>SourceChanged</code> when any mark, a row's checkbox included, was pressed on what a
                 <code>Source</code> since replaced showed. The grid holds no words for it; the Example below writes
-                its own.
+                its own. A press on a row's checkbox whose row a live update re-rendered before the click arrived is
+                still heard: the grid answers it itself, marking the row or saying why it cannot.
             </li>
             <li>
                 <strong><code>GridColumn.TemplateColumn(...)</code></strong> paints its cells with your markup. It still

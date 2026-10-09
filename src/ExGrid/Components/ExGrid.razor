@@ -3240,11 +3240,13 @@
         }
 
         // The rows of this render are keyed: the serials of the paint before go, so no Row Key of
-        // an earlier Window waits for the next render (ADR-0160). Then a told action press whose row
-        // component this render disposed: Blazor will not deliver its click, so the core answers it
-        // (ADR-0142, 2026-10-06; ActionPressTakenAt).
+        // an earlier Window waits for the next render (ADR-0160). Then a told action press, or a told
+        // press on a row's checkbox, whose row component this render disposed: Blazor will not deliver
+        // its click, so the core answers it (ADR-0142, 2026-10-06; ActionPressTakenAt; MK-9,
+        // MarkPressTakenAt).
         EndRowComponents();
         await AnswerActionPressWithNoClickAsync();
+        await AnswerMarkPressWithNoClickAsync();
 
         // A prerender's OnAfterRender does not run at all; this guard is for a renderer
         // that renders statically and still calls it.
@@ -9062,7 +9064,7 @@
     /// </summary>
     private async Task PressHeaderMarkAsync()
     {
-        var press = TakeMarkPress();
+        var press = await TakeMarkPressAsync(null);
         if (_marks is null || PointedAtNow)
             return;
         if (AimedAwayFrom(press?.Paint ?? PaintNotTold) is { } away)
@@ -9085,7 +9087,7 @@
     /// painted, it marks nothing and is refused (<see cref="OnMarkRefused"/>; ADR-0142, MK-9).</summary>
     private async Task MarkWholeResultAsync()
     {
-        var press = TakeMarkPress();
+        var press = await TakeMarkPressAsync(null);
         if (_marks is null)
             return;
         if (AimedAwayFrom(press?.Paint ?? PaintNotTold) is { } away)
@@ -9100,11 +9102,14 @@
     /// Space with the Focus in the Mark Column (ADR-0043): every row with a selected cell
     /// in that column, once each, as positions under the order they were taken in — past
     /// the Window the grid has no identity to name them by. The Consumer lines them up.
+    /// A told press on a row's checkbox whose click will not come is answered first, so the
+    /// two land in the order they were made (ADR-0142, MK-9).
     /// </summary>
-    private Task MarkSelectedRowsAsync()
+    private async Task MarkSelectedRowsAsync()
     {
+        await AnswerMarkPressWithNoClickAsync();
         if (_marks is null)
-            return Task.CompletedTask;
+            return;
         var spans = new List<(int Start, int End)>();
         foreach (var range in _selection.Selection.Ranges)
         {
@@ -9112,7 +9117,7 @@
                 spans.Add((range.TopRow, range.TopRow + range.RowCount));
         }
         if (spans.Count == 0)
-            return Task.CompletedTask;
+            return;
         spans.Sort();
         var merged = new List<RowRange>();
         var (start, end) = spans[0];
@@ -9127,7 +9132,7 @@
             (start, end) = (s, e);
         }
         merged.Add(new RowRange(start, end - start));
-        return _marks.OnMarkIntentAsync(new RowMarkIntent<TRow>.Positions(merged, _sequenceVersion));
+        await _marks.OnMarkIntentAsync(new RowMarkIntent<TRow>.Positions(merged, _sequenceVersion));
     }
 
     /// <summary>

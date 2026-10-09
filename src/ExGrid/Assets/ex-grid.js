@@ -1855,13 +1855,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     let actionPress = null;
     // A press on one of this grid's own marks (ADR-0043) — a row's checkbox, the header's, or "Mark all
     // N rows" on its status line — carries the render it was made on, as a press on an action does
-    // (ADR-0142, LV-32): the paint the Viewport named at the mousedown, and, for the header's under a
-    // pager, the first row of the page it named (data-ex-page), read together then. They are told to
-    // the core at the release on the same mark, before Blazor dispatches the click that follows it, and
-    // the core drops a press made on what a Source since replaced painted, or one naming rows under an
-    // order since moved, or a page since turned. A release elsewhere is no click, and tells nothing,
-    // nor does a press the platform makes a context menu of. Reads attributes the render wrote, as
-    // takenAt does; nothing is measured.
+    // (ADR-0142, MK-9): the paint the Viewport named at the mousedown; for the header's under a pager,
+    // the first row of the page it named (data-ex-page); and for a row's checkbox, the row its own cell's
+    // id names — read together then. They are told to the core at the release on the same mark, before
+    // Blazor dispatches the click that follows it. The core judges the click against them: it refuses a
+    // press made on what a Source since replaced painted, or one naming rows by position under an order
+    // since moved, and lines up the page a press named though the page has turned since. The row lets it
+    // find the row component that painted the checkbox, and answer a press whose click Blazor will not
+    // deliver, as it does an action's. A release elsewhere is no click, and tells nothing, nor does a
+    // press the platform makes a context menu of. Reads attributes and ids the render wrote, as takenAt
+    // does; nothing is measured.
     let markPress = null;
     // One of this grid's own marks, not a nested grid's: the nearest root above it is this one.
     const ownMark = (target) => {
@@ -2085,10 +2088,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 column: at ? Number(at[2]) : -1,
                 index: cell !== null ? Array.prototype.indexOf.call(cell.querySelectorAll('.ex-action'), button) : -1,
             } : null;
-            // And a press on one of its marks, the render it was made on and the page it named (markPress).
+            // And a press on one of its marks, the render it was made on, the page it named and, for a row's
+            // checkbox, the row its cell's id names (markPress) — the cell inside this root: the header's
+            // checkbox and "Mark all N rows" stand in none, though a grid nested in a cell stands in one.
             const mark = event.button === 0 && !contextPress ? ownMark(event.target) : null;
             const page = mark !== null ? mark.getAttribute('data-ex-page') : null;
-            markPress = mark !== null ? { mark, paint: paintNow(), page: page === null ? -1 : Number(page) } : null;
+            const markCell = mark !== null ? mark.closest('[role=gridcell]') : null;
+            const markAt = markCell !== null && root.contains(markCell) ? /r(\d+)c(\d+)$/.exec(markCell.id) : null;
+            markPress = mark !== null ? { mark, paint: paintNow(), page: page === null ? -1 : Number(page), row: markAt ? Number(markAt[1]) : -1 } : null;
         }
         // A press into an editor surface puts the keyboard there.
         noteSurface(event.target);
@@ -2223,14 +2230,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
             });
         }
-        // The click this release makes on a mark is told the render it was pressed on, and the page the
-        // press read in it (markPress).
+        // The click this release makes on a mark is told the render it was pressed on, and the page and
+        // the row the press read in it (markPress).
         const mark = replaying ? null : markPress;
         if (!replaying) {
             markPress = null;
         }
         if (core && mark !== null && event.button === 0 && ownMark(event.target) === mark.mark) {
-            core.invokeMethodAsync('MarkPressTakenAt', mark.paint, mark.page).catch((error) => {
+            core.invokeMethodAsync('MarkPressTakenAt', mark.paint, mark.page, mark.row).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to hear where a mark was pressed', error);
                 }

@@ -11,12 +11,12 @@ namespace ExGrid.Components;
 // 2026-10-05 to 2026-10-07). Each render that paints another Source, another order, other row
 // instances or other columns is a new paint, named on the Viewport (data-ex-paint, beside
 // data-ex-sequence and data-ex-layout); the browser reads that name with a key, a paste or a press on
-// an action and tells it with the gesture. The grid uses it for which Source and which order a gesture
-// was aimed under (ADR-0011) and which row component painted the button a press was made on
-// (ExGrid.ActionPress.cs), never for what a cell holds. Of its last paints it keeps the first paint
-// under the Source in force and the first under the order in force, and for each its first row, its
-// columns and a serial for each painted row's component; Row Keys only of the rows painted now, and
-// never a row or a source (ADR-0160).
+// an action or a mark and tells it with the gesture. The grid uses it for which Source and which order a
+// gesture was aimed under (ADR-0011) and which row component painted the button or the checkbox a press
+// was made on (ExGrid.ActionPress.cs, ExGrid.MarkPress.cs), never for what a cell holds. Of its last
+// paints it keeps the first paint under the Source in force and the first under the order in force, and
+// for each its first row, its columns and a serial for each painted row's component; Row Keys only of the
+// rows painted now, and never a row or a source (ADR-0160).
 public partial class ExGrid<TRow>
 {
     // What a gesture says when the browser told no paint: a press made by script with no mousedown
@@ -363,7 +363,8 @@ public partial class ExGrid<TRow>
     // Window is taken in. The newest paint's map is rebuilt from the rows each new paint paints, and
     // a render follows each new Window, so it holds the keys of rows the Window holds and nothing
     // older (ADR-0160) — a hidden grid's render paints no rows, and keeps no key. Kept only while a
-    // column has actions: a serial serves an Action press alone.
+    // column has actions or is the Mark Column: a serial serves a press on an action, or on a row's
+    // checkbox, alone (ExGrid.MarkPress.cs; MK-9).
     private Dictionary<object, int> _rowSerials = [];
     private Dictionary<object, int> _previousRowSerials = [];
     private int[]? _paintingSerials;
@@ -372,7 +373,7 @@ public partial class ExGrid<TRow>
 
     private void StartRowComponents(int id, int first, int count)
     {
-        if (!Columns.Any(static c => c.Actions.Count > 0))
+        if (!Columns.Any(static c => c.Actions.Count > 0 || c.IsMarkColumn))
         {
             _paintRows.Clear();
             _rowSerials.Clear();
