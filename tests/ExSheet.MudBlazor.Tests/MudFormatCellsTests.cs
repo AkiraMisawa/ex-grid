@@ -37,6 +37,21 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Contains("Format Cells", page.Find(".mud-dialog-title").TextContent);
     }
 
+    [Fact] // ADR-0071 / SH-45: MudBlazor's focus trap takes no first focus of its own, so the keyboard waits on the frame's element, which holds the keys typed meanwhile, until the tabs take it
+    public async Task Mudblazors_focus_trap_takes_no_first_focus_of_its_own()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+
+        await OpenAsync(page, "B2");
+
+        // MudBlazor 9 reads a dialog's first focus from the MudDialog itself, not from the options it
+        // is shown with: set only there, its trap took the keyboard to an empty element of its own
+        // before the tabs did, and an End typed then was lost (PR #70's CI, Edge on the Server host).
+        var trap = Assert.Single(page.FindComponents<global::MudBlazor.MudFocusTrap>(),
+            t => t.Find(".mud-ex-sheet-format-cells-form") is not null);
+        Assert.Equal(global::MudBlazor.DefaultFocus.None, trap.Instance.DefaultFocus);
+    }
+
     [Fact] // ADR-0071 / ADR-0050 item 14 / SH-45: Ctrl+1 opens the dialog, and the Context Menu's command is the same opening
     public async Task Ctrl_1_opens_the_dialog()
     {
