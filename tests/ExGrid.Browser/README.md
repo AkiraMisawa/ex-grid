@@ -735,7 +735,13 @@ nobody had asked for. What that means when writing a test:
   paused, the marks go after their second, and a collapse marks nothing however long after
   (PV-36). The server's live updates, which the page turns on, mark the server report's values
   through the hub's notices; the page's button turns them off and on, and leaving the page turns
-  them off (PV-20); and the code the page shows equal to its source.
+  them off (PV-20). Cut off from the server by the page's button, the server report is a Stale
+  Report: its notice stands, and its value cells — not its labels — take the stale colour, read
+  from the DOM and judged on the screen with `paints` (the most inked pixel of the numbers, over
+  their ground, a group row's tint), with a contrast of at least 4.5:1 and less than the ink's,
+  under ExPivot's default and under MudBlazor's mapping, in the light scheme and the dark one
+  (`?scheme=dark`); reconnected, Retry takes the mark away with the notice (PV-37, UX-8, ADR-0067's
+  decision of 2026-10-09). And the code the page shows equal to its source.
 - `pivot-risk.spec.mjs` — the rate-delta report on `/pivot-risk` (ADR-0060, PV-20), **run once
   per Chrome**, in a window wide enough for every tenor column beside the pane, since the report
   grid paints only the columns in view: the tenors painted in the Order Key's order, `ON`, `TN`,

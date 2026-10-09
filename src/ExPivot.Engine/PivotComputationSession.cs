@@ -34,7 +34,7 @@ public sealed class PivotComputationResult
 
 /// <summary>
 /// A report's independent computation state (ADR-0153). Snapshot changes are folded into this
-/// session's aggregate pass. Published reports never change. Disposing it leaves the provider alive.
+/// session's aggregate pass. Published reports never change. Disposing it leaves the Pivot Source alive.
 /// <para>
 /// <b>Cancellation.</b> A computation is observed to be cancelled only where the session's own
 /// state is whole, so a cancelled one never costs the next its incremental state. Before any of it
@@ -42,7 +42,7 @@ public sealed class PivotComputationResult
 /// into the held computation changes its working indexes in place, and from the first batch folded
 /// the work goes on, still yielding between slices, until the cube and the report have followed
 /// and the result is returned: a cancellation that lands meanwhile is not observed. A new
-/// computation — a new question, a compaction, a provider's answer — and a report laid out afresh
+/// computation — a new question, a compaction, a Pivot Source's answer — and a report laid out afresh
 /// are built aside and adopted together at the end, so cancelling one leaves the previous state as
 /// it was. Every state the session keeps is a state it returned: a result's changes are relative to
 /// the preceding result returned, whenever the cancellations landed.
@@ -72,7 +72,7 @@ public sealed class PivotComputationSession : IDisposable
     {
         _source = source ?? throw new ArgumentNullException(nameof(source));
         _fields = fields ?? source.Fields;
-        source.ComputationChanged += ProviderChanged;
+        source.ComputationChanged += SourceComputationChanged;
         if (source is SnapshotPivotSource snapshot)
             snapshot.SnapshotChanged += Changed;
     }
@@ -81,7 +81,7 @@ public sealed class PivotComputationSession : IDisposable
     /// out from — or null before its first result.</summary>
     internal PivotCube? HeldCube => _report?.Cube;
 
-    private void ProviderChanged(PivotSourceChanged change) => Interlocked.Increment(ref _sourceEpoch);
+    private void SourceComputationChanged(PivotSourceChanged change) => Interlocked.Increment(ref _sourceEpoch);
 
     private void Changed(SnapshotChange change)
     {
@@ -98,7 +98,7 @@ public sealed class PivotComputationSession : IDisposable
     /// <param name="cancellationToken">Stops the work where the session's state is whole: before
     /// the held computation changes, and anywhere in a computation or a layout built aside. Once
     /// pending batches are being folded in place, the computation finishes and is returned.</param>
-    /// <param name="refreshData">Asks a provider that is not a Snapshot again, though it announced no change.</param>
+    /// <param name="refreshData">Asks a Pivot Source that holds no Snapshot again, though it announced no change.</param>
     /// <param name="preferHeld">Lays the layout out from the cube held, without folding the pending
     /// batches, when that cube holds it: a layout gesture shows the data it was made on.</param>
     public async ValueTask<PivotComputationResult> ComputeAsync(PivotLayout layout, PivotOptions? options = null,
@@ -290,8 +290,8 @@ public sealed class PivotComputationSession : IDisposable
         }
         if (_source is SnapshotPivotSource snapshot)
             snapshot.SnapshotChanged -= Changed;
-        _source.ComputationChanged -= ProviderChanged;
-        // A computation can be suspended in a provider or a slice. Its finally block releases
+        _source.ComputationChanged -= SourceComputationChanged;
+        // A computation can be suspended in a Pivot Source or a slice. Its finally block releases
         // private state after it finishes; never clear fields out from under that operation.
         if (_compute.Wait(0))
         {

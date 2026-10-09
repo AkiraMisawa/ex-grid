@@ -5,7 +5,7 @@ namespace ExPivot.Engine;
 /// <summary>Items labeled and ordered by the report's culture and registered Order Key policy.</summary>
 /// <param name="Version">The displayed report's version.</param>
 /// <param name="Field">The requested field.</param>
-/// <param name="Search">The optional provider-side search.</param>
+/// <param name="Search">The optional search, made where the Pivot Source is.</param>
 /// <param name="Max">The maximum Items returned.</param>
 public sealed record PivotReportItemsQuery(PivotReportVersion Version, string Field, string? Search = null, int Max = 10_000);
 

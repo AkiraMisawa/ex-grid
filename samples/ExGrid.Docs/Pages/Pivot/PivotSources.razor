@@ -23,9 +23,9 @@
             before it.
         </p>
         <ul>
-            <li><strong><code>DataSource</code></strong> accepts <code>PivotSource.From</code> over local records or a Snapshot, including a CSV that stays in the browser.</li>
-            <li><strong><code>Source</code></strong> accepts a <code>PivotReportSource</code>. Its <code>Fetch</code> factory uses your delegates to request server report Windows and operations.</li>
-            <li><strong>Keep the source in a field.</strong> Each report owns independent calculation state; a new data provider initializes a new calculation.</li>
+            <li><strong><code>Source</code></strong> takes the Pivot Source: <code>PivotSource.From</code> over local records or a Snapshot, including a CSV that stays in the browser. ExPivot computes the report over it in the page, with the engine a server runs.</li>
+            <li><strong><code>ReportSource</code></strong> takes a report source instead, a <code>PivotReportSource</code>, for a report a server computes. Its <code>Fetch</code> factory uses your delegates to request the server's report Windows and operations. Hand ExPivot one of the two, never both.</li>
+            <li><strong>Keep the source in a field.</strong> Each report owns independent calculation state; a new Pivot Source starts a new calculation, as a refresh.</li>
         </ul>
     </DocsSection>
 
@@ -89,16 +89,19 @@
                 <code>UpdateMode</code> declares incremental changes or full refresh. The bundled Snapshot source is incremental:
                 a notice that its data moved on asks for its changes. A full-refresh source, such as a SQL query that can only say
                 that something changed, is asked to recompute its whole aggregate on every notice, so its server answers with the
-                newest even when its provider cannot tell; the browser still receives only the Window and its changes.
+                newest even when its Pivot Source cannot tell; the browser still receives only the Window and its Window Changes.
             </li>
             <li>Culture, formats and display words are explicit; custom Order Keys select policies registered on the server.</li>
             <li>The Consumer owns transport and report-state disposal. A missing baseline is recovered automatically; an unavailable older operation refuses by name.</li>
             <li>
-                A delta names the digest of the whole Window it produces (<code>PivotReportUpdate.WindowDigest</code>). ExPivot applies
-                it to the Window it holds and compares before showing anything; a delta that does not match, or names no digest, is
-                discarded and the complete Window asked for instead. <code>PivotReportSource.From</code> builds complete deltas. If you
-                build or relay deltas yourself, include every row whose shown values changed (subtotals, grand totals and percentages
-                too) and compute the digest with <code>PivotReportDigest.Of</code> over your whole resulting Window, never over the rows you send.
+                Once a Window is on screen, a server sends <strong>Window Changes</strong> in place of the whole Window: the rows that
+                changed since the Window ExPivot holds, the Baseline Window, with the digest of the Window they make
+                (<code>PivotReportUpdate.Changed</code>, <code>PivotReportUpdate.WindowDigest</code>). ExPivot applies them to the
+                Window it holds and compares before showing anything; Window Changes that do not match, or name no digest, are
+                discarded and the complete Window asked for instead. <code>PivotReportSource.From</code> builds complete Window
+                Changes. If you build or relay them yourself, include every row whose shown values changed (subtotals, grand totals
+                and percentages too) and compute the digest with <code>PivotReportDigest.Of</code> over your whole resulting Window,
+                never over the rows you send.
             </li>
         </ul>
         <DocsExample Builtin="typeof(ServerSource)" Mud="typeof(ServerSourceMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">

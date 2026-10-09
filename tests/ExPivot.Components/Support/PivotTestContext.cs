@@ -161,9 +161,9 @@ public abstract class PivotTestContext : BunitContext
         return Render<PivotComponent>(ps =>
         {
             if (reportSource is not null)
-                ps.Add(p => p.Source, reportSource);
+                ps.Add(p => p.ReportSource, reportSource);
             else
-                ps.Add(p => p.DataSource, source ?? Bundled(records));
+                ps.Add(p => p.Source, source ?? Bundled(records));
             ps.Add(p => p.Culture, CultureInfo.GetCultureInfo("en-US"))
               .Add(p => p.ViewportHeight, (ViewportSize)400)
               .Add(p => p.ViewportWidth, (ViewportSize)700);

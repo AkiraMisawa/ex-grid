@@ -12,7 +12,7 @@ namespace ExPivot.Components.Tests;
 /// <summary>
 /// The report's Change Highlight (ADR-0067/0068): ExPivot answers the grid's <c>CellChangedAt</c>
 /// by comparing the painted text of each value cell with the same cell — the same row Items, column
-/// Items and Value Field — in the reports of the recent data versions. Only data marks a cell; every
+/// Items and Value Field — in the reports of the recent Source Versions. Only data marks a cell; every
 /// cell of a row that appears is marked; a change the number format hides is not. The delegate stays stable; immutable display rows carry each change. The clock is the test's.
 /// </summary>
 public class ChangeHighlightTests : PivotTestContext
@@ -299,7 +299,7 @@ public class ChangeHighlightTests : PivotTestContext
     {
         var cut = RenderPivot(RegionAmount);
 
-        cut.Render(ps => ps.Add(p => p.DataSource, Bundled(EastApples(101))));
+        cut.Render(ps => ps.Add(p => p.Source, Bundled(EastApples(101))));
         Assert.Equal(["181", "286"], MarkedTexts(cut));
 
         cut.Render(ps => ps.Add(p => p.Label, PivotWords.Japanese));
@@ -336,7 +336,7 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.NotNull(second);
         Assert.Same(first, second);
 
-        // A data version that changes nothing painted is a version all the same.
+        // A Source Version that changes nothing painted is a version all the same.
         Clock.Advance(Interval);
         await PublishAsync(cut, source, EastApples(102));
         Assert.Same(second, Grid(cut).Instance.CellChangedAt);
@@ -367,7 +367,7 @@ public class ChangeHighlightTests : PivotTestContext
         data.Changed += change => remote.NotifyChanged(change.SourceVersion);
         SetRendererInfo(new RendererInfo("Server", isInteractive: true));
         var cut = Render<PivotComponent>(ps => ps
-            .Add(p => p.Source, remote)
+            .Add(p => p.ReportSource, remote)
             .Add(p => p.Layout, RegionAmount)
             .Add(p => p.Culture, System.Globalization.CultureInfo.GetCultureInfo("en-US"))
             .Add(p => p.ViewportHeight, (ViewportSize)400)

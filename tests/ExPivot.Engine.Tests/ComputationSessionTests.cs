@@ -132,7 +132,7 @@ public class ComputationSessionTests
     }
 
     [Fact] // ADR-0153: independent questions fold the same complete batches without rereading the input
-    public async Task Independent_reports_share_the_provider_but_keep_their_own_computation()
+    public async Task Independent_reports_share_the_Pivot_Source_but_keep_their_own_computation()
     {
         var fields = Fields();
         var records = Enumerable.Range(0, 1000).Select(i => new Trade(i, "Desk" + i % 10, i)).ToArray();

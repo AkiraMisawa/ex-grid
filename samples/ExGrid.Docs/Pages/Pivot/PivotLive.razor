@@ -53,6 +53,12 @@
             <code>copy-incomplete-range</code>, <code>summary-another-version</code>,
             <code>summary-inconsistent-errors</code>), never written to the clipboard or summed.
         </p>
+        <p>
+            Copy from a Stale Report is refused too. The report shows the data as of its time, and says so beside it; pasted
+            into another application the numbers would lose that and look current. So while the report is stale, Copy says
+            the time the data is as of and asks for Retry first (<code>copy-stale-report</code>), and writes nothing to the
+            clipboard. The Selection Summary still answers: it stands on screen beside the notice that says as of when.
+        </p>
     </DocsSection>
 
     <DocsSection Title="The Change Highlight">
@@ -70,13 +76,24 @@
             row first scrolled into view a moment later is marked as of when the change was first shown, and its
             mark ends with the others.
         </p>
+        <p>
+            <strong>What the highlight costs.</strong> To mark what changed, the report source keeps the reports the
+            highlight compares: every one published less than <code>ChangeHighlightDuration</code> before the newest,
+            and the one before them. That is at most max(versionsKept, ⌈<code>ChangeHighlightDuration</code> ÷ the time
+            between redraws⌉ + 1) reports, five at the defaults: two versions kept for Copy and the Selection Summary
+            (<code>PivotReportSource.From</code>'s <code>versionsKept</code>), a one-second highlight, and redraws at most
+            every 250 ms (<code>RedrawInterval</code>). The reports share what an update did not change, but a shorter
+            <code>RedrawInterval</code> or a longer <code>ChangeHighlightDuration</code> keeps more of them, in proportion.
+            If memory runs out while a redraw is computed, the report on screen stays as a Stale Report and the next
+            change asks again, rather than the page stopping.
+        </p>
     </DocsSection>
 
     <DocsSection Title="A server whose data moves on">
         <p>
             A server's source learns of changes however your application does: SignalR, polling, a message bus. Pass
             each notice to <code>FetchingPivotReportSource.NotifyChanged(version)</code>, and ExPivot asks the server again for
-            the current report Window and its changes. A <em>Refresh</em> on the Pivot Toolbar does the same when the source says it can be
+            the current report Window, as Window Changes once one is on screen. A <em>Refresh</em> on the Pivot Toolbar does the same when the source says it can be
             refreshed.
         </p>
         <p>
@@ -87,8 +104,18 @@
             asks again rather than assume it will fit. A layout you ask for that runs out of memory is refused instead, and the
             Field List goes back to the layout the report shows.
         </p>
+        <p>
+            While the report is stale, its value cells are painted in a muted colour too, so a reader who has not looked at the
+            notice still cannot take the numbers for the newest. They stay readable, and nothing animates; the labels keep
+            their colour, and the mark goes with the notice when the report recovers. The colour is the Visual Token
+            <code>--ex-pivot-stale-value-color</code>: unset, ExPivot mixes the grid's text into its ground, which keeps a
+            readable contrast in either scheme, and <code>ExPivot.MudBlazor</code>'s stylesheet mixes the palette's text
+            into its surface, which keeps at least 4.5:1 in MudBlazor's default light and dark palettes.
+        </p>
         <DocsExample Builtin="typeof(LiveServer)" Mud="typeof(LiveServerMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
-            The simulated server amends eight sales a second and announces each new Source Version.
+            The simulated server amends eight sales a second and announces each new Source Version. Cut it off: the next
+            question fails, and the report stays as it was, stale, with its notice and its numbers muted, and Copy refused,
+            until you reconnect and press Retry.
         </DocsExample>
     </DocsSection>
 </DocsPage>

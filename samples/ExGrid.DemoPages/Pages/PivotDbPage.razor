@@ -219,11 +219,11 @@
     #region The code: pivots
     // The same component over either source. A layout is View State, which the page holds and
     // binds; the Chromes are the page's ?chrome= switch.
-    private RenderFragment SnapshotPivot => @<ExPivot DataSource="_snapshotSource" @bind-Layout="_snapshotLayout"
+    private RenderFragment SnapshotPivot => @<ExPivot Source="_snapshotSource" @bind-Layout="_snapshotLayout"
                                                        PivotChrome="_pivotChrome" Chrome="_gridChrome"
                                                        Culture="Culture" ViewportHeight="360" />;
 
-    private RenderFragment ServerPivot => @<ExPivot Source="_serverSource" @bind-Layout="_serverLayout"
+    private RenderFragment ServerPivot => @<ExPivot ReportSource="_serverSource" @bind-Layout="_serverLayout"
                                                      PivotChrome="_pivotChrome" Chrome="_gridChrome"
                                                      Culture="Culture" ViewportHeight="360" />;
 

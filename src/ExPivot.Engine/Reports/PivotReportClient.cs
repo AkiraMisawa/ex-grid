@@ -1,6 +1,7 @@
 namespace ExPivot.Engine;
 
-/// <summary>Atomically adopts report Windows, discards obsolete replies and recovers a missing baseline.</summary>
+/// <summary>Atomically adopts report Windows, discards obsolete replies and recovers a missing
+/// Baseline Window.</summary>
 public sealed class PivotReportClient
 {
     private readonly PivotReportSource _source;
@@ -20,7 +21,8 @@ public sealed class PivotReportClient
     /// <summary>The latest current request's refusal, or null after a successful adoption.</summary>
     public PivotReportRefusal? Refusal { get { lock (_publication) return _refusal; } }
 
-    /// <summary>Reads the current request and, if its baseline is lost, requests one complete replacement.</summary>
+    /// <summary>Reads the current request and, if its Baseline Window is lost, or its Window Changes do
+    /// not make the source's Window, requests one complete replacement.</summary>
     /// <returns>True if this request was adopted; false for a refusal or an obsolete reply.</returns>
     public async ValueTask<bool> ReadAsync(PivotLayout layout, PivotReportSettings settings, PivotReportWindow window,
         int maxLeaves = PivotQuery.DefaultMaxLeaves, CancellationToken cancellationToken = default, bool markChanges = true, bool refreshData = false)
@@ -37,8 +39,9 @@ public sealed class PivotReportClient
             generation = ++_generation;
             previous = _current;
         }
-        // The version this client holds is named whatever Window is asked: a delta is answered only
-        // for the Window it holds, and a layout gesture lays out the data it shows (ADR-0152).
+        // The version this client holds is named whatever Window is asked: Window Changes are
+        // answered only against the Window it holds, and a layout gesture lays out the data it shows
+        // (ADR-0152).
         var baseline = previous?.Metadata.Version;
         var request = new PivotReportRequest(Guid.NewGuid().ToString("N"), layout, settings, window, baseline, maxLeaves)
             { MarkChanges = markChanges, RefreshData = refreshData };
@@ -126,15 +129,15 @@ public sealed class PivotReportClient
             if (update.Baseline is null || update.Baseline != request.Baseline || previous is null
                 || previous.Metadata.Version != update.Baseline || previous.Window != request.Window
                 || previous.Rows.Count != count || previous.Metadata.RowSequenceVersion != metadata.RowSequenceVersion)
-                return new(PivotReportRefusalKind.BaselineNotHeld, "The delta baseline is not the displayed Window.");
+                return new(PivotReportRefusalKind.BaselineNotHeld, "The Baseline Window of the Window Changes is not the Window displayed.");
             rows = previous.Rows.ToArray();
             var changed = new HashSet<int>();
             foreach (var change in update.Changes)
             {
                 if (change.Offset < 0 || change.Offset >= rows.Length || !changed.Add(change.Offset))
-                    return Invalid("The report delta repeats or exceeds a row position.");
+                    return Invalid("The Window Changes repeat or exceed a row position.");
                 if (change.Row is null || !previous.Rows[change.Offset].Key.Equals(change.Row.Key))
-                    return Invalid("A delta changes row identity without a new row sequence.");
+                    return Invalid("The Window Changes change a row's identity without a new row sequence.");
                 rows[change.Offset] = change.Row;
             }
         }
@@ -150,13 +153,13 @@ public sealed class PivotReportClient
                 || row.Values.Any(value => value is not null && (value.Text is null || !double.IsFinite(value.Number))))
                 return Invalid("The report Window contains an invalid or duplicate row.");
         }
-        // A delta's result must be the source's Window, every row of it: a delta that left out a
-        // row whose shown values changed — a total, a percentage — would show its old values.
+        // What Window Changes make must be the source's Window, every row of it: changes that left
+        // out a row whose shown values changed — a total, a percentage — would show its old values.
         if (update.Rows is null && update.WindowDigest is null)
-            return Invalid("The report delta names no digest of the Window it produces.");
+            return Invalid("The Window Changes name no digest of the Window they make.");
         if (update.WindowDigest is { } digest && PivotReportDigest.Of(metadata, request.Window.Start, rows) != digest)
             return Invalid(update.Rows is null
-                ? "The report delta does not reproduce the source's Window: it leaves out a changed row."
+                ? "The Window Changes do not make the source's Window: they leave out a changed row."
                 : "The complete report Window does not match its digest.");
         if (metadata.LabelWidths.Count != 0 && metadata.LabelWidths.Count != metadata.LabelColumns.Count
             || metadata.LabelWidths.Any(width => !double.IsFinite(width) || width < 0))

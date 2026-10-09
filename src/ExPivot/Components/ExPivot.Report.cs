@@ -18,9 +18,9 @@ namespace ExPivot.Components;
 /// <summary>
 /// Excel's PivotTable, drawn by ExGrid as that grid's Consumer (ADR-0059): the Pivot Toolbar above
 /// the report, one ExGrid over the Pivot Report, Show Details' tabs at its foot, and the Field List
-/// beside it (ADR-0061). ExPivot holds the Pivot Layout, asks its Pivot Source for the Leaf
-/// Aggregates and lays the report out with ExPivot.Engine (ADR-0066); ExGrid paints, selects,
-/// navigates, copies and reports.
+/// beside it (ADR-0061). ExPivot holds the Pivot Layout and asks a report source for the Window it
+/// shows: one ExPivot.Engine computes over its Pivot Source in this process, or a server's
+/// (ADR-0151); ExGrid paints, selects, navigates, copies and reports.
 /// </summary>
 // This part is the report half: the one ExGrid, its columns, its label cells, its Context Menu
 // and its double click (ADR-0059/0063).
@@ -438,8 +438,8 @@ public partial class ExPivot
         if (SelectionChanged.HasDelegate)
             builder.AddComponentParameter(21, nameof(ExGrid<PivotDisplayRow>.SelectionChanged), SelectionChanged);
         // The Change Highlight (ADR-0067/0068): ExPivot says when a cell's painted value changed
-        // with the data, through a delegate that is new for each data version and null while
-        // nothing can be marked; the grid marks the cell for the duration, on ExPivot's clock.
+        // with the data, through one delegate for its lifetime that reads the change each row
+        // carries (ADR-0153); the grid marks the cell for the duration, on ExPivot's clock.
         builder.AddComponentParameter(22, nameof(ExGrid<PivotDisplayRow>.CellChangedAt), _cellChangedAt);
         builder.AddComponentParameter(23, nameof(ExGrid<PivotDisplayRow>.ChangeHighlightDuration), ChangeHighlightDuration);
         builder.AddComponentParameter(24, nameof(ExGrid<PivotDisplayRow>.Clock), _time);

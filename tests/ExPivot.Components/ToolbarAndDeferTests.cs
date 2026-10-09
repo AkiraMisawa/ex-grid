@@ -411,7 +411,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
             builder.OpenComponent<PivotComponent>(0);
-            builder.AddComponentParameter(1, nameof(PivotComponent.DataSource), _source);
+            builder.AddComponentParameter(1, nameof(PivotComponent.Source), _source);
             builder.AddComponentParameter(2, nameof(PivotComponent.Layout), RegionProduct);
             builder.AddComponentParameter(3, nameof(PivotComponent.ShowFieldList), Shown);
             builder.AddComponentParameter(4, nameof(PivotComponent.ShowFieldListChanged),

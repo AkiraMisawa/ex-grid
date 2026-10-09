@@ -29,7 +29,7 @@ public sealed class ReportWindowTests : PivotTestContext
                 return ValueTask.FromResult(PivotReportUpdate.Complete(request, metadata, rows));
             }, items: (query, _) => ValueTask.FromResult(new PivotItemPage(query.SourceVersion, [], 0)));
         SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Server", true));
-        var cut = Render<PivotComponent>(ps => ps.Add(p => p.Source, source).Add(p => p.Layout, layout)
+        var cut = Render<PivotComponent>(ps => ps.Add(p => p.ReportSource, source).Add(p => p.Layout, layout)
             .Add(p => p.ShowFieldList, false).Add(p => p.ViewportHeight, (ViewportSize)200));
 
         var grid = cut.FindComponent<ExGrid<PivotDisplayRow>>().Instance;
@@ -41,8 +41,8 @@ public sealed class ReportWindowTests : PivotTestContext
     /// <summary>A keyed sale, for a server's Change Batches.</summary>
     public sealed record KeyedSale(long Id, string? Region, string Product, decimal Amount, int Quantity, bool Online);
 
-    [Fact] // ADR-0152: a delta that leaves out a total's change fails its digest, and is never painted: ExPivot shows the complete Window asked for in its place, equal to the server's report
-    public async Task ADR0152_A_delta_that_fails_its_digest_is_never_painted()
+    [Fact] // ADR-0152: Window Changes that leave out a total's change fail their digest, and are never painted: ExPivot shows the complete Window asked for in their place, equal to the server's report
+    public async Task ADR0152_Window_Changes_that_fail_their_digest_are_never_painted()
     {
         var fields = PivotFields.Of<KeyedSale>().Key("Id", s => s.Id).Text("Region", s => s.Region).Text("Product", s => s.Product)
             .Number("Amount", s => s.Amount).Number("Quantity", s => s.Quantity).Boolean("Online", s => s.Online);
@@ -51,7 +51,7 @@ public sealed class ReportWindowTests : PivotTestContext
         await using var server = PivotReportSource.From(data, timeProvider: Clock);
         static T Wire<T>(T value) => PivotReportJson.Read<T>(PivotReportJson.Write(value));
         var answers = new List<PivotReportUpdate>();
-        // A relay that rebuilds deltas and forgets the grand total, keeping the server's digest.
+        // A relay that rebuilds Window Changes and forgets the grand total, keeping the server's digest.
         var relay = PivotReportSource.Fetch(server.Fields, server.Features, server.UpdateMode,
             async (request, ct) =>
             {
@@ -64,7 +64,7 @@ public sealed class ReportWindowTests : PivotTestContext
             items: server.RawItemsAsync, reportItems: async (query, ct) => Wire(await server.ItemsAsync(Wire(query), ct)));
         data.Changed += change => relay.NotifyChanged(change.SourceVersion);
         SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Server", true));
-        var cut = Render<PivotComponent>(ps => ps.Add(p => p.Source, relay)
+        var cut = Render<PivotComponent>(ps => ps.Add(p => p.ReportSource, relay)
             .Add(p => p.Layout, new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] })
             .Add(p => p.Culture, System.Globalization.CultureInfo.GetCultureInfo("en-US"))
             .Add(p => p.ViewportHeight, (ViewportSize)400).Add(p => p.ViewportWidth, (ViewportSize)700));
@@ -75,26 +75,26 @@ public sealed class ReportWindowTests : PivotTestContext
         await cut.InvokeAsync(() => data.Apply(fields.Batch(changed: [sales[0] with { Amount = 101m }])));
 
         cut.WaitForAssertion(() => Assert.Equal(["East | 181", "North | 10", "West | 90", "(blank) | 5", "Grand Total | 286"], RowTexts(cut)));
-        // The delta, discarded unseen, and the complete Window in its place.
+        // The Window Changes, discarded unseen, and the complete Window in their place.
         Assert.Equal(asked + 2, answers.Count);
         Assert.Null(answers[^2].Rows);
         Assert.NotNull(answers[^1].Rows);
         Assert.False(cut.Instance.IsStale);
         Assert.Equal(["181", "286"], ChangeHighlightTests.MarkedTexts(cut));
     }
-    [Theory] // ADR-0153 (LV-31): a source that declares it refreshes in full is asked to refresh when it says its data moved on, so a server whose provider cannot tell still answers with the newest; an incremental source is asked for its changes
+    [Theory] // ADR-0153 (LV-31): a source that declares it refreshes in full is asked to refresh when it says its data moved on, so a server whose Pivot Source cannot tell still answers with the newest; an incremental source is asked for its changes
     [InlineData(PivotReportUpdateMode.FullRefresh)]
     [InlineData(PivotReportUpdateMode.Incremental)]
     public async Task ADR0153_A_full_refresh_source_is_asked_to_refresh_on_a_notice(PivotReportUpdateMode mode)
     {
-        // The server's provider answers from the records as they are when asked, and never says
+        // The server's Pivot Source answers from the records as they are when asked, and never says
         // they changed: a SQL query with no change tracking.
         var records = Sales.ToArray();
-        var provider = PivotSource.Fetch(Bundled().Fields, PivotSourceFeatures.All,
+        var pivotSource = PivotSource.Fetch(Bundled().Fields, PivotSourceFeatures.All,
             (query, ct) => Bundled(records).AggregateAsync(query, ct),
             (query, ct) => Bundled(records).ItemsAsync(query, ct),
             (query, ct) => Bundled(records).DetailsAsync(query, ct));
-        await using var server = PivotReportSource.From(provider, timeProvider: Clock);
+        await using var server = PivotReportSource.From(pivotSource, timeProvider: Clock);
         Assert.Equal(PivotReportUpdateMode.FullRefresh, server.UpdateMode);
         static T Wire<T>(T value) => PivotReportJson.Read<T>(PivotReportJson.Write(value));
         var requests = new List<PivotReportRequest>();
@@ -106,7 +106,7 @@ public sealed class ReportWindowTests : PivotTestContext
             },
             items: server.RawItemsAsync, reportItems: async (query, ct) => Wire(await server.ItemsAsync(Wire(query), ct)));
         SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Server", true));
-        var cut = Render<PivotComponent>(ps => ps.Add(p => p.Source, remote)
+        var cut = Render<PivotComponent>(ps => ps.Add(p => p.ReportSource, remote)
             .Add(p => p.Layout, new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] })
             .Add(p => p.Culture, System.Globalization.CultureInfo.GetCultureInfo("en-US"))
             .Add(p => p.ViewportHeight, (ViewportSize)400).Add(p => p.ViewportWidth, (ViewportSize)700));

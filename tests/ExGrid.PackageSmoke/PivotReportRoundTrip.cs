@@ -39,13 +39,13 @@ internal static class PivotReportRoundTrip
         Require(first.Rows![0].ValueAt(0)!.Text == "0,30" && first.Metadata!.LabelWidths.Count == 1,
             "explicit culture or label geometry changed");
         data.Apply(fields.Batch(changed: [new(1, "Rates", 0.4m)]));
-        var delta = Wire(await source.WindowAsync(query with { RequestId = "next", Baseline = first.Metadata!.Version }));
-        Require(delta.Rows is null && delta.Changes.Count == 1 && delta.Changes[0].Row.ValueAt(0)!.Exact == 0.6m, "the delta changed");
-        Require(delta.WindowDigest is { Length: 16 } && first.WindowDigest is { Length: 16 }
-            && PivotReportDigest.Of(delta.Metadata!, 0, [delta.Changes[0].Row]) == delta.WindowDigest
+        var changed = Wire(await source.WindowAsync(query with { RequestId = "next", Baseline = first.Metadata!.Version }));
+        Require(changed.Rows is null && changed.Changes.Count == 1 && changed.Changes[0].Row.ValueAt(0)!.Exact == 0.6m, "the Window Changes came back altered");
+        Require(changed.WindowDigest is { Length: 16 } && first.WindowDigest is { Length: 16 }
+            && PivotReportDigest.Of(changed.Metadata!, 0, [changed.Changes[0].Row]) == changed.WindowDigest
             && PivotReportDigest.Of(first.Metadata!, 0, first.Rows!) == first.WindowDigest, "the Window digest changed");
-        var version = delta.Metadata!.Version;
-        string[] columns = [delta.Metadata.ValueColumns[0].Name];
+        var version = changed.Metadata!.Version;
+        string[] columns = [changed.Metadata.ValueColumns[0].Name];
         PivotReportRange[] ranges = [new(0, 0, 1, 0)];
         var copy = Wire(await source.CopyAsync(Wire(new PivotReportCopyQuery(version, columns, ranges))));
         Require(copy.Refusal is null && copy.Blocks[0].Rows.Count == 2 && copy.Blocks[0].Rows[1][0].Raw == "0.6", "offscreen Copy changed");
@@ -53,12 +53,12 @@ internal static class PivotReportRoundTrip
         Require(summary.Counts.Numbers == 2 && summary.Sum.Exact == 1.2m, "Summary parts changed");
         var items = Wire(await source.ItemsAsync(Wire(new PivotReportItemsQuery(version, "Desk"))));
         Require(items.Items is [{ Label: "Rates" }], "Items changed");
-        var rawItems = Wire(await source.RawItemsAsync(Wire(new PivotItemsQuery("Desk", delta.Metadata.SourceVersion))));
+        var rawItems = Wire(await source.RawItemsAsync(Wire(new PivotItemsQuery("Desk", changed.Metadata.SourceVersion))));
         Require(rawItems.Items.Count == 1, "raw Items changed");
-        var details = Wire(await source.DetailsAsync(Wire(delta.Metadata.DetailsQuery(delta.Changes[0].Row, 0, 0, 10))));
-        Require(details.Records.Count == 2 && details.SourceVersion == delta.Metadata.SourceVersion, "Details changed");
+        var details = Wire(await source.DetailsAsync(Wire(changed.Metadata.DetailsQuery(changed.Changes[0].Row, 0, 0, 10))));
+        Require(details.Records.Count == 2 && details.SourceVersion == changed.Metadata.SourceVersion, "Details changed");
         var refused = Wire(PivotReportUpdate.Refused(query, new(PivotReportRefusalKind.ReportVersionNotHeld, "Expired")));
         Require(refused.Refusal?.Kind == PivotReportRefusalKind.ReportVersionNotHeld, "the refusal changed");
-        Console.WriteLine("Report protocol: trimmed packed Consumer preserves Windows, deltas and every versioned operation");
+        Console.WriteLine("Report protocol: trimmed packed Consumer preserves Windows, Window Changes and every versioned operation");
     }
 }

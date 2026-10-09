@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace ExPivot.Engine;
 
 /// <summary>An opaque identity of one immutable report, including its layout and display settings.</summary>
-/// <param name="Value">The provider's opaque identity.</param>
+/// <param name="Value">The report source's opaque identity.</param>
 public sealed record PivotReportVersion(string Value);
 
 /// <summary>The requested contiguous report rows; the complete report extent is metadata.</summary>
@@ -13,19 +13,20 @@ public sealed record PivotReportVersion(string Value);
 public sealed record PivotReportWindow(int Start, int Count);
 
 /// <summary>
-/// How a report provider learns data changes (ADR-0153), declared explicitly: a provider that can
-/// only announce that its data changed does not claim to update incrementally. Both use the same
-/// Windows, deltas, versions and recovery; what differs is what a notice of newer data asks.
+/// How a report source learns that its data changed (ADR-0153), declared explicitly: one whose Pivot
+/// Source can only announce that its data changed does not claim to update incrementally. Both use
+/// the same Windows, Window Changes, versions and recovery; what differs is what a notice of newer
+/// data asks.
 /// </summary>
 public enum PivotReportUpdateMode
 {
-    /// <summary>The provider identifies its changes — Change Batches, leaf changes — and the
+    /// <summary>The Pivot Source identifies its changes — Change Batches, leaf changes — and the
     /// computation updates only what they affect. A notice of newer data asks for those changes.</summary>
     Incremental,
-    /// <summary>The provider cannot identify its changes, and recomputes its complete aggregate
+    /// <summary>The Pivot Source cannot identify its changes, and recomputes its complete aggregate
     /// result. A notice of newer data asks it to (<see cref="PivotReportRequest.RefreshData"/>), so
-    /// a server whose provider cannot tell its data moved still answers with the newest; the
-    /// browser still receives only the Window and its changes.</summary>
+    /// a server whose Pivot Source cannot tell its data moved still answers with the newest; the
+    /// browser still receives only the Window and its Window Changes.</summary>
     FullRefresh,
 }
 
@@ -67,20 +68,20 @@ public sealed record PivotReportSettings
 /// <param name="Layout">The report's View State.</param>
 /// <param name="Settings">Its explicit culture, words and registered policies.</param>
 /// <param name="Window">The requested rows.</param>
-/// <param name="Baseline">The Report Version the Consumer holds — the data it shows — or null when it
-/// holds none. A source answers a delta only from it, and only when its Window is the requested
-/// Window; otherwise a complete Window. A request that marks no changes (a layout gesture) lays out
-/// the data of this version, when the source still holds it, rather than newer data the Consumer
-/// has not been shown.</param>
+/// <param name="Baseline">The Report Version of the Baseline Window — the Window the Consumer holds,
+/// the data it shows — or null when it holds none. A source answers with Window Changes only against
+/// it, and only when its Window is the requested Window; otherwise with a complete Window. A request
+/// that marks no changes (a layout gesture) lays out the data of this version, when the source still
+/// holds it, rather than newer data the Consumer has not been shown.</param>
 /// <param name="MaxLeaves">The existing leaf cap.</param>
 public sealed record PivotReportRequest(string RequestId, PivotLayout Layout, PivotReportSettings Settings,
     PivotReportWindow Window, PivotReportVersion? Baseline = null, int MaxLeaves = PivotQuery.DefaultMaxLeaves)
 {
     /// <summary>Whether this gesture can mark data changes; layout and display-setting gestures cannot.</summary>
     public bool MarkChanges { get; init; } = true;
-    /// <summary>Asks a full-refresh provider again even without a notification of its own: set by an
-    /// explicit Refresh or Retry, and by a notice of newer data from a source that declared
-    /// <see cref="PivotReportUpdateMode.FullRefresh"/>.</summary>
+    /// <summary>Asks a full-refresh source's Pivot Source again even without a notification of its
+    /// own: set by an explicit Refresh or Retry, and by a notice of newer data from a source that
+    /// declared <see cref="PivotReportUpdateMode.FullRefresh"/>.</summary>
     public bool RefreshData { get; init; }
 }
 
@@ -95,7 +96,7 @@ public sealed record PivotDisplayValue(double Number, decimal? Exact, string? Er
     [JsonIgnore] public bool IsError => Error is not null;
     /// <summary>The shown text.</summary>
     public override string ToString() => Text;
-    /// <summary>The raw number when format is null and the provider is invariant.</summary>
+    /// <summary>The raw number when <paramref name="format"/> is null and <paramref name="formatProvider"/> is invariant.</summary>
     public string ToString(string? format, IFormatProvider? formatProvider)
         => Error ?? (Exact is { } exact ? exact.ToString(format, formatProvider) : Number.ToString(format, formatProvider));
     internal static PivotDisplayValue? From(PivotValue? value)
@@ -168,7 +169,7 @@ public sealed record PivotDisplayColumn(string Name, string Header, PivotColumnR
 
 /// <summary>The whole report's extent and columns, without its rows or aggregate data.</summary>
 /// <param name="Version">The immutable Report Version.</param>
-/// <param name="SourceVersion">The data version behind the report.</param>
+/// <param name="SourceVersion">The Source Version the report was computed from.</param>
 /// <param name="RowSequenceVersion">Changes when the ordered sequence of row identities changes.</param>
 /// <param name="Layout">The accepted layout.</param>
 /// <param name="Settings">The accepted explicit display settings.</param>
@@ -202,7 +203,7 @@ public sealed record PivotReportMetadata(PivotReportVersion Version, string Sour
     /// row's Items, the value column's Items (none for a label cell), the Hidden Items the report
     /// was computed under, the range, and its <see cref="SourceVersion"/>, under which the records
     /// add up to the cell. Being made of values only, it stays the same question after any later
-    /// layout, and is answered while the data provider holds that Source Version.
+    /// layout, and is answered while the Pivot Source holds that Source Version.
     /// </summary>
     /// <param name="row">A row of this report's Window.</param>
     /// <param name="valueColumn">A value column's index, or −1 for the row's label cell.</param>
@@ -226,7 +227,8 @@ public sealed record PivotReportMetadata(PivotReportVersion Version, string Sour
 /// <summary>Why a report-source operation could not be answered.</summary>
 public enum PivotReportRefusalKind
 {
-    /// <summary>The server no longer retains a delta's baseline.</summary>
+    /// <summary>The source no longer holds the Baseline Window the request names, so it cannot answer
+    /// with Window Changes against it.</summary>
     BaselineNotHeld,
     /// <summary>A versioned operation's report is no longer available.</summary>
     ReportVersionNotHeld,
@@ -236,7 +238,7 @@ public enum PivotReportRefusalKind
     InvalidResponse,
     /// <summary>Window recovery failed; the previous report is stale.</summary>
     StaleReport,
-    /// <summary>The underlying data provider refused the calculation.</summary>
+    /// <summary>The Pivot Source refused the calculation.</summary>
     SourceRefused,
     /// <summary>The request itself cannot be answered.</summary>
     InvalidRequest,
@@ -253,60 +255,62 @@ public enum PivotReportRefusalKind
 /// <param name="Field">The offending field where relevant.</param>
 public sealed record PivotReportRefusal(PivotReportRefusalKind Kind, string Message, string? Field = null)
 {
-    /// <summary>The provider's typed refusal, when computation was refused by the source.</summary>
+    /// <summary>The Pivot Source's typed refusal, when it refused the computation.</summary>
     public PivotSourceRefusal? SourceRefusal { get; init; }
 }
 
 /// <summary>
-/// A replacement at one zero-based position within the requested Window. A delta carries one for
-/// every row of the Window whose key, labels or shown values differ from its baseline — a subtotal
-/// or grand total row whose total moved, a row whose percentage moved with its denominator, as much
-/// as the row whose data changed. A row left out keeps its old values on the client; the delta's
-/// <see cref="PivotReportUpdate.WindowDigest"/> is what catches it.
+/// A replacement at one zero-based position within the requested Window. Window Changes carry one
+/// for every row of the Window whose key, labels or shown values differ from the Baseline Window's —
+/// a subtotal or grand total row whose total moved, a row whose percentage moved with its
+/// denominator, as much as the row whose data changed. A row left out keeps its old values on the
+/// client; the <see cref="PivotReportUpdate.WindowDigest"/> the changes carry is what catches it.
 /// </summary>
 /// <param name="Offset">Its position within the Window.</param>
 /// <param name="Row">The complete detached replacement row.</param>
 public sealed record PivotReportRowChange(int Offset, PivotDisplayRow Row);
 
 /// <summary>
-/// One atomic report update: a complete Window, a delta from the requested baseline Window, or an
-/// explicit refusal (ADR-0152).
+/// One atomic report update: a complete Window, Window Changes from the requested Baseline Window —
+/// the rows of the Window that changed since it, sent with the digest of the Window they make, in
+/// place of the whole Window — or an explicit refusal (ADR-0152).
 /// <para>
-/// <b>A delta is verified, not trusted.</b> It names the digest of the Window it produces
-/// (<see cref="WindowDigest"/>, <see cref="PivotReportDigest"/>). The client applies the delta to
-/// the Window it holds, computes the digest of the result and compares — before anything of it is
-/// shown. A delta whose result differs, or that names no digest, is discarded, and a complete
-/// current Window is asked for in its place; if that cannot be had, the last complete report stays,
-/// as a Stale Report.
+/// <b>Window Changes are verified, not trusted.</b> They name the digest of the Window they make
+/// (<see cref="WindowDigest"/>, <see cref="PivotReportDigest"/>). The client applies them to the
+/// Baseline Window it holds, computes the digest of the result and compares — before anything of
+/// it is shown. Window Changes whose result differs, or that name no digest, are discarded, and a
+/// complete current Window is asked for in their place; if that cannot be had, the last complete
+/// report stays, as a Stale Report.
 /// </para>
 /// <para>
-/// <b>Building deltas yourself.</b> A Consumer that builds deltas — a server that does not run
-/// <see cref="LocalPivotReportSource"/>, a relay that coalesces or drops deltas, a delegate that
-/// turns push messages into deltas — includes a change for every row of the requested Window whose
-/// shown values changed, subtotals, grand totals and rows whose percentage changed included, and
-/// computes the digest over the whole Window as it stands after the delta, from its own complete
-/// copy of it: a digest computed over only the rows it sends, or by applying its own delta, would
-/// match its own mistake. <see cref="LocalPivotReportSource"/> builds complete deltas and their
-/// digests by construction; a relay passes them through untouched.
+/// <b>Building Window Changes yourself.</b> A Consumer that builds Window Changes — a server that
+/// does not run <see cref="LocalPivotReportSource"/>, a relay that coalesces or drops them, a
+/// delegate that turns push messages into them — includes a change for every row of the requested
+/// Window whose shown values changed, subtotals, grand totals and rows whose percentage changed
+/// included, and computes the digest over the whole Window as it stands after the changes, from its
+/// own complete copy of it: a digest computed over only the rows it sends, or by applying its own
+/// changes, would match its own mistake. <see cref="LocalPivotReportSource"/> builds complete Window
+/// Changes and their digests by construction; a relay passes them through untouched.
 /// </para>
 /// </summary>
 /// <param name="RequestId">The echoed request identity.</param>
 /// <param name="Window">The echoed Window identity.</param>
 /// <param name="Metadata">The resulting whole-report metadata, absent on refusal.</param>
-/// <param name="Baseline">The required baseline; null for a complete Window.</param>
-/// <param name="Rows">The complete Window, or null for a delta.</param>
-/// <param name="Changes">Complete replacement rows for a delta: every row of the Window whose
-/// shown values changed, never only the rows whose data did.</param>
+/// <param name="Baseline">The Report Version of the Baseline Window the changes apply to; null for a
+/// complete Window.</param>
+/// <param name="Rows">The complete Window, or null for Window Changes.</param>
+/// <param name="Changes">The Window Changes: complete replacement rows for every row of the Window
+/// whose shown values changed, never only the rows whose data did.</param>
 /// <param name="Refusal">Why it was not answered.</param>
 public sealed record PivotReportUpdate(string RequestId, PivotReportWindow Window, PivotReportMetadata? Metadata,
     PivotReportVersion? Baseline, IReadOnlyList<PivotDisplayRow>? Rows,
     IReadOnlyList<PivotReportRowChange> Changes, PivotReportRefusal? Refusal = null)
 {
     /// <summary>
-    /// The digest of the Window this update produces (<see cref="PivotReportDigest.Of"/>): for a
-    /// delta, of the baseline Window with the changes applied — every row of it, not only the
-    /// rows changed — which the client checks before it shows anything of the delta, and without
-    /// which it does not apply one; for a complete Window, of its rows, checked when present.
+    /// The digest of the Window this update makes (<see cref="PivotReportDigest.Of"/>): for Window
+    /// Changes, of the Baseline Window with the changes applied — every row of it, not only the rows
+    /// changed — which the client checks before it shows anything of them, and without which it
+    /// does not apply them; for a complete Window, of its rows, checked when present.
     /// </summary>
     public string? WindowDigest { get; init; }
 
@@ -319,18 +323,18 @@ public sealed record PivotReportUpdate(string RequestId, PivotReportWindow Windo
         };
 
     /// <summary>
-    /// A delta from the exact requested baseline. <paramref name="changes"/> replaces every row of
-    /// the Window whose key, labels or shown values changed — subtotal and grand total rows, and rows
-    /// whose percentage changed, included — and <paramref name="windowDigest"/> is the digest of
-    /// the whole Window after them (<see cref="PivotReportDigest.Of"/>), computed from the source's
-    /// own complete Window, never from the changes: the client refuses a delta whose result does
-    /// not reproduce it.
+    /// Window Changes from the exact Baseline Window the request names. <paramref name="changes"/>
+    /// replaces every row of the Window whose key, labels or shown values changed — subtotal and
+    /// grand total rows, and rows whose percentage changed, included — and
+    /// <paramref name="windowDigest"/> is the digest of the whole Window after them
+    /// (<see cref="PivotReportDigest.Of"/>), computed from the source's own complete Window, never
+    /// from the changes: the client refuses Window Changes whose result does not reproduce it.
     /// </summary>
     /// <param name="request">The request answered.</param>
     /// <param name="metadata">The resulting whole-report metadata.</param>
-    /// <param name="changes">Every row of the Window that differs from the baseline.</param>
+    /// <param name="changes">Every row of the Window that differs from the Baseline Window.</param>
     /// <param name="windowDigest">The digest of the whole Window after the changes.</param>
-    public static PivotReportUpdate Delta(PivotReportRequest request, PivotReportMetadata metadata,
+    public static PivotReportUpdate Changed(PivotReportRequest request, PivotReportMetadata metadata,
         IReadOnlyList<PivotReportRowChange> changes, string windowDigest)
     {
         ArgumentException.ThrowIfNullOrEmpty(windowDigest);

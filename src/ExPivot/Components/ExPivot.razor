@@ -26,8 +26,10 @@
      @onmousedown="() => DismissFieldMenu(fieldMenu)" @onmousedown:stopPropagation
      @onfocusin="() => DismissFieldMenu(fieldMenu)" @onfocusin:stopPropagation>
     @* While Show Details' dialog stands, what it covers takes neither the keyboard nor the pointer:
-       the dialog is modal (ADR-0059). *@
-    <div class="ex-pivot-report" inert="@(_dialog is not null)">
+       the dialog is modal (ADR-0059). While the report is a Stale Report it carries
+       ex-pivot-report-stale, by which ExPivot's stylesheet paints its value cells in a muted colour
+       (ADR-0067, 2026-10-09): a class here, so no row of the grid renders for it. *@
+    <div class="@(IsStale ? "ex-pivot-report ex-pivot-report-stale" : "ex-pivot-report")" inert="@(_dialog is not null)">
         @Toolbar()
         @* The Stale Report's notice, under the Pivot Toolbar (ADR-0061/0067): a polite live region
            that is always present, so a notice that appears in it is announced, without interrupting
@@ -99,9 +101,26 @@
     private bool _initialised;
     private bool _disposed;
 
-    /// <summary>The asynchronous report source, local or remote (ADR-0151). It owns computation;
-    /// this component receives metadata and requested Windows. Its lifetime belongs to the Consumer.</summary>
-    [Parameter] public PivotReportSource? Source { get; set; }
+    /// <summary>
+    /// The Pivot Source the report is computed from (ADR-0066/0151): <c>PivotSource.From</c> over
+    /// the Consumer's records or a Snapshot — a CSV read in the browser among them — or
+    /// <c>PivotSource.Fetch</c> over a server's Leaf Aggregates. Its fields are what the Field List
+    /// offers. ExPivot computes the report over it with the engine a server runs
+    /// (<c>PivotReportSource.From</c>), one computation for this ExPivot, which it disposes; the
+    /// source itself is the Consumer's, and a new instance is a refresh. Hand this or
+    /// <see cref="ReportSource"/>, not both.
+    /// </summary>
+    [Parameter] public PivotSource? Source { get; set; }
+
+    /// <summary>
+    /// A report source, in place of <see cref="Source"/> (ADR-0151): <c>PivotReportSource.Fetch</c>
+    /// over the Consumer's transport to a server that computes the report and sends the Window asked
+    /// for and its Window Changes, so the leaves and the rows outside the Window stay on that server,
+    /// or a <c>PivotReportSource.From</c> the Consumer keeps itself. It owns the computation; ExPivot
+    /// receives the report's metadata and the Windows it asks for. Its lifetime is the Consumer's.
+    /// Hand this or <see cref="Source"/>, not both.
+    /// </summary>
+    [Parameter] public PivotReportSource? ReportSource { get; set; }
 
     /// <summary>Server-registered Order Key identifiers by field name (ADR-0152): a report computed
     /// on a server orders a field's Items by the function the server registered under that name
@@ -110,11 +129,6 @@
     /// by name, never replaced by label order.</summary>
     [Parameter] public IReadOnlyDictionary<string, string>? OrderKeyPolicies { get; set; }
 
-    /// <summary>A local data provider, as a convenience instead of Source. This component creates
-    /// and disposes one report computation session over it. A remote server should expose a
-    /// report source through Source, so leaves and unrequested rows stay on that server.</summary>
-    [Parameter] public PivotSource? DataSource { get; set; }
-
     /// <summary>
     /// How often, at most, the report is redrawn for changes of data (ADR-0067): 250 ms by default.
     /// The source's <c>Changed</c> notices are gathered, and the report is asked again, from the
@@ -122,6 +136,17 @@
     /// changes forty times a second cannot be read; one that changes four times a second still
     /// feels live. Zero asks on every change. A question already out is answered first, and the
     /// changes that arrive meanwhile are asked for after it. A negative interval is refused.
+    /// <para>
+    /// It also sets what the Change Highlight costs in memory (ADR-0153, "What the history holds").
+    /// To mark what changed, the report source keeps the reports the highlight compares: every one
+    /// published less than <see cref="ChangeHighlightDuration"/> before the newest, and the one
+    /// before them — at most max(versionsKept, ⌈<see cref="ChangeHighlightDuration"/> ÷ the time
+    /// between redraws⌉ + 1), which is five at the defaults (versionsKept 2, a one-second highlight,
+    /// redraws 250 ms apart). The reports share what an update did not change, but a shorter interval
+    /// keeps more of them, in proportion, and zero keeps one for every redraw within the highlight's
+    /// duration. Memory running out while a redraw is computed leaves a Stale Report, and the next
+    /// change asks again (ADR-0161).
+    /// </para>
     /// </summary>
     [Parameter] public TimeSpan RedrawInterval { get; set; } = DefaultRedrawInterval;
 
@@ -136,6 +161,15 @@
     /// a sort, a collapse, a form or Show Values As marks nothing, and neither does a change the
     /// number format hides. Zero marks nothing; a negative duration is refused. The mark's colour is
     /// ExGrid's Visual Token <c>--ex-change-highlight-background</c>.
+    /// <para>
+    /// The highlight costs memory (ADR-0153, "What the history holds"). To mark what changed, the
+    /// report source keeps the reports it compares: every one published less than this duration
+    /// before the newest, and the one before them — at most max(versionsKept, ⌈this duration ÷ the
+    /// time between redraws⌉ + 1), which is five at the defaults (versionsKept 2, one second,
+    /// redraws <see cref="RedrawInterval"/> 250 ms apart). The reports share what an update did not
+    /// change, but a longer highlight keeps more of them, in proportion. Memory running out while a
+    /// redraw is computed leaves a Stale Report, and the next change asks again (ADR-0161).
+    /// </para>
     /// </summary>
     [Parameter] public TimeSpan ChangeHighlightDuration { get; set; } = ChangeHighlightRules.DefaultDuration;
 
@@ -240,7 +274,7 @@
     /// <summary>The report on screen, or null before the source first answered.</summary>
     public PivotReportState? Report => _state;
 
-    // The report source asked — the Source handed in, or the one made over DataSource — for a
+    // The report source asked — the ReportSource handed in, or the one made over Source — for a
     // test that follows what it keeps alive (ADR-0160, LV-22).
     internal PivotReportSource? AskedSource => _source;
 
@@ -259,9 +293,13 @@
     public Exception? LastError => _lastError;
 
     /// <summary>Whether the report is a Stale Report (ADR-0067): the newest data could not be
-    /// shown — it broke a cap, the source refused or failed, or a Refresh failed — so the report
-    /// stays on the last version it could compute, and the notice under the Pivot Toolbar says what
-    /// happened and as of when, with Retry.</summary>
+    /// shown — it broke a cap, the source refused or failed, a Refresh failed, or memory ran out —
+    /// so the report stays on the last version it could compute, and the notice under the Pivot
+    /// Toolbar says what happened and as of when, with Retry. Meanwhile the report carries the class
+    /// <c>ex-pivot-report-stale</c>, and its value cells are painted in the Visual Token
+    /// <c>--ex-pivot-stale-value-color</c>: muted, still readable, never animated. Copy is refused,
+    /// saying as of when the data is, since a paste elsewhere would lose that; the Selection Summary,
+    /// on screen beside the notice, still answers.</summary>
     public bool IsStale => _stale is not null;
 
     // The Consumer's word, the engine's English, then the English of the words the engine does not
@@ -274,8 +312,10 @@
         AdoptSummaryFigures();
         if (FieldListWidth is not (> 0 and < 10_000) || !double.IsFinite(FieldListWidth))
             throw new ArgumentOutOfRangeException(nameof(FieldListWidth), FieldListWidth, "A width in pixels, above zero.");
-        if ((Source is null) == (DataSource is null))
-            throw new InvalidOperationException("ExPivot needs exactly one report Source or local DataSource (ADR-0151).");
+        if (Source is null && ReportSource is null)
+            throw new InvalidOperationException("ExPivot needs a Pivot Source (Source) or a report source (ReportSource) to compute its report from (ADR-0151).");
+        if (Source is not null && ReportSource is not null)
+            throw new InvalidOperationException("ExPivot takes a Pivot Source (Source) or a report source (ReportSource), not both: the report is computed from one of them (ADR-0151).");
         ArgumentNullException.ThrowIfNull(Caps);
         if (!Enum.IsDefined(DetailsView))
             throw new ArgumentOutOfRangeException(nameof(DetailsView), DetailsView, "Unknown PivotDetailsView.");

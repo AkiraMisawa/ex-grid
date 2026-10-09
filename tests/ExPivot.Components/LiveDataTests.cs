@@ -394,7 +394,7 @@ public class LiveDataTests : PivotTestContext
         var (cut, _) = await ListedAsync(WestHidden);
         var next = new LiveSource { HoldsItems = true };
 
-        cut.Render(ps => ps.Add(p => p.DataSource, next));
+        cut.Render(ps => ps.Add(p => p.Source, next));
 
         Assert.Equal("Loading…", BandSummary(cut));
         await cut.InvokeAsync(Assert.Single(next.ItemQuestions).AnswerAsync);
@@ -489,7 +489,7 @@ public class LiveDataTests : PivotTestContext
         var first = new LiveSource();
         var cut = RenderPivot(RegionAmount, source: first);
         var second = new LiveSource();
-        cut.Render(ps => ps.Add(p => p.DataSource, second));
+        cut.Render(ps => ps.Add(p => p.Source, second));
         Assert.Single(second.Questions);
 
         await cut.InvokeAsync(() => first.Publish(EastApples(101)));

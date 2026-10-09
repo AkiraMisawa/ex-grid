@@ -17,8 +17,8 @@ namespace ExPivot.Components.Tests;
 /// report, ending at its last row, as the grid clamps its own slice when its total shrinks, and
 /// that Window is asked for and shown. So the grid is never handed rows past the report's row
 /// count, and the user sees the new report's last rows. Later questions ask for the clamped
-/// Window until the grid asks for another. The same holds for a local DataSource and for a
-/// server's report source over JSON. The clock is the test's.
+/// Window until the grid asks for another. The same holds for a report ExPivot computes over its
+/// Pivot Source and for a server's report source over JSON. The clock is the test's.
 /// </summary>
 public sealed class ReportShrinkTests : PivotTestContext
 {
@@ -72,7 +72,7 @@ public sealed class ReportShrinkTests : PivotTestContext
     /// <summary>Who computes the report.</summary>
     public enum Computed
     {
-        /// <summary>ExPivot, over a local DataSource.</summary>
+        /// <summary>ExPivot, over its Pivot Source (<c>Source</c>).</summary>
         Locally,
 
         /// <summary>A server's report source, asked over JSON through <c>PivotReportSource.Fetch</c>.</summary>

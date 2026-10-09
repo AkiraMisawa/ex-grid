@@ -16,7 +16,7 @@ internal sealed class OnDemandSource(PivotSource reference, PivotSourceFeatures?
     public List<Question> Questions { get; } = [];
     private readonly Dictionary<int, TaskCompletionSource<Question>> _asked = [];
 
-    /// <summary>Waits for the provider call itself; starting a question need not render the component.</summary>
+    /// <summary>Waits for the source's own call; starting a question need not render the component.</summary>
     public Task<Question> QuestionAsync(int index, CancellationToken cancellationToken)
     {
         lock (Questions)

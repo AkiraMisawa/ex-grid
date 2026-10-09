@@ -196,7 +196,7 @@ public class DetailsAndVersionTests : PivotTestContext
         var cut = RenderPivot(ByRegionAndProduct);
         await DoubleClickAsync(cut, 0, 1);
 
-        cut.Render(ps => ps.Add(p => p.DataSource, Bundled(Sales.Select(s => s with { Amount = s.Amount * 2 }).ToArray())));
+        cut.Render(ps => ps.Add(p => p.Source, Bundled(Sales.Select(s => s with { Amount = s.Amount * 2 }).ToArray())));
 
         Assert.Equal("Details: East / Apples", cut.FindAll(".ex-pivot-tab-button")[1].TextContent);
         cut.WaitForAssertion(() => Assert.Equal(
@@ -433,7 +433,7 @@ public class DetailsAndVersionTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".ex-pivot-item").Count));
         var before = cut.Instance.Report!.Metadata.SourceVersion;
 
-        cut.Render(ps => ps.Add(p => p.DataSource, Bundled([.. Sales, new Sale("South", "Apples", 1m, 1, true)])));
+        cut.Render(ps => ps.Add(p => p.Source, Bundled([.. Sales, new Sale("South", "Apples", 1m, 1, true)])));
 
         cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "East", "North", "South", "West", "(blank)"],
             cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));

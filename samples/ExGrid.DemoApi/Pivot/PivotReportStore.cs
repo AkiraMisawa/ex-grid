@@ -4,7 +4,7 @@ namespace ExGrid.DemoApi;
 
 // The demo Consumer owns calculation lifetime. Expiry never rebinds an old operation:
 // only a Window request may create replacement state, and it receives a complete reset.
-internal sealed class PivotReportStore(TradePivotSource provider, TradeStore trades) : BackgroundService
+internal sealed class PivotReportStore(TradePivotSource pivotSource, TradeStore trades) : BackgroundService
 {
     internal const int Capacity = 8;
     internal static readonly TimeSpan IdleTime = TimeSpan.FromMinutes(5);
@@ -33,15 +33,15 @@ internal sealed class PivotReportStore(TradePivotSource provider, TradeStore tra
                     _entries.Remove(oldest.Key);
                     await oldest.Value.Source.DisposeAsync();
                 }
-                _entries.Add(id, new(PivotReportSource.From(provider)));
+                _entries.Add(id, new(PivotReportSource.From(pivotSource)));
             }
             if (!_entries.TryGetValue(id, out var entry)) return await answer(null);
             entry.Used = DateTimeOffset.UtcNow;
-            // The SQL provider knows only that a version changed: full refresh is explicit.
+            // The SQL Pivot Source knows only that a version changed: full refresh is explicit.
             if (_observed != trades.Version)
             {
                 _observed = trades.Version;
-                await provider.RefreshAsync(token);
+                await pivotSource.RefreshAsync(token);
             }
             return await answer(entry.Source);
         }

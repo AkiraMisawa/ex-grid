@@ -4,12 +4,12 @@ using ExGrid.Data;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// One report's bounded calculation and display state over a separately owned data provider. Run in
-/// the browser for local data, or on a server behind the Consumer's transport (ADR-0151). Its deltas
-/// are complete by construction: every row of the requested Window is projected afresh from the
-/// newest report and compared with the baseline Window's, so a subtotal, a grand total or a
-/// percentage that moved with the data is in the delta as surely as the row whose data changed, and
-/// each delta names the digest of the whole Window it produces (<see cref="PivotReportUpdate"/>).
+/// One report's bounded calculation and display state over a separately owned Pivot Source. Run in
+/// the browser for local data, or on a server behind the Consumer's transport (ADR-0151). Its Window
+/// Changes are complete by construction: every row of the requested Window is projected afresh from
+/// the newest report and compared with the Baseline Window's, so a subtotal, a grand total or a
+/// percentage that moved with the data is among them as surely as the row whose data changed, and
+/// they name the digest of the whole Window they make (<see cref="PivotReportUpdate"/>).
 /// </summary>
 public sealed class LocalPivotReportSource : PivotReportSource
 {
@@ -20,7 +20,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
     private readonly PivotSlicing _slicing;
     private PivotLabelSizing _labelSizing = new();
     private readonly List<HighlightVersion> _highlight = [];
-    // A data version whose changes are marked: the report that shows it, the change's mark — the
+    // A Source Version whose changes are marked: the report that shows it, the change's mark — the
     // Report Version that first published it, kept when the same data is laid out again — and when
     // this source published it, on this source's clock, which only bounds how long it is kept. The
     // time a change is shown is the Consumer's (PivotChangeTimes).
@@ -75,7 +75,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
         }
     }
     private IReadOnlyList<PivotField> _effectiveFields;
-    private sealed record HeldReport(PivotReportMetadata Metadata, PivotReport Report, PivotSource Provider, IReadOnlyList<PivotField> Fields);
+    private sealed record HeldReport(PivotReportMetadata Metadata, PivotReport Report, PivotSource Source, IReadOnlyList<PivotField> Fields);
 
     internal LocalPivotReportSource(PivotSource source,
         IReadOnlyDictionary<string, Func<object, IComparable?>>? orderKeys, int versionsKept, TimeProvider clock, PivotSlicing slicing)
@@ -90,9 +90,10 @@ public sealed class LocalPivotReportSource : PivotReportSource
         _slicing = slicing;
         source.Changed += SourceChanged;
     }
-    /// <summary>Carries the bounded baseline from a replaced local provider into this new report
-    /// computation. Its next request still recomputes from its own provider; the baseline permits
-    /// exact row-order comparison and data-change highlighting across that replacement.</summary>
+    /// <summary>Carries the bounded baseline from the report computed over a replaced Pivot Source
+    /// into this new report computation. Its next request still recomputes from its own Pivot Source;
+    /// the baseline permits exact row-order comparison and data-change highlighting across that
+    /// replacement.</summary>
     public async ValueTask ContinueFromAsync(LocalPivotReportSource previous, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(previous);
@@ -142,8 +143,8 @@ public sealed class LocalPivotReportSource : PivotReportSource
             if (_settings != settings && ResolveFields(request.Settings) is { } policyRefusal)
                 return PivotReportUpdate.Refused(request, policyRefusal);
             var last = _versions.First?.Value;
-            // The Window the request names as its baseline, read before a publication below evicts
-            // its Report Version: a delta is made against what the Consumer holds, however few
+            // The Baseline Window the request names, read before a publication below evicts its
+            // Report Version: Window Changes are made against what the Consumer holds, however few
             // versions are kept. Once evicted, only this call holds it.
             _windows.TryGetValue(request.Baseline ?? new(""), out var previous);
             if (previous?.Window != request.Window) previous = null;
@@ -253,12 +254,12 @@ public sealed class LocalPivotReportSource : PivotReportSource
             }
             var state = new PivotReportState(last.Metadata, request.Window, Array.AsReadOnly(rows));
             _windows[last.Metadata.Version] = state;
-            // A delta carries every row of the Window that differs from the baseline's — totals and
-            // percentages included, as each row is projected afresh — and the digest of the whole
-            // Window it produces.
+            // Window Changes carry every row of the Window that differs from the Baseline Window's —
+            // totals and percentages included, as each row is projected afresh — and the digest of
+            // the whole Window they make.
             if (previous is not null && previous.Rows.Count == rows.Length
                 && previous.Metadata.RowSequenceVersion == last.Metadata.RowSequenceVersion)
-                return PivotReportUpdate.Delta(request, last.Metadata, changes,
+                return PivotReportUpdate.Changed(request, last.Metadata, changes,
                     PivotReportDigest.Of(last.Metadata, request.Window.Start, state.Rows));
             return PivotReportUpdate.Complete(request, last.Metadata, state.Rows);
         }
@@ -282,12 +283,12 @@ public sealed class LocalPivotReportSource : PivotReportSource
 
     // The cube of the version the request names as its baseline — the data the Consumer shows —
     // when a layout gesture should lay it out rather than the computation's newer data: held,
-    // from this provider under the same Order Key policies, older than the computation's cube,
+    // from this Pivot Source under the same Order Key policies, older than the computation's cube,
     // and holding the requested layout.
     private PivotCube? Shown(PivotReportRequest request, string policies)
     {
         if (request.MarkChanges || request.Baseline is not { } baseline || _computation?.HeldCube is not { } held
-            || Held(baseline) is not { } shown || ReferenceEquals(shown.Report.Cube, held) || !ReferenceEquals(shown.Provider, _source)
+            || Held(baseline) is not { } shown || ReferenceEquals(shown.Report.Cube, held) || !ReferenceEquals(shown.Source, _source)
             || PivotReportJson.Write(shown.Metadata.Settings.OrderKeyPolicies) != policies)
             return null;
         var cube = shown.Report.Cube;
@@ -345,7 +346,8 @@ public sealed class LocalPivotReportSource : PivotReportSource
             path, changed);
     }
 
-    // Retain only the data versions whose marks can still be shown, plus their baseline.
+    // Retain only the reports of the Source Versions whose marks can still be shown, plus their
+    // baseline.
     // Versions share unchanged calculation state and point to no predecessor. Display rows own
     // only their marks, so grid paint history cannot extend this lifetime. Answers the marks the
     // source keeps now, newest first: every mark a cell will carry is one of them.
@@ -408,7 +410,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
     }
 
     // A versioned operation captures one immutable report. It neither waits for a successor's
-    // calculation nor keeps the publication lock while yielding or asking the data provider.
+    // calculation nor keeps the publication lock while yielding or asking the Pivot Source.
     private HeldReport? Held(PivotReportVersion version)
     {
         lock (_published)
@@ -438,7 +440,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
         if (field is null || query.Max < 0)
             return new(query.Version, held.Metadata.SourceVersion, [], 0,
                 new(PivotReportRefusalKind.InvalidRequest, "Items needs a declared field and nonnegative cap."));
-        var page = await held.Provider.ItemsAsync(new(query.Field, held.Metadata.SourceVersion, query.Search, query.Max),
+        var page = await held.Source.ItemsAsync(new(query.Field, held.Metadata.SourceVersion, query.Search, query.Max),
             cancellationToken).ConfigureAwait(false);
         if (page.IsRefused)
             return new(query.Version, held.Metadata.SourceVersion, [], 0,
@@ -455,10 +457,10 @@ public sealed class LocalPivotReportSource : PivotReportSource
     }
 
     /// <inheritdoc />
-    /// <remarks>Asked of the data provider under the question's Source Version: answered while the
-    /// provider holds it, however many layouts and Report Versions came since, and refused by the
-    /// provider once it does not. The provider is not this report's to dispose, so a Details tab
-    /// opened before the report was replaced still pages its records.</remarks>
+    /// <remarks>Asked of the Pivot Source under the question's Source Version: answered while the
+    /// Pivot Source holds it, however many layouts and Report Versions came since, and refused by it
+    /// once it does not. The Pivot Source is not this report's to dispose, so a Details tab opened
+    /// before the report was replaced still pages its records.</remarks>
     public override ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);

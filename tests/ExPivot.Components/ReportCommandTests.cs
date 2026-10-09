@@ -233,7 +233,7 @@ public class ReportCommandTests : PivotTestContext
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
             builder.OpenComponent<PivotComponent>(0);
-            builder.AddComponentParameter(1, nameof(PivotComponent.DataSource), _source);
+            builder.AddComponentParameter(1, nameof(PivotComponent.Source), _source);
             builder.AddComponentParameter(3, nameof(PivotComponent.Layout), Layout);
             builder.AddComponentParameter(4, nameof(PivotComponent.LayoutChanged),
                 EventCallback.Factory.Create<PivotLayout>(this, layout => Layout = layout));
@@ -254,7 +254,7 @@ public class ReportCommandTests : PivotTestContext
             for (var i = 0; i < 2; i++)
             {
                 builder.OpenComponent<PivotComponent>(0);
-                builder.AddComponentParameter(1, nameof(PivotComponent.DataSource), _source);
+                builder.AddComponentParameter(1, nameof(PivotComponent.Source), _source);
                 builder.AddComponentParameter(3, nameof(PivotComponent.Layout), new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
                 builder.AddComponentParameter(4, nameof(PivotComponent.ViewportHeight), (ExGrid.ViewportSize)300);
                 builder.AddComponentParameter(5, nameof(PivotComponent.ViewportWidth), (ExGrid.ViewportSize)600);

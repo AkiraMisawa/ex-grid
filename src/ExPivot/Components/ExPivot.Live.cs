@@ -290,15 +290,21 @@ public partial class ExPivot
 
     private PivotStaleReportContext StaleReportContext(string reason)
     {
-        var zone = _time.LocalTimeZone;
-        var asOf = TimeZoneInfo.ConvertTime(_shownAt, zone);
-        var today = TimeZoneInfo.ConvertTime(Now(), zone).Date;
-        // The time, in the report's culture; the date too, when it is not today's — a time alone
-        // would say the report is fresher than it is.
-        var asOfText = asOf.ToString(asOf.Date == today ? "T" : "G", _culture);
+        var (asOf, asOfText) = AsOf();
         // Retry is not offered twice at once: the question it asked, or the Refresh, is out.
         var retry = new PivotCommand(PivotCommandIds.Retry, Word(PivotCommandIds.Retry), !_loading && !_refreshing, RetryAsync);
         return new PivotStaleReportContext(
             PivotWords.Fill(Word(StaleReportWords.Notice), asOfText, reason), reason, asOf, asOfText, retry, Word);
+    }
+
+    /// <summary>When the data the report shows arrived, in the clock's local zone, and as the notice
+    /// and a refused Copy write it: the time, in the report's culture, and the date too when it is not
+    /// today's — a time alone would say the report is fresher than it is.</summary>
+    private (DateTimeOffset At, string Text) AsOf()
+    {
+        var zone = _time.LocalTimeZone;
+        var asOf = TimeZoneInfo.ConvertTime(_shownAt, zone);
+        var today = TimeZoneInfo.ConvertTime(Now(), zone).Date;
+        return (asOf, asOf.ToString(asOf.Date == today ? "T" : "G", _culture));
     }
 }

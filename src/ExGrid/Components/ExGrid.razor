@@ -1250,7 +1250,7 @@
 
     /// <summary>
     /// Raised when a header click changes the sort (ADR-0012): the whole next Sorts
-    /// list, not a delta. The grid changes nothing on its own — the painted order moves
+    /// list, not what changed in it. The grid changes nothing on its own — the painted order moves
     /// only when the Consumer answers with a new Window (ADR-0001).
     /// </summary>
     [Parameter] public EventCallback<IReadOnlyList<SortSpec>> OnSortChanged { get; set; }
