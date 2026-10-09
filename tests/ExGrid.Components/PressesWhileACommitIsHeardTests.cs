@@ -346,6 +346,29 @@ public class PressesWhileACommitIsHeardTests : GridTestContext
         Assert.Empty(heard.Discards);
     }
 
+    [Theory] // ADR-0050 item 4 / ADR-0142, principle 6: a placement the Consumer asks for while the grid hears a commit a press asked for waits for it to land, as a click does: one Edit Intent, and the placement lands after the press, with no editor open
+    [InlineData(Answered.AtOnce)]
+    [InlineData(Answered.InOrder)]
+    public async Task A_placement_asked_while_a_commit_is_heard_lands_once_it_has_landed(Answered answered)
+    {
+        var heard = new Heard { Slow = answered != Answered.AtOnce };
+        var cut = RenderGrid(SourceOf(TestRows.Many(50)), heard);
+        await ClickAsync(cut, 50, 10);
+        await KeyAsync(cut, "5");
+
+        var pressed = PressRow(cut, 50);
+        var placement = cut.InvokeAsync(() => cut.Instance.PlaceSelectionAsync(
+            new SelectionRange(4, 1, 1, 1), new CellPosition(4, 1), cut.Instance.ReadSelection().RowSequenceVersion));
+        await AnswerAsync(cut, heard, answered);
+        await Task.WhenAll(pressed);
+        var placed = await placement;
+
+        Assert.Equal("5", Assert.Single(heard.Edits).Value);
+        Assert.True(placed);
+        Assert.Equal(new CellPosition(4, 1), Focus(cut));
+        Assert.False(EditorOpen(cut));
+    }
+
     [Fact] // ADR-0050 item 4 / ADR-0142: a placement the Consumer awaits inside its own handler of the commit does not wait for that commit, which waits for the handler: it places, and the commit lands once, with nothing left standing
     public async Task A_placement_awaited_inside_the_commits_own_handler_does_not_wait_for_it()
     {

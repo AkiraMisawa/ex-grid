@@ -6698,10 +6698,14 @@
     /// open edit brought in another <see cref="Source"/> instance, whatever the two sources'
     /// versions are: the positions were asked for among the rows of the one replaced (ADR-0142).
     /// The version is all a request carries, so a request made after the replacement is taken as
-    /// written for the new one.
+    /// written for the new one. Asked while the grid hears the open edit's commit, a request waits
+    /// for that commit to land, as a click does (ADR-0142); asked from inside one of the commit's
+    /// own handlers — an <see cref="OnEdit"/> handler awaiting it — it places at once and commits
+    /// nothing, since the commit waits for that handler, and the commit ends the edit as the
+    /// handler completes.
     /// </summary>
     /// <returns>Whether the placement was made: false when it was dropped as stale, or when
-    /// a Reject held an open edit (ADR-0034).</returns>
+    /// a Reject or a refusal held an open edit (ADR-0034, ADR-0142).</returns>
     /// <exception cref="ArgumentOutOfRangeException">The range reaches outside the grid, or
     /// the Focus lies outside the range.</exception>
     public async Task<bool> PlaceSelectionAsync(SelectionRange range, CellPosition focus, int rowSequenceVersion)
