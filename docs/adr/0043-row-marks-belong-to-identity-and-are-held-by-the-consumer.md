@@ -146,7 +146,8 @@ holds by then.
   page it was made on, and under the same order those positions still name the rows the user saw: the
   header's checkbox lines up that page, as `Positions` under the order it was pressed in. A told press keeps
   the mode it was made in: made with no pager it names the whole result, made under a pager it names its
-  page, whatever the Consumer has done to the pager since.
+  page, with the rows that page held, whatever the Consumer has done to the pager since. A press told no
+  paint — a key, a script — names what the header names now.
 - **A row's checkbox names its row by identity**, which an order move leaves as it was.
 - **Each refusal is said once**, through `OnMarkRefused`, with no Row Mark intent. ExGrid has no words of
   its own: as with `OnPasteRefused`, the Consumer says it. As first decided on 2026-10-08, a dropped press

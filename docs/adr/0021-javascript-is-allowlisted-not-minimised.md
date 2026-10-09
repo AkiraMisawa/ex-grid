@@ -582,7 +582,8 @@ section of that date.)* Four readings changed. No listener was added, and nothin
 - **A press on a mark carries its paint**, as an Action press does. The marks are a row's checkbox, the
   header's, and "Mark all N rows". At the mousedown on one of this grid's own marks, the existing listener
   reads the paint the Viewport names. For the header's checkbox under a pager, it also reads the first row
-  of the page that the render wrote (`data-ex-page`). At the release on the same mark it tells the core
+  of the page that the render wrote (`data-ex-page`), and, since 2026-10-09, how many rows that page held
+  (`data-ex-page-rows`), so that a press heard after the pager was removed or resized still names its page. At the release on the same mark it tells the core
   (`MarkPressTakenAt`), before Blazor dispatches the click
   ([ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)'s note of 2026-10-08).
   A press the platform makes a context menu of tells nothing. *(2026-10-09.)* A press on a row's checkbox
