@@ -11,6 +11,10 @@ public partial class ExPivot
     private static PivotReportRange ReportRange(SelectionRange range)
         => new(range.TopRow, range.LeftColumn, range.BottomRow, range.RightColumn);
 
+    /// <summary>A source's refusal of a Copy or a Selection Summary, its own sentence inside
+    /// ExPivot's words, as a refused question's is (ADR-0060).</summary>
+    private string SourceRefused(PivotReportRefusal refusal) => PivotWords.Fill(Word("source-refused"), refusal.Message);
+
     private async Task<GridCopyAnswer> CopyReportAsync(GridCopyRequest request, CancellationToken cancellationToken)
     {
         // Capture the entire question before yielding; a new Window never rebinds this gesture.
@@ -20,12 +24,14 @@ public partial class ExPivot
         var plan = request.Plan;
         var query = new PivotReportCopyQuery(report.Version, columns, plan.Segments.Select(ReportRange).ToArray());
         var answer = await source.CopyAsync(query, cancellationToken);
+        // Every sentence the grid announces for a refusal is a word of ExPivot's (ADR-0060); a
+        // source's own is said inside one, as a refused question's is.
         if (answer.Version != query.Version)
-            return GridCopyAnswer.Refuse("The copy answered another Report Version.");
+            return GridCopyAnswer.Refuse(Word("copy-another-version"));
         if (answer.Refusal is { } refusal)
-            return GridCopyAnswer.Refuse(refusal.Message);
+            return GridCopyAnswer.Refuse(SourceRefused(refusal));
         if (answer.Blocks.Count != plan.Segments.Count)
-            return GridCopyAnswer.Refuse("The copy did not answer every selected range.");
+            return GridCopyAnswer.Refuse(Word("copy-missing-range"));
         for (var i = 0; i < plan.Segments.Count; i++)
         {
             var segment = plan.Segments[i];
@@ -33,7 +39,7 @@ public partial class ExPivot
             if (block.Rows.Count != segment.BottomRow - segment.TopRow + 1
                 || block.Headers.Count != segment.RightColumn - segment.LeftColumn + 1
                 || block.Rows.Any(row => row.Count != block.Headers.Count))
-                return GridCopyAnswer.Refuse("The copy returned an incomplete selected range.");
+                return GridCopyAnswer.Refuse(Word("copy-incomplete-range"));
         }
         var hint = 0;
         PivotReportCopyCell Cell(int row, int column)
@@ -77,15 +83,16 @@ public partial class ExPivot
         var query = new PivotReportSummaryQuery(report.Version, request.Columns,
             request.Ranges.Select(ReportRange).ToArray(), request.Focus?.Row, request.Focus?.Column);
         var answer = await source.SummaryAsync(query, cancellationToken);
+        // The reason shown in place of the figures is a word of ExPivot's (ADR-0060).
         if (answer.Version != query.Version)
-            return GridSummaryResult.Declined("The summary answered another Report Version.");
+            return GridSummaryResult.Declined(Word("summary-another-version"));
         if (answer.Refusal is { } refusal)
-            return GridSummaryResult.Declined(refusal.Message);
+            return GridSummaryResult.Declined(SourceRefused(refusal));
         var cells = new GridSummaryCells();
         var counts = answer.Counts;
         if (answer.HasError)
         {
-            if (counts.Values <= 0) return GridSummaryResult.Declined("The summary returned inconsistent error counts.");
+            if (counts.Values <= 0) return GridSummaryResult.Declined(Word("summary-inconsistent-errors"));
             // AddError supplies the error flag and one already-counted cell.
             counts.Values--;
             cells.AddError();

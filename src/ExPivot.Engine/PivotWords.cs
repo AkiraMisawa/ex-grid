@@ -262,6 +262,14 @@ public static class PivotWords
         ["source-refused"] = "The source refused to answer: {0}",
         ["data-changed"] = "The data has changed — refresh.",
 
+        // A Copy or a Selection Summary the source answered for another Report Version, or in part:
+        // refused, and said where the grid says a refusal (ADR-0152).
+        ["copy-another-version"] = "The copy answered another Report Version.",
+        ["copy-missing-range"] = "The copy did not answer every selected range.",
+        ["copy-incomplete-range"] = "The copy returned an incomplete selected range.",
+        ["summary-another-version"] = "The summary answered another Report Version.",
+        ["summary-inconsistent-errors"] = "The summary returned inconsistent error counts.",
+
         // Show Details: the tabs at the report's foot and the dialog (ADR-0059).
         ["details-title"] = "Details: {0}",
         ["report-tab"] = "PivotTable",
@@ -423,6 +431,12 @@ public static class PivotWords
         ["source-failed"] = "ソースから応答を得られませんでした: {0}",
         ["source-refused"] = "ソースが応答を拒否しました: {0}",
         ["data-changed"] = "データが変更されました。更新してください。",
+
+        ["copy-another-version"] = "コピーへの応答が、別のバージョンのレポートのものでした。",
+        ["copy-missing-range"] = "コピーへの応答に、選択したすべての範囲が含まれていませんでした。",
+        ["copy-incomplete-range"] = "コピーへの応答に、欠けのある選択範囲が含まれていました。",
+        ["summary-another-version"] = "集計への応答が、別のバージョンのレポートのものでした。",
+        ["summary-inconsistent-errors"] = "集計への応答で、エラーの数が食い違っていました。",
 
         ["details-title"] = "詳細: {0}",
         ["report-tab"] = "ピボットテーブル",
