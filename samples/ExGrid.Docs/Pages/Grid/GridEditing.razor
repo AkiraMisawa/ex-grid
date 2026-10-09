@@ -110,7 +110,10 @@
             change, however fast it is typed and whether the 5 comes back before the <code>7</code> or under it.
             A write of the user's settles with the first new Window the grid takes in after your handler for it
             has completed; with a bound source, the grid asks the source to put out what it gathered at that
-            moment, so a write your handler handed it is in the Window before the next key is handled.
+            moment, so a write your handler handed it is in the Window before the next key is handled. What the
+            user saw is only ever read from the edited row: should that row be out of the Window as the write
+            settles, the editor keeps what it opened over, and the commit may tell the user's own value as a
+            change — it never hides one.
         </p>
         <p>
             <strong>The Edit Intent carries the same two texts</strong>, <code>SeenText</code> and

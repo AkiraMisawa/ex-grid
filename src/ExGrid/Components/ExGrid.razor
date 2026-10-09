@@ -2921,7 +2921,8 @@
         {
             FollowEditedRow();
             // A write of the user's own the editor awaited went with this Window: the baseline is
-            // what the cell paints now, read where the editor stands after following its row (D1).
+            // what the cell paints now, read from the edited row where the editor stands after
+            // following it, and kept as it was while the Window does not hold that row (D1).
             if (_editRebaseOwed)
                 RebaseEdit();
         }

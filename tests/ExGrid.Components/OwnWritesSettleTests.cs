@@ -44,10 +44,12 @@ public class OwnWritesSettleTests : GridTestContext
         public Action<GridEditIntent<TestRow>>? OnEdit { get; set; }
     }
 
-    private IRenderedComponent<ExGrid<TestRow>> RenderGrid(TestRow[] rows, Heard heard, GridColumn<TestRow>[]? columns = null)
+    private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
+        TestRow[] rows, Heard heard, GridColumn<TestRow>[]? columns = null, Func<TestRow, object>? rowKey = null)
         => Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, rows)
             .Add(g => g.TotalCount, rows.Length)
+            .Add(g => g.RowKey, rowKey)
             .Add(g => g.Columns, columns ?? Columns())
             .Add(g => g.RowHeight, 20d)
             .Add(g => g.ViewportHeight, 120)
@@ -343,6 +345,72 @@ public class OwnWritesSettleTests : GridTestContext
         await KeyAsync(cut, "Enter");
 
         Assert.Equal("Moved upstream", Assert.Single(heard.Notices).ReplacedText);
+    }
+
+    // ---- The baseline is read from the edited row, or kept ----
+    //
+    // A write the open editor awaited is let go while the edited row is out of the Window: the baseline is
+    // owed a reading then ("D1 settles at a point in the grid's order of events"), and the editor's position
+    // holds another row, or none. The baseline is only ever read from the edited row itself, by its Row Key;
+    // with the row away, the editor keeps the baseline it had. That errs towards a notice — the commit may
+    // tell the user's own write as a change — as ADR-0142's accepted limits do, and never hides one.
+
+    private static readonly Func<TestRow, object> ByBook = static row => row.Book;
+
+    [Fact] // ADR-0142 D1 / LV-11, LV-17, LV-20: with a Row Key, an order move that lets go of the write the open editor awaited, and takes the edited row out of the Window with another row at its place, leaves the baseline as it was — the notice the commit raises once the row is back never carries the other row's text
+    public async Task A_baseline_owed_while_the_edited_row_is_out_of_the_window_is_never_read_from_another_row()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, rowKey: ByBook);
+        // The user's own 5 into row 0's Amount, not written back yet: an editor opened over it awaits it.
+        await ClickAsync(cut, 150, 10);
+        await KeyAsync(cut, "5");
+        await KeyAsync(cut, "Enter");
+        await KeyAsync(cut, "ArrowUp");
+        await KeyAsync(cut, "7");
+        Assert.Equal("0", PaintedText(cut, 0, 1));
+
+        // The order moves: row 0 leaves the Window, and a row painting 99 stands at its place.
+        var other = new TestRow { Book = "Another row", Amount = 99m, AsOf = rows[0].AsOf, Active = rows[0].Active };
+        cut.Render(ps => ps.Add(g => g.Window, [other, .. rows[1..]]).Add(g => g.RowSequenceVersion, 1));
+        // Row 0 is back, with the user's 5 written into it.
+        var back = Changed(rows, 0, amount: 5m);
+        cut.Render(ps => ps.Add(g => g.Window, back).Add(g => g.RowSequenceVersion, 2));
+        await KeyAsync(cut, "Enter");
+
+        var commit = heard.Edits[1];
+        Assert.Equal("7", commit.Value);
+        Assert.Same(back[0], commit.Row);
+        var notice = Assert.Single(heard.Notices);
+        Assert.Equal("0", notice.SeenText);
+        Assert.Equal("5", notice.ReplacedText);
+        Assert.Equal((notice.SeenText, notice.ReplacedText), (commit.SeenText, commit.ReplacedText));
+    }
+
+    [Fact] // ADR-0142 D1 / LV-11, LV-17, principle 1: with a Row Key, a Window that moves past the edited row lets go of the write the open editor awaited while no row stands at the editor's place — the editor keeps the baseline it had, never none, so a change made upstream while the row was away is told when the commit lands over it
+    public async Task A_baseline_owed_while_no_row_stands_at_the_editors_place_is_kept_and_a_change_is_told()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, rowKey: ByBook);
+        await ClickAsync(cut, 150, 10);
+        await KeyAsync(cut, "5");
+        await KeyAsync(cut, "Enter");
+        await KeyAsync(cut, "ArrowUp");
+        await KeyAsync(cut, "7");
+
+        // The Window moves on to row 10, under the same order: row 0 is held no more.
+        cut.Render(ps => ps.Add(g => g.Window, rows[10..]).Add(g => g.WindowStart, 10));
+        // Row 0 is back, written upstream to 9 meanwhile, under the editor.
+        var back = Changed(rows, 0, amount: 9m);
+        cut.Render(ps => ps.Add(g => g.Window, back).Add(g => g.WindowStart, 0));
+        await KeyAsync(cut, "Enter");
+
+        var notice = Assert.Single(heard.Notices);
+        Assert.Equal("0", notice.SeenText);
+        Assert.Equal("9", notice.ReplacedText);
+        Assert.Equal("0", heard.Edits[1].SeenText);
     }
 
     // ---- A pushed-Window Consumer that applies the write in its handler ----

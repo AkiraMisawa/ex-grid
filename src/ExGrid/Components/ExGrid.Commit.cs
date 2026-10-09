@@ -104,15 +104,24 @@ public partial class ExGrid<TRow>
 
     /// <summary>The baseline moves to what the edited cell paints now: a write of the user's own that
     /// it awaited has settled, or was dropped by the Window that brought it (D1). Called once the
-    /// editor has followed its row, so a keyed row that moved is read where it stands now. A row the
-    /// Window does not hold at that moment paints nothing: the baseline is then the text the commit
-    /// finds, and no change is told for what the grid could not see.</summary>
+    /// editor has followed its row, so a keyed row that moved is read where it stands now. It is read
+    /// from the edited row only (<see cref="EditedRowInHand"/>). When the Window does not hold that row
+    /// at that moment, the editor keeps the baseline it had — never another row's text, and never
+    /// none — and the reading is not owed again: the commit may then tell the user's own write as a
+    /// change, which errs towards a notice, as ADR-0142's accepted limits do, and never hides one.</summary>
     private void RebaseEdit()
     {
         _editRebaseOwed = false;
-        if (_editMode != EditMode.None)
+        if (_editMode != EditMode.None && EditedRowInHand())
             _editSeenText = PaintedTextNow(_editingCell.Row, _editingCell.Column);
     }
+
+    /// <summary>Whether the Window holds, at the editor's position, the row the editor was opened on:
+    /// with a Row Key, the row under the editor's key; without one, the row at its position while the
+    /// order it was opened under holds (ADR-0142, LV-20).</summary>
+    private bool EditedRowInHand()
+        => RowInHand(_editingCell.Row) is { } row
+           && (_rowKey is { } rowKey ? _editKey is { } key && Equals(rowKey(row), key) : _sequenceVersion == _editSequence);
 
     /// <summary>
     /// With a Row Key, the editor and the Focus follow the row they were opened on (ADR-0011's note
@@ -224,7 +233,9 @@ public partial class ExGrid<TRow>
     //   - for a pushed Window, the first new Window taken in after the handler completed.
     // An order move or a replaced Source drops it (its positions name other rows), and so does a new
     // Window that no longer holds any of its rows; an editor that awaited it takes the cell's text then,
-    // as at a settle. A write the Consumer refused is taken back: it wrote nothing, and moves nothing.
+    // as at a settle. The baseline is only ever read from the edited row itself — by its Row Key, wherever
+    // the editor followed it — and, while the Window does not hold that row, the editor keeps the baseline
+    // it had (RebaseEdit). A write the Consumer refused is taken back: it wrote nothing, and moves nothing.
 
     // Whether the Consumer is hearing the open edit's own commit — its Edit Intent, raised while the
     // editor stands (CommitEditAsync) — and whether a Source, or visible columns, it handed over
