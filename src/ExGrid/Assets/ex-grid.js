@@ -98,11 +98,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         revealTimer = 0;
     };
 
-    // A reveal's repaint (ADR-0012, 2026-10-08). Under Citrix with the browser's hardware
-    // acceleration off, a far reveal left the Viewport white: the DOM, the offset and the slice
-    // were all right, and the rows stayed unpainted on screen until the offset moved once more.
-    // So the offset moves on by one pixel in the frame after the reveal's and back in the frame
-    // after that, which is the move that painted them there. The core hears nothing of it: a read
+    // A reveal's repaint (ADR-0012, 2026-10-08). On a PC reached through Citrix, with the browser's
+    // hardware acceleration off, a far reveal left the Viewport white: the DOM, the offset and the
+    // slice were all right, and the rows stayed unpainted on screen until the offset moved once
+    // more. That PC's browser also turned out to show the site as a remote browser isolation
+    // mirror, so which of the two layers dropped the paint is open (ADR-0012, 2026-10-09). So the
+    // offset moves on by one pixel in the frame after the reveal's and back in the frame after
+    // that, which is the move that painted them there. The core hears nothing of it: a read
     // meanwhile answers where the reveal left the scroller, so no slice is painted for it. A
     // scroll the user makes in between stands: the move back is not made, and the core is told to
     // read the offset again, through the scroller's own scroll event, since one it already read
