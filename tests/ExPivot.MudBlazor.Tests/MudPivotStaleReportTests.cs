@@ -119,6 +119,25 @@ public class MudPivotStaleReportTests : MudPivotTestContext
         Assert.Equal("East | 181", RowTexts(cut)[0]);
     }
 
+    [Fact] // ADR-0067/0062 (decided 2026-10-09): under MudPivotChrome a Stale Report's value cells are marked too — the class is ExPivot's, on the report, whichever Chrome draws the notice — and the recovery Retry brings unmarks them
+    public async Task A_stale_reports_value_cells_are_marked_under_mudblazor()
+    {
+        var server = new Server();
+        var cut = RenderPivot(RegionAmount, source: server.Source);
+        Assert.DoesNotContain("ex-pivot-report-stale", cut.Find(".ex-pivot-report").ClassList);
+
+        await StaleAsync(cut, server);
+
+        Assert.Contains("ex-pivot-report-stale", cut.Find(".ex-pivot-report").ClassList);
+        Assert.Single(cut.FindAll(".ex-pivot-stale[role=status] .mud-ex-pivot-stale-notice"));
+
+        server.Fails = null;
+        await cut.Find(".mud-ex-pivot-retry").ClickAsync(new MouseEventArgs());
+
+        Assert.False(cut.Instance.IsStale);
+        Assert.DoesNotContain("ex-pivot-report-stale", cut.Find(".ex-pivot-report").ClassList);
+    }
+
     [Fact] // ADR-0061/0062 (PV-9, PV-37): the same change says the same thing, and Retry asks the same question, under the built-in markup and MudPivotChrome
     public async Task The_notice_says_what_the_built_in_says()
     {

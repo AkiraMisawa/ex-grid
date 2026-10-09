@@ -84,14 +84,16 @@ Link both stylesheets in your host page:
   supersedes the work.
 - **Live data.** ExPivot listens to the source's `Changed` — a server's source raises it when you
   call `NotifyChanged`, however you learn of the change (SignalR, polling, a message bus) — and
-  requests the current report Window and its changes. Changes are gathered and the report is redrawn at most every
-  `RedrawInterval` (250 ms; zero redraws on every change). A change of values keeps the Selection
-  and any open menu or panel. A value cell whose shown text changed is marked for
-  `ChangeHighlightDuration` (one second); a new layout, a sort or a collapse marks nothing. When
-  the newest data cannot be shown — it breaks a cap, the source fails, or a Refresh fails — the
-  report stays as it was, and a notice under the Pivot Toolbar says what happened and as of when,
-  with Retry. While a new version's Items are on their way, the report filter band and Filter… keep
-  the ones they listed. `Clock` takes a `TimeProvider` for tests.
+  requests the current report Window, or its Window Changes. Changes are gathered and the report
+  is redrawn at most every `RedrawInterval` (250 ms; zero redraws on every change). A change of
+  values keeps the Selection and any open menu or panel. A value cell whose shown text changed is
+  marked for `ChangeHighlightDuration` (one second); a new layout, a sort or a collapse marks
+  nothing. When the newest data cannot be shown — it breaks a cap, the source fails, or a Refresh
+  fails — the report stays as it was, and a notice under the Pivot Toolbar says what happened and
+  as of when, with Retry; meanwhile its value cells are painted in a muted colour, still readable,
+  the Visual Token `--ex-pivot-stale-value-color`. While a new version's Items are on their way,
+  the report filter band and Filter… keep the ones they listed. `Clock` takes a `TimeProvider` for
+  tests.
 - **ShowFieldList** can be bound (`@bind-ShowFieldList`) to remember the pane the user hid or
   showed from the Pivot Toolbar.
 - **Label** replaces any word by its id. `Label="PivotWords.Japanese"` speaks the words of

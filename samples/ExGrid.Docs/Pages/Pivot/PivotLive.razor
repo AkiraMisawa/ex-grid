@@ -76,7 +76,7 @@
         <p>
             A server's source learns of changes however your application does: SignalR, polling, a message bus. Pass
             each notice to <code>FetchingPivotReportSource.NotifyChanged(version)</code>, and ExPivot asks the server again for
-            the current report Window and its changes. A <em>Refresh</em> on the Pivot Toolbar does the same when the source says it can be
+            the current report Window, as Window Changes once one is on screen. A <em>Refresh</em> on the Pivot Toolbar does the same when the source says it can be
             refreshed.
         </p>
         <p>
@@ -87,8 +87,18 @@
             asks again rather than assume it will fit. A layout you ask for that runs out of memory is refused instead, and the
             Field List goes back to the layout the report shows.
         </p>
+        <p>
+            While the report is stale, its value cells are painted in a muted colour too, so a reader who has not looked at the
+            notice still cannot take the numbers for the newest. They stay readable, and nothing animates; the labels keep
+            their colour, and the mark goes with the notice when the report recovers. The colour is the Visual Token
+            <code>--ex-pivot-stale-value-color</code>: unset, ExPivot mixes the grid's text into its ground, which keeps a
+            readable contrast in either scheme, and <code>ExPivot.MudBlazor</code>'s stylesheet maps it to the palette's
+            secondary text.
+        </p>
         <DocsExample Builtin="typeof(LiveServer)" Mud="typeof(LiveServerMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
-            The simulated server amends eight sales a second and announces each new Source Version.
+            The simulated server amends eight sales a second and announces each new Source Version. Cut it off: the next
+            question fails, and the report stays as it was, stale, with its notice and its numbers muted, until you reconnect
+            and press Retry.
         </DocsExample>
     </DocsSection>
 </DocsPage>

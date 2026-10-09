@@ -26,8 +26,10 @@
      @onmousedown="() => DismissFieldMenu(fieldMenu)" @onmousedown:stopPropagation
      @onfocusin="() => DismissFieldMenu(fieldMenu)" @onfocusin:stopPropagation>
     @* While Show Details' dialog stands, what it covers takes neither the keyboard nor the pointer:
-       the dialog is modal (ADR-0059). *@
-    <div class="ex-pivot-report" inert="@(_dialog is not null)">
+       the dialog is modal (ADR-0059). While the report is a Stale Report it carries
+       ex-pivot-report-stale, by which ExPivot's stylesheet paints its value cells in a muted colour
+       (ADR-0067, 2026-10-09): a class here, so no row of the grid renders for it. *@
+    <div class="@(IsStale ? "ex-pivot-report ex-pivot-report-stale" : "ex-pivot-report")" inert="@(_dialog is not null)">
         @Toolbar()
         @* The Stale Report's notice, under the Pivot Toolbar (ADR-0061/0067): a polite live region
            that is always present, so a notice that appears in it is announced, without interrupting
@@ -271,9 +273,11 @@
     public Exception? LastError => _lastError;
 
     /// <summary>Whether the report is a Stale Report (ADR-0067): the newest data could not be
-    /// shown — it broke a cap, the source refused or failed, or a Refresh failed — so the report
-    /// stays on the last version it could compute, and the notice under the Pivot Toolbar says what
-    /// happened and as of when, with Retry.</summary>
+    /// shown — it broke a cap, the source refused or failed, a Refresh failed, or memory ran out —
+    /// so the report stays on the last version it could compute, and the notice under the Pivot
+    /// Toolbar says what happened and as of when, with Retry. Meanwhile the report carries the class
+    /// <c>ex-pivot-report-stale</c>, and its value cells are painted in the Visual Token
+    /// <c>--ex-pivot-stale-value-color</c>: muted, still readable, never animated.</summary>
     public bool IsStale => _stale is not null;
 
     // The Consumer's word, the engine's English, then the English of the words the engine does not

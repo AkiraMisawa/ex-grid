@@ -1,14 +1,17 @@
 import { test, expect, circuitQuiet } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
+import { blend, contrast, onDeviceGrid, painted, paints, wholePixelCentres } from './pixels.mjs';
 
 // /pivot-live (ADR-0067/0068/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // live data both ways. In the page's own process, a timer the page owns folds Change Batches into
 // the bundled source; on the demo API server, live updates keep changing the trades, and the hub's
 // notices reach the server's source through NotifyChanged. What only a browser can say: that the
 // values the data changed are marked in both reports, and that a layout change marks nothing
-// (PV-36); that the page turns the server's live updates on, and off again as it goes; and that the
-// console stays clean throughout (PV-20).
+// (PV-36); that a server cut off leaves a Stale Report whose numbers are painted muted, and still
+// readable, until Retry brings the newest back (PV-37, ADR-0067's decision of 2026-10-09); that the
+// page turns the server's live updates on, and off again as it goes; and that the console stays
+// clean throughout (PV-20).
 //
 // The API server lives for the whole run, and other files share it: each test starts from
 // POST /api/reset, and turns live updates off again as it ends.
@@ -50,6 +53,75 @@ async function open(page, chrome) {
     }
     // Connected to the hub, and the server's live updates turned on.
     await expect(page.locator('#pivot-live-server-toggle')).toHaveText("Turn the server's live updates off", { timeout: 30_000 });
+}
+
+/** A computed colour as its sRGB channels, each its exact value in bytes, and its alpha. */
+function channelsOf(css) {
+    const rgb = /^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)$/.exec(css);
+    if (rgb) {
+        return { rgb: [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])], alpha: rgb[4] === undefined ? 1 : Number(rgb[4]) };
+    }
+    const srgb = /^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)(?: \/ ([\d.]+))?\)$/.exec(css);
+    if (srgb) {
+        return { rgb: [srgb[1], srgb[2], srgb[3]].map((v) => Number(v) * 255), alpha: srgb[4] === undefined ? 1 : Number(srgb[4]) };
+    }
+    throw new Error(`a computed colour this file does not read: ${css}`);
+}
+
+/** What text in the computed colour `css` paints on a device pixel it covers whole, over the opaque
+ * `ground`: its own channels, or, translucent, blended at the alpha the browser holds — a whole
+ * number of 255ths (pixels.mjs, `blend`). */
+function inkOver(css, ground) {
+    const { rgb, alpha } = channelsOf(css);
+    return alpha === 1 ? rgb : blend(rgb, Math.round(alpha * 255) / 255, ground);
+}
+
+/** The colour `css` resolves to inside `cell`, as the cascade there resolves it. */
+const probedColour = (cell, css) => cell.evaluate((element, colour) => {
+    const probe = document.createElement('span');
+    probe.style.color = colour;
+    element.appendChild(probe);
+    const resolved = getComputedStyle(probe).color;
+    probe.remove();
+    return resolved;
+}, css);
+
+/**
+ * The ground of `cells`, read in the first one's left padding, and the most inked pixel of their
+ * text — the one farthest from that ground — as painted, over the cells that stand wholly inside
+ * `within` across. Read on the device pixels each cell covers whole, two in from its edges, where a
+ * column's or a row's rule would be: a digit's stroke covers some pixel whole, and that pixel is
+ * the text's own colour (README.md, "Reading pixels").
+ */
+async function inkOf(page, cells, within) {
+    const scale = await page.evaluate(() => window.devicePixelRatio);
+    const bounds = await within.boundingBox();
+    let ground = null;
+    let inked = null;
+    let farthest = -1;
+    let read = 0;
+    for (const cell of await cells.all()) {
+        const box = await cell.boundingBox();
+        if (!box || box.x < bounds.x || box.x + box.width > bounds.x + bounds.width) {
+            continue;
+        }
+        read++;
+        const region = await painted(page, onDeviceGrid(box, scale));
+        const { xs, ys } = wholePixelCentres(box, scale);
+        ground ??= region.at(xs[2], ys[Math.floor(ys.length / 2)]);
+        for (const y of ys.slice(2, -2)) {
+            for (const x of xs.slice(2, -2)) {
+                const pixel = region.at(x, y);
+                const distance = pixel.reduce((sum, v, i) => sum + Math.abs(v - ground[i]), 0);
+                if (distance > farthest) {
+                    farthest = distance;
+                    inked = pixel;
+                }
+            }
+        }
+    }
+    expect(read, 'a value cell stands wholly in view').toBeGreaterThan(0);
+    return { ground, inked };
 }
 
 /** The number of the last Change Batch the page applied, as its status line says it. */
@@ -99,6 +171,74 @@ for (const chrome of ['builtin', 'mud']) {
             // Resumed, the batches mark values again.
             await page.locator('#pivot-live-local-toggle').click();
             await expect.poll(() => marked(page, 'local').count(), { timeout: 15_000 }).toBeGreaterThan(0);
+        });
+
+        test(`PV-37/ADR-0067: a server cut off leaves a Stale Report whose value cells paint muted and readable, its labels as they were, until Retry brings the newest back (${chrome})`, async ({ page }) => {
+            test.setTimeout(90_000);
+            await open(page, chrome);
+            // Only the server's report is read here: the page's own batches are paused, so that once
+            // the server's live updates are off too the circuit goes quiet (ADR-0056).
+            await page.locator('#pivot-live-local-toggle').click();
+            await expect(page.locator('#pivot-live-local-toggle')).toHaveText("Resume the page's changes");
+            const shell = pivot(page, 'server').locator('.ex-pivot-report');
+            const notice = pivot(page, 'server').locator('.ex-pivot-stale[role=status]');
+            // The first row — the first region's, with its subtotals — its value cells and its label.
+            const values = rows(page, 'server').first().locator('.ex-cell-numeric');
+            const label = rows(page, 'server').first().locator('[role=gridcell]').first();
+            await expect(values.first()).toBeVisible();
+            const colourOf = (cell) => cell.evaluate((element) => getComputedStyle(element).color);
+            const ink = await colourOf(values.first());
+            await expect(shell).not.toHaveClass(/ex-pivot-report-stale/);
+
+            // Cut off: the question the hub's next notice asks fails, and the report stays, stale.
+            await page.locator('#pivot-live-server-cut').click();
+            await expect(page.locator('#pivot-live-server-cut')).toHaveText('Reconnect the server');
+            await expect(notice).toContainText('Showing the data as of', { timeout: 30_000 });
+            await expect(notice).toContainText('The page cut the server off.');
+            await expect(shell).toHaveClass(/ex-pivot-report-stale/);
+            // Nothing more is asked once the live updates are off; the marks of the last answer end.
+            await page.locator('#pivot-live-server-toggle').click();
+            await expect(page.locator('#pivot-live-server-toggle')).toHaveText("Turn the server's live updates on");
+            await expect(marked(page, 'server')).toHaveCount(0, { timeout: 10_000 });
+            await page.mouse.move(0, 0);
+            await circuitQuiet();
+            await expect(notice).toContainText('The page cut the server off.');
+
+            // Decided: every value cell takes the stale colour — under MudBlazor the palette's secondary
+            // text, as the grid's Wrapper paints a Stale cell — and the labels keep the ink.
+            const stale = await colourOf(values.first());
+            expect(stale, 'the value cells are painted in another colour than the ink').not.toBe(ink);
+            for (const cell of await values.all()) {
+                expect(await colourOf(cell)).toBe(stale);
+            }
+            expect(await colourOf(label), 'a label keeps the ink').toBe(ink);
+            if (chrome === 'mud') {
+                expect(stale, "the palette's secondary text").toBe(await probedColour(values.first(), 'var(--mud-palette-text-secondary)'));
+            }
+            // Painted: the numbers' most inked pixel is the stale colour exactly, over the cells' ground.
+            const within = report(page, 'server').locator('.ex-scroller');
+            const muted = await inkOf(page, values, within);
+            const staleInk = inkOver(stale, muted.ground);
+            expect(paints(muted.inked, staleInk), `${muted.inked} over ${muted.ground}: the stale colour paints ${staleInk}`).toBe(true);
+            expect(paints(muted.inked, inkOver(ink, muted.ground)), 'not the ink').toBe(false);
+            if (chrome === 'builtin') {
+                // ExPivot's default keeps the readable contrast body text keeps (UX-8).
+                expect(contrast(staleInk, muted.ground), `${staleInk} over ${muted.ground}`).toBeGreaterThanOrEqual(4.5);
+            }
+
+            // Reconnected and retried: the newest is shown, the notice goes, and the mark with it.
+            await page.locator('#pivot-live-server-cut').click();
+            await expect(page.locator('#pivot-live-server-cut')).toHaveText('Cut the server off');
+            await notice.getByRole('button', { name: 'Retry' }).click();
+            await expect(shell).not.toHaveClass(/ex-pivot-report-stale/);
+            await expect(notice).toHaveText('');
+            await expect(marked(page, 'server')).toHaveCount(0, { timeout: 10_000 });
+            await page.mouse.move(0, 0);
+            await circuitQuiet();
+            expect(await colourOf(values.first())).toBe(ink);
+            const current = await inkOf(page, values, within);
+            const currentInk = inkOver(ink, current.ground);
+            expect(paints(current.inked, currentInk), `${current.inked} over ${current.ground}: the ink paints ${currentInk}`).toBe(true);
         });
 
         test(`PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (${chrome})`, async ({ page }) => {

@@ -59,12 +59,19 @@
     nothing, and the Selection stays while only values change. The page's changes stop, and the
     server's live updates go off, when you leave the page.
 </p>
+<p>
+    <strong>Cut the server off</strong> stands for a server out of reach: the server report's next
+    question fails, and ExPivot keeps the last report it could compute as a Stale Report. The notice
+    under its Pivot Toolbar says as of when, with Retry, and its numbers are muted until the server
+    answers again (ADR-0067).
+</p>
 
 <p><code>?trades=1000000&amp;batch=1000</code> holds a million trades in this process and amends a thousand a batch, instead of 2,000 and five.</p>
 
 <div class="demo-toolbar">
     <button id="pivot-live-local-toggle" @onclick="ToggleLocal">@(_localOn ? "Pause the page's changes" : "Resume the page's changes")</button>
     <button id="pivot-live-server-toggle" disabled="@(!_connected)" @onclick="ToggleServerAsync">@(_serverOn ? "Turn the server's live updates off" : "Turn the server's live updates on")</button>
+    <button id="pivot-live-server-cut" disabled="@(!_connected)" @onclick="ToggleCut">@(_cutOff ? "Reconnect the server" : "Cut the server off")</button>
 </div>
 
 <div class="demo-pivot-pair">
@@ -223,10 +230,19 @@
     private Task? _hubStarting;
     private bool _liveAsked;
 
+    // "Cut the server off" stands for a server out of reach: while it is on, each question for the
+    // report's Window fails before it is sent, and ExPivot keeps the last report it could compute as
+    // a Stale Report until Retry, or the next notice, brings an answer (ADR-0067).
+    private bool _cutOff;
+
     private async Task ConnectAsync(CancellationToken token)
     {
         var (fields, features) = await DemoServerPivot.DeclaredAsync(Api.Http, token);
-        var server = _server = DemoServerPivot.Fetch(Api.Http, fields, features);
+        var server = _server = DemoServerPivot.Fetch(Api.Http, fields, features, asked: question =>
+        {
+            if (_cutOff && question == "api/pivot/window")
+                throw new HttpRequestException("The page cut the server off.");
+        });
         StateHasChanged();
         // The hub says each Source Version the data moves on to; the page passes it on, and ExPivot
         // asks the server again for the whole answer (ADR-0067). Neither ExPivot nor ExGrid learns
@@ -303,6 +319,8 @@
     }
 
     private void ToggleLocal() => _localOn = !_localOn;
+
+    private void ToggleCut() => _cutOff = !_cutOff;
 
     private async Task ToggleServerAsync()
     {
