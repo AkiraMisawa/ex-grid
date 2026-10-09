@@ -105,6 +105,17 @@ see. Everything else a write lands on was on screen, and a live change there wea
   ([`2026-10-06-macos-fluxor-spike`](../../verification/2026-10-06-macos-fluxor-spike/README.md),
   proposal B).
 - **A refusal after the handler has completed is not offered.** By then the editor is closed.
+- **One commit at a time** *(decided with the user, 2026-10-09)*. While the Consumer hears a commit, the
+  editor stands, so that a refusal can keep the typing. A gesture that arrives meanwhile — a press on the
+  rows, a header, a column menu, a double click, a context menu, the Formula Bar or a key — waits for the
+  commit to land and is then answered against what it left, as if the Consumer had answered at once: one
+  commit raises one Edit Intent. When the commit was refused, the editor is still open with the text, and
+  a press elsewhere commits it again, as it would have had the Consumer refused at once; dropping the
+  press instead would answer a slow Consumer and a fast one differently. A placement awaited inside the
+  commit's own handler does not wait for it. As first built, a second press while an asynchronous
+  handler ran raised a second Edit Intent for the same commit, and one order of completion left the grid
+  believing it still heard a commit, after which a replaced Source no longer discarded the editor (found
+  in review, 2026-10-09).
 
 ## What a gesture carries, and what the grid keeps
 
@@ -133,13 +144,13 @@ On 2026-10-08 the user compared this track with the Codex track of live data con
 track's grid. The review of both found what follows; each was decided with the user or follows from a
 rule above.
 
-**A replaced Source is a new binding** *(decided with the user)*. A Consumer that hands the grid another
+**A replaced Source drops what was aimed at it** *(decided with the user)*. A Consumer that hands the grid another
 `IGridSource` instance has replaced what the positions name, even when the two report the same Row
 Sequence Version — two fresh `GridSource.From` both start at 0, and until then a paste, a commit or an
 Action press aimed at the old source landed on the new one's row. Now:
 - the Selection is dropped, as for an order move (ADR-0011);
-- a paste, Delete, Ctrl+D, Ctrl+R, a fill-handle release or a fill key told a paint under the old
-  binding is refused as `PasteRefusalReason.SourceChanged`, and an Action press as
+- a paste, Delete, Ctrl+D, Ctrl+R, a fill-handle release or a fill key told a paint of the old source
+  is refused as `PasteRefusalReason.SourceChanged`, and an Action press as
   `ActionRefusalReason.SourceChanged`, naming no row;
 - an open Cell Editor or Formula Bar edit is discarded as `EditDiscardReason.SourceChanged`: its row
   belongs to data that is no longer shown, as a change of columns discards one. No Edit Intent is raised;
@@ -151,10 +162,10 @@ Action press aimed at the old source landed on the new one's row. Now:
   commit's own handler changes are the commit's in the same way: accepted, no `ColumnsChanged` follows,
   and refused, the edit is discarded once as `ColumnsChanged`, or as `SourceChanged` when the source
   was replaced too. Columns changed by anything else still discard an open editor;
-- a Find answer from the old binding is refused as `FindRefusalReason.SourceChanged`, and the panel says
+- a Find answer from the old source is refused as `FindRefusalReason.SourceChanged`, and the panel says
   the data was replaced. As first built, the answer moved the Focus within the new source;
-- a placement and the Selection Summary compare the binding as well as the version, and a Mark intent
-  from the old binding moves nothing in the new one;
+- a placement and the Selection Summary compare the source as well as the version, and a Mark intent
+  from the old source moves nothing in the new one;
 - a press on a mark carries the paint it was made on, as an Action press does
   ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of 2026-10-08). One made on what
   the old source painted marks nothing
@@ -165,18 +176,22 @@ Action press aimed at the old source landed on the new one's row. Now:
   ([ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)'s rule that an edit is never
   committed into a new document, kept for every write).
 
-The binding is compared by reference, and no old source is held to compare it
+Sources are told apart by reference: the grid moves a number whenever its `Source` parameter becomes
+another instance, and holds no old source to compare
 ([ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md)). The Codex track
 found the same hole and closed it with the same rule for its own grid.
 
 Accepted limit: a placement asked after the replacement, with a Row Sequence Version the Consumer
 computed under the old source, places when both sources stand at that version. The grid cannot tell such
 a call from one computed under the new source. The version is the Consumer's to move, and
-`PlaceSelectionAsync` says so.
+`PlaceSelectionAsync` says so. Accepted by the user on 2026-10-09.
 
 **Keys aimed with a dropped Selection open nothing** *(decided with the user)*: see
 [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of
-2026-10-08.
+2026-10-08. With nothing selected, a key told a paint of a Source since replaced goes the same way: it
+opens nothing, writes nothing, and the run is said once as `SourceChanged`. As first built, it fell
+through to the first-key rule and typed into the new source's first cell (found in review, 2026-10-09).
+Across an order move under the same Source, a key with nothing selected keeps the first-key rule.
 
 **D1 settles at a point in the grid's order of events.** As first built, the user's own write stayed
 "unpainted" until a later paint showed the cell with other text. A write that left the text as it was —
@@ -192,13 +207,19 @@ once, when the editor opened, so the same keys gave a notice on one host and non
 - an editor keeps the painted text when it opened as what it saw, and while one of the user's own writes
   to that cell is unsettled, the cell's painted text at that write's settling becomes what it saw;
 - the Edit Intent's `SeenText` is what it saw and `ReplacedText` the text now, and the Overwrite Notice is
-  raised exactly when they differ.
+  raised exactly when they differ;
+- what it saw is only ever read from the edited row: by its Row Key, or by its position while the order
+  holds. While the Window does not hold that row, the editor keeps what it saw before — never another
+  row's text, and never nothing. As first built, the rebase read whatever row stood at the editor's
+  position (found in review, 2026-10-09).
 
 Accepted limits: a write a Consumer declines without `Refuse` counts as accepted, as LV-19 says, so it
 settles at the next new Window; a Consumer that writes back only after a later Window has its own value
 told as a change; and a fetching source's range answer already on its way when a handler completes can
-settle a write it does not carry. Each errs, if at all, towards a notice, except the first, which is the
-Consumer's contract.
+settle a write it does not carry; and when an order move lets go of a write the open editor awaited while
+the edited row is out of the Window, the editor keeps what it saw before, so its commit may tell the
+user's own write as a change. Each errs, if at all, towards a notice, except the first, which is the
+Consumer's contract. The user accepted all four on 2026-10-09.
 
 ## What changed on 2026-10-07
 

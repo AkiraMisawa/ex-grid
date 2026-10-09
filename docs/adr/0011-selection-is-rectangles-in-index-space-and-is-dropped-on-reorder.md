@@ -277,6 +277,11 @@ review of both found what it does to keys that were on their way.)*
   is a first key on the empty Selection. Delete and the fill keys aimed the same way are refused as
   writes, and Space aimed at an action is refused as the action's press is (ADR-0142).
 - **Keys told a newer paint follow the first-key rule**, as before: the user has seen the new rows.
+- **With nothing selected** *(found in review, 2026-10-09)*: a key typed with nothing selected is a first
+  key on the paint it was typed against. Told a paint of a Source since replaced, it goes as above — it
+  opens nothing, writes nothing, and the run is said once as `SourceChanged` — where, as first built, it
+  typed into the new source's first cell. Across an order move under the same Source it keeps the
+  first-key rule: the cell it opens belongs to the same data, and the user typed at no cell in particular.
 - Each key carries the paint it was typed against, so the outcome is the same at any speed
   (principle 6); the composition's text carries the paint its `compositionstart` read
   ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of 2026-10-08).

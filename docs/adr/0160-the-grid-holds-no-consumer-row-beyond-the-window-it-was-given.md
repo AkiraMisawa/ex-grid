@@ -71,12 +71,16 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
   - the reports the Change Highlight compares, and the `versionsKept` newest;
   - the display rows of the Window on screen;
   - the display rows of the Window last served under the Report Version before it, which is the
-    baseline of the next delta ([ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+    Baseline Window of the next Window Changes ([ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
 
   Once the pivot renders again, the grid holds no display row of an earlier Window. *(Restated on
   2026-10-08, when LV-22's ExPivot test was built. The first wording promised no earlier Window's rows,
   and no report beyond the versions kept and the one on screen; the design taken that day promises
-  neither. Under the Claude Code track's ADR-0161 the highlight kept no report.)*
+  neither. Under the Claude Code track's ADR-0161 the highlight kept no report. **Decided with the user
+  on 2026-10-09**, in the grilling of the merged pull request: the report source may keep the reports the
+  Change Highlight compares, within the bound ADR-0153 states, because the mark is a state of the cell
+  that a cell scrolled into view must show; ADR-0153's "Why reports, and not times" gives the reasons and
+  the options rejected.)*
 - **Observational**: the loop of the out-of-memory record — 101,001 report rows, 20 live redraws in the
   browser, the managed heap after a full collection after each — is recorded in `metrics.json`. It
   levels off.

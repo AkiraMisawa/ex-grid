@@ -274,6 +274,9 @@ Columns, where Excel puts it, or in Rows.
   - **The Consumer chooses them in one line, explicitly.** They never follow the culture on their
     own, because a screen whose language changed unasked is the surprise the family avoids.
   - A Consumer that needs another language replaces the words by id, as before.
+  - *(2026-10-09.)* They include the sentences ExPivot gives the grid to say for it — a refused Copy or
+    Selection Summary — and a source's own refusal is said inside `source-refused`, never raw. As first
+    built with the report-Window design, five such sentences were English only (found in review).
 
 ## The held answer is kept, and the layout is redone
 

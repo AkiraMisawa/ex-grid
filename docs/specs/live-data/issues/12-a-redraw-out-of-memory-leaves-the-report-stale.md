@@ -23,7 +23,9 @@ The exception reaches the renderer from `ExPivot.AskAsync` and the page stops
 
 2026-10-07: Built. `ExPivot.Asking.cs` catches an `OutOfMemoryException` raised while a redraw for newer data
 makes its cube (`AskAsync`) or lays out its report (`LayOutAsync`), and only there: a layout the user asked
-for is not a redraw, and still fails as before. What was being built is dropped, the report on screen
+for is not a redraw, and still fails as before. *(2026-10-08: no longer — a layout change that runs out of
+memory is refused, the layout goes back and the Pivot Toolbar says so, PV-47; the user confirmed it on
+2026-10-09. The catch now sits in the Codex track's computation, which replaced this one.)* What was being built is dropped, the report on screen
 stays as a Stale Report whose reason is `stale-out-of-memory` ("memory ran out while the newest data was
 laid out."; Japanese in `PivotWords`), and the next change asks again. `LastError` is left alone: memory
 running out is not the source's failure. The engine's Order Key no longer wraps an

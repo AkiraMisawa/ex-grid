@@ -1,6 +1,8 @@
 # 10: The report's Change Highlight keeps times, not reports
 
-Status: done
+Status: wontfix — built on the Claude Code track on 2026-10-07, and replaced on 2026-10-08 when the
+user took the Codex track's ExPivot (ADR-0151 to ADR-0153). None of what this ticket names is in the
+merged code; ADR-0161's table says what replaced each part.
 
 **What to do:** build the Change Highlight part of [ADR-0161](../../../adr/0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md).
 - ExPivot hands the grid one `CellChangedAt` for as long as a history lasts.

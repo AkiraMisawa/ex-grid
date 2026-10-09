@@ -33,17 +33,25 @@ Decided with the user on the Codex track, 2026-10-06, and taken on 2026-10-08 fo
   computes the Pivot Report and sends the requested Window and its changes; local data runs the same
   engine in the browser;
 - [ADR-0152](../../adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md): Report
-  Versions, deltas that name their baseline, automatic recovery, versioned operations;
+  Versions, Window Changes that name their Baseline Window, automatic recovery, versioned operations;
 - [ADR-0153](../../adr/0153-reports-share-unchanged-computation-and-display-rows-own-no-report.md):
   computation follows dependencies, and display rows own no report.
 
 And on 2026-10-08, merging the two (each recorded in the ADR it changes): a replaced Source refuses
 what was aimed at the old one, and keys aimed with a dropped Selection open nothing (ADR-0142's and
 ADR-0011's notes); the D1 rule settles at the first Window after a write's handler; `RowGone` is
-`RowLeftTheWindow`; a delta is checked against its Window Digest before it is shown (ADR-0152);
+`RowLeftTheWindow`; Window Changes are checked against their Window Digest before they are shown (ADR-0152);
 Details are asked by Source Version; the Change Highlight is timed by the component's clock; a
 cancelled computation keeps its state (ADR-0153); and a layer-3 wait's bound tells a hang, never a
 speed (ADR-0056).
+
+And on 2026-10-09, in the review and grilling of the merged pull request: one commit at a time, keys at a
+replaced Source with nothing selected, and what the editor saw read only from the edited row (ADR-0142,
+ADR-0011); a report that shrinks under the Window scrolled to is shown at its last rows (ADR-0151); the
+report source keeps the reports the Change Highlight compares, decided with the user (ADR-0153, LV-22);
+a first report computed from what the cube build and first layout made (ADR-0153); a Stale Report's cells
+marked and Copy from it refused (ADR-0067); mark presses aimed at an older display (ADR-0043, MK-9); and
+the names `Source`, `ReportSource` and Window Changes (ADR-0152).
 
 The criteria are §32 of `docs/definition-of-done.md` (LV-1 to LV-33; the Codex track's LV-20 to LV-28
 are LV-24 to LV-31 here), PV-2 and PV-42 to PV-48 in §29, SM-15 in §31, and two rows of §21.11. What is built, found and not done is in `docs/implementation-status.md`, "ExGrid's
@@ -76,8 +84,9 @@ its component (ADR-0140). The bundled sources keep a map of keys, take changes b
 incrementally and vouch that their Windows hold no row twice, so the grid does not walk them
 (ADR-0141). What did not outlive an update was decided on 2026-10-07:
 - a Window a Consumer pushes itself may now be vouched for (ADR-0141);
-- ExPivot makes its next cube and report from the last and shares the rows it did not change
-  (ADR-0161).
+- ExPivot makes its next cube and report from the last and shares the rows it did not change — on
+  2026-10-07 as the Claude Code track's ADR-0161, and since 2026-10-08 as the Codex track's incremental
+  engine (ADR-0153), which replaced it.
 
 What the grid kept beyond an update, it no longer keeps (ADR-0160).
 

@@ -1,6 +1,8 @@
 # 03: ExPivot keeps its report across live redraws
 
-Status: done — decided 2026-10-07 as ADR-0161; built by tickets 09 to 12
+Status: done — decided 2026-10-07 as ADR-0161 and built by tickets 09 to 12 on the Claude Code track;
+replaced on 2026-10-08, when the user took the Codex track's ExPivot (ADR-0151 to ADR-0153), whose
+incremental engine meets this ticket's aim. Of tickets 09 to 12 only 12's rule stayed (ADR-0161)
 
 **The aim:** a live redraw costs what changed, not what the report holds. Today ExPivot builds its
 cube, its report and every report row again on every redraw, at most four times a second. At 401,001

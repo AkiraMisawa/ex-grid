@@ -4,8 +4,16 @@
 This settles the API-compatibility, remote Order Key and recovery questions left by
 [ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md).
 Built on `claude/live-data-next` and taken on `claude/live-data-best` on 2026-10-08, with the
-sections of that day below: Details by Source Version, a delta checked against a digest, and a
+sections of that day below: Details by Source Version, Window Changes checked against a digest, and a
 throwing Order Key refused by name.)*
+
+*(2026-10-09: what this record first called a delta is **Window Changes** in the glossary — "delta"
+names a risk measure here — and the words below follow it; `PivotReportUpdate.Delta` became
+`PivotReportUpdate.Changed`. The same day the user confirmed Details by Source Version, which had been
+settled while merging, and chose the component's names: `ExPivot.Source` takes a Pivot Source, as on
+`main` and in v0.1.0-beta.2, so that a Consumer's page keeps compiling, and `ReportSource` takes a report
+source. The `DataSource` the Codex track had given the bundled data, a word the glossary avoids, went
+before any release.)*
 
 The new server boundary returns report Windows rather than the Leaf Aggregates expected by the
 old `PivotSource.Fetch` contract. The component also exposes a synchronous whole `PivotReport`,
@@ -42,7 +50,7 @@ This changes ADR-0060's earlier statement that an Order Key only runs on the com
 and a server never sees it. Its ordering semantics are unchanged: the key orders Items, does
 not merge them, and has the same tie and Blank/error rules.
 
-## A delta names the report it advances
+## Window Changes name the report they advance
 
 **Source Version alone is insufficient.** Two reports can use the same data under different
 Layouts, collapse states, sorts or display settings. A **Report Version** identifies the
@@ -50,17 +58,17 @@ settled report state, including which Source Version and report settings it used
 distinct from the Row Sequence Version, which changes only when row keys or their order change.
 The wire representation of that identity is an implementation choice.
 
-- A delta identifies its baseline and resulting Report Version and belongs to the requested
-  report/Window. It is applied atomically only to that baseline. An obsolete response never
+- Window Changes identify their Baseline Window and resulting Report Version and belong to the
+  requested report/Window. They are applied atomically only to that baseline. An obsolete response never
   replaces the current request's result, even if its Source Version happens to match.
 - A Source Version change with no changed displayed value still advances the report's version
   information. It must not leave Details or Selection Summary reading an older state merely
-  because the Window's visible delta was empty.
+  because the Window's visible changes were empty.
 - A version-specific operation captures its report identity and target. Copy and the Selection
   Summary keep their existing full-range and version-correct semantics. An operation that cannot be
   answered under its captured version is refused; it is never silently rebound to the latest report.
 - **Details are asked by the Source Version the cell was shown under** *(settled while merging,
-  2026-10-08)*. They are the Source Records behind a cell — its row Items, column Items and Hidden
+  2026-10-08; confirmed by the user on 2026-10-09)*. They are the Source Records behind a cell — its row Items, column Items and Hidden
   Items — and a layout gesture does not change them. Asked by Report Version, as first built, an open
   Details tab stopped paging after two layout-only gestures (two Report Versions are kept) and said
   that the data had changed, which was untrue. `PivotReportMetadata.DetailsQuery` builds the engine's
@@ -69,9 +77,9 @@ The wire representation of that identity is an implementation choice.
 
 ## Missing baselines recover automatically
 
-**When a gap, reconnection or discarded server state makes a delta inapplicable, request a
+**When a gap, reconnection or discarded server state makes Window Changes inapplicable, request a
 complete current Window for the active report automatically.** The client does not guess how
-to apply the delta or mix rows from different versions. The complete replacement, its extent
+to apply the changes or mix rows from different versions. The complete replacement, its extent
 and its metadata become current together. Superseding the request still discards its answer.
 
 If recovery fails or is refused, keep the last complete report identified as a Stale Report and
@@ -84,32 +92,32 @@ The alternative was to stop at Stale Report/Retry whenever a baseline was lost. 
 automatic Window recovery first, while preserving explicit failure when a complete answer
 cannot be obtained.
 
-## A delta is checked before it is shown *(decided with the user, 2026-10-08)*
+## Window Changes are checked before they are shown *(decided with the user, 2026-10-08)*
 
-A delta is the server's word for which rows of the Window changed. A Consumer that builds deltas
-itself — a server not running `LocalPivotReportSource`, a relay that coalesces or drops deltas, a client
-delegate that turns push messages into deltas — can leave out a row whose shown values changed, most
+Window Changes are the server's word for which rows of the Window changed. A Consumer that builds them
+itself — a server not running `LocalPivotReportSource`, a relay that coalesces or drops them, a client
+delegate that turns push messages into them — can leave out a row whose shown values changed, most
 easily a subtotal or a grand total. The row then keeps its old values beside new ones, and nothing says
 so: a quiet wrongness of the kind principle 1 forbids.
 
-**So every delta carries the digest of the Window it produces, and the client checks it before the result
+**So Window Changes always carry the digest of the Window they produce, and the client checks it before the result
 becomes current.**
 - `PivotReportUpdate.WindowDigest`: FNV-1a 64 over a canonical encoding of the Report Version, the Window's
   start, its row count and the report's, then every row of the Window in order — its role, Value Field,
-  key Items, Row Path, labels and each value cell's shown text. Not the rows the delta carries: a digest
+  key Items, Row Path, labels and each value cell's shown text. Not the rows the changes carry: a digest
   over those would agree with the mistake. Nothing per process enters it (`GetHashCode` never does), so
   a server on CoreCLR and a browser on WebAssembly compute the same value.
-- `LocalPivotReportSource` computes it over the whole Window after the delta, and on every complete
+- `LocalPivotReportSource` computes it over the whole Window after the changes, and on every complete
   Window.
-- `PivotReportClient` applies the delta to the Window it holds, computes the digest of the result and
+- `PivotReportClient` applies the changes to the Window it holds, computes the digest of the result and
   compares. A missing or mismatching digest is recovered as a missing baseline is: a complete current
-  Window is asked for, and nothing of the unverified delta is painted. If that fails, the last complete
+  Window is asked for, and nothing of the unverified changes is painted. If that fails, the last complete
   report stays as a Stale Report with Retry.
-- A Consumer that builds deltas computes the digest over its whole resulting Window. The XML docs of
+- A Consumer that builds Window Changes computes the digest over its whole resulting Window. The XML docs of
   `PivotReportUpdate`, `PivotReportRowChange` and `PivotReportSource.Fetch` say so.
 
 Considered and not taken: **writing the obligation down and trusting it** — chosen first, then reversed
-by the user the same day — and **sending complete Windows only**, which gives up the delta's saving for a
+by the user the same day — and **sending complete Windows only**, which gives up the saving of sending changes for a
 check that costs a hash of the painted rows.
 
 ## A registered Order Key that throws is refused by name *(2026-10-08)*
@@ -122,7 +130,7 @@ exception was lost to the transport, and ADR-0060's named refusal with it.
 
 Section 32 judges this ADR with LV-26 to LV-28 (LV-23 to LV-25 on the Codex track). Tests include equal
 Source Versions with different report settings, obsolete replies, missing baselines, failed recovery, an
-empty visible delta whose off-screen selection values changed, Details paged across a collapse and a sort,
-a delta missing a subtotal's change, a delta with no digest, the digest across a JSON round trip, and a
+empty visible change whose off-screen selection values changed, Details paged across a collapse and a sort,
+Window Changes missing a subtotal's change, Window Changes with no digest, the digest across a JSON round trip, and a
 throwing Order Key over JSON. Local/server reference equality and complete-batch publication are LV-24;
 ADR-0153 settled the row ownership, the incremental design and the full-refresh capability.

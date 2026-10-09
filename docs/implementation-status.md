@@ -867,12 +867,13 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
     `docs/specs/live-data`.)* ADR-0142 was rewritten: a write lands as the user entered it, on the row it
     was aimed at; only a change under the open editor is told, by an Overwrite Notice; an order move is
     refused as `OrderMoved`; the editor outlives an order move and follows its row (ADR-0011's note).
-    ADR-0160: the grid holds no row beyond its Window, checked by weak references. ADR-0161: ExPivot makes
-    its next cube and report from the last, its rows hold no value and no report, its Change Highlight
-    keeps times, and a redraw out of memory leaves the report stale. ADR-0141: a pushed Window may vouch
+    ADR-0160: the grid holds no row beyond its Window, checked by weak references. ADR-0161, on that track
+    (for ExPivot, replaced on 2026-10-08, below): ExPivot made its next cube and report from the last, its
+    rows held no value and no report, its Change Highlight kept times, and a redraw out of memory left the
+    report stale. ADR-0141: a pushed Window may vouch
     (`VouchesDistinctRows`), and the painted rows are checked. ADR-0130: the Selection Summary walks only
     while figures stand, over the Selection's positions.
-  - **Measured before and after**
+  - **Measured before and after** on that track's code
     ([`2026-10-07-macos-live-update-costs-after`](../verification/2026-10-07-macos-live-update-costs-after/README.md)):
     - ExPivot's live redraw at 401,001 report rows went from 268.5 ms to 19.0 ms on CoreCLR, and from one
       redraw at 2,338 ms followed by running out of memory to 532 ms in the browser.
@@ -882,7 +883,7 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
       redraw did before, 394.5 ms against 268.5 at 401,001 rows on CoreCLR. Most of it is comparing every
       row for the Change Highlight, as ADR-0161 chose.
   - *(2026-10-06 on the Codex track, `claude/live-data-next`.)* The same tickets, decided separately:
-    ADR-0151 to ADR-0153 — a server computes the Pivot Report and sends Windows and deltas, the browser runs
+    ADR-0151 to ADR-0153 — a server computes the Pivot Report and sends Windows and their changes, the browser runs
     the same incremental engine for local data, Report Versions and versioned Copy, Summary and Details,
     and detached display rows. Its records:
     [the costs](../verification/2026-10-06-macos-live-update-costs/README.md),
@@ -902,11 +903,32 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
     - an action press read its row at the release, and a macOS Ctrl+click fired later for nobody (LV-12);
     - ExPivot's cancelled computation threw its incremental state away (150,002 rows read for a
       one-record update after one cancellation), its Details stopped after two layout gestures, its
-      Change Highlight ran on the server's clock, a delta was trusted whole, a row of another report was
+      Change Highlight ran on the server's clock, Window Changes were trusted whole, a row of another report was
       read as this one's, and a throwing server Order Key lost its name: each fixed (LV-26 to LV-30);
     - `SlicedBuildTests` failed one run in four on a race in its helper: fixed, 25 runs of 25.
   - **Not measured on the merged code.** Neither track's after-record measured this branch; PV-48 asks for
     it.
+  - *(2026-10-09: reviewed and grilled.)* An independent review of the merged pull request found, and
+    this branch fixed, with a failing test first for each:
+    - a press made while an asynchronous `OnEdit` was heard committed the same edit again, and could leave
+      the grid believing it still heard a commit, so a replaced Source no longer discarded the editor: now
+      one commit at a time (ADR-0142, ED-12);
+    - scrolling a large ExPivot report and then shrinking it — a layout change, a collapse, a filter,
+      newer data — handed the grid a Window past the report's end, and the exception ended the circuit:
+      now the Window is clamped into the report (ADR-0151, LV-25);
+    - with nothing selected, keys at a replaced Source's paint typed into the new source; what the editor
+      saw could be read from another row (ADR-0011, ADR-0142, LV-17, LV-33);
+    - ExPivot's refused Copy and Summary spoke English only (ADR-0060, PV-33);
+    - the first report took 5.1 s at 401,001 rows against `main`'s 0.6 s: the engine copied its state
+      eagerly and laid the report out twice; now 0.8 s (ADR-0153).
+
+    The user then decided, in a grilling: the report source keeps the reports the Change Highlight
+    compares (ADR-0153, LV-22); a press made while a commit is heard waits for it; a Stale Report's cells
+    are marked and Copy from it is refused (ADR-0067, PV-49); a mark press aimed at an older display marks
+    the page it named, or is refused and told (ADR-0043, MK-9); `ExPivot.Source` takes a Pivot Source again
+    and `ReportSource` a report source, and a delta is Window Changes (ADR-0152, `CONTEXT.md`); and
+    confirmed what the merge had settled — the layout change refused when memory runs out, Details by
+    Source Version, a full-refresh source asked to refresh, D1's limits and a placement's.
 
 **Found by building it, and fixed.**
 

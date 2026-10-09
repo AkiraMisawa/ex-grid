@@ -175,6 +175,16 @@ same set of rows, so selection survives the frequent kind of update
 ([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
 _Avoid_: data version, generation (this names the order only)
 
+**Paint**:
+What the grid's rows show between two renders that change it — another Source, another order, other
+row instances or other columns make a new paint — named on the Viewport, so that a gesture (a key, a
+paste, a press on an Action or a mark) says which paint it was taken against. The grid judges the
+gesture against that paint, never against what it holds when the gesture arrives, which on a circuit
+is a round trip later
+([ADR-0142](./docs/adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md),
+[ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+_Avoid_: frame (the browser's), render (a render that paints the same is the same paint), snapshot
+
 **Grid Source**:
 The bundled convenience layer that sits on top of the push interface. It wraps an in-memory
 array (`GridSource.From`) or a server query (`GridSource.Fetch`) and takes over holding the
@@ -833,12 +843,26 @@ _Avoid_: Source Version (that names the data alone), Row Sequence Version (that 
 timestamp
 
 **Window Digest**:
-A digest of a Pivot Report's Window as it stands after a delta — every row of the Window, its key,
-labels and shown texts, with the Window's extent and Report Version — that the delta carries, and that
-the component computes again before it shows the result. A delta whose digest is missing or differs is
-never painted: the complete Window is asked for instead
+A digest of a Pivot Report's Window as it stands after Window Changes — every row of the Window, its
+key, labels and shown texts, with the Window's extent and Report Version — that the changes carry, and
+that the component computes again before it shows the result. Window Changes whose digest is missing or
+differs are never painted: the complete Window is asked for instead
 ([ADR-0152](./docs/adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
 _Avoid_: checksum, hash (the mechanism, not the term), signature (it proves no sender)
+
+**Window Changes**:
+The rows of a Pivot Report's Window that changed since a Baseline Window — each row whole, subtotals
+and grand totals included — sent with the Report Version and the Window Digest of the Window they make,
+in place of the whole Window. The component applies them to the Baseline Window it holds and shows the
+result only once the digest matches
+([ADR-0152](./docs/adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+_Avoid_: delta (a risk measure here), diff, patch
+
+**Baseline Window**:
+The Window, under a Report Version, that Window Changes are applied to: the one the component holds
+and names when it asks. A source that no longer holds it answers with the complete Window instead
+([ADR-0152](./docs/adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+_Avoid_: base, previous Window (the baseline is named, never assumed)
 
 **Leaf Aggregate**:
 For each combination of the row and column fields' Items that has records, the parts each Value

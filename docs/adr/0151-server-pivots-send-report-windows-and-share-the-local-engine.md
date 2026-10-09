@@ -97,10 +97,25 @@ million-record fixture completed 70 updates. Source record count alone did not e
   not take Details away) — ADR-0152.
 
 The earlier Leaf Aggregate contract remains documented as the existing API, with its replacement
-authorized by ADR-0152. ADR-0066's rejection of server report Windows and ADR-0067's deferral of a delta
-transport no longer govern this new path. Their correctness rules still apply: one complete
+authorized by ADR-0152. ADR-0066's rejection of server report Windows and ADR-0067's deferral of sending
+Window Changes no longer govern this new path. Their correctness rules still apply: one complete
 batch, stale answers discarded, a Stale Report identified, and no changed value presented as
 what the user previously saw.
+
+## A report that shrinks under the Window scrolled to *(found in review and fixed, 2026-10-09)*
+
+ExPivot asks for the Window the grid needs, and a later question — a layout change, a collapse, a
+filter, newer data — asks for that Window again. As first built, when the new report ended before the
+Window started, the source answered no rows at the old start and ExPivot handed the grid a Window past
+the report's row count. ExGrid's own check refused it with an exception during render, which on Blazor
+Server ends the circuit: scrolling a large report and then collapsing it took the page down.
+
+Now, when the report answered ends before the Window asked for ends, ExPivot asks in the same question
+for the Window clamped into it — the same height, ending at the report's last row, as ExGrid clamps its
+own slice — and shows it once it lands; the report on screen stays until then. The grid is never handed
+rows past the report's row count, and later questions ask for the clamped Window until the grid asks for
+another. A source answers the Window asked, with no rows past its end. LV-25 holds it, locally and over
+JSON, in layer 2 and in `pivot-db`.
 
 Section 32 judges this ADR with LV-24 and LV-25, and LV-22's ExPivot clause (LV-20 to LV-22 on the
 Codex track, renumbered when the tracks were merged).

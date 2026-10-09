@@ -9,7 +9,7 @@ Windows below records the earlier decision and no longer applies to that path. T
 Aggregate API below is the existing API.
 [ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md) subsequently
 permits replacing/renaming that API, selects server-registered Order Keys, and defines automatic
-Window recovery when a delta baseline is missing. Reference semantics, Source Version correctness, cancellation, and the Consumer's
+Window recovery when the Baseline Window of Window Changes is missing. Reference semantics, Source Version correctness, cancellation, and the Consumer's
 ownership of transport remain in force. *(Built on `claude/live-data-best`, 2026-10-08:
 `PivotReportSource`, `LocalPivotReportSource`, `FetchingPivotReportSource` and the report's JSON.)*
 

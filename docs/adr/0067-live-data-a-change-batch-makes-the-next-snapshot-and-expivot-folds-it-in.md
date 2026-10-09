@@ -46,10 +46,10 @@ does not start again from a million records.
 **Extended 2026-10-06:**
 [ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md) chooses
 server-computed report Windows and their changes for the new server path. The whole-answer
-behavior below describes the existing Leaf Aggregate API; deferring delta transport is no
+behavior below describes the existing Leaf Aggregate API; deferring the sending of changes is no
 longer the decision for that new path. [ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)
-settles its delta and recovery contract: a delta names its baseline, carries the digest of the
-Window it produces, and is never painted unverified.
+settles its Window Changes and recovery contract: Window Changes name their Baseline Window, carry the
+digest of the Window they produce, and are never painted unverified.
 The complete-batch, Source Version, Selection and Stale Report rules remain in force.
 
 The Consumer tells its `PivotSource.Fetch` that the server's data changed, however the Consumer
@@ -142,6 +142,22 @@ asked for ([ADR-0161](./0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-
 
 Before this, the exception reached the renderer and the page stopped
 ([`2026-10-06-macos-pivot-oom`](../../verification/2026-10-06-macos-pivot-oom/README.md)).
+
+## A Stale Report's cells say it too, and Copy from it is refused *(decided with the user, 2026-10-09)*
+
+The notice under the Pivot Toolbar says what happened and as of when, and that keeps a Stale Report
+from being a plausible wrong answer. Two places stayed quiet. A cell read far from the notice looked
+current. And a copy carried the old values to wherever it was pasted, where nothing says as of when.
+- **While the report is stale, its value cells carry a stale appearance** — static, the values still
+  readable, nothing animated (P8) — from a Visual Token beside the notice's own. The notice stays. The
+  appearance goes when the report recovers.
+- **Copy from a Stale Report is refused**, in ExPivot's words, saying the time of the version shown and
+  to Retry first. The Selection Summary still answers: it is on screen, beside the notice.
+
+Rejected: **the notice alone**, for the two quiet places above; **Copy allowed with a sentence through
+the live region**, because the clipboard cannot carry the time with the values; **dimming the report
+while a question is out**, already rejected above, which is not this: a Stale Report lasts until an
+answer comes, a question four times a second.
 
 ## Considered options
 
