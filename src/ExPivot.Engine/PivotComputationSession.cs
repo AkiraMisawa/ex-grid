@@ -186,8 +186,12 @@ public sealed class PivotComputationSession : IDisposable
                     var answer = await newPass.AnswerAsync(captured.Version, aside).ConfigureAwait(false);
                     if (answer.IsRefused)
                         return new(null, answer.Refusal, true);
-                    cube = await PivotEngine.CubeAsync(query, answer, _fields, slicing, cancellationToken).ConfigureAwait(false);
-                    newComputation = await ComputationCube.CreateAsync(cube, newPass, aside).ConfigureAwait(false);
+                    // The cube PivotEngine.CubeAsync makes, and the nodes it made for each leaf,
+                    // which the computation starts from.
+                    var leaves = new PivotCube.LeafNodes();
+                    cube = await PivotCube.BuildAsync(query, answer, FieldMeta.Of(_fields),
+                        Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken), leafNodes: leaves).ConfigureAwait(false);
+                    newComputation = await ComputationCube.CreateAsync(cube, leaves, newPass, aside).ConfigureAwait(false);
                 }
             }
             else
@@ -212,12 +216,14 @@ public sealed class PivotComputationSession : IDisposable
             if (relayout)
             {
                 // Laid out afresh, aside: a cancellation drops it, unless the batches it follows
-                // were folded in place, which it then completes.
+                // were folded in place, which it then completes. The layout is checked as
+                // PivotEngine.ReportAsync checks it.
                 var work = updated ? whole! : aside;
-                report = await PivotEngine.ReportAsync(cube, layout, chosen, slicing,
-                    updated ? CancellationToken.None : cancellationToken).ConfigureAwait(false);
+                var builder = PivotEngine.Builder(cube, layout, chosen);
+                if (!updated)
+                    cancellationToken.ThrowIfCancellationRequested();
                 structure = new ComputationReport();
-                report = await structure.InitializeAsync(report, work).ConfigureAwait(false);
+                report = await structure.InitializeAsync(builder, work).ConfigureAwait(false);
             }
             else if (updated)
             {

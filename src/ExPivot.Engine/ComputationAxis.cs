@@ -1,91 +1,129 @@
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 
 namespace ExPivot.Engine;
 
-internal sealed record ComputationAxis(ImmutableDictionary<int, AxisNode> Nodes,
-    ImmutableDictionary<int, ImmutableList<int>> Children)
+// One axis of a published computation: the initial cube's tree, by node id, under an immutable
+// overlay of the nodes and child lists the updates since wrote. A version shares everything an
+// update did not write; it reaches no preceding version, and nothing writes the initial tree.
+internal sealed class ComputationAxis(AxisNode[] initial, ImmutableDictionary<int, AxisNode> nodes,
+    ImmutableDictionary<int, ImmutableList<int>> children)
 {
-    public IReadOnlyList<AxisNode> ChildrenOf(int node)
-        => Children.TryGetValue(node, out var ids) ? new ChildRows(Nodes, ids) : [];
+    public AxisNode Node(int id) => nodes.TryGetValue(id, out var node) ? node : initial[id];
 
-    private sealed class ChildRows(ImmutableDictionary<int, AxisNode> nodes, ImmutableList<int> ids) : IReadOnlyList<AxisNode>
+    public IReadOnlyList<AxisNode> ChildrenOf(int node)
+    {
+        if (children.TryGetValue(node, out var ids))
+            return new ChildRows(this, ids);
+        if (node >= initial.Length)
+            return [];
+        // A relabelled child is read as the overlay has it.
+        var list = initial[node].Children;
+        return nodes.IsEmpty ? list : new InitialRows(this, list);
+    }
+
+    private sealed class ChildRows(ComputationAxis axis, ImmutableList<int> ids) : IReadOnlyList<AxisNode>
     {
         public int Count => ids.Count;
-        public AxisNode this[int index] => nodes[ids[index]];
-        public IEnumerator<AxisNode> GetEnumerator() { foreach (var id in ids) yield return nodes[id]; }
+        public AxisNode this[int index] => axis.Node(ids[index]);
+        public IEnumerator<AxisNode> GetEnumerator() { foreach (var id in ids) yield return axis.Node(id); }
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
+    private sealed class InitialRows(ComputationAxis axis, List<AxisNode> list) : IReadOnlyList<AxisNode>
+    {
+        public int Count => list.Count;
+        public AxisNode this[int index] => axis.Node(list[index].Id);
+        public IEnumerator<AxisNode> GetEnumerator() { foreach (var node in list) yield return axis.Node(node.Id); }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    /// <summary>
+    /// The working index of one axis, private to its computation. It starts as the initial cube's
+    /// tree, which it never writes: a node an update makes, relabels or gives other children is
+    /// written to the overlay it publishes. What only an update reads — each parent's children by
+    /// Item, and the nodes of each Item — is made the first time an update reads it, so the first
+    /// report costs what its own cube does.
+    /// </summary>
     public sealed class Working
     {
+        private readonly AxisNode[] _initial;
         private ImmutableDictionary<int, AxisNode> _nodes = ImmutableDictionary<int, AxisNode>.Empty;
         private ImmutableDictionary<int, ImmutableList<int>> _children = ImmutableDictionary<int, ImmutableList<int>>.Empty;
-        private readonly Dictionary<(int Parent, ItemKey Key), int> _paths = [];
-        private readonly Dictionary<(int Level, int Item), HashSet<int>> _byItem = [];
-        private readonly Dictionary<int, int> _users = [];
+        // Each parent's children by Item: made the first time an update looks for a child under it.
+        private readonly Dictionary<int, Dictionary<ItemKey, int>> _paths = [];
+        // How many leaves each node is on the path of, by id; the root is not counted.
+        private int[] _users;
         private int _next;
+        // The label every node of an Item carries, by level and the pass's Item: an Item's nodes
+        // are labelled alike, and relabelled together. And the nodes of each Item, made the first
+        // time an Item's label changes.
+        private readonly PivotItemKey?[][] _labels;
+        private Dictionary<(int Level, ItemKey Item), List<int>>? _byItem;
+
+        public Working(AxisNode[] initial, int levels)
+        {
+            _initial = initial;
+            _next = initial.Length;
+            _users = new int[Math.Max(16, initial.Length + (initial.Length / 8))];
+            _labels = new PivotItemKey?[levels][];
+            for (var level = 0; level < levels; level++)
+                _labels[level] = [];
+        }
+
         public HashSet<int> Changed { get; } = [];
         public HashSet<int> Removed { get; } = [];
-        private Working() { }
-        public static async ValueTask<Working> CreateAsync(AxisNode root, Slicer slicer)
-        {
-            var result = new Working();
-            var nodes = result._nodes.ToBuilder();
-            var children = result._children.ToBuilder();
-            var pending = new Stack<AxisNode>();
-            pending.Push(root);
-            while (pending.TryPop(out var node))
-            {
-                nodes.Add(node.Id, node);
-                result._next = Math.Max(result._next, node.Id + 1);
-                var ids = ImmutableList.CreateBuilder<int>();
-                foreach (var child in node.Children)
-                {
-                    ids.Add(child.Id);
-                    result._paths[(node.Id, child.Item!.Key)] = child.Id;
-                    pending.Push(child);
-                    if (slicer.Done(1)) await slicer.PauseAsync().ConfigureAwait(false);
-                }
-                children.Add(node.Id, ids.ToImmutable());
-                if (slicer.Done(1)) await slicer.PauseAsync().ConfigureAwait(false);
-            }
-            result._nodes = nodes.ToImmutable();
-            result._children = children.ToImmutable();
-            return result;
-        }
-        public AxisNode Root => _nodes[0];
-        public ComputationAxis Freeze() => new(_nodes, _children);
+        public AxisNode Root => Node(0);
+        public ComputationAxis Freeze() => new(_initial, _nodes, _children);
         public void Begin() { Changed.Clear(); Removed.Clear(); }
 
-        public AxisNode AddLeaf(AggregationPass pass, int leaf, int start, int count, bool initial = false)
+        private AxisNode Node(int id) => _nodes.TryGetValue(id, out var node) ? node : _initial[id];
+
+        /// <summary>A leaf the initial cube holds, at the node the cube made for it: every node on
+        /// its path counts it, and each Item on the path is labelled as the cube labelled it.</summary>
+        public void Use(AggregationPass pass, int leaf, int start, AxisNode node)
+        {
+            for (var at = node; at.Parent is not null; at = at.Parent)
+            {
+                _users[at.Id]++;
+                LabelOf(at.Level, pass.Leaves.ItemOfLeaf[start + at.Level][leaf]) ??= at.Item!.PublicKey;
+            }
+        }
+
+        public AxisNode AddLeaf(AggregationPass pass, int leaf, int start, int count)
         {
             var parent = Root;
             for (var level = 0; level < count; level++)
             {
                 var space = pass.Axes[start + level];
                 var item = pass.Leaves.ItemOfLeaf[start + level][leaf];
-                var path = (parent.Id, space.KeyOf(item));
-                if (!_paths.TryGetValue(path, out var id))
+                var paths = PathsUnder(parent.Id);
+                var key = space.KeyOf(item);
+                if (!paths.TryGetValue(key, out var id))
                 {
                     id = _next++;
-                    var made = new AxisNode(id, level, parent, ItemRef.Of(space.PublicKeyOf(item)));
+                    var label = space.PublicKeyOf(item);
+                    var made = new AxisNode(id, level, parent, ItemRef.Of(label));
                     _nodes = _nodes.Add(id, made);
-                    _children = _children.Add(id, ImmutableList<int>.Empty);
-                    _paths[path] = id;
+                    paths[key] = id;
+                    if (id >= _users.Length)
+                        Array.Resize(ref _users, Math.Max(id + 1, _users.Length * 2));
+                    // The Item's first node sets the label its nodes carry. A node made with a
+                    // newer spelling than the others carry came with a batch that touched its
+                    // Item, so Relabel brings the others to it.
+                    LabelOf(level, item) ??= label;
+                    if (_byItem is not null)
+                        NodesOf(_byItem, level, key).Add(id);
                 }
-                if (!_byItem.TryGetValue((start + level, item), out var matching))
-                    _byItem[(start + level, item)] = matching = [];
-                matching.Add(id);
-                var users = _users.GetValueOrDefault(id);
-                _users[id] = users + 1;
-                if (users == 0 && !initial)
+                if (_users[id]++ == 0)
                 {
-                    if (!_children[parent.Id].Contains(id))
-                        _children = _children.SetItem(parent.Id, _children[parent.Id].Add(id));
+                    var siblings = ChildIds(parent.Id);
+                    if (!siblings.Contains(id))
+                        _children = _children.SetItem(parent.Id, siblings.Add(id));
                     Changed.Add(id);
                     Changed.Add(parent.Id);
                 }
-                parent = _nodes[id];
+                parent = Node(id);
             }
             return parent;
         }
@@ -97,30 +135,94 @@ internal sealed record ComputationAxis(ImmutableDictionary<int, AxisNode> Nodes,
                 if (--_users[node.Id] != 0)
                     continue;
                 var parent = node.Parent.Id;
-                _children = _children.SetItem(parent, _children[parent].Remove(node.Id));
+                _children = _children.SetItem(parent, ChildIds(parent).Remove(node.Id));
                 Removed.Add(node.Id);
                 Changed.Add(parent);
             }
         }
 
+        /// <summary>Relabels the nodes of each Item a batch touched whose spelling changed: a text
+        /// Item is labelled by its first spelling among the records present (ADR-0060).</summary>
         public void Relabel(AggregationPass pass, int start, int count)
         {
-            for (var level = start; level < start + count; level++)
-            foreach (var item in pass.Axes[level].ChangedItems)
+            for (var level = 0; level < count; level++)
             {
-                if (!_byItem.TryGetValue((level, item), out var ids))
-                    continue;
-                var key = pass.Axes[level].PublicKeyOf(item);
-                foreach (var id in ids)
+                var space = pass.Axes[start + level];
+                var labels = _labels[level];
+                foreach (var item in space.ChangedItems)
                 {
-                    var before = _nodes[id];
-                    if (before.Item!.PublicKey.Kind == key.Kind && before.Item.PublicKey.Value == key.Value)
+                    // An Item no node carries has no label to change.
+                    if (item >= labels.Length || labels[item] is not { } label)
                         continue;
-                    _nodes = _nodes.SetItem(id, new AxisNode(id, before.Level, before.Parent, ItemRef.Of(key)));
-                    if (_users.GetValueOrDefault(id) > 0)
-                        Changed.Add(id);
+                    var key = space.PublicKeyOf(item);
+                    if (label.Kind == key.Kind && label.Value == key.Value)
+                        continue;
+                    labels[item] = key;
+                    if (!ByItem().TryGetValue((level, space.KeyOf(item)), out var ids))
+                        continue;
+                    foreach (var id in ids)
+                    {
+                        var before = Node(id);
+                        if (before.Item!.PublicKey.Kind == key.Kind && before.Item.PublicKey.Value == key.Value)
+                            continue;
+                        _nodes = _nodes.SetItem(id, new AxisNode(id, before.Level, before.Parent, ItemRef.Of(key)));
+                        if (_users[id] > 0)
+                            Changed.Add(id);
+                    }
                 }
             }
         }
+
+        private ref PivotItemKey? LabelOf(int level, int item)
+        {
+            ref var labels = ref _labels[level];
+            if (item >= labels.Length)
+                Array.Resize(ref labels, Math.Max(item + 1, Math.Max(16, labels.Length * 2)));
+            return ref labels[item];
+        }
+
+        private ImmutableList<int> ChildIds(int parent)
+        {
+            if (_children.TryGetValue(parent, out var ids))
+                return ids;
+            if (parent >= _initial.Length)
+                return ImmutableList<int>.Empty;
+            var builder = ImmutableList.CreateBuilder<int>();
+            foreach (var child in _initial[parent].Children)
+                builder.Add(child.Id);
+            return builder.ToImmutable();
+        }
+
+        private Dictionary<ItemKey, int> PathsUnder(int parent)
+        {
+            if (_paths.TryGetValue(parent, out var paths))
+                return paths;
+            paths = [];
+            if (parent < _initial.Length)
+            {
+                foreach (var child in _initial[parent].Children)
+                    paths[child.Item!.Key] = child.Id;
+            }
+            _paths[parent] = paths;
+            return paths;
+        }
+
+        // Every node but the root, by its level and Item: the initial cube's and the updates'.
+        private Dictionary<(int Level, ItemKey Item), List<int>> ByItem()
+        {
+            if (_byItem is { } made)
+                return made;
+            var index = new Dictionary<(int Level, ItemKey Item), List<int>>();
+            for (var id = 0; id < _next; id++)
+            {
+                var node = Node(id);
+                if (node.Item is { } item)
+                    NodesOf(index, node.Level, item.Key).Add(id);
+            }
+            return _byItem = index;
+        }
+
+        private static List<int> NodesOf(Dictionary<(int Level, ItemKey Item), List<int>> index, int level, ItemKey key)
+            => CollectionsMarshal.GetValueRefOrAddDefault(index, (level, key), out _) ??= [];
     }
 }

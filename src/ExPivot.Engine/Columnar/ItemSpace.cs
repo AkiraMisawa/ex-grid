@@ -64,7 +64,13 @@ internal sealed class ItemSpace
         Refresh(snapshot);
     }
 
+    /// <summary>The Items a Change Batch touched, while one is folded in (<see cref="Folding"/>):
+    /// what a computation relabels from (ADR-0153).</summary>
     internal HashSet<int> ChangedItems { get; } = [];
+
+    /// <summary>Whether a Change Batch is being folded in, so the Items its rows map to are noted
+    /// in <see cref="ChangedItems"/>; a pass over every record notes none.</summary>
+    internal bool Folding { get; set; }
 
     public FieldBinding Binding => _binding;
 
@@ -333,6 +339,7 @@ internal sealed class ItemSpace
     {
         var itemOfCode = _itemOfCode;
         var presence = _presence;
+        var changed = Folding ? ChangedItems : null;
         if (removed.IsEmpty)
         {
             for (var i = 0; i < items.Length; i++)
@@ -345,7 +352,7 @@ internal sealed class ItemSpace
                     continue;
                 }
                 items[i] = itemOfCode[code];
-                ChangedItems.Add(itemOfCode[code]);
+                changed?.Add(itemOfCode[code]);
                 presence[code]++;
             }
             return;
@@ -363,7 +370,7 @@ internal sealed class ItemSpace
             items[i] = itemOfCode[code];
             if (!Exactly.IsSet(removed, o))
             {
-                ChangedItems.Add(itemOfCode[code]);
+                changed?.Add(itemOfCode[code]);
                 presence[code]++;
             }
         }
