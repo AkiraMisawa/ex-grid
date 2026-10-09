@@ -118,7 +118,10 @@
             over a change — or whose store, a reducer or a server, is where writes are ordered — calls
             <code>Refuse(message)</code> before its handler completes: the editor stays open with the typing, the
             message is shown at the editor and announced, and the gesture moves nothing. A later commit raises the
-            intent again.
+            intent again. Your handler may take its time — a round trip to a server — and the editor stands while
+            it runs. A press made meanwhile, the second press of a double click or a click on a header included,
+            waits for your answer and is then answered against what it left, exactly as if you had answered at
+            once: one commit raises one Edit Intent.
         </p>
         <p>
             <strong>Target identity still matters</strong>, so a write is refused when the grid can no longer find
