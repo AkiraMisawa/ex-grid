@@ -152,8 +152,9 @@ current. And a copy carried the old values to wherever it was pasted, where noth
   readable, nothing animated (P8). The report carries `ex-pivot-report-stale`, and its value cells take
   `--ex-pivot-stale-value-color`, a Visual Token beside the notice's own. By default it mixes 60% of the
   ink into the ground, which keeps a contrast of 5.7:1 on white; under forced colours it is `GrayText`;
-  the MudBlazor wrapper mixes its own palette's text and surface so that both of its palettes keep at
-  least the 4.5:1 that UX-8 asks of body text. Labels, Details and the rows' components are untouched,
+  the MudBlazor wrapper mixes 82% of its palette's text into its surface, which keeps at least the 4.5:1
+  that UX-8 asks of body text in both of MudBlazor's default palettes (4.72:1 on a dark group row, the
+  lowest) while staying visibly muted; its secondary text colour fell to 4.02:1 there. Labels, Details and the rows' components are untouched,
   and the notice stays. The appearance goes when the report recovers.
 - **Copy from a Stale Report is refused** before the source is asked, in ExPivot's words
   (`copy-stale-report`: "The report shows the data as of {0}: Retry before copying.", with its Japanese),
