@@ -76,6 +76,17 @@
             row first scrolled into view a moment later is marked as of when the change was first shown, and its
             mark ends with the others.
         </p>
+        <p>
+            <strong>What the highlight costs.</strong> To mark what changed, the report source keeps the reports the
+            highlight compares: every one published less than <code>ChangeHighlightDuration</code> before the newest,
+            and the one before them. That is at most max(versionsKept, ⌈<code>ChangeHighlightDuration</code> ÷ the time
+            between redraws⌉ + 1) reports, five at the defaults: two versions kept for Copy and the Selection Summary
+            (<code>PivotReportSource.From</code>'s <code>versionsKept</code>), a one-second highlight, and redraws at most
+            every 250 ms (<code>RedrawInterval</code>). The reports share what an update did not change, but a shorter
+            <code>RedrawInterval</code> or a longer <code>ChangeHighlightDuration</code> keeps more of them, in proportion.
+            If memory runs out while a redraw is computed, the report on screen stays as a Stale Report and the next
+            change asks again, rather than the page stopping.
+        </p>
     </DocsSection>
 
     <DocsSection Title="A server whose data moves on">

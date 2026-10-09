@@ -50,7 +50,11 @@ public abstract class PivotReportSource : IAsyncDisposable
     /// behind the Consumer's transport.</summary>
     /// <param name="source">The Pivot Source; this report does not own its lifetime.</param>
     /// <param name="orderKeys">Server-registered Order Key functions, by policy identifier.</param>
-    /// <param name="versionsKept">Bounded number of immutable reports available to versioned operations.</param>
+    /// <param name="versionsKept">Bounded number of immutable reports available to versioned operations.
+    /// The reports the Change Highlight compares are kept as well: every one published less than the
+    /// request's <see cref="PivotReportSettings.ChangeHighlightDuration"/> before the newest, and the
+    /// one before them — at most max(versionsKept, ⌈ChangeHighlightDuration ÷ the time between the
+    /// reports it publishes⌉ + 1) in all (ADR-0153).</param>
     /// <param name="slicing">How calculation work shares the calling thread.</param>
     /// <param name="timeProvider">The clock that timestamps shown-text changes.</param>
     public static LocalPivotReportSource From(PivotSource source,
