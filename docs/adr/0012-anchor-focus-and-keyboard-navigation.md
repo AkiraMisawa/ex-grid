@@ -521,7 +521,9 @@ time and together: Chrome for Testing 152, the installed Edge with `--disable-gp
 `edge://gpu` status, a real scale of 1, field trials on (the browser launched by hand, not by
 Playwright), the CPU slowed tenfold, and the window captured with `PrintWindow` rather than through
 the browser, which redraws for a screenshot. All of them painted. What is left is Citrix's own display
-path, which this project cannot run.
+path, which this project cannot run. *(2026-10-09: not the only explanation left. The same PC shows the site
+through a remote browser isolation mirror; see "the white Viewport was seen through a remote browser
+isolation mirror" below.)*
 
 **The decision: a reveal is repainted.** In the frame after the reveal's, the offset moves one pixel
 away from the edge it stands at (across, where the rows cannot scroll), and in the frame after that it
