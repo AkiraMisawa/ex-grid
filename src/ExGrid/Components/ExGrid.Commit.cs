@@ -104,15 +104,24 @@ public partial class ExGrid<TRow>
 
     /// <summary>The baseline moves to what the edited cell paints now: a write of the user's own that
     /// it awaited has settled, or was dropped by the Window that brought it (D1). Called once the
-    /// editor has followed its row, so a keyed row that moved is read where it stands now. A row the
-    /// Window does not hold at that moment paints nothing: the baseline is then the text the commit
-    /// finds, and no change is told for what the grid could not see.</summary>
+    /// editor has followed its row, so a keyed row that moved is read where it stands now. It is read
+    /// from the edited row only (<see cref="EditedRowInHand"/>). When the Window does not hold that row
+    /// at that moment, the editor keeps the baseline it had — never another row's text, and never
+    /// none — and the reading is not owed again: the commit may then tell the user's own write as a
+    /// change, which errs towards a notice, as ADR-0142's accepted limits do, and never hides one.</summary>
     private void RebaseEdit()
     {
         _editRebaseOwed = false;
-        if (_editMode != EditMode.None)
+        if (_editMode != EditMode.None && EditedRowInHand())
             _editSeenText = PaintedTextNow(_editingCell.Row, _editingCell.Column);
     }
+
+    /// <summary>Whether the Window holds, at the editor's position, the row the editor was opened on:
+    /// with a Row Key, the row under the editor's key; without one, the row at its position while the
+    /// order it was opened under holds (ADR-0142, LV-20).</summary>
+    private bool EditedRowInHand()
+        => RowInHand(_editingCell.Row) is { } row
+           && (_rowKey is { } rowKey ? _editKey is { } key && Equals(rowKey(row), key) : _sequenceVersion == _editSequence);
 
     /// <summary>
     /// With a Row Key, the editor and the Focus follow the row they were opened on (ADR-0011's note
@@ -224,7 +233,9 @@ public partial class ExGrid<TRow>
     //   - for a pushed Window, the first new Window taken in after the handler completed.
     // An order move or a replaced Source drops it (its positions name other rows), and so does a new
     // Window that no longer holds any of its rows; an editor that awaited it takes the cell's text then,
-    // as at a settle. A write the Consumer refused is taken back: it wrote nothing, and moves nothing.
+    // as at a settle. The baseline is only ever read from the edited row itself — by its Row Key, wherever
+    // the editor followed it — and, while the Window does not hold that row, the editor keeps the baseline
+    // it had (RebaseEdit). A write the Consumer refused is taken back: it wrote nothing, and moves nothing.
 
     // Whether the Consumer is hearing the open edit's own commit — its Edit Intent, raised while the
     // editor stands (CommitEditAsync) — and whether a Source, or visible columns, it handed over
@@ -238,6 +249,98 @@ public partial class ExGrid<TRow>
     private bool _columnsMovedUnderCommit;
     private bool _editTakenDownUnderCommit;
     private bool? _commitHandBack;
+
+    // The commit being made (MakeCommitAsync), from the moment it is asked for until it has landed, been
+    // refused or failed, and the token that names it while it is made. The Consumer hears a commit's Edit
+    // Intent while the editor stands, so a commit takes as long as the Consumer's handler does. One is made
+    // at a time: a commit asked for meanwhile waits for it to land and is then asked of what it leaves — no
+    // editor, once it landed — so one commit raises one Edit Intent, however many presses arrive while it
+    // is heard; and a gesture that arrives meanwhile is answered once it has landed
+    // (AfterCommitInFlightAsync). The flow the commit runs in — its own code and every Consumer handler it
+    // raises — carries the token (_commitFlow): a commit asked for from inside it, as a placement one of
+    // those handlers asks for, is that commit's, and goes on at once, since waiting there would wait for
+    // itself.
+    private Task<bool>? _commitInFlight;
+    private object? _commitToken;
+    private readonly AsyncLocal<object?> _commitFlow = new();
+
+    /// <summary>Whether this runs inside the flow of the commit being made: its own code, a handler of
+    /// the Consumer's it raised, or anything those call.</summary>
+    private bool InCommitFlow => _commitToken is { } token && ReferenceEquals(_commitFlow.Value, token);
+
+    /// <summary>
+    /// Commits the open edit (ADR-0007, ADR-0142), one commit at a time. A commit asked for while one is
+    /// being made waits for that one to land, refused or not, and is then asked of what it leaves: once it
+    /// landed no editor stands, and nothing is committed again — one commit raises one Edit Intent,
+    /// however many presses arrive while the Consumer hears it (ADR-0010's click-away, ED-12). Refused, the
+    /// editor still stands, and the commit asked for is made, as it would have been had the Consumer
+    /// answered at once (principle 6). Asked from inside the flow of the commit being made — a placement
+    /// one of its handlers asks for — the edit is that commit's: nothing is committed, and nothing waits.
+    /// </summary>
+    /// <returns><c>false</c> when a Reject or a refusal held the editor: the editor is still standing,
+    /// and the gesture that asked for the commit keeps no meaning of its own (ADR-0034, ADR-0142).</returns>
+    /// <param name="reclaimFocus">Whether the keyboard comes back to the root once the edit
+    /// ends. A press into a field of the grid's own (the Name Box) keeps its meaning after
+    /// the commit (ADR-0010), so the keyboard stays where the press put it.</param>
+    /// <param name="byPress">Whether a press past the editor asked for the commit, rather than
+    /// a key typed in it: see <see cref="EndEditingAsync"/>.</param>
+    private async Task<bool> CommitEditAsync(bool reclaimFocus = true, bool byPress = false)
+    {
+        if (InCommitFlow)
+            return true;
+        await AfterCommitInFlightAsync();
+        if (_editMode == EditMode.None)
+            return true;
+        var commit = MakeCommitAsync(reclaimFocus, byPress);
+        if (!commit.IsCompleted)
+            _commitInFlight = commit;
+        return await commit;
+    }
+
+    /// <summary>Makes the commit of the open edit (<see cref="CommitOpenEditAsync"/>), named as the one
+    /// being made while it is: its flow carries its token, and a commit or a gesture asked for meanwhile
+    /// waits for it (<see cref="CommitEditAsync"/>, <see cref="AfterCommitInFlightAsync"/>).</summary>
+    private async Task<bool> MakeCommitAsync(bool reclaimFocus, bool byPress)
+    {
+        var token = new object();
+        _commitToken = token;
+        _commitFlow.Value = token;
+        try
+        {
+            return await CommitOpenEditAsync(reclaimFocus, byPress);
+        }
+        finally
+        {
+            _commitToken = null;
+            _commitInFlight = null;
+        }
+    }
+
+    /// <summary>
+    /// Waits until no commit is being made (ADR-0142; ADR-0010's click-away, ED-12). A gesture that arrives
+    /// while the Consumer hears a commit — a press on another row or the second press of a double click, a
+    /// press on a header or in a column menu, the click, double click or context menu that ends a press, a
+    /// key the listener did not hold — is answered once that commit has landed, against what it leaves, as
+    /// if it had arrived after it: it never commits the same editor a second time, and never reads the
+    /// editor still standing while it is heard as one a Reject or a refusal held. The gestures that waited
+    /// go on in the order they arrived, after the gesture that asked for the commit. Inside the commit's own
+    /// flow nothing waits: it would wait for itself.
+    /// </summary>
+    private async Task AfterCommitInFlightAsync()
+    {
+        while (_commitInFlight is { IsCompleted: false } inFlight && !InCommitFlow)
+        {
+            try
+            {
+                await inFlight;
+            }
+            catch (Exception)
+            {
+                // A failed commit is the failure of the gesture that asked for it, and is reported on
+                // that gesture's path; this one is answered against what it left.
+            }
+        }
+    }
 
     /// <summary>The editor goes in this render while the Consumer hears its commit: the keyboard is
     /// asked back now, before the render that removes the editor holding it, as the commit's own end

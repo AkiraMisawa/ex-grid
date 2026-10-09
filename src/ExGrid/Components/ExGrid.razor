@@ -192,7 +192,7 @@
                  data-ex-sequence="@_sequenceVersion" data-ex-layout="@_paintLayoutId" data-ex-paint="@NotePaint()"
                  role="presentation" @attributes="_dragHandler" @onmousedown="RowsPressHandler" @onmousedown:preventDefault="RowsPressKeepsFocus" @onmouseup="OnMouseUp"
                  @ondblclick="OnViewportDoubleClickAsync"
-                 @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
+                 @oncontextmenu="OnContextMenuAsync" @oncontextmenu:preventDefault="true">
                 @* The Keyboard Field (ADR-0080). While the grid has an editable column, the keyboard
                    with no edit open is held here instead of on the root itself, so that an IME has a
                    text field to start in: on the root, Chrome and Edge give it no input context, and
@@ -2921,7 +2921,8 @@
         {
             FollowEditedRow();
             // A write of the user's own the editor awaited went with this Window: the baseline is
-            // what the cell paints now, read where the editor stands after following its row (D1).
+            // what the cell paints now, read from the edited row where the editor stands after
+            // following it, and kept as it was while the Window does not hold that row (D1).
             if (_editRebaseOwed)
                 RebaseEdit();
         }
@@ -2971,8 +2972,9 @@
         _reconciledBinding = _binding;
         if (_sourceReplaced)
         {
-            // Noted for the gestures on their way that were aimed with it (ADR-0142).
-            NoteSelectionDropped(_selection.Selection);
+            // Noted for the gestures on their way that were aimed with it, or, with nothing selected, at
+            // what the old source painted (ADR-0142).
+            NoteSelectionDropped(_selection.Selection, sourceReplaced: true);
             reconciled = HeldSelection.Empty(_sequenceVersion);
         }
         else if (_columnsMoved)
@@ -2980,7 +2982,7 @@
         // A Selection the order took, under the same columns: noted for the gestures on their way
         // that were aimed with it (ADR-0142).
         else if (reconciled.RowSequenceVersion != _selection.RowSequenceVersion)
-            NoteSelectionDropped(_selection.Selection);
+            NoteSelectionDropped(_selection.Selection, sourceReplaced: false);
 
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
@@ -3644,6 +3646,11 @@
         // Read before anything below changes what is painted: the handle is grabbed where
         // the user saw it (ADR-0050, item 5).
         var onFillHandle = e.Button == 0 && !e.ShiftKey && !e.CtrlKey && !e.MetaKey && IsOnFillHandle(e);
+        // A press made while the Consumer hears a commit — the second press of a double click, a
+        // press on another row past an editor whose commit an earlier press asked for — is answered
+        // once that commit has landed, against what it leaves: never as a second commit of the same
+        // editor (ADR-0142; ED-12).
+        await AfterCommitInFlightAsync();
         // A press anywhere in the body dismisses an open popover — clicking past a
         // menu is how people close menus everywhere else on the platform. The
         // dismissal is markup, so the render must run even when the press itself
@@ -4113,6 +4120,8 @@
 
     private async Task AnswerReleaseAsync(MouseEventArgs e)
     {
+        // After the press it ends, which a commit being heard holds (AnswerPressAsync).
+        await AfterCommitInFlightAsync();
         if (_fillSource is not null)
         {
             await FinishFillAsync(CellUnder(e));
@@ -4163,6 +4172,9 @@
     /// (ADR-0011/0032).</summary>
     private async Task OnHeaderMouseDown(MouseEventArgs e)
     {
+        // Made while the Consumer hears a commit, the press is answered once that commit has landed,
+        // against what it leaves: never as a second commit of the same editor (ADR-0142; ED-12).
+        await AfterCommitInFlightAsync();
         // A new press is a new story. The flag a gesture arms is consumed by that
         // gesture's own click — but a release outside the header raises no header
         // click at all, and a flag left standing would eat the NEXT genuine sort.
@@ -4351,6 +4363,9 @@
     /// </summary>
     private async Task OnHeaderClickAsync(MouseEventArgs e)
     {
+        // After the press it ends, which a commit being heard holds (OnHeaderMouseDown): an editor
+        // standing below is then one a Reject or a refusal held, never one still being heard.
+        await AfterCommitInFlightAsync();
         // A press handed over from a grid pointed at (ADR-0058): its click is the same gesture,
         // and the header does nothing of its own. A drag whose release was not heard ends here.
         if (_pressHandedOver)
@@ -4519,17 +4534,19 @@
     /// the element, which is why no listener is installed and the JavaScript allowlist
     /// gains nothing for it (ADR-0021).
     /// </summary>
-    private void OnContextMenu(MouseEventArgs e)
+    private async Task OnContextMenuAsync(MouseEventArgs e)
     {
         // The pointer lands on a cell wherever it is inside the Viewport — the geometry
         // clamps, which is why a primary click below the last row selects the last row.
         // So this is not a dead zone but the guard for having nothing painted at all, and
         // then there is no target to aim a menu at.
         // The mouse-down that preceded this has already committed or been refused
-        // (ADR-0010/0034). An editor still standing here means a Reject held it, and this
-        // press keeps no meaning of its own either — moving the selection would leave the
-        // editor floating over a cell nobody is on, the stale-editor state the commit-first
-        // rule exists to prevent.
+        // (ADR-0010/0034) — once the Consumer has heard the commit, which this waits for
+        // (AfterCommitInFlightAsync). An editor still standing here means a Reject or a refusal
+        // held it, and this press keeps no meaning of its own either — moving the selection would
+        // leave the editor floating over a cell nobody is on, the stale-editor state the
+        // commit-first rule exists to prevent.
+        await AfterCommitInFlightAsync();
         if (_editMode != EditMode.None)
             return;
         // A secondary press on a grid pointed at from outside (ADR-0058) moves neither the
@@ -4971,6 +4988,9 @@
     /// popover in the way.</summary>
     private async Task OpenMenuAsync(int column)
     {
+        // Made while the Consumer hears a commit, the press is answered once that commit has landed,
+        // against what it leaves: never as a second commit of the same editor (ADR-0142; ED-12).
+        await AfterCommitInFlightAsync();
         // Pointed at from outside, no column menu opens (ADR-0058): the stylesheet lets the press
         // through to the header, which hands it over, and this is the guard behind it.
         if (PointedAtNow)
@@ -6305,6 +6325,11 @@
         // released by the press released through its repeats.
         if (repeat && key == "Escape")
             return;
+        // A key that reaches the core while the Consumer hears a commit — one the listener did not
+        // hold, typed after a press on a header or in a column menu — is answered once that commit has
+        // landed, against the mode it leaves, as the listener's hold answers the keys it holds
+        // (ADR-0010, ADR-0142).
+        await AfterCommitInFlightAsync();
         // While editing, the keys the gate forwarded are the editor's contract
         // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite. The key
         // carries the editor's text and selection as the browser had them (ADR-0051), and
@@ -6673,10 +6698,14 @@
     /// open edit brought in another <see cref="Source"/> instance, whatever the two sources'
     /// versions are: the positions were asked for among the rows of the one replaced (ADR-0142).
     /// The version is all a request carries, so a request made after the replacement is taken as
-    /// written for the new one.
+    /// written for the new one. Asked while the grid hears the open edit's commit, a request waits
+    /// for that commit to land, as a click does (ADR-0142); asked from inside one of the commit's
+    /// own handlers — an <see cref="OnEdit"/> handler awaiting it — it places at once and commits
+    /// nothing, since the commit waits for that handler, and the commit ends the edit as the
+    /// handler completes.
     /// </summary>
     /// <returns>Whether the placement was made: false when it was dropped as stale, or when
-    /// a Reject held an open edit (ADR-0034).</returns>
+    /// a Reject or a refusal held an open edit (ADR-0034, ADR-0142).</returns>
     /// <exception cref="ArgumentOutOfRangeException">The range reaches outside the grid, or
     /// the Focus lies outside the range.</exception>
     public async Task<bool> PlaceSelectionAsync(SelectionRange range, CellPosition focus, int rowSequenceVersion)
@@ -7521,16 +7550,16 @@
     }
 
     /// <summary>A commit leaves the grid as an intent and nothing else (ADR-0007): the
-    /// painted value does not change until the Consumer returns a new row instance.</summary>
-    /// <returns><c>false</c> when a Reject held the editor: nothing was raised, the
-    /// editor is still standing, and the gesture that asked for the commit keeps no
-    /// meaning of its own (ADR-0034).</returns>
+    /// painted value does not change until the Consumer returns a new row instance. Made one at
+    /// a time, through <see cref="CommitEditAsync"/>.</summary>
+    /// <returns><c>false</c> when a Reject or a refusal held the editor: the editor is still
+    /// standing, and the gesture that asked for the commit keeps no meaning of its own
+    /// (ADR-0034).</returns>
     /// <param name="reclaimFocus">Whether the keyboard comes back to the root once the edit
-    /// ends. A press into a field of the grid's own (the Name Box) keeps its meaning after
-    /// the commit (ADR-0010), so the keyboard stays where the press put it.</param>
-    /// <param name="byPress">Whether a press past the editor asked for the commit, rather than
-    /// a key typed in it: see <see cref="EndEditingAsync"/>.</param>
-    private async Task<bool> CommitEditAsync(bool reclaimFocus = true, bool byPress = false)
+    /// ends: see <see cref="CommitEditAsync"/>.</param>
+    /// <param name="byPress">Whether a press past the editor asked for the commit: see
+    /// <see cref="EndEditingAsync"/>.</param>
+    private async Task<bool> CommitOpenEditAsync(bool reclaimFocus, bool byPress)
     {
         if (_editMode == EditMode.None)
             return true;
@@ -7602,9 +7631,9 @@
             // A Source, or visible columns, the Consumer hands over while it hears this are the
             // commit's own doing (ApplyState): noted while it is heard, and answered once the handler
             // has completed. Should the editor have to go meanwhile, the keyboard goes where this
-            // commit's own end would send it (EndEditingAsync).
-            var hearing = _hearingCommit;
-            var handBack = _commitHandBack;
+            // commit's own end would send it (EndEditingAsync). One commit is made at a time
+            // (CommitEditAsync), so nothing is heard under another commit's flag, and the flag goes
+            // down as this handler completes, whatever else completes when.
             _hearingCommit = true;
             _commitHandBack = reclaimFocus ? _editSurface == EditSurface.Bar && !byPress : null;
             var heard = false;
@@ -7615,8 +7644,8 @@
             }
             finally
             {
-                _hearingCommit = hearing;
-                _commitHandBack = handBack;
+                _hearingCommit = false;
+                _commitHandBack = null;
                 if (!heard)
                     TakeDownEditTheFailedHandlerOutlived();
             }
@@ -7838,6 +7867,10 @@
     /// </summary>
     private async Task OnFormulaBarFocusAsync()
     {
+        // A press into the bar made while the Consumer hears a commit is answered once that commit has
+        // landed, against what it leaves: it never moves into the bar an edit that is being committed
+        // (ADR-0142).
+        await AfterCommitInFlightAsync();
         if (_editMode != EditMode.None)
         {
             var fromCell = _editSurface == EditSurface.Cell;
@@ -8112,6 +8145,9 @@
     /// paints when it opens (ADR-0142, LV-11).</summary>
     private async Task OnViewportDoubleClickAsync(MouseEventArgs e)
     {
+        // After the presses it ends, which a commit being heard holds (AnswerPressAsync): an editor
+        // standing then is one a Reject or a refusal held, never one still being heard.
+        await AfterCommitInFlightAsync();
         // The second press of a double click handed over (ADR-0058) opens no edit either, and
         // raises no OnCellDoubleClick (ADR-0063): the press was the Consumer's, and the Focus
         // never moved to the cell.

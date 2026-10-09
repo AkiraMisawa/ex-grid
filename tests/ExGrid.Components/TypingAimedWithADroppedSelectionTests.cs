@@ -267,6 +267,133 @@ public class TypingAimedWithADroppedSelectionTests : GridTestContext
         Assert.True(EditorOpen(cut));
     }
 
+    // ---- Nothing selected, and the Source replaced ----
+    //
+    // A key typed with nothing selected is a first key on the paint it was typed against (ADR-0012): it
+    // places the Focus on that paint's first cell. Told a paint of a Source since replaced, that cell is
+    // another source's, and the key goes as one aimed with a dropped Selection does (LV-33; ADR-0142's
+    // section of 2026-10-08, LV-32): typing opens nothing, writes nothing anywhere, and is said once as
+    // SourceChanged; a key that moves or selects moves nothing and says nothing. Not so across an order
+    // move under the same Source (above): the first-key rule stands there.
+
+    private static GridColumn<TestRow>[] FirstColumnReadOnly() =>
+    [
+        new("Book", ColumnType.Text, r => r.Book, width: Fixed100),
+        new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100, editable: true),
+    ];
+
+    [Theory] // ADR-0142 / LV-33, LV-32: typing with nothing selected, told what a Source since replaced painted — the first-key rule would have opened an edit on the new source's first cell — opens nothing, writes nothing anywhere, and the run is said once as SourceChanged; a key told the new paint then opens its own edit
+    [InlineData("5")]
+    [InlineData("F2")]
+    [InlineData("Backspace")]
+    public async Task Typing_with_nothing_selected_aimed_at_a_replaced_source_writes_nothing_and_is_said_once(string first)
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(GridSource.From(rows), heard);
+        var typedOn = Paint(cut);
+        var copies = Copies(rows);
+        cut.Render(ps => ps.Add(g => g.Source, GridSource.From(copies)));
+
+        foreach (var key in new[] { first, "0", "0", "Enter" })
+            await KeyAsync(cut, key, typedOn);
+
+        Assert.Equal([EditDiscardReason.SourceChanged], heard.Discards);
+        Assert.Empty(heard.Edits);
+        Assert.Empty(heard.Pastes);
+        Assert.Empty(heard.Clears);
+        Assert.Empty(heard.EditingChanges);
+        Assert.False(EditorOpen(cut));
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
+
+        await KeyAsync(cut, "7", Paint(cut));
+        await KeyAsync(cut, "Enter", Paint(cut));
+
+        Assert.Equal([EditDiscardReason.SourceChanged], heard.Discards);
+        var edit = Assert.Single(heard.Edits);
+        Assert.Equal("7", edit.Value);
+        Assert.Same(copies[0], edit.Row);
+    }
+
+    [Fact] // ADR-0142 / ADR-0080, LV-33: a composition started with nothing selected against what a Source since replaced painted opens nothing, writes nothing, and is said as SourceChanged
+    public async Task Ime_text_composed_with_nothing_selected_against_a_replaced_source_opens_nothing_and_is_said()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(GridSource.From(rows), heard);
+        var composedOn = Paint(cut);
+        cut.Render(ps => ps.Add(g => g.Source, GridSource.From(Copies(rows))));
+
+        var opened = await cut.InvokeAsync(() => cut.Instance.OnKeyFieldTextAsync("かな", composedOn));
+        await KeyAsync(cut, "Enter", composedOn);
+
+        Assert.False(opened);
+        Assert.Equal([EditDiscardReason.SourceChanged], heard.Discards);
+        Assert.Empty(heard.Edits);
+        Assert.False(EditorOpen(cut));
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
+    }
+
+    [Theory] // ADR-0142 / ADR-0012, LV-33: a key that moves or selects with nothing selected, told what a Source since replaced painted, places no Focus, writes nothing and says nothing — it was a first key on the old source's rows
+    [InlineData("ArrowDown", false)]
+    [InlineData("Enter", false)]
+    [InlineData("Tab", false)]
+    [InlineData("Delete", false)]
+    [InlineData(" ", false)]
+    [InlineData("a", true)]
+    public async Task A_key_that_moves_with_nothing_selected_aimed_at_a_replaced_source_places_no_focus(string key, bool ctrl)
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(GridSource.From(rows), heard);
+        var typedOn = Paint(cut);
+        cut.Render(ps => ps.Add(g => g.Source, GridSource.From(Copies(rows))));
+
+        await KeyAsync(cut, key, typedOn, ctrl: ctrl);
+
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
+        Assert.Empty(heard.Discards);
+        Assert.Empty(heard.Clears);
+        Assert.Empty(heard.PasteRefusals);
+    }
+
+    [Fact] // ADR-0142 / ADR-0012, LV-33: with nothing selected, typing told the new Source's paint keeps the first-key rule: the editor opens on the new source's first painted cell, and commits there
+    public async Task Typing_with_nothing_selected_told_the_new_sources_paint_opens_an_edit_by_the_first_key_rule()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(GridSource.From(rows), heard);
+        var copies = Copies(rows);
+        cut.Render(ps => ps.Add(g => g.Source, GridSource.From(copies)));
+        var seen = Paint(cut);
+
+        await KeyAsync(cut, "5", seen);
+        await KeyAsync(cut, "Enter", seen);
+
+        Assert.Empty(heard.Discards);
+        var edit = Assert.Single(heard.Edits);
+        Assert.Equal("5", edit.Value);
+        Assert.Same(copies[0], edit.Row);
+    }
+
+    [Fact] // ADR-0142 (2026-10-08), LV-33: typing with nothing selected against what a replaced Source painted, where the first key would have landed on a cell that does not edit, would have opened nothing: it is dropped, and nothing is said
+    public async Task Typing_with_nothing_selected_aimed_at_a_replaced_source_over_a_cell_that_does_not_edit_is_dropped_unsaid()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(GridSource.From(rows), heard, FirstColumnReadOnly());
+        var typedOn = Paint(cut);
+        cut.Render(ps => ps.Add(g => g.Source, GridSource.From(Copies(rows))));
+
+        await KeyAsync(cut, "5", typedOn);
+        await KeyAsync(cut, "ArrowRight", typedOn);
+        await KeyAsync(cut, "7", typedOn);
+
+        Assert.Empty(heard.Discards);
+        Assert.False(EditorOpen(cut));
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
+    }
+
     [Fact] // ADR-0142 (2026-10-08): typing aimed with a dropped Selection whose Focus was on a cell that does not edit would have opened nothing: it is dropped, and nothing is said
     public async Task Typing_aimed_at_a_cell_that_does_not_edit_is_dropped_unsaid()
     {

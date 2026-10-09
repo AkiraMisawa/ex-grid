@@ -110,7 +110,10 @@
             change, however fast it is typed and whether the 5 comes back before the <code>7</code> or under it.
             A write of the user's settles with the first new Window the grid takes in after your handler for it
             has completed; with a bound source, the grid asks the source to put out what it gathered at that
-            moment, so a write your handler handed it is in the Window before the next key is handled.
+            moment, so a write your handler handed it is in the Window before the next key is handled. What the
+            user saw is only ever read from the edited row: should that row be out of the Window as the write
+            settles, the editor keeps what it opened over, and the commit may tell the user's own value as a
+            change — it never hides one.
         </p>
         <p>
             <strong>The Edit Intent carries the same two texts</strong>, <code>SeenText</code> and
@@ -118,7 +121,10 @@
             over a change — or whose store, a reducer or a server, is where writes are ordered — calls
             <code>Refuse(message)</code> before its handler completes: the editor stays open with the typing, the
             message is shown at the editor and announced, and the gesture moves nothing. A later commit raises the
-            intent again.
+            intent again. Your handler may take its time — a round trip to a server — and the editor stands while
+            it runs. A press made meanwhile, the second press of a double click or a click on a header included,
+            waits for your answer and is then answered against what it left, exactly as if you had answered at
+            once: one commit raises one Edit Intent.
         </p>
         <p>
             <strong>Target identity still matters</strong>, so a write is refused when the grid can no longer find
@@ -148,7 +154,8 @@
                 <code>SourceChanged</code> — the <code>Source</code> was replaced by another instance. That is a new
                 binding whatever the two sources' Row Sequence Versions are: the Selection is dropped, an open edit is
                 discarded and <code>OnEditDiscarded</code> says <code>SourceChanged</code> — as it does for typing
-                aimed at what the old source painted, which opens nothing — and a paste, a fill,
+                aimed at what the old source painted, with a cell selected or none, which opens nothing — and a
+                paste, a fill,
                 <kbd>Delete</kbd> or an Action aimed at what the old source painted is refused rather than landing
                 on the new source's row at the same place. A <code>Source</code> your own <code>OnEdit</code> handler
                 hands over is that commit's doing, and so are other visible columns it shows: the edit ends as
