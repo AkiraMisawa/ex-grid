@@ -529,7 +529,9 @@ time and together: Chrome for Testing 152, the installed Edge with `--disable-gp
 `edge://gpu` status, a real scale of 1, field trials on (the browser launched by hand, not by
 Playwright), the CPU slowed tenfold, and the window captured with `PrintWindow` rather than through
 the browser, which redraws for a screenshot. All of them painted. What is left is Citrix's own display
-path, which this project cannot run.
+path, which this project cannot run. *(2026-10-09: not the only explanation left. The same PC shows the site
+through a remote browser isolation mirror; see "the white Viewport was seen through a remote browser
+isolation mirror" below.)*
 
 **The decision: a reveal is repainted.** In the frame after the reveal's, the offset moves one pixel
 away from the edge it stands at (across, where the rows cannot scroll), and in the frame after that it
@@ -556,3 +558,34 @@ moves back. That is the move that painted the rows there.
   paints nothing for them, and that a scroll in between stands. Whether it paints under Citrix is
   checked by hand there (VZ-18). *(Checked 2026-10-08 on that PC, with a build of v0.1.0-beta.2
   carrying only this change published to the Docs Site: Ctrl+↓, Ctrl+↑ and PageDown painted.)*
+
+## Added later: the white Viewport was seen through a remote browser isolation mirror *(2026-10-09)*
+
+*(A finding, not a decision. The section above stands as decided.)*
+
+The PC where the white Viewport was seen does not run the Docs Site in its own browser. Its
+organisation's remote browser isolation service runs the site in a cloud browser. The PC's Edge and
+Chrome show a mirror of that page, in which none of the site's scripts runs. On the mirror,
+`typeof Blazor` is `"undefined"` and `ex-grid.min.js` is never loaded. An internal site on the same
+PC is not isolated. This came out of a second fault on that PC: an arrow key moved the Focus and also
+scrolled the page. The mirror takes the key first, nothing there takes it, and the local browser
+scrolls by it, while the key is also forwarded to the grid in the cloud. The grid cannot prevent
+that from where it runs, and no CSS tried keeps the scroll off the page.
+[`verification/2026-10-09-windows-remote-isolation`](../../verification/2026-10-09-windows-remote-isolation/README.md)
+records the investigation.
+
+**What this changes in the section above.** "What is left is Citrix's own display path" is no longer
+the only explanation left. Every symptom recorded there fits a mirror that falls behind the page it
+mirrors and catches up on a scroll event:
+
+- The DOM was right and the screen was white.
+- Price updates were not drawn.
+- The rows appeared one by one under ArrowUp.
+- A user's scroll painted everything.
+- One pixel away and back painted the rows.
+
+The trace read the cloud page, and the screen showed the mirror. It is not settled which of the two
+layers, the remote desktop or the mirror, drops the paint. The run that settles it is: the Docs Site
+served from that PC's own `localhost`, which the service should not isolate, with the repaint off.
+The verification record gives its two outcomes. Until it is run, the repaint stays, and VZ-18 is
+checked as it is written.

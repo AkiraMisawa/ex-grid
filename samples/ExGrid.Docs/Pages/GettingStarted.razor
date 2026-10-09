@@ -55,4 +55,28 @@
             MudBlazor at the top and try the Example above again.
         </p>
     </DocsSection>
+
+    <DocsSection Title="Behind a remote browser isolation service">
+        <p>
+            Some organisations route the web through a remote browser isolation service. It runs a site
+            in a browser in the cloud and shows the user's own browser a mirror of that page, in which
+            none of the site's scripts runs. The grid's script runs in the cloud browser. A key reaches
+            the mirror first, and nothing there takes it, so the user's browser acts on it as on any
+            page: <b>an arrow key moves the active cell and also scrolls the page</b>, most plainly where
+            the grid fills little of it. The grid cannot prevent this from where it runs, and no
+            stylesheet can.
+        </p>
+        <p>
+            To tell whether a page is mirrored, open the browser's developer tools on it and run
+            <code>typeof Blazor</code> in the Console. On a mirror it answers <code>"undefined"</code>,
+            and the Sources panel lists the service's scripts instead of the application's
+            <code>_framework</code> and <code>_content</code> files.
+        </p>
+        <p>
+            Which sites are mirrored is the service's policy. Where this was found, the organisation's own
+            sites were not. Host the application on a site the service leaves alone, or ask whoever runs
+            the service to except its address. This Docs Site is on
+            GitHub Pages, so a user behind such a service may see it mirrored.
+        </p>
+    </DocsSection>
 </DocsPage>
