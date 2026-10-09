@@ -106,6 +106,12 @@ internal sealed class ReportBuilder
         _pending = new AxisNode?[_rowPlacements.Length];
     }
 
+    /// <summary>The cube it lays out.</summary>
+    internal PivotCube Cube => _cube;
+
+    /// <summary>The layout it lays the cube out under.</summary>
+    internal PivotLayout Layout => _layout;
+
     private int RowLevels => _rowPlacements.Length;
 
     private int ColumnLevels => _columnPlacements.Length;
@@ -129,7 +135,14 @@ internal sealed class ReportBuilder
 
     /// <summary>The report, laid out in slices (PV-40): the value columns and their spans, then the
     /// rows, each tree walked a step at a time, and the rows handed to the report.</summary>
-    public async ValueTask<PivotReport> BuildAsync(Slicer slicer)
+    public ValueTask<PivotReport> BuildAsync(Slicer slicer) => LayOutAsync(null, slicer);
+
+    /// <summary>The report around <paramref name="rows"/>, which this builder made node by node
+    /// (<see cref="RowsOf(AxisNode, int)"/>) for a computation's structure (ADR-0153): the value columns and their
+    /// spans laid out as <see cref="BuildAsync"/> lays them out.</summary>
+    internal ValueTask<PivotReport> BuildAroundAsync(IReadOnlyList<PivotReportRow> rows, Slicer slicer) => LayOutAsync(rows, slicer);
+
+    private async ValueTask<PivotReport> LayOutAsync(IReadOnlyList<PivotReportRow>? laidOut, Slicer slicer)
     {
         var columns = new List<PivotReportColumn>();
         var spans = new List<PivotHeaderSpan>();
@@ -137,10 +150,11 @@ internal sealed class ReportBuilder
         if (!Empty)
         {
             await EmitColumnsAsync(columns, spans, slicer).ConfigureAwait(false);
-            await EmitRowsAsync(rows, slicer).ConfigureAwait(false);
+            if (laidOut is null)
+                await EmitRowsAsync(rows, slicer).ConfigureAwait(false);
         }
         var tiers = ColumnLevels == 0 ? 0 : _valuesOnColumns ? ColumnLevels : ColumnLevels - 1;
-        var report = new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, rows, _lineage);
+        var report = new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, laidOut ?? rows, _lineage);
         return report;
     }
 
@@ -152,20 +166,38 @@ internal sealed class ReportBuilder
     // starts a new suffix, while a first child inherits its parent's pending ancestors.
     internal (PivotReportRow[] Before, PivotReportRow[] After, bool Descend) RowsOf(AxisNode node, int pendingFrom)
     {
-        var before = new List<PivotReportRow>();
-        var after = new List<PivotReportRow>();
-        if (Empty) return ([], [], false);
+        // One node's few rows, collected in lists this builder reuses: a structure is laid out
+        // node by node, hundreds of thousands of them.
+        _before.Clear();
+        _after.Clear();
+        var descend = LayOut(node, pendingFrom, _before, _after);
+        return ([.. _before], [.. _after], descend);
+    }
+
+    /// <summary>As <see cref="RowsOf(AxisNode, int)"/>, the node's rows before its children's
+    /// appended to <paramref name="rows"/>; answers its rows after them, for the caller to append
+    /// once the children are laid out.</summary>
+    internal PivotReportRow[] RowsInto(AxisNode node, int pendingFrom, List<PivotReportRow> rows, out bool descend)
+    {
+        _after.Clear();
+        descend = LayOut(node, pendingFrom, rows, _after);
+        return _after.Count == 0 ? [] : [.. _after];
+    }
+
+    private bool LayOut(AxisNode node, int pendingFrom, List<PivotReportRow> before, List<PivotReportRow> after)
+    {
+        if (Empty) return false;
         if (node.Item is null)
         {
             if (RowLevels == 0)
             {
                 Slicer.Run(EmitRowsAsync(before, Slicer.Unsliced));
-                return ([.. before], [], false);
+                return false;
             }
             if (_layout.GrandTotalRow && ValueCount > 0)
                 for (var vf = _valuesOnRows ? 0 : -1; vf < (_valuesOnRows ? ValueCount : 0); vf++)
                     after.Add(NewRow(PivotRowRole.GrandTotal, node, vf, true, GrandTotalLabels(vf)));
-            return ([], [.. after], true);
+            return true;
         }
         Array.Clear(_pending);
         for (var level = pendingFrom; level < node.Level; level++)
@@ -178,8 +210,11 @@ internal sealed class ReportBuilder
             if (tabular) LeaveTabular(node, after);
             else LeaveGrouped(node, after);
         }
-        return ([.. before], [.. after], descend);
+        return descend;
     }
+
+    private readonly List<PivotReportRow> _before = [];
+    private readonly List<PivotReportRow> _after = [];
 
     internal async ValueTask<List<AxisNode>> OrderedChildrenAsync(AxisNode node, Slicer slicer)
     {

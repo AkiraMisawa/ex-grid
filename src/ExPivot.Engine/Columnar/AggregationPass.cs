@@ -403,7 +403,24 @@ internal sealed class AggregationPass
         if (!_keepRows && change.Removed.Count > 0)
             return false;
         ChangedLeaves.Clear();
-        foreach (var axis in _axis) axis.ChangedItems.Clear();
+        foreach (var axis in _axis)
+        {
+            axis.ChangedItems.Clear();
+            axis.Folding = true;
+        }
+        try
+        {
+            return FoldIn(change);
+        }
+        finally
+        {
+            foreach (var axis in _axis)
+                axis.Folding = false;
+        }
+    }
+
+    private bool FoldIn(SnapshotChange change)
+    {
         var before = change.Before;
         var after = change.After;
         var marked = new HashSet<int>[_values.Length];

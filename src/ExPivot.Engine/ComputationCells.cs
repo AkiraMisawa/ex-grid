@@ -4,22 +4,41 @@ namespace ExPivot.Engine;
 
 // Immutable pages over the initial columnar cells. A new version copies only written pages;
 // it points to no previous version, so collecting one version cannot keep a history chain.
+// The cell index is the same: the initial cube's own, which nothing writes once that cube is
+// made, under an immutable overlay of the keys the versions since added or removed. A
+// computation's first version copies nothing of either.
 internal sealed class ComputationCells(
-    ImmutableDictionary<long, int> cells, PartColumns[] baseline,
+    Dictionary<long, int> initial, ImmutableDictionary<long, int> changed, PartColumns[] baseline,
     ImmutableDictionary<int, PartColumns[]> pages, int count)
 {
     internal const int PageSize = 256;
-    public ImmutableDictionary<long, int> Cells { get; } = cells;
+
+    // An initial key a later version removed.
+    private const int Gone = -1;
+
+    /// <summary>A computation's first version: the initial cube's cells, shared.</summary>
+    public static ComputationCells Of(Dictionary<long, int> cells, PartColumns[] values)
+        => new(cells, ImmutableDictionary.Create<long, int>(CellKey.Comparer), values,
+            ImmutableDictionary<int, PartColumns[]>.Empty, cells.Count);
+
     public PartColumns[] Baseline { get; } = baseline;
     public ImmutableDictionary<int, PartColumns[]> Pages { get; } = pages;
     public int Count { get; } = count;
+
+    /// <summary>The cell a key names in this version, if any.</summary>
+    public bool TryGetCell(long key, out int cell)
+        => Changed.TryGetValue(key, out cell) ? cell != Gone : Initial.TryGetValue(key, out cell);
+
+    /// <summary>The cell a key names; it must name one.</summary>
+    public int CellOf(long key)
+        => TryGetCell(key, out var cell) ? cell : throw new KeyNotFoundException($"No cell has the key {key}.");
 
     public (PartColumns[] Columns, int Offset) At(int cell)
         => Pages.TryGetValue(cell / PageSize, out var page) ? (page, cell % PageSize) : (Baseline, cell);
 
     public AggregateValue Read(int row, int column, int source, PivotAggregation aggregation)
     {
-        if (!Cells.TryGetValue(CellKey.Of(row, column), out var cell))
+        if (!TryGetCell(CellKey.Of(row, column), out var cell))
             return AggregateValue.Empty;
         var (columns, offset) = At(cell);
         return columns[source].Read(offset, aggregation);
@@ -27,19 +46,28 @@ internal sealed class ComputationCells(
 
     public sealed class Writer(ComputationCells previous)
     {
-        private readonly ImmutableDictionary<long, int>.Builder _cells = previous.Cells.ToBuilder();
+        private readonly ImmutableDictionary<long, int>.Builder _changed = previous.Changed.ToBuilder();
         private readonly ImmutableDictionary<int, PartColumns[]>.Builder _pages = previous.Pages.ToBuilder();
         private readonly HashSet<int> _written = [];
         private int _count = previous.Count;
 
+        private bool TryGetCell(long key, out int cell)
+            => _changed.TryGetValue(key, out cell) ? cell != Gone : previous.Initial.TryGetValue(key, out cell);
+
         public int Cell(long key)
         {
-            if (!_cells.TryGetValue(key, out var index))
-                _cells[key] = index = _count++;
+            if (!TryGetCell(key, out var index))
+                _changed[key] = index = _count++;
             return index;
         }
 
-        public void Remove(long key) => _cells.Remove(key);
+        public void Remove(long key)
+        {
+            if (previous.Initial.ContainsKey(key))
+                _changed[key] = Gone;
+            else
+                _changed.Remove(key);
+        }
 
         private PartColumns[] Write(int cell)
         {
@@ -110,6 +138,9 @@ internal sealed class ComputationCells(
                 values.Canonicalize(cell % PageSize, cell % PageSize + 1);
         }
 
-        public ComputationCells Freeze() => new(_cells.ToImmutable(), previous.Baseline, _pages.ToImmutable(), _count);
+        public ComputationCells Freeze() => new(previous.Initial, _changed.ToImmutable(), previous.Baseline, _pages.ToImmutable(), _count);
     }
+
+    private Dictionary<long, int> Initial { get; } = initial;
+    private ImmutableDictionary<long, int> Changed { get; } = changed;
 }

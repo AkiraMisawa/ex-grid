@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using System.Collections.Immutable;
 
 namespace ExPivot.Engine;
 
@@ -17,43 +16,37 @@ public sealed class PivotCube
     private readonly PartColumns[] _values;
     internal ComputationCells? ComputedCells { get; private init; }
 
-    internal async ValueTask<ComputationCells> ShareCellsAsync(Slicer slicer)
-    {
-        if (ComputedCells is not null) return ComputedCells;
-        var cells = ImmutableDictionary.CreateBuilder<long, int>(CellKey.Comparer);
-        foreach (var (key, index) in _cells)
-        {
-            cells.Add(key, index);
-            if (slicer.Done(1)) await slicer.PauseAsync().ConfigureAwait(false);
-        }
-        return new(cells.ToImmutable(), _values, ImmutableDictionary<int, PartColumns[]>.Empty, _cells.Count);
-    }
+    /// <summary>The cells as a computation's first version holds them: this cube's own, shared,
+    /// which nothing writes once the cube is made (ADR-0153).</summary>
+    internal ComputationCells ShareCells() => ComputedCells ?? ComputationCells.Of(_cells, _values);
 
     internal ComputationAxis? ComputedRows { get; private init; }
     internal ComputationAxis? ComputedColumns { get; private init; }
     internal IReadOnlyList<AxisNode> ChildrenOf(AxisNode node, bool rows)
         => (rows ? ComputedRows : ComputedColumns)?.ChildrenOf(node.Id) ?? node.Children;
     internal AxisNode NodeOf(AxisNode node, bool rows)
-        => (rows ? ComputedRows : ComputedColumns)?.Nodes[node.Id] ?? node;
-    private Dictionary<int, AxisNode>? _initialRows;
-    internal AxisNode RowNode(int id)
-    {
-        if (ComputedRows is not null) return ComputedRows.Nodes[id];
-        if (_initialRows is null)
-        {
-            var nodes = new Dictionary<int, AxisNode>();
-            void Add(AxisNode node) { nodes.Add(node.Id, node); foreach (var child in node.Children) Add(child); }
-            Add(RowRoot);
-            _initialRows = nodes;
-        }
-        return _initialRows[id];
-    }
+        => (rows ? ComputedRows : ComputedColumns)?.Node(node.Id) ?? node;
+    internal AxisNode RowNode(int id) => ComputedRows?.Node(id) ?? RowNodes[id];
+
+    /// <summary>The nodes the answer's trees were made of, by id: the root first. A computation's
+    /// trees start as these, and nothing writes them (ADR-0153).</summary>
+    internal AxisNode[] RowNodes { get; }
+
+    /// <inheritdoc cref="RowNodes"/>
+    internal AxisNode[] ColumnNodes { get; }
 
     internal PivotCube WithCells(string sourceVersion, long included, ComputationCells cells,
         ComputationAxis? rows = null, ComputationAxis? columns = null)
-        => new(Query, sourceVersion, included, Meta, RowRoot, ColumnRoot, Sources, _cells, _values)
+        => new(Query, sourceVersion, included, Meta, RowRoot, ColumnRoot, RowNodes, ColumnNodes, Sources, _cells, _values)
             { ComputedCells = cells, ComputedRows = rows, ComputedColumns = columns };
 
+    /// <summary>The nodes a cube made for each leaf of its answer, in the answer's order: what a
+    /// computation that keeps the cube up to date starts from (ADR-0153).</summary>
+    internal sealed class LeafNodes
+    {
+        public AxisNode[] Rows { get; set; } = [];
+        public AxisNode[] Columns { get; set; } = [];
+    }
 
     private PivotCube(
         PivotQuery query,
@@ -62,6 +55,8 @@ public sealed class PivotCube
         IReadOnlyDictionary<string, FieldMeta> meta,
         AxisNode rowRoot,
         AxisNode columnRoot,
+        AxisNode[] rowNodes,
+        AxisNode[] columnNodes,
         string[] sources,
         Dictionary<long, int> cells,
         PartColumns[] values)
@@ -72,6 +67,8 @@ public sealed class PivotCube
         Meta = meta;
         RowRoot = rowRoot;
         ColumnRoot = columnRoot;
+        RowNodes = rowNodes;
+        ColumnNodes = columnNodes;
         Sources = sources;
         _cells = cells;
         _values = values;
@@ -149,7 +146,8 @@ public sealed class PivotCube
         Slicer slicer,
         object? records = null,
         object? fields = null,
-        Func<string, IReadOnlyList<ItemKey>>? allItems = null)
+        Func<string, IReadOnlyList<ItemKey>>? allItems = null,
+        LeafNodes? leafNodes = null)
     {
         if (answer.Mismatch(query) is { } mismatch)
             throw new InvalidOperationException($"The answer does not answer the question: {mismatch} (ADR-0066).");
@@ -166,6 +164,11 @@ public sealed class PivotCube
         var columnNodes = new List<AxisNode> { columnRoot };
         var rowLeaves = await TreeAsync(answer.RowAxes, rowRoot, rowNodes, leafCount, slicer).ConfigureAwait(false);
         var columnLeaves = await TreeAsync(answer.ColumnAxes, columnRoot, columnNodes, leafCount, slicer).ConfigureAwait(false);
+        if (leafNodes is not null)
+        {
+            leafNodes.Rows = rowLeaves;
+            leafNodes.Columns = columnLeaves;
+        }
 
         var sources = answer.ValueColumns.Select(v => v.Field).ToArray();
         var values = new PartColumns[answer.ValueColumns.Length];
@@ -235,7 +238,8 @@ public sealed class PivotCube
         foreach (var columns in values)
             await slicer.ForAsync(cellCount, columns.Canonicalize).ConfigureAwait(false);
 
-        return new PivotCube(query, answer.SourceVersion, included, meta, rowRoot, columnRoot, sources, cells, values)
+        return new PivotCube(query, answer.SourceVersion, included, meta, rowRoot, columnRoot,
+            [.. rowNodes], [.. columnNodes], sources, cells, values)
         {
             RecordsIdentity = records,
             FieldsIdentity = fields,
