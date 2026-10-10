@@ -22,21 +22,17 @@
 
     <DocsSection Title="The parts of a grid">
         <p>
-            These pages and the API name the parts of a grid as the figure does. Header Groups label adjacent columns,
-            and Pinned Columns stay at the edge while the others pan under them. The Mark Column's ticks are Row Marks,
-            which your application holds. A Selection is rectangles of cells, as in Excel: the Focus is the cell you are
-            on, and the Extent is the end that moves as you extend the range. Under the grid, the Selection Summary gives
-            Excel's status-bar figures over it. A number too wide for its column shows <code>####</code>, never a
-            shorter number.
+            These pages and the API name the parts of a grid as the list under the figure does. Header Groups
+            label adjacent columns, and Pinned Columns stay at the edge while the others pan under them. The Mark
+            Column's ticks are Row Marks, which your application holds. A Selection is rectangles of cells, as in
+            Excel: the Focus is the cell you are on, and the Extent is the end that moves as you extend the range.
+            Under the grid, the Selection Summary gives Excel's status-bar figures over it. A number too wide for
+            its column shows <code>####</code>, never a shorter number.
         </p>
-        <figure class="docs-figure">
-            <img src="figures/grid-anatomy.png" width="1098" height="612"
-                 alt="An ExGrid of positions, each part named: the Header Group Economics; the Pinned Columns, with the column after them panned partly under them; the Mark Column with two Row Marks ticked; a Row Stripe; a Selection of Price and P&amp;L over four rows, with its Focus and its Extent; a P&amp;L too wide for its column, shown as ####; and the Selection Summary under the grid." />
-            <figcaption>
-                Positions under three Header Groups, panned until P&amp;L shows whole, with two rows marked and a range selected.
-                A script draws the figure from <a href="figure/grid-anatomy" target="_blank">the grid on a page of its own</a>.
-            </figcaption>
-        </figure>
+        <DocsFigure Name="grid-anatomy">
+            Positions under three Header Groups, panned until P&amp;L shows whole, with two rows marked and a range selected.
+            A script draws the figure from <a href="figure/grid-anatomy" target="_blank">the grid on a page of its own</a>.
+        </DocsFigure>
     </DocsSection>
 
     <DocsSection Title="The grid neither holds nor executes">

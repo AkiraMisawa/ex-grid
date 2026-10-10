@@ -12,6 +12,8 @@ const row = (page, label) => page.locator('.ex-row').filter({
 export default {
   name: 'pivot-anatomy',
   path: 'figure/pivot-anatomy',
+  overview: 'expivot',
+  alt: "An ExPivot report of 2025's sales by region and country, with Europe open, beside its PivotTable Fields pane; each part the list names is ringed and numbered",
   frame: '.anatomy-pivot',
   // Neither the report nor the pane may scroll: every part is shown whole.
   whole: ['.ex-scroller', '.ex-pivot-pane-body'],

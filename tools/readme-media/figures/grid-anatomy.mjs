@@ -12,6 +12,8 @@ const row = (page, id) => page.locator('.ex-row:not(.ex-placeholder)').filter({
 export default {
   name: 'grid-anatomy',
   path: 'figure/grid-anatomy',
+  overview: 'exgrid',
+  alt: 'An ExGrid of positions under Header Groups, panned past its Pinned Columns, with two rows marked and a range selected; each part the list names is ringed and numbered',
   frame: '.anatomy-grid',
   async ready(page) {
     await rowsPainted(page);
@@ -41,12 +43,12 @@ export default {
     await page.locator('.ex-summary-figure', { hasText: 'Sum' }).waitFor();
   },
   parts: [
-    { term: 'Header Group', note: 'a label over adjacent columns', side: 'top',
-      target: page => page.locator('.ex-header-group', { hasText: 'Economics' }) },
     // Down the left of the Mark Column's header, where nothing is written.
     { term: 'Pinned Column', note: 'held at the edge while the others pan under it', side: 'top', at: 0.04, ring: 4,
       target: page => ({ all: page.locator('.ex-header .ex-pinned, .ex-row:not(.ex-placeholder) .ex-pinned') }),
       within: page => page.locator('.ex-scroller') },
+    { term: 'Header Group', note: 'a label over adjacent columns', side: 'top',
+      target: page => page.locator('.ex-header-group', { hasText: 'Economics' }) },
     { term: 'Mark Column', note: 'its ticks are Row Marks, which your application holds', side: 'left',
       target: page => row(page, 5007).locator('.ex-cell').first() },
     { term: 'Row Stripe', note: 'on every second row of the result', side: 'left', target: page => row(page, 5010),
@@ -54,7 +56,7 @@ export default {
     // The Selection's ring stands outside it, clear of the Focus's and the Extent's.
     { term: 'Selection', note: 'rectangles of cells, by position', side: 'right', ring: 4, target: page => page.locator('.ex-range') },
     // Along the line between two rows, clear of the number beside it.
-    { term: 'Focus', note: 'the active cell: typing enters it', side: 'right', at: 0, target: page => page.locator('.ex-focus') },
+    { term: 'Focus', note: 'the active cell, which typing enters', side: 'right', at: 0, target: page => page.locator('.ex-focus') },
     { term: 'Extent', note: 'the end that moves as the range grows', side: 'right', target: page => cellBox(page, 'P&L', 4) },
     { term: 'Overflow', note: 'a number too wide shows ####, never a shorter number', side: 'right',
       target: page => row(page, 5006).locator('.ex-cell').filter({ has: page.locator('.ex-hashes') }) },

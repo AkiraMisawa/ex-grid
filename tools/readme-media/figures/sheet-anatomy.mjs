@@ -7,6 +7,8 @@ import { cellAt, cellBox, rowsPainted } from '../grid.mjs';
 export default {
   name: 'sheet-anatomy',
   path: 'figure/sheet-anatomy',
+  overview: 'exsheet',
+  alt: "An ExSheet expenses claim beside last quarter's, with the total's Formula open in the Cell Editor; each part the list names is ringed and numbered",
   frame: '.anatomy-sheet',
   async ready(page) {
     await rowsPainted(page);
@@ -33,7 +35,7 @@ export default {
     { term: 'Reference Outline', note: 'the cells a Reference in the Formula names', side: 'right', at: 0, ring: 4,
       target: page => page.locator('.ex-reference-outline') },
     { term: 'Number Format', note: 'turns a Value into the text shown, here 0.0%', side: 'right', target: page => cellBox(page, 'F', 2) },
-    { term: 'Error Value', note: 'an error, carried as data: nothing to divide by', side: 'right', target: page => cellBox(page, 'F', 5) },
+    { term: 'Error Value', note: 'an error, carried as data; here a division by nothing', side: 'right', target: page => cellBox(page, 'F', 5) },
     // Along the line under the total's row, clear of the change beside it.
     { term: 'Value', note: "what a cell's Entry evaluates to", side: 'right', at: 1, target: page => cellBox(page, 'E', 6) },
   ],
