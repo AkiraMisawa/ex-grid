@@ -88,6 +88,10 @@ Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.
 - In-process data, CSV, a database, or a server answering with leaf aggregates; live data folded
   in as Change Batches
 
+The parts of a pivot, as [the Docs Site](https://akiramisawa.github.io/ex-grid/expivot) and the API name them:
+
+[![An ExPivot report and its PivotTable Fields pane, each part named: the report filter, a Header Group over two Value Fields, a group row, an Item, a subtotal, the grand total, a cell computed from its Leaf Aggregate, and the four Areas](samples/ExGrid.Docs/wwwroot/figures/pivot-anatomy.png)](https://akiramisawa.github.io/ex-grid/expivot)
+
 [![A sales analysis in ExPivot: a region is collapsed and opened, and a field is added to the rows from the Fields pane and taken off again](docs/readme/sales-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/sales)
 
 <details>

@@ -872,6 +872,18 @@ total is computed from these parts, whether the report is computed locally or on
 [ADR-0151](./docs/adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)).
 _Avoid_: cube (the engine's own word for what it holds), summary, pre-aggregate, rollup
 
+**Question**:
+What a Pivot Source is asked to aggregate for a Pivot Report: the part of its Pivot Layout that
+decides the Leaf Aggregates — the row and column fields in order, the Hidden Items of each placed
+field, and for each field in Values the parts its Aggregations are computed from. A change to any of
+them asks a new Question, which supersedes one still unanswered; any other change — collapse, order,
+form, totals, Show Values As, a caption or a format — lays the held answer out again, and newer data
+is folded into that answer or answers the same Question again
+([ADR-0066](./docs/adr/0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md),
+[ADR-0067](./docs/adr/0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+_Avoid_: query (the grid's **Query** asks for rows), request, and Pivot Layout (a layout asks a
+Question, and holds more)
+
 **Pivot Field**:
 A named attribute of the Source Records the user can place in an Area: its caption, how it is read
 from a record, and its declared type, which decides where a ticked field goes and which
@@ -1106,6 +1118,10 @@ _Avoid_: demo, hero
 - **"Filter" means two things in a pivot.** ExGrid's **Filter** is a model of conditions the grid
   hands its Consumer; a pivot's filter is its **Hidden Items**, held in the Pivot Layout, and
   **Filters** is the Area. The report's grid is handed no Filter at all.
+- **"Question" is the pivot's; the grid asks a Query.** A **Question** is what a Pivot Source is
+  asked to aggregate. What ExGrid asks of its source is its **Query** — range, Filter and Sort —
+  and where its pages say "question" for the Query, a Find or the Selection Summary, it is the
+  everyday word. Write **Question** only for the pivot's.
 - **"Seam" means two things.** A **Chrome seam** is one of the places Chrome is substituted
   into. In talk about tests, a seam is the public boundary a test observes behaviour through —
   write **test seam** for that, and never "seam" alone where either could be meant.

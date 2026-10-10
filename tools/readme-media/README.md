@@ -1,13 +1,28 @@
 # README media
 
-The README's GIFs are recorded from the Docs Site's Showcases by `record.mjs`, never edited by hand
+The README's GIFs are recorded from the Docs Site's Showcases by `record.mjs`, and the figures that
+name a product's parts are drawn from pages of the Docs Site by `figures.mjs`. Neither is ever
+edited by hand
 ([ADR-0110](../../docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)).
-When the UI changes, record them again.
+When the UI changes, record and draw them again.
 
 Each scene in `scenes/` opens one Showcase, waits until it is ready, and plays its gestures: the
 same rows every time, because the Showcases' data comes from a fixed seed. The recording draws a
 cursor and a badge for each key pressed. Neither touches what the page does. A scene whose page
 logs an error is not written.
+
+## Figures
+
+Each figure in `figures/` opens a page made for it under `samples/ExGrid.Docs/Figures`, waits until
+it is ready, and names the parts it lists by their terms in `CONTEXT.md`: a ring around each part,
+and its name beside it with a line to the ring. Only the frame's margin moves, to make room for the
+names. A figure is refused when its page logs an error, when a part is not on the page exactly once,
+when an element it shows whole would scroll, and when two names would stand on each other's lines.
+The PNG is taken at twice the pixels, so it stays sharp where a page scales it down.
+
+| Figure | Page | Shown on |
+|---|---|---|
+| `pivot-anatomy` | `/figure/pivot-anatomy` | ExPivot's Overview, and the README's ExPivot section |
 
 ## Run it
 
@@ -29,8 +44,11 @@ npm ci
 node record.mjs --base http://localhost:5310/            # every scene, both Chromes, into out/
 node record.mjs --only blotter --chrome mud              # one scene, one Chrome
 node record.mjs --write                                  # also copy the GIFs into docs/readme/
+node figures.mjs --base http://localhost:5310/           # every figure, into out/
+node figures.mjs --write                                 # also copy the PNGs into the Docs Site's wwwroot/figures/
 ```
 
 Set `CHROMIUM_PATH` to use an installed Chromium instead of Playwright's own.
 
-A recording is 1280×720, turned into a 960-pixel-wide GIF at 10 frames a second.
+A recording is 1280×720, turned into a 960-pixel-wide GIF at 10 frames a second. A figure is as
+large as its page's frame and the names around it.
