@@ -1,0 +1,614 @@
+{
+  "inner": 10,
+  "redraws": 100,
+  "samples": [
+    {
+      "redraw": 0,
+      "managedMB": 15.3,
+      "linearMB": 80
+    },
+    {
+      "redraw": 1,
+      "redrawMs": 225,
+      "managedMB": 16.6,
+      "linearMB": 80
+    },
+    {
+      "redraw": 2,
+      "redrawMs": 88,
+      "managedMB": 17.4,
+      "linearMB": 80
+    },
+    {
+      "redraw": 3,
+      "redrawMs": 120,
+      "managedMB": 18.3,
+      "linearMB": 80
+    },
+    {
+      "redraw": 4,
+      "redrawMs": 109,
+      "managedMB": 19.1,
+      "linearMB": 80
+    },
+    {
+      "redraw": 5,
+      "redrawMs": 101,
+      "managedMB": 19.9,
+      "linearMB": 80
+    },
+    {
+      "redraw": 6,
+      "redrawMs": 134,
+      "managedMB": 20.8,
+      "linearMB": 80
+    },
+    {
+      "redraw": 7,
+      "redrawMs": 86,
+      "managedMB": 21.6,
+      "linearMB": 80
+    },
+    {
+      "redraw": 8,
+      "redrawMs": 78,
+      "managedMB": 22.4,
+      "linearMB": 80
+    },
+    {
+      "redraw": 9,
+      "redrawMs": 91,
+      "managedMB": 22.5,
+      "linearMB": 80
+    },
+    {
+      "redraw": 10,
+      "redrawMs": 80,
+      "managedMB": 22.6,
+      "linearMB": 80
+    },
+    {
+      "redraw": 11,
+      "redrawMs": 96,
+      "managedMB": 22.8,
+      "linearMB": 80
+    },
+    {
+      "redraw": 12,
+      "redrawMs": 71,
+      "managedMB": 22.9,
+      "linearMB": 80
+    },
+    {
+      "redraw": 13,
+      "redrawMs": 66,
+      "managedMB": 23,
+      "linearMB": 80
+    },
+    {
+      "redraw": 14,
+      "redrawMs": 96,
+      "managedMB": 23,
+      "linearMB": 80
+    },
+    {
+      "redraw": 15,
+      "redrawMs": 105,
+      "managedMB": 23.1,
+      "linearMB": 96
+    },
+    {
+      "redraw": 16,
+      "redrawMs": 74,
+      "managedMB": 23.2,
+      "linearMB": 96
+    },
+    {
+      "redraw": 17,
+      "redrawMs": 96,
+      "managedMB": 23.3,
+      "linearMB": 96
+    },
+    {
+      "redraw": 18,
+      "redrawMs": 68,
+      "managedMB": 24.1,
+      "linearMB": 96
+    },
+    {
+      "redraw": 19,
+      "redrawMs": 66,
+      "managedMB": 24.2,
+      "linearMB": 96
+    },
+    {
+      "redraw": 20,
+      "redrawMs": 95,
+      "managedMB": 24.3,
+      "linearMB": 96
+    },
+    {
+      "redraw": 21,
+      "redrawMs": 67,
+      "managedMB": 24.3,
+      "linearMB": 96
+    },
+    {
+      "redraw": 22,
+      "redrawMs": 72,
+      "managedMB": 24.4,
+      "linearMB": 96
+    },
+    {
+      "redraw": 23,
+      "redrawMs": 69,
+      "managedMB": 24.5,
+      "linearMB": 96
+    },
+    {
+      "redraw": 24,
+      "redrawMs": 67,
+      "managedMB": 24.6,
+      "linearMB": 96
+    },
+    {
+      "redraw": 25,
+      "redrawMs": 71,
+      "managedMB": 25.4,
+      "linearMB": 96
+    },
+    {
+      "redraw": 26,
+      "redrawMs": 53,
+      "managedMB": 25.5,
+      "linearMB": 96
+    },
+    {
+      "redraw": 27,
+      "redrawMs": 60,
+      "managedMB": 25.5,
+      "linearMB": 96
+    },
+    {
+      "redraw": 28,
+      "redrawMs": 70,
+      "managedMB": 25.6,
+      "linearMB": 96
+    },
+    {
+      "redraw": 29,
+      "redrawMs": 68,
+      "managedMB": 25.7,
+      "linearMB": 96
+    },
+    {
+      "redraw": 30,
+      "redrawMs": 65,
+      "managedMB": 25.8,
+      "linearMB": 96
+    },
+    {
+      "redraw": 31,
+      "redrawMs": 64,
+      "managedMB": 26.2,
+      "linearMB": 96
+    },
+    {
+      "redraw": 32,
+      "redrawMs": 66,
+      "managedMB": 26.2,
+      "linearMB": 96
+    },
+    {
+      "redraw": 33,
+      "redrawMs": 65,
+      "managedMB": 26.3,
+      "linearMB": 96
+    },
+    {
+      "redraw": 34,
+      "redrawMs": 62,
+      "managedMB": 26.4,
+      "linearMB": 96
+    },
+    {
+      "redraw": 35,
+      "redrawMs": 66,
+      "managedMB": 26.5,
+      "linearMB": 96
+    },
+    {
+      "redraw": 36,
+      "redrawMs": 65,
+      "managedMB": 26.5,
+      "linearMB": 96
+    },
+    {
+      "redraw": 37,
+      "redrawMs": 67,
+      "managedMB": 26.6,
+      "linearMB": 96
+    },
+    {
+      "redraw": 38,
+      "redrawMs": 66,
+      "managedMB": 26.7,
+      "linearMB": 96
+    },
+    {
+      "redraw": 39,
+      "redrawMs": 62,
+      "managedMB": 26.8,
+      "linearMB": 96
+    },
+    {
+      "redraw": 40,
+      "redrawMs": 67,
+      "managedMB": 26.9,
+      "linearMB": 96
+    },
+    {
+      "redraw": 41,
+      "redrawMs": 51,
+      "managedMB": 26.9,
+      "linearMB": 96
+    },
+    {
+      "redraw": 42,
+      "redrawMs": 64,
+      "managedMB": 27,
+      "linearMB": 96
+    },
+    {
+      "redraw": 43,
+      "redrawMs": 60,
+      "managedMB": 27.1,
+      "linearMB": 96
+    },
+    {
+      "redraw": 44,
+      "redrawMs": 60,
+      "managedMB": 27.2,
+      "linearMB": 96
+    },
+    {
+      "redraw": 45,
+      "redrawMs": 74,
+      "managedMB": 27.2,
+      "linearMB": 96
+    },
+    {
+      "redraw": 46,
+      "redrawMs": 64,
+      "managedMB": 27.3,
+      "linearMB": 96
+    },
+    {
+      "redraw": 47,
+      "redrawMs": 60,
+      "managedMB": 27.4,
+      "linearMB": 96
+    },
+    {
+      "redraw": 48,
+      "redrawMs": 78,
+      "managedMB": 27.5,
+      "linearMB": 96
+    },
+    {
+      "redraw": 49,
+      "redrawMs": 73,
+      "managedMB": 27.5,
+      "linearMB": 96
+    },
+    {
+      "redraw": 50,
+      "redrawMs": 61,
+      "managedMB": 27.6,
+      "linearMB": 96
+    },
+    {
+      "redraw": 51,
+      "redrawMs": 55,
+      "managedMB": 27.7,
+      "linearMB": 96
+    },
+    {
+      "redraw": 52,
+      "redrawMs": 62,
+      "managedMB": 27.8,
+      "linearMB": 96
+    },
+    {
+      "redraw": 53,
+      "redrawMs": 58,
+      "managedMB": 27.9,
+      "linearMB": 96
+    },
+    {
+      "redraw": 54,
+      "redrawMs": 61,
+      "managedMB": 27.9,
+      "linearMB": 96
+    },
+    {
+      "redraw": 55,
+      "redrawMs": 66,
+      "managedMB": 28,
+      "linearMB": 96
+    },
+    {
+      "redraw": 56,
+      "redrawMs": 56,
+      "managedMB": 28.1,
+      "linearMB": 96
+    },
+    {
+      "redraw": 57,
+      "redrawMs": 61,
+      "managedMB": 28.2,
+      "linearMB": 96
+    },
+    {
+      "redraw": 58,
+      "redrawMs": 50,
+      "managedMB": 28.2,
+      "linearMB": 96
+    },
+    {
+      "redraw": 59,
+      "redrawMs": 65,
+      "managedMB": 28.3,
+      "linearMB": 96
+    },
+    {
+      "redraw": 60,
+      "redrawMs": 60,
+      "managedMB": 28.4,
+      "linearMB": 96
+    },
+    {
+      "redraw": 61,
+      "redrawMs": 58,
+      "managedMB": 28.5,
+      "linearMB": 96
+    },
+    {
+      "redraw": 62,
+      "redrawMs": 58,
+      "managedMB": 28.5,
+      "linearMB": 96
+    },
+    {
+      "redraw": 63,
+      "redrawMs": 50,
+      "managedMB": 28.6,
+      "linearMB": 96
+    },
+    {
+      "redraw": 64,
+      "redrawMs": 62,
+      "managedMB": 28.7,
+      "linearMB": 96
+    },
+    {
+      "redraw": 65,
+      "redrawMs": 207,
+      "managedMB": 31.1,
+      "linearMB": 115
+    },
+    {
+      "redraw": 66,
+      "redrawMs": 65,
+      "managedMB": 30.8,
+      "linearMB": 115
+    },
+    {
+      "redraw": 67,
+      "redrawMs": 48,
+      "managedMB": 30.3,
+      "linearMB": 115
+    },
+    {
+      "redraw": 68,
+      "redrawMs": 56,
+      "managedMB": 24.9,
+      "linearMB": 115
+    },
+    {
+      "redraw": 69,
+      "redrawMs": 52,
+      "managedMB": 24.3,
+      "linearMB": 115
+    },
+    {
+      "redraw": 70,
+      "redrawMs": 59,
+      "managedMB": 23.8,
+      "linearMB": 115
+    },
+    {
+      "redraw": 71,
+      "redrawMs": 83,
+      "managedMB": 22.5,
+      "linearMB": 115
+    },
+    {
+      "redraw": 72,
+      "redrawMs": 60,
+      "managedMB": 22.7,
+      "linearMB": 115
+    },
+    {
+      "redraw": 73,
+      "redrawMs": 59,
+      "managedMB": 22.9,
+      "linearMB": 115
+    },
+    {
+      "redraw": 74,
+      "redrawMs": 49,
+      "managedMB": 17.7,
+      "linearMB": 115
+    },
+    {
+      "redraw": 75,
+      "redrawMs": 67,
+      "managedMB": 18.1,
+      "linearMB": 115
+    },
+    {
+      "redraw": 76,
+      "redrawMs": 61,
+      "managedMB": 18.1,
+      "linearMB": 115
+    },
+    {
+      "redraw": 77,
+      "redrawMs": 62,
+      "managedMB": 18.2,
+      "linearMB": 115
+    },
+    {
+      "redraw": 78,
+      "redrawMs": 58,
+      "managedMB": 18.3,
+      "linearMB": 115
+    },
+    {
+      "redraw": 79,
+      "redrawMs": 60,
+      "managedMB": 18.4,
+      "linearMB": 115
+    },
+    {
+      "redraw": 80,
+      "redrawMs": 62,
+      "managedMB": 18.5,
+      "linearMB": 115
+    },
+    {
+      "redraw": 81,
+      "redrawMs": 59,
+      "managedMB": 18.5,
+      "linearMB": 115
+    },
+    {
+      "redraw": 82,
+      "redrawMs": 65,
+      "managedMB": 18.6,
+      "linearMB": 115
+    },
+    {
+      "redraw": 83,
+      "redrawMs": 65,
+      "managedMB": 18.7,
+      "linearMB": 115
+    },
+    {
+      "redraw": 84,
+      "redrawMs": 61,
+      "managedMB": 18.8,
+      "linearMB": 115
+    },
+    {
+      "redraw": 85,
+      "redrawMs": 70,
+      "managedMB": 18.8,
+      "linearMB": 115
+    },
+    {
+      "redraw": 86,
+      "redrawMs": 57,
+      "managedMB": 18.9,
+      "linearMB": 115
+    },
+    {
+      "redraw": 87,
+      "redrawMs": 62,
+      "managedMB": 19,
+      "linearMB": 115
+    },
+    {
+      "redraw": 88,
+      "redrawMs": 68,
+      "managedMB": 19.1,
+      "linearMB": 115
+    },
+    {
+      "redraw": 89,
+      "redrawMs": 64,
+      "managedMB": 19.1,
+      "linearMB": 115
+    },
+    {
+      "redraw": 90,
+      "redrawMs": 65,
+      "managedMB": 19.2,
+      "linearMB": 115
+    },
+    {
+      "redraw": 91,
+      "redrawMs": 60,
+      "managedMB": 19.3,
+      "linearMB": 115
+    },
+    {
+      "redraw": 92,
+      "redrawMs": 62,
+      "managedMB": 19.4,
+      "linearMB": 115
+    },
+    {
+      "redraw": 93,
+      "redrawMs": 81,
+      "managedMB": 19.5,
+      "linearMB": 115
+    },
+    {
+      "redraw": 94,
+      "redrawMs": 60,
+      "managedMB": 19.5,
+      "linearMB": 115
+    },
+    {
+      "redraw": 95,
+      "redrawMs": 58,
+      "managedMB": 19.9,
+      "linearMB": 115
+    },
+    {
+      "redraw": 96,
+      "redrawMs": 61,
+      "managedMB": 20,
+      "linearMB": 115
+    },
+    {
+      "redraw": 97,
+      "redrawMs": 61,
+      "managedMB": 20.1,
+      "linearMB": 115
+    },
+    {
+      "redraw": 98,
+      "redrawMs": 59,
+      "managedMB": 20.1,
+      "linearMB": 115
+    },
+    {
+      "redraw": 99,
+      "redrawMs": 57,
+      "managedMB": 20.2,
+      "linearMB": 115
+    },
+    {
+      "redraw": 100,
+      "redrawMs": 59,
+      "managedMB": 20.3,
+      "linearMB": 115
+    }
+  ],
+  "errors": [],
+  "browser": "141.0.7390.37",
+  "firstReportSeconds": 1.588
+}

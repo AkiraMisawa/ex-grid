@@ -1,0 +1,48 @@
+@page "/perf-live-memory"
+@using System.Globalization
+@using global::ExPivot
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@* Disposable, never committed: LV-23's loop for reviewing PR #70. The same page on main and on the
+   branch — ExPivot's Source takes the Pivot Source on both. Ticket 01's fixture at 1,000 outer Items
+   x b inner, 1,000 changed records a batch; the managed heap after a full collection, on demand. *@
+<h1>Disposable live memory measurement</h1>
+<button id="perf-tick" @onclick="Tick">One batch</button>
+<button id="perf-gc" @onclick="Collect">Collect</button>
+<span id="perf-status">@_status</span>
+<span id="perf-mem">@_mem</span>
+<ExPivot Source="_source" Layout="_layout" Caps="_caps" ChangeHighlightDuration="TimeSpan.FromSeconds(1)"
+         RedrawInterval="TimeSpan.Zero" ViewportHeight="480" ViewportWidth="1200" />
+@code {
+    [SupplyParameterFromQuery(Name = "b")] public int Inner { get; set; } = 100;
+    private sealed record Row(int Id, string A, string B, decimal Value);
+    private Row[] _rows = [];
+    private readonly PivotFields<Row> _fields = PivotFields.Of<Row>().Key("Id", r => r.Id).Text("A", r => r.A).Text("B", r => r.B).Number("Value", r => r.Value);
+    private SnapshotPivotSource? _source;
+    private readonly PivotLayout _layout = new() { Rows = [new("A"), new("B")], Values = [new("Value")] };
+    private readonly PivotCaps _caps = new() { MaxLeaves = 1_000_000, MaxRows = 1_000_000 };
+    private string _status = "ready";
+    private string _mem = "";
+    private int _batch;
+
+    protected override void OnInitialized()
+    {
+        _rows = Enumerable.Range(0, 1000 * Inner).Select(i => new Row(i, $"A{i / Inner:00000}", $"B{i % Inner:0000}", i)).ToArray();
+        _source = PivotSource.From(_fields.Build(_rows), _fields.Fields);
+    }
+
+    private void Tick()
+    {
+        var changed = Enumerable.Range(0, 1000).Select(i => { var j = i * Inner; return _rows[j] = _rows[j] with { Value = _rows[j].Value + 1 }; }).ToArray();
+        _source!.Apply(_fields.Batch(changed: changed));
+        _status = $"Batch {++_batch}";
+    }
+
+    private void Collect()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        _mem = (GC.GetTotalMemory(forceFullCollection: true) / 1048576.0).ToString("F1", CultureInfo.InvariantCulture) + $" #{_batch}";
+    }
+}

@@ -1,0 +1,6 @@
+dotnet 10.0.203 (nix-managed)
+   live update k=    1: inline     5.658    14.550    19.756  with continuations     5.685    14.565    19.770  alloc median 15641 KiB
+   live update k=  100: inline     4.814     7.212     8.636  with continuations     4.827     7.223    16.893  alloc median 15793 KiB
+   live update k= 1000: inline    10.164    12.704    15.053  with continuations    10.178    12.747    15.464  alloc median 16898 KiB
+   repaint keyed   (18 rows painted):     0.266     0.333     1.195  alloc median 48 KiB
+   repaint unkeyed (18 rows painted):     0.268     0.331     1.157  alloc median 48 KiB

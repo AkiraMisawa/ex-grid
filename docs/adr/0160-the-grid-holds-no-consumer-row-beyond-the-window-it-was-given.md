@@ -83,7 +83,11 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
   the options rejected.)*
 - **Observational**: the loop of the out-of-memory record — 101,001 report rows, 20 live redraws in the
   browser, the managed heap after a full collection after each — is recorded in `metrics.json`. It
-  levels off.
+  levels off: at 89.5 MB, one report, on the Claude Code track's ExPivot
+  ([`2026-10-07-macos-live-update-costs-after`](../../verification/2026-10-07-macos-live-update-costs-after/README.md));
+  on the merged code at 137.6 MiB, flat from the 6th redraw, once the reports the Change Highlight compares
+  reach ADR-0153's bound, where `main` grew by 41.2 MiB a redraw in the same run
+  ([`2026-10-10-linux-merged-live-costs`](../../verification/2026-10-10-linux-merged-live-costs/README.md)).
 
 ## Considered options
 

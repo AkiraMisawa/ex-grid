@@ -1,0 +1,39 @@
+pivot r1 main advance 1 start 00:07:36 load 1.70 2.07 2.41
+pivot r1 main end exit 0 00:09:32 load 1.10 1.72 2.24
+pivot r1 final advance 1 start 00:09:32 load 1.10 1.72 2.24
+pivot r1 final end exit 0 00:09:49 load 1.08 1.69 2.22
+pivot r2 final advance 1 start 00:09:49 load 1.08 1.69 2.22
+pivot r2 final end exit 0 00:10:05 load 1.06 1.65 2.20
+pivot r2 main advance 1 start 00:10:05 load 1.06 1.65 2.20
+pivot r2 main end exit 0 00:12:00 load 1.05 1.47 2.07
+pivot r3 main advance 5000 start 00:12:00 load 1.05 1.47 2.07
+pivot r3 main end exit 0 00:13:58 load 1.00 1.31 1.93
+pivot r3 final advance 5000 start 00:13:58 load 1.00 1.31 1.93
+pivot r3 final end exit 0 00:14:14 load 1.00 1.29 1.91
+grid r1 main start 00:14:14 load 1.00 1.29 1.91
+grid r1 main end exit 0 00:14:51 load 1.00 1.25 1.87
+grid r1 final start 00:14:51 load 1.00 1.25 1.87
+grid r1 final end exit 0 00:15:29 load 1.00 1.22 1.84
+grid r2 final start 00:15:29 load 1.00 1.22 1.84
+grid r2 final end exit 0 00:16:06 load 1.00 1.19 1.80
+grid r2 main start 00:16:06 load 1.00 1.19 1.80
+grid r2 main end exit 0 00:16:20 load 1.00 1.19 1.79
+lv23 main start 00:16:20 load 1.00 1.19 1.79
+lv23 main end exit 0 00:16:52 load 1.00 1.16 1.76
+lv23 final start 00:16:52 load 1.00 1.16 1.76
+lv23 final end exit 0 00:17:02 load 0.92 1.14 1.75
+done 00:17:02
+lv23 b=10 final start 00:28:35 load 0.77 1.15 1.52
+lv23 b=10 final end exit 0 00:28:41 load 0.80 1.15 1.52
+lv23 b=10 main start 00:28:41 load 0.80 1.15 1.52
+lv23 b=10 main end exit 0 00:28:50 load 0.82 1.14 1.52
+lv23 b=400 final start 00:28:50 load 0.82 1.14 1.52
+lv23 b=400 final end exit 0 00:29:10 load 0.94 1.15 1.51
+lv23 b=400 main start 00:29:10 load 0.94 1.15 1.51
+lv23 b=400 main end exit 143 00:30:43 load 0.53 0.98 1.41
+sizes done 00:30:43
+lv23 long b=10 n=100 final start 00:30:56 load 0.45 0.95 1.40
+lv23 long b=10 n=100 final end exit 0 00:31:12 load 0.81 1.00 1.41
+lv23 long b=100 n=60 final start 00:31:12 load 0.81 1.00 1.41
+lv23 long b=100 n=60 final end exit 0 00:31:30 load 1.00 1.03 1.41
+long done 00:31:30

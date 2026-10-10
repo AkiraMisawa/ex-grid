@@ -1,0 +1,1839 @@
+{
+  "machine": {
+    "cpu": "Intel Xeon @ 2.10 GHz, 4 vCPUs (a cloud container)",
+    "memoryGiB": 15,
+    "os": "Ubuntu 24.04.5 LTS, Linux 6.18",
+    "dotnet": "SDK 10.0.203 through nix develop, runtime 10.0.7 (CoreCLR, workstation GC), Release, DOTNET_TieredCompilation=0",
+    "browser": "Chromium 141.0.7390.37 (Playwright's build), headless",
+    "webassembly": "samples/ExGrid.DemoHost published in Release, trimmed, no AOT, no wasm-tools workload",
+    "commit": "branch claude/live-data-best at 80d6b38 (src as at c82b894); main at db60f6f"
+  },
+  "coreclr": {
+    "PV-48 ExPivot whole live update, Apply through the component render (bUnit)": {
+      "11,001 report rows, 1 change(s) a batch, 1 ms between batches": {
+        "ms": {
+          "main": {
+            "min": 9.824,
+            "median": 13.3,
+            "max": 17.194,
+            "n": 18
+          },
+          "branch": {
+            "min": 1.775,
+            "median": 2.259,
+            "max": 6.39,
+            "n": 18
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 9.377,
+            "median": 9.382,
+            "max": 9.383,
+            "n": 18
+          },
+          "branch": {
+            "min": 0.914,
+            "median": 0.962,
+            "max": 1.003,
+            "n": 18
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 0,
+            "median": 0.0,
+            "max": 0,
+            "n": 18
+          },
+          "branch": {
+            "min": 0,
+            "median": 0.0,
+            "max": 0,
+            "n": 18
+          }
+        }
+      },
+      "11,001 report rows, 1,000 change(s) a batch, 1 ms between batches": {
+        "ms": {
+          "main": {
+            "min": 9.235,
+            "median": 13.826,
+            "max": 20.17,
+            "n": 18
+          },
+          "branch": {
+            "min": 3.571,
+            "median": 4.207,
+            "max": 5.221,
+            "n": 18
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 9.565,
+            "median": 9.566,
+            "max": 9.718,
+            "n": 18
+          },
+          "branch": {
+            "min": 2.295,
+            "median": 2.459,
+            "max": 2.62,
+            "n": 18
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 0,
+            "median": 0.0,
+            "max": 0,
+            "n": 18
+          },
+          "branch": {
+            "min": 0,
+            "median": 0.0,
+            "max": 0,
+            "n": 18
+          }
+        }
+      },
+      "first report: 11,001 report rows, 1 ms between batches": {
+        "firstReportMs": {
+          "main": {
+            "min": 1459.039,
+            "median": 1480.624,
+            "max": 1502.209,
+            "n": 2
+          },
+          "branch": {
+            "min": 1633.692,
+            "median": 1645.443,
+            "max": 1657.195,
+            "n": 2
+          }
+        },
+        "heapAfterUpdatesMiB": {
+          "main": {
+            "min": 142.723,
+            "median": 142.726,
+            "max": 142.729,
+            "n": 2
+          },
+          "branch": {
+            "min": 27.349,
+            "median": 27.349,
+            "max": 27.349,
+            "n": 2
+          }
+        }
+      },
+      "101,001 report rows, 1 change(s) a batch, 1 ms between batches": {
+        "ms": {
+          "main": {
+            "min": 108.098,
+            "median": 116.423,
+            "max": 135.142,
+            "n": 18
+          },
+          "branch": {
+            "min": 2.634,
+            "median": 2.891,
+            "max": 3.772,
+            "n": 18
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 76.454,
+            "median": 76.455,
+            "max": 76.456,
+            "n": 18
+          },
+          "branch": {
+            "min": 0.921,
+            "median": 0.964,
+            "max": 1.004,
+            "n": 18
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 0,
+            "median": 0.0,
+            "max": 0,
+            "n": 18
+          },
+          "branch": {
+            "min": 0,
+            "median": 0.0,
+            "max": 0,
+            "n": 18
+          }
+        }
+      },
+      "101,001 report rows, 1,000 change(s) a batch, 1 ms between batches": {
+        "ms": {
+          "main": {
+            "min": 109.476,
+            "median": 117.682,
+            "max": 164.947,
+            "n": 18
+          },
+          "branch": {
+            "min": 11.173,
+            "median": 12.318,
+            "max": 14.975,
+            "n": 18
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 76.647,
+            "median": 76.648,
+            "max": 76.66,
+            "n": 18
+          },
+          "branch": {
+            "min": 7.978,
+            "median": 8.055,
+            "max": 8.339,
+            "n": 18
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 0,
+            "median": 0.0,
+            "max": 0,
+            "n": 18
+          },
+          "branch": {
+            "min": 0,
+            "median": 0.0,
+            "max": 0,
+            "n": 18
+          }
+        }
+      },
+      "first report: 101,001 report rows, 1 ms between batches": {
+        "firstReportMs": {
+          "main": {
+            "min": 135.575,
+            "median": 136.479,
+            "max": 137.383,
+            "n": 2
+          },
+          "branch": {
+            "min": 194.031,
+            "median": 195.909,
+            "max": 197.787,
+            "n": 2
+          }
+        },
+        "heapAfterUpdatesMiB": {
+          "main": {
+            "min": 1400.309,
+            "median": 1400.311,
+            "max": 1400.314,
+            "n": 2
+          },
+          "branch": {
+            "min": 210.631,
+            "median": 210.634,
+            "max": 210.637,
+            "n": 2
+          }
+        }
+      },
+      "401,001 report rows, 1 change(s) a batch, 1 ms between batches": {
+        "ms": {
+          "main": {
+            "min": 563.545,
+            "median": 637.443,
+            "max": 741.931,
+            "n": 18
+          },
+          "branch": {
+            "min": 3.956,
+            "median": 4.264,
+            "max": 5.495,
+            "n": 18
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 280.999,
+            "median": 281.0,
+            "max": 281.0,
+            "n": 18
+          },
+          "branch": {
+            "min": 0.921,
+            "median": 0.964,
+            "max": 1.004,
+            "n": 18
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 92.262,
+            "median": 166.346,
+            "max": 211.525,
+            "n": 18
+          },
+          "branch": {
+            "min": 0,
+            "median": 0.0,
+            "max": 0,
+            "n": 18
+          }
+        }
+      },
+      "401,001 report rows, 1,000 change(s) a batch, 1 ms between batches": {
+        "ms": {
+          "main": {
+            "min": 565.069,
+            "median": 627.123,
+            "max": 1112.089,
+            "n": 18
+          },
+          "branch": {
+            "min": 20.556,
+            "median": 22.152,
+            "max": 26.519,
+            "n": 18
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 281.186,
+            "median": 281.203,
+            "max": 281.217,
+            "n": 18
+          },
+          "branch": {
+            "min": 17.689,
+            "median": 17.796,
+            "max": 18.068,
+            "n": 18
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 90.627,
+            "median": 164.341,
+            "max": 183.929,
+            "n": 18
+          },
+          "branch": {
+            "min": 0,
+            "median": 0.0,
+            "max": 0,
+            "n": 18
+          }
+        }
+      },
+      "first report: 401,001 report rows, 1 ms between batches": {
+        "firstReportMs": {
+          "main": {
+            "min": 790.173,
+            "median": 808.331,
+            "max": 826.489,
+            "n": 2
+          },
+          "branch": {
+            "min": 903.498,
+            "median": 926.209,
+            "max": 948.92,
+            "n": 2
+          }
+        },
+        "heapAfterUpdatesMiB": {
+          "main": {
+            "min": 6100.247,
+            "median": 6100.25,
+            "max": 6100.253,
+            "n": 2
+          },
+          "branch": {
+            "min": 813.677,
+            "median": 813.68,
+            "max": 813.682,
+            "n": 2
+          }
+        }
+      },
+      "11,001 report rows, 1 change(s) a batch, 5 s between batches, past the 1 s highlight": {
+        "ms": {
+          "main": {
+            "min": 8.308,
+            "median": 13.185,
+            "max": 14.808,
+            "n": 9
+          },
+          "branch": {
+            "min": 1.908,
+            "median": 2.517,
+            "max": 4.338,
+            "n": 9
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 9.374,
+            "median": 9.378,
+            "max": 9.378,
+            "n": 9
+          },
+          "branch": {
+            "min": 0.888,
+            "median": 0.892,
+            "max": 0.896,
+            "n": 9
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 9
+          },
+          "branch": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 9
+          }
+        }
+      },
+      "11,001 report rows, 1,000 change(s) a batch, 5 s between batches, past the 1 s highlight": {
+        "ms": {
+          "main": {
+            "min": 10.454,
+            "median": 13.573,
+            "max": 15.563,
+            "n": 9
+          },
+          "branch": {
+            "min": 4.01,
+            "median": 4.227,
+            "max": 7.079,
+            "n": 9
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 9.559,
+            "median": 9.56,
+            "max": 9.713,
+            "n": 9
+          },
+          "branch": {
+            "min": 2.242,
+            "median": 2.373,
+            "max": 2.555,
+            "n": 9
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 9
+          },
+          "branch": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 9
+          }
+        }
+      },
+      "first report: 11,001 report rows, 5 s between batches, past the 1 s highlight": {
+        "firstReportMs": {
+          "main": {
+            "min": 1472.492,
+            "median": 1472.492,
+            "max": 1472.492,
+            "n": 1
+          },
+          "branch": {
+            "min": 1715.213,
+            "median": 1715.213,
+            "max": 1715.213,
+            "n": 1
+          }
+        },
+        "heapAfterUpdatesMiB": {
+          "main": {
+            "min": 143.36,
+            "median": 143.36,
+            "max": 143.36,
+            "n": 1
+          },
+          "branch": {
+            "min": 20.854,
+            "median": 20.854,
+            "max": 20.854,
+            "n": 1
+          }
+        }
+      },
+      "101,001 report rows, 1 change(s) a batch, 5 s between batches, past the 1 s highlight": {
+        "ms": {
+          "main": {
+            "min": 113.273,
+            "median": 118.285,
+            "max": 140.666,
+            "n": 9
+          },
+          "branch": {
+            "min": 2.44,
+            "median": 2.698,
+            "max": 2.904,
+            "n": 9
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 76.451,
+            "median": 76.451,
+            "max": 76.451,
+            "n": 9
+          },
+          "branch": {
+            "min": 0.894,
+            "median": 0.894,
+            "max": 0.895,
+            "n": 9
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 9
+          },
+          "branch": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 9
+          }
+        }
+      },
+      "101,001 report rows, 1,000 change(s) a batch, 5 s between batches, past the 1 s highlight": {
+        "ms": {
+          "main": {
+            "min": 111.365,
+            "median": 117.556,
+            "max": 140.27,
+            "n": 9
+          },
+          "branch": {
+            "min": 6.955,
+            "median": 8.521,
+            "max": 12.166,
+            "n": 9
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 76.643,
+            "median": 76.643,
+            "max": 76.655,
+            "n": 9
+          },
+          "branch": {
+            "min": 7.84,
+            "median": 7.841,
+            "max": 8.153,
+            "n": 9
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 9
+          },
+          "branch": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 9
+          }
+        }
+      },
+      "first report: 101,001 report rows, 5 s between batches, past the 1 s highlight": {
+        "firstReportMs": {
+          "main": {
+            "min": 143.638,
+            "median": 143.638,
+            "max": 143.638,
+            "n": 1
+          },
+          "branch": {
+            "min": 214.455,
+            "median": 214.455,
+            "max": 214.455,
+            "n": 1
+          }
+        },
+        "heapAfterUpdatesMiB": {
+          "main": {
+            "min": 1407.061,
+            "median": 1407.061,
+            "max": 1407.061,
+            "n": 1
+          },
+          "branch": {
+            "min": 147.514,
+            "median": 147.514,
+            "max": 147.514,
+            "n": 1
+          }
+        }
+      },
+      "401,001 report rows, 1 change(s) a batch, 5 s between batches, past the 1 s highlight": {
+        "ms": {
+          "main": {
+            "min": 591.276,
+            "median": 623.449,
+            "max": 728.525,
+            "n": 9
+          },
+          "branch": {
+            "min": 3.611,
+            "median": 3.889,
+            "max": 5.188,
+            "n": 9
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 280.996,
+            "median": 280.996,
+            "max": 280.996,
+            "n": 9
+          },
+          "branch": {
+            "min": 0.894,
+            "median": 0.895,
+            "max": 0.895,
+            "n": 9
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 93.454,
+            "median": 163.859,
+            "max": 207.174,
+            "n": 9
+          },
+          "branch": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 9
+          }
+        }
+      },
+      "401,001 report rows, 1,000 change(s) a batch, 5 s between batches, past the 1 s highlight": {
+        "ms": {
+          "main": {
+            "min": 586.419,
+            "median": 649.764,
+            "max": 1175.117,
+            "n": 9
+          },
+          "branch": {
+            "min": 11.963,
+            "median": 14.232,
+            "max": 20.664,
+            "n": 9
+          }
+        },
+        "allocatedMiB": {
+          "main": {
+            "min": 281.182,
+            "median": 281.198,
+            "max": 281.212,
+            "n": 9
+          },
+          "branch": {
+            "min": 17.551,
+            "median": 17.582,
+            "max": 17.883,
+            "n": 9
+          }
+        },
+        "gcPauseMs": {
+          "main": {
+            "min": 90.776,
+            "median": 174.192,
+            "max": 209.574,
+            "n": 9
+          },
+          "branch": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 9
+          }
+        }
+      },
+      "first report: 401,001 report rows, 5 s between batches, past the 1 s highlight": {
+        "firstReportMs": {
+          "main": {
+            "min": 662.104,
+            "median": 662.104,
+            "max": 662.104,
+            "n": 1
+          },
+          "branch": {
+            "min": 939.703,
+            "median": 939.703,
+            "max": 939.703,
+            "n": 1
+          }
+        },
+        "heapAfterUpdatesMiB": {
+          "main": {
+            "min": 6134.843,
+            "median": 6134.843,
+            "max": 6134.843,
+            "n": 1
+          },
+          "branch": {
+            "min": 607.073,
+            "median": 607.073,
+            "max": 607.073,
+            "n": 1
+          }
+        }
+      }
+    },
+    "PV-48 ExPivot update step by step, branch": {
+      "11,001 report rows, 1,000 changes a batch": {
+        "snapshotApplyMs": {
+          "min": 0.155,
+          "median": 0.165,
+          "max": 0.256,
+          "n": 9
+        },
+        "aggregateFoldMs": {
+          "min": 0.16,
+          "median": 0.183,
+          "max": 0.238,
+          "n": 9
+        },
+        "affectedCubeMs": {
+          "min": 1.063,
+          "median": 1.118,
+          "max": 1.854,
+          "n": 9
+        },
+        "affectedReportStructureMs": {
+          "min": 0.069,
+          "median": 0.071,
+          "max": 0.094,
+          "n": 9
+        },
+        "labelWidthsMs": {
+          "min": 0.005,
+          "median": 0.005,
+          "max": 0.012,
+          "n": 9
+        }
+      },
+      "101,001 report rows, 1,000 changes a batch": {
+        "snapshotApplyMs": {
+          "min": 0.184,
+          "median": 0.195,
+          "max": 0.282,
+          "n": 9
+        },
+        "aggregateFoldMs": {
+          "min": 0.459,
+          "median": 0.575,
+          "max": 0.635,
+          "n": 9
+        },
+        "affectedCubeMs": {
+          "min": 2.798,
+          "median": 4.856,
+          "max": 7.112,
+          "n": 9
+        },
+        "affectedReportStructureMs": {
+          "min": 0.114,
+          "median": 0.122,
+          "max": 0.146,
+          "n": 9
+        },
+        "labelWidthsMs": {
+          "min": 0.007,
+          "median": 0.008,
+          "max": 0.03,
+          "n": 9
+        }
+      },
+      "401,001 report rows, 1,000 changes a batch": {
+        "snapshotApplyMs": {
+          "min": 0.248,
+          "median": 0.263,
+          "max": 0.387,
+          "n": 9
+        },
+        "aggregateFoldMs": {
+          "min": 1.497,
+          "median": 1.571,
+          "max": 2.011,
+          "n": 9
+        },
+        "affectedCubeMs": {
+          "min": 6.112,
+          "median": 6.999,
+          "max": 8.6,
+          "n": 9
+        },
+        "affectedReportStructureMs": {
+          "min": 0.189,
+          "median": 0.214,
+          "max": 0.334,
+          "n": 9
+        },
+        "labelWidthsMs": {
+          "min": 0.009,
+          "median": 0.011,
+          "max": 0.013,
+          "n": 9
+        }
+      }
+    },
+    "PV-48 ExPivot component, branch": {
+      "11,001 report rows, 1,000 changes a batch": {
+        "applyThroughComponentRenderMs": {
+          "min": 3.304,
+          "median": 3.526,
+          "max": 4.419,
+          "n": 9
+        },
+        "rowsRendered": {
+          "min": 4,
+          "median": 4,
+          "max": 4,
+          "n": 9
+        },
+        "rowsMounted": {
+          "min": 0,
+          "median": 0,
+          "max": 0,
+          "n": 9
+        },
+        "vouchedWindowAdmissionMs": {
+          "min": 0.0021,
+          "median": 0.0024,
+          "max": 0.0031,
+          "n": 9
+        }
+      },
+      "101,001 report rows, 1,000 changes a batch": {
+        "applyThroughComponentRenderMs": {
+          "min": 9.747,
+          "median": 10.394,
+          "max": 14.155,
+          "n": 9
+        },
+        "rowsRendered": {
+          "min": 2,
+          "median": 2,
+          "max": 2,
+          "n": 9
+        },
+        "rowsMounted": {
+          "min": 0,
+          "median": 0,
+          "max": 0,
+          "n": 9
+        },
+        "vouchedWindowAdmissionMs": {
+          "min": 0.0036,
+          "median": 0.0042,
+          "max": 0.0097,
+          "n": 9
+        }
+      },
+      "401,001 report rows, 1,000 changes a batch": {
+        "applyThroughComponentRenderMs": {
+          "min": 18.977,
+          "median": 20.266,
+          "max": 21.871,
+          "n": 9
+        },
+        "rowsRendered": {
+          "min": 2,
+          "median": 2,
+          "max": 2,
+          "n": 9
+        },
+        "rowsMounted": {
+          "min": 0,
+          "median": 0,
+          "max": 0,
+          "n": 9
+        },
+        "vouchedWindowAdmissionMs": {
+          "min": 0.0044,
+          "median": 0.0048,
+          "max": 0.0061,
+          "n": 9
+        }
+      }
+    },
+    "ExGrid whole live update and full repaint": {
+      "1,000,000 rows, 1 change(s) a batch, round 1": {
+        "main": {
+          "withContinuationsMs": {
+            "min": 6.329,
+            "median": 15.428,
+            "max": 20.65,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 15.275,
+            "median": 15.275,
+            "max": 15.276,
+            "n": 15
+          }
+        },
+        "branch": {
+          "withContinuationsMs": {
+            "min": 4.219,
+            "median": 6.568,
+            "max": 8.359,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 15.275,
+            "median": 15.275,
+            "max": 15.276,
+            "n": 15
+          }
+        }
+      },
+      "1,000,000 rows, 100 change(s) a batch, round 1": {
+        "main": {
+          "withContinuationsMs": {
+            "min": 4.799,
+            "median": 7.474,
+            "max": 11.626,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 15.394,
+            "median": 15.404,
+            "max": 15.532,
+            "n": 15
+          }
+        },
+        "branch": {
+          "withContinuationsMs": {
+            "min": 4.993,
+            "median": 7.603,
+            "max": 14.103,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 15.393,
+            "median": 15.403,
+            "max": 15.487,
+            "n": 15
+          }
+        }
+      },
+      "1,000,000 rows, 1,000 change(s) a batch, round 1": {
+        "main": {
+          "withContinuationsMs": {
+            "min": 9.97,
+            "median": 12.691,
+            "max": 16.622,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 16.499,
+            "median": 16.502,
+            "max": 17.25,
+            "n": 15
+          }
+        },
+        "branch": {
+          "withContinuationsMs": {
+            "min": 10.052,
+            "median": 12.435,
+            "max": 14.062,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 16.499,
+            "median": 16.501,
+            "max": 17.25,
+            "n": 15
+          }
+        }
+      },
+      "repaintKeyed, round 1": {
+        "main": {
+          "ms": {
+            "min": 0.42,
+            "median": 0.468,
+            "max": 0.89,
+            "n": 60
+          },
+          "painted": 18
+        },
+        "branch": {
+          "ms": {
+            "min": 0.39,
+            "median": 0.442,
+            "max": 0.555,
+            "n": 60
+          },
+          "painted": 18
+        }
+      },
+      "repaintUnkeyed, round 1": {
+        "main": {
+          "ms": {
+            "min": 0.392,
+            "median": 0.473,
+            "max": 1.753,
+            "n": 60
+          },
+          "painted": 18
+        },
+        "branch": {
+          "ms": {
+            "min": 0.424,
+            "median": 0.469,
+            "max": 0.718,
+            "n": 60
+          },
+          "painted": 18
+        }
+      },
+      "1,000,000 rows, 1 change(s) a batch, round 2": {
+        "main": {
+          "withContinuationsMs": {
+            "min": 5.685,
+            "median": 14.565,
+            "max": 19.77,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 15.275,
+            "median": 15.275,
+            "max": 15.276,
+            "n": 15
+          }
+        },
+        "branch": {
+          "withContinuationsMs": {
+            "min": 4.298,
+            "median": 6.785,
+            "max": 8.398,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 15.275,
+            "median": 15.275,
+            "max": 15.276,
+            "n": 15
+          }
+        }
+      },
+      "1,000,000 rows, 100 change(s) a batch, round 2": {
+        "main": {
+          "withContinuationsMs": {
+            "min": 4.827,
+            "median": 7.223,
+            "max": 16.893,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 15.397,
+            "median": 15.423,
+            "max": 15.488,
+            "n": 15
+          }
+        },
+        "branch": {
+          "withContinuationsMs": {
+            "min": 4.91,
+            "median": 7.555,
+            "max": 12.983,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 15.394,
+            "median": 15.403,
+            "max": 15.496,
+            "n": 15
+          }
+        }
+      },
+      "1,000,000 rows, 1,000 change(s) a batch, round 2": {
+        "main": {
+          "withContinuationsMs": {
+            "min": 10.178,
+            "median": 12.747,
+            "max": 15.464,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 16.499,
+            "median": 16.502,
+            "max": 17.251,
+            "n": 15
+          }
+        },
+        "branch": {
+          "withContinuationsMs": {
+            "min": 9.856,
+            "median": 12.546,
+            "max": 15.013,
+            "n": 15
+          },
+          "allocatedMiB": {
+            "min": 16.499,
+            "median": 16.501,
+            "max": 17.25,
+            "n": 15
+          }
+        }
+      },
+      "repaintKeyed, round 2": {
+        "main": {
+          "ms": {
+            "min": 0.266,
+            "median": 0.333,
+            "max": 1.195,
+            "n": 60
+          },
+          "painted": 18
+        },
+        "branch": {
+          "ms": {
+            "min": 0.389,
+            "median": 0.427,
+            "max": 0.539,
+            "n": 60
+          },
+          "painted": 18
+        }
+      },
+      "repaintUnkeyed, round 2": {
+        "main": {
+          "ms": {
+            "min": 0.268,
+            "median": 0.331,
+            "max": 1.157,
+            "n": 60
+          },
+          "painted": 18
+        },
+        "branch": {
+          "ms": {
+            "min": 0.414,
+            "median": 0.481,
+            "max": 0.953,
+            "n": 60
+          },
+          "painted": 18
+        }
+      }
+    }
+  },
+  "chrome": {
+    "LV-23 and PV-48 ExPivot live redraw, click to the changed text, /perf-live-memory": {
+      "11,001 report rows, 1,000 changes a batch, 20 redraws": {
+        "main": {
+          "firstReportS": 1.511,
+          "redrawMs": {
+            "min": 90,
+            "median": 112.0,
+            "max": 195,
+            "n": 20
+          },
+          "managedMiBAfterFullCollection": [
+            13.8,
+            18.3,
+            22.8,
+            27.2,
+            31.7,
+            36.1,
+            40.5,
+            45,
+            49.4,
+            53.9,
+            58.3,
+            62.8,
+            67.3,
+            71.7,
+            76.1,
+            80.6,
+            85,
+            89.5,
+            93.9,
+            98.3,
+            102.8
+          ],
+          "webAssemblyHeapMiB": [
+            67,
+            80,
+            80,
+            96,
+            96,
+            115,
+            115,
+            115,
+            138,
+            138,
+            138,
+            166,
+            166,
+            166,
+            166,
+            199,
+            199,
+            199,
+            199,
+            199,
+            239
+          ],
+          "outOfMemory": false
+        },
+        "branch": {
+          "firstReportS": 1.674,
+          "redrawMs": {
+            "min": 63,
+            "median": 73.0,
+            "max": 225,
+            "n": 20
+          },
+          "managedMiBAfterFullCollection": [
+            15.3,
+            16.6,
+            17.4,
+            18.3,
+            19.1,
+            19.9,
+            20.8,
+            21.6,
+            22.4,
+            23.2,
+            23.3,
+            23.6,
+            23.6,
+            24.5,
+            24.5,
+            24.6,
+            24.7,
+            24.8,
+            24.9,
+            24.9,
+            25
+          ],
+          "webAssemblyHeapMiB": [
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96
+          ],
+          "outOfMemory": false
+        }
+      },
+      "11,001 report rows, 1,000 changes a batch, 100 redraws": {
+        "branch": {
+          "firstReportS": 1.588,
+          "redrawMs": {
+            "min": 48,
+            "median": 64.0,
+            "max": 225,
+            "n": 100
+          },
+          "managedMiBAfterFullCollection": [
+            15.3,
+            16.6,
+            17.4,
+            18.3,
+            19.1,
+            19.9,
+            20.8,
+            21.6,
+            22.4,
+            22.5,
+            22.6,
+            22.8,
+            22.9,
+            23,
+            23,
+            23.1,
+            23.2,
+            23.3,
+            24.1,
+            24.2,
+            24.3,
+            24.3,
+            24.4,
+            24.5,
+            24.6,
+            25.4,
+            25.5,
+            25.5,
+            25.6,
+            25.7,
+            25.8,
+            26.2,
+            26.2,
+            26.3,
+            26.4,
+            26.5,
+            26.5,
+            26.6,
+            26.7,
+            26.8,
+            26.9,
+            26.9,
+            27,
+            27.1,
+            27.2,
+            27.2,
+            27.3,
+            27.4,
+            27.5,
+            27.5,
+            27.6,
+            27.7,
+            27.8,
+            27.9,
+            27.9,
+            28,
+            28.1,
+            28.2,
+            28.2,
+            28.3,
+            28.4,
+            28.5,
+            28.5,
+            28.6,
+            28.7,
+            31.1,
+            30.8,
+            30.3,
+            24.9,
+            24.3,
+            23.8,
+            22.5,
+            22.7,
+            22.9,
+            17.7,
+            18.1,
+            18.1,
+            18.2,
+            18.3,
+            18.4,
+            18.5,
+            18.5,
+            18.6,
+            18.7,
+            18.8,
+            18.8,
+            18.9,
+            19,
+            19.1,
+            19.1,
+            19.2,
+            19.3,
+            19.4,
+            19.5,
+            19.5,
+            19.9,
+            20,
+            20.1,
+            20.1,
+            20.2,
+            20.3
+          ],
+          "webAssemblyHeapMiB": [
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            80,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            96,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115,
+            115
+          ],
+          "outOfMemory": false
+        }
+      },
+      "101,001 report rows, 1,000 changes a batch, 20 redraws": {
+        "main": {
+          "firstReportS": 2.397,
+          "redrawMs": {
+            "min": 710,
+            "median": 780.0,
+            "max": 884,
+            "n": 20
+          },
+          "managedMiBAfterFullCollection": [
+            83.1,
+            124.3,
+            167.6,
+            210.9,
+            254.2,
+            293.3,
+            334.6,
+            375.8,
+            417,
+            458.2,
+            499.5,
+            540.7,
+            581.9,
+            623.1,
+            664.4,
+            705.6,
+            746.8,
+            788,
+            829.2,
+            870.5,
+            911.7
+          ],
+          "webAssemblyHeapMiB": [
+            166,
+            239,
+            344,
+            412,
+            495,
+            591,
+            591,
+            691,
+            691,
+            787,
+            885,
+            885,
+            981,
+            1079,
+            1079,
+            1175,
+            1273,
+            1273,
+            1369,
+            1466,
+            1466
+          ],
+          "outOfMemory": false
+        },
+        "branch": {
+          "firstReportS": 3.068,
+          "redrawMs": {
+            "min": 65,
+            "median": 90.0,
+            "max": 231,
+            "n": 20
+          },
+          "managedMiBAfterFullCollection": [
+            94.2,
+            101.6,
+            108.6,
+            115.6,
+            122.6,
+            129.6,
+            136.6,
+            136.6,
+            136.7,
+            136.8,
+            136.9,
+            137,
+            137,
+            137.1,
+            137.2,
+            137.3,
+            137.3,
+            137.4,
+            137.5,
+            137.6,
+            137.6
+          ],
+          "webAssemblyHeapMiB": [
+            199,
+            199,
+            199,
+            199,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239
+          ],
+          "outOfMemory": false
+        }
+      },
+      "101,001 report rows, 1,000 changes a batch, 60 redraws": {
+        "branch": {
+          "firstReportS": 3.209,
+          "redrawMs": {
+            "min": 56,
+            "median": 74.0,
+            "max": 218,
+            "n": 60
+          },
+          "managedMiBAfterFullCollection": [
+            94.2,
+            101.6,
+            108.6,
+            115.6,
+            122.6,
+            129.6,
+            136.6,
+            136.6,
+            136.7,
+            136.8,
+            136.9,
+            137,
+            137,
+            137.1,
+            137.2,
+            137.3,
+            137.3,
+            137.4,
+            137.5,
+            137.6,
+            137.6,
+            137.7,
+            137.8,
+            137.9,
+            138,
+            138,
+            138.1,
+            145.1,
+            145.2,
+            145.3,
+            145.3,
+            145.4,
+            146.5,
+            146.6,
+            146.6,
+            146.7,
+            146.8,
+            146.9,
+            146.9,
+            147,
+            147.1,
+            147.2,
+            147.3,
+            147.3,
+            147.4,
+            147.5,
+            147.6,
+            147.6,
+            147.7,
+            147.8,
+            147.9,
+            148,
+            148,
+            148.1,
+            148.2,
+            148.3,
+            148.3,
+            148.4,
+            148.5,
+            148.6,
+            148.6
+          ],
+          "webAssemblyHeapMiB": [
+            199,
+            199,
+            199,
+            199,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239,
+            239
+          ],
+          "outOfMemory": false
+        }
+      },
+      "401,001 report rows, 1,000 changes a batch, 6 redraws": {
+        "main": {
+          "firstReportS": 6.678,
+          "redrawMs": {
+            "min": 3056,
+            "median": 3182.0,
+            "max": 3295,
+            "n": 6
+          },
+          "managedMiBAfterFullCollection": [
+            302.8,
+            454.3,
+            605.8,
+            757.3,
+            908.8,
+            1060.4,
+            1211.9
+          ],
+          "webAssemblyHeapMiB": [
+            495,
+            809,
+            1018,
+            1307,
+            1516,
+            1719,
+            2008
+          ],
+          "outOfMemory": true
+        }
+      },
+      "401,001 report rows, 1,000 changes a batch, 20 redraws": {
+        "branch": {
+          "firstReportS": 8.248,
+          "redrawMs": {
+            "min": 75,
+            "median": 96.0,
+            "max": 266,
+            "n": 20
+          },
+          "managedMiBAfterFullCollection": [
+            347.6,
+            365.7,
+            383.4,
+            401.1,
+            418.7,
+            401.2,
+            401.3,
+            401.4,
+            419,
+            419.1,
+            419.2,
+            419.3,
+            419.3,
+            419.4,
+            419.5,
+            419.6,
+            419.7,
+            419.7,
+            419.8,
+            419.9,
+            420
+          ],
+          "webAssemblyHeapMiB": [
+            591,
+            591,
+            591,
+            591,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687,
+            687
+          ],
+          "outOfMemory": false
+        }
+      }
+    }
+  }
+}

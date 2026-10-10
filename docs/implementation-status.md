@@ -906,8 +906,14 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
       Change Highlight ran on the server's clock, Window Changes were trusted whole, a row of another report was
       read as this one's, and a throwing server Order Key lost its name: each fixed (LV-26 to LV-30);
     - `SlicedBuildTests` failed one run in four on a race in its helper: fixed, 25 runs of 25.
-  - **Not measured on the merged code.** Neither track's after-record measured this branch; PV-48 asks for
-    it.
+  - **Measured on the merged code** *(2026-10-10, against `main`,
+    [`2026-10-10-linux-merged-live-costs`](../verification/2026-10-10-linux-merged-live-costs/README.md))*:
+    ExPivot's live update is 3 to 147 times faster than `main`'s (at 401,001 report rows 4.3 against 627 ms
+    at one change, 22 against 630 at 1,000), and collects nothing where `main` paused about 150 ms an
+    update. In the browser the heap levels off at 137.6 MiB at 101,001 rows, where `main` grew by 41.2 MiB
+    a redraw, and holds 420 MiB at 401,001, where `main` ran out of memory on the 7th redraw (PV-48, LV-23).
+    The first report stays slower than `main`'s: 194–214 against 136–144 ms at 101,001 rows, 903–949 against
+    662–826 at 401,001. ExGrid's own live update is unchanged.
   - *(2026-10-09: reviewed and grilled.)* An independent review of the merged pull request found, and
     this branch fixed, with a failing test first for each:
     - a press made while an asynchronous `OnEdit` was heard committed the same edit again, and could leave

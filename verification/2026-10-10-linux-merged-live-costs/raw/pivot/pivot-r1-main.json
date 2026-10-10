@@ -1,0 +1,494 @@
+[
+  {
+    "side": "main",
+    "advanceMs": 1,
+    "records": 10000,
+    "reportRows": 11001,
+    "firstReportMs": 1459.0392,
+    "managedHeapAfterUpdatesBytes": 149655888,
+    "batches": [
+      {
+        "changes": 1,
+        "runs": [
+          {
+            "applyThroughRenderMs": 14.9988,
+            "allocatedBytes": 9832928,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 14.4161,
+            "allocatedBytes": 9835120,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 13.7767,
+            "allocatedBytes": 9837480,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 9.8244,
+            "allocatedBytes": 9837656,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 12.5245,
+            "allocatedBytes": 9838504,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 17.1936,
+            "allocatedBytes": 9838360,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 13.1915,
+            "allocatedBytes": 9838152,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 13.4089,
+            "allocatedBytes": 9838336,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 13.4536,
+            "allocatedBytes": 9838664,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          }
+        ]
+      },
+      {
+        "changes": 1000,
+        "runs": [
+          {
+            "applyThroughRenderMs": 10.4287,
+            "allocatedBytes": 10029272,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 10.5072,
+            "allocatedBytes": 10029808,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 11.968,
+            "allocatedBytes": 10030696,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 13.9429,
+            "allocatedBytes": 10031496,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 12.7993,
+            "allocatedBytes": 10030144,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 14.0582,
+            "allocatedBytes": 10030176,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 14.0036,
+            "allocatedBytes": 10030264,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 14.0351,
+            "allocatedBytes": 10190384,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 15.0096,
+            "allocatedBytes": 10029120,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "advanceMs": 1,
+    "records": 100000,
+    "reportRows": 101001,
+    "firstReportMs": 137.3835,
+    "managedHeapAfterUpdatesBytes": 1468330392,
+    "batches": [
+      {
+        "changes": 1,
+        "runs": [
+          {
+            "applyThroughRenderMs": 120.7565,
+            "allocatedBytes": 80168384,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 119.1859,
+            "allocatedBytes": 80168328,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 116.7852,
+            "allocatedBytes": 80168336,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 122.0355,
+            "allocatedBytes": 80168512,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 120.0533,
+            "allocatedBytes": 80169448,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 116.0612,
+            "allocatedBytes": 80168976,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 122.8142,
+            "allocatedBytes": 80169544,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 110.8644,
+            "allocatedBytes": 80169192,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 111.3005,
+            "allocatedBytes": 80169376,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          }
+        ]
+      },
+      {
+        "changes": 1000,
+        "runs": [
+          {
+            "applyThroughRenderMs": 120.8012,
+            "allocatedBytes": 80370520,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 115.9032,
+            "allocatedBytes": 80383728,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 159.3782,
+            "allocatedBytes": 80371336,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 114.4506,
+            "allocatedBytes": 80371088,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 110.364,
+            "allocatedBytes": 80371120,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 114.9135,
+            "allocatedBytes": 80371152,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 118.8819,
+            "allocatedBytes": 80371192,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 135.8383,
+            "allocatedBytes": 80371224,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 130.7313,
+            "allocatedBytes": 80371256,
+            "gcPauseMs": 0,
+            "gen0": 0,
+            "gen1": 0,
+            "gen2": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "side": "main",
+    "advanceMs": 1,
+    "records": 400000,
+    "reportRows": 401001,
+    "firstReportMs": 826.4885,
+    "managedHeapAfterUpdatesBytes": 6396572144,
+    "batches": [
+      {
+        "changes": 1,
+        "runs": [
+          {
+            "applyThroughRenderMs": 741.9313,
+            "allocatedBytes": 294648872,
+            "gcPauseMs": 211.525,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 620.2944,
+            "allocatedBytes": 294648920,
+            "gcPauseMs": 167.187,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 571.8529,
+            "allocatedBytes": 294648928,
+            "gcPauseMs": 92.262,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 674.1804,
+            "allocatedBytes": 294649056,
+            "gcPauseMs": 189.846,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 700.6015,
+            "allocatedBytes": 294649904,
+            "gcPauseMs": 101.884,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 615.5109,
+            "allocatedBytes": 294649568,
+            "gcPauseMs": 163.904,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 627.0908,
+            "allocatedBytes": 294649600,
+            "gcPauseMs": 158.946,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 573.5074,
+            "allocatedBytes": 294649936,
+            "gcPauseMs": 95.228,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 632.0226,
+            "allocatedBytes": 294649968,
+            "gcPauseMs": 96.777,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          }
+        ]
+      },
+      {
+        "changes": 1000,
+        "runs": [
+          {
+            "applyThroughRenderMs": 662.1184,
+            "allocatedBytes": 294845280,
+            "gcPauseMs": 172.109,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 565.0695,
+            "allocatedBytes": 294849312,
+            "gcPauseMs": 90.627,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 571.0512,
+            "allocatedBytes": 294853616,
+            "gcPauseMs": 92.154,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 611.6105,
+            "allocatedBytes": 294857368,
+            "gcPauseMs": 164.115,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 649.7941,
+            "allocatedBytes": 294862440,
+            "gcPauseMs": 183.692,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 629.5986,
+            "allocatedBytes": 294865424,
+            "gcPauseMs": 160.079,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 585.4064,
+            "allocatedBytes": 294869456,
+            "gcPauseMs": 97.912,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 661.995,
+            "allocatedBytes": 294873488,
+            "gcPauseMs": 183.929,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          },
+          {
+            "applyThroughRenderMs": 1112.0894,
+            "allocatedBytes": 294877512,
+            "gcPauseMs": 173.45,
+            "gen0": 1,
+            "gen1": 0,
+            "gen2": 0
+          }
+        ]
+      }
+    ]
+  }
+]
