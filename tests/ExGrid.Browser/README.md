@@ -234,6 +234,12 @@ arrived between two pictures. So:
   only itself. Two paints that ought to be one paint are compared with each other exactly, not
   through this; that is how ticket 92 found its defect. A new test that decides a colour is
   right uses `paints`, not a tolerance of its own.
+- **Text is antialiased, so a text colour is read from the cascade.** A glyph's pixels mix its
+  colour with the ground at whatever coverage the rasteriser gave them, and none need be the
+  colour itself: the most inked pixel of MudBlazor's Roboto, light on its dark palette, came 99%
+  of the way to the colour and stopped in CI's Chrome, where a local Chromium painted one whole
+  (2026-10-10). A glyph's pixels say only which of a few candidate colours the text is painted
+  in: the one its most inked pixels lie nearest (`presentation.spec.mjs`, `pivot-live.spec.mjs`).
 - **Two pictures of one thing are taken with `stillPictures`.** A mark the test sets draws the
   subject each way, through a stylesheet laid over the page with `alterPage`. It waits for the
   circuit to be quiet, and it takes every picture again when anything but the mark changed the

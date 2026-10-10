@@ -1,7 +1,7 @@
 import { test, expect, circuitQuiet } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
-import { blend, contrast, onDeviceGrid, painted, paints, wholePixelCentres } from './pixels.mjs';
+import { blend, contrast, onDeviceGrid, painted, wholePixelCentres } from './pixels.mjs';
 
 // /pivot-live (ADR-0067/0068/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // live data both ways. In the page's own process, a timer the page owns folds Change Batches into
@@ -90,8 +90,11 @@ const probedColour = (cell, css) => cell.evaluate((element, colour) => {
  * The ground of `cells`, read in the first one's left padding, and the most inked pixel of their
  * text — the one farthest from that ground — as painted, over the cells that stand wholly inside
  * `within` across. Read on the device pixels each cell covers whole, two in from its edges, where a
- * column's or a row's rule would be: a digit's stroke covers some pixel whole, and that pixel is
- * the text's own colour (README.md, "Reading pixels").
+ * column's or a row's rule would be. Text is antialiased, and no pixel of it need be its colour
+ * exactly: under the MudBlazor Chrome's Roboto, light on the dark palette, the most inked pixel
+ * CI's Chrome painted came 99% of the way from the ground to the stale colour and no further, where
+ * a local Chromium painted one whole (2026-10-10). That pixel says which colour the text is
+ * painted in (`nearest`), and the cascade says the colour (README.md, "Reading pixels").
  */
 async function inkOf(page, cells, within) {
     const scale = await page.evaluate(() => window.devicePixelRatio);
@@ -122,6 +125,21 @@ async function inkOf(page, cells, within) {
     }
     expect(read, 'a value cell stands wholly in view').toBeGreaterThan(0);
     return { ground, inked };
+}
+
+/**
+ * Which of `paints` — what nothing, and text in each colour, paints over the ground, by name — lies
+ * nearest the most inked pixel `inked`. The stale colour lies between the ground and the ink, nearly
+ * on the line from one to the other, and a pixel text covers in part lies on that line too, so only
+ * how far the text reaches tells the two apart. Text in the stale colour is nearest it once a pixel
+ * of it is half covered. Text in the ink is nearest the ink once a pixel of it is covered past the
+ * midpoint of the two colours, about 80% under ExPivot's own stale colour and 90% under the
+ * MudBlazor wrapper's, as a digit's stroke covers a pixel. Nothing painted, or numbers faded to
+ * less than half their colour, is nearest the ground.
+ */
+function nearest(inked, paints) {
+    const apart = (paint) => Math.hypot(...paint.map((v, i) => v - inked[i]));
+    return Object.entries(paints).reduce((best, entry) => (apart(entry[1]) < apart(best[1]) ? entry : best))[0];
 }
 
 /** The number of the last Change Batch the page applied, as its status line says it. */
@@ -216,22 +234,25 @@ for (const chrome of ['builtin', 'mud']) {
                 if (chrome === 'mud') {
                     expect(stale, "the Wrapper's mapping of the token").toBe(await probedColour(values.first(), 'var(--ex-pivot-stale-value-color)'));
                 }
-                // Painted: the numbers' most inked pixel is the stale colour exactly, over the cells' ground
+                // Painted: the numbers are painted in the stale colour, not the ink, over the cells' ground
                 // — the first row is a group row, so the ground is its tint, the least contrast the report
-                // has — and that colour keeps the readable contrast body text keeps (UX-8, measured from the
-                // computed colours over the painted ground), muted beside the ink's.
+                // has. The colour is the cascade's, above; the numbers' most inked pixel says which colour
+                // they are painted in (`nearest`). Over that ground the stale colour keeps the readable
+                // contrast body text keeps (UX-8, measured from the computed colours over the painted
+                // ground), muted beside the ink's.
                 const within = report(page, 'server').locator('.ex-scroller');
+                const paintsOver = (ground) => ({ ground, stale: inkOver(stale, ground), ink: inkOver(ink, ground) });
                 // A screenshot reads only what the viewport shows, and the server's report is the page's
                 // second: under the built-in Chrome it starts below the fold. Its first row is brought into
                 // view before its pixels are read.
                 await values.first().scrollIntoViewIfNeeded();
                 const muted = await inkOf(page, values, within);
-                const staleInk = inkOver(stale, muted.ground);
-                expect(paints(muted.inked, staleInk), `${muted.inked} over ${muted.ground}: the stale colour paints ${staleInk}`).toBe(true);
-                expect(paints(muted.inked, inkOver(ink, muted.ground)), 'not the ink').toBe(false);
-                const readable = contrast(staleInk, muted.ground);
-                expect(readable, `${staleInk} over ${muted.ground}`).toBeGreaterThanOrEqual(4.5);
-                expect(readable, 'muted beside the ink').toBeLessThan(contrast(inkOver(ink, muted.ground), muted.ground));
+                const mutedPaints = paintsOver(muted.ground);
+                expect(nearest(muted.inked, mutedPaints), `${muted.inked}, the numbers' most inked pixel, over ${muted.ground}:`
+                    + ` the stale colour paints ${mutedPaints.stale}, the ink ${mutedPaints.ink}`).toBe('stale');
+                const readable = contrast(mutedPaints.stale, muted.ground);
+                expect(readable, `${mutedPaints.stale} over ${muted.ground}`).toBeGreaterThanOrEqual(4.5);
+                expect(readable, 'muted beside the ink').toBeLessThan(contrast(mutedPaints.ink, muted.ground));
 
                 // Reconnected and retried: the newest is shown, the notice goes, and the mark with it.
                 await page.locator('#pivot-live-server-cut').click();
@@ -245,8 +266,9 @@ for (const chrome of ['builtin', 'mud']) {
                 expect(await colourOf(values.first())).toBe(ink);
                 await values.first().scrollIntoViewIfNeeded();
                 const current = await inkOf(page, values, within);
-                const currentInk = inkOver(ink, current.ground);
-                expect(paints(current.inked, currentInk), `${current.inked} over ${current.ground}: the ink paints ${currentInk}`).toBe(true);
+                const currentPaints = paintsOver(current.ground);
+                expect(nearest(current.inked, currentPaints), `${current.inked}, the numbers' most inked pixel, over ${current.ground}:`
+                    + ` the ink paints ${currentPaints.ink}, the stale colour ${currentPaints.stale}`).toBe('ink');
             });
         }
 
