@@ -17,6 +17,9 @@
     <!-- Layer 1 reaches the cell index's hash and the slices' row counter, which have no public
          surface (ADR-0066). -->
     <InternalsVisibleTo Include="ExPivot.Engine.Tests" />
+    <!-- Layer 2 follows the engine reports a live ExPivot keeps alive, which its report source
+         holds out of reach of any public surface (ADR-0160, LV-22). -->
+    <InternalsVisibleTo Include="ExPivot.Components.Tests" />
   </ItemGroup>
 
   <!-- The engine depends on exactly the ExGrid.Data it was built with (PV-1), as ExPivot depends

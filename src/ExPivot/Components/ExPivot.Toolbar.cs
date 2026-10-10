@@ -48,7 +48,7 @@ public partial class ExPivot
             PivotCommandIds.LayoutMenu, Word(PivotCommandIds.LayoutMenu), layoutOpen, ToggleLayoutMenu,
             layoutOpen ? PopupFragment(_open!) : null, _layoutMenuFocus);
         // Refresh is offered only by a source that can be asked again (ADR-0066).
-        var refresh = Source.Features.CanRefresh
+        var refresh = _source!.Features.CanRefresh
             ? new PivotCommand(PivotCommandIds.Refresh, Word(PivotCommandIds.Refresh), true, RefreshAsync)
             : null;
         var fieldList = new PivotCommand(PivotCommandIds.FieldListToggle, Word(PivotCommandIds.FieldListToggle), true,
@@ -130,7 +130,7 @@ public partial class ExPivot
             // More Items than are held: provably several shown, or not known.
             return page.Total - placement.HiddenItems.Count > 1 ? Word(PivotWords.MultipleItems) : Word("loading");
         }
-        var shown = PivotEngine.ItemsOf(page, _layout, field, _options).Where(i => !i.IsHidden).Take(2).ToArray();
+        var shown = page.Items.Where(i => !placement.HiddenItems.Contains(i.Key)).Take(2).ToArray();
         return shown.Length == 1 ? shown[0].Label : Word(PivotWords.MultipleItems);
     }
 }

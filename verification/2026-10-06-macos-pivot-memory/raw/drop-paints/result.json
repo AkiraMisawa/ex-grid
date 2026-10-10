@@ -1,0 +1,1109 @@
+{
+  "url": "/live-cost-pivot?b=400&intervention=drop-paints",
+  "completed": 20,
+  "samples": [
+    {
+      "update": 1,
+      "status": "Batch 1: apply 50.600 ms"
+    },
+    {
+      "update": 2,
+      "status": "Batch 2: apply 39.100 ms"
+    },
+    {
+      "update": 3,
+      "status": "Batch 3: apply 37.300 ms"
+    },
+    {
+      "update": 4,
+      "status": "Batch 4: apply 38.000 ms"
+    },
+    {
+      "update": 5,
+      "status": "Batch 5: apply 36.900 ms"
+    },
+    {
+      "update": 6,
+      "status": "Batch 6: apply 39.400 ms"
+    },
+    {
+      "update": 7,
+      "status": "Batch 7: apply 37.900 ms"
+    },
+    {
+      "update": 8,
+      "status": "Batch 8: apply 37.100 ms"
+    },
+    {
+      "update": 9,
+      "status": "Batch 9: apply 35.900 ms"
+    },
+    {
+      "update": 10,
+      "status": "Batch 10: apply 36.700 ms"
+    },
+    {
+      "update": 11,
+      "status": "Batch 11: apply 36.200 ms"
+    },
+    {
+      "update": 12,
+      "status": "Batch 12: apply 37.000 ms"
+    },
+    {
+      "update": 13,
+      "status": "Batch 13: apply 36.200 ms"
+    },
+    {
+      "update": 14,
+      "status": "Batch 14: apply 36.100 ms"
+    },
+    {
+      "update": 15,
+      "status": "Batch 15: apply 36.200 ms"
+    },
+    {
+      "update": 16,
+      "status": "Batch 16: apply 35.900 ms"
+    },
+    {
+      "update": 17,
+      "status": "Batch 17: apply 35.900 ms"
+    },
+    {
+      "update": 18,
+      "status": "Batch 18: apply 35.600 ms"
+    },
+    {
+      "update": 19,
+      "status": "Batch 19: apply 35.900 ms"
+    },
+    {
+      "update": 20,
+      "status": "Batch 20: apply 36.000 ms"
+    }
+  ],
+  "memory": [
+    {
+      "update": 0,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 326866792,
+      "managedBytes": 326866984,
+      "allocatedBytes": 411090224,
+      "threadAllocatedBytes": 422250920,
+      "gc0": 32,
+      "gc1": 10,
+      "gc2": 10,
+      "tracked": {
+        "Report": {
+          "created": 1,
+          "alive": 1
+        },
+        "Cube": {
+          "created": 1,
+          "alive": 1
+        },
+        "Snapshot": {
+          "created": 1,
+          "alive": 1
+        },
+        "Answer": {
+          "created": 1,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 1,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:0"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 1
+      },
+      "wasmHeapBytes": 518782976
+    },
+    {
+      "update": 1,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 486132176,
+      "managedBytes": 486132176,
+      "allocatedBytes": 637336040,
+      "threadAllocatedBytes": 647559888,
+      "gc0": 54,
+      "gc1": 12,
+      "gc2": 12,
+      "tracked": {
+        "Report": {
+          "created": 2,
+          "alive": 2
+        },
+        "Cube": {
+          "created": 2,
+          "alive": 2
+        },
+        "Snapshot": {
+          "created": 2,
+          "alive": 2
+        },
+        "Answer": {
+          "created": 2,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:1",
+          "309e89049fad406dbf1afa92d87c2bb9:0"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 2
+      },
+      "wasmHeapBytes": 825556992
+    },
+    {
+      "update": 2,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 651594832,
+      "managedBytes": 651594832,
+      "allocatedBytes": 862659880,
+      "threadAllocatedBytes": 872631240,
+      "gc0": 77,
+      "gc1": 13,
+      "gc2": 13,
+      "tracked": {
+        "Report": {
+          "created": 3,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 3,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 3,
+          "alive": 3
+        },
+        "Answer": {
+          "created": 3,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:2",
+          "309e89049fad406dbf1afa92d87c2bb9:1"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 3
+      },
+      "wasmHeapBytes": 1027604480
+    },
+    {
+      "update": 3,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 651675680,
+      "managedBytes": 651675680,
+      "allocatedBytes": 1087721632,
+      "threadAllocatedBytes": 1097695352,
+      "gc0": 100,
+      "gc1": 14,
+      "gc2": 14,
+      "tracked": {
+        "Report": {
+          "created": 4,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 4,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 4,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 4,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:3",
+          "309e89049fad406dbf1afa92d87c2bb9:2"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 4,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 651756936,
+      "managedBytes": 651756936,
+      "allocatedBytes": 1312790816,
+      "threadAllocatedBytes": 1322753096,
+      "gc0": 123,
+      "gc1": 15,
+      "gc2": 15,
+      "tracked": {
+        "Report": {
+          "created": 5,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 5,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 5,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 5,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:4",
+          "309e89049fad406dbf1afa92d87c2bb9:3"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 5,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 651824216,
+      "managedBytes": 651824216,
+      "allocatedBytes": 1537820040,
+      "threadAllocatedBytes": 1547804136,
+      "gc0": 146,
+      "gc1": 16,
+      "gc2": 16,
+      "tracked": {
+        "Report": {
+          "created": 6,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 6,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 6,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 6,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:5",
+          "309e89049fad406dbf1afa92d87c2bb9:4"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 6,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 651906696,
+      "managedBytes": 651906696,
+      "allocatedBytes": 1762869336,
+      "threadAllocatedBytes": 1772855400,
+      "gc0": 169,
+      "gc1": 17,
+      "gc2": 17,
+      "tracked": {
+        "Report": {
+          "created": 7,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 7,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 7,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 7,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:6",
+          "309e89049fad406dbf1afa92d87c2bb9:5"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 7,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 651982352,
+      "managedBytes": 651982352,
+      "allocatedBytes": 1987915464,
+      "threadAllocatedBytes": 1997905112,
+      "gc0": 192,
+      "gc1": 18,
+      "gc2": 18,
+      "tracked": {
+        "Report": {
+          "created": 8,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 8,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 8,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 8,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:7",
+          "309e89049fad406dbf1afa92d87c2bb9:6"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 8,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 652065936,
+      "managedBytes": 652065936,
+      "allocatedBytes": 2212963312,
+      "threadAllocatedBytes": 2222953232,
+      "gc0": 215,
+      "gc1": 19,
+      "gc2": 19,
+      "tracked": {
+        "Report": {
+          "created": 9,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 9,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 9,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 9,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:8",
+          "309e89049fad406dbf1afa92d87c2bb9:7"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 9,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 652163080,
+      "managedBytes": 652163080,
+      "allocatedBytes": 2438030848,
+      "threadAllocatedBytes": 2447998288,
+      "gc0": 238,
+      "gc1": 20,
+      "gc2": 20,
+      "tracked": {
+        "Report": {
+          "created": 10,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 10,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 10,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 10,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:9",
+          "309e89049fad406dbf1afa92d87c2bb9:8"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 10,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 652243920,
+      "managedBytes": 652243920,
+      "allocatedBytes": 2663075864,
+      "threadAllocatedBytes": 2673036568,
+      "gc0": 261,
+      "gc1": 21,
+      "gc2": 21,
+      "tracked": {
+        "Report": {
+          "created": 11,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 11,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 11,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 11,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:10",
+          "309e89049fad406dbf1afa92d87c2bb9:9"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 11,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 652325864,
+      "managedBytes": 652325864,
+      "allocatedBytes": 2888115360,
+      "threadAllocatedBytes": 2898075520,
+      "gc0": 284,
+      "gc1": 22,
+      "gc2": 22,
+      "tracked": {
+        "Report": {
+          "created": 12,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 12,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 12,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 12,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:11",
+          "309e89049fad406dbf1afa92d87c2bb9:10"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 12,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 652404152,
+      "managedBytes": 652404152,
+      "allocatedBytes": 3113149968,
+      "threadAllocatedBytes": 3123113688,
+      "gc0": 307,
+      "gc1": 23,
+      "gc2": 23,
+      "tracked": {
+        "Report": {
+          "created": 13,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 13,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 13,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 13,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:12",
+          "309e89049fad406dbf1afa92d87c2bb9:11"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 13,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 652489632,
+      "managedBytes": 652489632,
+      "allocatedBytes": 3338192760,
+      "threadAllocatedBytes": 3348151640,
+      "gc0": 330,
+      "gc1": 24,
+      "gc2": 24,
+      "tracked": {
+        "Report": {
+          "created": 14,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 14,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 14,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 14,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:13",
+          "309e89049fad406dbf1afa92d87c2bb9:12"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 14,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 684568408,
+      "managedBytes": 684568408,
+      "allocatedBytes": 3563229672,
+      "threadAllocatedBytes": 3573188512,
+      "gc0": 353,
+      "gc1": 25,
+      "gc2": 25,
+      "tracked": {
+        "Report": {
+          "created": 15,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 15,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 15,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 15,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:14",
+          "309e89049fad406dbf1afa92d87c2bb9:13"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 15,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 652648512,
+      "managedBytes": 652648512,
+      "allocatedBytes": 3788264784,
+      "threadAllocatedBytes": 3798253200,
+      "gc0": 376,
+      "gc1": 26,
+      "gc2": 26,
+      "tracked": {
+        "Report": {
+          "created": 16,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 16,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 16,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 16,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:15",
+          "309e89049fad406dbf1afa92d87c2bb9:14"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 16,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 650622304,
+      "managedBytes": 650622304,
+      "allocatedBytes": 4013326824,
+      "threadAllocatedBytes": 4023285168,
+      "gc0": 399,
+      "gc1": 27,
+      "gc2": 27,
+      "tracked": {
+        "Report": {
+          "created": 17,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 17,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 17,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 17,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:16",
+          "309e89049fad406dbf1afa92d87c2bb9:15"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 17,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 650627392,
+      "managedBytes": 650627392,
+      "allocatedBytes": 4238357360,
+      "threadAllocatedBytes": 4248318992,
+      "gc0": 422,
+      "gc1": 28,
+      "gc2": 28,
+      "tracked": {
+        "Report": {
+          "created": 18,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 18,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 18,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 18,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:17",
+          "309e89049fad406dbf1afa92d87c2bb9:16"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 18,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 650708584,
+      "managedBytes": 650708584,
+      "allocatedBytes": 4463384976,
+      "threadAllocatedBytes": 4473350608,
+      "gc0": 445,
+      "gc1": 29,
+      "gc2": 29,
+      "tracked": {
+        "Report": {
+          "created": 19,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 19,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 19,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 19,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:18",
+          "309e89049fad406dbf1afa92d87c2bb9:17"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 19,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 650789184,
+      "managedBytes": 650789184,
+      "allocatedBytes": 4688420768,
+      "threadAllocatedBytes": 4698379464,
+      "gc0": 468,
+      "gc1": 30,
+      "gc2": 30,
+      "tracked": {
+        "Report": {
+          "created": 20,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 20,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 20,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 20,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:19",
+          "309e89049fad406dbf1afa92d87c2bb9:18"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    },
+    {
+      "update": 20,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "drop-paints",
+      "managedBeforeGc": 689341432,
+      "managedBytes": 689341432,
+      "allocatedBytes": 4913448848,
+      "threadAllocatedBytes": 4923407048,
+      "gc0": 491,
+      "gc1": 31,
+      "gc2": 31,
+      "tracked": {
+        "Report": {
+          "created": 21,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 21,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 21,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 21,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "309e89049fad406dbf1afa92d87c2bb9:20",
+          "309e89049fad406dbf1afa92d87c2bb9:19"
+        ],
+        "paints": 0,
+        "paintRowReferences": 0,
+        "paintDistinctReports": 0,
+        "paintReportVersions": [],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259274240
+    }
+  ],
+  "errors": [],
+  "browser": "154.0.8037.98",
+  "runtime": {
+    "keys": [
+      "INTERNAL",
+      "invokeLibraryInitializers",
+      "Module",
+      "config",
+      "onConfigLoaded",
+      "onDownloadResourceProgress",
+      "out",
+      "err",
+      "onAbort",
+      "onExit",
+      "runtimeBuildInfo",
+      "runMain",
+      "runMainAndExit",
+      "exit",
+      "setEnvironmentVariable",
+      "getAssemblyExports",
+      "setModuleImports",
+      "getConfig",
+      "setHeapB32",
+      "setHeapB8",
+      "setHeapU8",
+      "setHeapU16",
+      "setHeapU32",
+      "setHeapI8",
+      "setHeapI16",
+      "setHeapI32",
+      "setHeapI52",
+      "setHeapU52",
+      "setHeapI64Big",
+      "setHeapF32",
+      "setHeapF64",
+      "getHeapB32",
+      "getHeapB8",
+      "getHeapU8",
+      "getHeapU16",
+      "getHeapU32",
+      "getHeapI8",
+      "getHeapI16",
+      "getHeapI32",
+      "getHeapI52",
+      "getHeapU52",
+      "getHeapI64Big",
+      "getHeapF32",
+      "getHeapF64",
+      "localHeapViewU8",
+      "localHeapViewU16",
+      "localHeapViewU32",
+      "localHeapViewI8",
+      "localHeapViewI16",
+      "localHeapViewI32",
+      "localHeapViewI64Big",
+      "localHeapViewF32",
+      "localHeapViewF64",
+      "collectCpuSamples",
+      "collectMetrics",
+      "collectGcDump",
+      "connectDSRouter",
+      "runtimeId"
+    ],
+    "moduleKeys": [
+      "HEAP8",
+      "HEAP16",
+      "HEAPU8",
+      "HEAPU16",
+      "HEAP32",
+      "HEAPU32",
+      "HEAPF32",
+      "HEAPF64",
+      "HEAP64",
+      "HEAPU64"
+    ],
+    "heapBytes": 1259274240
+  }
+}

@@ -1,0 +1,6 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 2.77 2.32 2.66 }; TieredCompilation=0
+   source's own key, vouched: 0 key calls over a new Window of 100,000 rows; vouched True
+   a Row Key of the grid's own over the source: 100,000 key calls over a new Window of 100,000 rows; vouched False
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/vouch.json

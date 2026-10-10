@@ -1,0 +1,734 @@
+{
+  "chrome": {
+    "DA-17 objects, browser (/pivot?trades=1000000)": {
+      "records": 1000000,
+      "readIntoSnapshotMs": 2563,
+      "how": "PivotSource.From(trades, DemoPivotData.Fields): one synchronous build, timed by the page",
+      "pageTaskMs": 5528
+    },
+    "PV-21 first question at load, /pivot over 1,000,000 trades": {
+      "answerMs": 385,
+      "longestTaskMs": 135,
+      "firstReportAtMs": 6412
+    },
+    "PV-21 gestures, /pivot over 1,000,000 trades": {
+      "open a field's menu": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 12.5,
+          "min": 12,
+          "max": 38.9
+        },
+        "answerMs": {
+          "median": 12.5,
+          "min": 12,
+          "max": 38.9
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.3,
+          "min": 0.2,
+          "max": 0.4
+        }
+      },
+      "sort Z to A": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 17.1,
+          "min": 15.7,
+          "max": 43.6
+        },
+        "answerMs": {
+          "median": 17.1,
+          "min": 15.7,
+          "max": 43.6
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.2,
+          "max": 0.7
+        }
+      },
+      "sort A to Z": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 20.4,
+          "min": 18.3,
+          "max": 30.2
+        },
+        "answerMs": {
+          "median": 20.4,
+          "min": 18.3,
+          "max": 30.2
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.3,
+          "min": 0.3,
+          "max": 0.5
+        }
+      },
+      "collapse": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 17.8,
+          "min": 15.1,
+          "max": 34.2
+        },
+        "answerMs": {
+          "median": 17.8,
+          "min": 15.1,
+          "max": 34.2
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.4,
+          "max": 0.5
+        }
+      },
+      "expand": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 16.6,
+          "min": 13.3,
+          "max": 25.4
+        },
+        "answerMs": {
+          "median": 16.6,
+          "min": 13.3,
+          "max": 25.5
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.3,
+          "max": 0.4
+        }
+      },
+      "open the Layout menu": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 12.4,
+          "min": 11.5,
+          "max": 16.2
+        },
+        "answerMs": {
+          "median": 12.4,
+          "min": 11.5,
+          "max": 16.2
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.3,
+          "max": 0.9
+        }
+      },
+      "change of form: Tabular": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 26.4,
+          "min": 19.3,
+          "max": 39.8
+        },
+        "answerMs": {
+          "median": 26.4,
+          "min": 19.3,
+          "max": 39.8
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.3,
+          "min": 0.3,
+          "max": 0.5
+        }
+      },
+      "change of form: Compact": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 20,
+          "min": 17.2,
+          "max": 30.8
+        },
+        "answerMs": {
+          "median": 20,
+          "min": 17.2,
+          "max": 30.8
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.3,
+          "max": 0.6
+        }
+      },
+      "new question: tick Book": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 43.9,
+          "min": 42.6,
+          "max": 100.4
+        },
+        "answerMs": {
+          "median": 153.3,
+          "min": 142.5,
+          "max": 222.4
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 99
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 99
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.2,
+          "max": 0.4
+        }
+      },
+      "new question: untick Book": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 41.6,
+          "min": 38.7,
+          "max": 43.8
+        },
+        "answerMs": {
+          "median": 130.2,
+          "min": 120.2,
+          "max": 148.8
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.3,
+          "min": 0.3,
+          "max": 0.5
+        }
+      },
+      "open the report filter": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 12.6,
+          "min": 11.6,
+          "max": 44.1
+        },
+        "answerMs": {
+          "median": 12.6,
+          "min": 11.6,
+          "max": 44.1
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.3,
+          "min": 0.2,
+          "max": 0.5
+        }
+      },
+      "new question: filter to USD": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 41.7,
+          "min": 40,
+          "max": 47.5
+        },
+        "answerMs": {
+          "median": 110,
+          "min": 109.1,
+          "max": 129.9
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "inputDelayMs": {
+          "median": 0.3,
+          "min": 0.2,
+          "max": 0.3
+        }
+      },
+      "new question: filter to (All)": {
+        "runs": 5,
+        "firstVisualAnswerMs": {
+          "median": 39.4,
+          "min": 39,
+          "max": 90.7
+        },
+        "answerMs": {
+          "median": 121,
+          "min": 113.7,
+          "max": 210.5
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 90
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 90
+        },
+        "inputDelayMs": {
+          "median": 0.3,
+          "min": 0.3,
+          "max": 0.4
+        }
+      }
+    },
+    "PV-21 questions below the cap, /pivot over 1,000,000 trades": {
+      "Rows TradeDate; Columns Product: 1,350 combinations": {
+        "first": {
+          "answerMs": 229.7,
+          "longestTaskMs": 59,
+          "firstVisualAnswerMs": 46.2
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 44.1,
+          "min": 41.6,
+          "max": 46.7
+        },
+        "answerMs": {
+          "median": 187.4,
+          "min": 174.5,
+          "max": 268.3
+        },
+        "longestTaskMs": {
+          "median": 51,
+          "min": 0,
+          "max": 82
+        },
+        "longestTaskSettlingMs": {
+          "median": 51,
+          "min": 0,
+          "max": 82
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.3,
+          "max": 0.4
+        },
+        "reportRows": 271
+      },
+      "Rows TradeDate, Book; Columns Product: 13,500 combinations": {
+        "first": {
+          "answerMs": 324,
+          "longestTaskMs": 0,
+          "firstVisualAnswerMs": 47.1
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 42.3,
+          "min": 40.9,
+          "max": 43
+        },
+        "answerMs": {
+          "median": 297.5,
+          "min": 283.6,
+          "max": 354.7
+        },
+        "longestTaskMs": {
+          "median": 59,
+          "min": 51,
+          "max": 99
+        },
+        "longestTaskSettlingMs": {
+          "median": 59,
+          "min": 51,
+          "max": 99
+        },
+        "inputDelayMs": {
+          "median": 0.5,
+          "min": 0.3,
+          "max": 0.5
+        },
+        "reportRows": 2971
+      },
+      "Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations": {
+        "first": {
+          "answerMs": 549.5,
+          "longestTaskMs": 98,
+          "firstVisualAnswerMs": 40.2
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 39.5,
+          "min": 38.7,
+          "max": 40.3
+        },
+        "answerMs": {
+          "median": 465,
+          "min": 432.4,
+          "max": 544.3
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 88
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 88
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.2,
+          "max": 0.4
+        },
+        "reportRows": 8371
+      }
+    },
+    "PV-21 the cap on leaves, /pivot over 1,000,000 trades": {
+      "Rows TradeDate, Quantity; Columns Product: 66,150 combinations": {
+        "first": {
+          "answerMs": 1034.9,
+          "longestTaskMs": 121,
+          "firstVisualAnswerMs": 46.8
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 42.5,
+          "min": 41.6,
+          "max": 44.4
+        },
+        "answerMs": {
+          "median": 801.5,
+          "min": 682.5,
+          "max": 815.1
+        },
+        "longestTaskMs": {
+          "median": 93,
+          "min": 55,
+          "max": 144
+        },
+        "longestTaskSettlingMs": {
+          "median": 93,
+          "min": 55,
+          "max": 144
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.4,
+          "max": 1
+        },
+        "reportRows": 13501
+      },
+      "Rows TradeDate, Notional: 134,730 combinations": {
+        "first": {
+          "answerMs": 1902.7,
+          "longestTaskMs": 113,
+          "firstVisualAnswerMs": 104.4
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 48.3,
+          "min": 42.5,
+          "max": 191
+        },
+        "answerMs": {
+          "median": 1917.4,
+          "min": 1882,
+          "max": 1921.8
+        },
+        "longestTaskMs": {
+          "median": 167,
+          "min": 129,
+          "max": 190
+        },
+        "longestTaskSettlingMs": {
+          "median": 167,
+          "min": 129,
+          "max": 190
+        },
+        "inputDelayMs": {
+          "median": 0.5,
+          "min": 0.4,
+          "max": 0.6
+        },
+        "reportRows": 134917
+      },
+      "Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations": {
+        "first": {
+          "answerMs": 1875.9,
+          "longestTaskMs": 226,
+          "firstVisualAnswerMs": 226.5
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 39.8,
+          "min": 39.3,
+          "max": 40.9
+        },
+        "answerMs": {
+          "median": 1850.2,
+          "min": 1664.8,
+          "max": 2024.8
+        },
+        "longestTaskMs": {
+          "median": 193,
+          "min": 0,
+          "max": 199
+        },
+        "longestTaskSettlingMs": {
+          "median": 193,
+          "min": 0,
+          "max": 199
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.2,
+          "max": 0.5
+        },
+        "reportRows": 13501
+      },
+      "Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused": {
+        "first": {
+          "answerMs": 496,
+          "longestTaskMs": 233,
+          "firstVisualAnswerMs": 233.6
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 39.7,
+          "min": 39.3,
+          "max": 228.2
+        },
+        "answerMs": {
+          "median": 288.3,
+          "min": 288.1,
+          "max": 481.6
+        },
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 227
+        },
+        "longestTaskSettlingMs": {
+          "median": 0,
+          "min": 0,
+          "max": 227
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.3,
+          "max": 0.4
+        },
+        "reportRows": 14,
+        "notice": "This layout needs more than 200,000 cells."
+      }
+    },
+    "PV-21 1,000 changes, /pivot-live over 1,000,000 trades": {
+      "runs": 12,
+      "appliedMs": {
+        "median": 32,
+        "min": 25,
+        "max": 48
+      },
+      "applyToReportFrameMs": {
+        "median": 32,
+        "min": 25,
+        "max": 48
+      },
+      "taskStartToReportFrameMs": {
+        "median": 55,
+        "min": 55,
+        "max": 55
+      },
+      "longestTaskMs": {
+        "median": 0,
+        "min": 0,
+        "max": 54
+      },
+      "reportInTheBatchsFrame": 12,
+      "lastStatus": "Batch 16: 1,000 trades amended, applied in 25 ms; the Snapshot is at version 16."
+    },
+    "DA-17 Arrow, browser (/pivot-db)": {
+      "trades": 1000000,
+      "firstRead": {
+        "status": "Read 1,000,000 trades at version 2c1e115d-1 in 7,834 ms.",
+        "pageMs": 7834,
+        "requestMs": 5332,
+        "browserReadMs": 2546,
+        "longestTaskMs": 381,
+        "readTaskMs": 67,
+        "firstQuestionMs": 167
+      },
+      "readAgain": {
+        "runs": 5,
+        "pageMs": {
+          "median": 2620,
+          "min": 2503,
+          "max": 2956
+        },
+        "requestMs": {
+          "median": 400,
+          "min": 357,
+          "max": 430
+        },
+        "browserReadMs": {
+          "median": 2292,
+          "min": 2187,
+          "max": 2573
+        },
+        "longestTaskMs": {
+          "median": 186,
+          "min": 167,
+          "max": 243
+        }
+      }
+    },
+    "PV-21/DA-17 CSV of 1,000,000 rows, browser (/pivot-csv)": {
+      "rows": 1000000,
+      "fileMiB": 89.7,
+      "runs": 3,
+      "pageSeconds": {
+        "median": 3.2,
+        "min": 3.1,
+        "max": 3.4
+      },
+      "readMs": {
+        "median": 3312,
+        "min": 3286,
+        "max": 3533
+      },
+      "firstQuestionMs": {
+        "median": 332,
+        "min": 319,
+        "max": 343
+      },
+      "reportMs": {
+        "median": 3644,
+        "min": 3629,
+        "max": 3852
+      },
+      "firstVisualAnswerMs": {
+        "median": 90,
+        "min": 87,
+        "max": 92
+      },
+      "longestTaskWhileReadingMs": {
+        "median": 122,
+        "min": 117,
+        "max": 128
+      },
+      "longestTaskUntilReportMs": {
+        "median": 128,
+        "min": 117,
+        "max": 137
+      },
+      "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 3.2 s."
+    },
+    "DA-17 CSV of 100,000 rows from memory, browser (/pivot-csv)": {
+      "rows": 100000,
+      "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
+      "pageSeconds": {
+        "median": 0.4,
+        "min": 0.4,
+        "max": 0.4
+      }
+    }
+  }
+}

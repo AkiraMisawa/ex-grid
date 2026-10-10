@@ -5,6 +5,7 @@ using ExPivot.Components.Tests.Support;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
+using PivotComponent = ExPivot.Components.ExPivot;
 
 namespace ExPivot.Components.Tests;
 
@@ -22,19 +23,19 @@ public class PivotRenderingTests : PivotTestContext
     {
         var cut = RenderPivot();
 
-        Assert.Empty(cut.FindComponents<ExGrid.Components.ExGrid<PivotReportRow>>());
+        Assert.Empty(cut.FindComponents<ExGrid.Components.ExGrid<PivotDisplayRow>>());
         Assert.Equal("To build a report, choose fields from the PivotTable Fields list.", cut.Find(".ex-pivot-empty").TextContent);
     }
 
-    [Fact] // ADR-0059: one ExGrid, the whole report as its Window, the label column pinned
+    [Fact] // ADR-0059: one ExGrid, the requested Window and full extent, the label column pinned
     public void The_report_is_one_grid_with_its_labels_pinned()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
 
         var grid = Grid(cut).Instance;
-        Assert.Single(cut.FindComponents<ExGrid.Components.ExGrid<PivotReportRow>>());
+        Assert.Single(cut.FindComponents<ExGrid.Components.ExGrid<PivotDisplayRow>>());
         Assert.Equal(1, grid.PinnedColumnCount);
-        Assert.Null(grid.TotalCount);
+        Assert.Equal(5, grid.TotalCount);
         Assert.Equal(["Row Labels", "Sum of Amount"], HeaderTexts(cut));
         Assert.Equal(["East | 180", "North | 10", "West | 90", "(blank) | 5", "Grand Total | 285"], RowTexts(cut));
     }
@@ -107,7 +108,7 @@ public class PivotRenderingTests : PivotTestContext
         }, records: records);
 
         Assert.Equal("East | 1,234.50", RowTexts(cut)[0]);
-        var value = (PivotValue)Grid(cut).Instance.Columns[1].Value(Grid(cut).Instance.Window[0])!;
+        var value = (PivotDisplayValue)Grid(cut).Instance.Columns[1].Value(Grid(cut).Instance.Window[0])!;
         Assert.Equal("1234.5", value.ToString(null, System.Globalization.CultureInfo.InvariantCulture));
     }
 
@@ -152,6 +153,25 @@ public class PivotRenderingTests : PivotTestContext
         cut.Render(ps => ps.Add(p => p.Source, second));
         Assert.Single(second.Questions);
         Assert.Equal("1285", RowTexts(cut)[0]);
+    }
+
+    [Fact] // ADR-0151: ExPivot is handed exactly one of its Pivot Source (Source) and a report source (ReportSource): neither, or both, is refused, naming the two; either alone draws the report
+    public async Task ADR0151_Exactly_one_of_Source_and_ReportSource_is_handed()
+    {
+        var neither = Assert.Throws<InvalidOperationException>(() => Render<PivotComponent>(ps => ps.Add(p => p.Layout, RegionProduct)));
+        Assert.Contains("(Source)", neither.Message);
+        Assert.Contains("(ReportSource)", neither.Message);
+
+        await using var reports = PivotReportSource.From(Bundled());
+        var both = Assert.Throws<InvalidOperationException>(() => RenderPivot(RegionProduct, ps => ps.Add(p => p.ReportSource, reports)));
+        Assert.Contains("(Source)", both.Message);
+        Assert.Contains("(ReportSource)", both.Message);
+        Assert.Contains("not both", both.Message);
+
+        var computedHere = RenderPivot(RegionProduct);
+        var reported = RenderPivot(RegionProduct, reportSource: reports);
+        reported.WaitForAssertion(() => Assert.Equal(RowTexts(computedHere), RowTexts(reported)));
+        Assert.Equal("−East | 180", RowTexts(reported)[0]);
     }
 
     private sealed record Position(string Desk, decimal Pnl);
@@ -199,7 +219,7 @@ public class PivotRenderingTests : PivotTestContext
     public async Task Field_list_interactions_do_not_render_the_grid()
     {
         var cut = RenderPivot(RegionProduct);
-        var before = cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount);
+        var before = cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount);
         var grid = Grid(cut).RenderCount;
 
         await cut.Find(".ex-pivot-search").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "Reg" });
@@ -207,7 +227,7 @@ public class PivotRenderingTests : PivotTestContext
         await cut.Find(".ex-pivot-search").FocusInAsync(new FocusEventArgs());
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
 
-        Assert.Equal(before, cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount));
+        Assert.Equal(before, cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount));
         Assert.Equal(grid, Grid(cut).RenderCount);
     }
 

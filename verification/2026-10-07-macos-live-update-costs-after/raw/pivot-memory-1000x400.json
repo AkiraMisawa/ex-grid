@@ -1,0 +1,153 @@
+{
+  "mode": "pivot-memory",
+  "machine": {
+    "at": "2026-10-07T13:26:42.9552260\u002B01:00",
+    "loadavg": "{ 2.13 2.82 2.87 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      "  3.5       00:01 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/151.0.7922.175/Helpers/Google Chrome Helper (Re",
+      "  2.4 37-06:49:46 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon",
+      "  2.3 01-00:27:06 claude",
+      "  2.1 23-21:16:13 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  1.4    13:06:47 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "  1.2 02-22:35:17 /System/Library/PrivateFrameworks/Ecosystem.framework/Support/ecosystemd",
+      "  1.2 37-06:49:47 /System/Library/CoreServices/launchservicesd",
+      "  1.1    13:06:47 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  1.0 37-06:39:31 /Applications/Armored Client.app/Contents/MacOS/Armored Client",
+      "  1.0 37-06:49:46 /usr/sbin/coreaudiod",
+      "  0.9 37-06:39:31 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": {
+    "aCount": 1000,
+    "bCount": 400,
+    "k": 1,
+    "redraws": 15,
+    "baselineMB": 399.9,
+    "samples": [
+      {
+        "redraw": 1,
+        "heapMB": 406.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 3,
+        "workingSetMB": 532.7
+      },
+      {
+        "redraw": 2,
+        "heapMB": 405.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 5,
+        "workingSetMB": 524.5
+      },
+      {
+        "redraw": 3,
+        "heapMB": 406.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 533.3
+      },
+      {
+        "redraw": 4,
+        "heapMB": 406.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 524.9
+      },
+      {
+        "redraw": 5,
+        "heapMB": 406.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 533.7
+      },
+      {
+        "redraw": 6,
+        "heapMB": 406.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 525.2
+      },
+      {
+        "redraw": 7,
+        "heapMB": 406.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 534
+      },
+      {
+        "redraw": 8,
+        "heapMB": 407,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 525.6
+      },
+      {
+        "redraw": 9,
+        "heapMB": 407.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 534.4
+      },
+      {
+        "redraw": 10,
+        "heapMB": 407.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 525.9
+      },
+      {
+        "redraw": 11,
+        "heapMB": 407.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 534.7
+      },
+      {
+        "redraw": 12,
+        "heapMB": 407.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 526.3
+      },
+      {
+        "redraw": 13,
+        "heapMB": 407.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 535.1
+      },
+      {
+        "redraw": 14,
+        "heapMB": 408,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 526.6
+      },
+      {
+        "redraw": 15,
+        "heapMB": 408.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 535.5
+      }
+    ]
+  }
+}

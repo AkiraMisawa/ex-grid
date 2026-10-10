@@ -1,7 +1,11 @@
 using System.Globalization;
 using Bunit;
+using ExGrid;
+using ExGrid.Clipboard;
 using ExSheet.Components.Tests.Support;
 using ExSheet.Engine;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 using Xunit;
 
 namespace ExSheet.Components.Tests;
@@ -175,5 +179,214 @@ public class SheetDocumentWiringTests : SheetTestContext
         var error = Assert.Throws<InvalidOperationException>(() =>
             cut.Render(ps => ps.Add(s => s.Culture, CultureInfo.GetCultureInfo("ja-JP"))));
         Assert.Contains("en-US", error.Message);
+    }
+
+    // ---- Another document opened in place of the one shown (ADR-0142, ADR-0011, ADR-0046) ----
+    //
+    // A Sheet's rows are places, so its own edits never move the Row Sequence Version it hands its
+    // grid; another Sheet Document opened in place of the one shown does, so that a gesture taken on
+    // what the old document painted is refused rather than written into the new one at the same place.
+
+    private static readonly CultureInfo EnUs = CultureInfo.GetCultureInfo("en-US");
+
+    private static int Paint(IRenderedComponent<global::ExSheet.Components.ExSheet> cut)
+        => int.Parse(Grid(cut).Find(".ex-viewport").GetAttribute("data-ex-paint")!, CultureInfo.InvariantCulture);
+
+    private static string Notice(IRenderedComponent<global::ExSheet.Components.ExSheet> cut) => cut.Find(".ex-sheet-notice").TextContent;
+
+    [Fact] // ADR-0142 / ADR-0011, ADR-0046: another Sheet Document opened in place of the one shown drops the Selection: its cells stand at the old one's places
+    public async Task A_replaced_document_drops_the_selection()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"))));
+        await GoToAsync(cut, "A1");
+        Assert.False(Grid(cut).Instance.ReadSelection().Selection.IsEmpty);
+
+        cut.Render(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "keep"))));
+
+        Assert.True(Grid(cut).Instance.ReadSelection().Selection.IsEmpty);
+    }
+
+    [Fact] // ADR-0142 / LV-13, ADR-0011: a paste taken on A1 of the old document and released after another was opened is refused as OrderMoved, said as the document replaced, and writes nothing into the new one
+    public async Task A_paste_aimed_at_the_replaced_document_is_refused()
+    {
+        var raised = new List<SheetDocument>();
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"))).Add(s => s.DocumentChanged, raised.Add));
+        await GoToAsync(cut, "A1");
+        var pressedOn = Paint(cut);
+
+        cut.Render(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "keep"))));
+        var grid = Grid(cut);
+        await grid.InvokeAsync(() => grid.Instance.OnPasteAsync("x", "<table><tr><td>x</td></tr></table>", pressedOn));
+
+        Assert.Equal("keep", CellText(cut, "A1"));
+        Assert.Empty(raised);
+        Assert.Equal(SheetWords.PasteRefused(PasteRefusalReason.OrderMoved), Notice(cut));
+    }
+
+    [Theory] // ADR-0142 / LV-13, ADR-0054, ADR-0035: Delete and Ctrl+D taken on A1:A2 of the old document are refused after another was opened — neither clears the new one's cells nor fills A2 from its A1
+    [InlineData("Delete", false)]
+    [InlineData("d", true)]
+    public async Task A_write_key_aimed_at_the_replaced_document_is_refused(string key, bool ctrl)
+    {
+        var raised = new List<SheetDocument>();
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"), ("A2", "below"))).Add(s => s.DocumentChanged, raised.Add));
+        await GoToAsync(cut, "A1:A2");
+        var pressedOn = Paint(cut);
+
+        cut.Render(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "keep"), ("A2", "stays"))));
+        var grid = Grid(cut);
+        await grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, ctrl, false, false, false, false, paint: pressedOn));
+
+        Assert.Equal("keep", CellText(cut, "A1"));
+        Assert.Equal("stays", CellText(cut, "A2"));
+        Assert.Empty(raised);
+        Assert.Equal(SheetWords.PasteRefused(PasteRefusalReason.OrderMoved), Notice(cut));
+    }
+
+    [Fact] // ADR-0142 / ADR-0011, ADR-0012 (decided 2026-10-08): `5` `0` `0` Enter typed on A1 of the old document and reaching the Sheet after another was opened opens nothing, writes nothing into the new one, and is said once, as typing that reached the Sheet after another document was opened
+    public async Task Typing_aimed_at_the_replaced_document_writes_nothing_and_is_said()
+    {
+        var raised = new List<SheetDocument>();
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"))).Add(s => s.DocumentChanged, raised.Add));
+        await GoToAsync(cut, "A1");
+        var typedOn = Paint(cut);
+
+        cut.Render(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "keep"))));
+        var grid = Grid(cut);
+        foreach (var key in new[] { "5", "0", "0", "Enter" })
+            await grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, false, false, false, false, false, paint: typedOn));
+
+        Assert.False(cut.Instance.IsEditing);
+        Assert.Equal("keep", CellText(cut, "A1"));
+        Assert.Equal("", CellText(cut, "A2"));
+        Assert.Empty(raised);
+        Assert.True(grid.Instance.ReadSelection().Selection.IsEmpty);
+        Assert.Equal(SheetWords.EditDiscarded(global::ExGrid.Cells.EditDiscardReason.OrderMoved), Notice(cut));
+    }
+
+    [Fact] // ADR-0142 / ADR-0012: a key typed after the new document is on screen keeps the first-key rule: it places the Focus on A1 and the editor opens there holding it
+    public async Task Typing_on_the_new_document_opens_an_edit_by_the_first_key_rule()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"))));
+        await GoToAsync(cut, "A1");
+
+        cut.Render(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "keep"))));
+        var grid = Grid(cut);
+        await grid.InvokeAsync(() => grid.Instance.OnKeyAsync("5", false, false, false, false, false, paint: Paint(cut)));
+
+        Assert.True(cut.Instance.IsEditing);
+        Assert.Equal("", Notice(cut));
+    }
+
+    [Fact] // ADR-0142, principle 1 (decided 2026-10-08): every edit discard the grid can raise has a sentence of its own, and typing that reached the Sheet after another document was opened — the one order move a Sheet has — says so, and that nothing was written
+    public void Every_edit_discard_is_worded_and_an_order_move_is_told_as_another_document_opened()
+    {
+        var sentences = Enum.GetValues<global::ExGrid.Cells.EditDiscardReason>().Select(SheetWords.EditDiscarded).ToArray();
+
+        Assert.Equal(sentences.Length, sentences.Distinct().Count());
+        var orderMoved = SheetWords.EditDiscarded(global::ExGrid.Cells.EditDiscardReason.OrderMoved);
+        Assert.Contains("another Sheet Document was opened", orderMoved);
+        Assert.Contains("nothing was written", orderMoved);
+    }
+
+    // ---- Another document opened by the Consumer's answer to a commit (ADR-0142, LV-32) ----
+    //
+    // A discard is never said for typing that was handed over (principle 1): the commit raised
+    // DocumentChanged with the entry in it, and another document handed in as the answer to it is the
+    // commit's own doing. The edit ends as committed, and no Overwrite Notice names a cell of the
+    // document no longer shown.
+
+    [Theory] // ADR-0142 / LV-32, ADR-0048, principle 1: `5` Enter in A1, answered with another Sheet Document — the raised one read back from a store, or another altogether — is entered and ends as committed, and is never said to be discarded
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_commit_answered_with_another_document_is_never_said_discarded(bool readBack)
+    {
+        var page = RenderPage<AnsweringPage>();
+        var cut = page.FindComponent<global::ExSheet.Components.ExSheet>();
+        page.Instance.AnswerWith = raised => readBack ? SheetDocument.FromJson(raised.ToJson()) : DocumentOf(EnUs, ("A1", "elsewhere"));
+
+        await EnterAsync(cut, "A1", "5");
+
+        Assert.Equal(1, page.Instance.Answered);
+        Assert.False(cut.Instance.IsEditing);
+        Assert.Equal(readBack ? "5" : "elsewhere", CellText(cut, "A1"));
+        Assert.Equal("", Notice(cut));
+    }
+
+    [Theory] // ADR-0142 D1 / LV-32, LV-11: a commit over a cell whose Value changed under the editor — a Linked Table's snapshot recalculating it — is told; but not when the Consumer answers the commit with another Sheet Document, whose cells stand at the old one's places
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task No_overwrite_notice_follows_a_commit_answered_with_another_document(bool answered)
+    {
+        var page = RenderPage<AnsweringPage>();
+        var cut = page.FindComponent<global::ExSheet.Components.ExSheet>();
+        await EnterAsync(cut, "A1", "=SUM(Positions[PV])");
+        await cut.Instance.DeclareLinkedTableAsync("Positions", ["Id", "Book", "PV"]);
+        await cut.Instance.PushLinkedTableAsync("Positions", [[Value.FromText("R-1"), Value.FromText("Rates"), Value.FromNumber(100)],
+            [Value.FromText("R-2"), Value.FromText("FX"), Value.FromNumber(250)]]);
+        await GoToAsync(cut, "A1");
+        await PressAsync(cut, "F2");
+        Assert.True(cut.Instance.IsEditing);
+        await cut.Instance.PushLinkedTableAsync("Positions", [[Value.FromText("R-2"), Value.FromText("FX"), Value.FromNumber(10)]]);
+        if (answered)
+            page.Instance.AnswerWith = raised => SheetDocument.FromJson(raised.ToJson());
+
+        await PressAsync(cut, "Enter");
+
+        Assert.False(cut.Instance.IsEditing);
+        Assert.Equal(answered ? "" : SheetWords.Overwritten("A1", "350", "10"), Notice(cut));
+    }
+
+    /// <summary>A Consumer's page that answers the Sheet's DocumentChanged by handing in the document
+    /// <see cref="AnswerWith"/> makes of the one raised, as a page that saves each change to a store and
+    /// shows what it reads back does.</summary>
+    private sealed class AnsweringPage : ComponentBase
+    {
+        private SheetDocument? _document;
+
+        /// <summary>What the page hands in for a document the Sheet raised; null hands in nothing.</summary>
+        public Func<SheetDocument, SheetDocument>? AnswerWith { get; set; }
+
+        /// <summary>How many raised documents the page answered.</summary>
+        public int Answered { get; private set; }
+
+        private void OnDocumentChanged(SheetDocument raised)
+        {
+            if (AnswerWith is not { } answer)
+                return;
+            Answered++;
+            _document = answer(raised);
+        }
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenComponent<global::ExSheet.Components.ExSheet>(0);
+            builder.AddComponentParameter(1, nameof(global::ExSheet.Components.ExSheet.Document), _document);
+            builder.AddComponentParameter(2, nameof(global::ExSheet.Components.ExSheet.DocumentChanged),
+                EventCallback.Factory.Create<SheetDocument>(this, OnDocumentChanged));
+            builder.AddComponentParameter(3, nameof(global::ExSheet.Components.ExSheet.Culture), EnUs);
+            builder.AddComponentParameter(4, nameof(global::ExSheet.Components.ExSheet.ViewportHeight), (ViewportSize)400);
+            builder.AddComponentParameter(5, nameof(global::ExSheet.Components.ExSheet.ViewportWidth), (ViewportSize)700);
+            builder.CloseComponent();
+        }
+    }
+
+    [Fact] // ADR-0142 / ADR-0048: a document this Sheet raised, handed back as a two-way binding does, is no replacement: the Selection stays, and a paste taken before it came back lands
+    public async Task The_sheets_own_document_coming_back_moves_nothing()
+    {
+        SheetDocument? raised = null;
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(EnUs, ("A1", "old"))).Add(s => s.DocumentChanged, d => raised = d));
+        await EnterAsync(cut, "B1", "2");
+        Assert.NotNull(raised);
+        await GoToAsync(cut, "A1");
+        var pressedOn = Paint(cut);
+
+        cut.Render(ps => ps.Add(s => s.Document, raised));
+        var grid = Grid(cut);
+        Assert.False(grid.Instance.ReadSelection().Selection.IsEmpty);
+        await grid.InvokeAsync(() => grid.Instance.OnPasteAsync("x", "<table><tr><td>x</td></tr></table>", pressedOn));
+
+        Assert.Equal("x", CellText(cut, "A1"));
+        Assert.Equal("", Notice(cut));
     }
 }

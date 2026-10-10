@@ -1,0 +1,56 @@
+# Prints the after-the-fix tables of README.md from raw/after/: PV-21's questions in the browser and the
+# questions on CoreCLR, per round, each side's runs as "a / b". Usage: python3 -I after.py raw/after
+import json, os, sys, glob, statistics
+
+base = sys.argv[1]
+NAMES = {"before": "before (4a289b0)", "fixed": "chains fixed (234da46)", "lazy": "both fixed (f2bc6a4)", "main": "`main` (db60f6f)"}
+QUESTIONS = [("tick Book", "gesture", "new question: tick Book"), ("untick Book", "gesture", "new question: untick Book"),
+             ("filter to USD", "gesture", "new question: filter to USD"), ("filter to (All)", "gesture", "new question: filter to (All)"),
+             ("1,350", "q", "1,350"), ("13,500", "q", "13,500"), ("27,000", "q", "27,000"), ("66,150", "q", "66,150"),
+             ("134,730", "q", "134,730"), ("198,450", "q", "198,450"), ("330,750, refused", "q", "330,750"),
+             ("first question at load", "first", None), ("CSV's first question", "csv", None)]
+
+def browser(path):
+    m = json.load(open(path))["chrome"]
+    g = m["PV-21 gestures, /pivot over 1,000,000 trades"]
+    q = {**m["PV-21 questions below the cap, /pivot over 1,000,000 trades"], **m["PV-21 the cap on leaves, /pivot over 1,000,000 trades"]}
+    out = {}
+    for label, kind, key in QUESTIONS:
+        if kind == "gesture":
+            out[label] = g[key]["answerMs"]["median"]
+        elif kind == "q":
+            name = next(n for n in q if f": {key} combinations" in n)
+            v = q[name]["answerMs"]
+            out[label] = v["median"] if isinstance(v, dict) else v
+        elif kind == "first":
+            out[label] = m["PV-21 first question at load, /pivot over 1,000,000 trades"]["answerMs"]
+        else:
+            out[label] = m["PV-21/DA-17 CSV of 1,000,000 rows, browser (/pivot-csv)"]["firstQuestionMs"]["median"]
+    return out
+
+def coreclr(path):
+    d = json.load(open(path))
+    return {r["name"].split(":")[0]: (statistics.median(r["ms"]), statistics.median(r["allocatedMiB"])) for r in d["results"]}
+
+for round_dir in sorted(glob.glob(os.path.join(base, "round*"))):
+    runs = {}
+    for f in sorted(glob.glob(os.path.join(round_dir, "*-metrics.json"))):
+        side = os.path.basename(f).split("-")[1]
+        runs.setdefault(side, []).append(browser(f))
+    sides = list(runs)
+    print(f"### {os.path.basename(round_dir)}: browser, ms (each run's median)\n")
+    print("| Question | " + " | ".join(NAMES[x] for x in sides) + " |")
+    print("|---|" + "---|" * len(sides))
+    for label, _, _ in QUESTIONS:
+        print(f"| {label} | " + " | ".join(" / ".join(f"{r[label]:,.0f}" for r in runs[s]) for s in sides) + " |")
+    q = {}
+    for f in sorted(glob.glob(os.path.join(round_dir, "question-*.json"))):
+        side = os.path.basename(f).split("-")[2].removesuffix(".json")
+        q.setdefault(side, []).append(coreclr(f))
+    names = list(next(iter(q.values()))[0])
+    print(f"\n### {os.path.basename(round_dir)}: CoreCLR, ms and MiB allocated (each run's median of five)\n")
+    print("| Combinations | " + " | ".join(NAMES[x] for x in q) + " |")
+    print("|---|" + "---|" * len(q))
+    for n in names:
+        print(f"| {n} | " + " | ".join(" / ".join(f"{r[n][0]:,.0f}" for r in q[s]) + f" ({q[s][0][n][1]:,.0f} MiB)" for s in q) + " |")
+    print()

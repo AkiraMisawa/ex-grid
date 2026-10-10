@@ -113,11 +113,16 @@ public interface IGridSource<TRow>
     /// <summary>
     /// Puts out at once the changes this source has gathered and not yet published, so that its
     /// Window is the newest version it holds (ADR-0141/0142). The grid calls it on its own
-    /// synchronization context just before it judges a write — a commit, an Action, a paste, a
-    /// fill, a clear — and reads <see cref="Window"/> again, so the write is judged against, and
-    /// its Edit Intent carries, the newest version. A source with nothing it could publish without
-    /// waiting, such as one whose pending change is a question to a server, does nothing; that is
-    /// the default.
+    /// synchronization context just before it handles a write — a commit, an Action, a paste, a
+    /// fill, a clear — and reads <see cref="Window"/> again, so the write is made on, and its Edit
+    /// Intent carries, the newest version. It calls it again as the handler of a write intent it
+    /// raised completes — an Edit, paste or fill intent, a Clear Intent, a Fill Intent — so a write
+    /// the Consumer handed this source, and this source gathered, is in the Window before the next
+    /// gesture is handled: the user's own write settles with the first Window published after its
+    /// handler completed, and counts as seen for the Overwrite Notice (ADR-0142, D1). A source with
+    /// nothing it could publish without waiting, such as one whose pending change is a question to a
+    /// server, does nothing; that is the default, and the write then settles with the Window its
+    /// answer brings.
     /// </summary>
     void PublishGathered() { }
 

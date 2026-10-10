@@ -1,0 +1,247 @@
+{
+  "host": "wasm",
+  "base": "http://localhost:5899",
+  "at": "2026-10-06T19:36:49.612Z",
+  "results": {
+    "w2": {
+      "6": {
+        "pass": true,
+        "evidence": {
+          "readings": [
+            {
+              "at": "start",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 6026072,
+              "statesSeen": 0,
+              "oldStatesAlive": 0,
+              "replacedSampled": 0,
+              "replacedAlive": 0,
+              "tradesNow": 1000,
+              "version": 0
+            },
+            {
+              "at": "after 200 ticks",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 6800712,
+              "statesSeen": 201,
+              "oldStatesAlive": 0,
+              "replacedSampled": 2000,
+              "replacedAlive": 170,
+              "tradesNow": 1002,
+              "version": 200
+            },
+            {
+              "at": "after 400 ticks",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 7226304,
+              "statesSeen": 403,
+              "oldStatesAlive": 0,
+              "replacedSampled": 4000,
+              "replacedAlive": 340,
+              "tradesNow": 1005,
+              "version": 400
+            },
+            {
+              "at": "after 600 ticks",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 7256432,
+              "statesSeen": 605,
+              "oldStatesAlive": 0,
+              "replacedSampled": 6000,
+              "replacedAlive": 510,
+              "tradesNow": 1005,
+              "version": 600
+            },
+            {
+              "at": "after 800 ticks",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 7272168,
+              "statesSeen": 807,
+              "oldStatesAlive": 0,
+              "replacedSampled": 8000,
+              "replacedAlive": 630,
+              "tradesNow": 1005,
+              "version": 800
+            },
+            {
+              "at": "after 1000 ticks",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 7274272,
+              "statesSeen": 1009,
+              "oldStatesAlive": 0,
+              "replacedSampled": 10000,
+              "replacedAlive": 630,
+              "tradesNow": 1005,
+              "version": 1000
+            },
+            {
+              "at": "after 1200 ticks",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 7274344,
+              "statesSeen": 1211,
+              "oldStatesAlive": 0,
+              "replacedSampled": 12000,
+              "replacedAlive": 630,
+              "tradesNow": 1005,
+              "version": 1200
+            },
+            {
+              "at": "grid gone (Home)",
+              "tracked": {
+                "w2-page": "1 of 1 alive",
+                "w2-source": "1 of 1 alive"
+              },
+              "heapBytes": 7024040,
+              "statesSeen": 1211,
+              "oldStatesAlive": 0,
+              "replacedSampled": 12000,
+              "replacedAlive": 0,
+              "tradesNow": 1005,
+              "version": 1200
+            }
+          ],
+          "problems": [],
+          "errorUi": false,
+          "heapGrowthAfterFirstRound": 473632
+        }
+      }
+    },
+    "w1": {
+      "6": {
+        "pass": true,
+        "evidence": {
+          "readings": [
+            {
+              "at": "start",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 5957488,
+              "statesSeen": 0,
+              "oldStatesAlive": 0,
+              "replacedSampled": 0,
+              "replacedAlive": 0,
+              "tradesNow": 1000,
+              "version": 0
+            },
+            {
+              "at": "after 200 ticks",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 6240264,
+              "statesSeen": 202,
+              "oldStatesAlive": 0,
+              "replacedSampled": 2000,
+              "replacedAlive": 630,
+              "tradesNow": 1002,
+              "version": 200
+            },
+            {
+              "at": "after 400 ticks",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 6261008,
+              "statesSeen": 404,
+              "oldStatesAlive": 0,
+              "replacedSampled": 4000,
+              "replacedAlive": 630,
+              "tradesNow": 1005,
+              "version": 400
+            },
+            {
+              "at": "after 600 ticks",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 6261048,
+              "statesSeen": 606,
+              "oldStatesAlive": 0,
+              "replacedSampled": 6000,
+              "replacedAlive": 630,
+              "tradesNow": 1005,
+              "version": 600
+            },
+            {
+              "at": "after 800 ticks",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 6261056,
+              "statesSeen": 808,
+              "oldStatesAlive": 0,
+              "replacedSampled": 8000,
+              "replacedAlive": 630,
+              "tradesNow": 1005,
+              "version": 800
+            },
+            {
+              "at": "after 1000 ticks",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 6261048,
+              "statesSeen": 1010,
+              "oldStatesAlive": 0,
+              "replacedSampled": 10000,
+              "replacedAlive": 630,
+              "tradesNow": 1005,
+              "version": 1000
+            },
+            {
+              "at": "after 1200 ticks",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 6301224,
+              "statesSeen": 1212,
+              "oldStatesAlive": 0,
+              "replacedSampled": 12000,
+              "replacedAlive": 630,
+              "tradesNow": 1005,
+              "version": 1200
+            },
+            {
+              "at": "grid gone (Home)",
+              "tracked": {
+                "w1-page": "1 of 1 alive"
+              },
+              "heapBytes": 6016064,
+              "statesSeen": 1212,
+              "oldStatesAlive": 0,
+              "replacedSampled": 12000,
+              "replacedAlive": 0,
+              "tradesNow": 1005,
+              "version": 1200
+            }
+          ],
+          "problems": [],
+          "errorUi": false,
+          "heapGrowthAfterFirstRound": 60960
+        }
+      }
+    }
+  }
+}

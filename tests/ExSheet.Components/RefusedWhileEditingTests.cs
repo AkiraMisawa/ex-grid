@@ -415,4 +415,21 @@ public class RefusedWhileEditingTests : SheetTestContext
         await cut.Instance.DoAsync(SheetEdit.InsertRows(1));
         Assert.Equal("Plums", CellText(cut, "A5"));
     }
+
+    [Fact] // ADR-0142 / LV-20, principle 1: every commit refusal the grid can raise has a sentence of its own, naming the cell
+    public void Every_commit_refusal_is_worded_with_its_cell()
+        => Assert.All(Enum.GetValues<global::ExGrid.Cells.CommitRefusalReason>(),
+            static reason => Assert.Contains("C4", SheetWords.CommitRefused("C4", reason)));
+
+    [Fact] // ADR-0142 / LV-13, principle 1: every paste refusal the grid can raise has a sentence of its own, and a write aimed at the cells of a Sheet Document since replaced — the one order move a Sheet has — says so, and that nothing was written
+    public void Every_paste_refusal_is_worded_and_an_order_move_is_told_as_a_replaced_document()
+    {
+        var sentences = Enum.GetValues<global::ExGrid.Clipboard.PasteRefusalReason>().Select(SheetWords.PasteRefused).ToArray();
+
+        Assert.Equal(sentences.Length, sentences.Distinct().Count());
+        var orderMoved = SheetWords.PasteRefused(global::ExGrid.Clipboard.PasteRefusalReason.OrderMoved);
+        Assert.Contains("another Sheet Document was opened", orderMoved);
+        Assert.Contains("nothing was written", orderMoved);
+        Assert.NotEqual(SheetWords.PasteRefused(global::ExGrid.Clipboard.PasteRefusalReason.EmptySelection), orderMoved);
+    }
 }

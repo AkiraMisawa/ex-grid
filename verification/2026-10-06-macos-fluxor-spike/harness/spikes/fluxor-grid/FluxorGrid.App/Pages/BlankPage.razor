@@ -1,0 +1,10 @@
+@page "/blank"
+@inject Census Census
+@* A page with no grid, no Fluxor and no query parameter, followed by the census: whether the page
+   last left stays reachable is then Blazor's, not ExGrid's or Fluxor's (check 6). *@
+<a id="home" href="">Home</a>
+<p id="blank">A blank page.</p>
+
+@code {
+    protected override void OnInitialized() => Census.Track("blank-page", this);
+}

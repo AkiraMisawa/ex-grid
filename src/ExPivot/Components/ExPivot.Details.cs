@@ -38,17 +38,24 @@ public partial class ExPivot
     /// Consumer takes them when it listens; otherwise they open in a tab at the report's foot, or in
     /// a dialog when the Consumer asked for one.
     /// </summary>
-    private async Task ShowDetailsAsync(PivotReportRow row, int valueColumn)
+    private Task ShowDetailsAsync(PivotDisplayRow row, int valueColumn)
     {
-        if (_report is not { } report || !ReferenceEquals(row.Report, report) || _reportSource is not { } source)
-            return;
+        if (_report is not { } report || (_state is null || !_state.Rows.Contains(row)) || _reportSource is not { } source)
+            return Task.CompletedTask;
+        return ShowDetailsAsync(report, source, row, valueColumn);
+    }
+
+    private async Task ShowDetailsAsync(PivotReportMetadata report, PivotReportSource source, PivotDisplayRow row, int valueColumn)
+    {
         if (row.ValueAt(valueColumn) is null)
             return;
-        var rowItems = Items(report, report.RowPath(row));
-        var columnItems = Items(report, report.ColumnPath(valueColumn));
-        var valueField = report.ValueFieldAt(row, valueColumn) is var vf and >= 0 ? report.ValueCaptions[vf] : null;
+        var rowItems = Items(report, row.RowPath);
+        var columnItems = Items(report, report.ValueColumns[valueColumn].ColumnPath);
+        var valueField = ValueFieldAt(report, row, valueColumn) is var vf and >= 0 ? report.ValueCaptions[vf] : null;
         var path = rowItems.Concat(columnItems).Select(item => item.Item).ToArray();
         var title = PivotWords.Fill(Word("details-title"), path.Length == 0 ? Word(PivotWords.GrandTotal) : string.Join(" / ", path));
+        // Resolved now, from the cell the user acted on: the question names its Items and the
+        // Source Version, so a collapse or a sort that follows leaves it the same question.
         var details = new PivotDetails(source, report.DetailsQuery(row, valueColumn), rowItems, columnItems, valueField, title);
         if (OnShowDetails.HasDelegate)
         {

@@ -1,0 +1,11 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/paint/v0/tests/ExGrid.Components/ExGrid.Components.csproj (in 123 ms).
+  2 of 3 projects are up-to-date for restore.
+  ExGrid.Data -> /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/paint/v0/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExGrid -> /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/paint/v0/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExGrid.Components -> /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/paint/v0/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll
+  Run tests: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/paint/v0/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|arm64]
+  Passed! - Failed: 0, Passed: 1642, Skipped: 1, Total: 1643, Duration: 5s 588ms - ExGrid.Components.dll (net10.0|arm64)
+  Tests succeeded: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/paint/v0/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|arm64]

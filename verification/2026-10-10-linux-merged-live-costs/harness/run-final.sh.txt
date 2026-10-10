@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# PV-48's CoreCLR half and LV-23's loop for PR #70 on the merged code: main db60f6f vs branch 80d6b38,
+# the same harnesses on both sides, interleaved, the machine otherwise idle.
+S=/tmp/claude-0/-home-user-ex-grid/745dc86b-9814-555a-832d-a3eebdd9e2d0/scratchpad/perf
+W=/home/user/ex-grid/.claude/worktrees
+O=$S/final; mkdir -p $O
+log() { echo "$1 $(date +%T) load $(cut -d' ' -f1-3 /proc/loadavg)" >> $O/run.log; }
+export DOTNET_TieredCompilation=0
+pivot() { # round side advance
+  local out=$O/pivot-r$1-$2; mkdir -p $out; log "pivot r$1 $2 advance $3 start"
+  (cd $W/perf-$2/tests/ExPivot.Components/bin/Release/net10.0 && PERF_OUT=$out PERF_ADVANCE_MS=$3 PERF_INNERS=10,100,400 PERF_BATCHES=1,1000 PERF_RUNS=9 \
+    nix develop /home/user/ex-grid -c dotnet ExPivot.Components.Tests.dll -class ExPivot.Components.Tests.PerfWholeUpdate > $out/log 2>&1)
+  log "pivot r$1 $2 end exit $?"
+}
+grid() { local out=$O/grid-r$1-$2; mkdir -p $out; log "grid r$1 $2 start"
+  (cd $W/perf-$2 && nix develop /home/user/ex-grid -c dotnet spikes/live-update/PerfGrid/bin/Release/net10.0/PerfGrid.dll $out/grid.json 1000000 1,100,1000 3 15 60 > $out/log 2>&1)
+  log "grid r$1 $2 end exit $?"
+}
+pivot 1 main 1; pivot 1 final 1; pivot 2 final 1; pivot 2 main 1
+pivot 3 main 5000; pivot 3 final 5000
+grid 1 main; grid 1 final; grid 2 final; grid 2 main
+unset DOTNET_TieredCompilation
+# LV-23: the published WebAssembly host of each side, served static, 20 redraws of 101,001 report rows.
+cd /home/user/ex-grid/.claude/worktrees/live-data-best/tests/ExGrid.Browser
+cp $S/lv23/perf-memory.spec.mjs $S/lv23/perf-memory.config.mjs .
+for side in main final; do
+  log "lv23 $side start"
+  PERF_WWWROOT=$S/hosts-perf-$side/wwwroot EXGRID_BASE_URL=http://localhost:5420 PERF_OUT=$O/lv23-$side.json PERF_B=100 PERF_N=20 \
+    nix develop '/home/user/ex-grid#browser' -c npx playwright test -c perf-memory.config.mjs > $O/lv23-$side.log 2>&1
+  log "lv23 $side end exit $?"
+done
+rm -f perf-memory.spec.mjs perf-memory.config.mjs
+echo "done $(date +%T)" >> $O/run.log

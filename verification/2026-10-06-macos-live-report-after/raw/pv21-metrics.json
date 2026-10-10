@@ -1,0 +1,66 @@
+{
+  "chrome": {
+    "PV-21 1,000 changes, /pivot-live over 1,000,000 trades": {
+      "runs": 12,
+      "appliedMs": {
+        "median": 33,
+        "min": 21,
+        "max": 42
+      },
+      "applyToReportFrameMs": {
+        "median": 33,
+        "min": 21,
+        "max": 42
+      },
+      "taskStartToReportFrameMs": null,
+      "longestTaskMs": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "reportInTheBatchsFrame": 12,
+      "lastStatus": "Batch 14: 1,000 trades amended, applied in 33 ms; the Snapshot is at version 14."
+    },
+    "PV-21/DA-17 CSV of 1,000,000 rows, browser (/pivot-csv)": {
+      "rows": 1000000,
+      "fileMiB": 81.1,
+      "runs": 3,
+      "pageSeconds": {
+        "median": 2,
+        "min": 2,
+        "max": 2
+      },
+      "readMs": {
+        "median": 2067,
+        "min": 2060,
+        "max": 2106
+      },
+      "firstQuestionMs": {
+        "median": 286,
+        "min": 284,
+        "max": 301
+      },
+      "reportMs": {
+        "median": 2353,
+        "min": 2344,
+        "max": 2407
+      },
+      "firstVisualAnswerMs": {
+        "median": 40,
+        "min": 40,
+        "max": 43
+      },
+      "longestTaskWhileReadingMs": {
+        "median": 99,
+        "min": 98,
+        "max": 113
+      },
+      "longestTaskUntilReportMs": {
+        "median": 99,
+        "min": 98,
+        "max": 113
+      },
+      "lastStatus": "one-million-trades.csv: 1,000,000 rows read in 2.0 s."
+    }
+  }
+}

@@ -1,0 +1,7 @@
+node v24.14.1, dotnet 10.0.203
+
+Running 1 test using 1 worker
+
+  ✓  1 [chrome] › perf-memory.spec.mjs:6:1 › LV-23 live ExPivot managed heap over redraws (15.4s)
+
+  1 passed (16.3s)

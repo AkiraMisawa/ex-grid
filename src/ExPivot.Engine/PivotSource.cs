@@ -54,10 +54,14 @@ public abstract class PivotSource
     /// its own.</summary>
     public event Action<PivotSourceChanged>? Changed;
 
+    // A view can synchronously ask from its notification, so calculations hear it first.
+    internal event Action<PivotSourceChanged>? ComputationChanged;
+
     /// <summary>Raises <see cref="Changed"/>.</summary>
     protected void OnChanged(PivotSourceChanged change)
     {
         ArgumentNullException.ThrowIfNull(change);
+        ComputationChanged?.Invoke(change);
         Changed?.Invoke(change);
     }
 

@@ -1,0 +1,238 @@
+#pragma warning disable xUnit1051, BL0005
+
+using System.Diagnostics;
+using System.Globalization;
+using System.Reflection;
+using System.Text.Json;
+using Bunit;
+using ExGrid;
+using ExGrid.Components;
+using ExGrid.DemoPages;
+using ExGrid.Columns;
+using ExPivot.Engine;
+using ExPivot.Components.Tests.Support;
+using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Time.Testing;
+using Xunit;
+using PC = ExPivot.Components.ExPivot;
+
+namespace ExPivot.Components.Tests;
+
+public sealed class LiveCostMeasurement : PivotTestContext
+{
+    private static readonly PivotSlicing Whole = new() { Budget = TimeSpan.FromDays(1) };
+    private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
+    private static readonly string Out = Environment.GetEnvironmentVariable("LIVE_COST_OUTPUT")!;
+    private sealed record Row(int Id, string A, string B, decimal Value);
+    private static object? Get(object o, string name) => o.GetType().GetField(name, Private)!.GetValue(o);
+    private static void Set(object o, string name, object? v) => o.GetType().GetField(name, Private)!.SetValue(o, v);
+    private static object? Call(object o, string name, params object?[] args) => o.GetType().GetMethod(name, Private)!.Invoke(o, args);
+    private static double Time(Action action) { var start = Stopwatch.GetTimestamp(); action(); return Stopwatch.GetElapsedTime(start).TotalMilliseconds; }
+    private static void Clean() { GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect(); }
+    private static void Save(string file, object result) => File.WriteAllText(Path.Combine(Out, file), JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+
+    [Fact] // ADR-0140/0141: observational only, run by name in Release, no timing assertion.
+    public async Task Grid_steps()
+    {
+        var results = new List<object>();
+        foreach (var n in new[] { 100_000, 1_000_000 })
+        foreach (var k in new[] { 1, 100, 1_000 })
+        {
+            var rows = DemoPivotData.Generate(n).ToArray();
+            var clock = new FakeTimeProvider();
+            var source = GridSource.From(rows, r => r.Id, clock);
+            source.GatherInterval = TimeSpan.FromDays(1);
+            var columns = Columns;
+            var marks = source.CellChangedAt;
+            SetRendererInfo(new RendererInfo("Server", true));
+            var cut = Render<ExGrid<DemoPivotTrade>>(p => p.Add(g => g.Source, source).Add(g => g.Columns, columns).Add(g => g.CellChangedAt, marks).Add(g => g.ViewportHeight, (ViewportSize)480).Add(g => g.ViewportWidth, (ViewportSize)1270));
+            var grid = cut.Instance;
+            // Remove the actual listener while individual source steps are timed. Render separately.
+            var listeners = Get(source, "StateChanged");
+            Set(source, "StateChanged", null);
+            source.Apply(new(changed: [rows[0] = rows[0] with { Pnl = -1 }]));
+            source.PublishGathered();
+            var runs = new List<object>();
+            for (var r = -2; r < 9; r++)
+            {
+                var chosen = Enumerable.Range(0, k).Select(i => i < Math.Min(k, 20) ? i : (i * 997) % n).Distinct().ToArray();
+                var changed = chosen.Select(i => rows[i] = rows[i] with { Pnl = rows[i].Pnl + 1 }).ToArray();
+                var batch = new GridChangeBatch<DemoPivotTrade>(changed: changed);
+                Clean();
+                var apply = Time(() => source.Apply(batch));
+                var requery = Requery(source, rows, changed, chosen);
+                var publish = Time(() => Call(source, "PublishPending"));
+                var before = cut.FindComponents<ExGridRow<DemoPivotTrade>>().ToDictionary(x => x.Instance, x => x.RenderCount);
+                double take = 0, state = 0, render = 0;
+                await cut.InvokeAsync(() => {
+                    Set(grid, "_window", source.Window);
+                    take = Time(() => Call(grid, "TakeInWindow"));
+                    Set(grid, "_observedWindow", null);
+                    state = Time(() => Call(grid, "ApplyState"));
+                    render = Time(() => grid.GetType().GetMethod("StateHasChanged", Private)!.Invoke(grid, null));
+                });
+                var painted = cut.FindComponents<ExGridRow<DemoPivotTrade>>().Where(x => !x.Instance.Placeholder).ToArray();
+                var rendered = painted.Count(x => !before.TryGetValue(x.Instance, out var old) || old != x.RenderCount);
+                if (r >= 0) runs.Add(new { applyMs = apply, publicationMs = publish, isolatedRequeryMs = requery, takeInWindowMs = take, applyStateMs = state, renderBunitMs = render, painted = painted.Length, rendered });
+            }
+            Set(source, "StateChanged", listeners);
+            results.Add(new { rows = n, changes = k, columns = 11, filter = "none", sorts = "none", runs });
+            Save("grid-core.json", results);
+            Console.WriteLine($"Grid completed n={n} k={k}");
+            cut.Dispose();
+        }
+    }
+
+    private static readonly GridColumn<DemoPivotTrade>[] Columns =
+    [
+        new("Id", ColumnType.Text, t => t.Id, header: "Trade ID", width: Fixed(110)),
+        new("Region", ColumnType.Text, t => t.Region, width: Fixed(100)),
+        new("Desk", ColumnType.Text, t => t.Desk, width: Fixed(90)),
+        new("Book", ColumnType.Text, t => t.Book, width: Fixed(140)),
+        new("Product", ColumnType.Text, t => t.Product, width: Fixed(90)),
+        new("Currency", ColumnType.Text, t => t.Currency, width: Fixed(90)),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", width: Fixed(120), align: CellAlign.Left,
+            format: value => ((DateTime)value).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+        // A number that does not fit is #### rather than cut short (ADR-0016): the widths leave room
+        // for every digit the amendments can bring.
+        new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(170), format: Money),
+        new("Pnl", ColumnType.Number, t => t.Pnl, header: "P&L", width: Fixed(150), format: Money),
+        new("Quantity", ColumnType.Number, t => t.Quantity, width: Fixed(90)),
+        new("Confirmed", ColumnType.Boolean, t => t.Confirmed, width: Fixed(100)),
+    ];
+
+    private static ColumnWidthSpec Fixed(double width) => new(ColumnWidth.Fixed(width));
+
+    private static string Money(object value) => ((decimal)value).ToString("#,##0.00", CultureInfo.InvariantCulture);
+    private static double Requery(InMemoryGridSource<DemoPivotTrade> source, DemoPivotTrade[] rows, DemoPivotTrade[] changed, int[] chosen)
+    {
+        var asm = typeof(GridSource).Assembly;
+        var changeType = asm.GetType("ExGrid.RowChange`1")!.MakeGenericType(typeof(DemoPivotTrade));
+        var list = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(changeType))!;
+        for (var i = 0; i < chosen.Length; i++) {
+            var at = chosen[i]; var old = source.Window[at];
+            list.Add(Activator.CreateInstance(changeType, old.Id, true, old, (long)at, true, changed[i], (long)at)!);
+        }
+        var method = asm.GetType("ExGrid.LiveRequery")!.GetMethod("Apply", BindingFlags.Public | BindingFlags.Static)!.MakeGenericMethod(typeof(DemoPivotTrade));
+        object?[] args = [Get(source, "_window"), Get(source, "_windowOrdinals"), list, Get(source, "_columns"), source.Filter, source.Sorts, rows.Length, (Func<(DemoPivotTrade[], long[])>)(() => throw new InvalidOperationException("unexpected full requery")), false];
+        return Time(() => method.Invoke(null, args));
+    }
+
+    [Fact] // ADR-0060/0066/0067/0140: every large-report step observed independently.
+    public async Task Pivot_steps()
+    {
+        SetRendererInfo(new RendererInfo("Server", true));
+        var results = new List<object>();
+        foreach (var bCount in new[] { 10, 100, 400 })
+        {
+            var records = Enumerable.Range(0, 1000 * bCount).Select(i => new Row(i, $"A{i / bCount:00000}", $"B{i % bCount:0000}", i)).ToArray();
+            var fields = PivotFields.Of<Row>().Key("Id", r => r.Id).Text("A", r => r.A).Text("B", r => r.B).Number("Value", r => r.Value);
+            var source = PivotSource.From(fields.Build(records), fields.Fields, Whole);
+            var layout = new PivotLayout { Rows = [new("A"), new("B")], Values = [new("Value")] };
+            var query = PivotQuery.For(layout, int.MaxValue);
+            var answer = await source.AggregateAsync(query);
+            var cube = await PivotEngine.CubeAsync(query, answer, source.Fields, Whole);
+            var previous = await PivotEngine.ReportAsync(cube, layout, slicing: Whole);
+            var component = new PC();
+            var metrics = (GridMetrics)Get(component, "_metrics")!;
+            var paceType = typeof(PC).GetNestedType("Pace", BindingFlags.NonPublic)!;
+            var builtType = typeof(PC).GetNestedType("Built", BindingFlags.NonPublic)!;
+            Set(component, "_report", previous);
+            Set(component, "_history", ReportHistory.Start(previous, DateTimeOffset.UtcNow));
+            var grid = Render<ExGrid<PivotReportRow>>(p => p.Add(g => g.Window, previous.Rows).Add(g => g.RowKey, x => x.Key).Add(g => g.Columns, new GridColumn<PivotReportRow>[] { new("Label", ColumnType.Text, r => r.Labels[0].Text), new("Value", ColumnType.Number, r => r.ValueAt(0)?.Text) }).Add(g => g.ViewportHeight, (ViewportSize)480).Add(g => g.ViewportWidth, (ViewportSize)1000));
+            var gridKeyCheck = typeof(ExGrid<PivotReportRow>).GetMethod("RequireDistinctKeys", BindingFlags.NonPublic | BindingFlags.Static)!;
+            var instanceCheck = typeof(ExGrid<PivotReportRow>).GetMethod("RequireDistinctRows", BindingFlags.NonPublic | BindingFlags.Static)!;
+            var runs = new List<object>();
+            for (var r = -2; r < 9; r++)
+            {
+                var changed = Enumerable.Range(0, 1000).Select(i => { var j = i * (records.Length / 1000); return records[j] = records[j] with { Value = records[j].Value + 1 }; }).ToArray();
+                var batch = fields.Batch(changed: changed);
+                Clean();
+                var apply = Time(() => source.Apply(batch));
+                var asking = Time(() => answer = source.AggregateAsync(query).Result);
+                var cubeMs = Time(() => cube = PivotEngine.CubeAsync(query, answer, source.Fields, Whole).Result);
+                PivotReport report = null!;
+                var reportMs = Time(() => report = PivotEngine.ReportAsync(cube, layout, slicing: Whole).Result);
+                bool same = false;
+                var sameMs = Time(() => same = report.HasSameRowsAsAsync(previous, Whole).Result);
+                var pace = Activator.CreateInstance(paceType, Whole, CancellationToken.None)!;
+                double[] widths = null!;
+                var widthsMs = Time(() => widths = ((Task<double[]>)Call(component, "LabelWidthsAsync", report, metrics, pace)!).GetAwaiter().GetResult());
+                var built = Activator.CreateInstance(builtType, report, previous, same, widths, metrics)!;
+                var show = Time(() => Call(component, "Show", built, layout, (DateTimeOffset?)DateTimeOffset.UtcNow, true));
+                var keys = Time(() => gridKeyCheck.Invoke(null, [report.Rows, 0, (Func<PivotReportRow, object>)(x => x.Key)]));
+                var instances = Time(() => instanceCheck.Invoke(null, [report.Rows]));
+                var before = grid.FindComponents<ExGridRow<PivotReportRow>>().ToDictionary(x => x.Instance, x => x.RenderCount);
+                double take = 0, state = 0, render = 0;
+                await grid.InvokeAsync(() => {
+                    grid.Instance.Window = report.Rows;
+                    Set(grid.Instance, "_window", report.Rows);
+                    take = Time(() => Call(grid.Instance, "TakeInWindow"));
+                    state = Time(() => Call(grid.Instance, "ApplyState"));
+                    render = Time(() => grid.Instance.GetType().GetMethod("StateHasChanged", Private)!.Invoke(grid.Instance, null));
+                });
+                var painted = grid.FindComponents<ExGridRow<PivotReportRow>>().Where(x => !x.Instance.Placeholder).ToArray();
+                if (r >= 0) runs.Add(new { applyMs = apply, answerMs = asking, cubeMs, reportMs, sameRowsMs = sameMs, labelWidthsMs = widthsMs, showMs = show, keysMs = keys, instancesMs = instances, takeInWindowMs = take, applyStateAfterCheckMs = state, renderBunitMs = render, painted = painted.Length, rendered = painted.Count(x => !before.TryGetValue(x.Instance, out var old) || old != x.RenderCount), mounted = painted.Count(x => !before.ContainsKey(x.Instance)) });
+                previous = report;
+            }
+            grid.Dispose();
+            results.Add(new { records = records.Length, reportRows = previous.Rows.Count, changes = 1000, rowFields = 2, valueFields = 1, columns = 1, runs });
+            Save("pivot-core.json", results);
+            Console.WriteLine($"Pivot completed report rows={previous.Rows.Count}");
+        }
+    }
+    [Fact] // ADR-0140/0066: isolate the axis trees and the cached-key construction without rebuilding variants.
+    public async Task Pivot_tree_and_key_steps()
+    {
+        var results = new List<object>();
+        var asm = typeof(PivotCube).Assembly;
+        var nodeType = asm.GetType("ExPivot.Engine.AxisNode")!;
+        var slicerType = asm.GetType("ExPivot.Engine.Slicer")!;
+        var tree = typeof(PivotCube).GetMethod("TreeAsync", BindingFlags.Static | BindingFlags.NonPublic)!;
+        var rowParam = System.Linq.Expressions.Expression.Parameter(typeof(PivotReportRow), "row");
+        var keyCtor = typeof(PivotRowKey).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic).Single();
+        var keyMake = System.Linq.Expressions.Expression.Lambda<Func<PivotReportRow, object>>(
+            System.Linq.Expressions.Expression.New(keyCtor,
+                System.Linq.Expressions.Expression.Property(rowParam, "Role"),
+                System.Linq.Expressions.Expression.Property(rowParam, "ValueField"),
+                System.Linq.Expressions.Expression.Property(rowParam, typeof(PivotReportRow).GetProperty("Node", Private)!)), rowParam).Compile();
+        foreach (var inner in new[] { 10, 100, 400 })
+        {
+            var records = Enumerable.Range(0, 1000 * inner).Select(i => new Row(i, $"A{i / inner:00000}", $"B{i % inner:0000}", i)).ToArray();
+            var fields = PivotFields.Of<Row>().Key("Id", r => r.Id).Text("A", r => r.A).Text("B", r => r.B).Number("Value", r => r.Value);
+            var source = PivotSource.From(fields.Build(records), fields.Fields, Whole);
+            var layout = new PivotLayout { Rows = [new("A"), new("B")], Values = [new("Value")] };
+            var query = PivotQuery.For(layout, int.MaxValue);
+            var answer = await source.AggregateAsync(query);
+            var cube = await PivotEngine.CubeAsync(query, answer, source.Fields, Whole);
+            var report = await PivotEngine.ReportAsync(cube, layout, slicing: Whole);
+            var rowAxes = typeof(PivotAnswer).GetProperty("RowAxes", Private)!.GetValue(answer);
+            var colAxes = typeof(PivotAnswer).GetProperty("ColumnAxes", Private)!.GetValue(answer);
+            object[] Args(object? axes) {
+                var root = Activator.CreateInstance(nodeType, 0, -1, null, null)!;
+                var nodes = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType))!;
+                nodes.Add(root);
+                var slicer = slicerType.GetMethod("Of", BindingFlags.Static | BindingFlags.Public)!.Invoke(null, [Whole, CancellationToken.None]);
+                return [axes!, root, nodes, answer.LeafCount, slicer!];
+            }
+            void RunTree(object[] args) {
+                var pending = tree.Invoke(null, args)!;
+                pending.GetType().GetProperty("Result")!.GetValue(pending);
+            }
+            var runs = new List<object>();
+            for(var r=-2;r<9;r++) {
+                var rowArgs = Args(rowAxes); var colArgs = Args(colAxes);
+                Clean();
+                var rowMs=Time(()=>RunTree(rowArgs));
+                var colMs=Time(()=>RunTree(colArgs));
+                var keys=new object[report.Rows.Count];
+                var keyMs=Time(()=>{for(var i=0;i<keys.Length;i++)keys[i]=keyMake(report.Rows[i]);});
+                GC.KeepAlive(keys);
+                if(r>=0)runs.Add(new { rowTreeMs=rowMs, columnTreeMs=colMs, cachedKeyConstructionMs=keyMs });
+            }
+            results.Add(new { records=records.Length, reportRows=report.Rows.Count, runs });
+        }
+        Save("pivot-trees-and-keys.json", results);
+    }
+
+}

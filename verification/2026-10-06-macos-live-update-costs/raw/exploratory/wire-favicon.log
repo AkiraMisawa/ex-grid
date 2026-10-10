@@ -1,0 +1,11 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+wire rows=100000 changes=1 complete
+file:///Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/measure-cost-wire.mjs:43
+ if(logs.length)throw new Error(JSON.stringify(logs));
+                      ^
+
+Error: [{"type":"error","text":"Failed to load resource: the server responded with a status of 404 (Not Found)"}]
+    at file:///Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/measure-cost-wire.mjs:43:23
+
+Node.js v24.14.1

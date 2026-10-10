@@ -1,0 +1,13 @@
+diff --git a/src/ExGrid/Components/ExGrid.SeenText.cs b/src/ExGrid/Components/ExGrid.SeenText.cs
+index 6c056c7b..94672c22 100644
+--- a/src/ExGrid/Components/ExGrid.SeenText.cs
++++ b/src/ExGrid/Components/ExGrid.SeenText.cs
+@@ -85,7 +85,7 @@ public partial class ExGrid<TRow>
+     // a scroll step, a new row instance on screen — so a fling makes one a frame. A gesture is
+     // answered a few round trips after it is made at most, and the paints of a few round trips of
+     // scrolling and live updates fit well inside this; one older than all of them is refused.
+-    private const int PaintsKept = 64;
++    private const int PaintsKept = 2; // [DEBUG-oom] was 64
+ 
+     private readonly List<Paint> _paints = [];
+     private int _paintId;

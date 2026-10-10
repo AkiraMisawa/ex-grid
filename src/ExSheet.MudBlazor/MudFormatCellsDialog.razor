@@ -14,7 +14,12 @@
     backdrop are MudBlazor's own Cancel, which the frame turns into the context's. MudBlazor's focus
     trap wraps Tab inside the dialog. No script is added.
 *@
-<MudDialog Class="mud-ex-sheet-format-cells" ContentClass="mud-ex-sheet-format-cells-content">
+@* No first focus of MudBlazor's own: the tabs take the keyboard themselves (MudFormatCellsTabs), and
+   until they do it waits on the frame's element, which holds the keys typed meanwhile. MudBlazor 9
+   reads this from the dialog itself, never from the options it is shown with: set only there, its
+   focus trap took the keyboard to an empty element of its own before the tabs did, and an End typed
+   then was lost (PR #70's CI, Edge on the Server host). *@
+<MudDialog Class="mud-ex-sheet-format-cells" ContentClass="mud-ex-sheet-format-cells-content" DefaultFocus="DefaultFocus.None">
     <TitleContent>
         <MudText Typo="Typo.h6">@Title</MudText>
     </TitleContent>

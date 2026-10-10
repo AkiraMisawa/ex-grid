@@ -1,0 +1,52 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] Serving /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0hosts/wasm/wwwroot at http://localhost:5799
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.v6iImP/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8799
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/ld13/v0hosts/api
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.3 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version abbc0aac-0 from /tmp/nix-shell.v6iImP/exgrid-demo-api/runs/trades-v1-20000.13019.abbc0aac.sqlite.
+
+Running 1 test using 1 worker
+
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+PV-21 1,000 changes {
+ "runs": 12,
+ "appliedMs": {
+  "median": 27,
+  "min": 23,
+  "max": 38
+ },
+ "applyToReportFrameMs": {
+  "median": 27,
+  "min": 23,
+  "max": 38
+ },
+ "taskStartToReportFrameMs": null,
+ "longestTaskMs": {
+  "median": 0,
+  "min": 0,
+  "max": 0
+ },
+ "reportInTheBatchsFrame": 12,
+ "lastStatus": "Batch 13: 1,000 trades amended, applied in 27 ms; the Snapshot is at version 13."
+}
+  ✓  1 [chrome] › measure-pivot.spec.mjs:469:1 › PV-21: 1,000 changes folded into a million trades on /pivot-live (30.9s)
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  1 passed (33.9s)

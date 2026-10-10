@@ -1,0 +1,6 @@
+@page "/grid-cost"
+<GridCost Rows="Count" Changes="Batch" @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+@code {
+    [SupplyParameterFromQuery(Name = "rows")] public int Count { get; set; } = 100000;
+    [SupplyParameterFromQuery(Name = "batch")] public int Batch { get; set; } = 1;
+}

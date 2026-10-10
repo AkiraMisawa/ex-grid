@@ -1,0 +1,39 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] (node:67413) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 24 tests using 1 worker
+
+(node:67422) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 100000 1 (3.8s)
+  ✓   2 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 100000 100 (3.8s)
+  ✓   3 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 100000 1000 (3.8s)
+  ✓   4 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 1000000 1 (6.6s)
+  ✓   5 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 1000000 100 (6.5s)
+  ✓   6 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 1000000 1000 (6.5s)
+  ✓   7 [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 10 (1.6s)
+  ✓   8 [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 100 (6.1s)
+(node:67638) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   9 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 100000 1 (3.8s)
+  ✓  10 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 100000 100 (3.8s)
+  ✓  11 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 100000 1000 (3.8s)
+  ✓  12 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 1000000 1 (6.6s)
+  ✓  13 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 1000000 100 (6.5s)
+  ✓  14 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 1000000 1000 (6.5s)
+  ✓  15 [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 10 (1.6s)
+  ✓  16 [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 100 (6.1s)
+(node:67880) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  17 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 100000 1 (3.8s)
+  ✓  18 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 100000 100 (3.8s)
+  ✓  19 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 100000 1000 (3.8s)
+  ✓  20 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 1000000 1 (6.5s)
+  ✓  21 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 1000000 100 (6.5s)
+  ✓  22 [chrome] › measure-cost.spec.mjs:28:5 › ADR-0141 measure grid 1000000 1000 (6.5s)
+  ✓  23 [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 10 (1.6s)
+  ✓  24 [chrome] › measure-cost.spec.mjs:58:5 › ADR-0067 measure pivot 1000 x 100 (6.0s)
+
+  24 passed (2.0m)

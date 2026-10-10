@@ -114,7 +114,13 @@ same Items under any culture, and a server can put them in a `WHERE`.
   - The key applies to ascending and descending sorts, and to the Item lists of Filter… and of the
     report filter band. It does not affect a sort by value.
   - The engine parses no tenor. The demo and the documentation show a tenor key.
-  - It runs where ExPivot runs, over the Items an answer carries, so a server never sees it.
+  - **Execution side changed, 2026-10-06:** it runs where the report is computed. For a remote
+    report, the application registers the function on the server and selects it by identifier;
+    local computation still uses the local function. An unsupported policy is refused, never
+    replaced with a different order. Culture and display words are explicit settings
+    ([ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+    The earlier Leaf Aggregate boundary ran the function only beside the component and said
+    the server never saw it; ADR-0151 moved report computation across that boundary.
 - **A field may be sorted by a Value Field**, ascending or descending. An Item's place is then its
   value at its total across the other axis, as shown, after Show Values As. Blank and error values
   go last, and ties fall back to the label, ascending.
@@ -268,6 +274,9 @@ Columns, where Excel puts it, or in Rows.
   - **The Consumer chooses them in one line, explicitly.** They never follow the culture on their
     own, because a screen whose language changed unasked is the surprise the family avoids.
   - A Consumer that needs another language replaces the words by id, as before.
+  - *(2026-10-09.)* They include the sentences ExPivot gives the grid to say for it — a refused Copy or
+    Selection Summary — and a source's own refusal is said inside `source-refused`, never raw. As first
+    built with the report-Window design, five such sentences were English only (found in review).
 
 ## The held answer is kept, and the layout is redone
 
@@ -325,6 +334,15 @@ of the same names. **The definitions of all eleven Aggregations — what each co
 and how a result is finished from its parts — move to `ExGrid.Data`**, so a pivot cell and the
 status bar cannot disagree. Their meaning here is unchanged. The columnar accumulator stays in
 `ExPivot.Engine` and produces the parts.
+
+## A next report shares what did not change *(2026-10-06; taken 2026-10-08)*
+
+[ADR-0153](./0153-reports-share-unchanged-computation-and-display-rows-own-no-report.md) computes a live
+report from the last one. Published Report Versions stay immutable and share the structure a batch did
+not change, and the display rows handed to ExGrid hold no report. The engine stays the reference: an
+incremental result equals a fresh computation, which Layer 1 holds it to. *(The Claude Code track
+decided the same direction with a narrower scope on 2026-10-07, as ADR-0161; comparing the two tracks
+on 2026-10-08, the user took ADR-0153.)*
 
 ## Consequences
 

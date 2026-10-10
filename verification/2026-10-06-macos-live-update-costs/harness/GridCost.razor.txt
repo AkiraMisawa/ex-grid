@@ -1,0 +1,51 @@
+@using global::ExGrid
+@using global::ExGrid.Components
+@using global::ExGrid.Columns
+@using global::ExGrid.DemoPages
+@using System.Globalization
+@implements IHandleEvent
+<link href="_content/ExGrid/ex-grid.min.css" rel="stylesheet" />
+<button id="cost-tick" @onclick="Tick">One batch</button>
+<span id="cost-ready">ready</span>
+<ExGrid TRow="DemoPivotTrade" Source="_source" Columns="Columns" CellChangedAt="_source.CellChangedAt" ChangeHighlightDuration="TimeSpan.FromMinutes(10)" PinnedColumnCount="1" ViewportHeight="480" ViewportWidth="1270" />
+@code {
+    [Parameter] public int Rows { get; set; }
+    [Parameter] public int Changes { get; set; }
+    private DemoPivotTrade[] _rows = [];
+    private InMemoryGridSource<DemoPivotTrade> _source = null!;
+    private int _tick;
+    protected override void OnInitialized() {
+        _rows = DemoPivotData.Generate(Rows).ToArray();
+        _source = GridSource.From(_rows, r => r.Id);
+        _source.GatherInterval = TimeSpan.Zero;
+    }
+    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object? arg) => item.InvokeAsync(arg);
+    private void Tick() {
+        var changed = Enumerable.Range(0, Changes).Select(i => {
+            var at = i < Math.Min(Changes,20) ? i : i * 997 % Rows;
+            return _rows[at] = _rows[at] with { Pnl = _rows[at].Pnl + (++_tick % 2 == 0 ? 1m : -2m) };
+        }).ToArray();
+        _source.Apply(new(changed: changed));
+    }
+    private static readonly GridColumn<DemoPivotTrade>[] Columns =
+    [
+        new("Id", ColumnType.Text, t => t.Id, header: "Trade ID", width: Fixed(110)),
+        new("Region", ColumnType.Text, t => t.Region, width: Fixed(100)),
+        new("Desk", ColumnType.Text, t => t.Desk, width: Fixed(90)),
+        new("Book", ColumnType.Text, t => t.Book, width: Fixed(140)),
+        new("Product", ColumnType.Text, t => t.Product, width: Fixed(90)),
+        new("Currency", ColumnType.Text, t => t.Currency, width: Fixed(90)),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", width: Fixed(120), align: CellAlign.Left,
+            format: value => ((DateTime)value).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+        // A number that does not fit is #### rather than cut short (ADR-0016): the widths leave room
+        // for every digit the amendments can bring.
+        new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(170), format: Money),
+        new("Pnl", ColumnType.Number, t => t.Pnl, header: "P&L", width: Fixed(150), format: Money),
+        new("Quantity", ColumnType.Number, t => t.Quantity, width: Fixed(90)),
+        new("Confirmed", ColumnType.Boolean, t => t.Confirmed, width: Fixed(100)),
+    ];
+
+    private static ColumnWidthSpec Fixed(double width) => new(ColumnWidth.Fixed(width));
+
+    private static string Money(object value) => ((decimal)value).ToString("#,##0.00", CultureInfo.InvariantCulture);
+}

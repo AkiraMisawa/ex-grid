@@ -23,11 +23,11 @@ namespace ExGrid;
 /// order token (<see cref="GridPage{TRow}.OrderToken"/>), and the Row Sequence Version moves when
 /// it differs from the previous answer's, and with every change when the server sends none.</para>
 ///
-/// <para><b>A write under live data</b> (ADR-0141/0142, D5; LV-16). Before it judges a write, the
+/// <para><b>A write under live data</b> (ADR-0141/0142, D5; LV-16). Before it handles a write, the
 /// grid asks its source to put out what it has gathered (<see cref="IGridSource{TRow}.PublishGathered"/>).
 /// This source has nothing it could put out without waiting: what it waits for is an answer from
-/// the server, so it keeps the interface's default, and does nothing. A write is therefore judged
-/// against what was painted, and its Edit Intent carries the row the grid painted. Whether the
+/// the server, so it keeps the interface's default, and does nothing. A write is therefore made on
+/// the rows of the last answer, and its Edit Intent carries the row the grid painted. Whether the
 /// server's data moved under the write — a row changed upstream since that answer — is the
 /// Consumer's server's to judge when it takes the write (ADR-0141).</para>
 /// </summary>

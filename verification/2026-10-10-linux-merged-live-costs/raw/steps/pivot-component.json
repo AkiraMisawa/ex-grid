@@ -1,0 +1,269 @@
+[
+  {
+    "records": 10000,
+    "reportRows": 11001,
+    "changes": 1000,
+    "scope": "Whole update from Snapshot Apply through report computation, Window projection, component render/diff and bUnit DOM; no browser layout or paint.",
+    "runs": [
+      {
+        "applyThroughComponentRenderMs": 4.4194,
+        "painted": 18,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4,
+        "vouchedWindowAdmissionMs": 0.0031,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 3.4925,
+        "painted": 18,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4,
+        "vouchedWindowAdmissionMs": 0.003,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 4.0347,
+        "painted": 18,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4,
+        "vouchedWindowAdmissionMs": 0.0029,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 3.3039,
+        "painted": 18,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4,
+        "vouchedWindowAdmissionMs": 0.0023,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 3.3826,
+        "painted": 18,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4,
+        "vouchedWindowAdmissionMs": 0.0023,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 3.5256,
+        "painted": 18,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4,
+        "vouchedWindowAdmissionMs": 0.0026,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 4.3059,
+        "painted": 18,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4,
+        "vouchedWindowAdmissionMs": 0.0024,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 3.3509,
+        "painted": 18,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4,
+        "vouchedWindowAdmissionMs": 0.0023,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 3.5658,
+        "painted": 18,
+        "rendered": 4,
+        "mounted": 0,
+        "paintedTextRowsChanged": 4,
+        "vouchedWindowAdmissionMs": 0.0021,
+        "windowRows": 64
+      }
+    ]
+  },
+  {
+    "records": 100000,
+    "reportRows": 101001,
+    "changes": 1000,
+    "scope": "Whole update from Snapshot Apply through report computation, Window projection, component render/diff and bUnit DOM; no browser layout or paint.",
+    "runs": [
+      {
+        "applyThroughComponentRenderMs": 9.9687,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0038,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 9.7466,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0042,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 12.1601,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0036,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 13.7166,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0044,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 14.1555,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.005,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 10.72,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0037,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 10.3333,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.004,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 10.3326,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0097,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 10.3939,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0043,
+        "windowRows": 64
+      }
+    ]
+  },
+  {
+    "records": 400000,
+    "reportRows": 401001,
+    "changes": 1000,
+    "scope": "Whole update from Snapshot Apply through report computation, Window projection, component render/diff and bUnit DOM; no browser layout or paint.",
+    "runs": [
+      {
+        "applyThroughComponentRenderMs": 20.6519,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0048,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 21.3885,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0061,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 20.2656,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0055,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 18.9765,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0047,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 19.744,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0047,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 20.1756,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0044,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 21.871,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0048,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 21.7826,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0051,
+        "windowRows": 64
+      },
+      {
+        "applyThroughComponentRenderMs": 19.9858,
+        "painted": 18,
+        "rendered": 2,
+        "mounted": 0,
+        "paintedTextRowsChanged": 2,
+        "vouchedWindowAdmissionMs": 0.0054,
+        "windowRows": 64
+      }
+    ]
+  }
+]

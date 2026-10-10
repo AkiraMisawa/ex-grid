@@ -1,0 +1,66 @@
+#pragma warning disable xUnit1051
+using System.Diagnostics;
+using System.Reflection;
+using System.Text.Json;
+using ExGrid.Data;
+using ExPivot.Engine;
+using Xunit;
+
+namespace ExPivot.Engine.Tests;
+
+// Disposable observational harness. No timing assertion, no production instrumentation.
+public sealed class ReportSteps
+{
+    private sealed record Row(int Id, string A, string B, decimal Value);
+    private static readonly PivotSlicing Whole = new() { Budget = TimeSpan.FromDays(1) };
+    private static T Field<T>(object target, string name) => (T)target.GetType()
+        .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(target)!;
+    private static double Time(Action action) { var start = Stopwatch.GetTimestamp(); action(); return Stopwatch.GetElapsedTime(start).TotalMilliseconds; }
+
+    [Fact]
+    public async Task ADR0153_update_steps()
+    {
+        var results = new List<object>();
+        foreach (var inner in new[] { 10, 100, 400 })
+        {
+            var records = Enumerable.Range(0, 1000 * inner).Select(i => new Row(i, $"A{i / inner:00000}", $"B{i % inner:0000}", i)).ToArray();
+            var fields = PivotFields.Of<Row>().Key("Id", r => r.Id).Text("A", r => r.A).Text("B", r => r.B).Number("Value", r => r.Value);
+            var source = PivotSource.From(fields.Build(records), fields.Fields, Whole);
+            var layout = new PivotLayout { Rows = [new("A"), new("B")], Values = [new("Value")] };
+            var session = new PivotComputationSession(source);
+            var first = await session.ComputeAsync(layout, maxLeaves: 1_000_000, slicing: Whole);
+            var pass = Field<AggregationPass>(session, "_pass");
+            var cubeWork = Field<ComputationCube>(session, "_computation");
+            var reportWork = Field<ComputationReport>(session, "_structure");
+            var report = first.Report!;
+            session.Dispose(); // The isolated steps below own the captured working state.
+            var sizing = new PivotLabelSizing();
+            var metrics = new PivotReportLabelMetrics(9, 8, 4, 16, 7, 4);
+            await sizing.WidthsAsync(report, metrics, [], [], true, Slicer.Unsliced);
+            var runs = new List<object>();
+            for (var iteration = -2; iteration < 9; iteration++)
+            {
+                var changed = Enumerable.Range(0, 1000).Select(i => { var at = i * inner; return records[at] = records[at] with { Value = records[at].Value + 1 }; }).ToArray();
+                var batch = fields.Batch(changed: changed);
+                GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+                SnapshotChange applied = null!;
+                var apply = Time(() => applied = source.Apply(batch));
+                var fold = Time(() => Assert.True(pass.Fold(applied)));
+                PivotCube cube = null!;
+                var cubeMs = Time(() => cube = cubeWork.UpdateAsync(pass, source.SourceVersion, Slicer.Unsliced).Result);
+                var before = report;
+                var reportMs = Time(() => report = reportWork.UpdateAsync(before, cube, cubeWork, Slicer.Unsliced).Result);
+                var widths = Time(() => sizing.WidthsAsync(report, metrics, reportWork.LabelChanges, reportWork.RemovedRows, false, Slicer.Unsliced).GetAwaiter().GetResult());
+                Assert.Same(before.Rows, report.Rows);
+                Assert.Equal(1000 * inner + 1001, report.Rows.Count);
+                if (iteration >= 0) runs.Add(new { snapshotApplyMs = apply, aggregateFoldMs = fold,
+                    affectedCubeMs = cubeMs, affectedReportStructureMs = reportMs, labelWidthsMs = widths,
+                    changedLeaves = pass.ChangedLeaves.Count, sameRowSequence = ReferenceEquals(before.Rows, report.Rows),
+                    recomputedSourceRows = pass.RecomputedRows });
+            }
+            results.Add(new { records = records.Length, reportRows = report.Rows.Count, changes = 1000, runs });
+            File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("LIVE_COST_OUTPUT")!, "pivot-steps.json"),
+                JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+        }
+    }
+}

@@ -1,0 +1,546 @@
+{
+  "host": "server",
+  "base": "http://localhost:5898",
+  "at": "2026-10-06T19:39:29.347Z",
+  "results": {
+    "w1": {
+      "1": {
+        "pass": true,
+        "evidence": {
+          "ticks": 60,
+          "painted": 20,
+          "busyRows": 10,
+          "quietRows": 10,
+          "busyRenders": 600,
+          "busyRendersPerRowPerTick": 1,
+          "busyMounts": 0,
+          "quietRenders": 0,
+          "quietMounts": 0,
+          "quietRecords": 0,
+          "busyRecords": 1220,
+          "otherRecords": 66,
+          "recordTypes": {
+            "attributes": 86,
+            "characterData": 1200
+          },
+          "marksOnBusy": 20,
+          "marksOnQuiet": 0,
+          "marksOffColumn": 0,
+          "totalRenders": 600,
+          "totalMounts": 0,
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "3": {
+        "pass": true,
+        "evidence": {
+          "before": "1,750,000.00",
+          "refusal": "Commit refused: CellChanged: Notional shows 1,750,001.00",
+          "editorValue": "999",
+          "shownUnderEditor": "1,750,001.00",
+          "afterSecondEnter": "999.00",
+          "store": "Store write: edit: 1 cells written, 0 refused",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "4": {
+        "pass": true,
+        "evidence": {
+          "paste": {
+            "r5": "111.00",
+            "r6": "222.00",
+            "store": "Store write: paste: 2 cells written, 0 refused"
+          },
+          "fillKey": {
+            "r8": "Rates-NewYork",
+            "r9": "Rates-NewYork",
+            "expected": "Rates-NewYork",
+            "store": "Store write: fill-key: 2 cells written, 0 refused"
+          },
+          "fillDrag": {
+            "r12": "104.0700",
+            "r13": "104.0700",
+            "expected": "104.0700",
+            "store": "Store write: fill-drag: 2 cells written, 0 refused"
+          },
+          "clear": {
+            "r15": "",
+            "store": "Store write: clear: 1 cells written, 0 refused"
+          },
+          "pasteRefused": "Paste refused: —",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "5": {
+        "pass": true,
+        "evidence": {
+          "sortedFirst": [
+            "T00000",
+            "T00985",
+            "T00000"
+          ],
+          "ascending": true,
+          "selectedBefore": 1,
+          "orderKeptAfterValues": true,
+          "selectedAfterValues": 1,
+          "movedTrade": "T00076",
+          "selectedAfterMove": 0,
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "2-paused": {
+        "pass": true,
+        "evidence": {
+          "live": false,
+          "editLanded": true,
+          "ownEditMarked": false,
+          "storeAfterEdit": "Store write: edit: 1 cells written, 0 refused",
+          "secondCommit": {
+            "cell": "7.00",
+            "refusal": "Commit refused: —"
+          },
+          "paste": {
+            "cell": "3.00",
+            "refusal": "Paste refused: —"
+          },
+          "storeAtEnd": "Store write: paste: 1 cells written, 0 refused",
+          "storeRefused": "Store refused: 0 (—)",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "2-live": {
+        "pass": true,
+        "evidence": {
+          "live": true,
+          "editLanded": true,
+          "ownEditMarked": false,
+          "storeAfterEdit": "Store write: edit: 1 cells written, 0 refused",
+          "secondCommit": {
+            "cell": "7.00",
+            "refusal": "Commit refused: —"
+          },
+          "paste": {
+            "cell": "3.00",
+            "refusal": "Paste refused: —"
+          },
+          "storeAtEnd": "Store write: paste: 1 cells written, 0 refused",
+          "storeRefused": "Store refused: 0 (—)",
+          "problems": [],
+          "errorUi": false
+        }
+      }
+    },
+    "w2": {
+      "1": {
+        "pass": true,
+        "evidence": {
+          "ticks": 60,
+          "painted": 20,
+          "busyRows": 10,
+          "quietRows": 10,
+          "busyRenders": 130,
+          "busyRendersPerRowPerTick": 0.217,
+          "busyMounts": 0,
+          "quietRenders": 0,
+          "quietMounts": 0,
+          "quietRecords": 0,
+          "busyRecords": 280,
+          "otherRecords": 19,
+          "recordTypes": {
+            "attributes": 39,
+            "characterData": 260
+          },
+          "marksOnBusy": 20,
+          "marksOnQuiet": 0,
+          "marksOffColumn": 0,
+          "totalRenders": 130,
+          "totalMounts": 0,
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "3": {
+        "pass": true,
+        "evidence": {
+          "before": "1,750,000.00",
+          "refusal": "Commit refused: CellChanged: Notional shows 1,750,001.00",
+          "editorValue": "999",
+          "shownUnderEditor": "1,750,001.00",
+          "afterSecondEnter": "999.00",
+          "store": "Store write: edit: 1 cells written, 0 refused",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "4": {
+        "pass": true,
+        "evidence": {
+          "paste": {
+            "r5": "111.00",
+            "r6": "222.00",
+            "store": "Store write: paste: 2 cells written, 0 refused"
+          },
+          "fillKey": {
+            "r8": "Rates-NewYork",
+            "r9": "Rates-NewYork",
+            "expected": "Rates-NewYork",
+            "store": "Store write: fill-key: 2 cells written, 0 refused"
+          },
+          "fillDrag": {
+            "r12": "104.0700",
+            "r13": "104.0700",
+            "expected": "104.0700",
+            "store": "Store write: fill-drag: 2 cells written, 0 refused"
+          },
+          "clear": {
+            "r15": "",
+            "store": "Store write: clear: 1 cells written, 0 refused"
+          },
+          "pasteRefused": "Paste refused: —",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "5": {
+        "pass": true,
+        "evidence": {
+          "sortedFirst": [
+            "T00000",
+            "T00985",
+            "T00000"
+          ],
+          "ascending": true,
+          "selectedBefore": 1,
+          "orderKeptAfterValues": true,
+          "selectedAfterValues": 1,
+          "movedTrade": "T00076",
+          "selectedAfterMove": 0,
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "2-paused": {
+        "pass": false,
+        "evidence": {
+          "live": false,
+          "editLanded": true,
+          "ownEditMarked": true,
+          "storeAfterEdit": "Store write: edit: 1 cells written, 0 refused",
+          "secondCommit": {
+            "cell": "5.00",
+            "refusal": "Commit refused: CellChanged: Notional shows 5.00"
+          },
+          "paste": {
+            "cell": "3.00",
+            "refusal": "Paste refused: —"
+          },
+          "storeAtEnd": "Store write: paste: 1 cells written, 0 refused",
+          "storeRefused": "Store refused: 0 (—)",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "2-live": {
+        "pass": false,
+        "evidence": {
+          "live": true,
+          "editLanded": true,
+          "ownEditMarked": true,
+          "storeAfterEdit": "Store write: edit: 1 cells written, 0 refused",
+          "secondCommit": {
+            "cell": "5.00",
+            "refusal": "Commit refused: CellChanged: Notional shows 5.00"
+          },
+          "paste": {
+            "cell": "3.00",
+            "refusal": "Paste refused: —"
+          },
+          "storeAtEnd": "Store write: paste: 1 cells written, 0 refused",
+          "storeRefused": "Store refused: 0 (—)",
+          "problems": [],
+          "errorUi": false
+        }
+      }
+    },
+    "w2src": {
+      "1": {
+        "pass": true,
+        "evidence": {
+          "ticks": 60,
+          "painted": 20,
+          "busyRows": 10,
+          "quietRows": 10,
+          "busyRenders": 130,
+          "busyRendersPerRowPerTick": 0.217,
+          "busyMounts": 0,
+          "quietRenders": 0,
+          "quietMounts": 0,
+          "quietRecords": 0,
+          "busyRecords": 280,
+          "otherRecords": 19,
+          "recordTypes": {
+            "attributes": 39,
+            "characterData": 260
+          },
+          "marksOnBusy": 20,
+          "marksOnQuiet": 0,
+          "marksOffColumn": 0,
+          "totalRenders": 130,
+          "totalMounts": 0,
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "3": {
+        "pass": true,
+        "evidence": {
+          "before": "1,750,000.00",
+          "refusal": "Commit refused: CellChanged: Notional shows 1,750,001.00",
+          "editorValue": "999",
+          "shownUnderEditor": "1,750,001.00",
+          "afterSecondEnter": "999.00",
+          "store": "Store write: edit: 1 cells written, 0 refused",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "4": {
+        "pass": true,
+        "evidence": {
+          "paste": {
+            "r5": "111.00",
+            "r6": "222.00",
+            "store": "Store write: paste: 2 cells written, 0 refused"
+          },
+          "fillKey": {
+            "r8": "Rates-NewYork",
+            "r9": "Rates-NewYork",
+            "expected": "Rates-NewYork",
+            "store": "Store write: fill-key: 2 cells written, 0 refused"
+          },
+          "fillDrag": {
+            "r12": "104.0700",
+            "r13": "104.0700",
+            "expected": "104.0700",
+            "store": "Store write: fill-drag: 2 cells written, 0 refused"
+          },
+          "clear": {
+            "r15": "",
+            "store": "Store write: clear: 1 cells written, 0 refused"
+          },
+          "pasteRefused": "Paste refused: —",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "5": {
+        "pass": true,
+        "evidence": {
+          "sortedFirst": [
+            "T00000",
+            "T00985",
+            "T00000"
+          ],
+          "ascending": true,
+          "selectedBefore": 1,
+          "orderKeptAfterValues": true,
+          "selectedAfterValues": 1,
+          "movedTrade": "T00076",
+          "selectedAfterMove": 0,
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "2-paused": {
+        "pass": true,
+        "evidence": {
+          "live": false,
+          "editLanded": true,
+          "ownEditMarked": false,
+          "storeAfterEdit": "Store write: edit: 1 cells written, 0 refused",
+          "secondCommit": {
+            "cell": "7.00",
+            "refusal": "Commit refused: —"
+          },
+          "paste": {
+            "cell": "3.00",
+            "refusal": "Paste refused: —"
+          },
+          "storeAtEnd": "Store write: paste: 1 cells written, 0 refused",
+          "storeRefused": "Store refused: 0 (—)",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "2-live": {
+        "pass": true,
+        "evidence": {
+          "live": true,
+          "editLanded": true,
+          "ownEditMarked": false,
+          "storeAfterEdit": "Store write: edit: 1 cells written, 0 refused",
+          "secondCommit": {
+            "cell": "7.00",
+            "refusal": "Commit refused: —"
+          },
+          "paste": {
+            "cell": "3.00",
+            "refusal": "Paste refused: —"
+          },
+          "storeAtEnd": "Store write: paste: 1 cells written, 0 refused",
+          "storeRefused": "Store refused: 0 (—)",
+          "problems": [],
+          "errorUi": false
+        }
+      }
+    },
+    "w2g0": {
+      "1": {
+        "pass": true,
+        "evidence": {
+          "ticks": 60,
+          "painted": 20,
+          "busyRows": 10,
+          "quietRows": 10,
+          "busyRenders": 600,
+          "busyRendersPerRowPerTick": 1,
+          "busyMounts": 0,
+          "quietRenders": 0,
+          "quietMounts": 0,
+          "quietRecords": 0,
+          "busyRecords": 1220,
+          "otherRecords": 66,
+          "recordTypes": {
+            "attributes": 86,
+            "characterData": 1200
+          },
+          "marksOnBusy": 20,
+          "marksOnQuiet": 0,
+          "marksOffColumn": 0,
+          "totalRenders": 600,
+          "totalMounts": 0,
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "3": {
+        "pass": true,
+        "evidence": {
+          "before": "1,750,000.00",
+          "refusal": "Commit refused: CellChanged: Notional shows 1,750,001.00",
+          "editorValue": "999",
+          "shownUnderEditor": "1,750,001.00",
+          "afterSecondEnter": "999.00",
+          "store": "Store write: edit: 1 cells written, 0 refused",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "4": {
+        "pass": true,
+        "evidence": {
+          "paste": {
+            "r5": "111.00",
+            "r6": "222.00",
+            "store": "Store write: paste: 2 cells written, 0 refused"
+          },
+          "fillKey": {
+            "r8": "Rates-NewYork",
+            "r9": "Rates-NewYork",
+            "expected": "Rates-NewYork",
+            "store": "Store write: fill-key: 2 cells written, 0 refused"
+          },
+          "fillDrag": {
+            "r12": "104.0700",
+            "r13": "104.0700",
+            "expected": "104.0700",
+            "store": "Store write: fill-drag: 2 cells written, 0 refused"
+          },
+          "clear": {
+            "r15": "",
+            "store": "Store write: clear: 1 cells written, 0 refused"
+          },
+          "pasteRefused": "Paste refused: —",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "5": {
+        "pass": true,
+        "evidence": {
+          "sortedFirst": [
+            "T00000",
+            "T00985",
+            "T00000"
+          ],
+          "ascending": true,
+          "selectedBefore": 1,
+          "orderKeptAfterValues": true,
+          "selectedAfterValues": 1,
+          "movedTrade": "T00076",
+          "selectedAfterMove": 0,
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "2-paused": {
+        "pass": true,
+        "evidence": {
+          "live": false,
+          "editLanded": true,
+          "ownEditMarked": true,
+          "storeAfterEdit": "Store write: edit: 1 cells written, 0 refused",
+          "secondCommit": {
+            "cell": "7.00",
+            "refusal": "Commit refused: —"
+          },
+          "paste": {
+            "cell": "3.00",
+            "refusal": "Paste refused: —"
+          },
+          "storeAtEnd": "Store write: paste: 1 cells written, 0 refused",
+          "storeRefused": "Store refused: 0 (—)",
+          "problems": [],
+          "errorUi": false
+        }
+      },
+      "2-live": {
+        "pass": true,
+        "evidence": {
+          "live": true,
+          "editLanded": true,
+          "ownEditMarked": true,
+          "storeAfterEdit": "Store write: edit: 1 cells written, 0 refused",
+          "secondCommit": {
+            "cell": "7.00",
+            "refusal": "Commit refused: —"
+          },
+          "paste": {
+            "cell": "3.00",
+            "refusal": "Paste refused: —"
+          },
+          "storeAtEnd": "Store write: paste: 1 cells written, 0 refused",
+          "storeRefused": "Store refused: 0 (—)",
+          "problems": [],
+          "errorUi": false
+        }
+      }
+    },
+    "server7": {
+      "pass": true,
+      "evidence": {
+        "aTicks": "Ticks: 40",
+        "bTicks": "Ticks: 0",
+        "bNotionalUnchanged": true,
+        "bVersion": "Version: 0",
+        "problems": [],
+        "errorUi": false
+      }
+    }
+  }
+}

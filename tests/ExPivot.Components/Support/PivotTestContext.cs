@@ -25,7 +25,14 @@ public sealed record Sale(string? Region, string Product, decimal Amount, int Qu
 public abstract class PivotTestContext : BunitContext
 {
     private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
+
+    /// <summary>ExGrid's settle delay: once a scroll has been still this long, the grid paints the
+    /// rows it landed on and asks for them (ADR-0004).</summary>
+    private static readonly TimeSpan SettleDelay = TimeSpan.FromMilliseconds(150);
+
     private readonly BunitJSModuleInterop _module;
+    // Where each handle says its scroller stands, as the browser would (ScrollReportAsync).
+    private readonly List<JSRuntimeInvocationHandler<ScrollOffset>> _scrollOffsets = [];
     private bool _rendererInfoSet;
 
     protected PivotTestContext()
@@ -39,10 +46,12 @@ public abstract class PivotTestContext : BunitContext
 
     // Every call a grid makes to the handle its listener's attach gave it, answered as the
     // browser would answer it.
-    private static void StandIn(BunitJSModuleInterop handle)
+    private void StandIn(BunitJSModuleInterop handle)
     {
         handle.Setup<bool>("metaIsPrimary").SetResult(false);
-        handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
+        var offset = handle.Setup<ScrollOffset>("getScrollOffset");
+        offset.SetResult(default);
+        _scrollOffsets.Add(offset);
         handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
         foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handKeyboardTo", "dispose" })
             handle.SetupVoid(name, _ => true).SetVoidResult();
@@ -54,7 +63,7 @@ public abstract class PivotTestContext : BunitContext
     internal BunitJSModuleInterop ReportGridHandle()
     {
         var handle = _module.SetupModule("attach",
-            invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotReportRow>>);
+            invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotDisplayRow>>);
         StandIn(handle);
         return handle;
     }
@@ -87,6 +96,20 @@ public abstract class PivotTestContext : BunitContext
     }
 
     internal FakeTimeProvider Clock { get; } = new();
+
+    /// <summary>
+    /// Scrolls the report grid as a user does: its scroller stands <paramref name="topPx"/> down and
+    /// says so, and the grid's settle delay passes on the test's clock, after which the grid paints
+    /// the rows it landed on and asks for them (ADR-0004, ADR-0001). Every grid's handle answers the
+    /// same offset, so the pivot is rendered without a details grid open.
+    /// </summary>
+    internal async Task ScrollReportAsync(IRenderedComponent<PivotComponent> cut, double topPx)
+    {
+        foreach (var offset in _scrollOffsets)
+            offset.SetResult(new ScrollOffset(topPx, 0));
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-sheet > .ex-grid > .ex-scroller").ScrollAsync(EventArgs.Empty));
+        Clock.Advance(SettleDelay);
+    }
 
     //  Region  Product  Amount  Quantity  Online
     //  East    Apples   100     10        TRUE
@@ -125,18 +148,23 @@ public abstract class PivotTestContext : BunitContext
 
     /// <summary>Renders an ExPivot as a connected, interactive component, in en-US, over
     /// <paramref name="source"/> — the bundled source over <paramref name="records"/> unless told
-    /// otherwise.</summary>
+    /// otherwise — or, when <paramref name="reportSource"/> is given, asking that report source
+    /// instead.</summary>
     internal IRenderedComponent<PivotComponent> RenderPivot(
         PivotLayout? layout = null,
         Action<ComponentParameterCollectionBuilder<PivotComponent>>? parameters = null,
         IReadOnlyList<Sale>? records = null,
-        PivotSource? source = null)
+        PivotSource? source = null,
+        PivotReportSource? reportSource = null)
     {
         Interactive();
         return Render<PivotComponent>(ps =>
         {
-            ps.Add(p => p.Source, source ?? Bundled(records))
-              .Add(p => p.Culture, CultureInfo.GetCultureInfo("en-US"))
+            if (reportSource is not null)
+                ps.Add(p => p.ReportSource, reportSource);
+            else
+                ps.Add(p => p.Source, source ?? Bundled(records));
+            ps.Add(p => p.Culture, CultureInfo.GetCultureInfo("en-US"))
               .Add(p => p.ViewportHeight, (ViewportSize)400)
               .Add(p => p.ViewportWidth, (ViewportSize)700);
             if (layout is not null)
@@ -160,12 +188,13 @@ public abstract class PivotTestContext : BunitContext
         SetRendererInfo(new RendererInfo("Server", isInteractive: true));
     }
 
-    internal static IRenderedComponent<ExGrid<PivotReportRow>> Grid(IRenderedComponent<PivotComponent> cut)
-        => cut.FindComponent<ExGrid<PivotReportRow>>();
+    internal static IRenderedComponent<ExGrid<PivotDisplayRow>> Grid(IRenderedComponent<PivotComponent> cut)
+        => cut.FindComponent<ExGrid<PivotDisplayRow>>();
 
-    /// <summary>Each painted row's cells as text, label cells first, joined with " | ".</summary>
+    /// <summary>Each painted row's cells as text, label cells first, joined with " | ". Read on the
+    /// renderer so parsing the DOM cannot race an asynchronous report's markup update.</summary>
     internal static string[] RowTexts(IRenderedComponent<PivotComponent> cut)
-        => RowTextsOf(cut.FindAll(".ex-pivot-sheet > .ex-grid .ex-viewport .ex-row"));
+        => cut.InvokeAsync(() => RowTextsOf(cut.FindAll(".ex-pivot-sheet > .ex-grid .ex-viewport .ex-row"))).GetAwaiter().GetResult();
 
     /// <summary>Each painted row's cells as text, joined with " | ".</summary>
     internal static string[] RowTextsOf(IEnumerable<IElement> rows)
@@ -188,17 +217,18 @@ public abstract class PivotTestContext : BunitContext
 
     /// <summary>Ticks or unticks a field in the list of fields.</summary>
     internal static Task TickFieldAsync(IRenderedComponent<PivotComponent> cut, string caption, bool tick)
-        => FieldItem(cut, caption).QuerySelector("input")!.ChangeAsync(new ChangeEventArgs { Value = tick });
+        => cut.InvokeAsync(() => FieldItem(cut, caption).QuerySelector("input")!.ChangeAsync(new ChangeEventArgs { Value = tick }));
 
-    /// <summary>Opens the menu of the Area's entry captioned <paramref name="caption"/>.</summary>
+    /// <summary>Opens the menu of the Area's entry captioned <paramref name="caption"/>. Lookup and
+    /// dispatch share the renderer's turn so a concurrent render cannot retire the event handler.</summary>
     internal static Task OpenMenuAsync(IRenderedComponent<PivotComponent> cut, string area, string caption)
-        => AreaElement(cut, area).QuerySelectorAll(".ex-pivot-entry-button")
+        => cut.InvokeAsync(() => AreaElement(cut, area).QuerySelectorAll(".ex-pivot-entry-button")
             .Single(b => b.QuerySelector(".ex-pivot-entry-caption")!.TextContent.Trim() == caption)
-            .ClickAsync(new MouseEventArgs());
+            .ClickAsync(new MouseEventArgs()));
 
     /// <summary>Runs the open menu's command called <paramref name="label"/>.</summary>
     internal static Task RunMenuAsync(IRenderedComponent<PivotComponent> cut, string label)
-        => MenuItem(cut, label).ClickAsync(new MouseEventArgs());
+        => cut.InvokeAsync(() => MenuItem(cut, label).ClickAsync(new MouseEventArgs()));
 
     /// <summary>The open menu's command called <paramref name="label"/>, a choice's mark aside.</summary>
     internal static IElement MenuItem(IRenderedComponent<PivotComponent> cut, string label)
@@ -211,7 +241,7 @@ public abstract class PivotTestContext : BunitContext
     internal static IReadOnlyList<GridCommand> ContextCommands(IRenderedComponent<PivotComponent> cut, int row, string column)
     {
         var grid = Grid(cut).Instance;
-        var context = new ContextMenuContext<PivotReportRow>(
+        var context = new ContextMenuContext<PivotDisplayRow>(
             grid.Window[row], column, ColumnType.Number, [new SelectionRange(row, 0, 1, 1)], grid.RowSequenceVersion, [], () => { });
         return grid.ContextCommands!(context).ToArray();
     }

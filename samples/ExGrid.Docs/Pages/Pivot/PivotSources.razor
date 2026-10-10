@@ -7,16 +7,25 @@
 
     <DocsSection Title="How a source is asked">
         <p>
-            ExPivot never holds or loops over your records itself. It asks its <code>PivotSource</code> for the
-            <em>Leaf Aggregates</em> of a layout, one per combination of the row and column Items that has
-            records, carrying the parts each Aggregation is computed from. Every subtotal and grand total is
-            merged from those parts, exactly. It asks without blocking: a slow answer leaves the report as it
-            was under a loading indication, and a newer question cancels the older one.
+            ExPivot requests a report Window and the metadata describing its full extent. Local data is
+            calculated by the same engine that a server uses. A slow answer leaves the report under its loading
+            indication, and a newer question cancels the older one. Copy and Selection Summary can include rows
+            outside the Window, and name the Report Version they answer; Show Details names the Source Version
+            the report was computed from.
+        </p>
+        <p>
+            The Window asked for is the one the grid is scrolled to. When a layout, a collapse, a filter or newer
+            data makes a report that ends before that Window does, ExPivot asks again for a Window of the same
+            height ending at the new report's last row, and shows that one, as the grid moves its own view to the
+            end of a result that shrank. The report you were reading stays on screen until it lands, and later
+            questions ask for that Window until you scroll elsewhere. A source therefore needs nothing of its own
+            for a shrinking report: it answers the Window it is asked for, with no rows when the report ends
+            before it.
         </p>
         <ul>
-            <li><strong><code>PivotSource.From</code></strong> answers in the process, from a Snapshot: the reference implementation of ExPivot's semantics.</li>
-            <li><strong><code>PivotSource.Fetch</code></strong> hands every question to delegates you write, so a server answers it.</li>
-            <li><strong>A new source is a refresh.</strong> Keep the source in a field; hand over a new instance when the data is new.</li>
+            <li><strong><code>Source</code></strong> takes the Pivot Source: <code>PivotSource.From</code> over local records or a Snapshot, including a CSV that stays in the browser. ExPivot computes the report over it in the page, with the engine a server runs.</li>
+            <li><strong><code>ReportSource</code></strong> takes a report source instead, a <code>PivotReportSource</code>, for a report a server computes. Its <code>Fetch</code> factory uses your delegates to request the server's report Windows and operations. Hand ExPivot one of the two, never both.</li>
+            <li><strong>Keep the source in a field.</strong> Each report owns independent calculation state; a new Pivot Source starts a new calculation, as a refresh.</li>
         </ul>
     </DocsSection>
 
@@ -69,18 +78,30 @@
 
     <DocsSection Title="A server's source">
         <p>
-            <code>PivotSource.Fetch(fields, features, aggregate, items, details)</code> carries your transport to a
-            server. ExPivot ships no HTTP client and no endpoint. <code>PivotJson</code> writes every question and
-            every answer as versioned JSON (decimals exactly, doubles to the last bit), so each delegate is one
-            request. The server answers from the same engine over a Snapshot, or from SQL, building its answer
-            with <code>PivotAnswerBuilder</code>; either way it is held to <code>From</code>'s answers.
+            <code>PivotReportSource.Fetch</code> carries your Window, Items, Copy, Summary and Details transports.
+            ExPivot ships no HTTP client or endpoint. <code>PivotReportJson</code> writes their questions and answers
+            as versioned JSON, preserving decimal and double values. Keep a <code>PivotReportSource.From(data)</code>
+            on the server. Its data can be a Snapshot, or a SQL-backed <code>PivotSource</code> that refreshes a full
+            aggregate answer; the browser still receives only report Windows.
         </p>
         <ul>
-            <li><code>features</code> says which Aggregations the server answers; a question asking for another is refused before it is sent.</li>
-            <li>An answer to another question than the one asked is refused by name.</li>
             <li>
-                Every answer carries its Source Version. A field's Items and a cell's records are asked for under it,
-                and a server that can no longer answer under it refuses, so Show Details never mixes two versions.
+                <code>UpdateMode</code> declares incremental changes or full refresh. The bundled Snapshot source is incremental:
+                a notice that its data moved on asks for its changes. A full-refresh source, such as a SQL query that can only say
+                that something changed, is asked to recompute its whole aggregate on every notice, so its server answers with the
+                newest even when its Pivot Source cannot tell; the browser still receives only the Window and its Window Changes.
+            </li>
+            <li>Culture, formats and display words are explicit; custom Order Keys select policies registered on the server.</li>
+            <li>The Consumer owns transport and report-state disposal. A missing baseline is recovered automatically; an unavailable older operation refuses by name.</li>
+            <li>
+                Once a Window is on screen, a server sends <strong>Window Changes</strong> in place of the whole Window: the rows that
+                changed since the Window ExPivot holds, the Baseline Window, with the digest of the Window they make
+                (<code>PivotReportUpdate.Changed</code>, <code>PivotReportUpdate.WindowDigest</code>). ExPivot applies them to the
+                Window it holds and compares before showing anything; Window Changes that do not match, or name no digest, are
+                discarded and the complete Window asked for instead. <code>PivotReportSource.From</code> builds complete Window
+                Changes. If you build or relay them yourself, include every row whose shown values changed (subtotals, grand totals
+                and percentages too) and compute the digest with <code>PivotReportDigest.Of</code> over your whole resulting Window,
+                never over the rows you send.
             </li>
         </ul>
         <DocsExample Builtin="typeof(ServerSource)" Mud="typeof(ServerSourceMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
@@ -100,7 +121,8 @@
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotSource)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.SnapshotPivotSource)" />
-        <ApiTable Type="typeof(global::ExPivot.Engine.FetchingPivotSource)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.PivotReportSource)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.FetchingPivotReportSource)" />
         <ApiTable Type="typeof(global::ExPivot.PivotCaps)" />
     </DocsSection>
 </DocsPage>

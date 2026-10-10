@@ -1,0 +1,99 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] Serving /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/wasm/wwwroot at http://localhost:5599
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.ogvv3a/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8599
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/api
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.1 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version 771bb34c-0 from /tmp/nix-shell.ogvv3a/exgrid-demo-api/runs/trades-v1-20000.90190.771bb34c.sqlite.
+
+Running 3 tests using 1 worker
+
+grid-wasm {
+ "rows": 100000,
+ "batch": 100,
+ "probe": true,
+ "load": "100,000 trades made in 210 ms; GridSource.From took 128 ms.",
+ "warmup": 3,
+ "appliedMs": {
+  "median": 3.6,
+  "min": 2.4,
+  "max": 10.3,
+  "n": 15
+ },
+ "applyToFrameMs": {
+  "median": 3.7,
+  "min": 2.5,
+  "max": 10.3,
+  "n": 15
+ },
+ "applyToPaintedMs": {
+  "median": 4.3,
+  "min": 2.9,
+  "max": 11.2,
+  "n": 15
+ },
+ "frameToPaintedMs": {
+  "median": 0.7,
+  "min": 0.4,
+  "max": 0.9,
+  "n": 15
+ },
+ "endOfTaskToFrameMs": {
+  "median": 0.1,
+  "min": 0,
+  "max": 0.1,
+  "n": 15
+ },
+ "taskStartToFrameMs": {
+  "median": 54,
+  "min": 50,
+  "max": 61,
+  "n": 11
+ },
+ "longestTaskMs": {
+  "median": 53,
+  "min": 0,
+  "max": 61,
+  "n": 15
+ },
+ "gridChanged": 12,
+ "probeSourceMs": {
+  "median": 3.2,
+  "min": 1.8,
+  "max": 6,
+  "n": 15
+ },
+ "probeKeysMs": {
+  "median": 30,
+  "min": 26.2,
+  "max": 36.4,
+  "n": 15
+ },
+ "probeRowsMs": {
+  "median": 14.3,
+  "min": 12.6,
+  "max": 20.5,
+  "n": 15
+ },
+ "lastStatus": "Batch 18: 100 trades amended, applied in 3 ms (exact 3.000). [probe source=3.200 keys=32.900 rows=14.600 window=100000]"
+}
+  ✓  1 [chrome] › measure-live-costs.spec.mjs:124:1 › ticket 01: a live update on /grid-live-local, WebAssembly (5.4s)
+  -  2 [chrome] › measure-live-costs.spec.mjs:192:1 › ticket 01: the bytes of a live update on /grid-live-local, Server host
+  -  3 [chrome] › measure-live-costs.spec.mjs:302:1 › ticket 01: a live redraw on /pivot-live-costs, WebAssembly
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  2 skipped
+  1 passed (8.0s)

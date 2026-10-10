@@ -1,0 +1,293 @@
+[
+  {
+    "records": 10000,
+    "reportRows": 11001,
+    "changes": 1000,
+    "runs": [
+      {
+        "snapshotApplyMs": 0.0812,
+        "aggregateFoldMs": 0.0962,
+        "affectedCubeMs": 1.1031,
+        "affectedReportStructureMs": 0.1073,
+        "labelWidthsMs": 0.0033,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.0882,
+        "aggregateFoldMs": 0.1457,
+        "affectedCubeMs": 1.0677,
+        "affectedReportStructureMs": 0.1094,
+        "labelWidthsMs": 0.0026,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.0885,
+        "aggregateFoldMs": 0.1543,
+        "affectedCubeMs": 0.95,
+        "affectedReportStructureMs": 0.1129,
+        "labelWidthsMs": 0.0042,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.0855,
+        "aggregateFoldMs": 0.106,
+        "affectedCubeMs": 1.0051,
+        "affectedReportStructureMs": 0.1115,
+        "labelWidthsMs": 0.0034,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.088,
+        "aggregateFoldMs": 0.1245,
+        "affectedCubeMs": 0.9931,
+        "affectedReportStructureMs": 0.1047,
+        "labelWidthsMs": 0.003,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.0798,
+        "aggregateFoldMs": 0.0967,
+        "affectedCubeMs": 0.9182,
+        "affectedReportStructureMs": 0.1,
+        "labelWidthsMs": 0.0016,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.076,
+        "aggregateFoldMs": 0.0819,
+        "affectedCubeMs": 0.9306,
+        "affectedReportStructureMs": 0.0927,
+        "labelWidthsMs": 0.0012,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.0767,
+        "aggregateFoldMs": 0.0845,
+        "affectedCubeMs": 0.9502,
+        "affectedReportStructureMs": 0.0998,
+        "labelWidthsMs": 0.0011,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.0762,
+        "aggregateFoldMs": 0.0879,
+        "affectedCubeMs": 0.9315,
+        "affectedReportStructureMs": 0.0997,
+        "labelWidthsMs": 0.0013,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      }
+    ]
+  },
+  {
+    "records": 100000,
+    "reportRows": 101001,
+    "changes": 1000,
+    "runs": [
+      {
+        "snapshotApplyMs": 0.1231,
+        "aggregateFoldMs": 0.2716,
+        "affectedCubeMs": 4.1989,
+        "affectedReportStructureMs": 0.1741,
+        "labelWidthsMs": 0.0054,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1301,
+        "aggregateFoldMs": 0.2915,
+        "affectedCubeMs": 4.3834,
+        "affectedReportStructureMs": 0.1757,
+        "labelWidthsMs": 0.006,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1332,
+        "aggregateFoldMs": 0.2768,
+        "affectedCubeMs": 4.6076,
+        "affectedReportStructureMs": 0.1714,
+        "labelWidthsMs": 0.0055,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1157,
+        "aggregateFoldMs": 0.292,
+        "affectedCubeMs": 4.0307,
+        "affectedReportStructureMs": 0.1716,
+        "labelWidthsMs": 0.006,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1059,
+        "aggregateFoldMs": 0.2744,
+        "affectedCubeMs": 4.2576,
+        "affectedReportStructureMs": 0.1712,
+        "labelWidthsMs": 0.0058,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.109,
+        "aggregateFoldMs": 0.2889,
+        "affectedCubeMs": 4.3518,
+        "affectedReportStructureMs": 0.1695,
+        "labelWidthsMs": 0.0044,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1245,
+        "aggregateFoldMs": 0.2925,
+        "affectedCubeMs": 4.6824,
+        "affectedReportStructureMs": 0.2013,
+        "labelWidthsMs": 0.0065,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1335,
+        "aggregateFoldMs": 0.3059,
+        "affectedCubeMs": 4.4907,
+        "affectedReportStructureMs": 0.1685,
+        "labelWidthsMs": 0.0041,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1035,
+        "aggregateFoldMs": 0.2696,
+        "affectedCubeMs": 3.9211,
+        "affectedReportStructureMs": 0.1668,
+        "labelWidthsMs": 0.0056,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      }
+    ]
+  },
+  {
+    "records": 400000,
+    "reportRows": 401001,
+    "changes": 1000,
+    "runs": [
+      {
+        "snapshotApplyMs": 0.1177,
+        "aggregateFoldMs": 0.4217,
+        "affectedCubeMs": 15.2959,
+        "affectedReportStructureMs": 0.2243,
+        "labelWidthsMs": 0.0055,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1189,
+        "aggregateFoldMs": 0.4244,
+        "affectedCubeMs": 12.7547,
+        "affectedReportStructureMs": 0.2216,
+        "labelWidthsMs": 0.006,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1146,
+        "aggregateFoldMs": 0.4237,
+        "affectedCubeMs": 12.3761,
+        "affectedReportStructureMs": 0.2571,
+        "labelWidthsMs": 0.0067,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1173,
+        "aggregateFoldMs": 0.4278,
+        "affectedCubeMs": 11.0787,
+        "affectedReportStructureMs": 0.2247,
+        "labelWidthsMs": 0.0061,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1189,
+        "aggregateFoldMs": 0.4188,
+        "affectedCubeMs": 12.361,
+        "affectedReportStructureMs": 0.246,
+        "labelWidthsMs": 0.0042,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.117,
+        "aggregateFoldMs": 0.4222,
+        "affectedCubeMs": 12.3262,
+        "affectedReportStructureMs": 0.2277,
+        "labelWidthsMs": 0.0057,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1375,
+        "aggregateFoldMs": 0.4202,
+        "affectedCubeMs": 12.3676,
+        "affectedReportStructureMs": 0.2635,
+        "labelWidthsMs": 0.0058,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.117,
+        "aggregateFoldMs": 0.4225,
+        "affectedCubeMs": 9.9267,
+        "affectedReportStructureMs": 0.221,
+        "labelWidthsMs": 0.0052,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      },
+      {
+        "snapshotApplyMs": 0.1282,
+        "aggregateFoldMs": 0.4245,
+        "affectedCubeMs": 11.0748,
+        "affectedReportStructureMs": 0.2205,
+        "labelWidthsMs": 0.0053,
+        "changedLeaves": 1000,
+        "sameRowSequence": true,
+        "recomputedSourceRows": 0
+      }
+    ]
+  }
+]

@@ -1,0 +1,2307 @@
+diff --git a/samples/ExGrid.DemoPages/Pages/GridLiveLocalPage.razor b/samples/ExGrid.DemoPages/Pages/GridLiveLocalPage.razor
+index 32972c2f..fb1f1693 100644
+--- a/samples/ExGrid.DemoPages/Pages/GridLiveLocalPage.razor
++++ b/samples/ExGrid.DemoPages/Pages/GridLiveLocalPage.razor
+@@ -1,5 +1,7 @@
+ @page "/grid-live-local"
+ @implements IAsyncDisposable
++@implements IHandleEvent
++@using System.Reflection
+ @using System.Diagnostics
+ @using System.Globalization
+ @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@@ -39,6 +41,12 @@
+ 
+ <div class="demo-toolbar">
+     <button id="grid-live-local-toggle" disabled="@(_source is null)" @onclick="Toggle">@(_on ? "Pause the page's changes" : "Resume the page's changes")</button>
++    @if (StepAsked == 1)
++    {
++        @* Harness (ticket 01): one batch per press, the page itself never rendering after it, so each
++           press is one render batch of the grid's on a circuit (M2's method). *@
++        <button id="grid-live-local-step" disabled="@(_source is null)" @onclick="StepOnce">Apply one batch</button>
++    }
+ </div>
+ 
+ <p class="demo-status">
+@@ -103,6 +111,26 @@ else
+     [SupplyParameterFromQuery(Name = "interval")]
+     public int? IntervalAsked { get; set; }
+ 
++    // Harness (ticket 01): ?probe=1 times, before each batch is applied, the same batch applied to a
++    // second source bound to nothing (the source's share in this runtime) and the grid's two checks of
++    // a pushed Window over the Window in hand (ticket 02); ?step=1 applies a batch per press instead
++    // of the timer, the page not rendering after the press.
++    [SupplyParameterFromQuery(Name = "probe")]
++    public int? ProbeAsked { get; set; }
++
++    [SupplyParameterFromQuery(Name = "step")]
++    public int? StepAsked { get; set; }
++
++    private InMemoryGridSource<DemoPivotTrade>? _shadow;
++
++    private static readonly Action<IReadOnlyList<DemoPivotTrade>, int, Func<DemoPivotTrade, object>> RequireKeys =
++        typeof(global::ExGrid.Components.ExGrid<DemoPivotTrade>).GetMethod("RequireDistinctKeys", BindingFlags.NonPublic | BindingFlags.Static)!
++            .CreateDelegate<Action<IReadOnlyList<DemoPivotTrade>, int, Func<DemoPivotTrade, object>>>();
++
++    private static readonly Action<IReadOnlyList<DemoPivotTrade>> RequireRows =
++        typeof(global::ExGrid.Components.ExGrid<DemoPivotTrade>).GetMethod("RequireDistinctRows", BindingFlags.NonPublic | BindingFlags.Static)!
++            .CreateDelegate<Action<IReadOnlyList<DemoPivotTrade>>>();
++
+     private int RowCount => RowsAsked is > 0 and var count ? count : DefaultRows;
+ 
+     private int TradesPerBatch => Math.Min(BatchAsked is > 0 and var count ? count : DefaultTradesPerBatch, _trades.Length);
+@@ -127,6 +155,15 @@ else
+             return;
+         if (IntervalAsked is >= 0 and var interval && _source is { } source)
+             source.GatherInterval = TimeSpan.FromMilliseconds(interval);
++        if (ProbeAsked == 1 && _source is { } probed)
++        {
++            _shadow = GridSource.From(_trades, t => t.Id);
++            _shadow.OnColumnsChanged(Columns.Select(c => c.Info).ToArray());
++            _ = _shadow.CellChangedAt;
++            _shadow.GatherInterval = probed.GatherInterval;
++        }
++        if (StepAsked == 1)
++            _on = false;
+         StateHasChanged();
+         _ticks = new PeriodicTimer(BatchEvery);
+         _ = Reported(AmendAsync(_ticks));
+@@ -181,9 +218,10 @@ else
+             if (!_on || _source is not { } source)
+                 continue;
+             var amended = Amend(TradesPerBatch);
++            var probe = Probe(source, amended) + First(amended);
+             var clock = Stopwatch.StartNew();
+             source.Apply(new GridChangeBatch<DemoPivotTrade>(changed: amended));
+-            Describe(amended, clock.Elapsed);
++            Describe(amended, clock.Elapsed, probe);
+         }
+     }
+ 
+@@ -249,13 +287,73 @@ else
+ 
+     private void Toggle() => _on = !_on;
+ 
++    // Harness (ticket 01): the shadow source's Apply of the same batch, and the two checks over the
++    // Window in hand, each timed, before the batch is applied to the grid's source.
++    private string Probe(InMemoryGridSource<DemoPivotTrade> source, DemoPivotTrade[] amended)
++    {
++        if (_shadow is not { } shadow)
++            return "";
++        var window = source.Window;
++        var clock = Stopwatch.StartNew();
++        shadow.Apply(new GridChangeBatch<DemoPivotTrade>(changed: amended));
++        var sourceMs = clock.Elapsed.TotalMilliseconds;
++        clock.Restart();
++        RequireKeys(window, 0, source.RowKey!);
++        var keysMs = clock.Elapsed.TotalMilliseconds;
++        clock.Restart();
++        RequireRows(window);
++        var rowsMs = clock.Elapsed.TotalMilliseconds;
++        return string.Create(CultureInfo.InvariantCulture, $" [probe source={sourceMs:F3} keys={keysMs:F3} rows={rowsMs:F3} window={window.Count}]");
++    }
++
++    // Harness (ticket 01): the first position a batch changed, with no Sort in force the smallest
++    // index among the trades it amended — where the grid's walk of a new Window stops.
++    private static string First(DemoPivotTrade[] amended)
++    {
++        var first = int.MaxValue;
++        foreach (var trade in amended)
++            first = Math.Min(first, int.Parse(trade.Id.AsSpan(1), CultureInfo.InvariantCulture) - 100000);
++        return string.Create(CultureInfo.InvariantCulture, $" [first={first}]");
++    }
++
++    private void StepOnce()
++    {
++        if (_source is not { } source)
++            return;
++        source.Apply(new GridChangeBatch<DemoPivotTrade>(changed: Amend(TradesPerBatch)));
++    }
++
++    // In step mode a press renders nothing of the page's own; otherwise as ComponentBase does.
++    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object? arg)
++    {
++        var task = item.InvokeAsync(arg);
++        if (StepAsked == 1)
++            return task;
++        var pending = task.Status != TaskStatus.RanToCompletion && task.Status != TaskStatus.Canceled;
++        StateHasChanged();
++        return pending ? RenderedAfter(task) : Task.CompletedTask;
++    }
++
++    private async Task RenderedAfter(Task task)
++    {
++        try
++        {
++            await task;
++        }
++        catch when (task.IsCanceled)
++        {
++            return;
++        }
++        StateHasChanged();
++    }
++
+     // The batch just applied, and how long Apply took. On WebAssembly that includes the grid's render
+     // of the change when the source showed it at once.
+-    private void Describe(IReadOnlyList<DemoPivotTrade> amended, TimeSpan applied)
++    private void Describe(IReadOnlyList<DemoPivotTrade> amended, TimeSpan applied, string probe = "")
+     {
+         _batches++;
+         _batchLine?.Show($"Batch {_batches.ToString("N0", Culture)}: {amended.Count.ToString("N0", Culture)} trades amended, "
+-            + $"applied in {applied.TotalMilliseconds.ToString("N0", Culture)} ms.");
++            + $"applied in {applied.TotalMilliseconds.ToString("N0", Culture)} ms (exact {applied.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture)}).{probe}");
+     }
+ 
+     // The page's own loop, which nothing awaits: a failure in it is reported as a render's is, never
+diff --git a/samples/ExGrid.DemoPages/Pages/PaintCostPage.razor b/samples/ExGrid.DemoPages/Pages/PaintCostPage.razor
+new file mode 100644
+index 00000000..dccdbd65
+--- /dev/null
++++ b/samples/ExGrid.DemoPages/Pages/PaintCostPage.razor
+@@ -0,0 +1,270 @@
++@page "/paint-cost"
++@using System.Collections
++@using System.Diagnostics
++@using System.Globalization
++@using System.Reflection
++@using System.Text.Json
++
++@* Harness (never committed): what a paint costs in this runtime under ADR-0142's kept paints, on
++   spikes/paint-text's grid — about 40 painted rows × 20 painted columns, 40 columns in all, a pushed
++   Window of 20,000 rows under a Row Key. Each scenario step (a scroll offset applied as OnScrollAsync
++   applies it, a fling settled as the settle timer does, or a new Window pushed) is timed with the
++   render it causes, which runs inline here; and NotePaint alone, on the same state, with the kept
++   paints put back as they were before the step each time. Private members by reflection. *@
++
++<h1>Paint cost harness</h1>
++<button id="paint-cost-run" @onclick="Run">Run</button>
++<span id="paint-cost-status">@_status</span>
++<pre id="paint-cost-out" style="max-height: 120px; overflow: auto">@_out</pre>
++
++<ExGrid TRow="PaintCostRow" @ref="_grid"
++        Window="_window"
++        TotalCount="Rows"
++        Columns="Columns"
++        PinnedColumnCount="1"
++        RowKey="Key"
++        RowHeight="24"
++        ViewportHeight="990"
++        ViewportWidth="1650" />
++
++@code {
++    [SupplyParameterFromQuery(Name = "runs")]
++    public int? RunsAsked { get; set; }
++
++    [SupplyParameterFromQuery(Name = "warmup")]
++    public int? WarmupAsked { get; set; }
++
++    public sealed record PaintCostRow(string Id, string[] Texts, DateTime[] Dates, decimal Big, decimal[] Numbers);
++
++    private const int Rows = 20_000;
++    private const int StartRow = 1_000;
++    private const double RowHeight = 24;
++    private const int NumberColumns = 31;
++    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
++    private static readonly Func<PaintCostRow, object> Key = r => r.Id;
++    private static readonly GridColumn<PaintCostRow>[] Columns = BuildColumns();
++    private static readonly PaintCostRow[] Base = Make(Rows);
++
++    private ExGrid<PaintCostRow>? _grid;
++    private IReadOnlyList<PaintCostRow> _window = Base;
++    private string _status = "Not run.";
++    private string _out = "";
++
++    private static PaintCostRow[] Make(int count)
++    {
++        var random = new Random(20261006);
++        string[] books = ["NY-RATES-01", "LDN-FX-02", "TKY-RATES-01", "HKG-EQ-01", "ZRH-EQ-01"];
++        string[] desks = ["Rates", "Credit", "FX", "Equities"];
++        string[] products = ["Swap", "Bond", "Option", "Future", "Spot"];
++        var start = new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Unspecified);
++        var rows = new PaintCostRow[count];
++        for (var i = 0; i < count; i++)
++        {
++            var numbers = new decimal[NumberColumns];
++            for (var n = 0; n < NumberColumns; n++)
++                numbers[n] = Math.Round((decimal)((random.NextDouble() - 0.45) * 2_000_000), 2);
++            rows[i] = new PaintCostRow(
++                "T" + (100000 + i).ToString(Invariant),
++                [books[random.Next(books.Length)], desks[random.Next(desks.Length)], products[random.Next(products.Length)], "Note " + random.Next(1000).ToString(Invariant)],
++                [start.AddDays(random.Next(270)), start.AddDays(270 + random.Next(3000)), start.AddDays(random.Next(272))],
++                Math.Round((decimal)(random.NextDouble() * 9_000_000_000), 2),
++                numbers);
++        }
++        return rows;
++    }
++
++    private static PaintCostRow Amended(PaintCostRow row)
++    {
++        var numbers = (decimal[])row.Numbers.Clone();
++        numbers[0] += 1.25m;
++        return row with { Numbers = numbers };
++    }
++
++    private static GridColumn<PaintCostRow>[] BuildColumns()
++    {
++        var columns = new List<GridColumn<PaintCostRow>> { new("Id", ColumnType.Text, r => r.Id, header: "Trade ID", width: Fixed(110)) };
++        for (var t = 0; t < 4; t++)
++        {
++            var at = t;
++            columns.Add(new($"T{t}", ColumnType.Text, r => r.Texts[at], width: Fixed(90)));
++        }
++        for (var d = 0; d < 3; d++)
++        {
++            var at = d;
++            columns.Add(new($"D{d}", ColumnType.Date, r => r.Dates[at], width: Fixed(100), align: CellAlign.Left,
++                format: value => ((DateTime)value).ToString("yyyy-MM-dd", Invariant)));
++        }
++        columns.Add(new("Big", ColumnType.Number, r => r.Big, width: Fixed(40), format: Money));
++        for (var n = 0; n < NumberColumns; n++)
++        {
++            var at = n;
++            columns.Add(n % 2 == 0
++                ? new($"N{n}", ColumnType.Number, r => r.Numbers[at], width: Fixed(90), format: Money)
++                : new($"N{n}", ColumnType.Number, r => r.Numbers[at], width: Fixed(90)));
++        }
++        return [.. columns];
++    }
++
++    private static ColumnWidthSpec Fixed(double width) => new(ColumnWidth.Fixed(width));
++
++    private static string Money(object value) => ((decimal)value).ToString("#,##0.00", Invariant);
++
++    private void Run()
++    {
++        _status = "Running…";
++        _ = RunAsync();
++    }
++
++    private sealed class Series
++    {
++        public List<double> StepMs { get; } = [];
++        public List<double> PaintMs { get; } = [];
++        public List<double> PaintBytes { get; } = [];
++        public List<double> NewPaints { get; } = [];
++    }
++
++    private static object Stat(List<double> values)
++    {
++        var sorted = values.OrderBy(v => v).ToArray();
++        return new { min = sorted[0], median = sorted[sorted.Length / 2], max = sorted[^1], n = sorted.Length };
++    }
++
++    private async Task RunAsync()
++    {
++        // Off the event's dispatch, so that a render runs inline and is timed with its step.
++        await Task.Yield();
++        try
++        {
++            var runs = RunsAsked is > 0 and var r ? r : 15;
++            var warmup = WarmupAsked is >= 0 and var w ? w : 3;
++            var grid = _grid!;
++            var type = typeof(ExGrid<PaintCostRow>);
++            const BindingFlags any = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
++            var applyScroll = type.GetMethod("ApplyScrollOffset", any)!;
++            var onSettled = type.GetMethod("OnSettled", any)!;
++            var notePaint = (Func<int>)type.GetMethod("NotePaint", any)!.CreateDelegate(typeof(Func<int>), grid);
++            var paintsField = type.GetField("_paints", any)!;
++            var paintIdField = type.GetField("_paintId", any)!;
++            var geometry = type.GetField("_geometry", any)!.GetValue(grid)!;
++            var page = (int)geometry.GetType().GetProperty("RowsPerViewport")!.GetValue(geometry)!;
++            var visible = type.GetField("_visible", any)!.GetValue(grid)!;
++            var painted = (int)visible.GetType().GetProperty("Count")!.GetValue(visible)!;
++            var top = StartRow * RowHeight;
++            var sideways = 1650 - 250.0;
++            void Scroll(double y, double x) => applyScroll.Invoke(grid, [new ScrollOffset(y, x)]);
++            void Settle() => onSettled.Invoke(grid, [null]);
++            void To(double y, double x) { Scroll(y, x); Settle(); }
++            void Push(IReadOnlyList<PaintCostRow> window) { _window = window; StateHasChanged(); }
++            int PaintId() => (int)paintIdField.GetValue(grid)!;
++
++            (object[] Paints, (PropertyInfo P, object? V)[] Newest) Snapshot()
++            {
++                var paints = ((IList)paintsField.GetValue(grid)!).Cast<object>().ToArray();
++                var newest = paints[^1];
++                return (paints, newest.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(p => p.CanWrite).Select(p => (p, p.GetValue(newest))).ToArray());
++            }
++            void Restore((object[] Paints, (PropertyInfo P, object? V)[] Newest) s)
++            {
++                var list = (IList)paintsField.GetValue(grid)!;
++                list.Clear();
++                foreach (var p in s.Paints)
++                    list.Add(p);
++                foreach (var (p, v) in s.Newest)
++                    p.SetValue(s.Paints[^1], v);
++            }
++
++            var scenarios = new List<(string Name, Action SetA, Action StepB)>
++            {
++                ("a: scroll by 1 row", () => To(top, 0), () => Scroll(top + RowHeight, 0)),
++                ("b: scroll by a page", () => To(top, 0), () => Scroll(top + (page * RowHeight), 0)),
++                ("c: fling frame (Placeholders)", () => { To(top, 0); Scroll(top + (3 * page * RowHeight), 0); }, () => Scroll(top + (6 * page * RowHeight), 0)),
++                ("c2: fling settles (full slice painted)", () => { To(top, 0); Scroll(top + (3 * page * RowHeight), 0); }, Settle),
++                ("d: horizontal scroll to a new slice", () => To(top, 0), () => Scroll(top, sideways)),
++            };
++            foreach (var replaced in new[] { 0, 3, -1 })
++            {
++                var name = replaced < 0 ? "e: live, every painted row new" : $"e: live, {replaced} painted rows new";
++                scenarios.Add((name, () => { To(top, 0); Push(Base); }, () =>
++                {
++                    var window = (PaintCostRow[])Base.Clone();
++                    int[] which = replaced switch
++                    {
++                        0 => [],
++                        3 => [StartRow, StartRow + (painted / 2), StartRow + painted - 1],
++                        _ => [.. Enumerable.Range(StartRow, painted)],
++                    };
++                    foreach (var at in which)
++                        window[at] = Amended(window[at]);
++                    Push(window);
++                }));
++            }
++
++            const int Batch = 20;
++            var results = new List<object>();
++            foreach (var (name, setA, stepB) in scenarios)
++            {
++                _status = $"Running {name}…";
++                var series = new Series();
++                for (var run = 0; run < warmup + runs; run++)
++                {
++                    setA();
++                    await Task.Yield();
++                    GC.Collect();
++                    var before = PaintId();
++                    var t0 = Stopwatch.GetTimestamp();
++                    stepB();
++                    var ms = Stopwatch.GetElapsedTime(t0).TotalMilliseconds;
++                    var newPaints = PaintId() - before;
++                    await Task.Yield();
++                    if (run >= warmup)
++                    {
++                        series.StepMs.Add(ms);
++                        series.NewPaints.Add(newPaints);
++                    }
++                }
++                // The paint alone, in batches of 20 so a timer's resolution does not hide it: 20
++                // restores and notes, less 20 restores alone.
++                setA();
++                await Task.Yield();
++                var snapshot = Snapshot();
++                stepB();
++                await Task.Yield();
++                for (var run = 0; run < warmup + runs; run++)
++                {
++                    GC.Collect();
++                    var a0 = GC.GetAllocatedBytesForCurrentThread();
++                    var t0 = Stopwatch.GetTimestamp();
++                    for (var i = 0; i < Batch; i++)
++                    {
++                        Restore(snapshot);
++                        notePaint();
++                    }
++                    var both = Stopwatch.GetElapsedTime(t0).TotalMilliseconds;
++                    var bothBytes = GC.GetAllocatedBytesForCurrentThread() - a0;
++                    GC.Collect();
++                    a0 = GC.GetAllocatedBytesForCurrentThread();
++                    t0 = Stopwatch.GetTimestamp();
++                    for (var i = 0; i < Batch; i++)
++                        Restore(snapshot);
++                    var restores = Stopwatch.GetElapsedTime(t0).TotalMilliseconds;
++                    var restoreBytes = GC.GetAllocatedBytesForCurrentThread() - a0;
++                    // Leave the state as after the step: the last paint noted.
++                    notePaint();
++                    if (run >= warmup)
++                    {
++                        series.PaintMs.Add((both - restores) / Batch);
++                        series.PaintBytes.Add((double)(bothBytes - restoreBytes) / Batch);
++                    }
++                }
++                results.Add(new { scenario = name, step = Stat(series.StepMs), notePaintAlone = Stat(series.PaintMs), notePaintBytes = Stat(series.PaintBytes), newPaints = Stat(series.NewPaints), stepRuns = series.StepMs, paintRuns = series.PaintMs });
++            }
++            _out = JsonSerializer.Serialize(new { runs, warmup, paintedRows = painted, rowsPerViewport = page, frequency = Stopwatch.Frequency, results });
++            _status = "Done.";
++        }
++        catch (Exception error)
++        {
++            _status = "Failed: " + error;
++        }
++        StateHasChanged();
++    }
++}
+diff --git a/samples/ExGrid.DemoPages/Pages/PivotLiveCostsPage.razor b/samples/ExGrid.DemoPages/Pages/PivotLiveCostsPage.razor
+new file mode 100644
+index 00000000..181c3e71
+--- /dev/null
++++ b/samples/ExGrid.DemoPages/Pages/PivotLiveCostsPage.razor
+@@ -0,0 +1,317 @@
++@page "/pivot-live-costs"
++@implements IAsyncDisposable
++@implements IHandleEvent
++@using System.Diagnostics
++@using System.Globalization
++@using System.Reflection
++@using global::ExPivot.Components
++@using global::ExPivot.Engine
++
++@* Harness (ticket 01 of docs/specs/live-data), never committed: ExPivot's live redraw over D10's
++   report — two row fields, A00000… × B0000…, with A's subtotals — in the browser, at the sizes the
++   ticket asks for (?a=1000&b=9, 100 or 400), k changes a batch (?batch=). Each batch amends the
++   first record and k − 1 others picked uniformly, so a painted cell always changes and the redraw
++   shows in the DOM. ?probe=1 times, before each batch, the steps that can be run from outside on
++   the report on screen: the cube made again from the held answer, the report laid out again from
++   the cube, and the grid's two checks of its rows. *@
++
++<DemoChromeAssets Name="builtin" Paper="true">
++    <Head>
++        <link href="_content/ExPivot/ex-pivot.min.css" rel="stylesheet" />
++    </Head>
++</DemoChromeAssets>
++
++<h1>Harness: ExPivot's live redraw over a large report</h1>
++
++<div class="demo-toolbar">
++    <button id="pivot-live-costs-toggle" disabled="@(_source is null)" @onclick="Toggle">@(_on ? "Pause the page's changes" : "Resume the page's changes")</button>
++    @if (StepAsked == 1)
++    {
++        <button id="pivot-live-costs-step" disabled="@(_source is null)" @onclick="StepAsync">Apply one batch</button>
++    }
++    <button id="pivot-live-costs-gc" @onclick="Collect">[DEBUG-oom] collect</button>
++    <span id="pivot-live-costs-mem">@_mem</span>
++    <button id="pivot-live-costs-gen" @onclick="MeasureGenerationAsync">[DEBUG-oom] generation</button>
++    <span id="pivot-live-costs-genout">@_gen</span>
++</div>
++
++<p class="demo-status">
++    <DemoStatusLine @ref="_madeLine" Id="pivot-live-costs-made" Initial="Waiting for the page to be interactive…" />
++    <DemoStatusLine @ref="_batchLine" Id="pivot-live-costs-status" Initial="No batch applied yet." />
++    @* The first record's value as the batch sets it, written before the batch is applied: the
++       report shows it in its second row once the redraw lands. *@
++    <DemoStatusLine @ref="_expectLine" Id="pivot-live-costs-expect" Initial="" />
++</p>
++
++<section id="pivot-live-costs">
++    @if (_source is not null)
++    {
++        <ExPivot @ref="_pivot" Source="_source" Layout="Layout" Caps="Caps" Culture="Culture"
++                 ChangeHighlightDuration="Highlight" ViewportHeight="300" ViewportWidth="900" />
++    }
++</section>
++
++@code {
++    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
++    private TimeSpan Highlight => TimeSpan.FromMilliseconds(HighlightAsked ?? 1000);
++    [SupplyParameterFromQuery(Name = "highlight")]
++    public int? HighlightAsked { get; set; }
++    // [DEBUG-oom] the managed heap after a full, compacting collection, in MB
++    private string _mem = "";
++    private readonly List<(string Kind, WeakReference Ref)> _watched = [];
++    private void Watch(string kind, object? o)
++    {
++        if (o is not null && !_watched.Exists(w => ReferenceEquals(w.Ref.Target, o)))
++            _watched.Add((kind, new WeakReference(o)));
++    }
++    private string _gen = "";
++    private static long Settled()
++    {
++        for (var i = 0; i < 2; i++)
++        {
++            GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
++            GC.WaitForPendingFinalizers();
++        }
++        return GC.GetTotalMemory(false);
++    }
++    // [DEBUG-oom] what one generation is made of: a fresh answer, cube, report, every row's labels
++    // and value cells read, each measured as the managed heap it adds after a full collection
++    private async Task MeasureGenerationAsync()
++    {
++        if (_source is not { } source)
++            return;
++        // another cap than the page's, so the source answers afresh rather than from what it holds
++        var query = PivotQuery.For(Layout, Caps.MaxLeaves - 1);
++        var m0 = Settled();
++        var answer = await source.AggregateAsync(query);
++        var m1 = Settled();
++        var cube = PivotEngine.Cube(query, answer, source.Fields);
++        var m2 = Settled();
++        var report = PivotEngine.Report(cube, Layout, new PivotOptions { Culture = Culture });
++        var m3 = Settled();
++        var n = report.Rows.Count;
++        foreach (var row in report.Rows)
++            for (var c = 0; c < report.ValueColumns.Count; c++)
++                row.ValueAt(c);
++        var m4 = Settled();
++        var keys = new object[n];
++        for (var i = 0; i < n; i++) keys[i] = report.Rows[i].Key;
++        var m5 = Settled();
++        double Per(long bytes) => (double)bytes / n;
++        _gen = string.Create(CultureInfo.InvariantCulture,
++            $"rows={n} leaves={answer.LeafCount} answer={Per(m1 - m0):F0}B/row cube={Per(m2 - m1):F0}B/row report={Per(m3 - m2):F0}B/row cells={Per(m4 - m3):F0}B/row keysArray={Per(m5 - m4):F0}B/row total={(m4 - m0) / 1048576.0:F1}MB");
++        GC.KeepAlive(answer); GC.KeepAlive(cube); GC.KeepAlive(report); GC.KeepAlive(keys);
++        StateHasChanged();
++    }
++    private void Collect()
++    {
++        // [DEBUG-oom] every generation seen so far, held weakly
++        Watch("report", _pivot?.Report);
++        Watch("cube", _pivot?.Report?.Cube);
++        Watch("snapshot", _source?.Snapshot);
++        GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
++        GC.WaitForPendingFinalizers();
++        GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
++        _mem = (GC.GetTotalMemory(false) / 1048576.0).ToString("F1", CultureInfo.InvariantCulture)
++            + " alive " + string.Join(",", _watched.GroupBy(w => w.Kind).Select(g => g.Key + "=" + g.Count(w => w.Ref.IsAlive) + "/" + g.Count()));
++        StateHasChanged();
++    }
++    private static readonly TimeSpan BatchEvery = TimeSpan.FromMilliseconds(250);
++    private static readonly global::ExPivot.PivotCaps Caps = new() { MaxLeaves = 2_000_000 };
++
++    private static readonly PivotFields<CostCell> Fields = PivotFields.Of<CostCell>()
++        .Key("Id", c => c.Id)
++        .Text("A", c => c.A)
++        .Text("B", c => c.B)
++        .Number("Value", c => c.Value, format: "#,##0.00");
++
++    private static readonly PivotLayout Layout = new()
++    {
++        Rows = [new PivotFieldPlacement("A"), new PivotFieldPlacement("B")],
++        Values = [new PivotValueField("Value", PivotAggregation.Sum) { NumberFormat = "#,##0.00" }],
++    };
++
++    private static readonly Action<IReadOnlyList<PivotReportRow>, int, Func<PivotReportRow, object>> RequireKeys =
++        typeof(global::ExGrid.Components.ExGrid<PivotReportRow>).GetMethod("RequireDistinctKeys", BindingFlags.NonPublic | BindingFlags.Static)!
++            .CreateDelegate<Action<IReadOnlyList<PivotReportRow>, int, Func<PivotReportRow, object>>>();
++
++    private static readonly Action<IReadOnlyList<PivotReportRow>> RequireRows =
++        typeof(global::ExGrid.Components.ExGrid<PivotReportRow>).GetMethod("RequireDistinctRows", BindingFlags.NonPublic | BindingFlags.Static)!
++            .CreateDelegate<Action<IReadOnlyList<PivotReportRow>>>();
++
++    private static readonly Func<PivotReportRow, object> ReportKey = row => row.Key;
++
++    public sealed record CostCell(string Id, string A, string B, decimal Value);
++
++    private readonly CancellationTokenSource _leaving = new();
++    private readonly Random _random = new(20261006);
++    private DemoStatusLine? _madeLine;
++    private DemoStatusLine? _batchLine;
++    private DemoStatusLine? _expectLine;
++    private global::ExPivot.Components.ExPivot? _pivot;
++    private CostCell[] _cells = [];
++    private SnapshotPivotSource? _source;
++    private bool _on = true;
++    private int _batches;
++    private PeriodicTimer? _ticks;
++
++    [SupplyParameterFromQuery(Name = "a")]
++    public int? AAsked { get; set; }
++
++    [SupplyParameterFromQuery(Name = "b")]
++    public int? BAsked { get; set; }
++
++    [SupplyParameterFromQuery(Name = "batch")]
++    public int? BatchAsked { get; set; }
++
++    [SupplyParameterFromQuery(Name = "probe")]
++    public int? ProbeAsked { get; set; }
++
++    // ?step=1: a batch per press of the step button, the timer's batches off and the page not
++    // rendering after the press, so exactly one batch is out when a redraw is timed.
++    [SupplyParameterFromQuery(Name = "step")]
++    public int? StepAsked { get; set; }
++
++    private int PerBatch => Math.Min(BatchAsked is > 0 and var count ? count : 1, _cells.Length);
++
++    protected override async Task OnAfterRenderAsync(bool firstRender)
++    {
++        if (!firstRender)
++            return;
++        var aCount = AAsked is > 0 and var a ? a : 1000;
++        var bCount = BAsked is > 0 and var b ? b : 9;
++        var clock = Stopwatch.StartNew();
++        var random = new Random(20261006);
++        var cells = new CostCell[aCount * bCount];
++        for (var i = 0; i < aCount; i++)
++        {
++            for (var j = 0; j < bCount; j++)
++            {
++                var at = (i * bCount) + j;
++                cells[at] = new CostCell("R" + at.ToString(CultureInfo.InvariantCulture), "A" + i.ToString("00000", CultureInfo.InvariantCulture),
++                    "B" + j.ToString("0000", CultureInfo.InvariantCulture), Math.Round((decimal)((random.NextDouble() - 0.45) * 100_000), 2));
++            }
++            if (i % 100 == 99)
++                await Task.Delay(1, _leaving.Token);
++        }
++        _cells = cells;
++        var making = clock.Elapsed;
++        clock.Restart();
++        _source = PivotSource.From(cells, Fields);
++        _madeLine?.Show($"{cells.Length.ToString("N0", Culture)} records made in {making.TotalMilliseconds.ToString("N0", Culture)} ms; "
++            + $"PivotSource.From took {clock.Elapsed.TotalMilliseconds.ToString("N0", Culture)} ms.");
++        if (StepAsked == 1)
++            _on = false;
++        StateHasChanged();
++        _ticks = new PeriodicTimer(BatchEvery);
++        _ = Reported(AmendAsync(_ticks));
++    }
++
++    private async Task AmendAsync(PeriodicTimer ticks)
++    {
++        while (await ticks.WaitForNextTickAsync())
++        {
++            if (!_on || _source is not { } source)
++                continue;
++            await OneBatchAsync(source);
++        }
++    }
++
++    private async Task OneBatchAsync(SnapshotPivotSource source)
++    {
++        var amended = Amend(PerBatch);
++        var probe = await ProbeAsync(source);
++        _expectLine?.Show(amended.First(c => c.Id == "R0").Value.ToString("#,##0.00", Culture));
++        var clock = Stopwatch.StartNew();
++        source.Apply(Fields.Batch(changed: amended));
++        var applied = clock.Elapsed;
++        _batches++;
++        _batchLine?.Show($"Batch {_batches.ToString("N0", Culture)}: {amended.Length.ToString("N0", Culture)} records amended, "
++            + $"applied in {applied.TotalMilliseconds.ToString("N0", Culture)} ms (exact {applied.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture)}).{probe}");
++    }
++
++    private Task StepAsync() => _source is { } source ? OneBatchAsync(source) : Task.CompletedTask;
++
++    // In step mode a press renders nothing of the page's own; otherwise as ComponentBase does.
++    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object? arg)
++    {
++        var task = item.InvokeAsync(arg);
++        if (StepAsked == 1)
++            return task;
++        var pending = task.Status != TaskStatus.RanToCompletion && task.Status != TaskStatus.Canceled;
++        StateHasChanged();
++        return pending ? RenderedAfter(task) : Task.CompletedTask;
++    }
++
++    private async Task RenderedAfter(Task task)
++    {
++        try
++        {
++            await task;
++        }
++        catch when (task.IsCanceled)
++        {
++            return;
++        }
++        StateHasChanged();
++    }
++
++    // The first record and k − 1 others, each picked once, their value moved.
++    private CostCell[] Amend(int count)
++    {
++        var picked = new HashSet<int> { 0 };
++        while (picked.Count < count)
++            picked.Add(_random.Next(_cells.Length));
++        var amended = new CostCell[picked.Count];
++        var i = 0;
++        foreach (var at in picked)
++        {
++            var cell = _cells[at];
++            amended[i++] = _cells[at] = cell with { Value = cell.Value + Math.Round((decimal)((_random.NextDouble() - 0.5) * 200), 2) + 0.01m };
++        }
++        return amended;
++    }
++
++    private async Task<string> ProbeAsync(SnapshotPivotSource source)
++    {
++        if (ProbeAsked != 1 || _pivot?.Report is not { } report)
++            return "";
++        var query = PivotQuery.For(Layout, Caps.MaxLeaves);
++        var answer = await source.AggregateAsync(query);
++        var clock = Stopwatch.StartNew();
++        var cube = PivotEngine.Cube(query, answer, source.Fields);
++        var cubeMs = clock.Elapsed.TotalMilliseconds;
++        clock.Restart();
++        var laidOut = PivotEngine.Report(cube, Layout, new PivotOptions { Culture = Culture });
++        var reportMs = clock.Elapsed.TotalMilliseconds;
++        clock.Restart();
++        RequireKeys(report.Rows, 0, ReportKey);
++        var keysMs = clock.Elapsed.TotalMilliseconds;
++        clock.Restart();
++        RequireRows(report.Rows);
++        var rowsMs = clock.Elapsed.TotalMilliseconds;
++        return string.Create(CultureInfo.InvariantCulture,
++            $" [probe cube={cubeMs:F3} report={reportMs:F3} keys={keysMs:F3} rows={rowsMs:F3} reportRows={laidOut.Rows.Count}]");
++    }
++
++    private void Toggle() => _on = !_on;
++
++    private async Task Reported(Task loop)
++    {
++        try
++        {
++            await loop;
++        }
++        catch (Exception error)
++        {
++            await DispatchExceptionAsync(error);
++        }
++    }
++
++    public ValueTask DisposeAsync()
++    {
++        _leaving.Cancel();
++        _ticks?.Dispose();
++        return ValueTask.CompletedTask;
++    }
++}
+diff --git a/spikes/paint-text/PaintCosts/CountingRenderer.cs b/spikes/paint-text/PaintCosts/CountingRenderer.cs
+new file mode 100644
+index 00000000..b2afe845
+--- /dev/null
++++ b/spikes/paint-text/PaintCosts/CountingRenderer.cs
+@@ -0,0 +1,229 @@
++using System.Diagnostics;
++using System.Text;
++using Microsoft.AspNetCore.Components;
++using Microsoft.AspNetCore.Components.RenderTree;
++using Microsoft.Extensions.Logging.Abstractions;
++using Microsoft.JSInterop;
++
++namespace Costs;
++
++/// <summary>What the render batches of one update carried, and what they rendered.</summary>
++public sealed class BatchCounts
++{
++    public int Batches;
++    public int Diffs;
++    public int Edits;
++    public int Frames;
++    public int DisposedComponents;
++    public int StringBytes;
++    /// <summary>The batches' size under Blazor's RenderBatchWriter format, transcribed (M2's
++    /// estimate, spikes/render-bench/Bench.BatchCount/CountingRenderer.cs): not the writer's own
++    /// output.</summary>
++    public int EstimatedBytes;
++    /// <summary>Diffs of components whose type the renderer was asked to watch (a row).</summary>
++    public int WatchedRendered;
++    /// <summary>Of those, components the renderer had not seen render before.</summary>
++    public int WatchedMounted;
++}
++
++/// <summary>
++/// A Renderer with no DOM, M2's (spikes/render-bench/Bench.BatchCount), with two additions: the
++/// time spent in <see cref="ProcessPendingRender"/> — every component's render and diff, and the
++/// parameters a parent sets on its children on the way — and the components of one watched type
++/// that render, so the rows a live update renders and mounts can be counted.
++/// </summary>
++public sealed class CountingRenderer : Renderer
++{
++    private readonly HashSet<int> _seen = [];
++    private readonly Dictionary<int, IComponent> _live = [];
++
++    public CountingRenderer(IServiceProvider services) : base(services, NullLoggerFactory.Instance)
++    {
++    }
++
++    public override Dispatcher Dispatcher { get; } = Dispatcher.CreateDefault();
++
++    /// <summary>Interactive, as on a circuit: ExGrid reads it.</summary>
++    protected override RendererInfo RendererInfo { get; } = new("Server", isInteractive: true);
++
++    public bool Counting { get; set; }
++
++    /// <summary>The component type whose renders are counted (an open generic is matched by its
++    /// definition).</summary>
++    public Type? Watched { get; set; }
++
++    public BatchCounts Counts { get; private set; } = new();
++
++    /// <summary>Ticks spent in <see cref="ProcessPendingRender"/> since the last <see cref="Take"/>.</summary>
++    public long RenderTicks { get; private set; }
++
++    public (BatchCounts Counts, double RenderMs) Take()
++    {
++        var taken = (Counts, RenderTicks * 1000.0 / Stopwatch.Frequency);
++        Counts = new BatchCounts();
++        RenderTicks = 0;
++        return taken;
++    }
++
++    /// <summary>The watched components alive now: those rendered and not disposed since.</summary>
++    public IEnumerable<IComponent> LiveWatched => _live.Values;
++
++    public int Attach(IComponent component) => AssignRootComponentId(component);
++
++    /// <summary>A component made by the renderer's own factory, so that its [Inject] properties
++    /// are filled.</summary>
++    public TComponent Create<TComponent>() where TComponent : IComponent => (TComponent)InstantiateComponent(typeof(TComponent));
++
++    public Task RenderRootAsync(int componentId, ParameterView parameters) => RenderRootComponentAsync(componentId, parameters);
++
++    public void RemoveRoot(int componentId) => RemoveRootComponent(componentId);
++
++    protected override void HandleException(Exception exception) => throw exception;
++
++    protected override void ProcessPendingRender()
++    {
++        var t0 = Stopwatch.GetTimestamp();
++        base.ProcessPendingRender();
++        RenderTicks += Stopwatch.GetTimestamp() - t0;
++    }
++
++    private bool IsWatched(IComponent component)
++    {
++        if (Watched is null)
++            return false;
++        var type = component.GetType();
++        return type == Watched || (Watched.IsGenericTypeDefinition && type.IsGenericType && type.GetGenericTypeDefinition() == Watched);
++    }
++
++    protected override Task UpdateDisplayAsync(in RenderBatch renderBatch)
++    {
++        var diffs = renderBatch.UpdatedComponents;
++        if (Watched is not null)
++        {
++            for (var i = 0; i < diffs.Count; i++)
++            {
++                var id = diffs.Array[i].ComponentId;
++                var component = GetComponentState(id).Component;
++                if (!IsWatched(component))
++                    continue;
++                Counts.WatchedRendered++;
++                if (_seen.Add(id))
++                    Counts.WatchedMounted++;
++                _live[id] = component;
++            }
++            for (var i = 0; i < renderBatch.DisposedComponentIDs.Count; i++)
++                _live.Remove(renderBatch.DisposedComponentIDs.Array[i]);
++        }
++        if (!Counting)
++            return Task.CompletedTask;
++
++        var c = Counts;
++        c.Batches++;
++        var strings = new HashSet<string>(StringComparer.Ordinal);
++        var bytes = 0;
++
++        void WriteString(string? value, bool deduplicate)
++        {
++            if (value is null)
++                return;
++            if (deduplicate && !strings.Add(value))
++                return;
++            var length = Encoding.UTF8.GetByteCount(value);
++            c.StringBytes += length;
++            bytes += SevenBitLength(length) + length + 4;
++        }
++
++        bytes += 4;
++        for (var i = 0; i < diffs.Count; i++)
++        {
++            var diff = diffs.Array[i];
++            c.Diffs++;
++            bytes += 4 + 8;
++            var edits = diff.Edits;
++            for (var e = 0; e < edits.Count; e++)
++            {
++                var edit = edits.Array[edits.Offset + e];
++                c.Edits++;
++                bytes += 16;
++                WriteString(edit.RemovedAttributeName, deduplicate: true);
++            }
++        }
++
++        var frames = renderBatch.ReferenceFrames;
++        bytes += 4;
++        for (var i = 0; i < frames.Count; i++)
++        {
++            var frame = frames.Array[i];
++            c.Frames++;
++            bytes += 20;
++            switch (frame.FrameType)
++            {
++                case RenderTreeFrameType.Attribute:
++                    WriteString(frame.AttributeName, deduplicate: true);
++                    if (frame.AttributeValue is bool flag)
++                        WriteString(flag ? string.Empty : null, deduplicate: true);
++                    else
++                    {
++                        var text = frame.AttributeValue as string;
++                        WriteString(text, deduplicate: string.IsNullOrEmpty(text));
++                    }
++                    break;
++                case RenderTreeFrameType.Element:
++                    WriteString(frame.ElementName, deduplicate: true);
++                    break;
++                case RenderTreeFrameType.Text:
++                    WriteString(frame.TextContent, deduplicate: string.IsNullOrWhiteSpace(frame.TextContent));
++                    break;
++                case RenderTreeFrameType.Markup:
++                    WriteString(frame.MarkupContent, deduplicate: false);
++                    break;
++                case RenderTreeFrameType.ElementReferenceCapture:
++                    WriteString(frame.ElementReferenceCaptureId, deduplicate: false);
++                    break;
++            }
++        }
++
++        c.DisposedComponents += renderBatch.DisposedComponentIDs.Count;
++        bytes += 4 + 4 * renderBatch.DisposedComponentIDs.Count;
++        bytes += 4 + 8 * renderBatch.DisposedEventHandlerIDs.Count;
++        bytes += 4; // named event changes: none here
++        bytes += 24; // the trailer of section offsets
++        c.EstimatedBytes += bytes;
++        return Task.CompletedTask;
++    }
++
++    private static int SevenBitLength(int value)
++    {
++        var length = 1;
++        while (value >= 0x80)
++        {
++            value >>= 7;
++            length++;
++        }
++        return length;
++    }
++}
++
++/// <summary>The services ExGrid and ExPivot ask for: a JavaScript runtime that answers every call
++/// with a default (every module or handle is itself again), and a clock.</summary>
++public sealed class Services(TimeProvider clock) : IServiceProvider
++{
++    private readonly FakeJS _js = new();
++
++    public object? GetService(Type serviceType)
++        => serviceType == typeof(IJSRuntime) ? _js
++         : serviceType == typeof(TimeProvider) ? clock
++         : serviceType == typeof(IServiceProvider) ? this
++         : null;
++
++    private sealed class FakeJS : IJSRuntime, IJSObjectReference
++    {
++        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => ValueTask.FromResult(Make<TValue>());
++
++        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => ValueTask.FromResult(Make<TValue>());
++
++        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
++
++        private TValue Make<TValue>() => typeof(TValue) == typeof(IJSObjectReference) ? (TValue)(object)this : default!;
++    }
++}
+diff --git a/spikes/paint-text/PaintCosts/GcRecorder.cs b/spikes/paint-text/PaintCosts/GcRecorder.cs
+new file mode 100644
+index 00000000..dc428d59
+--- /dev/null
++++ b/spikes/paint-text/PaintCosts/GcRecorder.cs
+@@ -0,0 +1,199 @@
++using System.Diagnostics.Tracing;
++
++namespace Costs;
++
++/// <summary>One collection as the runtime's own GC events describe it.</summary>
++public sealed class GcRecord
++{
++    public long Index { get; set; }
++    public int Generation { get; set; }
++    /// <summary>0 blocking (non-concurrent), 1 background, 2 foreground (during a background GC).</summary>
++    public int Type { get; set; }
++    public int Reason { get; set; }
++    public DateTime Start { get; set; }
++    public DateTime End { get; set; }
++    /// <summary>GCStart to GCEnd, ms.</summary>
++    public double DurationMs { get; set; }
++    /// <summary>The suspension that holds this GC: SuspendEEBegin before it to RestartEEEnd after it,
++    /// ms; for a background GC, only the suspensions inside its span, summed.</summary>
++    public double PauseMs { get; set; }
++    /// <summary>GCGlobalHeapHistory's GlobalMechanisms: 0x1 concurrent, 0x2 compaction, 0x4
++    /// promotion, 0x8 demotion, 0x10 card bundles, 0x20 elevation.</summary>
++    public long GlobalMechanisms { get; set; } = -1;
++    public bool? Compacting => GlobalMechanisms < 0 ? null : (GlobalMechanisms & 0x2) != 0;
++    public long? FreeListAllocated { get; set; }
++    public long? FreeListRejected { get; set; }
++    public long? EndOfSegAllocated { get; set; }
++    public long? CondemnedAllocated { get; set; }
++    public long? PinnedAllocated { get; set; }
++    public long? CompactMechanisms { get; set; }
++    public long? ExpandMechanisms { get; set; }
++    public long[] PromotedBytes { get; set; } = [];
++    public long[] GenerationSizes { get; set; } = [];
++}
++
++/// <summary>
++/// Listens to the runtime's GC events in-process (Microsoft-Windows-DotNETRuntime, keyword GC,
++/// Informational): every collection's generation, type, reason, duration, pause, mechanisms
++/// (compacting or sweeping), how its survivors were placed (free list or end of segment) and what
++/// it promoted. Events arrive on the listener's own thread, a little after the fact; they are
++/// paired with a redraw by GC index afterwards.
++/// </summary>
++public sealed class GcRecorder : EventListener
++{
++    private readonly object _lock = new();
++    private readonly Dictionary<long, GcRecord> _gcs = [];
++    private readonly List<(DateTime At, bool Begin)> _suspensions = [];
++    private long _current = -1;
++
++    /// <summary>How many of each event arrived (a check that the listener sees what it reads).</summary>
++    public Dictionary<string, int> EventCounts { get; } = [];
++
++    /// <summary>The first GCPerHeapHistory's payload, as it arrived.</summary>
++    public string? FirstPerHeap { get; private set; }
++
++    /// <summary>The level the runtime's GC events are enabled at: Verbose carries GCPerHeapHistory
++    /// (how survivors were placed), Informational does not. Static, because OnEventSourceCreated
++    /// runs from the base constructor, before a field of this one is set.</summary>
++    public static EventLevel Level { get; set; } = EventLevel.Verbose;
++
++    protected override void OnEventSourceCreated(EventSource source)
++    {
++        if (source.Name == "Microsoft-Windows-DotNETRuntime")
++            EnableEvents(source, Level, (EventKeywords)0x1);
++    }
++
++    private static long Long(EventWrittenEventArgs e, string name)
++    {
++        var at = e.PayloadNames?.IndexOf(name) ?? -1;
++        // Pointer-sized fields (FreeListAllocated and its kin) arrive as IntPtr/UIntPtr, which
++        // Convert does not take; an exception here would be swallowed by EventListener.
++        return at < 0 ? -1 : e.Payload![at] switch
++        {
++            null => -1,
++            IntPtr p => (long)p,
++            UIntPtr u => (long)(ulong)u,
++            var v => Convert.ToInt64(v, System.Globalization.CultureInfo.InvariantCulture),
++        };
++    }
++
++    protected override void OnEventWritten(EventWrittenEventArgs e)
++    {
++        var name = e.EventName ?? "";
++        lock (_lock)
++        {
++            EventCounts[name] = EventCounts.GetValueOrDefault(name) + 1;
++            if (name.StartsWith("GCPerHeapHistory", StringComparison.Ordinal) && FirstPerHeap is null)
++                FirstPerHeap = string.Join(",", (e.PayloadNames ?? []).Zip(e.Payload ?? [], (n, v) => $"{n}={v}"));
++            if (name.StartsWith("GCStart", StringComparison.Ordinal))
++            {
++                var index = Long(e, "Count");
++                _current = index;
++                _gcs[index] = new GcRecord
++                {
++                    Index = index,
++                    Generation = (int)Long(e, "Depth"),
++                    Type = (int)Long(e, "Type"),
++                    Reason = (int)Long(e, "Reason"),
++                    Start = e.TimeStamp,
++                };
++            }
++            else if (name.StartsWith("GCEnd", StringComparison.Ordinal))
++            {
++                if (_gcs.TryGetValue(Long(e, "Count"), out var gc))
++                {
++                    gc.End = e.TimeStamp;
++                    gc.DurationMs = (gc.End - gc.Start).TotalMilliseconds;
++                }
++            }
++            else if (name.StartsWith("GCSuspendEEBegin", StringComparison.Ordinal))
++            {
++                _suspensions.Add((e.TimeStamp, true));
++            }
++            else if (name.StartsWith("GCRestartEEEnd", StringComparison.Ordinal))
++            {
++                _suspensions.Add((e.TimeStamp, false));
++            }
++            else if (name.StartsWith("GCGlobalHeapHistory", StringComparison.Ordinal))
++            {
++                if (_gcs.TryGetValue(_current, out var gc))
++                    gc.GlobalMechanisms = Long(e, "GlobalMechanisms");
++            }
++            else if (name.StartsWith("GCPerHeapHistory", StringComparison.Ordinal))
++            {
++                if (_gcs.TryGetValue(_current, out var gc))
++                {
++                    gc.FreeListAllocated = Long(e, "FreeListAllocated");
++                    gc.FreeListRejected = Long(e, "FreeListRejected");
++                    gc.EndOfSegAllocated = Long(e, "EndOfSegAllocated");
++                    gc.CondemnedAllocated = Long(e, "CondemnedAllocated");
++                    gc.PinnedAllocated = Long(e, "PinnedAllocated");
++                    gc.CompactMechanisms = Long(e, "CompactMechanisms");
++                    gc.ExpandMechanisms = Long(e, "ExpandMechanisms");
++                }
++            }
++            else if (name.StartsWith("GCHeapStats", StringComparison.Ordinal))
++            {
++                if (_gcs.TryGetValue(_current, out var gc))
++                {
++                    gc.PromotedBytes = [Long(e, "TotalPromotedSize0"), Long(e, "TotalPromotedSize1"), Long(e, "TotalPromotedSize2"), Long(e, "TotalPromotedSize3"), Long(e, "TotalPromotedSize4")];
++                    gc.GenerationSizes = [Long(e, "GenerationSize0"), Long(e, "GenerationSize1"), Long(e, "GenerationSize2"), Long(e, "GenerationSize3"), Long(e, "GenerationSize4")];
++                }
++            }
++        }
++    }
++
++    /// <summary>Waits until the events of collection <paramref name="index"/> have arrived (or a
++    /// second has passed).</summary>
++    public async Task WaitForAsync(long index)
++    {
++        for (var i = 0; i < 100; i++)
++        {
++            lock (_lock)
++            {
++                if (_gcs.TryGetValue(index, out var gc) && gc.End != default && gc.PromotedBytes.Length > 0)
++                    return;
++            }
++            await Task.Delay(10);
++        }
++    }
++
++    /// <summary>The collections with index in (<paramref name="after"/>, <paramref name="upTo"/>],
++    /// their pauses computed from the suspensions around them.</summary>
++    public List<GcRecord> Between(long after, long upTo)
++    {
++        lock (_lock)
++        {
++            var list = _gcs.Values.Where(g => g.Index > after && g.Index <= upTo).OrderBy(g => g.Index).ToList();
++            foreach (var gc in list)
++            {
++                if (gc.End == default)
++                    continue;
++                if (gc.Type == 1)
++                {
++                    // A background GC: the suspensions inside its span.
++                    double pause = 0;
++                    DateTime? begun = null;
++                    foreach (var (at, begin) in _suspensions.Where(s => s.At >= gc.Start.AddMilliseconds(-50) && s.At <= gc.End.AddMilliseconds(50)))
++                    {
++                        if (begin)
++                            begun = at;
++                        else if (begun is { } b)
++                        {
++                            pause += (at - b).TotalMilliseconds;
++                            begun = null;
++                        }
++                    }
++                    gc.PauseMs = pause;
++                }
++                else
++                {
++                    var begin = _suspensions.Where(s => s.Begin && s.At <= gc.Start).Select(s => s.At).DefaultIfEmpty(gc.Start).Max();
++                    var end = _suspensions.Where(s => !s.Begin && s.At >= gc.End).Select(s => s.At).DefaultIfEmpty(gc.End).Min();
++                    gc.PauseMs = (end - begin).TotalMilliseconds;
++                }
++            }
++            return list;
++        }
++    }
++}
+diff --git a/spikes/paint-text/PaintCosts/GridPaint.cs b/spikes/paint-text/PaintCosts/GridPaint.cs
+new file mode 100644
+index 00000000..d4bdbeb1
+--- /dev/null
++++ b/spikes/paint-text/PaintCosts/GridPaint.cs
+@@ -0,0 +1,199 @@
++using System.Diagnostics;
++using System.Globalization;
++using ExGrid;
++using ExGrid.Columns;
++using ExGrid.Components;
++using Microsoft.AspNetCore.Components;
++using Microsoft.Extensions.Time.Testing;
++
++namespace Costs;
++
++/// <summary>A render-bench-like typed row: text keys, dates and many numbers, and one number too
++/// wide for its column.</summary>
++public sealed record PRow(string Id, string[] Texts, DateTime[] Dates, decimal Big, decimal[] Numbers);
++
++/// <summary>
++/// ExGrid with about 40 painted rows × 20 painted columns (40 columns in all, one pinned; a pushed
++/// Window of 20,000 rows under a Row Key). Scenarios (the brief's a–e): a vertical scroll by one
++/// row and by a page, a fling frame (Placeholders, ADR-0004) and the settle after it, a horizontal
++/// scroll to a new column slice, and a pushed Window with 0, 3 or every painted row a new instance.
++/// </summary>
++public static class GridPaint
++{
++    private const int TextColumns = 4;
++    private const int DateColumns = 3;
++    private const int NumberColumns = 31;
++    private const double RowHeight = 24;
++    private const int Rows = 20_000;
++    private const int StartRow = 1_000;
++
++    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
++
++    public static PRow[] Make(int count)
++    {
++        var random = new Random(20261006);
++        string[] books = ["NY-RATES-01", "LDN-FX-02", "TKY-RATES-01", "HKG-EQ-01", "ZRH-EQ-01"];
++        string[] desks = ["Rates", "Credit", "FX", "Equities"];
++        string[] products = ["Swap", "Bond", "Option", "Future", "Spot"];
++        var start = new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Unspecified);
++        var rows = new PRow[count];
++        for (var i = 0; i < count; i++)
++        {
++            var numbers = new decimal[NumberColumns];
++            for (var n = 0; n < NumberColumns; n++)
++                numbers[n] = Math.Round((decimal)((random.NextDouble() - 0.45) * 2_000_000), 2);
++            rows[i] = new PRow(
++                "T" + (100000 + i).ToString(Invariant),
++                [books[random.Next(books.Length)], desks[random.Next(desks.Length)], products[random.Next(products.Length)], "Note " + random.Next(1000).ToString(Invariant)],
++                [start.AddDays(random.Next(270)), start.AddDays(270 + random.Next(3000)), start.AddDays(random.Next(272))],
++                Math.Round((decimal)(random.NextDouble() * 9_000_000_000), 2),
++                numbers);
++        }
++        return rows;
++    }
++
++    /// <summary>A new instance of <paramref name="row"/> whose first number moved: a live change.</summary>
++    public static PRow Amended(PRow row)
++    {
++        var numbers = (decimal[])row.Numbers.Clone();
++        numbers[0] += 1.25m;
++        return row with { Numbers = numbers };
++    }
++
++    public static readonly GridColumn<PRow>[] Columns = BuildColumns();
++
++    private static GridColumn<PRow>[] BuildColumns()
++    {
++        var columns = new List<GridColumn<PRow>>
++        {
++            new("Id", ColumnType.Text, r => r.Id, header: "Trade ID", width: Fixed(110)),
++        };
++        for (var t = 0; t < TextColumns; t++)
++        {
++            var at = t;
++            columns.Add(new($"T{t}", ColumnType.Text, r => r.Texts[at], width: Fixed(90)));
++        }
++        for (var d = 0; d < DateColumns; d++)
++        {
++            var at = d;
++            columns.Add(new($"D{d}", ColumnType.Date, r => r.Dates[at], width: Fixed(100), align: CellAlign.Left,
++                format: value => ((DateTime)value).ToString("yyyy-MM-dd", Invariant)));
++        }
++        // Too narrow for its numbers: paints ####.
++        columns.Add(new("Big", ColumnType.Number, r => r.Big, width: Fixed(40), format: Money));
++        for (var n = 0; n < NumberColumns; n++)
++        {
++            var at = n;
++            columns.Add(n % 2 == 0
++                ? new($"N{n}", ColumnType.Number, r => r.Numbers[at], width: Fixed(90), format: Money)
++                : new($"N{n}", ColumnType.Number, r => r.Numbers[at], width: Fixed(90)));
++        }
++        return [.. columns];
++    }
++
++    private static ColumnWidthSpec Fixed(double width) => new(ColumnWidth.Fixed(width));
++
++    private static string Money(object value) => ((decimal)value).ToString("#,##0.00", Invariant);
++
++    public static async Task<object> RunAsync(int warmup, int runs, double viewportHeight, double viewportWidth)
++    {
++        var rows = Make(Rows);
++        var clock = new FakeTimeProvider(DateTimeOffset.UnixEpoch.AddYears(56));
++        var renderer = new CountingRenderer(new Services(clock)) { Watched = typeof(ExGridRow<>) };
++        var grid = renderer.Create<ExGrid<PRow>>();
++        var id = renderer.Attach(grid);
++        Func<PRow, object> key = r => r.Id;
++        Dictionary<string, object?> Parameters(IReadOnlyList<PRow> window) => new()
++        {
++            [nameof(ExGrid<PRow>.Window)] = window,
++            [nameof(ExGrid<PRow>.TotalCount)] = Rows,
++            [nameof(ExGrid<PRow>.Columns)] = Columns,
++            [nameof(ExGrid<PRow>.PinnedColumnCount)] = 1,
++            [nameof(ExGrid<PRow>.RowKey)] = key,
++            [nameof(ExGrid<PRow>.RowHeight)] = RowHeight,
++            [nameof(ExGrid<PRow>.ViewportHeight)] = (ViewportSize)viewportHeight,
++            [nameof(ExGrid<PRow>.ViewportWidth)] = (ViewportSize)viewportWidth,
++        };
++        await renderer.Dispatcher.InvokeAsync(() => renderer.RenderRootAsync(id, ParameterView.FromDictionary(Parameters(rows))));
++        var rig = new Rig<PRow>(renderer, grid);
++        await rig.SettleAsync();
++
++        var top = StartRow * RowHeight;
++        Task To(double y, double x) => renderer.Dispatcher.InvokeAsync(() => { rig.Scroll(y, x); rig.Settle(); });
++        await To(top, 0);
++        await rig.SettleAsync();
++        var painted = rig.PaintedCount;
++        var page = rig.RowsPerViewport;
++        var sliceAtLeft = rig.Slice;
++        // A new column slice that is not a fling: less than a Viewport sideways.
++        var sideways = viewportWidth - 250;
++        await To(top, sideways);
++        var sliceAfter = rig.Slice;
++        await To(top, 0);
++        var pinnedTexts = 1;
++        Console.WriteLine($"== ExGrid: {Rows:N0} rows, {Columns.Length} columns ({pinnedTexts} pinned); painted rows {painted} from {rig.FirstPainted}; a page is {page} rows; slice {sliceAtLeft} -> {sliceAfter} at {sideways}px ==");
++
++        var scenarios = new List<(string Name, Func<Task> SetA, Func<Task> StepB)>
++        {
++            ("a: scroll by 1 row", () => To(top, 0), () => { rig.Scroll(top + RowHeight, 0); return Task.CompletedTask; }),
++            ("b: scroll by a page", () => To(top, 0), () => { rig.Scroll(top + (page * RowHeight), 0); return Task.CompletedTask; }),
++            ("c: fling frame (Placeholders)", async () =>
++                {
++                    await To(top, 0);
++                    await renderer.Dispatcher.InvokeAsync(() => rig.Scroll(top + (3 * page * RowHeight), 0));
++                },
++                () => { rig.Scroll(top + (6 * page * RowHeight), 0); return Task.CompletedTask; }),
++            ("c2: fling settles (full slice painted)", async () =>
++                {
++                    await To(top, 0);
++                    await renderer.Dispatcher.InvokeAsync(() => rig.Scroll(top + (3 * page * RowHeight), 0));
++                },
++                () => { rig.Settle(); return Task.CompletedTask; }),
++            ("d: horizontal scroll to a new slice", () => To(top, 0), () => { rig.Scroll(top, sideways); return Task.CompletedTask; }),
++        };
++        foreach (var replaced in new[] { 0, 3, -1 })
++        {
++            var name = replaced < 0 ? "e: live, every painted row new" : $"e: live, {replaced} painted rows new";
++            scenarios.Add((name,
++                async () =>
++                {
++                    await To(top, 0);
++                    await renderer.Dispatcher.InvokeAsync(() => renderer.RenderRootAsync(id, ParameterView.FromDictionary(Parameters(rows))));
++                },
++                () =>
++                {
++                    var window = (PRow[])rows.Clone();
++                    var first = StartRow;
++                    var count = painted;
++                    int[] which = replaced switch
++                    {
++                        0 => [],
++                        3 => [first, first + (count / 2), first + count - 1],
++                        _ => [.. Enumerable.Range(first, count)],
++                    };
++                    foreach (var at in which)
++                        window[at] = Amended(window[at]);
++                    return renderer.RenderRootAsync(id, ParameterView.FromDictionary(Parameters(window)));
++                }));
++        }
++
++        var results = new List<object>();
++        foreach (var (name, setA, stepB) in scenarios)
++        {
++            var machineBefore = Machine.Snapshot();
++            var series = await rig.MeasureAsync(setA, stepB, warmup, runs);
++            var summary = series.Summary();
++            results.Add(new { scenario = name, measured = summary, machineBefore, machineAfter = Machine.Snapshot() });
++            Console.WriteLine($"-- {name}");
++            Print("step (scroll/params + render)", Stat.Of(series.StepMs));
++            Print("render (ProcessPendingRender)", Stat.Of(series.RenderMs));
++            Print("NotePaint alone", Stat.Of(series.PaintMs));
++            Console.WriteLine($"   NotePaint bytes {Stat.Of(series.PaintBytes).Median:F0}; step bytes {Stat.Of(series.StepBytes).Median:F0}; rows rendered {Stat.Of(series.RowsRendered).Median} (+{Stat.Of(series.RowsRenderedAfter).Median} after); new paints {Stat.Of(series.NewPaints).Median}");
++        }
++        var kept = rig.PaintsKept;
++        await renderer.DisposeAsync();
++        return new { rows = Rows, columns = Columns.Length, paintedRows = painted, rowsPerViewport = page, sliceAtLeft, sliceAfter, sideways, viewportHeight, viewportWidth, paintsKeptAtEnd = kept, results };
++    }
++
++    internal static void Print(string name, Stat stat) => Console.WriteLine($"   {name,-34} {stat}");
++}
+diff --git a/spikes/paint-text/PaintCosts/PaintCosts.csproj b/spikes/paint-text/PaintCosts/PaintCosts.csproj
+new file mode 100644
+index 00000000..8257d448
+--- /dev/null
++++ b/spikes/paint-text/PaintCosts/PaintCosts.csproj
+@@ -0,0 +1,25 @@
++<Project Sdk="Microsoft.NET.Sdk">
++
++  <!-- What a paint costs under ADR-0142's kept paints: the base (V0, row instances kept) against
++       proposal (A) (V1, painted text kept). Built once against each source state; the harness is
++       the same file set in both. Private steps are reached by reflection. CoreCLR Release, run with
++       DOTNET_TieredCompilation=0, the least of the runs read. Disposable: never committed. -->
++  <PropertyGroup>
++    <OutputType>Exe</OutputType>
++    <TargetFramework>net10.0</TargetFramework>
++    <Nullable>enable</Nullable>
++    <ImplicitUsings>enable</ImplicitUsings>
++    <ServerGarbageCollection>false</ServerGarbageCollection>
++    <NoWarn>$(NoWarn);BL0005;BL0006</NoWarn>
++  </PropertyGroup>
++
++  <ItemGroup>
++    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
++  </ItemGroup>
++
++  <ItemGroup>
++    <ProjectReference Include="..\..\..\src\ExGrid\ExGrid.csproj" />
++    <ProjectReference Include="..\..\..\src\ExPivot\ExPivot.csproj" />
++  </ItemGroup>
++
++</Project>
+diff --git a/spikes/paint-text/PaintCosts/PivotGc.cs b/spikes/paint-text/PaintCosts/PivotGc.cs
+new file mode 100644
+index 00000000..0adb8d72
+--- /dev/null
++++ b/spikes/paint-text/PaintCosts/PivotGc.cs
+@@ -0,0 +1,212 @@
++using System.Diagnostics;
++using System.Runtime;
++using ExGrid;
++using ExGrid.Components;
++using ExPivot.Engine;
++
++namespace Costs;
++
++/// <summary>
++/// Why ExPivot's live redraw has a slower median in V1 than in V0 on CoreCLR (follow-up to the
++/// paint-text measurement). Two modes:
++/// <list type="bullet">
++/// <item><c>pivot-gc</c>: scenario e of <see cref="PivotPaint"/> alone — a collection before each
++/// timed redraw, as the rig makes it (<c>full</c>), compacting (<c>compact</c>), or none — with every
++/// collection inside the redraw read from the runtime's GC events, and the GC's own memory info
++/// (committed, fragmented, promoted) before and after.</item>
++/// <item><c>pivot-steady</c>: consecutive live redraws with no forced collection at all, each
++/// timed, with every collection inside it and the heap after it.</item>
++/// </list>
++/// </summary>
++public static class PivotGc
++{
++    private static void PreCollect(string how)
++    {
++        switch (how)
++        {
++            case "full":
++                Clock.Collect();
++                break;
++            case "compact":
++                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
++                GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
++                GC.WaitForPendingFinalizers();
++                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
++                GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
++                break;
++            case "none":
++                break;
++            default:
++                throw new ArgumentException($"no pre-collection {how}");
++        }
++    }
++
++    private static object Info(GCMemoryInfo info) => new
++    {
++        index = info.Index,
++        generation = info.Generation,
++        compacted = info.Compacted,
++        concurrent = info.Concurrent,
++        heapSizeMB = Math.Round(info.HeapSizeBytes / 1048576.0, 1),
++        committedMB = Math.Round(info.TotalCommittedBytes / 1048576.0, 1),
++        fragmentedMB = Math.Round(info.FragmentedBytes / 1048576.0, 1),
++        promotedMB = Math.Round(info.PromotedBytes / 1048576.0, 1),
++        pauseMs = info.PauseDurations.ToArray().Select(p => Math.Round(p.TotalMilliseconds, 3)).ToArray(),
++        generations = info.GenerationInfo.ToArray().Select(g => new
++        {
++            sizeBeforeMB = Math.Round(g.SizeBeforeBytes / 1048576.0, 1),
++            fragmentationBeforeMB = Math.Round(g.FragmentationBeforeBytes / 1048576.0, 1),
++            sizeAfterMB = Math.Round(g.SizeAfterBytes / 1048576.0, 1),
++            fragmentationAfterMB = Math.Round(g.FragmentationAfterBytes / 1048576.0, 1),
++        }).ToArray(),
++    };
++
++    private static object Gc(GcRecord g) => new
++    {
++        g.Index, g.Generation, type = g.Type switch { 0 => "blocking", 1 => "background", 2 => "foreground", _ => g.Type.ToString() },
++        g.Reason, durationMs = Math.Round(g.DurationMs, 3), pauseMs = Math.Round(g.PauseMs, 3), g.Compacting, g.GlobalMechanisms,
++        freeListAllocatedMB = g.FreeListAllocated is { } f && f >= 0 ? Math.Round(f / 1048576.0, 2) : (double?)null,
++        endOfSegAllocatedMB = g.EndOfSegAllocated is { } e && e >= 0 ? Math.Round(e / 1048576.0, 2) : (double?)null,
++        condemnedAllocatedMB = g.CondemnedAllocated is { } c && c >= 0 ? Math.Round(c / 1048576.0, 2) : (double?)null,
++        g.FreeListRejected, g.PinnedAllocated, g.CompactMechanisms, g.ExpandMechanisms,
++        promotedMB = g.PromotedBytes.Select(p => Math.Round(p / 1048576.0, 2)).ToArray(),
++        generationSizesMB = g.GenerationSizes.Select(p => Math.Round(p / 1048576.0, 1)).ToArray(),
++    };
++
++    private static async Task<(Costs.CountingRenderer Renderer, ExPivot.Components.ExPivot Pivot, PivotPaint.IGridPivotSource Source, Cell[] Newest, Microsoft.Extensions.Time.Testing.FakeTimeProvider Clock)> StartAsync(int a, int b)
++    {
++        var started = await PivotPaint.StartAsync(a, b);
++        var grid = Reflect.Get<ExGrid<PivotReportRow>>(started.Pivot, "_grid");
++        var rig = new Rig<PivotReportRow>(started.Renderer, grid);
++        var geometry = Reflect.Get(grid, "_geometry")!;
++        var height = Convert.ToDouble(geometry.GetType().GetProperty("RowHeightPx")!.GetValue(geometry), System.Globalization.CultureInfo.InvariantCulture);
++        await started.Renderer.Dispatcher.InvokeAsync(() => { rig.Scroll(1_000 * height, 0); rig.Settle(); });
++        await rig.SettleAsync();
++        return started;
++    }
++
++    public static async Task<object> RunAsync(int a, int b, int warmup, int runs, string precollect, string listen)
++    {
++        GcRecorder.Level = listen == "info" ? System.Diagnostics.Tracing.EventLevel.Informational : System.Diagnostics.Tracing.EventLevel.Verbose;
++        using var recorder = listen == "off" ? null : new GcRecorder();
++        var (renderer, pivot, source, newest, clock) = await StartAsync(a, b);
++        var random = new Random(7);
++        var rows = new List<Dictionary<string, object?>>();
++        Console.WriteLine($"== pivot-gc {a:N0} x {b:N0}, pre-collection {precollect}, GC events {listen}, GCRetainVM={Environment.GetEnvironmentVariable("DOTNET_GCRetainVM") ?? "(default)"} ==");
++        for (var r = 0; r < warmup + runs; r++)
++        {
++            var amended = PivotPaint.Amend(newest, 1, random);
++            await renderer.Dispatcher.InvokeAsync(() => clock.Advance(TimeSpan.FromMilliseconds(400)));
++            var preIndex = GC.GetGCMemoryInfo(GCKind.Any).Index;
++            PreCollect(precollect);
++            var before = GC.GetGCMemoryInfo(GCKind.Any);
++            var index0 = before.Index;
++            var workingSet0 = Environment.WorkingSet;
++            double ms = 0, pause = 0;
++            await renderer.Dispatcher.InvokeAsync(() =>
++            {
++                var p0 = GC.GetTotalPauseDuration();
++                var t0 = Stopwatch.GetTimestamp();
++                var report = pivot.Report;
++                source.Apply(amended);
++                ms = Clock.Ms(t0);
++                pause = (GC.GetTotalPauseDuration() - p0).TotalMilliseconds;
++                if (ReferenceEquals(report, pivot.Report))
++                    throw new InvalidOperationException("The redraw did not run inline.");
++            });
++            var after = GC.GetGCMemoryInfo(GCKind.Any);
++            var ephemeral = GC.GetGCMemoryInfo(GCKind.Ephemeral);
++            if (r < warmup)
++                continue;
++            rows.Add(new()
++            {
++                ["run"] = r - warmup + 1,
++                ["redrawMs"] = Math.Round(ms, 3),
++                ["gcPauseMs"] = Math.Round(pause, 3),
++                ["preIndex"] = preIndex,
++                ["index0"] = index0,
++                ["index1"] = after.Index,
++                ["workingSetBeforeMB"] = Math.Round(workingSet0 / 1048576.0, 1),
++                ["workingSetAfterMB"] = Math.Round(Environment.WorkingSet / 1048576.0, 1),
++                ["afterPreCollection"] = Info(before),
++                ["lastEphemeralInRedraw"] = ephemeral.Index > index0 ? Info(ephemeral) : null,
++                ["lastInRedraw"] = after.Index > index0 ? Info(after) : null,
++            });
++            Console.WriteLine($"   run {r - warmup + 1,2}: {ms,8:F2} ms, GC pause {pause,7:F2} ms, GCs {after.Index - index0}, committed {before.TotalCommittedBytes / 1048576.0:F0} -> {after.TotalCommittedBytes / 1048576.0:F0} MB, fragmented after {ephemeral.FragmentedBytes / 1048576.0:F1} MB");
++        }
++        if (recorder is not null)
++        {
++            await recorder.WaitForAsync(GC.GetGCMemoryInfo(GCKind.Any).Index);
++            foreach (var row in rows)
++            {
++                row["collections"] = recorder.Between((long)row["index0"]!, (long)row["index1"]!).Select(Gc).ToArray();
++                row["preCollections"] = recorder.Between((long)row["preIndex"]!, (long)row["index0"]!).Select(Gc).ToArray();
++            }
++        }
++        var times = rows.Select(r => (double)r["redrawMs"]!).ToArray();
++        var pauses = rows.Select(r => (double)r["gcPauseMs"]!).ToArray();
++        Console.WriteLine($"   redraw {Stat.Of(times)}   GC pause {Stat.Of(pauses)}");
++        await renderer.DisposeAsync();
++        return new
++        {
++            a, b, warmup, runs, precollect, listen,
++            events = recorder?.EventCounts, firstPerHeapHistory = recorder?.FirstPerHeap,
++            gcRetainVM = Environment.GetEnvironmentVariable("DOTNET_GCRetainVM"),
++            gcSettings = new { GCSettings.IsServerGC, latency = GCSettings.LatencyMode.ToString() },
++            redrawMs = Stat.Of(times), gcPauseMs = Stat.Of(pauses), rows,
++        };
++    }
++
++    public static async Task<object> SteadyAsync(int a, int b, int redraws)
++    {
++        GcRecorder.Level = System.Diagnostics.Tracing.EventLevel.Verbose;
++        using var recorder = new GcRecorder();
++        var (renderer, pivot, source, newest, clock) = await StartAsync(a, b);
++        var random = new Random(7);
++        var rows = new List<Dictionary<string, object?>>();
++        Console.WriteLine($"== pivot-steady {a:N0} x {b:N0}, {redraws} redraws, no forced collection ==");
++        for (var r = 0; r < redraws; r++)
++        {
++            var amended = PivotPaint.Amend(newest, 1, random);
++            await renderer.Dispatcher.InvokeAsync(() => clock.Advance(TimeSpan.FromMilliseconds(400)));
++            var index0 = GC.GetGCMemoryInfo(GCKind.Any).Index;
++            double ms = 0, pause = 0;
++            await renderer.Dispatcher.InvokeAsync(() =>
++            {
++                var p0 = GC.GetTotalPauseDuration();
++                var t0 = Stopwatch.GetTimestamp();
++                var report = pivot.Report;
++                source.Apply(amended);
++                ms = Clock.Ms(t0);
++                pause = (GC.GetTotalPauseDuration() - p0).TotalMilliseconds;
++                if (ReferenceEquals(report, pivot.Report))
++                    throw new InvalidOperationException("The redraw did not run inline.");
++            });
++            var after = GC.GetGCMemoryInfo(GCKind.Any);
++            rows.Add(new()
++            {
++                ["redraw"] = r + 1,
++                ["redrawMs"] = Math.Round(ms, 3),
++                ["gcPauseMs"] = Math.Round(pause, 3),
++                ["index0"] = index0,
++                ["index1"] = after.Index,
++                ["allocatedNowMB"] = Math.Round(GC.GetTotalMemory(false) / 1048576.0, 1),
++                ["workingSetMB"] = Math.Round(Environment.WorkingSet / 1048576.0, 1),
++                ["lastGc"] = Info(after),
++            });
++            Console.WriteLine($"   redraw {r + 1,3}: {ms,8:F2} ms, GC pause {pause,7:F2} ms, GCs {after.Index - index0}, heap after last GC {after.HeapSizeBytes / 1048576.0:F0} MB, committed {after.TotalCommittedBytes / 1048576.0:F0} MB");
++        }
++        await recorder.WaitForAsync(GC.GetGCMemoryInfo(GCKind.Any).Index);
++        foreach (var row in rows)
++            row["collections"] = recorder.Between((long)row["index0"]!, (long)row["index1"]!).Select(Gc).ToArray();
++        var times = rows.Select(r => (double)r["redrawMs"]!).ToArray();
++        await renderer.DisposeAsync();
++        return new
++        {
++            a, b, redraws,
++            events = recorder.EventCounts, firstPerHeapHistory = recorder.FirstPerHeap,
++            gcSettings = new { GCSettings.IsServerGC, latency = GCSettings.LatencyMode.ToString() },
++            redrawMs = Stat.Of(times), rows,
++        };
++    }
++}
+diff --git a/spikes/paint-text/PaintCosts/PivotPaint.cs b/spikes/paint-text/PaintCosts/PivotPaint.cs
+new file mode 100644
+index 00000000..95c1769b
+--- /dev/null
++++ b/spikes/paint-text/PaintCosts/PivotPaint.cs
+@@ -0,0 +1,222 @@
++using System.Diagnostics;
++using System.Globalization;
++using ExGrid;
++using ExGrid.Components;
++using ExPivot;
++using ExPivot.Engine;
++using Microsoft.AspNetCore.Components;
++using Microsoft.Extensions.Time.Testing;
++using PivotComponent = ExPivot.Components.ExPivot;
++
++namespace Costs;
++
++/// <summary>A record of D10's report: two text fields, A00000… × B0000…, and a number.</summary>
++public sealed record Cell(string Id, string A, string B, decimal Value);
++
++/// <summary>
++/// ExPivot over D10's report (ticket 01's PivotCosts: A × B with A's subtotals, Viewport 300 × 900,
++/// 11 painted rows), its report grid driven as the browser would: a scroll by one row and by a page,
++/// a fling frame and its settle, and a live redraw (a batch applied past the redraw interval, slicing
++/// off, so the redraw runs inline), whose new report makes every painted row a new instance.
++/// </summary>
++public static class PivotPaint
++{
++    private static readonly PivotSlicing Never = new() { Budget = TimeSpan.FromDays(1) };
++
++    public static readonly PivotFields<Cell> Fields = PivotFields.Of<Cell>()
++        .Key("Id", c => c.Id)
++        .Text("A", c => c.A)
++        .Text("B", c => c.B)
++        .Number("Value", c => c.Value, format: "#,##0.00");
++
++    private static readonly PivotLayout Layout = new()
++    {
++        Rows = [new PivotFieldPlacement("A"), new PivotFieldPlacement("B")],
++        Values = [new PivotValueField("Value", PivotAggregation.Sum) { NumberFormat = "#,##0.00" }],
++    };
++
++    public static Cell[] Make(int aCount, int bCount)
++    {
++        var random = new Random(20261006);
++        var cells = new Cell[aCount * bCount];
++        for (var a = 0; a < aCount; a++)
++        {
++            for (var b = 0; b < bCount; b++)
++            {
++                var i = (a * bCount) + b;
++                cells[i] = new Cell(
++                    "R" + i.ToString(CultureInfo.InvariantCulture),
++                    "A" + a.ToString("00000", CultureInfo.InvariantCulture),
++                    "B" + b.ToString("0000", CultureInfo.InvariantCulture),
++                    Math.Round((decimal)((random.NextDouble() - 0.45) * 100_000), 2));
++            }
++        }
++        return cells;
++    }
++
++    /// <summary>k records, each picked once, uniformly, their value moved (as /pivot-live amends).</summary>
++    public static Cell[] Amend(Cell[] cells, int count, Random random)
++    {
++        var picked = new HashSet<int>();
++        while (picked.Count < count)
++            picked.Add(random.Next(cells.Length));
++        var amended = new Cell[picked.Count];
++        var i = 0;
++        foreach (var at in picked)
++        {
++            var cell = cells[at];
++            amended[i++] = cells[at] = cell with { Value = cell.Value + Math.Round((decimal)((random.NextDouble() - 0.5) * 200), 2) };
++        }
++        return amended;
++    }
++
++    internal static async Task<(CountingRenderer Renderer, PivotComponent Pivot, IGridPivotSource Source, Cell[] Newest, FakeTimeProvider Clock)> StartAsync(int aCount, int bCount)
++    {
++        var cells = Make(aCount, bCount);
++        var caps = new PivotCaps { MaxLeaves = 2_000_000 };
++        var source = PivotSource.From(cells, Fields, Never);
++        var clock = new FakeTimeProvider(DateTimeOffset.UnixEpoch.AddYears(56));
++        var renderer = new CountingRenderer(new Services(clock)) { Watched = typeof(ExGridRow<>) };
++        var pivot = renderer.Create<PivotComponent>();
++        var pivotId = renderer.Attach(pivot);
++        await renderer.Dispatcher.InvokeAsync(() => renderer.RenderRootAsync(pivotId, ParameterView.FromDictionary(new Dictionary<string, object?>
++        {
++            [nameof(PivotComponent.Source)] = source,
++            [nameof(PivotComponent.Layout)] = Layout,
++            [nameof(PivotComponent.RedrawInterval)] = TimeSpan.FromMilliseconds(250),
++            [nameof(PivotComponent.ChangeHighlightDuration)] = TimeSpan.FromSeconds(1),
++            [nameof(PivotComponent.Culture)] = CultureInfo.GetCultureInfo("en-US"),
++            [nameof(PivotComponent.ViewportHeight)] = (ViewportSize)300,
++            [nameof(PivotComponent.ViewportWidth)] = (ViewportSize)900,
++            [nameof(PivotComponent.Slicing)] = Never,
++            [nameof(PivotComponent.Caps)] = caps,
++        })));
++        for (var wait = 0; pivot.Report is null; wait++)
++        {
++            if (wait > 6000)
++                throw new TimeoutException("ExPivot showed no report.");
++            await Task.Delay(10);
++            for (var s = 0; s < 5; s++)
++                await renderer.Dispatcher.InvokeAsync(() => Task.Yield());
++        }
++        for (var s = 0; s < 5; s++)
++            await renderer.Dispatcher.InvokeAsync(() => Task.Yield());
++        return (renderer, pivot, new PivotSourceHandle(source), (Cell[])cells.Clone(), clock);
++    }
++
++    /// <summary>The bundled source, applied to by the harness.</summary>
++    internal interface IGridPivotSource
++    {
++        void Apply(Cell[] amended);
++    }
++
++    private sealed class PivotSourceHandle(SnapshotPivotSource source) : IGridPivotSource
++    {
++        public void Apply(Cell[] amended) => source.Apply(Fields.Batch(changed: amended));
++    }
++
++    public static async Task<object> RunAsync(int aCount, int bCount, int warmup, int runs)
++    {
++        var t0 = Stopwatch.GetTimestamp();
++        var (renderer, pivot, source, newest, clock) = await StartAsync(aCount, bCount);
++        var grid = Reflect.Get<ExGrid<PivotReportRow>>(pivot, "_grid");
++        var rig = new Rig<PivotReportRow>(renderer, grid);
++        var rowHeight = Reflect.Get(grid, "_geometry")!.GetType().GetProperty("RowHeightPx")!.GetValue(Reflect.Get(grid, "_geometry"));
++        var height = Convert.ToDouble(rowHeight, CultureInfo.InvariantCulture);
++        var reportRows = pivot.Report!.Rows.Count;
++        var top = 1_000 * height;
++        Task To(double y) => renderer.Dispatcher.InvokeAsync(() => { rig.Scroll(y, 0); rig.Settle(); });
++        await To(top);
++        await rig.SettleAsync();
++        var painted = rig.PaintedCount;
++        var page = rig.RowsPerViewport;
++        Console.WriteLine($"== ExPivot: {aCount:N0} x {bCount:N0}, {reportRows:N0} report rows, {grid.Columns.Count} columns, made in {Clock.Ms(t0):F0} ms; painted rows {painted} from {rig.FirstPainted}; a page is {page} rows (row {height}px) ==");
++
++        var random = new Random(7);
++        var scenarios = new List<(string Name, Func<Task> SetA, Func<Task> StepB)>
++        {
++            ("a: scroll by 1 row", () => To(top), () => { rig.Scroll(top + height, 0); return Task.CompletedTask; }),
++            ("b: scroll by a page", () => To(top), () => { rig.Scroll(top + (page * height), 0); return Task.CompletedTask; }),
++            ("c: fling frame (Placeholders)", async () =>
++                {
++                    await To(top);
++                    await renderer.Dispatcher.InvokeAsync(() => rig.Scroll(top + (3 * page * height), 0));
++                },
++                () => { rig.Scroll(top + (6 * page * height), 0); return Task.CompletedTask; }),
++            ("c2: fling settles", async () =>
++                {
++                    await To(top);
++                    await renderer.Dispatcher.InvokeAsync(() => rig.Scroll(top + (3 * page * height), 0));
++                },
++                () => { rig.Settle(); return Task.CompletedTask; }),
++            // A live redraw: past the redraw interval, one record amended; slicing off, so the
++            // redraw — answer, cube, report, Show and the grid's render — runs inside the Apply.
++            ("e: live redraw (every painted row new)", async () =>
++                {
++                    await To(top);
++                    await renderer.Dispatcher.InvokeAsync(() => clock.Advance(TimeSpan.FromMilliseconds(400)));
++                },
++                () =>
++                {
++                    var before = pivot.Report;
++                    source.Apply(Amend(newest, 1, random));
++                    if (ReferenceEquals(pivot.Report, before))
++                        throw new InvalidOperationException("The redraw did not run inline.");
++                    return Task.CompletedTask;
++                }),
++        };
++        var results = new List<object>();
++        foreach (var (name, setA, stepB) in scenarios)
++        {
++            var machineBefore = Machine.Snapshot();
++            var series = await rig.MeasureAsync(setA, stepB, warmup, runs);
++            results.Add(new { scenario = name, measured = series.Summary(), machineBefore, machineAfter = Machine.Snapshot() });
++            Console.WriteLine($"-- {name}");
++            GridPaint.Print("step (scroll/redraw + render)", Stat.Of(series.StepMs));
++            GridPaint.Print("render (ProcessPendingRender)", Stat.Of(series.RenderMs));
++            GridPaint.Print("NotePaint alone", Stat.Of(series.PaintMs));
++            Console.WriteLine($"   NotePaint bytes {Stat.Of(series.PaintBytes).Median:F0}; step bytes {Stat.Of(series.StepBytes).Median:F0}; rows rendered {Stat.Of(series.RowsRendered).Median} (+{Stat.Of(series.RowsRenderedAfter).Median} after); new paints {Stat.Of(series.NewPaints).Median}");
++        }
++        await renderer.DisposeAsync();
++        return new { aCount, bCount, reportRows, columns = grid.Columns.Count, paintedRows = painted, rowsPerViewport = page, results };
++    }
++
++    /// <summary>
++    /// The memory a run of live redraws keeps (ticket 01's pivot-memory): after each redraw a full
++    /// collection, the managed heap, and how many earlier reports and cubes are still alive.
++    /// </summary>
++    public static async Task<object> MemoryAsync(int aCount, int bCount, int k, int redraws)
++    {
++        var (renderer, pivot, source, newest, clock) = await StartAsync(aCount, bCount);
++        var random = new Random(7);
++        var reports = new List<WeakReference>();
++        var cubes = new List<WeakReference>();
++        var samples = new List<object>();
++        Clock.Collect();
++        var baseline = GC.GetTotalMemory(forceFullCollection: true);
++        Console.WriteLine($"== ExPivot memory, {aCount:N0} x {bCount:N0}, k {k}: after the first report {baseline / 1048576.0:F1} MB ==");
++        for (var r = 0; r < redraws; r++)
++        {
++            reports.Add(new WeakReference(pivot.Report));
++            cubes.Add(new WeakReference(pivot.Report!.Cube));
++            var before = pivot.Report;
++            var amended = Amend(newest, k, random);
++            await renderer.Dispatcher.InvokeAsync(() => clock.Advance(TimeSpan.FromMilliseconds(400)));
++            await renderer.Dispatcher.InvokeAsync(() => source.Apply(amended));
++            while (ReferenceEquals(pivot.Report, before))
++                await Task.Delay(5);
++            for (var s = 0; s < 5; s++)
++                await renderer.Dispatcher.InvokeAsync(() => Task.Yield());
++            Clock.Collect();
++            var heap = GC.GetTotalMemory(forceFullCollection: true);
++            var aliveReports = reports.Count(w => w.IsAlive);
++            var aliveCubes = cubes.Count(w => w.IsAlive);
++            samples.Add(new { redraw = r + 1, heapMB = Math.Round(heap / 1048576.0, 1), aliveEarlierReports = aliveReports, aliveEarlierCubes = aliveCubes });
++            Console.WriteLine($"   redraw {r + 1,3}: heap {heap / 1048576.0,8:F1} MB; earlier reports alive {aliveReports,3} of {reports.Count}, cubes {aliveCubes,3}");
++        }
++        var grid = Reflect.Get<ExGrid<PivotReportRow>>(pivot, "_grid");
++        var paintsKept = ((System.Collections.IList)Reflect.Get(grid, "_paints")!).Count;
++        await renderer.DisposeAsync();
++        return new { aCount, bCount, k, redraws, baselineMB = Math.Round(baseline / 1048576.0, 1), samples, paintsKept };
++    }
++}
+diff --git a/spikes/paint-text/PaintCosts/Program.cs b/spikes/paint-text/PaintCosts/Program.cs
+new file mode 100644
+index 00000000..b5263210
+--- /dev/null
++++ b/spikes/paint-text/PaintCosts/Program.cs
+@@ -0,0 +1,80 @@
++using System.Globalization;
++using Costs;
++
++// What a paint costs under ADR-0142's kept paints, V0 (rows kept) against V1 (painted text kept).
++// Run in Release with DOTNET_TieredCompilation=0; write the output where it lasts, never under the
++// temp directory:
++//
++//   dotnet PaintCosts.dll grid  <out.json> [warmup] [runs] [viewportHeight] [viewportWidth]
++//   dotnet PaintCosts.dll pivot <out.json> <A> <B> [warmup] [runs]
++//   dotnet PaintCosts.dll pivot-memory <out.json> <A> <B> <k> <redraws>
++//   dotnet PaintCosts.dll pivot-gc <out.json> <A> <B> [warmup] [runs] [full|compact|none] [verbose|info|off]
++//   dotnet PaintCosts.dll pivot-steady <out.json> <A> <B> [redraws]
++
++if (args.Length < 2)
++{
++    Console.Error.WriteLine("grid <out.json> [warmup] [runs] [h] [w] | pivot <out.json> <A> <B> [warmup] [runs] | pivot-memory <out.json> <A> <B> <k> <redraws>");
++    return 2;
++}
++
++static int Arg(string[] args, int at, int otherwise) => args.Length > at ? int.Parse(args[at], CultureInfo.InvariantCulture) : otherwise;
++
++var output = args[1];
++var machine = Machine.Snapshot();
++var variant = Environment.GetEnvironmentVariable("PAINT_VARIANT") ?? "(unnamed)";
++Console.WriteLine($"variant {variant}; load {((dynamic)machine).loadavg}; TieredCompilation={Environment.GetEnvironmentVariable("DOTNET_TieredCompilation") ?? "(default)"}");
++object result;
++switch (args[0])
++{
++    case "grid":
++    {
++        var warmup = Arg(args, 2, 3);
++        var runs = Arg(args, 3, 15);
++        var height = Arg(args, 4, 990);
++        var width = Arg(args, 5, 1650);
++        result = new { mode = "grid", variant, warmup, runs, machine, measured = await GridPaint.RunAsync(warmup, runs, height, width) };
++        break;
++    }
++    case "pivot":
++    {
++        var a = int.Parse(args[2], CultureInfo.InvariantCulture);
++        var b = int.Parse(args[3], CultureInfo.InvariantCulture);
++        var warmup = Arg(args, 4, 3);
++        var runs = Arg(args, 5, 15);
++        result = new { mode = "pivot", variant, warmup, runs, machine, measured = await PivotPaint.RunAsync(a, b, warmup, runs) };
++        break;
++    }
++    case "pivot-memory":
++    {
++        var a = int.Parse(args[2], CultureInfo.InvariantCulture);
++        var b = int.Parse(args[3], CultureInfo.InvariantCulture);
++        var k = int.Parse(args[4], CultureInfo.InvariantCulture);
++        var redraws = int.Parse(args[5], CultureInfo.InvariantCulture);
++        result = new { mode = "pivot-memory", variant, machine, measured = await PivotPaint.MemoryAsync(a, b, k, redraws) };
++        break;
++    }
++    case "pivot-gc":
++    {
++        var a = int.Parse(args[2], CultureInfo.InvariantCulture);
++        var b = int.Parse(args[3], CultureInfo.InvariantCulture);
++        var warmup = Arg(args, 4, 3);
++        var runs = Arg(args, 5, 15);
++        var precollect = args.Length > 6 ? args[6] : "full";
++        var listen = args.Length > 7 ? args[7] : "verbose";
++        result = new { mode = "pivot-gc", variant, machine, measured = await PivotGc.RunAsync(a, b, warmup, runs, precollect, listen) };
++        break;
++    }
++    case "pivot-steady":
++    {
++        var a = int.Parse(args[2], CultureInfo.InvariantCulture);
++        var b = int.Parse(args[3], CultureInfo.InvariantCulture);
++        var redraws = Arg(args, 4, 60);
++        result = new { mode = "pivot-steady", variant, machine, measured = await PivotGc.SteadyAsync(a, b, redraws) };
++        break;
++    }
++    default:
++        Console.Error.WriteLine($"no mode {args[0]}");
++        return 2;
++}
++Machine.Write(output, result);
++return 0;
+diff --git a/spikes/paint-text/PaintCosts/Rig.cs b/spikes/paint-text/PaintCosts/Rig.cs
+new file mode 100644
+index 00000000..6e40b73d
+--- /dev/null
++++ b/spikes/paint-text/PaintCosts/Rig.cs
+@@ -0,0 +1,199 @@
++using System.Collections;
++using System.Diagnostics;
++using System.Reflection;
++using ExGrid.Components;
++using Microsoft.AspNetCore.Components;
++
++namespace Costs;
++
++/// <summary>One step's timings and counts, every run kept.</summary>
++public sealed class StepSeries
++{
++    public List<double> StepMs { get; } = [];
++    public List<double> RenderMs { get; } = [];
++    public List<double> StepBytes { get; } = [];
++    public List<double> RowsRendered { get; } = [];
++    public List<double> RowsMounted { get; } = [];
++    public List<double> RowsRenderedAfter { get; } = [];
++    public List<double> NewPaints { get; } = [];
++    public List<double> PaintMs { get; } = [];
++    public List<double> PaintBytes { get; } = [];
++    public List<double> StepGcPauseMs { get; } = [];
++    public List<double> StepGen0 { get; } = [];
++    public List<double> StepGen1 { get; } = [];
++    public List<double> StepGen2 { get; } = [];
++
++    public object Summary() => new
++    {
++        step = Stat.Of(StepMs),
++        render = Stat.Of(RenderMs),
++        stepBytes = Stat.Of(StepBytes),
++        notePaintAlone = Stat.Of(PaintMs),
++        notePaintAloneBytes = Stat.Of(PaintBytes),
++        paintShareOfRenderAtLeast = Math.Round(PaintMs.Min() / RenderMs.Min(), 4),
++        paintShareOfRenderAtMedian = Math.Round(Stat.Of(PaintMs).Median / Stat.Of(RenderMs).Median, 4),
++        rowsRendered = Stat.Of(RowsRendered),
++        rowsMounted = Stat.Of(RowsMounted),
++        rowsRenderedAfter = Stat.Of(RowsRenderedAfter),
++        newPaints = Stat.Of(NewPaints),
++        stepGcPauseMs = Stat.Of(StepGcPauseMs),
++        stepGen0Collections = Stat.Of(StepGen0),
++        stepGen1Collections = Stat.Of(StepGen1),
++        stepGen2Collections = Stat.Of(StepGen2),
++    };
++}
++
++/// <summary>
++/// One ExGrid on the counting renderer, driven as the browser would drive it: a scroll offset
++/// applied (ApplyScrollOffset, what OnScrollAsync does with the offset it reads), a fling settled
++/// (OnSettled, what the settle timer runs), or new parameters. Each step is timed with the render it
++/// causes; and NotePaint — the paint alone — is timed again on the same state, with the kept paints
++/// put back as they were before the step each time, so it notes the same paint against the same
++/// previous one.
++/// </summary>
++public sealed class Rig<TRow>(CountingRenderer renderer, ExGrid<TRow> grid) where TRow : class
++{
++    private readonly MethodInfo _applyScroll = Reflect.Method(typeof(ExGrid<TRow>), "ApplyScrollOffset");
++    private readonly MethodInfo _onSettled = Reflect.Method(typeof(ExGrid<TRow>), "OnSettled");
++    private readonly Func<int> _notePaint = (Func<int>)Reflect.Method(typeof(ExGrid<TRow>), "NotePaint").CreateDelegate(typeof(Func<int>), grid);
++    private readonly FieldInfo _paints = Reflect.Field(typeof(ExGrid<TRow>), "_paints");
++    private readonly FieldInfo _paintId = Reflect.Field(typeof(ExGrid<TRow>), "_paintId");
++
++    public CountingRenderer Renderer => renderer;
++
++    public ExGrid<TRow> Grid => grid;
++
++    public int PaintId => (int)_paintId.GetValue(grid)!;
++
++    public int PaintsKept => ((IList)_paints.GetValue(grid)!).Count;
++
++    public void Scroll(double top, double left) => _applyScroll.Invoke(grid, [new ScrollOffset(top, left)]);
++
++    public void Settle() => _onSettled.Invoke(grid, [null]);
++
++    public bool Placeholder => Reflect.Get<bool>(grid, "_placeholderMode");
++
++    public int FirstPainted => Reflect.Get(grid, "_visible") is { } v ? (int)v.GetType().GetProperty("Start")!.GetValue(v)! : -1;
++
++    public int PaintedCount => Reflect.Get(grid, "_visible") is { } v ? (int)v.GetType().GetProperty("Count")!.GetValue(v)! : -1;
++
++    public int RowsPerViewport
++    {
++        get
++        {
++            var geometry = Reflect.Get(grid, "_geometry")!;
++            return (int)geometry.GetType().GetProperty("RowsPerViewport")!.GetValue(geometry)!;
++        }
++    }
++
++    public string Slice => Reflect.Get(grid, "_scrollable")?.ToString() ?? "null";
++
++    /// <summary>The kept paints as they are, and the newest one's settable state.</summary>
++    private (object[] Paints, (PropertyInfo Property, object? Value)[] Newest) Snapshot()
++    {
++        var list = (IList)_paints.GetValue(grid)!;
++        var paints = list.Cast<object>().ToArray();
++        var newest = paints[^1];
++        var state = newest.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
++            .Where(p => p.CanWrite).Select(p => (p, p.GetValue(newest))).ToArray();
++        return (paints, state);
++    }
++
++    private void Restore((object[] Paints, (PropertyInfo Property, object? Value)[] Newest) snapshot)
++    {
++        var list = (IList)_paints.GetValue(grid)!;
++        list.Clear();
++        foreach (var paint in snapshot.Paints)
++            list.Add(paint);
++        var newest = snapshot.Paints[^1];
++        foreach (var (property, value) in snapshot.Newest)
++            property.SetValue(newest, value);
++    }
++
++    /// <summary>
++    /// Runs <paramref name="setA"/> then times <paramref name="stepB"/>, <paramref name="warmup"/>
++    /// + <paramref name="runs"/> times, a full collection before each timed step; then times
++    /// NotePaint alone on the last B state the same number of times.
++    /// </summary>
++    public async Task<StepSeries> MeasureAsync(Func<Task> setA, Func<Task> stepB, int warmup, int runs)
++    {
++        var series = new StepSeries();
++        for (var r = 0; r < warmup + runs; r++)
++        {
++            await setA();
++            await SettleAsync();
++            Clock.Collect();
++            renderer.Take();
++            var before = PaintId;
++            double ms = 0;
++            long bytes = 0;
++            double pause = 0;
++            int g0 = 0, g1 = 0, g2 = 0;
++            await renderer.Dispatcher.InvokeAsync(async () =>
++            {
++                var p0 = GC.GetTotalPauseDuration();
++                var (c0, c1, c2) = (GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
++                var a0 = GC.GetAllocatedBytesForCurrentThread();
++                var t0 = Stopwatch.GetTimestamp();
++                await stepB();
++                ms = Clock.Ms(t0);
++                bytes = GC.GetAllocatedBytesForCurrentThread() - a0;
++                pause = (GC.GetTotalPauseDuration() - p0).TotalMilliseconds;
++                (g0, g1, g2) = (GC.CollectionCount(0) - c0, GC.CollectionCount(1) - c1, GC.CollectionCount(2) - c2);
++            });
++            var (counts, renderMs) = renderer.Take();
++            var newPaints = PaintId - before;
++            await SettleAsync();
++            var (after, _) = renderer.Take();
++            if (r >= warmup)
++            {
++                series.StepMs.Add(ms);
++                series.RenderMs.Add(renderMs);
++                series.StepBytes.Add(bytes);
++                series.RowsRendered.Add(counts.WatchedRendered);
++                series.RowsMounted.Add(counts.WatchedMounted);
++                series.RowsRenderedAfter.Add(after.WatchedRendered);
++                series.NewPaints.Add(newPaints);
++                series.StepGcPauseMs.Add(pause);
++                series.StepGen0.Add(g0);
++                series.StepGen1.Add(g1);
++                series.StepGen2.Add(g2);
++            }
++        }
++
++        // The paint alone: the kept paints as they were before the step, and the state after it.
++        await setA();
++        await SettleAsync();
++        var snapshot = await renderer.Dispatcher.InvokeAsync(Snapshot);
++        await renderer.Dispatcher.InvokeAsync(stepB);
++        await SettleAsync();
++        for (var r = 0; r < warmup + runs; r++)
++        {
++            await renderer.Dispatcher.InvokeAsync(() => Restore(snapshot));
++            Clock.Collect();
++            double ms = 0;
++            long bytes = 0;
++            await renderer.Dispatcher.InvokeAsync(() =>
++            {
++                var a0 = GC.GetAllocatedBytesForCurrentThread();
++                var t0 = Stopwatch.GetTimestamp();
++                _notePaint();
++                ms = Clock.Ms(t0);
++                bytes = GC.GetAllocatedBytesForCurrentThread() - a0;
++            });
++            if (r >= warmup)
++            {
++                series.PaintMs.Add(ms);
++                series.PaintBytes.Add(bytes);
++            }
++        }
++        return series;
++    }
++
++    /// <summary>Whatever the grid renders again after a step, on its own continuations.</summary>
++    public async Task SettleAsync()
++    {
++        for (var settle = 0; settle < 5; settle++)
++            await renderer.Dispatcher.InvokeAsync(() => Task.Yield());
++    }
++}
+diff --git a/spikes/paint-text/PaintCosts/Support.cs b/spikes/paint-text/PaintCosts/Support.cs
+new file mode 100644
+index 00000000..5ea713f9
+--- /dev/null
++++ b/spikes/paint-text/PaintCosts/Support.cs
+@@ -0,0 +1,133 @@
++using System.Diagnostics;
++using System.Reflection;
++using System.Text.Json;
++using Microsoft.AspNetCore.Components;
++
++namespace Costs;
++
++/// <summary>Private members, reached by name: this harness times steps that are not public, and
++/// src/ is not changed for it. A member that is renamed fails here by name.</summary>
++public static class Reflect
++{
++    private const BindingFlags Any = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
++
++    public static MethodInfo Method(Type type, string name)
++    {
++        for (var t = type; t is not null; t = t.BaseType)
++        {
++            var found = t.GetMethods(Any | BindingFlags.DeclaredOnly).Where(m => m.Name == name).ToArray();
++            if (found.Length == 1)
++                return found[0];
++            if (found.Length > 1)
++                throw new InvalidOperationException($"{type.Name}.{name} is overloaded: {found.Length} methods.");
++        }
++        throw new InvalidOperationException($"{type.Name} has no method {name}.");
++    }
++
++    public static FieldInfo Field(Type type, string name)
++    {
++        for (var t = type; t is not null; t = t.BaseType)
++        {
++            if (t.GetField(name, Any | BindingFlags.DeclaredOnly) is { } field)
++                return field;
++        }
++        throw new InvalidOperationException($"{type.Name} has no field {name}.");
++    }
++
++    public static object? Get(object target, string field) => Field(target.GetType(), field).GetValue(target);
++
++    public static T Get<T>(object target, string field) => (T)Get(target, field)!;
++
++    public static void Set(object target, string field, object? value) => Field(target.GetType(), field).SetValue(target, value);
++
++    public static object? Call(object target, string method, params object?[] args)
++        => Method(target.GetType(), method).Invoke(target, args);
++
++    /// <summary>A component's StateHasChanged, which is protected.</summary>
++    public static void StateHasChanged(IComponent component)
++        => typeof(ComponentBase).GetMethod("StateHasChanged", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(component, null);
++}
++
++/// <summary>A series of timings: the least is what is read (the ticket's method), the median and
++/// the most beside it, so a wide spread shows.</summary>
++public sealed record Stat(int Runs, double Min, double Median, double Max, double[] All)
++{
++    public static Stat Of(IReadOnlyCollection<double> values)
++    {
++        var sorted = values.OrderBy(v => v).ToArray();
++        return new Stat(sorted.Length, sorted[0], sorted[sorted.Length / 2], sorted[^1], [.. values.Select(v => Math.Round(v, 4))]);
++    }
++
++    public override string ToString() => $"{Min,9:F3} {Median,9:F3} {Max,9:F3}";
++}
++
++public static class Clock
++{
++    public static double Ms(long from) => (Stopwatch.GetTimestamp() - from) * 1000.0 / Stopwatch.Frequency;
++
++    /// <summary>Times <paramref name="action"/> <paramref name="runs"/> times after
++    /// <paramref name="warmup"/> untimed calls, a full collection before each.</summary>
++    public static Stat Repeat(int warmup, int runs, Action action)
++    {
++        for (var i = 0; i < warmup; i++)
++            action();
++        var times = new List<double>(runs);
++        for (var i = 0; i < runs; i++)
++        {
++            GC.Collect();
++            GC.WaitForPendingFinalizers();
++            GC.Collect();
++            var t0 = Stopwatch.GetTimestamp();
++            action();
++            times.Add(Ms(t0));
++        }
++        return Stat.Of(times);
++    }
++
++    public static void Collect()
++    {
++        GC.Collect();
++        GC.WaitForPendingFinalizers();
++        GC.Collect();
++    }
++}
++
++/// <summary>What the machine was doing when a batch ran: its load average and the busiest
++/// processes, written beside the numbers.</summary>
++public static class Machine
++{
++    public static object Snapshot()
++    {
++        return new
++        {
++            at = DateTimeOffset.Now.ToString("O"),
++            loadavg = Run("sysctl", "-n vm.loadavg").Trim(),
++            top = Run("/bin/sh", "-c \"ps -axo pcpu,etime,command -r 2>/dev/null | head -12 | cut -c1-160\"").Split('\n', StringSplitOptions.RemoveEmptyEntries),
++            tieredCompilation = Environment.GetEnvironmentVariable("DOTNET_TieredCompilation"),
++            runtime = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
++            gc = System.Runtime.GCSettings.IsServerGC ? "server" : "workstation",
++        };
++    }
++
++    private static string Run(string file, string args)
++    {
++        try
++        {
++            using var process = Process.Start(new ProcessStartInfo(file, args) { RedirectStandardOutput = true, UseShellExecute = false })!;
++            var output = process.StandardOutput.ReadToEnd();
++            process.WaitForExit();
++            return output;
++        }
++        catch (Exception error)
++        {
++            return $"unavailable: {error.Message}";
++        }
++    }
++
++    public static void Write(string path, object value)
++    {
++        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
++        File.WriteAllText(path, JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true }));
++        Console.WriteLine($"wrote {path}");
++    }
++}

@@ -10,20 +10,19 @@ namespace ExGrid.Cells;
 /// </summary>
 public enum EditDiscardReason
 {
-    /// <summary>The row order changed under the open editor, so the coordinates the
-    /// editor floats over stopped naming the row they were opened on (ADR-0011).
-    /// Committing would put the value on a stranger.</summary>
-    OrderChanged,
-
     /// <summary>The visible columns changed under the open editor, so the coordinates
-    /// stopped naming the column they were opened on (ADR-0011). Distinct from
-    /// <see cref="OrderChanged"/> because telling a user their rows were reordered when
-    /// a column was hidden is a wrong reason, which is worse than none.</summary>
+    /// stopped naming the column they were opened on (ADR-0011). A change of the row order
+    /// discards nothing: the editor outlives it (ADR-0011's note of 2026-10-07). Columns the
+    /// Consumer changes while it hears the open edit's own Edit Intent are that commit's doing:
+    /// accepted, the edit ends as committed and nothing is discarded; refused, the editor cannot
+    /// stand over the new columns, and the edit is discarded with this reason, once (ADR-0142,
+    /// decided 2026-10-08).</summary>
     ColumnsChanged,
 
-    /// <summary>The row left the Window before the commit landed, so there is no row
-    /// instance left to carry the Edit Intent's identity (ADR-0003 / 0011). A
-    /// positional guess would land the value on a different row.</summary>
+    /// <summary>No Row Key is in force, and the row left the Window under the order the
+    /// editor was opened under before the commit landed, so there is no row instance left to
+    /// carry the Edit Intent's identity (ADR-0003 / 0011). A positional guess would land the
+    /// value on a different row. With a Row Key, the commit is refused instead (ADR-0142).</summary>
     RowLeftTheWindow,
 
     /// <summary>The column stopped being Editable while its editor was open — a
@@ -39,4 +38,26 @@ public enum EditDiscardReason
     /// the root's live region, as a refused copy's is; the reason is the Consumer's, so it is
     /// true of what happened.</summary>
     DiscardedByConsumer,
+
+    /// <summary>The grid's <c>Source</c> parameter was replaced by another instance, whatever the two
+    /// sources' Row Sequence Versions are (ADR-0011, ADR-0142). Either an edit was open — a Cell Editor
+    /// or a Formula Bar edit — and the row it was opened on belongs to a source the grid no longer
+    /// shows, so the text is thrown away rather than committed into whatever row the new source holds
+    /// there; or typing that would have opened an edit — a character, F2, Backspace, a composition's
+    /// text — reached the grid after the replacement, aimed with the Selection it dropped, and opened
+    /// nothing. No Edit Intent is raised, and nothing is written anywhere. Raised once for all the keys
+    /// typed against that Selection. A Source the Consumer hands over while it hears the open edit's
+    /// own Edit Intent is that commit's doing: accepted, the edit ends as committed and nothing is
+    /// discarded; refused, the editor cannot be held over a row that went with the old source, and
+    /// the edit is discarded with this reason, once.</summary>
+    SourceChanged,
+
+    /// <summary>Typing that would have opened an edit — a character, F2, Backspace, a composition's
+    /// text — reached the grid after the Row Sequence Version it was typed under had moved: the rows
+    /// moved before the typing reached the grid, and the Selection it was aimed with went with the old
+    /// order (ADR-0011). Nothing opens and nothing is written anywhere, rather than the first key's
+    /// rule placing a Focus the user did not aim at and the typing landing there (ADR-0012; ADR-0142,
+    /// decided 2026-10-08). Raised once for all the keys typed against that Selection. An edit already
+    /// open is not discarded by an order move: it outlives it (ADR-0011's note of 2026-10-07).</summary>
+    OrderMoved,
 }

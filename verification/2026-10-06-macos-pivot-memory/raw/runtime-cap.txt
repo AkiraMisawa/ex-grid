@@ -1,0 +1,3 @@
+Published .NET native runtime: dotnet.native.mx9wzm9o5h.js
+getHeapMax=()=>2147483648
+No heap option was changed.

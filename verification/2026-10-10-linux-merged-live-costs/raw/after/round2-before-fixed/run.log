@@ -1,0 +1,20 @@
+build start 14:07:14
+api before exit 0 14:07:36
+components before exit 0 14:07:50
+b1-before start 14:08:13 load 3.86 1.70 1.54
+b1-before end exit 0 14:13:41
+b2-fixed start 14:13:46 load 1.09 1.19 1.35
+b2-fixed end exit 0 14:19:11
+b3-before start 14:19:16 load 0.92 0.96 1.18
+b3-before end exit 0 14:24:49
+b4-fixed start 14:24:54 load 0.77 0.74 1.00
+b4-fixed end exit 0 14:30:25
+q1 before start 14:30:30 load 1.17 0.97 1.01
+q1 before end exit 0 14:30:50
+q2 fixed start 14:30:50 load 1.12 0.97 1.01
+q2 fixed end exit 0 14:31:11
+q3 fixed start 14:31:11 load 1.09 0.97 1.01
+q3 fixed end exit 0 14:31:31
+q4 before start 14:31:31 load 1.06 0.98 1.01
+q4 before end exit 0 14:31:52
+done 14:31:52

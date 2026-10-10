@@ -9,6 +9,8 @@ namespace ExGrid.Clipboard;
 /// work. <see cref="ShapeMismatch"/>: the target is not a multiple of the copied block.
 /// <see cref="DisjointTarget"/>: a block cannot be pasted into multiple ranges.
 /// <see cref="EmptySelection"/>: nowhere to paste; nothing happens.
+/// <see cref="OrderMoved"/>: the gesture was aimed under an order that has moved since, so its
+/// positions name other rows now (ADR-0011, ADR-0142).
 /// <see cref="TargetNotEditable"/> is the one that is not about shape (ADR-0035): the
 /// target covers a column the Consumer declared non-editable, so the write may not land
 /// however it is shaped. Chrome must not offer the "reselect the same shape" advice for
@@ -18,13 +20,14 @@ namespace ExGrid.Clipboard;
 /// cap (ADR-0035). The byte ceiling is component-level, never produced by the pure rules.
 /// <see cref="SpillPastExtent"/> exists only where a Consumer declared that a paste may
 /// spill (ADR-0050, item 3): the block would run past the grid's last row or column.
-/// <see cref="TargetChanged"/> and <see cref="RenderNoLongerKept"/> are not about shape either
-/// (ADR-0142): what the user saw of the target changed before the write landed, or can no longer
-/// be told. They are judged after every other rule, so the existing reasons still say their own.
+/// No reason is about the values under the target: a write lands as entered over cells that changed
+/// since they were painted (ADR-0142).
 /// </summary>
 public enum PasteRefusalReason
 {
-    /// <summary>Nothing is selected: nowhere to paste, and nothing happens.</summary>
+    /// <summary>Nothing is selected: nowhere to paste, and nothing happens. A write aimed with a
+    /// Selection that an order move took away is <see cref="OrderMoved"/>, and one a replaced
+    /// Source took away is <see cref="SourceChanged"/>, not this.</summary>
     EmptySelection,
 
     /// <summary>A block of several cells onto one cell, which would spill outside the
@@ -68,21 +71,24 @@ public enum PasteRefusalReason
     /// (ADR-0035). Component-level, never produced by the pure rules.</summary>
     SourceUnavailable,
 
-    /// <summary>A painted cell of the target shows other text than it did in the render the
-    /// gesture was taken against: the data under it changed between what the user saw and the
-    /// write landing, and writing over it would lose that change unseen (ADR-0142, LV-13). Raised
-    /// for a paste, a Ctrl+Enter fill, a fill-handle drag, a fill key and Delete alike — and for a
-    /// fill-handle drag or a fill key whose painted source cell changed, since it would write
-    /// values the user did not see (D4). Cells that were not painted were not seen, and cells the
-    /// user's own earlier write changed are known to them; neither is compared (D1).
-    /// Component-level, never produced by the pure rules.</summary>
-    TargetChanged,
+    /// <summary>The gesture was aimed under a Row Sequence Version that has moved since: the
+    /// Selection it was aimed with no longer names those rows, so nothing is written (ADR-0011,
+    /// ADR-0142). Raised for a paste, Delete, Ctrl+D or Ctrl+R taken before the order moved — even
+    /// onto the empty Selection the move left — for a Ctrl+Enter fill whose editor opened before it,
+    /// and for a fill-handle drag released after it. Component-level, never produced by the pure
+    /// rules.</summary>
+    OrderMoved,
 
-    /// <summary>The render the gesture was taken against is no longer kept, or showed the rows in
-    /// another order, so the grid can no longer tell what the user saw of the target (ADR-0142).
-    /// Chrome must not say the data changed: it may not have. Component-level, never produced by
-    /// the pure rules.</summary>
-    RenderNoLongerKept,
+    /// <summary>The gesture was aimed at what the grid painted from a Grid Source it has since been
+    /// unbound from: the <c>Source</c> parameter was replaced by another instance, so the positions
+    /// it was aimed at name the new source's rows, and nothing is written (ADR-0011, ADR-0142). Raised
+    /// whatever the two sources' Row Sequence Versions are — two fresh sources both start at 0 — for
+    /// a paste, Delete, Ctrl+D or Ctrl+R taken before the replacement, even onto the empty Selection
+    /// it left; for Ctrl+D or Ctrl+R whose source rows were being read when it came; and for a
+    /// fill-handle drag released after it. An edit open across it is discarded instead
+    /// (<see cref="Cells.EditDiscardReason.SourceChanged"/>), so a Ctrl+Enter fill never reaches it.
+    /// Component-level, never produced by the pure rules.</summary>
+    SourceChanged,
 }
 
 /// <summary>

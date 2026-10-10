@@ -845,7 +845,7 @@ from a CSV in 955 ms and 14.6 s; read from Arrow in 475 ms and 3.7 s.
 decisions D1 to D10, P1 and P2 of 2026-10-06:
 [ADR-0140](adr/0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md),
 [ADR-0141](adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md) and
-[ADR-0142](adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md). §32 of the
+[ADR-0142](adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md). §32 of the
 Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's key.)*
 
 **What exists.**
@@ -860,9 +860,91 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
 - **`GridSource.Fetch` hears that its data moved on**: `NotifyChanged`, with the added keys when the
   Consumer knows them; the server's order token; `/grid-live` is built on it.
 - **`/grid-live-local`**: a million trades in the browser, fed Change Batches.
-- **Writes refused when what the user saw changed** (ADR-0142): the Cell Editor's commit, Actions,
-  paste, fills and clears, each judged against the render it was taken against, keyboard gestures
-  included; the user's own writes count as seen.
+- **Writes refused when what the user saw changed** (ADR-0142 as decided on 2026-10-05): the Cell
+  Editor's commit, Actions, paste, fills and clears, each judged against the render it was taken
+  against, keyboard gestures included; the user's own writes count as seen.
+  - *(2026-10-07: replaced, and built on `claude/live-data-next-cc`, tickets 04 to 13 of
+    `docs/specs/live-data`.)* ADR-0142 was rewritten: a write lands as the user entered it, on the row it
+    was aimed at; only a change under the open editor is told, by an Overwrite Notice; an order move is
+    refused as `OrderMoved`; the editor outlives an order move and follows its row (ADR-0011's note).
+    ADR-0160: the grid holds no row beyond its Window, checked by weak references. ADR-0161, on that track
+    (for ExPivot, replaced on 2026-10-08, below): ExPivot made its next cube and report from the last, its
+    rows held no value and no report, its Change Highlight kept times, and a redraw out of memory left the
+    report stale. ADR-0141: a pushed Window may vouch
+    (`VouchesDistinctRows`), and the painted rows are checked. ADR-0130: the Selection Summary walks only
+    while figures stand, over the Selection's positions.
+  - **Measured before and after** on that track's code
+    ([`2026-10-07-macos-live-update-costs-after`](../verification/2026-10-07-macos-live-update-costs-after/README.md)):
+    - ExPivot's live redraw at 401,001 report rows went from 268.5 ms to 19.0 ms on CoreCLR, and from one
+      redraw at 2,338 ms followed by running out of memory to 532 ms in the browser.
+    - The heap stays flat.
+    - The collector's pause per redraw in steady state fell from 28.6 ms to 0.57 ms.
+    - **Slower:** a redraw laid out afresh (one in 64, at the source's compaction) costs more than every
+      redraw did before, 394.5 ms against 268.5 at 401,001 rows on CoreCLR. Most of it is comparing every
+      row for the Change Highlight, as ADR-0161 chose.
+  - *(2026-10-06 on the Codex track, `claude/live-data-next`.)* The same tickets, decided separately:
+    ADR-0151 to ADR-0153 — a server computes the Pivot Report and sends Windows and their changes, the browser runs
+    the same incremental engine for local data, Report Versions and versioned Copy, Summary and Details,
+    and detached display rows. Its records:
+    [the costs](../verification/2026-10-06-macos-live-update-costs/README.md),
+    [the memory diagnosis](../verification/2026-10-06-macos-pivot-memory/README.md),
+    [the boundary A/B](../verification/2026-10-06-macos-pivot-boundary-bench/README.md) and
+    [after](../verification/2026-10-06-macos-live-report-after/README.md).
+  - *(2026-10-08: merged on `claude/live-data-best`.)* Comparing the two tracks, the user took this
+    track's grid and the Codex track's ExPivot; ADR-0161 kept only its out-of-memory rule. The comparison's
+    review found, and the merge fixed:
+    - a replaced Source took writes aimed at the old one, on both tracks for ExSheet's documents and on
+      this one for every grid: now refused as `SourceChanged`, the open editor discarded, the Selection
+      dropped (LV-32);
+    - keys aimed with a dropped Selection typed into the first painted cell: now they open nothing (LV-33);
+    - D1 let an upstream change through after a write that left the text as it was, and gave the notice
+      on one host and not the other: now it settles at the first Window after the write's handler (LV-17);
+    - `RowGone` named a row that had only left the Window: now `RowLeftTheWindow` (LV-20);
+    - an action press read its row at the release, and a macOS Ctrl+click fired later for nobody (LV-12);
+    - ExPivot's cancelled computation threw its incremental state away (150,002 rows read for a
+      one-record update after one cancellation), its Details stopped after two layout gestures, its
+      Change Highlight ran on the server's clock, Window Changes were trusted whole, a row of another report was
+      read as this one's, and a throwing server Order Key lost its name: each fixed (LV-26 to LV-30);
+    - `SlicedBuildTests` failed one run in four on a race in its helper: fixed, 25 runs of 25.
+  - **Measured on the merged code** *(2026-10-10, against `main`,
+    [`2026-10-10-linux-merged-live-costs`](../verification/2026-10-10-linux-merged-live-costs/README.md))*:
+    ExPivot's live update is 3 to 147 times faster than `main`'s (at 401,001 report rows 4.3 against 627 ms
+    at one change, 22 against 630 at 1,000), and collects nothing where `main` paused about 150 ms an
+    update. In the browser the heap levels off at 137.6 MiB at 101,001 rows, where `main` grew by 41.2 MiB
+    a redraw, and holds 420 MiB at 401,001, where `main` ran out of memory on the 7th redraw (PV-48, LV-23).
+    The first report stays slower than `main`'s: 194–214 against 136–144 ms at 101,001 rows, 903–949 against
+    662–826 at 401,001. A new question over a million trades in the browser was 16 to 60% slower (PV-21),
+    where the live update is about even. ExGrid's own live update is unchanged.
+  - *(2026-10-10, the afternoon: a new question's extra, fixed as the user chose.)* A question made two
+    pieces of the state a live update folds into, though only an update reads them: the chain of every
+    stored row to its leaf, and each total's list of leaves. The pass now keeps each leaf's first row
+    (`234da46`), and the first update makes the lists (`f2bc6a4`); `FirstRecordTests` and `MemberListsTests`
+    pin them. Measured back to back on a new container: in the browser the page's own questions and those
+    up to 1,350 combinations are even with `main`'s, and from 27,000 combinations up 10–35% slower, where
+    they were up to 55% slower; on CoreCLR level with `main` or faster, except at 198,450 combinations. The
+    first live update after a new question now makes the lists, once: about 0.9 s in the browser at
+    198,450 combinations, sliced (`verification/2026-10-10-linux-merged-live-costs`, "After the fixes").
+  - *(2026-10-09: reviewed and grilled.)* An independent review of the merged pull request found, and
+    this branch fixed, with a failing test first for each:
+    - a press made while an asynchronous `OnEdit` was heard committed the same edit again, and could leave
+      the grid believing it still heard a commit, so a replaced Source no longer discarded the editor: now
+      one commit at a time (ADR-0142, ED-12);
+    - scrolling a large ExPivot report and then shrinking it — a layout change, a collapse, a filter,
+      newer data — handed the grid a Window past the report's end, and the exception ended the circuit:
+      now the Window is clamped into the report (ADR-0151, LV-25);
+    - with nothing selected, keys at a replaced Source's paint typed into the new source; what the editor
+      saw could be read from another row (ADR-0011, ADR-0142, LV-17, LV-33);
+    - ExPivot's refused Copy and Summary spoke English only (ADR-0060, PV-33);
+    - the first report took 5.1 s at 401,001 rows against `main`'s 0.6 s: the engine copied its state
+      eagerly and laid the report out twice; now 0.8 s (ADR-0153).
+
+    The user then decided, in a grilling: the report source keeps the reports the Change Highlight
+    compares (ADR-0153, LV-22); a press made while a commit is heard waits for it; a Stale Report's cells
+    are marked and Copy from it is refused (ADR-0067, PV-49); a mark press aimed at an older display marks
+    the page it named, or is refused and told (ADR-0043, MK-9); `ExPivot.Source` takes a Pivot Source again
+    and `ReportSource` a report source, and a delta is Window Changes (ADR-0152, `CONTEXT.md`); and
+    confirmed what the merge had settled — the layout change refused when memory runs out, Details by
+    Source Version, a full-refresh source asked to refresh, D1's limits and a placement's.
 
 **Found by building it, and fixed.**
 
@@ -874,8 +956,9 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
 
 **Not done.**
 
-- **Layer 3 has not run** the new and changed specs (`write-refusal.spec.mjs`,
-  `grid-live.spec.mjs`, `grid-live-local.spec.mjs`, `measure-live.spec.mjs`); CI runs them.
+- **Layer 3 had not run** the specs of the first version (`write-refusal.spec.mjs`,
+  `grid-live.spec.mjs`, `grid-live-local.spec.mjs`, `measure-live.spec.mjs`) when it was written; CI ran
+  them. The merged branch's changed specs are listed with its pull request.
 - **LV-15 is observed only in part**: apply to frame has a spec; the bytes per update on the Server
   host, and the requery and the grid's pass per update in the browser, are not recorded yet.
 

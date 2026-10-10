@@ -43,6 +43,15 @@ does not start again from a million records.
 
 ## A server's source says the data moved on
 
+**Extended 2026-10-06:**
+[ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md) chooses
+server-computed report Windows and their changes for the new server path. The whole-answer
+behavior below describes the existing Leaf Aggregate API; deferring the sending of changes is no
+longer the decision for that new path. [ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)
+settles its Window Changes and recovery contract: Window Changes name their Baseline Window, carry the
+digest of the Window they produce, and are never painted unverified.
+The complete-batch, Source Version, Selection and Stale Report rules remain in force.
+
 The Consumer tells its `PivotSource.Fetch` that the server's data changed, however the Consumer
 learns it: SignalR, polling, or a message bus (Q57).
 
@@ -122,6 +131,40 @@ learns it: SignalR, polling, or a message bus (Q57).
   the interval after the last change reached the screen, whether that change was shown or found
   unshowable. A user's gesture supersedes a question for newer data, and its own question brings
   the change; a data change never cancels the user's question.
+
+## A redraw that runs out of memory leaves the report stale *(2026-10-07; widened 2026-10-08)*
+
+An `OutOfMemoryException` while the report of the newest data is computed is caught where the redraw is
+asked for ([ADR-0161](./0161-a-live-pivot-redraw-that-runs-out-of-memory-leaves-the-report-stale.md)).
+- For a live or data redraw, what was being computed is dropped, the report on screen stays as a Stale
+  Report with the reason, and the next change asks again.
+- A user's layout change is refused instead, and the layout goes back.
+
+Before this, the exception reached the renderer and the page stopped
+([`2026-10-06-macos-pivot-oom`](../../verification/2026-10-06-macos-pivot-oom/README.md)).
+
+## A Stale Report's cells say it too, and Copy from it is refused *(decided with the user, 2026-10-09)*
+
+The notice under the Pivot Toolbar says what happened and as of when, and that keeps a Stale Report
+from being a plausible wrong answer. Two places stayed quiet. A cell read far from the notice looked
+current. And a copy carried the old values to wherever it was pasted, where nothing says as of when.
+- **While the report is stale, its value cells carry a stale appearance** — static, the values still
+  readable, nothing animated (P8). The report carries `ex-pivot-report-stale`, and its value cells take
+  `--ex-pivot-stale-value-color`, a Visual Token beside the notice's own. By default it mixes 60% of the
+  ink into the ground, which keeps a contrast of 5.7:1 on white; under forced colours it is `GrayText`;
+  the MudBlazor wrapper mixes 82% of its palette's text into its surface, which keeps at least the 4.5:1
+  that UX-8 asks of body text in both of MudBlazor's default palettes (4.72:1 on a dark group row, the
+  lowest) while staying visibly muted; its secondary text colour fell to 4.02:1 there. Labels, Details and the rows' components are untouched,
+  and the notice stays. The appearance goes when the report recovers.
+- **Copy from a Stale Report is refused** before the source is asked, in ExPivot's words
+  (`copy-stale-report`: "The report shows the data as of {0}: Retry before copying.", with its Japanese),
+  saying the time of the version shown and to Retry first. The Selection Summary still answers: it is on
+  screen, beside the notice.
+
+Rejected: **the notice alone**, for the two quiet places above; **Copy allowed with a sentence through
+the live region**, because the clipboard cannot carry the time with the values; **dimming the report
+while a question is out**, already rejected above, which is not this: a Stale Report lasts until an
+answer comes, a question four times a second.
 
 ## Considered options
 

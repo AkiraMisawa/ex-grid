@@ -14,6 +14,11 @@ namespace ExGrid.Components;
 /// change: the identities ADR-0003/0006 make the change signal. A row resolved again keeps the
 /// instance it had when it would paint the same, so a new instance repaints its own row, and its
 /// neighbours only where a line they share has moved.</para>
+///
+/// <para>It holds a row instance only while the Window the grid was last given holds it (ADR-0160,
+/// ADR-0050's note of 2026-10-07): a new Window drops every entry whose rows it does not hold where
+/// they were painted (<see cref="KeepOnly"/>), and what is kept for the rows it does hold is their
+/// appearance values.</para>
 /// </summary>
 internal sealed class CellAppearances<TRow> where TRow : class
 {
@@ -70,6 +75,68 @@ internal sealed class CellAppearances<TRow> where TRow : class
         if (_asked.Count > 256)
             Forget(_asked, static asked => asked.Stamp);
     }
+
+    /// <summary>
+    /// Forgets every row a new Window does not hold (ADR-0160): an appearance kept for a position
+    /// whose row the Window no longer holds there, and the answers asked of a row it no longer holds
+    /// around the rows last painted, from <paramref name="first"/> for <paramref name="count"/>
+    /// rows. A row still held whose neighbour above or below is not keeps its appearance value and
+    /// drops the neighbour, so it is resolved again and, painting the same, keeps the instance it
+    /// had (DC-58). A row that only moved away is asked again when it is painted again. A pass over
+    /// what is kept, never over the Window.
+    /// </summary>
+    /// <param name="rowAt">The row the new Window holds at an absolute position, or null.</param>
+    /// <param name="first">The first row the last render painted.</param>
+    /// <param name="count">How many rows it painted.</param>
+    public void KeepOnly(Func<int, TRow?> rowAt, int first, int count)
+    {
+        List<int>? stale = null;
+        foreach (var (position, entry) in _byPosition)
+        {
+            if (!ReferenceEquals(entry.Row, rowAt(position)))
+            {
+                (stale ??= []).Add(position);
+            }
+            else if (!ReferenceEquals(entry.Above, rowAt(position - 1)) || !ReferenceEquals(entry.Below, rowAt(position + 1)))
+            {
+                entry.Above = null;
+                entry.Below = null;
+                entry.Context = NoContext;
+            }
+        }
+        if (stale is not null)
+        {
+            foreach (var position in stale)
+                _byPosition.Remove(position);
+        }
+
+        if (_asked.Count == 0)
+            return;
+        _held.Clear();
+        for (var position = first - 1; position <= first + count; position++)
+        {
+            if (rowAt(position) is { } row)
+                _held.Add(row);
+        }
+        List<TRow>? gone = null;
+        foreach (var row in _asked.Keys)
+        {
+            if (!_held.Contains(row))
+                (gone ??= []).Add(row);
+        }
+        if (gone is not null)
+        {
+            foreach (var row in gone)
+                _asked.Remove(row);
+        }
+        _held.Clear();
+    }
+
+    // What an entry whose neighbours went is resolved under: never a context, so it is resolved again.
+    private const int NoContext = -1;
+
+    // The rows the new Window holds around the rows last painted, while KeepOnly runs only.
+    private readonly HashSet<TRow> _held = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>The appearance of the row at absolute <paramref name="position"/>, from the rows
     /// above and below it in the Window (null where the Window holds none), or null when none of

@@ -146,7 +146,7 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         {
             for (var column = 0; column < report.ValueColumns.Count; column += 3)
             {
-                if (row.ValueAt(column) is not { } value)
+                if (report.ValueAt(row, column) is not { } value)
                     continue;
                 // The whole cell — one page holds it, under the server's cap on a page — then a
                 // page from inside it: the same records, and the same total.
@@ -397,6 +397,6 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
     private static string[] Cells(PivotReport report) => report.Rows
         .Select(row => string.Join(" | ", row.Labels.Select(label => label.Text ?? ""))
             + " => " + string.Join(" | ", Enumerable.Range(0, report.ValueColumns.Count).Select(column =>
-                row.ValueAt(column) is { } value ? value.Text + " = " + value.ToString(null, CultureInfo.InvariantCulture) : "")))
+                report.ValueAt(row, column) is { } value ? value.Text + " = " + value.ToString(null, CultureInfo.InvariantCulture) : "")))
         .ToArray();
 }

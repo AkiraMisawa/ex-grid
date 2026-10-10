@@ -267,6 +267,14 @@ the whole of the keypress: the first Down selects the first cell, the way the fi
 any list selects its first item. Keys that name a whole region (Ctrl+A, the Space pair,
 Ctrl+Home) need no starting point and still do what they say.
 
+*(2026-10-08, decided with the user.)* The rule is for keys typed after the drop, against the rows the
+user now sees. A key can reach the grid after an order move or a replaced Source dropped the Selection
+**it was aimed with**. Such a key is no first key: it was typed at a cell the user could see, and a
+Focus placed for it would take its typing into a cell the user never aimed at. It moves nothing and
+opens nothing, and typing says why through `OnEditDiscarded`
+([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of that
+date).
+
 **"Go to the beginning" is a different request from "make this cell visible", and
 Pinned Columns are where the two come apart.** Found by pressing Ctrl+Home on a grid
 with two pinned columns: the Focus went to the first cell and **the Viewport did not

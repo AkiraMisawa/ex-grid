@@ -45,11 +45,20 @@ internal sealed class AggregationPass
     private int[] _leafOf = [];
 
     // Each leaf's rows as a chain through the row numbers, in slice order: made the first time a
-    // leaf is recomputed, and extended as a batch brings rows. A row a batch removed stays in its
-    // chain, and a recompute skips it (its _leafOf is −1); a compaction drops the whole pass.
+    // leaf is recomputed, or a leaf's first row leaves while later ones stay, and extended as a
+    // batch brings rows. A row a batch removed stays in its chain, and a recompute skips it (its
+    // _leafOf is −1); a compaction drops the whole pass.
     private int[]? _next;
     private int[] _first = [];
     private int[] _last = [];
+
+    // The row each leaf was first given, kept as the rows are (KeepFirstRows), so that a leaf's
+    // first record is known without the chains: a question makes none. Leaves are made in the
+    // order their first rows are read, so those of the first _firstRowsKnown are known. −1 for a
+    // leaf a batch emptied, until a row is given to it again; _emptied counts them.
+    private int[] _firstRowOf = [];
+    private int _firstRowsKnown;
+    private int _emptied;
 
     // While a batch is folded in, the leaves its rows went to.
     private HashSet<int>? _added;
@@ -72,6 +81,18 @@ internal sealed class AggregationPass
 
     public PivotQuery Query => _query;
 
+    internal HashSet<int> ChangedLeaves { get; } = [];
+    internal IReadOnlyList<ItemSpace> Axes => _axis;
+
+    internal async ValueTask<PartColumns[]> PartsOfAsync(int[] leaves, Slicer slicer)
+    {
+        var result = new PartColumns[_values.Length];
+        for (var v = 0; v < result.Length; v++)
+            result[v] = await _values[v].FinishedAsync(leaves, leaves.Length, slicer).ConfigureAwait(false);
+        return result;
+    }
+
+
     /// <summary>The Snapshot the pass has read: the one it began on, or the one a batch made.</summary>
     public Snapshot Snapshot => _snapshot;
 
@@ -87,6 +108,15 @@ internal sealed class AggregationPass
     /// <summary>How many rows the last <see cref="Fold"/> recomputed parts from, for the tests and
     /// the measurements: the rows of the leaves it could not bring up to date by subtraction.</summary>
     internal long RecomputedRows { get; private set; }
+
+    /// <summary>Whether each leaf's rows are chained, for the tests.</summary>
+    internal bool HasChains => _next is not null;
+
+    /// <summary>How many stored rows the pass has numbered, for the tests.</summary>
+    internal int NumberedRows => _numbered;
+
+    /// <summary>The leaf of a numbered row, −1 for a row no leaf holds, for the tests.</summary>
+    internal int LeafOfRow(int number) => _leafOf[number];
 
     /// <summary>Reads stored rows [<paramref name="from"/>, <paramref name="to"/>), in slice order.
     /// False once the question is refused, which stops it at once.</summary>
@@ -301,6 +331,8 @@ internal sealed class AggregationPass
     private void Keep(int first, ReadOnlySpan<int> leaves)
     {
         leaves.CopyTo(_leafOf.AsSpan(first));
+        if (_firstRowsKnown < _leaves.Count || _emptied > 0)
+            KeepFirstRows(first, leaves);
         if (_next is null)
             return;
         EnsureChains(_leaves.Count);
@@ -308,6 +340,33 @@ internal sealed class AggregationPass
         {
             if (leaves[i] >= 0)
                 Chain(leaves[i], first + i);
+        }
+    }
+
+    // The rows numbered from `first` that a leaf is given first. A leaf made among them is met at
+    // the row it was made at, and the leaves made are met in the order they were made; a leaf a
+    // batch emptied takes the first row it is given again. Once every leaf's is known, the rest
+    // of the rows are not looked at.
+    private void KeepFirstRows(int first, ReadOnlySpan<int> leaves)
+    {
+        if (_firstRowOf.Length < _leaves.Count)
+            Array.Resize(ref _firstRowOf, Math.Max(_leaves.Count, Math.Max(16, _firstRowOf.Length * 2)));
+        for (var i = 0; i < leaves.Length; i++)
+        {
+            var leaf = leaves[i];
+            if (leaf == _firstRowsKnown)
+            {
+                _firstRowOf[_firstRowsKnown++] = first + i;
+            }
+            else if (_emptied > 0 && leaf >= 0 && _firstRowOf[leaf] < 0)
+            {
+                _firstRowOf[leaf] = first + i;
+                _emptied--;
+            }
+            else if (_emptied == 0 && _firstRowsKnown == _leaves.Count)
+            {
+                break;
+            }
         }
     }
 
@@ -390,6 +449,25 @@ internal sealed class AggregationPass
         // batches that add — folds additions alone.
         if (!_keepRows && change.Removed.Count > 0)
             return false;
+        ChangedLeaves.Clear();
+        foreach (var axis in _axis)
+        {
+            axis.ChangedItems.Clear();
+            axis.Folding = true;
+        }
+        try
+        {
+            return FoldIn(change);
+        }
+        finally
+        {
+            foreach (var axis in _axis)
+                axis.Folding = false;
+        }
+    }
+
+    private bool FoldIn(SnapshotChange change)
+    {
         var before = change.Before;
         var after = change.After;
         var marked = new HashSet<int>[_values.Length];
@@ -410,7 +488,13 @@ internal sealed class AggregationPass
             _leafOf[number] = -1;
             if (leaf < 0)
                 continue;
-            _leaves.Records[leaf]--;
+            ChangedLeaves.Add(leaf);
+            if (--_leaves.Records[leaf] == 0 && leaf < _firstRowsKnown && _firstRowOf[leaf] >= 0)
+            {
+                // Emptied: the next row given to it is its first.
+                _firstRowOf[leaf] = -1;
+                _emptied++;
+            }
             for (var v = 0; v < _values.Length; v++)
             {
                 if (!marked[v].Contains(leaf) && !_values[v].TrySubtract(leaf, slice, row.Offset))
@@ -442,6 +526,8 @@ internal sealed class AggregationPass
         {
             _added = null;
         }
+
+        ChangedLeaves.UnionWith(added);
 
         // 3. The leaves whose parts cannot be subtracted, from their rows. An exact sum is an
         // integer, which subtraction and addition keep exactly; one past 128 bits is a double,
@@ -564,6 +650,28 @@ internal sealed class AggregationPass
             if (leaf >= 0)
                 Chain(leaf, number);
         }
+    }
+
+    // A fresh pass first encounters a leaf at its first surviving physical record.
+    // Stable leaf IDs alone cannot order floating-point merges after records move.
+    internal int FirstRecord(int leaf)
+    {
+        if (!_keepRows) return leaf;
+        if (leaf < _firstRowsKnown)
+        {
+            // The row a leaf was first given stays its first while the leaf holds it: rows are
+            // numbered in slice order, and a number is never handed out again. A leaf a batch
+            // emptied, and gave no row since, has none.
+            var given = _firstRowOf[leaf];
+            if (given < 0) return int.MaxValue;
+            if (_leafOf[given] == leaf) return given;
+        }
+        // Its first row has left and later ones stay: the next is found along the chains.
+        if (_next is null) MakeChains();
+        if (leaf >= _first.Length) return int.MaxValue;
+        for (var row = _first[leaf]; row >= 0; row = _next![row])
+            if (_leafOf[row] == leaf) return row;
+        return int.MaxValue;
     }
 
     private void EnsureChains(int leaves)

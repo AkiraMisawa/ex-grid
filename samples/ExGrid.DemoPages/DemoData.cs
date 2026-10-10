@@ -11,6 +11,8 @@ namespace ExGrid.DemoPages;
 /// </summary>
 public sealed class DemoTrade
 {
+    // The trade's own number: the Row Key /features?rowkey=1 binds its source with (ADR-0140).
+    public int Id;
     public string Book = "";
     public string Trader = "";
     public decimal Notional;

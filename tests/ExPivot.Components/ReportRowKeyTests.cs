@@ -10,11 +10,11 @@ namespace ExPivot.Components.Tests;
 
 /// <summary>
 /// ExPivot's Row Key for its report grid (ADR-0140, PV-42): a report row is named by what it stands
-/// for — its role, its Value Field and its Items, the pairing <c>ReportHistory</c> makes — so a live
-/// redraw repaints the rows that changed in place, and builds no row component for a key it painted
-/// before. The data is <c>/pivot-live</c>'s shape: keyed trades amended a few at a time and handed
-/// to the bundled source as Change Batches, P&amp;L by region and desk across products. The clock is
-/// the test's.
+/// for — its role, its Value Field and its Items, the key the report source pairs rows by for the
+/// Change Highlight (ADR-0153) — so a live redraw repaints the rows that changed in place, and builds
+/// no row component for a key it painted before. The data is <c>/pivot-live</c>'s shape: keyed
+/// trades amended a few at a time and handed to the bundled source as Change Batches, P&amp;L by
+/// region and desk across products. The clock is the test's.
 /// </summary>
 public class ReportRowKeyTests : PivotTestContext
 {
@@ -58,14 +58,14 @@ public class ReportRowKeyTests : PivotTestContext
     }
 
     /// <summary>Every painted report row component, by the key of the row it paints.</summary>
-    private static Dictionary<PivotRowKey, ExGridRow<PivotReportRow>> PaintedByKey(IRenderedComponent<PivotComponent> cut)
-        => cut.FindComponents<ExGridRow<PivotReportRow>>()
+    private static Dictionary<PivotRowKey, ExGridRow<PivotDisplayRow>> PaintedByKey(IRenderedComponent<PivotComponent> cut)
+        => cut.FindComponents<ExGridRow<PivotDisplayRow>>()
             .Select(row => row.Instance)
             .ToDictionary(row => row.Row.Key);
 
     // Not Assert.Same: a failure would print the components, and a row component's CellTextMetrics
     // cannot be printed (its Bold is another CellTextMetrics, so the record's ToString never ends).
-    private static void SameComponent(ExGridRow<PivotReportRow> expected, ExGridRow<PivotReportRow> actual)
+    private static void SameComponent(ExGridRow<PivotDisplayRow> expected, ExGridRow<PivotDisplayRow> actual)
         => Assert.True(ReferenceEquals(expected, actual), $"the row component at {expected.RowIndex} was built again");
 
     [Fact] // ADR-0140 / PV-42: across live redraws, no row component is built for a key already painted, and the changed rows repaint in place
@@ -76,7 +76,7 @@ public class ReportRowKeyTests : PivotTestContext
         var cut = RenderPivot(PnlByRegionAndDesk, source: source);
         var painted = PaintedByKey(cut);
         Assert.True(painted.Count > 6, $"{painted.Count} rows painted");
-        var built = new HashSet<ExGridRow<PivotReportRow>>(painted.Values, ReferenceEqualityComparer.Instance);
+        var built = new HashSet<ExGridRow<PivotDisplayRow>>(painted.Values, ReferenceEqualityComparer.Instance);
         var random = new Random(20261006);
 
         for (var redraw = 0; redraw < 12; redraw++)
@@ -152,7 +152,9 @@ public class ReportRowKeyTests : PivotTestContext
         Assert.Equal(first.Rows.Count, second.Rows.Count);
         for (var i = 0; i < first.Rows.Count; i++)
         {
-            Assert.NotSame(first.Rows[i], second.Rows[i]);
+            if (first.Rows[i].Values.SequenceEqual(second.Rows[i].Values))
+                Assert.Same(first.Rows[i], second.Rows[i]);
+            else Assert.NotSame(first.Rows[i], second.Rows[i]);
             Assert.Equal(key(first.Rows[i]), key(second.Rows[i]));
         }
         Assert.Equal(first.Rows.Count, first.Rows.Select(row => key(row)).Distinct().Count());

@@ -1,0 +1,65 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 2.78 3.07 2.96 }; TieredCompilation=0
+== pivot-steady 1,000 x 9, 60 redraws, no forced collection ==
+   redraw   1:    32.61 ms, GC pause    0.00 ms, GCs 0, heap after last GC 6 MB, committed 10 MB
+   redraw   2:     1.67 ms, GC pause    0.21 ms, GCs 0, heap after last GC 6 MB, committed 10 MB
+   redraw   3:     4.58 ms, GC pause    1.64 ms, GCs 2, heap after last GC 17 MB, committed 17 MB
+   redraw   4:     0.59 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw   5:     0.57 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw   6:     0.63 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw   7:     0.60 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw   8:     0.60 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw   9:     0.62 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  10:     0.59 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  11:     0.58 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  12:     0.57 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  13:     0.59 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  14:     0.58 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  15:     0.60 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  16:     0.58 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  17:     0.68 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  18:     0.59 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  19:     0.56 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  20:     0.62 ms, GC pause    0.00 ms, GCs 0, heap after last GC 17 MB, committed 17 MB
+   redraw  21:     4.47 ms, GC pause    3.80 ms, GCs 1, heap after last GC 22 MB, committed 34 MB
+   redraw  22:     0.59 ms, GC pause    0.00 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  23:     0.56 ms, GC pause    0.00 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  24:     0.55 ms, GC pause    0.00 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  25:     0.55 ms, GC pause    0.00 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  26:     0.59 ms, GC pause    0.00 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  27:     0.57 ms, GC pause    0.00 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  28:     0.72 ms, GC pause    0.09 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  29:     0.57 ms, GC pause    0.00 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  30:     0.58 ms, GC pause    0.00 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  31:     1.10 ms, GC pause    0.37 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  32:     0.57 ms, GC pause    0.00 ms, GCs 0, heap after last GC 22 MB, committed 34 MB
+   redraw  33:     0.53 ms, GC pause    0.00 ms, GCs 1, heap after last GC 33 MB, committed 40 MB
+   redraw  34:     0.53 ms, GC pause    0.00 ms, GCs 0, heap after last GC 33 MB, committed 40 MB
+   redraw  35:     0.58 ms, GC pause    0.00 ms, GCs 0, heap after last GC 33 MB, committed 40 MB
+   redraw  36:     0.54 ms, GC pause    0.00 ms, GCs 0, heap after last GC 33 MB, committed 40 MB
+   redraw  37:     0.53 ms, GC pause    0.00 ms, GCs 0, heap after last GC 33 MB, committed 40 MB
+   redraw  38:     0.54 ms, GC pause    0.00 ms, GCs 0, heap after last GC 33 MB, committed 40 MB
+   redraw  39:     0.97 ms, GC pause    0.41 ms, GCs 1, heap after last GC 29 MB, committed 38 MB
+   redraw  40:     0.56 ms, GC pause    0.00 ms, GCs 0, heap after last GC 29 MB, committed 38 MB
+   redraw  41:     0.53 ms, GC pause    0.00 ms, GCs 0, heap after last GC 29 MB, committed 38 MB
+   redraw  42:     0.52 ms, GC pause    0.00 ms, GCs 0, heap after last GC 29 MB, committed 38 MB
+   redraw  43:     0.53 ms, GC pause    0.00 ms, GCs 0, heap after last GC 29 MB, committed 38 MB
+   redraw  44:     0.74 ms, GC pause    0.08 ms, GCs 0, heap after last GC 29 MB, committed 38 MB
+   redraw  45:     0.57 ms, GC pause    0.00 ms, GCs 0, heap after last GC 29 MB, committed 38 MB
+   redraw  46:     0.54 ms, GC pause    0.00 ms, GCs 0, heap after last GC 29 MB, committed 38 MB
+   redraw  47:     1.00 ms, GC pause    0.24 ms, GCs 0, heap after last GC 29 MB, committed 38 MB
+   redraw  48:     0.57 ms, GC pause    0.00 ms, GCs 1, heap after last GC 24 MB, committed 30 MB
+   redraw  49:     0.54 ms, GC pause    0.00 ms, GCs 0, heap after last GC 24 MB, committed 30 MB
+   redraw  50:     0.59 ms, GC pause    0.00 ms, GCs 0, heap after last GC 24 MB, committed 30 MB
+   redraw  51:     0.51 ms, GC pause    0.00 ms, GCs 0, heap after last GC 24 MB, committed 30 MB
+   redraw  52:     0.55 ms, GC pause    0.00 ms, GCs 0, heap after last GC 24 MB, committed 30 MB
+   redraw  53:     0.53 ms, GC pause    0.00 ms, GCs 0, heap after last GC 24 MB, committed 30 MB
+   redraw  54:     0.53 ms, GC pause    0.00 ms, GCs 0, heap after last GC 24 MB, committed 30 MB
+   redraw  55:     0.53 ms, GC pause    0.00 ms, GCs 0, heap after last GC 24 MB, committed 30 MB
+   redraw  56:     0.53 ms, GC pause    0.00 ms, GCs 0, heap after last GC 24 MB, committed 30 MB
+   redraw  57:     0.93 ms, GC pause    0.37 ms, GCs 1, heap after last GC 20 MB, committed 29 MB
+   redraw  58:     0.53 ms, GC pause    0.00 ms, GCs 0, heap after last GC 20 MB, committed 29 MB
+   redraw  59:     0.53 ms, GC pause    0.00 ms, GCs 0, heap after last GC 20 MB, committed 29 MB
+   redraw  60:     0.68 ms, GC pause    0.08 ms, GCs 0, heap after last GC 20 MB, committed 29 MB
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-steady-1000x9.json

@@ -125,7 +125,7 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
   - a sort or a filter marks nothing;
   - a change the format hides is not marked.
 - **A write over live data** follows
-  [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).
+  [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md).
 
 ## The grid's pass over a new Window
 
@@ -137,14 +137,16 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
   not check a Window that is vouched for.
   - Two rows under different keys cannot be one instance, so the refusal is not weakened. It moves
     to the source, and it judges by key, which is stricter.
-- **A Window that is not vouched for**, such as a Consumer's own, is checked as today.
+- **A Window that is not vouched for**, such as a Consumer's own, is checked as today. *(Refined on
+  2026-10-07: a Consumer's own Window may be vouched for too, and a vouched Window's painted rows are
+  still checked. See below.)*
 
 ## Settled while building it
 
 *(2026-10-06, decided with the user — D5 to D9 — when the first build was put together.)*
 
 - **A source puts out what it has gathered when the grid asks, before a write is judged** (D5;
-  [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md)).
+  [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)).
   - `GridSource.From` publishes its gathered changes at once, so the write is judged against them,
     and its `ReplaceRow` takes an edit built on the newest version.
   - `GridSource.Fetch` has nothing to put out: what it waits for is an answer from the server. A
@@ -178,6 +180,40 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
   - **Reading the Window again after a change does not raise `IsLoading`.** Dimming the grid four
     times a second would flicker; this is ExPivot's rule.
   - **The demo server counts a reset as a move of the order.**
+
+## Settled on 2026-10-07: who may vouch, and a pushed Window
+
+*(Decided with the user in the grilling of live data continued — Q4 — on ticket 01's numbers:
+[`2026-10-06-macos-live-update-costs-cc`](../../verification/2026-10-06-macos-live-update-costs-cc/README.md).
+This was ticket 02 of `docs/specs/live-data`.)*
+
+- **The check is most of an update for a Consumer that pushes a large Window, and little for ExPivot.**
+  - An ExGrid page pushing the same 10⁶ rows that `GridSource.From` holds pays 40 ms on CoreCLR for the
+    check, 92–98% of the update. In the browser it pays 257 ms, more than PV-21's 0.2 s on its own.
+  - For ExPivot's report the check is 3–4% of a redraw: 8 ms of 268 at 401,001 rows on CoreCLR.
+- **Who may vouch that a Window holds no Row Key twice:**
+  - a bundled source, which refuses a repeated key as each change comes (this ADR);
+  - a Consumer's own `IGridSource`, through `VouchesDistinctRows`, which was already public;
+  - a Consumer that pushes its Window, through a grid parameter beside `RowKey`, meaningful only with a
+    Row Key. *(Built as `VouchesDistinctRows`. Like every push parameter, it is refused by name beside a
+    bound Source, which vouches for itself
+    ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)).)* ExPivot vouches for its report: the engine cannot build a report that repeats a key, because
+    an axis node keeps its children by Item (`AxisNode.Child`).
+- **A vouched Window is not walked whole, and its painted rows are still checked.**
+  - On every render, the grid checks the Row Keys of the rows it paints, a few dozen, before Blazor's own
+    exception for clashing keys.
+  - A broken promise is refused by name the moment a repeat reaches the screen, so LV-2 holds for
+    everything the user can see or act on.
+  - The cost follows the painted rows, not the Window.
+- **What a broken promise costs off the screen is the vouching party's.**
+  - A repeated key that is never painted is not seen.
+  - A write aimed at a row by key ([ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)) finds the first row under it.
+  - Rejected: vouching with no check at all (2026-10-06's option i), which leaves a repeat on screen to
+    Blazor's exception rather than the grid's named refusal.
+  - Rejected: keeping the whole check for every pushed Window (option ii), which keeps the 257 ms.
+- **The Selection Summary's walk of a new Window is a separate cost**, up to 11 ms on CoreCLR and about
+  130 ms in the browser at 10⁶ rows. It is decided in
+  [ADR-0130](./0130-the-selection-summary-is-asked-of-the-consumer-like-find.md)'s note of the same day.
 
 ## Considered options
 

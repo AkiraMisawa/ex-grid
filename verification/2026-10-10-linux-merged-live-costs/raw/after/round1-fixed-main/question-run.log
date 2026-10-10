@@ -1,0 +1,9 @@
+r1 main start 14:04:55 load 0.85 0.76 1.33
+r1 main end exit 0 14:05:17
+r2 fixed start 14:05:17 load 0.90 0.77 1.32
+r2 fixed end exit 0 14:05:36
+r3 fixed start 14:05:36 load 0.93 0.79 1.31
+r3 fixed end exit 0 14:05:55
+r4 main start 14:05:55 load 1.01 0.82 1.31
+r4 main end exit 0 14:06:17
+done 14:06:17

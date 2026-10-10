@@ -90,20 +90,24 @@ public partial class ExGrid<TRow>
     /// run, i2). Over a cell that does not edit nothing opens. Answers whether an edit is open now;
     /// the listener empties the field when none is.
     ///
+    /// <para>The composition carries the paint the Viewport named as it started, and goes as a typed
+    /// key does: composed against a Selection that an order move or a replaced Source has dropped
+    /// since, it opens nothing and writes nothing, and is said to be thrown away (ADR-0142, decided
+    /// 2026-10-08).</para>
+    ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public only
     /// because JavaScript interop requires it.</para>
     /// </summary>
     /// <param name="text">The composition's text.</param>
-    /// <param name="paint">The render the composition started on (<c>data-ex-paint</c>, read at
-    /// its <c>compositionstart</c>): the field covers the cell from then on, so the edit keeps
-    /// what that render showed of it (ADR-0142, LV-11, D2).</param>
+    /// <param name="paint">The paint the Viewport named at the composition's start
+    /// (<c>data-ex-paint</c>); left out, the newest.</param>
     [JSInvokable]
     public async Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold)
     {
         if (_disposed)
             return false;
-        if (_editMode == EditMode.None)
-            await TryStartEditingAsync(EditMode.Overwrite, text, paint);
+        if (_editMode == EditMode.None && !await DropKeyAimedWithADroppedSelectionAsync(paint, opensAnEdit: true))
+            await TryStartEditingAsync(EditMode.Overwrite, text);
         return _editMode != EditMode.None;
     }
 }

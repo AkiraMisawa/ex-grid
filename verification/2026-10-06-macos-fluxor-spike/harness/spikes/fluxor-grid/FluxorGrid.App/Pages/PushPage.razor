@@ -1,0 +1,135 @@
+@page "/w1"
+@inherits FluxorComponent
+@inject IState<TradesState> State
+@inject IDispatcher Dispatcher
+@inject TimeProvider Clock
+@inject Census Census
+
+@* W1: the store pushes the Window (ADR-0001). The page is a FluxorComponent, so every state change
+   renders it, and it hands the grid the Window it derives from the state: the store's own list
+   unsorted, or the list GridQueryEngine sorts under the Sort the store holds. What a push Consumer
+   carries itself is all here: the Row Key, the Row Sequence Version (the key sequence compared with
+   the Window it last handed over), the Change Highlight (change times its reducer keeps by
+   comparing painted text, read through one delegate held for the page's life), and resolving an
+   intent's positions against the Window it handed over. *@
+@{ var view = Project(State.Value); }
+
+<h1>W1 — the store pushes the Window</h1>
+<a id="home" href="">Home</a>
+<Instruments Feed="_feed" />
+<p class="fg-status">
+    <span id="edit-status">Grid: @_intents.EditStatus</span>
+    <span id="commit-refused" role="status">Commit refused: @_intents.CommitRefused</span>
+    <span id="paste-refused" role="status">Paste refused: @_intents.PasteRefused</span>
+    <span id="upstream-status">Upstream: @_intents.Upstream</span>
+    <span id="sequence">Sequence: @view.Version</span>
+</p>
+
+<ExGrid TRow="Trade"
+        Window="view.Window"
+        RowSequenceVersion="view.Version"
+        Sorts="view.Sorts"
+        OnSortChanged="_onSort"
+        RowKey="RowKey"
+        Columns="TradeColumns.All"
+        PinnedColumnCount="2"
+        RowHeight="24"
+        ViewportHeight="520"
+        ViewportWidth="880"
+        CellChangedAt="_changedAt"
+        ChangeHighlightDuration="Highlight"
+        ShowFillHandle="true"
+        OnEdit="_onEdit"
+        OnPaste="_onPaste"
+        OnFill="_onFill"
+        OnClear="_onClear"
+        OnCommitRefused="_onCommitRefused"
+        OnPasteRefused="_onPasteRefused"
+        DeclaredKeys="BlotterIntents.UpstreamKeys"
+        OnDeclaredKey="_onKey" />
+
+@code {
+    private static readonly TimeSpan Highlight = TimeSpan.FromSeconds(1);
+    private static readonly Func<Trade, object> RowKey = TradeColumns.TradeKey;
+
+    [SupplyParameterFromQuery(Name = "interval")] public int? Interval { get; set; }
+    [SupplyParameterFromQuery(Name = "perTick")] public int? PerTick { get; set; }
+    [SupplyParameterFromQuery(Name = "ticks")] public int? Ticks { get; set; }
+    [SupplyParameterFromQuery(Name = "addEvery")] public int? AddEvery { get; set; }
+
+    private StartFeed _feed = default!;
+    private BlotterIntents _intents = default!;
+
+    // Every delegate the grid is handed, made once (AGENTS.md: a method group is a new instance
+    // per render).
+    private CellChangeOf<Trade> _changedAt = default!;
+    private Action<IReadOnlyList<SortSpec>> _onSort = default!;
+    private Action<GridEditIntent<Trade>> _onEdit = default!;
+    private Action<GridPasteIntent> _onPaste = default!;
+    private Action<GridFillIntent> _onFill = default!;
+    private Action<GridClearIntent> _onClear = default!;
+    private Action<GridCommitRefusal> _onCommitRefused = default!;
+    private Action<PasteRefusalReason> _onPasteRefused = default!;
+    private Action<GridDeclaredKeyPress> _onKey = default!;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Dispatcher.Dispatch(new TrackChanges(true));
+        Census.Track("w1-page", this);
+        _feed = new StartFeed(Interval ?? 100, PerTick ?? 20, Ticks ?? 0, AddEvery ?? 10, 20261006);
+        // Positions are resolved against the Window the grid was handed: the view this page last
+        // rendered, never the store's newest state, which can be a version ahead of the grid.
+        _intents = new BlotterIntents(Dispatcher, Clock, () => _view!.Window, () => _view!.Version);
+        _changedAt = (row, column) => _view!.State.ChangedAt.TryGetValue(new CellKey(row.Id, column.Name), out var at) ? at : null;
+        _onSort = sorts => Dispatcher.Dispatch(new SortChanged(sorts));
+        _onEdit = _intents.Edit;
+        _onPaste = _intents.Paste;
+        _onFill = _intents.Fill;
+        _onClear = _intents.Clear;
+        _onCommitRefused = _intents.OnCommitRefused;
+        _onPasteRefused = _intents.OnPasteRefused;
+        _onKey = _intents.Key;
+    }
+
+    /// <summary>The Window derived from one state, and the Row Sequence Version it is written in.</summary>
+    private sealed record View(TradesState State, IReadOnlyList<Trade> Window, int Version, IReadOnlyList<SortSpec> Sorts);
+
+    private View? _view;
+
+    /// <summary>
+    /// The state as the grid is handed it, made once per state, in render: so it is always the one
+    /// this render hands over, however many states arrived since the last render. The Row Sequence
+    /// Version moves when the key sequence differs from the Window last handed over (ADR-0011): the
+    /// grid cannot tell, and the store does not know what the grid was handed.
+    /// </summary>
+    private View Project(TradesState state)
+    {
+        var last = _view;
+        if (last is not null && ReferenceEquals(last.State, state))
+            return last;
+        IReadOnlyList<Trade> window;
+        if (last is not null && ReferenceEquals(last.State.Trades, state.Trades) && ReferenceEquals(last.State.Sorts, state.Sorts))
+            window = last.Window;
+        else if (state.Sorts.Count == 0)
+            window = state.Trades;
+        else
+            window = GridQueryEngine.Apply(state.Trades, TradeColumns.Infos, null, state.Sorts);
+        var version = last is null ? 0 : SameKeys(last.Window, window) ? last.Version : last.Version + 1;
+        return _view = new View(state, window, version, state.Sorts);
+    }
+
+    private static bool SameKeys(IReadOnlyList<Trade> a, IReadOnlyList<Trade> b)
+    {
+        if (ReferenceEquals(a, b))
+            return true;
+        if (a.Count != b.Count)
+            return false;
+        for (var i = 0; i < a.Count; i++)
+        {
+            if (!ReferenceEquals(a[i], b[i]) && a[i].Id != b[i].Id)
+                return false;
+        }
+        return true;
+    }
+}

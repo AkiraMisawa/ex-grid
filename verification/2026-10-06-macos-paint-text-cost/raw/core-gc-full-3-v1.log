@@ -1,0 +1,21 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+variant V1; load { 2.74 3.10 2.72 }; TieredCompilation=0
+== pivot-gc 1,000 x 100, pre-collection full, GC events verbose, GCRetainVM=(default) ==
+   run  1:    65.52 ms, GC pause   16.12 ms, GCs 5, committed 310 -> 368 MB, fragmented after 35.2 MB
+   run  2:    81.39 ms, GC pause   29.39 ms, GCs 5, committed 376 -> 420 MB, fragmented after 30.3 MB
+   run  3:    73.25 ms, GC pause   24.75 ms, GCs 5, committed 427 -> 453 MB, fragmented after 46.7 MB
+   run  4:    82.82 ms, GC pause   35.14 ms, GCs 5, committed 385 -> 416 MB, fragmented after 10.2 MB
+   run  5:    77.21 ms, GC pause   30.15 ms, GCs 5, committed 416 -> 425 MB, fragmented after 19.3 MB
+   run  6:    73.51 ms, GC pause   26.40 ms, GCs 5, committed 425 -> 434 MB, fragmented after 28.4 MB
+   run  7:    73.76 ms, GC pause   26.35 ms, GCs 5, committed 430 -> 444 MB, fragmented after 38.0 MB
+   run  8:    74.04 ms, GC pause   25.70 ms, GCs 5, committed 444 -> 454 MB, fragmented after 47.1 MB
+   run  9:    83.30 ms, GC pause   36.59 ms, GCs 5, committed 416 -> 426 MB, fragmented after 10.7 MB
+   run 10:    75.95 ms, GC pause   29.27 ms, GCs 5, committed 419 -> 426 MB, fragmented after 19.8 MB
+   run 11:    74.85 ms, GC pause   27.73 ms, GCs 5, committed 426 -> 441 MB, fragmented after 34.1 MB
+   run 12:    72.76 ms, GC pause   25.47 ms, GCs 5, committed 438 -> 447 MB, fragmented after 40.7 MB
+   run 13:    72.82 ms, GC pause   26.00 ms, GCs 5, committed 447 -> 456 MB, fragmented after 49.8 MB
+   run 14:    81.09 ms, GC pause   34.64 ms, GCs 5, committed 418 -> 429 MB, fragmented after 13.4 MB
+   run 15:    76.03 ms, GC pause   26.78 ms, GCs 5, committed 422 -> 429 MB, fragmented after 22.5 MB
+   redraw    65.525    74.851    83.300   GC pause    16.116    26.777    36.587
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/verification/2026-10-06-macos-paint-text-cost/raw/core-gc-full-3-v1.json

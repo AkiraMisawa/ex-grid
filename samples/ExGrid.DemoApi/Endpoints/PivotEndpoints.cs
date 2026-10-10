@@ -50,8 +50,32 @@ internal static class PivotEndpoints
         app.MapPost("/api/pivot/details", (HttpRequest request, TradePivotSource source, TradeStore store, CancellationToken cancellationToken) =>
             Answer(request, store, ReadDetailsPage,
                 async (query, token) => PivotJson.Write(await source.DetailsAsync(query, token)), cancellationToken));
+        MapReport<PivotReportRequest, PivotReportUpdate>(app, "window", true,
+            (source, query, ct) => source!.WindowAsync(query, ct));
+        MapReport<PivotReportItemsQuery, PivotReportItemsResult>(app, "items", false,
+            (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportItemsResult(query.Version, "", [], 0, PivotReportStore.NotHeld())) : source.ItemsAsync(query, ct));
+        MapReport<PivotReportCopyQuery, PivotReportCopyResult>(app, "copy", false,
+            (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportCopyResult(query.Version, [], PivotReportStore.NotHeld())) : source.CopyAsync(query, ct));
+        MapReport<PivotReportSummaryQuery, PivotReportSummaryResult>(app, "summary", false,
+            (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportSummaryResult(query.Version, default, default, default, false, null, "", PivotReportStore.NotHeld())) : source.SummaryAsync(query, ct));
+        app.MapDelete("/api/pivot/reports/{id}", async (string id, PivotReportStore reports, CancellationToken ct) =>
+        {
+            await reports.RemoveAsync(id, ct);
+            return Results.NoContent();
+        });
         return app;
     }
+
+    private static void MapReport<TQuery, TResult>(IEndpointRouteBuilder app, string operation, bool create,
+        Func<LocalPivotReportSource?, TQuery, CancellationToken, ValueTask<TResult>> answer)
+        => app.MapPost("/api/pivot/reports/{id}/" + operation,
+            (string id, HttpRequest request, PivotReportStore reports, TradeStore store, CancellationToken ct) =>
+                Answer(request, store, document =>
+                {
+                    if (!Guid.TryParseExact(id, "N", out _)) throw new FormatException("A report identity must be a UUID in N format.");
+                    return PivotReportJson.Read<TQuery>(document);
+                }, (query, token) => reports.AnswerAsync(id, create,
+                    async source => PivotReportJson.Write(await answer(source, query, token)), token), ct));
 
     /// <summary>The most records one Details page may ask for. A page is what a grid paints and
     /// reads ahead; a million records in one answer is not something to build (principle 5), so a
@@ -86,7 +110,7 @@ internal static class PivotEndpoints
         {
             question = read(document);
         }
-        catch (Exception e) when (e is FormatException or NotSupportedException)
+        catch (Exception e) when (e is FormatException or NotSupportedException or System.Text.Json.JsonException)
         {
             return ApiResults.BadRequest(e.Message);
         }

@@ -1,0 +1,3 @@
+1000x10 rows=11001 leaves=10000 answer=1B/row cube=294B/row report=120B/row cells=107B/row keysArray=4B/row total=5.5MB
+1000x100 rows=101001 leaves=100000 answer=4B/row cube=310B/row report=117B/row cells=107B/row keysArray=4B/row total=51.8MB
+1000x400 rows=401001 leaves=400000 answer=4B/row cube=279B/row report=117B/row cells=107B/row keysArray=4B/row total=193.8MB

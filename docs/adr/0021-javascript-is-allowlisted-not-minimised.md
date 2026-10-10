@@ -544,7 +544,7 @@ reads.
   `FocusAsync`**, through Blazor, as it would without the grid. No script of the grid's is there to
   read where the keyboard is.
 
-*(2026-10-05, [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).)* **A keyboard gesture now carries the render it was taken
+*(2026-10-05, [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md).)* **A keyboard gesture now carries the render it was taken
 against, as a press on the rows does.** The capture-phase key listener and the clipboard read — the
 first and third entries — read what the painting render wrote, so that a write is judged against
 what the user saw. It is not a new use, and nothing is measured.
@@ -555,3 +555,38 @@ has, each told before Blazor dispatches what it carries: a press on an Action of
 entry), which opens the editor. No listener was added, and none reads layout. The action press
 also names the row, column and action of the cell it was on, read from the ids the render wrote, so
 the core can answer a press whose click Blazor will not deliver (ADR-0142).
+*(2026-10-07, ADR-0142 rewritten.)* A write is no longer judged against what the user saw: it lands
+as entered. The readings that serve where a gesture lands and which order it was aimed under stay. A
+reading that served only the judgement of a write is no longer made: the Formula Bar's
+`BarPressTakenAt`, and the render the key field and the press listener passed along for it. No
+listener is added, and nothing is measured.
+
+*(2026-10-08, merging the two tracks of live data; [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)'s
+section of that date.)* Four readings changed. No listener was added, and nothing is measured.
+- **An action press reads its whole address at the mousedown.** The note of 2026-10-06 read the
+  paint at the mousedown, but the row, column and action from the cell's ids at the release. A keyed
+  row ([ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md))
+  can move the same button between the two, and the old paint with the new ids named another row.
+  The ids are now read with the paint and told at the release.
+- **A press the platform makes a context menu of is not told.** Where Meta is the primary modifier
+  (macOS), Control with the primary button sends `mousedown` and `mouseup` with button 0 and no
+  `click`. Told, it stayed pending in the core. Once a later render disposed its row's component, it
+  acted for a click nobody made. The existing `mousedown` reads `ctrlKey` beside the platform it
+  already knows.
+- **A composition carries its paint again.** The note of 2026-10-07 stopped passing a render with
+  the key field's text, because the render served only the judgement of a write. It now serves which
+  Selection the text was aimed with
+  ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of
+  2026-10-08). `compositionstart` reads the paint, an attribute, and the field hands it over with the
+  text, as a key carries its own.
+- **A press on a mark carries its paint**, as an Action press does. The marks are a row's checkbox, the
+  header's, and "Mark all N rows". At the mousedown on one of this grid's own marks, the existing listener
+  reads the paint the Viewport names. For the header's checkbox under a pager, it also reads the first row
+  of the page that the render wrote (`data-ex-page`), and, since 2026-10-09, how many rows that page held
+  (`data-ex-page-rows`), so that a press heard after the pager was removed or resized still names its page. At the release on the same mark it tells the core
+  (`MarkPressTakenAt`), before Blazor dispatches the click
+  ([ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)'s note of 2026-10-08).
+  A press the platform makes a context menu of tells nothing. *(2026-10-09.)* A press on a row's checkbox
+  also names its row, read from its own cell's id at the mousedown, so that the core can answer a press
+  whose click Blazor will not deliver (ADR-0043's note as rewritten that day). No listener was added and
+  nothing is measured: it is an attribute the render wrote.

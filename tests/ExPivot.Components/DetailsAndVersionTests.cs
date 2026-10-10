@@ -70,7 +70,7 @@ public class DetailsAndVersionTests : PivotTestContext
 
         cut.WaitForAssertion(() => Assert.NotEmpty(source.DetailQueries));
         var query = source.DetailQueries[0];
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, query.SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, query.SourceVersion);
         Assert.Equal(0, query.Start);
         Assert.Equal(ExGrid.FetchingGridSource<PivotDetailRecord>.DefaultPageRows, query.Count);
         Assert.Equal([new PivotFieldItem("Region", PivotItemKey.Text("East"))], query.RowItems);
@@ -100,7 +100,7 @@ public class DetailsAndVersionTests : PivotTestContext
         await cut.Find(".ex-pivot-tab-close").ClickAsync(new MouseEventArgs());
         Assert.Empty(cut.FindAll(".ex-pivot-tabs"));
         Assert.Empty(cut.FindAll(".ex-pivot-details-panel"));
-        Assert.Single(cut.FindComponents<ExGrid<PivotReportRow>>());
+        Assert.Single(cut.FindComponents<ExGrid<PivotDisplayRow>>());
     }
 
     [Fact] // ADR-0059 (PV-14): while a details tab is selected its records cover the report, which stays with its state and is marked covered — left unpainted, so its own header cannot stand over the records' — until the report's tab brings it back
@@ -293,6 +293,55 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Equal(["East", "Apples", 30m, 3m, true], page.Records[0].Values);
     }
 
+    /// <summary>A keyed sale, for Change Batches.</summary>
+    public sealed record KeyedSale(long Id, string? Region, string Product, decimal Amount);
+
+    [Fact] // ADR-0151/0066 (PV-14): Details name the cell's Source Version, not its Report Version — a collapse and a sort later, the next page is still answered; once the data has moved on beyond what the source holds, it is refused as the data having changed
+    public async Task Details_keep_paging_across_layout_gestures_until_their_data_is_gone()
+    {
+        var fields = PivotFields.Of<KeyedSale>().Key("Id", s => s.Id).Text("Region", s => s.Region)
+            .Text("Product", s => s.Product).Number("Amount", s => s.Amount);
+        var sales = Sales.Select((sale, i) => new KeyedSale(i, sale.Region, sale.Product, sale.Amount)).ToArray();
+        var source = PivotSource.From(sales, fields);
+        PivotDetails? taken = null;
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] },
+            ps => ps.Add(p => p.OnShowDetails, (PivotDetails details) => taken = details), source: source);
+        Assert.Equal("Apples | 130", RowTexts(cut)[1]);
+
+        // Show Details on East / Apples.
+        await DoubleClickAsync(cut, 1, 1);
+        Assert.NotNull(taken);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, taken!.SourceVersion);
+        var first = await taken.DetailsAsync(0, 1, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal([100m], first.Records.Select(r => r.Values[^1]));
+
+        // A collapse of East, then a sort of Region: two new Report Versions of the same data.
+        await cut.FindAll(".ex-pivot-toggle")[0].ClickAsync(new MouseEventArgs());
+        cut.WaitForAssertion(() => Assert.StartsWith("+East", RowTexts(cut)[0], StringComparison.Ordinal));
+        await cut.InvokeAsync(() => AreaElement(cut, "Rows").QuerySelectorAll(".ex-pivot-entry-button")
+            .First(b => b.QuerySelector(".ex-pivot-entry-caption")!.TextContent.Trim() == "Region").ClickAsync(new MouseEventArgs()));
+        await cut.InvokeAsync(() => cut.FindAll(".ex-pivot-menu-item").Single(b => MenuLabel(b) == "Sort Z to A").ClickAsync(new MouseEventArgs()));
+        cut.WaitForAssertion(() => Assert.StartsWith("−West", RowTexts(cut)[0], StringComparison.Ordinal));
+
+        // The next page is still the records behind the cell the user acted on.
+        var next = await taken.DetailsAsync(1, 1, Xunit.TestContext.Current.CancellationToken);
+        Assert.False(next.IsRefused);
+        Assert.Equal(2, next.Total);
+        Assert.Equal([30m], next.Records.Select(r => r.Values[^1]));
+
+        // The data moves on, redraw after redraw, beyond the versions the source holds.
+        for (var i = 0; i < SnapshotPivotSource.AnswersHeld + 1; i++)
+        {
+            Clock.Advance(TimeSpan.FromSeconds(1));
+            var report = cut.Instance.Report;
+            await cut.InvokeAsync(() => source.Apply(fields.Batch(changed: [sales[3] = sales[3] with { Amount = sales[3].Amount + 1 }])));
+            cut.WaitForAssertion(() => Assert.NotSame(report, cut.Instance.Report));
+        }
+        var gone = await taken.DetailsAsync(1, 1, Xunit.TestContext.Current.CancellationToken);
+        Assert.True(gone.IsRefused);
+        Assert.Equal(PivotSourceRefusalKind.SourceVersionNotHeld, gone.Refusal!.Kind);
+    }
+
     // ---- PV-23: the Source Version, the component's side -----------------------------------------
 
     [Fact] // ADR-0066 (PV-23): Filter… lists the Items the source gives under the report's Source Version
@@ -306,7 +355,7 @@ public class DetailsAndVersionTests : PivotTestContext
 
         var query = Assert.Single(source.ItemQueries);
         Assert.Equal("Region", query.Field);
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, query.SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, query.SourceVersion);
         Assert.Equal(PivotComponent.ItemListCap, query.Max);
         Assert.Equal(["(Select All)", "East", "North", "West", "(blank)"], cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim()));
     }
@@ -364,14 +413,14 @@ public class DetailsAndVersionTests : PivotTestContext
         var source = new OnDemandSource(Bundled(many)) { AnswersAtOnce = true };
         var cut = RenderPivot(new PivotLayout { Filters = [P("Region")], Values = [Sum("Amount")] }, source: source);
         await cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs());
-        Assert.Equal(PivotComponent.ItemListCap, cut.FindAll(".ex-pivot-item").Count - 1);
+        cut.WaitForAssertion(() => Assert.Equal(PivotComponent.ItemListCap, cut.FindAll(".ex-pivot-item").Count - 1));
         Assert.Contains("More than 10,000 items.", cut.Find(".ex-pivot-item-filter .ex-pivot-note").TextContent);
 
         await cut.Find(".ex-pivot-item-filter .ex-pivot-search").InputAsync(new ChangeEventArgs { Value = "r1000" });
 
         Assert.Equal(2, source.ItemQueries.Count);
         Assert.Equal("r1000", source.ItemQueries[1].Search);
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, source.ItemQueries[1].SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, source.ItemQueries[1].SourceVersion);
         cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "R10000"], cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));
     }
 
@@ -382,13 +431,13 @@ public class DetailsAndVersionTests : PivotTestContext
         await OpenMenuAsync(cut, "Rows", "Region");
         await RunMenuAsync(cut, "Filter…");
         cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".ex-pivot-item").Count));
-        var before = cut.Instance.Report!.Cube.SourceVersion;
+        var before = cut.Instance.Report!.Metadata.SourceVersion;
 
         cut.Render(ps => ps.Add(p => p.Source, Bundled([.. Sales, new Sale("South", "Apples", 1m, 1, true)])));
 
         cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "East", "North", "South", "West", "(blank)"],
             cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));
-        Assert.NotEqual(before, cut.Instance.Report!.Cube.SourceVersion);
+        Assert.NotEqual(before, cut.Instance.Report!.Metadata.SourceVersion);
         Assert.Single(cut.FindAll(".ex-pivot-popup"));
     }
 

@@ -33,10 +33,13 @@
        a live region where the confirmations above are not: they report what did happen. *@
     <span id="paste-refused-status" role="status">Paste refused: @_pasteRefusedStatus</span>
     <span id="edit-discarded-status" role="status">Edit discarded: @_editDiscardedStatus</span>
-    @* A write refused because what the user saw of its target changed before it landed
-       (ADR-0142): announced as every refusal is (A11Y-16). The commit's sentence carries the
-       cell's new text, because the editor covers the cell. *@
+    @* A write refused because its row is gone or its order moved (ADR-0142): announced as every
+       refusal is (A11Y-16). *@
     <span id="commit-refused-status" role="status">Commit refused: @_commitRefusedStatus</span>
+    @* A commit that landed over a cell that changed while the editor covered it (ADR-0142, LV-21):
+       the Overwrite Notice, announced as a refusal is, with both texts, because the user never saw
+       the change. Nothing was refused. *@
+    <span id="overwrite-notice-status" role="status">Overwritten: @_overwriteStatus</span>
     <span id="action-refused-status" role="status">Action refused: @_actionRefusedStatus</span>
     <span id="find-refused-status" role="status">Find: @_findStatus</span>
     <span id="context-status">Context: @_contextStatus</span>
@@ -69,11 +72,12 @@
         OnPasteRefused="OnPasteRefused"
         OnEditDiscarded="OnEditDiscarded"
         OnCommitRefused="OnCommitRefused"
+        OnOverwriteNotice="OnOverwriteNotice"
         OnAction="OnAction"
         OnActionRefused="OnActionRefused"
         ShowFillHandle="UpstreamOn"
         OnFill="OnFill"
-        DeclaredKeys="@(UpstreamOn ? UpstreamKeys : null)"
+        DeclaredKeys="@(RowKeyOn ? UpstreamAndResortKeys : UpstreamOn ? UpstreamKeys : null)"
         OnDeclaredKey="OnUpstreamKey"
         OnFindRefused="OnFindRefused"
         OnColumnWidthChanged="OnWidthChanged"
@@ -123,7 +127,20 @@
 
     private bool UpstreamOn => Upstream == "1";
 
+    /// <summary>
+    /// <c>?rowkey=1</c>, beside <c>?upstream=1</c>, binds the source with the trade's own number as
+    /// its Row Key (ADR-0140), and declares F8 as well: the top row's Notional jumps past every
+    /// other, as a live amendment can, so under a sort by Notional the row moves to the end — with
+    /// an edit open too, which follows its row there without a scroll (ADR-0011's note of
+    /// 2026-10-07).
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "rowkey")]
+    public string? RowKeyParameter { get; set; }
+
+    private bool RowKeyOn => UpstreamOn && RowKeyParameter == "1";
+
     private static readonly string[] UpstreamKeys = ["F9"];
+    private static readonly string[] UpstreamAndResortKeys = ["F9", "F8"];
 
     [Inject] private Microsoft.Extensions.Options.IOptions<PopoverOptions> MudPopovers { get; set; } = default!;
 
@@ -159,6 +176,7 @@
         {
             rows[i] = new DemoTrade
             {
+                Id = i,
                 Book = books[i % books.Length],
                 Trader = traders[(i / 3) % traders.Length],
                 Notional = 1_000_000m + (i * 12_345.67m),
@@ -167,7 +185,7 @@
             };
         }
 
-        _source = GridSource.From(rows);
+        _source = RowKeyOn ? GridSource.From(rows, static t => t.Id) : GridSource.From(rows);
         _second = GridSource.From(rows.Take(20).ToArray());
         _rules
             .Column("Notional", (_, text) => !decimal.TryParse(text, out var value)
@@ -243,6 +261,7 @@
     private string _contextStatus = "—";
     private string _widthStatus = "—";
     private string _commitRefusedStatus = "—";
+    private string _overwriteStatus = "—";
     private string _actionRefusedStatus = "—";
     private string _upstreamStatus = "—";
     private string _actionStatus = "—";
@@ -343,7 +362,7 @@
 
     private void OnEdit(GridEditIntent<DemoTrade> intent)
     {
-        _editStatus = $"{intent.Column}={intent.Value} on {intent.Row.Book}/{intent.Row.Trader}";
+        _editStatus = $"{intent.Column}={intent.Value} on {intent.Row.Book}/{intent.Row.Trader}" + (RowKeyOn ? $" #{intent.Row.Id}" : "");
         // The Consumer's half of ADR-0007: a NEW instance carrying the change goes
         // back through the source, and the screen follows the identity change. An
         // unparseable value applies nothing — validation is the Consumer's.
@@ -410,13 +429,13 @@
     {
         "Trader" => new DemoTrade
         {
-            Book = row.Book, Trader = value, Notional = row.Notional,
+            Id = row.Id, Book = row.Book, Trader = value, Notional = row.Notional,
             TradeDate = row.TradeDate, Confirmed = row.Confirmed,
         },
         "Notional" => decimal.TryParse(value, out var notional)
             ? new DemoTrade
             {
-                Book = row.Book, Trader = row.Trader, Notional = notional,
+                Id = row.Id, Book = row.Book, Trader = row.Trader, Notional = notional,
                 TradeDate = row.TradeDate, Confirmed = row.Confirmed,
             }
             : null,
@@ -432,43 +451,71 @@
     private void OnPasteRefused(PasteRefusalReason reason)
         => Status(reason, reason switch
         {
-            PasteRefusalReason.TargetNotEditable =>
-                "TargetNotEditable — the selection covers a column that is not editable",
+            PasteRefusalReason.EmptySelection =>
+                "EmptySelection — nothing was written: select the cells to write into",
             PasteRefusalReason.SingleCellTarget =>
                 "SingleCellTarget — reselect a target of the same shape",
-            // ADR-0142: the data under the target moved after the user saw it. Nothing was written,
-            // and the user, who has not seen the new values, is told to look before trying again.
-            PasteRefusalReason.TargetChanged =>
-                "TargetChanged — nothing was written: the cells changed before the write landed; check them and try again",
-            // Not "changed": the grid cannot tell whether they did, only that it no longer knows what was shown.
-            PasteRefusalReason.RenderNoLongerKept =>
-                "RenderNoLongerKept — nothing was written: the grid could no longer tell what the cells showed; try again",
-            _ => reason.ToString(),
+            PasteRefusalReason.ShapeMismatch =>
+                "ShapeMismatch — the selection is not a whole multiple of the copied block",
+            PasteRefusalReason.DisjointTarget =>
+                "DisjointTarget — a block of several cells goes into one range only",
+            PasteRefusalReason.TargetNotEditable =>
+                "TargetNotEditable — the selection covers a column that is not editable",
+            PasteRefusalReason.TooLarge =>
+                "TooLarge — more than a paste or a fill reads at once",
+            PasteRefusalReason.SpillPastExtent =>
+                "SpillPastExtent — the block would run past the last row or column",
+            PasteRefusalReason.NothingToFillFrom =>
+                "NothingToFillFrom — there is no row above, or column to the left, to fill from",
+            PasteRefusalReason.MultipleRanges =>
+                "MultipleRanges — a fill works on one range",
+            PasteRefusalReason.SourceUnavailable =>
+                "SourceUnavailable — the cells to fill from could not be read whole",
+            // ADR-0142/0011: aimed with a Selection the rows moving took away.
+            PasteRefusalReason.OrderMoved =>
+                "OrderMoved — nothing was written: the rows moved after you aimed it; select the cells again",
+            // ADR-0142: aimed at what a Source since replaced painted.
+            PasteRefusalReason.SourceChanged =>
+                "SourceChanged — nothing was written: the data the grid shows was replaced before it landed; select the cells again",
+            // Every reason is worded above; one the page does not know is a defect to see, not a
+            // sentence to guess (principle 1).
+            _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A paste refusal this page does not word."),
         }, s => _pasteRefusedStatus = s);
 
-    /// <summary>A commit over a cell whose value moved while the user typed (ADR-0142, LV-11). The
-    /// editor still stands with the typing and covers the cell, so the sentence is where the user
-    /// sees the new value; Enter again writes over it, Escape leaves it.</summary>
+    /// <summary>A commit whose row the grid could not find in the rows it holds now (ADR-0142,
+    /// LV-20). The editor still stands with the typing; Escape leaves it.</summary>
     private void OnCommitRefused(GridCommitRefusal refusal)
         => Status(refusal, refusal.Reason switch
         {
-            CommitRefusalReason.RenderNoLongerKept =>
-                $"Not written: the grid can no longer tell what {refusal.Column} showed when you started typing. " +
-                $"It shows {refusal.PaintedText} now — press Enter again to write over it, or Escape to keep it",
-            _ => $"{refusal.Column} changed to {refusal.PaintedText} while you were typing — " +
-                 "press Enter again to write over it, or Escape to keep it",
+            CommitRefusalReason.OrderMoved =>
+                $"OrderMoved — {refusal.Column} was not written: the rows moved while you were typing; press Escape to leave it",
+            CommitRefusalReason.RowLeftTheWindow =>
+                $"RowLeftTheWindow — {refusal.Column} was not written: the row is not in the rows the grid holds now; bring it back into view and commit again, or press Escape",
+            // Every reason is worded above; one the page does not know is a defect to see, not a
+            // sentence to guess (principle 1).
+            _ => throw new ArgumentOutOfRangeException(nameof(refusal), refusal.Reason, "A commit refusal this page does not word."),
         }, s => _commitRefusedStatus = s);
 
-    /// <summary>An action pressed on a row that moved before the press landed (ADR-0142, LV-12).
-    /// Nothing was done; one more press, on the row as it is now, does it.</summary>
+    /// <summary>A commit that landed over a cell whose value moved while the user typed (ADR-0142,
+    /// LV-11, LV-21): the editor covered the cell, so the sentence says what it showed and what was
+    /// written over.</summary>
+    private void OnOverwriteNotice(GridOverwriteNotice notice)
+        => Status(notice, $"{notice.Column} written over {notice.ReplacedText}; it showed {notice.SeenText} when you started typing",
+            s => _overwriteStatus = s);
+
+    /// <summary>An action whose row the grid could not find in the rows it holds when the press
+    /// landed (ADR-0142, LV-12, LV-20): out of the Window, or named by a place the rows moving gave
+    /// to another row. Nothing was done; the row's values changing never refuses one.</summary>
     private void OnActionRefused(GridActionRefusal<DemoTrade> refusal)
         => Status(refusal.Reason, refusal.Reason switch
         {
-            ActionRefusalReason.RowChanged =>
-                $"RowChanged — {refusal.Action.ActionName} was not done: the row changed before the press landed; check it and press again",
-            ActionRefusalReason.RenderNoLongerKept =>
-                $"RenderNoLongerKept — {refusal.Action.ActionName} was not done: the grid could no longer tell what the row showed; press again",
-            _ => refusal.Reason.ToString(),
+            ActionRefusalReason.RowLeftTheWindow =>
+                $"RowLeftTheWindow — {refusal.ActionName} was not done: the row is not in the rows the grid holds now; bring it back into view and press it again",
+            ActionRefusalReason.OrderMoved =>
+                $"OrderMoved — {refusal.ActionName} was not done: the rows moved before the press landed; press it on the row again",
+            ActionRefusalReason.SourceChanged =>
+                $"SourceChanged — {refusal.ActionName} was not done: the data the grid shows was replaced before the press landed",
+            _ => throw new ArgumentOutOfRangeException(nameof(refusal), refusal.Reason, "An action refusal this page does not word."),
         }, s => _actionRefusedStatus = s);
 
     private void OnAction(GridActionEventArgs<DemoTrade> press)
@@ -479,13 +526,28 @@
     private void OnUpstreamKey(GridDeclaredKeyPress press)
     {
         var window = _source.Window;
+        if (press.Key == "F8")
+        {
+            // Under ?rowkey=1: the top row amended past every other Notional.
+            if (window.Count == 0)
+                return;
+            var top = window[0];
+            _source.ReplaceRow(top, new DemoTrade
+            {
+                Id = top.Id, Book = top.Book, Trader = top.Trader, Notional = window.Max(t => t.Notional) + 1_000_000m,
+                TradeDate = top.TradeDate, Confirmed = top.Confirmed,
+            });
+            _rules.Evaluate(_source.Window, _columns);
+            _upstreamStatus = $"trade #{top.Id} amended past every other (×{++_upstreamTicks})";
+            return;
+        }
         var count = Math.Min(5, window.Count);
         for (var row = 0; row < count; row++)
         {
             var old = window[row];
             _source.ReplaceRow(old, new DemoTrade
             {
-                Book = old.Book, Trader = old.Trader, Notional = old.Notional + 1m,
+                Id = old.Id, Book = old.Book, Trader = old.Trader, Notional = old.Notional + 1m,
                 TradeDate = old.TradeDate, Confirmed = old.Confirmed,
             });
         }
@@ -538,10 +600,13 @@
     private void OnEditDiscarded(EditDiscardReason reason)
         => Status(reason, reason switch
         {
-            EditDiscardReason.OrderChanged =>
-                "OrderChanged — the rows were reordered while you were typing, so the entry was dropped",
             EditDiscardReason.RowLeftTheWindow =>
                 "RowLeftTheWindow — that row is no longer loaded, so the entry could not be placed",
+            EditDiscardReason.SourceChanged =>
+                "SourceChanged — the data the grid shows was replaced while you were typing; the entry was not written",
+            // Decided 2026-10-08: typing that reached the grid after the rows moved opens nothing.
+            EditDiscardReason.OrderMoved =>
+                "OrderMoved — the rows moved before your typing reached the grid; nothing was written",
             _ => reason.ToString(),
         }, s => _editDiscardedStatus = s);
 

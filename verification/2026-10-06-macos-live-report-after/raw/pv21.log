@@ -1,0 +1,114 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] (node:94061) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Serving /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/wasm/wwwroot at http://localhost:5599
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 1000000 trades into /tmp/nix-shell.YBQNwu/exgrid-demo-api/trades-v1-1000000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8599
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/api
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 100000 of 1000000 trades (10%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 200000 of 1000000 trades (20%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 300000 of 1000000 trades (30%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 400000 of 1000000 trades (40%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 500000 of 1000000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 600000 of 1000000 trades (60%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 700000 of 1000000 trades (70%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 800000 of 1000000 trades (80%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 900000 of 1000000 trades (90%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 1000000 trades in 2.0 s: 76.8 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 1000000 trades at version 08649b55-0 from /tmp/nix-shell.YBQNwu/exgrid-demo-api/runs/trades-v1-1000000.94062.08649b55.sqlite.
+
+Running 2 tests using 1 worker
+
+(node:94071) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+PV-21 1,000 changes {
+ "runs": 12,
+ "appliedMs": {
+  "median": 33,
+  "min": 21,
+  "max": 42
+ },
+ "applyToReportFrameMs": {
+  "median": 33,
+  "min": 21,
+  "max": 42
+ },
+ "taskStartToReportFrameMs": null,
+ "longestTaskMs": {
+  "median": 0,
+  "min": 0,
+  "max": 0
+ },
+ "reportInTheBatchsFrame": 12,
+ "lastStatus": "Batch 14: 1,000 trades amended, applied in 33 ms; the Snapshot is at version 14."
+}
+  ✓  1 [chrome] › measure-pivot.spec.mjs:469:1 › PV-21: 1,000 changes folded into a million trades on /pivot-live (31.3s)
+PV-21 CSV {
+ "rows": 1000000,
+ "fileMiB": 81.1,
+ "runs": 3,
+ "pageSeconds": {
+  "median": 2,
+  "min": 2,
+  "max": 2
+ },
+ "readMs": {
+  "median": 2067,
+  "min": 2060,
+  "max": 2106
+ },
+ "firstQuestionMs": {
+  "median": 286,
+  "min": 284,
+  "max": 301
+ },
+ "reportMs": {
+  "median": 2353,
+  "min": 2344,
+  "max": 2407
+ },
+ "firstVisualAnswerMs": {
+  "median": 40,
+  "min": 40,
+  "max": 43
+ },
+ "longestTaskWhileReadingMs": {
+  "median": 99,
+  "min": 98,
+  "max": 113
+ },
+ "longestTaskUntilReportMs": {
+  "median": 99,
+  "min": 98,
+  "max": 113
+ },
+ "lastStatus": "one-million-trades.csv: 1,000,000 rows read in 2.0 s."
+}
+  ✓  2 [chrome] › measure-pivot.spec.mjs:592:1 › PV-21/DA-17: a CSV of a million rows read on /pivot-csv (8.6s)
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  2 passed (46.2s)

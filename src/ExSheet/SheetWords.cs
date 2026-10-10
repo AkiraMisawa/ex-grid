@@ -53,9 +53,15 @@ internal static class SheetWords
     {
         EditDiscardReason.RowLeftTheWindow =>
             "What was typed was not entered: the row being edited was scrolled too far away to be written. Go back to it and type it again.",
-        EditDiscardReason.OrderChanged => "What was typed was not entered: the rows moved while the cell was being edited.",
         EditDiscardReason.ColumnsChanged => "What was typed was not entered: the columns changed while the cell was being edited.",
         EditDiscardReason.ColumnNoLongerEditable => "What was typed was not entered: the cell stopped taking entries while it was being edited.",
+        // ADR-0142, decided 2026-10-08: typing that reached the Sheet after another Sheet Document was
+        // opened, the one move of order a Sheet has (ADR-0046).
+        EditDiscardReason.OrderMoved =>
+            "What was typed was not entered: another Sheet Document was opened before the typing reached the Sheet, so nothing was written.",
+        // ADR-0142: a grid Source replaced by another instance. ExSheet binds none, so it is said for truth's sake.
+        EditDiscardReason.SourceChanged =>
+            "What was typed was not entered: the data the Sheet shows was replaced while it was being typed, so nothing was written.",
         _ => "What was typed was not entered.",
     };
 
@@ -76,22 +82,39 @@ internal static class SheetWords
         PasteRefusalReason.TargetNotEditable => "Nothing was pasted: the selection covers cells that cannot be written.",
         PasteRefusalReason.TooLarge => "Nothing was pasted: the clipboard holds more than a paste reads at once.",
         PasteRefusalReason.SpillPastExtent => "Nothing was pasted: the block would run past the Sheet's edge (XFD1048576).",
-        // ADR-0142: raised for a paste, a fill and Delete alike, so the sentence says written.
-        PasteRefusalReason.TargetChanged =>
-            "Nothing was written: cells it would have written changed before it landed. Check them and try again.",
-        PasteRefusalReason.RenderNoLongerKept =>
-            "Nothing was written: the Sheet could no longer tell what those cells showed when you acted. Try again.",
-        _ => "Nothing was pasted.",
+        PasteRefusalReason.NothingToFillFrom =>
+            "Nothing was filled: there is no row above the selection, or column to its left, to fill from.",
+        PasteRefusalReason.MultipleRanges => "Nothing was filled: a fill works on one range. Select one range.",
+        PasteRefusalReason.SourceUnavailable => "Nothing was filled: the cells to fill from could not be read.",
+        // ADR-0142: a grid Source replaced by another instance. ExSheet binds none, so it is said for truth's sake.
+        PasteRefusalReason.SourceChanged =>
+            "Nothing was entered: the data the Sheet shows was replaced before it landed, so nothing was written. Select the cells again.",
+        // ADR-0142, ADR-0046: a Sheet's rows are places, and its Row Sequence Version moves only when
+        // another Sheet Document is opened in place of the one shown.
+        PasteRefusalReason.OrderMoved =>
+            "Nothing was entered: another Sheet Document was opened after the cells were selected, so nothing was written. Select the cells again.",
+        // A reason with no sentence here would be told as something it is not (principle 1).
+        _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A paste refusal the Sheet does not word."),
     };
 
-    /// <summary>A commit refused because the cell changed under the editor (ADR-0142, LV-11): the
-    /// editor covers the cell, so the sentence carries what it shows now.</summary>
-    internal static string CommitRefused(string address, string shown) =>
-        $"What was typed was not entered yet: {address} changed to {shown} while it was being edited. Press Enter to enter it over that, or Escape to keep it.";
+    /// <summary>A commit refused because the row it was opened on can no longer be found (ADR-0142,
+    /// LV-20): the editor stands with the typing, and only Escape leaves it.</summary>
+    internal static string CommitRefused(string address, CommitRefusalReason reason) => reason switch
+    {
+        // ADR-0046: in a Sheet only another Sheet Document opened in place of the one shown moves the
+        // order, and ExSheet discards an edit open across that itself; said true all the same.
+        CommitRefusalReason.OrderMoved =>
+            $"What was typed was not entered: another Sheet Document was opened while {address} was being edited, so nothing was written. Press Escape to leave it.",
+        CommitRefusalReason.RowLeftTheWindow =>
+            $"What was typed was not entered: the row of {address} is not among the rows the Sheet holds now. Bring it back into view and press Enter again, or press Escape to leave it.",
+        // A reason with no sentence here would be told as something it is not (principle 1).
+        _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A commit refusal the Sheet does not word."),
+    };
 
-    // ADR-0142 (P2): the grid can no longer tell what the cell showed, so the notice must not say it changed.
-    internal static string CommitRefusedUnseen(string address, string shown) =>
-        $"What was typed was not entered yet: it can no longer be told what {address} showed when editing began. It shows {shown} now. Press Enter to enter it over that, or Escape to keep it.";
+    /// <summary>A commit that landed over a cell that changed while it was being edited (ADR-0142,
+    /// LV-11): the editor covered the cell, so the sentence says what it replaced.</summary>
+    internal static string Overwritten(string address, string seen, string replaced) =>
+        $"{address} was entered over a change made while it was being edited: it showed {seen} when editing began and {replaced} just before.";
 
     internal static string CopyRefused(CopyRefusalReason reason) => reason switch
     {

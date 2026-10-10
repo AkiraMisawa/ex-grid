@@ -15,6 +15,7 @@ public static class FindPanelLabelIds
     {
         Finding.FindOutcome.NotFound => NotFound,
         Finding.FindOutcome.OrderChanged => OrderChanged,
+        Finding.FindOutcome.SourceChanged => SourceChanged,
         _ => null,
     };
 
@@ -41,4 +42,8 @@ public static class FindPanelLabelIds
 
     /// <summary>What a step whose answer arrived under another order says.</summary>
     public const string OrderChanged = "find-order-changed";
+
+    /// <summary>What a step whose answer came from a <c>Source</c> since replaced by another
+    /// instance says.</summary>
+    public const string SourceChanged = "find-source-changed";
 }

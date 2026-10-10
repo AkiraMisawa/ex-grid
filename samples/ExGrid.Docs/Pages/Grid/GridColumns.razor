@@ -96,6 +96,21 @@
                 filtering and edits.
             </li>
             <li>
+                <strong>Under live data</strong>, a press on a mark is judged against what was on screen when it was
+                made, which over a slow connection may have changed by the time it arrives. What the press can still
+                name exactly is honoured: a row's checkbox marks the row it was pressed on, wherever the order has
+                moved it, and the header's checkbox marks what it named when it was pressed — under a pager, the page
+                it was pressed on, even when the page has been turned or the pager taken away since; with no pager, the
+                whole result, even when a pager has been added since. The rest marks nothing, so no mark lands on a
+                row nobody pressed, and
+                <code>OnMarkRefused</code> says why, once per press: <code>OrderMoved</code> when the header's checkbox
+                or "Mark all N rows" was pressed before a sort, a filter or a live reorder moved the rows it named,
+                and <code>SourceChanged</code> when any mark, a row's checkbox included, was pressed on what a
+                <code>Source</code> since replaced showed. The grid holds no words for it; the Example below writes
+                its own. A press on a row's checkbox whose row a live update re-rendered before the click arrived is
+                still heard: the grid answers it itself, marking the row or saying why it cannot.
+            </li>
+            <li>
                 <strong><code>GridColumn.TemplateColumn(...)</code></strong> paints its cells with your markup. It still
                 takes a value accessor, and that value — never the markup — is what sorts, filters and copies.
                 Keep the template in a static field: a new lambda per render makes the column look changed.
@@ -104,6 +119,15 @@
                 <strong><code>GridColumn.ActionColumn(...)</code></strong> carries buttons and no value. A press raises
                 <code>OnAction</code> with the row and the action's name. With the keyboard, Space presses a single
                 action, or enters a cell with several, where ← and → choose.
+            </li>
+            <li>
+                <strong>Under live data</strong>, a press acts on the row it was made on, as that row is now: a value
+                the feed changed since the button was painted refuses nothing, and whether the action is still
+                allowed is your rule in <code>OnAction</code>. With a Row Key, a press finds its row wherever the order
+                has moved it. A press the grid can no longer pair with its row is refused through
+                <code>OnActionRefused</code>, naming why: <code>OrderMoved</code>, <code>RowLeftTheWindow</code>, or
+                <code>SourceChanged</code> when the <code>Source</code> was replaced. See
+                <a href="exgrid/editing#editing-while-values-change">Editing while values change</a>.
             </li>
         </ul>
         <DocsExample Title="Marks, a template and actions" Builtin="typeof(SpecialColumns)" Mud="typeof(SpecialColumnsMud)"

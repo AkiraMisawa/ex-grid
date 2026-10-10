@@ -74,8 +74,14 @@ internal sealed class ReportBuilder
     private readonly int _labelColumnCount;
     private readonly AxisNode?[] _pending;
 
-    public ReportBuilder(PivotCube cube, PivotLayout layout, PivotOptions options)
+    // The rows this builder makes, and the report it hands them to, share one lineage: a report
+    // answers the values of its own rows, and refuses another report's (PivotReport.ValueAt). An
+    // update of a report continues its lineage, so the rows the versions share stay answerable.
+    private readonly ReportLineage _lineage;
+
+    public ReportBuilder(PivotCube cube, PivotLayout layout, PivotOptions options, ReportLineage? lineage = null)
     {
+        _lineage = lineage ?? new ReportLineage();
         _cube = cube;
         _layout = layout;
         _options = options;
@@ -100,6 +106,12 @@ internal sealed class ReportBuilder
         _pending = new AxisNode?[_rowPlacements.Length];
     }
 
+    /// <summary>The cube it lays out.</summary>
+    internal PivotCube Cube => _cube;
+
+    /// <summary>The layout it lays the cube out under.</summary>
+    internal PivotLayout Layout => _layout;
+
     private int RowLevels => _rowPlacements.Length;
 
     private int ColumnLevels => _columnPlacements.Length;
@@ -123,7 +135,14 @@ internal sealed class ReportBuilder
 
     /// <summary>The report, laid out in slices (PV-40): the value columns and their spans, then the
     /// rows, each tree walked a step at a time, and the rows handed to the report.</summary>
-    public async ValueTask<PivotReport> BuildAsync(Slicer slicer)
+    public ValueTask<PivotReport> BuildAsync(Slicer slicer) => LayOutAsync(null, slicer);
+
+    /// <summary>The report around <paramref name="rows"/>, which this builder made node by node
+    /// (<see cref="RowsOf(AxisNode, int)"/>) for a computation's structure (ADR-0153): the value columns and their
+    /// spans laid out as <see cref="BuildAsync"/> lays them out.</summary>
+    internal ValueTask<PivotReport> BuildAroundAsync(IReadOnlyList<PivotReportRow> rows, Slicer slicer) => LayOutAsync(rows, slicer);
+
+    private async ValueTask<PivotReport> LayOutAsync(IReadOnlyList<PivotReportRow>? laidOut, Slicer slicer)
     {
         var columns = new List<PivotReportColumn>();
         var spans = new List<PivotHeaderSpan>();
@@ -131,12 +150,99 @@ internal sealed class ReportBuilder
         if (!Empty)
         {
             await EmitColumnsAsync(columns, spans, slicer).ConfigureAwait(false);
-            await EmitRowsAsync(rows, slicer).ConfigureAwait(false);
+            if (laidOut is null)
+                await EmitRowsAsync(rows, slicer).ConfigureAwait(false);
         }
         var tiers = ColumnLevels == 0 ? 0 : _valuesOnColumns ? ColumnLevels : ColumnLevels - 1;
-        var report = new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, rows);
-        await slicer.ForAsync(rows.Count, report.Attach).ConfigureAwait(false);
+        var report = new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, laidOut ?? rows, _lineage);
         return report;
+    }
+
+    private PivotReportRow NewRow(PivotRowRole role, AxisNode node, int valueField, bool carriesValues, PivotRowLabel[] labels)
+        => new(role, node, valueField, carriesValues, labels, _lineage);
+
+    // The same layout rules used by a complete walk, applied to one affected axis node.
+    // Tabular pending labels always form a suffix of the ancestor path: a later sibling
+    // starts a new suffix, while a first child inherits its parent's pending ancestors.
+    internal (PivotReportRow[] Before, PivotReportRow[] After, bool Descend) RowsOf(AxisNode node, int pendingFrom)
+    {
+        // One node's few rows, collected in lists this builder reuses: a structure is laid out
+        // node by node, hundreds of thousands of them.
+        _before.Clear();
+        _after.Clear();
+        var descend = LayOut(node, pendingFrom, _before, _after);
+        return ([.. _before], [.. _after], descend);
+    }
+
+    /// <summary>As <see cref="RowsOf(AxisNode, int)"/>, the node's rows before its children's
+    /// appended to <paramref name="rows"/>; answers its rows after them, for the caller to append
+    /// once the children are laid out.</summary>
+    internal PivotReportRow[] RowsInto(AxisNode node, int pendingFrom, List<PivotReportRow> rows, out bool descend)
+    {
+        _after.Clear();
+        descend = LayOut(node, pendingFrom, rows, _after);
+        return _after.Count == 0 ? [] : [.. _after];
+    }
+
+    private bool LayOut(AxisNode node, int pendingFrom, List<PivotReportRow> before, List<PivotReportRow> after)
+    {
+        if (Empty) return false;
+        if (node.Item is null)
+        {
+            if (RowLevels == 0)
+            {
+                Slicer.Run(EmitRowsAsync(before, Slicer.Unsliced));
+                return false;
+            }
+            if (_layout.GrandTotalRow && ValueCount > 0)
+                for (var vf = _valuesOnRows ? 0 : -1; vf < (_valuesOnRows ? ValueCount : 0); vf++)
+                    after.Add(NewRow(PivotRowRole.GrandTotal, node, vf, true, GrandTotalLabels(vf)));
+            return true;
+        }
+        Array.Clear(_pending);
+        for (var level = pendingFrom; level < node.Level; level++)
+            _pending[level] = AncestorAt(node, level);
+        var tabular = _layout.Form == PivotReportForm.Tabular;
+        var descend = (tabular ? EnterTabular(node, before) : EnterGrouped(node, before)) >= 0;
+        Array.Clear(_pending);
+        if (descend)
+        {
+            if (tabular) LeaveTabular(node, after);
+            else LeaveGrouped(node, after);
+        }
+        return descend;
+    }
+
+    private readonly List<PivotReportRow> _before = [];
+    private readonly List<PivotReportRow> _after = [];
+
+    internal async ValueTask<List<AxisNode>> OrderedChildrenAsync(AxisNode node, Slicer slicer)
+    {
+        var order = Order(node, rows: true);
+        while (true)
+        {
+            var budget = Slicer.PieceUnits;
+            var done = order.Step(ref budget);
+            if (slicer.Done(Slicer.PieceUnits - budget)) await slicer.PauseAsync().ConfigureAwait(false);
+            if (done) return order.Result!;
+        }
+    }
+
+    internal async ValueTask<PivotReport> WithRowsAsync(PivotReport previous, IReadOnlyList<PivotReportRow> rows,
+        bool columnsChanged, Slicer slicer)
+    {
+        if (!columnsChanged)
+            return new(_cube, _layout, _options, _reader, previous.LabelColumns, previous.ValueColumns,
+                previous.HeaderSpans, previous.HeaderTierCount, rows, _lineage);
+        var columns = new List<PivotReportColumn>();
+        var spans = new List<PivotHeaderSpan>();
+        if (!Empty) await EmitColumnsAsync(columns, spans, slicer).ConfigureAwait(false);
+        var old = previous.ValueColumns.ToDictionary(c => c.Name);
+        for (var i = 0; i < columns.Count; i++)
+            if (old.TryGetValue(columns[i].Name, out var held) && held.Header == columns[i].Header)
+                columns[i] = held;
+        return new(_cube, _layout, _options, _reader, previous.LabelColumns, columns, spans,
+            previous.HeaderTierCount, rows, _lineage);
     }
 
     private string Word(string id) => _options.Word(id);
@@ -396,12 +502,12 @@ internal sealed class ReportBuilder
                 {
                     var labels = NewLabels();
                     labels[_labelColumnCount - 1] = new PivotRowLabel(_values[vf].Caption);
-                    rows.Add(new PivotReportRow(PivotRowRole.Item, root, vf, carriesValues: true, labels));
+                    rows.Add(NewRow(PivotRowRole.Item, root, vf, carriesValues: true, labels));
                 }
             }
             else
             {
-                rows.Add(new PivotReportRow(PivotRowRole.GrandTotal, root, -1, carriesValues: true, NewLabels()));
+                rows.Add(NewRow(PivotRowRole.GrandTotal, root, -1, carriesValues: true, NewLabels()));
             }
             return;
         }
@@ -416,11 +522,11 @@ internal sealed class ReportBuilder
             if (_valuesOnRows)
             {
                 for (var vf = 0; vf < ValueCount; vf++)
-                    rows.Add(new PivotReportRow(PivotRowRole.GrandTotal, root, vf, carriesValues: true, GrandTotalLabels(vf)));
+                    rows.Add(NewRow(PivotRowRole.GrandTotal, root, vf, carriesValues: true, GrandTotalLabels(vf)));
             }
             else
             {
-                rows.Add(new PivotReportRow(PivotRowRole.GrandTotal, root, -1, carriesValues: true, GrandTotalLabels(-1)));
+                rows.Add(NewRow(PivotRowRole.GrandTotal, root, -1, carriesValues: true, GrandTotalLabels(-1)));
             }
         }
     }
@@ -462,7 +568,7 @@ internal sealed class ReportBuilder
         var at = node;
         while (at.Level > level)
             at = at.Parent!;
-        return at;
+        return _cube.NodeOf(at, rows: true);
     }
 
     // The Compact and Outline forms: a group row heads each outer Item's block (ADR-0060). An
@@ -479,20 +585,20 @@ internal sealed class ReportBuilder
         {
             if (_valuesOnRows)
             {
-                rows.Add(new PivotReportRow(PivotRowRole.Group, node, -1, carriesValues: false, ItemLabels(node)));
+                rows.Add(NewRow(PivotRowRole.Group, node, -1, carriesValues: false, ItemLabels(node)));
                 for (var vf = 0; vf < ValueCount; vf++)
-                    rows.Add(new PivotReportRow(PivotRowRole.Item, node, vf, carriesValues: true, CaptionLabels(node, vf)));
+                    rows.Add(NewRow(PivotRowRole.Item, node, vf, carriesValues: true, CaptionLabels(node, vf)));
             }
             else
             {
-                rows.Add(new PivotReportRow(innermost ? PivotRowRole.Item : PivotRowRole.Group, node, -1,
+                rows.Add(NewRow(innermost ? PivotRowRole.Item : PivotRowRole.Group, node, -1,
                     carriesValues: true, ItemLabels(node)));
             }
             return -1;
         }
 
         var (_, atTop) = SubtotalsOf(level);
-        rows.Add(new PivotReportRow(PivotRowRole.Group, node, -1, carriesValues: atTop, ItemLabels(node)));
+        rows.Add(NewRow(PivotRowRole.Group, node, -1, carriesValues: atTop, ItemLabels(node)));
         return 0;
     }
 
@@ -506,11 +612,11 @@ internal sealed class ReportBuilder
         if (_valuesOnRows)
         {
             for (var vf = 0; vf < ValueCount; vf++)
-                rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, SubtotalLabels(node, vf)));
+                rows.Add(NewRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, SubtotalLabels(node, vf)));
         }
         else
         {
-            rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, -1, carriesValues: true, SubtotalLabels(node, -1)));
+            rows.Add(NewRow(PivotRowRole.Subtotal, node, -1, carriesValues: true, SubtotalLabels(node, -1)));
         }
     }
 
@@ -600,12 +706,12 @@ internal sealed class ReportBuilder
             {
                 var labels = TabularLabels(node, level);
                 labels[_labelColumnCount - 1] = new PivotRowLabel(_values[vf].Caption);
-                rows.Add(new PivotReportRow(role, node, vf, carriesValues: true, labels));
+                rows.Add(NewRow(role, node, vf, carriesValues: true, labels));
             }
         }
         else
         {
-            rows.Add(new PivotReportRow(role, node, -1, carriesValues: true, TabularLabels(node, level)));
+            rows.Add(NewRow(role, node, -1, carriesValues: true, TabularLabels(node, level)));
         }
         return -1;
     }
@@ -624,7 +730,7 @@ internal sealed class ReportBuilder
             labels[level] = new PivotRowLabel(total);
             if (vf >= 0)
                 labels[_labelColumnCount - 1] = new PivotRowLabel(_values[vf].Caption);
-            rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, labels));
+            rows.Add(NewRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, labels));
         }
     }
 
@@ -660,7 +766,7 @@ internal sealed class ReportBuilder
         var level = node.Level + 1;
         var placement = rows ? _rowPlacements[level] : _columnPlacements[level];
         var meta = rows ? _rowMeta[level] : _columnMeta[level];
-        var children = node.Children;
+        var children = _cube.ChildrenOf(node, rows).ToList();
         var descending = placement.Sort.Direction == PivotSortDirection.Descending;
         if (placement.Sort.ByValue is { } vf)
         {

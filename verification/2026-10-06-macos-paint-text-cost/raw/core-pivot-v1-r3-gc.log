@@ -1,0 +1,30 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+variant V1; load { 3.10 3.69 3.91 }; TieredCompilation=0
+== ExPivot: 1,000 x 100, 101,001 report rows, 2 columns, made in 434 ms; painted rows 11 from 1000; a page is 11 rows (row 28px) ==
+-- a: scroll by 1 row
+   step (scroll/redraw + render)          0.057     0.076     0.104
+   render (ProcessPendingRender)          0.051     0.067     0.092
+   NotePaint alone                        0.002     0.002     0.004
+   NotePaint bytes 544; step bytes 9152; rows rendered 1 (+0 after); new paints 1
+-- b: scroll by a page
+   step (scroll/redraw + render)          0.066     0.077     0.109
+   render (ProcessPendingRender)          0.061     0.071     0.098
+   NotePaint alone                        0.003     0.004     0.007
+   NotePaint bytes 944; step bytes 29864; rows rendered 11 (+0 after); new paints 1
+-- c: fling frame (Placeholders)
+   step (scroll/redraw + render)          0.063     0.079     0.118
+   render (ProcessPendingRender)          0.057     0.072     0.107
+   NotePaint alone                        0.002     0.002     0.003
+   NotePaint bytes 856; step bytes 29040; rows rendered 11 (+0 after); new paints 1
+-- c2: fling settles
+   step (scroll/redraw + render)          0.059     0.080     0.103
+   render (ProcessPendingRender)          0.056     0.074     0.094
+   NotePaint alone                        0.002     0.003     0.004
+   NotePaint bytes 944; step bytes 14664; rows rendered 11 (+0 after); new paints 1
+-- e: live redraw (every painted row new)
+   step (scroll/redraw + render)         64.661    73.216    82.637
+   render (ProcessPendingRender)          4.409     4.598     4.924
+   NotePaint alone                        0.003     0.006     0.008
+   NotePaint bytes 944; step bytes 82647360; rows rendered 11 (+0 after); new paints 1
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/verification/2026-10-06-macos-paint-text-cost/raw/core-pivot-v1-r3-gc.json

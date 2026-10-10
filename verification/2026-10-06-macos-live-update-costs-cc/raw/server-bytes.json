@@ -1,0 +1,264 @@
+{
+  "derivedFrom": "browser-results.json (grid-server-bytes entries, per-connection deltas)",
+  "method": "the circuit connection is the one whose bytes follow the render batches; the one writing about 548 bytes at every reading, with or without a batch, is the harness polling GET /api/wire, and is excluded",
+  "results": [
+    {
+      "rows": 100000,
+      "batch": 1,
+      "presses": 15,
+      "circuitConnection": "0HNP3NPDQ3UME",
+      "pollConnection": [
+        "0HNP3NPDQ3UMG"
+      ],
+      "updateRenderBatchPayload": {
+        "min": 73,
+        "median": 73,
+        "max": 73,
+        "mean": 73.0
+      },
+      "updateWire": {
+        "min": 19,
+        "median": 19,
+        "max": 23,
+        "mean": 19.5
+      },
+      "unmarkRenderBatchPayload": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "mean": 0.0
+      },
+      "unmarkWire": {
+        "min": 0,
+        "median": 0,
+        "max": 7,
+        "mean": 0.5
+      },
+      "unmarkBatches": 0,
+      "perUpdateTotalWireMean": 20.0,
+      "perUpdateTotalPayloadMean": 73.0,
+      "clientPayloadPerPress": {
+        "min": 395,
+        "median": 396,
+        "max": 396,
+        "mean": 395.8
+      },
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15"
+    },
+    {
+      "rows": 100000,
+      "batch": 100,
+      "presses": 15,
+      "circuitConnection": "0HNP3NQ05OTE4",
+      "pollConnection": [
+        "0HNP3NQ05OTE6"
+      ],
+      "updateRenderBatchPayload": {
+        "min": 73,
+        "median": 641,
+        "max": 1161,
+        "mean": 580.9
+      },
+      "updateWire": {
+        "min": 14,
+        "median": 71,
+        "max": 197,
+        "mean": 75.7
+      },
+      "unmarkRenderBatchPayload": {
+        "min": 0,
+        "median": 301,
+        "max": 537,
+        "mean": 259.0
+      },
+      "unmarkWire": {
+        "min": 0,
+        "median": 20,
+        "max": 99,
+        "mean": 26.6
+      },
+      "unmarkBatches": 12,
+      "perUpdateTotalWireMean": 102.3,
+      "perUpdateTotalPayloadMean": 839.9,
+      "clientPayloadPerPress": {
+        "min": 395,
+        "median": 396,
+        "max": 396,
+        "mean": 395.8
+      },
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15"
+    },
+    {
+      "rows": 100000,
+      "batch": 1000,
+      "presses": 15,
+      "circuitConnection": "0HNP3NQIGHODA",
+      "pollConnection": [
+        "0HNP3NQIGHODC"
+      ],
+      "updateRenderBatchPayload": {
+        "min": 1805,
+        "median": 2565,
+        "max": 3641,
+        "mean": 2555.9
+      },
+      "updateWire": {
+        "min": 179,
+        "median": 291,
+        "max": 465,
+        "mean": 293.0
+      },
+      "unmarkRenderBatchPayload": {
+        "min": 905,
+        "median": 1293,
+        "max": 1809,
+        "mean": 1269.3
+      },
+      "unmarkWire": {
+        "min": 45,
+        "median": 116,
+        "max": 209,
+        "mean": 119.3
+      },
+      "unmarkBatches": 15,
+      "perUpdateTotalWireMean": 412.3,
+      "perUpdateTotalPayloadMean": 3825.1,
+      "clientPayloadPerPress": {
+        "min": 395,
+        "median": 396,
+        "max": 396,
+        "mean": 395.8
+      },
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15"
+    },
+    {
+      "rows": 1000000,
+      "batch": 1,
+      "presses": 15,
+      "circuitConnection": "0HNP3NR4RS3JM",
+      "pollConnection": [
+        "0HNP3NR4RS3JO"
+      ],
+      "updateRenderBatchPayload": {
+        "min": 73,
+        "median": 73,
+        "max": 73,
+        "mean": 73.0
+      },
+      "updateWire": {
+        "min": 19,
+        "median": 19,
+        "max": 23,
+        "mean": 19.5
+      },
+      "unmarkRenderBatchPayload": {
+        "min": 0,
+        "median": 0,
+        "max": 0,
+        "mean": 0.0
+      },
+      "unmarkWire": {
+        "min": 0,
+        "median": 0,
+        "max": 7,
+        "mean": 0.5
+      },
+      "unmarkBatches": 0,
+      "perUpdateTotalWireMean": 20.0,
+      "perUpdateTotalPayloadMean": 73.0,
+      "clientPayloadPerPress": {
+        "min": 395,
+        "median": 396,
+        "max": 396,
+        "mean": 395.8
+      },
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15"
+    },
+    {
+      "rows": 1000000,
+      "batch": 100,
+      "presses": 15,
+      "circuitConnection": "0HNP3NRNDQKA4",
+      "pollConnection": [
+        "0HNP3NRNDQKA6"
+      ],
+      "updateRenderBatchPayload": {
+        "min": 73,
+        "median": 644,
+        "max": 1159,
+        "mean": 641.1
+      },
+      "updateWire": {
+        "min": 21,
+        "median": 71,
+        "max": 221,
+        "mean": 83.1
+      },
+      "unmarkRenderBatchPayload": {
+        "min": 0,
+        "median": 301,
+        "max": 537,
+        "mean": 290.5
+      },
+      "unmarkWire": {
+        "min": 0,
+        "median": 24,
+        "max": 102,
+        "mean": 30.0
+      },
+      "unmarkBatches": 13,
+      "perUpdateTotalWireMean": 113.1,
+      "perUpdateTotalPayloadMean": 931.6,
+      "clientPayloadPerPress": {
+        "min": 395,
+        "median": 396,
+        "max": 396,
+        "mean": 395.8
+      },
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15"
+    },
+    {
+      "rows": 1000000,
+      "batch": 1000,
+      "presses": 15,
+      "circuitConnection": "0HNP3NS9VKM5J",
+      "pollConnection": [
+        "0HNP3NS9VKM5L"
+      ],
+      "updateRenderBatchPayload": {
+        "min": 1965,
+        "median": 2562,
+        "max": 3482,
+        "mean": 2572.2
+      },
+      "updateWire": {
+        "min": 216,
+        "median": 297,
+        "max": 428,
+        "mean": 294.7
+      },
+      "unmarkRenderBatchPayload": {
+        "min": 969,
+        "median": 1293,
+        "max": 1745,
+        "mean": 1286.9
+      },
+      "unmarkWire": {
+        "min": 58,
+        "median": 133,
+        "max": 210,
+        "mean": 129.5
+      },
+      "unmarkBatches": 15,
+      "perUpdateTotalWireMean": 424.3,
+      "perUpdateTotalPayloadMean": 3859.1,
+      "clientPayloadPerPress": {
+        "min": 395,
+        "median": 396,
+        "max": 396,
+        "mean": 395.8
+      },
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15"
+    }
+  ]
+}

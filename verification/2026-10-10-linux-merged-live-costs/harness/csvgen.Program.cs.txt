@@ -1,0 +1,5 @@
+// Disposable: writes /pivot-csv's trade export of a million trades, as the page's own DemoCsv writes it,
+// for measure-pivot.spec.mjs's EXGRID_MEASURE_CSV (PV-21, DA-17).
+var bytes = await ExGrid.DemoPages.DemoCsv.TradeExportFileAsync(int.Parse(args[1]));
+await File.WriteAllBytesAsync(args[0], bytes);
+Console.WriteLine($"{bytes.Length:N0} bytes");

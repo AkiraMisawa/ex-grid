@@ -1,0 +1,101 @@
+@using System.Globalization
+@using ExGrid.Cells
+@using ExGrid.Columns
+@using ExGrid.Keys
+
+<div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; font-size: 14px">
+    <button type="button" @onclick="AdvancePrices">Advance prices (F9)</button>
+    <span>@_feed</span>
+</div>
+
+<ExGrid TRow="Position" Source="_source" Columns="Columns" CellChangedAt="_source.CellChangedAt"
+        OnEdit="OnEdit" OnOverwriteNotice="OnOverwriteNotice" OnAction="OnAction"
+        DeclaredKeys="FeedKeys" OnDeclaredKey="OnFeedKey"
+        ViewportHeight="150" ViewportWidth="ViewportSize.Stretch" />
+<p role="status" style="margin: 12px 0 0; font-size: 14px">@_result</p>
+
+@code {
+    private const decimal Limit = 150m;
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    // Declared to the grid, F9 reaches this page even while a cell is being edited, and leaves the edit open.
+    private static readonly string[] FeedKeys = ["F9"];
+
+    private static readonly GridColumn<Position>[] Columns =
+    [
+        new("Id", ColumnType.Number, row => row.Id, width: Fixed(80), align: CellAlign.Left),
+        new("Trader", ColumnType.Text, row => row.Trader, width: Fixed(120), editable: true),
+        new("Price", ColumnType.Number, row => row.Price, width: Fixed(100), editable: true,
+            format: value => ((decimal)value).ToString("0.00", Invariant), validate: ValidatePrice),
+        GridColumn<Position>.ActionColumn("Actions", [new GridAction("approve", "Approve")], width: Fixed(110)),
+    ];
+
+    // Keyed by Id, so the feed hands over new versions of the same positions.
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(
+        Position.Sample(3).Select((row, index) => row with { Price = 100m + index * 10m }).ToArray(),
+        row => row.Id);
+
+    private string _feed = "Prices start at 100, 110 and 120.";
+    private string _result = "Type a Price, press F9 while the editor is open, then Enter.";
+    private int _feeds;
+
+    public LiveWrites()
+    {
+        // This feed moves only when F9 is pressed, so each change is shown as it comes. A feed that
+        // ticks many times a second keeps the default, which gathers its changes.
+        _source.GatherInterval = TimeSpan.Zero;
+    }
+
+    // Text that is not a positive number never reaches OnEdit: the editor stays open with the message.
+    private static EditVerdict ValidatePrice(Position row, string text)
+        => !decimal.TryParse(text, NumberStyles.Number, Invariant, out var price) || price <= 0
+            ? EditVerdict.Reject("Enter a positive price.")
+            : EditVerdict.Accept;
+
+    private void OnEdit(GridEditIntent<Position> edit)
+    {
+        if (edit.Column == "Price")
+        {
+            var price = decimal.Parse(edit.Value, NumberStyles.Number, Invariant);
+            // This desk's rule, judged here: refused before the handler completes, the editor stays
+            // open with the typing and this message.
+            if (price > Limit)
+            {
+                edit.Refuse($"{Money(price)} is above this desk's limit of {Money(Limit)}. Enter a lower price, or press Escape.");
+                return;
+            }
+            // edit.Row is the row as the source holds it now, so a field the feed changed meanwhile stays.
+            _source.ReplaceRow(edit.Row, edit.Row with { Price = price });
+        }
+        else
+        {
+            _source.ReplaceRow(edit.Row, edit.Row with { Trader = edit.Value });
+        }
+        _result = $"Written: {edit.Column} {edit.Value} on position {edit.Row.Id}.";
+    }
+
+    // The commit landed over a value the feed changed under the editor. The grid holds no sentence
+    // for it: the page says what was written over.
+    private void OnOverwriteNotice(GridOverwriteNotice notice)
+        => _result += $" It replaced {notice.ReplacedText}: the feed changed {notice.Column} while you typed, from the {notice.SeenText} you saw.";
+
+    private void OnFeedKey(GridDeclaredKeyPress key) => AdvancePrices();
+
+    // Stands in for a live feed: a Change Batch with a new version of every position, each price up by 10.
+    private void AdvancePrices()
+    {
+        _source.Apply(new GridChangeBatch<Position>(changed: [.. _source.Window.Select(row => row with { Price = row.Price + 10m })]));
+        _feed = $"Feed update {++_feeds}: every price up by 10.";
+    }
+
+    // The grid acts on the row the press was made on, as it is now. Whether the desk may approve it
+    // is this page's business rule, and the page says why it declines.
+    private void OnAction(GridActionEventArgs<Position> action)
+        => _result = action.Row.Price > Limit
+            ? $"Not approved: position {action.Row.Id} is at {Money(action.Row.Price)}, above this desk's limit of {Money(Limit)}."
+            : $"Approved: position {action.Row.Id} at {Money(action.Row.Price)}.";
+
+    private static string Money(decimal value) => value.ToString("0.00", Invariant);
+
+    private static ColumnWidthSpec Fixed(double width) => new(ColumnWidth.Fixed(width));
+}

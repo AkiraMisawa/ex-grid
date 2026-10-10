@@ -1,0 +1,38 @@
+{
+  "mode": "vouch",
+  "machine": {
+    "at": "2026-10-06T13:44:19.6708860\u002B01:00",
+    "loadavg": "{ 2.04 2.07 2.51 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      "  7.0 36-06:57:07 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui",
+      "  5.6 36-07:07:22 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon",
+      "  2.1 22-21:33:49 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  1.6 01-22:52:53 /System/Library/PrivateFrameworks/Ecosystem.framework/Support/ecosystemd",
+      "  1.4 04-11:01:20 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  1.2 04-11:01:20 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "  1.1 01-22:52:54 /System/Library/PrivateFrameworks/EcosystemAnalytics.framework/Support/ecosystemanalyticsd",
+      "  1.0 36-07:07:22 /usr/sbin/coreaudiod",
+      "  0.9 24-15:52:56 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacOS/com.appl",
+      "  0.7 36-07:06:59 /System/Library/CoreServices/WindowManager.app/Contents/MacOS/WindowManager",
+      "  0.7 23-17:09:52 /Library/Application Support/org.pqrs/Karabiner-Elements/Karabiner-Core-Service.app/Contents/MacOS/Karabiner-Core-Service"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": [
+    {
+      "grid": "source\u0027s own key, vouched",
+      "windowRows": 100000,
+      "keyCallsInApplyState": 0,
+      "vouched": true
+    },
+    {
+      "grid": "a Row Key of the grid\u0027s own over the source",
+      "windowRows": 100000,
+      "keyCallsInApplyState": 100000,
+      "vouched": false
+    }
+  ]
+}

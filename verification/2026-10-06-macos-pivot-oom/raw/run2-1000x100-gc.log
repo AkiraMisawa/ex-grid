@@ -1,0 +1,14 @@
+{"step":"loaded","s":1.644,"managedAfterGcMB":87.9,"heapMB":199,"managedMB":"87.9","oom":null}
+{"step":1,"s":0.66,"landed":true,"managedAfterGcMB":129.1,"heapMB":239,"managedMB":"129.1","oom":null}
+{"step":2,"s":0.813,"landed":true,"managedAfterGcMB":172.3,"heapMB":344,"managedMB":"172.3","oom":null}
+{"step":3,"s":0.814,"landed":true,"managedAfterGcMB":215.5,"heapMB":412,"managedMB":"215.5","oom":null}
+{"step":4,"s":0.782,"landed":true,"managedAfterGcMB":258.7,"heapMB":495,"managedMB":"258.7","oom":null}
+{"step":5,"s":0.798,"landed":true,"managedAfterGcMB":299.9,"heapMB":591,"managedMB":"299.9","oom":null}
+{"step":6,"s":0.791,"landed":true,"managedAfterGcMB":341,"heapMB":591,"managedMB":"341.0","oom":null}
+{"step":7,"s":0.804,"landed":true,"managedAfterGcMB":382.2,"heapMB":694,"managedMB":"382.2","oom":null}
+{"step":8,"s":0.775,"landed":true,"managedAfterGcMB":423.3,"heapMB":791,"managedMB":"423.3","oom":null}
+{"step":9,"s":0.796,"landed":true,"managedAfterGcMB":464.5,"heapMB":791,"managedMB":"464.5","oom":null}
+{"step":10,"s":0.778,"landed":true,"managedAfterGcMB":505.6,"heapMB":888,"managedMB":"505.6","oom":null}
+{"step":11,"s":0.797,"landed":true,"managedAfterGcMB":546.8,"heapMB":984,"managedMB":"546.8","oom":null}
+{"step":12,"s":0.783,"landed":true,"managedAfterGcMB":587.9,"heapMB":984,"managedMB":"587.9","oom":null}
+{"verdict":"GREEN","oom":null,"errors":[]}

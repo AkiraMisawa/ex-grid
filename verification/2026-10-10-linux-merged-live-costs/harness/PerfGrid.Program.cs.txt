@@ -1,0 +1,126 @@
+using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json;
+using Costs;
+using ExGrid;
+using ExGrid.Components;
+using Microsoft.AspNetCore.Components;
+
+// Disposable A/B harness for reviewing PR #70, never committed: ExGrid's whole live update over
+// GridSource.From keyed (as /grid-live-local), and a full repaint of a pushed Window, the same code
+// on main and on the branch. Run in Release with DOTNET_TieredCompilation=0:
+//   dotnet <PerfGrid.dll> <out.json> <rows> <k,k,…> <warmup> <runs> <pages>
+var output = args[0];
+var rows = int.Parse(args[1], CultureInfo.InvariantCulture);
+var ks = args[2].Split(',').Select(s => int.Parse(s, CultureInfo.InvariantCulture)).ToArray();
+var warmup = int.Parse(args[3], CultureInfo.InvariantCulture);
+var runs = int.Parse(args[4], CultureInfo.InvariantCulture);
+var pages = int.Parse(args[5], CultureInfo.InvariantCulture);
+var results = new Dictionary<string, object>();
+
+static async Task Settle(CountingRenderer renderer)
+{
+    for (var settle = 0; settle < 5; settle++)
+        await renderer.Dispatcher.InvokeAsync(() => Task.Yield());
+}
+
+// 1. The whole live update as the grid takes it: Apply on the renderer's context, interval 0, so
+// publication, the grid's take-in and its render run inline; then whatever follows on continuations.
+{
+    var trades = Trades.Generate(rows);
+    var source = GridSource.From(trades, t => t.Id);
+    var cellChangedAt = source.CellChangedAt;
+    source.GatherInterval = TimeSpan.Zero;
+    var newest = (Trade[])trades.Clone();
+    var renderer = new CountingRenderer(new Services(TimeProvider.System)) { Watched = typeof(ExGridRow<>) };
+    var grid = renderer.Create<ExGrid<Trade>>();
+    var id = renderer.Attach(grid);
+    await renderer.Dispatcher.InvokeAsync(() => renderer.RenderRootAsync(id, ParameterView.FromDictionary(new Dictionary<string, object?>
+    {
+        [nameof(ExGrid<Trade>.Source)] = source,
+        [nameof(ExGrid<Trade>.Columns)] = Trades.Columns,
+        [nameof(ExGrid<Trade>.PinnedColumnCount)] = 1,
+        [nameof(ExGrid<Trade>.CellChangedAt)] = cellChangedAt,
+        [nameof(ExGrid<Trade>.ChangeHighlightDuration)] = TimeSpan.FromSeconds(1),
+        [nameof(ExGrid<Trade>.ViewportHeight)] = (ViewportSize)480,
+        [nameof(ExGrid<Trade>.ViewportWidth)] = (ViewportSize)1270,
+    })));
+    await Settle(renderer);
+    var perK = new List<object>();
+    foreach (var k in ks)
+    {
+        var random = new Random(20261006 + k);
+        var inline = new List<double>(); var settled = new List<double>(); var allocs = new List<double>();
+        for (var r = 0; r < warmup + runs; r++)
+        {
+            var batch = new GridChangeBatch<Trade>(changed: Trades.Amend(newest, k, random));
+            Clock.Collect();
+            double e = 0;
+            var a0 = GC.GetTotalAllocatedBytes(precise: true);
+            var t0 = Stopwatch.GetTimestamp();
+            await renderer.Dispatcher.InvokeAsync(() =>
+            {
+                var a = Stopwatch.GetTimestamp();
+                source.Apply(batch);
+                e = Clock.Ms(a);
+            });
+            await Settle(renderer);
+            var all = Clock.Ms(t0);
+            var alloc = GC.GetTotalAllocatedBytes(precise: true) - a0;
+            if (r >= warmup) { inline.Add(e); settled.Add(all); allocs.Add(alloc); }
+        }
+        perK.Add(new { changes = k, inlineMs = Stat.Of(inline), withContinuationsMs = Stat.Of(settled), allocatedBytes = Stat.Of(allocs) });
+        Console.WriteLine($"   live update k={k,5}: inline {Stat.Of(inline)}  with continuations {Stat.Of(settled)}  alloc median {Stat.Of(allocs).Median / 1024:F0} KiB");
+    }
+    results["liveUpdate"] = new { rows, perK };
+    await renderer.DisposeAsync();
+}
+
+// 2. A full repaint: a pushed Window whose rows are all new, keyed and unkeyed.
+foreach (var keyed in new[] { true, false })
+{
+    var trades = Trades.Generate(Math.Max(rows / 10, 40 * (pages + 10)));
+    var renderer = new CountingRenderer(new Services(TimeProvider.System)) { Watched = typeof(ExGridRow<>) };
+    var grid = renderer.Create<ExGrid<Trade>>();
+    var id = renderer.Attach(grid);
+    Dictionary<string, object?> Parameters(int page)
+    {
+        var p = new Dictionary<string, object?>
+        {
+            [nameof(ExGrid<Trade>.Window)] = trades[(page * 40)..(page * 40 + 40)],
+            [nameof(ExGrid<Trade>.Columns)] = Trades.Columns,
+            [nameof(ExGrid<Trade>.PinnedColumnCount)] = 1,
+            [nameof(ExGrid<Trade>.ViewportHeight)] = (ViewportSize)480,
+            [nameof(ExGrid<Trade>.ViewportWidth)] = (ViewportSize)1270,
+        };
+        if (keyed)
+            p[nameof(ExGrid<Trade>.RowKey)] = (Func<Trade, object>)(t => t.Id);
+        return p;
+    }
+    await renderer.Dispatcher.InvokeAsync(() => renderer.RenderRootAsync(id, ParameterView.FromDictionary(Parameters(0))));
+    await Settle(renderer);
+    var times = new List<double>(); var allocs = new List<double>();
+    for (var page = 1; page <= warmup + pages; page++)
+    {
+        var parameters = ParameterView.FromDictionary(Parameters(page));
+        Clock.Collect();
+        double e = 0;
+        var a0 = GC.GetTotalAllocatedBytes(precise: true);
+        await renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            var a = Stopwatch.GetTimestamp();
+            await renderer.RenderRootAsync(id, parameters);
+            e = Clock.Ms(a);
+        });
+        await Settle(renderer);
+        var alloc = GC.GetTotalAllocatedBytes(precise: true) - a0;
+        if (page > warmup) { times.Add(e); allocs.Add(alloc); }
+    }
+    var painted = renderer.LiveWatched.OfType<ExGridRow<Trade>>().Count(r => !r.Placeholder);
+    results[keyed ? "repaintKeyed" : "repaintUnkeyed"] = new { painted, ms = Stat.Of(times), allocatedBytes = Stat.Of(allocs) };
+    Console.WriteLine($"   repaint {(keyed ? "keyed  " : "unkeyed")} ({painted} rows painted): {Stat.Of(times)}  alloc median {Stat.Of(allocs).Median / 1024:F0} KiB");
+    await renderer.DisposeAsync();
+}
+
+File.WriteAllText(output, JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+return 0;

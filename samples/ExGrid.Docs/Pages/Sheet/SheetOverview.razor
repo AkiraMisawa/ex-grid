@@ -75,8 +75,21 @@
         <p>
             Handing over a different document replaces the Sheet and clears its undo stack. If the user has an
             edit open at that moment, it is discarded and the Sheet says so, rather than typing into the new
-            document. Handing back the document ExSheet just raised — as <code>@@bind-Document</code> does —
-            changes nothing.
+            document — unless the new document is your answer to that edit's own commit, handed in as you hear
+            <code>DocumentChanged</code>: the entry was made, in the document it was typed in, and the edit ends as
+            committed. The Selection goes with the old document, and a paste, <kbd>Delete</kbd> or fill the user
+            aimed at the old one that lands after the new one opened is refused, and the Sheet says another
+            document was opened and nothing was written: its cells stand at the old one's places, and the write
+            was meant for those. Typing aimed at the old one that reaches the Sheet after the new one opened
+            opens no edit, and the Sheet says so the same way. Handing back the document ExSheet just raised — as <code>@@bind-Document</code>
+            does — changes nothing.
+        </p>
+        <p>
+            A Sheet is ExGrid's Consumer, so its edits follow the grid's rules for writes
+            (<a href="exgrid/editing#editing-while-values-change">Editing while values change</a>): what the user
+            enters lands as entered, and if a cell changed under the open editor — a Linked Table's snapshot
+            recalculating it, say — the commit still lands, and the Sheet's notice says what it showed when
+            editing began and what was written over.
         </p>
         <DocsExample Builtin="typeof(SaveAndLoad)" Mud="typeof(SaveAndLoadMud)" Files="@(["Examples/Sheet/Expenses.cs"])" />
     </DocsSection>

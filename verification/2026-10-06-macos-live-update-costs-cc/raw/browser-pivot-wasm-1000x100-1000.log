@@ -1,0 +1,80 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] Serving /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/wasm/wwwroot at http://localhost:5599
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.WaL90b/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8599
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/api
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.1 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version 27fb6fe0-0 from /tmp/nix-shell.WaL90b/exgrid-demo-api/runs/trades-v1-20000.6758.27fb6fe0.sqlite.
+
+Running 3 tests using 1 worker
+
+  -  1 [chrome] › measure-live-costs.spec.mjs:131:1 › ticket 01: a live update on /grid-live-local, WebAssembly
+  -  2 [chrome] › measure-live-costs.spec.mjs:200:1 › ticket 01: the bytes of a live update on /grid-live-local, Server host
+pivot-wasm {
+ "a": 1000,
+ "b": 100,
+ "batch": 1000,
+ "probe": false,
+ "load": "100,000 records made in 226 ms; PivotSource.From took 101 ms.",
+ "warmup": 3,
+ "appliedMs": {
+  "median": 43.9,
+  "min": 40.9,
+  "max": 74.9,
+  "n": 15
+ },
+ "applyToReportFrameMs": {
+  "median": 566,
+  "min": 555,
+  "max": 671,
+  "n": 15
+ },
+ "applyToReportPaintedMs": {
+  "median": 567,
+  "min": 555,
+  "max": 672,
+  "n": 15
+ },
+ "longestTaskMs": {
+  "median": 55,
+  "min": 50,
+  "max": 132,
+  "n": 15
+ },
+ "longTasks": {
+  "median": 1,
+  "min": 1,
+  "max": 3,
+  "n": 15
+ },
+ "longTasksTotalMs": {
+  "median": 55,
+  "min": 50,
+  "max": 238,
+  "n": 15
+ },
+ "probeCubeMs": null,
+ "probeReportMs": null,
+ "probeKeysMs": null,
+ "probeRowsMs": null,
+ "reportRows": null,
+ "lastStatus": "Batch 18: 1,000 records amended, applied in 43 ms (exact 43.000)."
+}
+  ✓  3 [chrome] › measure-live-costs.spec.mjs:310:1 › ticket 01: a live redraw on /pivot-live-costs, WebAssembly (19.7s)
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  2 skipped
+  1 passed (22.4s)

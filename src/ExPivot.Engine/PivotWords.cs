@@ -256,10 +256,23 @@ public static class PivotWords
         ["refused-too-many-cells"] = "This layout needs more than {0} cells.",
         ["refused-too-many-rows"] = "This layout needs more than {0} rows.",
         ["refused-too-many-columns"] = "This layout needs more than {0} columns.",
+        ["refused-out-of-memory"] = "Memory ran out while this layout was laid out.",
         ["aggregation-not-offered"] = "The source does not answer {0}.",
         ["source-failed"] = "The source could not answer: {0}",
         ["source-refused"] = "The source refused to answer: {0}",
         ["data-changed"] = "The data has changed — refresh.",
+
+        // A Copy or a Selection Summary the source answered for another Report Version, or in part:
+        // refused, and said where the grid says a refusal (ADR-0152).
+        ["copy-another-version"] = "The copy answered another Report Version.",
+        ["copy-missing-range"] = "The copy did not answer every selected range.",
+        ["copy-incomplete-range"] = "The copy returned an incomplete selected range.",
+        ["summary-another-version"] = "The summary answered another Report Version.",
+        ["summary-inconsistent-errors"] = "The summary returned inconsistent error counts.",
+
+        // A Copy from a Stale Report, refused: pasted elsewhere, its numbers would lose the time they
+        // are as of (ADR-0067/0152). {0} the time of the version shown, as the notice writes it.
+        ["copy-stale-report"] = "The report shows the data as of {0}: Retry before copying.",
 
         // Show Details: the tabs at the report's foot and the dialog (ADR-0059).
         ["details-title"] = "Details: {0}",
@@ -276,6 +289,7 @@ public static class PivotWords
         ["stale-too-many-columns"] = "the newest data needs more than {0} columns.",
         ["stale-source-failed"] = "the source could not answer: {0}",
         ["stale-source-refused"] = "the source refused to answer: {0}",
+        ["stale-out-of-memory"] = "memory ran out while the newest data was laid out.",
         ["retry"] = "Retry",
     };
 
@@ -416,10 +430,18 @@ public static class PivotWords
         ["refused-too-many-cells"] = "このレイアウトには {0} 個を超えるセルが必要です。",
         ["refused-too-many-rows"] = "このレイアウトには {0} を超える行が必要です。",
         ["refused-too-many-columns"] = "このレイアウトには {0} を超える列が必要です。",
+        ["refused-out-of-memory"] = "このレイアウトを配置する途中でメモリが不足しました。",
         ["aggregation-not-offered"] = "ソースは {0} に対応していません。",
         ["source-failed"] = "ソースから応答を得られませんでした: {0}",
         ["source-refused"] = "ソースが応答を拒否しました: {0}",
         ["data-changed"] = "データが変更されました。更新してください。",
+
+        ["copy-another-version"] = "コピーへの応答が、別のバージョンのレポートのものでした。",
+        ["copy-missing-range"] = "コピーへの応答に、選択したすべての範囲が含まれていませんでした。",
+        ["copy-incomplete-range"] = "コピーへの応答に、欠けのある選択範囲が含まれていました。",
+        ["summary-another-version"] = "集計への応答が、別のバージョンのレポートのものでした。",
+        ["summary-inconsistent-errors"] = "集計への応答で、エラーの数が食い違っていました。",
+        ["copy-stale-report"] = "レポートは {0} 時点のデータを表示しています。コピーする前に再試行してください。",
 
         ["details-title"] = "詳細: {0}",
         ["report-tab"] = "ピボットテーブル",
@@ -433,6 +455,7 @@ public static class PivotWords
         ["stale-too-many-columns"] = "最新のデータには {0} を超える列が必要です。",
         ["stale-source-failed"] = "ソースから応答を得られませんでした: {0}",
         ["stale-source-refused"] = "ソースが応答を拒否しました: {0}",
+        ["stale-out-of-memory"] = "最新のデータを配置する途中でメモリが不足しました。",
         ["retry"] = "再試行",
 
         // ExGrid's commands in the report's Context Menu (ExGrid.Chrome.GridCommandIds).

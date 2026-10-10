@@ -1,0 +1,460 @@
+{
+  "url": "/live-cost-pivot?b=400&gc=true",
+  "completed": 6,
+  "samples": [
+    {
+      "update": 1,
+      "status": "Batch 1: apply 50.600 ms"
+    },
+    {
+      "update": 2,
+      "status": "Batch 2: apply 38.700 ms"
+    },
+    {
+      "update": 3,
+      "status": "Batch 3: apply 37.200 ms"
+    },
+    {
+      "update": 4,
+      "status": "Batch 4: apply 38.100 ms"
+    },
+    {
+      "update": 5,
+      "status": "Batch 5: apply 36.800 ms"
+    },
+    {
+      "update": 6,
+      "status": "Batch 6: apply 39.400 ms"
+    }
+  ],
+  "memory": [
+    {
+      "update": 0,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": true,
+      "intervention": null,
+      "managedBeforeGc": 326857784,
+      "managedBytes": 317473000,
+      "allocatedBytes": 422247360,
+      "threadAllocatedBytes": 422254560,
+      "gc0": 32,
+      "gc1": 12,
+      "gc2": 12,
+      "tracked": {
+        "Report": {
+          "created": 1,
+          "alive": 1
+        },
+        "Cube": {
+          "created": 1,
+          "alive": 1
+        },
+        "Snapshot": {
+          "created": 1,
+          "alive": 1
+        },
+        "Answer": {
+          "created": 1,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 1,
+        "historyReports": [
+          "9d6818bca419417f98f2df36bb4e1b61:0"
+        ],
+        "paints": 2,
+        "paintRowReferences": 36,
+        "paintDistinctReports": 1,
+        "paintReportVersions": [
+          "9d6818bca419417f98f2df36bb4e1b61:0"
+        ],
+        "sourceAnsweredSnapshots": 1
+      },
+      "wasmHeapBytes": 518782976
+    },
+    {
+      "update": 1,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": true,
+      "intervention": null,
+      "managedBeforeGc": 492749776,
+      "managedBytes": 476437888,
+      "allocatedBytes": 647561912,
+      "threadAllocatedBytes": 647563960,
+      "gc0": 55,
+      "gc1": 15,
+      "gc2": 15,
+      "tracked": {
+        "Report": {
+          "created": 2,
+          "alive": 2
+        },
+        "Cube": {
+          "created": 2,
+          "alive": 2
+        },
+        "Snapshot": {
+          "created": 2,
+          "alive": 2
+        },
+        "Answer": {
+          "created": 2,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "9d6818bca419417f98f2df36bb4e1b61:1",
+          "9d6818bca419417f98f2df36bb4e1b61:0"
+        ],
+        "paints": 3,
+        "paintRowReferences": 54,
+        "paintDistinctReports": 2,
+        "paintReportVersions": [
+          "9d6818bca419417f98f2df36bb4e1b61:0",
+          "9d6818bca419417f98f2df36bb4e1b61:1"
+        ],
+        "sourceAnsweredSnapshots": 2
+      },
+      "wasmHeapBytes": 847839232
+    },
+    {
+      "update": 2,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": true,
+      "intervention": null,
+      "managedBeforeGc": 646031888,
+      "managedBytes": 635311800,
+      "allocatedBytes": 872637544,
+      "threadAllocatedBytes": 872640000,
+      "gc0": 78,
+      "gc1": 18,
+      "gc2": 18,
+      "tracked": {
+        "Report": {
+          "created": 3,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 3,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 3,
+          "alive": 3
+        },
+        "Answer": {
+          "created": 3,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "9d6818bca419417f98f2df36bb4e1b61:2",
+          "9d6818bca419417f98f2df36bb4e1b61:1"
+        ],
+        "paints": 4,
+        "paintRowReferences": 72,
+        "paintDistinctReports": 3,
+        "paintReportVersions": [
+          "9d6818bca419417f98f2df36bb4e1b61:0",
+          "9d6818bca419417f98f2df36bb4e1b61:1",
+          "9d6818bca419417f98f2df36bb4e1b61:2"
+        ],
+        "sourceAnsweredSnapshots": 3
+      },
+      "wasmHeapBytes": 1067319296
+    },
+    {
+      "update": 3,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": true,
+      "intervention": null,
+      "managedBeforeGc": 845359440,
+      "managedBytes": 794185600,
+      "allocatedBytes": 1097702688,
+      "threadAllocatedBytes": 1097705000,
+      "gc0": 101,
+      "gc1": 20,
+      "gc2": 20,
+      "tracked": {
+        "Report": {
+          "created": 4,
+          "alive": 4
+        },
+        "Cube": {
+          "created": 4,
+          "alive": 4
+        },
+        "Snapshot": {
+          "created": 4,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 4,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "9d6818bca419417f98f2df36bb4e1b61:3",
+          "9d6818bca419417f98f2df36bb4e1b61:2"
+        ],
+        "paints": 5,
+        "paintRowReferences": 90,
+        "paintDistinctReports": 4,
+        "paintReportVersions": [
+          "9d6818bca419417f98f2df36bb4e1b61:0",
+          "9d6818bca419417f98f2df36bb4e1b61:1",
+          "9d6818bca419417f98f2df36bb4e1b61:2",
+          "9d6818bca419417f98f2df36bb4e1b61:3"
+        ],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1370423296
+    },
+    {
+      "update": 4,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": true,
+      "intervention": null,
+      "managedBeforeGc": 1004269128,
+      "managedBytes": 953058752,
+      "allocatedBytes": 1322761592,
+      "threadAllocatedBytes": 1322764224,
+      "gc0": 124,
+      "gc1": 22,
+      "gc2": 22,
+      "tracked": {
+        "Report": {
+          "created": 5,
+          "alive": 5
+        },
+        "Cube": {
+          "created": 5,
+          "alive": 5
+        },
+        "Snapshot": {
+          "created": 5,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 5,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "9d6818bca419417f98f2df36bb4e1b61:4",
+          "9d6818bca419417f98f2df36bb4e1b61:3"
+        ],
+        "paints": 6,
+        "paintRowReferences": 108,
+        "paintDistinctReports": 5,
+        "paintReportVersions": [
+          "9d6818bca419417f98f2df36bb4e1b61:0",
+          "9d6818bca419417f98f2df36bb4e1b61:1",
+          "9d6818bca419417f98f2df36bb4e1b61:2",
+          "9d6818bca419417f98f2df36bb4e1b61:3",
+          "9d6818bca419417f98f2df36bb4e1b61:4"
+        ],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1589706752
+    },
+    {
+      "update": 5,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": true,
+      "intervention": null,
+      "managedBeforeGc": 1163112912,
+      "managedBytes": 1111931872,
+      "allocatedBytes": 1547814888,
+      "threadAllocatedBytes": 1547818088,
+      "gc0": 147,
+      "gc1": 24,
+      "gc2": 24,
+      "tracked": {
+        "Report": {
+          "created": 6,
+          "alive": 6
+        },
+        "Cube": {
+          "created": 6,
+          "alive": 6
+        },
+        "Snapshot": {
+          "created": 6,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 6,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "9d6818bca419417f98f2df36bb4e1b61:5",
+          "9d6818bca419417f98f2df36bb4e1b61:4"
+        ],
+        "paints": 7,
+        "paintRowReferences": 126,
+        "paintDistinctReports": 6,
+        "paintReportVersions": [
+          "9d6818bca419417f98f2df36bb4e1b61:0",
+          "9d6818bca419417f98f2df36bb4e1b61:1",
+          "9d6818bca419417f98f2df36bb4e1b61:2",
+          "9d6818bca419417f98f2df36bb4e1b61:3",
+          "9d6818bca419417f98f2df36bb4e1b61:4",
+          "9d6818bca419417f98f2df36bb4e1b61:5"
+        ],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1802633216
+    },
+    {
+      "update": 6,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": true,
+      "intervention": null,
+      "managedBeforeGc": 1322012408,
+      "managedBytes": 1270805592,
+      "allocatedBytes": 1772868736,
+      "threadAllocatedBytes": 1772871432,
+      "gc0": 170,
+      "gc1": 26,
+      "gc2": 26,
+      "tracked": {
+        "Report": {
+          "created": 7,
+          "alive": 7
+        },
+        "Cube": {
+          "created": 7,
+          "alive": 7
+        },
+        "Snapshot": {
+          "created": 7,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 7,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "9d6818bca419417f98f2df36bb4e1b61:6",
+          "9d6818bca419417f98f2df36bb4e1b61:5"
+        ],
+        "paints": 8,
+        "paintRowReferences": 144,
+        "paintDistinctReports": 7,
+        "paintReportVersions": [
+          "9d6818bca419417f98f2df36bb4e1b61:0",
+          "9d6818bca419417f98f2df36bb4e1b61:1",
+          "9d6818bca419417f98f2df36bb4e1b61:2",
+          "9d6818bca419417f98f2df36bb4e1b61:3",
+          "9d6818bca419417f98f2df36bb4e1b61:4",
+          "9d6818bca419417f98f2df36bb4e1b61:5",
+          "9d6818bca419417f98f2df36bb4e1b61:6"
+        ],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 2105999360
+    }
+  ],
+  "errors": [
+    "Error: Garbage collector could not allocate 16384u bytes of memory for major heap section."
+  ],
+  "browser": "154.0.8037.98",
+  "runtime": {
+    "keys": [
+      "INTERNAL",
+      "invokeLibraryInitializers",
+      "Module",
+      "config",
+      "onConfigLoaded",
+      "onDownloadResourceProgress",
+      "out",
+      "err",
+      "onAbort",
+      "onExit",
+      "runtimeBuildInfo",
+      "runMain",
+      "runMainAndExit",
+      "exit",
+      "setEnvironmentVariable",
+      "getAssemblyExports",
+      "setModuleImports",
+      "getConfig",
+      "setHeapB32",
+      "setHeapB8",
+      "setHeapU8",
+      "setHeapU16",
+      "setHeapU32",
+      "setHeapI8",
+      "setHeapI16",
+      "setHeapI32",
+      "setHeapI52",
+      "setHeapU52",
+      "setHeapI64Big",
+      "setHeapF32",
+      "setHeapF64",
+      "getHeapB32",
+      "getHeapB8",
+      "getHeapU8",
+      "getHeapU16",
+      "getHeapU32",
+      "getHeapI8",
+      "getHeapI16",
+      "getHeapI32",
+      "getHeapI52",
+      "getHeapU52",
+      "getHeapI64Big",
+      "getHeapF32",
+      "getHeapF64",
+      "localHeapViewU8",
+      "localHeapViewU16",
+      "localHeapViewU32",
+      "localHeapViewI8",
+      "localHeapViewI16",
+      "localHeapViewI32",
+      "localHeapViewI64Big",
+      "localHeapViewF32",
+      "localHeapViewF64",
+      "collectCpuSamples",
+      "collectMetrics",
+      "collectGcDump",
+      "connectDSRouter",
+      "runtimeId"
+    ],
+    "moduleKeys": [
+      "HEAP8",
+      "HEAP16",
+      "HEAPU8",
+      "HEAPU16",
+      "HEAP32",
+      "HEAPU32",
+      "HEAPF32",
+      "HEAPF64",
+      "HEAP64",
+      "HEAPU64"
+    ],
+    "heapBytes": 2105999360
+  }
+}

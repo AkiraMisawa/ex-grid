@@ -11,11 +11,13 @@ namespace ExGrid.Components;
 
 // The Selection Summary (ADR-0130): Excel's status-bar figures over the selection. The grid asks
 // and whoever holds the data answers, as for Find (ADR-0055); the grid shows only the answer to
-// the current question. The question is the selection's ranges, the order they were read in, the
-// visible columns, the figures shown and how many times the rows have moved under a standing
-// selection: any of these moving clears the figures at once — in the render that shows the move —
-// and asks again after it. The previous answer is never left beside a new selection, and a late
-// answer is dropped by the question it answers, never by a time.
+// the current question. The question is the selection's ranges, the Source they were read from and
+// the order they were read in, the visible columns, the figures shown and how many times the rows
+// have moved under a standing selection: any of these moving clears the figures at once — in the
+// render that shows the move — and asks again after it. The previous answer is never left beside a
+// new selection, and a late answer is dropped by the question it answers, never by a time. The
+// Source is told apart by the grid's binding, not by its version, which two fresh sources share
+// (ADR-0142).
 public partial class ExGrid<TRow>
 {
     /// <summary>
@@ -60,42 +62,68 @@ public partial class ExGrid<TRow>
     private bool _summaryRaiseOwed;
 
     // How many times the rows under a standing selection may have moved: a changed row at a
-    // position the Window held before, a changed row count, or an edit the grid handed over.
+    // selected position the Window held before, a changed row count, or an edit the grid handed over.
     private int _summaryRowsStamp;
     private IReadOnlyList<TRow>? _summaryRows;
     private int _summaryRowsStart;
     private int? _summaryRowsTotal;
 
     private sealed record SummaryQuestion(
-        IReadOnlyList<SelectionRange> Ranges, CellPosition Focus, int Version, string[] Columns, SummaryFigures Figures, int RowsStamp);
+        IReadOnlyList<SelectionRange> Ranges, CellPosition Focus, int Binding, int Version, string[] Columns, SummaryFigures Figures, int RowsStamp);
 
     /// <summary>The status line stands whenever the grid can summarise, figures or none, so the
     /// strip the Viewport gives it does not come and go with every selection (ADR-0130).</summary>
     private bool ShowsSummaryStrip => ShowSelectionSummary && CanSummarize;
 
     /// <summary>
-    /// Notes whether the rows moved under the positions the Window held before (ADR-0130): the
-    /// same position now holding a different row, or a different row count. A Window that only
+    /// Notes whether the rows moved under the figures (ADR-0130): a selected position the Window
+    /// held before now holding a different row, or a different row count. A Window that only
     /// scrolled shows the same rows where both hold them, and moves nothing.
+    ///
+    /// <para>Walked only while a question stands — figures shown, or being asked for — and only
+    /// over the positions it asks about, so the cost follows the Selection's rows in the Window,
+    /// not the Window (ADR-0130, 2026-10-07). With no question, nothing on screen can be wrong, and
+    /// the stamp moves so that the next question asks afresh. A question asked under another order,
+    /// or of a Source since replaced by another instance, goes with the Selection (ADR-0011,
+    /// ADR-0142), and is not walked either.</para>
     /// </summary>
     private void NoteRowsForSummary()
     {
-        var rows = _window!;
-        var previous = _summaryRows;
-        var moved = previous is not null && _total != _summaryRowsTotal;
-        if (previous is not null && !moved && !ReferenceEquals(previous, rows))
-        {
-            var from = Math.Max(_windowStart, _summaryRowsStart);
-            var to = Math.Min(_windowStart + rows.Count, _summaryRowsStart + previous.Count);
-            var comparer = EqualityComparer<TRow>.Default;
-            for (var position = from; !moved && position < to; position++)
-                moved = !comparer.Equals(rows[position - _windowStart], previous[position - _summaryRowsStart]);
-        }
+        var moved = _summaryQuestion is not { } question || question.Binding != _binding || question.Version != _sequenceVersion
+            || (_summaryRows is not null && SelectedRowsMoved(question.Ranges));
         if (moved)
             _summaryRowsStamp++;
-        _summaryRows = rows;
+        _summaryRows = _window;
         _summaryRowsStart = _windowStart;
         _summaryRowsTotal = _total;
+    }
+
+    /// <summary>Whether a row the figures were taken over moved, between the Window taken over them
+    /// and the one in hand: a different row count, or a selected position both hold now holding a
+    /// different row, by the row type's equality.</summary>
+    private bool SelectedRowsMoved(IReadOnlyList<SelectionRange> ranges)
+    {
+        var rows = _window!;
+        var previous = _summaryRows!;
+        // A row added or removed anywhere may have shifted the selected rows, and a selected row
+        // neither Window holds cannot show that it stayed (ADR-0130).
+        if (_total != _summaryRowsTotal)
+            return true;
+        if (ReferenceEquals(previous, rows) && _windowStart == _summaryRowsStart)
+            return false;
+        var from = Math.Max(_windowStart, _summaryRowsStart);
+        var to = Math.Min(_windowStart + rows.Count, _summaryRowsStart + previous.Count);
+        var comparer = EqualityComparer<TRow>.Default;
+        for (var i = 0; i < ranges.Count; i++)
+        {
+            var end = Math.Min(to, ranges[i].BottomRow + 1);
+            for (var position = Math.Max(from, ranges[i].TopRow); position < end; position++)
+            {
+                if (!comparer.Equals(rows[position - _windowStart], previous[position - _summaryRowsStart]))
+                    return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>
@@ -144,7 +172,7 @@ public partial class ExGrid<TRow>
         var figures = SummaryFigures & SummaryFigures.All;
         // Compared in place: this runs on every render of the root, and a question unchanged —
         // the common case, a scroll — allocates nothing.
-        if (_summaryQuestion is { } standing && standing.Version == _sequenceVersion && standing.Figures == figures
+        if (_summaryQuestion is { } standing && standing.Binding == _binding && standing.Version == _sequenceVersion && standing.Figures == figures
             && standing.RowsStamp == _summaryRowsStamp && standing.Focus == selection.Focus && SameColumns(standing.Columns)
             && (ReferenceEquals(standing.Ranges, selection.Ranges) || standing.Ranges.SequenceEqual(selection.Ranges)))
         {
@@ -155,7 +183,7 @@ public partial class ExGrid<TRow>
         for (var i = 0; i < Columns.Count; i++)
             names[i] = Columns[i].Name;
         CancelSummary();
-        _summaryQuestion = new SummaryQuestion(selection.Ranges, selection.Focus, _sequenceVersion, names, figures, _summaryRowsStamp);
+        _summaryQuestion = new SummaryQuestion(selection.Ranges, selection.Focus, _binding, _sequenceVersion, names, figures, _summaryRowsStamp);
         _summary = new SelectionSummary(SelectionSummaryStatus.Pending, RequestFor(_summaryQuestion), null);
         _summaryAskOwed = true;
         _summaryRaiseOwed = true;

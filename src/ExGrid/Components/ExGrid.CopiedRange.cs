@@ -32,6 +32,14 @@ public partial class ExGrid<TRow>
     {
         if (payload.Kind != "data")
             return payload;
+        return payload with { Landing = PrepareCopyOutline(plan, rowAt) };
+    }
+
+    /// <summary>Captures the copy's coordinates and painted text before an asynchronous Consumer
+    /// answer can yield (ADR-0152, ADR-0170): a later render or copy invalidates this landing by the
+    /// same rules as a payload waiting for the browser's write.</summary>
+    private int PrepareCopyOutline(CopyPlan plan, Func<int, TRow?> rowAt)
+    {
         var rectangles = plan.Segments.ToArray();
         var fingerprints = new int[rectangles.Length][];
         for (var k = 0; k < rectangles.Length; k++)
@@ -45,7 +53,7 @@ public partial class ExGrid<TRow>
             }
         }
         _builtCopy = new CopiedRange(++_copyLandings, rectangles, _sequenceVersion, fingerprints);
-        return payload with { Landing = _copyLandings };
+        return _copyLandings;
     }
 
     /// <summary>
@@ -117,8 +125,8 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// Keeps the outline only while it marks what the clipboard holds (ADR-0170): dropped when the
     /// coordinates stop meaning what they meant, as the Selection is (ADR-0011), and when a copied
-    /// row the grid has now paints other text in its copied cells than it was copied with (as
-    /// ADR-0142 compares what the user saw). A row is read again only when it is another instance
+    /// row the grid has now paints other text in its copied cells than it was copied with (the
+    /// painted text, not the row object). A row is read again only when it is another instance
     /// than the one last read, or the columns are another list; a row the grid did not have when it
     /// copied carries no fingerprint and is not compared.
     /// </summary>

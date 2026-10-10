@@ -3,48 +3,67 @@ using ExPivot.Engine;
 namespace ExGrid.Docs.Examples.Pivot;
 
 /// <summary>
-/// A server's side of a Pivot Source, simulated in the page: the endpoints a real server would
-/// expose over HTTP — each takes a question as <c>PivotJson</c> and answers with JSON, after a
-/// network's delay. It answers from the bundled engine over its own Snapshot; a server answering
-/// from SQL builds the same answers with <c>PivotAnswerBuilder</c>.
+/// A server report, simulated in the page: each endpoint takes a <c>PivotReportJson</c> question
+/// and answers after a network's delay. The shared engine retains computation over the server's
+/// Snapshot; only requested Windows and versioned operation results leave it.
 /// </summary>
-public sealed class SalesServer : IDisposable
+public sealed class SalesServer : IAsyncDisposable
 {
     private static readonly TimeSpan Latency = TimeSpan.FromMilliseconds(500);
 
     private readonly Sale[] _sales = Sales.Sample();
     private readonly SnapshotPivotSource _data;
+    private readonly LocalPivotReportSource _report;
     private readonly Random _random = new(7);
     private PeriodicTimer? _trading;
 
-    public SalesServer()
+    /// <summary>A server, with the Order Keys it registers by name: a report computed here cannot
+    /// carry a delegate from the browser, so a field's custom order is one of these, selected by
+    /// <c>ExPivot.OrderKeyPolicies</c>.</summary>
+    public SalesServer(IReadOnlyDictionary<string, Func<object, IComparable?>>? orderKeys = null)
     {
         _data = PivotSource.From(_sales, Sales.Fields);
+        _report = PivotReportSource.From(_data, orderKeys);
         _data.Changed += change => VersionChanged?.Invoke(change.SourceVersion!);
     }
 
     /// <summary>GET /api/pivot/fields: the fields the server offers.</summary>
     public IReadOnlyList<PivotField> Fields => _data.Fields;
 
-    /// <summary>POST /api/pivot/aggregate.</summary>
-    public async Task<string> AggregateAsync(string question, CancellationToken token)
+    /// <summary>A Window request. Only requested display rows leave this calculation.</summary>
+    public async Task<string> WindowAsync(string question, CancellationToken token)
     {
         await Task.Delay(Latency, token);
-        return PivotJson.Write(await _data.AggregateAsync(PivotJson.ReadQuery(question), token));
+        return PivotReportJson.Write(await _report.WindowAsync(PivotReportJson.Read<PivotReportRequest>(question), token));
     }
 
-    /// <summary>POST /api/pivot/items: a field's Items, for Filter….</summary>
+    /// <summary>Versioned, labeled Items for Filter.</summary>
     public async Task<string> ItemsAsync(string question, CancellationToken token)
     {
         await Task.Delay(Latency, token);
-        return PivotJson.Write(await _data.ItemsAsync(PivotJson.ReadItemsQuery(question), token));
+        return PivotReportJson.Write(await _report.ItemsAsync(PivotReportJson.Read<PivotReportItemsQuery>(question), token));
     }
 
-    /// <summary>POST /api/pivot/details: the records behind a cell, for Show Details.</summary>
+    /// <summary>Versioned offscreen Copy.</summary>
+    public async Task<string> CopyAsync(string question, CancellationToken token)
+    {
+        await Task.Delay(Latency, token);
+        return PivotReportJson.Write(await _report.CopyAsync(PivotReportJson.Read<PivotReportCopyQuery>(question), token));
+    }
+
+    /// <summary>Versioned Selection Summary.</summary>
+    public async Task<string> SummaryAsync(string question, CancellationToken token)
+    {
+        await Task.Delay(Latency, token);
+        return PivotReportJson.Write(await _report.SummaryAsync(PivotReportJson.Read<PivotReportSummaryQuery>(question), token));
+    }
+
+    /// <summary>The source records behind a cell, under the Source Version its report was computed
+    /// from: answered while the Snapshot source still holds that version, whatever layouts followed.</summary>
     public async Task<string> DetailsAsync(string question, CancellationToken token)
     {
         await Task.Delay(Latency, token);
-        return PivotJson.Write(await _data.DetailsAsync(PivotJson.ReadDetailsQuery(question), token));
+        return PivotReportJson.Write(await _report.DetailsAsync(PivotReportJson.Read<PivotDetailsQuery>(question), token));
     }
 
     /// <summary>What a SignalR hub would push: the Source Version the data has moved on to.</summary>
@@ -64,5 +83,9 @@ public sealed class SalesServer : IDisposable
             _data.Apply(Sales.Fields.Batch(changed: Sales.Amend(_sales, _random, count: 8)));
     }
 
-    public void Dispose() => _trading?.Dispose();
+    public async ValueTask DisposeAsync()
+    {
+        _trading?.Dispose();
+        await _report.DisposeAsync();
+    }
 }

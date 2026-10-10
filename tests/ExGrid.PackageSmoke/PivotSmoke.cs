@@ -65,7 +65,7 @@ internal static class PivotSmoke
         source.Apply(fields.Batch(added: trades, changed: trades, removedKeys: ["T-1042"]));
         var updated = await source.AggregateAsync(query, ct);
 
-        return report.Rows[0].Labels[0].Text + report.Rows[^1].ValueAt(0)!.Text
+        return report.Rows[0].Labels[0].Text + report.ValueAt(report.Rows[^1], 0)!.Text
             + whole.Fields.Count + named.Fields.Count + updated.SourceVersion;
     }
 
@@ -122,8 +122,8 @@ internal static class PivotSmoke
 
         return string.Join(",", report.ValueColumns.Select(c => c.Header))
             + report.Rows[0].Labels[0].Text
-            + report.Rows[0].ValueAt(0)!.Text
-            + report.Rows[^1].ValueAt(2)!.Text
+            + report.ValueAt(report.Rows[0], 0)!.Text
+            + report.ValueAt(report.Rows[^1], 2)!.Text
             + PivotLayoutJson.Write(layout);
     }
 }

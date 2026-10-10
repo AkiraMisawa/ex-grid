@@ -1,0 +1,88 @@
+#pragma warning disable xUnit1051
+using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json;
+using Bunit;
+using ExGrid;
+using ExGrid.Components;
+using ExPivot.Components.Tests.Support;
+using ExPivot.Engine;
+using Microsoft.AspNetCore.Components;
+using Xunit;
+using PC = ExPivot.Components.ExPivot;
+
+namespace ExPivot.Components.Tests;
+
+// Disposable A/B harness for reviewing PR #70 (never committed). Ticket 01's fixture: 1,000 outer
+// Items x {10, 100, 400} inner, one record per leaf, decimal Sum. The same code runs on main and on
+// the branch; only the source parameter and the report token differ (SIDE).
+public sealed class PerfWholeUpdate : PivotTestContext
+{
+    private sealed record Row(int Id, string A, string B, decimal Value);
+
+    [Fact]
+    public async Task Whole_update()
+    {
+        SetRendererInfo(new RendererInfo("Server", true));
+        var output = Environment.GetEnvironmentVariable("PERF_OUT")!;
+        var inners = (Environment.GetEnvironmentVariable("PERF_INNERS") ?? "10,100,400").Split(',').Select(int.Parse).ToArray();
+        var batches = (Environment.GetEnvironmentVariable("PERF_BATCHES") ?? "1,1000").Split(',').Select(int.Parse).ToArray();
+        var runsPer = int.Parse(Environment.GetEnvironmentVariable("PERF_RUNS") ?? "9");
+        var advance = TimeSpan.FromMilliseconds(int.Parse(Environment.GetEnvironmentVariable("PERF_ADVANCE_MS") ?? "1"));
+        var whole = new PivotSlicing { Budget = TimeSpan.FromDays(1) };
+        var results = new List<object>();
+        foreach (var inner in inners)
+        {
+            var records = Enumerable.Range(0, 1000 * inner).Select(i => new Row(i, $"A{i / inner:00000}", $"B{i % inner:0000}", i)).ToArray();
+            var fields = PivotFields.Of<Row>().Key("Id", r => r.Id).Text("A", r => r.A).Text("B", r => r.B).Number("Value", r => r.Value);
+            var source = PivotSource.From(fields.Build(records), fields.Fields, whole);
+            var layout = new PivotLayout { Rows = [new("A"), new("B")], Values = [new("Value")] };
+            var firstStart = Stopwatch.GetTimestamp();
+            var cut = Render<PC>(p => p.Add(c => c.@@SOURCE@@, source).Add(c => c.Layout, layout)
+                .Add(c => c.Culture, CultureInfo.GetCultureInfo("en-US")).Add(c => c.Slicing, whole)
+                .Add(c => c.Caps, new PivotCaps { MaxLeaves = 1_000_000, MaxRows = 1_000_000 })
+                .Add(c => c.RedrawInterval, TimeSpan.Zero).Add(c => c.Clock, Clock)
+                .Add(c => c.ViewportHeight, (ViewportSize)480).Add(c => c.ViewportWidth, (ViewportSize)1200));
+            cut.WaitForState(() => (@@ROWCOUNT@@) == records.Length + 1001, TimeSpan.FromMinutes(10));
+            var firstMs = Stopwatch.GetElapsedTime(firstStart).TotalMilliseconds;
+            var perBatch = new List<object>();
+            foreach (var k in batches)
+            {
+                var runs = new List<object>();
+                for (var iteration = -2; iteration < runsPer; iteration++)
+                {
+                    var step = records.Length / k;
+                    var changed = Enumerable.Range(0, k).Select(i => {
+                        var at = (i * step + iteration + 2) % records.Length;
+                        return records[at] = records[at] with { Value = records[at].Value + 1 };
+                    }).ToArray();
+                    var batch = fields.Batch(changed: changed);
+                    GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+                    Clock.Advance(advance);
+                    var token = @@TOKEN@@;
+                    var g0 = GC.CollectionCount(0); var g1 = GC.CollectionCount(1); var g2 = GC.CollectionCount(2);
+                    var pause0 = GC.GetTotalPauseDuration();
+                    var alloc0 = GC.GetTotalAllocatedBytes(precise: true);
+                    var start = Stopwatch.GetTimestamp();
+                    await cut.InvokeAsync(() => source.Apply(batch));
+                    cut.WaitForState(() => !Equals(@@TOKEN@@, token), TimeSpan.FromMinutes(5));
+                    var elapsed = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+                    var alloc = GC.GetTotalAllocatedBytes(precise: true) - alloc0;
+                    var pause = (GC.GetTotalPauseDuration() - pause0).TotalMilliseconds;
+                    if (iteration >= 0) runs.Add(new {
+                        applyThroughRenderMs = elapsed, allocatedBytes = alloc, gcPauseMs = pause,
+                        gen0 = GC.CollectionCount(0) - g0, gen1 = GC.CollectionCount(1) - g1, gen2 = GC.CollectionCount(2) - g2 });
+                }
+                perBatch.Add(new { changes = k, runs });
+            }
+            GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+            var heapLive = GC.GetTotalMemory(forceFullCollection: true);
+            results.Add(new { side = "@@SIDE@@", advanceMs = advance.TotalMilliseconds, records = records.Length, reportRows = records.Length + 1001, firstReportMs = firstMs,
+                managedHeapAfterUpdatesBytes = heapLive, batches = perBatch });
+            File.WriteAllText(Path.Combine(output, "pivot-whole-update.json"),
+                JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+            cut.Dispose();
+            GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+        }
+    }
+}

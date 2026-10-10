@@ -1,0 +1,18 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+  Discovering: ExPivot.Components.Tests
+  Discovered:  ExPivot.Components.Tests
+  Starting:    ExPivot.Components.Tests
+Pivot completed report rows=11001
+Pivot completed report rows=101001
+Pivot completed report rows=401001
+Grid completed n=100000 k=1
+Grid completed n=100000 k=100
+Grid completed n=100000 k=1000
+Grid completed n=1000000 k=1
+Grid completed n=1000000 k=100
+Grid completed n=1000000 k=1000
+  Finished:    ExPivot.Components.Tests
+=== TEST EXECUTION SUMMARY ===
+   ExPivot.Components.Tests  Total: 2, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 20.604s

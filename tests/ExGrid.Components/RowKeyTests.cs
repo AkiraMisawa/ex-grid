@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Bunit;
 using ExGrid.Cells;
 using ExGrid.Columns;
@@ -452,6 +453,175 @@ public class RowKeyTests : GridTestContext
 
         var raised = await Renderer.UnhandledException.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
         Assert.Contains("same row instance", raised.Message);
+    }
+
+    // ---- LV-10, a pushed Window: the Consumer vouches beside its Row Key (ADR-0141, 2026-10-07) ---
+
+    [Fact] // ADR-0141 / LV-10: a pushed Window its Consumer vouches for is not walked — of 10⁵ rows, only the painted rows' keys are asked
+    public void A_vouched_pushed_window_is_not_walked()
+    {
+        var counting = new CountingKey();
+        var trades = Trades(100_000);
+        var cut = RenderGrid(trades, counting.Key, ps => ps
+            .Add(g => g.VouchesDistinctRows, true).Add(g => g.ViewportHeight, 300));
+        var painted = Rows(cut).Count;
+        var renders = cut.RenderCount;
+        counting.Calls = 0;
+
+        cut.Render(ps => ps.Add(g => g.Window, [.. trades.Select(trade => trade.Id == 1001 ? trade.WithAmount(3m) : trade)]));
+
+        Assert.Equal(3m, RowComponentOf(cut, 1001).Row.Amount);
+        Assert.InRange(counting.Calls, painted, painted * (cut.RenderCount - renders));
+    }
+
+    [Fact] // ADR-0141 / LV-10: a pushed Window nobody vouches for is walked whole, every row's key asked
+    public void A_pushed_window_not_vouched_for_is_walked_whole()
+    {
+        var counting = new CountingKey();
+        var trades = Trades(100_000);
+        var cut = RenderGrid(trades, counting.Key, ps => ps.Add(g => g.ViewportHeight, 300));
+        counting.Calls = 0;
+
+        cut.Render(ps => ps.Add(g => g.Window, [.. trades.Select(trade => trade.Id == 1001 ? trade.WithAmount(3m) : trade)]));
+
+        Assert.Equal(3m, RowComponentOf(cut, 1001).Row.Amount);
+        Assert.True(counting.Calls >= 100_000, $"the key was asked {counting.Calls} times");
+    }
+
+    [Fact] // ADR-0141 / LV-10 / LV-2: a vouched Window with a repeat among its painted rows is refused by name — never Blazor's exception
+    public void A_vouched_window_with_a_repeat_among_its_painted_rows_is_refused_by_name()
+    {
+        var trades = Trades(5_000);
+        var lying = trades.ToArray();
+        lying[3] = new Trade(lying[1].Id, "Twin", 0m);
+
+        var refusal = Assert.Throws<InvalidOperationException>(() => RenderGrid(lying, ById, ps => ps
+            .Add(g => g.VouchesDistinctRows, true).Add(g => g.ViewportHeight, 300)));
+
+        Assert.Contains("Row Key", refusal.Message);
+        Assert.Contains("1001", refusal.Message);
+        Assert.Contains("Window[1]", refusal.Message);
+        Assert.Contains("Window[3]", refusal.Message);
+        Assert.Contains("ADR-0140", refusal.Message);
+    }
+
+    [Fact] // ADR-0141 / LV-10 / ADR-0004: a vouched Window with a null among its painted rows is refused by name, never handed to the Row Key
+    public void A_vouched_window_with_a_null_among_its_painted_rows_is_refused_by_name()
+    {
+        var trades = Trades(5_000);
+        var gapped = trades.ToArray();
+        gapped[2] = null!;
+
+        var refusal = Assert.Throws<InvalidOperationException>(() => RenderGrid(gapped, ById, ps => ps
+            .Add(g => g.VouchesDistinctRows, true).Add(g => g.ViewportHeight, 300)));
+
+        Assert.Contains("Window[2] is null", refusal.Message);
+    }
+
+    [Fact] // ADR-0141 / LV-10: a repeat in a vouched Window is not seen off the screen, and is refused by name on the render that scrolls it into view
+    public async Task A_repeat_scrolled_into_view_is_refused_on_the_render_that_paints_it()
+    {
+        var trades = Trades(5_000);
+        var lying = trades.ToArray();
+        lying[4_001] = new Trade(lying[4_000].Id, "Twin", 0m);
+        var cut = RenderGrid(lying, ById, ps => ps
+            .Add(g => g.VouchesDistinctRows, true).Add(g => g.RowHeight, 20d).Add(g => g.ViewportHeight, 300));
+        Assert.NotEmpty(Rows(cut));
+
+        var refusal = await Assert.ThrowsAsync<InvalidOperationException>(() => ScrollToAsync(cut.Find(".ex-scroller"), 3_995 * 20));
+
+        Assert.Contains("Window[4000]", refusal.Message);
+        Assert.Contains("Window[4001]", refusal.Message);
+        Assert.Contains("ADR-0140", refusal.Message);
+    }
+
+    [Fact] // ADR-0141 / LV-10: a Window a source vouches for is checked where it is painted too — a repeat on screen is refused by name
+    public async Task A_source_vouched_window_with_a_repeat_among_its_painted_rows_is_refused_by_name()
+    {
+        var trades = Trades(5_000);
+        var source = new KeyedSource(trades) { RowKey = ById, Vouches = true };
+        Render<ExGrid<Trade>>(ps => ps
+            .Add(g => g.Source, source).Add(g => g.Columns, Columns).Add(g => g.ViewportHeight, 300));
+        var lying = trades.ToArray();
+        lying[2] = new Trade(lying[0].Id, "Twin", 0m);
+
+        source.Push(lying);
+
+        var raised = await Renderer.UnhandledException.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        Assert.IsType<InvalidOperationException>(raised);
+        Assert.Contains("Window[0]", raised.Message);
+        Assert.Contains("Window[2]", raised.Message);
+        Assert.Contains("ADR-0140", raised.Message);
+    }
+
+    [Fact] // ADR-0141 / ADR-0001: a source vouches for its own Windows, so the push mode's vouch beside one is refused by name
+    public void The_vouch_beside_a_source_is_refused_by_name()
+    {
+        var source = new KeyedSource(Trades()) { RowKey = ById, Vouches = true };
+
+        var refusal = Assert.Throws<InvalidOperationException>(() => Render<ExGrid<Trade>>(ps => ps
+            .Add(g => g.Source, source).Add(g => g.Columns, Columns).Add(g => g.VouchesDistinctRows, true)));
+
+        Assert.Contains(nameof(ExGrid<Trade>.VouchesDistinctRows), refusal.Message);
+    }
+
+    [Fact] // ADR-0141 / LV-10: a pushed vouch with no Row Key behind it is not taken — the grid checks for a repeated row itself
+    public void A_pushed_vouch_without_a_row_key_is_not_taken()
+    {
+        var trades = Trades(5_000);
+        var repeated = trades.ToArray();
+        repeated[4_001] = repeated[4_000];
+
+        var refusal = Assert.Throws<InvalidOperationException>(() => RenderGrid(repeated, rowKey: null, ps => ps
+            .Add(g => g.VouchesDistinctRows, true).Add(g => g.ViewportHeight, 300)));
+
+        Assert.Contains("same row instance", refusal.Message);
+    }
+
+    [Fact] // ADR-0141 / LV-10: a vouch withdrawn over the Window in hand has that Window checked whole
+    public void A_withdrawn_vouch_has_the_window_in_hand_checked()
+    {
+        var trades = Trades(5_000);
+        var lying = trades.ToArray();
+        lying[4_001] = new Trade(lying[4_000].Id, "Twin", 0m);
+        var cut = RenderGrid(lying, ById, ps => ps.Add(g => g.VouchesDistinctRows, true).Add(g => g.ViewportHeight, 300));
+
+        var refusal = Assert.Throws<InvalidOperationException>(() => cut.Render(ps => ps.Add(g => g.VouchesDistinctRows, false)));
+
+        Assert.Contains("Window[4000]", refusal.Message);
+        Assert.Contains("Window[4001]", refusal.Message);
+    }
+
+    [Fact] // ADR-0160 / ADR-0141: a new Window lets go of the Row Keys painted from the last one, even one that paints no row
+    public void A_new_window_holds_no_row_key_painted_from_the_last()
+    {
+        var (cut, keys) = RenderUnderFreshKeys();
+
+        cut.Render(ps => ps.Add(g => g.Window, Array.Empty<Trade>()));
+        // Blazor keeps the previous render's frames, the last rows' keys among them, until the next.
+        cut.Render();
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        Assert.All(keys, key => Assert.False(key.IsAlive, "a Row Key painted from an earlier Window is still held"));
+    }
+
+    // A Row Key that makes a new key object at every call, so only whoever was handed one holds it.
+    // Kept out of line, so no local of the test keeps a key alive.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private (IRenderedComponent<ExGrid<Trade>> Cut, WeakReference[] Keys) RenderUnderFreshKeys()
+    {
+        var made = new List<WeakReference>();
+        Func<Trade, object> fresh = _ =>
+        {
+            var key = new object();
+            made.Add(new WeakReference(key));
+            return key;
+        };
+        var cut = RenderGrid(Trades(50), fresh, ps => ps.Add(g => g.ViewportHeight, 300));
+        Assert.NotEmpty(Rows(cut));
+        return (cut, [.. made]);
     }
 
     // ---- A component that now outlives its instance (ADR-0140, Consequences) ---------------------

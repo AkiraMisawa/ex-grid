@@ -4,7 +4,8 @@
 # ExPivot.MudBlazor — reads back what each declares, and builds and publishes an application that
 # takes them from the packed files alone (ADR-0042; the family ships at one version since its note
 # of 2026-10-03). A Snapshot is written to an Arrow stream and read back through the packed data
-# packages, and the check fails if it comes back different (DA-16).
+# packages, and the check fails if it comes back different (DA-16). A trimmed Consumer also
+# round-trips report Windows, Window Changes and versioned operations with reflection disabled (ADR-0152).
 #
 #   tests/ExGrid.PackageSmoke/check.sh [version]
 #
@@ -142,15 +143,15 @@ done
 grep -qF '"./_content/ExGrid/ex-grid.min.js"' "$root/src/ExGrid/Components/ExGrid.razor" \
   || fail "the component no longer imports ./_content/ExGrid/ex-grid.min.js; update this check with it"
 
-echo "== a Snapshot through an Arrow stream and back, through the packed packages"
+echo "== trimmed packed Consumer: Arrow and report protocol round trips"
 # RoundTrip runs what the application above compiled for a browser: it writes a Snapshot of every
 # kind, with Blanks, captions, a Record Key and a version, and reads it back (ADR-0065, DA-16).
-dotnet build "$here/RoundTrip" -c Release --nologo \
+dotnet publish "$here/RoundTrip" -c Release --nologo -o "$out/roundtrip" --self-contained true -p:PublishTrimmed=true \
   -p:ExGridVersion="$version" -p:RestorePackagesPath="$cache"
-for id in exgrid.data exgrid.data.arrow; do
+for id in exgrid.data exgrid.data.arrow expivot.engine; do
   grep -qF "$feed" "$cache/$id/$version/.nupkg.metadata" || fail "the round trip took $id $version from somewhere other than $feed"
 done
-dotnet "$here/RoundTrip/bin/Release/net10.0/PackageSmoke.RoundTrip.dll" \
-  || fail "a Snapshot written to an Arrow stream and read back through the packed packages is not the one written"
+dotnet "$out/roundtrip/PackageSmoke.RoundTrip.dll" \
+  || fail "a packed data or report protocol round trip changed its result"
 
 echo "package check: $version passed"

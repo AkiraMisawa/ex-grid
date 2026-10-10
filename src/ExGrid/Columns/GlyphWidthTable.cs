@@ -19,6 +19,8 @@ public sealed class GlyphWidthTable
 {
     private readonly FrozenDictionary<int, (double Regular, double Bold)> _widths;
 
+    internal IEnumerable<int> CodePoints => _widths.Keys;
+
     /// <summary>
     /// A table of <paramref name="glyphs"/> measured at <paramref name="measuredAtPx"/>: each a
     /// single character (one code point), with its width at the regular weights the grid paints

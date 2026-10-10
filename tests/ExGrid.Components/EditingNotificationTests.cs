@@ -194,8 +194,8 @@ public class EditingNotificationTests : GridTestContext
         Assert.Equal([true, false], told);
     }
 
-    [Fact] // ADR-0050 section 6 / ADR-0011: an order change landing under the editor discards the edit, and it has ended
-    public async Task A_discard_by_an_order_change_raises_the_end()
+    [Fact] // ADR-0050 section 6 / ADR-0011 (note of 2026-10-07): an order change landing under the editor ends nothing — the edit stays open, and the Consumer hears no end
+    public async Task An_order_change_under_the_editor_raises_no_end()
     {
         var told = new List<bool>();
         var discarded = new List<EditDiscardReason>();
@@ -205,8 +205,8 @@ public class EditingNotificationTests : GridTestContext
 
         cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 1));
 
-        Assert.Equal([EditDiscardReason.OrderChanged], discarded);
-        Assert.Equal([true, false], told);
+        Assert.Empty(discarded);
+        Assert.Equal([true], told);
     }
 
     [Fact] // ADR-0050 section 6 / ADR-0011: a row that left the Window takes the typing at the commit, and the edit has ended

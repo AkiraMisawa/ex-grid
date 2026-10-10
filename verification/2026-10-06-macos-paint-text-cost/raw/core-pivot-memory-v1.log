@@ -1,0 +1,25 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+variant V1; load { 2.38 2.48 2.69 }; TieredCompilation=0
+== ExPivot memory, 1,000 x 100, k 1: after the first report 162.0 MB ==
+   redraw   1: heap    256.5 MB; earlier reports alive   1 of 1, cubes   1
+   redraw   2: heap    350.9 MB; earlier reports alive   2 of 2, cubes   2
+   redraw   3: heap    445.4 MB; earlier reports alive   3 of 3, cubes   3
+   redraw   4: heap    539.8 MB; earlier reports alive   4 of 4, cubes   4
+   redraw   5: heap    314.5 MB; earlier reports alive   4 of 5, cubes   4
+   redraw   6: heap    331.4 MB; earlier reports alive   4 of 6, cubes   4
+   redraw   7: heap    348.2 MB; earlier reports alive   4 of 7, cubes   4
+   redraw   8: heap    314.5 MB; earlier reports alive   4 of 8, cubes   4
+   redraw   9: heap    331.4 MB; earlier reports alive   4 of 9, cubes   4
+   redraw  10: heap    348.2 MB; earlier reports alive   4 of 10, cubes   4
+   redraw  11: heap    314.5 MB; earlier reports alive   4 of 11, cubes   4
+   redraw  12: heap    331.4 MB; earlier reports alive   4 of 12, cubes   4
+   redraw  13: heap    348.2 MB; earlier reports alive   4 of 13, cubes   4
+   redraw  14: heap    314.6 MB; earlier reports alive   4 of 14, cubes   4
+   redraw  15: heap    331.4 MB; earlier reports alive   4 of 15, cubes   4
+   redraw  16: heap    348.2 MB; earlier reports alive   4 of 16, cubes   4
+   redraw  17: heap    314.6 MB; earlier reports alive   4 of 17, cubes   4
+   redraw  18: heap    331.4 MB; earlier reports alive   4 of 18, cubes   4
+   redraw  19: heap    348.2 MB; earlier reports alive   4 of 19, cubes   4
+   redraw  20: heap    314.6 MB; earlier reports alive   4 of 20, cubes   4
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/verification/2026-10-06-macos-paint-text-cost/raw/core-pivot-memory-v1.json

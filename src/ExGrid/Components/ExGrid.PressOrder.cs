@@ -18,22 +18,11 @@ public partial class ExGrid<TRow>
     // the core heard last, while the core is answering it.
     private Task _pressAnswer = Task.CompletedTask;
 
-    private Task OnMouseDown(MouseEventArgs e)
-    {
-        var taken = AsTaken(e, "mousedown");
-        // A double click opens the editor on the render its second press was taken against
-        // (ADR-0142, D2): the double click itself is Blazor's, and follows that press.
-        _lastPressPaint = PaintOf(taken);
-        return _pressAnswer = AnswerPressAsync(taken);
-    }
+    private Task OnMouseDown(MouseEventArgs e) => _pressAnswer = AnswerPressAsync(AsTaken(e, "mousedown"));
 
     private Task OnMouseUp(MouseEventArgs e) => _pressAnswer = AnswerReleaseAsync(AsTaken(e, "mouseup"));
 
-    // The render the last press on the rows was taken against (ADR-0142, D2), for the double click
-    // that follows it; the newest for a press nobody told of.
-    private int _lastPressPaint = PaintNotTold;
-
-    private Task OnFormulaBarPressedAsync() => _pressAnswer = OnFormulaBarFocusAsync(TakeBarPressTold());
+    private Task OnFormulaBarPressedAsync() => _pressAnswer = OnFormulaBarFocusAsync();
 
     /// <summary>
     /// A press into the Formula Bar, answered in its turn among the held keys (ADR-0051,
@@ -55,9 +44,8 @@ public partial class ExGrid<TRow>
     {
         if (_disposed)
             return Task.CompletedTask;
-        // Answered again as the press: on the render that press was taken against (ADR-0142, D2).
         if (barHoldsFocus && _editMode == EditMode.None)
-            _pressAnswer = FromChromeAsync(() => OnFormulaBarFocusAsync(_barPressPaint));
+            _pressAnswer = FromChromeAsync(OnFormulaBarFocusAsync);
         return PressAnsweredAsync();
     }
 
@@ -85,18 +73,20 @@ public partial class ExGrid<TRow>
     private TakenAt? _taken;
 
     // The layouts the rows were painted under lately, the newest last: the column geometry, the
-    // columns' names in order, and the row height. A press names the one it was painted under
-    // (data-ex-layout), and is resolved against it. A press is answered a few round trips after it
-    // is made at most, so a short memory is enough; one older than it lands on no cell.
+    // columns' names in order, the row height, and the binding — which Source the rows were painted
+    // from (_binding). A press names the one it was painted under (data-ex-layout), and is resolved
+    // against it. A press is answered a few round trips after it is made at most, so a short memory
+    // is enough; one older than it lands on no cell.
     private const int PaintLayoutsKept = 16;
     private readonly List<PaintLayout> _paintLayouts = [];
     private int _paintLayoutId;
 
-    private sealed record PaintLayout(int Id, ColumnGeometry Columns, string[] ColumnNames, double RowHeightPx);
+    private sealed record PaintLayout(int Id, ColumnGeometry Columns, string[] ColumnNames, double RowHeightPx, int Binding);
 
     /// <summary>Keeps the layout the next render paints the rows under, if it is a new one
     /// (ED-31). The columns' names are kept as one array while they are unchanged, so two layouts
-    /// share an index space exactly when they share that array.</summary>
+    /// share an index space exactly when they share that array. A replaced Source is a new layout:
+    /// its rows are another source's (ADR-0142).</summary>
     private void NotePaintLayout()
     {
         var geometry = _columnStyles.Geometry;
@@ -104,11 +94,11 @@ public partial class ExGrid<TRow>
         var last = _paintLayouts.Count > 0 ? _paintLayouts[^1] : null;
         var names = last is not null && SameNames(last.ColumnNames) ? last.ColumnNames : [.. Columns.Select(c => c.Name)];
         if (last is not null && ReferenceEquals(last.Columns, geometry)
-            && ReferenceEquals(last.ColumnNames, names) && last.RowHeightPx == rowHeight)
+            && ReferenceEquals(last.ColumnNames, names) && last.RowHeightPx == rowHeight && last.Binding == _binding)
         {
             return;
         }
-        _paintLayouts.Add(new PaintLayout(++_paintLayoutId, geometry, names, rowHeight));
+        _paintLayouts.Add(new PaintLayout(++_paintLayoutId, geometry, names, rowHeight, _binding));
         if (_paintLayouts.Count > PaintLayoutsKept)
             _paintLayouts.RemoveAt(0);
     }
@@ -131,8 +121,8 @@ public partial class ExGrid<TRow>
     /// or at the replay of a press it held. The core resolves the event against this, not against
     /// the slice, scroll and layout it holds when the event arrives, so a press held behind keys
     /// that moved the view lands where it was made. One taken under another row order, under
-    /// columns since renamed, reordered, added or removed, or on rows that are no longer there,
-    /// lands on no cell.
+    /// columns since renamed, reordered, added or removed, on rows that are no longer there, or on
+    /// the rows of a Source since replaced by another instance (ADR-0142), lands on no cell.
     ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
@@ -146,26 +136,22 @@ public partial class ExGrid<TRow>
     /// <param name="rowSequence">The Row Sequence Version the Viewport was painted under
     /// (<c>data-ex-sequence</c>).</param>
     /// <param name="layout">The layout the Viewport was painted under (<c>data-ex-layout</c>).</param>
-    /// <param name="paint">The render the Viewport's cells were painted by (<c>data-ex-paint</c>):
-    /// a fill-handle drag released here is judged against what it painted (ADR-0142, LV-13).</param>
     [JSInvokable]
     public void PressTakenAt(string kind, double offsetX, double offsetY, int firstRow,
-        double scrollLeftPx, int rowSequence, int layout, int paint = PaintNotTold)
+        double scrollLeftPx, int rowSequence, int layout)
     {
         // It crosses the JS boundary: a NaN would travel silently into the offsets.
         _taken = !_disposed && double.IsFinite(offsetX) && double.IsFinite(offsetY) && double.IsFinite(scrollLeftPx)
-            ? new TakenAt(kind, offsetX, offsetY, firstRow, scrollLeftPx, rowSequence, layout, paint)
+            ? new TakenAt(kind, offsetX, offsetY, firstRow, scrollLeftPx, rowSequence, layout)
             : null;
     }
 
     private sealed record TakenAt(string Kind, double OffsetX, double OffsetY, int FirstRow,
-        double ScrollLeftPx, int RowSequence, int Layout, int Paint);
+        double ScrollLeftPx, int RowSequence, int Layout);
 
     /// <summary>A press or release as it was taken (ED-31): the offsets it was given, and the first
     /// row, horizontal scroll and layout they were measured against. <see cref="Layout"/> is null
-    /// when what it was taken on is no longer held: the press lands on no cell. <see cref="Paint"/>
-    /// names the render whose cells it was taken on (ADR-0142), held or not: a paint no longer
-    /// kept is the judgement's to refuse.</summary>
+    /// when what it was taken on is no longer held: the press lands on no cell.</summary>
     private sealed class TakenMouseEventArgs : MouseEventArgs
     {
         public PaintLayout? Layout { get; init; }
@@ -173,8 +159,6 @@ public partial class ExGrid<TRow>
         public int FirstRow { get; init; }
 
         public double ScrollLeftPx { get; init; }
-
-        public int Paint { get; init; } = PaintNotTold;
     }
 
     /// <summary>The event as it was taken, if the script told of it (ED-31); the event as it came
@@ -187,7 +171,7 @@ public partial class ExGrid<TRow>
             return e;
         var layout = _paintLayouts.FindLast(l => l.Id == told.Layout);
         var held = layout is not null && ReferenceEquals(layout.ColumnNames, _paintLayouts[^1].ColumnNames)
-            && told.RowSequence == _sequenceVersion
+            && layout.Binding == _binding && told.RowSequence == _sequenceVersion
             && told.FirstRow >= _pageStartRow && told.FirstRow < _pageStartRow + _geometry.TotalRowCount;
         return new TakenMouseEventArgs
         {
@@ -199,13 +183,8 @@ public partial class ExGrid<TRow>
             Layout = held ? layout : null,
             FirstRow = told.FirstRow,
             ScrollLeftPx = told.ScrollLeftPx,
-            Paint = told.Paint,
         };
     }
-
-    /// <summary>The render a press or release was taken against (ADR-0142): the one the script
-    /// told of, or the newest for an event nobody told of.</summary>
-    private static int PaintOf(MouseEventArgs e) => e is TakenMouseEventArgs taken ? taken.Paint : PaintNotTold;
 
     /// <summary>The first row the event's offsets were measured against: the one painted when it was
     /// taken, the slice held now for an event nobody told of, null for one taken on what is no

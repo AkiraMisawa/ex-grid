@@ -1,0 +1,3734 @@
+{
+  "machine": {
+    "cpu": "Apple M4 Pro, 12 cores (8 performance, 4 efficiency)",
+    "memoryGiB": 24,
+    "os": "macOS 26.6.2 (25G83)",
+    "dotnet": "SDK 10.0.203 through nix develop, runtime 10.0.7 (CoreCLR, workstation GC), Release, DOTNET_TieredCompilation=0",
+    "browser": "Google Chrome 154.0.8037.98, headless, through Playwright 1.63.0 (Node 24.14.1)",
+    "webassembly": "samples/ExGrid.DemoHost published in Release, trimmed, no AOT",
+    "commit": "526f3b75 (after); 41c8d8c8 (before, the records of 2026-10-06 and this record's same-day runs)"
+  },
+  "chrome": {
+    "PV-48 ExPivot live redraw, Apply to the painted report, /pivot-live-costs (D10's report)": {
+      "10,001 report rows, 1 change(s) a batch": {
+        "applyToReportPaintedMs": {
+          "before": {
+            "min": 57,
+            "median": 78,
+            "max": 81,
+            "n": 15
+          },
+          "after": {
+            "min": 28,
+            "median": 29,
+            "max": 30,
+            "n": 15
+          }
+        },
+        "longestTaskMs": {
+          "before": {
+            "min": 0,
+            "median": 0,
+            "max": 51,
+            "n": 15
+          },
+          "after": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 15
+          }
+        }
+      },
+      "10,001 report rows, 1,000 change(s) a batch": {
+        "applyToReportPaintedMs": {
+          "before": {
+            "min": 68,
+            "median": 71,
+            "max": 94,
+            "n": 15
+          },
+          "after": {
+            "min": 39,
+            "median": 46,
+            "max": 50,
+            "n": 15
+          }
+        },
+        "longestTaskMs": {
+          "before": {
+            "min": 0,
+            "median": 0,
+            "max": 59,
+            "n": 15
+          },
+          "after": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 15
+          }
+        }
+      },
+      "101,001 report rows, 1 change(s) a batch": {
+        "applyToReportPaintedMs": {
+          "before": {
+            "min": 529,
+            "median": 563,
+            "max": 692,
+            "n": 15
+          },
+          "after": {
+            "min": 143,
+            "median": 152,
+            "max": 164,
+            "n": 15
+          }
+        },
+        "longestTaskMs": {
+          "before": {
+            "min": 0,
+            "median": 58,
+            "max": 170,
+            "n": 15
+          },
+          "after": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 15
+          }
+        }
+      },
+      "101,001 report rows, 1,000 change(s) a batch": {
+        "applyToReportPaintedMs": {
+          "before": {
+            "min": 555,
+            "median": 567,
+            "max": 672,
+            "n": 15
+          },
+          "after": {
+            "min": 175,
+            "median": 183,
+            "max": 198,
+            "n": 15
+          }
+        },
+        "longestTaskMs": {
+          "before": {
+            "min": 50,
+            "median": 55,
+            "max": 132,
+            "n": 15
+          },
+          "after": {
+            "min": 0,
+            "median": 54,
+            "max": 58,
+            "n": 15
+          }
+        }
+      },
+      "401,001 report rows, 1 change(s) a batch": {
+        "applyToReportPaintedMs": {
+          "before": {
+            "min": 2338,
+            "median": 2338,
+            "max": 2338,
+            "n": 1
+          },
+          "after": {
+            "min": 532,
+            "median": 537,
+            "max": 581,
+            "n": 15
+          }
+        },
+        "longestTaskMs": {
+          "before": {
+            "min": 75,
+            "median": 75,
+            "max": 75,
+            "n": 1
+          },
+          "after": {
+            "min": 0,
+            "median": 0,
+            "max": 75,
+            "n": 15
+          }
+        },
+        "note": "before: one redraw timed cleanly (the diagnostic run); longer runs ran out of memory"
+      },
+      "401,001 report rows, 1,000 change(s) a batch": {
+        "applyToReportPaintedMs": {
+          "before": null,
+          "after": {
+            "min": 600,
+            "median": 610,
+            "max": 651,
+            "n": 15
+          }
+        },
+        "longestTaskMs": {
+          "before": null,
+          "after": {
+            "min": 0,
+            "median": 57,
+            "max": 86,
+            "n": 15
+          }
+        },
+        "note": "before: ran out of memory"
+      },
+      "long runs, after": {
+        "101,001 report rows, 1 change a batch, 80 redraws": {
+          "applyToReportPaintedMs": {
+            "min": 143,
+            "median": 153,
+            "max": 823,
+            "n": 80
+          },
+          "redraw 65, ms (the redraw CoreCLR shows laid out afresh in the same sequence of batches)": 823
+        },
+        "401,001 report rows, 1 change a batch, 80 redraws": {
+          "applyToReportPaintedMs": {
+            "min": 532,
+            "median": 546,
+            "max": 3329,
+            "n": 80
+          },
+          "redraw 65, ms (the redraw CoreCLR shows laid out afresh in the same sequence of batches)": 3329
+        }
+      },
+      "steps timed in the page, after (least/median/most of 15)": {
+        "10,001 report rows": {
+          "probeNextCubeMs": {
+            "min": 1.8,
+            "median": 3.6,
+            "max": 4.3,
+            "n": 15
+          },
+          "probeNextReportMs": {
+            "min": 0.8,
+            "median": 1.4,
+            "max": 2.7,
+            "n": 15
+          },
+          "probeCubeMs": {
+            "min": 12,
+            "median": 19.2,
+            "max": 26.4,
+            "n": 15
+          },
+          "probeReportMs": {
+            "min": 12.2,
+            "median": 15.6,
+            "max": 18.1,
+            "n": 15
+          },
+          "probeKeysMs": {
+            "min": 2,
+            "median": 2.3,
+            "max": 2.3,
+            "n": 15
+          },
+          "probeRowsMs": {
+            "min": 1.2,
+            "median": 1.4,
+            "max": 1.7,
+            "n": 15
+          }
+        },
+        "101,001 report rows": {
+          "probeNextCubeMs": {
+            "min": 29.2,
+            "median": 31.1,
+            "max": 34,
+            "n": 15
+          },
+          "probeNextReportMs": {
+            "min": 6.9,
+            "median": 7.3,
+            "max": 7.8,
+            "n": 15
+          },
+          "probeCubeMs": {
+            "min": 118.5,
+            "median": 134.8,
+            "max": 139.5,
+            "n": 15
+          },
+          "probeReportMs": {
+            "min": 185,
+            "median": 201,
+            "max": 207.9,
+            "n": 15
+          },
+          "probeKeysMs": {
+            "min": 19,
+            "median": 19.4,
+            "max": 20.6,
+            "n": 15
+          },
+          "probeRowsMs": {
+            "min": 12.7,
+            "median": 13,
+            "max": 13.7,
+            "n": 15
+          }
+        },
+        "401,001 report rows": {
+          "probeNextCubeMs": {
+            "min": 88.2,
+            "median": 95,
+            "max": 102.4,
+            "n": 15
+          },
+          "probeNextReportMs": {
+            "min": 22.8,
+            "median": 23.6,
+            "max": 25,
+            "n": 15
+          },
+          "probeCubeMs": {
+            "min": 463,
+            "median": 523.5,
+            "max": 547,
+            "n": 15
+          },
+          "probeReportMs": {
+            "min": 922.8,
+            "median": 933,
+            "max": 1007.5,
+            "n": 15
+          },
+          "probeKeysMs": {
+            "min": 79,
+            "median": 80,
+            "max": 139.5,
+            "n": 15
+          },
+          "probeRowsMs": {
+            "min": 50.5,
+            "median": 51.5,
+            "max": 52.7,
+            "n": 15
+          }
+        }
+      },
+      "the before code again, the same day, Apply to the painted report": {
+        "10,001 report rows, 1 change a batch": {
+          "min": 55,
+          "median": 78,
+          "max": 81,
+          "n": 15
+        },
+        "101,001 report rows, 1 change a batch": {
+          "min": 534,
+          "median": 548,
+          "max": 673,
+          "n": 15
+        }
+      }
+    },
+    "LV-23 a live ExPivot over 20 redraws, managed heap after a full collection, /pivot-live-costs": {
+      "101,001 report rows, 20 redraws, after": [
+        {
+          "after": "loaded",
+          "managedHeapAfterFullCollectionMB": 88.3,
+          "reportsAlive": "1/1",
+          "webAssemblyHeapMB": 166,
+          "outOfMemory": null
+        },
+        {
+          "after": 1,
+          "managedHeapAfterFullCollectionMB": 89.6,
+          "reportsAlive": "1/2",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 2,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/3",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 3,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/4",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 4,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/5",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 5,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/6",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 6,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/7",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 7,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/8",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 8,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/9",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 9,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/10",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 10,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/11",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 11,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/12",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 12,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/13",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 13,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/14",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 14,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/15",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 15,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/16",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 16,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/17",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 17,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/18",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 18,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/19",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 19,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/20",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 20,
+          "managedHeapAfterFullCollectionMB": 89.5,
+          "reportsAlive": "1/21",
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        }
+      ],
+      "101,001 report rows, before (2026-10-06, 12 redraws)": [
+        {
+          "after": "loaded",
+          "managedHeapAfterFullCollectionMB": 87.9,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 199,
+          "outOfMemory": null
+        },
+        {
+          "after": 1,
+          "managedHeapAfterFullCollectionMB": 129.1,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 239,
+          "outOfMemory": null
+        },
+        {
+          "after": 2,
+          "managedHeapAfterFullCollectionMB": 172.3,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 344,
+          "outOfMemory": null
+        },
+        {
+          "after": 3,
+          "managedHeapAfterFullCollectionMB": 215.5,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 412,
+          "outOfMemory": null
+        },
+        {
+          "after": 4,
+          "managedHeapAfterFullCollectionMB": 258.7,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 495,
+          "outOfMemory": null
+        },
+        {
+          "after": 5,
+          "managedHeapAfterFullCollectionMB": 299.9,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 6,
+          "managedHeapAfterFullCollectionMB": 341.0,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 7,
+          "managedHeapAfterFullCollectionMB": 382.2,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 694,
+          "outOfMemory": null
+        },
+        {
+          "after": 8,
+          "managedHeapAfterFullCollectionMB": 423.3,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 791,
+          "outOfMemory": null
+        },
+        {
+          "after": 9,
+          "managedHeapAfterFullCollectionMB": 464.5,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 791,
+          "outOfMemory": null
+        },
+        {
+          "after": 10,
+          "managedHeapAfterFullCollectionMB": 505.6,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 888,
+          "outOfMemory": null
+        },
+        {
+          "after": 11,
+          "managedHeapAfterFullCollectionMB": 546.8,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 984,
+          "outOfMemory": null
+        },
+        {
+          "after": 12,
+          "managedHeapAfterFullCollectionMB": 587.9,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 984,
+          "outOfMemory": null
+        }
+      ],
+      "401,001 report rows, 15 redraws, after": [
+        {
+          "after": "loaded",
+          "managedHeapAfterFullCollectionMB": 325.2,
+          "reportsAlive": "1/1",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 1,
+          "managedHeapAfterFullCollectionMB": 330.2,
+          "reportsAlive": "1/2",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 2,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/3",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 3,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/4",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 4,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/5",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 5,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/6",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 6,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/7",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 7,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/8",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 8,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/9",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 9,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/10",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 10,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/11",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 11,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/12",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 12,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/13",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 13,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/14",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 14,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/15",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 15,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/16",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        }
+      ],
+      "401,001 report rows, 80 redraws, after (crosses the redraw a compaction lays out afresh)": [
+        {
+          "after": "loaded",
+          "managedHeapAfterFullCollectionMB": 325.2,
+          "reportsAlive": "1/1",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 1,
+          "managedHeapAfterFullCollectionMB": 330.2,
+          "reportsAlive": "1/2",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 2,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/3",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 3,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/4",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 4,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/5",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 5,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/6",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 6,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/7",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 7,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/8",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 8,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/9",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 9,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/10",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 10,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/11",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 11,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/12",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 12,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/13",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 13,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/14",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 14,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/15",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 15,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/16",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 16,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/17",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 17,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/18",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 18,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/19",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 19,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/20",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 20,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/21",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 21,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/22",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 22,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/23",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 23,
+          "managedHeapAfterFullCollectionMB": 345.0,
+          "reportsAlive": "1/24",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 24,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/25",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 25,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/26",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 26,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/27",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 27,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/28",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 28,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/29",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 29,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/30",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 30,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/31",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 31,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/32",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 32,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/33",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 33,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/34",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 34,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/35",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 35,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/36",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 36,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/37",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 37,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/38",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 38,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/39",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 39,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/40",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 40,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/41",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 41,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/42",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 42,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/43",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 43,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/44",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 44,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/45",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 45,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/46",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 46,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/47",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 47,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/48",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 48,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/49",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 49,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/50",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 50,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/51",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 51,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/52",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 52,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/53",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 53,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/54",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 54,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/55",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 55,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/56",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 56,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/57",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 57,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/58",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 58,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/59",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 59,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/60",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 60,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/61",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 61,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/62",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 62,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/63",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 63,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/64",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 64,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/65",
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 65,
+          "managedHeapAfterFullCollectionMB": 402.7,
+          "reportsAlive": "1/66",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 66,
+          "managedHeapAfterFullCollectionMB": 330.2,
+          "reportsAlive": "1/67",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 67,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/68",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 68,
+          "managedHeapAfterFullCollectionMB": 329.6,
+          "reportsAlive": "1/69",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 69,
+          "managedHeapAfterFullCollectionMB": 329.6,
+          "reportsAlive": "1/70",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 70,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/71",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 71,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/72",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 72,
+          "managedHeapAfterFullCollectionMB": 329.6,
+          "reportsAlive": "1/73",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 73,
+          "managedHeapAfterFullCollectionMB": 329.6,
+          "reportsAlive": "1/74",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 74,
+          "managedHeapAfterFullCollectionMB": 329.6,
+          "reportsAlive": "1/75",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 75,
+          "managedHeapAfterFullCollectionMB": 329.6,
+          "reportsAlive": "1/76",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 76,
+          "managedHeapAfterFullCollectionMB": 329.6,
+          "reportsAlive": "1/77",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 77,
+          "managedHeapAfterFullCollectionMB": 329.6,
+          "reportsAlive": "1/78",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 78,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/79",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 79,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/80",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        },
+        {
+          "after": 80,
+          "managedHeapAfterFullCollectionMB": 329.7,
+          "reportsAlive": "1/81",
+          "webAssemblyHeapMB": 786,
+          "outOfMemory": null
+        }
+      ],
+      "401,001 report rows, before (2026-10-06, no collection forced)": [
+        {
+          "after": "loaded",
+          "managedHeapAfterFullCollectionMB": null,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 591,
+          "outOfMemory": null
+        },
+        {
+          "after": 1,
+          "managedHeapAfterFullCollectionMB": null,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 783,
+          "outOfMemory": null
+        },
+        {
+          "after": 2,
+          "managedHeapAfterFullCollectionMB": null,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 1081,
+          "outOfMemory": null
+        },
+        {
+          "after": 3,
+          "managedHeapAfterFullCollectionMB": null,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 1273,
+          "outOfMemory": null
+        },
+        {
+          "after": 4,
+          "managedHeapAfterFullCollectionMB": null,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 1465,
+          "outOfMemory": null
+        },
+        {
+          "after": 5,
+          "managedHeapAfterFullCollectionMB": null,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 1758,
+          "outOfMemory": null
+        },
+        {
+          "after": 6,
+          "managedHeapAfterFullCollectionMB": null,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 1958,
+          "outOfMemory": null
+        },
+        {
+          "after": 7,
+          "managedHeapAfterFullCollectionMB": null,
+          "reportsAlive": null,
+          "webAssemblyHeapMB": 2048,
+          "outOfMemory": "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100] |       Unhandled exception rendering component: Out of memory | System.OutOfMemoryException: Out of memory |    at ExPivot.Engine.PartColumns..ctor(PivotParts parts, Int32 capacity)"
+        }
+      ]
+    },
+    "LV-15 1,000 changes to 1,000,000 rows and its parts, /grid-live-local": {
+      "100,000 rows, 1 change(s) a batch, Apply to the painted frame": {
+        "before": {
+          "min": 3.2,
+          "median": 16,
+          "max": 25.2,
+          "n": 15
+        },
+        "after": {
+          "min": 1.6,
+          "median": 3.1,
+          "max": 12.5,
+          "n": 15
+        }
+      },
+      "100,000 rows, 100 change(s) a batch, Apply to the painted frame": {
+        "before": {
+          "min": 6.4,
+          "median": 10.1,
+          "max": 24.3,
+          "n": 15
+        },
+        "after": {
+          "min": 5.6,
+          "median": 9.4,
+          "max": 17.5,
+          "n": 15
+        }
+      },
+      "100,000 rows, 1,000 change(s) a batch, Apply to the painted frame": {
+        "before": {
+          "min": 18,
+          "median": 25.2,
+          "max": 32.6,
+          "n": 15
+        },
+        "after": {
+          "min": 18,
+          "median": 24.8,
+          "max": 34.7,
+          "n": 15
+        }
+      },
+      "1,000,000 rows, 1 change(s) a batch, Apply to the painted frame": {
+        "before": {
+          "min": 5,
+          "median": 91.4,
+          "max": 135.5,
+          "n": 15
+        },
+        "after": {
+          "min": 3.4,
+          "median": 6.8,
+          "max": 72.7,
+          "n": 15
+        }
+      },
+      "1,000,000 rows, 100 change(s) a batch, Apply to the painted frame": {
+        "before": {
+          "min": 7.9,
+          "median": 13.3,
+          "max": 79.3,
+          "n": 15
+        },
+        "after": {
+          "min": 6.8,
+          "median": 11.4,
+          "max": 73.7,
+          "n": 15
+        }
+      },
+      "1,000,000 rows, 1,000 change(s) a batch, Apply to the painted frame": {
+        "before": {
+          "min": 22.7,
+          "median": 28.6,
+          "max": 87.3,
+          "n": 15
+        },
+        "after": {
+          "min": 22.4,
+          "median": 28.5,
+          "max": 87.4,
+          "n": 15
+        }
+      },
+      "1,000,000 rows: the source alone, the same batch": {
+        "before": {
+          "min": 14.9,
+          "median": 15.4,
+          "max": 108.4,
+          "n": 15
+        },
+        "after": {
+          "min": 14.2,
+          "median": 15.1,
+          "max": 16.1,
+          "n": 15
+        }
+      },
+      "bytes per update on the Server host, 1,000,000 rows": {
+        "1 change(s)": {
+          "renderBatch": {
+            "before": {
+              "min": 73,
+              "median": 73,
+              "max": 73,
+              "mean": 73.0
+            },
+            "after": {
+              "min": 73,
+              "median": 73,
+              "max": 73,
+              "mean": 73.0
+            }
+          },
+          "wire": {
+            "before": {
+              "min": 19,
+              "median": 19,
+              "max": 23,
+              "mean": 19.5
+            },
+            "after": {
+              "min": 19,
+              "median": 19,
+              "max": 23,
+              "mean": 19.5
+            }
+          },
+          "unmarkRenderBatch": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "mean": 0.0
+          },
+          "unmarkWire": {
+            "min": 0,
+            "median": 0,
+            "max": 7,
+            "mean": 0.5
+          },
+          "perUpdateWireMean": 20.0
+        },
+        "100 change(s)": {
+          "renderBatch": {
+            "before": {
+              "min": 73,
+              "median": 644,
+              "max": 1159,
+              "mean": 641.1
+            },
+            "after": {
+              "min": 73,
+              "median": 644,
+              "max": 1159,
+              "mean": 641.0
+            }
+          },
+          "wire": {
+            "before": {
+              "min": 21,
+              "median": 71,
+              "max": 221,
+              "mean": 83.1
+            },
+            "after": {
+              "min": 21,
+              "median": 79,
+              "max": 223,
+              "mean": 84.1
+            }
+          },
+          "unmarkRenderBatch": {
+            "min": 0,
+            "median": 301,
+            "max": 537,
+            "mean": 290.5
+          },
+          "unmarkWire": {
+            "min": 0,
+            "median": 24,
+            "max": 98,
+            "mean": 29.7
+          },
+          "perUpdateWireMean": 113.9
+        },
+        "1,000 change(s)": {
+          "renderBatch": {
+            "before": {
+              "min": 1965,
+              "median": 2562,
+              "max": 3482,
+              "mean": 2572.2
+            },
+            "after": {
+              "min": 1965,
+              "median": 2562,
+              "max": 3482,
+              "mean": 2569.9
+            }
+          },
+          "wire": {
+            "before": {
+              "min": 216,
+              "median": 297,
+              "max": 428,
+              "mean": 294.7
+            },
+            "after": {
+              "min": 216,
+              "median": 296,
+              "max": 429,
+              "mean": 294.4
+            }
+          },
+          "unmarkRenderBatch": {
+            "min": 969,
+            "median": 1293,
+            "max": 1745,
+            "mean": 1286.9
+          },
+          "unmarkWire": {
+            "min": 58,
+            "median": 133,
+            "max": 210,
+            "mean": 129.3
+          },
+          "perUpdateWireMean": 423.7
+        }
+      }
+    },
+    "LV-10 ticket 07: a pushed Window of 1,000,000 rows, /grid-live-local?push=1": {
+      "1,000,000 rows pushed under a Row Key, not vouched, 1,000 change(s) a batch": {
+        "applyToPaintedMs": {
+          "min": 589.7,
+          "median": 631.6,
+          "max": 764.2,
+          "n": 15
+        },
+        "appliedMs": {
+          "min": 282.9,
+          "median": 298.8,
+          "max": 382.2,
+          "n": 15
+        },
+        "longestTaskMs": {
+          "min": 303,
+          "median": 317,
+          "max": 397,
+          "n": 15
+        }
+      },
+      "1,000,000 rows pushed under a Row Key, not vouched, 1 change(s) a batch": {
+        "applyToPaintedMs": {
+          "min": 640.4,
+          "median": 645,
+          "max": 676.2,
+          "n": 15
+        },
+        "appliedMs": {
+          "min": 319.6,
+          "median": 324,
+          "max": 354.3,
+          "n": 15
+        },
+        "longestTaskMs": {
+          "min": 277,
+          "median": 297,
+          "max": 311,
+          "n": 15
+        }
+      },
+      "1,000,000 rows pushed under a Row Key, vouched (VouchesDistinctRows), 1,000 change(s) a batch": {
+        "applyToPaintedMs": {
+          "min": 23.7,
+          "median": 29.7,
+          "max": 84.4,
+          "n": 15
+        },
+        "appliedMs": {
+          "min": 22.7,
+          "median": 28.7,
+          "max": 83.4,
+          "n": 15
+        },
+        "longestTaskMs": {
+          "min": 0,
+          "median": 0,
+          "max": 88,
+          "n": 15
+        }
+      },
+      "1,000,000 rows pushed under a Row Key, vouched (VouchesDistinctRows), 1 change(s) a batch": {
+        "applyToPaintedMs": {
+          "min": 4.3,
+          "median": 7.3,
+          "max": 67.7,
+          "n": 15
+        },
+        "appliedMs": {
+          "min": 3.7,
+          "median": 6.4,
+          "max": 67.2,
+          "n": 15
+        },
+        "longestTaskMs": {
+          "min": 0,
+          "median": 0,
+          "max": 67,
+          "n": 15
+        }
+      },
+      "the check by key alone over 1,000,000 rows (RequireDistinctKeys)": {
+        "before": {
+          "min": 269.2,
+          "median": 277.9,
+          "max": 294.9,
+          "n": 15
+        },
+        "after": {
+          "min": 267.3,
+          "median": 279.7,
+          "max": 371.9,
+          "n": 15
+        }
+      }
+    },
+    "PV-21 1,000 changes, /pivot-live over 1,000,000 trades (beside PV-48)": {
+      "after": {
+        "runs": 12,
+        "appliedMs": {
+          "median": 28,
+          "min": 22,
+          "max": 42
+        },
+        "applyToReportFrameMs": {
+          "median": 28,
+          "min": 22,
+          "max": 42
+        },
+        "taskStartToReportFrameMs": null,
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "reportInTheBatchsFrame": 12,
+        "lastStatus": "Batch 13: 1,000 trades amended, applied in 28 ms; the Snapshot is at version 13."
+      },
+      "beforeSameDay (41c8d8c8)": {
+        "runs": 12,
+        "appliedMs": {
+          "median": 27,
+          "min": 23,
+          "max": 38
+        },
+        "applyToReportFrameMs": {
+          "median": 27,
+          "min": 23,
+          "max": 38
+        },
+        "taskStartToReportFrameMs": null,
+        "longestTaskMs": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "reportInTheBatchsFrame": 12,
+        "lastStatus": "Batch 13: 1,000 trades amended, applied in 27 ms; the Snapshot is at version 13."
+      },
+      "targets": "PV-21: 1,000 changes <= 0.2 s; the page blocked <= 50 ms at a time (a published build without AOT)"
+    }
+  },
+  "coreclr": {
+    "how": "Release, DOTNET_TieredCompilation=0, each step alone on the same inputs, the least of 15 runs after 3 untimed (a full collection before each); spikes/live-update/Costs (harness/)",
+    "PV-48 ExPivot live redraw, step by step": {
+      "10,001 report rows, 1 change(s) a batch": {
+        "wholeRedrawMs": {
+          "before": {
+            "min": 3.534,
+            "median": 3.929,
+            "max": 4.324,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 3.604,
+            "median": 3.944,
+            "max": 4.088,
+            "n": 15
+          },
+          "after": {
+            "min": 0.481,
+            "median": 0.503,
+            "max": 0.572,
+            "n": 15
+          },
+          "afterSecondRound": {
+            "min": 0.546,
+            "median": 0.616,
+            "max": 0.671,
+            "n": 15
+          }
+        },
+        "stepsAfterMs": {
+          "fold": {
+            "min": 0.009,
+            "median": 0.011,
+            "max": 2.091,
+            "n": 15
+          },
+          "answer": {
+            "min": 0.213,
+            "median": 0.217,
+            "max": 0.241,
+            "n": 15
+          },
+          "nextCube": {
+            "min": 0.209,
+            "median": 0.228,
+            "max": 0.246,
+            "n": 15
+          },
+          "nextCubeEngineCompares": {
+            "min": 0.357,
+            "median": 0.37,
+            "max": 0.431,
+            "n": 15
+          },
+          "nextReport": {
+            "min": 0.046,
+            "median": 0.05,
+            "max": 0.068,
+            "n": 15
+          },
+          "hasSameRowsAs": {
+            "min": 0.0,
+            "median": 0.001,
+            "max": 0.001,
+            "n": 15
+          },
+          "changesSince": {
+            "min": 0.001,
+            "median": 0.001,
+            "max": 0.007,
+            "n": 15
+          },
+          "show": {
+            "min": 0.004,
+            "median": 0.006,
+            "max": 0.017,
+            "n": 15
+          },
+          "gridApplyState": {
+            "min": 0.003,
+            "median": 0.003,
+            "max": 0.004,
+            "n": 15
+          },
+          "render": {
+            "min": 0.053,
+            "median": 0.059,
+            "max": 0.08,
+            "n": 15
+          },
+          "changesSinceBothLaidOutAfresh": {
+            "min": 1.641,
+            "median": 1.673,
+            "max": 1.776,
+            "n": 15
+          }
+        },
+        "stepsBeforeMs": {
+          "cube": {
+            "min": 1.059,
+            "median": 1.091,
+            "max": 1.165,
+            "n": 15
+          },
+          "report": {
+            "min": 1.298,
+            "median": 1.35,
+            "max": 1.542,
+            "n": 15
+          },
+          "labelWidths": {
+            "min": 0.321,
+            "median": 0.355,
+            "max": 0.389,
+            "n": 15
+          },
+          "gridKeyCheck": {
+            "min": 0.144,
+            "median": 0.149,
+            "max": 0.186,
+            "n": 15
+          },
+          "render": {
+            "min": 0.281,
+            "median": 0.327,
+            "max": 0.415,
+            "n": 15
+          }
+        },
+        "paintedRowsRenderedPerRedrawOf11": {
+          "before": {
+            "min": 11,
+            "median": 11,
+            "max": 11,
+            "n": 15
+          },
+          "after": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 15
+          }
+        },
+        "allocatedPerRedrawMB": {
+          "min": 0.957,
+          "median": 0.957,
+          "max": 0.957,
+          "n": 15
+        }
+      },
+      "10,001 report rows, 1,000 change(s) a batch": {
+        "wholeRedrawMs": {
+          "before": {
+            "min": 4.315,
+            "median": 4.687,
+            "max": 4.749,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 4.417,
+            "median": 4.549,
+            "max": 4.751,
+            "n": 15
+          },
+          "after": {
+            "min": 1.93,
+            "median": 2.107,
+            "max": 2.285,
+            "n": 15
+          },
+          "afterSecondRound": {
+            "min": 2.225,
+            "median": 2.464,
+            "max": 2.626,
+            "n": 15
+          }
+        },
+        "stepsAfterMs": {
+          "fold": {
+            "min": 0.394,
+            "median": 0.448,
+            "max": 0.512,
+            "n": 15
+          },
+          "answer": {
+            "min": 0.269,
+            "median": 0.277,
+            "max": 0.303,
+            "n": 15
+          },
+          "nextCube": {
+            "min": 0.538,
+            "median": 0.576,
+            "max": 0.602,
+            "n": 15
+          },
+          "nextCubeEngineCompares": {
+            "min": 0.742,
+            "median": 0.774,
+            "max": 0.849,
+            "n": 15
+          },
+          "nextReport": {
+            "min": 0.572,
+            "median": 0.594,
+            "max": 0.68,
+            "n": 15
+          },
+          "hasSameRowsAs": {
+            "min": 0.0,
+            "median": 0.001,
+            "max": 0.001,
+            "n": 15
+          },
+          "changesSince": {
+            "min": 0.001,
+            "median": 0.002,
+            "max": 0.011,
+            "n": 15
+          },
+          "show": {
+            "min": 0.071,
+            "median": 0.078,
+            "max": 0.182,
+            "n": 15
+          },
+          "gridApplyState": {
+            "min": 0.003,
+            "median": 0.004,
+            "max": 0.015,
+            "n": 15
+          },
+          "render": {
+            "min": 0.078,
+            "median": 0.092,
+            "max": 0.121,
+            "n": 15
+          },
+          "changesSinceBothLaidOutAfresh": {
+            "min": 2.069,
+            "median": 2.128,
+            "max": 2.165,
+            "n": 15
+          }
+        },
+        "stepsBeforeMs": {
+          "cube": {
+            "min": 1.103,
+            "median": 1.15,
+            "max": 1.388,
+            "n": 15
+          },
+          "report": {
+            "min": 1.359,
+            "median": 1.413,
+            "max": 1.547,
+            "n": 15
+          },
+          "labelWidths": {
+            "min": 0.321,
+            "median": 0.353,
+            "max": 0.46,
+            "n": 15
+          },
+          "gridKeyCheck": {
+            "min": 0.146,
+            "median": 0.153,
+            "max": 0.181,
+            "n": 15
+          },
+          "render": {
+            "min": 0.333,
+            "median": 0.351,
+            "max": 0.4,
+            "n": 15
+          }
+        },
+        "paintedRowsRenderedPerRedrawOf11": {
+          "before": {
+            "min": 11,
+            "median": 11,
+            "max": 11,
+            "n": 15
+          },
+          "after": {
+            "min": 0,
+            "median": 3,
+            "max": 4,
+            "n": 15
+          }
+        },
+        "allocatedPerRedrawMB": {
+          "min": 2.2,
+          "median": 2.347,
+          "max": 2.905,
+          "n": 15
+        }
+      },
+      "101,001 report rows, 1 change(s) a batch": {
+        "wholeRedrawMs": {
+          "before": {
+            "min": 60.197,
+            "median": 61.56,
+            "max": 76.552,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 62.631,
+            "median": 64.72,
+            "max": 76.911,
+            "n": 15
+          },
+          "after": {
+            "min": 4.814,
+            "median": 5.146,
+            "max": 5.705,
+            "n": 15
+          },
+          "afterSecondRound": {
+            "min": 5.199,
+            "median": 5.469,
+            "max": 5.769,
+            "n": 15
+          }
+        },
+        "stepsAfterMs": {
+          "fold": {
+            "min": 0.074,
+            "median": 0.091,
+            "max": 2.143,
+            "n": 15
+          },
+          "answer": {
+            "min": 2.288,
+            "median": 2.353,
+            "max": 2.916,
+            "n": 15
+          },
+          "nextCube": {
+            "min": 2.311,
+            "median": 2.399,
+            "max": 2.54,
+            "n": 15
+          },
+          "nextCubeEngineCompares": {
+            "min": 3.885,
+            "median": 3.981,
+            "max": 4.205,
+            "n": 15
+          },
+          "nextReport": {
+            "min": 0.393,
+            "median": 0.428,
+            "max": 0.459,
+            "n": 15
+          },
+          "hasSameRowsAs": {
+            "min": 0.003,
+            "median": 0.005,
+            "max": 0.006,
+            "n": 15
+          },
+          "changesSince": {
+            "min": 0.006,
+            "median": 0.008,
+            "max": 0.011,
+            "n": 15
+          },
+          "show": {
+            "min": 0.023,
+            "median": 0.042,
+            "max": 0.049,
+            "n": 15
+          },
+          "gridApplyState": {
+            "min": 0.012,
+            "median": 0.019,
+            "max": 0.022,
+            "n": 15
+          },
+          "render": {
+            "min": 0.145,
+            "median": 0.163,
+            "max": 0.18,
+            "n": 15
+          },
+          "changesSinceBothLaidOutAfresh": {
+            "min": 17.696,
+            "median": 18.148,
+            "max": 19.363,
+            "n": 15
+          }
+        },
+        "stepsBeforeMs": {
+          "cube": {
+            "min": 18.436,
+            "median": 19.247,
+            "max": 20.584,
+            "n": 15
+          },
+          "report": {
+            "min": 31.61,
+            "median": 32.013,
+            "max": 32.58,
+            "n": 15
+          },
+          "labelWidths": {
+            "min": 3.305,
+            "median": 3.445,
+            "max": 3.75,
+            "n": 15
+          },
+          "gridKeyCheck": {
+            "min": 1.63,
+            "median": 1.686,
+            "max": 1.731,
+            "n": 15
+          },
+          "render": {
+            "min": 2.111,
+            "median": 2.196,
+            "max": 2.449,
+            "n": 15
+          }
+        },
+        "paintedRowsRenderedPerRedrawOf11": {
+          "before": {
+            "min": 11,
+            "median": 11,
+            "max": 11,
+            "n": 15
+          },
+          "after": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 15
+          }
+        },
+        "allocatedPerRedrawMB": {
+          "min": 9.377,
+          "median": 9.383,
+          "max": 9.385,
+          "n": 15
+        }
+      },
+      "101,001 report rows, 1,000 change(s) a batch": {
+        "wholeRedrawMs": {
+          "before": {
+            "min": 62.899,
+            "median": 64.354,
+            "max": 73.055,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 66.734,
+            "median": 94.504,
+            "max": 108.148,
+            "n": 15
+          },
+          "after": {
+            "min": 9.025,
+            "median": 9.646,
+            "max": 10.385,
+            "n": 15
+          },
+          "afterSecondRound": {
+            "min": 9.321,
+            "median": 10.199,
+            "max": 10.641,
+            "n": 15
+          }
+        },
+        "stepsAfterMs": {
+          "fold": {
+            "min": 0.925,
+            "median": 1.015,
+            "max": 1.379,
+            "n": 15
+          },
+          "answer": {
+            "min": 2.367,
+            "median": 2.418,
+            "max": 2.692,
+            "n": 15
+          },
+          "nextCube": {
+            "min": 4.892,
+            "median": 4.991,
+            "max": 5.094,
+            "n": 15
+          },
+          "nextCubeEngineCompares": {
+            "min": 7.085,
+            "median": 7.226,
+            "max": 7.67,
+            "n": 15
+          },
+          "nextReport": {
+            "min": 1.422,
+            "median": 1.457,
+            "max": 1.817,
+            "n": 15
+          },
+          "hasSameRowsAs": {
+            "min": 0.004,
+            "median": 0.004,
+            "max": 0.006,
+            "n": 15
+          },
+          "changesSince": {
+            "min": 0.006,
+            "median": 0.008,
+            "max": 0.01,
+            "n": 15
+          },
+          "show": {
+            "min": 0.299,
+            "median": 0.318,
+            "max": 0.342,
+            "n": 15
+          },
+          "gridApplyState": {
+            "min": 0.01,
+            "median": 0.017,
+            "max": 0.021,
+            "n": 15
+          },
+          "render": {
+            "min": 0.148,
+            "median": 0.164,
+            "max": 0.203,
+            "n": 15
+          },
+          "changesSinceBothLaidOutAfresh": {
+            "min": 19.937,
+            "median": 20.306,
+            "max": 21.173,
+            "n": 15
+          }
+        },
+        "stepsBeforeMs": {
+          "cube": {
+            "min": 17.559,
+            "median": 18.09,
+            "max": 18.948,
+            "n": 15
+          },
+          "report": {
+            "min": 30.893,
+            "median": 31.17,
+            "max": 31.727,
+            "n": 15
+          },
+          "labelWidths": {
+            "min": 3.234,
+            "median": 3.521,
+            "max": 3.713,
+            "n": 15
+          },
+          "gridKeyCheck": {
+            "min": 1.738,
+            "median": 1.774,
+            "max": 1.819,
+            "n": 15
+          },
+          "render": {
+            "min": 2.11,
+            "median": 2.206,
+            "max": 2.321,
+            "n": 15
+          }
+        },
+        "paintedRowsRenderedPerRedrawOf11": {
+          "before": {
+            "min": 11,
+            "median": 11,
+            "max": 11,
+            "n": 15
+          },
+          "after": {
+            "min": 0,
+            "median": 1,
+            "max": 2,
+            "n": 15
+          }
+        },
+        "allocatedPerRedrawMB": {
+          "min": 10.694,
+          "median": 11.196,
+          "max": 16.725,
+          "n": 15
+        }
+      },
+      "401,001 report rows, 1 change(s) a batch": {
+        "wholeRedrawMs": {
+          "before": {
+            "min": 268.518,
+            "median": 280.065,
+            "max": 300.951,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 270.388,
+            "median": 286.174,
+            "max": 303.29,
+            "n": 15
+          },
+          "after": {
+            "min": 18.991,
+            "median": 20.231,
+            "max": 21.306,
+            "n": 15
+          },
+          "afterSecondRound": {
+            "min": 19.853,
+            "median": 20.917,
+            "max": 23.508,
+            "n": 15
+          }
+        },
+        "stepsAfterMs": {
+          "fold": {
+            "min": 0.221,
+            "median": 0.233,
+            "max": 1.449,
+            "n": 15
+          },
+          "answer": {
+            "min": 9.348,
+            "median": 9.637,
+            "max": 9.779,
+            "n": 15
+          },
+          "nextCube": {
+            "min": 9.624,
+            "median": 10.055,
+            "max": 10.499,
+            "n": 15
+          },
+          "nextCubeEngineCompares": {
+            "min": 16.286,
+            "median": 16.734,
+            "max": 17.117,
+            "n": 15
+          },
+          "nextReport": {
+            "min": 1.547,
+            "median": 1.622,
+            "max": 1.639,
+            "n": 15
+          },
+          "hasSameRowsAs": {
+            "min": 0.005,
+            "median": 0.006,
+            "max": 0.007,
+            "n": 15
+          },
+          "changesSince": {
+            "min": 0.006,
+            "median": 0.009,
+            "max": 0.011,
+            "n": 15
+          },
+          "show": {
+            "min": 0.033,
+            "median": 0.044,
+            "max": 0.051,
+            "n": 15
+          },
+          "gridApplyState": {
+            "min": 0.017,
+            "median": 0.022,
+            "max": 0.024,
+            "n": 15
+          },
+          "render": {
+            "min": 0.16,
+            "median": 0.176,
+            "max": 0.192,
+            "n": 15
+          },
+          "changesSinceBothLaidOutAfresh": {
+            "min": 76.755,
+            "median": 78.984,
+            "max": 82.915,
+            "n": 15
+          }
+        },
+        "stepsBeforeMs": {
+          "cube": {
+            "min": 80.067,
+            "median": 82.459,
+            "max": 88.544,
+            "n": 15
+          },
+          "report": {
+            "min": 157.212,
+            "median": 158.854,
+            "max": 162.9,
+            "n": 15
+          },
+          "labelWidths": {
+            "min": 12.95,
+            "median": 13.646,
+            "max": 14.436,
+            "n": 15
+          },
+          "gridKeyCheck": {
+            "min": 8.21,
+            "median": 8.563,
+            "max": 9.67,
+            "n": 15
+          },
+          "render": {
+            "min": 8.836,
+            "median": 9.355,
+            "max": 11.124,
+            "n": 15
+          }
+        },
+        "paintedRowsRenderedPerRedrawOf11": {
+          "before": {
+            "min": 11,
+            "median": 11,
+            "max": 11,
+            "n": 15
+          },
+          "after": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 15
+          }
+        },
+        "allocatedPerRedrawMB": {
+          "min": 37.149,
+          "median": 37.151,
+          "max": 37.156,
+          "n": 15
+        }
+      },
+      "401,001 report rows, 1,000 change(s) a batch": {
+        "wholeRedrawMs": {
+          "before": {
+            "min": 276.023,
+            "median": 282.572,
+            "max": 296.662,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 291.604,
+            "median": 304.691,
+            "max": 321.218,
+            "n": 15
+          },
+          "after": {
+            "min": 28.842,
+            "median": 30.965,
+            "max": 32.571,
+            "n": 15
+          },
+          "afterSecondRound": {
+            "min": 29.933,
+            "median": 31.599,
+            "max": 34.67,
+            "n": 15
+          }
+        },
+        "stepsAfterMs": {
+          "fold": {
+            "min": 1.402,
+            "median": 1.549,
+            "max": 2.046,
+            "n": 15
+          },
+          "answer": {
+            "min": 9.653,
+            "median": 10.862,
+            "max": 11.136,
+            "n": 15
+          },
+          "nextCube": {
+            "min": 19.39,
+            "median": 19.597,
+            "max": 20.479,
+            "n": 15
+          },
+          "nextCubeEngineCompares": {
+            "min": 28.821,
+            "median": 29.496,
+            "max": 30.114,
+            "n": 15
+          },
+          "nextReport": {
+            "min": 3.118,
+            "median": 3.296,
+            "max": 3.429,
+            "n": 15
+          },
+          "hasSameRowsAs": {
+            "min": 0.004,
+            "median": 0.006,
+            "max": 0.007,
+            "n": 15
+          },
+          "changesSince": {
+            "min": 0.007,
+            "median": 0.01,
+            "max": 0.011,
+            "n": 15
+          },
+          "show": {
+            "min": 0.4,
+            "median": 0.419,
+            "max": 0.451,
+            "n": 15
+          },
+          "gridApplyState": {
+            "min": 0.016,
+            "median": 0.021,
+            "max": 0.024,
+            "n": 15
+          },
+          "render": {
+            "min": 0.169,
+            "median": 0.184,
+            "max": 0.225,
+            "n": 15
+          },
+          "changesSinceBothLaidOutAfresh": {
+            "min": 80.47,
+            "median": 81.392,
+            "max": 87.274,
+            "n": 15
+          }
+        },
+        "stepsBeforeMs": {
+          "cube": {
+            "min": 81.436,
+            "median": 82.168,
+            "max": 85.073,
+            "n": 15
+          },
+          "report": {
+            "min": 159.118,
+            "median": 160.016,
+            "max": 160.932,
+            "n": 15
+          },
+          "labelWidths": {
+            "min": 12.514,
+            "median": 13.793,
+            "max": 14.215,
+            "n": 15
+          },
+          "gridKeyCheck": {
+            "min": 8.11,
+            "median": 8.368,
+            "max": 8.542,
+            "n": 15
+          },
+          "render": {
+            "min": 9.261,
+            "median": 9.486,
+            "max": 11.619,
+            "n": 15
+          }
+        },
+        "paintedRowsRenderedPerRedrawOf11": {
+          "before": {
+            "min": 11,
+            "median": 11,
+            "max": 11,
+            "n": 15
+          },
+          "after": {
+            "min": 0,
+            "median": 1,
+            "max": 1,
+            "n": 15
+          }
+        },
+        "allocatedPerRedrawMB": {
+          "min": 38.838,
+          "median": 39.309,
+          "max": 39.901,
+          "n": 15
+        }
+      }
+    },
+    "PV-48 the collector inside one redraw (a full collection before each, GC events)": {
+      "10,001 report rows": {
+        "beforeSameDay": {
+          "redrawMs": {
+            "min": 3.999,
+            "median": 4.368,
+            "max": 4.531,
+            "n": 15
+          },
+          "gcPauseMs": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 15
+          },
+          "collectionsGen0Gen1Gen2InAllRedraws": [
+            0,
+            0,
+            0
+          ],
+          "compacting": 0,
+          "redraws": 15,
+          "allocatedMB": null
+        },
+        "after": {
+          "redrawMs": {
+            "min": 0.507,
+            "median": 0.535,
+            "max": 0.607,
+            "n": 15
+          },
+          "gcPauseMs": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 15
+          },
+          "collectionsGen0Gen1Gen2InAllRedraws": [
+            0,
+            0,
+            0
+          ],
+          "compacting": 0,
+          "redraws": 15,
+          "allocatedMB": {
+            "min": 0.98,
+            "median": 0.99,
+            "max": 1.09,
+            "n": 15
+          }
+        }
+      },
+      "101,001 report rows": {
+        "beforeSameDay": {
+          "redrawMs": {
+            "min": 63.558,
+            "median": 68.832,
+            "max": 77.057,
+            "n": 15
+          },
+          "gcPauseMs": {
+            "min": 15.088,
+            "median": 17.833,
+            "max": 27.546,
+            "n": 15
+          },
+          "collectionsGen0Gen1Gen2InAllRedraws": [
+            43,
+            32,
+            0
+          ],
+          "compacting": 10,
+          "redraws": 15,
+          "allocatedMB": null
+        },
+        "after": {
+          "redrawMs": {
+            "min": 4.93,
+            "median": 5.073,
+            "max": 7.308,
+            "n": 15
+          },
+          "gcPauseMs": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 15
+          },
+          "collectionsGen0Gen1Gen2InAllRedraws": [
+            0,
+            0,
+            0
+          ],
+          "compacting": 0,
+          "redraws": 15,
+          "allocatedMB": {
+            "min": 9.42,
+            "median": 9.43,
+            "max": 9.43,
+            "n": 15
+          }
+        },
+        "beforeRecord": {
+          "redrawMs": {
+            "min": 70.27,
+            "median": 72.89,
+            "max": 84.015,
+            "n": 15
+          },
+          "gcPauseMs": {
+            "min": 16.324,
+            "median": 18.134,
+            "max": 28.903,
+            "n": 15
+          },
+          "collectionsGen0Gen1Gen2InAllRedraws": [
+            43,
+            32,
+            0
+          ],
+          "compacting": 10,
+          "redraws": 15,
+          "allocatedMB": null
+        }
+      },
+      "401,001 report rows": {
+        "beforeSameDay": {
+          "redrawMs": {
+            "min": 273.977,
+            "median": 289.578,
+            "max": 307.552,
+            "n": 15
+          },
+          "gcPauseMs": {
+            "min": 61.941,
+            "median": 68.768,
+            "max": 79.405,
+            "n": 15
+          },
+          "collectionsGen0Gen1Gen2InAllRedraws": [
+            134,
+            136,
+            0
+          ],
+          "compacting": 30,
+          "redraws": 15,
+          "allocatedMB": null
+        },
+        "after": {
+          "redrawMs": {
+            "min": 19.644,
+            "median": 20.302,
+            "max": 22.503,
+            "n": 15
+          },
+          "gcPauseMs": {
+            "min": 0,
+            "median": 0,
+            "max": 0,
+            "n": 15
+          },
+          "collectionsGen0Gen1Gen2InAllRedraws": [
+            0,
+            0,
+            0
+          ],
+          "compacting": 0,
+          "redraws": 15,
+          "allocatedMB": {
+            "min": 37.18,
+            "median": 37.19,
+            "max": 37.19,
+            "n": 15
+          }
+        }
+      }
+    },
+    "PV-48 steady state, consecutive redraws, no forced collection (H3's method)": {
+      "101,001 report rows, before (2026-10-06 paint-text record, V0, 150 redraws)": [
+        {
+          "redraws": "11-60",
+          "medianMs": 77.164,
+          "meanMs": 87.25,
+          "mostMs": 191.684,
+          "gcPauseMsInAll": 1293.8,
+          "gcPauseMsPerRedraw": 25.88,
+          "heapAfterLastGcMB": 3961.1
+        },
+        {
+          "redraws": "61-70",
+          "medianMs": 82.05,
+          "meanMs": 82.19,
+          "mostMs": 96.878,
+          "gcPauseMsInAll": 274.2,
+          "gcPauseMsPerRedraw": 27.42,
+          "heapAfterLastGcMB": 4757.5
+        },
+        {
+          "redraws": "71-100",
+          "medianMs": 83.158,
+          "meanMs": 105.44,
+          "mostMs": 207.211,
+          "gcPauseMsInAll": 917.1,
+          "gcPauseMsPerRedraw": 30.57,
+          "heapAfterLastGcMB": 5778.4
+        },
+        {
+          "redraws": "101-150",
+          "medianMs": 85.025,
+          "meanMs": 97.42,
+          "mostMs": 205.601,
+          "gcPauseMsInAll": 1521.6,
+          "gcPauseMsPerRedraw": 30.43,
+          "heapAfterLastGcMB": 8087.6
+        },
+        {
+          "redraws": "11-150",
+          "medianMs": 81.848,
+          "meanMs": 94.42,
+          "mostMs": 207.211,
+          "gcPauseMsInAll": 4006.7,
+          "gcPauseMsPerRedraw": 28.62,
+          "heapAfterLastGcMB": 8087.6
+        }
+      ],
+      "101,001 report rows, after (150 redraws)": [
+        {
+          "redraws": "11-60",
+          "medianMs": 5.675,
+          "meanMs": 6.53,
+          "mostMs": 24.989,
+          "gcPauseMsInAll": 11.7,
+          "gcPauseMsPerRedraw": 0.23,
+          "heapAfterLastGcMB": 234.3
+        },
+        {
+          "redraws": "61-70",
+          "medianMs": 5.59,
+          "meanMs": 13.45,
+          "mostMs": 85.193,
+          "gcPauseMsInAll": 14.1,
+          "gcPauseMsPerRedraw": 1.41,
+          "heapAfterLastGcMB": 266.9
+        },
+        {
+          "redraws": "71-100",
+          "medianMs": 5.114,
+          "meanMs": 6.32,
+          "mostMs": 38.566,
+          "gcPauseMsInAll": 34.3,
+          "gcPauseMsPerRedraw": 1.14,
+          "heapAfterLastGcMB": 221.3
+        },
+        {
+          "redraws": "101-150",
+          "medianMs": 5.242,
+          "meanMs": 7.01,
+          "mostMs": 86.53,
+          "gcPauseMsInAll": 20.2,
+          "gcPauseMsPerRedraw": 0.4,
+          "heapAfterLastGcMB": 273.6
+        },
+        {
+          "redraws": "11-150",
+          "medianMs": 5.368,
+          "meanMs": 7.15,
+          "mostMs": 86.53,
+          "gcPauseMsInAll": 80.3,
+          "gcPauseMsPerRedraw": 0.57,
+          "heapAfterLastGcMB": 273.6
+        }
+      ],
+      "10,001 report rows, after (70 redraws)": [
+        {
+          "redraws": "11-70",
+          "medianMs": 0.589,
+          "meanMs": 0.92,
+          "mostMs": 11.631,
+          "gcPauseMsInAll": 7.7,
+          "gcPauseMsPerRedraw": 0.13,
+          "heapAfterLastGcMB": 25.6
+        }
+      ],
+      "401,001 report rows, after (70 redraws)": [
+        {
+          "redraws": "11-70",
+          "medianMs": 22.604,
+          "meanMs": 31.28,
+          "mostMs": 394.469,
+          "gcPauseMsInAll": 75.9,
+          "gcPauseMsPerRedraw": 1.26,
+          "heapAfterLastGcMB": 906.3
+        }
+      ]
+    },
+    "LV-23 ExPivot memory after a full collection per redraw": {
+      "101,001 report rows, 20 redraws, after": [
+        {
+          "redraw": 1,
+          "heapMB": 154.3,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 3,
+          "workingSetMB": 196.5
+        },
+        {
+          "redraw": 2,
+          "heapMB": 154.3,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 5,
+          "workingSetMB": 200.3
+        },
+        {
+          "redraw": 3,
+          "heapMB": 154.4,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 197
+        },
+        {
+          "redraw": 4,
+          "heapMB": 154.6,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 200.3
+        },
+        {
+          "redraw": 5,
+          "heapMB": 154.7,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 195.5
+        },
+        {
+          "redraw": 6,
+          "heapMB": 154.9,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 198.8
+        },
+        {
+          "redraw": 7,
+          "heapMB": 155.1,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 194.8
+        },
+        {
+          "redraw": 8,
+          "heapMB": 155.2,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 198.1
+        },
+        {
+          "redraw": 9,
+          "heapMB": 155.4,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 198.9
+        },
+        {
+          "redraw": 10,
+          "heapMB": 155.5,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 198.9
+        },
+        {
+          "redraw": 11,
+          "heapMB": 155.7,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 194.8
+        },
+        {
+          "redraw": 12,
+          "heapMB": 155.9,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 198.9
+        },
+        {
+          "redraw": 13,
+          "heapMB": 156,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 198.9
+        },
+        {
+          "redraw": 14,
+          "heapMB": 156.2,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 198.9
+        },
+        {
+          "redraw": 15,
+          "heapMB": 156.3,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 194.8
+        },
+        {
+          "redraw": 16,
+          "heapMB": 156.5,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 198.1
+        },
+        {
+          "redraw": 17,
+          "heapMB": 156.7,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 194.8
+        },
+        {
+          "redraw": 18,
+          "heapMB": 156.8,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 198.1
+        },
+        {
+          "redraw": 19,
+          "heapMB": 157,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 194.8
+        },
+        {
+          "redraw": 20,
+          "heapMB": 157.1,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 198.1
+        }
+      ],
+      "401,001 report rows, 15 redraws, after": [
+        {
+          "redraw": 1,
+          "heapMB": 406.7,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 3,
+          "workingSetMB": 532.7
+        },
+        {
+          "redraw": 2,
+          "heapMB": 405.9,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 5,
+          "workingSetMB": 524.5
+        },
+        {
+          "redraw": 3,
+          "heapMB": 406.1,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 533.3
+        },
+        {
+          "redraw": 4,
+          "heapMB": 406.3,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 524.9
+        },
+        {
+          "redraw": 5,
+          "heapMB": 406.4,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 533.7
+        },
+        {
+          "redraw": 6,
+          "heapMB": 406.6,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 525.2
+        },
+        {
+          "redraw": 7,
+          "heapMB": 406.8,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 534
+        },
+        {
+          "redraw": 8,
+          "heapMB": 407,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 525.6
+        },
+        {
+          "redraw": 9,
+          "heapMB": 407.2,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 534.4
+        },
+        {
+          "redraw": 10,
+          "heapMB": 407.3,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 525.9
+        },
+        {
+          "redraw": 11,
+          "heapMB": 407.5,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 534.7
+        },
+        {
+          "redraw": 12,
+          "heapMB": 407.7,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 526.3
+        },
+        {
+          "redraw": 13,
+          "heapMB": 407.9,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 535.1
+        },
+        {
+          "redraw": 14,
+          "heapMB": 408,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 526.6
+        },
+        {
+          "redraw": 15,
+          "heapMB": 408.2,
+          "aliveEarlierReports": 0,
+          "aliveEarlierCubes": 0,
+          "historyTimesKept": 7,
+          "workingSetMB": 535.5
+        }
+      ]
+    },
+    "LV-15 GridSource.From keyed, one live update": {
+      "100,000 rows, 1 change(s) a batch": {
+        "wholeUpdateMs": {
+          "before": {
+            "min": 0.1,
+            "median": 0.279,
+            "max": 0.663,
+            "n": 15
+          },
+          "after": {
+            "min": 0.085,
+            "median": 0.094,
+            "max": 0.16,
+            "n": 15
+          }
+        },
+        "requeryAloneMs": {
+          "min": 0.042,
+          "median": 0.046,
+          "max": 0.053,
+          "n": 15
+        },
+        "gridApplyStateMs": {
+          "min": 0.005,
+          "median": 0.009,
+          "max": 0.016,
+          "n": 15
+        },
+        "selectionSummaryWalkLastRowChangedMs": {
+          "before": {
+            "min": 0.488,
+            "median": 0.507,
+            "max": 0.782,
+            "n": 15
+          },
+          "after": {
+            "min": 0.004,
+            "median": 0.007,
+            "max": 0.013,
+            "n": 15
+          }
+        },
+        "pushedTakeInUnvouchedMs": {
+          "before": {
+            "min": 3.41,
+            "median": 3.565,
+            "max": 4.642,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 3.609,
+            "median": 3.751,
+            "max": 3.912,
+            "n": 15
+          },
+          "after": {
+            "min": 3.718,
+            "median": 3.836,
+            "max": 3.911,
+            "n": 15
+          }
+        },
+        "keyCheckAloneMs": {
+          "before": {
+            "min": 3.093,
+            "median": 3.204,
+            "max": 3.301,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 3.234,
+            "median": 3.353,
+            "max": 3.553,
+            "n": 15
+          },
+          "after": {
+            "min": 3.661,
+            "median": 3.821,
+            "max": 4.205,
+            "n": 15
+          }
+        },
+        "pushedTakeInVouchedMs": {
+          "min": 0.004,
+          "median": 0.006,
+          "max": 0.01,
+          "n": 15
+        },
+        "pushedTakeInAndRenderVouchedMs": {
+          "min": 0.043,
+          "median": 0.047,
+          "max": 0.084,
+          "n": 15
+        }
+      },
+      "100,000 rows, 100 change(s) a batch": {
+        "wholeUpdateMs": {
+          "before": {
+            "min": 0.29,
+            "median": 0.309,
+            "max": 0.449,
+            "n": 15
+          },
+          "after": {
+            "min": 0.283,
+            "median": 0.295,
+            "max": 0.37,
+            "n": 15
+          }
+        },
+        "requeryAloneMs": {
+          "min": 0.073,
+          "median": 0.082,
+          "max": 0.141,
+          "n": 15
+        },
+        "gridApplyStateMs": {
+          "min": 0.007,
+          "median": 0.01,
+          "max": 0.015,
+          "n": 15
+        },
+        "selectionSummaryWalkLastRowChangedMs": {
+          "before": {
+            "min": 0.484,
+            "median": 0.489,
+            "max": 0.592,
+            "n": 15
+          },
+          "after": {
+            "min": 0.004,
+            "median": 0.005,
+            "max": 0.013,
+            "n": 15
+          }
+        },
+        "pushedTakeInUnvouchedMs": {
+          "before": {
+            "min": 3.054,
+            "median": 3.152,
+            "max": 3.484,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 3.167,
+            "median": 3.372,
+            "max": 3.507,
+            "n": 15
+          },
+          "after": {
+            "min": 3.707,
+            "median": 3.877,
+            "max": 4.037,
+            "n": 15
+          }
+        },
+        "keyCheckAloneMs": {
+          "before": {
+            "min": 2.978,
+            "median": 3.171,
+            "max": 3.772,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 3.188,
+            "median": 3.381,
+            "max": 3.618,
+            "n": 15
+          },
+          "after": {
+            "min": 3.741,
+            "median": 3.849,
+            "max": 4.035,
+            "n": 15
+          }
+        },
+        "pushedTakeInVouchedMs": {
+          "min": 0.005,
+          "median": 0.008,
+          "max": 0.012,
+          "n": 15
+        },
+        "pushedTakeInAndRenderVouchedMs": {
+          "min": 0.053,
+          "median": 0.069,
+          "max": 0.137,
+          "n": 15
+        }
+      },
+      "100,000 rows, 1,000 change(s) a batch": {
+        "wholeUpdateMs": {
+          "before": {
+            "min": 2.016,
+            "median": 2.11,
+            "max": 2.234,
+            "n": 15
+          },
+          "after": {
+            "min": 1.96,
+            "median": 2.056,
+            "max": 2.232,
+            "n": 15
+          }
+        },
+        "requeryAloneMs": {
+          "min": 0.396,
+          "median": 0.411,
+          "max": 0.456,
+          "n": 15
+        },
+        "gridApplyStateMs": {
+          "min": 0.01,
+          "median": 0.014,
+          "max": 0.017,
+          "n": 15
+        },
+        "selectionSummaryWalkLastRowChangedMs": {
+          "before": {
+            "min": 0.52,
+            "median": 0.553,
+            "max": 0.68,
+            "n": 15
+          },
+          "after": {
+            "min": 0.007,
+            "median": 0.009,
+            "max": 0.016,
+            "n": 15
+          }
+        },
+        "pushedTakeInUnvouchedMs": {
+          "before": {
+            "min": 3.24,
+            "median": 3.392,
+            "max": 4.101,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 3.337,
+            "median": 3.472,
+            "max": 3.984,
+            "n": 15
+          },
+          "after": {
+            "min": 3.81,
+            "median": 4.081,
+            "max": 5.251,
+            "n": 15
+          }
+        },
+        "keyCheckAloneMs": {
+          "before": {
+            "min": 3.337,
+            "median": 3.389,
+            "max": 3.773,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 3.24,
+            "median": 3.475,
+            "max": 3.672,
+            "n": 15
+          },
+          "after": {
+            "min": 3.918,
+            "median": 4.039,
+            "max": 4.11,
+            "n": 15
+          }
+        },
+        "pushedTakeInVouchedMs": {
+          "min": 0.008,
+          "median": 0.009,
+          "max": 0.014,
+          "n": 15
+        },
+        "pushedTakeInAndRenderVouchedMs": {
+          "min": 0.086,
+          "median": 0.11,
+          "max": 0.151,
+          "n": 15
+        }
+      },
+      "1,000,000 rows, 1 change(s) a batch": {
+        "wholeUpdateMs": {
+          "before": {
+            "min": 0.745,
+            "median": 3.068,
+            "max": 10.126,
+            "n": 15
+          },
+          "after": {
+            "min": 0.562,
+            "median": 0.807,
+            "max": 0.933,
+            "n": 15
+          }
+        },
+        "requeryAloneMs": {
+          "min": 0.37,
+          "median": 0.376,
+          "max": 0.476,
+          "n": 15
+        },
+        "gridApplyStateMs": {
+          "min": 0.017,
+          "median": 0.018,
+          "max": 0.022,
+          "n": 15
+        },
+        "selectionSummaryWalkLastRowChangedMs": {
+          "before": {
+            "min": 8.622,
+            "median": 8.84,
+            "max": 9.283,
+            "n": 15
+          },
+          "after": {
+            "min": 0.011,
+            "median": 0.02,
+            "max": 0.021,
+            "n": 15
+          }
+        },
+        "pushedTakeInUnvouchedMs": {
+          "before": {
+            "min": 47.078,
+            "median": 49.0,
+            "max": 65.079,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 48.864,
+            "median": 51.33,
+            "max": 55.464,
+            "n": 15
+          },
+          "after": {
+            "min": 47.095,
+            "median": 48.381,
+            "max": 51.137,
+            "n": 15
+          }
+        },
+        "keyCheckAloneMs": {
+          "before": {
+            "min": 39.913,
+            "median": 41.726,
+            "max": 44.975,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 44.18,
+            "median": 45.978,
+            "max": 52.839,
+            "n": 15
+          },
+          "after": {
+            "min": 47.221,
+            "median": 48.333,
+            "max": 50.409,
+            "n": 15
+          }
+        },
+        "pushedTakeInVouchedMs": {
+          "min": 0.015,
+          "median": 0.017,
+          "max": 0.019,
+          "n": 15
+        },
+        "pushedTakeInAndRenderVouchedMs": {
+          "min": 0.1,
+          "median": 0.129,
+          "max": 0.135,
+          "n": 15
+        }
+      },
+      "1,000,000 rows, 100 change(s) a batch": {
+        "wholeUpdateMs": {
+          "before": {
+            "min": 0.922,
+            "median": 1.164,
+            "max": 1.531,
+            "n": 15
+          },
+          "after": {
+            "min": 0.857,
+            "median": 1.18,
+            "max": 1.346,
+            "n": 15
+          }
+        },
+        "requeryAloneMs": {
+          "min": 0.498,
+          "median": 0.509,
+          "max": 0.521,
+          "n": 15
+        },
+        "gridApplyStateMs": {
+          "min": 0.017,
+          "median": 0.019,
+          "max": 0.02,
+          "n": 15
+        },
+        "selectionSummaryWalkLastRowChangedMs": {
+          "before": {
+            "min": 8.918,
+            "median": 9.327,
+            "max": 9.919,
+            "n": 15
+          },
+          "after": {
+            "min": 0.01,
+            "median": 0.019,
+            "max": 0.022,
+            "n": 15
+          }
+        },
+        "pushedTakeInUnvouchedMs": {
+          "before": {
+            "min": 41.294,
+            "median": 43.418,
+            "max": 45.598,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 43.394,
+            "median": 45.076,
+            "max": 54.284,
+            "n": 15
+          },
+          "after": {
+            "min": 48.118,
+            "median": 48.836,
+            "max": 52.179,
+            "n": 15
+          }
+        },
+        "keyCheckAloneMs": {
+          "before": {
+            "min": 41.517,
+            "median": 43.461,
+            "max": 46.687,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 43.669,
+            "median": 45.204,
+            "max": 47.51,
+            "n": 15
+          },
+          "after": {
+            "min": 48.244,
+            "median": 51.11,
+            "max": 54.173,
+            "n": 15
+          }
+        },
+        "pushedTakeInVouchedMs": {
+          "min": 0.011,
+          "median": 0.016,
+          "max": 0.018,
+          "n": 15
+        },
+        "pushedTakeInAndRenderVouchedMs": {
+          "min": 0.121,
+          "median": 0.138,
+          "max": 0.155,
+          "n": 15
+        }
+      },
+      "1,000,000 rows, 1,000 change(s) a batch": {
+        "wholeUpdateMs": {
+          "before": {
+            "min": 3.344,
+            "median": 3.679,
+            "max": 3.865,
+            "n": 15
+          },
+          "after": {
+            "min": 3.305,
+            "median": 3.627,
+            "max": 3.821,
+            "n": 15
+          }
+        },
+        "requeryAloneMs": {
+          "min": 1.148,
+          "median": 1.216,
+          "max": 1.252,
+          "n": 15
+        },
+        "gridApplyStateMs": {
+          "min": 0.015,
+          "median": 0.018,
+          "max": 0.021,
+          "n": 15
+        },
+        "selectionSummaryWalkLastRowChangedMs": {
+          "before": {
+            "min": 11.063,
+            "median": 11.295,
+            "max": 11.829,
+            "n": 15
+          },
+          "after": {
+            "min": 0.01,
+            "median": 0.019,
+            "max": 0.02,
+            "n": 15
+          }
+        },
+        "pushedTakeInUnvouchedMs": {
+          "before": {
+            "min": 42.879,
+            "median": 44.582,
+            "max": 47.99,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 43.502,
+            "median": 44.743,
+            "max": 57.04,
+            "n": 15
+          },
+          "after": {
+            "min": 47.942,
+            "median": 49.058,
+            "max": 63.42,
+            "n": 15
+          }
+        },
+        "keyCheckAloneMs": {
+          "before": {
+            "min": 41.972,
+            "median": 44.778,
+            "max": 46.7,
+            "n": 15
+          },
+          "beforeSameDay": {
+            "min": 43.99,
+            "median": 44.324,
+            "max": 50.406,
+            "n": 15
+          },
+          "after": {
+            "min": 48.341,
+            "median": 49.22,
+            "max": 55.283,
+            "n": 15
+          }
+        },
+        "pushedTakeInVouchedMs": {
+          "min": 0.012,
+          "median": 0.017,
+          "max": 0.019,
+          "n": 15
+        },
+        "pushedTakeInAndRenderVouchedMs": {
+          "min": 0.132,
+          "median": 0.155,
+          "max": 0.174,
+          "n": 15
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "inner": 400,
+  "redraws": 20,
+  "samples": [
+    {
+      "redraw": 0,
+      "managedMB": 302.8,
+      "linearMB": 495
+    },
+    {
+      "redraw": 1,
+      "redrawMs": 3175,
+      "managedMB": 454.3,
+      "linearMB": 809
+    },
+    {
+      "redraw": 2,
+      "redrawMs": 3157,
+      "managedMB": 605.8,
+      "linearMB": 1018
+    },
+    {
+      "redraw": 3,
+      "redrawMs": 3189,
+      "managedMB": 757.3,
+      "linearMB": 1307
+    },
+    {
+      "redraw": 4,
+      "redrawMs": 3295,
+      "managedMB": 908.8,
+      "linearMB": 1516
+    },
+    {
+      "redraw": 5,
+      "redrawMs": 3056,
+      "managedMB": 1060.4,
+      "linearMB": 1719
+    },
+    {
+      "redraw": 6,
+      "redrawMs": 3191,
+      "managedMB": 1211.9,
+      "linearMB": 2008
+    }
+  ],
+  "errors": [
+    "Error: Garbage collector could not allocate 16384u bytes of memory for major heap section."
+  ],
+  "browser": "141.0.7390.37",
+  "firstReportSeconds": 6.678
+}

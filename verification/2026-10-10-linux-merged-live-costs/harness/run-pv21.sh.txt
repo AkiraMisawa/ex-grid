@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# PV-21 (and DA-17) on the merged code and on main: the unchanged measure-pivot.spec.mjs over a million
+# trades, against each side's published WebAssembly host and Release demo API, the same CSV for both.
+S=/tmp/claude-0/-home-user-ex-grid/745dc86b-9814-555a-832d-a3eebdd9e2d0/scratchpad/perf
+O=$S/final/pv21; mkdir -p $O
+W=/home/user/ex-grid/.claude/worktrees
+B=$W/live-data-best/tests/ExGrid.Browser
+REC=$W/live-data-best/verification/2026-10-10-linux
+log() { echo "$1 $(date +%T) load $(cut -d' ' -f1-3 /proc/loadavg)" >> $S/final/run.log; }
+for side in final main; do
+  log "pv21 $side start"
+  fuser -k 5440/tcp 2>/dev/null; fuser -k -TERM 8440/tcp 2>/dev/null; sleep 3
+  (cd $B && setsid node static-host.mjs $S/hosts-perf-$side/wwwroot 5440 > $O/$side-static.log 2>&1 &)
+  rm -rf $S/pv21/api-data-$side; mkdir -p $S/pv21/api-data-$side
+  (cd $W/perf-$side/samples/ExGrid.DemoApi/bin/Release/net10.0 && ASPNETCORE_ENVIRONMENT=Development EXGRID_DEMO_TRADES=1000000 \
+     EXGRID_DEMO_DATA=$S/pv21/api-data-$side setsid nix develop /home/user/ex-grid -c dotnet ExGrid.DemoApi.dll --urls http://localhost:8440 > $O/$side-api.log 2>&1 &)
+  for i in $(seq 1 150); do
+    curl -sf http://localhost:5440/wide >/dev/null && curl -sf http://localhost:8440/api/status >/dev/null && break
+    sleep 2
+  done
+  log "pv21 $side servers ready after ${i} polls"
+  [ -f $REC/metrics.json ] && mv -f $REC/metrics.json $REC/metrics.before-pv21-$side.json
+  (cd $B && EXGRID_BASE_URL=http://localhost:5440 EXGRID_MEASURE=pivot EXGRID_MEASURE_CSV=$S/pv21/trades-1000000.csv \
+     timeout 3600 xvfb-run -a -s "-screen 0 2560x1600x24" nix develop '/home/user/ex-grid#browser' -c \
+     npx playwright test -c playwright.chromium.config.mjs --project=chrome measure-pivot.spec.mjs > $O/$side-run.log 2>&1)
+  log "pv21 $side end exit $?"
+  cp $REC/metrics.json $O/$side-metrics.json 2>/dev/null
+  fuser -k 5440/tcp 2>/dev/null; fuser -k -TERM 8440/tcp 2>/dev/null; sleep 5; fuser -k 8440/tcp 2>/dev/null
+done
+echo "pv21 done $(date +%T)" >> $S/final/run.log

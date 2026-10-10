@@ -1,0 +1,102 @@
+#pragma warning disable xUnit1051
+using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json;
+using Bunit;
+using ExGrid;
+using ExGrid.Components;
+using ExGrid.DemoPages;
+using ExPivot.Components.Tests.Support;
+using ExPivot.Engine;
+using Microsoft.AspNetCore.Components;
+using Xunit;
+using PC = ExPivot.Components.ExPivot;
+
+namespace ExPivot.Components.Tests;
+
+// Disposable A/B harness for PR #70 (never committed): PV-21's new questions over a million of the demo's
+// trades, on CoreCLR, through the component as the page asks them. Each measured question follows the
+// page's first layout, so every one is a new question, as measure-pivot.spec.mjs builds each layout from
+// the first. The same code on main and on the branch; only the report token differs (SIDE).
+public sealed class PerfQuestion : PivotTestContext
+{
+    private static PivotLayout Placed(string[] rows, string[] columns) => new()
+    {
+        Filters = [new PivotFieldPlacement("Currency")],
+        Rows = [.. rows.Select(r => new PivotFieldPlacement(r))],
+        Columns = [.. columns.Select(c => new PivotFieldPlacement(c))],
+        Values = [new PivotValueField("Pnl", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    private static void Progress(string what)
+        => File.AppendAllText(Path.Combine(Environment.GetEnvironmentVariable("PERF_OUT")!, "progress.log"), $"{DateTime.UtcNow:HH:mm:ss.fff} {what}\n");
+
+    [Fact]
+    public async Task New_questions()
+    {
+        Progress("start");
+        SetRendererInfo(new RendererInfo("Server", true));
+        var output = Environment.GetEnvironmentVariable("PERF_OUT")!;
+        var runs = int.Parse(Environment.GetEnvironmentVariable("PERF_RUNS") ?? "5");
+        var only = Environment.GetEnvironmentVariable("PERF_ONLY");
+        var trades = DemoPivotData.Trades(count: int.Parse(Environment.GetEnvironmentVariable("PERF_TRADES") ?? "1000000"));
+        Progress($"trades {trades.Length}");
+        var source = PivotSource.From(trades, DemoPivotData.Fields);
+        Progress("source built");
+        var whole = new PivotSlicing { Budget = TimeSpan.FromDays(1) };
+        var first = DemoPivotData.FirstLayout();
+        var layouts = new (string Name, PivotLayout Layout)[]
+        {
+            ("1,350: rows TradeDate; columns Product", Placed(["TradeDate"], ["Product"])),
+            ("13,500: rows TradeDate, Book; columns Product", Placed(["TradeDate", "Book"], ["Product"])),
+            ("66,150: rows TradeDate, Quantity; columns Product", Placed(["TradeDate", "Quantity"], ["Product"])),
+            ("134,730: rows TradeDate, Notional", Placed(["TradeDate", "Notional"], [])),
+            ("198,450: rows TradeDate, Quantity; columns Product, Region", Placed(["TradeDate", "Quantity"], ["Product", "Region"])),
+        };
+        var firstStart = Stopwatch.GetTimestamp();
+        var cut = Render<PC>(p => p.Add(c => c.Source, source).Add(c => c.Layout, first)
+            .Add(c => c.Culture, CultureInfo.GetCultureInfo("en-US")).Add(c => c.Slicing, whole)
+            .Add(c => c.RedrawInterval, TimeSpan.Zero).Add(c => c.Clock, TimeProvider.System)
+            .Add(c => c.ViewportHeight, (ViewportSize)480).Add(c => c.ViewportWidth, (ViewportSize)1200));
+        cut.WaitForState(() => (object?)cut.Instance.Report?.Metadata.Version is not null, TimeSpan.FromMinutes(10));
+        var firstMs = Stopwatch.GetElapsedTime(firstStart).TotalMilliseconds;
+        Progress($"first report {firstMs:F0} ms");
+        var results = new List<object>();
+        var atFirst = true;
+        foreach (var (name, layout) in layouts)
+        {
+            if (only is not null && !name.StartsWith(only, StringComparison.Ordinal)) continue;
+            var times = new List<double>();
+            var allocations = new List<double>();
+            var pauses = new List<double>();
+            for (var iteration = -1; iteration < runs; iteration++)
+            {
+                // Back to the first layout, a question of its own, untimed.
+                if (!atFirst)
+                {
+                    var back = (object?)cut.Instance.Report?.Metadata.Version;
+                    cut.Render(p => p.Add(c => c.Layout, first));
+                    cut.WaitForState(() => !Equals((object?)cut.Instance.Report?.Metadata.Version, back), TimeSpan.FromMinutes(10));
+                }
+                GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+                var token = (object?)cut.Instance.Report?.Metadata.Version;
+                var pause0 = GC.GetTotalPauseDuration();
+                var alloc0 = GC.GetTotalAllocatedBytes(precise: true);
+                var start = Stopwatch.GetTimestamp();
+                cut.Render(p => p.Add(c => c.Layout, layout));
+                cut.WaitForState(() => !Equals((object?)cut.Instance.Report?.Metadata.Version, token), TimeSpan.FromMinutes(10));
+                var elapsed = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+                atFirst = false;
+                if (iteration < 0) continue;
+                times.Add(elapsed);
+                allocations.Add((GC.GetTotalAllocatedBytes(precise: true) - alloc0) / 1048576.0);
+                pauses.Add((GC.GetTotalPauseDuration() - pause0).TotalMilliseconds);
+            }
+            Progress($"{name}: {string.Join(", ", times.Select(t => t.ToString("F0")))}");
+            results.Add(new { name, rows = cut.Instance.Report?.Metadata.RowCount ?? -1, ms = times, allocatedMiB = allocations, gcPauseMs = pauses });
+            Console.WriteLine($"branch {name}: median {times.Order().ElementAt(times.Count / 2):F1} ms ({string.Join(", ", times.Select(t => t.ToString("F0")))}), allocated {allocations.Order().ElementAt(allocations.Count / 2):F0} MiB");
+        }
+        File.WriteAllText(Path.Combine(output, "question-branch.json"),
+            JsonSerializer.Serialize(new { side = "branch", trades = trades.Length, firstReportMs = firstMs, results }, new JsonSerializerOptions { WriteIndented = true }));
+    }
+}

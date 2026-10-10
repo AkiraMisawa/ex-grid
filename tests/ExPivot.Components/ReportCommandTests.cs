@@ -83,7 +83,25 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal([new PivotDetailItem("Product", "Apples")], shown.ColumnItems);
         Assert.Equal("Sum of Amount", shown.ValueField);
         Assert.Equal("Details: East / Apples", shown.Title);
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, shown.SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, shown.SourceVersion);
+    }
+
+    [Fact] // ADR-0152/0151: a menu command keeps the report it was offered for across a live update: its Details name that report's Source Version
+    public async Task Details_from_an_open_menu_keeps_its_captured_report_version()
+    {
+        PivotDetails? shown = null;
+        var source = new LiveSource();
+        var cut = RenderPivot(RegionProduct, ps => ps.Add(p => p.OnShowDetails, (PivotDetails details) => shown = details), source: source);
+        var before = cut.Instance.Report!.Metadata;
+        var command = ContextCommands(cut, 1, Grid(cut).Instance.Columns[1].Name).Single(c => c.Id == PivotCommandIds.ShowDetails);
+        await cut.InvokeAsync(() => source.Publish([Sales[0] with { Amount = 999m }, .. Sales[1..]]));
+        cut.WaitForState(() => cut.Instance.Report!.Metadata.SourceVersion != before.SourceVersion);
+        await cut.InvokeAsync(command.Invoke);
+        Assert.NotNull(shown);
+        Assert.Equal(before.SourceVersion, shown.Query.SourceVersion);
+        Assert.Equal(before.SourceVersion, shown.SourceVersion);
+        var page = await shown.DetailsAsync(0, 100, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal([Sales[0], Sales[2]], page.Records.Select(row => row.Record));
     }
 
     [Fact] // ADR-0063: an empty cell has no records to show, and a double click there shows nothing

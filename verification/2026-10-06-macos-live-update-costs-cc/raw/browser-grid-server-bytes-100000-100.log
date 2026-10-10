@@ -1,0 +1,862 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[62]
+[WebServer]       User profile is available. Using '/Users/akira338/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
+[WebServer] info: Microsoft.Hosting.Lifetime[14]
+[WebServer]       Now listening on: http://localhost:6598
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Application started. Press Ctrl+C to shut down.
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Hosting environment: Development
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Content root path: /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/wide - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint '/wide (/wide)'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint '/wide (/wide)'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/wide - 200 - text/html;+charset=utf-8 93.5490ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/wide - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint '/wide (/wide)'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint '/wide (/wide)'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/wide - 200 - text/html;+charset=utf-8 10.2111ms
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.1LziUr/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8598
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/api
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.1 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version 11e5216b-0 from /tmp/nix-shell.1LziUr/exgrid-demo-api/runs/trades-v1-20000.25787.11e5216b.sqlite.
+
+Running 3 tests using 1 worker
+
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/features - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint '/features (/features)'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint '/features (/features)'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/features - 200 - text/html;+charset=utf-8 20.4509ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.ba41p0dsyn.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExSheet/ex-sheet.min.ptpl2x75ud.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExGrid.DemoPages/app.7cd1vs3nio.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_framework/blazor.web.hwaxidwiwj.js - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/MudBlazor/MudBlazor.min.js - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExSheet/ex-sheet.min.ptpl2x75ud.css'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server/wwwroot/_content/ExSheet/ex-sheet.min.css.br'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExGrid.DemoPages/app.7cd1vs3nio.css'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server/wwwroot/_content/ExGrid.DemoPages/app.css.br'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.ba41p0dsyn.css'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server/wwwroot/_content/ExGrid/ex-grid.min.css.br'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/MudBlazor/MudBlazor.min.js'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server/wwwroot/_content/MudBlazor/MudBlazor.min.js.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExSheet/ex-sheet.min.ptpl2x75ud.css - 200 1896 text/css 6.0287ms
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExGrid.DemoPages/app.7cd1vs3nio.css - 200 2064 text/css 6.1644ms
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/MudBlazor/MudBlazor.min.js - 200 15087 text/javascript 5.8132ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.ba41p0dsyn.css - 200 4157 text/css 6.7423ms
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_framework/blazor.web.hwaxidwiwj.js'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server/wwwroot/_framework/blazor.web.js.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_framework/blazor.web.hwaxidwiwj.js - 200 47577 text/javascript 6.5070ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_blazor/initializers - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_blazor/initializers - 200 - application/json;+charset=utf-8 1.7800ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 POST http://localhost:5598/_blazor/negotiate?negotiateVersion=1 - - 0
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 POST http://localhost:5598/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 2.1276ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_blazor?id=C8Cx8al2oZ_VaQjrYd8WlA - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_blazor?id=C8Cx8al2oZ_VaQjrYd8WlA - 101 - - 10.3802ms
+  -  1 [chrome] › measure-live-costs.spec.mjs:133:1 › ticket 01: a live update on /grid-live-local, WebAssembly
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/grid-live-local?rows=100000&batch=100&interval=0&step=1 - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint '/grid-live-local (/grid-live-local)'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint '/grid-live-local (/grid-live-local)'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/grid-live-local?rows=100000&batch=100&interval=0&step=1 - 200 - text/html;+charset=utf-8 5.5425ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.ba41p0dsyn.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExSheet/ex-sheet.min.ptpl2x75ud.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExGrid.DemoPages/app.7cd1vs3nio.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_framework/blazor.web.hwaxidwiwj.js - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/MudBlazor/MudBlazor.min.js - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExGrid.DemoPages/app.7cd1vs3nio.css'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server/wwwroot/_content/ExGrid.DemoPages/app.css.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExGrid.DemoPages/app.7cd1vs3nio.css - 200 2064 text/css 1.1403ms
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExSheet/ex-sheet.min.ptpl2x75ud.css'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server/wwwroot/_content/ExSheet/ex-sheet.min.css.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExSheet/ex-sheet.min.ptpl2x75ud.css - 200 1896 text/css 1.6380ms
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_framework/blazor.web.hwaxidwiwj.js'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server/wwwroot/_framework/blazor.web.js.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/MudBlazor/MudBlazor.min.js'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server/wwwroot/_content/MudBlazor/MudBlazor.min.js.br'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_framework/blazor.web.hwaxidwiwj.js - 200 47577 text/javascript 1.4533ms
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/MudBlazor/MudBlazor.min.js - 200 15087 text/javascript 1.4744ms
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.ba41p0dsyn.css'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scrat[WebServer] chpad/hosts/server/wwwroot/_content/ExGrid/ex-grid.min.css.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.ba41p0dsyn.css - 200 4157 text/css 3.1891ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_blazor/initializers - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_blazor/initializers - 200 - application/json;+charset=utf-8 0.3245ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 POST http://localhost:5598/_blazor/negotiate?negotiateVersion=1 - - 0
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 POST http://localhost:5598/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.2491ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_blazor?id=Lk9nT_Qy28pgiwSprx7v6w - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.s89smab63y.js - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.s89smab63y.js'. Physical path: '/private/tmp/claude-501/-Users-akira338-github-ex-grid/046d34fd-22d4-4f2b-b79a-7395332c483e/scratchpad/hosts/server/wwwroot/_content/ExGrid/ex-grid.min.js.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.s89smab63y.js - 200 8619 text/javascript 0.6220ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 2.4039ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1432ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0689ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.4200ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0966ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.2223ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1167ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.4275ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0915ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.2097ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1110ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.6952ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.3078ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1607ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0951ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.5873ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1930ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1830ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0579ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.6980ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.2644ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1539ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0402ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.2802ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0699ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1199ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0568ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1824ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0524ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1375ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0615ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.5050ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.2783ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0946ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0398ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.3545ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1414ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0851ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0350ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.3263ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1839ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0836ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0620ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.2230ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0946ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0741ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0321ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.2562ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0613ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1332ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0454ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1850ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0681ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0767ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0312ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.2812ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1060ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0800ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0645ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.3059ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0802ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0965ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0292ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1929ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0599ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0646ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0467ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.1545ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0402ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0830ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.0350ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/api/wire - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'HTTP: GET /api/wire'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/api/wire - 200 - application/json;+charset=utf-8 0.2242ms
+grid-server-bytes {
+ "rows": 100000,
+ "batch": 100,
+ "warmup": 3,
+ "webSocketExtensions": "permessage-deflate; client_max_window_bits=15",
+ "connection": "0HNP3NQ05OTE6",
+ "payload": {
+  "median": 641,
+  "min": 73,
+  "max": 1161,
+  "n": 15
+ },
+ "wire": {
+  "median": 549,
+  "min": 547,
+  "max": 549,
+  "n": 15
+ },
+ "renderBatches": {
+  "median": 1,
+  "min": 1,
+  "max": 1,
+  "n": 15
+ },
+ "clientPayload": {
+  "median": 396,
+  "min": 395,
+  "max": 396,
+  "n": 15
+ },
+ "laterRenderBatches": {
+  "median": 1,
+  "min": 0,
+  "max": 1,
+  "n": 15
+ },
+ "laterPayload": {
+  "median": 301,
+  "min": 0,
+  "max": 537,
+  "n": 15
+ },
+ "laterWire": {
+  "median": 549,
+  "min": 547,
+  "max": 549,
+  "n": 15
+ }
+}
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 POST http://localhost:5598/_blazor/disconnect - multipart/form-data;+boundary=----WebKitFormBoundaryO5Zv2SjA8sA5K3jx 359
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_blazor?id=Lk9nT_Qy28pgiwSprx7v6w - 101 - - 26249.1349ms
+  ✓  2 [chrome] › measure-live-costs.spec.mjs:202:1 › ticket 01: the bytes of a live update on /grid-live-local, Server host (26.4s)
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 POST http://localhost:5598/_blazor/disconnect - 200 0 - 9.8482ms
+  -  3 [chrome] › measure-live-costs.spec.mjs:314:1 › ticket 01: a live redraw on /pivot-live-costs, WebAssembly
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  2 skipped
+  1 passed (29.4s)

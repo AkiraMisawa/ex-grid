@@ -1,0 +1,16 @@
+import { chromium } from 'playwright';
+const base = process.argv[2] ?? 'http://localhost:5899';
+const path = process.argv[3] ?? '/w1';
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+const problems = [];
+page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') problems.push(`${m.type()}: ${m.text()}`); });
+page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
+await page.goto(base + path);
+await page.locator('#fg-interactive').waitFor({ state: 'attached', timeout: 60000 });
+await page.locator('.ex-grid .ex-row').first().waitFor({ timeout: 60000 });
+await page.screenshot({ path: `out/smoke${path.replace(/\W/g, '_')}.png` });
+console.log('rows', await page.locator('.ex-grid .ex-row').count());
+console.log('status', await page.locator('.fg-instruments').innerText());
+console.log('problems', problems);
+await browser.close();

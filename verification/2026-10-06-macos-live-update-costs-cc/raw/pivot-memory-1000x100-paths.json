@@ -1,0 +1,197 @@
+{
+  "mode": "pivot-memory",
+  "machine": {
+    "at": "2026-10-06T16:40:52.1595940\u002B01:00",
+    "loadavg": "{ 1.84 2.22 2.61 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      " 46.5 01-00:11:32 /System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd",
+      "  7.9       00:01 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet spikes/live-update/Costs/bin/Release/net10.0/Costs.dll pivot-m",
+      "  6.9       54:10 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/managedcorespotlightd",
+      "  2.7 23-00:30:22 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  1.8 24-18:49:29 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacOS/com.appl",
+      "  1.2    03:41:15 claude",
+      "  0.9 36-09:53:40 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui",
+      "  0.8 04-13:57:53 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  0.5 02-01:49:26 /System/Library/PrivateFrameworks/Ecosystem.framework/Support/ecosystemd",
+      "  0.4 04-13:57:53 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "  0.4 36-10:03:56 /System/Library/CoreServices/launchservicesd"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": {
+    "aCount": 1000,
+    "bCount": 100,
+    "k": 1,
+    "redraws": 20,
+    "baselineMB": 153.6,
+    "samples": [
+      {
+        "redraw": 1,
+        "heapMB": 248.2,
+        "aliveEarlierReports": 1,
+        "aliveEarlierCubes": 1,
+        "historyVersions": 2,
+        "workingSetMB": 242.5
+      },
+      {
+        "redraw": 2,
+        "heapMB": 342.6,
+        "aliveEarlierReports": 2,
+        "aliveEarlierCubes": 2,
+        "historyVersions": 3,
+        "workingSetMB": 294.8
+      },
+      {
+        "redraw": 3,
+        "heapMB": 437.1,
+        "aliveEarlierReports": 3,
+        "aliveEarlierCubes": 3,
+        "historyVersions": 4,
+        "workingSetMB": 346.9
+      },
+      {
+        "redraw": 4,
+        "heapMB": 531.5,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4,
+        "historyVersions": 4,
+        "workingSetMB": 398.6
+      },
+      {
+        "redraw": 5,
+        "heapMB": 382.7,
+        "aliveEarlierReports": 5,
+        "aliveEarlierCubes": 5,
+        "historyVersions": 4,
+        "workingSetMB": 442.8
+      },
+      {
+        "redraw": 6,
+        "heapMB": 452.4,
+        "aliveEarlierReports": 6,
+        "aliveEarlierCubes": 6,
+        "historyVersions": 4,
+        "workingSetMB": 491.8
+      },
+      {
+        "redraw": 7,
+        "heapMB": 538.5,
+        "aliveEarlierReports": 7,
+        "aliveEarlierCubes": 7,
+        "historyVersions": 4,
+        "workingSetMB": 534.6
+      },
+      {
+        "redraw": 8,
+        "heapMB": 632.9,
+        "aliveEarlierReports": 8,
+        "aliveEarlierCubes": 8,
+        "historyVersions": 4,
+        "workingSetMB": 586.6
+      },
+      {
+        "redraw": 9,
+        "heapMB": 727.3,
+        "aliveEarlierReports": 9,
+        "aliveEarlierCubes": 9,
+        "historyVersions": 4,
+        "workingSetMB": 638.7
+      },
+      {
+        "redraw": 10,
+        "heapMB": 821.8,
+        "aliveEarlierReports": 10,
+        "aliveEarlierCubes": 10,
+        "historyVersions": 4,
+        "workingSetMB": 690.8
+      },
+      {
+        "redraw": 11,
+        "heapMB": 916.2,
+        "aliveEarlierReports": 11,
+        "aliveEarlierCubes": 11,
+        "historyVersions": 4,
+        "workingSetMB": 742.9
+      },
+      {
+        "redraw": 12,
+        "heapMB": 752.4,
+        "aliveEarlierReports": 12,
+        "aliveEarlierCubes": 12,
+        "historyVersions": 4,
+        "workingSetMB": 791.2
+      },
+      {
+        "redraw": 13,
+        "heapMB": 836.8,
+        "aliveEarlierReports": 13,
+        "aliveEarlierCubes": 13,
+        "historyVersions": 4,
+        "workingSetMB": 834.5
+      },
+      {
+        "redraw": 14,
+        "heapMB": 931.2,
+        "aliveEarlierReports": 14,
+        "aliveEarlierCubes": 14,
+        "historyVersions": 4,
+        "workingSetMB": 886.5
+      },
+      {
+        "redraw": 15,
+        "heapMB": 1025.7,
+        "aliveEarlierReports": 15,
+        "aliveEarlierCubes": 15,
+        "historyVersions": 4,
+        "workingSetMB": 938.6
+      },
+      {
+        "redraw": 16,
+        "heapMB": 1120.1,
+        "aliveEarlierReports": 16,
+        "aliveEarlierCubes": 16,
+        "historyVersions": 4,
+        "workingSetMB": 990.7
+      },
+      {
+        "redraw": 17,
+        "heapMB": 1206.2,
+        "aliveEarlierReports": 17,
+        "aliveEarlierCubes": 17,
+        "historyVersions": 4,
+        "workingSetMB": 1036.2
+      },
+      {
+        "redraw": 18,
+        "heapMB": 1061.2,
+        "aliveEarlierReports": 18,
+        "aliveEarlierCubes": 18,
+        "historyVersions": 4,
+        "workingSetMB": 1086.4
+      },
+      {
+        "redraw": 19,
+        "heapMB": 1130.9,
+        "aliveEarlierReports": 19,
+        "aliveEarlierCubes": 19,
+        "historyVersions": 4,
+        "workingSetMB": 1135.4
+      },
+      {
+        "redraw": 20,
+        "heapMB": 1225.3,
+        "aliveEarlierReports": 20,
+        "aliveEarlierCubes": 20,
+        "historyVersions": 4,
+        "workingSetMB": 1183
+      }
+    ],
+    "paintsKept": 21,
+    "heapAfterClearingPaintsMB": 313.1,
+    "earlierReportsAliveAfterClearingPaints": 4,
+    "earlierCubesAliveAfterClearingPaints": 4
+  }
+}

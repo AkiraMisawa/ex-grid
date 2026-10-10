@@ -1,12 +1,17 @@
-@implements IDisposable
+@implements IAsyncDisposable
 @using ExPivot.Components
 @using ExPivot.Engine
 
-<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="300" />
+<p>
+    <button @onclick="() => _cutOff = !_cutOff">@(_cutOff ? "Reconnect the server" : "Cut the server off")</button>
+</p>
+
+<ExPivot ReportSource="_source" @bind-Layout="_layout" ViewportHeight="300" />
 
 @code {
     private readonly SalesServer _server = new();
-    private FetchingPivotSource _source = default!;
+    private FetchingPivotReportSource _source = default!;
+    private bool _cutOff;
 
     private PivotLayout _layout = new()
     {
@@ -17,19 +22,25 @@
 
     protected override void OnInitialized()
     {
-        _source = PivotSource.Fetch(_server.Fields, PivotSourceFeatures.All,
-            async (query, token) => PivotJson.ReadAnswer(await _server.AggregateAsync(PivotJson.Write(query), token)),
-            async (query, token) => PivotJson.ReadItemPage(await _server.ItemsAsync(PivotJson.Write(query), token)),
-            async (query, token) => PivotJson.ReadDetailPage(await _server.DetailsAsync(PivotJson.Write(query), token)));
+        _source = PivotReportSource.Fetch(_server.Fields, PivotSourceFeatures.All, PivotReportUpdateMode.Incremental,
+            // Cut off, the next question fails, as an unreachable server's does: ExPivot keeps the
+            // report it has as a Stale Report, says so, and mutes its numbers until Retry (ADR-0067).
+            async (query, token) => _cutOff
+                ? throw new HttpRequestException("The server cannot be reached.")
+                : PivotReportJson.Read<PivotReportUpdate>(await _server.WindowAsync(PivotReportJson.Write(query), token)),
+            copy: async (query, token) => PivotReportJson.Read<PivotReportCopyResult>(await _server.CopyAsync(PivotReportJson.Write(query), token)),
+            summary: async (query, token) => PivotReportJson.Read<PivotReportSummaryResult>(await _server.SummaryAsync(PivotReportJson.Write(query), token)),
+            details: async (query, token) => PivotReportJson.Read<PivotDetailPage>(await _server.DetailsAsync(PivotReportJson.Write(query), token)),
+            reportItems: async (query, token) => PivotReportJson.Read<PivotReportItemsResult>(await _server.ItemsAsync(PivotReportJson.Write(query), token)));
         // However the news arrives — SignalR, polling, a message bus — pass it on: ExPivot asks
-        // the server again for the whole answer.
+        // the current report Window again.
         _server.VersionChanged += _source.NotifyChanged;
         _server.StartTrading(TimeSpan.FromSeconds(1));
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         _server.VersionChanged -= _source.NotifyChanged;
-        _server.Dispose();
+        await _server.DisposeAsync();
     }
 }

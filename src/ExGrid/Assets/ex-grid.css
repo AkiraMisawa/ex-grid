@@ -846,6 +846,11 @@
     background: var(--ex-editor-background, Canvas);
     color: var(--ex-editor-color, CanvasText);
 }
+/* An editor whose row moved out of view under it (ADR-0011's note of 2026-10-07): the grid does not
+   scroll to follow the row, so the editor stays open, holding the keyboard, at its column on the
+   first painted row — and neither seen nor pressed there, over a cell that is not its own. */
+.ex-editor.ex-editor-away,
+.ex-reference-text.ex-editor-away { opacity: 0; pointer-events: none; }
 .ex-editor {
     outline: var(--ex-editor-outline, 2px solid Highlight);
     outline-offset: -1px;

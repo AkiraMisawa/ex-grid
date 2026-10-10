@@ -28,10 +28,12 @@ _Avoid_: spreadsheet, worksheet, and **Sheet**, which names what ExSheet holds, 
 **ExPivot**:
 Excel's PivotTable inside the application. The Consumer gives it a **Pivot Source** over the
 **Source Records** and declares their **Pivot Fields**; the user places Pivot Fields into **Areas**
-through the **Field List**, and ExPivot computes the **Pivot Report** from the source's **Leaf
-Aggregates**. It is drawn by ExGrid, as that grid's **Consumer**: ExPivot holds the **Pivot Layout**
-and computes the report, ExGrid paints and reports. **Decided** with the user, 2026-09-30
-([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+through the **Field List** to define the **Pivot Report**. It is drawn by ExGrid, as that grid's
+**Consumer**: ExPivot holds the **Pivot Layout** and supplies the report, ExGrid paints and reports.
+**Decided** with the user, 2026-09-30
+([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)); local and
+server reports follow the same meaning
+([ADR-0151](./docs/adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)).
 _Avoid_: pivot grid, OLAP grid, cube (the cube is how the engine keeps what it aggregated, not the
 product), and **Pivot Report**, which names what ExPivot computes, not the product
 
@@ -141,6 +143,13 @@ says whether a row changed; Row Identity does
 _Avoid_: Row Identity (the test for sameness), id, primary key (the database's), Record Key (a
 Snapshot's declared column, from which a Snapshot's rows take their Row Key)
 
+**Vouch**:
+A source's or a Consumer's promise that a Window holds no Row Key twice. A bundled source vouches
+because it refuses a repeated key as each change comes; a Consumer that pushes its Window vouches
+by declaring it. The grid then does not walk the whole Window for a repeat, and still checks the
+rows it paints ([ADR-0141](./docs/adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md)).
+_Avoid_: guarantee, trust, validate (that is an Edit Verdict's)
+
 **Placeholder**:
 A row not yet painted with real data. Two reasons, one mechanism — waiting for data from the
 Consumer, and deliberate skipping during fast scrolling
@@ -165,6 +174,16 @@ A version identifying the **order** of rows — not their values. The Consumer p
 same set of rows, so selection survives the frequent kind of update
 ([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
 _Avoid_: data version, generation (this names the order only)
+
+**Paint**:
+What the grid's rows show between two renders that change it — another Source, another order, other
+row instances or other columns make a new paint — named on the Viewport, so that a gesture (a key, a
+paste, a press on an Action or a mark) says which paint it was taken against. The grid judges the
+gesture against that paint, never against what it holds when the gesture arrives, which on a circuit
+is a round trip later
+([ADR-0142](./docs/adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md),
+[ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+_Avoid_: frame (the browser's), render (a render that paints the same is the same paint), snapshot
 
 **Grid Source**:
 The bundled convenience layer that sits on top of the push interface. It wraps an in-memory
@@ -494,14 +513,23 @@ _Avoid_: cancel (that is Escape), rollback, revert
 The grid's own "no", raised on **the operation** — its target, its shape, its size — and never on
 the value being written: a copy cap, a misaligned selection, a paste shape, a target covering a
 column that is not Editable, a paste past its size ceiling, a clipboard the browser would not let
-it write, a target whose painted text changed between what the user saw and the write landing
-([ADR-0142](./docs/adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md)). Because a Refusal never looked at what the user typed, it stops only
+it write, a write whose row left the Window, whose order moved, or whose Source was replaced before it
+landed
+([ADR-0142](./docs/adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)). A value that changed under a write is not one: the write lands. Because a Refusal never looked at what the user typed, it stops only
 the operation it named: a fill refused for covering a non-editable column leaves the editor open
 and the single-cell Enter still available. Contrast an **Edit Verdict**'s Reject, which judges the
 value ([ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md),
 [ADR-0014](./docs/adr/0014-paste-shape-rules-and-selection-count.md),
 [ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
 _Avoid_: rejection, validation failure, error (that is a Cell State), denial
+
+**Overwrite Notice**:
+The grid's notice that a Cell Editor commit replaced text that changed while the editor was open —
+the one change a user cannot see, because the editor covers the cell. The commit lands. The notice
+names the cell, the text the user saw when the editor opened and the text the commit replaced, and
+Chrome words it ([ADR-0142](./docs/adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)).
+_Avoid_: conflict, warning, Refusal (nothing was refused), Change Highlight (that marks a change
+on screen)
 
 **Find**:
 Moving the Focus to the next cell whose displayed text matches what the user typed, searching
@@ -792,10 +820,10 @@ server's Pivot Source it stays on the server
 _Avoid_: row (a row is the report's), item (that is a field's distinct value), fact, entity
 
 **Pivot Source**:
-What ExPivot asks for a report's aggregates, a field's Items and the Source Records behind a cell.
-The bundled one aggregates a Snapshot in process and is the reference implementation, as
-`GridSource.From` is ExGrid's; a Consumer's server may answer instead, and is held to the bundled
-one's answers.
+What supplies ExPivot with a report or the aggregates from which it is computed, a field's Items,
+and the Source Records behind a cell. The bundled one is the reference implementation, as
+`GridSource.From` is ExGrid's; a Consumer's server may answer instead, under the same rules
+([ADR-0151](./docs/adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)).
 _Avoid_: data source, provider, backend, pivot cache (Excel's word; here that is the Snapshot)
 
 **Source Version**:
@@ -805,12 +833,43 @@ longer answer under it refuses rather than answer from newer data.
 _Avoid_: data version (it names nothing here), Row Sequence Version (that is the grid's order),
 timestamp, revision
 
+**Report Version**:
+Which settled state of a Pivot Report an answer or an operation refers to: its Source Version,
+Pivot Layout and display settings. Reports made from the same data can have different Report
+Versions. The Row Sequence Version names only the row keys and their order, not the report's
+values or settings
+([ADR-0152](./docs/adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+_Avoid_: Source Version (that names the data alone), Row Sequence Version (that names row order),
+timestamp
+
+**Window Digest**:
+A digest of a Pivot Report's Window as it stands after Window Changes — every row of the Window, its
+key, labels and shown texts, with the Window's extent and Report Version — that the changes carry, and
+that the component computes again before it shows the result. Window Changes whose digest is missing or
+differs are never painted: the complete Window is asked for instead
+([ADR-0152](./docs/adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+_Avoid_: checksum, hash (the mechanism, not the term), signature (it proves no sender)
+
+**Window Changes**:
+The rows of a Pivot Report's Window that changed since a Baseline Window — each row whole, subtotals
+and grand totals included — sent with the Report Version and the Window Digest of the Window they make,
+in place of the whole Window. The component applies them to the Baseline Window it holds and shows the
+result only once the digest matches
+([ADR-0152](./docs/adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+_Avoid_: delta (a risk measure here), diff, patch
+
+**Baseline Window**:
+The Window, under a Report Version, that Window Changes are applied to: the one the component holds
+and names when it asks. A source that no longer holds it answers with the complete Window instead
+([ADR-0152](./docs/adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+_Avoid_: base, previous Window (the baseline is named, never assumed)
+
 **Leaf Aggregate**:
-What a Pivot Source answers a report with: for each combination of the row and column fields'
-Items that has records, the parts each Value Field's Aggregation is computed from — counts, sums,
-extremes. ExPivot computes every cell, subtotal and grand total from them; a source never answers
-with the report itself
-([ADR-0066](./docs/adr/0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+For each combination of the row and column fields' Items that has records, the parts each Value
+Field's Aggregation is computed from — counts, sums, extremes. Every cell, subtotal and grand
+total is computed from these parts, whether the report is computed locally or on a server
+([ADR-0066](./docs/adr/0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md),
+[ADR-0151](./docs/adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)).
 _Avoid_: cube (the engine's own word for what it holds), summary, pre-aggregate, rollup
 
 **Pivot Field**:

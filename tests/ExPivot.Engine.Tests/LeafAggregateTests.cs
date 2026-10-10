@@ -72,7 +72,7 @@ public class LeafAggregateTests
                 var records = Observations.Where(o => path.All(step => PivotItemKey.For(Read[step.Field](o)).Equals(step.Item))).ToArray();
                 var aggregation = layout.Values[report.ValueFieldAt(row, column)].Aggregation;
                 var expected = Oracle(records.Select(o => o.Value).ToArray(), aggregation);
-                var actual = row.ValueAt(column);
+                var actual = report.ValueAt(row, column);
                 var where = $"{aggregation} at [{string.Join(", ", path.Select(p => p.Item))}]";
                 switch (expected)
                 {
@@ -318,7 +318,7 @@ public class LeafAggregateTests
 
     // Every value cell's raw, locale-free form — what a copy carries — in the report's order.
     private static string[] Raw(PivotReport report) => report.Rows
-        .SelectMany(row => Enumerable.Range(0, report.ValueColumns.Count).Select(column => row.ValueAt(column)))
+        .SelectMany(row => Enumerable.Range(0, report.ValueColumns.Count).Select(column => report.ValueAt(row, column)))
         .OfType<PivotValue>()
         .Select(value => value.ToString(null, System.Globalization.CultureInfo.InvariantCulture))
         .ToArray();

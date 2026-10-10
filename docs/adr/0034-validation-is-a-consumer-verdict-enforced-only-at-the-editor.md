@@ -225,6 +225,23 @@ column holds the editor too, but leaves the single-cell Enter alone
 Consumer's declaration — `Editable` — and is, in its own words, a "may not" where the others were
 a "cannot". Who is judging no longer separates the two; what is judged still does.)*
 
+## After the intent: the Consumer may refuse an edit *(2026-10-07)*
+
+*(Decided with the user with [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)'s rewrite.)*
+
+- **`GridEditIntent.Refuse(message)`, called before the `OnEdit` handler completes, holds the editor as a
+  Reject does.** The text typed stays, and the message is shown at the editor and in the root's live
+  region.
+- **The verdict judges before the intent; `Refuse` answers after it**, against whatever the Consumer
+  holds as the newest version: a reducer, a server.
+- **In this ADR's words it is neither a Refusal nor a Reject.** A Refusal is the grid's own, and a Reject
+  is asked before the intent. It is the Consumer declining the intent, as `GridPasteIntent.Refuse()` and
+  `GridFillIntent.Refuse()` already let it ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md),
+  item 3).
+- **The Edit Intent now carries the text the editor saw when it opened, and the text the commit
+  replaced.** When the two differ, the grid raises an Overwrite Notice, and the commit still lands
+  (ADR-0142).
+
 ## Consequences
 
 - `CONTEXT.md` gains **Edit Verdict**.

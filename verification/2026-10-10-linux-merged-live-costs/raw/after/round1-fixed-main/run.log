@@ -1,0 +1,13 @@
+r1-fixed start 13:43:28 load 1.90 4.88 3.06
+r1-fixed servers ready after 4 polls 13:43:37 load 1.68 4.73 3.04
+r1-fixed end exit 0 13:48:50 load 1.27 2.31 2.43
+r2-main start 13:48:55 load 1.17 2.27 2.41
+r2-main servers ready after 4 polls 13:49:05 load 1.07 2.21 2.39
+r2-main end exit 0 13:54:06 load 1.44 1.61 2.07
+r3-fixed start 13:54:11 load 1.33 1.58 2.06
+r3-fixed servers ready after 4 polls 13:54:20 load 1.20 1.54 2.04
+r3-fixed end exit 0 13:59:35 load 1.06 1.03 1.65
+r4-main start 13:59:40 load 0.97 1.02 1.64
+r4-main servers ready after 4 polls 13:59:49 load 0.90 1.00 1.63
+r4-main end exit 0 14:04:50 load 0.93 0.77 1.33
+done 14:04:55 load 0.85 0.76 1.33

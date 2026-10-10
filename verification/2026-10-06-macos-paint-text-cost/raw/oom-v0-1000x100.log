@@ -1,0 +1,15 @@
+# node loop.mjs http://localhost:5799 1000 100 12 "" 1   (v0, 2026-10-06 21:06:08)
+{"step":"loaded","s":1.561,"managedAfterGcMB":"87.9 alive report=1/1,cube=1/1,snapshot=1/1","heapMB":199,"managedMB":"87.9 alive report=1/1,cube=1/1,snapshot=1/1","oom":null}
+{"step":1,"s":0.644,"landed":true,"managedAfterGcMB":"129.1 alive report=2/2,cube=2/2,snapshot=2/2","heapMB":239,"managedMB":"129.1 alive report=2/2,cube=2/2,snapshot=2/2","oom":null}
+{"step":2,"s":0.828,"landed":true,"managedAfterGcMB":"172.3 alive report=3/3,cube=3/3,snapshot=3/3","heapMB":344,"managedMB":"172.3 alive report=3/3,cube=3/3,snapshot=3/3","oom":null}
+{"step":3,"s":0.797,"landed":true,"managedAfterGcMB":"215.5 alive report=4/4,cube=4/4,snapshot=4/4","heapMB":412,"managedMB":"215.5 alive report=4/4,cube=4/4,snapshot=4/4","oom":null}
+{"step":4,"s":0.782,"landed":true,"managedAfterGcMB":"258.8 alive report=5/5,cube=5/5,snapshot=4/5","heapMB":495,"managedMB":"258.8 alive report=5/5,cube=5/5,snapshot=4/5","oom":null}
+{"step":5,"s":0.799,"landed":true,"managedAfterGcMB":"299.9 alive report=6/6,cube=6/6,snapshot=4/6","heapMB":591,"managedMB":"299.9 alive report=6/6,cube=6/6,snapshot=4/6","oom":null}
+{"step":6,"s":0.778,"landed":true,"managedAfterGcMB":"341.0 alive report=7/7,cube=7/7,snapshot=4/7","heapMB":591,"managedMB":"341.0 alive report=7/7,cube=7/7,snapshot=4/7","oom":null}
+{"step":7,"s":0.799,"landed":true,"managedAfterGcMB":"382.2 alive report=8/8,cube=8/8,snapshot=4/8","heapMB":694,"managedMB":"382.2 alive report=8/8,cube=8/8,snapshot=4/8","oom":null}
+{"step":8,"s":0.762,"landed":true,"managedAfterGcMB":"423.3 alive report=9/9,cube=9/9,snapshot=4/9","heapMB":791,"managedMB":"423.3 alive report=9/9,cube=9/9,snapshot=4/9","oom":null}
+{"step":9,"s":0.782,"landed":true,"managedAfterGcMB":"464.5 alive report=10/10,cube=10/10,snapshot=4/10","heapMB":791,"managedMB":"464.5 alive report=10/10,cube=10/10,snapshot=4/10","oom":null}
+{"step":10,"s":0.794,"landed":true,"managedAfterGcMB":"505.6 alive report=11/11,cube=11/11,snapshot=4/11","heapMB":888,"managedMB":"505.6 alive report=11/11,cube=11/11,snapshot=4/11","oom":null}
+{"step":11,"s":0.815,"landed":true,"managedAfterGcMB":"546.8 alive report=12/12,cube=12/12,snapshot=4/12","heapMB":984,"managedMB":"546.8 alive report=12/12,cube=12/12,snapshot=4/12","oom":null}
+{"step":12,"s":0.789,"landed":true,"managedAfterGcMB":"587.9 alive report=13/13,cube=13/13,snapshot=4/13","heapMB":984,"managedMB":"587.9 alive report=13/13,cube=13/13,snapshot=4/13","oom":null}
+{"verdict":"GREEN","oom":null,"errors":[]}

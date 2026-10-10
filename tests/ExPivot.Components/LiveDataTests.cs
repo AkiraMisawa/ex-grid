@@ -59,7 +59,8 @@ public class LiveDataTests : PivotTestContext
 
         // And asked for once, from the newest, when the interval has passed.
         Clock.Advance(TimeSpan.FromMilliseconds(1));
-        cut.WaitForAssertion(() => Assert.Equal(3, source.Questions.Count));
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(3, source.Questions.Count);
         cut.WaitForAssertion(() => Assert.Equal("East | 183", RowTexts(cut)[0]));
         Assert.Equal(source.Questions[0].Query, source.Questions[2].Query);
 
@@ -130,7 +131,8 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(2, source.Questions.Count);
 
         Clock.Advance(Interval);
-        cut.WaitForAssertion(() => Assert.Equal(3, source.Questions.Count));
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(3, source.Questions.Count);
         await cut.InvokeAsync(source.Questions[2].AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 183", RowTexts(cut)[0]));
     }
@@ -275,14 +277,14 @@ public class LiveDataTests : PivotTestContext
     public async Task A_new_version_keeps_the_bands_summary_while_its_items_are_on_their_way()
     {
         var (cut, source) = await ListedAsync(WestHidden);
-        var first = cut.Instance.Report!.Cube.SourceVersion;
+        var first = cut.Instance.Report!.Metadata.SourceVersion;
 
         await PublishAsync(cut, source, [.. Sales, South]);
 
-        Assert.NotEqual(first, cut.Instance.Report!.Cube.SourceVersion);
+        Assert.NotEqual(first, cut.Instance.Report!.Metadata.SourceVersion);
         var asked = source.ItemQuestions[^1];
         Assert.Equal(2, source.ItemQuestions.Count);
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, asked.Query.SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, asked.Query.SourceVersion);
         Assert.False(asked.Completion.Task.IsCompleted);
         Assert.Equal("(Multiple Items)", BandSummary(cut));
 
@@ -421,10 +423,11 @@ public class LiveDataTests : PivotTestContext
         await cut.InvokeAsync(layoutQuestion.AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 180 | 18", RowTexts(cut)[0]));
         Assert.Single(told);
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(ChangeHighlightTests.MarkedTexts(cut));
 
         // The change is asked for after it: the whole answer, for the user's layout.
-        cut.WaitForAssertion(() => Assert.Equal(3, source.Questions.Count));
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(3, source.Questions.Count);
         Assert.Equal(layoutQuestion.Query, source.Questions[2].Query);
         await cut.InvokeAsync(source.Questions[2].AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 181 | 18", RowTexts(cut)[0]));
@@ -445,12 +448,13 @@ public class LiveDataTests : PivotTestContext
         await TickFieldAsync(cut, "Quantity", true);
 
         Assert.True(live.IsCancelled);
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
         Assert.Equal(3, source.Questions.Count);
         await cut.InvokeAsync(source.Questions[2].AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 181 | 18", RowTexts(cut)[0]));
         Assert.Single(told);
         // A new layout marks nothing, even with new data in the same redraw.
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(ChangeHighlightTests.MarkedTexts(cut));
 
         await cut.InvokeAsync(live.AnswerAsync);
         Clock.Advance(TimeSpan.FromSeconds(1));
@@ -471,8 +475,9 @@ public class LiveDataTests : PivotTestContext
         await cut.FindAll(".ex-pivot-toggle")[0].ClickAsync(new MouseEventArgs());
 
         Assert.True(live.IsCancelled);
-        Assert.Equal("+East | 180", RowTexts(cut)[0]);
-        cut.WaitForAssertion(() => Assert.Equal(3, source.Questions.Count));
+        cut.WaitForAssertion(() => Assert.Equal("+East | 180", RowTexts(cut)[0]));
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(3, source.Questions.Count);
         await cut.InvokeAsync(source.Questions[2].AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("+East | 181", RowTexts(cut)[0]));
         Assert.Equal(["181", "286"], ChangeHighlightTests.MarkedTexts(cut));
@@ -629,6 +634,7 @@ public class LiveDataTests : PivotTestContext
         await cut.Find(".ex-pivot-refresh-button").ClickAsync(new MouseEventArgs());
 
         Assert.True(layoutQuestion.IsCancelled);
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
         Assert.Equal(layoutQuestion.Query, source.Questions[2].Query);
         await cut.InvokeAsync(source.Questions[2].AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 180 | 18", RowTexts(cut)[0]));
@@ -642,7 +648,7 @@ public class LiveDataTests : PivotTestContext
     {
         var server = new Server();
         var cut = RenderPivot(RegionAmount, source: server.Source);
-        var version = cut.Instance.Report!.Cube.SourceVersion;
+        var version = cut.Instance.Report!.Metadata.SourceVersion;
 
         await cut.InvokeAsync(() => server.Source.NotifyChanged(version));
         Assert.Single(server.Asked);
@@ -660,7 +666,7 @@ public class LiveDataTests : PivotTestContext
     {
         var source = new LiveSource();
         var cut = RenderPivot(RegionProduct, source: source);
-        var rows = cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount);
+        var rows = cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount);
         var grid = Grid(cut).RenderCount;
 
         source.Fails = new InvalidOperationException("The server is unreachable.");
@@ -668,7 +674,7 @@ public class LiveDataTests : PivotTestContext
         await cut.Find(".ex-pivot-search").InputAsync(new ChangeEventArgs { Value = "Reg" });
 
         Assert.Single(cut.FindAll(".ex-pivot-stale-notice"));
-        Assert.Equal(rows, cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount));
+        Assert.Equal(rows, cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount));
         Assert.Equal(grid, Grid(cut).RenderCount);
     }
 }

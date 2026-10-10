@@ -1,0 +1,30 @@
+tests start 14:33:49 load 1.41 1.19 1.08
+tests exit 0 14:36:08 load 8.04 4.73 2.47
+publish exit 0 14:37:15 load 4.29 4.39 2.52
+api exit 0 14:37:19 load 4.29 4.39 2.52
+components exit 0 14:37:27 load 4.82 4.49 2.58
+l1-lazy start 14:37:48 load 3.45 4.20 2.52
+l1-lazy end exit 0 14:43:03 load 1.15 2.20 2.12
+l2-main start 14:43:08 load 1.06 2.16 2.11
+l2-main end exit 0 14:48:13 load 0.94 1.31 1.74
+l3-fixed start 14:48:18 load 0.86 1.29 1.73
+l3-fixed end exit 0 14:53:35 load 1.47 1.13 1.51
+l4-lazy start 14:53:40 load 1.35 1.11 1.51
+l4-lazy end exit 0 14:58:59 load 1.22 1.02 1.33
+l5-main start 14:59:04 load 1.12 1.01 1.33
+l5-main end exit 0 15:04:14 load 1.53 1.02 1.21
+l6-fixed start 15:04:19 load 1.41 1.01 1.20
+l6-fixed end exit 0 15:09:44 load 1.88 1.19 1.19
+q1 main start 15:09:49 load 1.73 1.17 1.19
+q1 main end exit 0 15:10:11 load 1.52 1.16 1.18
+q2 lazy start 15:10:11 load 1.52 1.16 1.18
+q2 lazy end exit 0 15:10:28 load 1.37 1.15 1.18
+q3 fixed start 15:10:28 load 1.37 1.15 1.18
+q3 fixed end exit 0 15:10:48 load 1.27 1.14 1.17
+q4 fixed start 15:10:48 load 1.27 1.14 1.17
+q4 fixed end exit 0 15:11:08 load 1.26 1.14 1.18
+q5 lazy start 15:11:08 load 1.26 1.14 1.18
+q5 lazy end exit 0 15:11:25 load 1.20 1.14 1.17
+q6 main start 15:11:25 load 1.20 1.14 1.17
+q6 main end exit 0 15:11:47 load 1.20 1.14 1.17
+done 15:11:47 load 1.20 1.14 1.17

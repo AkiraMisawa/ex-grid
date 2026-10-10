@@ -234,6 +234,12 @@ arrived between two pictures. So:
   only itself. Two paints that ought to be one paint are compared with each other exactly, not
   through this; that is how ticket 92 found its defect. A new test that decides a colour is
   right uses `paints`, not a tolerance of its own.
+- **Text is antialiased, so a text colour is read from the cascade.** A glyph's pixels mix its
+  colour with the ground at whatever coverage the rasteriser gave them, and none need be the
+  colour itself: the most inked pixel of MudBlazor's Roboto, light on its dark palette, came 99%
+  of the way to the colour and stopped in CI's Chrome, where a local Chromium painted one whole
+  (2026-10-10). A glyph's pixels say only which of a few candidate colours the text is painted
+  in: the one its most inked pixels lie nearest (`presentation.spec.mjs`, `pivot-live.spec.mjs`).
 - **Two pictures of one thing are taken with `stillPictures`.** A mark the test sets draws the
   subject each way, through a stylesheet laid over the page with `alterPage`. It waits for the
   circuit to be quiet, and it takes every picture again when anything but the mark changed the
@@ -348,20 +354,21 @@ nobody had asked for. What that means when writing a test:
   refusal (ED-24), Backspace's empty editor (ED-23), Ctrl+D / Ctrl+R and a fill refused by
   name (CP-24/25), the keys staying the input's own inside the editor, and — on `/cells` —
   a display-only grid leaving Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25).
-- `write-refusal.spec.mjs` — a write over a target that changed after the user saw it (ADR-0142,
-  LV-11 to LV-14) on `/features?upstream=1`, where F9 moves the first five rows' Notional as a
-  live feed would. On both hosts, at 150 ms on the Server host: a commit over a cell that changed
-  under the editor refused with the new value in the refusal status, the typing kept, a second
-  Enter landing, Escape writing nothing, and a change to another cell of the row refusing nothing
-  (LV-11); a Ctrl+V pressed straight after F9 judged against the render it was pressed on —
-  refused where that render was the older one, pasted where it already showed the change (LV-13,
-  LV-14). On the Server host only, where a gesture can be taken before F9's render comes back: an
-  Action press, a Ctrl+Enter fill and a fill-handle release refused (LV-12, LV-13); a commit whose
-  opening key was taken before F9's change refused with the new value (LV-11, D2); a Ctrl+D whose
-  source F9 moved refused though its target did not move (LV-13, D4); a Delete and a Ctrl+R whose
-  target F9 moved refused (LV-13, D3). The user's own writes count
-  as seen (LV-17, D1): `5` Enter ↑ Ctrl+V and `1` Enter ↑ `2` Enter, typed at once, land on both
-  hosts, the Server host at 0 and at 150 ms. Each race reads what the page showed at the gesture
+- `write-lands.spec.mjs` — a write lands as the user entered it (ADR-0142, rewritten 2026-10-07;
+  LV-11 to LV-14, LV-17) on `/features?upstream=1`, where F9 moves the first five rows' Notional as
+  a live feed would. On both hosts, at 150 ms on the Server host: a commit over a cell that changed
+  under the editor landing, with the Overwrite Notice in its live region naming what was seen and
+  what was replaced (LV-11, LV-21), Escape writing and telling nothing, and a change to another cell
+  of the row telling nothing (LV-11); a Ctrl+V pressed straight after F9 pasting where it was aimed, under the same order
+  (LV-13, LV-14). On the Server host only, where a gesture can be taken before F9's render comes
+  back: an Action press acting on its row as F9 left it (LV-12); a Ctrl+Enter fill, a fill-handle
+  release, a Delete, a Ctrl+R and a Ctrl+D whose source F9 moved landing (LV-13); a commit whose
+  opening key was taken before F9's change landing, the change before the open not compared
+  (LV-11). `5` Enter ↑ Ctrl+V and `1` Enter ↑ `2` Enter, typed at once, land on both hosts, the
+  Server host at 0 and at 150 ms, with no notice (LV-17). On `/features?upstream=1&rowkey=1`, where
+  F8 amends the top row's Notional past every other, under a sort by Notional: the editor going with
+  its row out of view without a scroll, still holding the keyboard, and Enter landing on that row
+  (ADR-0011's note of 2026-10-07, LV-20). Each race reads what the page showed at the gesture
   first, from a capture listener ahead of the grid's, and says so by name if the change had
   already been painted.
 - `copied-range.spec.mjs` — the Copied Range (ADR-0170, CP-26 to CP-32) on `/features`: a copy
@@ -715,10 +722,15 @@ nobody had asked for. What that means when writing a test:
   desk, the account numbers keeping their zeros; the page's two samples, one under the declared
   Schema and one under a suggested Schema, reading the same trades to the same total — a second
   file read while a report stands; and the code shown under "The code" equal to its source.
-- `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069), **run once per Chrome**, against the
-  demo API server from either host: its trades read over Arrow into a Snapshot the page pivots in
-  its own process, at the version `/api/status` names, and asked of the server through
-  `PivotSource.Fetch`, which answers in SQL, show the same numbers painted row for row — and
+- `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069, ADR-0151/0152), against the demo API server
+  from either host. A server report scrolls beyond its first Window with a bounded number of rendered
+  rows (LV-24); a report scrolled to its last row and then shrunk by a layout, computed in the page
+  and on the server alike, shows the new report's last rows, breaks nothing, and scrolls back to its
+  top (LV-24, ADR-0151); and a whole-column Copy and Selection Summary of a remote report include the rows
+  outside the Window and equal the local report's (LV-28). **Run once per Chrome**: its trades read over
+  Arrow into a Snapshot the page pivots in its own process, at the version `/api/status` names, and
+  asked of the server through `PivotReportSource.Fetch`, whose server computes the report and returns
+  the requested Window, show the same numbers painted row for row — and
   again after a layout changed in one pane is shown on the other pivot; Refresh is offered by the
   server's source alone, and asks again; Show Details opens the same records behind a cell in
   both, and the server's come a page at a time as the Details tab scrolls to its end (PV-20);
@@ -729,7 +741,13 @@ nobody had asked for. What that means when writing a test:
   paused, the marks go after their second, and a collapse marks nothing however long after
   (PV-36). The server's live updates, which the page turns on, mark the server report's values
   through the hub's notices; the page's button turns them off and on, and leaving the page turns
-  them off (PV-20); and the code the page shows equal to its source.
+  them off (PV-20). Cut off from the server by the page's button, the server report is a Stale
+  Report: its notice stands, and its value cells — not its labels — take the stale colour, read
+  from the DOM and judged on the screen with `paints` (the most inked pixel of the numbers, over
+  their ground, a group row's tint), with a contrast of at least 4.5:1 and less than the ink's,
+  under ExPivot's default and under MudBlazor's mapping, in the light scheme and the dark one
+  (`?scheme=dark`); reconnected, Retry takes the mark away with the notice (PV-37, UX-8, ADR-0067's
+  decision of 2026-10-09). And the code the page shows equal to its source.
 - `pivot-risk.spec.mjs` — the rate-delta report on `/pivot-risk` (ADR-0060, PV-20), **run once
   per Chrome**, in a window wide enough for every tenor column beside the pane, since the report
   grid paints only the columns in view: the tenors painted in the Order Key's order, `ON`, `TN`,

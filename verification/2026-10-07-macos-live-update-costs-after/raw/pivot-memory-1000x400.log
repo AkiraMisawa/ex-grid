@@ -1,0 +1,20 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 2.13 2.82 2.87 }; TieredCompilation=0
+== ExPivot memory, 1,000 x 400, k 1: after the first report 399.9 MB ==
+   redraw   1: heap    406.7 MB; earlier reports alive   0 of 1, cubes   0; history times kept 3
+   redraw   2: heap    405.9 MB; earlier reports alive   0 of 2, cubes   0; history times kept 5
+   redraw   3: heap    406.1 MB; earlier reports alive   0 of 3, cubes   0; history times kept 7
+   redraw   4: heap    406.3 MB; earlier reports alive   0 of 4, cubes   0; history times kept 7
+   redraw   5: heap    406.4 MB; earlier reports alive   0 of 5, cubes   0; history times kept 7
+   redraw   6: heap    406.6 MB; earlier reports alive   0 of 6, cubes   0; history times kept 7
+   redraw   7: heap    406.8 MB; earlier reports alive   0 of 7, cubes   0; history times kept 7
+   redraw   8: heap    407.0 MB; earlier reports alive   0 of 8, cubes   0; history times kept 7
+   redraw   9: heap    407.2 MB; earlier reports alive   0 of 9, cubes   0; history times kept 7
+   redraw  10: heap    407.3 MB; earlier reports alive   0 of 10, cubes   0; history times kept 7
+   redraw  11: heap    407.5 MB; earlier reports alive   0 of 11, cubes   0; history times kept 7
+   redraw  12: heap    407.7 MB; earlier reports alive   0 of 12, cubes   0; history times kept 7
+   redraw  13: heap    407.9 MB; earlier reports alive   0 of 13, cubes   0; history times kept 7
+   redraw  14: heap    408.0 MB; earlier reports alive   0 of 14, cubes   0; history times kept 7
+   redraw  15: heap    408.2 MB; earlier reports alive   0 of 15, cubes   0; history times kept 7
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/pivot-memory-1000x400.json

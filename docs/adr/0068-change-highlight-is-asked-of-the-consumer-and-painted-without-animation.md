@@ -47,6 +47,10 @@ apart across Windows, and the grid has none: Row Identity is a reference
 - **The delegate's identity is the change signal**, as it is for Cell State. When the Consumer hands
   over a new delegate, the painted rows ask again. Rewriting what an unchanged delegate answers
   leaves the marks as they were.
+  - **ExPivot refinement, 2026-10-06 (ADR-0153):** the retained-report path holds one stable
+    lookup and replaces the immutable display row when its change information changes. The row
+    is the invalidation signal in that path, so unrelated rows skip rendering. Mutating an
+    unchanged row's hidden answers remains invalid; expiry still uses the grid's timer.
 - **A cell is marked while the current time is before its change time plus
   `ChangeHighlightDuration`.** The duration defaults to 1 s, and the Consumer may set it.
 - **The grid takes the mark away itself.** It keeps one timer, for the earliest end among the marks
@@ -131,6 +135,21 @@ CI's repeat of `grid-live.spec.mjs` found it: the unmarked cell beside a mark no
 nothing. Layer 2 now pins each marked rule's layers. Layer 3 reads a marked cell's layers against
 an unmarked cell of its kind, a Pinned Column's cell included.
 
+## ExPivot's marks are timed by ExPivot's clock *(2026-10-08)*
+
+Under [ADR-0153](./0153-reports-share-unchanged-computation-and-display-rows-own-no-report.md) a report
+can be computed on a server. Its changes travel as the Report Version each value cell last changed in
+(`PivotDisplayRow.ChangedIn`), with the changes still being shown listed in the report's metadata
+(`ChangeMarks`). ExPivot stamps each listed change with its own `TimeProvider` when it first adopts a
+report that lists it, and the grid ends the mark on that clock. The server's clock never reaches the
+browser: under the Codex track's first version, a server five seconds behind the browser showed no mark
+at all, and one ahead showed them for longer. A layout gesture marks nothing, as a sort or a filter does,
+even when it brings the newest data with it.
+
+*(The Claude Code track's section of 2026-10-07, "ExPivot holds one delegate across data versions", went
+with its ADR-0161 design on 2026-10-08. The bullet of 2026-10-06 above, from ADR-0153, says what holds
+now.)*
+
 ## Consequences
 
 - **§26 of the Definition of Done gains DC-64 to DC-66**, which gate ExGrid as every declaration
@@ -140,7 +159,9 @@ an unmarked cell of its kind, a Pinned Column's cell included.
   plus one timer while any mark is showing.
 - **ExSheet and plain Consumers can use the same declaration later.** For ExSheet, the obvious case
   is a cell whose value a recalculation changed.
-- *(2026-10-05, [ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md), [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).)* **A Consumer may now declare a
+- *(2026-10-05, [ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md), [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md).)* **A Consumer may now declare a
   Row Key**, and the grid pairs a row's versions by it to repaint the row in place. The grid still
   compares no values to mark a cell. ADR-0142 compares what the grid painted, to keep a write off a
-  cell the user did not see; that comparison marks nothing.
+  cell the user did not see; that comparison marks nothing. *(2026-10-07: ADR-0142, rewritten, no
+  longer compares a write's target; only the editor compares the text it opened on, and that marks
+  nothing either.)*

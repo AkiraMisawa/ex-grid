@@ -40,8 +40,9 @@
 
 @code {
     // The dialog is modal, closes on Escape and on a press on its backdrop, and has its × — each a
-    // Cancel. MudFormatCellsDialog takes the keyboard to the tab shown itself (DefaultFocus.None):
-    // MudBlazor's own first focus lands before the tabs are drawn. It is as wide on every tab.
+    // Cancel. MudFormatCellsDialog takes the keyboard to the tab shown itself, and tells MudBlazor's
+    // focus trap to take no first focus of its own, which would land before the tabs are drawn:
+    // MudBlazor 9 reads that from the dialog, not from these options. It is as wide on every tab.
     private static readonly DialogOptions Options = new()
     {
         CloseOnEscapeKey = true,
@@ -49,7 +50,6 @@
         CloseButton = true,
         MaxWidth = MaxWidth.Small,
         FullWidth = true,
-        DefaultFocus = DefaultFocus.None,
     };
 
     // Whether the element the keyboard leaves from stands, and that element; and the keys typed

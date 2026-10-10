@@ -1,6 +1,6 @@
 # 02: A pushed Window vouches for its rows
 
-Status: needs-triage — a decision for the user, then an amendment to ADR-0141 and LV-10
+Status: done — decided 2026-10-07; built by ticket 07
 
 **The question:** should a Consumer that pushes its Window itself be able to tell the grid that the
 Window holds no row twice, as a bundled source does — so that the grid stops walking every row of
@@ -49,3 +49,10 @@ every new Window? ExPivot is such a Consumer, and so is any ExGrid page that pus
 - [ ] PV-43's measurement repeated: the grid's share of a redraw at 401,001 rows
 
 ## Comments
+
+2026-10-07: Decided with the user (Q4). A pushed Window may be vouched for, through a parameter beside
+`RowKey`. A vouched Window is not walked whole, and the painted rows' keys are checked on every render,
+so a repeat on screen is refused by name. ExPivot vouches for its report. Recorded in
+[ADR-0141](../../../adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md)'s
+section of 2026-10-07; LV-10 restated. Ticket 01's numbers: the check is 92–98% of a pushed 10⁶-row
+update on CoreCLR (257 ms in the browser) and 3–4% of an ExPivot redraw.

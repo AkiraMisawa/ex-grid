@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# PV-48's browser half on the merged code: the LV-23 loop at 10^4 and 4x10^5 report rows, main and branch.
+S=/tmp/claude-0/-home-user-ex-grid/745dc86b-9814-555a-832d-a3eebdd9e2d0/scratchpad/perf
+O=$S/final; log() { echo "$1 $(date +%T) load $(cut -d' ' -f1-3 /proc/loadavg)" >> $O/run.log; }
+cd /home/user/ex-grid/.claude/worktrees/live-data-best/tests/ExGrid.Browser
+cp $S/lv23/perf-memory.spec.mjs $S/lv23/perf-memory.config.mjs .
+for b in 10 400; do
+  for side in final main; do
+    log "lv23 b=$b $side start"
+    PERF_WWWROOT=$S/hosts-perf-$side/wwwroot EXGRID_BASE_URL=http://localhost:5420 PERF_OUT=$O/lv23-b$b-$side.json PERF_B=$b PERF_N=20 \
+      timeout 900 nix develop '/home/user/ex-grid#browser' -c npx playwright test -c perf-memory.config.mjs > $O/lv23-b$b-$side.log 2>&1
+    log "lv23 b=$b $side end exit $?"
+    fuser -k 5420/tcp 2>/dev/null
+  done
+done
+rm -f perf-memory.spec.mjs perf-memory.config.mjs
+echo "sizes done $(date +%T)" >> $O/run.log

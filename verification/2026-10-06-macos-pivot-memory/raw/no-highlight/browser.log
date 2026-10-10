@@ -1,0 +1,36 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] (node:96773) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:96774) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chrome] › oom.spec.mjs:3:1 › ADR-0067 live pivot does not exhaust memory (16.9s)
+
+
+  1) [chrome] › oom.spec.mjs:3:1 › ADR-0067 live pivot does not exhaust memory ─────────────────────
+
+    Error: crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+          Unhandled exception rendering component: Out of memory
+    System.OutOfMemoryException: Out of memory
+       at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+       at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+       at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+       at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+       at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)
+
+       6 |  const save=()=>fs.writeFileSync(`${process.env.OOM_OUTPUT}/result.json`,JSON.stringify(result,null,2));
+       7 |  const failure=new Promise((_,reject)=>{
+    >  8 |   page.on('console',m=>{if(m.text().startsWith('[DEBUG-oom-a4f2] ')){result.memory.push(JSON.parse(m.text().slice(17)));save();}if(m.type()==='error'){result.errors.push(m.text());save();reject(new Error(m.text()));}});
+         |                                                                                                                                                                                                   ^
+       9 |   page.on('pageerror',e=>{result.errors.push(e.message);save();reject(e);});
+      10 |  });
+      11 |  try {
+        at _Page.<anonymous> (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom/tests/ExGrid.Browser/oom.spec.mjs:8:195)
+
+    Error Context: test-results/oom-ADR-0067-live-pivot-does-not-exhaust-memory-chrome/error-context.md
+
+  1 failed
+    [chrome] › oom.spec.mjs:3:1 › ADR-0067 live pivot does not exhaust memory ──────────────────────

@@ -1,0 +1,16 @@
+{"appliedMs":36.4,"applyToReportPaintedMs":585,"longestTaskMs":57,"longTasksTotalMs":57,"redraw":1,"loopStyleS":0.629,"linearMB":239}
+{"appliedMs":31.9,"applyToReportPaintedMs":580,"longestTaskMs":58,"longTasksTotalMs":58,"redraw":2,"loopStyleS":0.594,"linearMB":344}
+{"appliedMs":32.3,"applyToReportPaintedMs":579,"longestTaskMs":0,"longTasksTotalMs":0,"redraw":3,"loopStyleS":0.629,"linearMB":412}
+{"appliedMs":32.4,"applyToReportPaintedMs":591,"longestTaskMs":72,"longTasksTotalMs":72,"redraw":4,"loopStyleS":0.632,"linearMB":495}
+{"appliedMs":32.4,"applyToReportPaintedMs":550,"longestTaskMs":58,"longTasksTotalMs":58,"redraw":5,"loopStyleS":0.594,"linearMB":591}
+{"appliedMs":32.1,"applyToReportPaintedMs":594,"longestTaskMs":57,"longTasksTotalMs":166,"redraw":6,"loopStyleS":0.646,"linearMB":591}
+{"appliedMs":33.3,"applyToReportPaintedMs":554,"longestTaskMs":0,"longTasksTotalMs":0,"redraw":7,"loopStyleS":0.598,"linearMB":687}
+{"appliedMs":32.7,"applyToReportPaintedMs":615,"longestTaskMs":66,"longTasksTotalMs":119,"redraw":8,"loopStyleS":0.641,"linearMB":783}
+{"appliedMs":32.2,"applyToReportPaintedMs":549,"longestTaskMs":57,"longTasksTotalMs":57,"redraw":9,"loopStyleS":0.576,"linearMB":783}
+{"appliedMs":32.5,"applyToReportPaintedMs":553,"longestTaskMs":0,"longTasksTotalMs":0,"redraw":10,"loopStyleS":0.598,"linearMB":879}
+{"appliedMs":32.4,"applyToReportPaintedMs":620,"longestTaskMs":77,"longTasksTotalMs":134,"redraw":11,"loopStyleS":0.671,"linearMB":879}
+{"appliedMs":31.8,"applyToReportPaintedMs":546,"longestTaskMs":56,"longTasksTotalMs":56,"redraw":12,"loopStyleS":0.559,"linearMB":975}
+{"appliedMs":32.6,"applyToReportPaintedMs":549,"longestTaskMs":0,"longTasksTotalMs":0,"redraw":13,"loopStyleS":0.591,"linearMB":1071}
+{"appliedMs":31.9,"applyToReportPaintedMs":646,"longestTaskMs":104,"longTasksTotalMs":156,"redraw":14,"loopStyleS":0.683,"linearMB":1167}
+{"appliedMs":31.9,"applyToReportPaintedMs":544,"longestTaskMs":54,"longTasksTotalMs":54,"redraw":15,"loopStyleS":0.586,"linearMB":1167}
+{"label":"pivot-redraws-1-v0 (v0, contended no)","base":"http://localhost:5799","at":"2026-10-06T21:53:43.937Z","a":1000,"b":100,"redraws":15,"load":"100,000 records made in 224 ms; PivotSource.From took 97 ms.","outOfMemory":null,"consoleErrors":[],"applyToReportPaintedMs":{"min":544,"median":579,"max":646,"n":15},"appliedMs":{"min":31.8,"median":32.4,"max":36.4,"n":15},"loopStyleS":{"min":0.559,"median":0.598,"max":0.683,"n":15},"longestTaskMs":{"min":0,"median":57,"max":104,"n":15}}

@@ -1,0 +1,271 @@
+[
+ {
+  "layout": "1,350",
+  "run": 0,
+  "wallMs": 300,
+  "totalMs": 383.0390000000005,
+  "kinds": {
+   "browser (program)": 91.12699999999992,
+   "idle": 12.002000000000002,
+   "JavaScript": 3.646,
+   ".NET code": 265.35400000000027,
+   "other runtime (wasm)": 5.098,
+   ".NET collector": 4.731,
+   "JS collector": 1.081
+  },
+  "gcFunctions": {
+   "sgen_try_alloc_obj_nolock": 0.67,
+   "sgen_los_alloc_large_inner": 0.339,
+   "undefined": 3.3930000000000002,
+   "sgen_alloc_os_memory_aligned": 0.329
+  }
+ },
+ {
+  "layout": "1,350",
+  "run": 1,
+  "wallMs": 370,
+  "totalMs": 396.7840000000012,
+  "kinds": {
+   "browser (program)": 34.30800000000001,
+   "idle": 26.06899999999999,
+   "JavaScript": 2.974,
+   "JS collector": 0.634,
+   ".NET code": 227.49600000000015,
+   ".NET collector": 101.19899999999994,
+   "other runtime (wasm)": 4.103999999999999
+  },
+  "gcFunctions": {
+   "undefined": 4.5409999999999995,
+   "sgen_alloc_os_memory_aligned": 0.691,
+   "sgen_los_alloc_large_inner": 0.341,
+   "major_start_major_collection": 6.306,
+   "major_start_collection": 0.688,
+   "major_do_collection": 79.66600000000001,
+   "sgen_client_par_object_get_size": 4.5360000000000005,
+   "major_sweep": 2.569,
+   "sgen_gc_invoke_finalizers": 1.861
+  }
+ },
+ {
+  "layout": "1,350",
+  "run": 2,
+  "wallMs": 235,
+  "totalMs": 256.347,
+  "kinds": {
+   "browser (program)": 26.882999999999996,
+   "idle": 20.608,
+   "JavaScript": 2.836,
+   ".NET code": 199.93200000000002,
+   ".NET collector": 2.7,
+   "other runtime (wasm)": 3.388
+  },
+  "gcFunctions": {
+   "sgen_alloc_os_memory_aligned": 0.328,
+   "undefined": 1.346,
+   "sgen_alloc_os_memory": 0.688,
+   "sgen_try_alloc_obj_nolock": 0.338
+  }
+ },
+ {
+  "layout": "134,730",
+  "run": 0,
+  "wallMs": 2482,
+  "totalMs": 2505.7439999999983,
+  "kinds": {
+   "browser (program)": 42.28200000000003,
+   "idle": 15.072999999999999,
+   "JavaScript": 7.180000000000001,
+   ".NET code": 2045.3010000000031,
+   ".NET collector": 345.0940000000005,
+   "other runtime (wasm)": 46.24400000000001,
+   "JS collector": 4.569999999999999
+  },
+  "gcFunctions": {
+   "undefined": 34.51699999999999,
+   "sgen_try_alloc_obj_nolock": 13.518,
+   "sgen_alloc_os_memory": 7.093,
+   "sgen_alloc_os_memory_aligned": 8.161999999999999,
+   "major_start_major_collection": 12.802000000000001,
+   "major_start_collection": 0.751,
+   "major_scan_ptr_field_with_evacuation": 0.669,
+   "major_do_collection": 195.5739999999998,
+   "sgen_client_par_object_get_size": 6.923,
+   "major_sweep": 4.4879999999999995,
+   "sgen_card_table_record_pointer": 0.346,
+   "collect_nursery": 43.64100000000001,
+   "sgen_card_table_wbarrier_set_field": 1.372,
+   "sgen_nursery_alloc_range": 0.33,
+   "major_scan_card_table": 12.473,
+   "sgen_card_table_wbarrier_arrayref_copy": 0.71,
+   "major_iterate_block_ranges": 0.337,
+   "major_pin_objects": 0.666,
+   "major_copy_or_mark_object_canonical": 0.331,
+   "sgen_gc_invoke_finalizers": 0.391
+  }
+ },
+ {
+  "layout": "134,730",
+  "run": 1,
+  "wallMs": 2117,
+  "totalMs": 2142.3970000000077,
+  "kinds": {
+   "browser (program)": 38.636,
+   "idle": 10.704,
+   "JavaScript": 5.692,
+   ".NET code": 1796.8560000000166,
+   "other runtime (wasm)": 49.20800000000004,
+   ".NET collector": 239.21500000000003,
+   "JS collector": 2.086
+  },
+  "gcFunctions": {
+   "undefined": 26.771,
+   "sgen_alloc_os_memory_aligned": 4.604,
+   "sgen_alloc_os_memory": 5.005999999999999,
+   "collect_nursery": 47.926,
+   "major_scan_card_table": 18.907999999999998,
+   "sgen_los_alloc_large_inner": 0.333,
+   "sgen_try_alloc_obj_nolock": 12.149,
+   "sgen_card_table_wbarrier_set_field": 1.432,
+   "major_start_major_collection": 6.328000000000001,
+   "major_start_collection": 0.813,
+   "major_pin_objects": 0.331,
+   "major_scan_ptr_field_with_evacuation": 0.315,
+   "major_do_collection": 106.96399999999988,
+   "sgen_client_par_object_get_size": 3.05,
+   "major_sweep": 2.914,
+   "sgen_gc_invoke_finalizers": 0.329,
+   "major_start_nursery_collection": 0.335,
+   "sgen_card_table_wbarrier_arrayref_copy": 0.368,
+   "sgen_nursery_alloc_range": 0.339
+  }
+ },
+ {
+  "layout": "134,730",
+  "run": 2,
+  "wallMs": 2047,
+  "totalMs": 2077.0840000000208,
+  "kinds": {
+   "browser (program)": 41.167000000000016,
+   "idle": 23.052999999999994,
+   "JavaScript": 5.265000000000001,
+   ".NET code": 1697.2150000000104,
+   ".NET collector": 272.7429999999998,
+   "other runtime (wasm)": 36.977,
+   "JS collector": 0.6639999999999999
+  },
+  "gcFunctions": {
+   "sgen_alloc_os_memory": 15.877000000000002,
+   "sgen_alloc_os_memory_aligned": 6.066,
+   "undefined": 21.77599999999999,
+   "sgen_nursery_alloc_range": 0.333,
+   "sgen_alloc_obj_nolock": 0.395,
+   "major_start_major_collection": 7.497,
+   "major_start_collection": 1.3849999999999998,
+   "major_pin_objects": 0.334,
+   "major_scan_ptr_field_with_evacuation": 0.35,
+   "major_do_collection": 139.28799999999987,
+   "sgen_client_par_object_get_size": 3.681,
+   "major_sweep": 3.6590000000000003,
+   "sgen_gc_invoke_finalizers": 0.36,
+   "sgen_try_alloc_obj_nolock": 10.128000000000002,
+   "collect_nursery": 46.613000000000014,
+   "sgen_card_table_wbarrier_set_field": 1.344,
+   "major_scan_card_table": 11.901,
+   "sgen_card_table_wbarrier_arrayref_copy": 1.371,
+   "sgen_perform_collection": 0.385
+  }
+ },
+ {
+  "layout": "198,450",
+  "run": 0,
+  "wallMs": 2352,
+  "totalMs": 2383.816000000007,
+  "kinds": {
+   "browser (program)": 45.284000000000034,
+   "idle": 10.406000000000002,
+   "JavaScript": 8.905000000000001,
+   ".NET collector": 278.9420000000005,
+   ".NET code": 1990.9510000000193,
+   "JS collector": 2.824,
+   "other runtime (wasm)": 46.50400000000001
+  },
+  "gcFunctions": {
+   "undefined": 30.794999999999998,
+   "sgen_alloc_os_memory_aligned": 20.142,
+   "sgen_alloc_os_memory": 40.034000000000006,
+   "major_start_major_collection": 9.143,
+   "major_iterate_block_ranges": 0.289,
+   "major_start_collection": 0.341,
+   "major_pin_objects": 0.674,
+   "major_scan_ptr_field_with_evacuation": 0.427,
+   "major_do_collection": 168.15599999999998,
+   "sgen_client_par_object_get_size": 2.7280000000000006,
+   "major_sweep": 3.8160000000000007,
+   "sgen_gc_invoke_finalizers": 0.324,
+   "sgen_try_alloc_obj_nolock": 1.374,
+   "sgen_los_alloc_large_inner": 0.366,
+   "sgen_card_table_wbarrier_set_field": 0.333
+  }
+ },
+ {
+  "layout": "198,450",
+  "run": 1,
+  "wallMs": 2153,
+  "totalMs": 2185.763000000001,
+  "kinds": {
+   "browser (program)": 48.455999999999996,
+   "idle": 9.675,
+   "JavaScript": 6.848,
+   ".NET code": 1851.1150000000116,
+   "other runtime (wasm)": 45.84600000000004,
+   ".NET collector": 223.4879999999999,
+   "JS collector": 0.335
+  },
+  "gcFunctions": {
+   "sgen_alloc_os_memory_aligned": 4.707000000000001,
+   "undefined": 10.499999999999996,
+   "major_start_major_collection": 10.005999999999998,
+   "major_start_collection": 0.665,
+   "major_pin_objects": 0.333,
+   "major_copy_or_mark_object_canonical": 0.325,
+   "major_scan_ptr_field_with_evacuation": 0.332,
+   "major_do_collection": 150.11899999999983,
+   "sgen_client_par_object_get_size": 3.0330000000000004,
+   "major_sweep": 3.5290000000000004,
+   "sgen_gc_invoke_finalizers": 0.339,
+   "sgen_alloc_os_memory": 38.11399999999999,
+   "sgen_try_alloc_obj_nolock": 1.486
+  }
+ },
+ {
+  "layout": "198,450",
+  "run": 2,
+  "wallMs": 2144,
+  "totalMs": 2185.8590000000245,
+  "kinds": {
+   "browser (program)": 52.915000000000006,
+   "idle": 22.633,
+   "JavaScript": 6.592,
+   "JS collector": 2.617,
+   ".NET code": 1853.7410000000177,
+   ".NET collector": 206.59900000000002,
+   "other runtime (wasm)": 40.76199999999998
+  },
+  "gcFunctions": {
+   "undefined": 14.831000000000003,
+   "sgen_alloc_os_memory": 9.555,
+   "sgen_alloc_os_memory_aligned": 2.6079999999999997,
+   "major_start_major_collection": 10.266000000000002,
+   "major_start_collection": 0.336,
+   "major_pin_objects": 0.665,
+   "major_scan_ptr_field_with_evacuation": 0.671,
+   "major_do_collection": 157.12699999999975,
+   "sgen_client_par_object_get_size": 3.7680000000000007,
+   "major_sweep": 3.7300000000000004,
+   "sgen_try_alloc_obj_nolock": 2.036,
+   "sgen_need_major_collection": 0.335,
+   "sgen_ensure_free_space": 0.332,
+   "sgen_card_table_wbarrier_set_field": 0.339
+  }
+ }
+]

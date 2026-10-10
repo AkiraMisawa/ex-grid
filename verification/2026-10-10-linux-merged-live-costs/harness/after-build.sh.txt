@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+S=/tmp/claude-0/-home-user-ex-grid/745dc86b-9814-555a-832d-a3eebdd9e2d0/scratchpad
+W=/home/user/ex-grid/.claude/worktrees
+L=$S/fix
+echo "build start $(date +%T)" >> $L/build.log
+(cd $W/perf-fixed && timeout 2400 nix develop /home/user/ex-grid -c dotnet publish samples/ExGrid.DemoHost -c Release -o $S/perf/hosts-perf-fixed > $L/publish-fixed.log 2>&1); echo "publish fixed exit $? $(date +%T)" >> $L/build.log
+for side in fixed main; do
+  (cd $W/perf-$side && timeout 1800 nix develop /home/user/ex-grid -c dotnet build samples/ExGrid.DemoApi -c Release > $L/api-$side.log 2>&1); echo "api $side exit $? $(date +%T)" >> $L/build.log
+  (cd $W/perf-$side && timeout 1800 nix develop /home/user/ex-grid -c dotnet build tests/ExPivot.Components -c Release > $L/components-$side.log 2>&1); echo "components $side exit $? $(date +%T)" >> $L/build.log
+done
+echo "build done $(date +%T)" >> $L/build.log

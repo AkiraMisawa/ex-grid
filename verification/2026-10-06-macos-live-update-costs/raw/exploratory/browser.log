@@ -1,0 +1,64 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] (node:61896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 9 tests using 1 worker
+
+(node:61897) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chrome] › measure-cost.spec.mjs:25:5 › ADR-0141 measure grid 100000 1 (3.8s)
+  ✓  2 [chrome] › measure-cost.spec.mjs:25:5 › ADR-0141 measure grid 100000 100 (3.8s)
+  ✓  3 [chrome] › measure-cost.spec.mjs:25:5 › ADR-0141 measure grid 100000 1000 (3.8s)
+  ✓  4 [chrome] › measure-cost.spec.mjs:25:5 › ADR-0141 measure grid 1000000 1 (6.6s)
+  ✓  5 [chrome] › measure-cost.spec.mjs:25:5 › ADR-0141 measure grid 1000000 100 (6.5s)
+  ✓  6 [chrome] › measure-cost.spec.mjs:25:5 › ADR-0141 measure grid 1000000 1000 (6.4s)
+  ✘  7 [chrome] › measure-cost.spec.mjs:55:5 › ADR-0067 measure pivot 1000 x 10 (55.9s)
+
+
+  1) [chrome] › measure-cost.spec.mjs:55:5 › ADR-0067 measure pivot 1000 x 10 ──────────────────────
+
+    Test was interrupted.
+
+    Error: locator.click: Target page, context or browser has been closed
+    Call log:
+      - waiting for locator('#cost-tick')
+        - locator resolved to <button disabled id="cost-tick">One batch</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+          - waiting 100ms
+        107 × waiting for element to be visible, enabled and stable
+            - element is not enabled
+          - retrying click action
+            - waiting 500ms
+
+
+      61 |         for(let r=0;r<9;r++) {
+      62 |             await page.evaluate(()=>window.cost.arm({status:'#cost-status',grid:'.ex-pivot-sheet .ex-viewport'}));
+    > 63 |             await page.locator('#cost-tick').click();
+         |                                              ^
+      64 |             await page.waitForFunction(()=>window.cost.watches.grid.frame!==null,null,{timeout:300000});
+      65 |             runs.push(await page.evaluate(()=>{
+      66 |                 const p=window.cost,w=p.watches.grid;
+        at /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/measure-cost.spec.mjs:63:46
+
+    Error Context: test-results/measure-cost-ADR-0067-measure-pivot-1000-x-10-chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/measure-cost-ADR-0067-measure-pivot-1000-x-10-chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/measure-cost-ADR-0067-measure-pivot-1000-x-10-chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 interrupted
+    [chrome] › measure-cost.spec.mjs:55:5 › ADR-0067 measure pivot 1000 x 10 ───────────────────────
+  2 did not run
+  6 passed (1.5m)

@@ -4,8 +4,8 @@
    Visual Token with a system-colour default, so the bare pivot follows the host's scheme and a
    Wrapper sets the tokens on its own element (ADR-0029/0030/0062). The report itself is ExGrid,
    styled by ex-grid.css; nothing here reaches inside the grid but the label cells' own content,
-   which ExPivot renders, and the grid's root is touched only to leave it unpainted while a details
-   tab covers it. */
+   which ExPivot renders, and a Stale Report's value cells, whose text is muted while it is stale
+   (ADR-0067); the grid's root is touched only to leave it unpainted while a details tab covers it. */
 
 /* The root: the report beside the Field List. A Stretch height is written inline as the grid's
    is: a flex item as tall as its parent (ADR-0028). */
@@ -132,6 +132,19 @@
     border: 1px solid var(--ex-pivot-entry-border-color, ButtonBorder);
 }
 .ex-pivot-retry:disabled { cursor: default; color: var(--ex-pivot-muted-color, GrayText); }
+
+/* A Stale Report's value cells (ADR-0067, decided 2026-10-09): while the report stays on the last
+   version it could compute it carries ex-pivot-report-stale, and its numbers are painted in a muted
+   colour, so a reader who has not looked at the notice still cannot take them for the newest. The
+   one place this stylesheet reaches inside the grid: the value cells of the report's own grid — the
+   sheet's child, never a details tab's records, which stand in a panel beside it — and not its
+   labels, which are Text, not numeric. The class comes and goes in one step with the notice, no row
+   of the grid renders for it, and nothing here transitions or animates (ADR-0027 P8). The default
+   mixes the grid's own ink into its own ground, so the numbers keep a readable contrast in either
+   scheme: #666 on white, 5.7:1, and about 7:1 on a dark ground. */
+.ex-pivot-report-stale > .ex-pivot-sheet > .ex-grid .ex-cell-numeric {
+    color: var(--ex-pivot-stale-value-color, color-mix(in srgb, var(--ex-color, CanvasText) 60%, var(--ex-background, Canvas)));
+}
 
 /* The tabs at the report's foot, where Excel's sheet tabs are (ADR-0059). */
 .ex-pivot-tabs {
@@ -391,4 +404,5 @@
 @media (forced-colors: active) {
     .ex-pivot-area.ex-pivot-drop-target, .ex-pivot-fields.ex-pivot-drop-remove { outline-color: Highlight; }
     .ex-pivot-entry.ex-pivot-drop-before { box-shadow: 0 -2px 0 Highlight; }
+    .ex-pivot-report-stale > .ex-pivot-sheet > .ex-grid .ex-cell-numeric { color: GrayText; }
 }

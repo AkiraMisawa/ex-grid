@@ -1,0 +1,55 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 1.49 1.92 2.56 }; TieredCompilation=0
+== ExGrid, GridSource.From keyed, 100,000 rows ==
+   100,000 trades made in 23 ms
+   grid bound; 18 rows painted
+-- k = 1 changes a batch --
+   fold (Apply, gathered)                 0.008     0.015     0.027
+   publish (PublishGathered)              0.051     0.058     0.101
+     LiveRequery.Apply alone              0.045     0.055     0.071
+     CellChangeTimes.Record alone         0.007     0.011     0.025
+   bound source Apply (no grid)           0.052     0.063     0.085
+   grid ApplyState                        0.014     0.332     0.696
+     NoteRowsForSummary alone (stops at 68313)     0.334     0.345     0.442
+     NoteRowsForSummary, last row only     0.488     0.507     0.782
+     RequireDistinctKeys alone            3.093     3.204     3.301
+     RequireDistinctRows alone            1.537     1.627     1.804
+   grid render                            0.062     0.088     0.131
+   whole update                           0.100     0.279     0.663
+   pushed ApplyState, Row Key             3.410     3.565     4.642
+   pushed ApplyState, instance            1.880     1.927     2.192
+   rows rendered 0 (of 18 painted); bytes/update 56
+-- k = 100 changes a batch --
+   fold (Apply, gathered)                 0.077     0.083     0.110
+   publish (PublishGathered)              0.191     0.211     0.267
+     LiveRequery.Apply alone              0.075     0.085     0.119
+     CellChangeTimes.Record alone         0.071     0.088     0.099
+   bound source Apply (no grid)           0.270     0.289     0.359
+   grid ApplyState                        0.007     0.013     0.021
+     NoteRowsForSummary alone (stops at 1)     0.006     0.009     0.022
+     NoteRowsForSummary, last row only     0.484     0.489     0.592
+     RequireDistinctKeys alone            2.978     3.171     3.772
+     RequireDistinctRows alone            1.546     1.651     2.041
+   grid render                            0.079     0.131     0.677
+   whole update                           0.290     0.309     0.449
+   pushed ApplyState, Row Key             3.054     3.152     3.484
+   pushed ApplyState, instance            1.557     1.653     2.049
+   rows rendered 1 (of 18 painted); bytes/update 464
+-- k = 1,000 changes a batch --
+   fold (Apply, gathered)                 0.570     0.615     0.676
+   publish (PublishGathered)              1.218     1.278     1.492
+     LiveRequery.Apply alone              0.356     0.376     0.449
+     CellChangeTimes.Record alone         0.631     0.654     0.729
+   bound source Apply (no grid)           1.856     1.924     2.029
+   grid ApplyState                        0.010     0.015     0.018
+     NoteRowsForSummary alone (stops at 0)     0.007     0.011     0.023
+     NoteRowsForSummary, last row only     0.520     0.553     0.680
+     RequireDistinctKeys alone            3.337     3.389     3.773
+     RequireDistinctRows alone            1.746     1.984     2.196
+   grid render                            0.118     0.146     0.190
+   whole update                           2.016     2.110     2.234
+   pushed ApplyState, Row Key             3.240     3.392     4.101
+   pushed ApplyState, instance            1.672     1.810     2.089
+   rows rendered 9 (of 18 painted); bytes/update 1471
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/live-data-next-cc/verification/2026-10-06-macos-live-update-costs-cc/raw/grid-1e5.json

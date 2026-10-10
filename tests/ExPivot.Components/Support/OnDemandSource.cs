@@ -14,6 +14,19 @@ internal sealed class OnDemandSource(PivotSource reference, PivotSourceFeatures?
 {
     /// <summary>The questions asked, in order.</summary>
     public List<Question> Questions { get; } = [];
+    private readonly Dictionary<int, TaskCompletionSource<Question>> _asked = [];
+
+    /// <summary>Waits for the source's own call; starting a question need not render the component.</summary>
+    public Task<Question> QuestionAsync(int index, CancellationToken cancellationToken)
+    {
+        lock (Questions)
+        {
+            if (Questions.Count > index) return Task.FromResult(Questions[index]);
+            if (!_asked.TryGetValue(index, out var completion))
+                _asked[index] = completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            return completion.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        }
+    }
 
     /// <summary>The Items asked for, in order.</summary>
     public List<PivotItemsQuery> ItemQueries { get; } = [];
@@ -52,7 +65,11 @@ internal sealed class OnDemandSource(PivotSource reference, PivotSourceFeatures?
     public override ValueTask<PivotAnswer> AggregateAsync(PivotQuery query, CancellationToken cancellationToken = default)
     {
         var question = new Question(reference, query, cancellationToken);
-        Questions.Add(question);
+        lock (Questions)
+        {
+            Questions.Add(question);
+            if (_asked.Remove(Questions.Count - 1, out var completion)) completion.TrySetResult(question);
+        }
         if (AnswersAtOnce)
         {
             question.Completion.TrySetResult(reference.AggregateAsync(query, CancellationToken.None).AsTask().GetAwaiter().GetResult());

@@ -1,0 +1,18 @@
+node v24.14.1, dotnet 10.0.203
+{"step":"loaded","s":3.944,"managedAfterGcMB":"325.2 alive report=1/1,cube=1/1,snapshot=1/1","heapMB":591,"managedMB":"325.2 alive report=1/1,cube=1/1,snapshot=1/1","oom":null}
+{"step":1,"s":0.655,"landed":true,"managedAfterGcMB":"330.2 alive report=1/2,cube=1/2,snapshot=2/2","heapMB":591,"managedMB":"330.2 alive report=1/2,cube=1/2,snapshot=2/2","oom":null}
+{"step":2,"s":0.774,"landed":true,"managedAfterGcMB":"329.7 alive report=1/3,cube=1/3,snapshot=3/3","heapMB":591,"managedMB":"329.7 alive report=1/3,cube=1/3,snapshot=3/3","oom":null}
+{"step":3,"s":0.757,"landed":true,"managedAfterGcMB":"329.7 alive report=1/4,cube=1/4,snapshot=4/4","heapMB":591,"managedMB":"329.7 alive report=1/4,cube=1/4,snapshot=4/4","oom":null}
+{"step":4,"s":0.782,"landed":true,"managedAfterGcMB":"329.7 alive report=1/5,cube=1/5,snapshot=4/5","heapMB":591,"managedMB":"329.7 alive report=1/5,cube=1/5,snapshot=4/5","oom":null}
+{"step":5,"s":0.774,"landed":true,"managedAfterGcMB":"329.7 alive report=1/6,cube=1/6,snapshot=4/6","heapMB":591,"managedMB":"329.7 alive report=1/6,cube=1/6,snapshot=4/6","oom":null}
+{"step":6,"s":0.788,"landed":true,"managedAfterGcMB":"329.7 alive report=1/7,cube=1/7,snapshot=4/7","heapMB":591,"managedMB":"329.7 alive report=1/7,cube=1/7,snapshot=4/7","oom":null}
+{"step":7,"s":0.756,"landed":true,"managedAfterGcMB":"329.7 alive report=1/8,cube=1/8,snapshot=4/8","heapMB":591,"managedMB":"329.7 alive report=1/8,cube=1/8,snapshot=4/8","oom":null}
+{"step":8,"s":0.769,"landed":true,"managedAfterGcMB":"329.7 alive report=1/9,cube=1/9,snapshot=4/9","heapMB":591,"managedMB":"329.7 alive report=1/9,cube=1/9,snapshot=4/9","oom":null}
+{"step":9,"s":0.773,"landed":true,"managedAfterGcMB":"329.7 alive report=1/10,cube=1/10,snapshot=4/10","heapMB":591,"managedMB":"329.7 alive report=1/10,cube=1/10,snapshot=4/10","oom":null}
+{"step":10,"s":0.765,"landed":true,"managedAfterGcMB":"329.7 alive report=1/11,cube=1/11,snapshot=4/11","heapMB":591,"managedMB":"329.7 alive report=1/11,cube=1/11,snapshot=4/11","oom":null}
+{"step":11,"s":0.757,"landed":true,"managedAfterGcMB":"329.7 alive report=1/12,cube=1/12,snapshot=4/12","heapMB":591,"managedMB":"329.7 alive report=1/12,cube=1/12,snapshot=4/12","oom":null}
+{"step":12,"s":0.765,"landed":true,"managedAfterGcMB":"329.7 alive report=1/13,cube=1/13,snapshot=4/13","heapMB":591,"managedMB":"329.7 alive report=1/13,cube=1/13,snapshot=4/13","oom":null}
+{"step":13,"s":0.765,"landed":true,"managedAfterGcMB":"329.7 alive report=1/14,cube=1/14,snapshot=4/14","heapMB":591,"managedMB":"329.7 alive report=1/14,cube=1/14,snapshot=4/14","oom":null}
+{"step":14,"s":0.768,"landed":true,"managedAfterGcMB":"329.7 alive report=1/15,cube=1/15,snapshot=4/15","heapMB":591,"managedMB":"329.7 alive report=1/15,cube=1/15,snapshot=4/15","oom":null}
+{"step":15,"s":0.767,"landed":true,"managedAfterGcMB":"329.7 alive report=1/16,cube=1/16,snapshot=4/16","heapMB":591,"managedMB":"329.7 alive report=1/16,cube=1/16,snapshot=4/16","oom":null}
+{"verdict":"GREEN","oom":null,"errors":[]}

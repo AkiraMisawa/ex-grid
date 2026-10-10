@@ -103,7 +103,9 @@ public static class PivotEngine
     public static PivotReport Report(PivotCube cube, PivotLayout layout, PivotOptions? options = null)
         => Builder(cube, layout, options).Build();
 
-    private static ReportBuilder Builder(PivotCube cube, PivotLayout layout, PivotOptions? options)
+    /// <summary>The builder that lays <paramref name="cube"/> out under <paramref name="layout"/>,
+    /// once the layout is checked: what <see cref="Report"/> refuses, it refuses.</summary>
+    internal static ReportBuilder Builder(PivotCube cube, PivotLayout layout, PivotOptions? options)
     {
         ArgumentNullException.ThrowIfNull(cube);
         ArgumentNullException.ThrowIfNull(layout);

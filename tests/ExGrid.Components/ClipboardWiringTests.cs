@@ -748,6 +748,79 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(0, asked);
     }
 
+    [Fact] // ADR-0152: a report source answers the complete versioned copy asynchronously.
+    public async Task ADR0152_An_asynchronous_copy_answer_gets_the_approved_plan_and_defers_the_copy_event()
+    {
+        var requests = new List<GridCopyRequest>();
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.TotalCount, 100)
+            .Add(g => g.CopyAnswerAsync, (GridCopyRequest request, CancellationToken _) =>
+            {
+                requests.Add(request);
+                return Task.FromResult(GridCopyAnswer.Write("complete\r\n", "<table><tr><td>complete</td></tr></table>"));
+            }));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, " ", ctrl: true);
+
+        var synchronous = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+        Assert.Equal("async", synchronous.Kind);
+        Assert.Empty(requests);
+        var payload = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync(withHeaders: true));
+
+        Assert.NotNull(payload);
+        Assert.Equal("complete\r\n", payload.Text);
+        var request = Assert.Single(requests);
+        Assert.Equal([new SelectionRange(0, 0, 100, 1)], request.Plan.Segments);
+        Assert.True(request.WithHeaders);
+        Assert.Equal(0, request.RowSequenceVersion);
+    }
+
+    [Fact] // ADR-0152: a missing report version refuses the complete copy without a partial clipboard write.
+    public async Task ADR0152_An_asynchronous_copy_refusal_is_announced_after_the_answer_arrives()
+    {
+        var answer = new TaskCompletionSource<GridCopyAnswer>();
+        GridCopyRequest? asked = null;
+        var refusals = new List<CopyRefusalReason>();
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.RowSequenceVersion, 7)
+            .Add(g => g.OnCopyRefused, (CopyRefusalReason reason) => refusals.Add(reason))
+            .Add(g => g.CopyAnswerAsync, (GridCopyRequest request, CancellationToken _) =>
+            {
+                asked = request;
+                return answer.Task;
+            }));
+        await ClickCellAsync(cut, 50, 10);
+        var copying = cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync());
+        Assert.False(copying.IsCompleted);
+        Assert.NotNull(asked);
+        Assert.Equal(7, asked.RowSequenceVersion);
+        cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 8));
+        answer.SetResult(GridCopyAnswer.Refuse("That report version is no longer available."));
+
+        Assert.Null(await copying);
+        cut.WaitForAssertion(() => Assert.Equal([CopyRefusalReason.RefusedByConsumer], refusals));
+        Assert.Equal("That report version is no longer available.", cut.Find(".ex-announce").TextContent);
+    }
+
+    [Fact] // ADR-0152 / ADR-0005: even an asynchronous provider never sees a refused copy plan.
+    public async Task ADR0152_The_copy_cap_is_checked_before_an_asynchronous_answer_is_asked()
+    {
+        var asked = 0;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.CopyCellCap, 1L)
+            .Add(g => g.CopyAnswerAsync, (GridCopyRequest _, CancellationToken __) =>
+            {
+                asked++;
+                return Task.FromResult(GridCopyAnswer.Write("incorrect", "incorrect"));
+            }));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, " ", ctrl: true);
+
+        Assert.Equal("none", (await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload())).Kind);
+        Assert.Null(await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync()));
+        Assert.Equal(0, asked);
+    }
+
     [Fact] // ADR-0050 item 9: a refusal without a sentence is not an answer
     public void A_copy_refusal_needs_a_sentence()
     {

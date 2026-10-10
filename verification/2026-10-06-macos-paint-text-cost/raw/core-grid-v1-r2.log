@@ -1,0 +1,45 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+variant V1; load { 2.90 3.02 2.79 }; TieredCompilation=0
+== ExGrid: 20,000 rows, 40 columns (1 pinned); painted rows 42 from 1000; a page is 42 rows; slice ColumnRange { Start = 1, Count = 18 } -> ColumnRange { Start = 16, Count = 18 } at 1400px ==
+-- a: scroll by 1 row
+   step (scroll/params + render)          0.053     0.058     0.084
+   render (ProcessPendingRender)          0.052     0.057     0.081
+   NotePaint alone                        0.003     0.003     0.003
+   NotePaint bytes 2384; step bytes 21824; rows rendered 1 (+0 after); new paints 1
+-- b: scroll by a page
+   step (scroll/params + render)          0.355     0.373     0.411
+   render (ProcessPendingRender)          0.346     0.363     0.401
+   NotePaint alone                        0.048     0.050     0.059
+   NotePaint bytes 53928; step bytes 219208; rows rendered 42 (+0 after); new paints 1
+-- c: fling frame (Placeholders)
+   step (scroll/params + render)          0.091     0.109     0.130
+   render (ProcessPendingRender)          0.089     0.106     0.123
+   NotePaint alone                        0.001     0.001     0.004
+   NotePaint bytes 2464; step bytes 85088; rows rendered 42 (+0 after); new paints 1
+-- c2: fling settles (full slice painted)
+   step (scroll/params + render)          0.311     0.326     0.341
+   render (ProcessPendingRender)          0.310     0.324     0.340
+   NotePaint alone                        0.047     0.050     0.053
+   NotePaint bytes 53928; step bytes 155568; rows rendered 42 (+0 after); new paints 1
+-- d: horizontal scroll to a new slice
+   step (scroll/params + render)          0.372     0.392     0.417
+   render (ProcessPendingRender)          0.371     0.391     0.416
+   NotePaint alone                        0.060     0.065     0.086
+   NotePaint bytes 67216; step bytes 144176; rows rendered 42 (+0 after); new paints 1
+-- e: live, 0 painted rows new
+   step (scroll/params + render)          0.773     0.792     0.949
+   render (ProcessPendingRender)          0.039     0.041     0.051
+   NotePaint alone                        0.000     0.000     0.000
+   NotePaint bytes 0; step bytes 766520; rows rendered 0 (+0 after); new paints 0
+-- e: live, 3 painted rows new
+   step (scroll/params + render)          0.700     0.718     0.768
+   render (ProcessPendingRender)          0.058     0.063     0.077
+   NotePaint alone                        0.005     0.006     0.011
+   NotePaint bytes 4864; step bytes 776520; rows rendered 3 (+0 after); new paints 1
+-- e: live, every painted row new
+   step (scroll/params + render)          0.961     0.995     1.081
+   render (ProcessPendingRender)          0.295     0.306     0.338
+   NotePaint alone                        0.048     0.049     0.062
+   NotePaint bytes 53856; step bytes 892832; rows rendered 42 (+0 after); new paints 1
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/live-data-paint-text/verification/2026-10-06-macos-paint-text-cost/raw/core-grid-v1-r2.json

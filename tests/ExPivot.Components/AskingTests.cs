@@ -61,7 +61,7 @@ public class AskingTests : PivotTestContext
         Assert.True(cut.Instance.IsLoading);
         Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
         Assert.Equal("Loading…", cut.Find(".ex-pivot-empty").TextContent);
-        Assert.Empty(cut.FindComponents<ExGrid<PivotReportRow>>());
+        Assert.Empty(cut.FindComponents<ExGrid<PivotDisplayRow>>());
     }
 
     [Fact] // ADR-0066 (PV-25): while a question is out the Field List shows the new layout, and the report stays as it was under the grid's IsLoading
@@ -101,6 +101,7 @@ public class AskingTests : PivotTestContext
         var first = source.Questions[1];
         await TickFieldAsync(cut, "Quantity", true);
 
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
         Assert.Equal(3, source.Questions.Count);
         Assert.True(first.IsCancelled);
         Assert.False(source.Questions[2].IsCancelled);
@@ -121,7 +122,7 @@ public class AskingTests : PivotTestContext
         await TickFieldAsync(cut, "Product", true);
         var superseded = source.Questions[1];
         await TickFieldAsync(cut, "Quantity", true);
-        var current = source.Questions[2];
+        var current = await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
 
         // The superseded answer arrives first: discarded, and the report goes on waiting.
         Assert.False(superseded.Completion.Task.IsCompleted);
@@ -140,7 +141,9 @@ public class AskingTests : PivotTestContext
         await TickFieldAsync(cut, "Online", false);
         Assert.Equal(4, source.Questions.Count);
         await cut.InvokeAsync(late.AnswerAsync);
-        await SettleAsync(cut);
+        // The held answer's report request finishes asynchronously. Wait for the public
+        // layout notification, not a fixed number of renderer work items (ADR-0025).
+        cut.WaitForAssertion(() => Assert.Equal(2, told.Count));
         Assert.Equal(["Region", "Product"], cut.Instance.CurrentLayout.Rows.Select(p => p.Field));
         Assert.Equal("−East | 180 | 18", RowTexts(cut)[0]);
         Assert.Equal(2, told.Count);
@@ -251,7 +254,7 @@ public class AskingTests : PivotTestContext
 
     private static async Task ChangeAggregationAsync(IRenderedComponent<PivotComponent> cut, string aggregation)
     {
-        var caption = cut.Instance.Report!.ValueCaptions[0];
+        var caption = cut.Instance.Report!.Metadata.ValueCaptions[0];
         await OpenMenuAsync(cut, "Values", caption);
         await RunMenuAsync(cut, "Value Field Settings…");
         await cut.FindAll(".ex-pivot-value-settings select")[0].ChangeAsync(new ChangeEventArgs { Value = aggregation });
@@ -408,7 +411,7 @@ public class AskingTests : PivotTestContext
     public async Task The_pane_and_the_toolbar_do_not_render_the_grid()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });
-        var rows = cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount);
+        var rows = cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount);
         var grid = Grid(cut).RenderCount;
 
         await cut.Find(".ex-pivot-defer input").ChangeAsync(new ChangeEventArgs { Value = true });
@@ -421,7 +424,7 @@ public class AskingTests : PivotTestContext
         await cut.Find("button[aria-label='Hide Field List']").ClickAsync(new MouseEventArgs());
         await cut.Find(".ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
 
-        Assert.Equal(rows, cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount));
+        Assert.Equal(rows, cut.FindComponents<ExGridRow<PivotDisplayRow>>().Sum(r => r.RenderCount));
         Assert.Equal(grid, Grid(cut).RenderCount);
     }
 }

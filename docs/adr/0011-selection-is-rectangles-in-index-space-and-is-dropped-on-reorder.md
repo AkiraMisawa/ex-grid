@@ -230,6 +230,62 @@ Rejected: **committing the text onto the row instance captured when the editor o
 nothing and is wrong for a different reason — the user never pressed Enter, and turning an
 abandoned draft into a commit is a worse failure than losing it loudly.
 
+## An open editor outlives an order move *(decided with the user, 2026-10-07)*
+
+*(The grilling of live data continued, after [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md) was rewritten so that a write lands as
+the user entered it, on the row the user aimed it at. Under live data the order can move several times
+a second, and the discard above threw the user's typing away each time.)*
+
+- **The Selection is still dropped when the order moves.** Nothing in this ADR's rule for the Selection
+  changes.
+- **An open editor is no longer discarded for it.**
+  - With a Row Key, the editor and the Focus follow the row they were opened on to its new position, and
+    a commit lands on that row.
+  - Without a Row Key, the editor stays where it is, and a commit is refused as `OrderMoved`, with the text
+    kept; Escape leaves without writing (ADR-0142).
+  - Either way nothing lands on a stranger, which is what the discard protected, and nothing typed is
+    thrown away.
+- **The grid does not scroll to follow the row.** If the row moves out of view, the editor stays open with
+  its row; the keys typed still reach it, and Enter still commits it. ag-grid does the same: it keeps the
+  row being edited rendered wherever it goes, and does not scroll
+  ([`rowRenderer.ts#L1553-L1580`](https://github.com/ag-grid/ag-grid/blob/0fee5b7b1e839ae23fe860e404042448f3c1375d/packages/ag-grid-community/src/rendering/rowRenderer.ts#L1553-L1580)). ExGrid has never moved the view for a change of data.
+- **`OrderChanged` is no longer raised for an open editor.** The other discards stand: a change of
+  columns, a column that stops being Editable, and, without a Row Key, a row that left the Window under the
+  same order (`RowLeftTheWindow`). With a Row Key, a row that left the Window refuses the commit as
+  `RowLeftTheWindow` (named `RowGone` until 2026-10-08) and keeps the editor open (ADR-0142).
+- **The grid holds the Row Key of the row under an open editor while the editor is open**, the one row
+  reference [ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md) allows beyond the Window besides its two others.
+
+## Keys aimed with a Selection that was dropped open nothing *(decided with the user, 2026-10-08)*
+
+*(Merging the two tracks of live data continued. Both kept the first-key rule of
+[ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md) for keys that arrive after a drop, and the
+review of both found what it does to keys that were on their way.)*
+
+- **A replaced Source drops the Selection too**, whatever the two sources' Row Sequence Versions: the
+  positions now name rows of other data (ADR-0142's section of 2026-10-08).
+- **A key typed at a cell, and the drop overtakes it**: on a circuit, or held behind a key being answered,
+  `5` `0` `0` Enter can reach the grid after an order move or a replaced Source dropped the Selection it
+  was aimed with. Taken by the first-key rule, the keys placed a Focus on the first painted cell and
+  typed into it — a cell the user never aimed at.
+- **Now such a key opens nothing and writes nothing anywhere.** A printable key, F2, Backspace or a
+  composition's text, told a paint under which the Selection it was aimed with has since been dropped, is
+  thrown away. The run of them is said once through `OnEditDiscarded`: `OrderMoved` for an order move,
+  `SourceChanged` for a replaced Source. An edit that the replacement itself discarded has already said
+  it. Typing aimed at a cell that does not edit would have opened nothing, and goes unsaid.
+- **A key that moves or selects, aimed the same way, moves nothing and says nothing.** None of these keys
+  is a first key on the empty Selection. Delete and the fill keys aimed the same way are refused as
+  writes, and Space aimed at an action is refused as the action's press is (ADR-0142).
+- **Keys told a newer paint follow the first-key rule**, as before: the user has seen the new rows.
+- **With nothing selected** *(found in review, 2026-10-09)*: a key typed with nothing selected is a first
+  key on the paint it was typed against. Told a paint of a Source since replaced, it goes as above — it
+  opens nothing, writes nothing, and the run is said once as `SourceChanged` — where, as first built, it
+  typed into the new source's first cell. Across an order move under the same Source it keeps the
+  first-key rule: the cell it opens belongs to the same data, and the user typed at no cell in particular.
+- Each key carries the paint it was typed against, so the outcome is the same at any speed
+  (principle 6); the composition's text carries the paint its `compositionstart` read
+  ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of 2026-10-08).
+
 ## Consequences
 
 - **Selection is cleared when the Row Sequence Version changes — and the version names the

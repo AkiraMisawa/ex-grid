@@ -1,0 +1,5645 @@
+{
+  "mode": "pivot-gc",
+  "variant": "V1",
+  "machine": {
+    "at": "2026-10-06T22:45:50.0617960\u002B01:00",
+    "loadavg": "{ 3.08 3.19 2.73 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      " 31.1 36-16:08:53 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon",
+      " 17.6 35-11:48:50 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor",
+      " 16.9 36-16:08:50 /usr/libexec/sysmond",
+      " 11.0       14:00 /System/Library/ExtensionKit/Extensions/Ventura.appex/Contents/MacOS/Ventura -AppleLanguages (\u0022en-GB\u0022)",
+      "  5.8       00:01 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet /Users/akira338/github/ex-grid/.claude/worktrees/live-data-pai",
+      "  5.2 36-16:08:08 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension -LaunchArguments eyJ0eXBlIjox",
+      "  2.9 04-20:02:51 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  2.1 36-15:58:38 /Applications/Armored Client.app/Contents/MacOS/Armored Client",
+      "  2.0 23-06:35:20 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  1.8 36-16:08:54 /System/Library/CoreServices/launchservicesd",
+      "  1.5 04-20:02:51 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": {
+    "a": 1000,
+    "b": 100,
+    "warmup": 3,
+    "runs": 15,
+    "precollect": "full",
+    "listen": "verbose",
+    "events": {
+      "IncreaseMemoryPressure": 2,
+      "GCAllocationTick_V4": 8627,
+      "GCSuspendEEBegin_V1": 141,
+      "GCSuspendEEEnd_V1": 141,
+      "GCTriggered": 137,
+      "GCStart_V2": 138,
+      "GCDynamicEvent": 273,
+      "GCMarkWithType": 909,
+      "PinObjectAtGCTime": 38,
+      "GCGlobalHeapHistory_V4": 138,
+      "GCPerHeapHistory_V3": 138,
+      "GCEnd_V1": 138,
+      "GCHeapStats_V2": 138,
+      "GCRestartEEBegin_V1": 141,
+      "GCRestartEEEnd_V1": 141,
+      "GCFinalizersBegin_V1": 62,
+      "FinalizeObject": 307,
+      "GCFinalizersEnd_V1": 62,
+      "GCCreateConcurrentThread_V1": 1,
+      "GCCreateSegment_V1": 2,
+      "GCFitBucketInfo": 58
+    },
+    "firstPerHeapHistory": "ClrInstanceID=0,FreeListAllocated=0,FreeListRejected=0,EndOfSegAllocated=0,CondemnedAllocated=0,PinnedAllocated=0,PinnedAllocatedAdvance=0,RunningFreeListEfficiency=0,CondemnReasons0=0,CondemnReasons1=0,CompactMechanisms=0,ExpandMechanisms=0,HeapIndex=0,ExtraGen0Commit=16216,Count=5",
+    "gcRetainVM": null,
+    "gcSettings": {
+      "IsServerGC": false,
+      "latency": "Interactive"
+    },
+    "redrawMs": {
+      "Runs": 15,
+      "Min": 65.219,
+      "Median": 75.147,
+      "Max": 83.534,
+      "All": [
+        65.219,
+        78.803,
+        74.088,
+        82.674,
+        78.431,
+        75.147,
+        75.459,
+        72.05,
+        83.534,
+        75.991,
+        72.824,
+        71.552,
+        70.662,
+        81.248,
+        73.808
+      ]
+    },
+    "gcPauseMs": {
+      "Runs": 15,
+      "Min": 15.971,
+      "Median": 26.945,
+      "Max": 36.929,
+      "All": [
+        15.971,
+        26.945,
+        23.915,
+        35.181,
+        31.207,
+        27.1,
+        26.135,
+        24.816,
+        36.929,
+        29.071,
+        25.751,
+        24.477,
+        24.346,
+        34.435,
+        28.281
+      ]
+    },
+    "rows": [
+      {
+        "run": 1,
+        "redrawMs": 65.219,
+        "gcPauseMs": 15.971,
+        "preIndex": 33,
+        "index0": 35,
+        "index1": 40,
+        "workingSetBeforeMB": 357.6,
+        "workingSetAfterMB": 414.2,
+        "afterPreCollection": {
+          "index": 35,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 309,
+          "committedMB": 310,
+          "fragmentedMB": 39.7,
+          "promotedMB": 269.3,
+          "pauseMs": [
+            30.755,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 176.1,
+              "fragmentationBeforeMB": 24.9,
+              "sizeAfterMB": 178.1,
+              "fragmentationAfterMB": 25.2
+            },
+            {
+              "sizeBeforeMB": 130.9,
+              "fragmentationBeforeMB": 14.5,
+              "sizeAfterMB": 130.9,
+              "fragmentationAfterMB": 14.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 40,
+          "generation": 1,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 367.9,
+          "committedMB": 368.4,
+          "fragmentedMB": 35.1,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            4.416,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 16,
+              "fragmentationBeforeMB": 2.8,
+              "sizeAfterMB": 8,
+              "fragmentationAfterMB": 0.9
+            },
+            {
+              "sizeBeforeMB": 194.1,
+              "fragmentationBeforeMB": 29.6,
+              "sizeAfterMB": 210.1,
+              "fragmentationAfterMB": 32.3
+            },
+            {
+              "sizeBeforeMB": 149.8,
+              "fragmentationBeforeMB": 1.9,
+              "sizeAfterMB": 149.8,
+              "fragmentationAfterMB": 1.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 40,
+          "generation": 1,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 367.9,
+          "committedMB": 368.4,
+          "fragmentedMB": 35.1,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            4.416,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 16,
+              "fragmentationBeforeMB": 2.8,
+              "sizeAfterMB": 8,
+              "fragmentationAfterMB": 0.9
+            },
+            {
+              "sizeBeforeMB": 194.1,
+              "fragmentationBeforeMB": 29.6,
+              "sizeAfterMB": 210.1,
+              "fragmentationAfterMB": 32.3
+            },
+            {
+              "sizeBeforeMB": 149.8,
+              "fragmentationBeforeMB": 1.9,
+              "sizeAfterMB": 149.8,
+              "fragmentationAfterMB": 1.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 36,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 3.466,
+            "pauseMs": 3.547,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              178.1,
+              130.9,
+              0
+            ]
+          },
+          {
+            "Index": 37,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.312,
+            "pauseMs": 1.376,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.87,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              178.1,
+              130.9,
+              0
+            ]
+          },
+          {
+            "Index": 38,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 4.494,
+            "pauseMs": 4.605,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 4.54,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 7.08,
+            "FreeListRejected": 4624,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.1,
+              11.62,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              194.1,
+              148.3,
+              0
+            ]
+          },
+          {
+            "Index": 39,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 2.099,
+            "pauseMs": 2.178,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.14,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              194.1,
+              148.8,
+              0
+            ]
+          },
+          {
+            "Index": 40,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 4.377,
+            "pauseMs": 4.47,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 3.27,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 9.97,
+            "FreeListRejected": 1584,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.13,
+              13.24,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              210.1,
+              149.8,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 34,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 30.735,
+            "pauseMs": 30.873,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.71,
+              7.12,
+              144.1,
+              116.34,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              2,
+              176.1,
+              130.9,
+              0
+            ]
+          },
+          {
+            "Index": 35,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 30.713,
+            "pauseMs": 30.82,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.71,
+              151.23,
+              116.34,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              178.1,
+              130.9,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 2,
+        "redrawMs": 78.803,
+        "gcPauseMs": 26.945,
+        "preIndex": 40,
+        "index0": 42,
+        "index1": 47,
+        "workingSetBeforeMB": 414.8,
+        "workingSetAfterMB": 456.4,
+        "afterPreCollection": {
+          "index": 42,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 375.7,
+          "committedMB": 376.2,
+          "fragmentedMB": 50.6,
+          "promotedMB": 325,
+          "pauseMs": [
+            37.544,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 2,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 218.1,
+              "fragmentationBeforeMB": 33.3,
+              "sizeAfterMB": 220.1,
+              "fragmentationAfterMB": 33.5
+            },
+            {
+              "sizeBeforeMB": 155.6,
+              "fragmentationBeforeMB": 17.1,
+              "sizeAfterMB": 155.6,
+              "fragmentationAfterMB": 17.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 47,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 418.8,
+          "committedMB": 419.8,
+          "fragmentedMB": 30.3,
+          "promotedMB": 14.3,
+          "pauseMs": [
+            6.51,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 231.7,
+              "fragmentationBeforeMB": 27.5,
+              "sizeAfterMB": 238.7,
+              "fragmentationAfterMB": 27.3
+            },
+            {
+              "sizeBeforeMB": 172.9,
+              "fragmentationBeforeMB": 2.9,
+              "sizeAfterMB": 172.9,
+              "fragmentationAfterMB": 2.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 47,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 418.8,
+          "committedMB": 419.8,
+          "fragmentedMB": 30.3,
+          "promotedMB": 14.3,
+          "pauseMs": [
+            6.51,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 231.7,
+              "fragmentationBeforeMB": 27.5,
+              "sizeAfterMB": 238.7,
+              "fragmentationAfterMB": 27.3
+            },
+            {
+              "sizeBeforeMB": 172.9,
+              "fragmentationBeforeMB": 2.9,
+              "sizeAfterMB": 172.9,
+              "fragmentationAfterMB": 2.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 43,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 3.473,
+            "pauseMs": 3.559,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              220.1,
+              155.6,
+              0
+            ]
+          },
+          {
+            "Index": 44,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.272,
+            "pauseMs": 1.339,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.88,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              220.1,
+              155.6,
+              0
+            ]
+          },
+          {
+            "Index": 45,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 10.138,
+            "pauseMs": 10.254,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 5.18,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 6.45,
+            "FreeListRejected": 4440,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483649,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.09,
+              11.63,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              226.5,
+              172.9,
+              0
+            ]
+          },
+          {
+            "Index": 46,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 5.363,
+            "pauseMs": 5.467,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0.9,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 5.19,
+            "FreeListRejected": 64,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483649,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              6.09,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.2,
+              231.7,
+              172.9,
+              0
+            ]
+          },
+          {
+            "Index": 47,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 6.458,
+            "pauseMs": 6.559,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0.14,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 7.01,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483649,
+            "ExpandMechanisms": 2147483656,
+            "promotedMB": [
+              7.12,
+              7.15,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.2,
+              238.7,
+              172.9,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 41,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 38.323,
+            "pauseMs": 38.447,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.7,
+              7.12,
+              177.7,
+              138.47,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              2,
+              218.1,
+              155.6,
+              0
+            ]
+          },
+          {
+            "Index": 42,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 37.502,
+            "pauseMs": 37.605,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.7,
+              184.83,
+              138.47,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              220.1,
+              155.6,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 3,
+        "redrawMs": 74.088,
+        "gcPauseMs": 23.915,
+        "preIndex": 47,
+        "index0": 49,
+        "index1": 54,
+        "workingSetBeforeMB": 456.7,
+        "workingSetAfterMB": 487,
+        "afterPreCollection": {
+          "index": 49,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 425.8,
+          "committedMB": 426.8,
+          "fragmentedMB": 97.8,
+          "promotedMB": 327.9,
+          "pauseMs": [
+            40.372,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 2,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 245.9,
+              "fragmentationBeforeMB": 61,
+              "sizeAfterMB": 247.8,
+              "fragmentationAfterMB": 61.3
+            },
+            {
+              "sizeBeforeMB": 177.9,
+              "fragmentationBeforeMB": 36.5,
+              "sizeAfterMB": 177.9,
+              "fragmentationAfterMB": 36.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 54,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 438.1,
+          "committedMB": 453,
+          "fragmentedMB": 46.6,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.275,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 247.8,
+              "fragmentationBeforeMB": 49.6,
+              "sizeAfterMB": 247.8,
+              "fragmentationAfterMB": 36.4
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 10.2,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 10.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 54,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 438.1,
+          "committedMB": 453,
+          "fragmentedMB": 46.6,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.275,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 247.8,
+              "fragmentationBeforeMB": 49.6,
+              "sizeAfterMB": 247.8,
+              "fragmentationAfterMB": 36.4
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 10.2,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 10.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 50,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 3.442,
+            "pauseMs": 3.525,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              247.8,
+              177.9,
+              0
+            ]
+          },
+          {
+            "Index": 51,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.3,
+            "pauseMs": 1.369,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.94,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              247.8,
+              177.9,
+              0
+            ]
+          },
+          {
+            "Index": 52,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 9.132,
+            "pauseMs": 9.258,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 11.69,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 496,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.06,
+              11.69,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              247.8,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 53,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.588,
+            "pauseMs": 1.658,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.13,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              247.8,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 54,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.237,
+            "pauseMs": 8.331,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 13.18,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.18,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.2,
+              247.8,
+              183,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 48,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 43.45,
+            "pauseMs": 43.578,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.69,
+              7.12,
+              177.72,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              2,
+              245.9,
+              177.9,
+              0
+            ]
+          },
+          {
+            "Index": 49,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 40.309,
+            "pauseMs": 40.439,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.69,
+              184.84,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              247.8,
+              177.9,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 4,
+        "redrawMs": 82.674,
+        "gcPauseMs": 35.181,
+        "preIndex": 54,
+        "index0": 56,
+        "index1": 61,
+        "workingSetBeforeMB": 418.8,
+        "workingSetAfterMB": 459.2,
+        "afterPreCollection": {
+          "index": 56,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 369.8,
+          "committedMB": 384.7,
+          "fragmentedMB": 41.8,
+          "promotedMB": 327.9,
+          "pauseMs": [
+            34.798,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 1.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 185,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 186.7,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 41.7,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 41.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 61,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 401.7,
+          "committedMB": 416.1,
+          "fragmentedMB": 10.2,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            8.735,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 198.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 211.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 10.2,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 10.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 61,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 401.7,
+          "committedMB": 416.1,
+          "fragmentedMB": 10.2,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            8.735,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 198.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 211.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 10.2,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 10.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 57,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 13.43,
+            "pauseMs": 13.517,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              186.7,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 58,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.217,
+            "pauseMs": 1.288,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.9,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              186.7,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 59,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 10.031,
+            "pauseMs": 10.145,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0.12,
+            "endOfSegAllocatedMB": 11.52,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.08,
+              11.65,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              198.2,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 60,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.561,
+            "pauseMs": 1.664,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              198.2,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 61,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.697,
+            "pauseMs": 8.806,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 13.23,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.13,
+              13.23,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.2,
+              211.4,
+              183,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 55,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 77.39,
+            "pauseMs": 77.515,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.69,
+              7.12,
+              177.73,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              1.7,
+              185,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 56,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 34.754,
+            "pauseMs": 34.857,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.69,
+              184.85,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              186.7,
+              183,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 5,
+        "redrawMs": 78.431,
+        "gcPauseMs": 31.207,
+        "preIndex": 61,
+        "index0": 63,
+        "index1": 68,
+        "workingSetBeforeMB": 459.3,
+        "workingSetAfterMB": 477.1,
+        "afterPreCollection": {
+          "index": 63,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 403.6,
+          "committedMB": 416.1,
+          "fragmentedMB": 75.7,
+          "promotedMB": 327.9,
+          "pauseMs": [
+            32.368,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 2,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 218.6,
+              "fragmentationBeforeMB": 33.7,
+              "sizeAfterMB": 220.5,
+              "fragmentationAfterMB": 34
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 41.7,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 41.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 68,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 410.8,
+          "committedMB": 425.2,
+          "fragmentedMB": 19.3,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.292,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 220.5,
+              "fragmentationBeforeMB": 22.3,
+              "sizeAfterMB": 220.5,
+              "fragmentationAfterMB": 9.1
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 10.2,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 10.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 68,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 410.8,
+          "committedMB": 425.2,
+          "fragmentedMB": 19.3,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.292,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 220.5,
+              "fragmentationBeforeMB": 22.3,
+              "sizeAfterMB": 220.5,
+              "fragmentationAfterMB": 9.1
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 10.2,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 10.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 64,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.988,
+            "pauseMs": 9.076,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              220.5,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 65,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.23,
+            "pauseMs": 1.294,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.89,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              220.5,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 66,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 9.273,
+            "pauseMs": 9.387,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 11.65,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 384,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.07,
+              11.65,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              220.5,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 67,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 3.239,
+            "pauseMs": 3.323,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              220.5,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 68,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.257,
+            "pauseMs": 8.354,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 13.22,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.22,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.2,
+              220.5,
+              183,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 62,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 34.428,
+            "pauseMs": 34.557,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.69,
+              7.12,
+              177.74,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              2,
+              218.6,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 63,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 32.315,
+            "pauseMs": 32.435,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.69,
+              184.86,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              220.5,
+              183,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 6,
+        "redrawMs": 75.147,
+        "gcPauseMs": 27.1,
+        "preIndex": 68,
+        "index0": 70,
+        "index1": 75,
+        "workingSetBeforeMB": 477.2,
+        "workingSetAfterMB": 495.2,
+        "afterPreCollection": {
+          "index": 70,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 412.7,
+          "committedMB": 425.2,
+          "fragmentedMB": 84.8,
+          "promotedMB": 327.9,
+          "pauseMs": [
+            33.099,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 2,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 227.7,
+              "fragmentationBeforeMB": 42.8,
+              "sizeAfterMB": 229.6,
+              "fragmentationAfterMB": 43.1
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 41.7,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 41.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 75,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 419.9,
+          "committedMB": 434.3,
+          "fragmentedMB": 28.4,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.261,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 229.6,
+              "fragmentationBeforeMB": 31.4,
+              "sizeAfterMB": 229.6,
+              "fragmentationAfterMB": 18.2
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 10.2,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 10.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 75,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 419.9,
+          "committedMB": 434.3,
+          "fragmentedMB": 28.4,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.261,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 229.6,
+              "fragmentationBeforeMB": 31.4,
+              "sizeAfterMB": 229.6,
+              "fragmentationAfterMB": 18.2
+            },
+            {
+              "sizeBeforeMB": 183,
+              "fragmentationBeforeMB": 10.2,
+              "sizeAfterMB": 183,
+              "fragmentationAfterMB": 10.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 71,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 6.364,
+            "pauseMs": 6.452,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              229.6,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 72,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.406,
+            "pauseMs": 1.479,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.89,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              229.6,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 73,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 9.316,
+            "pauseMs": 9.443,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 11.65,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 440,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.08,
+              11.65,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              229.6,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 74,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.567,
+            "pauseMs": 1.639,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              229.6,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 75,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.224,
+            "pauseMs": 8.33,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 13.23,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.23,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.1,
+              229.6,
+              183,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 69,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 35.366,
+            "pauseMs": 35.49,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.69,
+              7.12,
+              177.74,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              2,
+              227.7,
+              183,
+              0
+            ]
+          },
+          {
+            "Index": 70,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 33.053,
+            "pauseMs": 33.163,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.69,
+              184.86,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              229.6,
+              183,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 7,
+        "redrawMs": 75.459,
+        "gcPauseMs": 26.135,
+        "preIndex": 75,
+        "index0": 77,
+        "index1": 82,
+        "workingSetBeforeMB": 493.4,
+        "workingSetAfterMB": 511.3,
+        "afterPreCollection": {
+          "index": 77,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 417.2,
+          "committedMB": 430.2,
+          "fragmentedMB": 89.2,
+          "promotedMB": 328,
+          "pauseMs": [
+            34.719,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 1.9,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 236.8,
+              "fragmentationBeforeMB": 51.9,
+              "sizeAfterMB": 238.7,
+              "fragmentationAfterMB": 52.2
+            },
+            {
+              "sizeBeforeMB": 178.4,
+              "fragmentationBeforeMB": 37,
+              "sizeAfterMB": 178.4,
+              "fragmentationAfterMB": 37
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 82,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 429.5,
+          "committedMB": 444.4,
+          "fragmentedMB": 38,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            8.338,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 238.7,
+              "fragmentationBeforeMB": 40.5,
+              "sizeAfterMB": 238.7,
+              "fragmentationAfterMB": 27.3
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 10.7,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 10.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 82,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 429.5,
+          "committedMB": 444.4,
+          "fragmentedMB": 38,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            8.338,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 238.7,
+              "fragmentationBeforeMB": 40.5,
+              "sizeAfterMB": 238.7,
+              "fragmentationAfterMB": 27.3
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 10.7,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 10.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 78,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 5.496,
+            "pauseMs": 5.588,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              238.7,
+              178.4,
+              0
+            ]
+          },
+          {
+            "Index": 79,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.435,
+            "pauseMs": 1.508,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.89,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              238.7,
+              178.4,
+              0
+            ]
+          },
+          {
+            "Index": 80,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 9.055,
+            "pauseMs": 9.172,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 11.64,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 192,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.09,
+              11.64,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              238.7,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 81,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.633,
+            "pauseMs": 1.707,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              238.7,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 82,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.303,
+            "pauseMs": 8.394,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 13.24,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.24,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.1,
+              238.7,
+              183.6,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 76,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 37.185,
+            "pauseMs": 37.297,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.69,
+              7.12,
+              177.75,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              1.9,
+              236.8,
+              178.4,
+              0
+            ]
+          },
+          {
+            "Index": 77,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 34.669,
+            "pauseMs": 34.761,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.69,
+              184.87,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              238.7,
+              178.4,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 8,
+        "redrawMs": 72.05,
+        "gcPauseMs": 24.816,
+        "preIndex": 82,
+        "index0": 84,
+        "index1": 89,
+        "workingSetBeforeMB": 511.3,
+        "workingSetAfterMB": 529.1,
+        "afterPreCollection": {
+          "index": 84,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 431.4,
+          "committedMB": 444.4,
+          "fragmentedMB": 103.5,
+          "promotedMB": 328,
+          "pauseMs": [
+            32.662,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 1.9,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 245.9,
+              "fragmentationBeforeMB": 61,
+              "sizeAfterMB": 247.8,
+              "fragmentationAfterMB": 61.2
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 42.2,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 42.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 89,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 438.6,
+          "committedMB": 453.5,
+          "fragmentedMB": 47.1,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.174,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 247.8,
+              "fragmentationBeforeMB": 49.6,
+              "sizeAfterMB": 247.8,
+              "fragmentationAfterMB": 36.4
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 10.7,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 10.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 89,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 438.6,
+          "committedMB": 453.5,
+          "fragmentedMB": 47.1,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.174,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 247.8,
+              "fragmentationBeforeMB": 49.6,
+              "sizeAfterMB": 247.8,
+              "fragmentationAfterMB": 36.4
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 10.7,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 10.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 85,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 4.734,
+            "pauseMs": 4.816,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              247.8,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 86,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.236,
+            "pauseMs": 1.342,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.91,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              247.8,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 87,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.91,
+            "pauseMs": 9.029,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 11.66,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 80,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.06,
+              11.66,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              247.8,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 88,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.532,
+            "pauseMs": 1.61,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              247.8,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 89,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.139,
+            "pauseMs": 8.236,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 13.21,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.21,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.2,
+              247.8,
+              183.6,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 83,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 35.675,
+            "pauseMs": 35.807,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.7,
+              7.12,
+              177.76,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              1.9,
+              245.9,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 84,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 32.611,
+            "pauseMs": 32.731,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.7,
+              184.87,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              247.8,
+              183.6,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 9,
+        "redrawMs": 83.534,
+        "gcPauseMs": 36.929,
+        "preIndex": 89,
+        "index0": 91,
+        "index1": 96,
+        "workingSetBeforeMB": 491.3,
+        "workingSetAfterMB": 503.7,
+        "afterPreCollection": {
+          "index": 91,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 370.2,
+          "committedMB": 415.6,
+          "fragmentedMB": 42.2,
+          "promotedMB": 328,
+          "pauseMs": [
+            32.734,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 1.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 184.9,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 186.6,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 42.2,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 42.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 96,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 402.2,
+          "committedMB": 425.6,
+          "fragmentedMB": 10.7,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.941,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 198.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 211.5,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 10.7,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 10.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 96,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 402.2,
+          "committedMB": 425.6,
+          "fragmentedMB": 10.7,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.941,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 198.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 211.5,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 10.7,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 10.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 92,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 14.73,
+            "pauseMs": 14.814,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.8,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              186.6,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 93,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.256,
+            "pauseMs": 1.324,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.89,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              186.6,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 94,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 10.06,
+            "pauseMs": 10.162,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 11.65,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.07,
+              11.65,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              198.2,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 95,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.77,
+            "pauseMs": 1.849,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              198.2,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 96,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.908,
+            "pauseMs": 9.001,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 13.22,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.22,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.2,
+              211.5,
+              183.6,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 90,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 67.581,
+            "pauseMs": 67.706,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.7,
+              7.12,
+              177.76,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              1.7,
+              184.9,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 91,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 32.685,
+            "pauseMs": 32.778,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0.01,
+              1.7,
+              184.88,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              186.6,
+              183.6,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 10,
+        "redrawMs": 75.991,
+        "gcPauseMs": 29.071,
+        "preIndex": 96,
+        "index0": 98,
+        "index1": 103,
+        "workingSetBeforeMB": 497.3,
+        "workingSetAfterMB": 504.8,
+        "afterPreCollection": {
+          "index": 98,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 404.2,
+          "committedMB": 419.2,
+          "fragmentedMB": 76.2,
+          "promotedMB": 328,
+          "pauseMs": [
+            31.943,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 1.9,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 218.6,
+              "fragmentationBeforeMB": 33.7,
+              "sizeAfterMB": 220.6,
+              "fragmentationAfterMB": 34
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 42.2,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 42.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 103,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 411.3,
+          "committedMB": 426.4,
+          "fragmentedMB": 19.8,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            8.26,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 220.6,
+              "fragmentationBeforeMB": 22.3,
+              "sizeAfterMB": 220.6,
+              "fragmentationAfterMB": 9.1
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 10.7,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 10.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 103,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 411.3,
+          "committedMB": 426.4,
+          "fragmentedMB": 19.8,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            8.26,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 220.6,
+              "fragmentationBeforeMB": 22.3,
+              "sizeAfterMB": 220.6,
+              "fragmentationAfterMB": 9.1
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 10.7,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 10.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 99,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.571,
+            "pauseMs": 8.648,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              220.6,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 100,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.227,
+            "pauseMs": 1.289,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.89,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              220.6,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 101,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 9.288,
+            "pauseMs": 9.396,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 11.64,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 312,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.08,
+              11.64,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              220.6,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 102,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.557,
+            "pauseMs": 1.64,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              220.6,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 103,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.214,
+            "pauseMs": 8.314,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 13.23,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.23,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.2,
+              220.6,
+              183.6,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 97,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 34.789,
+            "pauseMs": 34.929,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.7,
+              7.12,
+              177.76,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              1.9,
+              218.6,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 98,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 31.894,
+            "pauseMs": 32,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.7,
+              184.89,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              220.6,
+              183.6,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 11,
+        "redrawMs": 72.824,
+        "gcPauseMs": 25.751,
+        "preIndex": 103,
+        "index0": 105,
+        "index1": 110,
+        "workingSetBeforeMB": 504.8,
+        "workingSetAfterMB": 516.3,
+        "afterPreCollection": {
+          "index": 105,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 413.3,
+          "committedMB": 426.4,
+          "fragmentedMB": 85.3,
+          "promotedMB": 328,
+          "pauseMs": [
+            32.328,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 2,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 227.7,
+              "fragmentationBeforeMB": 42.8,
+              "sizeAfterMB": 229.7,
+              "fragmentationAfterMB": 43.1
+            },
+            {
+              "sizeBeforeMB": 183.6,
+              "fragmentationBeforeMB": 42.2,
+              "sizeAfterMB": 183.6,
+              "fragmentationAfterMB": 42.2
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 110,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 425.5,
+          "committedMB": 440.6,
+          "fragmentedMB": 34.1,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            8.175,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 229.7,
+              "fragmentationBeforeMB": 31.5,
+              "sizeAfterMB": 229.7,
+              "fragmentationAfterMB": 18.2
+            },
+            {
+              "sizeBeforeMB": 188.7,
+              "fragmentationBeforeMB": 15.8,
+              "sizeAfterMB": 188.7,
+              "fragmentationAfterMB": 15.8
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 110,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 425.5,
+          "committedMB": 440.6,
+          "fragmentedMB": 34.1,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            8.175,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 229.7,
+              "fragmentationBeforeMB": 31.5,
+              "sizeAfterMB": 229.7,
+              "fragmentationAfterMB": 18.2
+            },
+            {
+              "sizeBeforeMB": 188.7,
+              "fragmentationBeforeMB": 15.8,
+              "sizeAfterMB": 188.7,
+              "fragmentationAfterMB": 15.8
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 106,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 4.987,
+            "pauseMs": 5.065,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.8,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              229.7,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 107,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.352,
+            "pauseMs": 1.416,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.86,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              229.7,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 108,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 9.416,
+            "pauseMs": 9.521,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 11.61,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 248,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.1,
+              11.61,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              229.7,
+              188.7,
+              0
+            ]
+          },
+          {
+            "Index": 109,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.652,
+            "pauseMs": 1.725,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              229.7,
+              188.7,
+              0
+            ]
+          },
+          {
+            "Index": 110,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.143,
+            "pauseMs": 8.227,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 13.25,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.25,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.1,
+              229.7,
+              188.7,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 104,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 34.874,
+            "pauseMs": 35.001,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.69,
+              7.12,
+              177.78,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              2,
+              227.7,
+              183.6,
+              0
+            ]
+          },
+          {
+            "Index": 105,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 32.292,
+            "pauseMs": 32.394,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.69,
+              184.9,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              229.7,
+              183.6,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 12,
+        "redrawMs": 71.552,
+        "gcPauseMs": 24.477,
+        "preIndex": 110,
+        "index0": 112,
+        "index1": 117,
+        "workingSetBeforeMB": 513.9,
+        "workingSetAfterMB": 523,
+        "afterPreCollection": {
+          "index": 112,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 425,
+          "committedMB": 438.1,
+          "fragmentedMB": 97,
+          "promotedMB": 328,
+          "pauseMs": [
+            32.583,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 2,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 236.8,
+              "fragmentationBeforeMB": 51.9,
+              "sizeAfterMB": 238.8,
+              "fragmentationAfterMB": 52.2
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 44.9,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 44.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 117,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 432.2,
+          "committedMB": 447.2,
+          "fragmentedMB": 40.7,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.279,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 238.8,
+              "fragmentationBeforeMB": 40.5,
+              "sizeAfterMB": 238.8,
+              "fragmentationAfterMB": 27.3
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 13.4,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 13.4
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 117,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 432.2,
+          "committedMB": 447.2,
+          "fragmentedMB": 40.7,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.279,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 238.8,
+              "fragmentationBeforeMB": 40.5,
+              "sizeAfterMB": 238.8,
+              "fragmentationAfterMB": 27.3
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 13.4,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 13.4
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 113,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 4.295,
+            "pauseMs": 4.373,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.8,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              238.8,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 114,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.17,
+            "pauseMs": 1.236,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.94,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              238.8,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 115,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.991,
+            "pauseMs": 9.103,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 11.69,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 592,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.06,
+              11.69,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              238.8,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 116,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.565,
+            "pauseMs": 1.645,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.13,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              238.8,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 117,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.242,
+            "pauseMs": 8.334,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 13.18,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.18,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.1,
+              238.8,
+              186.2,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 111,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 35.252,
+            "pauseMs": 35.368,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.71,
+              7.12,
+              177.77,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              2,
+              236.8,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 112,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 32.54,
+            "pauseMs": 32.652,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.71,
+              184.89,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              238.8,
+              186.2,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 13,
+        "redrawMs": 70.662,
+        "gcPauseMs": 24.346,
+        "preIndex": 117,
+        "index0": 119,
+        "index1": 124,
+        "workingSetBeforeMB": 523,
+        "workingSetAfterMB": 534.9,
+        "afterPreCollection": {
+          "index": 119,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 434.1,
+          "committedMB": 447.2,
+          "fragmentedMB": 106.1,
+          "promotedMB": 328,
+          "pauseMs": [
+            32.455,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 2,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 245.9,
+              "fragmentationBeforeMB": 61,
+              "sizeAfterMB": 247.9,
+              "fragmentationAfterMB": 61.3
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 44.9,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 44.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 124,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 441.3,
+          "committedMB": 456.4,
+          "fragmentedMB": 49.8,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            8.125,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 247.9,
+              "fragmentationBeforeMB": 49.7,
+              "sizeAfterMB": 247.9,
+              "fragmentationAfterMB": 36.4
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 13.4,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 13.4
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 124,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 441.3,
+          "committedMB": 456.4,
+          "fragmentedMB": 49.8,
+          "promotedMB": 20.4,
+          "pauseMs": [
+            8.125,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 247.9,
+              "fragmentationBeforeMB": 49.7,
+              "sizeAfterMB": 247.9,
+              "fragmentationAfterMB": 36.4
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 13.4,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 13.4
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 120,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 3.91,
+            "pauseMs": 3.993,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              247.9,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 121,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.209,
+            "pauseMs": 1.273,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.86,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              247.9,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 122,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 9.257,
+            "pauseMs": 9.352,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 11.61,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 200,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.09,
+              11.61,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              247.9,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 123,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.675,
+            "pauseMs": 1.745,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              247.9,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 124,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.085,
+            "pauseMs": 8.19,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 13.24,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.24,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.1,
+              247.9,
+              186.2,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 118,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 35.329,
+            "pauseMs": 35.462,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.7,
+              7.12,
+              177.79,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              2,
+              245.9,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 119,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 32.407,
+            "pauseMs": 32.514,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.7,
+              184.91,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              247.9,
+              186.2,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 14,
+        "redrawMs": 81.248,
+        "gcPauseMs": 34.435,
+        "preIndex": 124,
+        "index0": 126,
+        "index1": 131,
+        "workingSetBeforeMB": 497.2,
+        "workingSetAfterMB": 507.8,
+        "afterPreCollection": {
+          "index": 126,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 372.9,
+          "committedMB": 418.5,
+          "fragmentedMB": 44.9,
+          "promotedMB": 328,
+          "pauseMs": [
+            32.169,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 1.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 184.9,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 186.6,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 44.9,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 44.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 131,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 404.9,
+          "committedMB": 429.1,
+          "fragmentedMB": 13.4,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.815,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 198.3,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 211.5,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 13.4,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 13.4
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 131,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 404.9,
+          "committedMB": 429.1,
+          "fragmentedMB": 13.4,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.815,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 198.3,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 211.5,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 13.4,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 13.4
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 127,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 12.716,
+            "pauseMs": 12.794,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.81,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              186.6,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 128,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.269,
+            "pauseMs": 1.332,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.89,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              186.6,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 129,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 9.823,
+            "pauseMs": 9.926,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 11.65,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.07,
+              11.65,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              198.3,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 130,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.647,
+            "pauseMs": 1.717,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              198.3,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 131,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.78,
+            "pauseMs": 8.867,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 13.22,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.23,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.1,
+              211.5,
+              186.2,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 125,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 67.13,
+            "pauseMs": 67.242,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.71,
+              7.12,
+              177.78,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              1.7,
+              184.9,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 126,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 32.13,
+            "pauseMs": 32.224,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.71,
+              184.9,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              186.6,
+              186.2,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "run": 15,
+        "redrawMs": 73.808,
+        "gcPauseMs": 28.281,
+        "preIndex": 131,
+        "index0": 133,
+        "index1": 138,
+        "workingSetBeforeMB": 500.5,
+        "workingSetAfterMB": 507.7,
+        "afterPreCollection": {
+          "index": 133,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 406.9,
+          "committedMB": 421.9,
+          "fragmentedMB": 78.9,
+          "promotedMB": 328,
+          "pauseMs": [
+            31.909,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 2,
+              "fragmentationBeforeMB": 0.3,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 218.6,
+              "fragmentationBeforeMB": 33.7,
+              "sizeAfterMB": 220.6,
+              "fragmentationAfterMB": 34
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 44.9,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 44.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastEphemeralInRedraw": {
+          "index": 138,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 414,
+          "committedMB": 429.1,
+          "fragmentedMB": 22.5,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.323,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 220.6,
+              "fragmentationBeforeMB": 22.3,
+              "sizeAfterMB": 220.6,
+              "fragmentationAfterMB": 9.1
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 13.4,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 13.4
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "lastInRedraw": {
+          "index": 138,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 414,
+          "committedMB": 429.1,
+          "fragmentedMB": 22.5,
+          "promotedMB": 20.3,
+          "pauseMs": [
+            8.323,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.9,
+              "sizeAfterMB": 7.1,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 220.6,
+              "fragmentationBeforeMB": 22.3,
+              "sizeAfterMB": 220.6,
+              "fragmentationAfterMB": 9.1
+            },
+            {
+              "sizeBeforeMB": 186.2,
+              "fragmentationBeforeMB": 13.4,
+              "sizeAfterMB": 186.2,
+              "fragmentationAfterMB": 13.4
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 134,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 7.703,
+            "pauseMs": 7.783,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.8,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              8,
+              220.6,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 135,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.283,
+            "pauseMs": 1.364,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.89,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              16,
+              220.6,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 136,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 9.304,
+            "pauseMs": 9.429,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 11.64,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 288,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              6.07,
+              11.64,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              6.1,
+              220.6,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 137,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 1.478,
+            "pauseMs": 1.566,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.15,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              14.1,
+              220.6,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 138,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 8.283,
+            "pauseMs": 8.386,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 13.22,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              7.12,
+              13.22,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              7.1,
+              220.6,
+              186.2,
+              0
+            ]
+          }
+        ],
+        "preCollections": [
+          {
+            "Index": 132,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 33.894,
+            "pauseMs": 34.037,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              1.7,
+              7.12,
+              177.8,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              2,
+              218.6,
+              186.2,
+              0
+            ]
+          },
+          {
+            "Index": 133,
+            "Generation": 2,
+            "type": "blocking",
+            "Reason": 1,
+            "durationMs": 31.853,
+            "pauseMs": 31.955,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0,
+              1.7,
+              184.92,
+              141.37,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0,
+              220.6,
+              186.2,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

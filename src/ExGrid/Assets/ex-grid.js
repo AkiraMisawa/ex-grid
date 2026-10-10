@@ -12,11 +12,10 @@
 // that same mousedown and mouseup, and the keydown, selecting the Name Box's text for the press
 // that gives it the keyboard (ADR-0051, ticket 78); that same mousedown and mouseup telling the
 // core what each press on the rows was taken against, so a held one lands where it was made
-// (ED-31, ADR-0021's note of 2026-10-02); that same mousedown and mouseup, the keydown, the
-// paste and the Keyboard Field's compositionstart reading the render the rows on screen were
-// painted by (data-ex-paint), so that a write — and an edit, from the gesture that opens it, a
-// press into the Formula Bar among them — is judged against what the user saw of its target
-// (ADR-0142, D2; ADR-0021's note of 2026-10-05);
+// (ED-31, ADR-0021's note of 2026-10-02); the keydown, the paste and that same mousedown and
+// mouseup on an action reading the render the rows on screen were painted by (data-ex-paint), so
+// that a write is checked against the order it was aimed under and a press on an action finds the
+// row it was made on (ADR-0142; ADR-0021's notes of 2026-10-05 and 2026-10-07);
 // and the editor listener keeping the coloured text beneath a field honest (ADR-0057). And the
 // seventh entry (ADR-0080): the Keyboard Field's composition and focus, heard on the root —
 // `compositionstart` and `compositionend`, always on, so a composition on a selected cell takes its
@@ -491,8 +490,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the painting render wrote on this grid's own Viewport (data-ex-paint), the first in the
     // scroller, ahead of any grid nested in a cell. A key and a paste carry it from the moment they
     // are taken, held or not, as a press on the rows carries its own (takenAt): a write they make
-    // is judged against what the user saw then, never against a render that replaced it before the
-    // write landed. Reads an attribute; nothing is measured, and nothing per cell crosses.
+    // by position is checked against the order it was aimed under, never against one a render
+    // brought in before the write landed; what the cells hold is never judged (ADR-0142, rewritten
+    // 2026-10-07). Reads an attribute; nothing is measured, and nothing per cell crosses.
     const paintNow = () => {
         const viewport = scroller ? scroller.querySelector('.ex-viewport') : null;
         const value = viewport ? viewport.getAttribute('data-ex-paint') : null;
@@ -1627,9 +1627,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // How much of the field's value has already been handed on: a second composition finished in
     // the field before the keyboard left it is appended to the first, and only its own text goes.
     let keyFieldCarried = 0;
-    // The render the composition started on (paintNow, at its compositionstart): the field covers
-    // the cell from then on, so the edit its text opens keeps what that render showed of the cell
-    // (ADR-0142, D2).
+    // The render the composition was typed against, read at its compositionstart (paintNow), as a
+    // key carries the one its keydown was typed against: a composition aimed with a Selection that an
+    // order move or a replaced Source has dropped since opens nothing (ADR-0142, 2026-10-08). Reads an
+    // attribute; nothing is measured.
     let keyFieldPaint = -1;
     // The editor's request for the keyboard, made while the field was composing or as a
     // composition ended: granted once the field has stopped composing (keyFieldEnded).
@@ -1789,11 +1790,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && !target.readOnly && !target.disabled && document.activeElement !== target
             && target.closest('.ex-formula-bar-text') !== null && root.contains(target);
     };
-    // A text field of this grid's own Formula Bar, not a nested grid's, that a press will focus:
-    // one that does not hold DOM focus already, which a press would not focus again.
-    const focusesOwnBar = (target) => (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
-        && document.activeElement !== target && target.closest('.ex-formula-bar-text') !== null
-        && target.closest('.ex-grid') === root;
     const holdBehindBarPress = () => {
         held.push({ barPress: true });
         if (!answering) {
@@ -1845,12 +1841,39 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const isOwnRows = (target) => inOwnScroller(target) && target.classList.contains('ex-viewport');
     // An action's button on this grid's own rows, not a nested grid's (ADR-0020), or null.
     const ownAction = (target) => (inOwnScroller(target) ? target.closest('.ex-action') : null);
-    // A press on an action carries the render its row was painted by (ADR-0142, LV-12): the paint
-    // the Viewport named at the press, told to the core at the release on the same button — the
-    // click that fires the action follows that release, and Blazor dispatches it after this
-    // message, so the press the core hears next is the one it was told of. A release elsewhere is
-    // no click, and tells nothing. Reads an attribute, as takenAt does; nothing is measured.
+    // A press on an action carries the render its row was painted by (ADR-0142, LV-12), so the core
+    // finds the row component that painted the button, and its address in that render: the paint the
+    // Viewport named at the press, and the row and column the button's cell id names and which of
+    // the cell's actions it is, all read together at the mousedown. A keyed row can move the same
+    // button between the press and the release (ADR-0140): ids read at the release would be the row's
+    // new place, which in the old paint names another row. They are told to the core at the release
+    // on the same button — the click that fires the action follows that release, and Blazor
+    // dispatches it after this message, so the press the core hears next is the one it was told of.
+    // A release elsewhere is no click, and tells nothing. Nor does a press the platform makes a
+    // context menu of instead of a click — Control with the primary button where Meta is the primary
+    // modifier (macOS): no click follows it, and told, it would wait for one until a render disposed
+    // its row, then act for a click nobody made (principle 1). Reads attributes and ids the render
+    // wrote, as takenAt does; nothing is measured.
     let actionPress = null;
+    // A press on one of this grid's own marks (ADR-0043) — a row's checkbox, the header's, or "Mark all
+    // N rows" on its status line — carries the render it was made on, as a press on an action does
+    // (ADR-0142, MK-9): the paint the Viewport named at the mousedown; for the header's under a pager,
+    // the first row of the page it named and how many rows that page holds (data-ex-page,
+    // data-ex-page-rows); and for a row's checkbox, the row its own cell's id names — read together then.
+    // They are told to the core at the release on the same mark, before Blazor dispatches the click that
+    // follows it. The core judges the click against them: it refuses a press made on what a Source since
+    // replaced painted, or one naming rows by position under an order since moved, and lines up the page
+    // a press named though the page has turned, or the pager gone, since. The row lets it
+    // find the row component that painted the checkbox, and answer a press whose click Blazor will not
+    // deliver, as it does an action's. A release elsewhere is no click, and tells nothing, nor does a
+    // press the platform makes a context menu of. Reads attributes and ids the render wrote, as takenAt
+    // does; nothing is measured.
+    let markPress = null;
+    // One of this grid's own marks, not a nested grid's: the nearest root above it is this one.
+    const ownMark = (target) => {
+        const mark = target instanceof Element ? target.closest('.ex-mark, .ex-mark-result') : null;
+        return mark !== null && root !== null && mark.closest('.ex-grid') === root ? mark : null;
+    };
     const isOwnRowsOrHeadings = (target) => isOwnRows(target)
         || (inOwnScroller(target) && target.closest('.ex-header') !== null);
     // What a press or release on this grid's own rows was taken against (ED-31; ADR-0021, note of
@@ -1861,9 +1884,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the row the move brought there (`1` Enter PageDown `9` and a press on F6 at once, on the
     // Server host: the `2` typed next went into F18). The core is told this just before Blazor
     // dispatches the event — at once, or at the replay of a held one — and resolves the cell
-    // against it. With them, the render whose cells were on screen (data-ex-paint), which a
-    // fill-handle drag released here is judged against (ADR-0142). Reads attributes and the scroll
-    // offset; nothing is measured.
+    // against it. Reads attributes and the scroll offset; nothing is measured.
     const takenAt = (event) => {
         const viewport = event.target;
         const number = (name) => {
@@ -1874,7 +1895,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             x: event.offsetX, y: event.offsetY, first: number('data-ex-first-row'),
             left: scroller ? scroller.scrollLeft : 0,
             sequence: number('data-ex-sequence'), layout: number('data-ex-layout'),
-            paint: number('data-ex-paint'),
         };
     };
     const tellTaken = (kind, taken) => {
@@ -1882,7 +1902,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left,
-            taken.sequence, taken.layout, taken.paint).catch((error) => {
+            taken.sequence, taken.layout).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear where a press was taken', error);
             }
@@ -2057,28 +2077,42 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const nameBox = event.button === 0 && !replaying ? ownNameBox(event.target) : null;
         nameBoxPressed = nameBox !== document.activeElement ? nameBox : null;
         nameBoxSelected = null;
-        // A press on an action of this grid's rows keeps the render it was made on (actionPress).
+        // A press on an action of this grid's rows keeps the render it was made on and its address
+        // in that render (actionPress); one the platform makes a context menu of keeps nothing.
         if (!replaying) {
-            const button = event.button === 0 ? ownAction(event.target) : null;
-            actionPress = button !== null ? { button, paint: paintNow() } : null;
+            const contextPress = metaIsPrimary && event.ctrlKey;
+            const button = event.button === 0 && !contextPress ? ownAction(event.target) : null;
+            const cell = button !== null ? button.closest('[role=gridcell]') : null;
+            const at = cell !== null ? /r(\d+)c(\d+)$/.exec(cell.id) : null;
+            actionPress = button !== null ? {
+                button,
+                paint: paintNow(),
+                row: at ? Number(at[1]) : -1,
+                column: at ? Number(at[2]) : -1,
+                index: cell !== null ? Array.prototype.indexOf.call(cell.querySelectorAll('.ex-action'), button) : -1,
+            } : null;
+            // And a press on one of its marks, the render it was made on, the page it named — its first row
+            // and how many rows it holds — and, for a row's checkbox, the row its cell's id names (markPress):
+            // the cell inside this root, for the header's checkbox and "Mark all N rows" stand in none, though
+            // a grid nested in a cell stands in one.
+            const mark = event.button === 0 && !contextPress ? ownMark(event.target) : null;
+            const page = mark !== null ? mark.getAttribute('data-ex-page') : null;
+            const pageRows = mark !== null ? mark.getAttribute('data-ex-page-rows') : null;
+            const markCell = mark !== null ? mark.closest('[role=gridcell]') : null;
+            const markAt = markCell !== null && root.contains(markCell) ? /r(\d+)c(\d+)$/.exec(markCell.id) : null;
+            markPress = mark !== null ? {
+                mark,
+                paint: paintNow(),
+                page: page === null ? -1 : Number(page),
+                pageRows: pageRows === null ? -1 : Number(pageRows),
+                row: markAt ? Number(markAt[1]) : -1,
+            } : null;
         }
         // A press into an editor surface puts the keyboard there.
         noteSurface(event.target);
         // A press in an editor surface's text puts the caret where it lands: the user's move.
         if (event.button === 0 && !replaying && isTextField(event.target) && event.target.closest('.ex-editor') !== null) {
             noteCaretMove(event.target);
-        }
-        // A press that focuses this grid's own Formula Bar carries the render the rows were
-        // painted by (ADR-0142, LV-11, D2): the focus opens an edit on the Focus cell, which keeps
-        // what that render showed of the cell. Told before the focus, the press's default action,
-        // is dispatched, so the focus the core hears next is the one it describes, as a press on
-        // an action is told before its click (actionPress). Reads an attribute; nothing measured.
-        if (core && !replaying && event.button === 0 && focusesOwnBar(event.target)) {
-            core.invokeMethodAsync('BarPressTakenAt', paintNow()).catch((error) => {
-                if (core) {
-                    console.error('[ex-grid] the grid failed to hear where the Formula Bar was pressed', error);
-                }
-            });
         }
         if (holdsBarPress(event)) {
             holdBehindBarPress();
@@ -2189,24 +2223,34 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!replaying) {
             askAboutPress();
         }
-        // The click this release makes on an action is judged against the render it was pressed
-        // on (actionPress).
+        // The click this release makes on an action is told the render it was pressed on, and the
+        // address the press read in it (actionPress).
         const action = replaying ? null : actionPress;
         if (!replaying) {
             actionPress = null;
         }
         if (core && action !== null && event.button === 0 && ownAction(event.target) === action.button) {
-            // And what it pressed — the row and column its cell's id names, and which of the cell's
-            // actions — so that the core can answer a press whose click Blazor will not deliver:
-            // one whose row component a render the browser has not seen yet has disposed (ADR-0142,
-            // 2026-10-06). Read from the ids the render wrote; nothing is measured.
-            const cell = action.button.closest('[role=gridcell]');
-            const at = cell !== null ? /r(\d+)c(\d+)$/.exec(cell.id) : null;
-            const index = cell !== null ? Array.prototype.indexOf.call(cell.querySelectorAll('.ex-action'), action.button) : -1;
-            core.invokeMethodAsync('ActionPressTakenAt', action.paint,
-                at ? Number(at[1]) : -1, at ? Number(at[2]) : -1, index).catch((error) => {
+            // What it pressed — the row and column its cell's id named at the press, and which of the
+            // cell's actions — so that the core can answer a press whose click Blazor will not
+            // deliver: one whose row component a render the browser has not seen yet has disposed
+            // (ADR-0142, 2026-10-06). Read at the press, not now: a keyed row's button may stand
+            // elsewhere by now, and its ids would name another row in the paint it was pressed on.
+            core.invokeMethodAsync('ActionPressTakenAt', action.paint, action.row, action.column, action.index).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to hear where an action was pressed', error);
+                }
+            });
+        }
+        // The click this release makes on a mark is told the render it was pressed on, and the page, its
+        // rows and the row the press read in it (markPress).
+        const mark = replaying ? null : markPress;
+        if (!replaying) {
+            markPress = null;
+        }
+        if (core && mark !== null && event.button === 0 && ownMark(event.target) === mark.mark) {
+            core.invokeMethodAsync('MarkPressTakenAt', mark.paint, mark.page, mark.row, mark.pageRows).catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to hear where a mark was pressed', error);
                 }
             });
         }
@@ -2439,8 +2483,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Blazor's own route for large interop data and is not subject to that limit;
     // its length travels with it, so C# can refuse a paste past the grid's ceiling
     // without reading a byte. An empty flavour is sent as nothing at all. With them goes the
-    // render the paste was taken against, read at its event (paintNow): its target is judged
-    // against what that render painted (ADR-0142, LV-13/LV-14).
+    // render the paste was taken against, read at its event (paintNow): the paste is refused when
+    // the order that render was painted under has moved since (ADR-0142, LV-13/LV-14).
     const sendPaste = (plain, markup, paint) => {
         const encoder = new TextEncoder();
         const stream = (value) => (value

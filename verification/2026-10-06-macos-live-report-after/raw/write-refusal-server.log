@@ -1,0 +1,252 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[62]
+[WebServer]       User profile is available. Using '/Users/akira338/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
+[WebServer] info: Microsoft.Hosting.Lifetime[14]
+[WebServer]       Now listening on: http://localhost:6598
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Application started. Press Ctrl+C to shut down.
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Hosting environment: Development
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Content root path: /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:6598/wide - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint '/wide (/wide)'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint '/wide (/wide)'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:6598/wide - 200 - text/html;+charset=utf-8 103.6715ms
+[WebServer] (node:94424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/wide - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint '/wide (/wide)'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint '/wide (/wide)'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/wide - 200 - text/html;+charset=utf-8 10.1761ms
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.KOZGIP/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8598
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/api
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.1 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version f501585f-0 from /tmp/nix-shell.KOZGIP/exgrid-demo-api/runs/trades-v1-20000.94425.f501585f.sqlite.
+
+Running 15 tests using 1 worker
+
+(node:94426) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/features - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint '/features (/features)'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint '/features (/features)'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/features - 200 - text/html;+charset=utf-8 31.3311ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.ba41p0dsyn.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExSheet/ex-sheet.min.ptpl2x75ud.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExGrid.DemoPages/app.7cd1vs3nio.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_framework/blazor.web.hwaxidwiwj.js - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/MudBlazor/MudBlazor.min.js - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExGrid.DemoPages/app.7cd1vs3nio.css'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_content/ExGrid.DemoPages/app.css.br'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.ba41p0dsyn.css'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/[WebServer] worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_content/ExGrid/ex-grid.min.css.br'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExSheet/ex-sheet.min.ptpl2x75ud.css'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_content/ExSheet/ex-sheet.min.css.br'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_framework/blazor.web.hwaxidwiwj.js'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_framework/blazor.web.js.br'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/MudBlazor/MudBlazor.min.js'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_content/MudBlazor/MudBlazor.min.js.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/MudBlazor/MudBlazor.min.js - 200 15087 text/javascript 7.0240ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExGrid.DemoPages/app.7cd1vs3nio.css - 200 2064 text/css 7.3348ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExSheet/ex-sheet.min.ptpl2x75ud.css - 200 1896 text/css 7.3809ms
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.ba41p0dsyn.css - 200 4157 text/css 8.4462ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_framework/blazor.web.hwaxidwiwj.js - 200 47577 text/javascript 7.4695ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_blazor/initializers - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_blazor/initializers - 200 - application/json;+charset=utf-8 1.8078ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 POST http://localhost:5598/_blazor/negotiate?negotiateVersion=1 - - 0
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 POST http://localhost:5598/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 2.2360ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_blazor?id=H4xhLI2swtk-ljxJPE6Uaw - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_blazor?id=H4xhLI2swtk-ljxJPE6Uaw - 101 - - 15.9208ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/ - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint '/ (/)'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint '/ (/)'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/ - 200 - text/html;+charset=utf-8 2.3245ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.ba41p0dsyn.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExSheet/ex-sheet.min.ptpl2x75ud.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_framework/blazor.web.hwaxidwiwj.js - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExGrid.DemoPages/app.7cd1vs3nio.css - - -
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/MudBlazor/MudBlazor.min.js - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExGrid.DemoPages/app.7cd1vs3nio.css'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_content/ExGrid.DemoPages/app.css.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExGrid.DemoPages/app.7cd1vs3nio.css - 200 2064 text/css 1.7371ms
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/MudBlazor/MudBlazor.min.js'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_content/MudBlazor/MudBlazor.min.js.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/MudBlazor/MudBlazor.min.js - 200 15087 text/javascript 1.8319ms
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_framework/blazor.web.hwaxidwiwj.js'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_framework/blazor.web.js.br'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExSheet/ex-sheet.min.ptpl2x75ud.css'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claud[WebServer] e/worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_content/ExSheet/ex-sheet.min.css.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExSheet/ex-sheet.min.ptpl2x75ud.css - 200 1896 text/css 2.0410ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_framework/blazor.web.hwaxidwiwj.js - 200 47577 text/javascript 1.9882ms
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.ba41p0dsyn.css'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_content/ExGrid/ex-grid.min.css.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.ba41p0dsyn.css - 200 4157 text/css 2.9239ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_blazor/initializers - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_blazor/initializers - 200 - application/json;+charset=utf-8 0.2560ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 POST http://localhost:5598/_blazor/negotiate?negotiateVersion=1 - - 0
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 POST http://localhost:5598/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.2549ms
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_blazor?id=tJW8KGheRiSweclRAQkSzQ - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.s89smab63y.js - - -
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+[WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.s89smab63y.js'. Physical path: '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/server/wwwroot/_content/ExGrid/ex-grid.min.js.br'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_content/ExGrid/ex-grid.min.s89smab63y.js - 200 8619 text/javascript 0.5022ms
+  ✓   1 [chrome] › write-refusal.spec.mjs:88:1 › LV-11: a commit over a cell that changed under the editor is refused, says the new value, keeps the typing, and the second commit lands (ADR-0142) (2.8s)
+  ✓   2 [chrome] › write-refusal.spec.mjs:119:1 › LV-11: Escape after a refused commit writes nothing (ADR-0142) (1.5s)
+  ✓   3 [chrome] › write-refusal.spec.mjs:138:1 › LV-11: a change to another cell of the row refuses nothing (ADR-0142) (1.4s)
+  ✓   4 [chrome] › write-refusal.spec.mjs:153:1 › LV-12: an Action press taken on a render whose row has changed since is refused, and says why; the next press fires once (ADR-0142, ADR-0020) (1.4s)
+  ✓   5 [chrome] › write-refusal.spec.mjs:186:1 › LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it landed is judged against the older one, and refused; pressed again, it pastes (ADR-0142) (3.0s)
+  ✓   6 [chrome] › write-refusal.spec.mjs:224:1 › LV-13: a Ctrl+Enter fill whose target changed since the key was pressed is refused, and the editor stays with the typing (ADR-0142, ADR-0035) (1.6s)
+  ✓   7 [chrome] › write-refusal.spec.mjs:247:1 › LV-13: a fill-handle drag released on a render whose target has changed since is refused (ADR-0142, ADR-0050 item 5) (1.8s)
+  ✓   8 [chrome] › write-refusal.spec.mjs:289:5 › LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0142 D1, 0 ms) (1.2s)
+  ✓   9 [chrome] › write-refusal.spec.mjs:319:5 › LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0142 D1/D2, 0 ms) (1.3s)
+  ✓  10 [chrome] › write-refusal.spec.mjs:289:5 › LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0142 D1, 150 ms) (2.7s)
+  ✓  11 [chrome] › write-refusal.spec.mjs:319:5 › LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote (ADR-0142 D1/D2, 150 ms) (2.6s)
+  ✓  12 [chrome] › write-refusal.spec.mjs:347:1 › LV-11: a change in the round trip between the key that opens the editor and the open refuses the commit, with the new value (ADR-0142 D2) (2.5s)
+  ✓  13 [chrome] › write-refusal.spec.mjs:378:1 › LV-13: a Delete whose target changed since the key was pressed is refused, and clears nothing (ADR-0142 D3) (1.6s)
+  ✓  14 [chrome] › write-refusal.spec.mjs:397:1 › LV-13: a Ctrl+R whose target changed since the key was pressed is refused (ADR-0142 D3) (1.6s)
+  ✓  15 [chrome] › write-refusal.spec.mjs:417:1 › LV-13: a Ctrl+D whose source changed since the key was pressed is refused, though its target did not change (ADR-0142 D4) (1.6s)
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+[WebServer]       Request starting HTTP/1.1 POST http://localhost:5598/_blazor/disconnect - multipart/form-data;+boundary=----WebKitFormBoundarysVlZW6g9X4RLjBja 359
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+[WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 GET http://localhost:5598/_blazor?id=tJW8KGheRiSweclRAQkSzQ - 101 - - 28707.4318ms
+[WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+[WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+[WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+[WebServer]       Request finished HTTP/1.1 POST http://localhost:5598/_blazor/disconnect - 200 0 - 5.2648ms
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  15 passed (31.8s)

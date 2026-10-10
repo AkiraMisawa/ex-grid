@@ -14,7 +14,7 @@ namespace ExPivot;
 public sealed class PivotDetails
 {
     internal PivotDetails(
-        PivotSource source,
+        PivotReportSource source,
         PivotDetailsQuery query,
         IReadOnlyList<PivotDetailItem> rowItems,
         IReadOnlyList<PivotDetailItem> columnItems,
@@ -42,7 +42,10 @@ public sealed class PivotDetails
     public string Title { get; }
 
     /// <summary>The question for every record behind the cell, from the first — serialisable
-    /// (<see cref="PivotJson"/>), so a Consumer can carry it elsewhere.</summary>
+    /// (<see cref="PivotJson"/>, <see cref="PivotReportJson"/>), so a Consumer can carry it
+    /// elsewhere. It names the cell by its Items and the Source Version the report was computed
+    /// from, not by a Report Version: a later layout — a collapse, a sort — does not change it
+    /// (ADR-0151).</summary>
     public PivotDetailsQuery Query { get; }
 
     /// <summary>The Source Version the report was computed from, which the records are asked
@@ -53,12 +56,14 @@ public sealed class PivotDetails
     public IReadOnlyList<PivotField> Fields => Source.Fields;
 
     /// <summary>The source the report was computed from — the one its records are asked of.</summary>
-    internal PivotSource Source { get; }
+    internal PivotReportSource Source { get; }
 
     /// <summary>
     /// One page of the records behind the cell, in the data's order, with how many there are — or
     /// the source's refusal, which a Consumer shows rather than records that would not add up
-    /// (ADR-0066). Asked under <see cref="SourceVersion"/>.
+    /// (ADR-0066). Asked under <see cref="SourceVersion"/>, whatever layouts the report has had since:
+    /// answered while the Pivot Source holds that version, and refused, as the data having
+    /// changed, once it does not.
     /// </summary>
     /// <param name="start">The first record wanted, counted among the records behind the cell.</param>
     /// <param name="count">How many records are wanted.</param>

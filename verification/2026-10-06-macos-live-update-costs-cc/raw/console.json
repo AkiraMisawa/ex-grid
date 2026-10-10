@@ -1,0 +1,15 @@
+{
+  "chrome": {
+    "ticket 01: a live redraw on /pivot-live-costs, WebAssembly": {
+      "at": "2026-10-06T15:37:12.314Z",
+      "errors": [
+        {
+          "text": "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]\n      Unhandled exception rendering component: Out of memory\nSystem.OutOfMemoryException: Out of memory\n   at ExPivot.Engine.PartColumns..ctor(PivotParts parts, Int32 capacity)\n   at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)\n   at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()\n   at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)",
+          "url": "http://localhost:5599/_framework/blazor.webassembly.zxhwjtv6sc.js"
+        }
+      ],
+      "warnings": [],
+      "pageErrors": []
+    }
+  }
+}

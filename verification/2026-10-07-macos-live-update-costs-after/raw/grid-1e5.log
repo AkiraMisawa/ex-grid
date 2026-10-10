@@ -1,0 +1,61 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+load { 1.35 2.04 2.69 }; TieredCompilation=0
+== ExGrid, GridSource.From keyed, 100,000 rows ==
+   100,000 trades made in 23 ms
+   grid bound; 18 rows painted
+-- k = 1 changes a batch --
+   fold (Apply, gathered)                 0.007     0.010     0.017
+   publish (PublishGathered)              0.050     0.054     0.076
+     LiveRequery.Apply alone              0.042     0.046     0.053
+     CellChangeTimes.Record alone         0.006     0.013     0.030
+   bound source Apply (no grid)           0.054     0.065     0.085
+   grid ApplyState                        0.005     0.009     0.016
+     NoteRowsForSummary alone (stops at 68313)     0.003     0.004     0.013
+     NoteRowsForSummary, last row only     0.004     0.007     0.013
+     RequireDistinctKeys alone            3.661     3.821     4.205
+     RequireDistinctRows alone            1.611     1.684     1.958
+   grid render                            0.051     0.079     0.106
+   whole update                           0.085     0.094     0.160
+   pushed ApplyState, Row Key             3.718     3.836     3.911
+   pushed ApplyState, instance            1.669     1.750     1.857
+   pushed ApplyState, vouched             0.004     0.006     0.010
+   pushed ApplyState+render, vouched      0.043     0.047     0.084
+   rows rendered 0 (of 18 painted); bytes/update 56
+-- k = 100 changes a batch --
+   fold (Apply, gathered)                 0.075     0.081     0.111
+   publish (PublishGathered)              0.189     0.201     0.219
+     LiveRequery.Apply alone              0.073     0.082     0.141
+     CellChangeTimes.Record alone         0.067     0.077     0.096
+   bound source Apply (no grid)           0.267     0.276     0.404
+   grid ApplyState                        0.007     0.010     0.015
+     NoteRowsForSummary alone (stops at 1)     0.004     0.006     0.016
+     NoteRowsForSummary, last row only     0.004     0.005     0.013
+     RequireDistinctKeys alone            3.741     3.849     4.035
+     RequireDistinctRows alone            1.589     1.706     2.024
+   grid render                            0.064     0.116     0.724
+   whole update                           0.283     0.295     0.370
+   pushed ApplyState, Row Key             3.707     3.877     4.037
+   pushed ApplyState, instance            1.613     1.719     1.937
+   pushed ApplyState, vouched             0.005     0.008     0.012
+   pushed ApplyState+render, vouched      0.053     0.069     0.137
+   rows rendered 1 (of 18 painted); bytes/update 464
+-- k = 1,000 changes a batch --
+   fold (Apply, gathered)                 0.587     0.628     0.790
+   publish (PublishGathered)              1.199     1.248     1.363
+     LiveRequery.Apply alone              0.396     0.411     0.456
+     CellChangeTimes.Record alone         0.601     0.630     0.684
+   bound source Apply (no grid)           1.861     1.903     2.103
+   grid ApplyState                        0.010     0.014     0.017
+     NoteRowsForSummary alone (stops at 0)     0.007     0.010     0.019
+     NoteRowsForSummary, last row only     0.007     0.009     0.016
+     RequireDistinctKeys alone            3.918     4.039     4.110
+     RequireDistinctRows alone            1.794     1.913     2.288
+   grid render                            0.096     0.146     0.179
+   whole update                           1.960     2.056     2.232
+   pushed ApplyState, Row Key             3.810     4.081     5.251
+   pushed ApplyState, instance            1.800     1.913     3.124
+   pushed ApplyState, vouched             0.008     0.009     0.014
+   pushed ApplyState+render, vouched      0.086     0.110     0.151
+   rows rendered 9 (of 18 painted); bytes/update 1471
+wrote /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-after/verification/2026-10-07-macos-live-update-costs-after/raw/grid-1e5.json

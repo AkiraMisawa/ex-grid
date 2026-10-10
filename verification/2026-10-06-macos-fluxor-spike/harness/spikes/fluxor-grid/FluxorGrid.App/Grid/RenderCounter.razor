@@ -1,0 +1,15 @@
+@using FluxorGrid.Store
+@inject RenderCounts Counts
+@* Counts its row's renders: it is given its parameters again only when the row renders, since
+   a Trade is a reference type Blazor always treats as possibly changed. A row component kept
+   under a Row Key keeps this one too, so a mount is a row that appeared (ADR-0140). Paints
+   nothing that changes, so it adds no DOM mutation of its own. *@
+<span class="fg-counter" aria-hidden="true">·</span>
+
+@code {
+    [Parameter] public Trade Row { get; set; } = default!;
+
+    protected override void OnInitialized() => Counts.Mounted(Row.Id);
+
+    protected override void OnParametersSet() => Counts.Rendered(Row.Id);
+}

@@ -42,7 +42,8 @@ public class CellKeyTests
         Assert.Equal((270 * 13) + 13 + 270 + 1, keys.Length);
         Assert.True(keys.Select(CellKey.Comparer.GetHashCode).Distinct().Count() > keys.Length * 0.999);
         Assert.True(keys.Select(key => key.GetHashCode()).Distinct().Count() <= 512);
-        Assert.Equal("3510", PivotEngine.Report(cube, layout, EnUs).Rows[^1].ValueAt(270)!.Text);
+        var report = PivotEngine.Report(cube, layout, EnUs);
+        Assert.Equal("3510", report.ValueAt(report.Rows[^1], 270)!.Text);
     }
 
     private static double Occupied(int[] hashes, int buckets)

@@ -9,7 +9,7 @@ written as a proposal in [§9, "Open questions for the user"](#9-open-questions-
 and the user decided §9's questions in a grilling. The decisions are
 [ADR-0140](../adr/0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md),
 [ADR-0141](../adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md) and
-[ADR-0142](../adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md). Where this
+[ADR-0142](../adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md). Where this
 note and those ADRs differ, the ADRs hold. Candidate 1 is reserved, and candidates 2 to 5 are
 decided.)*
 

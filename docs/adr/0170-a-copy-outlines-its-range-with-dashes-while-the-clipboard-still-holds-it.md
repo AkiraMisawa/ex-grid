@@ -53,8 +53,11 @@ The outline says one thing: **this is what is on the clipboard.** It goes at the
 5. **A copied cell shows other text than it was copied with.** The grid keeps, for each copied row,
    a fingerprint of the copied cells' painted text. When a row in the Window is a different
    instance from the one last checked, its copied cells are read again, and a difference drops the
-   outline. This is the comparison [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md)
-   makes for a write: the painted text, not the row object. Under a Row Key a row whose P&L moves
+   outline. This was the comparison [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)
+   made for a write: the painted text, not the row object. *(ADR-0142 was rewritten on 2026-10-07: a write
+   now lands as entered, and only the Cell Editor compares the text it opened on. The Copied Range keeps
+   the comparison for its own reason, that an outline must not stand over text that is no longer what
+   was copied.)* Under a Row Key a row whose P&L moves
    keeps the outline over its notional, as long as the notional reads the same. A row the grid does
    not hold is checked when it comes into the Window.
 6. **Another copy lands**, whose outline replaces this one.
@@ -133,6 +136,10 @@ tell one grid's write from another's.
   dashes the green it gives its outline where no Theme or Wrapper names `--ex-focus-outline`, so
   they are never the core's CanvasText round Excel's green outline. A Consumer that answers the copy
   itself (`CopyAnswer`) gets the outline over the rectangles it was asked for.
+- **Integration clarification, 2026-10-07:** an asynchronous Consumer answer (ADR-0152) uses
+  the coordinates and available painted-text fingerprints from when it was asked. Its eventual
+  landing is checked against the current Window by the same rules; answering later cannot
+  relabel changed coordinates or values as the contents of the clipboard.
 - **What a `CopyAnswer` copies past the Window has no fingerprint** for the rows outside it, because
   the grid never held them. Those rows are not compared, and the other five rules still apply. A
   Sheet changes only through edits and pastes, and an edit already ends the outline.

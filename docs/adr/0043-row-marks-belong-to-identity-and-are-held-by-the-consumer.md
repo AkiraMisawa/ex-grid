@@ -128,6 +128,44 @@ new trade on a live screen — is not marked, and the header turns to "some". Re
 click and was swept into a bulk action is the outcome this component exists to prevent; the
 header turning to "some" says, honestly, that something new has come in.
 
+**A press is judged against what it was made on** *(2026-10-08, decided while merging the two tracks
+of live data, [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)'s
+section of that date; rewritten on 2026-10-09, decided with the user: what the press can still name
+exactly is honoured, and the rest is refused and said)*. A press on a mark carries the paint it was made
+on, read as the button went down ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s notes of
+2026-10-08 and 2026-10-09). On a circuit the click is judged a round trip later, against whatever the grid
+holds by then.
+- **A press made on what a replaced Source painted marks nothing**, a row's checkbox included, and is
+  refused: `OnMarkRefused` with `MarkRefusalReason.SourceChanged`. The rows it was aimed at belong to data
+  that is no longer shown. As first built, a row's checkbox marked the new source's row under the same
+  key, and the header marked the new source's result or page.
+- **The header's checkbox and "Mark all N rows" name rows by position, or the result as it stood.** Under
+  an order that has moved since, they mark nothing and are refused: `OnMarkRefused(OrderMoved)`. Lining up
+  rows the user never saw there is the quietly wrong answer.
+- **Under a pager, a page turned since does not undo the press.** The press carries the first row of the
+  page it was made on, and under the same order those positions still name the rows the user saw: the
+  header's checkbox lines up that page, as `Positions` under the order it was pressed in. A told press keeps
+  the mode it was made in: made with no pager it names the whole result, made under a pager it names its
+  page, with the rows that page held, whatever the Consumer has done to the pager since. A press told no
+  paint — a key, a script — names what the header names now.
+- **A row's checkbox names its row by identity**, which an order move leaves as it was.
+- **Each refusal is said once**, through `OnMarkRefused`, with no Row Mark intent. ExGrid has no words of
+  its own: as with `OnPasteRefused`, the Consumer says it. As first decided on 2026-10-08, a dropped press
+  raised no notification, as Space aimed with a dropped Selection does
+  ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of
+  2026-10-08); the user chose on 2026-10-09 to say why, as for writes and typed keys.
+- **No mark press is lost to Blazor.** A row's checkbox whose component a render disposed before its click
+  came is answered by the grid as its click would have been; under a moved order its position is all that
+  names it, since the grid keeps no row and no key beyond the Window
+  ([ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md)), so it is refused as
+  `OrderMoved`. A told press is taken only by its own click, so it never reaches the next press.
+
+Rejected on 2026-10-09: **refusing every press made on an older paint**, a turned page included, when what
+it named still holds; **dropping without a word**, the first version — the checkbox shows that nothing
+changed, but marks feed bulk actions, and a press that silently did nothing leads to one run over fewer
+rows than the user believed; and **keeping each version's result** so that every press could be honoured,
+which costs a key per row of the result for each version kept.
+
 ## The header has three states, and the Consumer counts
 
 None, some, all — decided by comparing **the number of marked Detail rows in the current result**

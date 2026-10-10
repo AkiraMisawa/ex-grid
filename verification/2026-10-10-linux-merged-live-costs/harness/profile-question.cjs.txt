@@ -1,0 +1,98 @@
+// Disposable: PV-21's new questions in the browser, under Chrome's CPU profiler, so the time from the
+// Update click to the answer can be split by what the main thread was doing: the .NET runtime's
+// collector, .NET code (the interpreter and the jiterpreter's traces), other runtime work, or idle.
+// usage: node profile-question.cjs <base-url> <out.json> <symbols-file>
+const { chromium } = require('/home/user/ex-grid/.claude/worktrees/live-data-best/tests/ExGrid.Browser/node_modules/playwright');
+const fs = require('fs');
+
+const [base, out, symbolsFile] = process.argv.slice(2);
+const symbols = new Map(fs.readFileSync(symbolsFile, 'utf8').split('\n').filter(Boolean)
+    .map((line) => { const i = line.indexOf(':'); return [Number(line.slice(0, i)), line.slice(i + 1)]; }));
+const MILLION = 1_000_000;
+const REPORT = '.ex-pivot .ex-pivot-sheet > .ex-grid';
+
+const layouts = [
+    { name: '1,350', build: async (p) => { await tick(p, 'Desk').uncheck(); await tick(p, 'Region').uncheck(); await tick(p, 'Trade date').check(); } },
+    { name: '134,730', build: async (p) => { await tick(p, 'Desk').uncheck(); await tick(p, 'Region').uncheck(); await moveEntry(p, 'Product', 'Remove Field'); await tick(p, 'Trade date').check(); await tick(p, 'Notional').check(); await moveEntry(p, 'Sum of Notional', 'Move to Row Labels'); } },
+    { name: '198,450', build: async (p) => { await tick(p, 'Desk').uncheck(); await moveEntry(p, 'Region', 'Move to Column Labels'); await tick(p, 'Trade date').check(); await tick(p, 'Quantity').check(); await moveEntry(p, 'Sum of Quantity', 'Move to Row Labels'); } },
+];
+const pane = (p) => p.getByRole('region', { name: 'PivotTable Fields' });
+const tick = (p, caption) => pane(p).getByRole('checkbox', { name: caption, exact: true });
+const entry = (p, caption) => pane(p).getByRole('button', { name: `Options for ${caption}`, exact: true });
+async function moveEntry(p, caption, command) {
+    await entry(p, caption).click();
+    await p.getByRole('menu').getByRole('menuitem', { name: command, exact: true }).click();
+    await p.getByRole('menu').waitFor({ state: 'detached' });
+}
+
+function classify(profile) {
+    const parent = new Map();
+    const byId = new Map(profile.nodes.map((n) => [n.id, n]));
+    for (const n of profile.nodes) for (const c of n.children ?? []) parent.set(c, n.id);
+    const nameOf = (frame) => {
+        const m = /^\$?func(\d+)$/.exec(frame.functionName) ?? /wasm-function\[(\d+)\]/.exec(frame.functionName);
+        if (m && frame.url.includes('dotnet.native')) return symbols.get(Number(m[1])) ?? frame.functionName;
+        return frame.functionName || frame.url || '(anonymous)';
+    };
+    const kinds = {};
+    const gcFunctions = {};
+    let total = 0;
+    profile.samples.forEach((id, i) => {
+        const dt = (profile.timeDeltas[i] ?? 0) / 1000; // ms
+        total += dt;
+        const stack = [];
+        for (let at = id; at != null; at = parent.get(at)) stack.push(byId.get(at).callFrame);
+        const names = stack.map(nameOf);
+        const top = names[0];
+        let kind;
+        if (top === '(idle)') kind = 'idle';
+        else if (top === '(garbage collector)') kind = 'JS collector';
+        else if (top === '(program)') kind = 'browser (program)';
+        else if (names.some((n) => /^sgen_|^mono_gc_|_collection$|^major_|^minor_|^mono_sgen/.test(n))) {
+            kind = '.NET collector';
+            const gc = names.find((n) => /^sgen_perform_collection|^major_|^minor_|^sgen_collect|^collect_nursery|^major_do_collection|^major_start_collection|^major_finish_collection/.test(n)) ?? names.find((n) => /^sgen_/.test(n));
+            gcFunctions[gc] = (gcFunctions[gc] ?? 0) + dt;
+        }
+        else if (names.some((n) => /mono_interp_exec_method|interp_exec|jiterp|^jiterpreter|mono_jiterp/.test(n)) || stack.some((f) => /jiterp/i.test(f.url))) kind = '.NET code';
+        else if (stack.some((f) => f.url.includes('dotnet.native.wasm') || f.url.includes('.wasm'))) kind = 'other runtime (wasm)';
+        else kind = 'JavaScript';
+        kinds[kind] = (kinds[kind] ?? 0) + dt;
+    });
+    return { totalMs: total, kinds, gcFunctions };
+}
+
+(async () => {
+    const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', headless: true });
+    const page = await browser.newPage({ viewport: { width: 1400, height: 1100 } });
+    await page.goto(`${base}/pivot?trades=${MILLION}`, { timeout: 600_000 });
+    await page.locator('#pivot-read').filter({ hasText: `${MILLION.toLocaleString('en-US')} trades read into a Snapshot` }).waitFor({ timeout: 600_000 });
+    await page.locator(`${REPORT} .ex-viewport .ex-row`).first().waitFor({ timeout: 300_000 });
+    await page.waitForTimeout(2_000);
+    const firstRows = await page.locator(REPORT).getAttribute('aria-rowcount');
+    await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
+    const update = pane(page).getByRole('button', { name: 'Update', exact: true });
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Profiler.enable');
+    await cdp.send('Profiler.setSamplingInterval', { interval: 250 });
+    const results = [];
+    for (const layout of layouts) {
+        for (let run = 0; run < 3; run++) {
+            await page.locator('#pivot-reset').click();
+            await page.waitForFunction(([sel, rows]) => document.querySelector(sel)?.getAttribute('aria-rowcount') === rows, [REPORT, firstRows], { timeout: 300_000 });
+            await page.waitForTimeout(1_500);
+            await layout.build(page);
+            await page.waitForTimeout(500);
+            await cdp.send('Profiler.start');
+            const t0 = Date.now();
+            await update.click();
+            await page.waitForFunction(([sel, rows]) => { const r = document.querySelector(sel)?.getAttribute('aria-rowcount'); return r && r !== rows; }, [REPORT, firstRows], { polling: 'raf', timeout: 300_000 });
+            const wall = Date.now() - t0;
+            const { profile } = await cdp.send('Profiler.stop');
+            const c = classify(profile);
+            results.push({ layout: layout.name, run, wallMs: wall, ...c });
+            console.log(layout.name, run, 'wall', wall, JSON.stringify(Object.fromEntries(Object.entries(c.kinds).map(([k, v]) => [k, Math.round(v)]))));
+        }
+    }
+    fs.writeFileSync(out, JSON.stringify(results, null, 1));
+    await browser.close();
+})().catch((e) => { console.error(e); process.exit(1); });

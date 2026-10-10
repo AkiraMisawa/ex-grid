@@ -1,0 +1,193 @@
+{
+  "mode": "pivot-memory",
+  "machine": {
+    "at": "2026-10-06T16:38:38.4321190\u002B01:00",
+    "loadavg": "{ 3.09 2.49 2.76 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      "  6.9 24-18:47:15 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacOS/com.appl",
+      "  4.5       00:01 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet spikes/live-update/Costs/bin/Release/net10.0/Costs.dll pivot-m",
+      "  2.2 36-09:51:26 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      "  2.0 23-00:28:08 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  1.4 02-01:47:12 /System/Library/PrivateFrameworks/Ecosystem.framework/Support/ecosystemd",
+      "  1.3 04-13:55:39 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  1.1 04-13:55:39 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "  1.0    03:39:01 claude",
+      "  0.8 36-09:51:15 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/151.0.7922.175/Helpers/Google Chrome Helper (Re",
+      "  0.7 12-15:02:55 /usr/libexec/trustd",
+      "  0.6 02-01:47:13 /System/Library/PrivateFrameworks/EcosystemAnalytics.framework/Support/ecosystemanalyticsd"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": {
+    "aCount": 1000,
+    "bCount": 200,
+    "k": 1,
+    "redraws": 20,
+    "baselineMB": 305.9,
+    "samples": [
+      {
+        "redraw": 1,
+        "heapMB": 496,
+        "aliveEarlierReports": 1,
+        "aliveEarlierCubes": 1,
+        "historyVersions": 2,
+        "workingSetMB": 398.5
+      },
+      {
+        "redraw": 2,
+        "heapMB": 427,
+        "aliveEarlierReports": 2,
+        "aliveEarlierCubes": 2,
+        "historyVersions": 3,
+        "workingSetMB": 500.5
+      },
+      {
+        "redraw": 3,
+        "heapMB": 606.8,
+        "aliveEarlierReports": 3,
+        "aliveEarlierCubes": 3,
+        "historyVersions": 4,
+        "workingSetMB": 592.5
+      },
+      {
+        "redraw": 4,
+        "heapMB": 788.6,
+        "aliveEarlierReports": 4,
+        "aliveEarlierCubes": 4,
+        "historyVersions": 4,
+        "workingSetMB": 689.5
+      },
+      {
+        "redraw": 5,
+        "heapMB": 919.7,
+        "aliveEarlierReports": 5,
+        "aliveEarlierCubes": 5,
+        "historyVersions": 4,
+        "workingSetMB": 755.7
+      },
+      {
+        "redraw": 6,
+        "heapMB": 860.6,
+        "aliveEarlierReports": 6,
+        "aliveEarlierCubes": 6,
+        "historyVersions": 4,
+        "workingSetMB": 831.5
+      },
+      {
+        "redraw": 7,
+        "heapMB": 1021.6,
+        "aliveEarlierReports": 7,
+        "aliveEarlierCubes": 7,
+        "historyVersions": 4,
+        "workingSetMB": 923.4
+      },
+      {
+        "redraw": 8,
+        "heapMB": 1211.5,
+        "aliveEarlierReports": 8,
+        "aliveEarlierCubes": 8,
+        "historyVersions": 4,
+        "workingSetMB": 1027.8
+      },
+      {
+        "redraw": 9,
+        "heapMB": 1359.5,
+        "aliveEarlierReports": 9,
+        "aliveEarlierCubes": 9,
+        "historyVersions": 4,
+        "workingSetMB": 1098.7
+      },
+      {
+        "redraw": 10,
+        "heapMB": 1294.3,
+        "aliveEarlierReports": 10,
+        "aliveEarlierCubes": 10,
+        "historyVersions": 4,
+        "workingSetMB": 1187.3
+      },
+      {
+        "redraw": 11,
+        "heapMB": 1474.1,
+        "aliveEarlierReports": 11,
+        "aliveEarlierCubes": 11,
+        "historyVersions": 4,
+        "workingSetMB": 1287.9
+      },
+      {
+        "redraw": 12,
+        "heapMB": 1655.6,
+        "aliveEarlierReports": 12,
+        "aliveEarlierCubes": 12,
+        "historyVersions": 4,
+        "workingSetMB": 1387
+      },
+      {
+        "redraw": 13,
+        "heapMB": 1605.5,
+        "aliveEarlierReports": 13,
+        "aliveEarlierCubes": 13,
+        "historyVersions": 4,
+        "workingSetMB": 1488.2
+      },
+      {
+        "redraw": 14,
+        "heapMB": 1763.4,
+        "aliveEarlierReports": 14,
+        "aliveEarlierCubes": 14,
+        "historyVersions": 4,
+        "workingSetMB": 1579.5
+      },
+      {
+        "redraw": 15,
+        "heapMB": 1953.3,
+        "aliveEarlierReports": 15,
+        "aliveEarlierCubes": 15,
+        "historyVersions": 4,
+        "workingSetMB": 1683.9
+      },
+      {
+        "redraw": 16,
+        "heapMB": 2143.3,
+        "aliveEarlierReports": 16,
+        "aliveEarlierCubes": 16,
+        "historyVersions": 4,
+        "workingSetMB": 1788.2
+      },
+      {
+        "redraw": 17,
+        "heapMB": 2060,
+        "aliveEarlierReports": 17,
+        "aliveEarlierCubes": 17,
+        "historyVersions": 4,
+        "workingSetMB": 1875.3
+      },
+      {
+        "redraw": 18,
+        "heapMB": 2249.9,
+        "aliveEarlierReports": 18,
+        "aliveEarlierCubes": 18,
+        "historyVersions": 4,
+        "workingSetMB": 1979.7
+      },
+      {
+        "redraw": 19,
+        "heapMB": 2439.9,
+        "aliveEarlierReports": 19,
+        "aliveEarlierCubes": 19,
+        "historyVersions": 4,
+        "workingSetMB": 2084
+      },
+      {
+        "redraw": 20,
+        "heapMB": 2358.4,
+        "aliveEarlierReports": 20,
+        "aliveEarlierCubes": 20,
+        "historyVersions": 4,
+        "workingSetMB": 2167.6
+      }
+    ]
+  }
+}

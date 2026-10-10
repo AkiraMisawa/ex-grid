@@ -175,6 +175,20 @@ Rejected: **opt-in** (off by default), which would hide the feature from every g
 have it for free; and **a strip only while two cells are selected**, rejected above for moving the
 Viewport.
 
+## The walk of a new Window *(decided with the user, 2026-10-07)*
+
+*(The grilling of live data continued, Q5, on ticket 01's measurement:
+[`2026-10-06-macos-live-update-costs-cc`](../../verification/2026-10-06-macos-live-update-costs-cc/README.md).)*
+
+- **The grid walked every new Window**, from its top to the first changed position, to learn whether the
+  rows moved. It did so whether or not a figure stood, and whether or not a source vouched for the
+  Window. Under live data at 10⁶ rows that was up to 11 ms on CoreCLR and about 130 ms in the browser.
+- **The walk now runs only while figures stand or are being asked for.** With no figure, nothing can be
+  wrong, and the stamp moves so that the next question asks afresh.
+- **It compares the selected positions only.** The figures are taken over the Selection, so a row that
+  moved outside it changes no figure, and the cost follows the Selection's rows in the Window rather than
+  the Window.
+
 ## Considered options
 
 - **The grid sums what is in the Window, and shows nothing past it** — rejected. The figures would

@@ -1,0 +1,289 @@
+[
+ {
+  "layout": "1,350",
+  "run": 0,
+  "wallMs": 455,
+  "totalMs": 585.0180000000012,
+  "kinds": {
+   "browser (program)": 142.5540000000001,
+   "idle": 21.418000000000003,
+   "JavaScript": 2.9499999999999997,
+   ".NET code": 362.76600000000053,
+   ".NET collector": 47.545,
+   "other runtime (wasm)": 7.785000000000001
+  },
+  "gcFunctions": {
+   "sgen_alloc_os_memory_aligned": 0.728,
+   "undefined": 9.922,
+   "sgen_alloc_os_memory": 19.750999999999998,
+   "major_start_nursery_collection": 0.34,
+   "collect_nursery": 8.083,
+   "major_scan_card_table": 6.710000000000001,
+   "sgen_gc_invoke_finalizers": 2.011
+  }
+ },
+ {
+  "layout": "1,350",
+  "run": 1,
+  "wallMs": 299,
+  "totalMs": 317.2680000000005,
+  "kinds": {
+   "browser (program)": 27.466999999999995,
+   "idle": 14.948000000000004,
+   "JavaScript": 2.949,
+   ".NET code": 262.46999999999997,
+   ".NET collector": 2.1940000000000004,
+   "other runtime (wasm)": 6.901000000000001,
+   "JS collector": 0.339
+  },
+  "gcFunctions": {
+   "undefined": 1.1099999999999999,
+   "sgen_alloc_os_memory": 1.084
+  }
+ },
+ {
+  "layout": "1,350",
+  "run": 2,
+  "wallMs": 282,
+  "totalMs": 312.6700000000005,
+  "kinds": {
+   "browser (program)": 38.46700000000002,
+   "idle": 26.994000000000003,
+   "JavaScript": 2.403,
+   ".NET code": 233.82100000000037,
+   ".NET collector": 3.748,
+   "other runtime (wasm)": 6.551,
+   "JS collector": 0.6859999999999999
+  },
+  "gcFunctions": {
+   "sgen_nursery_alloc_range": 0.334,
+   "sgen_alloc_os_memory_aligned": 0.683,
+   "sgen_array_list_add": 0.33,
+   "sgen_alloc_os_memory": 0.708,
+   "undefined": 1.364,
+   "sgen_need_major_collection": 0.329
+  }
+ },
+ {
+  "layout": "134,730",
+  "run": 0,
+  "wallMs": 3923,
+  "totalMs": 3958.466000000003,
+  "kinds": {
+   "browser (program)": 64.34700000000001,
+   "idle": 22.785,
+   "JavaScript": 10.715,
+   ".NET code": 3010.5750000000053,
+   ".NET collector": 758.7050000000015,
+   "other runtime (wasm)": 87.80199999999991,
+   "JS collector": 3.5370000000000004
+  },
+  "gcFunctions": {
+   "undefined": 122.7949999999998,
+   "sgen_alloc_os_memory_aligned": 50.414000000000016,
+   "sgen_alloc_os_memory": 36.23500000000001,
+   "major_start_major_collection": 10.77,
+   "major_iterate_block_ranges": 0.404,
+   "major_pin_objects": 0.721,
+   "major_start_collection": 1.126,
+   "major_do_collection": 94.25099999999996,
+   "sgen_client_par_object_get_size": 5.741999999999999,
+   "major_sweep": 7.845,
+   "sgen_gc_invoke_finalizers": 0.759,
+   "sgen_alloc_obj_nolock": 0.38,
+   "sgen_try_alloc_obj_nolock": 4.8709999999999996,
+   "collect_nursery": 186.02600000000012,
+   "sgen_card_table_wbarrier_arrayref_copy": 3.368,
+   "sgen_card_table_wbarrier_set_field": 6.543,
+   "sgen_nursery_alloc": 0.736,
+   "major_scan_card_table": 67.701,
+   "major_scan_ptr_field_with_evacuation": 0.7569999999999999,
+   "major_scan_object_with_evacuation": 154.98800000000003,
+   "major_copy_or_mark_object_canonical": 0.351,
+   "sgen_need_major_collection": 0.266,
+   "sgen_nursery_alloc_range": 1.6560000000000001
+  }
+ },
+ {
+  "layout": "134,730",
+  "run": 1,
+  "wallMs": 3116,
+  "totalMs": 3150.0799999999904,
+  "kinds": {
+   "browser (program)": 53.46600000000001,
+   "idle": 20.290000000000003,
+   "JavaScript": 7.413,
+   ".NET code": 2459.3660000000245,
+   "other runtime (wasm)": 66.87,
+   ".NET collector": 540.0000000000017,
+   "JS collector": 2.675
+  },
+  "gcFunctions": {
+   "sgen_alloc_os_memory_aligned": 8.448,
+   "major_start_major_collection": 12.991999999999997,
+   "major_iterate_block_ranges": 0.377,
+   "major_start_collection": 1.076,
+   "major_pin_objects": 0.7270000000000001,
+   "major_scan_object_with_evacuation": 241.88400000000027,
+   "major_do_collection": 11.764999999999999,
+   "sgen_client_par_object_get_size": 1.3780000000000001,
+   "major_sweep": 7.148000000000001,
+   "sgen_gc_invoke_finalizers": 0.875,
+   "undefined": 49.93700000000001,
+   "sgen_alloc_os_memory": 11.716,
+   "sgen_try_alloc_obj_nolock": 5.518000000000001,
+   "sgen_nursery_alloc_range": 1.4409999999999998,
+   "major_scan_card_table": 31.042999999999992,
+   "collect_nursery": 148.53799999999984,
+   "major_copy_or_mark_object_canonical": 0.335,
+   "major_scan_ptr_field_with_evacuation": 0.334,
+   "sgen_card_table_wbarrier_arrayref_copy": 2.792,
+   "sgen_nursery_alloc": 0.336,
+   "sgen_card_table_wbarrier_set_field": 1.34
+  }
+ },
+ {
+  "layout": "134,730",
+  "run": 2,
+  "wallMs": 2910,
+  "totalMs": 2937.516999999997,
+  "kinds": {
+   "browser (program)": 41.66500000000001,
+   "idle": 6.763000000000001,
+   "JavaScript": 6.298999999999999,
+   ".NET collector": 399.9020000000007,
+   ".NET code": 2377.338000000034,
+   "other runtime (wasm)": 104.84500000000001,
+   "JS collector": 0.7050000000000001
+  },
+  "gcFunctions": {
+   "undefined": 39.29100000000002,
+   "sgen_alloc_os_memory_aligned": 10.368,
+   "major_start_major_collection": 14.003,
+   "major_start_collection": 1.7229999999999999,
+   "major_pin_objects": 0.681,
+   "major_copy_or_mark_object_canonical": 0.682,
+   "major_scan_object_with_evacuation": 234.21799999999993,
+   "major_do_collection": 9.264,
+   "sgen_client_par_object_get_size": 1.0030000000000001,
+   "major_sweep": 9.475999999999999,
+   "sgen_gc_invoke_finalizers": 0.874,
+   "sgen_alloc_os_memory": 12.803999999999998,
+   "sgen_need_major_collection": 0.6910000000000001,
+   "sgen_card_table_wbarrier_set_field": 2.166,
+   "major_scan_card_table": 8.254,
+   "collect_nursery": 49.537,
+   "sgen_try_alloc_obj_nolock": 4.187,
+   "sgen_card_table_wbarrier_arrayref_copy": 0.6799999999999999
+  }
+ },
+ {
+  "layout": "198,450",
+  "run": 0,
+  "wallMs": 3192,
+  "totalMs": 3226.1999999999966,
+  "kinds": {
+   "browser (program)": 47.81600000000003,
+   "idle": 7.165,
+   "JavaScript": 9.723000000000003,
+   ".NET code": 2733.5639999999944,
+   ".NET collector": 361.4320000000003,
+   "other runtime (wasm)": 64.06700000000001,
+   "JS collector": 2.4330000000000003
+  },
+  "gcFunctions": {
+   "undefined": 25.816999999999986,
+   "sgen_update_heap_boundaries": 0.6080000000000001,
+   "sgen_alloc_os_memory": 25.237000000000002,
+   "sgen_alloc_os_memory_aligned": 10.865,
+   "major_start_major_collection": 17.801999999999996,
+   "major_iterate_block_ranges": 0.672,
+   "major_start_collection": 0.6759999999999999,
+   "major_pin_objects": 1.043,
+   "major_scan_ptr_field_with_evacuation": 1.022,
+   "major_do_collection": 121.8229999999999,
+   "sgen_client_par_object_get_size": 2.744,
+   "major_is_object_live": 0.345,
+   "major_sweep": 9.219,
+   "sgen_gc_invoke_finalizers": 0.659,
+   "sgen_try_alloc_obj_nolock": 1.688,
+   "sgen_assert_memory_alloc": 0.359,
+   "collect_nursery": 17.537,
+   "major_scan_card_table": 16.427999999999997,
+   "major_scan_object_with_evacuation": 106.88799999999986
+  }
+ },
+ {
+  "layout": "198,450",
+  "run": 1,
+  "wallMs": 3213,
+  "totalMs": 3244.0019999999968,
+  "kinds": {
+   "browser (program)": 47.58700000000001,
+   "idle": 14.086,
+   "JavaScript": 9.158000000000001,
+   ".NET code": 2833.792000000004,
+   ".NET collector": 268.96500000000026,
+   "other runtime (wasm)": 63.161000000000065,
+   "JS collector": 7.253
+  },
+  "gcFunctions": {
+   "sgen_alloc_os_memory": 28.434,
+   "undefined": 62.53500000000008,
+   "sgen_alloc_os_memory_aligned": 25.720000000000006,
+   "sgen_los_alloc_large_inner": 0.388,
+   "collect_nursery": 21.846,
+   "major_scan_card_table": 17.005000000000003,
+   "sgen_try_alloc_obj_nolock": 2.402,
+   "sgen_card_table_wbarrier_set_field": 0.327,
+   "sgen_gc_invoke_finalizers": 0.353,
+   "major_start_major_collection": 7.861,
+   "major_start_collection": 0.354,
+   "major_pin_objects": 0.331,
+   "major_copy_or_mark_object_canonical": 0.331,
+   "major_scan_ptr_field_with_evacuation": 0.334,
+   "major_scan_object_with_evacuation": 88.91899999999991,
+   "major_do_collection": 3.056,
+   "sgen_client_par_object_get_size": 1.975,
+   "major_sweep": 6.7940000000000005
+  }
+ },
+ {
+  "layout": "198,450",
+  "run": 2,
+  "wallMs": 3164,
+  "totalMs": 3193.7800000000134,
+  "kinds": {
+   "browser (program)": 44.014999999999986,
+   "idle": 14.079,
+   "JavaScript": 7.848,
+   "JS collector": 0.477,
+   ".NET code": 2793.7510000000243,
+   "other runtime (wasm)": 61.539999999999985,
+   ".NET collector": 272.07000000000033
+  },
+  "gcFunctions": {
+   "undefined": 16.219000000000005,
+   "sgen_alloc_os_memory": 14.131000000000004,
+   "major_start_major_collection": 12.232000000000001,
+   "major_start_collection": 1.7770000000000001,
+   "major_pin_objects": 0.6779999999999999,
+   "major_copy_or_mark_object_canonical": 0.6859999999999999,
+   "major_scan_object_with_evacuation": 164.53600000000014,
+   "major_do_collection": 7.789,
+   "sgen_client_par_object_get_size": 0.666,
+   "major_sweep": 10.592,
+   "major_free_swept_blocks": 3.3970000000000002,
+   "sgen_alloc_os_memory_aligned": 5.381,
+   "sgen_need_major_collection": 0.346,
+   "major_is_object_live": 0.338,
+   "sgen_gc_invoke_finalizers": 0.315,
+   "sgen_try_alloc_obj_nolock": 1.3450000000000002,
+   "major_scan_card_table": 15.187,
+   "collect_nursery": 15.448000000000002,
+   "sgen_ensure_free_space": 0.336,
+   "sgen_alloc_obj_nolock": 0.334,
+   "sgen_card_table_wbarrier_set_field": 0.337
+  }
+ }
+]

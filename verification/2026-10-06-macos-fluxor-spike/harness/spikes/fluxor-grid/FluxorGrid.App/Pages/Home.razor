@@ -1,0 +1,19 @@
+@page "/"
+@inject Census Census
+<h1>ExGrid over a Fluxor store</h1>
+<ul>
+    <li><a href="w1">W1 — the store pushes the Window</a></li>
+    <li><a href="w2">W2 — the store's list handed to GridSource.From (edits through the store)</a></li>
+    <li><a href="w2?edits=source">W2 — edits through the source, then the store</a></li>
+    <li><a href="blank">A blank page, for the census</a></li>
+</ul>
+@* The census with no grid on the page (check 6): the store and its census live on in the app or
+   circuit when a grid page is left by Blazor's navigation. *@
+<button id="home-census-count" @onclick="Count">Collect and count</button>
+<pre id="home-census">@_census</pre>
+
+@code {
+    private string _census = "";
+
+    private void Count() => _census = Census.Count();
+}

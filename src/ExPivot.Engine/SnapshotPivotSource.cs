@@ -249,11 +249,26 @@ public sealed class SnapshotPivotSource : PivotSource
             _heldAnswer = null;
             version = VersionOf(_snapshot);
         }
+        SnapshotChanged?.Invoke(change);
         OnChanged(new PivotSourceChanged(version));
         return change;
     }
 
-    private string VersionOf(Snapshot snapshot) => _id + ":" + snapshot.Version.ToString(CultureInfo.InvariantCulture);
+    internal event Action<SnapshotChange>? SnapshotChanged;
+
+    internal (Snapshot Snapshot, string Version) Capture()
+    {
+        lock (_gate)
+            return (_snapshot, VersionOf(_snapshot));
+    }
+
+    internal void RememberComputation(Snapshot snapshot)
+    {
+        lock (_gate)
+            Remember(snapshot);
+    }
+
+    internal string VersionOf(Snapshot snapshot) => _id + ":" + snapshot.Version.ToString(CultureInfo.InvariantCulture);
 
     // The Snapshot of a version the source still answers under: the current one, or one of its last
     // answers'.

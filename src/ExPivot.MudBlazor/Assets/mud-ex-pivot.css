@@ -45,10 +45,16 @@
     --ex-pivot-dialog-radius: var(--mud-default-borderradius);
     --ex-pivot-dialog-shadow: var(--mud-elevation-24);
     /* The Stale Report's notice (ADR-0067), as ExPivot's markup draws it when a Consumer keeps
-       the built-in notice under the paper; MudPivotChrome draws it as a MudAlert instead. */
+       the built-in notice under the paper; MudPivotChrome draws it as a MudAlert instead. And its
+       value cells while the report is stale (2026-10-09): the palette's text mixed 82% into the
+       surface the cells stand on, muted as ExPivot's own default is and still body text by UX-8.
+       Over MudBlazor's default palettes that is 5.9:1 on the surface and 5.4:1 on a group row's tint
+       in the light scheme, 5.1:1 and 4.7:1 in the dark one, beside the text's own 10.1:1 and 6.7:1;
+       the palette's secondary text fell to 4.5:1 and 4.2:1. */
     --ex-pivot-stale-color: var(--mud-palette-text-primary);
     --ex-pivot-stale-background: var(--mud-palette-surface);
     --ex-pivot-stale-border-color: var(--mud-palette-warning);
+    --ex-pivot-stale-value-color: color-mix(in srgb, var(--mud-palette-text-primary) 82%, var(--mud-palette-surface));
     /* The pane's type. The report's is the grid's own, which is metrics-bearing and the paper's
        (ADR-0027/0030); this one sizes nothing ExPivot computes. */
     --ex-pivot-font-size: var(--mud-typography-body2-size, 0.875rem);

@@ -68,6 +68,16 @@ public class MudFindPanelTests : MudTestContext
         Assert.Equal("No match", outcome.TextContent.Trim());
     }
 
+    [Fact] // ADR-0142 / ADR-0055: an answer from a Source since replaced is worded as such, apart from an order move, into the live region
+    public void A_replaced_source_is_worded_apart_from_an_order_move()
+    {
+        var replaced = RenderPanel(Context(outcome: FindOutcome.SourceChanged)).Find(".mud-ex-grid-find-outcome").TextContent.Trim();
+        var moved = RenderPanel(Context(outcome: FindOutcome.OrderChanged)).Find(".mud-ex-grid-find-outcome").TextContent.Trim();
+
+        Assert.Equal("The data was replaced; find again", replaced);
+        Assert.NotEqual(moved, replaced);
+    }
+
     [Fact] // ADR-0055 / ADR-0030 / WR-3: the Chrome's Label words the panel
     public void The_chrome_words_the_panel()
     {

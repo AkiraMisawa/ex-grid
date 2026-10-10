@@ -1,0 +1,4 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-boundary-bench' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+{"leaves":2976,"rtt":0,"mode":"A","repeat":0,"clientMemory":{"managedLiveBytes":5174248,"managedHeapBytes":1789360}}
+{"leaves":2976,"rtt":0,"mode":"B","repeat":0,"clientMemory":{"managedLiveBytes":4927960,"managedHeapBytes":1459168}}

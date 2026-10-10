@@ -1,0 +1,52 @@
+@inherits FluxorComponent
+@inject IState<TradesState> State
+@inject IDispatcher Dispatcher
+@inject RenderCounts Counts
+@inject Census Census
+@* The checks' panel, the same on both pages: the feed's controls, the store's state, and the
+   readings the checks take — row renders, and the census of what the store left reachable. A
+   FluxorComponent of its own, so a page that does not re-render on a state change (W2) still
+   shows the state. *@
+<div class="fg-instruments">
+    <button id="feed-start" @onclick="StartFeed">Start the feed</button>
+    <button id="feed-stop" @onclick="StopFeed">Stop the feed</button>
+    <button id="counts-reset" @onclick="ResetCounts">Reset the counts</button>
+    <button id="counts-read" @onclick="ReadCounts">Read the counts</button>
+    <button id="census-count" @onclick="CountCensus">Collect and count</button>
+    <span id="feed-status">Feed: @(State.Value.FeedRunning ? "running" : "stopped")</span>
+    <span id="ticks">Ticks: @State.Value.Ticks</span>
+    <span id="state-version">Version: @State.Value.Version</span>
+    <span id="trades-count">Trades: @State.Value.Trades.Count</span>
+    <span id="last-write">Store write: @State.Value.LastWrite</span>
+    <span id="store-refused">Store refused: @State.Value.Refused (@State.Value.LastRefusal)</span>
+    <span id="expected-prices" hidden>@ExpectedPrices()</span>
+    <pre id="counts">@_counts</pre>
+    <pre id="census">@_census</pre>
+</div>
+
+@code {
+    /// <summary>The feed as the page's query asked for it.</summary>
+    [Parameter, EditorRequired] public StartFeed Feed { get; set; } = default!;
+
+    private string _counts = "";
+    private string _census = "";
+
+    private void StartFeed() => Dispatcher.Dispatch(Feed);
+
+    private void StopFeed() => Dispatcher.Dispatch(new StopFeed());
+
+    private void ResetCounts()
+    {
+        Counts.Reset();
+        _counts = "reset";
+    }
+
+    private void ReadCounts() => _counts = Counts.ToJson();
+
+    private void CountCensus() => _census = Census.Count();
+
+    // The Price text of the first twenty trades in the store's order: what an unsorted grid shows
+    // once it has painted the newest state, so a check waits for that, never for a time.
+    private string ExpectedPrices()
+        => string.Join("|", State.Value.Trades.Take(LiveFeed.BusyRows).Select(t => TradeColumns.TextOf(t, "Price")));
+}

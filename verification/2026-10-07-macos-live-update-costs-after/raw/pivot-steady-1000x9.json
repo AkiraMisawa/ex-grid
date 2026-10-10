@@ -1,0 +1,3709 @@
+{
+  "mode": "pivot-steady",
+  "machine": {
+    "at": "2026-10-07T13:25:05.0242780\u002B01:00",
+    "loadavg": "{ 2.78 3.07 2.96 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      " 45.1 37-06:48:08 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon",
+      " 17.5    17:06:06 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/Users/akira338",
+      " 16.3    17:06:06 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --user-data-",
+      " 16.0       00:01 /nix/store/icng75fiyvz03cxk8rcaf0k59pf85g76-dotnet-combined/share/dotnet/dotnet /Users/akira338/github/ex-grid/.claude/worktrees/ld-measure-af",
+      "  9.5 25-15:33:42 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacOS/com.appl",
+      "  2.3 23-21:14:35 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  1.8    13:05:09 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  1.7    13:05:09 /Applications/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "  1.6 37-06:37:53 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui",
+      "  1.4 25-15:33:41 /Applications/Docker.app/Contents/MacOS/Docker Desktop.app/Contents/Frameworks/Docker Desktop Helper (Renderer).app/Contents/MacOS/Docker Desk",
+      "  1.1 01-00:25:28 claude"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": {
+    "a": 1000,
+    "b": 9,
+    "redraws": 60,
+    "events": {
+      "IncreaseMemoryPressure": 6,
+      "GCAllocationTick_V4": 490,
+      "GCSuspendEEBegin_V1": 13,
+      "GCSuspendEEEnd_V1": 13,
+      "GCTriggered": 9,
+      "GCStart_V2": 9,
+      "GCDynamicEvent": 14,
+      "GCMarkWithType": 34,
+      "PinObjectAtGCTime": 2,
+      "GCGlobalHeapHistory_V4": 9,
+      "GCPerHeapHistory_V3": 9,
+      "GCEnd_V1": 9,
+      "GCHeapStats_V2": 9,
+      "GCRestartEEBegin_V1": 13,
+      "GCRestartEEEnd_V1": 13,
+      "GCFinalizersBegin_V1": 8,
+      "FinalizeObject": 77,
+      "GCFinalizersEnd_V1": 8,
+      "GCCreateConcurrentThread_V1": 1,
+      "GCFitBucketInfo": 3
+    },
+    "firstPerHeapHistory": "ClrInstanceID=0,FreeListAllocated=0,FreeListRejected=0,EndOfSegAllocated=0,CondemnedAllocated=0,PinnedAllocated=0,PinnedAllocatedAdvance=0,RunningFreeListEfficiency=0,CondemnReasons0=40,CondemnReasons1=8192,CompactMechanisms=2147483650,ExpandMechanisms=0,HeapIndex=0,ExtraGen0Commit=3718752,Count=5",
+    "gcSettings": {
+      "IsServerGC": false,
+      "latency": "Interactive"
+    },
+    "redrawMs": {
+      "Runs": 60,
+      "Min": 0.506,
+      "Median": 0.576,
+      "Max": 32.614,
+      "All": [
+        32.614,
+        1.672,
+        4.578,
+        0.585,
+        0.574,
+        0.633,
+        0.598,
+        0.6,
+        0.616,
+        0.586,
+        0.584,
+        0.572,
+        0.586,
+        0.577,
+        0.604,
+        0.581,
+        0.677,
+        0.59,
+        0.564,
+        0.617,
+        4.474,
+        0.594,
+        0.564,
+        0.552,
+        0.554,
+        0.587,
+        0.569,
+        0.717,
+        0.572,
+        0.577,
+        1.1,
+        0.568,
+        0.53,
+        0.525,
+        0.576,
+        0.539,
+        0.53,
+        0.541,
+        0.97,
+        0.556,
+        0.532,
+        0.522,
+        0.528,
+        0.739,
+        0.573,
+        0.542,
+        0.997,
+        0.566,
+        0.544,
+        0.586,
+        0.506,
+        0.551,
+        0.529,
+        0.53,
+        0.533,
+        0.532,
+        0.933,
+        0.53,
+        0.534,
+        0.678
+      ]
+    },
+    "rows": [
+      {
+        "redraw": 1,
+        "redrawMs": 32.614,
+        "gcPauseMs": 0,
+        "index0": 1,
+        "index1": 1,
+        "allocatedNowMB": 19,
+        "workingSetMB": 99.1,
+        "lastGc": {
+          "index": 1,
+          "generation": 2,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 6.4,
+          "committedMB": 10,
+          "fragmentedMB": 1.3,
+          "promotedMB": 5.1,
+          "pauseMs": [
+            2.711,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 6.6,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 3.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 3.2,
+              "fragmentationAfterMB": 1.3
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 2,
+        "redrawMs": 1.672,
+        "gcPauseMs": 0.215,
+        "index0": 1,
+        "index1": 1,
+        "allocatedNowMB": 19.9,
+        "workingSetMB": 100.3,
+        "lastGc": {
+          "index": 1,
+          "generation": 2,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 6.4,
+          "committedMB": 10,
+          "fragmentedMB": 1.3,
+          "promotedMB": 5.1,
+          "pauseMs": [
+            2.711,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 6.6,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 3.2,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 3.2,
+              "fragmentationAfterMB": 1.3
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 3,
+        "redrawMs": 4.578,
+        "gcPauseMs": 1.635,
+        "index0": 1,
+        "index1": 3,
+        "allocatedNowMB": 24.3,
+        "workingSetMB": 101,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 2,
+            "Generation": 2,
+            "type": "background",
+            "Reason": 4,
+            "durationMs": 3.65,
+            "pauseMs": 7.948,
+            "Compacting": false,
+            "GlobalMechanisms": 21,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              3.18,
+              0,
+              0,
+              4.16,
+              0
+            ],
+            "generationSizesMB": [
+              7.9,
+              3.2,
+              0,
+              5.9,
+              0
+            ]
+          },
+          {
+            "Index": 3,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 0.982,
+            "pauseMs": 1.198,
+            "Compacting": false,
+            "GlobalMechanisms": 20,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              5.01,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              11.2,
+              0,
+              5.9,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "redraw": 4,
+        "redrawMs": 0.585,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 25.3,
+        "workingSetMB": 101.4,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 5,
+        "redrawMs": 0.574,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 26.3,
+        "workingSetMB": 101.9,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 6,
+        "redrawMs": 0.633,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 27.3,
+        "workingSetMB": 102.9,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 7,
+        "redrawMs": 0.598,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 28.3,
+        "workingSetMB": 103.8,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 8,
+        "redrawMs": 0.6,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 29.2,
+        "workingSetMB": 104.8,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 9,
+        "redrawMs": 0.616,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 30.2,
+        "workingSetMB": 105.8,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 10,
+        "redrawMs": 0.586,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 31.2,
+        "workingSetMB": 106.8,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 11,
+        "redrawMs": 0.584,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 32.2,
+        "workingSetMB": 107.8,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 12,
+        "redrawMs": 0.572,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 33.2,
+        "workingSetMB": 108.8,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 13,
+        "redrawMs": 0.586,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 34.2,
+        "workingSetMB": 109.8,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 14,
+        "redrawMs": 0.577,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 35.1,
+        "workingSetMB": 110.7,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 15,
+        "redrawMs": 0.604,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 36.1,
+        "workingSetMB": 111.7,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 16,
+        "redrawMs": 0.581,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 37.1,
+        "workingSetMB": 112.7,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 17,
+        "redrawMs": 0.677,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 38.1,
+        "workingSetMB": 113.7,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 18,
+        "redrawMs": 0.59,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 39.1,
+        "workingSetMB": 114.7,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 19,
+        "redrawMs": 0.564,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 40.1,
+        "workingSetMB": 115.7,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 20,
+        "redrawMs": 0.617,
+        "gcPauseMs": 0,
+        "index0": 3,
+        "index1": 3,
+        "allocatedNowMB": 41.1,
+        "workingSetMB": 116.6,
+        "lastGc": {
+          "index": 3,
+          "generation": 0,
+          "compacted": false,
+          "concurrent": false,
+          "heapSizeMB": 17.1,
+          "committedMB": 17.5,
+          "fragmentedMB": 4.9,
+          "promotedMB": 5,
+          "pauseMs": [
+            1.04,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 2.7,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0.2,
+              "sizeAfterMB": 11.2,
+              "fragmentationAfterMB": 3.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 5.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 5.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 21,
+        "redrawMs": 4.474,
+        "gcPauseMs": 3.803,
+        "index0": 3,
+        "index1": 4,
+        "allocatedNowMB": 31.2,
+        "workingSetMB": 117.4,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 4,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 3.744,
+            "pauseMs": 3.84,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 7.72,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 104,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0.43,
+              7.72,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0.4,
+              7.7,
+              14.1,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "redraw": 22,
+        "redrawMs": 0.594,
+        "gcPauseMs": 0,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 32.2,
+        "workingSetMB": 118,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 23,
+        "redrawMs": 0.564,
+        "gcPauseMs": 0,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 33.2,
+        "workingSetMB": 118.5,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 24,
+        "redrawMs": 0.552,
+        "gcPauseMs": 0,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 34.2,
+        "workingSetMB": 119,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 25,
+        "redrawMs": 0.554,
+        "gcPauseMs": 0,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 35.1,
+        "workingSetMB": 119.6,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 26,
+        "redrawMs": 0.587,
+        "gcPauseMs": 0,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 36.1,
+        "workingSetMB": 120.2,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 27,
+        "redrawMs": 0.569,
+        "gcPauseMs": 0,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 37.1,
+        "workingSetMB": 120.7,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 28,
+        "redrawMs": 0.717,
+        "gcPauseMs": 0.093,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 38.1,
+        "workingSetMB": 121.3,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 29,
+        "redrawMs": 0.572,
+        "gcPauseMs": 0,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 39.1,
+        "workingSetMB": 121.8,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 30,
+        "redrawMs": 0.577,
+        "gcPauseMs": 0,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 40.1,
+        "workingSetMB": 122.4,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 31,
+        "redrawMs": 1.1,
+        "gcPauseMs": 0.37,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 27.9,
+        "workingSetMB": 123,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 32,
+        "redrawMs": 0.568,
+        "gcPauseMs": 0,
+        "index0": 4,
+        "index1": 4,
+        "allocatedNowMB": 27.3,
+        "workingSetMB": 123.6,
+        "lastGc": {
+          "index": 4,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 22.3,
+          "committedMB": 33.7,
+          "fragmentedMB": 0.1,
+          "promotedMB": 8.2,
+          "pauseMs": [
+            3.803,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 8,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.2,
+              "fragmentationBeforeMB": 3.1,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 14.1,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 14.1,
+              "fragmentationAfterMB": 0.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 33,
+        "redrawMs": 0.53,
+        "gcPauseMs": 0,
+        "index0": 4,
+        "index1": 5,
+        "allocatedNowMB": 24.4,
+        "workingSetMB": 123.6,
+        "lastGc": {
+          "index": 5,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 33.5,
+          "committedMB": 40.3,
+          "fragmentedMB": 18.2,
+          "promotedMB": 21.7,
+          "pauseMs": [
+            0.093,
+            0.37
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.6,
+              "fragmentationAfterMB": 2.9
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0.4
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 14.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 5,
+            "Generation": 2,
+            "type": "background",
+            "Reason": 4,
+            "durationMs": 3.489,
+            "pauseMs": 7.948,
+            "Compacting": false,
+            "GlobalMechanisms": 21,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0.43,
+              7.72,
+              7.72,
+              5.8,
+              0
+            ],
+            "generationSizesMB": [
+              4.6,
+              0.4,
+              7.7,
+              20.7,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "redraw": 34,
+        "redrawMs": 0.525,
+        "gcPauseMs": 0,
+        "index0": 5,
+        "index1": 5,
+        "allocatedNowMB": 25.4,
+        "workingSetMB": 123.6,
+        "lastGc": {
+          "index": 5,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 33.5,
+          "committedMB": 40.3,
+          "fragmentedMB": 18.2,
+          "promotedMB": 21.7,
+          "pauseMs": [
+            0.093,
+            0.37
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.6,
+              "fragmentationAfterMB": 2.9
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0.4
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 14.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 35,
+        "redrawMs": 0.576,
+        "gcPauseMs": 0,
+        "index0": 5,
+        "index1": 5,
+        "allocatedNowMB": 26.4,
+        "workingSetMB": 123.6,
+        "lastGc": {
+          "index": 5,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 33.5,
+          "committedMB": 40.3,
+          "fragmentedMB": 18.2,
+          "promotedMB": 21.7,
+          "pauseMs": [
+            0.093,
+            0.37
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.6,
+              "fragmentationAfterMB": 2.9
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0.4
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 14.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 36,
+        "redrawMs": 0.539,
+        "gcPauseMs": 0,
+        "index0": 5,
+        "index1": 5,
+        "allocatedNowMB": 27.4,
+        "workingSetMB": 123.6,
+        "lastGc": {
+          "index": 5,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 33.5,
+          "committedMB": 40.3,
+          "fragmentedMB": 18.2,
+          "promotedMB": 21.7,
+          "pauseMs": [
+            0.093,
+            0.37
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.6,
+              "fragmentationAfterMB": 2.9
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0.4
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 14.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 37,
+        "redrawMs": 0.53,
+        "gcPauseMs": 0,
+        "index0": 5,
+        "index1": 5,
+        "allocatedNowMB": 28.4,
+        "workingSetMB": 123.6,
+        "lastGc": {
+          "index": 5,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 33.5,
+          "committedMB": 40.3,
+          "fragmentedMB": 18.2,
+          "promotedMB": 21.7,
+          "pauseMs": [
+            0.093,
+            0.37
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.6,
+              "fragmentationAfterMB": 2.9
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0.4
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 14.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 38,
+        "redrawMs": 0.541,
+        "gcPauseMs": 0,
+        "index0": 5,
+        "index1": 5,
+        "allocatedNowMB": 29.3,
+        "workingSetMB": 123.6,
+        "lastGc": {
+          "index": 5,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 33.5,
+          "committedMB": 40.3,
+          "fragmentedMB": 18.2,
+          "promotedMB": 21.7,
+          "pauseMs": [
+            0.093,
+            0.37
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 3.2,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.6,
+              "fragmentationAfterMB": 2.9
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0.4
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 0.1,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 14.9
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 39,
+        "redrawMs": 0.97,
+        "gcPauseMs": 0.409,
+        "index0": 5,
+        "index1": 6,
+        "allocatedNowMB": 25.9,
+        "workingSetMB": 121.5,
+        "lastGc": {
+          "index": 6,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 28.9,
+          "committedMB": 38.1,
+          "fragmentedMB": 11.6,
+          "promotedMB": 0.5,
+          "pauseMs": [
+            0.409,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 5.2,
+              "fragmentationBeforeMB": 0.7,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0.4,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 11.6,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 11.6
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 6,
+            "Generation": 1,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 0.374,
+            "pauseMs": 0.435,
+            "Compacting": true,
+            "GlobalMechanisms": 18,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 104,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0.43,
+              0.04,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0.4,
+              0,
+              7.7,
+              20.7,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "redraw": 40,
+        "redrawMs": 0.556,
+        "gcPauseMs": 0,
+        "index0": 6,
+        "index1": 6,
+        "allocatedNowMB": 26.9,
+        "workingSetMB": 121.5,
+        "lastGc": {
+          "index": 6,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 28.9,
+          "committedMB": 38.1,
+          "fragmentedMB": 11.6,
+          "promotedMB": 0.5,
+          "pauseMs": [
+            0.409,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 5.2,
+              "fragmentationBeforeMB": 0.7,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0.4,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 11.6,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 11.6
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 41,
+        "redrawMs": 0.532,
+        "gcPauseMs": 0,
+        "index0": 6,
+        "index1": 6,
+        "allocatedNowMB": 27.9,
+        "workingSetMB": 121.5,
+        "lastGc": {
+          "index": 6,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 28.9,
+          "committedMB": 38.1,
+          "fragmentedMB": 11.6,
+          "promotedMB": 0.5,
+          "pauseMs": [
+            0.409,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 5.2,
+              "fragmentationBeforeMB": 0.7,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0.4,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 11.6,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 11.6
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 42,
+        "redrawMs": 0.522,
+        "gcPauseMs": 0,
+        "index0": 6,
+        "index1": 6,
+        "allocatedNowMB": 28.9,
+        "workingSetMB": 121.5,
+        "lastGc": {
+          "index": 6,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 28.9,
+          "committedMB": 38.1,
+          "fragmentedMB": 11.6,
+          "promotedMB": 0.5,
+          "pauseMs": [
+            0.409,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 5.2,
+              "fragmentationBeforeMB": 0.7,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0.4,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 11.6,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 11.6
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 43,
+        "redrawMs": 0.528,
+        "gcPauseMs": 0,
+        "index0": 6,
+        "index1": 6,
+        "allocatedNowMB": 29.9,
+        "workingSetMB": 121.5,
+        "lastGc": {
+          "index": 6,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 28.9,
+          "committedMB": 38.1,
+          "fragmentedMB": 11.6,
+          "promotedMB": 0.5,
+          "pauseMs": [
+            0.409,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 5.2,
+              "fragmentationBeforeMB": 0.7,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0.4,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 11.6,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 11.6
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 44,
+        "redrawMs": 0.739,
+        "gcPauseMs": 0.081,
+        "index0": 6,
+        "index1": 6,
+        "allocatedNowMB": 30.8,
+        "workingSetMB": 121.5,
+        "lastGc": {
+          "index": 6,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 28.9,
+          "committedMB": 38.1,
+          "fragmentedMB": 11.6,
+          "promotedMB": 0.5,
+          "pauseMs": [
+            0.409,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 5.2,
+              "fragmentationBeforeMB": 0.7,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0.4,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 11.6,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 11.6
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 45,
+        "redrawMs": 0.573,
+        "gcPauseMs": 0,
+        "index0": 6,
+        "index1": 6,
+        "allocatedNowMB": 31.8,
+        "workingSetMB": 121.5,
+        "lastGc": {
+          "index": 6,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 28.9,
+          "committedMB": 38.1,
+          "fragmentedMB": 11.6,
+          "promotedMB": 0.5,
+          "pauseMs": [
+            0.409,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 5.2,
+              "fragmentationBeforeMB": 0.7,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0.4,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 11.6,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 11.6
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 46,
+        "redrawMs": 0.542,
+        "gcPauseMs": 0,
+        "index0": 6,
+        "index1": 6,
+        "allocatedNowMB": 32.8,
+        "workingSetMB": 121.5,
+        "lastGc": {
+          "index": 6,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 28.9,
+          "committedMB": 38.1,
+          "fragmentedMB": 11.6,
+          "promotedMB": 0.5,
+          "pauseMs": [
+            0.409,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 5.2,
+              "fragmentationBeforeMB": 0.7,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0.4,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 11.6,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 11.6
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 47,
+        "redrawMs": 0.997,
+        "gcPauseMs": 0.236,
+        "index0": 6,
+        "index1": 6,
+        "allocatedNowMB": 21.8,
+        "workingSetMB": 121.5,
+        "lastGc": {
+          "index": 6,
+          "generation": 1,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 28.9,
+          "committedMB": 38.1,
+          "fragmentedMB": 11.6,
+          "promotedMB": 0.5,
+          "pauseMs": [
+            0.409,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 5.2,
+              "fragmentationBeforeMB": 0.7,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0.4,
+              "fragmentationBeforeMB": 0.4,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 20.7,
+              "fragmentationBeforeMB": 11.6,
+              "sizeAfterMB": 20.7,
+              "fragmentationAfterMB": 11.6
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 48,
+        "redrawMs": 0.566,
+        "gcPauseMs": 0,
+        "index0": 6,
+        "index1": 7,
+        "allocatedNowMB": 23,
+        "workingSetMB": 113.2,
+        "lastGc": {
+          "index": 7,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 23.8,
+          "committedMB": 29.8,
+          "fragmentedMB": 8.7,
+          "promotedMB": 14,
+          "pauseMs": [
+            0.081,
+            0.236
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 2.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.1,
+              "fragmentationAfterMB": 2.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 23.2,
+              "fragmentationBeforeMB": 8.6,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 6.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 7,
+            "Generation": 2,
+            "type": "background",
+            "Reason": 4,
+            "durationMs": 3.305,
+            "pauseMs": 7.948,
+            "Compacting": false,
+            "GlobalMechanisms": 21,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 0,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0.43,
+              0.04,
+              7.72,
+              5.8,
+              0
+            ],
+            "generationSizesMB": [
+              4.1,
+              0,
+              7.7,
+              11.9,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "redraw": 49,
+        "redrawMs": 0.544,
+        "gcPauseMs": 0,
+        "index0": 7,
+        "index1": 7,
+        "allocatedNowMB": 24,
+        "workingSetMB": 113.3,
+        "lastGc": {
+          "index": 7,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 23.8,
+          "committedMB": 29.8,
+          "fragmentedMB": 8.7,
+          "promotedMB": 14,
+          "pauseMs": [
+            0.081,
+            0.236
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 2.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.1,
+              "fragmentationAfterMB": 2.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 23.2,
+              "fragmentationBeforeMB": 8.6,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 6.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 50,
+        "redrawMs": 0.586,
+        "gcPauseMs": 0,
+        "index0": 7,
+        "index1": 7,
+        "allocatedNowMB": 25.1,
+        "workingSetMB": 113.2,
+        "lastGc": {
+          "index": 7,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 23.8,
+          "committedMB": 29.8,
+          "fragmentedMB": 8.7,
+          "promotedMB": 14,
+          "pauseMs": [
+            0.081,
+            0.236
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 2.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.1,
+              "fragmentationAfterMB": 2.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 23.2,
+              "fragmentationBeforeMB": 8.6,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 6.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 51,
+        "redrawMs": 0.506,
+        "gcPauseMs": 0,
+        "index0": 7,
+        "index1": 7,
+        "allocatedNowMB": 26.1,
+        "workingSetMB": 113.2,
+        "lastGc": {
+          "index": 7,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 23.8,
+          "committedMB": 29.8,
+          "fragmentedMB": 8.7,
+          "promotedMB": 14,
+          "pauseMs": [
+            0.081,
+            0.236
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 2.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.1,
+              "fragmentationAfterMB": 2.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 23.2,
+              "fragmentationBeforeMB": 8.6,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 6.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 52,
+        "redrawMs": 0.551,
+        "gcPauseMs": 0,
+        "index0": 7,
+        "index1": 7,
+        "allocatedNowMB": 27.1,
+        "workingSetMB": 113.2,
+        "lastGc": {
+          "index": 7,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 23.8,
+          "committedMB": 29.8,
+          "fragmentedMB": 8.7,
+          "promotedMB": 14,
+          "pauseMs": [
+            0.081,
+            0.236
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 2.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.1,
+              "fragmentationAfterMB": 2.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 23.2,
+              "fragmentationBeforeMB": 8.6,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 6.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 53,
+        "redrawMs": 0.529,
+        "gcPauseMs": 0,
+        "index0": 7,
+        "index1": 7,
+        "allocatedNowMB": 28,
+        "workingSetMB": 113.2,
+        "lastGc": {
+          "index": 7,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 23.8,
+          "committedMB": 29.8,
+          "fragmentedMB": 8.7,
+          "promotedMB": 14,
+          "pauseMs": [
+            0.081,
+            0.236
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 2.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.1,
+              "fragmentationAfterMB": 2.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 23.2,
+              "fragmentationBeforeMB": 8.6,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 6.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 54,
+        "redrawMs": 0.53,
+        "gcPauseMs": 0,
+        "index0": 7,
+        "index1": 7,
+        "allocatedNowMB": 29,
+        "workingSetMB": 113.2,
+        "lastGc": {
+          "index": 7,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 23.8,
+          "committedMB": 29.8,
+          "fragmentedMB": 8.7,
+          "promotedMB": 14,
+          "pauseMs": [
+            0.081,
+            0.236
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 2.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.1,
+              "fragmentationAfterMB": 2.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 23.2,
+              "fragmentationBeforeMB": 8.6,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 6.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 55,
+        "redrawMs": 0.533,
+        "gcPauseMs": 0,
+        "index0": 7,
+        "index1": 7,
+        "allocatedNowMB": 30,
+        "workingSetMB": 113.2,
+        "lastGc": {
+          "index": 7,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 23.8,
+          "committedMB": 29.8,
+          "fragmentedMB": 8.7,
+          "promotedMB": 14,
+          "pauseMs": [
+            0.081,
+            0.236
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 2.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.1,
+              "fragmentationAfterMB": 2.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 23.2,
+              "fragmentationBeforeMB": 8.6,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 6.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 56,
+        "redrawMs": 0.532,
+        "gcPauseMs": 0,
+        "index0": 7,
+        "index1": 7,
+        "allocatedNowMB": 31,
+        "workingSetMB": 113.2,
+        "lastGc": {
+          "index": 7,
+          "generation": 2,
+          "compacted": false,
+          "concurrent": true,
+          "heapSizeMB": 23.8,
+          "committedMB": 29.8,
+          "fragmentedMB": 8.7,
+          "promotedMB": 14,
+          "pauseMs": [
+            0.081,
+            0.236
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 2.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 4.1,
+              "fragmentationAfterMB": 2.5
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 23.2,
+              "fragmentationBeforeMB": 8.6,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 6.1
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 57,
+        "redrawMs": 0.933,
+        "gcPauseMs": 0.373,
+        "index0": 7,
+        "index1": 8,
+        "allocatedNowMB": 27.5,
+        "workingSetMB": 112.4,
+        "lastGc": {
+          "index": 8,
+          "generation": 0,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 20.1,
+          "committedMB": 29,
+          "fragmentedMB": 1.7,
+          "promotedMB": 0.4,
+          "pauseMs": [
+            0.373,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 6,
+              "fragmentationBeforeMB": 0.6,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": [
+          {
+            "Index": 8,
+            "Generation": 0,
+            "type": "blocking",
+            "Reason": 0,
+            "durationMs": 0.323,
+            "pauseMs": 0.403,
+            "Compacting": true,
+            "GlobalMechanisms": 22,
+            "freeListAllocatedMB": 0,
+            "endOfSegAllocatedMB": 0,
+            "condemnedAllocatedMB": 0,
+            "FreeListRejected": 0,
+            "PinnedAllocated": 0,
+            "CompactMechanisms": 2147483650,
+            "ExpandMechanisms": 0,
+            "promotedMB": [
+              0.4,
+              0,
+              0,
+              0,
+              0
+            ],
+            "generationSizesMB": [
+              0,
+              0.4,
+              7.7,
+              11.9,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "redraw": 58,
+        "redrawMs": 0.53,
+        "gcPauseMs": 0,
+        "index0": 8,
+        "index1": 8,
+        "allocatedNowMB": 28.4,
+        "workingSetMB": 112.4,
+        "lastGc": {
+          "index": 8,
+          "generation": 0,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 20.1,
+          "committedMB": 29,
+          "fragmentedMB": 1.7,
+          "promotedMB": 0.4,
+          "pauseMs": [
+            0.373,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 6,
+              "fragmentationBeforeMB": 0.6,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 59,
+        "redrawMs": 0.534,
+        "gcPauseMs": 0,
+        "index0": 8,
+        "index1": 8,
+        "allocatedNowMB": 29.4,
+        "workingSetMB": 112.4,
+        "lastGc": {
+          "index": 8,
+          "generation": 0,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 20.1,
+          "committedMB": 29,
+          "fragmentedMB": 1.7,
+          "promotedMB": 0.4,
+          "pauseMs": [
+            0.373,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 6,
+              "fragmentationBeforeMB": 0.6,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      },
+      {
+        "redraw": 60,
+        "redrawMs": 0.678,
+        "gcPauseMs": 0.076,
+        "index0": 8,
+        "index1": 8,
+        "allocatedNowMB": 30.4,
+        "workingSetMB": 112.4,
+        "lastGc": {
+          "index": 8,
+          "generation": 0,
+          "compacted": true,
+          "concurrent": false,
+          "heapSizeMB": 20.1,
+          "committedMB": 29,
+          "fragmentedMB": 1.7,
+          "promotedMB": 0.4,
+          "pauseMs": [
+            0.373,
+            0
+          ],
+          "generations": [
+            {
+              "sizeBeforeMB": 6,
+              "fragmentationBeforeMB": 0.6,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0.4,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 7.7,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 7.7,
+              "fragmentationAfterMB": 0
+            },
+            {
+              "sizeBeforeMB": 11.9,
+              "fragmentationBeforeMB": 1.7,
+              "sizeAfterMB": 11.9,
+              "fragmentationAfterMB": 1.7
+            },
+            {
+              "sizeBeforeMB": 0,
+              "fragmentationBeforeMB": 0,
+              "sizeAfterMB": 0,
+              "fragmentationAfterMB": 0
+            }
+          ]
+        },
+        "collections": []
+      }
+    ]
+  }
+}

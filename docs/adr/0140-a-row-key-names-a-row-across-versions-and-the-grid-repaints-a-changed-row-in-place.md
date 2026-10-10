@@ -23,7 +23,8 @@ the row from every other row, and stays the same when the row's data changes.
 - **Row Identity stays the change signal.** `ShouldRender` still compares the row by reference. A
   key never tells the grid that a row is unchanged, and a row rewritten in place still does not
   repaint.
-- **The grid compares no values and holds nothing between Windows.** The key pairs one render's rows
+- **The grid compares no values and holds nothing between Windows.** *(Made a rule with a check on
+  2026-10-07: [ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md).)* The key pairs one render's rows
   with the next render's, and nothing else.
   [ADR-0068](./0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)'s
   rule stands: the grid never compares values itself.
@@ -100,8 +101,9 @@ changed:
   - ADR-0037's engagement and
     [ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)'s P7 are held by the
     core, not by the row. They are re-read against this when it is built.
-- **A press on an Action names the row as it was painted when it was pressed.** See
-  [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).
+- **An Action press acts on the row it was pressed on**, which its key keeps in hand. *(Until 2026-10-07
+  it was judged on the row as painted when pressed; see
+  [ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md), rewritten.)*
 - **`CONTEXT.md` gains Row Key.** It is distinct from Row Identity, the test for sameness, and from
   Record Key, a Snapshot's declared column. A Snapshot's rows take their Row Key from the Record
   Key.

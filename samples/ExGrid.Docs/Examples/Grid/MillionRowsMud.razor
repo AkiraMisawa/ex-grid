@@ -9,6 +9,7 @@
     <ChildContent>
         <ExGrid TRow="Trade" Window="_window" WindowStart="_windowStart" TotalCount="MillionTrades.Count"
                 IsLoading="_loading" OnRangeNeeded="OnRangeNeeded" Columns="Columns" Chrome="_chrome"
+                RowKey="TradeId" VouchesDistinctRows="true"
                 ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
     </ChildContent>
 </MudExGridPaper>
@@ -29,6 +30,11 @@
         new("Price", ColumnType.Number, t => t.Price),
         new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
     ];
+
+    // A trade's id names it across Windows, so a row fetched again keeps its row component and only
+    // the text that changed is written. No id repeats among the million, so no Window cut from them
+    // can hold one twice: the page vouches for its Windows, and the grid checks only the rows it paints.
+    private static readonly Func<Trade, object> TradeId = static t => t.Id;
 
     // The grid cannot ask for rows in a result it has been told is empty, so the first page is ours to load.
     private IReadOnlyList<Trade> _window = MillionTrades.Range(0, 100);

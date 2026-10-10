@@ -1,0 +1,1633 @@
+{
+  "mode": "pivot-memory",
+  "machine": {
+    "at": "2026-10-07T13:27:56.5512460\u002B01:00",
+    "loadavg": "{ 2.29 2.69 2.81 }",
+    "top": [
+      " %CPU     ELAPSED COMMAND",
+      " 40.2 37-06:50:59 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon",
+      " 10.9    17:08:57 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper --type=gpu-process --user-data-dir=/Users/akira338",
+      "  7.6    17:08:57 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer --user-data-",
+      "  7.2    17:09:01 /Applications/Claude.app/Contents/MacOS/Claude",
+      "  3.9    13:08:02 /Applications/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "  2.6    13:08:00 /Applications/Wispr Flow.app/Contents/Frameworks/Wispr Flow Helper (Renderer).app/Contents/MacOS/Wispr Flow Helper (Renderer) --type=renderer ",
+      "  2.4 23-21:17:26 /Users/akira338/Library/Android/sdk/emulator/qemu/darwin-aarch64/qemu-system-aarch64-headless -avd saylo_pixel -no-window -no-audio -no-boot-a",
+      "  2.1 37-06:50:59 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow console",
+      "  1.6 37-06:40:44 /Applications/WezTerm.app/Contents/MacOS/wezterm-gui",
+      "  1.6 37-06:40:44 /Applications/Armored Client.app/Contents/MacOS/Armored Client",
+      "  1.3 01-00:28:19 claude"
+    ],
+    "tieredCompilation": "0",
+    "runtime": ".NET 10.0.7",
+    "gc": "workstation"
+  },
+  "measured": {
+    "aCount": 1000,
+    "bCount": 100,
+    "k": 1,
+    "redraws": 200,
+    "baselineMB": 152.5,
+    "samples": [
+      {
+        "redraw": 1,
+        "heapMB": 154.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 3,
+        "workingSetMB": 196.9
+      },
+      {
+        "redraw": 2,
+        "heapMB": 154.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 5,
+        "workingSetMB": 200.7
+      },
+      {
+        "redraw": 3,
+        "heapMB": 154.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 197.4
+      },
+      {
+        "redraw": 4,
+        "heapMB": 154.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 200.7
+      },
+      {
+        "redraw": 5,
+        "heapMB": 154.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.9
+      },
+      {
+        "redraw": 6,
+        "heapMB": 154.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.2
+      },
+      {
+        "redraw": 7,
+        "heapMB": 155.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 8,
+        "heapMB": 155.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 9,
+        "heapMB": 155.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.2
+      },
+      {
+        "redraw": 10,
+        "heapMB": 155.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.2
+      },
+      {
+        "redraw": 11,
+        "heapMB": 155.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 12,
+        "heapMB": 155.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.2
+      },
+      {
+        "redraw": 13,
+        "heapMB": 156,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.2
+      },
+      {
+        "redraw": 14,
+        "heapMB": 156.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.2
+      },
+      {
+        "redraw": 15,
+        "heapMB": 156.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 16,
+        "heapMB": 156.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 17,
+        "heapMB": 156.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 18,
+        "heapMB": 156.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 19,
+        "heapMB": 157,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 20,
+        "heapMB": 157.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 21,
+        "heapMB": 157.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 22,
+        "heapMB": 157.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 23,
+        "heapMB": 157.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 24,
+        "heapMB": 157.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 25,
+        "heapMB": 158,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 26,
+        "heapMB": 158.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 27,
+        "heapMB": 158.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 28,
+        "heapMB": 158.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 29,
+        "heapMB": 158.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 30,
+        "heapMB": 158.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 31,
+        "heapMB": 158.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 32,
+        "heapMB": 159.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 33,
+        "heapMB": 159.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 34,
+        "heapMB": 159.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 35,
+        "heapMB": 159.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 36,
+        "heapMB": 159.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 37,
+        "heapMB": 159.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 38,
+        "heapMB": 160.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 39,
+        "heapMB": 160.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 40,
+        "heapMB": 160.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 41,
+        "heapMB": 160.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 42,
+        "heapMB": 160.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 43,
+        "heapMB": 160.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 44,
+        "heapMB": 161.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 45,
+        "heapMB": 161.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 46,
+        "heapMB": 161.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 47,
+        "heapMB": 161.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 48,
+        "heapMB": 161.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 49,
+        "heapMB": 161.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 50,
+        "heapMB": 162.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 51,
+        "heapMB": 162.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.2
+      },
+      {
+        "redraw": 52,
+        "heapMB": 162.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.5
+      },
+      {
+        "redraw": 53,
+        "heapMB": 162.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.3
+      },
+      {
+        "redraw": 54,
+        "heapMB": 162.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 198.8
+      },
+      {
+        "redraw": 55,
+        "heapMB": 162.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.6
+      },
+      {
+        "redraw": 56,
+        "heapMB": 163.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.1
+      },
+      {
+        "redraw": 57,
+        "heapMB": 163.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 195.9
+      },
+      {
+        "redraw": 58,
+        "heapMB": 163.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.4
+      },
+      {
+        "redraw": 59,
+        "heapMB": 163.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 196.3
+      },
+      {
+        "redraw": 60,
+        "heapMB": 163.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 199.8
+      },
+      {
+        "redraw": 61,
+        "heapMB": 163.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 196.6
+      },
+      {
+        "redraw": 62,
+        "heapMB": 164.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 200.1
+      },
+      {
+        "redraw": 63,
+        "heapMB": 164.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 197
+      },
+      {
+        "redraw": 64,
+        "heapMB": 164.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 200.4
+      },
+      {
+        "redraw": 65,
+        "heapMB": 227.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 269.5
+      },
+      {
+        "redraw": 66,
+        "heapMB": 186,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 260.6
+      },
+      {
+        "redraw": 67,
+        "heapMB": 170.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 253.2
+      },
+      {
+        "redraw": 68,
+        "heapMB": 170.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 251.4
+      },
+      {
+        "redraw": 69,
+        "heapMB": 170.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 251.4
+      },
+      {
+        "redraw": 70,
+        "heapMB": 170.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 251.4
+      },
+      {
+        "redraw": 71,
+        "heapMB": 170.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 251.4
+      },
+      {
+        "redraw": 72,
+        "heapMB": 154.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 244.9
+      },
+      {
+        "redraw": 73,
+        "heapMB": 154.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 239.5
+      },
+      {
+        "redraw": 74,
+        "heapMB": 154.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 75,
+        "heapMB": 154.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 76,
+        "heapMB": 154.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 77,
+        "heapMB": 154.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 78,
+        "heapMB": 155,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 79,
+        "heapMB": 155.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 80,
+        "heapMB": 155.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 81,
+        "heapMB": 155.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 82,
+        "heapMB": 155.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 83,
+        "heapMB": 155.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 84,
+        "heapMB": 156,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 85,
+        "heapMB": 156.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 86,
+        "heapMB": 156.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 87,
+        "heapMB": 156.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 88,
+        "heapMB": 156.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 89,
+        "heapMB": 156.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 90,
+        "heapMB": 157,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 91,
+        "heapMB": 157.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 92,
+        "heapMB": 157.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 93,
+        "heapMB": 157.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 94,
+        "heapMB": 157.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 95,
+        "heapMB": 157.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 96,
+        "heapMB": 157.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 97,
+        "heapMB": 158.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 98,
+        "heapMB": 158.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 99,
+        "heapMB": 158.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 100,
+        "heapMB": 158.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 101,
+        "heapMB": 158.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 102,
+        "heapMB": 158.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 103,
+        "heapMB": 159.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 104,
+        "heapMB": 159.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 105,
+        "heapMB": 159.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 106,
+        "heapMB": 159.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 107,
+        "heapMB": 159.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 108,
+        "heapMB": 159.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 109,
+        "heapMB": 160.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 110,
+        "heapMB": 160.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 111,
+        "heapMB": 160.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 112,
+        "heapMB": 160.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 113,
+        "heapMB": 160.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 114,
+        "heapMB": 160.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 115,
+        "heapMB": 161.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 116,
+        "heapMB": 161.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 117,
+        "heapMB": 161.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 118,
+        "heapMB": 161.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 119,
+        "heapMB": 161.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 120,
+        "heapMB": 161.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 121,
+        "heapMB": 162.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 122,
+        "heapMB": 162.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 123,
+        "heapMB": 162.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 124,
+        "heapMB": 162.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 125,
+        "heapMB": 162.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.6
+      },
+      {
+        "redraw": 126,
+        "heapMB": 162.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.8
+      },
+      {
+        "redraw": 127,
+        "heapMB": 163.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 235.9
+      },
+      {
+        "redraw": 128,
+        "heapMB": 163.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 236.1
+      },
+      {
+        "redraw": 129,
+        "heapMB": 225.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 280.4
+      },
+      {
+        "redraw": 130,
+        "heapMB": 186.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 271.1
+      },
+      {
+        "redraw": 131,
+        "heapMB": 170.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 265.1
+      },
+      {
+        "redraw": 132,
+        "heapMB": 170.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 264.6
+      },
+      {
+        "redraw": 133,
+        "heapMB": 170.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 264.6
+      },
+      {
+        "redraw": 134,
+        "heapMB": 170.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 264.6
+      },
+      {
+        "redraw": 135,
+        "heapMB": 154.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 258
+      },
+      {
+        "redraw": 136,
+        "heapMB": 154.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 252.7
+      },
+      {
+        "redraw": 137,
+        "heapMB": 154.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 138,
+        "heapMB": 154.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 139,
+        "heapMB": 154.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 140,
+        "heapMB": 154.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 141,
+        "heapMB": 155,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 142,
+        "heapMB": 155.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 143,
+        "heapMB": 155.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 144,
+        "heapMB": 155.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 145,
+        "heapMB": 155.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 146,
+        "heapMB": 155.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 147,
+        "heapMB": 156,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 148,
+        "heapMB": 156.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 149,
+        "heapMB": 156.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 150,
+        "heapMB": 156.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 151,
+        "heapMB": 156.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 152,
+        "heapMB": 156.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 153,
+        "heapMB": 157,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 154,
+        "heapMB": 157.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 155,
+        "heapMB": 157.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 156,
+        "heapMB": 157.5,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 157,
+        "heapMB": 157.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 158,
+        "heapMB": 157.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 159,
+        "heapMB": 158,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 160,
+        "heapMB": 158.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 161,
+        "heapMB": 158.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 162,
+        "heapMB": 158.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 163,
+        "heapMB": 158.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 164,
+        "heapMB": 158.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 165,
+        "heapMB": 158.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 166,
+        "heapMB": 159.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 167,
+        "heapMB": 159.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 168,
+        "heapMB": 159.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 169,
+        "heapMB": 159.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 170,
+        "heapMB": 159.8,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 171,
+        "heapMB": 159.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 172,
+        "heapMB": 160.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 173,
+        "heapMB": 160.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 174,
+        "heapMB": 160.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 175,
+        "heapMB": 160.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 176,
+        "heapMB": 160.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 177,
+        "heapMB": 160.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 178,
+        "heapMB": 161.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 179,
+        "heapMB": 161.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 180,
+        "heapMB": 161.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 181,
+        "heapMB": 161.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 182,
+        "heapMB": 161.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 183,
+        "heapMB": 161.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 184,
+        "heapMB": 162.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 185,
+        "heapMB": 162.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 186,
+        "heapMB": 162.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 187,
+        "heapMB": 162.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 188,
+        "heapMB": 162.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.6
+      },
+      {
+        "redraw": 189,
+        "heapMB": 162.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.8
+      },
+      {
+        "redraw": 190,
+        "heapMB": 163.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 248.9
+      },
+      {
+        "redraw": 191,
+        "heapMB": 163.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 249.1
+      },
+      {
+        "redraw": 192,
+        "heapMB": 163.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 249.2
+      },
+      {
+        "redraw": 193,
+        "heapMB": 226.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 284
+      },
+      {
+        "redraw": 194,
+        "heapMB": 186.2,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 275.5
+      },
+      {
+        "redraw": 195,
+        "heapMB": 170.3,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 268.4
+      },
+      {
+        "redraw": 196,
+        "heapMB": 170.4,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 266.6
+      },
+      {
+        "redraw": 197,
+        "heapMB": 170.6,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 266.6
+      },
+      {
+        "redraw": 198,
+        "heapMB": 170.7,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 266.6
+      },
+      {
+        "redraw": 199,
+        "heapMB": 170.9,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 266.6
+      },
+      {
+        "redraw": 200,
+        "heapMB": 154.1,
+        "aliveEarlierReports": 0,
+        "aliveEarlierCubes": 0,
+        "historyTimesKept": 7,
+        "workingSetMB": 260.4
+      }
+    ]
+  }
+}
