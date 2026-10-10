@@ -1,0 +1,9 @@
+r1 main start 05:50:20 load 1.07 0.38 0.27
+r1 main end exit 0 05:50:42
+r2 branch start 05:50:42 load 1.13 0.44 0.29
+r2 branch end exit 0 05:50:59
+r3 branch start 05:50:59 load 1.16 0.49 0.31
+r3 branch end exit 0 05:51:18
+r4 main start 05:51:18 load 1.12 0.52 0.32
+r4 main end exit 0 05:51:39
+done 05:51:39

@@ -54,9 +54,11 @@ are in [`raw/`](raw/), and [`metrics.json`](metrics.json) holds every figure as 
   rows; `implementation-status.md`), recorded as it is.
 - **A new question over a million trades is slower than `main`'s, by 16 to 60%** (PV-21): a question of
   13,500 combinations takes 371 ms against 298, one of 198,450 2.96 s against 1.85, a million-row CSV's
-  first question 412 ms against 332, as the first report is slower on CoreCLR. The live update over a
-  million trades is about even (37 ms against 32 for 1,000 changes), and every gesture's first visual
-  answer stays within PV-21's 0.1 s on both sides.
+  first question 412 ms against 332. The extra is the branch's .NET code under the browser's interpreter,
+  and some collection: on CoreCLR the same questions are faster than `main`'s at 134,730 combinations
+  ("Where a new question's extra time goes"). The live update over a million trades is about even (37 ms
+  against 32 for 1,000 changes), and every gesture's first visual answer stays within PV-21's 0.1 s on
+  both sides.
 - **ExGrid's live update did not change** at 100 and 1,000 changes over 10⁶ rows. At one change the
   branch's median is 6.6–6.8 ms against `main`'s 14.6–15.4 in both rounds; this harness does not separate
   why.
@@ -187,12 +189,51 @@ targets are the user's "snappy" (Q52).
 | Arrow from the demo API, read again / objects into a Snapshot | | 2,620 / 2,563 | 2,619 / 2,658 |
 
 - **Every new question is slower on the branch**, by 16% (tick Book) to 60% (198,450 combinations), on every
-  question asked, as the first report is on CoreCLR above; reading the data is within 4% (Arrow, objects,
-  the CSV's read). This harness does not separate where the time goes. The branch misses one target `main`
+  question asked; reading the data is within 4% (Arrow, objects, the CSV's read). Where the time goes is
+  the next section. The branch misses one target `main`
   met: the 13,500-combination question, 371 ms against PV-21's 300 (`main` 298). Neither side meets 0.3 s
   from 27,000 combinations up, or 50 ms of blocking.
 - **The live update over a million trades is about even.** Its report is small (14 rows), so the branch's
   gain shows only as the report grows: the tables above.
+
+## Where a new question's extra time goes
+
+Measured after PV-21, the same day. The five questions were timed on CoreCLR through the component
+(`harness/PerfQuestion.cs.txt`: bUnit, `DOTNET_TieredCompilation=0`, the demo's million trades, slicing off,
+each question asked after the page's first layout, five runs after one, two rounds a side). Three of them
+were profiled in the browser (`harness/profile-question.cjs.txt`): Chrome's CPU profiler from the Update
+click to the answer, three runs each, every sample named through the runtime pack's symbol map for
+`dotnet.native.wasm`, which the published hosts carry unchanged (`raw/question/`). The profiler slows
+both sides; the split is what it says.
+
+| Combinations | CoreCLR, ms: `main` / branch | Allocated a question, MiB: `main` → branch | Browser, profiled, ms: `main` / branch | of which .NET code | of which the collector | idle |
+|---|---|---|---|---|---|---|
+| 1,350 | 16 / 19–20 | 9 → 14 | 235–370 / 282–299 | 200–227 / 234–262 | 3–101 / 2–4 | 21–26 / 15–27 |
+| 13,500 | 25–26 / 37 | 18 → 26 | | | | |
+| 66,150 | 83–147 / 113–116 | 67 → 88 | | | | |
+| 134,730 | 459–495 / 283–302 | 171 → 205 | 2,047–2,117 / 2,910–3,116 | 1,697–1,797 / 2,377–2,459 | 239–273 / 400–540 | 11–23 / 7–20 |
+| 198,450 | 318–319 / 381–404 | 137 → 211 | 2,144–2,153 / 3,164–3,213 | 1,851–1,854 / 2,794–2,834 | 207–223 / 269–272 | 10–23 / 14 |
+
+The browser's columns leave out each layout's first run, which compiles what it runs.
+
+- **Nothing waits.** The main thread is idle for 7–27 ms of a question on either side, so slicing's yields
+  cost nothing measurable.
+- **Most of the extra is the branch's .NET code, run by the browser's interpreter**: 0.7 s of 0.9 s at
+  134,730 combinations, 1.0 s of 1.04 s at 198,450. The collector takes the rest, 0.2 s at 134,730
+  combinations, where the branch allocates 205 MiB a question against 171 and keeps more of it.
+- **On CoreCLR the same questions are not uniformly slower.** At 134,730 combinations the branch is 40%
+  faster; it is slower for the smallest questions and at 198,450 combinations, by 20 to 45%. Taking PV-21's
+  own times, the browser multiplies `main`'s CoreCLR time by 4 to 6 for the large questions and the
+  branch's by 7.5 to 8.5. In the branch's profile the hottest native frames are the interpreter itself,
+  `memmove` and `memset` (arrays copied and cleared) and `get_virtual_method_fast` (virtual calls): work
+  a JIT inlines or devirtualises, and the interpreter does as written. `main`'s raw profile was not kept
+  to compare frame by frame.
+- **What the branch builds that `main` does not** is the state a live update folds into. That is the pass
+  that keeps each row's leaf, the incremental cube, and the report's parts that versions share, all built
+  with the report. A live update over that state costs 4–22 ms at 401,001 report rows, against `main`'s 600.
+- **Which of those costs most in the browser is not separated.** The interpreter's frames name no .NET
+  method, and the jiterpreter's traces are anonymous modules. A build timed phase by phase in the browser
+  would say.
 
 ## Not measured
 
@@ -213,6 +254,8 @@ From the repository root, a worktree for each side, with the harness files copie
 | `PerfGrid.*.txt` | `spikes/live-update/PerfGrid/` (`Program.cs`, `CountingRenderer.cs`, `Support.cs`, `Trades.cs`, `PerfGrid.csproj`) |
 | `PerfLiveMemoryPage.razor.txt` | `samples/ExGrid.DemoPages/Pages/PerfLiveMemoryPage.razor` |
 | `perf-memory.spec.mjs.txt`, `perf-memory.config.mjs.txt` | `tests/ExGrid.Browser/` (copied in by the run, removed after) |
+| `PerfQuestion.cs.txt` | `tests/ExPivot.Components/PerfQuestion.cs`, beside `samples/ExGrid.DemoPages/DemoPivotData.cs` copied in as `MeasurementDemoPivotData.cs`; on `main` the report token is `ExPivot.Report` and its row count `Report.Rows.Count` |
+| `profile-question.cjs.txt` | run with node against a served host: `node profile-question.cjs <url> <out.json> <dotnet.native.js.symbols of the runtime pack>` |
 
 Build each side in Release (`nix develop -c dotnet build tests/ExPivot.Components -c Release`, the same for
 `tests/ExPivot.Engine.Tests`, `spikes/live-update/PerfGrid` and `samples/ExGrid.DemoApi`), publish its DemoHost
