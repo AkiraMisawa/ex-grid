@@ -518,7 +518,7 @@ test('item 15: Escape in the Formula Bar cancels the edit and gives the keys bac
 
 // ---- Clipboard (ADR-0048, ADR-0050) ------------------------------------------------------------
 
-waitsOn(14)('item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)', async ({ page }) => {
     await enter(page, 'E1', '=B2');
     await click(page, 'E1');
     await page.keyboard.press('Control+C');
@@ -528,7 +528,7 @@ waitsOn(14)('item 16: a copied Formula pastes with its relative References shift
     expect(await entryOf(page, 'E3')).toBe('=B4');
 });
 
-waitsOn(14)('item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)', async ({ page }) => {
+test('item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)', async ({ page }) => {
     await click(page, 'B2');
     await click(page, 'D4', { modifiers: ['Shift'] });
     await page.keyboard.press('Control+C');
@@ -554,17 +554,17 @@ async function pasteText(page, a1, text) {
     await page.keyboard.press('Control+V');
 }
 
-waitsOn(14)('item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)', async ({ page }) => {
     await pasteText(page, 'E5', '=A1+1');
     expect(await entryOf(page, 'E5')).toBe('=A1+1');
 });
 
-waitsOn(14)('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)', async ({ page }) => {
     await pasteText(page, 'E5', '1,234');
     await expect(cell(page, 'E5')).toHaveText('1,234');
 });
 
-waitsOn(14)('item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)', async ({ page }) => {
     await pasteText(page, 'E5', '=1+');
     // Excel took unreadable Formula text as the text itself, with no refusal and no dialog.
     await expect(cell(page, 'E5')).toHaveText('=1+');
