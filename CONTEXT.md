@@ -722,9 +722,19 @@ it is now in a time zone: the Consumer's, or else the browser's. Until one is kn
 ([ADR-0121](./docs/adr/0121-today-is-the-sheet-day-and-exsheet-keeps-it.md)).
 _Avoid_: system date, server date, current date
 
+**Sheet Seed**:
+The number a Sheet's `RAND` and `RANDBETWEEN` draw from. With the cell, the call and the count of
+changes since the Sheet was opened, it decides each draw, so the same seed and the same changes give
+the same draws. It is the Consumer's `Seed` when one is given, or else one ExSheet chooses when it
+opens a Sheet Document, which never records it
+([ADR-0180](./docs/adr/0180-rand-and-randbetween-draw-from-the-sheet-seed-and-draw-again-at-each-change.md)).
+_Avoid_: random state, RNG state
+
 **Volatile Function**:
 A function whose answer can change while no cell its Formula names changes — `OFFSET`, which reads
-a Reference it computes, and `NOW`. A Formula that calls one is recalculated in every recalculation
+a Reference it computes, `INDIRECT`, which reads one written as text, `NOW`, and `RAND` and
+`RANDBETWEEN`, which draw again at each change. A Formula that calls one is recalculated in every
+recalculation
 ([ADR-0124](./docs/adr/0124-volatile-functions-are-recalculated-after-every-change.md)).
 _Avoid_: dynamic function, live function
 

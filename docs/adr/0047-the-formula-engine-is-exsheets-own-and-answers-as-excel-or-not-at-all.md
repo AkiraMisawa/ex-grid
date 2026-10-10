@@ -489,3 +489,42 @@ future work, never a reason to loosen a comparison.
 cases at the required 15 significant digits. It does not prove that a matching algorithm is
 impossible. LET's Formula-local names and random functions' reproducibility/persistence still
 need their own decisions. Observing those functions did not admit them.
+
+## The catalogue's last Decide rows *(decided with the user, 2026-10-10)*
+
+The rows of the function catalogue that still waited on a decision were put to the user together
+(`docs/specs/exsheet-functions/spec.md`, tickets 13 to 18).
+
+- **`RAND` and `RANDBETWEEN`** draw from the Sheet Seed, and draw again at each change:
+  [ADR-0180](./0180-rand-and-randbetween-draw-from-the-sheet-seed-and-draw-again-at-each-change.md).
+- **`LET`** binds names inside one Formula, as Excel's keyboard accepts them:
+  [ADR-0181](./0181-let-binds-names-inside-one-formula-as-excel-accepts-them-from-the-keyboard.md).
+- **`IRR`, `XIRR` and `RATE` stay undeclared, and no work goes into them for now.**
+  - Microsoft documents only their iteration's limits and tolerances. Those are eight to ten
+    orders of magnitude coarser than the fifteen digits this ADR compares, and the iteration
+    itself is not documented.
+  - So no domain of their arguments can be shown to match Excel from what is documented, and none
+    is admitted with the rest refused.
+  - They wait for an implementation that reproduces every observed case.
+- **`SUBTOTAL` and `AGGREGATE` are admitted while a Sheet cannot hide a row.**
+  - A Sheet has no hidden or filtered row yet
+    ([ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)). So
+    the codes that skip hidden rows (101–111, and `AGGREGATE`'s options that do) give what the
+    others give, as they do in Excel over such a sheet.
+  - A test names this, and fails on the day a row can be hidden, as SH-37's does for its refusal.
+  - Microsoft documents that both skip nested subtotals, but not which cells count as nested. A
+    cell whose whole Formula is a `SUBTOTAL` is skipped by `SUBTOTAL`. A cell whose whole Formula
+    is a `SUBTOTAL` or an `AGGREGATE` is skipped by `AGGREGATE`'s options 0 to 3. Any other call
+    of either function inside the range makes the result `#VALUE!` until a Windows run asks Excel:
+    a call inside a larger Formula, or an `AGGREGATE` inside a `SUBTOTAL`'s range.
+  - `AGGREGATE`'s function numbers for functions the engine does not support are `#VALUE!`.
+- **`ERROR.TYPE` gives `#GETTING_DATA` and `#CIRC!` back**, as `IFNA` and `ISBLANK` do (above), and
+  never a number for them.
+  - Microsoft's table numbers `#GETTING_DATA` 8. Answering 8 would let a Formula show a number
+    while the data it needs is still on its way
+    ([ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md)).
+  - An Error Value outside Microsoft's table is `#VALUE!` until Excel is asked: `#SPILL!`,
+    `#CALC!`, and the typed `#FIELD!`, `#BLOCKED!`, `#CONNECT!` and `#UNKNOWN!`. Not `#N/A`, which
+    is the table's answer for a Value that is no error, and would read as one.
+- **`INDIRECT`** is admitted for A1-style text naming a place on the same Sheet:
+  [ADR-0124](./0124-volatile-functions-are-recalculated-after-every-change.md)'s note of this date.

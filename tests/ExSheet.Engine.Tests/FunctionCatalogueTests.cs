@@ -15,7 +15,7 @@ public class FunctionCatalogueTests
         @"^\| `(?<name>[A-Z][A-Z0-9.]*)` \| (?<status>[A-Za-z]+) \| (?<priority>P[123]|—) \|",
         RegexOptions.CultureInvariant | RegexOptions.Multiline);
 
-    private static readonly string[] Statuses = ["Supported", "Ready", "Observe", "Decide"];
+    private static readonly string[] Statuses = ["Supported", "Ready", "Observe", "Decide", "Blocked"];
 
     private static IReadOnlyList<(string Name, string Status, string Priority)> Catalogue()
     {

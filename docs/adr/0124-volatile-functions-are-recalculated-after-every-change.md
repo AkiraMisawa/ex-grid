@@ -62,3 +62,22 @@ locale is the Sheet's ([ADR-0048](./0048-a-sheet-document-holds-entries-and-exsh
 - `OFFSET`'s result can be a range of several cells. Until spilled arrays arrive
   ([ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md)), such a result
   is a range a function such as `SUM` reads, and `#VALUE!` where one Value is wanted.
+
+## `RAND`, `RANDBETWEEN` and `INDIRECT` *(decided with the user, 2026-10-10)*
+
+- **`RAND` and `RANDBETWEEN` are volatile,** and their draws change only at a change, never on the
+  clock: [ADR-0180](./0180-rand-and-randbetween-draw-from-the-sheet-seed-and-draw-again-at-each-change.md).
+- **`INDIRECT` is admitted for one form of text: an A1-style Reference to a cell or a range of the
+  same Sheet,** with or without the Sheet's own qualifier. It is volatile, as decided above, and the
+  place its text names is read as it stands after the recalculation.
+  - **Its text is not rewritten by an insertion or a deletion.** `INDIRECT("A5")` names A5 after a
+    row is inserted above row 5, while `=A5` becomes `=A6`: a Reference moves with its cell, and
+    text is only text. Excel is used for exactly this, though no Windows run has recorded it yet; the
+    next one does.
+  - **Text in a form Excel reads but no Windows run has observed is `#VALUE!`:**
+    - R1C1 style (`a1` given as FALSE);
+    - a structured reference such as `Positions[PV]`;
+    - a Spill Range's `A1#`.
+  - **Text that names no place is `#REF!`, as in Excel.** That includes another Sheet's name, since
+    an ExSheet holds one Sheet
+    ([ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).

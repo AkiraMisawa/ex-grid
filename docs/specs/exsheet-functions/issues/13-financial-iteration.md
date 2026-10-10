@@ -21,3 +21,15 @@ the gap. IRR-018 selects a different root; XIRR-001 stops at a different number;
 solves a case Excel refuses. RATE-009's near-zero answer also differs. Full inputs, results
 and methodology remain reviewable. This does not prove that a matching algorithm is impossible.
 All three functions remain undeclared (`#NAME?`).
+
+2026-10-10, decided with the user: not pursued for now. The three functions stay undeclared
+(`#NAME?`). The catalogue marks them Blocked, a status added for a function that has been observed
+but that nothing yet reproduces. What would unblock them:
+- an implementation of Excel's own iteration: its start, update, guard, stopping test, the iterate
+  it returns, and when it fails;
+- that reproduces all 143 observed cases to 15 significant digits;
+- then a Windows run designed to tell candidate algorithms apart.
+
+Microsoft's documented tolerances cannot prove any domain of arguments to match, so none is admitted
+with the rest refused (ADR-0047's note of 2026-10-10). The Status stays `needs-info`: the missing
+information is the algorithm.
