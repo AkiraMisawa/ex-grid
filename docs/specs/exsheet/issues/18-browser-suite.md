@@ -1,6 +1,6 @@
 # 18: ExSheet in real browsers
 
-Status: ready-for-agent
+Status: needs-info
 
 **What to build:** Layer 3 for everything above, on Chrome and Edge, against both hosts. It covers typing, Point by
 keys and by mouse, completion accepted with Tab, the Formula Bar mirroring, the fill-handle drag,
@@ -95,3 +95,63 @@ The first box stays open. Two criteria of §27 name Layer 3 and have no layer-3 
 
 Every other §27 criterion that names Layer 3 has a live test. What SH-42, SH-51 and SH-52 ask by
 hand on Windows is a Windows run's, not this ticket's.
+
+*(2026-10-10, SH-27 and SH-41 in layer 3.)* Both have tests now. SH-27 passes. SH-41 fails on Linux,
+where `system-ui` is DejaVu Sans. The fix needs a decision, so the first box stays open and the status
+is `needs-info`.
+
+- **SH-27**, `sheet-vs-excel.spec.mjs`, "third run, main keys case 5". This is Excel's case 5 of the
+  third Windows run, on `/sheet`'s own cells. B2:C3 is selected with the mouse from B2, and `=A1` is
+  typed with Ctrl+Enter. B2 holds `=A1`, C2 `=B1`, B3 `=A2` and C3 `=B2`, showing Item, Qty, Apples
+  and Item. The Selection stays B2:C3, with B2 active. One Ctrl+Z gives all four cells their Entries
+  back, and D2 its 6.
+- **SH-41**, `sheet-paper.spec.mjs`, four tests under each Chrome. They run on two new cases of
+  `SheetCases`, `bold` and `fit`. Each case sets its columns a hundredth of a pixel from where a number
+  stops fitting, in the Cell Metrics the Sheet paints with, which `SheetPage` passes in.
+  - At the bold edge: a hundredth under it, 12% is shown plain and `####` bold, named by its value. A
+    hundredth over it, the bold 12% is shown.
+  - General: each cell shows the widest General text its own widths fit. Under the built-in Chrome the
+    plain cell shows `1.23457E+20` and the bold one `1.2346E+20`, because the bold `+` is the wider.
+    Under the Wrapper's Chrome it is the other way round, because Roboto's bold separator is the
+    narrower.
+  - Italic: 12%, aligned right and aligned left, a hundredth over the regular edge, is not cut at
+    either edge.
+  - "Painted whole" is read in pixels. The cell as painted and the same cell with its clip and ellipsis
+    lifted must be one picture (`stillPictures`, `pixelsApart` at 0).
+- **Every other §27 criterion that names Layer 3 has a live test**, confirmed by reading them: SH-14,
+  18, 28 (DC-45's F4 tests), 29, 31, 32, 34, 35, 36, 39, 42, 43, 45, 46, 48, 50, 51, 52, 53 and 54,
+  and SH-58 and SH-60 (`sheet-today.spec.mjs`'s TODAY() and NOW() tests, titled by ADR). None is
+  `fixme`. Each skip is by host, and the other host runs the case.
+
+**Found: on Linux a bold number at its bold edge can be cut.** The fourth SH-41 test puts the bold 12%
+a hundredth over its bold edge in eight columns of one declared width, B to I, at eight offsets, so
+that their edges round to Device Pixels in more than one way. With `system-ui` in DejaVu Sans, D2 is
+cut. Linux paints `system-ui` in DejaVu Sans (ADR-0016's measurement), so CI's Ubuntu runners should
+show this too; that was not seen here. D2 is declared 49.87px and painted 49px, because its edges were
+rounded to Device Pixels (ADR-0090). That leaves 33px of content for the text's 33.516px, and
+`text-overflow: ellipsis` draws `1…`. `scrollWidth` does not show this, but the pictures do.
+- The `####` decision and General's fit read the declared width (ADR-0090). A column can be painted up
+  to a Device Pixel narrower than it is declared.
+- ADR-0090 relies on the estimate to "leave more than that to spare". DejaVu Sans Bold fills the core's
+  bold classes almost exactly: its digit is 9.742px against 9.75. So 12% has 0.35px to spare.
+- ExGrid's own group and total rows paint at 600, which Linux draws in the same Bold face, and they are
+  judged by the regular widths, whose digit class is the same 9.75. So the same arithmetic applies to
+  them. That was not tested here.
+- Under the Wrapper's Chrome (Roboto), and in this container's own `system-ui` (Inter), all eight
+  columns are painted whole.
+
+The test is left failing by `test.fail` where `system-ui` is DejaVu Sans, measured in the page, and
+names SH-41. The decision needed is on ADR-0090's estimate, and with it ADR-0016. Two proposals:
+- **Charge the estimate one more pixel** for the `####` decision and General's fit, and size Auto
+  columns with the same charge. A number shown then fits its painted cell however its edges round, at
+  100% and above. The decision still reads the declared width, so it does not change with the scale.
+  The cost is that `####` comes up to a pixel earlier.
+- **Let a shown number use one Device Pixel of the cell's right padding.** The content box is then
+  never narrower than the declared content. No decision changes, but every right-aligned number moves
+  right by one Device Pixel.
+
+Runs, with Playwright's Chromium 1194 under xvfb, `--project=chrome`: SH-27's and SH-41's tests with
+`--repeat-each=3` passed on both hosts in this container's face (Inter). With `system-ui` pointed at
+DejaVu Sans by a local fontconfig file, 24 of 24 passed on each host, the D2 sweep being the expected
+failure three times. The whole of `sheet-vs-excel.spec.mjs` and `sheet-paper.spec.mjs` ran once on each
+host, with no console message. The first box still needs Edge too, which is CI's.

@@ -1,6 +1,6 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, alterPage } from './fixtures.mjs';
 import { sheet, cell, pressCell, editor, bar, stretchesOf } from './sheet-helpers.mjs';
-import { painted, sameColour, resolvedColour, contrast } from './pixels.mjs';
+import { painted, sameColour, resolvedColour, contrast, onDeviceGrid, pixelsApart, stillPictures } from './pixels.mjs';
 
 // ExSheet paints Font and Fill on white Paper (ticket 48; ADR-0071, "Paper and Ink"; SH-39, SH-40,
 // DC-58). The Paper is Excel's white and the Ink Excel's black under the light and the dark scheme
@@ -323,5 +323,156 @@ for (const [chrome, query] of CHROMES) {
             expect(pixels.filter((pixel) => sameColour(pixel, colour, 40)).length, `${name}, painted over the Fill`).toBeGreaterThanOrEqual(3);
         }
         await page.keyboard.press('Escape');
+    });
+}
+
+// What fits, bold and italic (SH-41; ADR-0071, "Bold, and what fits"; ADR-0016). A bold cell is
+// judged by the bold widths: whether it is ####, and the text General fits to its column. An italic
+// one is judged by the regular widths, its slant leaning into the cell's padding. /sheet?case=bold and
+// ?case=fit put columns a hundredth of a pixel from where a number stops fitting, in the Cell Metrics
+// the Sheet paints with under either Chrome (SheetCases). What the grid decided is read from the DOM.
+// That what it shows is painted whole is read in pixels: the cell as painted, and the same cell with
+// its clip and its ellipsis lifted, are one picture over the cell and the pixels either side of it. A
+// cut glyph or an ellipsis is their difference. The columns' edges are on Device Pixels (ADR-0090), so
+// the pictures' edges are too.
+
+/** Opens a case with the Focus off the cells read and the pointer off the Sheet, in the face the widths are for. */
+async function openFit(page, name, query) {
+    await openCase(page, name, 'light', query);
+    const grid = sheet(page);
+    // The Focus outline would lie over A1; A10 holds nothing.
+    await pressCell(grid, 'A10');
+    // Roboto has arrived under the Wrapper's Chrome.
+    await page.evaluate(() => document.fonts.ready);
+    await page.mouse.move(0, 0);
+    // The second way each cell is pictured, set by stillPictures' mark: its clip and ellipsis lifted.
+    await alterPage(page, () => {
+        const style = document.createElement('style');
+        style.textContent = '.ex-cell[data-fit-picture="unclipped"] { overflow: visible !important; text-overflow: clip !important; }';
+        document.head.append(style);
+        return () => style.remove();
+    });
+    return grid;
+}
+
+/** How a cell's text lies in it, as laid out: its painted width, its content box and the text's own width. */
+function layoutOf(locator) {
+    return locator.evaluate((el) => {
+        const style = getComputedStyle(el);
+        const box = el.getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        return {
+            painted: box.width,
+            content: box.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+            text: range.getBoundingClientRect().width,
+        };
+    });
+}
+
+/** A cell's font, as the cascade resolved it. */
+const fontOf = (locator) => locator.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { weight: style.fontWeight, style: style.fontStyle, align: style.textAlign };
+});
+
+/**
+ * Asserts, softly so that every cell is reported, that a cell's text is painted whole. Where it is
+ * not, both pictures go with the test's report.
+ */
+async function expectPaintedWhole(page, locator, what) {
+    const box = await locator.boundingBox();
+    const scale = await page.evaluate(() => devicePixelRatio);
+    const region = onDeviceGrid(box, scale, 12);
+    const pictures = await stillPictures(locator, {
+        mark: 'data-fit-picture',
+        ways: ['painted', 'unclipped'],
+        shoot: () => page.screenshot({ clip: region, scale: 'device', animations: 'disabled', caret: 'hide' }),
+    });
+    const apart = pixelsApart(pictures.painted, pictures.unclipped, 0);
+    if (apart.differing > 0) {
+        for (const way of ['painted', 'unclipped']) {
+            await test.info().attach(`${what}, ${way}`, { body: pictures[way], contentType: 'image/png' });
+        }
+    }
+    expect.soft(apart.differing, `${what}: as painted and unclipped, the same picture (${JSON.stringify(await layoutOf(locator))})`).toBe(0);
+}
+
+/**
+ * Whether the browser paints system-ui in DejaVu Sans, as Linux does: measured in the page, as the
+ * same text set in system-ui and in DejaVu Sans, bold. A face that is not installed falls back to
+ * another, which measures differently.
+ */
+const paintsDejaVu = (page) => page.evaluate(() => {
+    const context = new OffscreenCanvas(1, 1).getContext('2d');
+    const width = (family) => {
+        context.font = `700 14px ${family}`;
+        return context.measureText('0123456789%.,+-E').width;
+    };
+    return width('system-ui') === width('"DejaVu Sans"');
+});
+
+for (const [chrome, query] of CHROMES) {
+    test(`SH-41 (${chrome} Chrome): a bold number is #### exactly when it does not fit at the bold widths (ADR-0071, ADR-0016)`, async ({ page }) => {
+        const grid = await openFit(page, 'bold', query);
+        // A hundredth under the bold edge: plain, 12% fits, and is painted whole; bold, it is ####,
+        // named by its value.
+        await expect(cell(grid, 'A1')).toHaveText('12%');
+        await expect(cell(grid, 'A2')).toHaveText(/^#+$/);
+        await expect(cell(grid, 'A2')).toHaveAttribute('aria-label', '12%');
+        expect((await fontOf(cell(grid, 'A1'))).weight).toBe('400');
+        expect((await fontOf(cell(grid, 'A2'))).weight).toBe('700');
+        await expectPaintedWhole(page, cell(grid, 'A1'), 'A1, plain, a hundredth under the bold edge');
+        // A hundredth over it, bold: shown.
+        for (const column of 'BCDEFGHI') {
+            await expect(cell(grid, `${column}2`)).toHaveText('12%');
+            expect((await fontOf(cell(grid, `${column}2`))).weight).toBe('700');
+        }
+    });
+
+    test(`SH-41 (${chrome} Chrome): a bold number shown a hundredth over the bold edge is painted whole, wherever its column's edges fall on Device Pixels (ADR-0071, ADR-0016, ADR-0090)`, async ({ page }) => {
+        const grid = await openFit(page, 'bold', query);
+        // Left failing where it fails, until the decision it needs is made. The #### decision reads the
+        // declared width (ADR-0090), and a column is painted up to a Device Pixel narrower than declared.
+        // ADR-0090 counts on the estimate to leave more than that to spare, and in DejaVu Sans, which
+        // Linux paints system-ui in, the core's bold widths leave 0.35px over 12%: the column painted
+        // narrower cuts it with an ellipsis (found here, 2026-10-10; ticket 18).
+        test.fail(!query && await paintsDejaVu(page),
+            'SH-41: a bold number at its bold edge is cut where its column is painted narrower than declared, in DejaVu Sans; needs a decision on ADR-0090\'s estimate');
+        // Eight columns of one declared width, B to I, at eight offsets. Each is painted at one of the
+        // two whole widths either side of the declared one, as its offset falls (ADR-0090).
+        const widths = [];
+        for (const column of 'BCDEFGHI') {
+            const target = cell(grid, `${column}2`);
+            await expect(target).toHaveText('12%');
+            widths.push((await layoutOf(target)).painted);
+            await expectPaintedWhole(page, target, `${column}2, bold, a hundredth over the bold edge`);
+        }
+        expect(Math.max(...widths) - Math.min(...widths), `the eight columns' painted widths: ${widths.join(', ')}`).toBeLessThanOrEqual(1);
+    });
+
+    test(`SH-41 (${chrome} Chrome): General fits a bold number to the bold widths, and both are painted whole (ADR-0071, ADR-0047)`, async ({ page }) => {
+        const grid = await openFit(page, 'fit', query);
+        // Between the widths the whole of its General text, 1.23457E+20, takes plain and bold, each cell
+        // shows the widest General text its own widths fit, a digit fewer where they do not fit the
+        // whole. Under the built-in Chrome the bold widths are the wider (the + is), so the bold cell has
+        // the digit fewer; under the Wrapper's, Roboto's bold separator is the narrower, so the plain one does.
+        const [plain, bold] = query ? ['1.2346E+20', '1.23457E+20'] : ['1.23457E+20', '1.2346E+20'];
+        await expect(cell(grid, 'B1')).toHaveText(plain);
+        await expect(cell(grid, 'B2')).toHaveText(bold);
+        expect((await fontOf(cell(grid, 'B2'))).weight).toBe('700');
+        await expectPaintedWhole(page, cell(grid, 'B1'), 'B1, General, plain');
+        await expectPaintedWhole(page, cell(grid, 'B2'), 'B2, General, bold');
+    });
+
+    test(`SH-41 (${chrome} Chrome): an italic number that fits is not cut at either edge (ADR-0071, ADR-0016)`, async ({ page }) => {
+        const grid = await openFit(page, 'fit', query);
+        // A hundredth over the width the regular widths give it, against the cell's right edge and its left.
+        for (const [address, align] of [['A1', 'right'], ['A2', 'left']]) {
+            const target = cell(grid, address);
+            await expect(target).toHaveText('12%');
+            expect(await fontOf(target)).toEqual({ weight: '400', style: 'italic', align });
+            await expectPaintedWhole(page, target, `${address}, italic, aligned ${align}`);
+        }
     });
 }

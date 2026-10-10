@@ -1,4 +1,5 @@
 using System.Globalization;
+using global::ExGrid.Columns;
 using global::ExSheet.Engine;
 
 namespace ExGrid.DemoPages;
@@ -29,6 +30,16 @@ namespace ExGrid.DemoPages;
 /// <item><c>today</c> reads the Sheet Day (ADR-0121): A1 is <c>TODAY()</c> as <c>yyyy-mm-dd</c>, and
 /// A2 is <c>TODAY()</c> itself, and A3 is <c>NOW()</c>'s day as <c>yyyy-mm-dd</c> (ADR-0124); <c>/sheet</c>'s <c>?zone=</c> and <c>?today=</c> set the Sheet's
 /// <c>TimeZone</c> and <c>Today</c>.</item>
+/// <item><c>bold</c> and <c>fit</c> put columns at the edges SH-41 is judged at (ADR-0071, "Bold, and
+/// what fits"; ADR-0016), a hundredth of a pixel from where a number stops fitting, in the Cell Metrics
+/// the Sheet paints with, which the page passes in. <c>bold</c>: 12% (0.12 in <c>0%</c>) in column A,
+/// a hundredth under the width its bold text takes, plain in A1 and bold in A2; and bold in row 2 of B
+/// to I, a hundredth over that width. B to I are eight columns of one declared width at eight offsets.
+/// The grid puts each column's edges on Device Pixels (ADR-0090), so each is painted at one of the two
+/// whole widths either side of the declared one, as its offset falls.
+/// <c>fit</c>: 12% italic in column A, a hundredth over the width its text takes, aligned right in A1
+/// and left in A2; and 123456789012345678901 in General in column B, plain in B1 and bold in B2, at a
+/// width between the ones its whole General text takes plain and bold.</item>
 /// </list>
 /// </summary>
 public static class SheetCases
@@ -52,21 +63,48 @@ public static class SheetCases
     /// <summary>The names <see cref="Document"/> knows, in the order the run numbers them.</summary>
     public static IReadOnlyList<string> Names { get; } =
         ["1", "2", "3b", "3c", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "16", "17", "18", "paper", "lines", "12-1", "12-14",
-            "14-16", "14-17", "14-18", "fills", "today", "spill"];
+            "14-16", "14-17", "14-18", "fills", "today", "spill", "bold", "fit"];
 
     /// <summary>
     /// Case <paramref name="name"/>'s Sheet, in <paramref name="culture"/>; null when no case is
-    /// asked for.
+    /// asked for. <paramref name="metrics"/> are the Cell Metrics the Sheet will paint it with, which
+    /// the cases that set a column at the edge of what fits compute its width from.
     /// </summary>
     /// <exception cref="ArgumentException">The name is not one of <see cref="Names"/>: refused by
     /// name rather than opened as the page's own Sheet, which a comparison would then be made
     /// against.</exception>
-    public static SheetDocument? Document(string? name, CultureInfo culture)
+    public static SheetDocument? Document(string? name, CultureInfo culture, CellTextMetrics metrics)
     {
         if (name is null) return null;
         var sheet = new Sheet(culture);
         switch (name)
         {
+            case "bold":
+                // ####, at the bold widths: shown a hundredth over the edge, and #### a hundredth under it
+                // where the regular widths still fit it (SH-41).
+                Enter(sheet, "A1", "0.12");
+                Enter(sheet, "A2", "0.12");
+                for (var column = 'B'; column <= 'I'; column++) Enter(sheet, $"{column}2", "0.12");
+                Format(sheet, new CellFormatChange { NumberFormat = NumberFormat.Parse("0%") }, "A1:I2");
+                Format(sheet, new CellFormatChange { Bold = true }, "A2:I2");
+                var boldPx = metrics.Bold.TextWidthPx(sheet.GetDisplay(CellAddress.Parse("A2")).Text);
+                SetContentWidth(sheet, metrics, 0, 0, boldPx - 0.01);
+                SetContentWidth(sheet, metrics, 1, 8, boldPx + 0.01);
+                break;
+            case "fit":
+                // Italic is judged by the regular widths (ADR-0071), and General fits a bold number to the
+                // bold ones (SH-41).
+                Enter(sheet, "A1", "0.12");
+                Enter(sheet, "A2", "0.12");
+                Format(sheet, new CellFormatChange { NumberFormat = NumberFormat.Parse("0%"), Italic = true }, "A1:A2");
+                Format(sheet, new CellFormatChange { Alignment = HorizontalAlignment.Left }, "A2");
+                SetContentWidth(sheet, metrics, 0, 0, metrics.TextWidthPx(sheet.GetDisplay(CellAddress.Parse("A1")).Text) + 0.01);
+                Enter(sheet, "B1", "123456789012345678901");
+                Enter(sheet, "B2", "123456789012345678901");
+                Format(sheet, new CellFormatChange { Bold = true }, "B2");
+                var whole = sheet.GetDisplay(CellAddress.Parse("B1"), Sheet.MaxColumnWidth).Text;
+                SetContentWidth(sheet, metrics, 1, 1, (metrics.TextWidthPx(whole) + metrics.Bold.TextWidthPx(whole)) / 2);
+                break;
             case "today":
                 Enter(sheet, "A1", "=TEXT(TODAY(),\"yyyy-mm-dd\")");
                 Enter(sheet, "A2", "=TODAY()");
@@ -230,4 +268,9 @@ public static class SheetCases
 
     private static void Format(Sheet sheet, CellFormatChange change, string range) =>
         sheet.Do(SheetEdit.SetCellFormat([CellRange.Parse(range)], change));
+
+    // Columns first to last at the width, in characters, whose content is contentPx in these metrics:
+    // a column's width in pixels is its characters' digits and the cell's padding on both sides.
+    private static void SetContentWidth(Sheet sheet, CellTextMetrics metrics, int first, int last, double contentPx) =>
+        sheet.Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(first, last), contentPx / metrics.DigitWidthPx));
 }

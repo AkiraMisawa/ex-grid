@@ -586,7 +586,15 @@ nobody had asked for. What that means when writing a test:
   Formula Bar dark in the dark scheme and light in the light one; the Selection, the Cell Editor,
   a Reference Outline and the pointed shade keeping their light-scheme look on the Paper, and the
   Formula Bar's References taking the dark scheme's; and `--ex-sheet-paper` and `--ex-sheet-ink`
-  set by a Consumer changing the Paper and the Ink.
+  set by a Consumer changing the Paper and the Ink. And what fits (SH-41; ADR-0071, "Bold, and what
+  fits") under both Chromes, on `/sheet?case=bold` and `?case=fit`, whose columns stand a hundredth
+  of a pixel from where a number stops fitting in the Sheet's own Cell Metrics: a bold 12% `####`
+  under its bold edge where the plain one shows; General fitting a bold number to the bold widths;
+  an italic number not cut at either edge; each number shown painted whole, the cell as painted and
+  with its clip lifted being one picture. A bold 12% over its bold edge, in eight columns of one
+  declared width, is painted whole wherever their edges fall on Device Pixels — left failing
+  (`test.fail`) where `system-ui` is DejaVu Sans, as on Linux, where the column painted a pixel
+  narrower than declared cuts it to `1…` (ADR-0090; ticket 18, 2026-10-10).
 - `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0071, SH-45, DC-60;
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as
