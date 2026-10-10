@@ -195,6 +195,13 @@ targets are the user's "snappy" (Q52).
   from 27,000 combinations up, or 50 ms of blocking.
 - **The live update over a million trades is about even.** Its report is small (14 rows), so the branch's
   gain shows only as the report grows: the tables above.
+- **A question's combinations are named as the spec names them**: the product of its fields' Item counts,
+  198,450 = 270 trade dates × 49 quantities × 5 products × 3 regions. The leaves are the combinations that
+  have trades, and the same million trades have fewer for four of them: 26,982 for 27,000, 134,646 for
+  134,730, 197,151 for 198,450 and 314,758 for 330,750 (`verification/2026-10-01-linux-measure`). The
+  page's own questions ask for 50. The reports have 14 rows on the page's first layout, and 271, 2,971,
+  8,371, 13,501, 134,917 and 13,501 for the questions from 1,350 to 198,450 combinations: the row fields'
+  combinations with their subtotal rows and the grand total.
 
 ## Where a new question's extra time goes
 
