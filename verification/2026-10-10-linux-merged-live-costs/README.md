@@ -37,10 +37,10 @@ are in [`raw/`](raw/), and [`metrics.json`](metrics.json) holds every figure as 
 
 ## In brief
 
-- **ExPivot's live update is 3 to 147 times faster than `main`'s.** At 401,001 report rows: 4.3 ms
-  against 627–643 at one change, 22 ms against 625–630 at 1,000. `main` allocated 281 MiB an update
-  and paused about 150 ms an update for the collector; the branch allocates 1–18 MiB and did not
-  collect.
+- **ExPivot's live update is 3 to 147 times faster than `main`'s.** At 401,001 report rows, round
+  medians: 3.9–4.3 ms against 623–643 at one change, 14–22 ms against 625–650 at 1,000. `main`
+  allocated 281 MiB an update and paused about 150 ms an update for the collector; the branch
+  allocates 1–18 MiB and did not collect.
 - **The browser no longer runs out of memory, and its heap levels off.** At 101,001 report rows `main` grew
   by 41.2 MiB a redraw, as the record of 2026-10-06 found; the branch levels off at 137 MiB after six
   redraws. At 401,001 rows `main` ran out of memory on the 7th redraw (+151.5 MiB a redraw, 3.2 s a
