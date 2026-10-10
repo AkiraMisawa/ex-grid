@@ -520,8 +520,11 @@ test('item 15: Escape in the Formula Bar cancels the edit and gives the keys bac
 
 test('item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)', async ({ page }) => {
     await enter(page, 'E1', '=B2');
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     await click(page, 'E1');
     await page.keyboard.press('Control+C');
+    // On the Server host the copy lands a round trip later (ADR-0005).
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
     await click(page, 'E3');
     await page.keyboard.press('Control+V');
     // Excel: =A1 copied from B1 into B3 is =A3.
@@ -529,9 +532,12 @@ test('item 16: a copied Formula pastes with its relative References shifted (ADR
 });
 
 test('item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)', async ({ page }) => {
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     await click(page, 'B2');
     await click(page, 'D4', { modifiers: ['Shift'] });
     await page.keyboard.press('Control+C');
+    // On the Server host the copy lands a round trip later (ADR-0005).
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
     await click(page, 'C6');
     await page.keyboard.press('Control+V');
     // Excel: E5:G7 selected with the Focus on E5, and B2's =A2*2 written as =E6*2 at F6.
