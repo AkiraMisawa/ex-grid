@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# PV-21 after the fix: the unchanged measure-pivot.spec.mjs over a million trades, the fixed branch
+# (234da46) and main (db60f6f) alternated, each on its published WebAssembly host and Release demo API.
+S=/tmp/claude-0/-home-user-ex-grid/745dc86b-9814-555a-832d-a3eebdd9e2d0/scratchpad
+P=$S/perf
+O=$S/fix/pv21; mkdir -p $O
+W=/home/user/ex-grid/.claude/worktrees
+B=$W/live-data-best/tests/ExGrid.Browser
+REC=$W/live-data-best/verification/2026-10-10-linux
+log() { echo "$1 $(date +%T) load $(cut -d' ' -f1-3 /proc/loadavg)" >> $O/run.log; }
+n=0
+for side in fixed main fixed main; do
+  n=$((n+1)); tag=r$n-$side
+  log "$tag start"
+  fuser -k 5440/tcp 2>/dev/null; fuser -k -TERM 8440/tcp 2>/dev/null; sleep 3
+  (cd $B && setsid node static-host.mjs $P/hosts-perf-$side/wwwroot 5440 > $O/$tag-static.log 2>&1 &)
+  rm -rf $P/pv21/api-data-$side; mkdir -p $P/pv21/api-data-$side
+  (cd $W/perf-$side/samples/ExGrid.DemoApi/bin/Release/net10.0 && ASPNETCORE_ENVIRONMENT=Development EXGRID_DEMO_TRADES=1000000 \
+     EXGRID_DEMO_DATA=$P/pv21/api-data-$side setsid nix develop /home/user/ex-grid -c dotnet ExGrid.DemoApi.dll --urls http://localhost:8440 > $O/$tag-api.log 2>&1 &)
+  for i in $(seq 1 150); do
+    curl -sf http://localhost:5440/wide >/dev/null && curl -sf http://localhost:8440/api/status >/dev/null && break
+    sleep 2
+  done
+  log "$tag servers ready after ${i} polls"
+  rm -f $REC/metrics.json
+  (cd $B && EXGRID_BASE_URL=http://localhost:5440 EXGRID_MEASURE=pivot EXGRID_MEASURE_CSV=$P/pv21/trades-1000000.csv \
+     timeout 3600 xvfb-run -a -s "-screen 0 2560x1600x24" nix develop '/home/user/ex-grid#browser' -c \
+     npx playwright test -c playwright.chromium.config.mjs --project=chrome measure-pivot.spec.mjs > $O/$tag-run.log 2>&1)
+  log "$tag end exit $?"
+  cp $REC/metrics.json $O/$tag-metrics.json 2>/dev/null
+  fuser -k 5440/tcp 2>/dev/null; fuser -k -TERM 8440/tcp 2>/dev/null; sleep 5; fuser -k 8440/tcp 2>/dev/null
+done
+log "done"

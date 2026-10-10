@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# The lazy member lists (29fe98f): layers 1-2, then measured against main and against 234da46, alternated.
+S=/tmp/claude-0/-home-user-ex-grid/745dc86b-9814-555a-832d-a3eebdd9e2d0/scratchpad
+P=$S/perf; W=/home/user/ex-grid/.claude/worktrees
+L=$S/fix/lazy; mkdir -p $L
+log() { echo "$1 $(date +%T) load $(cut -d' ' -f1-3 /proc/loadavg)" >> $L/run.log; }
+log "tests start"
+(cd $W/lazy && timeout 3600 nix develop /home/user/ex-grid -c dotnet test ExGrid.slnx > $L/layers12.log 2>&1); log "tests exit $?"
+(cd $W/lazy && timeout 2400 nix develop /home/user/ex-grid -c dotnet publish samples/ExGrid.DemoHost -c Release -o $P/hosts-perf-lazy > $L/publish.log 2>&1); log "publish exit $?"
+(cd $W/lazy && timeout 1800 nix develop /home/user/ex-grid -c dotnet build samples/ExGrid.DemoApi -c Release > $L/api.log 2>&1); log "api exit $?"
+sed -e 's/@@TOKEN@@/(object?)cut.Instance.Report?.Metadata.Version/g' -e 's/@@ROWS@@/cut.Instance.Report?.Metadata.RowCount ?? -1/g' -e 's/@@SIDE@@/lazy/g' $P/question/PerfQuestion.cs.template > $W/lazy/tests/ExPivot.Components/PerfQuestion.cs
+f=$W/lazy/tests/ExPivot.Components/ExPivot.Components.csproj
+sed -i 's#    <ProjectReference Include="..\\..\\src\\ExPivot\\ExPivot.csproj" />#    <ProjectReference Include="..\\..\\src\\ExPivot\\ExPivot.csproj" />\n    <ProjectReference Include="..\\..\\samples\\ExGrid.DemoPages\\ExGrid.DemoPages.csproj" />#' $f
+(cd $W/lazy && git add tests/ExPivot.Components/PerfQuestion.cs tests/ExPivot.Components/ExPivot.Components.csproj && timeout 1800 nix develop /home/user/ex-grid -c dotnet build tests/ExPivot.Components -c Release > $L/components.log 2>&1); log "components exit $?"
+(cd $W/lazy && timeout 120 nix develop /home/user/ex-grid -c dotnet build-server shutdown > /dev/null 2>&1); pkill -f "[M]SBuild.dll /noautoresponse"; sleep 20
+B=$W/live-data-best/tests/ExGrid.Browser
+REC=$W/live-data-best/verification/2026-10-10-linux
+n=0
+for side in lazy main fixed lazy main fixed; do
+  n=$((n+1)); tag=l$n-$side
+  log "$tag start"
+  fuser -k 5440/tcp 2>/dev/null; fuser -k -TERM 8440/tcp 2>/dev/null; sleep 3
+  (cd $B && setsid node static-host.mjs $P/hosts-perf-$side/wwwroot 5440 > $L/$tag-static.log 2>&1 &)
+  rm -rf $P/pv21/api-data-$side; mkdir -p $P/pv21/api-data-$side
+  (cd $W/perf-$side/samples/ExGrid.DemoApi/bin/Release/net10.0 2>/dev/null || cd $W/$side/samples/ExGrid.DemoApi/bin/Release/net10.0; ASPNETCORE_ENVIRONMENT=Development EXGRID_DEMO_TRADES=1000000 \
+     EXGRID_DEMO_DATA=$P/pv21/api-data-$side setsid nix develop /home/user/ex-grid -c dotnet ExGrid.DemoApi.dll --urls http://localhost:8440 > $L/$tag-api.log 2>&1 &)
+  for i in $(seq 1 150); do
+    curl -sf http://localhost:5440/wide >/dev/null && curl -sf http://localhost:8440/api/status >/dev/null && break
+    sleep 2
+  done
+  rm -f $REC/metrics.json
+  (cd $B && EXGRID_BASE_URL=http://localhost:5440 EXGRID_MEASURE=pivot EXGRID_MEASURE_CSV=$P/pv21/trades-1000000.csv \
+     timeout 3600 xvfb-run -a -s "-screen 0 2560x1600x24" nix develop '/home/user/ex-grid#browser' -c \
+     npx playwright test -c playwright.chromium.config.mjs --project=chrome measure-pivot.spec.mjs > $L/$tag-run.log 2>&1)
+  log "$tag end exit $?"
+  cp $REC/metrics.json $L/$tag-metrics.json 2>/dev/null
+  fuser -k 5440/tcp 2>/dev/null; fuser -k -TERM 8440/tcp 2>/dev/null; sleep 5; fuser -k 8440/tcp 2>/dev/null
+done
+n=0
+for side in main lazy fixed fixed lazy main; do
+  n=$((n+1)); out=$L/q$n-$side; mkdir -p $out
+  dir=$W/perf-$side; [ -d $dir ] || dir=$W/$side
+  log "q$n $side start"
+  (cd $dir/tests/ExPivot.Components/bin/Release/net10.0 && DOTNET_TieredCompilation=0 PERF_OUT=$out PERF_RUNS=5 \
+    timeout 1500 nix develop /home/user/ex-grid -c dotnet ExPivot.Components.Tests.dll -class ExPivot.Components.Tests.PerfQuestion > $out/log 2>&1)
+  log "q$n $side end exit $?"
+done
+log "done"

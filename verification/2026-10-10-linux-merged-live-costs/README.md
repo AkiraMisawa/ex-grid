@@ -6,7 +6,9 @@ the grilling of the merged pull request): PV-48 and LV-23 repeated on the merged
 track's after-record measured ([`2026-10-06-macos-live-report-after`](../2026-10-06-macos-live-report-after/README.md)
 measured the Codex track's ExPivot, [`2026-10-07-macos-live-update-costs-after`](../2026-10-07-macos-live-update-costs-after/README.md)
 the Claude Code track's). PV-21, which PV-48 records beside it, ran on both sides too. ExGrid's own live
-update is measured beside them, to see that the merge cost the grid nothing.
+update is measured beside them, to see that the merge cost the grid nothing. The two fixes the afternoon
+brought to a new question, `234da46` and `f2bc6a4`, are measured against `main` and against the code
+before them in "After the fixes", on a new container.
 
 It decides nothing. Performance never gates (AGENTS.md); every number here is observational. The harness
 is disposable and was never committed where it builds; a copy is in [`harness/`](harness/), the raw files
@@ -52,9 +54,11 @@ are in [`raw/`](raw/), and [`metrics.json`](metrics.json) holds every figure as 
 - **The first report is slower than `main`'s**: 194–214 ms against 136–144 at 101,001 rows, 903–949
   against 662–826 at 401,001. This is what remains after the fix of 2026-10-09 (5.1 s → 0.8 s at 401,001
   rows; `implementation-status.md`), recorded as it is.
-- **A new question over a million trades is slower than `main`'s, by 16 to 60%** (PV-21): a question of
-  13,500 combinations takes 371 ms against 298, one of 198,450 2.96 s against 1.85, a million-row CSV's
-  first question 412 ms against 332. The extra is the branch's .NET code under the browser's interpreter,
+- **A new question over a million trades was slower than `main`'s, by 16 to 60%** (PV-21): a question of
+  13,500 combinations took 371 ms against 298, one of 198,450 2.96 s against 1.85, a million-row CSV's
+  first question 412 ms against 332. **After the afternoon's fixes** it is even with `main`'s for the
+  page's own questions and up to 1,350 combinations, and 10–35% slower from 27,000 combinations up, and
+  on CoreCLR it is level with `main`'s or faster except at 198,450 ("After the fixes"). The extra is the branch's .NET code under the browser's interpreter,
   and some collection: on CoreCLR the same questions are faster than `main`'s at 134,730 combinations
   ("Where a new question's extra time goes"). The live update over a million trades is about even (37 ms
   against 32 for 1,000 changes), and every gesture's first visual answer stays within PV-21's 0.1 s on
@@ -242,7 +246,8 @@ The browser's columns leave out each layout's first run, which compiles what it 
   into an array of one number a trade (4 MiB at a million); `main` makes the chains the first time a live
   update recomputes a leaf. A live update over that state costs 4–22 ms at 401,001 report rows, against
   `main`'s 600. *(Corrected the same day: this list first named the pass that keeps each row's leaf, which
-  `main` keeps as well.)*
+  `main` keeps as well. Since `234da46` and `f2bc6a4` neither the chains nor each total's leaves are made
+  at a question: "After the fixes".)*
 - **Which of those costs most in the browser is not separated.** The interpreter's frames name no .NET
   method, and the jiterpreter's traces are anonymous modules. A build timed phase by phase in the browser
   would say. What the numbers show, without separating it: the branch's extra over `main` in PV-21's own
@@ -250,7 +255,126 @@ The browser's columns leave out each layout's first run, which compiles what it 
   (71 ms at 1,350, 73 at 13,500), and on CoreCLR the branch allocates 5 MiB more a question at 1,350
   combinations. Work done per trade, not per combination, would show both, and of what the branch adds,
   only the chains are made per trade. Past 13,500 combinations the extra grows with them, to 1.1 s at
-  198,450.
+  198,450. *(The afternoon's rounds separated two pieces by taking them away, the chains and each total's
+  leaves: "After the fixes".)*
+
+## After the fixes: a question chains no rows and lists no total's leaves
+
+*(Measured the afternoon of 2026-10-10, after the user chose to fix the slowdown in this pull request.)*
+
+The branch's extra on a new question was two pieces of the state a live update folds into, both made
+at every question, though only an update reads them. Each is now made when an update first needs it:
+
+- **`234da46`: the chains.** A question used to chain every stored row to its leaf, to read off each
+  leaf's first record. The pass now keeps the row it first gives each leaf, and a leaf a batch empties
+  takes the next row given to it. The chains are made when a live update recomputes a leaf, as on
+  `main`, or when a leaf's first row leaves while later ones stay. `FirstRecordTests` pins both halves.
+- **`f2bc6a4`: each total's leaves.** The computation keeps, for every total, its leaves in their first
+  records' order, to merge again a total that subtraction cannot keep exact. A question used to make
+  those lists for every total of every leaf: eight a leaf with two fields a side. The first update now
+  makes them, a piece at a time. `MemberListsTests` pins it.
+
+**Method.** The same harness, the same CSV and the same kind of container, but a new one: it restarted
+at 13:21 UTC, and its numbers run 10–25% above the morning's for the same code. So compare within a round,
+never across them or with the tables above. Each round alternates its sides, one PV-21 run and one
+CoreCLR run at a time, with the load average near 1 (`raw/after/*/run.log`).
+- **Round 1** ran the chains fix against `main`.
+- **Round 2** ran the code before the fixes (`4a289b0`, whose `src/` is that of `c82b894`) against the
+  chains fix, to separate that fix.
+- **Round 3** ran both fixes against `main` and against the chains fix.
+
+The CoreCLR harness referenced `samples/ExGrid.DemoPages` from the test project, where the morning's
+copied `DemoPivotData.cs` in. `harness/after.py.txt` prints these tables from `raw/after/`, and the scripts
+are `harness/after-*.sh.txt`. `metrics.json` holds the morning's figures; the afternoon's are in
+`raw/after/`.
+
+**Round 2: the chains fix alone.** Browser, ms, each run's median:
+
+| Question | before (4a289b0) | chains fixed (234da46) |
+|---|---|---|
+| tick Book | 255 / 220 | 191 / 210 |
+| untick Book | 210 / 195 | 155 / 168 |
+| filter to USD | 186 / 185 | 151 / 178 |
+| filter to (All) | 223 / 202 | 220 / 192 |
+| 1,350 | 282 / 372 | 244 / 333 |
+| 13,500 | 456 / 529 | 395 / 454 |
+| 27,000 | 874 / 905 | 825 / 783 |
+| 66,150 | 1,266 / 1,593 | 1,323 / 1,311 |
+| 134,730 | 3,467 / 3,057 | 2,887 / 2,856 |
+| 198,450 | 3,640 / 3,656 | 3,316 / 3,771 |
+| 330,750, refused | 436 / 495 | 454 / 523 |
+| first question at load | 598 / 535 | 500 / 518 |
+| CSV's first question | 479 / 491 | 513 / 460 |
+
+CoreCLR, ms (each run's median of five) and MiB allocated a question:
+
+| Combinations | before (4a289b0) | chains fixed (234da46) |
+|---|---|---|
+| 1,350 | 22 / 21 (14 MiB) | 19 / 18 (10 MiB) |
+| 13,500 | 43 / 40 (26 MiB) | 36 / 35 (22 MiB) |
+| 66,150 | 121 / 145 (88 MiB) | 129 / 117 (84 MiB) |
+| 134,730 | 345 / 349 (205 MiB) | 322 / 337 (202 MiB) |
+| 198,450 | 436 / 403 (211 MiB) | 470 / 463 (207 MiB) |
+
+**Round 3: both fixes, against `main` and the chains fix.** Browser, ms, each run's median:
+
+| Question | both fixed (f2bc6a4) | `main` (db60f6f) | chains fixed (234da46) |
+|---|---|---|---|
+| tick Book | 192 / 169 | 217 / 188 | 174 / 197 |
+| untick Book | 157 / 145 | 151 / 162 | 164 / 154 |
+| filter to USD | 198 / 161 | 135 / 173 | 153 / 145 |
+| filter to (All) | 163 / 180 | 138 / 135 | 169 / 166 |
+| 1,350 | 310 / 255 | 210 / 247 | 266 / 264 |
+| 13,500 | 342 / 322 | 290 / 438 | 371 / 402 |
+| 27,000 | 641 / 652 | 567 / 562 | 784 / 908 |
+| 66,150 | 1,143 / 1,142 | 948 / 933 | 1,196 / 1,223 |
+| 134,730 | 2,624 / 2,878 | 2,137 / 2,209 | 2,805 / 2,909 |
+| 198,450 | 2,504 / 2,684 | 2,232 / 2,282 | 3,464 / 3,518 |
+| 330,750, refused | 436 / 451 | 339 / 450 | 433 / 414 |
+| first question at load | 530 / 463 | 472 / 514 | 517 / 553 |
+| CSV's first question | 404 / 430 | 382 / 395 | 442 / 409 |
+
+CoreCLR, ms (each run's median of five) and MiB allocated a question:
+
+| Combinations | `main` (db60f6f) | both fixed (f2bc6a4) | chains fixed (234da46) |
+|---|---|---|---|
+| 1,350 | 17 / 17 (9 MiB) | 18 / 18 (10 MiB) | 19 / 26 (10 MiB) |
+| 13,500 | 31 / 27 (18 MiB) | 31 / 36 (19 MiB) | 37 / 36 (22 MiB) |
+| 66,150 | 126 / 120 (67 MiB) | 102 / 102 (72 MiB) | 116 / 125 (84 MiB) |
+| 134,730 | 275 / 290 (171 MiB) | 260 / 272 (193 MiB) | 316 / 308 (202 MiB) |
+| 198,450 | 235 / 277 (137 MiB) | 297 / 285 (147 MiB) | 422 / 415 (207 MiB) |
+
+- **The chains fix took the per-trade part off.**
+  - On CoreCLR, a question of 1,350 combinations allocates 10 MiB where it allocated 14 (`main` 9),
+    and takes 18–19 ms where it took 21–22.
+  - In the browser, the page's own questions took 3–64 ms less, and those of 1,350 and 13,500
+    combinations 38–75 ms less.
+  - It left the larger questions' gap: in round 1, from 13,500 combinations up, they stayed 13–55% behind
+    `main`'s. On CoreCLR the gap grew with the totals over each leaf, to +63–76% at 198,450.
+- **The lists were the per-combination part.**
+  - At 198,450 combinations the browser's question went from 3.46–3.52 s to 2.50–2.68 s (`main`
+    2.23–2.28), and on CoreCLR from 415–422 to 285–297 ms (`main` 235–277).
+  - On CoreCLR the branch is now level with `main` or faster: 102 against 120–126 ms at 66,150
+    combinations, and 260–272 against 275–290 at 134,730.
+- **Where the branch stands against `main` in the browser (round 3).**
+  - The page's own questions are within 45 ms of `main`'s either way (tick Book faster, filter to (All)
+    slower), and the CSV's first question within 13%.
+  - At 1,350 combinations the branch took 255 and 310 ms against `main`'s 210 and 247. The 310 is the
+    round's first run, started while the load average was still 3.5 after the builds.
+  - From 27,000 combinations up the branch is 10–35% slower: 641–652 against 562–567 ms at 27,000,
+    1.14 s against 0.93–0.95 at 66,150, 2.62–2.88 s against 2.14–2.21 at 134,730, and 2.50–2.68 s
+    against 2.23–2.28 at 198,450.
+  - The 13,500-combination question took 322–342 ms against `main`'s 290 and 438: PV-21's 0.3 s is
+    missed by both sides here in at least one run, and the runs are too noisy to say by how much.
+- **What moved.** The lists are made by the first update after a new question, once, sliced, and only
+  on a live source; a question that is never updated never makes them. Their cost is the questions'
+  difference between the two fixes: at 198,450 combinations about 0.13 s on CoreCLR and 0.8–1.0 s in the
+  browser. PV-48's live updates are timed after warm-ups and do not include it. Apply on `/pivot-live`,
+  1,000 changes to a 14-row report, took 46–49 ms against `main`'s 34–38 (the chains fix 49–56), as the
+  morning's 37 against 32.
+- **Not separated:** what remains of the 10–35% in the browser. The branch still makes the nodes each
+  leaf stands at and the report's parts that versions share, both at the question. A build timed phase by
+  phase in the browser would say which costs what.
 
 ## Not measured
 

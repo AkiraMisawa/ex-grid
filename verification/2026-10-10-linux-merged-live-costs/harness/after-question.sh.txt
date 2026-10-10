@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# The questions on CoreCLR after the fix, main and the fixed branch alternated (PerfQuestion, disposable).
+S=/tmp/claude-0/-home-user-ex-grid/745dc86b-9814-555a-832d-a3eebdd9e2d0/scratchpad
+O=$S/fix/question; mkdir -p $O
+W=/home/user/ex-grid/.claude/worktrees
+n=0
+for side in main fixed fixed main; do
+  n=$((n+1)); out=$O/r$n-$side; mkdir -p $out
+  echo "r$n $side start $(date +%T) load $(cut -d' ' -f1-3 /proc/loadavg)" >> $O/run.log
+  (cd $W/perf-$side/tests/ExPivot.Components/bin/Release/net10.0 && DOTNET_TieredCompilation=0 PERF_OUT=$out PERF_RUNS=5 \
+    timeout 1500 nix develop /home/user/ex-grid -c dotnet ExPivot.Components.Tests.dll -class ExPivot.Components.Tests.PerfQuestion > $out/log 2>&1)
+  echo "r$n $side end exit $? $(date +%T)" >> $O/run.log
+done
+echo "done $(date +%T)" >> $O/run.log

@@ -913,8 +913,17 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
     update. In the browser the heap levels off at 137.6 MiB at 101,001 rows, where `main` grew by 41.2 MiB
     a redraw, and holds 420 MiB at 401,001, where `main` ran out of memory on the 7th redraw (PV-48, LV-23).
     The first report stays slower than `main`'s: 194–214 against 136–144 ms at 101,001 rows, 903–949 against
-    662–826 at 401,001; so does a new question over a million trades in the browser, by 16 to 60% (PV-21),
+    662–826 at 401,001. A new question over a million trades in the browser was 16 to 60% slower (PV-21),
     where the live update is about even. ExGrid's own live update is unchanged.
+  - *(2026-10-10, the afternoon: a new question's extra, fixed as the user chose.)* A question made two
+    pieces of the state a live update folds into, though only an update reads them: the chain of every
+    stored row to its leaf, and each total's list of leaves. The pass now keeps each leaf's first row
+    (`234da46`), and the first update makes the lists (`f2bc6a4`); `FirstRecordTests` and `MemberListsTests`
+    pin them. Measured back to back on a new container: in the browser the page's own questions and those
+    up to 1,350 combinations are even with `main`'s, and from 27,000 combinations up 10–35% slower, where
+    they were up to 55% slower; on CoreCLR level with `main` or faster, except at 198,450 combinations. The
+    first live update after a new question now makes the lists, once: about 0.9 s in the browser at
+    198,450 combinations, sliced (`verification/2026-10-10-linux-merged-live-costs`, "After the fixes").
   - *(2026-10-09: reviewed and grilled.)* An independent review of the merged pull request found, and
     this branch fixed, with a failing test first for each:
     - a press made while an asynchronous `OnEdit` was heard committed the same edit again, and could leave
