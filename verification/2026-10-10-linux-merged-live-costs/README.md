@@ -1,12 +1,12 @@
-# Live costs on the merged code: PV-48 and LV-23, against `main` (PR #70)
+# Live costs on the merged code: PV-48, LV-23 and PV-21, against `main` (PR #70)
 
 Date: 2026-10-10. `claude/live-data-best` at `80d6b38` (its `src/` is that of `c82b894`, which changed
 only a test) against `main` at `db60f6f`. This is the measurement decided with the user on 2026-10-09 (Q10 of
 the grilling of the merged pull request): PV-48 and LV-23 repeated on the merged code, which neither
 track's after-record measured ([`2026-10-06-macos-live-report-after`](../2026-10-06-macos-live-report-after/README.md)
 measured the Codex track's ExPivot, [`2026-10-07-macos-live-update-costs-after`](../2026-10-07-macos-live-update-costs-after/README.md)
-the Claude Code track's). ExGrid's own live update is measured beside them, to see that the merge cost the
-grid nothing.
+the Claude Code track's). PV-21, which PV-48 records beside it, ran on both sides too. ExGrid's own live
+update is measured beside them, to see that the merge cost the grid nothing.
 
 It decides nothing. Performance never gates (AGENTS.md); every number here is observational. The harness
 is disposable and was never committed where it builds; a copy is in [`harness/`](harness/), the raw files
@@ -34,6 +34,10 @@ are in [`raw/`](raw/), and [`metrics.json`](metrics.json) holds every figure as 
   `ChangeHighlightDuration` one second. Each redraw is a click, timed until the report's viewport shows
   other text; after it, a full collection (`GC.Collect`, `WaitForPendingFinalizers`, `GC.Collect`,
   `GC.GetTotalMemory(true)`) and the size of the WebAssembly heap.
+- **PV-21**: the repository's own `measure-pivot.spec.mjs`, unchanged, on each side's published host and its
+  Release demo API holding a million trades, headed under xvfb as `verification/2026-10-01-linux-measure`
+  ran it. Both sides read the same 89.7 MiB CSV, written by the page's own `DemoCsv.TradeExportFileAsync`
+  (`harness/csvgen.*.txt`). One run a side; each gesture three to twelve times within it.
 
 ## In brief
 
@@ -48,6 +52,11 @@ are in [`raw/`](raw/), and [`metrics.json`](metrics.json) holds every figure as 
 - **The first report is slower than `main`'s**: 194–214 ms against 136–144 at 101,001 rows, 903–949
   against 662–826 at 401,001. This is what remains after the fix of 2026-10-09 (5.1 s → 0.8 s at 401,001
   rows; `implementation-status.md`), recorded as it is.
+- **A new question over a million trades is slower than `main`'s, by 16 to 60%** (PV-21): a question of
+  13,500 combinations takes 371 ms against 298, one of 198,450 2.96 s against 1.85, a million-row CSV's
+  first question 412 ms against 332, as the first report is slower on CoreCLR. The live update over a
+  million trades is about even (37 ms against 32 for 1,000 changes), and every gesture's first visual
+  answer stays within PV-21's 0.1 s on both sides.
 - **ExGrid's live update did not change** at 100 and 1,000 changes over 10⁶ rows. At one change the
   branch's median is 6.6–6.8 ms against `main`'s 14.6–15.4 in both rounds; this harness does not separate
   why.
@@ -154,12 +163,41 @@ the viewport's new text; that is the DOM, not the frame the browser paints.
   the reports the Change Highlight compares, so that a cell scrolled into view shows its mark (ADR-0153,
   "Why reports, and not times"; LV-22).
 
+## A million trades in the browser (PV-21, beside PV-48)
+
+`measure-pivot.spec.mjs` over a million trades (`raw/pv21/`): the gestures on `/pivot`, questions up to the
+200,000-leaf cap and past it, 1,000 changes on `/pivot-live`, and a CSV of a million rows on `/pivot-csv`.
+Times in the page's own clock, from the input to the frame after the answer; medians, milliseconds. PV-21's
+targets are the user's "snappy" (Q52).
+
+| Gesture or question | PV-21's target | `main` | branch |
+|---|---|---|---|
+| First visual answer, every gesture | ≤ 100 | 12–48 | 13–53 |
+| Sort, collapse, expand, change of form | ≤ 100 | 17–26 | 18–29 |
+| A new question from the page: tick or untick Book, filter to USD or (All) | ≤ 300 | 110–153 | 141–179 |
+| A question of 1,350 combinations | ≤ 300 | 187 | 258 |
+| 13,500 combinations | ≤ 300 | 298 | **371** |
+| 27,000 combinations | ≤ 300 | 465 | 697 |
+| 66,150 / 134,730 / 198,450 combinations (near the cap) | ≤ 300 | 802 / 1,917 / 1,850 | 1,092 / 2,438 / 2,958 |
+| 330,750 combinations, refused past the cap | ≤ 300 | 288 | 380 |
+| The first question at load | | 385 | 454 |
+| 1,000 changes on `/pivot-live`, Apply to the report's frame | ≤ 200 | 32 (25–48) | 37 (32–80) |
+| A CSV of a million rows: read / first question / report | ≤ 4,000 | 3,312 / 332 / 3,644 | 3,392 / 412 / 3,804 |
+| The page blocked at once: the longest task, CSV / near the cap | ≤ 50 | 122 / 93–193 | 174 / 124–145 |
+| Arrow from the demo API, read again / objects into a Snapshot | | 2,620 / 2,563 | 2,619 / 2,658 |
+
+- **Every new question is slower on the branch**, by 16% (tick Book) to 60% (198,450 combinations), on every
+  question asked, as the first report is on CoreCLR above; reading the data is within 4% (Arrow, objects,
+  the CSV's read). This harness does not separate where the time goes. The branch misses one target `main`
+  met: the 13,500-combination question, 371 ms against PV-21's 300 (`main` 298). Neither side meets 0.3 s
+  from 27,000 combinations up, or 50 ms of blocking.
+- **The live update over a million trades is about even.** Its report is small (14 rows), so the branch's
+  gain shows only as the report grows: the tables above.
+
 ## Not measured
 
-- **The frame the browser paints.** The loop times the click to the changed DOM. The step from Apply to the
-  painted frame at 10⁴, 10⁵ and 4×10⁵ rows is timed only in this redraw-to-text form here.
-- **PV-21** (a million trades in the browser, `measure-pivot.spec.mjs`) was not run on the merged code; its
-  latest record is the Codex track's, in `2026-10-06-macos-live-report-after`.
+- **The frame the browser paints, for the report sizes of PV-48.** The loop times the click to the changed
+  DOM; PV-21 times its frames, over a small report.
 - **The Server host.** Everything above is CoreCLR in-process or WebAssembly.
 
 ## Reproducing
@@ -177,10 +215,12 @@ From the repository root, a worktree for each side, with the harness files copie
 | `perf-memory.spec.mjs.txt`, `perf-memory.config.mjs.txt` | `tests/ExGrid.Browser/` (copied in by the run, removed after) |
 
 Build each side in Release (`nix develop -c dotnet build tests/ExPivot.Components -c Release`, the same for
-`tests/ExPivot.Engine.Tests` and `spikes/live-update/PerfGrid`), publish its DemoHost
-(`nix develop -c dotnet publish samples/ExGrid.DemoHost -c Release -o <hosts>/wasm`), and run
-`harness/run-final.sh.txt`, then `run-sizes.sh.txt` and `run-long.sh.txt`: they name the scratch paths of
-this run, which a rerun replaces. One test class runs from its build folder, since `dotnet test --filter` does
+`tests/ExPivot.Engine.Tests`, `spikes/live-update/PerfGrid` and `samples/ExGrid.DemoApi`), publish its DemoHost
+(`nix develop -c dotnet publish samples/ExGrid.DemoHost -c Release -o <hosts>/wasm`), write the CSV with
+`harness/csvgen.*.txt` (a console project referencing `samples/ExGrid.DemoPages`), and run
+`harness/run-final.sh.txt`, then `run-sizes.sh.txt`, `run-long.sh.txt` and `run-pv21.sh.txt`: they name the
+scratch paths of this run, which a rerun replaces. `harness/pv21.py` prints the two sides' PV-21 records
+side by side. One test class runs from its build folder, since `dotnet test --filter` does
 not filter under Microsoft.Testing.Platform:
 
 ```sh

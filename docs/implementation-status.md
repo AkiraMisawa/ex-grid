@@ -913,7 +913,8 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
     update. In the browser the heap levels off at 137.6 MiB at 101,001 rows, where `main` grew by 41.2 MiB
     a redraw, and holds 420 MiB at 401,001, where `main` ran out of memory on the 7th redraw (PV-48, LV-23).
     The first report stays slower than `main`'s: 194–214 against 136–144 ms at 101,001 rows, 903–949 against
-    662–826 at 401,001. ExGrid's own live update is unchanged.
+    662–826 at 401,001; so does a new question over a million trades in the browser, by 16 to 60% (PV-21),
+    where the live update is about even. ExGrid's own live update is unchanged.
   - *(2026-10-09: reviewed and grilled.)* An independent review of the merged pull request found, and
     this branch fixed, with a failing test first for each:
     - a press made while an asynchronous `OnEdit` was heard committed the same edit again, and could leave

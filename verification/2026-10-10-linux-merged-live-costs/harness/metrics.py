@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Composes the record's metrics.json (PV-48 and LV-23, and ExGrid's live update beside them) from its
+"""Composes the record's metrics.json (PV-48, LV-23 and PV-21, and ExGrid's live update beside them) from its
 raw files, in the shape the layer-3 specs record: the browser under the project's key ("chrome"),
 CoreCLR under "coreclr", the machine under "machine"; each figure a spread {min, median, max, n}, main
 and the branch side by side. Run: python3 -I harness/metrics.py <the record's directory>."""
@@ -111,6 +111,12 @@ for inner, rows in ((10, 11001), (100, 101001), (400, 401001)):
                 'outOfMemory': bool(run['errors']),
             }
 metrics['chrome']['LV-23 and PV-48 ExPivot live redraw, click to the changed text, /perf-live-memory'] = loop
+
+# PV-21 and DA-17, beside PV-48: measure-pivot.spec.mjs's own records of each side, side by side.
+pv21 = {side: load(f'pv21/{side}-metrics.json')['chrome'] for side in SIDES}
+for key in sorted(set(pv21['main']) | set(pv21['branch'])):
+    if key.startswith(('PV-21', 'DA-17')):
+        metrics['chrome'][key] = {side: pv21[side].get(key) for side in SIDES}
 
 with open(os.path.join(record, 'metrics.json'), 'w') as f:
     json.dump(metrics, f, indent=2)

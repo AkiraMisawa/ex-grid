@@ -37,3 +37,10 @@ lv23 long b=10 n=100 final end exit 0 00:31:12 load 0.81 1.00 1.41
 lv23 long b=100 n=60 final start 00:31:12 load 0.81 1.00 1.41
 lv23 long b=100 n=60 final end exit 0 00:31:30 load 1.00 1.03 1.41
 long done 00:31:30
+pv21 final start 00:39:39 load 0.52 0.50 0.94
+pv21 final servers ready after 4 polls 00:39:48 load 0.52 0.50 0.94
+pv21 final end exit 0 00:44:39 load 1.09 0.90 1.00
+pv21 main start 00:44:44 load 1.00 0.88 0.99
+pv21 main servers ready after 4 polls 00:44:53 load 0.85 0.85 0.98
+pv21 main end exit 0 00:49:29 load 0.85 0.80 0.92
+pv21 done 00:49:34

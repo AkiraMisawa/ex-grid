@@ -1,0 +1,41 @@
+dotnet 10.0.203 (nix-managed)
+info: ExGrid.DemoApi.TradeStore[0]
+      Generating 1000000 trades into /tmp/claude-0/-home-user-ex-grid/745dc86b-9814-555a-832d-a3eebdd9e2d0/scratchpad/perf/pv21/api-data-final/trades-v1-1000000.sqlite: the first start for this count.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:8440
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/user/ex-grid/.claude/worktrees/perf-final/samples/ExGrid.DemoApi/bin/Release/net10.0
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 100000 of 1000000 trades (10%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 200000 of 1000000 trades (20%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 300000 of 1000000 trades (30%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 400000 of 1000000 trades (40%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 500000 of 1000000 trades (50%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 600000 of 1000000 trades (60%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 700000 of 1000000 trades (70%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 800000 of 1000000 trades (80%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 900000 of 1000000 trades (90%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 1000000 trades in 4.3 s: 76.8 MB.
+info: ExGrid.DemoApi.TradeStore[0]
+      Serving 1000000 trades at version d51dd087-0 from /tmp/claude-0/-home-user-ex-grid/745dc86b-9814-555a-832d-a3eebdd9e2d0/scratchpad/perf/pv21/api-data-final/runs/trades-v1-1000000.30369.d51dd087.sqlite.
+info: ExGrid.DemoApi.LiveUpdater[0]
+      Live updates on: 20 trades every 250 ms.
+info: ExGrid.DemoApi.LiveUpdater[0]
+      Live updates off.
+info: ExGrid.DemoApi.TradeArrow[0]
+      The trades' Arrow stream at version d51dd087-1: 1000000 trades read into a Snapshot in 4441 ms and written in 311 ms, 81.3 MB.
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
