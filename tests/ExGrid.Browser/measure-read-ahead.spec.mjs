@@ -56,17 +56,22 @@ const PACES = list('EXGRID_MEASURE_PACES', 'step,held');
 const SAMPLES = Number(process.env.EXGRID_MEASURE_SAMPLES ?? 3);
 const RTT = Number(process.env.EXGRID_MEASURE_RTT ?? 150);
 const TICKS = Number(process.env.EXGRID_MEASURE_TICKS ?? 10);
-// How far each scrolling sample goes, in rows.
-const DISTANCE = Number(process.env.EXGRID_MEASURE_ROWS ?? 240);
+// How many trades a tick moves: the demo's live updates move twenty (/pivot-live); a thousand is
+// PV-21's batch, and enough to reach a narrow Window of a long report.
+const TICK_TRADES = list('EXGRID_MEASURE_TICK_TRADES', '20,1000').map(Number);
+// How far each scrolling sample goes, in rows: four times the widest read-ahead, so that even 120
+// rows either side runs out a few times in a sample.
+const DISTANCE = Number(process.env.EXGRID_MEASURE_ROWS ?? 480);
 // The demo API server itself, not the proxy: the run's own questions to it are not the page's.
 const DIRECT_API = process.env.EXGRID_MEASURE_API ?? `http://localhost:${API_PORT + 1000}`;
 const OUT = path.resolve(process.env.EXGRID_MEASURE_OUT ?? 'test-results/read-ahead');
 
-// A wheel notch, in pixels, and how many animation frames apart held inputs go: a wheel spun at
-// about twenty notches a second, and a key held at about thirty presses a second, as a held key
-// repeats.
+// A wheel notch, in pixels, and how many animation frames a held input waits after the one before
+// it has been dispatched: a wheel spun at about twenty notches a second, and a key held at the
+// twenty-five to thirty presses a second a held key repeats at. Dispatching takes time of its own,
+// so the pace achieved is read back from the inputs' own time stamps, and recorded.
 const NOTCH_PX = 100;
-const HELD_FRAMES = { wheel: 3, arrow: 2, pagedown: 2 };
+const HELD_FRAMES = { wheel: 2, arrow: 1, pagedown: 1 };
 
 test.use({ viewport: { width: 1400, height: 1100 }, freshDocument: true, actionTimeout: 60_000 });
 
@@ -361,8 +366,8 @@ async function pageLog(page) {
 }
 
 /** Opens the lab page for a layout and a read-ahead, the probe in place, and waits for the report. */
-async function open(page, layout, readAhead) {
-    await page.goto(`/lab-read-ahead?layout=${layout}&readAhead=${readAhead.rows}&supersede=${readAhead.supersedes ? 1 : 0}`,
+async function open(page, layout, readAhead, more = '') {
+    await page.goto(`/lab-read-ahead?layout=${layout}&readAhead=${readAhead.rows}&supersede=${readAhead.supersedes ? 1 : 0}${more}`,
         { timeout: 600_000 });
     await expect(page.locator('#lab-read-ahead')).toHaveText(String(readAhead.rows));
     await expect(page.locator('#lab-supersedes')).toHaveText(readAhead.supersedes ? /superseding/ : /^$/);
@@ -421,11 +426,14 @@ function inputsFor(input, state, pageRows) {
 
 /** One sample: `count` inputs from a settled start, each settled (step) or paced (held). */
 async function scrollSample(page, net, { input, pace, startRow, pageRows }) {
+    const preparing = net.entries.length;
     const start = await prepare(page, input, startRow);
     const count = inputsFor(input, start, pageRows);
     await net.settled();
     await pageLog(page);
     const mark = net.entries.length;
+    // The Windows asked while the sample was prepared: the one it starts from among them.
+    const setup = net.since(preparing).map((e) => ({ start: e.start, count: e.count, outcome: e.outcome, rows: e.rows }));
     await page.evaluate(() => window.__ra.reset());
     const began = Date.now();
     for (let i = 0; i < count; i++) {
@@ -477,6 +485,7 @@ async function scrollSample(page, net, { input, pace, startRow, pageRows }) {
             cancelled: end.cancelled - start.cancelled,
             failed: end.failed - start.failed,
         },
+        setup,
         network,
         pageLog: log,
     };
@@ -529,8 +538,27 @@ const environment = (page) => ({
     distanceRows: DISTANCE,
     notchPx: NOTCH_PX,
     heldFrames: HELD_FRAMES,
+    tickTrades: TICK_TRADES,
+    ticks: TICKS,
     commit: process.env.EXGRID_MEASURE_COMMIT ?? null,
 });
+
+/**
+ * A load's code run once before it is timed: the page's runtime is new with every load, so its
+ * first questions, parses and renders run code for the first time. A few of each input, settled,
+ * from `startRow`; nothing of it is recorded.
+ */
+async function warmUp(page, startRow, pageRows) {
+    for (const input of ['pagedown', 'wheel', 'arrow']) {
+        await prepare(page, input, startRow);
+        for (let i = 0; i < (input === 'arrow' ? 8 : 4); i++) {
+            const before = await read(page);
+            await act(page, input);
+            await movedFrom(page, before.top);
+            await settled(page);
+        }
+    }
+}
 
 for (const layout of LAYOUTS) {
     test(`read-ahead: the ${layout} report scrolled by the wheel, ArrowDown and PageDown`, async ({ page }, testInfo) => {
@@ -550,6 +578,7 @@ for (const layout of LAYOUTS) {
             const starts = Array.from({ length: SAMPLES }, (_, i) => Math.round(first + (i * (last - first)) / Math.max(1, SAMPLES - 1)));
             // The rows PageDown moves: the rows the Viewport shows whole (ADR-0012), read from one press.
             const pageRows = await measurePageRows(page, starts[0]);
+            await warmUp(page, starts[0], pageRows);
             const samples = [];
             for (const input of INPUTS) {
                 for (const pace of PACES) {
@@ -603,70 +632,88 @@ for (const layout of LAYOUTS) {
         const result = { layout, environment: environment(page), readAheads: {} };
         const summary = {};
         await setRoundTrip(RTT);
-        for (const readAhead of LIVE_READ_AHEADS) {
-            // The generated trades again, so every read-ahead takes the same ticks from the same data.
-            await api('POST', '/api/reset');
-            const loaded = await open(page, layout, readAhead);
-            const row = Math.min(1000, Math.max(0, Math.floor(loaded.rowCount / 3)));
-            await net.settled();
-            await pageLog(page);
-            const placing = net.entries.length;
-            await scrollRowToTop(page.locator(REPORT), row);
-            const placed = await settled(page);
-            await net.settled();
-            // The complete Window the scroll asked for, read ahead: what a Window costs this layout.
-            const placedAnswers = net.since(placing);
-            const placedLog = await pageLog(page);
-            const report = net.reportId;
-            const keptBefore = await api('GET', `/api/lab/kept/${report}`);
-            const ticks = [];
-            for (let tick = 1; tick <= TICKS; tick++) {
-                const before = await read(page);
-                const mark = net.entries.length;
-                await page.locator('#lab-tick').click();
-                // The tick lands, ExPivot is told, and asks for the Window it holds: one answer more.
-                await page.waitForFunction(({ ticks, answered }) => {
-                    const now = window.__ra.state();
-                    return now !== null && now.ticks >= ticks && now.answered > answered && now.inFlight === 0;
-                }, { ticks: before.ticks + 1, answered: before.answered }, { polling: 'raf', timeout: 120_000 });
-                await settled(page);
-                await net.settled();
-                const network = net.since(mark);
-                const log = await pageLog(page);
-                ticks.push({ tick, network, pageLog: log });
+        // One pass first, recorded nowhere: the server's code for a live tick, its computation and its
+        // Window Changes has then run before any of it is timed.
+        await liveRun(page, net, layout, LIVE_READ_AHEADS[0], TICK_TRADES[0], 2);
+        for (const tickTrades of TICK_TRADES) {
+            for (const readAhead of LIVE_READ_AHEADS) {
+                const key = `${readAhead.key} rows, ${tickTrades} trades a tick`;
+                console.log(`${layout} live: read-ahead ${readAhead.key}, ${tickTrades} trades a tick`);
+                const run = await liveRun(page, net, layout, readAhead, tickTrades, TICKS);
+                result.readAheads[key] = run;
+                const live = run.ticks.flatMap((t) => t.network).filter((e) => e.baseline && e.outcome === 'answered');
+                summary[key] = {
+                    readAhead: readAhead.key,
+                    tickTrades,
+                    reportRows: run.reportRows,
+                    windowRows: spread(live.map((e) => e.server?.windowRows)),
+                    windowChanges: spread(live.filter((e) => !e.complete).map((e) => e.changes)),
+                    completeAnswers: live.filter((e) => e.complete).length,
+                    perTick: live.map((e) => ({
+                        changes: e.changes,
+                        complete: e.complete,
+                        rawBytes: e.rawBytes,
+                        changesBytes: e.complete ? e.rowsBytes : e.changesBytes,
+                        metadataBytes: e.metadataBytes,
+                        encodedBytes: e.encodedBytes,
+                        computeMs: e.timing?.compute,
+                        projectMs: e.timing?.project,
+                    })),
+                    answers: answers(live, run.ticks.flatMap((t) => t.pageLog)),
+                    placed: answers(run.placedAnswers, run.placedLog),
+                    kept: run.keptAfter,
+                    keptHeapBytes: run.released.heldBytes,
+                };
+                write(`${layout}-live.json`, result);
+                write(`${layout}-live-summary.json`, summary);
             }
-            const keptAfter = await api('GET', `/api/lab/kept/${report}`);
-            const released = await api('POST', `/api/lab/kept/${report}/release`);
-            const live = ticks.flatMap((t) => t.network).filter((e) => e.baseline && e.outcome === 'answered');
-            result.readAheads[readAhead.key] = {
-                reportRows: loaded.rowCount, row, window: { start: placed.first }, placedAnswers, placedLog, keptBefore, keptAfter, released, ticks,
-            };
-            summary[readAhead.key] = {
-                reportRows: loaded.rowCount,
-                windowRows: spread(live.map((e) => e.server?.windowRows)),
-                windowChanges: spread(live.filter((e) => !e.complete).map((e) => e.changes)),
-                completeAnswers: live.filter((e) => e.complete).length,
-                perTick: live.map((e) => ({
-                    changes: e.changes,
-                    complete: e.complete,
-                    rawBytes: e.rawBytes,
-                    changesBytes: e.complete ? e.rowsBytes : e.changesBytes,
-                    metadataBytes: e.metadataBytes,
-                    encodedBytes: e.encodedBytes,
-                    computeMs: e.timing?.compute,
-                    projectMs: e.timing?.project,
-                })),
-                answers: answers(live, ticks.flatMap((t) => t.pageLog)),
-                placed: answers(placedAnswers, placedLog),
-                kept: keptAfter,
-                keptHeapBytes: released.heldBytes,
-            };
-            write(`${layout}-live.json`, result);
-            write(`${layout}-live-summary.json`, summary);
         }
         record(testInfo.project.name, { [`read-ahead ${layout} live updates, ${RTT} ms round trip`]: summary });
         console.log(`read-ahead ${layout} live ${JSON.stringify(summary, null, 1)}`);
     });
+}
+
+/**
+ * One live run: the generated trades again, so that every run takes the same ticks from the same
+ * data; the page loaded at `readAhead`, its Window placed a third of the way down (row 1,000 at
+ * most) and read ahead; then `ticks` ticks of `tickTrades` trades each, the seeds 1, 2, …, each
+ * answered before the next; and the Windows the report source keeps then, and what they hold.
+ */
+async function liveRun(page, net, layout, readAhead, tickTrades, ticks) {
+    await api('POST', '/api/reset');
+    const loaded = await open(page, layout, readAhead, `&tickTrades=${tickTrades}`);
+    const row = Math.min(1000, Math.max(0, Math.floor(loaded.rowCount / 3)));
+    await net.settled();
+    await pageLog(page);
+    const placing = net.entries.length;
+    await scrollRowToTop(page.locator(REPORT), row);
+    const placed = await settled(page);
+    await net.settled();
+    // The complete Window the scroll asked for, read ahead: what a Window costs this layout.
+    const placedAnswers = net.since(placing);
+    const placedLog = await pageLog(page);
+    const report = net.reportId;
+    const keptBefore = await api('GET', `/api/lab/kept/${report}`);
+    const done = [];
+    for (let tick = 1; tick <= ticks; tick++) {
+        const before = await read(page);
+        const mark = net.entries.length;
+        await page.locator('#lab-tick').click();
+        // The tick lands, ExPivot is told, and asks for the Window it holds: one answer more.
+        await page.waitForFunction(({ ticks, answered }) => {
+            const now = window.__ra.state();
+            return now !== null && now.ticks >= ticks && now.answered > answered && now.inFlight === 0;
+        }, { ticks: before.ticks + 1, answered: before.answered }, { polling: 'raf', timeout: 120_000 });
+        await settled(page);
+        await net.settled();
+        done.push({ tick, network: net.since(mark), pageLog: await pageLog(page) });
+    }
+    const keptAfter = await api('GET', `/api/lab/kept/${report}`);
+    const released = await api('POST', `/api/lab/kept/${report}/release`);
+    return {
+        reportRows: loaded.rowCount, row, window: { start: placed.first }, placedAnswers, placedLog,
+        keptBefore, keptAfter, released, ticks: done,
+    };
 }
 
 /** The rows one PageDown moves, read from one press at `startRow`: the Focus's and the Viewport's. */
