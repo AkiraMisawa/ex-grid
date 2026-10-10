@@ -228,12 +228,21 @@ The browser's columns leave out each layout's first run, which compiles what it 
   `memmove` and `memset` (arrays copied and cleared) and `get_virtual_method_fast` (virtual calls): work
   a JIT inlines or devirtualises, and the interpreter does as written. `main`'s raw profile was not kept
   to compare frame by frame.
-- **What the branch builds that `main` does not** is the state a live update folds into. That is the pass
-  that keeps each row's leaf, the incremental cube, and the report's parts that versions share, all built
-  with the report. A live update over that state costs 4–22 ms at 401,001 report rows, against `main`'s 600.
+- **What the branch builds that `main` does not** is the state a live update folds into: the incremental
+  cube, with each total's leaves, and the report's parts that versions share, all built with the report.
+  The pass that keeps each row's leaf is `main`'s too, since the demo's trades carry a Record Key. What the
+  branch adds to it is the chain of each leaf's rows, made at every new question by a walk over every trade
+  into an array of one number a trade (4 MiB at a million); `main` makes the chains the first time a live
+  update recomputes a leaf. A live update over that state costs 4–22 ms at 401,001 report rows, against
+  `main`'s 600. *(Corrected the same day: this list first named the pass that keeps each row's leaf, which
+  `main` keeps as well.)*
 - **Which of those costs most in the browser is not separated.** The interpreter's frames name no .NET
   method, and the jiterpreter's traces are anonymous modules. A build timed phase by phase in the browser
-  would say.
+  would say. What the numbers show, without separating it: the branch's extra over `main` in PV-21's own
+  times is about the same at 1,350 and 13,500 combinations (71 and 73 ms), and on CoreCLR it allocates
+  5 MiB more a question at 1,350 combinations. Work done per trade, not per combination, would show both,
+  and of what the branch adds, only the chains are made per trade. Past 13,500 combinations the extra
+  grows with them, to 1.1 s at 198,450.
 
 ## Not measured
 
