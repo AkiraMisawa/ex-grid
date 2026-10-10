@@ -150,7 +150,10 @@ git -C <scratchpad>/ag-grid rev-parse HEAD   # 0fee5b7b1e839ae23fe860e404042448f
   - [13: Measure after the changes](issues/13-measure-after-the-changes.md) — measured the Claude Code
     track's code; the Codex track's own after-record is
     [`2026-10-06-macos-live-report-after`](../../../verification/2026-10-06-macos-live-report-after/README.md).
-    Neither measured the merged code; PV-48 asks for it.
+    The merged code was measured on 2026-10-10, as PV-48 asks:
+    [`2026-10-10-linux-merged-live-costs`](../../../verification/2026-10-10-linux-merged-live-costs/README.md).
+- [14: A remote report's Window is read ahead](issues/14-a-remote-reports-window-is-read-ahead.md) — needs
+  triage. Written up on 2026-10-10. It is to be measured first, then decided with the user.
 
 ## Numbers for the next decisions
 
