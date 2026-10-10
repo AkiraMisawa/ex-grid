@@ -1,6 +1,6 @@
 # 25: An edit stands when the keyboard leaves the grid, and a press brings it back
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0018, section 6 (2026-09-29), with ADR-0021's note of the same day, for ExGrid
 as a whole. Found on `/sheet`: `=` typed into a cell, then a click on the positions grid. The Sheet's
@@ -19,7 +19,7 @@ the Sheet's rows pointed while the keyboard stayed with the positions grid.
 - [x] After that press, a press that points leaves the keyboard in the edit's surface and the next
       Escape cancels this edit; a press that commits leaves it on the root (ED-26)
 - [x] The Formula Bar case: an edit last typed in the bar gets the keyboard back in the bar
-- [ ] Held keys and held presses (ED-22) still keep their order when the keyboard comes back
+- [x] Held keys and held presses (ED-22) still keep their order when the keyboard comes back
 - [x] The comment on `reclaimFocus` no longer calls itself the one decision about focus made in
       script
 - [x] No JavaScript use is added; the listener stays the allowlisted `mousedown` (ADR-0021)
@@ -149,3 +149,31 @@ straight after the press back is the Sheet's", on `/sheet` and on `/sheets`). No
 order: several keys, or a key and a second press, held behind a press back and arriving in order.
 The one case that cannot pass, a press back within one round trip of the key that opens the edit, is
 accepted (ADR-0018 section 6) and is not this box's.
+
+*(2026-10-10, the test of order.)* The last box is ticked, and the ticket is done. No defect was
+found, and nothing outside the tests changed. `edit-stands.spec.mjs` gains seven tests, "what follows
+a press back at once keeps its order", each run without injected latency on both hosts and at 150 ms
+on the Server host (skipped by name on WebAssembly, which has no round trip). Each waits for the edit
+to open and the keyboard to leave before the round trip is set, so the accepted gap is not among them.
+Each then presses or types with no wait between, and reads only the outcome, which another order would
+change.
+
+- On `/sheet`, under both Chromes, with the keyboard in the positions grid (left through
+  *Revalue*, as the other tests here leave it):
+  - `=` standing in C4; a press back on B2, `*3-4` and Enter. C4 holds `=B2*3-4`, 32.
+  - `99` standing in C4; a press back on B2 that commits it, `456` and Enter. C4 is 99, B2 is 456,
+    and the Focus is B3.
+  - `=` standing in C4; a press back on B2, `+`, a second press on B3, `*2` and Enter. C4 holds
+    `=B2+B3*2`, 26. Answered ahead of the `+`, the second press would have pointed in B2's place.
+- On `/sheets`, the left Sheet's `=` standing in D1 while the right holds an edit of its own (`5` in
+  D2): a press back on the left's B1, `*`, a press on C1, `-1` and Enter. D1 holds `=B1*C1-1`, 199,
+  and the right's edit still holds `5`.
+
+The tests were checked against the module with each half of the order taken away, at 150 ms on the
+Server host, and the module was then put back. With a press on the rows allowed to pass while keys are
+held, the three tests with a second press failed (`-20` on `/sheets`: the press overtook the `*`).
+With the hold behind a press on the rows while an edit is open taken out, all seven failed.
+
+Runs, with Playwright's Chromium under xvfb, `--project=chrome`, on this branch: the seven with
+`--repeat-each=3`, on WebAssembly 21 passed and 21 skipped by name, on Server 42 passed; the whole of
+`edit-stands.spec.mjs` once on each host, with no console message.

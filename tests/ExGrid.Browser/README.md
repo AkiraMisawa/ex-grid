@@ -796,7 +796,11 @@ nobody had asked for. What that means when writing a test:
   committing the edit and opening that cell's text, on `/features` and on the Sheet; outside an
   edit, a press and an arrow holding nothing, read by a page listener the held keys never reach;
   and a press on the rows of a stand-in for a grid nested in the Sheet starting no hold of the
-  Sheet's, the key after it reaching the nested grid as the browser's own keydown. And ED-27 on `/sheets` under both
+  Sheet's, the key after it reaching the nested grid as the browser's own keydown. And the same
+  hold as the keyboard comes back, without latency and at 150 ms on the Server host: keys, and a
+  key with a second press and keys after it, typed at once after a press back, answered in the order
+  they were made — on `/sheet` under both Chromes, behind a press back that points and one that
+  commits, and on `/sheets` while the other Sheet holds an edit of its own. And ED-27 on `/sheets` under both
   Chromes (`?chrome=mud` puts each Sheet on the Wrapper's paper): the computed outline of each
   Sheet's Cell Editor is 1px wide while DOM focus is outside its root, and at the token's full
   width, in the same colour, while the keyboard is its own.
