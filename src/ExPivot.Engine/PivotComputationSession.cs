@@ -84,6 +84,9 @@ public sealed class PivotComputationSession : IDisposable
     /// <summary>The pass the session folds batches into, for the tests.</summary>
     internal AggregationPass? Pass => _pass;
 
+    /// <summary>The computation the session updates, for the tests.</summary>
+    internal ComputationCube? Computation => _computation;
+
     private void SourceComputationChanged(PivotSourceChanged change) => Interlocked.Increment(ref _sourceEpoch);
 
     private void Changed(SnapshotChange change)

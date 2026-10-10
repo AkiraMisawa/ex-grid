@@ -18,8 +18,9 @@ internal sealed class ComputationCube
 
     private Leaf[] _leaves;
     // Each total's leaves, by first record: what a total that subtraction cannot keep exact is
-    // merged again from.
-    private readonly Dictionary<long, Members> _members = new(CellKey.Comparer);
+    // merged again from. Made from the leaves held the first time an update needs them
+    // (MembersAsync), so a question that is never updated makes none (PV-21).
+    private Dictionary<long, Members>? _members;
     private readonly ComputationAxis.Working _rows;
     private readonly ComputationAxis.Working _columns;
     private ComputationCells _cells;
@@ -27,6 +28,8 @@ internal sealed class ComputationCube
     // The leaves whose parts subtraction cannot keep exactly, and how many there are.
     private bool[] _nonAdditive;
     private int _nonAdditiveCount;
+    /// <summary>Whether each total's leaves have been listed, for the tests.</summary>
+    internal bool HasMembers => _members is not null;
     public IReadOnlySet<int> ChangedRowNodes => _rows.Changed;
     public IReadOnlySet<int> RemovedRowNodes => _rows.Removed;
     public IReadOnlySet<int> ChangedColumnNodes => _columns.Changed;
@@ -71,8 +74,6 @@ internal sealed class ComputationCube
         }, weight: 1 + rowFields + columnFields).ConfigureAwait(false);
         if (answered != leaves.Rows.Length)
             throw new InvalidOperationException("The cube holds more leaves than the pass it was made from (ADR-0153).");
-        foreach (var members in result._members.Values)
-            members.Seal();
         return result;
     }
 
@@ -81,24 +82,44 @@ internal sealed class ComputationCube
     {
         _rows.Use(pass, leaf, 0, row);
         _columns.Use(pass, leaf, pass.Query.Rows.Count, column);
-        var first = pass.FirstRecord(leaf);
-        _leaves[leaf] = new() { Row = row, Column = column, Records = records, First = first };
-        var member = Members.Of(first, leaf);
-        for (var r = row; r is not null; r = r.Parent)
-        {
-            for (var c = column; c is not null; c = c.Parent)
-            {
-                if (r != row || c != column)
-                    MembersOf(CellKey.Of(r.Id, c.Id)).Append(member);
-            }
-        }
+        _leaves[leaf] = new() { Row = row, Column = column, Records = records, First = pass.FirstRecord(leaf) };
         var (parts, offset) = _cells.At(_cells.CellOf(CellKey.Of(row.Id, column.Id)));
         if (!Additive(parts, offset))
             SetNonAdditive(leaf, true);
     }
 
+    // Each total's leaves, made from the leaves held, a piece at a time, the first time an update
+    // needs them. The leaves are held in the order they were made, which is their first records'
+    // order, so each total's come sorted.
+    private async ValueTask<Dictionary<long, Members>> MembersAsync(Slicer slicer)
+    {
+        if (_members is { } made)
+            return made;
+        made = new Dictionary<long, Members>(CellKey.Comparer);
+        await slicer.ForAsync(_leaves.Length, (from, to) =>
+        {
+            for (var leaf = from; leaf < to; leaf++)
+            {
+                if (!Held(leaf, out var held))
+                    continue;
+                var member = Members.Of(held.First, leaf);
+                for (var r = held.Row; r is not null; r = r.Parent)
+                {
+                    for (var c = held.Column; c is not null; c = c.Parent)
+                    {
+                        if (r != held.Row || c != held.Column)
+                            (CollectionsMarshal.GetValueRefOrAddDefault(made, CellKey.Of(r.Id, c.Id), out _) ??= new Members()).Append(member);
+                    }
+                }
+            }
+        }, weight: (1 + _cube.Query.Rows.Count) * (1 + _cube.Query.Columns.Count)).ConfigureAwait(false);
+        foreach (var members in made.Values)
+            members.Seal();
+        return _members = made;
+    }
+
     private Members MembersOf(long total)
-        => CollectionsMarshal.GetValueRefOrAddDefault(_members, total, out _) ??= new Members();
+        => CollectionsMarshal.GetValueRefOrAddDefault(_members!, total, out _) ??= new Members();
 
     private bool Held(int leaf, out Leaf held)
     {
@@ -171,6 +192,8 @@ internal sealed class ComputationCube
 
     public async ValueTask<PivotCube> UpdateAsync(AggregationPass pass, string version, Slicer slicer)
     {
+        // Made before the batch changes any leaf held: they are the leaves before it.
+        var allMembers = await MembersAsync(slicer).ConfigureAwait(false);
         _rows.Begin(); _columns.Begin(); ValueRows.Clear(); ValueColumns.Clear();
         var changed = pass.ChangedLeaves.Order().ToArray();
         var values = await pass.PartsOfAsync(changed, slicer).ConfigureAwait(false);
@@ -208,7 +231,7 @@ internal sealed class ComputationCube
             {
                 write.Remove(key);
                 _rows.RemoveLeaf(row); _columns.RemoveLeaf(column);
-                foreach (var total in affected) _members[total].Remove(Members.Of(first, leaf));
+                foreach (var total in affected) allMembers[total].Remove(Members.Of(first, leaf));
                 Keep(leaf, default);
             }
             else
@@ -217,8 +240,8 @@ internal sealed class ComputationCube
                 if (first != nextFirst)
                     foreach (var total in affected)
                     {
-                        _members[total].Remove(Members.Of(first, leaf));
-                        _members[total].Add(Members.Of(nextFirst, leaf));
+                        allMembers[total].Remove(Members.Of(first, leaf));
+                        allMembers[total].Add(Members.Of(nextFirst, leaf));
                     }
                 Keep(leaf, new() { Row = row, Column = column, Records = records, First = nextFirst });
                 write.Put(write.Cell(key), values, at);
@@ -226,7 +249,7 @@ internal sealed class ComputationCube
         }
         foreach (var key in totals)
         {
-            var members = _members[key];
+            var members = allMembers[key];
             if (members.Count == 0)
             {
                 write.Remove(key);
