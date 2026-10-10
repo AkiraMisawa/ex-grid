@@ -65,6 +65,24 @@
         </ul>
     </DocsSection>
 
+    <DocsSection Title="The parts of a sheet">
+        <p>
+            These pages and the API name the parts of a sheet as the figure does. A cell holds an Entry, what the user
+            typed, and shows its Value, what the Entry evaluates to, in the cell's Number Format. While a Formula is
+            edited, the Cell Editor over the cell and the Formula Bar show the same text, the Name Box says where the
+            Focus is, and a Reference Outline marks the cells each Reference names. An error is a Value too, carried
+            into every Formula that uses it. The Sheet Toolbar shows only when you ask for it.
+        </p>
+        <figure class="docs-figure">
+            <img src="figures/sheet-anatomy.png" width="1256" height="648"
+                 alt="An ExSheet expenses claim with the total's Formula open, each part named: the Sheet Toolbar; the Name Box, reading D7; the Formula Bar, showing =SUM(D2:D6); the Headings; the Cell Editor over D7; the Reference Outline over D2:D6; a percentage's Number Format; the Error Value #DIV/0!; and a total's Value." />
+            <figcaption>
+                An expenses claim beside last quarter's, with the total's Formula opened by F2. A script draws the figure
+                from <a href="figure/sheet-anatomy" target="_blank">the sheet on a page of its own</a>.
+            </figcaption>
+        </figure>
+    </DocsSection>
+
     <DocsSection Title="Saving and opening a document">
         <p>
             <code>SheetDocument.ToJson()</code> and <code>SheetDocument.FromJson(json)</code> are its serialised

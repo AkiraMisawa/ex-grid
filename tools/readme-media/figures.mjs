@@ -9,10 +9,14 @@
 // --write puts the PNGs into the Docs Site's wwwroot/figures, which the Docs Site and the README
 // show; without it they stay in out/.
 //
-// A part says where its name stands: `left` of the frame, or of the element `of` names; or in a
-// row `top` of the frame; or `below` it, or below `of`. Its line meets the ring at `at`, a fraction
-// along the ring's side that faces the name. A name over or under its part stands centred on that
-// point, with a straight line, and a row further out when it would cover another name or line.
+// A figure may `prepare` its page first with a user's gestures — a selection, an edit opened —
+// which the names then point at. A part says where its name stands: `left` or `right` of the
+// frame, or of the element `of` names; or in a row `top` of the frame; or `below` it, or below
+// `of`. Its line meets the ring at `at`, a fraction along the ring's side that faces the name. A
+// name over or under its part stands centred on that point, with a straight line, and a row
+// further out when it would cover another name or line. A part's target is a locator, or a box a
+// figure works out from the page (a cell by its column's header and its row); `within` cuts it to
+// what an element shows, so a row panned part out of sight is ringed where it is seen.
 
 import { chromium } from 'playwright';
 import { mkdirSync, readdirSync, copyFileSync } from 'node:fs';
@@ -60,6 +64,7 @@ for (const figure of figures) {
   await page.goto(`${base}${figure.path}`);
   await figure.ready(page);
   await whole(page, figure.whole ?? []);
+  if (figure.prepare) await figure.prepare(page);
 
   // The names, unplaced, for their sizes; then where each stands, which says how much room the
   // frame needs around it; then the room, and the places again on the moved page.
@@ -110,21 +115,48 @@ async function measure(page, figure) {
   const from = box => ({ x: box.x - frame.x, y: box.y - frame.y, width: box.width, height: box.height });
   const parts = [];
   for (const part of figure.parts) {
+    let target = await boxOf(part.target(page), part.term);
+    if (part.within) target = cut(target, await boxOf(part.within(page), `what ${part.term} is seen within`), part.term);
     parts.push({
-      target: from(await boxOf(part.target(page), part.term)),
+      target: from(target),
       of: part.of ? from(await boxOf(part.of(page), `what ${part.term} stands beside`)) : null,
     });
   }
   return { frame, parts };
 }
 
-/** A part's box on the page, or a refusal that names the part: a figure never names what is not there. */
-async function boxOf(locator, what) {
-  if (await locator.count() !== 1)
-    throw new Error(`${what}: the page shows ${await locator.count()} of it, not one`);
-  const box = await locator.boundingBox();
-  if (!box) throw new Error(`${what}: not on screen`);
-  return box;
+/** The part of `box` that `within` shows. */
+function cut(box, within, what) {
+  const x = Math.max(box.x, within.x), y = Math.max(box.y, within.y);
+  const right = Math.min(box.x + box.width, within.x + within.width), bottom = Math.min(box.y + box.height, within.y + within.height);
+  if (right <= x || bottom <= y) throw new Error(`${what}: not within what shows it`);
+  return { x, y, width: right - x, height: bottom - y };
+}
+
+/**
+ * A part's box on the page, or a refusal that names the part: a figure never names what is not
+ * there. A target is a locator for one element; `{ all: locator }`, for the box around every
+ * element it finds on screen; or a promise of a box the figure worked out itself.
+ */
+async function boxOf(target, what) {
+  target = await target;
+  // A locator has a method named `all` too, so it is told apart by `count` first.
+  if (typeof target?.count === 'function') {
+    if (await target.count() !== 1)
+      throw new Error(`${what}: the page shows ${await target.count()} of it, not one`);
+    const box = await target.boundingBox();
+    if (!box) throw new Error(`${what}: not on screen`);
+    return box;
+  }
+  if (target?.all) {
+    const boxes = (await Promise.all((await target.all.all()).map(l => l.boundingBox())))
+      .filter(b => b && b.width > 0 && b.height > 0);
+    if (boxes.length === 0) throw new Error(`${what}: not on screen`);
+    const x = Math.min(...boxes.map(b => b.x)), y = Math.min(...boxes.map(b => b.y));
+    return { x, y, width: Math.max(...boxes.map(b => b.x + b.width)) - x, height: Math.max(...boxes.map(b => b.y + b.height)) - y };
+  }
+  if (!target || !(target.width > 0) || !(target.height > 0)) throw new Error(`${what}: not on screen`);
+  return target;
 }
 
 /** Where each name, ring and line stands, from the frame's corner. */
@@ -138,21 +170,25 @@ function layout(figure, sizes, boxes) {
     const ring = { x: t.x - grow, y: t.y - grow, width: t.width + 2 * grow, height: t.height + 2 * grow };
     const at = part.at ?? 0.5;
     const meet = part.side === 'left' ? { x: ring.x, y: ring.y + at * ring.height }
+      : part.side === 'right' ? { x: ring.x + ring.width, y: ring.y + at * ring.height }
       : part.side === 'top' ? { x: ring.x + at * ring.width, y: ring.y }
       : { x: ring.x + at * ring.width, y: ring.y + ring.height };
     return { term: part.term, side: part.side, of: boxes.parts[i].of ?? frame, ring, meet, name: { ...sizes[i] } };
   });
 
-  // Left: right-aligned at the gap from what it stands beside, level with where its line meets the
+  // Left and right: at the gap from what it stands beside, level with where its line meets the
   // ring, or below the name before it.
   const beside = box => `${box.x},${box.y},${box.width},${box.height}`;
-  for (const column of Map.groupBy(placed.filter(p => p.side === 'left'), p => beside(p.of)).values()) {
-    let floor = -Infinity;
-    for (const p of column.sort((a, b) => a.meet.y - b.meet.y)) {
-      p.name.x = p.of.x - gap - p.name.width;
-      p.name.y = Math.max(p.meet.y - p.name.height / 2, floor);
-      floor = p.name.y + p.name.height + apart;
-      p.line = [[p.name.x + p.name.width + 6, p.name.y + p.name.height / 2], [p.meet.x, p.meet.y]];
+  for (const side of ['left', 'right']) {
+    for (const column of Map.groupBy(placed.filter(p => p.side === side), p => beside(p.of)).values()) {
+      let floor = -Infinity;
+      for (const p of column.sort((a, b) => a.meet.y - b.meet.y)) {
+        p.name.x = side === 'left' ? p.of.x - gap - p.name.width : p.of.x + p.of.width + gap;
+        p.name.y = Math.max(p.meet.y - p.name.height / 2, floor);
+        floor = p.name.y + p.name.height + apart;
+        const end = side === 'left' ? p.name.x + p.name.width + 6 : p.name.x - 6;
+        p.line = [[end, p.name.y + p.name.height / 2], [p.meet.x, p.meet.y]];
+      }
     }
   }
 
@@ -229,14 +265,14 @@ function writeNames(names) {
     Object.assign(name.style, {
       position: 'absolute', left: '-9999px', top: '0', whiteSpace: 'nowrap',
       font: `600 17px/1.25 ${font}`, color: '#1b2230',
-      textAlign: side === 'left' ? 'right' : 'center',
+      textAlign: side === 'left' ? 'right' : side === 'right' ? 'left' : 'center',
     });
     name.textContent = term;
     if (note) {
       const small = document.createElement('div');
       Object.assign(small.style, {
         font: `400 14px/1.3 ${font}`, color: '#4f5867', marginTop: '2px', whiteSpace: 'normal', width: 'max-content', maxWidth: '176px',
-        marginLeft: 'auto', marginRight: side === 'left' ? '0' : 'auto',
+        marginLeft: side === 'right' ? '0' : 'auto', marginRight: side === 'left' ? '0' : 'auto',
       });
       small.textContent = note;
       name.appendChild(small);

@@ -15,13 +15,16 @@ logs an error is not written.
 
 Each figure in `figures/` opens a page made for it under `samples/ExGrid.Docs/Figures`, waits until
 it is ready, and names the parts it lists by their terms in `CONTEXT.md`: a ring around each part,
-and its name beside it with a line to the ring. Only the frame's margin moves, to make room for the
-names. A figure is refused when its page logs an error, when a part is not on the page exactly once,
+and its name beside it with a line to the ring. A figure may first make the state it names with a
+user's gestures, as a scene does: a Selection, a row marked, a Formula opened with F2. Only the
+frame's margin moves, to make room for the names. A figure is refused when its page logs an error, when a part is not on the page exactly once,
 when an element it shows whole would scroll, and when two names would stand on each other's lines.
 The PNG is taken at twice the pixels, so it stays sharp where a page scales it down.
 
 | Figure | Page | Shown on |
 |---|---|---|
+| `grid-anatomy` | `/figure/grid-anatomy` | ExGrid's Overview, and the README's ExGrid section |
+| `sheet-anatomy` | `/figure/sheet-anatomy` | ExSheet's Overview, and the README's ExSheet section |
 | `pivot-anatomy` | `/figure/pivot-anatomy` | ExPivot's Overview, and the README's ExPivot section |
 
 ## Run it

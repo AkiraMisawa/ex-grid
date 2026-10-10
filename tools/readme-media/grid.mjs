@@ -10,6 +10,16 @@ export async function cellAt(page, header, row, scope = page) {
   return { x: h.x + h.width / 2, y: r.y + r.height / 2 };
 }
 
+/** The box of the cell under the header `header`, in the `row`-th painted row (0-based): the
+ * header's columns and the row's height, read from what is painted. */
+export async function cellBox(page, header, row, scope = page) {
+  const head = scope.locator('.ex-header .ex-header-cell').filter({ hasText: new RegExp(`^\\W*${escape(header)}\\W*$`) }).first();
+  const h = await head.boundingBox();
+  const r = await scope.locator('.ex-row:not(.ex-placeholder)').nth(row).boundingBox();
+  if (!h || !r) throw new Error(`No cell under "${header}" in row ${row}`);
+  return { x: h.x, y: r.y, width: h.width, height: r.height };
+}
+
 /** Waits until a grid has painted rows. */
 export async function rowsPainted(page) {
   await page.locator('.ex-row:not(.ex-placeholder)').first().waitFor();

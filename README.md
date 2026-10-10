@@ -55,6 +55,10 @@ Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.
 
 </details>
 
+The parts of a grid, as [the Docs Site](https://akiramisawa.github.io/ex-grid/exgrid) and the API name them:
+
+[![An ExGrid of positions, each part named: a Header Group, the Pinned Columns, the Mark Column and its Row Marks, a Row Stripe, a Selection with its Focus and its Extent, a number too wide for its column shown as ####, and the Selection Summary](samples/ExGrid.Docs/wwwroot/figures/grid-anatomy.png)](https://akiramisawa.github.io/ex-grid/exgrid)
+
 ### ExSheet
 
 - Excel's extent, 1,048,576 rows by 16,384 columns, held sparsely
@@ -67,6 +71,10 @@ Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.
   font, fill, borders), an opt-in toolbar
 - The **Sheet Document** is yours to keep: Entries, never Values, so a saved Sheet recomputes the
   same on a server as in the browser
+
+The parts of a sheet, as [the Docs Site](https://akiramisawa.github.io/ex-grid/exsheet) and the API name them:
+
+[![An ExSheet expenses claim with a Formula open, each part named: the Sheet Toolbar, the Name Box, the Formula Bar, the Headings, the Cell Editor, a Reference Outline, a Number Format, an Error Value and a Value](samples/ExGrid.Docs/wwwroot/figures/sheet-anatomy.png)](https://akiramisawa.github.io/ex-grid/exsheet)
 
 
 [![A budget sheet in ExSheet: a month's figure is typed and every total follows, a variance shows its Formula, a block is made bold and undone](docs/readme/budget-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/budget)
