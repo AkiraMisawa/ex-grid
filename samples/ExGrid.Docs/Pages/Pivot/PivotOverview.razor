@@ -16,6 +16,22 @@
         <DocsExample Builtin="typeof(FirstPivot)" Mud="typeof(FirstPivotMud)" Files="@(["Examples/Pivot/Sales.cs"])" CodeOpen="true" />
     </DocsSection>
 
+    <DocsSection Title="The parts of a pivot">
+        <p>
+            These pages and the API name the parts of a pivot as the list under the figure does. A field stands in
+            one of four Areas of the PivotTable Fields pane: Filters, Columns, Rows or Values. A field in Filters
+            is a report filter above the report. The Items of the fields in Rows and Columns label the report's
+            rows and columns, and a column Item with columns under it stands over them as a Header Group. Each
+            cell is one combination of Items. It is computed, as every subtotal and the grand total are, from the
+            Leaf Aggregates: for each combination of Items that has records, the counts, sums and extremes that
+            the Value Fields' Aggregations are computed from.
+        </p>
+        <DocsFigure Name="pivot-anatomy">
+            2025's sales by region and country, with Europe open. A script draws the figure from
+            <a href="figure/pivot-anatomy" target="_blank">the report on a page of its own</a>, where every part can be tried.
+        </DocsFigure>
+    </DocsSection>
+
     <DocsSection Title="What ExPivot does, and what it leaves to you">
         <ul>
             <li>

@@ -1,0 +1,28 @@
+@using ExGrid.Docs.Figures
+
+@* A figure tools/readme-media/figures.mjs drew from a page of this site (ADR-0110): the picture, the
+   names its numbers stand for, written as text so they read at any width and can be copied, and a
+   caption. The picture's size and the names come from DrawnFigures.g.cs, which the script writes. *@
+<figure class="docs-figure">
+    <img src="figures/@(Figure.Name).png" width="@Figure.Width" height="@Figure.Height" alt="@Figure.Alt" />
+    <ol class="docs-figure-names">
+        @foreach (var part in Figure.Parts)
+        {
+            <li><strong>@part.Term</strong>: @part.Note</li>
+        }
+    </ol>
+    @if (ChildContent is not null)
+    {
+        <figcaption>@ChildContent</figcaption>
+    }
+</figure>
+
+@code {
+    /// <summary>The figure's name, as figures.mjs knows it: <c>grid-anatomy</c>.</summary>
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+
+    /// <summary>What the figure shows, and where it was drawn from.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private DrawnFigure Figure => DrawnFigures.ByName[Name];
+}

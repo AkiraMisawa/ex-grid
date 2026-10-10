@@ -55,6 +55,22 @@ Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.
 
 </details>
 
+The parts of a grid, as [the Docs Site](https://akiramisawa.github.io/ex-grid/exgrid) and the API name them:
+
+<!-- figure grid-anatomy -->
+[![An ExGrid of positions under Header Groups, panned past its Pinned Columns, with two rows marked and a range selected; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/grid-anatomy.png)](https://akiramisawa.github.io/ex-grid/exgrid)
+
+1. **Pinned Column**: held at the edge while the others pan under it
+2. **Header Group**: a label over adjacent columns
+3. **Mark Column**: its ticks are Row Marks, which your application holds
+4. **Row Stripe**: on every second row of the result
+5. **Selection**: rectangles of cells, by position
+6. **Focus**: the active cell, which typing enters
+7. **Extent**: the end that moves as the range grows
+8. **Overflow**: a number too wide shows ####, never a shorter number
+9. **Selection Summary**: Excel's status-bar figures over the Selection
+<!-- /figure grid-anatomy -->
+
 ### ExSheet
 
 - Excel's extent, 1,048,576 rows by 16,384 columns, held sparsely
@@ -67,6 +83,22 @@ Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.
   font, fill, borders), an opt-in toolbar
 - The **Sheet Document** is yours to keep: Entries, never Values, so a saved Sheet recomputes the
   same on a server as in the browser
+
+The parts of a sheet, as [the Docs Site](https://akiramisawa.github.io/ex-grid/exsheet) and the API name them:
+
+<!-- figure sheet-anatomy -->
+[![An ExSheet expenses claim beside last quarter's, with the total's Formula open in the Cell Editor; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/sheet-anatomy.png)](https://akiramisawa.github.io/ex-grid/exsheet)
+
+1. **Sheet Toolbar**: opt-in buttons that act on the Selection
+2. **Name Box**: where the Focus is
+3. **Formula Bar**: the Focus cell's Entry, editable here too
+4. **Headings**: column letters and row numbers
+5. **Cell Editor**: the uncommitted text, over its cell
+6. **Reference Outline**: the cells a Reference in the Formula names
+7. **Number Format**: turns a Value into the text shown, here 0.0%
+8. **Error Value**: an error, carried as data; here a division by nothing
+9. **Value**: what a cell's Entry evaluates to
+<!-- /figure sheet-anatomy -->
 
 
 [![A budget sheet in ExSheet: a month's figure is typed and every total follows, a variance shows its Formula, a block is made bold and undone](docs/readme/budget-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/budget)
@@ -87,6 +119,22 @@ Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.
 - Money summed exactly — never through a `double`
 - In-process data, CSV, a database, or a server answering with leaf aggregates; live data folded
   in as Change Batches
+
+The parts of a pivot, as [the Docs Site](https://akiramisawa.github.io/ex-grid/expivot) and the API name them:
+
+<!-- figure pivot-anatomy -->
+[![An ExPivot report of 2025's sales by region and country, with Europe open, beside its PivotTable Fields pane; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/pivot-anatomy.png)](https://akiramisawa.github.io/ex-grid/expivot)
+
+1. **Report filter**: a field in Filters
+2. **Value Field**: Revenue, with its Aggregation, Sum
+3. **Header Group**: a column Item over its columns
+4. **Group row**: an outer Item, heading its Items
+5. **Item**: one value of a field in Rows
+6. **Subtotal**: of the group, at its foot
+7. **Grand total**: of everything the report counts
+8. **Cell**: one per combination of Items, computed from its Leaf Aggregate
+9. **Areas**: Filters, Columns, Rows and Values
+<!-- /figure pivot-anatomy -->
 
 [![A sales analysis in ExPivot: a region is collapsed and opened, and a field is added to the rows from the Fields pane and taken off again](docs/readme/sales-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/sales)
 

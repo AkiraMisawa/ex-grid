@@ -1,0 +1,63 @@
+@page "/figure/grid-anatomy"
+@layout BareLayout
+@using System.Globalization
+@using ExGrid.Columns
+@* An alias: MudBlazor, which the site imports everywhere, has a Position of its own. *@
+@using DeskPosition = ExGrid.Docs.Examples.Grid.Position
+
+@* The grid the ExGrid Overview's figure names the parts of. tools/readme-media/figures.mjs opens this
+   page, makes a Selection and marks two rows as a user would, numbers each part and takes the
+   picture, so the figure is never drawn by hand (ADR-0110). *@
+<ShowcaseFrame Title="The parts of a grid">
+    <style>
+        .anatomy-page {
+            min-height: 100vh;
+            padding: 24px;
+            box-sizing: border-box;
+            background: light-dark(#ffffff, #121418);
+        }
+        .anatomy-grid { width: @(Width)px; }
+    </style>
+    <div class="anatomy-page">
+        <div class="anatomy-grid">
+            <ExGrid TRow="DeskPosition" Source="_source" Columns="_columns" HeaderGroups="_groups" PinnedColumnCount="3"
+                    StripeRows="true" ViewportHeight="ViewportHeight" ViewportWidth="ViewportSize.Stretch" />
+        </div>
+    </div>
+</ShowcaseFrame>
+
+@code {
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    // Narrower than its columns, so the figure can pan until P&L shows whole and the first column
+    // that is not pinned has passed partly under the Pinned Columns; twelve rows tall.
+    private const double Width = 666;
+    private static readonly ViewportSize ViewportHeight = 384;
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+
+    // P&L is sized for the usual position, so the one past a million shows ####: a number that does
+    // not fit is never shown shorter (ADR-0016).
+    private static readonly GridColumn<DeskPosition>[] Columns =
+    [
+        GridColumn<DeskPosition>.MarkColumn(),
+        new("Id", ColumnType.Number, p => p.Id, width: Fixed(70), align: CellAlign.Left),
+        new("Instrument", ColumnType.Text, p => p.Instrument, width: Fixed(124)),
+        new("Desk", ColumnType.Text, p => p.Desk, width: Fixed(88)),
+        new("Trader", ColumnType.Text, p => p.Trader, width: Fixed(96)),
+        new("Quantity", ColumnType.Number, p => p.Quantity, width: Fixed(104), format: v => ((int)v).ToString("N0", Invariant)),
+        new("Price", ColumnType.Number, p => p.Price, width: Fixed(80), format: v => ((decimal)v).ToString("N2", Invariant)),
+        new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", width: Fixed(92), format: v => ((decimal)v).ToString("N0", Invariant)),
+    ];
+
+    private static readonly HeaderGroup[] Groups =
+    [
+        new("Position", ["Id", "Instrument"]),
+        new("Owner", ["Desk", "Trader"]),
+        new("Economics", ["Quantity", "Price", "Pnl"]),
+    ];
+
+    private readonly InMemoryGridSource<DeskPosition> _source = GridSource.From(DeskPosition.Sample());
+    private readonly IReadOnlyList<GridColumn<DeskPosition>> _columns = Columns;
+    private readonly IReadOnlyList<HeaderGroup> _groups = Groups;
+}
