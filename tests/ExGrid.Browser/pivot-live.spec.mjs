@@ -221,6 +221,10 @@ for (const chrome of ['builtin', 'mud']) {
                 // has — and that colour keeps the readable contrast body text keeps (UX-8, measured from the
                 // computed colours over the painted ground), muted beside the ink's.
                 const within = report(page, 'server').locator('.ex-scroller');
+                // A screenshot reads only what the viewport shows, and the server's report is the page's
+                // second: under the built-in Chrome it starts below the fold. Its first row is brought into
+                // view before its pixels are read.
+                await values.first().scrollIntoViewIfNeeded();
                 const muted = await inkOf(page, values, within);
                 const staleInk = inkOver(stale, muted.ground);
                 expect(paints(muted.inked, staleInk), `${muted.inked} over ${muted.ground}: the stale colour paints ${staleInk}`).toBe(true);
@@ -239,6 +243,7 @@ for (const chrome of ['builtin', 'mud']) {
                 await page.mouse.move(0, 0);
                 await circuitQuiet();
                 expect(await colourOf(values.first())).toBe(ink);
+                await values.first().scrollIntoViewIfNeeded();
                 const current = await inkOf(page, values, within);
                 const currentInk = inkOver(ink, current.ground);
                 expect(paints(current.inked, currentInk), `${current.inked} over ${current.ground}: the ink paints ${currentInk}`).toBe(true);
