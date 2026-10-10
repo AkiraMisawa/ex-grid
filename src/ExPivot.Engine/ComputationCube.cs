@@ -54,7 +54,6 @@ internal sealed class ComputationCube
         var cells = cube.ShareCells();
         var rows = new ComputationAxis.Working(cube.RowNodes, rowFields);
         var columns = new ComputationAxis.Working(cube.ColumnNodes, columnFields);
-        await pass.PrepareChainsAsync(slicer).ConfigureAwait(false);
         var result = new ComputationCube(cube, cells, rows, columns, pass.Leaves.Count);
         var records = pass.Leaves.Records;
         var answered = 0;

@@ -81,6 +81,9 @@ public sealed class PivotComputationSession : IDisposable
     /// out from — or null before its first result.</summary>
     internal PivotCube? HeldCube => _report?.Cube;
 
+    /// <summary>The pass the session folds batches into, for the tests.</summary>
+    internal AggregationPass? Pass => _pass;
+
     private void SourceComputationChanged(PivotSourceChanged change) => Interlocked.Increment(ref _sourceEpoch);
 
     private void Changed(SnapshotChange change)
