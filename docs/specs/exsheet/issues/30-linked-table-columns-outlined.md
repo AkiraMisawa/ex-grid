@@ -1,6 +1,6 @@
 # 30: A Linked Table's columns outlined in the grid that shows them
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0057, "A structured reference is outlined by whoever shows its table", and
 ADR-0049's note of the same day. ExSheet tells its Consumer which Linked Table columns the Formula
@@ -15,6 +15,15 @@ connects the two for its positions grid.
 - [x] ExSheet: a notification to its Consumer of each Linked Table column read and its colour,
       raised when that changes and emptied when the edit ends (SH-31)
 - [x] `/sheet` passes the notification to its positions grid (SH-31)
-- [ ] Layer 3 on both hosts: typing `=SUM(Positions[PV])` outlines the positions grid's PV column in
+- [x] Layer 3 on both hosts: typing `=SUM(Positions[PV])` outlines the positions grid's PV column in
       the colour `Positions[PV]` wears in the editor; Escape removes it; two Sheets on a page each
       outline only through their own Consumer's wiring (SH-31, DC-25)
+
+## Comments
+
+*(2026-10-10, backlog cleanup.)* Status set to done, and the last box ticked.
+`declarations.spec.mjs`: "SH-31/DC-50: =A1+SUM(Positions[PV]) outlines the positions grid's PV
+column in the colour Positions[PV] was given; Escape removes it". `pointing-scope.spec.mjs` compares
+that colour with the text's in the Cell Editor, and `sheets.spec.mjs` checks two Sheets on one page.
+Each Sheet's outlines now go through its own Pointing Scope (SH-31 as it reads now), not through a
+Consumer's own wiring as the box says.

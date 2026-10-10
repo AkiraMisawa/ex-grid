@@ -1,8 +1,9 @@
 # What to verify on Windows, twelfth run
 
-Status: done. **Part A was run on 2026-10-01 at a0ed1e6** (`verification/2026-10-01-windows-excel-12/`;
-what it settled is in ADR-0071). (Part C of the
-[eleventh run](verify-on-windows-11.md) still waits for tickets 48, 49 and 51.)
+Status: done. **Part A was run on 2026-10-01 at a0ed1e6**
+(`verification/2026-10-01-windows-excel-12/`; what it settled is in ADR-0071). (Part C of the
+[eleventh run](verify-on-windows-11.md), which this note said was still waiting, was run on
+2026-10-02.)
 
 This is for the Claude Code session on the Windows desktop of the earlier runs.
 - Read [`verify-on-windows-11.md`](verify-on-windows-11.md) first. Its Setup, method and tools

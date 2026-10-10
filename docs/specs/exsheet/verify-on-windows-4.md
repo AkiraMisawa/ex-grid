@@ -1,6 +1,8 @@
 # What to verify on Windows, fourth run
 
-Status: ready-for-human — **A, B, C, D in order** (E is optional).
+Status: done — run at 393eb61 on 2026-09-29 (`verification/2026-09-29-windows-excel-4/`,
+`verification/2026-09-29-windows-4/`); the optional Part E was not run. What it settled is in
+ADR-0053. *(Set from the records on 2026-10-10.)*
 
 For the Claude Code session on the Windows desktop of the first three runs (Excel, Chrome, Edge,
 WSL2 with nix). The third run's method, tools and advance authorisation all still apply: read

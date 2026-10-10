@@ -11,7 +11,7 @@ layer 3 at a time.
 **Blocked by:** 06, 07, 10, 11, 13, 15, 16
 
 - [ ] Every ExSheet criterion marked layer 3 in the Definition of Done passes on both browsers and both hosts
-- [ ] Two ExSheets: keys, popovers, undo and the Formula Bar never cross (ADR-0018)
+- [x] Two ExSheets: keys, popovers, undo and the Formula Bar never cross (ADR-0018)
 - [x] No console message, and the DOM does not grow with the extent
 
 ## Comments
@@ -77,3 +77,21 @@ module, which attaches a sixth for the caret report (ADR-0051, DC-24). The test 
 
 **Still open here:** the first criterion (both browsers — CI; the failures above on the Server host
 and under the Mud Chrome), the second (the late focus reclaim).
+
+*(2026-10-10, backlog cleanup.)* The second box is ticked. `sheets.spec.mjs` covers all four: the
+keys ("SH-13/DC-25: typing and Formulas stay in the Sheet that has the keyboard", and a cancel
+finished late in the other Sheet), the popovers (a completion list, a pointing outline and the
+Formula Bar belonging to one Sheet; "a Context Menu opens in the Sheet it was asked of"), undo
+("SH-13: each Sheet keeps its own undo stack") and the Formula Bar. The `test.fail` defects listed
+above are no longer marked anywhere.
+
+The first box stays open. Two criteria of §27 name Layer 3 and have no layer-3 test on a Sheet:
+
+- **SH-27**, Ctrl+Enter with a Formula over a range: `=A1` over B2:C3 from B2 gives `=A1`, `=B1`,
+  `=A2`, `=B2`. Layer 2 has it (`tests/ExSheet.Components/ExcelKeyWiringTests.cs`); its layer 3 is
+  "beside Excel", so a probe in `sheet-vs-excel.spec.mjs`.
+- **SH-41**, a bold number's `####` and an italic number's edges, read in pixels. Only the core's
+  DC-58 tests exist (`appearance.spec.mjs`), on `/appearance`, which has no ExSheet.
+
+Every other §27 criterion that names Layer 3 has a live test. What SH-42, SH-51 and SH-52 ask by
+hand on Windows is a Windows run's, not this ticket's.

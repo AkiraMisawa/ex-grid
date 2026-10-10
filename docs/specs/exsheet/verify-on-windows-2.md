@@ -1,6 +1,9 @@
 # What to verify on Windows, second run
 
-Status: ready-for-human
+Status: done — run at e9c448a on 2026-09-27 (`verification/2026-09-27-windows-excel-2/`,
+`verification/2026-09-27-windows-2/`; Part E is [`bisect-on-windows.md`](bisect-on-windows.md), in
+`verification/2026-09-27-windows-bisect/`). What it settled is in ADR-0047. *(Set from the records
+on 2026-10-10.)*
 
 For a Claude Code session on the Windows desktop used on 2026-09-27 (Excel, Chrome, Edge, WSL2
 with nix). The first run's method and tools still apply, except where this page says otherwise (the user's

@@ -1,6 +1,6 @@
 # 26: The application's changes are refused while an edit is open
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0048, "While an edit is open, the application's changes are refused"
 (2026-09-29), and ADR-0050, section 6. Found on `/sheet`: `99` typed over C4 (Plums), then *Insert a
@@ -25,7 +25,7 @@ ExSheet:
 - [x] ExSheet says whether an edit is open, and raises a notification when that changes, so the
       application can grey out its buttons (SH-29)
 - [x] The `/sheet` demo page greys out its toolbar buttons while an edit is open, as a Consumer would
-- [ ] Layer 2, one test per command and per way an edit ends; layer 3 on `/sheet`: `99` over C4,
+- [x] Layer 2, one test per command and per way an edit ends; layer 3 on `/sheet`: `99` over C4,
       the insert button, Enter: 99 is in Plums' row (SH-29)
 
 - [x] Replacing the whole Sheet Document (`Document` set by the application) while an edit is open
@@ -78,3 +78,10 @@ insertion moved there; what an edit ended in (the Edit Intent, a Ctrl+Enter fill
 a discard) is now raised before the end. SRV-7 in the Cell Editor, DC-13 and the two
 `sheet-vs-excel` items of 2026-09-29 fail on the base too, on this machine, and are not this
 ticket's.
+
+*(2026-10-10, backlog cleanup.)* Status set to done, and the last box ticked: the suite it waited on
+has run in CI ever since. Layer 2: `RefusedWhileEditingTests` takes each of the five commands and
+each way an edit ends (commit, cancel, discard, a rejected commit). Layer 3, `sheet.spec.mjs`:
+"SH-29 (ADR-0048): the commands grey out while 99 is typed over C4, and Enter puts 99 in Plums'
+row", the insert pressed on a 150 ms circuit before the button greys out, and the buttons through
+each way an edit opens and ends.

@@ -1,6 +1,9 @@
 # What to verify on Windows, eighth run
 
-Status: ready-for-human — **Part A now; Part B once tickets 27–30 are done.**
+Status: done — Part A at 7628ab9 on 2026-09-29, and its cases 24–32 at dd50310 on 2026-09-30
+(`verification/2026-09-29-windows-excel-8/`); Part B at 9d208c0 on 2026-09-30
+(`verification/2026-09-30-windows-8/`). What it settled is in ADR-0057. *(Set from the records on
+2026-10-10.)*
 
 For the Claude Code session on the Windows desktop of the earlier runs (Excel, Chrome, Edge, WSL2 with
 nix). Read [`verify-on-windows-5.md`](verify-on-windows-5.md) and

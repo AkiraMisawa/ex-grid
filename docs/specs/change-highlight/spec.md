@@ -1,6 +1,7 @@
 # Change Highlight
 
-Status: ready-for-agent
+Status: done — built with ExPivot's first version (#30); tickets 01 and 02 are done. *(Set on
+2026-10-10.)*
 
 Decided by [ADR-0068](../../adr/0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md),
 in the ExPivot grilling of 2026-09-30. Exit criteria: `docs/definition-of-done.md` §26, DC-64 to

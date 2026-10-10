@@ -1,6 +1,9 @@
 # Excel's behaviours, observed beside ExSheet
 
-Status: ready-for-agent
+Status: done — every item was observed beside Excel at 9a78a14 on 2026-09-27, as the first Windows
+run's Part D (`verification/2026-09-27-windows-excel/behaviours.md`). Its probes are
+`tests/ExGrid.Browser/sheet-vs-excel.spec.mjs`, which the second to fourth runs ran again. *(Set
+from the records on 2026-10-10.)*
 
 The engine's Values are checked against Excel automatically, by the case corpus and its oracle
 (`verify-on-windows.md`, Part A). This list is about what a user **does**: keys, clicks and drags.

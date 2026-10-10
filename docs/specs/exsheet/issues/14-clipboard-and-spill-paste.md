@@ -1,6 +1,7 @@
 # 14: The clipboard, and the paste that spills
 
-Status: ready-for-agent
+Status: done — but for a real Excel on the other side of the clipboard (DC-33's other half;
+`sheet-vs-excel.spec.mjs` item 18), which a Windows run observes
 
 **What to build:** Inside ExSheet, a copy carries Entries and relative References shift on paste. Outward it
 carries Values as unformatted text. Inward, each field is parsed as if typed. The third ADR-0050
@@ -212,3 +213,18 @@ Excel's HTML as the Windows paste event carried it. Layer 3 (`declarations.spec.
 synthetic paste event carrying text/plain, text/html, text/rtf and a file, too narrow (refused by
 name, the notice still standing 500 ms later) and wide enough (pasted, spilled, selected), on
 Chrome against both hosts.
+
+*(2026-10-10, backlog cleanup.)* Status set to done. What the comments above left open is covered:
+
+- Layer 3 with the real clipboard runs in CI on `chrome` and `msedge`, against both hosts:
+  `declarations.spec.mjs`, "DC-8: a block pasted from the real clipboard onto one cell spills, and
+  becomes the Selection" and "SH-14/DC-33: a copy inside the Sheet carries Entries and shifts
+  References; outward it carries Values", with the Context Menu's copy beside them.
+- `sheet-vs-excel.spec.mjs` items 16, 17 and 19 waited on this ticket as `test.fixme`, so they never
+  ran in CI. They run now, and wait for the copy to reach the clipboard before pasting, as the
+  file's probe of one copied cell does. Run before the push on both hosts, three times each.
+- Whether Edge keeps the `data-ex-grid="invariant"` marker is recorded in each run's `metrics.json`,
+  not asserted. Where it is stripped, ADR-0050's fallback reads the fields as shown text.
+
+What stays is Excel itself: item 18, cells from Excel and to Excel, needs Excel on the other side of
+the clipboard.

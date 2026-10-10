@@ -1,6 +1,8 @@
 # ExPivot, first version
 
-Status: ready-for-agent
+Status: done — but for [ticket 07](issues/07-observe-beside-excel-on-windows.md), the run beside
+Excel on Windows (`ready-for-human`). Built in #30, and carried on by #63, #64 and #70. *(Set on
+2026-10-10.)*
 
 Decided by [ADR-0059](../../adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md) to
 [ADR-0069](../../adr/0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md), with the user,

@@ -1,6 +1,9 @@
 # ExSheet's function catalogue
 
-Status: ready-for-agent
+Status: needs-info — no function is Ready (item 5 below). Tickets 01 to 12 admitted every one that
+was, in #57 to #59. What remains waits on a decision or an algorithm: tickets 13 to 15, and the
+Decide rows `SUBTOTAL`, `AGGREGATE`, `ERROR.TYPE` and `INDIRECT`, which have no ticket. *(Set on
+2026-10-10.)*
 
 The functions ExSheet's engine supports, and the queue of those it may support next, each with its
 status and a priority. **ADR-0047 decides whether a function is admitted; this file only orders the

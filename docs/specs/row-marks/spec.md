@@ -1,6 +1,7 @@
 # Row Marks and the Mark Column
 
-Status: ready-for-agent
+Status: done — built in #22. MK-6 and MK-7, which the last comment leaves to CI, pass on `chrome`
+and `msedge` (`verification/2026-09-29-windows-5/`). *(Set on 2026-10-10.)*
 
 Decided by [ADR-0043](../../adr/0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md),
 with consequences recorded in ADR-0014, ADR-0015, ADR-0020 and ADR-0024. Exit criteria:

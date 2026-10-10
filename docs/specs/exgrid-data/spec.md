@@ -1,6 +1,7 @@
 # The Snapshot: `ExGrid.Data` and `ExGrid.Data.Arrow`
 
-Status: ready-for-agent
+Status: done — built with ExPivot's first version (#30); tickets 01 to 07 are done. Each item of
+"Out of Scope" that is deferred needs an ADR of its own. *(Set on 2026-10-10.)*
 
 Decided by [ADR-0064](../../adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)
 and [ADR-0065](../../adr/0065-a-snapshot-travels-as-apache-arrow.md), in the ExPivot grilling of

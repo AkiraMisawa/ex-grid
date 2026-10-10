@@ -142,3 +142,10 @@ failures are the base's: the macOS overlay scrollbar (UX-10, the scrollbar spec,
 the system clipboard (two sheet-vs-excel copies), DC-13, WR-7's Drawer and tab, and SRV-7 on Server.
 `edit-stands.spec.mjs` passes whole on both hosts. The held-keys box stays open as Q24's accepted
 round-trip gap (ADR-0018 section 6).
+
+*(2026-10-10, backlog cleanup.)* Still `ready-for-agent`, for the one open box.
+`edit-stands.spec.mjs` covers one key held behind a press back ("with a 150 ms round trip, the key
+straight after the press back is the Sheet's", on `/sheet` and on `/sheets`). Nothing tests the
+order: several keys, or a key and a second press, held behind a press back and arriving in order.
+The one case that cannot pass, a press back within one round trip of the key that opens the edit, is
+accepted (ADR-0018 section 6) and is not this box's.

@@ -1,6 +1,8 @@
 # 19: Verify the engine's uncertain cases against a real Excel
 
-Status: ready-for-human
+Status: done — Excel's answers were recorded on 2026-09-27
+(`verification/2026-09-27-windows-excel/`); every disagreement is fixed to Excel's answer, and the
+`0.1+0.2-0.3` example is corrected (ADR-0047)
 
 **What to build:** ADR-0047 admits a function only when it matches Excel, and the tests are written
 from Excel's observed behaviour. The engine was built without a real Excel, so every case whose
@@ -60,8 +62,8 @@ with ranges (`=XLOOKUP(1,A1,B1,)`), because ExSheet does not read array constant
 | 35 | `= A1 + B1` typed with spaces, then F2 | spaces kept (ADR-0047) | `= A1 + B1`, spaces kept (TEXT-074, agrees). Typed with real keys, F2 shows `= A1 + B1` (agrees); a trailing space is dropped on entry |
 
 - [x] Every row has Excel's answer and the build number is recorded
-- [ ] Each row where the engine differs is fixed to match, or the function / argument value is refused with an Error Value, and ADR-0047's list is updated accordingly
-- [ ] Rows 1–3 settle ADR-0047's `0.1+0.2-0.3` example, and the ADR's text is corrected if Excel returns 0
+- [x] Each row where the engine differs is fixed to match, or the function / argument value is refused with an Error Value, and ADR-0047's list is updated accordingly
+- [x] Rows 1–3 settle ADR-0047's `0.1+0.2-0.3` example, and the ADR's text is corrected if Excel returns 0
 
 ## Comments
 
@@ -78,3 +80,8 @@ was changed in the engine, so the second and third checkboxes stay open. Rows 1�
 0 for rows 1 and 2, and the IEEE result for row 3. That answers ADR-0047's `0.1+0.2-0.3` example;
 correcting the ADR is the user's call.
 
+*(2026-10-10, backlog cleanup.)* Status set to done, and the last two boxes ticked. ADR-0047's
+"Observed in Excel" corrects the example (Excel gives 0 for `=0.1+0.2-0.3`), and "What the
+observation settled" fixes every disagreement to Excel's answer. All 57 cases that carry a
+`ticket19Row` in `tests/ExSheet.Engine.Tests/ExcelCases/` read `source: "observed"`, none differs by
+decision, and `ExcelCaseTests` holds the engine to each.
