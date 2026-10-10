@@ -239,10 +239,11 @@ The browser's columns leave out each layout's first run, which compiles what it 
 - **Which of those costs most in the browser is not separated.** The interpreter's frames name no .NET
   method, and the jiterpreter's traces are anonymous modules. A build timed phase by phase in the browser
   would say. What the numbers show, without separating it: the branch's extra over `main` in PV-21's own
-  times is about the same at 1,350 and 13,500 combinations (71 and 73 ms), and on CoreCLR it allocates
-  5 MiB more a question at 1,350 combinations. Work done per trade, not per combination, would show both,
-  and of what the branch adds, only the chains are made per trade. Past 13,500 combinations the extra
-  grows with them, to 1.1 s at 198,450.
+  times stays within 25–73 ms from the page's own questions, of 50 combinations, to 13,500 combinations
+  (71 ms at 1,350, 73 at 13,500), and on CoreCLR the branch allocates 5 MiB more a question at 1,350
+  combinations. Work done per trade, not per combination, would show both, and of what the branch adds,
+  only the chains are made per trade. Past 13,500 combinations the extra grows with them, to 1.1 s at
+  198,450.
 
 ## Not measured
 
