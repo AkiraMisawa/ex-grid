@@ -1,0 +1,273 @@
+@page "/lab-read-ahead"
+@implements IAsyncDisposable
+@inject DemoApiClient Api
+@using System.Diagnostics
+@using System.Globalization
+@using System.Net.Http.Json
+@using System.Text
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+
+@*
+    LAB ONLY, never merged (lab/remote-read-ahead, ticket 14 of the live-data spec): one ExPivot over
+    the demo API server's report source, as /pivot-db's server pivot, asking ?readAhead= rows either
+    side of the range its grid needs (ExPivot.ReadAheadRows). The layouts are fixed by ?layout=:
+    narrow (6 value columns), wide (Product and Quantity in Columns, hundreds of value columns) and
+    wide-dense (the same columns over Trade date alone, for a server holding a million trades).
+    measure-read-ahead.spec.mjs drives it. The page writes nothing while it is measured but its
+    status line, which renders on its own; #lab-dump writes the questions' log when asked.
+*@
+<DemoChromeAssets Name="builtin">
+    <Head>
+        <link href="_content/ExPivot/ex-pivot.min.css" rel="stylesheet" />
+    </Head>
+</DemoChromeAssets>
+
+<DemoNav />
+
+<h1>LAB ONLY: a remote report's Window read ahead</h1>
+
+<p>
+    Layout <code id="lab-layout">@LayoutName</code>, <code id="lab-read-ahead">@ReadAhead</code> rows asked either side of
+    the range the grid needs<span id="lab-supersedes">@(Supersedes ? ", any other Window superseding a question in flight" : "")</span>.
+    Never merged: ticket 14's measurement.
+</p>
+
+<div class="demo-toolbar">
+    <button id="lab-tick" disabled="@(_source is null)" @onclick="TickAsync">Change trades on the server</button>
+    <button id="lab-dump" @onclick="Dump">Write the questions' log</button>
+</div>
+<p class="demo-status"><DemoStatusLine @ref="_status" Id="lab-status" Initial="Asking the demo API server for its fields…" /></p>
+
+@if (_source is not null)
+{
+    <ExPivot ReportSource="_source" @bind-Layout="_layout" ReadAheadRows="ReadAhead" ReadAheadSupersedes="Supersedes"
+             ShowFieldList="false" Culture="Culture" ViewportHeight="Height" />
+}
+
+<pre id="lab-log">@_dump</pre>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private readonly CancellationTokenSource _leaving = new();
+    private FetchingPivotReportSource? _source;
+    private PivotLayout _layout = Narrow();
+    private DemoStatusLine? _status;
+    private readonly List<string> _log = [];
+    private string _dump = "";
+    private int _dumps;
+    private int _asked;
+    private int _answered;
+    private int _cancelled;
+    private int _failed;
+    private int _inFlight;
+    private int _ticks;
+    private ulong _seed;
+    private string? _version;
+
+    [SupplyParameterFromQuery(Name = "readAhead")]
+    public int? ReadAheadAsked { get; set; }
+
+    [SupplyParameterFromQuery(Name = "layout")]
+    public string? LayoutAsked { get; set; }
+
+    [SupplyParameterFromQuery(Name = "height")]
+    public int? HeightAsked { get; set; }
+
+    // How many trades a tick moves: the demo's live updates move twenty (/pivot-live).
+    [SupplyParameterFromQuery(Name = "tickTrades")]
+    public int? TickTradesAsked { get; set; }
+
+    // ?supersede=1: a question in flight is superseded by any other Window, as GridSource.Fetch's is
+    // (ExPivot.ReadAheadSupersedes).
+    [SupplyParameterFromQuery(Name = "supersede")]
+    public int? SupersedeAsked { get; set; }
+
+    private int ReadAhead => ReadAheadAsked is >= 0 and var rows ? rows : 0;
+
+    private bool Supersedes => SupersedeAsked == 1;
+
+    private string LayoutName => LayoutAsked ?? "narrow";
+
+    // ExPivot's own default, unless the page is asked for another.
+    private int Height => HeightAsked is > 0 and var height ? height : 400;
+
+    private int TickTrades => TickTradesAsked is > 0 and var trades ? trades : 20;
+
+    protected override void OnInitialized()
+    {
+        _layout = LayoutName switch
+        {
+            "narrow" => Narrow(),
+            "wide" => Wide(),
+            "wide-dense" => WideDense(),
+            _ => throw new InvalidOperationException($"?layout= is narrow, wide or wide-dense, not \"{LayoutAsked}\"."),
+        };
+        PivotReportClient.LabChecked += Checked;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        var token = _leaving.Token;
+        try
+        {
+            var (fields, features) = await DemoServerPivot.DeclaredAsync(Api.Http, token);
+            _source = Fetch(fields, features);
+            Describe();
+            StateHasChanged();
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (HttpRequestException error)
+        {
+            _status?.Show(Api.NotAnswering(error));
+        }
+    }
+
+    // Rows Trade date and Book: about 3,000 rows over the demo's 20,000 trades.
+    private static PivotLayout Narrow() => new()
+    {
+        Rows = [new PivotFieldPlacement("TradeDate"), new PivotFieldPlacement("Book")],
+        Columns = [new PivotFieldPlacement("Product")],
+        Values = [new PivotValueField("Pnl", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    // The same rows, and Product and Quantity in Columns: every product's quantities, its total, and
+    // the grand total.
+    private static PivotLayout Wide() => new()
+    {
+        Rows = [new PivotFieldPlacement("TradeDate"), new PivotFieldPlacement("Book")],
+        Columns = [new PivotFieldPlacement("Product"), new PivotFieldPlacement("Quantity")],
+        Values = [new PivotValueField("Pnl", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    // Wide's columns over Trade date alone: 271 rows, each nearly full over a million trades.
+    private static PivotLayout WideDense() => new()
+    {
+        Rows = [new PivotFieldPlacement("TradeDate")],
+        Columns = [new PivotFieldPlacement("Product"), new PivotFieldPlacement("Quantity")],
+        Values = [new PivotValueField("Pnl", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    // DemoServerPivot.Fetch's transport, with each Window question counted and timed: how long its
+    // answer took to arrive and to be read as a whole, how long it took to parse, and its length.
+    private FetchingPivotReportSource Fetch(IReadOnlyList<PivotField> fields, PivotSourceFeatures features)
+    {
+        var path = "api/pivot/reports/" + Guid.NewGuid().ToString("N");
+        async ValueTask<TAnswer> PostAsync<TQuery, TAnswer>(string operation, TQuery query, CancellationToken token)
+        {
+            using var content = new StringContent(PivotReportJson.Write(query), Encoding.UTF8, "application/json");
+            using var response = await Api.Http.PostAsync(path + "/" + operation, content, token);
+            response.EnsureSuccessStatusCode();
+            return PivotReportJson.Read<TAnswer>(await response.Content.ReadAsStringAsync(token));
+        }
+        async ValueTask<PivotReportUpdate> WindowAsync(PivotReportRequest query, CancellationToken token)
+        {
+            _asked++;
+            _inFlight++;
+            Describe();
+            var started = Stopwatch.GetTimestamp();
+            var outcome = "failed";
+            try
+            {
+                using var content = new StringContent(PivotReportJson.Write(query), Encoding.UTF8, "application/json");
+                using var response = await Api.Http.PostAsync(path + "/window", content, token);
+                response.EnsureSuccessStatusCode();
+                var text = await response.Content.ReadAsStringAsync(token);
+                var arrived = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+                var parsing = Stopwatch.GetTimestamp();
+                var update = PivotReportJson.Read<PivotReportUpdate>(text);
+                var parsed = Stopwatch.GetElapsedTime(parsing).TotalMilliseconds;
+                outcome = "answered";
+                // Written by hand, so no serializer reflects over the page in a trimmed build.
+                _log.Add(FormattableString.Invariant(
+                    $"{{\"kind\":\"window\",\"request\":\"{query.RequestId}\",\"start\":{query.Window.Start},\"count\":{query.Window.Count},")
+                    + FormattableString.Invariant(
+                    $"\"baseline\":{Bool(query.Baseline is not null)},\"complete\":{Bool(update.Rows is not null)},\"rows\":{update.Rows?.Count ?? -1},")
+                    + FormattableString.Invariant(
+                    $"\"changes\":{(update.Rows is null ? update.Changes.Count : -1)},\"chars\":{text.Length},\"arrivedMs\":{arrived:0.##},\"parseMs\":{parsed:0.##}}}"));
+                return update;
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                outcome = "cancelled";
+                throw;
+            }
+            finally
+            {
+                _inFlight--;
+                switch (outcome)
+                {
+                    case "answered": _answered++; break;
+                    case "cancelled": _cancelled++; break;
+                    default: _failed++; break;
+                }
+                Describe();
+            }
+        }
+        return PivotReportSource.Fetch(fields, features, PivotReportUpdateMode.FullRefresh, WindowAsync,
+            copy: (query, token) => PostAsync<PivotReportCopyQuery, PivotReportCopyResult>("copy", query, token),
+            summary: (query, token) => PostAsync<PivotReportSummaryQuery, PivotReportSummaryResult>("summary", query, token),
+            reportItems: (query, token) => PostAsync<PivotReportItemsQuery, PivotReportItemsResult>("items", query, token),
+            dispose: async () =>
+            {
+                try { using var response = await Api.Http.DeleteAsync(path); }
+                catch (HttpRequestException) { }
+                catch (OperationCanceledException) { }
+            });
+    }
+
+    // Told of each answer ExPivot's client checked, in this process: the Window it makes, the Window
+    // Changes it applied, and how long the check took, the Window Digest included.
+    private void Checked(int rows, int changes, double ms)
+        => _log.Add(FormattableString.Invariant($"{{\"kind\":\"check\",\"rows\":{rows},\"changes\":{changes},\"ms\":{ms:0.##}}}"));
+
+    private static string Bool(bool value) => value ? "true" : "false";
+
+    // One tick of the server's live updates, the same trades for the same seed after a reset; then the
+    // source is told, as /pivot-live's hub tells it, and ExPivot asks for the Window it holds again.
+    private async Task TickAsync()
+    {
+        if (_source is not { } source)
+            return;
+        var token = _leaving.Token;
+        _seed++;
+        using var response = await Api.Http.PostAsJsonAsync("api/lab/live-tick", new TickQuestion(_seed, TickTrades), token);
+        response.EnsureSuccessStatusCode();
+        var tick = await response.Content.ReadFromJsonAsync<TickAnswer>(token)
+            ?? throw new InvalidOperationException("The server answered no tick.");
+        _ticks++;
+        _version = tick.Version;
+        Describe();
+        source.NotifyChanged(tick.Version);
+    }
+
+    private sealed record TickQuestion(ulong Seed, int Trades);
+
+    private sealed record TickAnswer(string Version, string[] TradeIds, string[] BookedIds);
+
+    private void Describe()
+        => _status?.Show($"Window questions: asked {_asked}, answered {_answered}, cancelled {_cancelled}, failed {_failed}, "
+            + $"in flight {_inFlight}; ticks {_ticks}" + (_version is null ? "." : $", the last at version {_version}."));
+
+    // The log since the last dump, under a numbered first line, so that a reader knows the dump it
+    // asked for has been written.
+    private void Dump()
+    {
+        _dumps++;
+        _dump = string.Join('\n', _log.Prepend(FormattableString.Invariant($"{{\"kind\":\"dump\",\"n\":{_dumps}}}")));
+        _log.Clear();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        PivotReportClient.LabChecked -= Checked;
+        _leaving.Cancel();
+        if (_source is not null) await _source.DisposeAsync();
+    }
+}

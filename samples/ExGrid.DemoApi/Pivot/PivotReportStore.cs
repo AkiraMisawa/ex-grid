@@ -48,6 +48,16 @@ internal sealed class PivotReportStore(TradePivotSource pivotSource, TradeStore 
         finally { _gate.Release(); }
     }
 
+    // LAB ONLY, never merged (lab/remote-read-ahead): a reading of one report's source, under the
+    // store's gate so that no question is answered meanwhile; null when the store holds no such report.
+    internal async ValueTask<T?> LabAsync<T>(string id, Func<LocalPivotReportSource, T> read, CancellationToken token)
+        where T : class
+    {
+        await _gate.WaitAsync(token);
+        try { return _entries.TryGetValue(id, out var entry) ? read(entry.Source) : null; }
+        finally { _gate.Release(); }
+    }
+
     internal async Task RemoveAsync(string id, CancellationToken token)
     {
         await _gate.WaitAsync(token);

@@ -21,6 +21,12 @@ public sealed class PivotReportClient
     /// <summary>The latest current request's refusal, or null after a successful adoption.</summary>
     public PivotReportRefusal? Refusal { get { lock (_publication) return _refusal; } }
 
+    /// <summary>LAB ONLY, never merged (<c>lab/remote-read-ahead</c>): told of each answer a client
+    /// in this process checked — the rows of the Window it makes (−1 when refused), the Window Changes
+    /// it applied (−1 for a complete Window), and the milliseconds the check took, the Window Digest
+    /// computed again included.</summary>
+    public static event Action<int, int, double>? LabChecked;
+
     /// <summary>Reads the current request and, if its Baseline Window is lost, or its Window Changes do
     /// not make the source's Window, requests one complete replacement.</summary>
     /// <returns>True if this request was adopted; false for a refusal or an obsolete reply.</returns>
@@ -71,12 +77,15 @@ public sealed class PivotReportClient
             cancellationToken.ThrowIfCancellationRequested();
             PivotReportRefusal? issue;
             PivotReportState? state;
+            var labStarted = System.Diagnostics.Stopwatch.GetTimestamp();
             try { issue = Validate(update, request, previous, out state); }
             catch (Exception error) when (error is ArgumentException or InvalidOperationException or NullReferenceException)
             {
                 issue = Invalid("The report response is malformed: " + error.Message);
                 state = null;
             }
+            LabChecked?.Invoke(state?.Rows.Count ?? -1, update?.Rows is null ? update?.Changes.Count ?? 0 : -1,
+                System.Diagnostics.Stopwatch.GetElapsedTime(labStarted).TotalMilliseconds);
             // Validation can run concurrently with a newer request. Adopting either its
             // state or refusal must be serialized with starting that request (ADR-0152).
             lock (_publication)

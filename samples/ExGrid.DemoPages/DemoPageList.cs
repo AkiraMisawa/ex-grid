@@ -74,6 +74,9 @@ public static class DemoPageList
             "Change Batches folded into the bundled source by the page's own timer, and a server whose data its live updates keep moving; changed values are marked in both, and a server cut off leaves a Stale Report (ADR-0067, ADR-0068)."),
         new("pivot-risk", "Pivot risk", "ExPivot",
             "A rate-delta report: desks and curves in Rows, tenors in Columns, ordered ON, TN, 1W … 30Y by an Order Key, with 18M and 1Y6M side by side (ADR-0060)."),
+        // LAB ONLY, never merged (lab/remote-read-ahead).
+        new("lab-read-ahead", "LAB: remote read-ahead", "Lab",
+            "LAB ONLY, never merged: one ExPivot over the demo API server's report source, asking rows either side of the range its grid needs, for ticket 14's measurement."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null

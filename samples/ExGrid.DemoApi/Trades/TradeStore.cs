@@ -449,7 +449,13 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
     /// Tick <c>n</c>'s numbers come from <c>n</c>, so the same ticks from the same state make the
     /// same trades. The change is told to <see cref="Changes"/> once committed.
     /// </summary>
-    public async Task<TradeChange> ApplyLiveChangesAsync(int tradesPerTick, CancellationToken cancellationToken)
+    public Task<TradeChange> ApplyLiveChangesAsync(int tradesPerTick, CancellationToken cancellationToken)
+        => ApplyLiveChangesAsync(tradesPerTick, seed: null, cancellationToken);
+
+    /// <summary>LAB ONLY, never merged (<c>lab/remote-read-ahead</c>): a tick whose numbers come from
+    /// <paramref name="seed"/> rather than the change counter, so the same seeds from the same state —
+    /// the generated trades after a reset — change the same trades, whatever ran before.</summary>
+    public async Task<TradeChange> ApplyLiveChangesAsync(int tradesPerTick, ulong? seed, CancellationToken cancellationToken)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(tradesPerTick, 1);
         await _writeLock.WaitAsync(cancellationToken);
@@ -460,7 +466,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             var counter = latest.Counter + 1;
             var trades = latest.Trades;
             var next = latest.NextNumber;
-            var random = new SplitMix64(LiveSeed, (ulong)counter);
+            var random = new SplitMix64(LiveSeed, seed ?? (ulong)counter);
             var touched = new SortedSet<string>(StringComparer.Ordinal);
 
             using var transaction = writer.BeginTransaction();

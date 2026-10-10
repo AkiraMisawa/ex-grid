@@ -1,7 +1,38 @@
+using System.Diagnostics;
 using System.Globalization;
 using ExGrid.Data;
 
 namespace ExPivot.Engine;
+
+/// <summary>
+/// LAB ONLY, never merged (<c>lab/remote-read-ahead</c>, ticket 14 of the live-data spec): what one
+/// <see cref="LocalPivotReportSource.WindowAsync"/> did, timed on the source's own clock, and the
+/// Windows the source keeps once it has answered (LV-22).
+/// </summary>
+/// <param name="Computed">Whether the answer computed a report: newer data, a new layout or a first
+/// question. A moved Window under the same report computes nothing.</param>
+/// <param name="ComputeMs">The computation and the report's layout, label widths included; 0 when
+/// nothing was computed.</param>
+/// <param name="ProjectMs">Every row of the Window projected from the report and compared with the
+/// Baseline Window's.</param>
+/// <param name="DigestMs">The Window Digest over the whole Window, and the answer built.</param>
+/// <param name="TotalMs">From the source's gate taken to the answer built.</param>
+/// <param name="WindowStart">The Window's first row.</param>
+/// <param name="WindowRows">The rows the Window holds.</param>
+/// <param name="ValueColumns">The report's value columns: every row carries each.</param>
+/// <param name="ReportRows">The report's rows.</param>
+/// <param name="Complete">Whether the answer is a complete Window rather than Window Changes.</param>
+/// <param name="Changes">The rows the Window Changes carry; 0 for a complete Window.</param>
+/// <param name="KeptWindows">The Windows the source keeps after answering: one per Report Version
+/// it keeps, the Baseline Window of the next Window Changes.</param>
+/// <param name="KeptRows">The rows those Windows hold.</param>
+/// <param name="KeptDistinctRows">The distinct row instances among them: a row unchanged between
+/// two versions is one instance.</param>
+/// <param name="KeptValueCells">The value cells the distinct rows carry, empty ones included.</param>
+/// <param name="KeptFilledCells">The value cells among them that hold a value.</param>
+public sealed record LabWindowMeasure(bool Computed, double ComputeMs, double ProjectMs, double DigestMs, double TotalMs,
+    int WindowStart, int WindowRows, int ValueColumns, int ReportRows, bool Complete, int Changes,
+    int KeptWindows, long KeptRows, long KeptDistinctRows, long KeptValueCells, long KeptFilledCells);
 
 /// <summary>
 /// One report's bounded calculation and display state over a separately owned Pivot Source. Run in
@@ -135,6 +166,11 @@ public sealed class LocalPivotReportSource : PivotReportSource
         if (request.Window.Start < 0 || request.Window.Count < 0)
             return PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.InvalidRequest, "The report Window is negative."));
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        // LAB ONLY: the measure of this answer (LabLastWindow); none for a refusal.
+        LabLastWindow = null;
+        var labStarted = Stopwatch.GetTimestamp();
+        var labComputed = false;
+        var labComputeMs = 0.0;
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -151,6 +187,8 @@ public sealed class LocalPivotReportSource : PivotReportSource
             if (request.RefreshData || _dirty || _unpublished is not null || _settings != settings || _layout != layout
                 || _maxLeaves != request.MaxLeaves || last is null)
             {
+                var labComputeStarted = Stopwatch.GetTimestamp();
+                labComputed = true;
                 // Cleared before awaiting: a newer source notification keeps the next read dirty.
                 var wasDirty = _dirty;
                 _dirty = false;
@@ -235,7 +273,9 @@ public sealed class LocalPivotReportSource : PivotReportSource
                     _unpublished = new() { Reset = true };
                     _dirty = true;
                 }
+                labComputeMs = Stopwatch.GetElapsedTime(labComputeStarted).TotalMilliseconds;
             }
+            var labProjectStarted = Stopwatch.GetTimestamp();
             var comparable = previous is not null && PivotReportJson.SameSettings(previous.Metadata.Settings, request.Settings)
                 && PivotLayoutJson.Write(previous.Metadata.Layout) == layout;
             var priorByKey = comparable ? previous!.Rows.ToDictionary(row => row.Key) : null;
@@ -254,14 +294,22 @@ public sealed class LocalPivotReportSource : PivotReportSource
             }
             var state = new PivotReportState(last.Metadata, request.Window, Array.AsReadOnly(rows));
             _windows[last.Metadata.Version] = state;
+            var labProjectMs = Stopwatch.GetElapsedTime(labProjectStarted).TotalMilliseconds;
+            var labDigestStarted = Stopwatch.GetTimestamp();
             // Window Changes carry every row of the Window that differs from the Baseline Window's —
             // totals and percentages included, as each row is projected afresh — and the digest of
             // the whole Window they make.
-            if (previous is not null && previous.Rows.Count == rows.Length
-                && previous.Metadata.RowSequenceVersion == last.Metadata.RowSequenceVersion)
-                return PivotReportUpdate.Changed(request, last.Metadata, changes,
-                    PivotReportDigest.Of(last.Metadata, request.Window.Start, state.Rows));
-            return PivotReportUpdate.Complete(request, last.Metadata, state.Rows);
+            var answer = previous is not null && previous.Rows.Count == rows.Length
+                && previous.Metadata.RowSequenceVersion == last.Metadata.RowSequenceVersion
+                ? PivotReportUpdate.Changed(request, last.Metadata, changes,
+                    PivotReportDigest.Of(last.Metadata, request.Window.Start, state.Rows))
+                : PivotReportUpdate.Complete(request, last.Metadata, state.Rows);
+            var labDigestMs = Stopwatch.GetElapsedTime(labDigestStarted).TotalMilliseconds;
+            LabLastWindow = LabMeasure(labComputed, labComputeMs, labProjectMs, labDigestMs,
+                Stopwatch.GetElapsedTime(labStarted).TotalMilliseconds, request.Window.Start, rows.Length,
+                last.Metadata.ValueColumns.Count, last.Metadata.RowCount, answer.Rows is not null,
+                answer.Rows is null ? answer.Changes.Count : 0);
+            return answer;
         }
         catch (OrderKeyFailedException failed)
         {
@@ -423,6 +471,55 @@ public sealed class LocalPivotReportSource : PivotReportSource
     /// no longer held. What a test follows to see which reports a live report keeps alive
     /// (ADR-0160, LV-22).</summary>
     internal PivotReport? ReportOf(PivotReportVersion version) => Held(version)?.Report;
+
+    /// <summary>LAB ONLY, never merged (<c>lab/remote-read-ahead</c>): the measure of the last
+    /// Window this source answered, or null before its first.</summary>
+    public LabWindowMeasure? LabLastWindow { get; private set; }
+
+    /// <summary>LAB ONLY, never merged (<c>lab/remote-read-ahead</c>): the Windows this source keeps
+    /// now — one per Report Version it keeps, the Baseline Window of the next Window Changes.</summary>
+    public LabWindowMeasure LabKept()
+    {
+        _gate.Wait();
+        try { return LabMeasure(false, 0, 0, 0, 0, 0, 0, 0, 0, false, 0); }
+        finally { _gate.Release(); }
+    }
+
+    /// <summary>LAB ONLY, never merged (<c>lab/remote-read-ahead</c>): lets go of the Windows this
+    /// source keeps, so that a full collection before and after says what they held. The next Window
+    /// Changes are answered as a complete Window, as for a Baseline Window no longer held. Answers
+    /// what was let go.</summary>
+    public LabWindowMeasure LabReleaseKept()
+    {
+        _gate.Wait();
+        try
+        {
+            var kept = LabMeasure(false, 0, 0, 0, 0, 0, 0, 0, 0, false, 0);
+            _windows.Clear();
+            return kept;
+        }
+        finally { _gate.Release(); }
+    }
+
+    private LabWindowMeasure LabMeasure(bool computed, double computeMs, double projectMs, double digestMs, double totalMs,
+        int windowStart, int windowRows, int valueColumns, int reportRows, bool complete, int changes)
+    {
+        long rows = 0, cells = 0, filled = 0;
+        var distinct = new HashSet<PivotDisplayRow>(ReferenceEqualityComparer.Instance);
+        foreach (var window in _windows.Values)
+        {
+            rows += window.Rows.Count;
+            foreach (var row in window.Rows)
+            {
+                if (!distinct.Add(row)) continue;
+                cells += row.Values.Count;
+                foreach (var value in row.Values)
+                    if (value is not null) filled++;
+            }
+        }
+        return new(computed, computeMs, projectMs, digestMs, totalMs, windowStart, windowRows, valueColumns, reportRows,
+            complete, changes, _windows.Count, rows, distinct.Count, cells, filled);
+    }
 
     private static PivotReportRefusal NotHeld(PivotReportVersion version)
         => new(PivotReportRefusalKind.ReportVersionNotHeld, $"Report Version '{version.Value}' is no longer held.");

@@ -32,7 +32,11 @@ internal static class DemoCors
             .SetIsOriginAllowed(IsLocalPage)
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .WithExposedHeaders(SnapshotEndpoints.VersionHeader));
+            .WithExposedHeaders(SnapshotEndpoints.VersionHeader)
+            // LAB ONLY, never merged (lab/remote-read-ahead): a preflight answers for two hours, so a
+            // page's JSON question costs the one round trip under measurement, not a second for its
+            // preflight each time Chrome's five-second default lapses.
+            .SetPreflightMaxAge(TimeSpan.FromHours(2)));
         options.AddPolicy(HubPolicy, policy => policy
             .SetIsOriginAllowed(IsLocalPage)
             .AllowAnyHeader()

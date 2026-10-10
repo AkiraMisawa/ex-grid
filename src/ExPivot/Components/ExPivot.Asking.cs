@@ -471,13 +471,46 @@ public partial class ExPivot
         return new PivotReportWindow(Math.Max(0, rows - window.Count), window.Count);
     }
 
+    /// <summary>
+    /// LAB ONLY, never merged (ticket 14 of the live-data spec, <c>lab/remote-read-ahead</c>): how
+    /// many rows ExPivot asks its report source for either side of the range the grid needs,
+    /// clamped into the report — the read-ahead <c>GridSource.Fetch</c> has (ADR-0025), here to
+    /// measure what it would buy a report served over a network. 0, the default, asks for exactly
+    /// the range, as ExPivot does without this switch. A range the Window already asked for covers
+    /// asks nothing while that question is out or its answer is held.
+    /// </summary>
+    [Parameter] public int ReadAheadRows { get; set; }
+
+    /// <summary>
+    /// LAB ONLY, never merged (<c>lab/remote-read-ahead</c>): the comparison <c>GridSource.Fetch</c>
+    /// makes (ADR-0025) — a question in flight is kept only while the grid's range widens to the very
+    /// Window it asks, and superseded by any other, even one it covers. False, the default, keeps a
+    /// question in flight whose Window covers the range the grid needs.
+    /// </summary>
+    [Parameter] public bool ReadAheadSupersedes { get; set; }
+
     private Task WindowNeededAsync(RowRange range)
     {
-        var wanted = new PivotReportWindow(range.Start, range.Count);
+        // LAB ONLY: a range inside the Window asked for, whose answer is out or held, asks nothing;
+        // otherwise the range widened by ReadAheadRows either side, clamped into the report. With
+        // ReadAheadRows 0 this asks exactly what ExPivot asked before: the range itself, unless it
+        // is the Window already asked for.
+        var asked = _wantedWindow;
+        var held = _state?.Window;
+        if (Covers(asked, range) && ((_asking is not null && !ReadAheadSupersedes) || held == asked))
+            return Task.CompletedTask;
+        var readAhead = Math.Max(0, ReadAheadRows);
+        var rows = (long)(_report?.RowCount ?? int.MaxValue);
+        var start = Math.Max(0L, (long)range.Start - readAhead);
+        var end = Math.Max((long)range.Start + range.Count, Math.Min(rows, (long)range.Start + range.Count + readAhead));
+        var wanted = new PivotReportWindow((int)start, (int)(end - start));
         if (wanted == _wantedWindow) return Task.CompletedTask;
         _wantedWindow = wanted;
         return PursueAsync(raise: _raisePending, kind: Question.Window);
     }
+
+    private static bool Covers(PivotReportWindow window, RowRange range)
+        => range.Start >= window.Start && (long)range.Start + range.Count <= (long)window.Start + window.Count;
 
     /// <summary>The question in flight has landed: nothing is out any more. Returns whether it
     /// carried changes of data.</summary>

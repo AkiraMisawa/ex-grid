@@ -70,12 +70,27 @@ internal static class PivotEndpoints
         Func<LocalPivotReportSource?, TQuery, CancellationToken, ValueTask<TResult>> answer)
         => app.MapPost("/api/pivot/reports/{id}/" + operation,
             (string id, HttpRequest request, PivotReportStore reports, TradeStore store, CancellationToken ct) =>
-                Answer(request, store, document =>
+            {
+                // LAB ONLY, never merged (lab/remote-read-ahead): the request's time on the server.
+                var received = System.Diagnostics.Stopwatch.GetTimestamp();
+                return Answer(request, store, document =>
                 {
                     if (!Guid.TryParseExact(id, "N", out _)) throw new FormatException("A report identity must be a UUID in N format.");
                     return PivotReportJson.Read<TQuery>(document);
                 }, (query, token) => reports.AnswerAsync(id, create,
-                    async source => PivotReportJson.Write(await answer(source, query, token)), token), ct));
+                    async source =>
+                    {
+                        var gateTaken = System.Diagnostics.Stopwatch.GetElapsedTime(received).TotalMilliseconds;
+                        var result = await answer(source, query, token);
+                        var written = System.Diagnostics.Stopwatch.GetTimestamp();
+                        var document = PivotReportJson.Write(result);
+                        if (operation == "window" && source?.LabLastWindow is { } measure)
+                            LabEndpoints.Describe(request.HttpContext.Response, measure, gateTaken,
+                                System.Diagnostics.Stopwatch.GetElapsedTime(written).TotalMilliseconds,
+                                System.Diagnostics.Stopwatch.GetElapsedTime(received).TotalMilliseconds);
+                        return document;
+                    }, token), ct);
+            });
 
     /// <summary>The most records one Details page may ask for. A page is what a grid paints and
     /// reads ahead; a million records in one answer is not something to build (principle 5), so a

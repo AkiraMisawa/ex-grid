@@ -41,6 +41,8 @@ app.MapLiveEndpoints();
 app.MapResetEndpoints();
 app.MapPivotEndpoints();
 app.MapSnapshotEndpoints();
+// LAB ONLY, never merged (lab/remote-read-ahead): the read-ahead measurement's own questions.
+app.MapLabEndpoints();
 app.MapHub<TradesHub>(TradesHub.Path).RequireCors(DemoCors.HubPolicy);
 
 app.Run();
