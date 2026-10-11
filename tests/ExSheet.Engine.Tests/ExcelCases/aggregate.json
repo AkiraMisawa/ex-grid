@@ -452,6 +452,30 @@
       "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(14,4,D1:D3,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-052",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a SUBTOTAL in parentheses in the range under option 6 is #VALUE! (ADR-0047, SH-68)",
+      "cells": {"A1": "1", "A2": "2", "A3": "=(SUBTOTAL(9,A1:A2))", "ZZ1000": "=AGGREGATE(9,6,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-053",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a SUBTOTAL under IF in the range under option 6 is #VALUE! (ADR-0047, SH-68)",
+      "cells": {"A1": "1", "A2": "2", "A3": "=IF(TRUE,SUBTOTAL(9,A1:A2))", "ZZ1000": "=AGGREGATE(9,6,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-054",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an AGGREGATE plus 0 in the range under option 6 is #VALUE! (ADR-0047, SH-68)",
+      "cells": {"A1": "1", "A2": "2", "A3": "=AGGREGATE(9,0,A1:A2)+0", "ZZ1000": "=AGGREGATE(9,6,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }
