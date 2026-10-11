@@ -4,7 +4,7 @@
 |---|---|---|
 | ExGrid | 95.7% | 88.7% |
 | ExSheet | 95.3% | 88.4% |
-| ExPivot | 93.8% | 84.6% |
+| ExPivot | 93.8% | 84.7% |
 | Data | 94.5% | 90.3% |
 
 # Summary
@@ -12,18 +12,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/11/2026 - 18:55:46 |
-| Parser: | MultiReport (12x Cobertura) |
+| Generated on: | 10/11/2026 - 21:48:04 |
+| Parser: | MultiReport (13x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 796 |
 | Files: | 433 |
-| **Line coverage:** | 94.9% (53518 of 56363) |
-| Covered lines: | 53518 |
-| Uncovered lines: | 2845 |
+| **Line coverage:** | 94.9% (53519 of 56363) |
+| Covered lines: | 53519 |
+| Uncovered lines: | 2844 |
 | Coverable lines: | 56363 |
 | Total lines: | 92823 |
-| **Branch coverage:** | 87.8% (30323 of 34532) |
-| Covered branches: | 30323 |
+| **Branch coverage:** | 87.8% (30325 of 34532) |
+| Covered branches: | 30325 |
 | Total branches: | 34532 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -153,8 +153,8 @@
 |ExGrid.Components.ExGrid.SummaryQuestion<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenAt<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|91.6%|88.3%|
 |ExGrid.Components.ExGrid<TRow>|95.3%|89.9%|
+|ExGrid.Components.ExGrid<TRow>|91.6%|88.3%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
@@ -451,7 +451,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**90%**|**79.4%**|
+|**ExPivot**|**90%**|**79.5%**|
 |ExPivot.Chrome.IPivotChrome|36.3%||
 |ExPivot.Chrome.PivotAreaEntryView|100%||
 |ExPivot.Chrome.PivotAreaView|100%||
@@ -473,12 +473,12 @@
 |ExPivot.Chrome.PivotToolbarContext|85.7%||
 |ExPivot.Chrome.PivotToolbarMenuView|100%||
 |ExPivot.Chrome.PivotValueFieldSettingsContext|100%||
-|ExPivot.Components.ExPivot|90.7%|80.6%|
+|ExPivot.Components.ExPivot|90.7%|80.7%|
 |ExPivot.Components.ExPivot.FieldDrag|100%||
 |ExPivot.Components.ExPivot.ItemsLoad|100%|100%|
 |ExPivot.Components.ExPivot.ItemsView|100%|100%|
 |ExPivot.Components.ExPivot.OpenSurface|100%|100%|
-|ExPivot.Components.ExPivot<TView, TContext>|90.7%|80.6%|
+|ExPivot.Components.ExPivot<TView, TContext>|90.7%|80.7%|
 |ExPivot.Components.PivotDetailsDialogView|100%||
 |ExPivot.Components.PivotDetailsGrid|93.1%|70%|
 |ExPivot.Components.PivotDetailsSheet|85.1%|60.4%|
