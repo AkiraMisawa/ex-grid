@@ -781,6 +781,27 @@
     color: var(--ex-state-error-color, #b3261e);
     outline: 1px solid var(--ex-state-error-color, #b3261e);
 }
+/* The notices a page holding another version's files calls for (ADR-0123): the script refused,
+   shown in place of the rows, and a stylesheet that is not the one a product's root was built
+   with, shown at the top of that root. Every product's notice wears this one look, in the tokens
+   a cell's error and the ground already are, so no colour comes from C# (ADR-0027/0028); ExSheet's
+   and ExPivot's stand outside a grid's root, so the rule is not scoped under one. An attribute, not
+   a class: a stylesheet of any version shows the notice a root of any other version renders, so its
+   selector cannot change between versions, and the stamp it carries is an attribute's value. The
+   two rules that show a stylesheet's notice and hide it for its own stamp are appended to each
+   shipped stylesheet by tools/assets/minify.mjs; until a stylesheet arrives, the notice's inline
+   display keeps it out of the way, so a cold load shows nothing. The text is selectable, to be
+   quoted in a report. */
+[data-ex-notice] {
+    box-sizing: border-box;
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height, 28px);
+    background: var(--ex-background, Canvas);
+    color: var(--ex-state-error-color, #b3261e);
+    outline: 1px solid var(--ex-state-error-color, #b3261e);
+    outline-offset: -1px;
+    user-select: text;
+}
 /* The Size Tip (ADR-0052, 2026-09-29): how many rows and columns a drag across Headings covers,
    at the Heading the Extent is on. Placed and sized by the core, inline: its width is the Cell
    Metrics' estimate of its text, so the padding is the cell's own token and the text never

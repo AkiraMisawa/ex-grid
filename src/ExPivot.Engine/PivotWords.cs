@@ -462,6 +462,11 @@ public static class PivotWords
         ["copy"] = "コピー",
         ["copy-with-headers"] = "見出し付きでコピー",
 
+        // The notices of a page that holds another version's files (ExGrid.Chrome.ReloadNoticeLabelIds,
+        // ADR-0123): the report's grid refusing its script, and either product's stylesheet notice.
+        ["reload-notice-script"] = "このページには別のバージョンのグリッドのスクリプトがあります。ページを再読み込みしてください。",
+        ["reload-notice-stylesheet"] = "このページには別のバージョンのスタイルシートがあります。ページを再読み込みしてください。",
+
         // A date part's Items (PivotDateWords), as the Japanese edition's date grouping labels them.
         [PivotDateWords.Year] = "{0}年",
         [PivotDateWords.Quarter] = "第{0}四半期",

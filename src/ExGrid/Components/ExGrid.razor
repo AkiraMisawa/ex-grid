@@ -59,11 +59,17 @@
 @* data-ex-pointed-from: while the grid is pointed at, the root of the grid that points, which the
    script tells of each press handed over (ADR-0058, "On a circuit"). *@
 <div class="@RootClass" style="@RootStyle()" tabindex="@RootTabIndex" dir="ltr" @ref="_root"
-     id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
+     id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Busy ? "true" : null)"
      data-ex-reveal="@_revealToken" data-ex-pointed-from="@PointedFrom"
      aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
      aria-activedescendant="@(keyFieldShown ? null : activeDescendant)"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
+    @* The stylesheet's notice (ADR-0123, ERR-11): it carries the stamp of the stylesheet this build
+       ships, and the inline display keeps it out of the way until a stylesheet's rules decide.
+       Each shipped stylesheet shows it for any stamp and hides it for its own, so another
+       version's stylesheet shows it, ours hides it, and none yet loaded shows nothing — with no
+       script. Its words are the built-in Chrome's (ADR-0203). *@
+    <div data-ex-notice="stylesheet" data-ex-stylesheet="@ShippedAssets.StylesheetName" data-ex-stamp="@ShippedAssets.StylesheetStamp" style="display: none">@StylesheetNoticeWords</div>
     @* One scroll container for both axes, with the header and the Pinned Columns held in
        place by `position: sticky` inside it. Two containers cannot do this: giving the
        inner one a non-visible overflow on one axis turns the other into `auto` (CSS
@@ -216,7 +222,14 @@
                                autocomplete="off" autocapitalize="off" spellcheck="false" />
                     </div>
                 }
-                @if (_visible is { } visible)
+                @if (_scriptRefused)
+                {
+                    @* The script is another version's, or none (ADR-0123, ERR-10): said here, in place
+                       of the rows, which nothing could select, scroll or edit, and in the live region
+                       once, which is where assistive technology hears it. A press here goes nowhere. *@
+                    <div data-ex-notice="script" aria-hidden="true" @onmousedown:stopPropagation @ondblclick:stopPropagation @oncontextmenu:stopPropagation>@ScriptRefusedWords</div>
+                }
+                else if (_visible is { } visible)
                 {
                     var pointDashes = PointDashesRange(visible);
                     var outlineCover = OutlineCoverAt(visible);
@@ -996,8 +1009,6 @@
     /// (ADR-0008). Provisional the way the band's own numbers are — the shape is the
     /// decision, the period is not.</summary>
     private static readonly TimeSpan EdgeScrollTick = TimeSpan.FromMilliseconds(50);
-
-    private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
 
     /// <summary>
     /// The metrics behind width observation and the overflow decision until a theme
@@ -2398,6 +2409,12 @@
     /// on an answer that has not arrived.</summary>
     private bool Prerendered => !RendererInfo.IsInteractive || !_listening;
 
+    /// <summary>Waiting on something that will come: Prerendered, unless the script was refused —
+    /// a grid that refused its script waits for nothing, and says so in place of its rows instead
+    /// of sitting dimmed and busy (ADR-0123, ERR-10). It still takes no tab stop: nothing would
+    /// hear a key.</summary>
+    private bool Busy => Prerendered && !_scriptRefused;
+
     // Whether the capture-phase listener is attached (ADR-0010/0021) — set once, by the
     // attach, whose render lifts the Prerendered state.
     private bool _listening;
@@ -2429,7 +2446,7 @@
 
     // Interned per combination, as the header cells' classes are (ADR-0027 P5). ex-pointed-at is
     // the grid pointed at from outside (ADR-0058, ADR-0029's note of 2026-09-30).
-    private string RootClass => (_loading || Prerendered, _editMode != EditMode.None, PointedAtNow) switch
+    private string RootClass => (_loading || Busy, _editMode != EditMode.None, PointedAtNow) switch
     {
         (true, true, false) => "ex-grid ex-loading ex-editing",
         (true, false, false) => "ex-grid ex-loading",
@@ -3393,9 +3410,13 @@
         // Nothing here may escape: a missing or misconfigured module file would
         // otherwise take the Range Request down with it, and the grid would sit on
         // Placeholders forever without ever asking the Consumer for rows.
+        IJSObjectReference? attached = null;
         try
         {
-            var module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            // At an address that changes with the file's content (ADR-0123, ERR-9).
+            var module = await JS.InvokeAsync<IJSObjectReference>("import", ModuleAddress);
+            // Only a runtime that answers nothing at all, as a test's loose stand-in does; a
+            // browser's import either gives a module or throws.
             if (module is null)
                 return;
             if (_disposed)
@@ -3406,6 +3427,15 @@
                 return;
             }
             _module = module;
+
+            // The script this build was made with, or nothing attaches (ADR-0123, ERR-10).
+            if (!await ScriptIsOwnAsync(module))
+            {
+                await RefuseScriptAsync(null);
+                return;
+            }
+            if (_disposed)
+                return;
 
             _self ??= DotNetObjectReference.Create(this);
             var claims = KeyClaims();
@@ -3424,6 +3454,7 @@
                 return;
             }
 
+            attached = handle;
             _scrollHandle = handle;
             _metaIsPrimary = await handle.InvokeAsync<bool>("metaIsPrimary");
 
@@ -3438,8 +3469,17 @@
             _listening = true;
             StateHasChanged();
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        catch (JSException)
         {
+            // The module did not load, has no stamp to answer (it is older than the stamp), or
+            // broke while it attached: shown the same way as another version's, never left busy
+            // and silent (ADR-0123, ERR-10). Whatever had attached is let go.
+            await RefuseScriptAsync(attached);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            // The circuit or the component went first: disposal racing the attach is not a fault
+            // (ERR-7), and there is nobody left to tell.
         }
     }
 

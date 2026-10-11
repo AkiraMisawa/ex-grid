@@ -32,6 +32,8 @@ public static class BuiltInCommandLabels
         GridCommandIds.CopyWithHeaders => "Copy with headers",
         GridLabelIds.NameBox => "Name Box",
         GridLabelIds.FormulaBar => "Formula Bar",
+        ReloadNoticeLabelIds.Script => "This page holds another version of the grid's script. Reload the page.",
+        ReloadNoticeLabelIds.Stylesheet => "This page holds another version's stylesheet. Reload the page.",
         FindPanelLabelIds.Title => "Find",
         SummaryLabelIds.Average => "Average",
         SummaryLabelIds.Count => "Count",

@@ -11,8 +11,9 @@ namespace ExGrid.Components.Tests.Support;
 /// </summary>
 internal sealed class GridJSInterop
 {
-    /// <summary>Must match the path ExGrid imports.</summary>
-    internal const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
+    /// <summary>The address ExGrid imports its script at under bUnit (ADR-0123): the plain path
+    /// with the shipped file's version, since the renderer knows no fingerprinted files.</summary>
+    internal static string ModulePath => ExGrid.Testing.ShippedScript.Address;
 
     private readonly JSRuntimeInvocationHandler<ScrollOffset> _offset;
     private readonly JSRuntimeInvocationHandler _releaseTab;
@@ -88,6 +89,8 @@ internal sealed class GridJSInterop
     internal static GridJSInterop Setup(BunitContext context)
     {
         var module = context.JSInterop.SetupModule(ModulePath);
+        // The stamp the grid was built with, asked before anything attaches (ADR-0123).
+        module.Setup<string>("stamp").SetResult(ExGrid.Testing.ShippedScript.Stamp);
         var handle = module.SetupModule("attach", _ => true);
         // Asked once at attach: which modifier this platform's users reach for (ADR-0012).
         // The tests drive OnKeyAsync directly and pass it per key, so the answer here only
