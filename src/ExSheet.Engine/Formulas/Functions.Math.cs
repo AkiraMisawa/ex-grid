@@ -49,6 +49,12 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
+        return ProductOf(numbers);
+    }
+
+    /// <summary>PRODUCT of the numbers taken; with none, 0.</summary>
+    private static Operand ProductOf(List<double> numbers)
+    {
         if (numbers.Count == 0) return Operand.Of(Value.FromNumber(0));
         var product = 1.0;
         foreach (var n in numbers) product *= n;
@@ -60,6 +66,12 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
+        return MedianOf(numbers);
+    }
+
+    /// <summary>MEDIAN of the numbers taken, which it sorts; with none, <c>#NUM!</c>.</summary>
+    private static Operand MedianOf(List<double> numbers)
+    {
         if (numbers.Count == 0) return Operand.Of(ErrorValue.Num);
         numbers.Sort();
         var middle = numbers.Count / 2;
@@ -93,6 +105,15 @@ internal static partial class FunctionLibrary
             numbers.Add(single);
         }
         if (!TryNumber(call, 1, out var k, out var failure)) return failure;
+        return KthOf(numbers, k, largest);
+    }
+
+    /// <summary>
+    /// The k-th largest or smallest of the numbers taken, which it sorts. A k that is not a whole
+    /// number is <c>#VALUE!</c> until Excel is asked (LARGE-007); below 1 or past their count, <c>#NUM!</c>.
+    /// </summary>
+    private static Operand KthOf(List<double> numbers, double k, bool largest)
+    {
         if (k != Math.Floor(k)) return Operand.Of(ErrorValue.Value);
         if (k < 1 || k > numbers.Count) return Operand.Of(ErrorValue.Num);
         numbers.Sort();
@@ -171,6 +192,12 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
+        return SpreadOf(numbers, sample, root);
+    }
+
+    /// <summary>VAR.S, VAR.P, STDEV.S or STDEV.P of the numbers taken (<see cref="Spread"/>).</summary>
+    private static Operand SpreadOf(List<double> numbers, bool sample, bool root)
+    {
         var divisor = sample ? numbers.Count - 1 : numbers.Count;
         if (divisor < 1) return Operand.Of(ErrorValue.Div0);
         var mean = numbers.Sum() / numbers.Count;

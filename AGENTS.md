@@ -56,7 +56,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 75 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -103,7 +103,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 75 ADRs. **A new decision that follows these will not
+The principles that run through all the ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
@@ -343,7 +343,14 @@ site quietly wrong about the product, the spine's first rule turned on ourselves
   run.
 - **A change with nothing for the site** — an internal refactor, a test, a CI script — says so in
   one line of the report or the PR, naming why. Silence is not the same as "nothing to document".
-- **A background agent's brief carries this too**, and its report lists the pages it changed.
+- **A change a Consumer can see also adds a Change Note**, `docs/releases/unreleased/<slug>.md`, in
+  the same branch: its product, whether it adds, fixes, changes behaviour or breaks, and one or two
+  sentences (ADR-0190). A breaking or behaviour change says what a Consumer changes or will see. The
+  cut before a tag gathers the notes into the version's Release Notes; nobody edits a shared file.
+- **A ticket opened, or moved to another status, keeps its `Roadmap:` line true** (ADR-0191). The
+  Docs Site's build refuses an open ticket without one.
+- **A background agent's brief carries this too**, and its report lists the pages it changed and the
+  Change Notes it wrote.
 
 ## Working in parallel
 

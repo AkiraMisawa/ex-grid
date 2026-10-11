@@ -1,6 +1,7 @@
 # 07: Observe each reading beside Excel on Windows
 
 Status: ready-for-human
+Roadmap: internal
 
 **What to do:** Run every item of `../excel-behaviours.md` beside Excel on a Windows machine, as
 ExSheet's readings were run (`docs/specs/exsheet/verify-on-windows.md`), and record what Excel did.

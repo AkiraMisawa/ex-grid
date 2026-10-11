@@ -1,0 +1,39 @@
+@* The start page's latest version (ADR-0190): the newest version published to nuget.org, its day and
+   its Highlights, read from its Release Notes; on a site not published from a tag, how many changes it
+   describes that are not on nuget.org yet; and the way to the Roadmap (ADR-0191). *@
+@if (ReleaseNotes.Newest is { } newest)
+{
+    <MudPaper Outlined="true" Class="docs-latest" aria-label="Latest version">
+        <div class="docs-latest-head">
+            <MudText Typo="Typo.overline" Class="docs-latest-label">Latest version</MudText>
+            <a href="@($"{ReleaseNotes.Route}#{newest.Anchor}")" class="docs-latest-version">@newest.Version</a>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                     Color="@(newest.Prerelease ? Color.Default : Color.Success)">@(newest.Prerelease ? "Prerelease" : "Release")</MudChip>
+            <MudText Typo="Typo.body2" Class="docs-muted">@ReleaseNotes.PublishedText(newest)</MudText>
+        </div>
+        @if (Highlights(newest) is { Count: > 0 } highlights)
+        {
+            <ul class="docs-latest-highlights">
+                @foreach (var item in highlights)
+                {
+                    <li>@((MarkupString)item.Html)</li>
+                }
+            </ul>
+        }
+        <div class="docs-latest-links">
+            <MudLink Href="@ReleaseNotes.Route" Typo="Typo.body2">All release notes →</MudLink>
+            <MudLink Href="@Roadmap.Route" Typo="Typo.body2">Roadmap →</MudLink>
+            @if (ReleaseNotes.ShowsUnreleased && ReleaseNotes.ChangeNotes.Count > 0)
+            {
+                <MudLink Href="@($"{ReleaseNotes.Route}#{ReleaseNotes.UnreleasedAnchor}")" Typo="Typo.body2" Class="docs-latest-unreleased">
+                    @ReleaseNotes.ChangeNotes.Count @(ReleaseNotes.ChangeNotes.Count == 1 ? "change" : "changes") on this site not on nuget.org yet →
+                </MudLink>
+            }
+        </div>
+    </MudPaper>
+}
+
+@code {
+    private static IReadOnlyList<ReleaseItem> Highlights(ReleaseVersion version) =>
+        version.Sections.FirstOrDefault(s => s.Kind == ReleaseSectionKind.Highlights)?.Items ?? [];
+}

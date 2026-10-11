@@ -1,0 +1,9 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<ExSheet @bind-Document="_document" Seed="20261011"
+         ViewportHeight="360" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private SheetDocument _document = DiceRolls.Document();
+}

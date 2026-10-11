@@ -1,0 +1,481 @@
+{
+  "area": "aggregate",
+  "about": "AGGREGATE (docs/specs/exsheet-functions ticket 16; ADR-0047, 2026-10-10): admitted while a Sheet cannot hide a row, so options 1, 3, 5 and 7 give what 0, 2, 4 and 6 give. Options 0 to 3 pass over a cell whose whole Formula is a SUBTOTAL or an AGGREGATE; any other call of either in the range is #VALUE! until a Windows run asks Excel. Function numbers for functions the engine does not support (13, 16-19) are #VALUE!.",
+  "cases": [
+    {
+      "id": "AGGREGATE-001",
+      "source": "documented",
+      "description": "Microsoft's example: the largest number, Error Values passed over (option 6)",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(4,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 96}
+    },
+    {
+      "id": "AGGREGATE-002",
+      "source": "documented",
+      "description": "Microsoft's example: the third largest, Error Values passed over",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(14,6,A1:A11,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 72}
+    },
+    {
+      "id": "AGGREGATE-003",
+      "source": "documented",
+      "description": "Microsoft's example: SMALL without its k is #VALUE!",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(15,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-004",
+      "source": "documented",
+      "description": "Microsoft's example: the median of two references, Error Values passed over",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(12,6,A1:A11,B1:B11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 68}
+    },
+    {
+      "id": "AGGREGATE-005",
+      "source": "documented",
+      "description": "Microsoft's example: MAX over the same data is its first Error Value",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=MAX(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "AGGREGATE-006",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: SUM with Error Values passed over (option 6)",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 462}
+    },
+    {
+      "id": "AGGREGATE-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked which Error Value comes back: option 4 passes over nothing: the first Error Value is the result",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,4,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "AGGREGATE-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked which Error Value comes back: option 0 passes over only nested SUBTOTAL and AGGREGATE: the first Error Value is the result",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,0,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "AGGREGATE-009",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: option 2 passes over Error Values",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,2,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 462}
+    },
+    {
+      "id": "AGGREGATE-010",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: with no row hidden, option 7 gives what option 6 gives",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,7,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 462}
+    },
+    {
+      "id": "AGGREGATE-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked which Error Value comes back: with no row hidden, option 5 gives what option 4 gives",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,5,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "AGGREGATE-012",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: with no row hidden, options 1 and 3 give what 0 and 2 give",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,3,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 462}
+    },
+    {
+      "id": "AGGREGATE-013",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: COUNT with Error Values passed over",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(2,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "AGGREGATE-014",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: MIN with Error Values passed over",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(5,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 30}
+    },
+    {
+      "id": "AGGREGATE-015",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: AVERAGE with Error Values passed over",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(1,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 51.333333333333336, "digits": 12}
+    },
+    {
+      "id": "AGGREGATE-016",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: the second smallest, Error Values passed over",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(15,6,A1:A11,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 31}
+    },
+    {
+      "id": "AGGREGATE-017",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: PRODUCT",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(6,6,B1:B3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 506350}
+    },
+    {
+      "id": "AGGREGATE-018",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: MEDIAN of one reference, Error Values passed over",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(12,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 34}
+    },
+    {
+      "id": "AGGREGATE-019",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: several references are taken together in the reference form",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,6,A1:A11,B1:B11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1309}
+    },
+    {
+      "id": "AGGREGATE-020",
+      "source": "documented",
+      "description": "Worked from Microsoft's definitions: a k past the count of numbers is #NUM!, as LARGE's",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(14,6,A1:A11,10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "AGGREGATE-021",
+      "source": "documented",
+      "description": "Options 0 to 3 pass over a nested SUBTOTAL and a nested AGGREGATE",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "D4": "=AGGREGATE(9,0,D1:D2)", "D5": "4", "ZZ1000": "=AGGREGATE(9,0,D1:D5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "AGGREGATE-022",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: COUNTA with option 6 counts what is left once Error Values are passed over",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(3,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "AGGREGATE-023",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: COUNTA with option 4 counts the Error Values, as COUNTA does",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(3,4,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 11}
+    },
+    {
+      "id": "AGGREGATE-024",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: COUNT with option 4 passes over Error Values, as COUNT does",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(2,4,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "AGGREGATE-025",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 4 with a whole-Formula SUBTOTAL in the range is #VALUE!; Microsoft documents option 4 as ignoring nothing, so Excel is expected to count the nested SUBTOTAL (6), and the engine follows Excel's answer once a run has read it (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,4,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-026",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a SUBTOTAL inside a larger Formula in the range is #VALUE!",
+      "cells": {"D1": "1", "D2": "2", "D3": "=1+SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,0,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-027",
+      "source": "uncertain",
+      "description": "Refused: function number 13, MODE.SNGL, which the engine does not support",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(13,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-10): an AGGREGATE function number for a function the engine does not support is #VALUE!"
+    },
+    {
+      "id": "AGGREGATE-028",
+      "source": "uncertain",
+      "description": "Refused: function number 16, PERCENTILE.INC, which the engine does not support",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(16,6,A1:A11,0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-10): an AGGREGATE function number for a function the engine does not support is #VALUE!"
+    },
+    {
+      "id": "AGGREGATE-029",
+      "source": "uncertain",
+      "description": "Refused: function number 17, QUARTILE.INC, which the engine does not support",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(17,6,A1:A11,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-10): an AGGREGATE function number for a function the engine does not support is #VALUE!"
+    },
+    {
+      "id": "AGGREGATE-030",
+      "source": "uncertain",
+      "description": "Refused: function number 18, PERCENTILE.EXC, which the engine does not support",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(18,6,A1:A11,0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-10): an AGGREGATE function number for a function the engine does not support is #VALUE!"
+    },
+    {
+      "id": "AGGREGATE-031",
+      "source": "uncertain",
+      "description": "Refused: function number 19, QUARTILE.EXC, which the engine does not support",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(19,6,A1:A11,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-10): an AGGREGATE function number for a function the engine does not support is #VALUE!"
+    },
+    {
+      "id": "AGGREGATE-032",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a function number past 19 is #VALUE!",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(20,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-033",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: SUBTOTAL's 109 is no function number of AGGREGATE's",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(109,6,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-034",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an option past 7 is #VALUE!",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,8,A1:A11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-035",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an option left empty is 0",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,,B1:B3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 242}
+    },
+    {
+      "id": "AGGREGATE-036",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the reference form over a computed array is #VALUE!",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,6,A1:A11*1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-037",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the array form over a computed array, its Error Values passed over",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(14,6,A1:A11/(A1:A11>50),1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 96}
+    },
+    {
+      "id": "AGGREGATE-038",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a k that is not a whole number is #VALUE!, as LARGE's (LARGE-007)",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(14,6,A1:A11,1.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-039",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the array form over a single number is #VALUE!",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(14,6,5,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-040",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the array form with an argument after k is #VALUE!",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(14,6,A1:A11,1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-041",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a number as a further reference in the reference form is #VALUE!",
+      "fixture": "aggregateData",
+      "cells": {"ZZ1000": "=AGGREGATE(9,6,B1:B3,5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-042",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 5 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,5,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-043",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 6 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,6,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-044",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 7 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,7,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-045",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 4 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(9,4,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-046",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 5 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(9,5,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-047",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 6 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(9,6,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-048",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 7 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(9,7,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-049",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the array form (LARGE) under option 4 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(14,4,D1:D3,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-050",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the array form (LARGE) under option 6 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(14,6,D1:D3,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-051",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the array form (LARGE) under option 4 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(14,4,D1:D3,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-052",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a SUBTOTAL in parentheses in the range under option 6 is #VALUE! (ADR-0047, SH-68)",
+      "cells": {"A1": "1", "A2": "2", "A3": "=(SUBTOTAL(9,A1:A2))", "ZZ1000": "=AGGREGATE(9,6,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-053",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a SUBTOTAL under IF in the range under option 6 is #VALUE! (ADR-0047, SH-68)",
+      "cells": {"A1": "1", "A2": "2", "A3": "=IF(TRUE,SUBTOTAL(9,A1:A2))", "ZZ1000": "=AGGREGATE(9,6,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-054",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an AGGREGATE plus 0 in the range under option 6 is #VALUE! (ADR-0047, SH-68)",
+      "cells": {"A1": "1", "A2": "2", "A3": "=AGGREGATE(9,0,A1:A2)+0", "ZZ1000": "=AGGREGATE(9,6,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

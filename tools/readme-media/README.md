@@ -43,7 +43,9 @@ You need Node.js, ffmpeg, and the .NET SDK (or Nix).
 WebAssembly runs several times slower than the build GitHub Pages serves: the blotter scene took 65
 seconds under it, against 12 in Release, and a GIF recorded that way shows a slower product than a
 reader gets. Publish the site as `docs.yml` does and serve the files with `serve.mjs`, which serves
-them as Pages does.
+them as Pages does. Leave out `docs.yml`'s `DocsRef`: a local build carries no banner above the
+Showcases and the figure pages, where a site published from a branch carries one (ADR-0110), so the
+pictures show the product alone.
 
 ```sh
 # 1. Publish the Docs Site as docs.yml does, and serve it (from this folder)

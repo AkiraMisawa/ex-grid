@@ -1,0 +1,12 @@
+@* The records a reference page's row cites (ADR-0110), each linked at the tag or the commit the site
+   was built from. The build has checked that every one exists. *@
+@for (var k = 0; k < Of.Count; k++)
+{
+    var cite = Of[k];
+    @(k > 0 ? " " : "")<a href="@cite.Url" target="_blank" rel="noopener" class="docs-cite">@cite.Title</a>
+}
+
+@code {
+    /// <summary>The records, in the order the row cites them.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<DocsCite> Of { get; set; } = [];
+}

@@ -22,7 +22,38 @@
         <a href="" class="docs-brand">
             <span class="docs-brand-mark">Ex</span><span>Grid</span>
         </a>
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Inherit" Class="docs-version">@DocsVersion.Value</MudChip>
+        @* The version the site states (ADR-0110): a tag's version, leading to its Release Notes; or,
+           in the warning colour, the branch and commit of a site that is not on nuget.org. *@
+        <MudTooltip Text="@DocsBuild.ChipTitle">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                     Color="@(DocsBuild.Kind is DocsBuildKind.Branch or DocsBuildKind.Experiment ? Color.Warning : Color.Inherit)"
+                     Href="@DocsBuild.ReleaseNotesHref" Class="docs-version">@DocsBuild.Chip</MudChip>
+        </MudTooltip>
+        @* The site's sections (ADR-0110), from DocsNav. Below the large breakpoint they are hidden,
+           and the drawer lists every page they lead to. *@
+        <nav class="docs-appbar-links d-none d-lg-flex" aria-label="Site">
+            <MudButton Href="@DocsNav.GetStarted.Url" Variant="Variant.Text" Color="Color.Inherit">@DocsNav.GetStarted.Title</MudButton>
+            <MudMenu Label="Products" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" Variant="Variant.Text"
+                     Color="Color.Inherit" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft"
+                     ListClass="docs-products">
+                @foreach (var product in DocsNav.Products)
+                {
+                    <MudMenuItem Href="@product.Link.Url">
+                        <div class="docs-product-title">@product.Link.Title</div>
+                        <div class="docs-product-caption">@product.Caption</div>
+                    </MudMenuItem>
+                }
+                <MudDivider />
+                <MudMenuItem Href="@DocsNav.FeatureMatrix.Link.Url">
+                    <div class="docs-product-title">@DocsNav.FeatureMatrix.Link.Title</div>
+                    <div class="docs-product-caption">@DocsNav.FeatureMatrix.Caption</div>
+                </MudMenuItem>
+            </MudMenu>
+            <MudButton Href="@DocsNav.Showcases.Url" Variant="Variant.Text" Color="Color.Inherit">@DocsNav.Showcases.Title</MudButton>
+            <MudButton Href="@DocsNav.ReleaseNotes.Url" Variant="Variant.Text" Color="Color.Inherit">@DocsNav.ReleaseNotes.Title</MudButton>
+            <MudButton Href="@DocsNav.Roadmap.Url" Variant="Variant.Text" Color="Color.Inherit">@DocsNav.Roadmap.Title</MudButton>
+        </nav>
+        <SiteSearch Class="docs-appbar-search" />
         <MudSpacer />
         <ChromeSwitch Class="docs-appbar-switch" />
         <MudTooltip Text="@(State.Dark ? "Light mode" : "Dark mode")">
@@ -32,7 +63,7 @@
         </MudTooltip>
         <MudTooltip Text="GitHub">
             <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit"
-                           Href="https://github.com/AkiraMisawa/ex-grid" Target="_blank" aria-label="GitHub" />
+                           Href="@DocsBuild.Repository" Target="_blank" aria-label="GitHub" />
         </MudTooltip>
     </MudAppBar>
     <MudDrawer @bind-Open="_drawer" ClipMode="DrawerClipMode.Always" Elevation="0"
@@ -40,8 +71,14 @@
         <NavMenu />
     </MudDrawer>
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="docs-content">
+        @* "Back to top" on the rail leads here. *@
+        <MudContainer MaxWidth="MaxWidth.Large" Class="docs-content" id="top">
+            @if (DocsBuild.Unreleased)
+            {
+                <UnreleasedBanner />
+            }
             @Body
+            <DocsFooter />
         </MudContainer>
     </MudMainContent>
 </MudLayout>

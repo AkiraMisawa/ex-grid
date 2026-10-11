@@ -1,6 +1,6 @@
 namespace ExSheet.Engine.Formulas;
 
-/// <summary>INDEX (its array form), XMATCH, CHOOSE, ROW and COLUMN, each to Microsoft's documentation of it.</summary>
+/// <summary>INDEX (its array form), XMATCH, CHOOSE, ROW, COLUMN, OFFSET and INDIRECT, each to Microsoft's documentation of it.</summary>
 internal static partial class FunctionLibrary
 {
     /// <summary>
@@ -191,4 +191,38 @@ internal static partial class FunctionLibrary
         if (top < 0 || left < 0 || bottom >= Sheet.RowCount || right >= Sheet.ColumnCount) return Operand.Of(ErrorValue.Ref);
         return Operand.Of(new Area((int)top, (int)left, (int)bottom, (int)right));
     }
+
+    /// <summary>
+    /// INDIRECT (ADR-0124's note of 2026-10-10, a volatile function): the Reference its text names,
+    /// A1-style, to a cell or a range of this Sheet, with or without the Sheet's own qualifier. A
+    /// Reference of several cells is a range for a function such as <c>SUM</c>, and spills where it
+    /// is the result (ADR-0125). The text is text: an insertion or a deletion does not rewrite it.
+    /// Text in a form Excel reads but no Windows run has observed is <c>#VALUE!</c> — R1C1 style
+    /// (<c>a1</c> FALSE), a structured reference (<c>Positions[PV]</c>) and a Spill Range
+    /// (<c>A1#</c>) — and text that names no place is <c>#REF!</c>, as in Excel, another Sheet's
+    /// name included (ADR-0046).
+    /// </summary>
+    private static Operand Indirect(FunctionCall call)
+    {
+        if (!TryScalar(call, 0, out var value, out var failure)) return failure;
+        if (call.Count > 1)
+        {
+            // a1: TRUE, or left out, is A1 style; FALSE, 0, a blank or an empty argument is R1C1's.
+            if (!call.Has(1)) return Operand.Of(ErrorValue.Value);
+            if (!TryScalar(call, 1, out var style, out failure)) return failure;
+            if (style is not { } a1 || !TryTruth(a1, out var isA1)) return Operand.Of(ErrorValue.Value);
+            if (!isA1) return Operand.Of(ErrorValue.Value);
+        }
+        var text = call.Evaluator.ToText(value);
+        // Table[Column], and any other text a structured reference begins as.
+        if (StructuredText().IsMatch(text)) return Operand.Of(ErrorValue.Value);
+        if (Lexer.ReadReference(text, 0, out var length) is not { } reference) return Operand.Of(ErrorValue.Ref);
+        // A1#: the Spill Range of the Formula in A1 (ADR-0125).
+        if (reference.Shape == ReferenceShape.Cell && length == text.Length - 1 && text[length] == '#') return Operand.Of(ErrorValue.Value);
+        if (length != text.Length || !call.Evaluator.Cells.IsLocal(reference)) return Operand.Of(ErrorValue.Ref);
+        return Operand.Of(reference.Area);
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^[A-Za-z_\\][A-Za-z0-9_.]*\[", System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    private static partial System.Text.RegularExpressions.Regex StructuredText();
 }

@@ -19,7 +19,7 @@ public static class RegionalSales
             ["Total", "=SUM(B2:B4)", "=SUM(C2:C4)", "=SUM(D2:D4)", "=SUM(E2:E4)", "=SUM(F2:F4)"],
             [],
             ["Look up a region", "South", "", "Refused, not approximated"],
-            ["Its total", "=XLOOKUP(B7, A2:A4, F2:F4, \"Not found\")", "", "Unsupported", "=MEDIAN(B2:E2)"],
+            ["Its total", "=XLOOKUP(B7, A2:A4, F2:F4, \"Not found\")", "", "Unsupported", "=IRR(B2:E2)"],
             ["Share of all sales", "=ROUND(B8/F5, 3)", "", "Circular", "=E9+1"],
             ["Regions reporting", "=COUNTA(A2:A4)", "", "Divide by zero", "=B2/0"],
             ["", "", "", "Caught", "=IFERROR(E10, 0)"],

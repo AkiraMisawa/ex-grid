@@ -8,8 +8,9 @@
         <p>
             Declare <code>editable: true</code> on a column and wire <code>OnEdit</code>. On a selected cell, the
             user types to replace the value, or presses <kbd>F2</kbd> (or double-clicks) to edit it with a caret.
-            <kbd>Enter</kbd> and <kbd>Tab</kbd> commit and move on, cycling inside the selection, so a block can
-            be filled by typing; <kbd>Escape</kbd> cancels.
+            <kbd>Backspace</kbd> empties the cell and starts typing in it, as in Excel; nothing is written until the
+            edit commits. <kbd>Enter</kbd> and <kbd>Tab</kbd> commit and move on, cycling inside the selection, so a
+            block can be filled by typing; <kbd>Escape</kbd> cancels.
         </p>
         <p>
             A commit arrives as a <code>GridEditIntent&lt;TRow&gt;</code>: the row instance, the column's name and
@@ -77,8 +78,8 @@
                 <code>OnPasteRefused</code>, before anything is raised, never half-applied.
             </li>
             <li>
-                <strong><kbd>Ctrl</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>+<kbd>Y</kbd></strong> are forwarded as
-                <code>OnUndo</code> and <code>OnRedo</code>. The history is yours, because only your application sees
+                <strong><kbd>Ctrl</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>+<kbd>Y</kbd></strong> (or
+                <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>) are forwarded as <code>OnUndo</code> and <code>OnRedo</code>. The history is yours, because only your application sees
                 every change, including those made outside the grid. Each gesture arrives as one intent, so keeping
                 one step per intent makes a paste of a thousand cells one <kbd>Ctrl</kbd>+<kbd>Z</kbd>. While the
                 editor is open, <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes the typing instead.

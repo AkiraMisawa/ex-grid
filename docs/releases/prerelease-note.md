@@ -1,0 +1,1 @@
+A prerelease (ADR-0042): every test layer passed in CI on this commit, but the Definition of Done has not been signed off. What it still owes is listed in [docs/implementation-status.md at this commit](https://github.com/AkiraMisawa/ex-grid/blob/{ref}/docs/implementation-status.md).

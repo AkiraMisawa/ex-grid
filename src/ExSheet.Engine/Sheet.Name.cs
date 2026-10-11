@@ -106,7 +106,8 @@ public sealed partial class Sheet
         }
         Name = name;
         RebuildDependencies();
-        var recalculated = dirty.Count == 0 ? [] : Recalculate(dirty, []).Recalculated;
+        // INDIRECT's text may name the Sheet by the name it has had or now has (ADR-0124).
+        var recalculated = dirty.Count == 0 && !HasVolatileFormulas ? [] : Recalculate(dirty, []).Recalculated;
         return new RenameOutcome(Diff(before, recalculated), oldName, rewritten);
     }
 
@@ -126,7 +127,8 @@ public sealed partial class Sheet
         }
         Name = outcome.OldName;
         RebuildDependencies();
-        var recalculated = dirty.Count == 0 ? [] : Recalculate(dirty, []).Recalculated;
+        // INDIRECT's text may name the Sheet by the name it has had or now has (ADR-0124).
+        var recalculated = dirty.Count == 0 && !HasVolatileFormulas ? [] : Recalculate(dirty, []).Recalculated;
         return Diff(before, recalculated);
     }
 }

@@ -45,7 +45,8 @@ as ADR-0124 already holds for a computed Reference.
   Sheet's Formulas read, and each counts once:
   - an edit of an Entry, and an insertion or a deletion;
   - the undo or the redo of one of those;
-  - a Linked Table's snapshot.
+  - a Linked Table's snapshot;
+  - a Linked Table's declaration, and a declaration that replaces it (2026-10-11, below).
 
   A change of format, width or font changes no Value, recalculates nothing and draws nothing. The
   clock is not a change: the minute that moves `NOW` and the day that moves `TODAY` (ADR-0121,
@@ -101,6 +102,13 @@ number it returns there is not something a guess may supply.
 the list above. It still recalculates volatile Formulas, since `INDIRECT`'s text can name the Sheet, and
 those draws come out the same. Whether Excel draws again on a rename is asked on the sign-off's Windows
 run, and this follows Excel's answer.)*
+
+*(2026-10-11, decided with the user: declaring a Linked Table, and declaring it again with other columns
+or another key, is a change, and draws again. The list above named only the snapshot, and a declaration
+drew nothing. It changes what the Sheet's Formulas read as a snapshot does: their readers stop being
+`#NAME?`, or wait again. Excel recalculates when a query's data is refreshed. The same declaration again
+changes nothing and draws nothing. Whether Excel draws again on a refresh that brings the same data is
+asked on the seventeenth Windows run, and this follows Excel's answer.)*
 
 ## Considered options
 
