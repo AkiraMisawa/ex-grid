@@ -392,9 +392,10 @@ test('the Blazor error UI never appears (CON-5)', async ({ page }) => {
 
 // ---------------------------------------------------------------------------------------------
 // UX-4 (ADR-0029): the classes the core paints under its root are exactly ADR-0029's — the stable
-// table and the internal list, with what later ADRs entered in either there. Transcribed from the
-// ADR, never from the stylesheet or the markup: a class the grid paints that no list names is one
-// a Wrapper could take for a contract, or one no decision ever made.
+// table, the internal list with what later ADRs entered in either there, and the internal names,
+// prefixes and families its section of 2026-10-11 lists. Transcribed from the ADR, never from the
+// stylesheet or the markup: a class the grid paints that nothing names is one a Wrapper could take
+// for a contract, or one no decision ever made, and it fails the walk by name.
 
 /** ADR-0029's stable table, with the entries added there by ADR-0043, ADR-0050/0051, ADR-0052,
  * ADR-0068 and ADR-0125. */
@@ -433,9 +434,33 @@ const INTERNAL_CLASSES = [
     'ex-reference-text-shown', 'ex-reference-pointed',
     'ex-pointed-at', 'ex-point-dashes',
     'ex-copied-range',
+    // ADR-0029, "The classes UX-4's walk found unnamed" (2026-10-11): internal, every one.
+    'ex-ceiling-probe', 'ex-focus-wrap', 'ex-hashes', 'ex-hover-row', 'ex-message', 'ex-select-all',
+    'ex-value-list', 'ex-mark-result', 'ex-editor-away', 'ex-point-on-reference',
+    'ex-key-field', 'ex-key-field-layer', 'ex-key-field-held', 'ex-key-field-composing',
+];
+
+/** The same section's prefixes: every popover part not named above, and every part of Find. */
+const INTERNAL_PREFIXES = ['ex-popover-', 'ex-find-'];
+
+/** And its families, generated from a Sheet's document data: the Fill, the Font and the Border
+ * sides (a side, a style and a colour), each named by its colour as six hex digits. The tint and
+ * the pinned shade layer ADR-0206 makes internal join INTERNAL_CLASSES by name where they are
+ * painted. */
+const INTERNAL_FAMILIES = [
+    /^ex-lined$/,
+    /^ex-fill-[0-9a-f]{6}$/,
+    /^ex-font-(x|[0-9a-f]{6})b?i?u?s?$/,
+    /^ex-l[trbl]-[a-z]+-[0-9a-f]{6}$/,
 ];
 
 const NAMED_CLASSES = new Set([...STABLE_CLASSES, ...INTERNAL_CLASSES]);
+
+/** Whether ADR-0029 names a class: in the stable table, by an internal name, by an internal
+ * prefix, or as one of the internal families. */
+const named = (name) => NAMED_CLASSES.has(name)
+    || INTERNAL_PREFIXES.some((prefix) => name.startsWith(prefix))
+    || INTERNAL_FAMILIES.some((family) => family.test(name));
 
 /**
  * Notes every class worn under a grid root from now until the test ends, the root's own
@@ -607,7 +632,14 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
         'ex-reference-outline'];
     expect(reached.filter((name) => !worn.has(name)), 'states the walk set out to reach and did not').toEqual([]);
 
-    const unnamed = [...worn].filter(([name]) => !NAMED_CLASSES.has(name)).map(([name, where]) => `${name} (${where})`).sort();
-    expect(unnamed, 'classes painted under the root that ADR-0029 names in neither list').toEqual([]);
+    // Each kind of name the section lists was met, so none of them is a pattern that matches nothing.
+    const met = (test) => [...worn.keys()].some(test);
+    expect({
+        prefixes: INTERNAL_PREFIXES.filter((prefix) => !met((name) => name.startsWith(prefix) && !NAMED_CLASSES.has(name))),
+        families: INTERNAL_FAMILIES.filter((family) => !met((name) => family.test(name))).map(String),
+    }, 'internal prefixes and families the walk never met').toEqual({ prefixes: [], families: [] });
+
+    const unnamed = [...worn].filter(([name]) => !named(name)).map(([name, where]) => `${name} (${where})`).sort();
+    expect(unnamed, 'classes painted under the root that ADR-0029 names nowhere').toEqual([]);
 });
 
