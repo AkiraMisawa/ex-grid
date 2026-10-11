@@ -885,6 +885,25 @@ element carries it; and "the grid is interactive" is `expectTabStopTaken`. A gri
 asserted directly where the root is the point: a display-only grid's tab stop (A11Y-17), a
 Prerendered root's attributes (A11Y-20).
 
+- `shipped-files.spec.mjs` — each package asks for the files it was built with (ADR-0123; ERR-9 to
+  ERR-11), on the DemoHost under both hosts, each test on a document of its own: the address the grid's
+  script and the stylesheets are asked for at — fingerprinted on the Server host, the plain path with
+  `?v=` on the WebAssembly one — and the stylesheets still in the head on a page with a `HeadContent` of
+  its own; another version's script, and one older than the stamp, served in place of the grid's and
+  refused before anything attaches (its `attach` counted), said in place of the rows and once in the
+  live region; and ExGrid's, ExSheet's and ExPivot's stylesheet notices, hidden by their own
+  stylesheet, shown by another version's, and not shown while the stylesheet has not arrived (the
+  WebAssembly host only: a Blazor Web App's stylesheet is in the head the server sends).
+- `freshness.spec.mjs` — ERR-9's deploy (ADR-0123): `freshness-app/`, a standalone application of one
+  grid, published twice from two copies of `src/ExGrid` whose shipped files are two versions', each
+  copy's `ShippedAssets.g.cs` written as `tools/assets/minify.mjs` would. The first is served as GitHub
+  Pages serves a site (`Cache-Control: max-age=600`, an ETag), loaded, replaced in place by the second,
+  and the page reloaded: the second assembly runs the second script and paints with the second
+  stylesheet, each asked for at its new address, while the framework's unchanged script stays in the
+  cache. Nothing is built in the checkout, so a running DemoHost is never rebuilt under itself; the two
+  publishes take under a minute. It drives a host of its own, so it runs beside the WebAssembly
+  host only.
+
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
 first navigation and fails a test on a console `error` or an uncaught page error
 (CON-1/2), on a warning from ExGrid's own code (CON-3), and on an unhandled exception at
