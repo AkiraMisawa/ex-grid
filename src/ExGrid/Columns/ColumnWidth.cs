@@ -8,9 +8,12 @@ namespace ExGrid.Columns;
 /// <para>A width is View State, which a Consumer persists (<c>CONTEXT.md</c>): its JSON form is
 /// <see cref="GridViewStateJson"/>'s, which writes Auto as the string <c>"Auto"</c> — the intent,
 /// never the width an Auto column was painted at — and a Fixed width as its number of pixels, and
-/// refuses anything else (ADR-0016, ADR-0207). The struct carries no JSON form of its own: its
-/// state is private, and written by <c>System.Text.Json</c> directly it does not read back.</para>
+/// refuses anything else (ADR-0016, ADR-0207). The struct carries no JSON form of its own: handed
+/// to <c>System.Text.Json</c> directly, it is refused with a <see cref="NotSupportedException"/>
+/// that names the entry point, rather than written as something that reads back as another
+/// width.</para>
 /// </summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(OnlyThroughGridViewStateJson<ColumnWidth>))]
 public readonly record struct ColumnWidth
 {
     private readonly double _px; // 0 is Auto; Fixed is always positive

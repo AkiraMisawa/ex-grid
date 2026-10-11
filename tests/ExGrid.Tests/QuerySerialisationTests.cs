@@ -9,10 +9,12 @@ namespace ExGrid.Tests;
 /// <summary>
 /// FN-13 and ST-4: the Query and the View State travel as a serialisable model (ADR-0002), through
 /// ExGrid's own JSON entry point (ADR-0207), so what a Consumer writes — to a server, or to a stored
-/// personal setting — reads back as what it wrote. "Equal" is structural here: the records hold
-/// lists, which a record compares by reference, so a round trip is held part by part, and an
-/// operand by its CLR type as well as its value, because the engine reads the type (ADR-0023).
-/// What the entry point refuses is held in <see cref="GridViewStateJsonTests"/>.
+/// personal setting — reads back as what it wrote. "Equal" is structural: a View State compares by
+/// what it holds (<see cref="GridViewState.Equals(GridViewState?)"/>), so its round trip is held
+/// whole as well as part by part; a <see cref="GridQuery"/>, a record holding lists, which a record
+/// compares by reference, is held part by part. An operand is held by its CLR type as well as its
+/// value, because the engine reads the type (ADR-0023). What the entry point refuses is held in
+/// <see cref="GridViewStateJsonTests"/>.
 /// </summary>
 public class QuerySerialisationTests
 {
@@ -80,7 +82,10 @@ public class QuerySerialisationTests
             var view = new GridViewState([new ColumnViewState(column, ColumnWidth.Auto)], [],
                 new GridFilter(new Dictionary<string, FilterSpec> { [column] = new([clause]) }));
 
-            AssertSameFilter(view.Filter, RoundTrip(view).Filter);
+            var back = RoundTrip(view);
+            AssertSameFilter(view.Filter, back.Filter);
+            Assert.Equal(view, back);
+            Assert.Equal(view.GetHashCode(), back.GetHashCode());
         });
 
     /// <summary>The cultures the form is held under, besides the one the run starts in (named ""): one
@@ -288,6 +293,90 @@ public class QuerySerialisationTests
         Assert.Equal(1, back.PinnedColumnCount);
         Assert.Equal(view.Sorts, back.Sorts);
         AssertSameFilter(view.Filter, back.Filter);
+        // And whole: one value, read back equal to the one written.
+        Assert.Equal(view, back);
+        Assert.True(view == back);
+        Assert.Equal(view.GetHashCode(), back.GetHashCode());
+    }
+
+    // ---- ADR-0207 / ST-4: a View State is one value ------------------------------------------------
+
+    /// <summary>A View State of three columns — the first pinned, Fixed; then Auto; then Fixed — under
+    /// two sort levels and a filter on two columns, built anew from <paramref name="columns"/>,
+    /// <paramref name="sorts"/> and <paramref name="filter"/> where given.</summary>
+    private static GridViewState AView(
+        ColumnViewState[]? columns = null, SortSpec[]? sorts = null, Dictionary<string, FilterSpec>? filter = null,
+        bool noFilter = false, object? opaque = null)
+        => new(
+            columns ?? [new("Notional", ColumnWidth.Fixed(120), pinned: true), new("Book", ColumnWidth.Auto), new("AsOf", ColumnWidth.Fixed(90))],
+            sorts ?? [new("Book", SortDirection.Descending), new("AsOf", SortDirection.Ascending)],
+            noFilter ? null : new GridFilter(filter ?? AFilter(), opaque));
+
+    private static Dictionary<string, FilterSpec> AFilter(
+        FilterClause? first = null, FilterClause? second = null, FilterCombinator combinator = FilterCombinator.Or, bool swap = false)
+    {
+        var a = first ?? new FilterClause(FilterOperator.GreaterThan, 1_000_000m);
+        var b = second ?? new FilterClause(FilterOperator.In, Values: [1m, null]);
+        return new Dictionary<string, FilterSpec>
+        {
+            ["Notional"] = new(swap ? [b, a] : [a, b], combinator),
+            ["AsOf"] = new([new FilterClause(FilterOperator.LessThan, new DateTime(2026, 1, 5))]),
+        };
+    }
+
+    [Fact] // ADR-0207 / ST-4: two View States holding the same view are equal, with one hash — built apart, whatever lists hold them, the filter's columns in any order, an operand equal by its own type
+    public void ADR0207_view_states_holding_the_same_view_are_equal()
+    {
+        var view = AView();
+        var reordered = new Dictionary<string, FilterSpec>();
+        foreach (var (column, spec) in AFilter().Reverse())
+            reordered[column] = spec;
+
+        foreach (var same in new[]
+                 {
+                     AView(),
+                     AView(filter: reordered),
+                     // 1.00m is 1m by decimal's own equality, as the filter compares it (ADR-0023).
+                     AView(filter: AFilter(second: new FilterClause(FilterOperator.In, Values: [1.00m, null]))),
+                 })
+        {
+            Assert.Equal(view, same);
+            Assert.True(view == same);
+            Assert.Equal(view.GetHashCode(), same.GetHashCode());
+        }
+        Assert.Equal(AView(noFilter: true), AView(noFilter: true));
+    }
+
+    [Fact] // ADR-0207 / ST-4: a View State that differs in any part is another view — a width, the order, a pin, a column, a sort, the filter, a clause, an operand's value or type, the Opaque Filter
+    public void ADR0207_view_states_that_differ_in_any_part_are_not_equal()
+    {
+        var view = AView();
+        var others = new (string Part, GridViewState Other)[]
+        {
+            ("a width", AView(columns: [new("Notional", ColumnWidth.Fixed(121), pinned: true), new("Book", ColumnWidth.Auto), new("AsOf", ColumnWidth.Fixed(90))])),
+            ("Auto for Fixed", AView(columns: [new("Notional", ColumnWidth.Auto, pinned: true), new("Book", ColumnWidth.Auto), new("AsOf", ColumnWidth.Fixed(90))])),
+            ("the order", AView(columns: [new("Notional", ColumnWidth.Fixed(120), pinned: true), new("AsOf", ColumnWidth.Fixed(90)), new("Book", ColumnWidth.Auto)])),
+            ("a pin", AView(columns: [new("Notional", ColumnWidth.Fixed(120), pinned: true), new("Book", ColumnWidth.Auto, pinned: true), new("AsOf", ColumnWidth.Fixed(90))])),
+            ("a column hidden", AView(columns: [new("Notional", ColumnWidth.Fixed(120), pinned: true), new("Book", ColumnWidth.Auto)])),
+            ("a sort's direction", AView(sorts: [new("Book", SortDirection.Ascending), new("AsOf", SortDirection.Ascending)])),
+            ("the sort's order", AView(sorts: [new("AsOf", SortDirection.Ascending), new("Book", SortDirection.Descending)])),
+            ("no filter", AView(noFilter: true)),
+            ("a filtered column fewer", AView(filter: new Dictionary<string, FilterSpec> { ["Notional"] = AFilter()["Notional"] })),
+            ("the combinator", AView(filter: AFilter(combinator: FilterCombinator.And))),
+            ("an operator", AView(filter: AFilter(first: new FilterClause(FilterOperator.GreaterThanOrEqual, 1_000_000m)))),
+            ("an operand's value", AView(filter: AFilter(first: new FilterClause(FilterOperator.GreaterThan, 1_000_001m)))),
+            ("an operand's type", AView(filter: AFilter(first: new FilterClause(FilterOperator.GreaterThan, 1_000_000d)))),
+            ("a Blank among In's values", AView(filter: AFilter(second: new FilterClause(FilterOperator.In, Values: [1m])))),
+            ("the clauses' order", AView(filter: AFilter(swap: true))),
+            ("an Opaque Filter", AView(opaque: "region = EMEA")),
+        };
+
+        foreach (var (part, other) in others)
+        {
+            Assert.False(view.Equals(other), $"A View State differing in {part} compared equal.");
+            Assert.False(other.Equals(view), $"A View State differing in {part} compared equal, the other way.");
+            Assert.True(view != other, part);
+        }
     }
 
     [Fact] // ADR-0016 / ADR-0207 / ST-4: an Auto width is persisted as the intent alone, never as a width
