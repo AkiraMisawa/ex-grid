@@ -22,12 +22,13 @@ namespace ExGrid.Components;
 /// needed, and the extra row on each side keeps a clipped edge out of the readable area,
 /// so no border is drawn where the range does not end.
 ///
-/// A range spanning the pinned boundary is painted as two rectangles, for the reason the
-/// rest of the horizontal axis is asymmetric (ADR-0004): a Pinned Column covers the
-/// Viewport's edge rather than occupying content ahead of it, so its part of the
-/// selection has to travel with it while the rest pans underneath. A selected range's two
-/// rectangles are each the whole range clipped to its own side (<see cref="Range"/>); the
-/// bands and outlines that are not a range are cut at the boundary instead.
+/// A range spanning the pinned boundary is painted in two layers, for the reason the rest of
+/// the horizontal axis is asymmetric (ADR-0004): a Pinned Column covers the Viewport's edge
+/// rather than occupying content ahead of it, so its part of the selection has to travel with
+/// it while the rest pans underneath. In each layer it reaches, a selected range is a tint and a
+/// box (ADR-0206): the box is the whole range clipped to its own side (<see cref="Box"/>), and
+/// the tint is cut at the boundary (<see cref="Tint"/>), as the bands and the outlines that are
+/// not a range are.
 ///
 /// It lives in the component layer for the reason <see cref="ColumnStyles"/> does: the
 /// pure layer answers where a column is, and this answers how that is written down for a
@@ -36,43 +37,65 @@ namespace ExGrid.Components;
 internal static class SelectionStyles
 {
     /// <summary>
-    /// A selected range as one layer paints it (ADR-0008, "Excel's look for the Focus and a
-    /// single range"), or null when the layer holds no part of it — and null for a range that
-    /// is the Focus's cell alone, which is not tinted at all: the Focus outline marks it.
+    /// A selected range's box as one layer paints it (ADR-0008, "Excel's look for the Focus and a
+    /// single range"; ADR-0206): the element that keeps the class <c>ex-range</c> and draws the
+    /// outline, or null when the layer holds no part of the range — and null for a range that is the
+    /// Focus's cell alone, which has no box and no tint at all: the Focus outline marks it.
     ///
-    /// A range that spans the pinned boundary is painted <em>whole</em> in both layers, each
-    /// clipped to its own side of the boundary. Whatever is drawn inside the range's edge —
-    /// the outline of a single range, the forced-colors outline of every range — then stops
-    /// at the boundary on each side instead of being drawn along it, so the two parts meet
-    /// with no seam; and the scrollable part keeps its box while it slides beneath the
-    /// pinned block. Nothing here needs to know how wide an outline is, only that a column
-    /// is wider than one.
-    ///
-    /// A range holding the <paramref name="focus"/> carries a hole where the Focus is, in the
-    /// layer the Focus's cell belongs to: the selection's tint never covers the Focus cell, as
-    /// Excel's never covers the active cell (the Focus band and the hover band are other
-    /// overlays and keep theirs). The hole is geometry, so it is resolved here with the
-    /// rectangle and written inline, as the polygon the stylesheet clips the tint with; the
-    /// range stays one element whatever its size. It is left out while the Focus's row is not
-    /// among the painted rows, where the clipped rectangle does not reach it.
+    /// A range that spans the pinned boundary has its box drawn <em>whole</em> in both layers, each
+    /// clipped to its own side of the boundary. Whatever is drawn inside the range's edge — the
+    /// outline of a single range, the forced-colors outline of every range — then stops at the
+    /// boundary on each side instead of being drawn along it, so the two parts meet with no seam;
+    /// and the scrollable part keeps its box while it slides beneath the pinned block. Nothing here
+    /// needs to know how wide an outline is, only that a column is wider than one.
     ///
     /// <para>The outline of a single range lies where Excel's does, outside the range on every
     /// side but one that something above the selection layer would cover
     /// (<see cref="OutlineSides"/>); so each layer's clip lets a row's height past the range's
     /// edges on every side but the boundary, which is more than any outline is wide.</para>
+    ///
+    /// <para>The box paints no tint: that is <see cref="Tint"/>'s element, painted before every box
+    /// in its layer, so the outlines lie over the tints by tree order alone and the box isolates
+    /// nothing (ADR-0206).</para>
     /// </summary>
-    public static string? Range(
+    public static string? Box(
         SelectionRange range, CellPosition focus, ColumnGeometry columns, double rowHeightPx, RowRange painted,
         bool pinnedLayer, OutlineCover cover)
     {
         if (range.CellCount == 1 && range.Contains(focus))
             return null;
         if (Whole(range, columns, rowHeightPx, painted, pinnedLayer, outsidePx: rowHeightPx) is not { } style
-            || Clip(range, painted) is not { } rows || Side(range, columns, pinnedLayer) is not { } side)
+            || Side(range, columns, pinnedLayer) is not { } side)
             return null;
-        style += OutlineSides(range.TopRow, side.First, columns, pinnedLayer, cover);
+        return style + OutlineSides(range.TopRow, side.First, columns, pinnedLayer, cover);
+    }
 
-        var leftPx = columns.OffsetPxOf(range.LeftColumn);
+    /// <summary>
+    /// A selected range's tint as one layer paints it (ADR-0206): the range's part on the layer's
+    /// side of the pinned boundary, cut at the boundary as the bands are, or null when the layer
+    /// holds no part of it — and null for a range that is the Focus's cell alone, which is not
+    /// tinted at all. The pinned tints stand in the pinned shade layer, the scrollable ones in the
+    /// scrollable layer, each before every box.
+    ///
+    /// A range holding the <paramref name="focus"/> carries a hole where the Focus is, in the
+    /// layer the Focus's cell belongs to: the selection's tint never covers the Focus cell, as
+    /// Excel's never covers the active cell (the Focus band and the hover band are other
+    /// overlays and keep theirs). The hole is geometry, so it is resolved here with the
+    /// rectangle and written inline, as the polygon the stylesheet clips the tint with, in the
+    /// tint's own box; the tint stays one element whatever its size, and carries no other clip. It
+    /// is left out while the Focus's row is not among the painted rows, where the clipped
+    /// rectangle does not reach it.
+    /// </summary>
+    public static string? Tint(
+        SelectionRange range, CellPosition focus, ColumnGeometry columns, double rowHeightPx, RowRange painted,
+        bool pinnedLayer)
+    {
+        if (range.CellCount == 1 && range.Contains(focus))
+            return null;
+        if (Side(range, columns, pinnedLayer) is not { } side || Clip(range, painted) is not { } rows)
+            return null;
+        var leftPx = columns.OffsetPxOf(side.First);
+        var style = Rect(leftPx, columns.OffsetPxOf(side.Last + 1) - leftPx, rows, rowHeightPx, painted.Start);
         if (range.Contains(focus) && Side(CellRange(focus), columns, pinnedLayer) is not null
             && focus.Row >= rows.Top && focus.Row < rows.Top + rows.Count)
         {
@@ -88,9 +111,24 @@ internal static class SelectionStyles
     }
 
     /// <summary>
+    /// Whether one layer paints a tint for a selected range (<see cref="Tint"/>), answered without
+    /// writing it down: what decides whether the pinned shade layer is emitted at all (ADR-0206).
+    /// </summary>
+    public static bool Tinted(SelectionRange range, CellPosition focus, ColumnGeometry columns, RowRange painted, bool pinnedLayer)
+        => !(range.CellCount == 1 && range.Contains(focus)) && Reaches(range, columns, painted, pinnedLayer);
+
+    /// <summary>
+    /// Whether a rectangle has a part in one layer among the painted rows — whether
+    /// <see cref="Scrollable"/> or <see cref="Pinned"/> would answer one — answered without writing
+    /// it down.
+    /// </summary>
+    public static bool Reaches(SelectionRange range, ColumnGeometry columns, RowRange painted, bool pinnedLayer)
+        => Side(range, columns, pinnedLayer) is not null && Clip(range, painted) is not null;
+
+    /// <summary>
     /// A rectangle painted whole in one layer and clipped to that layer's side of the pinned
-    /// boundary, or null when the layer holds no part of it: how a selected range is painted
-    /// (<see cref="Range"/>, which adds the Focus's hole), and how a Reference Outline is
+    /// boundary, or null when the layer holds no part of it: how a selected range's box is painted
+    /// (<see cref="Box"/>, which adds the sides of its outline), and how a Reference Outline is
     /// (ADR-0057), so that whatever is drawn inside the edge stops at the boundary on each side
     /// with no seam. The clip lets what is drawn past the rectangle's edges show for
     /// <paramref name="outsidePx"/> on every side but the boundary: zero for what is drawn inside

@@ -1,7 +1,7 @@
-import { test, expect, alterPage, watchNextKey, keySeenUntouched } from './fixtures.mjs';
-import { sheet, cell, pressCell } from './sheet-helpers.mjs';
-import { sameColour, resolvedColour } from './pixels.mjs';
-import { across } from './line-pixels.mjs';
+import { test, expect, alterPage, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet } from './fixtures.mjs';
+import { sheet, cell, pressCell, clickCell, expectFocusAt } from './sheet-helpers.mjs';
+import { sameColour, resolvedColour, paints, painted } from './pixels.mjs';
+import { across, along, pattern, expected, isDark } from './line-pixels.mjs';
 
 // What Part C of the eleventh Windows run left to the next PR, as decided on 2026-10-02 (ADR-0090;
 // ADR-0071, "What was decided after Part C"; ADR-0050 item 14; ADR-0016): read on /sheet?case=…, the
@@ -34,12 +34,13 @@ async function devicePixelTold(grid) {
     })).toBe(true);
 }
 
-/** Selects B2:C3 with keys, as Part C's case 11 did. */
-async function selectB2toC3(page, grid) {
+/** Selects B2:C3 with keys, as Part C's case 11 did. Its box is one element in each layer it
+ * reaches: two when the pinned boundary runs through it (ADR-0206). */
+async function selectB2toC3(page, grid, layers = 1) {
     await pressCell(grid, 'B2');
     await page.keyboard.press('Shift+ArrowRight');
     await page.keyboard.press('Shift+ArrowDown');
-    await expect(grid.locator('.ex-range-single')).toHaveCount(1);
+    await expect(grid.locator('.ex-range-single')).toHaveCount(layers);
     await page.mouse.move(0, 0);
 }
 
@@ -120,6 +121,260 @@ test('SH-54/DC-59 (MudBlazor Chrome): the outline is the palette\'s primary and 
     expect(Math.sign(b - g)).toBe(Math.sign(pb - pg));
     expect(Math.min(...shade)).toBeGreaterThan(Math.max(...outline) - 40);
 });
+
+// ---- The Selection over a Pinned Column (DC-59, SH-54; ADR-0206) -----------------------------------
+//
+// A range's tint is an element of its own, the pinned tints lie in a shade layer of their own, and on
+// the Paper that layer multiplies as one group with the pinned cells beneath it; a range across the
+// pinned boundary multiplies on its scrollable side too, which a range's clip had isolated. Read on
+// case 11 with ?pin=: pin=3 puts B2:C3 wholly in the Pinned Columns, pin=2 puts the boundary through it.
+
+const PLACES = [['in a Pinned Column', 3], ['across the pinned boundary', 2]];
+
+/** The lines of case 11 inside B2:C3 that are not the Focus's own pixels: C2's bottom (C2 and C3
+ * meet), and B3's right (B3 and C3 meet), each read on its gridline pixel and the one before it. */
+async function linesInside(page, grid) {
+    const c2 = await across(page, await cell(grid, 'C2').boundingBox(), 'bottom', 0.5);
+    const b3 = await across(page, await cell(grid, 'B3').boundingBox(), 'right', 0.5);
+    return {
+        'C2|C3': { line: c2.pixel(-1), shade: c2.pixel(-2) },
+        'B3|C3': { line: b3.pixel(-1), shade: b3.pixel(-2) },
+    };
+}
+
+/** The selection's fill as the page resolves the token: its colour and the alpha the browser holds. */
+async function selectionFill(grid) {
+    const css = await grid.locator('.ex-range-tint').first().evaluate((el) => getComputedStyle(el).backgroundColor);
+    const m = /rgba?\(\s*([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/.exec(css);
+    if (!m) throw new Error(`the tint's background is ${css}`);
+    return { colour: [Number(m[1]), Number(m[2]), Number(m[3])], alpha: Math.round(Number(m[4] ?? 1) * 255) / 255 };
+}
+
+/** What a fill multiplied over an opaque colour paints, each channel exact: under · (1 − a + a · fill). */
+const multiplied = ({ colour, alpha }, under) => under.map((u, i) => u * (1 - alpha + alpha * colour[i] / 255));
+
+for (const [place, pin] of PLACES) {
+    test(`SH-54/DC-59 (MudBlazor Chrome): ${place}, a black line inside the shade stays black and the shade is the primary mixed into white (ADR-0206, case 11)`, async ({ page }) => {
+        const grid = await openCase(page, '11', `&chrome=mud&pin=${pin}`);
+        await selectB2toC3(page, grid, pin === 2 ? 2 : 1);
+        await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
+        const fill = await selectionFill(grid);
+        // The primary, not a grey: the shade is coloured, so a source-over tint would not leave a
+        // black line black (ADR-0206: (16, 13, 41) where it did not multiply).
+        expect(Math.max(...fill.colour) - Math.min(...fill.colour), JSON.stringify(fill)).toBeGreaterThan(40);
+
+        const lines = await linesInside(page, grid);
+        for (const [edge, { line, shade }] of Object.entries(lines)) {
+            expect(sameColour(line, BLACK, 2), `the line between ${edge} (pin=${pin}): ${line}`).toBe(true);
+            expect(paints(shade, multiplied(fill, WHITE)), `the shade beside the line between ${edge} (pin=${pin}): ${shade}, exact ${multiplied(fill, WHITE)}`).toBe(true);
+        }
+        // The Focus cell stays unshaded.
+        const b2 = await across(page, await cell(grid, 'B2').boundingBox(), 'bottom', 0.25);
+        expect(sameColour(b2.pixel(-3), WHITE, 2), `inside the Focus cell: ${b2.pixel(-3)}`).toBe(true);
+    });
+
+    test(`SH-54/DC-59 (built-in Chrome): ${place}, the shade is #C7C7C7, a black line inside stays black, and the Focus is unshaded (ADR-0206, case 11)`, async ({ page }) => {
+        const grid = await openCase(page, '11', `&pin=${pin}`);
+        await selectB2toC3(page, grid, pin === 2 ? 2 : 1);
+        await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
+
+        const lines = await linesInside(page, grid);
+        for (const [edge, { line, shade }] of Object.entries(lines)) {
+            expect(sameColour(line, BLACK, 2), `the line between ${edge} (pin=${pin}): ${line}`).toBe(true);
+            expect(sameColour(shade, EXCEL_SHADE, 3), `the shade beside the line between ${edge} (pin=${pin}): ${shade}`).toBe(true);
+        }
+        // C3's bottom: the outline's two Device Pixels, the white line inside them, then the shade,
+        // as where nothing is pinned.
+        const c3 = await across(page, await cell(grid, 'C3').boundingBox(), 'bottom', 0.5);
+        for (const offset of [-1, 0]) expect(sameColour(c3.pixel(offset), EXCEL_GREEN, 2), `the outline at ${offset} on C3's bottom: ${c3.pixel(offset)}`).toBe(true);
+        expect(sameColour(c3.pixel(-2), WHITE, 2), `the white line inside: ${c3.pixel(-2)}`).toBe(true);
+        expect(sameColour(c3.pixel(-3), EXCEL_SHADE, 3), `the shade inside C3: ${c3.pixel(-3)}`).toBe(true);
+        const b2 = await across(page, await cell(grid, 'B2').boundingBox(), 'bottom', 0.25);
+        expect(sameColour(b2.pixel(-3), WHITE, 2), `inside the Focus cell: ${b2.pixel(-3)}`).toBe(true);
+    });
+}
+
+test('DC-59: a Consumer\'s coloured --ex-selection-fill multiplies over a pinned Fill and a pinned line, in a Pinned Column and across the boundary (ADR-0206, ADR-0071)', async ({ page }) => {
+    for (const [place, pin] of PLACES) {
+        // Case 10: B2's thick black bottom, and B3's yellow Fill below it.
+        const grid = await openCase(page, '10', `&pin=${pin}`);
+        // A Consumer's coloured token, on body, which outlives the page: alterPage takes it off.
+        await alterPage(page, () => {
+            document.body.style.setProperty('--ex-selection-fill', 'rgba(0, 0, 255, 0.4)');
+            return () => document.body.style.removeProperty('--ex-selection-fill');
+        });
+        // B2:C4 with the Focus in C4, so B2 and B3 are shaded.
+        await pressCell(grid, 'C4');
+        await page.keyboard.press('Shift+ArrowLeft');
+        await page.keyboard.press('Shift+ArrowUp');
+        await page.keyboard.press('Shift+ArrowUp');
+        await expect(grid.locator('.ex-range-single')).toHaveCount(pin === 3 ? 1 : 2);
+        await page.mouse.move(0, 0);
+        const fill = await selectionFill(grid);
+        expect(fill.colour, place).toEqual([0, 0, 255]);
+
+        // B2's thick bottom is three Device Pixels, on B2's last two and B3's first: black, under
+        // the shade as over the Paper. Multiplied, blue over black is black; laid over, it would not be.
+        const b2 = await across(page, await cell(grid, 'B2').boundingBox(), 'bottom', 0.5);
+        for (const offset of [-2, -1, 0]) {
+            expect(sameColour(b2.pixel(offset), BLACK, 2), `B2's thick bottom at ${offset} (${place}): ${b2.pixel(offset)}`).toBe(true);
+        }
+        // B3's yellow, darkened by the blue rather than tinted with it: (153, 153, 0), where a tint
+        // laid over would be (153, 153, 102).
+        const yellow = [255, 255, 0];
+        const b3 = await across(page, await cell(grid, 'B3').boundingBox(), 'bottom', 0.5);
+        expect(paints(b3.pixel(-4), multiplied(fill, yellow)), `B3's Fill under the shade (${place}): ${b3.pixel(-4)}`).toBe(true);
+        // And the Paper beside it, C3, in the same shade over white either way.
+        const c3 = await across(page, await cell(grid, 'C3').boundingBox(), 'bottom', 0.5);
+        expect(paints(c3.pixel(-4), multiplied(fill, WHITE)), `C3's Paper under the shade (${place}): ${c3.pixel(-4)}`).toBe(true);
+    }
+});
+
+/**
+ * Reads a line on a Sheet cell's `side` against case 9's table, as sheet-borders.spec.mjs does:
+ * which device pixels across the gridline are dark, and the dash pattern along it.
+ */
+async function expectLine(page, grid, style, side) {
+    const row = STYLES_IN_ORDER.indexOf(style) + 2;
+    await scrollRowToTop(grid, Math.max(0, row - 2));
+    const target = cell(grid, `${side === 'bottom' ? 'B' : 'D'}${row}`);
+    await expect(target).toBeVisible();
+    await page.mouse.move(0, 0);
+    const box = await target.boundingBox();
+    const { scale, pixel } = await across(page, box, side, 0.5);
+    const want = expected(style);
+    for (const offset of want.light) {
+        const pixels = await along(page, box, side, offset);
+        expect(pixels.filter(isDark).length, `${style} on ${side} leaves ${offset} clear (scale ${scale})`).toBe(0);
+    }
+    if (want.dark) {
+        for (const offset of want.dark) {
+            expect(isDark(pixel(offset)), `${style} on ${side} at ${offset} (scale ${scale}): ${pixel(offset)}`).toBe(true);
+            const pixels = await along(page, box, side, offset);
+            expect(pixels.every(isDark), `${style} on ${side} is solid along ${offset} (scale ${scale})`).toBe(true);
+        }
+    } else {
+        for (const offset of want.rows) {
+            const lengths = pattern(await along(page, box, side, offset)).slice(0, want.pattern.length);
+            expect(lengths.length, `${style} on ${side} along ${offset}: runs read`).toBeGreaterThanOrEqual(3);
+            expect(lengths, `${style} on ${side} along ${offset} (scale ${scale})`).toEqual(want.pattern.slice(0, lengths.length));
+        }
+    }
+}
+
+const STYLES_IN_ORDER = ['Hair', 'Thin', 'Medium', 'Thick', 'Double', 'Dotted', 'Dashed', 'DashDot', 'DashDotDot',
+    'MediumDashed', 'MediumDashDot', 'MediumDashDotDot', 'SlantedDashDot'];
+
+// The sub-pixel gate (ADR-0206). A blend above the sticky pinned cells may make the browser read its
+// backdrop from an offscreen surface, which at a fraction of a Device Pixel could blur every line the
+// Viewport holds. So with a pinned tint on screen and the page a third of a pixel across and down, the
+// lines outside the range — a pinned column's and a scrollable one's — keep their exact Device Pixels.
+// If this fails, the work stops and returns to the user as a decision; offsets are never tuned to it.
+test('DC-59: with a pinned tint on screen and the page a third of a pixel across and down, the lines outside the range keep their exact Device Pixels (ADR-0206, the sub-pixel gate)', async ({ page }) => {
+    // The thirteen styles on B's bottoms and D's rights, with A and B pinned.
+    const grid = await openCase(page, 'lines', '&pin=2');
+    // Padding on the page's own element around the Sheet, which leaves with the page (as
+    // sheet-borders.spec.mjs shifts it): a margin of a third of a pixel would collapse.
+    await page.locator('.demo-side-by-side').evaluate((el) => {
+        el.style.paddingTop = '0.33px';
+        el.style.paddingLeft = '0.33px';
+    });
+    await devicePixelTold(grid);
+    // A2:A14, the style names beside the lines: a pinned range, its tint in the shade layer, and
+    // nothing of it in the scrollable layer. A second range, F3, takes the Focus, so A2:A14 is one
+    // of several and carries no outline: a single range's outline lies one pixel outside it, on B's
+    // first pixels, where it would be read as part of a line.
+    await pressCell(grid, 'A2');
+    for (let i = 0; i < 12; i++) await page.keyboard.press('Shift+ArrowDown');
+    await clickCell(grid, 'F3', { modifiers: ['ControlOrMeta'] });
+    await expectFocusAt(grid, 'F3');
+    await expect(grid.locator('.ex-range-single')).toHaveCount(0);
+    await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
+    await expect(grid.locator('.ex-selection > .ex-range-tint')).toHaveCount(0);
+    for (const style of ['Thin', 'Thick', 'Double', 'Dotted', 'MediumDashDotDot']) {
+        for (const side of ['bottom', 'right']) {
+            await expect(grid.locator('.ex-shade-pinned > .ex-range-tint'), 'the pinned tint stays on screen').toHaveCount(1);
+            await expectLine(page, grid, style, side);
+        }
+    }
+});
+
+test('DC-59: scrolling with column A selected, its shade stays on column A down and across, and never over the cells that pass beneath it (ADR-0206)', async ({ page }) => {
+    const grid = await openCase(page, '11', '&pin=1');
+    await pressCell(grid, 'A5');
+    await page.keyboard.press('Control+Space');
+    await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
+    await page.mouse.move(0, 0);
+
+    for (const [down, sideways] of [[0, 0], [0, 150], [40, 150], [40, 0]]) {
+        await scrollRowToTop(grid, down);
+        await grid.locator('.ex-scroller').evaluate((scroller, left) => { scroller.scrollLeft = left; }, sideways);
+        await expect.poll(() => grid.locator('.ex-scroller').evaluate((s) => s.scrollLeft)).toBe(sideways);
+        await circuitQuiet();
+        // A row clear of the Focus's, two below the top of the readable area, and the first cell of it
+        // wholly clear of column A's edge, whichever column has scrolled there: read at their middles,
+        // away from every gridline.
+        // A jump of forty rows is a fling: its rows are Placeholders until they settle (ADR-0004).
+        await expect(grid.locator('.ex-row.ex-placeholder')).toHaveCount(0);
+        const row = down + 3;
+        const box = await cell(grid, `A${row}`).boundingBox();
+        const nextCell = () => grid.evaluate((root, { row, edge }) => {
+            for (let column = 1; column < 64; column++) {
+                const el = root.querySelector(`[id$='-r${row - 1}c${column}']`);
+                const rect = el?.getBoundingClientRect();
+                if (rect && rect.left >= edge + 1) return { x: rect.left, width: rect.width };
+            }
+            return null;
+        }, { row, edge: box.x + box.width });
+        await expect.poll(nextCell, { message: `a painted cell beside column A in row ${row}` }).not.toBeNull();
+        const next = await nextCell();
+        const region = await painted(page, { x: box.x, y: box.y, width: next.x + next.width - box.x, height: box.height });
+        const y = box.y + box.height / 2;
+        const inA = region.at(box.x + box.width / 2, y);
+        const beside = region.at(next.x + next.width / 2, y);
+        expect(sameColour(inA, EXCEL_SHADE, 3), `A${row} is shaded, ${down} rows down and ${sideways}px across: ${inA}`).toBe(true);
+        // Whatever column lies beside A at this offset is not: the scrollable layer holds no part of
+        // the range, and the pinned tint travels with column A, not with what passes beneath it.
+        expect(sameColour(beside, WHITE, 2), `the cell beside column A, ${down} rows down and ${sideways}px across: ${beside}`).toBe(true);
+    }
+});
+
+test('DC-59: under forced colors no tint is painted over a pinned range, and its outline is (ADR-0206)', async ({ page }) => {
+    const grid = await openCase(page, '11', '&pin=3');
+    await selectB2toC3(page, grid);
+    await page.emulateMedia({ forcedColors: 'active' });
+    await expect.poll(() => grid.locator('.ex-selection-pinned > .ex-range').first().evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid');
+    const read = await grid.evaluate((root) => ({
+        tints: [...root.querySelectorAll('.ex-range-tint')].map((el) => getComputedStyle(el).display),
+        blend: getComputedStyle(root.querySelector('.ex-shade-pinned')).mixBlendMode,
+    }));
+    expect(read.tints.length).toBeGreaterThan(0);
+    expect(read.tints.every((display) => display === 'none'), JSON.stringify(read)).toBe(true);
+    expect(read.blend).toBe('normal');
+    // Inside C3, selected and pinned, the ground is the unselected cells' own.
+    const c3 = await across(page, await cell(grid, 'C3').boundingBox(), 'bottom', 0.5);
+    const e8 = await across(page, await cell(grid, 'E8').boundingBox(), 'bottom', 0.5);
+    expect(c3.pixel(-5), 'C3 is not tinted').toEqual(e8.pixel(-5));
+});
+
+for (const [chrome, query] of [['built-in', ''], ['MudBlazor', '&chrome=mud']]) {
+    test(`DC-59/SH-39 (${chrome} Chrome, dark scheme): across the pinned boundary the shade is the same on both sides and a black line inside stays black, as in the light scheme (ADR-0206, ADR-0071)`, async ({ page }) => {
+        const grid = await openCase(page, '11', `${query}&pin=2&scheme=dark`);
+        await selectB2toC3(page, grid, 2);
+        await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
+        const lines = await linesInside(page, grid);
+        for (const [edge, { line }] of Object.entries(lines)) {
+            expect(sameColour(line, BLACK, 2), `the line between ${edge}: ${line}`).toBe(true);
+        }
+        // B3 pinned and C3 scrollable, side by side under one shade over the white Paper.
+        const pinned = lines['B3|C3'].shade;
+        const scrollable = (await across(page, await cell(grid, 'C2').boundingBox(), 'bottom', 0.5)).pixel(-2);
+        expect(sameColour(pinned, scrollable, 1), `pinned ${pinned} against scrollable ${scrollable}`).toBe(true);
+        if (chrome === 'built-in') {
+            expect(sameColour(pinned, EXCEL_SHADE, 3), `the shade over the Paper: ${pinned}`).toBe(true);
+        }
+    });
+}
 
 // ---- Device Pixels (VZ-16, VZ-17) -----------------------------------------------------------------
 

@@ -86,28 +86,38 @@
    Theme or Wrapper names one, or they would be the core's CanvasText round a green outline. */
 .ex-sheet .ex-copied-range::after { outline-color: var(--ex-focus-outline, #217346); }
 .ex-sheet .ex-fill-handle { background: var(--ex-fill-handle-color, var(--ex-focus-outline, #217346)); }
-/* The shade multiplies with the cells beneath it rather than lying over them, so the lines inside a
-   range stay as drawn: a black line stays black, as Excel's do over its #C7C7C7, and a Fill darkens
-   as it does. For the blend to reach the cells nothing between the shade and the Viewport may be a
-   stacking context of its own (an isolated group blends with nothing), so on the Paper the
-   scrollable selection layer and the range give up their z-index and isolation, and the shade paints
-   first in its range, beneath the outline, by order alone. The layer still paints above the rows,
-   which are not positioned, and below the Pinned Columns (z-index 2) and the editor (3). The pinned
-   layer stays a stacking context above the pinned cells, so over a Pinned Column the shade still lies
-   over the lines (ADR-0071; owed). Under ExSheet.MudBlazor the shade is the primary mixed into white:
-   its translucent token, multiplied over white Paper. */
+/* On the Paper every wash multiplies and a line stays as drawn (ADR-0071; ADR-0206). The shade
+   multiplies with the cells beneath it rather than lying over them, so the lines inside a range stay
+   as drawn: a black line stays black, as Excel's do over its #C7C7C7, and a Fill darkens as it does.
+   A blend sees only what its own group painted before it, so what blends must have the Viewport for
+   its group, which holds the rows and the pinned cells:
+   - in the scrollable layer, each tint, and each band. The layer gives up its z-index here, so it is
+     no group of its own: it still paints above the rows, which are not positioned, and below the
+     Pinned Columns (z-index 2) and the editor (3);
+   - over the Pinned Columns, the pinned shade layer itself, which holds the pinned bands and tints
+     plainly: a later sibling in the Viewport, it blends as one group with everything painted before
+     it, the pinned cells included.
+   The boxes and outlines are painted after the washes, by tree order, and do not blend. The shade is
+   black at 22%: over white Paper that is Excel's #C7C7C7 (255 × 0.78 = 199). Under ExSheet.MudBlazor
+   it is the primary mixed into white: its translucent token, multiplied over white Paper. The bands
+   multiply too, on both sides, though ExSheet turns on neither itself; over white nothing changes. */
 .ex-sheet .ex-selection { z-index: auto; }
-.ex-sheet .ex-selection .ex-range { isolation: auto; }
-/* The shade is black at 22%: over white Paper that is Excel's #C7C7C7 (255 × 0.78 = 199), and over a
-   Pinned Column, where it cannot multiply, it stays translucent, so the value still reads through. */
-.ex-sheet .ex-selection .ex-range::before {
-    z-index: auto;
+.ex-sheet .ex-selection > .ex-range-tint,
+.ex-sheet .ex-selection > .ex-focus-row,
+.ex-sheet .ex-selection > .ex-hover-row,
+.ex-sheet .ex-shade-pinned {
     mix-blend-mode: multiply;
-    background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22));
 }
-.ex-sheet .ex-selection-pinned .ex-range::before { background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22)); }
+.ex-sheet .ex-range-tint { background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22)); }
 @media (forced-colors: active) {
     .ex-sheet .ex-focus::after, .ex-sheet .ex-range-single::after { box-shadow: none; }
+    /* No wash is painted under forced colors (ADR-0206): the core paints no tint, and nothing here
+       blends the system colours the browser forces, the bands' outlines among them. */
+    .ex-sheet .ex-selection > .ex-focus-row,
+    .ex-sheet .ex-selection > .ex-hover-row,
+    .ex-sheet .ex-shade-pinned {
+        mix-blend-mode: normal;
+    }
     /* The core's restatement, which the green above would otherwise outrank (ADR-0170). */
     .ex-sheet .ex-copied-range::after { outline-color: Highlight; }
 }
