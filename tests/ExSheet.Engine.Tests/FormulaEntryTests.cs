@@ -17,8 +17,8 @@ public class FormulaEntryTests
     }
 
     [Theory] // ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case
-    [InlineData("=SU|", new[] { "SUBSTITUTE", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT" })]
-    [InlineData("=su|", new[] { "SUBSTITUTE", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT" })]
+    [InlineData("=SU|", new[] { "SUBSTITUTE", "SUBTOTAL", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT" })]
+    [InlineData("=su|", new[] { "SUBSTITUTE", "SUBTOTAL", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT" })]
     [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT" })]
     [InlineData("=IFE|", new[] { "IFERROR" })]
     [InlineData("=1+co|", new[] { "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COS", "COSH", "COT", "COTH", "COUNT", "COUNTA", "COUNTBLANK", "COUNTIF", "COUNTIFS" })]
@@ -50,7 +50,7 @@ public class FormulaEntryTests
     [Fact] // ADR-0049/0051: Linked Tables' names are offered beside the functions, in one alphabetical list
     public void Completion_offers_linked_tables()
     {
-        Assert.Equal(["ABS", "Accounts", "ACOS", "ACOSH", "ACOT", "ACOTH", "AND", "ASIN", "ASINH", "ATAN", "ATAN2", "ATANH", "AVERAGE", "AVERAGEIF", "AVERAGEIFS"], Names("=a|", "Positions", "Accounts")!);
+        Assert.Equal(["ABS", "Accounts", "ACOS", "ACOSH", "ACOT", "ACOTH", "AGGREGATE", "AND", "ASIN", "ASINH", "ATAN", "ATAN2", "ATANH", "AVERAGE", "AVERAGEIF", "AVERAGEIFS"], Names("=a|", "Positions", "Accounts")!);
         Assert.Equal(["Positions"], Names("=SUM(pos|", "Positions", "Accounts")!);
     }
 

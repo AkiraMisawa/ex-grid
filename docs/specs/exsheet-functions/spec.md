@@ -76,8 +76,8 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `STDEV.P` | Supported | — | |
 | `VAR.S` | Supported | — | |
 | `VAR.P` | Supported | — | |
-| `SUBTOTAL` | Ready | P3 | Admitted while a Sheet cannot hide a row, behind a test that fails when one can; a nested call other than a whole-Formula `SUBTOTAL` is `#VALUE!` until observed (ADR-0047, 2026-10-10). Ticket 16 |
-| `AGGREGATE` | Ready | P3 | As `SUBTOTAL`; a function number for a function the engine does not support is `#VALUE!`. Ticket 16 |
+| `SUBTOTAL` | Supported | — | Admitted while a Sheet cannot hide a row, behind a test that fails when one can; a nested call other than a whole-Formula `SUBTOTAL` is `#VALUE!` until observed (ADR-0047, 2026-10-10). Ticket 16 |
+| `AGGREGATE` | Supported | — | As `SUBTOTAL`; options 0 to 3 pass over a whole-Formula `SUBTOTAL` or `AGGREGATE`, and a function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`. Ticket 16 |
 
 ### Logic and errors
 

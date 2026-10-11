@@ -122,6 +122,8 @@ them:
 | `LARGE`, `SMALL` | `array, k` |
 | `RANK.EQ` | `number, ref, [order]` |
 | `STDEV.S`, `STDEV.P`, `VAR.S`, `VAR.P` | `number1, [number2], ...` |
+| `SUBTOTAL` | `function_num, ref1, [ref2], ...` — 1 to 11, and 101 to 111 |
+| `AGGREGATE` | `function_num, options, ref1, [ref2], ...`, or `function_num, options, array, k` for `LARGE` and `SMALL` |
 | `IF` | `logical_test, value_if_true, [value_if_false]` |
 | `IFS` | `logical_test1, value_if_true1, ...` |
 | `SWITCH` | `expression, value1, result1, [default_or_value2], [result2], ...` |
@@ -236,6 +238,18 @@ answer:
   too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`); `ERROR.TYPE` of an Error
   Value outside Microsoft's table — `#SPILL!`, `#CALC!`, `#FIELD!`, `#BLOCKED!`, `#CONNECT!`,
   `#UNKNOWN!` (`#VALUE!`).
+- **`SUBTOTAL` and `AGGREGATE` while no row can be hidden** (ADR-0047, 2026-10-10). A Sheet cannot hide
+  a row yet, so `SUBTOTAL`'s 101 to 111 give what 1 to 11 give, and `AGGREGATE`'s options 1, 3, 5
+  and 7 what 0, 2, 4 and 6 give, as Excel's do over such a sheet; a test fails on the day a row can
+  be hidden. Microsoft documents that both pass over nested subtotals, but not which cells count as
+  nested. A cell whose whole Formula is a `SUBTOTAL` is passed over by `SUBTOTAL`, and one whose
+  whole Formula is a `SUBTOTAL` or an `AGGREGATE` by `AGGREGATE`'s options 0 to 3; any other call
+  of either inside the range — inside a larger Formula, behind a spill, an `AGGREGATE` in a
+  `SUBTOTAL`'s range, or any call with options 4 to 7 — makes the result `#VALUE!` until a Windows
+  run asks Excel. So do a function number or an option that is not a whole number, an argument that
+  is no reference where a reference is wanted (a computed array, a number), and `AGGREGATE`'s
+  function numbers for functions the engine does not support: 13 (`MODE.SNGL`) and 16 to 19
+  (`PERCENTILE` and `QUARTILE`).
 - **More of the refusal of unlifted functions.** `CONCATENATE` over a range of several cells, and a
   `TEXTJOIN` delimiter of several cells, are `#VALUE!`; `CONCAT` and `TEXTJOIN`'s texts take ranges.
 

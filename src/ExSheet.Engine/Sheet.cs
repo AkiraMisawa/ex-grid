@@ -596,6 +596,13 @@ public sealed partial class Sheet
 
         public Operand TableColumn(string table, string column) => sheet.TableColumn(table, column);
 
+        public Node? FormulaAt(CellAddress address)
+        {
+            if (sheet._cells.GetValueOrDefault(address) is not { } cell) return null;
+            if (cell.Entry is { } entry) return entry.Parsed;
+            return cell.SpilledFrom is { } anchor ? sheet._cells.GetValueOrDefault(anchor)?.Entry?.Parsed : null;
+        }
+
         public bool IsLocal(Reference reference) => sheet.IsLocal(reference);
 
         public DateOnly? Today => sheet.Today;

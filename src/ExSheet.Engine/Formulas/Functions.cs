@@ -134,6 +134,49 @@ internal static partial class FunctionLibrary
         new("VAR.S", 1, Open, "number1, [number2], ...", "Estimates variance based on a sample.", VarS),
         new("VAR.P", 1, Open, "number1, [number2], ...", "Calculates variance based on the entire population.", VarP),
         new("XOR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if an odd number of its arguments are TRUE.", Xor),
+        new("SUBTOTAL", 2, Open, "function_num, ref1, [ref2], ...", "Returns a subtotal in a list or database.", Subtotal)
+        {
+            // Excel's list, as Microsoft documents it: the functions 1 to 11, and 101 to 111 that pass
+            // over hidden rows (ADR-0047, 2026-10-10; a Sheet cannot hide a row yet).
+            Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
+            {
+                [0] =
+                [
+                    new("1", "1 - AVERAGE"), new("2", "2 - COUNT"), new("3", "3 - COUNTA"), new("4", "4 - MAX"),
+                    new("5", "5 - MIN"), new("6", "6 - PRODUCT"), new("7", "7 - STDEV"), new("8", "8 - STDEVP"),
+                    new("9", "9 - SUM"), new("10", "10 - VAR"), new("11", "11 - VARP"),
+                    new("101", "101 - AVERAGE"), new("102", "102 - COUNT"), new("103", "103 - COUNTA"), new("104", "104 - MAX"),
+                    new("105", "105 - MIN"), new("106", "106 - PRODUCT"), new("107", "107 - STDEV"), new("108", "108 - STDEVP"),
+                    new("109", "109 - SUM"), new("110", "110 - VAR"), new("111", "111 - VARP"),
+                ],
+            },
+        },
+        new("AGGREGATE", 3, Open, "function_num, options, ref1, [ref2], ...", "Returns an aggregate in a list or database.", Aggregate)
+        {
+            // The functions the engine supports, of Excel's nineteen (13 and 16 to 19 are #VALUE!), and
+            // the eight options, as Microsoft documents them (ADR-0047, 2026-10-10).
+            Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
+            {
+                [0] =
+                [
+                    new("1", "1 - AVERAGE"), new("2", "2 - COUNT"), new("3", "3 - COUNTA"), new("4", "4 - MAX"),
+                    new("5", "5 - MIN"), new("6", "6 - PRODUCT"), new("7", "7 - STDEV.S"), new("8", "8 - STDEV.P"),
+                    new("9", "9 - SUM"), new("10", "10 - VAR.S"), new("11", "11 - VAR.P"), new("12", "12 - MEDIAN"),
+                    new("14", "14 - LARGE"), new("15", "15 - SMALL"),
+                ],
+                [1] =
+                [
+                    new("0", "0 - Ignore nested SUBTOTAL and AGGREGATE functions"),
+                    new("1", "1 - Ignore hidden rows, nested SUBTOTAL and AGGREGATE functions"),
+                    new("2", "2 - Ignore error values, nested SUBTOTAL and AGGREGATE functions"),
+                    new("3", "3 - Ignore hidden rows, error values, nested SUBTOTAL and AGGREGATE functions"),
+                    new("4", "4 - Ignore nothing"),
+                    new("5", "5 - Ignore hidden rows"),
+                    new("6", "6 - Ignore error values"),
+                    new("7", "7 - Ignore hidden rows and error values"),
+                ],
+            },
+        },
         new("ROWS", 1, 1, "array", "Returns the number of rows in a reference.", Rows),
         new("COLUMNS", 1, 1, "array", "Returns the number of columns in a reference.", Columns),
         new("SIGN", 1, 1, "number", "Returns the sign of a number: 1, 0 or -1.", Sign),
@@ -254,8 +297,15 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
-        // SUM's last addition cancels as a Formula's final addition does (ADR-0047, second run:
-        // =SUM(0.1,0.2,-0.3) is 0), wherever SUM stands in the Formula.
+        return SumOf(numbers);
+    }
+
+    /// <summary>
+    /// SUM of the numbers taken. Its last addition cancels as a Formula's final addition does
+    /// (ADR-0047, second run: <c>=SUM(0.1,0.2,-0.3)</c> is 0), wherever SUM stands in the Formula.
+    /// </summary>
+    private static Operand SumOf(List<double> numbers)
+    {
         var total = 0.0;
         for (var i = 0; i < numbers.Count; i++) total = i == numbers.Count - 1 ? Arithmetic.FinalAdd(total, numbers[i]) : total + numbers[i];
         return Operand.Of(Evaluator.Number(total));
@@ -265,6 +315,12 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
+        return AverageOf(numbers);
+    }
+
+    /// <summary>AVERAGE of the numbers taken; with none, <c>#DIV/0!</c>.</summary>
+    private static Operand AverageOf(List<double> numbers)
+    {
         if (numbers.Count == 0) return Operand.Of(ErrorValue.Div0);
         var total = 0.0;
         foreach (var n in numbers) total += n;
@@ -275,15 +331,21 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
-        return Operand.Of(Value.FromNumber(numbers.Count == 0 ? 0 : numbers.Min()));
+        return MinOf(numbers);
     }
+
+    /// <summary>MIN of the numbers taken; with none, 0.</summary>
+    private static Operand MinOf(List<double> numbers) => Operand.Of(Value.FromNumber(numbers.Count == 0 ? 0 : numbers.Min()));
 
     private static Operand Max(FunctionCall call)
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
-        return Operand.Of(Value.FromNumber(numbers.Count == 0 ? 0 : numbers.Max()));
+        return MaxOf(numbers);
     }
+
+    /// <summary>MAX of the numbers taken; with none, 0.</summary>
+    private static Operand MaxOf(List<double> numbers) => Operand.Of(Value.FromNumber(numbers.Count == 0 ? 0 : numbers.Max()));
 
     // ---- COUNT, COUNTA ---------------------------------------------------------------------
 

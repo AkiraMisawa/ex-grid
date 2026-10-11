@@ -1,6 +1,6 @@
 # 16: SUBTOTAL and AGGREGATE, while a Sheet cannot hide a row
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** `SUBTOTAL` and `AGGREGATE` under
 [ADR-0047](../../../adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)'s
@@ -8,22 +8,40 @@ note of 2026-10-10, "The catalogue's last Decide rows".
 
 **Blocked by:** none.
 
-- [ ] `SUBTOTAL` with function numbers 1–11 and 101–111. While no row can be hidden, the two give the
+- [x] `SUBTOTAL` with function numbers 1–11 and 101–111. While no row can be hidden, the two give the
       same answers, as they do in Excel over such a sheet. A test named for ADR-0047 fails on the day a
       row can be hidden, and its message says to revisit this (SH-37's pattern)
-- [ ] `AGGREGATE`'s reference form and array form, with its options 0–7. The options that skip hidden
+- [x] `AGGREGATE`'s reference form and array form, with its options 0–7. The options that skip hidden
       rows give what the others give. Function numbers for functions the engine supports are
       answered; the rest are `#VALUE!`
-- [ ] Nested calls (SH-68):
+- [x] Nested calls (SH-68):
       - a cell whose whole Formula is a `SUBTOTAL` is skipped by `SUBTOTAL`;
       - a cell whose whole Formula is a `SUBTOTAL` or an `AGGREGATE` is skipped by `AGGREGATE`'s
         options 0–3;
       - any other call of either in the range makes the result `#VALUE!`
-- [ ] Corpus cases: Microsoft's documented cases as `documented`, and the open ones as `uncertain`
+- [x] Corpus cases: Microsoft's documented cases as `documented`, and the open ones as `uncertain`
       for the next Windows run. That run also asks what Excel counts as nested
-- [ ] The catalogue rows Supported. The Docs Site's Formulas page lists them from the declared set,
+- [x] The catalogue rows Supported. The Docs Site's Formulas page lists them from the declared set,
       and says what is refused
+- [ ] For the next Windows run: the `uncertain` cases of `ExcelCases/subtotal.json` and
+      `ExcelCases/aggregate.json`, and what Excel counts as nested — a call inside a larger Formula
+      (SUBTOTAL-020, AGGREGATE-026), an `AGGREGATE` in `SUBTOTAL`'s range (SUBTOTAL-021), and a nested
+      call under `AGGREGATE`'s options 4 to 7 (AGGREGATE-025), which Microsoft documents as counted
 
 ## Comments
 
 2026-10-10: written with the user's decision, ADR-0047's note of 2026-10-10.
+
+2026-10-11: built. `SUBTOTAL` and `AGGREGATE` reduce through the same code as `SUM`, `AVERAGE`, `MEDIAN`,
+`LARGE` and their kin, so each function number answers as its function does over a range. The nesting
+rule reads the Formula a cell shows (its own, or for a spilled cell its Anchor's): a whole-Formula call
+is passed over where the ticket says, and any other call is `#VALUE!` — including a whole-Formula
+`SUBTOTAL` under `AGGREGATE`'s options 4 to 7, which the ticket's "any other call" covers although
+Microsoft documents those options as counting it; SH-68's wording can be read as passing it over, so the
+refusal is the one answer none of the three readings contradicts. `SubtotalTests` holds the test that
+fails on the day a row can be hidden (SH-37's pattern, its message naming ADR-0047's note), and
+`RowHidingWatchTests` watches the component the same way. Function numbers and options that are not
+whole numbers, arguments that are no reference where one is wanted, and `AGGREGATE`'s 13 and 16 to 19
+are `#VALUE!`. Completion lists `SUBTOTAL`'s 22 numbers, and `AGGREGATE`'s supported numbers and eight
+options, with Microsoft's documented texts; the Windows run should confirm Excel's popup texts. ADR-0047's
+dated addition naming the functions is left to the orchestrator.

@@ -31,6 +31,13 @@ internal interface ICellReader
     /// recalculation leaves it; <c>#REF!</c> when it does not spill.
     /// </summary>
     Operand Spill(CellAddress anchor);
+
+    /// <summary>
+    /// The Formula whose result a cell shows: its own, or for a cell of a Spill Range its Anchor's
+    /// (ADR-0125); <see langword="null"/> for a constant or a blank. What <c>SUBTOTAL</c> and
+    /// <c>AGGREGATE</c> read to tell a nested call (ADR-0047, 2026-10-10).
+    /// </summary>
+    Node? FormulaAt(CellAddress address);
 }
 
 /// <summary>

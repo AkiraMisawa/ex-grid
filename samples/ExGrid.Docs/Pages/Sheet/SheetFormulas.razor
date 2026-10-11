@@ -72,6 +72,15 @@
                 figure while its data is on its way. An Error Value outside the table, such as <code>#SPILL!</code>
                 or <code>#CALC!</code>, is <code>#VALUE!</code> until Excel has been asked what it gives.
             </li>
+            <li>
+                <b><code>SUBTOTAL</code> and <code>AGGREGATE</code></b> answer while a Sheet cannot hide a row, so
+                <code>SUBTOTAL</code>'s 101 to 111 give what 1 to 11 give, as Excel's do when nothing is hidden. They
+                pass over a cell whose whole Formula is a <code>SUBTOTAL</code> (and, for <code>AGGREGATE</code>'s
+                options 0 to 3, an <code>AGGREGATE</code>); any other call of either inside their range is
+                <code>#VALUE!</code>, because Excel does not document which cells it counts as nested. So is an
+                <code>AGGREGATE</code> function number for a function the Sheet does not have, such as 13,
+                <code>MODE.SNGL</code>.
+            </li>
         </ul>
     </DocsSection>
 
