@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "FILTER-001",
-      "source": "documented",
+      "source": "observed",
       "description": "The rows whose value is above 25; the anchor shows the first",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H5>25)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "FILTER-002",
-      "source": "documented",
+      "source": "observed",
       "description": "The rows whose value is above 25; the last spills two rows down",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H5>25)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "FILTER-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Filtered by another column",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(H1:H5,G1:G5=\"Banana\")"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "FILTER-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Two conditions multiplied are both",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(H1:H5,(G1:G5=\"Banana\")*(H1:H5>30))"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "FILTER-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Several columns spill across",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(G1:H5,H1:H5>=40)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "FILTER-006",
-      "source": "documented",
+      "source": "observed",
       "description": "Nothing kept, and no if_empty, is #CALC!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H5>100)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "FILTER-007",
-      "source": "documented",
+      "source": "observed",
       "description": "Nothing kept is if_empty",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H5>100,\"none\")"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "FILTER-008",
-      "source": "documented",
+      "source": "observed",
       "description": "An Entry in the way is #SPILL!",
       "fixture": "lookupData",
       "cells": {"ZZ1001": "x", "ZZ1000": "=FILTER(H1:H5,H1:H5>25)"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "FILTER-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: include of another height is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H3>0)"},
@@ -85,7 +85,7 @@
     },
     {
       "id": "FILTER-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: include holding text is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(H1:H5,G1:G5)"},
@@ -94,7 +94,7 @@
     },
     {
       "id": "FILTER-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number in include is TRUE when it is not 0",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(G1:G5,H1:H5-20)"},

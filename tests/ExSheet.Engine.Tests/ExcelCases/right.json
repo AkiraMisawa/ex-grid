@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "RIGHT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the last five characters",
       "cells": {"A1": "Sale Price", "ZZ1000": "=RIGHT(A1,5)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "RIGHT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: num_chars left out is 1",
       "cells": {"A1": "Stock Number", "ZZ1000": "=RIGHT(A1)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "RIGHT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "More characters than the text holds give the whole text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=RIGHT(\"abc\",10)"},
@@ -29,7 +29,7 @@
     },
     {
       "id": "RIGHT-004",
-      "source": "documented",
+      "source": "observed",
       "description": "num_chars below 0 is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=RIGHT(\"abc\",-1)"},
@@ -38,7 +38,7 @@
     },
     {
       "id": "RIGHT-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number is read as its text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=RIGHT(1234,2)"},

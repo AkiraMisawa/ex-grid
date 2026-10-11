@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SECH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example, 5.73E-20, scaled to compare",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SECH(45)*1E20"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SECH-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example, 1.87E-13, scaled to compare",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SECH(30)*1E13"},

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "TAN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(0.785)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "TAN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: 45 degrees",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(45*PI()/180)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "TAN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: RADIANS",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(RADIANS(45))"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "TAN-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 2^27 is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(2^27)"},

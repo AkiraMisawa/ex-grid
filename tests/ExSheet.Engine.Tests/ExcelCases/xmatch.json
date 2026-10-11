@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "XMATCH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "The position of an exact match",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=XMATCH(\"Cherry\",G1:G5)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "XMATCH-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Searching last to first finds the later of two",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=XMATCH(\"Banana\",G1:G5,0,-1)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "XMATCH-003",
-      "source": "documented",
+      "source": "observed",
       "description": "No match is #N/A",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=XMATCH(\"Fig\",G1:G5)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "XMATCH-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Exact or next larger",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=XMATCH(26,J1:J5,1)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "XMATCH-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Exact or next smaller",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=XMATCH(26,J1:J5,-1)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "XMATCH-006",
-      "source": "documented",
+      "source": "observed",
       "description": "A wildcard match",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=XMATCH(\"Ch*\",G1:G5,2)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "XMATCH-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: along a row",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=XMATCH(\"y\",M1:O1)"},

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "VALUEFN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: currency text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=VALUE(\"$1,000\")"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "VALUEFN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: times as text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=VALUE(\"16:48:00\")-VALUE(\"12:00:00\")"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "VALUEFN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "A number is itself",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=VALUE(5)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "VALUEFN-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Text that is no number is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=VALUE(\"abc\")"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "VALUEFN-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a blank cell is 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=VALUE(A5)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "VALUEFN-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a boolean is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=VALUE(TRUE)"},

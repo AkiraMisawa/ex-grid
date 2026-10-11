@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "TEXTFN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: currency with a thousands separator and two decimals",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(1234.567,\"$#,##0.00\")"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "TEXTFN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a date as month, day and year in two digits, codes in upper case",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(DATE(2012,3,14),\"MM/DD/YY\")"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "TEXTFN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the day of the week",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(DATE(2012,3,14),\"DDDD\")"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "TEXTFN-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a percentage",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(0.285,\"0.0%\")"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "TEXTFN-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: scientific notation",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(12200000,\"0.00E+00\")"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "TEXTFN-006",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: leading zeros",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(1234,\"0000000\")"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "TEXTFN-007",
-      "source": "documented",
+      "source": "observed",
       "description": "Thousands grouped, rounded to the code",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(1234.5,\"#,##0\")"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "TEXTFN-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: under ja-JP a code that spells the built-in short date shows as written",
       "cells": {"ZZ1000": "=TEXT(DATE(2026,9,26),\"m/d/yyyy\")"},
       "check": "ZZ1000",
@@ -85,7 +85,7 @@
     },
     {
       "id": "TEXTFN-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "German Excel's own year code is not read",
       "cells": {"ZZ1000": "=TEXT(DATE(2026,9,26),\"JJJJ\")"},
       "check": "ZZ1000",
@@ -96,7 +96,7 @@
     },
     {
       "id": "TEXTFN-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text that is no number stays as it is",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(\"abc\",\"0\")"},
@@ -105,7 +105,7 @@
     },
     {
       "id": "TEXTFN-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text that reads as a number is formatted as one",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(\"12\",\"0.0\")"},
@@ -114,7 +114,7 @@
     },
     {
       "id": "TEXTFN-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a boolean stays TRUE",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(TRUE,\"0\")"},
@@ -123,7 +123,7 @@
     },
     {
       "id": "TEXTFN-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a blank cell is 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(A5,\"0.00\")"},
@@ -132,7 +132,7 @@
     },
     {
       "id": "TEXTFN-015",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number a date format cannot show is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(-1,\"yyyy\")"},
@@ -141,7 +141,7 @@
     },
     {
       "id": "TEXTFN-016",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: General with a short number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(5,\"General\")"},
@@ -186,7 +186,7 @@
     },
     {
       "id": "TEXTFN-021",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a colour is dropped, and the minus kept",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(-5,\"[Red]0\")"},
@@ -195,7 +195,7 @@
     },
     {
       "id": "TEXTFN-022",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an Error Value is the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(C2,\"0\")"},

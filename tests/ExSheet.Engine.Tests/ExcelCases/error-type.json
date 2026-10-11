@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ERRORTYPE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #NULL! is 1 (its example, A2 holding #NULL!)",
       "cells": {"A2": "#NULL!", "ZZ1000": "=ERROR.TYPE(A2)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "ERRORTYPE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #DIV/0! is 2",
       "cells": {"ZZ1000": "=ERROR.TYPE(1/0)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "ERRORTYPE-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #VALUE! is 3",
       "cells": {"ZZ1000": "=ERROR.TYPE(\"a\"+1)"},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "ERRORTYPE-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #REF! is 4",
       "cells": {"ZZ1000": "=ERROR.TYPE(#REF!)"},
       "check": "ZZ1000",
@@ -36,7 +36,7 @@
     },
     {
       "id": "ERRORTYPE-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #NAME? is 5 (a function nobody declared)",
       "cells": {"ZZ1000": "=ERROR.TYPE(NOSUCHFUNCTION())"},
       "check": "ZZ1000",
@@ -44,7 +44,7 @@
     },
     {
       "id": "ERRORTYPE-006",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #NUM! is 6",
       "cells": {"ZZ1000": "=ERROR.TYPE(SQRT(-1))"},
       "check": "ZZ1000",
@@ -52,7 +52,7 @@
     },
     {
       "id": "ERRORTYPE-007",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #N/A is 7",
       "cells": {"ZZ1000": "=ERROR.TYPE(NA())"},
       "check": "ZZ1000",
@@ -60,7 +60,7 @@
     },
     {
       "id": "ERRORTYPE-008",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: a number, which is no error, is #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ERROR.TYPE(A1)"},
@@ -69,7 +69,7 @@
     },
     {
       "id": "ERRORTYPE-009",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: text, which is no error, is #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ERROR.TYPE(A6)"},
@@ -78,7 +78,7 @@
     },
     {
       "id": "ERRORTYPE-010",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: ERROR.TYPE of #DIV/0! chooses its message with CHOOSE",
       "cells": {"A3": "=1/0", "ZZ1000": "=IF(ERROR.TYPE(A3)<3,CHOOSE(ERROR.TYPE(A3),\"Ranges do not intersect\",\"The divisor is zero\"))"},
       "check": "ZZ1000",
@@ -86,7 +86,7 @@
     },
     {
       "id": "ERRORTYPE-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a blank cell, which is no error, is #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ERROR.TYPE(A5)"},
@@ -95,7 +95,7 @@
     },
     {
       "id": "ERRORTYPE-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a boolean, which is no error, is #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ERROR.TYPE(A4)"},

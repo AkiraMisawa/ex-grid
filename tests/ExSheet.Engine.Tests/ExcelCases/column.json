@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "COLUMN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the column of the Formula's own cell",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COLUMN()"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "COLUMN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the column of a Reference",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COLUMN(D10)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "COLUMN-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a whole column",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COLUMN(C:C)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "COLUMN-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Several columns spill, each column's number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COLUMN(A1:C1)"},

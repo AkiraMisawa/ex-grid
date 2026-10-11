@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "COLUMNS-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COLUMNS(C1:E4)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "COLUMNS-002",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a whole row",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COLUMNS(1:1)"},

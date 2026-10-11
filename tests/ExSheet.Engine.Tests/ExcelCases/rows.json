@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ROWS-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROWS(C1:E4)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ROWS-002",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a whole column",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROWS(A:A)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ROWS-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a single value is one row",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROWS(5)"},

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "TRUNC-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TRUNC(8.9)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "TRUNC-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: toward zero",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TRUNC(-8.9)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "TRUNC-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TRUNC(0.45)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "TRUNC-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: to two digits",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TRUNC(3.14159,2)"},

@@ -884,7 +884,7 @@
     },
     {
       "id": "ERR-107",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: IFERROR catches a typed #SPILL! as it catches any other Error Value",
       "cells": {"A1": "#SPILL!", "B1": "=IFERROR(A1,\"caught\")"},
       "check": "B1",
@@ -893,7 +893,7 @@
     },
     {
       "id": "ERR-108",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a typed #CALC! propagates through arithmetic",
       "cells": {"A1": "#CALC!", "B1": "=A1+1"},
       "check": "B1",

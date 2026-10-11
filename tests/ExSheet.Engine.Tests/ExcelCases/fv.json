@@ -13,7 +13,7 @@
     },
     {
       "id": "FV-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a year of payments",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.12/12,12,-1000)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "FV-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a rate of 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0,10,-100)"},

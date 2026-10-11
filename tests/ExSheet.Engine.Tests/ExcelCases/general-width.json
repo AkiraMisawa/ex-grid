@@ -368,7 +368,7 @@
     },
     {
       "id": "WD-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a Formula whose result is text never widens a column",
       "cells": {"A1": "=\"A heading far wider than its column\""},
       "check": "A1",
@@ -377,7 +377,7 @@
     },
     {
       "id": "WD-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a Formula whose result fits does not widen a column",
       "cells": {"A1": "=1234*10"},
       "check": "A1",
@@ -386,7 +386,7 @@
     },
     {
       "id": "WD-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a Formula that takes a date format on entry widens a default-width column to its whole text",
       "cells": {"B1": "9/26/2026", "A1": "=B1+1"},
       "check": "A1",

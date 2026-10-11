@@ -253,7 +253,7 @@
     },
     {
       "id": "FF-027",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: % on a Reference is not inferred",
       "cells": {"A1": "5"},
       "action": {"do": "enter", "cells": {"B1": "=A1%"}},
@@ -283,7 +283,7 @@
     },
     {
       "id": "FF-030",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): a cell in 0% plus a number takes 0%, as FF-006's number plus a percentage does",
       "cells": {"A1": "10%"},
       "action": {"do": "enter", "cells": {"B1": "=A1+1"}},
@@ -293,7 +293,7 @@
     },
     {
       "id": "FF-031",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): a cell in 0% subtracted from a number takes 0%",
       "cells": {"A1": "10%"},
       "action": {"do": "enter", "cells": {"B1": "=1-A1"}},
@@ -303,7 +303,7 @@
     },
     {
       "id": "FF-032",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): a cell in 0% divided gives no format, as a product does (FF-025)",
       "cells": {"A1": "10%"},
       "action": {"do": "enter", "cells": {"B1": "=A1/2"}},
@@ -313,7 +313,7 @@
     },
     {
       "id": "FF-033",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): a date multiplied by 2 takes the date format, as a date multiplied by 1 does (FF-011)",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "enter", "cells": {"B1": "=A1*2"}},
@@ -323,7 +323,7 @@
     },
     {
       "id": "FF-034",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): a percentage constant subtracted from a number gives 0.0%, as one added does (ARITH-006)",
       "cells": {},
       "action": {"do": "enter", "cells": {"B1": "=10-50%"}},
@@ -333,7 +333,7 @@
     },
     {
       "id": "FF-035",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): a percentage constant subtracted from a date gives no format, as one added does (FF-029)",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "enter", "cells": {"B1": "=A1-50%"}},
@@ -343,7 +343,7 @@
     },
     {
       "id": "FF-036",
-      "source": "documented",
+      "source": "observed",
       "description": "DATE in a General cell gives the short date format, as Microsoft documents",
       "cells": {},
       "action": {"do": "enter", "cells": {"B1": "=DATE(2026,9,26)"}},
@@ -352,7 +352,7 @@
     },
     {
       "id": "FF-037",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: DATE plus a number keeps the date format, as a date's Reference does",
       "cells": {},
       "action": {"do": "enter", "cells": {"B1": "=DATE(2026,9,26)+1"}},
@@ -361,7 +361,7 @@
     },
     {
       "id": "FF-038",
-      "source": "documented",
+      "source": "observed",
       "description": "TODAY in a General cell gives the short date format, as Microsoft documents (its Value is the day the oracle runs, so only the format is compared)",
       "cells": {},
       "action": {"do": "enter", "cells": {"B1": "=TODAY()"}},
@@ -370,7 +370,7 @@
     },
     {
       "id": "FF-039",
-      "source": "documented",
+      "source": "observed",
       "description": "NOW in a General cell gives the short date and time format, as Microsoft documents (its Value is the moment the oracle runs, so only the format is compared)",
       "cells": {},
       "action": {"do": "enter", "cells": {"B1": "=NOW()"}},

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "CSCH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=CSCH(1.5)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "CSCH-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: at 0 is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=CSCH(0)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "CSCH-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: below the smallest number is 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=CSCH(1000)"},

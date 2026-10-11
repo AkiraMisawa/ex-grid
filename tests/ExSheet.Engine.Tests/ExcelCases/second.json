@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SECOND-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: 4:48:18 PM",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SECOND(0.7002083333333333)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SECOND-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: 4:48 PM",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SECOND(0.7)"},

@@ -349,7 +349,7 @@
     },
     {
       "id": "LVL-031",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a whole number typed into a percent cell is divided by 100 too: 10 is 10%",
       "cells": {},
       "action": [
@@ -362,7 +362,7 @@
     },
     {
       "id": "LVL-032",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a percentage typed into a percent cell is not divided again",
       "cells": {},
       "action": [
@@ -375,7 +375,7 @@
     },
     {
       "id": "LVL-033",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number typed into a column formatted 0.00% is divided by 100",
       "cells": {},
       "action": [
@@ -400,7 +400,7 @@
     },
     {
       "id": "LVL-035",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative number typed into a percent cell is divided by 100",
       "cells": {},
       "action": [

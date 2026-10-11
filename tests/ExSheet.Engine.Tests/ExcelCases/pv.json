@@ -13,7 +13,7 @@
     },
     {
       "id": "PV-002",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a rate of 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0,10,-100)"},

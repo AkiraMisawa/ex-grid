@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ISNUMBER-001",
-      "source": "documented",
+      "source": "observed",
       "description": "A number is a number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNUMBER(A1)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ISNUMBER-002",
-      "source": "documented",
+      "source": "observed",
       "description": "A number stored as text is not a number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNUMBER(A3)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ISNUMBER-003",
-      "source": "documented",
+      "source": "observed",
       "description": "A blank cell is not a number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNUMBER(A5)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "ISNUMBER-004",
-      "source": "documented",
+      "source": "observed",
       "description": "A boolean is not a number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNUMBER(A4)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "ISNUMBER-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Numeric text typed as the argument is not converted",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNUMBER(\"19\")"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "ISNUMBER-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an Error Value is not a number, and not the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNUMBER(C2)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "ISNUMBER-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "ISNUMBER over a range where one Value is wanted is refused",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNUMBER(A1:A2)"},
