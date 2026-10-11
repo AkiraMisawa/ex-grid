@@ -489,21 +489,43 @@ public partial class ExPivot
     /// </summary>
     [Parameter] public bool ReadAheadSupersedes { get; set; }
 
+    /// <summary>
+    /// LAB ONLY, never merged (<c>lab/remote-read-ahead</c>): aligned blocks of this many rows, as
+    /// ag-grid's Server-Side row model fetches them (its <c>cacheBlockSize</c>, 100 by default). Above
+    /// 0, ExPivot asks its report source for the Window made of the aligned blocks that cover the
+    /// range the grid needs widened by <see cref="ReadAheadBlockMargin"/> rows either side, clamped
+    /// into the report — one block, or two at a boundary — and <see cref="ReadAheadRows"/> is not
+    /// read. A range the Window asked for covers asks nothing while that question is out or its
+    /// answer is held, as for <see cref="ReadAheadRows"/>. The report source holds one contiguous
+    /// Window, so a block is let go once the Window moves off it; ag-grid keeps every block
+    /// (<c>maxBlocksInCache</c> -1).
+    /// </summary>
+    [Parameter] public int ReadAheadBlockRows { get; set; }
+
+    /// <summary>
+    /// LAB ONLY, never merged (<c>lab/remote-read-ahead</c>): with <see cref="ReadAheadBlockRows"/>,
+    /// the rows either side of the range the grid needs that the blocks asked for must cover —
+    /// ag-grid's <c>rowBuffer</c>, 10 by default. ExPivot hears of the range only once the grid's
+    /// Window no longer covers the rows on screen (ADR-0001), so these rows widen the Window asked
+    /// then; they do not ask before the Window runs out, as ag-grid's rendered rows do.
+    /// </summary>
+    [Parameter] public int ReadAheadBlockMargin { get; set; } = 10;
+
     private Task WindowNeededAsync(RowRange range)
     {
         // LAB ONLY: a range inside the Window asked for, whose answer is out or held, asks nothing;
-        // otherwise the range widened by ReadAheadRows either side, clamped into the report. With
-        // ReadAheadRows 0 this asks exactly what ExPivot asked before: the range itself, unless it
-        // is the Window already asked for.
+        // otherwise the range widened by ReadAheadRows either side, or the aligned blocks that cover
+        // it widened by ReadAheadBlockMargin, clamped into the report. With ReadAheadRows 0 and no
+        // blocks this asks exactly what ExPivot asked before: the range itself, unless it is the
+        // Window already asked for.
         var asked = _wantedWindow;
         var held = _state?.Window;
         if (Covers(asked, range) && ((_asking is not null && !ReadAheadSupersedes) || held == asked))
             return Task.CompletedTask;
-        var readAhead = Math.Max(0, ReadAheadRows);
         var rows = (long)(_report?.RowCount ?? int.MaxValue);
-        var start = Math.Max(0L, (long)range.Start - readAhead);
-        var end = Math.Max((long)range.Start + range.Count, Math.Min(rows, (long)range.Start + range.Count + readAhead));
-        var wanted = new PivotReportWindow((int)start, (int)(end - start));
+        var wanted = ReadAheadBlockRows > 0
+            ? BlocksCovering(range, ReadAheadBlockRows, Math.Max(0, ReadAheadBlockMargin), rows)
+            : Widened(range, Math.Max(0, ReadAheadRows), rows);
         if (wanted == _wantedWindow) return Task.CompletedTask;
         _wantedWindow = wanted;
         return PursueAsync(raise: _raisePending, kind: Question.Window);
@@ -511,6 +533,29 @@ public partial class ExPivot
 
     private static bool Covers(PivotReportWindow window, RowRange range)
         => range.Start >= window.Start && (long)range.Start + range.Count <= (long)window.Start + window.Count;
+
+    /// <summary>LAB ONLY: <paramref name="range"/> widened by <paramref name="readAhead"/> rows either
+    /// side, clamped into a report of <paramref name="rows"/> rows, and never short of the range.</summary>
+    internal static PivotReportWindow Widened(RowRange range, int readAhead, long rows)
+    {
+        var end = (long)range.Start + range.Count;
+        var start = Math.Max(0L, (long)range.Start - readAhead);
+        var last = Math.Max(end, Math.Min(rows, end + readAhead));
+        return new PivotReportWindow((int)start, (int)(last - start));
+    }
+
+    /// <summary>LAB ONLY: the aligned blocks of <paramref name="blockRows"/> rows that cover
+    /// <paramref name="range"/> widened by <paramref name="margin"/> rows either side — from the
+    /// first one's start to the last one's end — clamped into a report of <paramref name="rows"/>
+    /// rows, and never short of the range.</summary>
+    internal static PivotReportWindow BlocksCovering(RowRange range, int blockRows, int margin, long rows)
+    {
+        var end = (long)range.Start + range.Count;
+        var start = Math.Max(0L, (long)range.Start - margin) / blockRows * blockRows;
+        var aligned = (end + margin + blockRows - 1) / blockRows * blockRows;
+        var last = Math.Max(end, Math.Min(rows, aligned));
+        return new PivotReportWindow((int)start, (int)(last - start));
+    }
 
     /// <summary>The question in flight has landed: nothing is out any more. Returns whether it
     /// carried changes of data.</summary>

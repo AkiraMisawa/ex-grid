@@ -17,8 +17,11 @@ import path from 'node:path';
 // asking ?readAhead= rows either side of the range its grid needs (ExPivot.ReadAheadRows, the lab's
 // switch), at 0, 30, 60 and 120 rows. A question in flight whose Window covers the range the grid
 // needs is kept; "60s" is 60 rows with any other Window superseding it instead, as GridSource.Fetch
-// supersedes (ADR-0025), for comparison. EXGRID_MEASURE_LAYOUTS, _PARTS, _INPUTS, _PACES, _SAMPLES,
-// _READ_AHEAD and _LIVE_READ_AHEAD narrow a run. For each layout and each read-ahead it records:
+// supersedes (ADR-0025), for comparison. "b100" asks aligned blocks of 100 rows instead, as ag-grid's
+// Server-Side row model does: the blocks that cover the range widened by 10 rows either side, its
+// rowBuffer (ExPivot.ReadAheadBlockRows); "b100m0" covers the range alone. EXGRID_MEASURE_LAYOUTS,
+// _PARTS, _INPUTS, _PACES, _SAMPLES, _READ_AHEAD and _LIVE_READ_AHEAD narrow a run. For each layout
+// and each read-ahead it records:
 //
 // - scrolling: how long Placeholders are on screen while the report is scrolled by the wheel, by
 //   ArrowDown at the Viewport's foot (a key that scrolls by a row) and by PageDown, each a step at a
@@ -45,8 +48,14 @@ test.skip(MEASURE === 'read-ahead' && SERVER,
 
 const list = (name, fallback) => (process.env[name] ?? fallback).split(',').map((s) => s.trim()).filter(Boolean);
 // A read-ahead is a number of rows; with an `s` after it, a question in flight is superseded by any
-// other Window, as GridSource.Fetch's is (ADR-0025) — the comparison, scrolling only.
-const variant = (text) => ({ key: text, rows: Number.parseInt(text, 10), supersedes: text.endsWith('s') });
+// other Window, as GridSource.Fetch's is (ADR-0025) — the comparison, scrolling only. `b` and a
+// number is aligned blocks of that many rows, covering the range and 10 rows either side, or the
+// rows an `m` and a number after it says.
+const variant = (text) => {
+    const block = /^b(\d+)(?:m(\d+))?$/.exec(text);
+    if (block) return { key: text, rows: 0, supersedes: false, block: Number(block[1]), margin: block[2] === undefined ? 10 : Number(block[2]) };
+    return { key: text, rows: Number.parseInt(text, 10), supersedes: text.endsWith('s'), block: 0, margin: 10 };
+};
 const SCROLL_READ_AHEADS = list('EXGRID_MEASURE_READ_AHEAD', '0,30,60,120,60s').map(variant);
 const LIVE_READ_AHEADS = list('EXGRID_MEASURE_LIVE_READ_AHEAD', '0,30,60,120').map(variant);
 const LAYOUTS = list('EXGRID_MEASURE_LAYOUTS', 'narrow,wide');
@@ -367,10 +376,12 @@ async function pageLog(page) {
 
 /** Opens the lab page for a layout and a read-ahead, the probe in place, and waits for the report. */
 async function open(page, layout, readAhead, more = '') {
-    await page.goto(`/lab-read-ahead?layout=${layout}&readAhead=${readAhead.rows}&supersede=${readAhead.supersedes ? 1 : 0}${more}`,
-        { timeout: 600_000 });
+    await page.goto(`/lab-read-ahead?layout=${layout}&readAhead=${readAhead.rows}&supersede=${readAhead.supersedes ? 1 : 0}`
+        + `&block=${readAhead.block}&blockMargin=${readAhead.margin}${more}`, { timeout: 600_000 });
     await expect(page.locator('#lab-read-ahead')).toHaveText(String(readAhead.rows));
     await expect(page.locator('#lab-supersedes')).toHaveText(readAhead.supersedes ? /superseding/ : /^$/);
+    await expect(page.locator('#lab-block')).toHaveText(String(readAhead.block));
+    await expect(page.locator('#lab-block-margin')).toHaveText(String(readAhead.margin));
     await expect(page.locator(`${REPORT} .ex-viewport .ex-row`).first()).toBeVisible({ timeout: 300_000 });
     const state = await settled(page);
     expect(state.rowCount, 'the report has rows to scroll').toBeGreaterThan(0);
