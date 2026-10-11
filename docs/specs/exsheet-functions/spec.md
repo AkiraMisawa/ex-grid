@@ -4,8 +4,9 @@ Status: done — but for [ticket 13](issues/13-financial-iteration.md) (`needs-i
 `RATE` are Blocked, since no algorithm reproduces Excel's, and are not pursued for now. Tickets 14 to 18,
 decided with the user on 2026-10-10 (item 11 below), are built and done (item 12); their questions, with
 every other ticket's `uncertain` cases, are corpus cases the sign-off's Windows run puts to Excel, but
-for two of ticket 15's that the corpus cannot ask (what an undo does to a draw, and whether a rename draws
-again), which that run asks by hand.
+for three of ticket 15's that the corpus cannot ask (what an undo does to a draw, whether a rename draws
+again, and whether a refresh that brings the same data draws again; ADR-0180 and its notes of
+2026-10-11), which that run asks by hand.
 *(Set on 2026-10-11.)*
 
 The functions ExSheet's engine supports, and the queue of those it may support next, each with its

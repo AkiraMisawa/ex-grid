@@ -1,6 +1,6 @@
 {
   "area": "indirect",
-  "about": "INDIRECT (docs/specs/exsheet-functions ticket 18; ADR-0124's note of 2026-10-10): A1-style text naming a cell or a range of the same Sheet, with or without its own qualifier, read as it stands after the recalculation (volatile). Its text is not rewritten by an insertion or a deletion. R1C1 text, a structured reference and A1# are #VALUE!; text that names no place, another Sheet's name included, is #REF!.",
+  "about": "INDIRECT (docs/specs/exsheet-functions ticket 18; ADR-0124's note of 2026-10-10): A1-style text naming a cell or a range of the same Sheet, with or without its own qualifier, read as it stands after the recalculation (volatile). Its text is not rewritten by an insertion or a deletion. R1C1 text, a structured reference (a declared Linked Table's bare name included) and A1# are #VALUE!; text that names no place, another Sheet's name included, is #REF!.",
   "cases": [
     {
       "id": "INDIRECT-001",
@@ -180,7 +180,7 @@
     },
     {
       "id": "INDIRECT-023",
-      "source": "documented",
+      "source": "uncertain",
       "description": "R1C1 style (a1 FALSE) is refused until a Windows run observes it (ADR-0124, 2026-10-10); Microsoft documents 45, and with no excelExpect Excel's answer reads as a disagreement, so whether the engine follows it or keeps refusing is decided with the answer",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"R3C2\",FALSE)"},
       "check": "ZZ1000",
@@ -240,6 +240,16 @@
       "action": {"do": "deleteRows", "row": 3},
       "check": "A1",
       "expect": {"value2": 7, "formula": "=INDIRECT(\"B5\")"}
+    },
+    {
+      "id": "INDIRECT-030",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a declared table's bare name, which Excel reads as a structured reference to the table's data",
+      "cells": {"ZZ1000": "=SUM(INDIRECT(\"Positions\"))"},
+      "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5]]}},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0124 (2026-10-10): structured reference text, a table's bare name included, is #VALUE! until a Windows run observes it"
     }
   ]
 }

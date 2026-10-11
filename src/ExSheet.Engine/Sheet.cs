@@ -628,6 +628,8 @@ public sealed partial class Sheet
 
         public Operand TableColumn(string table, string column) => sheet.TableColumn(table, column);
 
+        public bool IsLinkedTable(string name) => sheet._tables.ContainsKey(name);
+
         public Node? FormulaAt(CellAddress address)
         {
             if (sheet._cells.GetValueOrDefault(address) is not { } cell) return null;

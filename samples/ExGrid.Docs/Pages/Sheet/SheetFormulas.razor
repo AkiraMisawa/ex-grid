@@ -104,7 +104,8 @@
                 <b><code>INDIRECT</code></b> reads A1-style text naming a cell or a range of the same Sheet. Like
                 <code>OFFSET</code> it is recalculated after every change, and its text is only text: inserting a row
                 rewrites the References beside it, never the text. R1C1 text (<code>a1</code> FALSE), a structured
-                reference's text and <code>A1#</code> are <code>#VALUE!</code> until Excel has been asked how it reads
+                reference's text, a Linked Table's name on its own (<code>"Positions"</code>, which Excel reads as the
+                table's data) and <code>A1#</code> are <code>#VALUE!</code> until Excel has been asked how it reads
                 them; text that names no place, another Sheet's name included, is <code>#REF!</code>, as in Excel.
                 What <code>INDIRECT</code> or <code>OFFSET</code> reaches counts as a Reference typed in the Formula
                 would: one that reaches its own cell or a circular reference is <code>#CIRC!</code>, and one that
@@ -183,8 +184,11 @@
         <p>
             Every operation a user can perform is a <code>SheetEdit</code> — insert or delete rows and columns, set
             a Cell Format, paste, fill — and <code>Sheet.Do(edit)</code> returns the one <code>SheetStep</code> that
-            undoes and redoes it. <code>Sheet.Check(edit)</code> says whether an edit would be refused, without doing
-            it. <code>GetDisplay(address, width)</code> gives what the cell shows in a column so many characters wide:
+            undoes and redoes it. A paste that writes in parts is still one edit: a copied block over several ranges
+            (<code>SheetEdit.Paste(block, targets)</code>), and pasted text some of whose fields carry an exact
+            number (<code>SheetEdit.PasteText(fields, entries)</code>). Each is one step, and one change, so
+            <code>RAND</code> draws once for it. <code>Sheet.Check(edit)</code> says whether an edit would be refused,
+            without doing it. <code>GetDisplay(address, width)</code> gives what the cell shows in a column so many characters wide:
             General rounds to fit, and any other format that does not fit is <code>####</code>.
         </p>
     </DocsSection>

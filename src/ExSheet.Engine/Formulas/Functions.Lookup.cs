@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>INDEX (its array form), XMATCH, CHOOSE, ROW, COLUMN, OFFSET and INDIRECT, each to Microsoft's documentation of it.</summary>
@@ -198,7 +200,8 @@ internal static partial class FunctionLibrary
     /// Reference of several cells is a range for a function such as <c>SUM</c>, and spills where it
     /// is the result (ADR-0125). The text is text: an insertion or a deletion does not rewrite it.
     /// Text in a form Excel reads but no Windows run has observed is <c>#VALUE!</c> — R1C1 style
-    /// (<c>a1</c> FALSE), a structured reference (<c>Positions[PV]</c>) and a Spill Range
+    /// (<c>a1</c> FALSE), a structured reference (<c>Positions[PV]</c>, or a declared Linked Table's
+    /// bare name, <c>Positions</c>, which Excel reads as the table's data) and a Spill Range
     /// (<c>A1#</c>) — and text that names no place is <c>#REF!</c>, as in Excel, another Sheet's
     /// name included (ADR-0046).
     /// </summary>
@@ -214,8 +217,8 @@ internal static partial class FunctionLibrary
             if (!isA1) return Operand.Of(ErrorValue.Value);
         }
         var text = call.Evaluator.ToText(value);
-        // Table[Column], and any other text a structured reference begins as.
-        if (StructuredText().IsMatch(text)) return Operand.Of(ErrorValue.Value);
+        // Table[Column], any other text a structured reference begins as, and a declared table's name.
+        if (StructuredText().IsMatch(text) || call.Evaluator.Cells.IsLinkedTable(text)) return Operand.Of(ErrorValue.Value);
         if (Lexer.ReadReference(text, 0, out var length) is not { } reference) return Operand.Of(ErrorValue.Ref);
         // A1#: the Spill Range of the Formula in A1 (ADR-0125).
         if (reference.Shape == ReferenceShape.Cell && length == text.Length - 1 && text[length] == '#') return Operand.Of(ErrorValue.Value);
@@ -223,6 +226,6 @@ internal static partial class FunctionLibrary
         return Operand.Of(reference.Area);
     }
 
-    [System.Text.RegularExpressions.GeneratedRegex(@"^[A-Za-z_\\][A-Za-z0-9_.]*\[", System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
-    private static partial System.Text.RegularExpressions.Regex StructuredText();
+    [GeneratedRegex(@"^[A-Za-z_\\][A-Za-z0-9_.]*\[", RegexOptions.CultureInvariant)]
+    private static partial Regex StructuredText();
 }

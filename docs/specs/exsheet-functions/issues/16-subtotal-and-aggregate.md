@@ -67,7 +67,7 @@ disagreement, which is corrected before the tag. AGGREGATE-042 to AGGREGATE-051 
 the test pins: options 5 to 7 over a whole-Formula `SUBTOTAL`, options 4 to 7 over a whole-Formula
 `AGGREGATE`, and the array form.)* The Formulas page now says which options
 pass over what. The Status is `done`: the one open box is the sign-off's Windows run, and each of its
-questions is a corpus case — the `uncertain` cases of `subtotal.json` (SUBTOTAL-020 to SUBTOTAL-034) and
-`aggregate.json` (AGGREGATE-007, 008, 011 and 022 to 041), what counts as nested among them. Excel's popup
+questions is a corpus case — the `uncertain` cases of `subtotal.json` (SUBTOTAL-020 to SUBTOTAL-038) and
+`aggregate.json` (AGGREGATE-007, 008, 011 and 022 to 054), what counts as nested among them. Excel's popup
 texts for the function numbers and options, which the comment above asks the run to confirm, are
 Microsoft's documented ones (ADR-0058); like tickets 09 and 11's captions, nothing here waits on them.

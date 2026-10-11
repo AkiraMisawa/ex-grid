@@ -15,12 +15,13 @@ Status: done
 - [x] Volatile (SH-59): in the volatile set; the place it names is read as it stands after the
       recalculation; a Formula that reaches itself through it is `#CIRC!`
 - [x] Its text is not rewritten by an insertion or a deletion, while a Reference beside it is
-- [x] Refusals (SH-68): `#VALUE!` for R1C1 text (`a1` FALSE), a structured reference and `A1#`;
-      `#REF!` for text that names no place, another Sheet's name included
+- [x] Refusals (SH-68): `#VALUE!` for R1C1 text (`a1` FALSE), a structured reference (a declared
+      Linked Table's bare name included) and `A1#`; `#REF!` for text that names no place, another
+      Sheet's name included
 - [x] The corpus cases. The catalogue row Supported, and the Docs Site's Formulas page says what is
       refused
 - [ ] For the next Windows run: Excel's answer for each refused form, and what an insertion does to
-      the text (INDIRECT-023 to INDIRECT-029); and the other `uncertain` cases of
+      the text (INDIRECT-023 to INDIRECT-030); and the other `uncertain` cases of
       `ExcelCases/indirect.json`: the Sheet's own qualifier, lower case and `$`, whole columns, a range
       that spills, empty text, a space before the reference, a leading `=`, and two ranges with a space
       between them
@@ -49,3 +50,10 @@ found.
 2026-10-11: the Status is `done`. The one open box is the sign-off's Windows run, and each of its
 questions is a corpus case: INDIRECT-023 (`documented`, Excel's 45 beside the engine's refusal) and the
 `uncertain` cases of `indirect.json`, INDIRECT-009 to INDIRECT-022 and INDIRECT-024 to INDIRECT-029.
+
+2026-10-11, after the second review: INDIRECT-023's `source` is `uncertain`, since its `expect` is the
+engine's refusal, not Microsoft's documented 45. A declared Linked Table's bare name
+(`INDIRECT("Positions")`) is `#VALUE!`, not `#REF!`: Excel reads it as a structured reference to the
+table's data, a form ADR-0124's note refuses until a run has observed it
+(`ADR0124_a_linked_tables_bare_name_is_value_and_any_other_name_ref`). INDIRECT-030 asks it, so the
+sign-off's Windows run puts INDIRECT-009 to INDIRECT-030 to Excel.

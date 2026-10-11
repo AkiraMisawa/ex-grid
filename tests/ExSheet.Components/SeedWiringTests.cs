@@ -86,6 +86,80 @@ public class SeedWiringTests : SheetTestContext
         Assert.Equal(Alone(Draws(), Seed, 2), Shown(cut));
     }
 
+    private static Task PasteAsync(IRenderedComponent<Components.ExSheet> cut, string text, string? html = null)
+    {
+        var grid = Grid(cut);
+        return grid.InvokeAsync(() => grid.Instance.OnPasteAsync(text, html));
+    }
+
+    private static async Task CtrlClickAsync(IRenderedComponent<Components.ExSheet> cut, string address)
+    {
+        var at = CellAddress.Parse(address);
+        var heading = double.Parse(cut.Find(".ex-row-heading").GetAttribute("style")!.Replace("width:", "").Replace("px", "").Trim(), CultureInfo.InvariantCulture);
+        await cut.Find(".ex-viewport").MouseDownAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs
+        {
+            Button = 0, Buttons = 1, CtrlKey = true,
+            OffsetX = heading + at.Column * SheetColumns.DefaultWidthPx + 5,
+            OffsetY = at.Row * Components.ExSheet.DefaultRowHeightPx + 5,
+        });
+        await cut.Find(".ex-viewport").MouseUpAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs { Button = 0 });
+    }
+
+    [Fact] // ADR-0180, ADR-0048: typed fields and exact numbers pasted together are one change, and its undo and its redo one each
+    public async Task ADR0180_a_paste_of_typed_fields_and_exact_numbers_is_one_change()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Draws()).Add(s => s.Seed, Seed));
+        await GoToAsync(cut, "D1");
+
+        await PasteAsync(cut, "", "<table><tr><td x:num=\"1.0000000000000002\">1</td><td>=D1*2</td></tr></table>");
+        Assert.Equal("2", CellText(cut, "E1"));
+        Assert.Equal(Alone(cut.Instance.ToDocument(), Seed, 1), Shown(cut));
+
+        await cut.InvokeAsync(() => cut.Instance.UndoAsync());
+        Assert.Equal(Alone(Draws(), Seed, 2), Shown(cut));
+        await cut.InvokeAsync(() => cut.Instance.RedoAsync());
+        Assert.Equal(Alone(cut.Instance.ToDocument(), Seed, 3), Shown(cut));
+    }
+
+    [Fact] // ADR-0180, ADR-0048, ADR-0014: the Sheet's own copy of one cell pasted over several ranges is one change, and its undo and its redo one each
+    public async Task ADR0180_a_paste_over_several_ranges_is_one_change()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Draws()).Add(s => s.Seed, Seed));
+        await EnterAsync(cut, "D1", "=ROW()");
+        await GoToAsync(cut, "D1");
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+        await GoToAsync(cut, "D2");
+        await CtrlClickAsync(cut, "F2");
+        await CtrlClickAsync(cut, "F4");
+
+        await PasteAsync(cut, payload.Text!, payload.Html);
+        // The own copy, its Reference-free Formula written into each range.
+        Assert.Equal("4", CellText(cut, "F4"));
+        Assert.Equal(Alone(cut.Instance.ToDocument(), Seed, 2), Shown(cut));
+
+        await cut.InvokeAsync(() => cut.Instance.UndoAsync());
+        Assert.Equal("", CellText(cut, "F4"));
+        Assert.Equal(Alone(cut.Instance.ToDocument(), Seed, 3), Shown(cut));
+        await cut.InvokeAsync(() => cut.Instance.RedoAsync());
+        Assert.Equal(Alone(cut.Instance.ToDocument(), Seed, 4), Shown(cut));
+    }
+
+    [Fact] // ADR-0180, ADR-0048: a refused paste is no change, so it draws nothing, though the fields before the refused one were read
+    public async Task ADR0180_a_refused_paste_draws_nothing()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Draws()).Add(s => s.Seed, Seed));
+        var opened = Shown(cut);
+        await GoToAsync(cut, "D1");
+
+        await PasteAsync(cut, "", "<table><tr><td x:num=\"1.0000000000000002\">1</td><td>=D1*2</td><td class=xl65>#####</td></tr></table>");
+
+        Assert.Equal("", CellText(cut, "D1"));
+        Assert.False(cut.Instance.CanUndo);
+        Assert.Equal(opened, Shown(cut));
+        await EnterAsync(cut, "G1", "1");
+        Assert.Equal(Alone(cut.Instance.ToDocument(), Seed, 1), Shown(cut));
+    }
+
     [Fact] // ADR-0180: a Sheet Document handed over again is opened again, its count of changes from 0, so a fixed seed shows its opening draws
     public async Task ADR0180_a_document_opened_again_counts_its_changes_from_zero()
     {

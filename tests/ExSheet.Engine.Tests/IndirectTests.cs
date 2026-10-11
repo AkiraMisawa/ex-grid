@@ -194,4 +194,23 @@ public class IndirectTests
 
         Assert.Equal(1.08, sheet.Number("A1"));
     }
+
+    [Fact] // ADR-0124 (2026-10-10), ADR-0049: a declared Linked Table's bare name is a structured reference Excel reads, so #VALUE! until a run observes it; any other name is #REF!
+    public void ADR0124_a_linked_tables_bare_name_is_value_and_any_other_name_ref()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "=INDIRECT(\"Positions\")");
+        sheet.Enter("A2", "=SUM(INDIRECT(\"positions\"))");
+        Assert.Equal(ErrorValue.Ref, sheet.Error("A1"));
+        Assert.Equal(ErrorValue.Ref, sheet.Error("A2"));
+
+        // The declaration is a change, and INDIRECT is volatile: it reads its text again.
+        sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
+        Assert.Equal(ErrorValue.Value, sheet.Error("A1"));
+        Assert.Equal(ErrorValue.Value, sheet.Error("A2"));
+
+        sheet.PushLinkedTable("Positions", [[Value.FromText("R-1"), Value.FromNumber(250.5)]]);
+        Assert.Equal(ErrorValue.Value, sheet.Error("A1"));
+        Assert.Equal(ErrorValue.Value, sheet.Error("A2"));
+    }
 }
