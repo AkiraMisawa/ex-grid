@@ -1,6 +1,8 @@
 # 14: A remote report's Window is read ahead
 
 Status: ready-for-agent
+Roadmap: ExPivot — A report served over a network reads rows ahead of the Viewport, so that ordinary
+scrolling paints rows already held instead of Placeholders (ADR-0182).
 
 **What to do:** measure what reading ahead would buy a report served over a network. Then, once the
 user has decided, build it: ExPivot asks a remote report source for more rows than the grid needs. Ordinary

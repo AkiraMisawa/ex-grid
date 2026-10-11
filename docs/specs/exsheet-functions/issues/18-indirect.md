@@ -1,6 +1,8 @@
 # 18: INDIRECT, for A1-style text on the same Sheet
 
 Status: ready-for-agent
+Roadmap: ExSheet — INDIRECT, reading the cell or range that A1-style text names on the same Sheet
+(ADR-0124).
 
 **What to build:** `INDIRECT` under
 [ADR-0124](../../../adr/0124-volatile-functions-are-recalculated-after-every-change.md)'s note of

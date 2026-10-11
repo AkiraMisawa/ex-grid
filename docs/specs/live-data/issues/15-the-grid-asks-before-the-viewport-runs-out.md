@@ -1,6 +1,8 @@
 # 15: The grid asks for rows before the Viewport runs out of them
 
 Status: ready-for-agent
+Roadmap: ExGrid, ExPivot — The grid may ask for rows a margin before the Viewport runs out of them,
+and ExPivot sets that margin from its read-ahead (ADR-0183).
 
 **What to build:** the Range Request Margin of
 [ADR-0183](../../../adr/0183-the-grid-may-ask-for-rows-before-the-viewport-runs-out-of-them.md).

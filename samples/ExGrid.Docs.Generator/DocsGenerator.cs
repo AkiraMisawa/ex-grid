@@ -35,6 +35,11 @@ namespace ExGrid.Docs.Generator;
 /// and emits them as <c>ReleaseNotes</c> for the Release notes page, the latest version on the start page
 /// and the "New in" chips (ADR-0190).
 /// </para>
+/// <para>
+/// And the Roadmap (<see cref="Roadmap"/>): the open tickets by their <c>Status:</c> and <c>Roadmap:</c>
+/// lines, the scope tables of ADR-0046 and ADR-0059, and the rows <c>RoadmapByHand</c> writes, each
+/// citing its record. It emits them as <c>Roadmap</c> for the Roadmap page and the search (ADR-0191).
+/// </para>
 /// </summary>
 [Generator(LanguageNames.CSharp)]
 public sealed class DocsGenerator : IIncrementalGenerator
@@ -173,6 +178,39 @@ public sealed class DocsGenerator : IIncrementalGenerator
             foreach (var diagnostic in diagnostics)
                 spc.ReportDiagnostic(diagnostic);
             spc.AddSource("ReleaseNotes.g.cs", source);
+        });
+
+        // The Roadmap (ADR-0191): the tickets under docs/specs/*/issues/, the scope tables of ADR-0046 and
+        // ADR-0059, and the rows the site writes by hand in RoadmapByHand, with the records those cite.
+        var roadmapFiles = context.AdditionalTextsProvider
+            .Select((file, cancel) =>
+            {
+                var path = file.Path.Replace('\\', '/');
+                var repo = Roadmap.RepoPathOf(path);
+                if (repo is null)
+                    return null;
+                var text = file.GetText(cancel);
+                return text is null ? null : new RecordInput(file.Path, repo, text);
+            })
+            .Where(file => file is not null)
+            .Collect();
+        var hand = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                (node, _) => RoadmapHandReader.IsHand(node),
+                (syntax, cancel) => RoadmapHandReader.Read((ClassDeclarationSyntax)syntax.Node, syntax.SemanticModel, cancel))
+            .Collect();
+        context.RegisterSourceOutput(roadmapFiles.Combine(hand).Combine(pages).Combine(adrs).Combine(build), (spc, all) =>
+        {
+            var ((((files, rows), scans), names), input) = all;
+            var (diagnostics, source) = Roadmap.Build(
+                files.Select(f => f!).ToImmutableArray(),
+                rows.SelectMany(r => r).ToImmutableArray(),
+                scans.Select(p => p!).ToImmutableArray(),
+                names,
+                input.Info);
+            foreach (var diagnostic in diagnostics)
+                spc.ReportDiagnostic(diagnostic);
+            spc.AddSource("Roadmap.g.cs", source);
         });
     }
 

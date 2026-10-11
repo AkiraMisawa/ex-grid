@@ -1,6 +1,6 @@
 @* The start page's latest version (ADR-0190): the newest version published to nuget.org, its day and
    its Highlights, read from its Release Notes; on a site not published from a tag, how many changes it
-   describes that are not on nuget.org yet. *@
+   describes that are not on nuget.org yet; and the way to the Roadmap (ADR-0191). *@
 @if (ReleaseNotes.Newest is { } newest)
 {
     <MudPaper Outlined="true" Class="docs-latest" aria-label="Latest version">
@@ -22,6 +22,7 @@
         }
         <div class="docs-latest-links">
             <MudLink Href="@ReleaseNotes.Route" Typo="Typo.body2">All release notes →</MudLink>
+            <MudLink Href="@Roadmap.Route" Typo="Typo.body2">Roadmap →</MudLink>
             @if (ReleaseNotes.ShowsUnreleased && ReleaseNotes.ChangeNotes.Count > 0)
             {
                 <MudLink Href="@($"{ReleaseNotes.Route}#{ReleaseNotes.UnreleasedAnchor}")" Typo="Typo.body2" Class="docs-latest-unreleased">

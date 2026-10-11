@@ -1,6 +1,8 @@
 # 15: RAND and RANDBETWEEN, drawn from the Sheet Seed
 
 Status: ready-for-agent
+Roadmap: ExSheet — RAND and RANDBETWEEN, drawn from a seed the Sheet is given, so that the same seed
+and the same edits give the same numbers (ADR-0180).
 
 **What to build:** `RAND` and `RANDBETWEEN` under
 [ADR-0180](../../../adr/0180-rand-and-randbetween-draw-from-the-sheet-seed-and-draw-again-at-each-change.md).

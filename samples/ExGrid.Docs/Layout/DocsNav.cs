@@ -126,6 +126,7 @@ public static class DocsNav
         new("Project", DocsNavSection.Project,
         [
             new("Release notes", "release-notes"),
+            new("Roadmap", "roadmap"),
             new("Decision records", "docs/adr/", DocsLinkKind.Repository),
             new("Contributing", "CONTRIBUTING.md", DocsLinkKind.Repository),
             new("Report a problem", DocsBuild.Repository + "/issues", DocsLinkKind.External),
@@ -161,6 +162,9 @@ public static class DocsNav
 
     /// <summary>The app bar's link to the Release Notes (ADR-0190).</summary>
     public static DocsLink ReleaseNotes { get; } = new("Release notes", "release-notes");
+
+    /// <summary>The app bar's link to the Roadmap (ADR-0191).</summary>
+    public static DocsLink Roadmap { get; } = new("Roadmap", "roadmap");
 
     /// <summary>
     /// The topic pages in reading order, which "previous" and "next" walk: the Docs groups' pages, so

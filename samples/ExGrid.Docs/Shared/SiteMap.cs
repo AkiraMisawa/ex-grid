@@ -54,6 +54,9 @@ public enum SiteSearchKind
 
     /// <summary>A line of the Release Notes, or a Change Note (ADR-0190).</summary>
     ReleaseNote,
+
+    /// <summary>An item of the Roadmap: a ticket, a row of a scope table, or a row written by hand (ADR-0191).</summary>
+    Roadmap,
 }
 
 /// <summary>A place the search can lead to.</summary>
@@ -88,7 +91,7 @@ internal static partial class SiteMap
     /// <summary>
     /// What the search leads to: each page the navigation lists, each of its sections, each titled
     /// Example and each type an API table lists, in the navigation's order; then each line of the
-    /// Release Notes.
+    /// Release Notes, and each item of the Roadmap.
     /// </summary>
     public static IReadOnlyList<SiteSearchEntry> Entries { get; } = BuildEntries();
 
@@ -155,6 +158,7 @@ internal static partial class SiteMap
             }
         }
         entries.AddRange(ReleaseNotes.SearchEntries());
+        entries.AddRange(Roadmap.SearchEntries());
         return entries.ToArray();
     }
 

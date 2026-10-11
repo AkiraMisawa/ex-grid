@@ -47,7 +47,7 @@
     <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
     <!-- The build step that highlights the Examples, reads the API documentation, maps the site and
-         reads the Release Notes. -->
+         reads the Release Notes and the Roadmap. -->
     <ProjectReference Include="..\ExGrid.Docs.Generator\ExGrid.Docs.Generator.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
@@ -58,11 +58,17 @@
          files, and the snippets a page quotes (.html, .sh, .css), are handed over here. The code a
          page shows is the file it runs. -->
     <AdditionalFiles Include="Examples\**\*.cs;Examples\**\*.html;Examples\**\*.sh;Examples\**\*.css" />
-    <!-- The decision records, by name only: an API summary's "ADR-0016" links to its file. -->
+    <!-- The decision records: an API summary's "ADR-0016" links to its file, and the Roadmap reads the
+         scope tables of ADR-0046 and ADR-0059. -->
     <AdditionalFiles Include="..\..\docs\adr\*.md" />
     <!-- The Release Notes (ADR-0190): each version's file, the prerelease note and the Change Notes,
          read and checked by the generator for the Release notes page. -->
     <AdditionalFiles Include="..\..\docs\releases\**\*.md" />
+    <!-- The Roadmap (ADR-0191): the tickets, by their Status: and Roadmap: lines; and the Definition of
+         Done and what it still owes, which the Roadmap's hand-written rows cite. The scope tables it reads
+         are ADR-0046's and ADR-0059's, among the decision records above. -->
+    <AdditionalFiles Include="..\..\docs\specs\*\issues\*.md" />
+    <AdditionalFiles Include="..\..\docs\definition-of-done.md;..\..\docs\implementation-status.md" />
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
     <CompilerVisibleProperty Include="DocsVersion" />
     <CompilerVisibleProperty Include="DocsRef" />
