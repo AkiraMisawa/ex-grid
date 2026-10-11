@@ -110,6 +110,7 @@ public sealed partial class Sheet
     internal StructuralOutcome Restructure(StructuralEdit edit, bool formatInserted = true)
     {
         if (CheckStructural(edit) is { } refusal) throw new SheetRefusedException(refusal);
+        CountChange();
 
         var before = Snapshot();
         var shownBefore = ShownSnapshot();
@@ -159,7 +160,9 @@ public sealed partial class Sheet
         ShiftAxisFormats(edit, formatInserted);
         ShiftColumnWidths(edit, formatInserted);
         RebuildDependencies();
-        var recalculated = dirty.Count == 0 ? [] : Recalculate(dirty, []).Recalculated;
+        // A volatile Formula is recalculated whatever the change, an insertion's or a deletion's
+        // included, though nothing it names moved: INDIRECT's text names the same place (ADR-0124).
+        var recalculated = dirty.Count == 0 && !HasVolatileFormulas ? [] : Recalculate(dirty, []).Recalculated;
         // Rows and columns moved: two cells' sides meet on a new edge, from cells that may hold nothing.
         var change = SheetChange.Merge([Diff(before, recalculated, shownBefore), new SheetChange([], [], [], WidthsChangedSince(widthsBefore))])
             .ReformattingUnnamedRows();

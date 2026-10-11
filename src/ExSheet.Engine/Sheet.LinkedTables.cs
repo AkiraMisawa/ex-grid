@@ -98,6 +98,9 @@ public sealed partial class Sheet
         {
             Declare(name, columns, key);
         }
+        // A declaration that takes effect is a change, as a snapshot is: what the Sheet's Formulas
+        // read changes (ADR-0180, 2026-10-11).
+        CountChange();
         return RecalculateReaders(name);
     }
 
@@ -187,6 +190,8 @@ public sealed partial class Sheet
             }
             count++;
         }
+        // A snapshot is a change, refused or taken: what the Sheet's Formulas read changes (ADR-0180).
+        CountChange();
         if (table.Key.Count > 0 && FirstRepeat([.. table.Key.Select(k => (IReadOnlyList<Value?>)columns[table.ColumnIndex[k]])]) is (var first, var second))
         {
             // The table waits again, so its readers show #GETTING_DATA, which IFERROR does not
@@ -257,7 +262,11 @@ public sealed partial class Sheet
 
     private SheetChange RecalculateReaders(string name)
     {
-        if (!_tableReaders.TryGetValue(name, out var readers) || readers.Count == 0) return SheetChange.None;
+        if (!_tableReaders.TryGetValue(name, out var readers) || readers.Count == 0)
+        {
+            // Nothing reads the table, but a volatile Formula is recalculated whatever the change (ADR-0124).
+            return HasVolatileFormulas ? Recalculate([], []) : SheetChange.None;
+        }
         return Recalculate([.. readers], []);
     }
 

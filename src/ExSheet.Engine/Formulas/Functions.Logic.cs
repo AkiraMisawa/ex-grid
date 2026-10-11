@@ -1,6 +1,6 @@
 namespace ExSheet.Engine.Formulas;
 
-/// <summary>AND, OR, NOT, IFNA, ISBLANK, ISNUMBER, ISTEXT, ISNA, NA, IFS and SWITCH, each to Microsoft's documentation of it.</summary>
+/// <summary>AND, OR, NOT, IFNA, ISBLANK, ISNUMBER, ISTEXT, ISNA, NA, ERROR.TYPE, IFS and SWITCH, each to Microsoft's documentation of it.</summary>
 internal static partial class FunctionLibrary
 {
     private static Operand And(FunctionCall call) => Logical(call, all: true);
@@ -99,8 +99,44 @@ internal static partial class FunctionLibrary
     /// <summary>ISNA: TRUE for <c>#N/A</c> only.</summary>
     private static Operand IsNa(FunctionCall call) => Inspect(call, value => value is { IsError: true, Error: ErrorValue.NA });
 
+    /// <summary>
+    /// LET is read into a <see cref="LetNode"/> of its own, with its names in scope (ADR-0181), and
+    /// never called as a function: declared here so that completion, the argument hint and the
+    /// catalogue know it.
+    /// </summary>
+    private static Operand Let(FunctionCall call) => throw new InvalidOperationException("LET is evaluated as a LetNode, never as a call.");
+
     /// <summary>NA: the Error Value <c>#N/A</c>.</summary>
     private static Operand Na(FunctionCall call) => Operand.Of(ErrorValue.NA);
+
+    /// <summary>
+    /// ERROR.TYPE (ADR-0047's note of 2026-10-10): Microsoft's number for an Error Value —
+    /// <c>#NULL!</c> 1, <c>#DIV/0!</c> 2, <c>#VALUE!</c> 3, <c>#REF!</c> 4, <c>#NAME?</c> 5,
+    /// <c>#NUM!</c> 6, <c>#N/A</c> 7 — and <c>#N/A</c> for a Value that is no error.
+    /// <c>#GETTING_DATA</c> and <c>#CIRC!</c> are given back, never numbered: Microsoft's table numbers
+    /// <c>#GETTING_DATA</c> 8, and a number would let a Formula show something while its data is on its
+    /// way (ADR-0049). An Error Value outside the table — <c>#SPILL!</c>, <c>#CALC!</c>, <c>#FIELD!</c>,
+    /// <c>#BLOCKED!</c>, <c>#CONNECT!</c>, <c>#UNKNOWN!</c> — is <c>#VALUE!</c> until a Windows run asks
+    /// Excel; not <c>#N/A</c>, which is the table's answer for a Value that is no error.
+    /// </summary>
+    private static Operand ErrorType(FunctionCall call)
+    {
+        var operand = call.Operand(0);
+        if (IsArray(operand)) return Operand.Of(ErrorValue.Value);
+        if (call.Evaluator.ScalarOf(operand) is not { IsError: true } value) return Operand.Of(ErrorValue.NA);
+        return value.Error switch
+        {
+            ErrorValue.Null => Operand.Of(Value.FromNumber(1)),
+            ErrorValue.Div0 => Operand.Of(Value.FromNumber(2)),
+            ErrorValue.Value => Operand.Of(Value.FromNumber(3)),
+            ErrorValue.Ref => Operand.Of(Value.FromNumber(4)),
+            ErrorValue.Name => Operand.Of(Value.FromNumber(5)),
+            ErrorValue.Num => Operand.Of(Value.FromNumber(6)),
+            ErrorValue.NA => Operand.Of(Value.FromNumber(7)),
+            ErrorValue.GettingData or ErrorValue.Circ => Operand.Of(value),
+            _ => Operand.Of(ErrorValue.Value),
+        };
+    }
 
     /// <summary>
     /// IFS: the value beside the first test that is TRUE, each test read as <c>IF</c> reads its own;

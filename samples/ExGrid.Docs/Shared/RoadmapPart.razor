@@ -1,0 +1,234 @@
+@* One section of the Roadmap (ADR-0191), read from its one source when the site was built, for the
+   product the chips chose. Each row names the products it reaches and links its ticket, or the record
+   that decided it, at the tag or the commit the site was built from. *@
+@switch (Part)
+{
+    case RoadmapPartKind.OnMain:
+        @if (DocsBuild.Kind == DocsBuildKind.Tag)
+        {
+            <p class="docs-notes-none">
+                Nothing beyond @DocsBuild.Version: a version holds all of main as it stood when it was tagged.
+            </p>
+        }
+        else
+        {
+            <p class="docs-roadmap-intro">
+                @switch (DocsBuild.Kind)
+                {
+                    case DocsBuildKind.Branch:
+                        <text>
+                            What @DocsBuild.Branch holds beyond @NewestName, read from its Change Notes, one written with each change.
+                            It reaches nuget.org with the next version, and may change before then.
+                        </text>
+                        break;
+                    case DocsBuildKind.Experiment:
+                        <text>
+                            What @DocsBuild.Branch holds beyond @NewestName, read from its Change Notes. It is an experiment:
+                            what it holds may never reach main.
+                        </text>
+                        break;
+                    default:
+                        <text>
+                            What the working tree this site was built in holds beyond @NewestName, read from its Change Notes,
+                            one written with each change.
+                        </text>
+                        break;
+                }
+                @(" ")<text>By product and kind, the same changes are the Release notes'</text>
+                <a href="@($"{ReleaseNotes.Route}#{ReleaseNotes.UnreleasedAnchor}")">Unreleased</a> section.
+            </p>
+            var notes = ReleaseNotes.ChangeNotes.Where(n => Roadmap.Shows([n.Product], Product)).ToList();
+            @if (ReleaseNotes.ChangeNotes.Count == 0)
+            {
+                <p class="docs-notes-none">No Change Note is waiting: as far as its notes say, @ReleaseNotes.UnreleasedSource holds what @NewestName holds.</p>
+            }
+            else if (notes.Count == 0)
+            {
+                <p class="docs-notes-none">Nothing for @Product here.</p>
+            }
+            else
+            {
+                <ul class="docs-notes-list docs-roadmap-list">
+                    @foreach (var note in notes)
+                    {
+                        <li class="docs-notes-item">
+                            <span class="docs-notes-label">@note.Product</span><span class="@KindClass(note.Kind)">@ReleaseNotes.KindText(note.Kind)</span>@(" ")@((MarkupString)note.Html)
+                            @if (note.Docs is not null)
+                            {
+                                @(" ")<a href="@note.Docs" class="docs-notes-more">In the docs</a>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        }
+        break;
+
+    case RoadmapPartKind.Decided or RoadmapPartKind.Waiting:
+        var state = Part == RoadmapPartKind.Decided ? RoadmapState.Decided : RoadmapState.Waiting;
+        <p class="docs-roadmap-intro">
+            @if (state == RoadmapState.Decided)
+            {
+                <text>Work whose decision is recorded, waiting only to be built. Each row links its ticket, and the decision it names.</text>
+            }
+            else
+            {
+                <text>Work that needs a decision before it can be built. Its ticket says what is missing.</text>
+            }
+        </p>
+        var all = Roadmap.Tickets.Where(t => t.State == state).ToList();
+        var tickets = all.Where(t => Roadmap.Shows(t.Products, Product)).ToList();
+        @if (all.Count == 0)
+        {
+            <p class="docs-notes-none">@(state == RoadmapState.Decided ? "Nothing is decided and waiting to be built." : "Nothing is waiting on a decision.")</p>
+        }
+        else if (tickets.Count == 0)
+        {
+            <p class="docs-notes-none">Nothing for @Product here.</p>
+        }
+        else
+        {
+            <ul class="docs-roadmap-list docs-roadmap-rows">
+                @foreach (var ticket in tickets)
+                {
+                    <li class="docs-roadmap-row">
+                        <div class="docs-roadmap-row-head">
+                            <span class="docs-roadmap-row-title">@((MarkupString)ticket.TitleHtml)</span>
+                            <RoadmapProducts Products="ticket.Products" />
+                        </div>
+                        <p class="docs-roadmap-row-text">@((MarkupString)ticket.SentenceHtml)</p>
+                        <p class="docs-roadmap-row-links">
+                            <a href="@ticket.Url" target="_blank" rel="noopener">Ticket @ticket.Name</a>
+                            @if (ticket.Waiting is { } waiting)
+                            {
+                                <span class="docs-muted">@waiting</span>
+                            }
+                        </p>
+                    </li>
+                }
+            </ul>
+        }
+        break;
+
+    case RoadmapPartKind.Later:
+        <p class="docs-roadmap-intro">
+            What a product's first version left out on purpose, each with why, from the scope tables of the
+            decisions that defined ExSheet and ExPivot. Later says what was left out, not when it comes.
+            ExGrid and the data packages have no such table.
+        </p>
+        var groups = Roadmap.Scope.Where(r => r.Scope == RoadmapScope.Later).GroupBy(r => r.Product)
+            .Where(g => Roadmap.Shows([g.Key], Product)).ToList();
+        @if (groups.Count == 0)
+        {
+            <p class="docs-notes-none">Nothing for @Product here: only ExSheet and ExPivot have a scope table.</p>
+        }
+        @foreach (var group in groups)
+        {
+            var first = group.First();
+            <MudText Typo="Typo.h6" HtmlTag="h3" Class="docs-notes-heading">
+                @group.Key <a href="@first.AdrUrl" target="_blank" rel="noopener" class="docs-roadmap-source">ADR-@first.Adr</a>
+            </MudText>
+            <ul class="docs-notes-list docs-roadmap-list">
+                @foreach (var row in group)
+                {
+                    <li class="docs-notes-item">
+                        <span class="docs-roadmap-row-title">@((MarkupString)row.LabelHtml)</span>
+                        @if (row.WhyHtml.Length > 0)
+                        {
+                            <span class="docs-muted">@(" — ")@((MarkupString)row.WhyHtml)</span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+        break;
+
+    case RoadmapPartKind.TowardStable:
+        <p class="docs-roadmap-intro">
+            What the next version without a suffix requires, each row with the record that requires it. A version
+            with a suffix is a prerelease, published before the Definition of Done is signed off; one without is a
+            release, and waits for that sign-off.
+        </p>
+        var stable = RoadmapByHand.TowardStable.Where(n => Roadmap.Shows(n.Products, Product)).ToList();
+        @if (stable.Count == 0)
+        {
+            <p class="docs-notes-none">Nothing for @Product here.</p>
+        }
+        else
+        {
+            <ul class="docs-roadmap-list docs-roadmap-rows">
+                @foreach (var note in stable)
+                {
+                    <li class="docs-roadmap-row">
+                        <p class="docs-roadmap-row-text">@note.Text</p>
+                        <p class="docs-roadmap-row-links"><RoadmapCites Of="note.Cites" /></p>
+                    </li>
+                }
+            </ul>
+        }
+        <p class="docs-roadmap-intro docs-roadmap-linked-lead">Linked, not copied, at the same commit:</p>
+        <ul class="docs-notes-list docs-roadmap-list">
+            @foreach (var record in RoadmapByHand.Linked)
+            {
+                var cite = Roadmap.Cite(record.Cite);
+                <li class="docs-notes-item">
+                    <a href="@cite.Url" target="_blank" rel="noopener">@record.Title</a>@(" ")<span class="docs-muted">(@cite.Title).</span>@(" ")@record.About
+                </li>
+            }
+        </ul>
+        break;
+
+    case RoadmapPartKind.NotPlanned:
+        <p class="docs-roadmap-intro">
+            What the family will not do, each with the decision that refused it. A refusal changes only with a new decision.
+        </p>
+        var refused = Roadmap.Scope.Where(r => r.Scope == RoadmapScope.NotPlanned && Roadmap.Shows([r.Product], Product)).ToList();
+        var byHand = RoadmapByHand.NotPlanned.Where(n => Roadmap.Shows(n.Products, Product)).ToList();
+        @if (refused.Count + byHand.Count == 0)
+        {
+            <p class="docs-notes-none">Nothing for @Product here.</p>
+        }
+        else
+        {
+            <ul class="docs-roadmap-list docs-roadmap-rows">
+                @foreach (var row in refused)
+                {
+                    <li class="docs-roadmap-row">
+                        <div class="docs-roadmap-row-head">
+                            <span class="docs-roadmap-row-title">@((MarkupString)row.LabelHtml)</span>
+                            <RoadmapProducts Products="@(new[] { row.Product })" />
+                        </div>
+                        @if (row.WhyHtml.Length > 0)
+                        {
+                            <p class="docs-roadmap-row-text">@((MarkupString)row.WhyHtml)</p>
+                        }
+                        <p class="docs-roadmap-row-links"><a href="@row.AdrUrl" target="_blank" rel="noopener">ADR-@row.Adr</a></p>
+                    </li>
+                }
+                @foreach (var note in byHand)
+                {
+                    <li class="docs-roadmap-row">
+                        <div class="docs-roadmap-row-head">
+                            <p class="docs-roadmap-row-text">@note.Text</p>
+                            <RoadmapProducts Products="note.Products" />
+                        </div>
+                        <p class="docs-roadmap-row-links"><RoadmapCites Of="note.Cites" /></p>
+                    </li>
+                }
+            </ul>
+        }
+        break;
+}
+
+@code {
+    /// <summary>The section to draw.</summary>
+    [Parameter, EditorRequired] public RoadmapPartKind Part { get; set; }
+
+    /// <summary>The product the chips chose, or <see langword="null"/> for every product.</summary>
+    [Parameter] public string? Product { get; set; }
+
+    private static string NewestName => ReleaseNotes.Newest?.Version ?? "the last version";
+
+    private static string KindClass(ReleaseKind kind) =>
+        "docs-notes-kind docs-notes-kind-" + kind.ToString().ToLowerInvariant();
+}

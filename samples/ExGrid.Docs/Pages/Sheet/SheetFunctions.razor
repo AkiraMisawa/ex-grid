@@ -1,0 +1,80 @@
+@page "/exsheet/functions"
+@using global::ExSheet.Engine
+
+@* ExSheet's functions (ADR-0110, ADR-0047), a reference page: every function the engine supports, from its
+   own list, DeclaredFunction.All, grouped by the categories of the catalogue the build read. Its sections are
+   the categories, which the rail lists. The filter is C#. A function the catalogue lists and the engine does not
+   support yet links to the Roadmap section that holds its ticket. *@
+<DocsPage Product="ExSheet" Title="Functions"
+          Lead="Every function ExSheet's engine supports, by category, with its arguments as Excel writes them. Each gives Excel's result; a name outside this list is #NAME?, never an approximation.">
+    <ReferenceAsOf>
+        The functions and their arguments are the engine's own list, <code>DeclaredFunction.All</code>; the categories are
+        its catalogue's.
+    </ReferenceAsOf>
+
+    <div class="docs-functions-filter">
+        <MudTextField T="string" @bind-Value="_filter" Immediate="true" Label="Filter" Placeholder="SUM, text, date…"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.FilterList" aria-label="Filter the functions" />
+        <MudText Typo="Typo.body2" Class="docs-muted docs-functions-count">@CountText</MudText>
+    </div>
+    <p class="docs-muted">
+        Where the engine cannot give Excel's answer for an argument, it gives an Error Value rather than a different
+        answer: see <a href="exsheet/formulas#supported-functions">Formulas</a>.
+    </p>
+
+    @foreach (var (category, functions) in FunctionCatalogue.Supported)
+    {
+        var shown = functions.Where(f => FunctionCatalogue.Matches(f, _filter)).ToList();
+        @if (shown.Count > 0)
+        {
+            <FunctionTable Title="@category.Name" Anchor="@category.Anchor" Functions="shown" />
+        }
+    }
+    @if (FunctionCatalogue.Uncatalogued.Where(f => FunctionCatalogue.Matches(f, _filter)).ToList() is { Count: > 0 } uncatalogued)
+    {
+        <FunctionTable Title="@FunctionCatalogue.UncataloguedTitle" Anchor="@DocsAnchor.Of(FunctionCatalogue.UncataloguedTitle)" Functions="uncatalogued" />
+    }
+    @if (Matching == 0)
+    {
+        <p class="docs-notes-none">No supported function's name or description holds “@_filter”.</p>
+    }
+
+    @if (FunctionCatalogue.Pending.Count > 0)
+    {
+        <section class="docs-section" id="@PendingAnchor">
+            <MudText Typo="Typo.h5" HtmlTag="h2" Class="docs-section-title">
+                <a href="@($"{FunctionCatalogue.Route}#{PendingAnchor}")" class="docs-anchor">@FunctionCatalogue.PendingTitle</a>
+            </MudText>
+            <p>
+                Excel functions the catalogue lists, which the engine does not answer yet: in a Formula each is
+                <code>#NAME?</code> today. Each links the place on the Roadmap that holds the work on it.
+            </p>
+            <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table docs-reference-table">
+                <thead><tr><th style="width: 22%">Function</th><th style="width: 30%">Category</th><th>On the Roadmap</th></tr></thead>
+                <tbody>
+                    @foreach (var function in FunctionCatalogue.Pending)
+                    {
+                        <tr>
+                            <td><code>@function.Name</code></td>
+                            <td>@function.Category</td>
+                            <td><a href="@function.RoadmapHref">@function.RoadmapTitle</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </section>
+    }
+</DocsPage>
+
+@code {
+    private static readonly string PendingAnchor = DocsAnchor.Of(FunctionCatalogue.PendingTitle);
+
+    private string? _filter;
+
+    private int Matching => DeclaredFunction.All.Count(f => FunctionCatalogue.Matches(f, _filter));
+
+    private string CountText => string.IsNullOrWhiteSpace(_filter)
+        ? $"{DeclaredFunction.All.Count} functions supported"
+        : $"{Matching} of {DeclaredFunction.All.Count} functions";
+}

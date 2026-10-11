@@ -122,6 +122,8 @@ them:
 | `LARGE`, `SMALL` | `array, k` |
 | `RANK.EQ` | `number, ref, [order]` |
 | `STDEV.S`, `STDEV.P`, `VAR.S`, `VAR.P` | `number1, [number2], ...` |
+| `SUBTOTAL` | `function_num, ref1, [ref2], ...` — 1 to 11, and 101 to 111 |
+| `AGGREGATE` | `function_num, options, ref1, [ref2], ...`, or `function_num, options, array, k` for `LARGE` and `SMALL` |
 | `IF` | `logical_test, value_if_true, [value_if_false]` |
 | `IFS` | `logical_test1, value_if_true1, ...` |
 | `SWITCH` | `expression, value1, result1, [default_or_value2], [result2], ...` |
@@ -130,6 +132,7 @@ them:
 | `IFERROR` | `value, value_if_error` |
 | `IFNA` | `value, value_if_na` |
 | `ISERROR`, `ISBLANK`, `ISNUMBER`, `ISTEXT`, `ISNA` | `value` |
+| `ERROR.TYPE` | `error_val` — Microsoft's number, 1 to 7; `#GETTING_DATA` and `#CIRC!` given back |
 | `NA`, `PI` | (none) |
 | `ROUND`, `ROUNDUP`, `ROUNDDOWN` | `number, num_digits` |
 | `TRUNC` | `number, [num_digits]` |
@@ -143,6 +146,8 @@ them:
 | `DATE` | `year, month, day` |
 | `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Sheet.SetToday`, ADR-0121) |
 | `NOW` | (none) — the moment `Sheet.NowSource` gives, read once per recalculation; volatile (ADR-0124) |
+| `RAND` | (none) — drawn from the Sheet Seed (`Sheet.SetSeed`), `#GETTING_DATA` until it is set; volatile (ADR-0180) |
+| `RANDBETWEEN` | `bottom, top` — as `RAND`, a whole number with both bounds drawn |
 | `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND` | `serial_number` |
 | `TIME` | `hour, minute, second` |
 | `WEEKDAY` | `serial_number, [return_type]` |
@@ -166,6 +171,7 @@ them:
 | `INDEX` | `array, row_num, [column_num]` |
 | `CHOOSE` | `index_num, value1, [value2], ...` |
 | `OFFSET` | `reference, rows, cols, [height], [width]` — volatile (ADR-0124) |
+| `INDIRECT` | `ref_text, [a1]` — A1-style text naming a place on the same Sheet; volatile (ADR-0124) |
 | `ROW`, `COLUMN` | `[reference]` |
 | `ROWS`, `COLUMNS` | `array` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
@@ -180,6 +186,7 @@ them:
 | `SORTBY` | `array, by_array1, [sort_order1], ...` |
 | `SEQUENCE` | `rows, [columns], [start], [step]` |
 | `TRANSPOSE` | `array` |
+| `LET` | `name1, name_value1, calculation_or_name2, [name_value2, calculation_or_name3...]` |
 | `SUMPRODUCT` | `array1, [array2], ...` |
 
 A Formula whose result is an array of more than one Value **spills** (ADR-0125): its cell, the
@@ -217,7 +224,8 @@ answer:
   where Excel shows 0. `IFERROR` and `IFNA` do not catch it.
 - **`#GETTING_DATA`**, a Linked Table's data on its way, is not an error to `IFERROR` and
   `ISERROR`, where Excel's are: a fallback never stands in for data that has not arrived.
-  `ISBLANK` and `ISNUMBER` give it back too, rather than FALSE.
+  `ISBLANK` and `ISNUMBER` give it back too, rather than FALSE, and `ERROR.TYPE` gives it and
+  `#CIRC!` back rather than a number (Microsoft's table numbers `#GETTING_DATA` 8).
 - **`TEXT` reads its code in the invariant spelling** under every culture (`"yyyy"`, never German
   Excel's `"JJJJ"`), as a cell's number format records it, and shows the Value as a cell in that
   format would under the Sheet's culture (ADR-0120). A code outside the cell formats' subset, an
@@ -231,7 +239,62 @@ answer:
   with a blank in its array, and `SORT` and `SORTBY` with a blank or an Error Value among their keys
   (`#VALUE!`); `SIN`, `COS` and `TAN` of 2^27 or more (`#NUM!`, the limit Microsoft documents for
   `COT` and its kin); `ACOTH` of an absolute value not above 1 (`#NUM!`; the page names `#VALUE!`
-  too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`).
+  too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`); `ERROR.TYPE` of an Error
+  Value outside Microsoft's table — `#SPILL!`, `#CALC!`, `#FIELD!`, `#BLOCKED!`, `#CONNECT!`,
+  `#UNKNOWN!` (`#VALUE!`).
+- **`RAND` and `RANDBETWEEN` draw from the Sheet Seed** (ADR-0180). Excel names no generator and no
+  seed, so its numbers cannot be matched; what is Excel's is its contract — a draw of `RAND` in
+  [0,1), evenly spread; `RANDBETWEEN`'s whole numbers, both bounds drawn; two calls two draws; a
+  `LET` binding one draw. Each draw is a function of `Sheet.Seed`, the cell, the call's place in its
+  Formula and `Sheet.Changes`, the count of changes since the Sheet was made or opened, so the same
+  Entries, seed and count give the same draws whatever order cells are computed in. An edit, an
+  insertion or a deletion, the undo or redo of one, a Linked Table's snapshot, and a Linked Table's
+  declaration that declares it or replaces it each count once and draw again; a recalculation by the clock, a format, a rename of the Sheet (ADR-0180, 2026-10-11)
+  and a new seed draw nothing. Without a seed,
+  every Formula that draws is `#GETTING_DATA`. The engine never chooses a seed of its own:
+  `Sheet.SetSeed(seed)` gives one, and `SetSeed(seed, changes)` the count as well, so a Sheet opened
+  from a document shows another Sheet's draws (SH-17). Neither is part of a Sheet Document. Unlike
+  Excel, nothing draws without a change, and there is no manual recalculation. An undo draws again;
+  what Excel's undo does to a draw has not been observed yet.
+  `RANDBETWEEN` refuses a fractional bound and a bound past 2^53 in magnitude with `#VALUE!`, and
+  otherwise answers as Excel was observed to: a bottom above the top is `#NUM!`, a boolean and text
+  that is not a number are `#VALUE!`, a numeric string is its number and a blank is 0.
+- **`LET` takes the names Excel's keyboard accepts** (ADR-0181). A name is bound for the values
+  after it and its own calculation, sequentially and lexically, and compared without regard to
+  case; a name read before its binding, or inside its own value, is `#NAME?`. A name starts with a
+  letter of any script or `_` and goes on with letters, digits and `_`, at most 249 characters, and
+  a `LET` binds at most 126. Refused on entry, as a Formula that cannot be read is: an even number
+  of arguments, a missing calculation or value, a name bound twice, and a name that could mean
+  something else until a Windows run shows that Excel's keyboard accepts it — one that reads as a
+  Reference in A1 or R1C1 shape (`A1`, `R1C1`, `R2`, `C3`; `c` and `r` alone are names), the name
+  of any of Excel's functions, declared by the engine or not (`SUM`, `IRR`, `RATE`, `N`), `TRUE` and
+  `FALSE`. Each binding is computed at most once, when first read, so an
+  unused binding's Error Value never reaches the result; but a `LET` depends on everything its text
+  names, so an unused binding over a cycle is `#CIRC!`, and one over a waiting Linked Table waits.
+  `Table[Column]` always reads the Linked Table, whatever is bound. Two bound names with a space
+  between them, Excel's intersection, are refused by name.
+- **`INDIRECT` reads A1-style text naming a cell or a range of this Sheet** (ADR-0124, 2026-10-10),
+  with or without the Sheet's own qualifier, as it stands after the recalculation; it is volatile,
+  as `OFFSET` is. Its text is text: an insertion or a deletion rewrites the References beside it and
+  never it, so `INDIRECT("B5")` names B5 whatever moved. Text in a form Excel reads but no Windows
+  run has observed is `#VALUE!` — R1C1 style (`a1` FALSE), a structured reference (`Positions[PV]`)
+  and a Spill Range (`A1#`) — and text that names no place is `#REF!`, as in Excel, another Sheet's
+  name included. What a computed Reference (`INDIRECT`'s or `OFFSET`'s) reads taints the Formula as a
+  Reference its text names does: one that reaches a cycle, or its own cell, is `#CIRC!`, and one that
+  reaches a waiting cell waits, whatever the function reading it does with an Error Value — `COUNT`,
+  `COUNTA`, `SUBTOTAL` and `AGGREGATE`'s options that pass over errors included.
+- **`SUBTOTAL` and `AGGREGATE` while no row can be hidden** (ADR-0047, 2026-10-10). A Sheet cannot hide
+  a row yet, so `SUBTOTAL`'s 101 to 111 give what 1 to 11 give, and `AGGREGATE`'s options 1, 3, 5
+  and 7 what 0, 2, 4 and 6 give, as Excel's do over such a sheet; a test fails on the day a row can
+  be hidden. Microsoft documents that both pass over nested subtotals, but not which cells count as
+  nested. A cell whose whole Formula is a `SUBTOTAL` is passed over by `SUBTOTAL`, and one whose
+  whole Formula is a `SUBTOTAL` or an `AGGREGATE` by `AGGREGATE`'s options 0 to 3; any other call
+  of either inside the range — inside a larger Formula, behind a spill, an `AGGREGATE` in a
+  `SUBTOTAL`'s range, or any call with options 4 to 7, which Microsoft documents as counted (SH-68,
+  2026-10-11) — makes the result `#VALUE!` until a Windows run asks Excel. So do a function number or an option that is not a whole number, an argument that
+  is no reference where a reference is wanted (a computed array, a number), and `AGGREGATE`'s
+  function numbers for functions the engine does not support: 13 (`MODE.SNGL`) and 16 to 19
+  (`PERCENTILE` and `QUARTILE`).
 - **More of the refusal of unlifted functions.** `CONCATENATE` over a range of several cells, and a
   `TEXTJOIN` delimiter of several cells, are `#VALUE!`; `CONCAT` and `TEXTJOIN`'s texts take ranges.
 
@@ -278,9 +341,8 @@ An argument outside these domains gives `#VALUE!` unless another Error Value is 
 
 `IRR`, `XIRR` and `RATE` remain undeclared (`#NAME?`). The solver experiment in
 `spikes/exsheet-financial-solvers/` does not yet reproduce Excel's chosen roots, stopping results
-and failures. `LET`, `RAND` and `RANDBETWEEN` still need the decisions recorded in catalogue
-tickets 14 and 15. The October 3 observation run did not resolve existing Supported functions'
-other `uncertain` corpus cases.
+and failures. The October 3 observation run did not resolve existing Supported functions' other
+`uncertain` corpus cases.
 
 ## Operations, and undoing them
 

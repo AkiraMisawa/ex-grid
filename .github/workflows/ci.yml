@@ -60,8 +60,13 @@ jobs:
       - name: Restore tools
         run: dotnet tool restore
 
+      # The Docs Site's build is told the version a tag publishes, and then holds the Release Notes to
+      # it (ADR-0190): that version's notes exist and are the newest, and no Change Note is left. On
+      # any other run there is no version to publish, and "dev" builds it as a local build.
       - name: Build
-        run: dotnet build ExGrid.slnx
+        env:
+          DOCS_VERSION: ${{ inputs.version || 'dev' }}
+        run: dotnet build ExGrid.slnx -p:DocsVersion="$DOCS_VERSION"
 
       - name: Layers 1 and 2, with coverage
         env:

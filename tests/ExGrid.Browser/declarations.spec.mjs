@@ -52,9 +52,9 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
             await clickCell(grid, 'F2');
             await page.keyboard.type('=SU');
-            // SUBSTITUTE, then SUM (then SUMIF, SUMIFS, SUMPRODUCT): the declared functions beginning with SU.
+            // SUBSTITUTE, SUBTOTAL, then SUM (then SUMIF, SUMIFS, SUMPRODUCT): the declared functions beginning with SU.
             await expect(items(grid).first()).toHaveText('SUBSTITUTE');
-            await expect(items(grid).nth(1)).toHaveText('SUM');
+            await expect(items(grid).nth(2)).toHaveText('SUM');
             // Inside the grid's box (ADR-0040), and beneath the cell being edited.
             const list = await boxOf(completion(grid));
             const root = await boxOf(grid);
@@ -79,6 +79,8 @@ for (const chrome of ['builtin', 'mud']) {
             // them, the hint beneath.
             await page.keyboard.press('ArrowDown');
             await expect(items(grid).nth(1)).toHaveAttribute('aria-selected', 'true');
+            await page.keyboard.press('ArrowDown');
+            await expect(items(grid).nth(2)).toHaveAttribute('aria-selected', 'true');
             await page.keyboard.press('Tab');
             await expect(editor(grid)).toHaveValue('=SUM(');
             await expect(bar(grid)).toHaveValue('=SUM(');
@@ -123,6 +125,8 @@ for (const chrome of ['builtin', 'mud']) {
             // ↓ is still the list's, and Tab still accepts.
             await page.keyboard.press('ArrowDown');
             await expect(items(grid).nth(1)).toHaveAttribute('aria-selected', 'true');
+            await page.keyboard.press('ArrowDown');
+            await expect(items(grid).nth(2)).toHaveAttribute('aria-selected', 'true');
             await page.keyboard.press('Tab');
             await expect(editor(grid)).toHaveValue('=SUM(');
             await page.keyboard.press('Escape');

@@ -1,7 +1,12 @@
 # ExSheet's function catalogue
 
-Status: ready-for-agent — tickets 14 to 18 are Ready, decided with the user on 2026-10-10 (item 11
-below). Ticket 13 is Blocked: no algorithm reproduces Excel's, and it is not pursued for now.
+Status: done — but for [ticket 13](issues/13-financial-iteration.md) (`needs-info`): `IRR`, `XIRR` and
+`RATE` are Blocked, since no algorithm reproduces Excel's, and are not pursued for now. Tickets 14 to 18,
+decided with the user on 2026-10-10 (item 11 below), are built and done (item 12); their questions, with
+every other ticket's `uncertain` cases, are corpus cases the sign-off's Windows run puts to Excel, but
+for two of ticket 15's that the corpus cannot ask (what an undo does to a draw, and whether a rename draws
+again), which that run asks by hand.
+*(Set on 2026-10-11.)*
 
 The functions ExSheet's engine supports, and the queue of those it may support next, each with its
 status and a priority. **ADR-0047 decides whether a function is admitted; this file only orders the
@@ -11,7 +16,9 @@ change that rule, and a function listed here is not a promise.
 
 `tests/ExSheet.Engine.Tests/FunctionCatalogueTests.cs` reads this file: the rows marked
 **Supported** must be exactly `DeclaredFunction.All`. Admitting a function without changing its row
-here fails the build, and so does changing a row without admitting the function.
+here fails the build, and so does changing a row without admitting the function. Every name the
+file lists, its rows and its list of [Excel's functions not in the queue](#excels-functions-not-in-the-queue),
+must be exactly the names the engine refuses as a `LET` name for being a function's (ADR-0181).
 
 ## Status
 
@@ -76,8 +83,8 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `STDEV.P` | Supported | — | |
 | `VAR.S` | Supported | — | |
 | `VAR.P` | Supported | — | |
-| `SUBTOTAL` | Ready | P3 | Admitted while a Sheet cannot hide a row, behind a test that fails when one can; a nested call other than a whole-Formula `SUBTOTAL` is `#VALUE!` until observed (ADR-0047, 2026-10-10). Ticket 16 |
-| `AGGREGATE` | Ready | P3 | As `SUBTOTAL`; a function number for a function the engine does not support is `#VALUE!`. Ticket 16 |
+| `SUBTOTAL` | Supported | — | Admitted while a Sheet cannot hide a row, behind a test that fails when one can; a nested call other than a whole-Formula `SUBTOTAL` is `#VALUE!` until observed (ADR-0047, 2026-10-10). Ticket 16 |
+| `AGGREGATE` | Supported | — | As `SUBTOTAL`; options 0 to 3 pass over a whole-Formula `SUBTOTAL` or `AGGREGATE`, and a function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`. Ticket 16 |
 
 ### Logic and errors
 
@@ -98,7 +105,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `SWITCH` | Supported | — | |
 | `XOR` | Supported | — | |
 | `NA` | Supported | — | |
-| `ERROR.TYPE` | Ready | P3 | `#GETTING_DATA` and `#CIRC!` are given back, never numbered; an Error Value outside Microsoft's table is `#VALUE!` (ADR-0047, 2026-10-10). Ticket 17 |
+| `ERROR.TYPE` | Supported | — | `#GETTING_DATA` and `#CIRC!` are given back, never numbered; an Error Value outside Microsoft's table is `#VALUE!` until Excel is asked (ADR-0047, 2026-10-10). Ticket 17 |
 
 ### Lookup and reference
 
@@ -116,7 +123,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `ROWS` | Supported | — | |
 | `COLUMNS` | Supported | — | |
 | `OFFSET` | Supported | — | Volatile (ADR-0124): recalculated after every change, its computed Reference read as it stands |
-| `INDIRECT` | Ready | P3 | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; R1C1, structured and `A1#` text are `#VALUE!` (ADR-0124, 2026-10-10). Ticket 18 |
+| `INDIRECT` | Supported | — | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; R1C1, structured and `A1#` text are `#VALUE!`, and text that names no place is `#REF!` (ADR-0124, 2026-10-10). Ticket 18 |
 
 ### Math and rounding
 
@@ -248,14 +255,85 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 | `UNIQUE` | Supported | — | Spills (ADR-0125); a blank in the array is refused until Excel is asked |
 | `SEQUENCE` | Supported | — | Spills (ADR-0125) |
 | `TRANSPOSE` | Supported | — | Spills (ADR-0125) |
-| `LET` | Ready | P3 | Names bound inside one Formula, as Excel's keyboard accepts them (ADR-0181). Ticket 14 |
+| `LET` | Supported | — | Names bound inside one Formula, as Excel's keyboard accepts them; the name of any of Excel's functions this file lists, declared or not, `TRUE`, `FALSE` and R1C1 shapes are refused on entry until observed (ADR-0181). Ticket 14 |
 
 ### Random
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `RAND` | Ready | P3 | Draws from the Sheet Seed, and draws again at each change (ADR-0180). Ticket 15 |
-| `RANDBETWEEN` | Ready | P3 | As `RAND`; a fractional bound and a bound past 2^53 are `#VALUE!` (ADR-0180). Ticket 15 |
+| `RAND` | Supported | — | Draws from the Sheet Seed, and draws again at each change, never on the clock (ADR-0180). Ticket 15 |
+| `RANDBETWEEN` | Supported | — | As `RAND`; a fractional bound and a bound past 2^53 are `#VALUE!` (ADR-0180). Ticket 15 |
+
+## Excel's functions not in the queue
+
+The rest of Excel's worksheet functions, as Microsoft documents them. None of them is queued: each
+is `#NAME?` (ADR-0047), and none has a status or a priority until a row above catalogues it. They are
+listed because a `LET` name is refused if it is the name of any of Excel's functions, as the rows
+above and this list name them, whether or not the engine declares it (ADR-0181's note of
+2026-10-11): a Sheet saved with `LET(NPER, …)` would otherwise stop opening on the day `NPER` is
+declared.
+
+`FunctionCatalogueTests` reads this list with the rows above, and together they must be exactly the
+names the engine refuses as a function's (`ExcelFunctionNames`). Cataloguing a function moves its name
+from here to a row; a function Excel adds is listed here, and in the engine, in the same change.
+
+- **A**: `ACCRINT`, `ACCRINTM`, `ADDRESS`, `AMORDEGRC`, `AMORLINC`, `ARABIC`, `AREAS`,
+  `ARRAYTOTEXT`, `ASC`, `AVEDEV`, `AVERAGEA`
+- **B**: `BAHTTEXT`, `BASE`, `BESSELI`, `BESSELJ`, `BESSELK`, `BESSELY`, `BETA.DIST`, `BETA.INV`,
+  `BETADIST`, `BETAINV`, `BIN2DEC`, `BIN2HEX`, `BIN2OCT`, `BINOM.DIST`, `BINOM.DIST.RANGE`,
+  `BINOM.INV`, `BINOMDIST`, `BITAND`, `BITLSHIFT`, `BITOR`, `BITRSHIFT`, `BITXOR`, `BYCOL`, `BYROW`
+- **C**: `CALL`, `CEILING`, `CEILING.PRECISE`, `CELL`, `CHAR`, `CHIDIST`, `CHIINV`, `CHISQ.DIST`,
+  `CHISQ.DIST.RT`, `CHISQ.INV`, `CHISQ.INV.RT`, `CHISQ.TEST`, `CHITEST`, `CHOOSECOLS`, `CHOOSEROWS`,
+  `CLEAN`, `CODE`, `COMBIN`, `COMBINA`, `COMPLEX`, `CONFIDENCE`, `CONFIDENCE.NORM`, `CONFIDENCE.T`,
+  `CONVERT`, `COPILOT`, `CORREL`, `COUPDAYBS`, `COUPDAYS`, `COUPDAYSNC`, `COUPNCD`, `COUPNUM`,
+  `COUPPCD`, `COVAR`, `COVARIANCE.P`, `COVARIANCE.S`, `CRITBINOM`, `CUBEKPIMEMBER`, `CUBEMEMBER`,
+  `CUBEMEMBERPROPERTY`, `CUBERANKEDMEMBER`, `CUBESET`, `CUBESETCOUNT`, `CUBEVALUE`, `CUMIPMT`,
+  `CUMPRINC`
+- **D**: `DATEVALUE`, `DAVERAGE`, `DAYS360`, `DB`, `DBCS`, `DCOUNT`, `DCOUNTA`, `DDB`, `DEC2BIN`,
+  `DEC2HEX`, `DEC2OCT`, `DECIMAL`, `DELTA`, `DETECTLANGUAGE`, `DEVSQ`, `DGET`, `DISC`, `DMAX`,
+  `DMIN`, `DOLLAR`, `DOLLARDE`, `DOLLARFR`, `DPRODUCT`, `DROP`, `DSTDEV`, `DSTDEVP`, `DSUM`,
+  `DURATION`, `DVAR`, `DVARP`
+- **E**: `ECMA.CEILING`, `EFFECT`, `ENCODEURL`, `ERF`, `ERF.PRECISE`, `ERFC`, `ERFC.PRECISE`,
+  `EUROCONVERT`, `EVEN`, `EXPAND`, `EXPON.DIST`, `EXPONDIST`
+- **F**: `F.DIST`, `F.DIST.RT`, `F.INV`, `F.INV.RT`, `F.TEST`, `FACT`, `FACTDOUBLE`, `FALSE`,
+  `FDIST`, `FIELDVALUE`, `FILTERXML`, `FINDB`, `FINV`, `FISHER`, `FISHERINV`, `FIXED`, `FLOOR`,
+  `FLOOR.PRECISE`, `FORECAST`, `FORECAST.ETS`, `FORECAST.ETS.CONFINT`, `FORECAST.ETS.SEASONALITY`,
+  `FORECAST.ETS.STAT`, `FORECAST.LINEAR`, `FORMULATEXT`, `FREQUENCY`, `FTEST`, `FVSCHEDULE`
+- **G**: `GAMMA`, `GAMMA.DIST`, `GAMMA.INV`, `GAMMADIST`, `GAMMAINV`, `GAMMALN`, `GAMMALN.PRECISE`,
+  `GAUSS`, `GCD`, `GEOMEAN`, `GESTEP`, `GETPIVOTDATA`, `GROUPBY`, `GROWTH`
+- **H**: `HARMEAN`, `HEX2BIN`, `HEX2DEC`, `HEX2OCT`, `HSTACK`, `HYPERLINK`, `HYPGEOM.DIST`,
+  `HYPGEOMDIST`
+- **I**: `IMABS`, `IMAGE`, `IMAGINARY`, `IMARGUMENT`, `IMCONJUGATE`, `IMCOS`, `IMCOSH`, `IMCOT`,
+  `IMCSC`, `IMCSCH`, `IMDIV`, `IMEXP`, `IMLN`, `IMLOG10`, `IMLOG2`, `IMPOWER`, `IMPRODUCT`,
+  `IMREAL`, `IMSEC`, `IMSECH`, `IMSIN`, `IMSINH`, `IMSQRT`, `IMSUB`, `IMSUM`, `IMTAN`, `INFO`,
+  `INTERCEPT`, `INTRATE`, `IPMT`, `ISERR`, `ISEVEN`, `ISFORMULA`, `ISLOGICAL`, `ISNONTEXT`,
+  `ISO.CEILING`, `ISODD`, `ISOMITTED`, `ISOWEEKNUM`, `ISPMT`, `ISREF`
+- **J**: `JIS`
+- **K**: `KURT`
+- **L**: `LAMBDA`, `LCM`, `LEFTB`, `LENB`, `LINEST`, `LOGEST`, `LOGINV`, `LOGNORM.DIST`,
+  `LOGNORM.INV`, `LOGNORMDIST`, `LOOKUP`
+- **M**: `MAKEARRAY`, `MAP`, `MAXA`, `MDETERM`, `MDURATION`, `MIDB`, `MINA`, `MINVERSE`, `MIRR`,
+  `MMULT`, `MODE`, `MODE.MULT`, `MODE.SNGL`, `MULTINOMIAL`, `MUNIT`
+- **N**: `N`, `NEGBINOM.DIST`, `NEGBINOMDIST`, `NETWORKDAYS.INTL`, `NOMINAL`, `NORM.DIST`,
+  `NORM.INV`, `NORM.S.DIST`, `NORM.S.INV`, `NORMDIST`, `NORMINV`, `NORMSDIST`, `NORMSINV`, `NPER`
+- **O**: `OCT2BIN`, `OCT2DEC`, `OCT2HEX`, `ODD`, `ODDFPRICE`, `ODDFYIELD`, `ODDLPRICE`, `ODDLYIELD`
+- **P**: `PDURATION`, `PEARSON`, `PERCENTILE`, `PERCENTILE.EXC`, `PERCENTILE.INC`, `PERCENTOF`,
+  `PERCENTRANK`, `PERCENTRANK.EXC`, `PERCENTRANK.INC`, `PERMUT`, `PERMUTATIONA`, `PHI`, `PHONETIC`,
+  `PIVOTBY`, `POISSON`, `POISSON.DIST`, `PPMT`, `PRICE`, `PRICEDISC`, `PRICEMAT`, `PROB`, `PY`
+- **Q**: `QUARTILE`, `QUARTILE.EXC`, `QUARTILE.INC`, `QUOTIENT`
+- **R**: `RANDARRAY`, `RANK`, `RANK.AVG`, `RECEIVED`, `REDUCE`, `REGEXEXTRACT`, `REGEXREPLACE`,
+  `REGEXTEST`, `REGISTER.ID`, `REPLACEB`, `RIGHTB`, `ROMAN`, `RRI`, `RSQ`, `RTD`
+- **S**: `SCAN`, `SEARCHB`, `SERIESSUM`, `SHEET`, `SHEETS`, `SKEW`, `SKEW.P`, `SLN`, `SLOPE`,
+  `SQRTPI`, `STANDARDIZE`, `STDEV`, `STDEVA`, `STDEVP`, `STDEVPA`, `STEYX`, `STOCKHISTORY`, `SUMSQ`,
+  `SUMX2MY2`, `SUMX2PY2`, `SUMXMY2`, `SYD`
+- **T**: `T`, `T.DIST`, `T.DIST.2T`, `T.DIST.RT`, `T.INV`, `T.INV.2T`, `T.TEST`, `TAKE`, `TBILLEQ`,
+  `TBILLPRICE`, `TBILLYIELD`, `TDIST`, `TEXTAFTER`, `TEXTBEFORE`, `TEXTSPLIT`, `TIMEVALUE`, `TINV`,
+  `TOCOL`, `TOROW`, `TRANSLATE`, `TREND`, `TRIMMEAN`, `TRIMRANGE`, `TRUE`, `TTEST`, `TYPE`
+- **U**: `UNICHAR`, `UNICODE`
+- **V**: `VALUETOTEXT`, `VAR`, `VARA`, `VARP`, `VARPA`, `VDB`, `VSTACK`
+- **W**: `WEBSERVICE`, `WEEKNUM`, `WEIBULL`, `WEIBULL.DIST`, `WORKDAY.INTL`, `WRAPCOLS`, `WRAPROWS`
+- **Y**: `YIELD`, `YIELDDISC`, `YIELDMAT`
+- **Z**: `Z.TEST`, `ZTEST`
 
 ## Order of work
 
@@ -281,6 +359,12 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
     (ADR-0180, ticket 15), `LET` (ADR-0181, ticket 14), `SUBTOTAL` and `AGGREGATE` (ticket 16),
     `ERROR.TYPE` (ticket 17) and `INDIRECT` (ticket 18). Blocked: `IRR`, `XIRR` and `RATE`, which
     are not pursued for now (ticket 13). No row is Decide any more.
+12. **Tickets 14 to 18 built** (2026-10-11): `ERROR.TYPE`, `SUBTOTAL`, `AGGREGATE`, `INDIRECT`, `LET`,
+    `RAND` and `RANDBETWEEN` are Supported. Their `uncertain` cases, and the questions their tickets
+    name, go to the next Windows run. No row is Ready any more.
+13. **Excel's functions not in the queue are listed** (2026-10-11, ADR-0181's note of that date): a
+    `LET` name is refused if it is the name of any of Excel's functions, as this file lists them, so
+    the list beside the rows is what the engine refuses, kept equal to it by `FunctionCatalogueTests`.
 
 The retained evidence is `verification/2026-10-03-windows-functions/`. New corpus cases preserve
 its IDs, typed fixtures and exact numeric expectations. A deliberate refusal keeps Excel's
