@@ -22,6 +22,9 @@ internal sealed class PushHost : ComponentBase
     /// Consumer's job, not the grid's (ADR-0001).</summary>
     [Parameter] public int ReadAhead { get; set; }
 
+    /// <summary>The grid's Range Request Margin (ADR-0183); 0, the grid's default, unless set.</summary>
+    [Parameter] public int RangeRequestMargin { get; set; }
+
     public List<RowRange> Requests { get; } = [];
 
     private IReadOnlyList<TestRow> _window = [];
@@ -40,6 +43,7 @@ internal sealed class PushHost : ComponentBase
         builder.AddComponentParameter(6, nameof(ExGrid<TestRow>.ViewportHeight), (ViewportSize)ViewportHeight);
         builder.AddComponentParameter(7, nameof(ExGrid<TestRow>.OnRangeNeeded),
             EventCallback.Factory.Create<RowRange>(this, Answer));
+        builder.AddComponentParameter(8, nameof(ExGrid<TestRow>.RangeRequestMargin), RangeRequestMargin);
         builder.CloseComponent();
     }
 
