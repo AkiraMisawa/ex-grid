@@ -1,6 +1,6 @@
 # 18: ExSheet in real browsers
 
-Status: needs-info
+Status: ready-for-agent
 
 **What to build:** Layer 3 for everything above, on Chrome and Edge, against both hosts. It covers typing, Point by
 keys and by mouse, completion accepted with Tab, the Formula Bar mirroring, the fill-handle drag,
@@ -155,3 +155,11 @@ Runs, with Playwright's Chromium 1194 under xvfb, `--project=chrome`: SH-27's an
 DejaVu Sans by a local fontconfig file, 24 of 24 passed on each host, the D2 sweep being the expected
 failure three times. The whole of `sheet-vs-excel.spec.mjs` and `sheet-paper.spec.mjs` ran once on each
 host, with no console message. The first box still needs Edge too, which is CI's.
+
+*(2026-10-11, decided with the user.)* The second proposal is taken: a cell that shows a number may
+use one Device Pixel of its right padding (ADR-0090's section of this date, VZ-19). No `####`
+decision changes; every number sits one Device Pixel further right. What is left here:
+- build it in the core;
+- lift the `test.fail` from SH-41's sweep in `sheet-paper.spec.mjs`, and see the sweep pass under
+  DejaVu Sans as well as here;
+- Edge, which only CI runs.
