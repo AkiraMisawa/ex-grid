@@ -12,7 +12,13 @@ written in English.
   `docs/specs/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01`, never a single combined
   tickets file
 - Triage state is a `Status:` line near the top of each file. The roles are `needs-triage`,
-  `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`
+  `needs-info`, `ready-for-agent`, `ready-for-human`, `done`, `wontfix`
+- A ticket that is not `done` or `wontfix` carries a `Roadmap:` line beside its `Status:`:
+  `Roadmap: <Products> — <one sentence a Consumer understands>`, the products being any of ExGrid,
+  ExSheet, ExPivot and Data, or `Roadmap: internal` for work a Consumer would not care about (a
+  verification run, a process change). The Docs Site's Roadmap is read from these lines, and its build
+  refuses an open ticket without one. The sentence holds no date, quarter or version
+  ([ADR-0191](../adr/0191-the-roadmap-is-read-from-the-tickets-and-the-adrs-and-carries-no-dates.md))
 - Comments and conversation history append to the bottom of the file under a `## Comments`
   heading
 

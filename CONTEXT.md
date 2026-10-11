@@ -1118,6 +1118,28 @@ the window and carries no prose. The README's recordings are made from it
 ([ADR-0110](./docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)).
 _Avoid_: demo, hero
 
+**Release Notes**:
+What a published version says it holds, one file per version under `docs/releases/`: its highlights,
+its breaking and behaviour changes, and what each product gained. The same text is the GitHub
+release and the Docs Site's Release notes page. A prerelease's notes say what the Definition of Done
+still owes; a stable version's name its sign-off and every SHOULD accepted failing
+([ADR-0190](./docs/adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md)).
+_Avoid_: changelog; "release" for a prerelease (a release is a version without a suffix)
+
+**Change Note**:
+One change's entry in the next Release Notes: a file under `docs/releases/unreleased/`, written in the
+branch that makes the change, naming its product and whether it adds, fixes, changes behaviour or
+breaks. The cut before a tag gathers them into the version's Release Notes
+([ADR-0190](./docs/adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md)).
+_Avoid_: changeset, fragment
+
+**Roadmap**:
+The Docs Site's page of what is decided next, what is left for later and what the family will not do,
+by the state of each decision and never by date, read at build time from the tickets and the ADRs,
+and stamped with the version or commit it is as of
+([ADR-0191](./docs/adr/0191-the-roadmap-is-read-from-the-tickets-and-the-adrs-and-carries-no-dates.md)).
+_Avoid_: plan, pipeline, timeline; backlog (the tickets are the backlog)
+
 ## Flagged ambiguities
 
 - **"Grid" on its own does not say whether ExGrid, ExSheet or ExPivot is meant.** When it is

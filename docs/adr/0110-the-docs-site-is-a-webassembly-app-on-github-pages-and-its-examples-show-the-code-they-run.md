@@ -3,6 +3,13 @@
 *(Decided with the user on 2026-10-03, while rewriting the README after comparing it with
 ag-grid's. Modelled on MudBlazor's documentation, which the user named as the reference.)*
 
+*(Rewritten in part on 2026-10-11, decided with the user after comparing the site with
+mudblazor.com and ag-grid.com: the site's frame and its reference pages, including Release Notes
+([ADR-0190](./0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md))
+and a Roadmap ([ADR-0191](./0191-the-roadmap-is-read-from-the-tickets-and-the-adrs-and-carries-no-dates.md));
+an Example's code shown whole; and how the site is published. Each passage that changed says so
+where it changed.)*
+
 A Consumer learns ExGrid today from three places, none of them made for it:
 
 - **The README** says what the products are and gives one snippet.
@@ -71,6 +78,52 @@ each page a description, live examples with their code, and the API.
   - The demo pages that read the demo API (`/pivot-db`, `/pivot-live`, `/grid-live`) are not
     ported as they are.
 
+### The frame and the reference pages *(added 2026-10-11)*
+
+mudblazor.com and ag-grid.com both put a reader one click from four things the site lacked: what
+changed in each version, what is coming, the whole API, and a search. The frame stays MudBlazor's.
+
+- **An app bar of sections**, as ag-grid's: Get started, a Products menu (ExGrid, ExSheet, ExPivot,
+  Data, and the Feature matrix), Showcases, Release notes, Roadmap, and a search box. The Chrome
+  switch, the light/dark switch and the GitHub link stay where they are. Below the large breakpoint
+  the text links fold into the drawer; the site stays desktop-first, as the grid is (ADR-0045).
+- **The drawer's groups collapse**, as mudblazor.com's do, and only the current one opens.
+  `DocsNav` stays the one ordered list. A group belongs to the Docs, Showcases, Reference or Project
+  section, and "previous / next" walks only the Docs groups.
+- **A rail, "On this page"**, lists the page's sections at wide widths. It is a static list read from
+  the site map below, with no scroll spy. Beneath it, "Source of this page" links the page's file at
+  the commit the site was built from.
+- **A footer** of the same links, and the line the site was built from: its version or commit, MIT,
+  no analytics.
+- **A second kind of page, the reference page**, beside the topic page. It has no Examples, and every
+  fact on it is read from a named source, at build time or by reflection over the shipped assemblies.
+  It says what it is "as of": a version, or a commit.
+  - **Release notes** ([ADR-0190](./0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md)).
+  - **Roadmap** ([ADR-0191](./0191-the-roadmap-is-read-from-the-tickets-and-the-adrs-and-carries-no-dates.md)).
+  - **Packages**: the ten packages by product, their nuget.org descriptions read from the assemblies,
+    which to install, and why every family reference is exact (ADR-0042).
+  - **Feature matrix**: where the family runs (.NET, browsers, devices, direction, hosting, licence,
+    maturity), each row citing its ADR; which surfaces each Wrapper fills; and, generated from the site
+    map, which sections each product's pages hold and whether each has a MudBlazor Example. It stands
+    where ag-grid's "Community vs. Enterprise" stands; this family has no paid edition, so its axes
+    are where it runs and which Chrome draws what.
+  - **Functions**: ExSheet's supported functions, from the engine's own list, by the catalogue's
+    categories.
+  - **Keyboard**: every key in the three products, each linked to the page that explains it.
+  - **The API reference is not built yet.** A page per public type would publish a surface nobody has
+    reviewed, and Consumers would start depending on types that are public only so the tests can reach
+    them (ADR-0042). It waits for the decision about the public C# surface. Until then each topic page
+    keeps its API table.
+- **A site map is generated at build time** from the pages: each route, title, section and Example.
+  It feeds the rail, the search, the Feature matrix and the checks on Release Notes' links. A route
+  missing from the navigation, a navigation entry with no page, a section title that is not a literal
+  and two sections with one anchor are build errors, as a missing Example region already was.
+- **Search is C#**, over the site map: pages, sections, Examples, Release Notes and Roadmap items. No
+  index service, and no keyboard shortcut to open it, because every page holds live grids that take
+  keys.
+- **A navigation entry appears only with a page behind it.** A planned page is not listed early; an
+  entry with nothing behind it would be quietly wrong.
+
 ### An Example shows the code it runs
 
 - **The code beneath an Example is read from the Example's own source file**, as the demo pages'
@@ -78,6 +131,10 @@ each page a description, live examples with their code, and the API.
   is shown. What a page shows cannot drift from what it runs.
   - A region that is missing is an error the page states, never an empty box or other code
     (principle 1).
+  - *(Rewritten 2026-10-11.)* **The whole file is shown, and there are no regions.** That is how the
+    site was built: every Example file is written to be read whole, and a region would hide the
+    `@using` lines and the data a reader needs to run it. A file that is missing is still an error the
+    page states.
 - **The code is highlighted at build time, in C#.** A build step turns each embedded source into
   HTML with a class on every token. The browser receives finished markup.
   - **No JavaScript highlights.** There is no flash of plain text before the colours arrive, and
@@ -102,6 +159,11 @@ and records each use here:
 That is the whole list. Highlighting, navigation and theme switching are C#. There are no
 analytics.
 
+*(Added 2026-10-11.)* MudBlazor's own script, which its popovers, menus and autocomplete run, belongs
+to the frame, as DoD WR-8 says of the Wrapper: it is MudBlazor's, not the site's. The site adds none:
+no keyboard shortcut for search, nothing kept in `localStorage` (the theme and the Chrome are chosen
+again on each visit), and no scroll spy on the rail.
+
 ### Publishing
 
 - **The site is published from a `v*` tag, and on demand.** A workflow of its own
@@ -111,6 +173,24 @@ analytics.
     Consumer cannot install yet.
   - On demand (`workflow_dispatch`) publishes `main`, for a correction that cannot wait for a
     tag. The site then states the commit it was built from.
+- *(Rewritten 2026-10-11, decided with the user.)* **What happened instead, and what replaces it.**
+  - The tag's publish ran beside the release, not after it. For `0.1.0-beta.2` the site stated the
+    version half an hour before nuget.org had the packages, and it would have stated it had the
+    release failed.
+  - On demand published whatever branch it was run on, and said only its commit. Six runs went out
+    from `lab/*` branches on 2026-10-07 and 2026-10-08, to carry experiments to a machine under
+    investigation; the last, from `main`, documented features no package held.
+  - **So the release publishes the site, after the push.** `release.yml` gains a last job that calls
+    `docs.yml` with the version, the tag and the UTC day of the push (ADR-0190). The site therefore
+    states a version only once nuget.org has it. `docs.yml` is no longer started by a tag.
+  - **On demand stays, from `main` or a `lab/*` branch**, and refuses any other. A lab publish is how
+    an experiment reaches a machine nobody can run a build on, and it stays possible.
+  - **A site not published from a tag says so on every page**: a banner above the page names the
+    branch and the commit, says that it describes changes not on nuget.org, and links the Release
+    notes' Unreleased section. A `lab/*` site says that it is an experiment. The version chip in the app
+    bar says the same in the warning colour.
+  - Links to an ADR, and "Source of this page", point at the tag or the commit the site was built
+    from, so a site published from a tag cites the decisions as they stood then.
 - **GitHub Pages serves the site under `/ex-grid/`.** The workflow rewrites `<base href>`. It
   copies `index.html` to `404.html` so a deep link opens the app, and adds `.nojekyll` so
   `_framework/` is served.
@@ -141,3 +221,7 @@ analytics.
 - **The README links to the site.** The package readmes stay as they are: they go to nuget.org
   and must stand alone.
 - **`CONTEXT.md` gains Docs Site, Example and Showcase.**
+- *(Added 2026-10-11.)* **The generator grows**: the site map, the Release Notes and the Roadmap are
+  parsed at build time, each by a small hand-written parser with errors that name the file and the line,
+  pinned by a test project of its own. The release workflow gains the job that publishes the site, and
+  `docs.yml` becomes callable.
