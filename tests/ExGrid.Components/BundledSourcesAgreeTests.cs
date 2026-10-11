@@ -144,14 +144,29 @@ public class BundledSourcesAgreeTests : GridTestContext
         internal int StatesSince(int pushesBefore) => _rendersAtPush.Skip(pushesBefore).Distinct().Count();
     }
 
-    [Fact] // FN-4 / ADR-0001 / ADR-0025: the same painting at every step, the same row renders where both sources hold the rows, and the grid renders more under Fetch only for the states Fetch pushes that From does not
+    /// <summary>What FN-4, as restated on 2026-10-11, lets a step cost the grid under <c>Fetch</c> beyond
+    /// <c>From</c>: nothing (<see cref="None"/>), or the states the fetching source pushes and <c>From</c>
+    /// does not — named by the criterion for a sort, a filter, and the restart when either is cleared
+    /// (<see cref="FetchStates"/>).</summary>
+    private enum ExtraAllowed
+    {
+        /// <summary>No state and no render beyond <c>From</c>'s: a scroll, a fling.</summary>
+        None,
+
+        /// <summary>The states <c>Fetch</c> pushes beyond <c>From</c>'s, each one render, and nothing else.</summary>
+        FetchStates,
+    }
+
+    [Fact] // FN-4 / ADR-0001 / ADR-0025: the same painting at every step, the same row renders where both sources hold the rows, and the grid renders more under Fetch only on a sort, a filter or either cleared, by exactly the states Fetch pushes there
     public async Task FN4_the_grid_renders_more_under_fetch_by_exactly_the_states_fetch_pushes()
     {
         // FN-4 as restated on 2026-10-11: one push path, so the grids paint alike at every step and
         // their rows cost alike wherever both sources hold them; the grid's own renders may exceed
         // From's by the states Fetch pushes that From does not — the loading state of a sort and a
-        // filter, the restart when either is cleared, a fetch past its read-ahead (ADR-0025) — and by
-        // nothing else. The messages give every count.
+        // filter, and the restart when either is cleared — and by nothing else. Each step says which it
+        // is: a scroll and a fling may cost no state and no render more under Fetch, a fling past the
+        // fetched Window included, which the criterion does not name; a sort, a filter and either
+        // cleared may cost exactly the states Fetch pushed beyond From's. The messages give every count.
         var rows = TestRows.Many(300);
         var inMemory = GridSource.From(rows);
         using var fetching = GridSource.Fetch<TestRow>((query, _) => Answer(rows, query), readAheadRows: 60);
@@ -169,10 +184,13 @@ public class BundledSourcesAgreeTests : GridTestContext
         var fetchPushed = new PushedStates(fetching, () => fetchGrid.Instance.Renders);
         AssertSamePaint("first paint", fromGrid, fetchGrid);
         var failures = new List<string>();
-        var extraRenders = 0;
+        var extraStatesWhereAllowed = 0;
 
-        async Task StepAsync(string step, Func<IGridSource<TestRow>, IRenderedComponent<CountedGrid>, Task> gesture,
-            bool bothHold = true)
+        // heldFor: the decision a step's failure waits on, where the product does something the
+        // criterion as worded does not name, and only the user can say whether the row should.
+        async Task StepAsync(string step, ExtraAllowed allowed,
+            Func<IGridSource<TestRow>, IRenderedComponent<CountedGrid>, Task> gesture, bool bothHold = true,
+            string? heldFor = null)
         {
             var (fromGridBefore, fromPushesBefore, fromRowsBefore) = (fromGrid.Instance.Renders, fromPushed.Count, RowRenders.Of(fromGrid));
             var (fetchGridBefore, fetchPushesBefore, fetchRowsBefore) = (fetchGrid.Instance.Renders, fetchPushed.Count, RowRenders.Of(fetchGrid));
@@ -180,14 +198,27 @@ public class BundledSourcesAgreeTests : GridTestContext
             await gesture(fetching, fetchGrid);
             AssertSamePaint(step, fromGrid, fetchGrid);
 
-            // The grid's own renders: more under Fetch by exactly the states Fetch pushed beyond From's.
             var fromRenders = fromGrid.Instance.Renders - fromGridBefore;
             var fetchRenders = fetchGrid.Instance.Renders - fetchGridBefore;
             var (fromStates, fetchStates) = (fromPushed.StatesSince(fromPushesBefore), fetchPushed.StatesSince(fetchPushesBefore));
-            extraRenders += fetchRenders - fromRenders;
-            if (fetchRenders - fromRenders != fetchStates - fromStates)
-                failures.Add($"{step}: the grid rendered {fromRenders} times under From for {fromStates} states pushed, "
-                    + $"and {fetchRenders} times under Fetch for {fetchStates}");
+            var counts = $"the grid rendered {fromRenders} times under From for {fromStates} states pushed, "
+                + $"and {fetchRenders} times under Fetch for {fetchStates}";
+            switch (allowed)
+            {
+                // Not a state the criterion names: Fetch may push nothing more than From, and the grid may
+                // render no more under it.
+                case ExtraAllowed.None when fetchStates != fromStates || fetchRenders != fromRenders:
+                    failures.Add($"{step}: FN-4 names no state Fetch may push beyond From's here, but {counts}"
+                        + (heldFor is null ? "" : $". HELD FOR A DECISION: {heldFor}"));
+                    break;
+                // A state the criterion names: more under Fetch by exactly the states it pushed beyond From's.
+                case ExtraAllowed.FetchStates when fetchStates < fromStates || fetchRenders - fromRenders != fetchStates - fromStates:
+                    failures.Add($"{step}: the grid's extra renders under Fetch are not the extra states it pushed — {counts}");
+                    break;
+                case ExtraAllowed.FetchStates:
+                    extraStatesWhereAllowed += fetchStates - fromStates;
+                    break;
+            }
 
             // Every painted row cost the same renders through either source (ADR-0003), wherever both hold
             // it: past Fetch's read-ahead the two Windows differ — From's rows paint as Placeholders that
@@ -200,32 +231,39 @@ public class BundledSourcesAgreeTests : GridTestContext
                 failures.Add($"{step}: the rows rendered differently — From {string.Join(" ", fromRows)}, Fetch {string.Join(" ", fetchRows)}");
         }
 
-        await StepAsync("a scroll inside the Viewport", (_, grid) => ScrollToAsync(grid.Find(".ex-scroller"), 3 * RowHeightPx));
-        await StepAsync("a sort", (source, grid) => grid.InvokeAsync(() =>
+        await StepAsync("a scroll inside the Viewport", ExtraAllowed.None,
+            (_, grid) => ScrollToAsync(grid.Find(".ex-scroller"), 3 * RowHeightPx));
+        await StepAsync("a sort", ExtraAllowed.FetchStates, (source, grid) => grid.InvokeAsync(() =>
             source.OnSortChanged([new SortSpec("Amount", SortDirection.Descending)])));
-        await StepAsync("a filter", (source, grid) => grid.InvokeAsync(() =>
+        await StepAsync("a filter", ExtraAllowed.FetchStates, (source, grid) => grid.InvokeAsync(() =>
             source.OnFilterChanged(new GridFilter(new Dictionary<string, FilterSpec>
             {
                 ["Active"] = new([new FilterClause(FilterOperator.Equals, true)]),
             }))));
-        await StepAsync("another scroll", (_, grid) => ScrollToAsync(grid.Find(".ex-scroller"), 7 * RowHeightPx));
-        await StepAsync("a fling inside both Windows, settled", async (_, grid) =>
+        await StepAsync("another scroll", ExtraAllowed.None,
+            (_, grid) => ScrollToAsync(grid.Find(".ex-scroller"), 7 * RowHeightPx));
+        await StepAsync("a fling inside both Windows, settled", ExtraAllowed.None, async (_, grid) =>
         {
             await ScrollToAsync(grid.Find(".ex-scroller"), 40 * RowHeightPx);
             await grid.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
         });
-        await StepAsync("a fling past the fetched Window, settled and answered", async (_, grid) =>
+        await StepAsync("a fling past the fetched Window, settled and answered", ExtraAllowed.None, async (_, grid) =>
         {
             await ScrollToAsync(grid.Find(".ex-scroller"), 120 * RowHeightPx);
             await grid.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
-        }, bothHold: false);
-        await StepAsync("the filter cleared", (source, grid) => grid.InvokeAsync(() => source.OnFilterChanged(null)));
-        await StepAsync("the sort cleared", (source, grid) => grid.InvokeAsync(() => source.OnSortChanged([])));
+        }, bothHold: false, heldFor: "Fetch answers the Range Request past its read-ahead with a new Window, a state "
+            + "From, holding every row, never pushes. FN-4's row names a sort, a filter and the restart when either "
+            + "is cleared, and nothing else; whether this state is allowed too is the user's to decide, and the row "
+            + "would have to name it.");
+        await StepAsync("the filter cleared", ExtraAllowed.FetchStates,
+            (source, grid) => grid.InvokeAsync(() => source.OnFilterChanged(null)));
+        await StepAsync("the sort cleared", ExtraAllowed.FetchStates,
+            (source, grid) => grid.InvokeAsync(() => source.OnSortChanged([])));
 
         Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
         // The fetching source's own states are there to count: a run in which it pushed nothing more
-        // than From would assert nothing about them.
-        Assert.True(extraRenders > 0, "Fetch pushed no state that From did not, so nothing was compared.");
+        // than From where the criterion allows it would assert nothing about them.
+        Assert.True(extraStatesWhereAllowed > 0, "Fetch pushed no state that From did not, so nothing was compared.");
     }
 
     private static void AssertSamePaint(
