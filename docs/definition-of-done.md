@@ -1118,6 +1118,15 @@ built; when ExSheet is proposed for a release of its own, this section becomes i
 the preconditions §2 has for ExGrid. *(That happened on 2026-10-11: `0.1.0` carries ExSheet stable,
 so this section gates the tag ([ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md)).)*
 
+*(Added 2026-10-11, decided with the user, [ADR-0202](adr/0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md).)* Before `0.1.0`:
+- **SH-7 is met as written**: every case under `tests/ExSheet.Engine.Tests/ExcelCases/` whose source is
+  `uncertain` or `documented` is put to Excel on the sign-off's Windows run (`oracle.ps1 -Update`), and
+  each that disagrees is corrected, or its arguments refused with an Error Value, before the tag.
+- **SH-28's edge cases, and SH-51 and SH-52's by-hand halves, are run on Windows** (the seventh run's
+  Parts A and B, ticket 160), and a disagreement is settled in ADR-0051 or ADR-0100 first.
+- **SH-66 to SH-68 are built.** `IRR`, `XIRR` and `RATE` (ticket 13) and dragging a Reference Outline
+  (ticket 31) are not in `0.1.0`, and are said as known limitations.
+
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
 | **SH-1** | MUST | `ExSheet.Engine` references nothing of ours and no Blazor package; `ExSheet` references it and `ExGrid`; nothing references `ExSheet` (ADR-0046/0047) | `dotnet list … reference` / `package` | as stated |
@@ -1228,7 +1237,11 @@ tag, together with §32's rows on ExPivot's report Windows ([ADR-0200](adr/0200-
 
 Where a criterion says "as Excel", the behaviour was read from Excel's documentation and has not
 yet been run beside Excel on Windows. `docs/specs/expivot/excel-behaviours.md` lists each such
-reading until a run settles it.
+reading until a run settles it. *(2026-10-11, decided with the user, [ADR-0202](adr/0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md): the run is made before
+`0.1.0`, on the sign-off's Windows run (ticket 07). The twelve readings that change a number on screen —
+items 2 to 8 and 15 to 17 — gate the tag: a disagreement is settled in the ADR first and the code after
+it. A disagreement in layout or wording is a known limitation of `0.1.0`. PV-21's numbers near the
+combination cap are recorded in Step 6 and said as a known limitation; they do not gate.)*
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
