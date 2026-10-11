@@ -1,0 +1,42 @@
+@page "/showcases"
+
+@* The Showcases (ADR-0110): one use case per product, each a page of its own that fills the window.
+   Each opens in a tab of its own, under either Chrome; the address carries the choice. No recordings
+   here: the page a card opens is the thing itself. *@
+<DocsPage Title="Showcases"
+          Lead="One use case per product, as an application would build it, with no prose. Each fills the window and opens in a tab of its own, under the built-in Chrome or MudBlazor's.">
+    <div class="docs-cards">
+        @foreach (var showcase in Cards)
+        {
+            <MudPaper Outlined="true" Class="docs-card docs-showcase-card">
+                <MudText Typo="Typo.overline" Color="Color.Primary">@showcase.Product</MudText>
+                <MudText Typo="Typo.h6" HtmlTag="h2">@showcase.Title</MudText>
+                <MudText Typo="Typo.body2" Class="docs-muted mt-1 mb-4">@showcase.Text</MudText>
+                <div class="docs-showcase-buttons">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="@showcase.Href" Target="_blank"
+                               EndIcon="@Icons.Material.Filled.OpenInNew" aria-label="@($"{showcase.Title}, built-in Chrome, in a new tab")">Built-in</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="@($"{showcase.Href}?chrome=mud")" Target="_blank"
+                               EndIcon="@Icons.Material.Filled.OpenInNew" aria-label="@($"{showcase.Title}, MudBlazor's Chrome, in a new tab")">MudBlazor</MudButton>
+                </div>
+                <MudLink Href="@showcase.Docs" Typo="Typo.body2" Class="docs-showcase-docs">@showcase.DocsText</MudLink>
+            </MudPaper>
+        }
+    </div>
+</DocsPage>
+
+@code {
+    private sealed record Card(string Product, string Title, string Text, string Href, string Docs, string DocsText);
+
+    private static readonly Card[] Cards =
+    [
+        new("ExGrid", "Trade blotter",
+            "Live prices that flash as they change, pinned columns, a desk filter, and a rectangle of P&L selected and copied.",
+            "showcase/blotter", "exgrid", "Read the ExGrid docs →"),
+        new("ExSheet", "Budget sheet",
+            "A departmental budget: Formulas typed and completed, References outlined, the fill handle, and Format Cells.",
+            "showcase/budget", "exsheet", "Read the ExSheet docs →"),
+        new("ExPivot", "Sales analysis",
+            "60,000 sales: fields dragged in the Fields pane, each value as a share of its column, and regions collapsed and opened.",
+            "showcase/sales", "expivot", "Read the ExPivot docs →"),
+    ];
+}

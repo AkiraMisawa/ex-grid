@@ -26,26 +26,36 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="Arrays that spill">
+        <p>
+            A Formula whose result is several Values spills, as in Excel 365. The Formula's cell, the Anchor, shows the
+            first Value, and the others fill the cells below and to the right, its Spill Range. A Reference to several
+            cells spills (<code>=A2:A4</code>), and so does an operator applied to a range, element by element
+            (<code>=B2:E2*1.1</code>). So do <code>FILTER</code>, <code>UNIQUE</code>, <code>SORT</code>,
+            <code>SORTBY</code>, <code>SEQUENCE</code> and <code>TRANSPOSE</code>, an <code>INDEX</code> with a row or
+            a column of 0, and an <code>XLOOKUP</code> whose return array is several columns wide. A function that
+            reduces an array takes one and returns one Value: <code>=SUMPRODUCT((A2:A4="North")*F2:F4)</code>.
+        </p>
+        <p>
+            The cells of a Spill Range hold no Entry. When one of them holds an Entry or another Formula's spill, or
+            the range would pass the Sheet's edge, nothing spills and the Anchor shows <code>#SPILL!</code>: nothing is
+            overwritten, and clearing the obstacle lets the Formula spill. <code>A1#</code> names the Spill Range of
+            the Formula in A1. Selecting a spilled cell shows its Anchor's Formula in the Formula Bar, dimmed, because
+            it is edited at the Anchor. The <code>@@</code> operator is refused when a Formula is typed: no Formula
+            silently takes one Value of a range.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="Supported functions">
         <p>
             Each function gives Excel's result. A name outside this set is <code>#NAME?</code>, never an
             approximation of what the function might have meant.
         </p>
-        <MudSimpleTable Dense="true" Outlined="true" Class="mb-4">
-            <thead>
-                <tr><th>Function</th><th>Arguments</th><th>Returns</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var function in DeclaredFunction.All)
-                {
-                    <tr>
-                        <td><code>@function.Name</code></td>
-                        <td><code>@function.Arguments</code></td>
-                        <td>@function.Description</td>
-                    </tr>
-                }
-            </tbody>
-        </MudSimpleTable>
+        <p>
+            The engine supports @DeclaredFunction.All.Count functions. Each one, with its arguments as Excel writes them
+            and what it returns, is on the <a href="exsheet/functions">Functions</a> page, by category, with a filter
+            and the functions that are not supported yet.
+        </p>
         <p>Where the engine cannot give Excel's answer, it gives an Error Value instead of a different answer:</p>
         <ul>
             <li>
@@ -53,9 +63,13 @@
                 one, where Excel shows 0. <code>IFERROR</code> does not catch it.
             </li>
             <li>
-                <b>No spilled arrays.</b> A Formula whose result would be a range of several cells, or an operator
-                applied to one, is <code>#VALUE!</code>; so is an <code>XLOOKUP</code> whose return array is more than
-                one cell across.
+                <b>A function given a range where it takes one Value.</b> Excel 365 applies such a function to each
+                Value and spills the results, so <code>=ROUND(B2:E2, -3)</code> gives four. ExSheet does not yet: it is
+                <code>#VALUE!</code>.
+            </li>
+            <li>
+                <b>An array too large to hold.</b> An array of more than 2<sup>24</sup> Values, sixteen whole columns,
+                is not built: whatever would build one is <code>#NUM!</code>. Excel runs out of resources before it.
             </li>
             <li>
                 <b><code>XLOOKUP</code>'s binary search</b> (<code>search_mode</code> 2 and -2) answers only over a

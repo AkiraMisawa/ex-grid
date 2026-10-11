@@ -1,0 +1,33 @@
+@using global::ExSheet.Engine
+
+@* One category of ExSheet's functions on the Functions page: a section the rail lists, with each function's
+   name, its arguments as Excel writes them, and what it returns, from the engine's own list. *@
+<section class="docs-section" id="@Anchor">
+    <MudText Typo="Typo.h5" HtmlTag="h2" Class="docs-section-title">
+        <a href="@($"{FunctionCatalogue.Route}#{Anchor}")" class="docs-anchor">@Title</a>
+    </MudText>
+    <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table docs-reference-table">
+        <thead><tr><th style="width: 18%">Function</th><th style="width: 36%">Arguments</th><th>Returns</th></tr></thead>
+        <tbody>
+            @foreach (var function in Functions)
+            {
+                <tr>
+                    <td><code>@function.Name</code></td>
+                    <td><code>@function.Arguments</code></td>
+                    <td>@function.Description</td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+</section>
+
+@code {
+    /// <summary>The category's heading.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>The anchor the rail links.</summary>
+    [Parameter, EditorRequired] public string Anchor { get; set; } = "";
+
+    /// <summary>The functions to list, in the catalogue's order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<DeclaredFunction> Functions { get; set; } = [];
+}

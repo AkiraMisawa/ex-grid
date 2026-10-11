@@ -1,0 +1,60 @@
+@* The banner above every page of a site that is not a version's (ADR-0110): it names the branch
+   and the commit the site was published from, says that the site describes changes that are not
+   on nuget.org, and leads to the Release Notes' Unreleased section (ADR-0190). A lab/* site says
+   that it is an experiment. A local build says what it is in its own words.
+
+   Strip is the one-line form a full-window page carries (BareLayout): a Showcase's or a figure's
+   height leaves --docs-banner-height for it. *@
+@if (Strip)
+{
+    <div class="docs-banner-strip" role="note">
+        <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Size="Size.Small" Class="docs-banner-strip-icon" />
+        <span class="docs-banner-strip-text">
+            @if (DocsBuild.Kind == DocsBuildKind.Experiment)
+            {
+                <text>An experiment, published from <b>@DocsBuild.Branch</b> at <code>@DocsBuild.ShortCommit</code>: not on nuget.org.</text>
+            }
+            else
+            {
+                <text>Published from <b>@DocsBuild.Branch</b> at <code>@DocsBuild.ShortCommit</code>: not on nuget.org yet.</text>
+            }
+        </span>
+        <a href="@DocsBuild.ReleaseNotesHref" class="docs-banner-strip-link">What is unreleased</a>
+    </div>
+}
+else
+{
+    <MudAlert Severity="@(DocsBuild.Kind == DocsBuildKind.Local ? Severity.Info : Severity.Warning)"
+              Dense="true" Class="docs-banner">
+        @switch (DocsBuild.Kind)
+        {
+            case DocsBuildKind.Experiment:
+                <text>
+                    This site is an experiment, published from the branch <b>@DocsBuild.Branch</b> at
+                    <MudLink Href="@DocsBuild.CommitUrl" Target="_blank"><code>@DocsBuild.ShortCommit</code></MudLink>.
+                    It describes changes that are not on nuget.org, and may never be: a page can show what no package
+                    holds.
+                </text>
+                break;
+            case DocsBuildKind.Branch:
+                <text>
+                    This site was published from <b>@DocsBuild.Branch</b> at
+                    <MudLink Href="@DocsBuild.CommitUrl" Target="_blank"><code>@DocsBuild.ShortCommit</code></MudLink>.
+                    It describes changes that are not on nuget.org yet: a page can show what no package holds.
+                </text>
+                break;
+            default:
+                <text>
+                    A local build of the Docs Site, from the working tree it was built in. It may describe changes
+                    that are not on nuget.org yet.
+                </text>
+                break;
+        }
+        <MudLink Href="@DocsBuild.ReleaseNotesHref" Class="docs-banner-link">See what is unreleased</MudLink>
+    </MudAlert>
+}
+
+@code {
+    /// <summary>The one-line form, for a page that fills the window.</summary>
+    [Parameter] public bool Strip { get; set; }
+}

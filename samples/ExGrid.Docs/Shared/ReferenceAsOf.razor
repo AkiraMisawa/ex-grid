@@ -1,0 +1,32 @@
+@* What a reference page is "as of" (ADR-0110): the version a tag published, or the branch and commit
+   the site was built from, or the working tree of a local build. Every fact on the page was read from
+   the repository or the shipped assemblies at that point. *@
+<p class="docs-reference-asof">
+    @switch (DocsBuild.Kind)
+    {
+        case DocsBuildKind.Tag:
+            <text>As of <a href="@DocsBuild.ReleaseNotesHref">@DocsBuild.Version</a>, read from the repository at its tag.</text>
+            break;
+        case DocsBuildKind.Branch:
+            <text>
+                As of <b>@DocsBuild.Branch</b> at <a href="@DocsBuild.CommitUrl" target="_blank" rel="noopener"><code>@DocsBuild.ShortCommit</code></a>,
+                read from the repository at that commit, which nuget.org does not have yet.
+            </text>
+            break;
+        case DocsBuildKind.Experiment:
+            <text>
+                As of <b>@DocsBuild.Branch</b> at <a href="@DocsBuild.CommitUrl" target="_blank" rel="noopener"><code>@DocsBuild.ShortCommit</code></a>,
+                an experiment, read from the repository at that commit.
+            </text>
+            break;
+        default:
+            <text>As of the working tree this site was built in.</text>
+            break;
+    }
+    @(" ")@ChildContent
+</p>
+
+@code {
+    /// <summary>What follows the line: where the page's facts come from.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
