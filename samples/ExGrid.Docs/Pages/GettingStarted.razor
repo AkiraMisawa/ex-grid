@@ -1,7 +1,7 @@
 @page "/getting-started"
 
 <DocsPage Title="Installation"
-          Lead="Add the packages, link their stylesheets, and put a grid on a page. A MudBlazor application adds the Wrappers and nothing else changes.">
+          Lead="Add the packages, place their stylesheet components, and put a grid on a page. A MudBlazor application adds the Wrappers and nothing else changes.">
 
     <DocsSection Title="Requirements">
         <ul>
@@ -25,24 +25,25 @@
 
     <DocsSection Title="Link the stylesheets">
         <p>
-            Each package brings one stylesheet. The grid loads its own script module, so there is no
-            script to add.
+            Each package brings one stylesheet, and a component that links it: <code>ExGridStylesheet</code>,
+            <code>ExSheetStylesheet</code> and <code>ExPivotStylesheet</code>, and <code>MudExGridStylesheet</code>,
+            <code>MudExSheetStylesheet</code> and <code>MudExPivotStylesheet</code> for the Wrappers. You place the
+            component, not a <code>&lt;link&gt;</code> to a <code>_content/</code> path, because the address has to
+            change whenever the file does (<a href="getting-started#a-new-version-s-files">A new version's files</a>).
+            The grid loads its own script module the same way, so there is no script to add.
         </p>
-        <CodeBlock Path="Examples/Setup/host-page.html" />
-    </DocsSection>
-
-    <DocsSection Title="A new version's files">
         <p>
-            The scripts and stylesheets are minified, with source maps. Whether a browser fetches the new ones after an
-            upgrade, or keeps an old script beside a new component, is decided by how your application serves static
-            files. In a Blazor Web App, .NET's static assets fingerprint each file, so a new version is a new address.
-            To get that, reference each stylesheet through <code>@@Assets</code>, and keep <code>&lt;ImportMap /&gt;</code>,
-            through which the grid resolves its own script to the fingerprinted file:
+            In a Blazor Web App, place them in <code>App.razor</code>'s <code>&lt;head&gt;</code>, where they are
+            sent with the page:
         </p>
-        <CodeBlock Path="Examples/Setup/fingerprinted-links.html" />
+        <CodeBlock Path="Examples/Setup/web-app-head.html" />
         <p>
-            Each product's stylesheet, and each Wrapper's, is referenced the same way.
+            In a standalone WebAssembly application, add them to <code>Program.cs</code> as root components in the
+            head, beside <code>HeadOutlet</code>. Not inside a <code>&lt;HeadContent&gt;</code>: only the last
+            <code>HeadContent</code> rendered reaches the head, so a page with one of its own would take the
+            stylesheets away.
         </p>
+        <CodeBlock Path="Examples/Setup/standalone-program.cs" />
     </DocsSection>
 
     <DocsSection Title="A first grid">
@@ -57,8 +58,9 @@
     <DocsSection Title="In a MudBlazor application">
         <p>
             Set MudBlazor up as usual: its services, its stylesheet and script, and the theme, popover
-            and dialog providers in your layout. Then link each package's stylesheet followed by its
-            Wrapper's.
+            and dialog providers in your layout. Then add each package's stylesheet component followed by
+            its Wrapper's, as root components in a standalone application, or in <code>App.razor</code>'s
+            <code>&lt;head&gt;</code> in a Blazor Web App.
         </p>
         <CodeBlock Path="Examples/Setup/Program.cs" />
         <CodeBlock Path="Examples/Setup/MainLayout.razor" />
@@ -69,6 +71,69 @@
             included. The Chrome fills the grid's menus, filter panel, find panel and Cell Editor with
             MudBlazor's own controls. The grid's behaviour does not change: switch the site to
             MudBlazor at the top and try the Example above again.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="A new version's files">
+        <p>
+            The scripts and stylesheets are minified, with source maps. After an upgrade, the browser has to run
+            the new script and paint with the new stylesheet beside the new assemblies, on a normal reload, without
+            anyone knowing that a hard refresh exists. So each package asks for the files it was built with, at an
+            address that changes with the file's content:
+        </p>
+        <ul>
+            <li>
+                <b>In a Blazor Web App</b> on <code>MapStaticAssets</code>, the fingerprinted address .NET gives the
+                file, which it serves as immutable.
+            </li>
+            <li>
+                <b>In a standalone application</b>, on GitHub Pages or any static host, the plain address with the
+                first twelve hex digits of the file's SHA-256 as <code>?v=</code>. A static host that keeps a file
+                for ten minutes, as GitHub Pages does, still sends the new one, because it is asked for at a new
+                address.
+            </li>
+        </ul>
+        <p>
+            Nothing here is yours to configure, and <code>&lt;ImportMap /&gt;</code> is no longer needed for the
+            grid's script.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="A standalone application's first visit">
+        <p>
+            A standalone application starts its components once the .NET runtime has loaded, and the stylesheet
+            components are among them. So on a first visit, and on the first load after an upgrade, a grid can
+            stand unstyled for a moment until its stylesheet arrives: about 0.4 s behind a 300 ms round trip,
+            measured, and then styled. It is the price of an address the package chooses. A Blazor Web App sends
+            the head with the page, so it has no such moment.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="When a page holds another version's files">
+        <p>
+            When a page still holds another version's files, the products say so instead of looking right and
+            being wrong:
+        </p>
+        <ul>
+            <li>
+                <b>"This page holds another version of the grid's script. Reload the page."</b> The grid shows this
+                in place of its rows, and says it once to a screen reader, when the script it loaded is not the one
+                it was built with: a tab opened before a deploy, a proxy that ignores the address's version, or a
+                script that did not load at all. It attaches nothing to that script, so nothing in the grid can be
+                selected or typed in, and it still asks your application for its rows. Reloading brings the
+                matching files.
+            </li>
+            <li>
+                <b>"This page holds another version's stylesheet. Reload the page."</b> A grid, a Sheet or a pivot
+                shows this when the stylesheet the page holds belongs to another version of that product. The stylesheet decides it on its own, with no script: each version's stylesheet shows the
+                notice for any other version and hides it for its own. A stylesheet that has not arrived yet shows
+                nothing, and one that is missing leaves the grid plainly unstyled.
+            </li>
+        </ul>
+        <p>
+            Both are the built-in Chrome's words. Replace them through the grid's <code>CommandLabel</code>, a
+            Sheet's <code>CommandLabel</code> or a pivot's <code>Label</code>, by the ids in
+            <code>ReloadNoticeLabelIds</code>.
         </p>
     </DocsSection>
 
