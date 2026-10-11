@@ -41,6 +41,13 @@ release in the Definition of Done's sense, and waits for Step 7.**
 
 ### How a version is published
 
+*(2026-10-11, decided with the user:
+[ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)
+rewrites this for stable versions. `0.1.0` is grown on `release/0.1` and rehearsed by release
+candidates; a tag may be on `main` or a release branch; the refusal of an unsuffixed version is
+replaced by a check that the notes name a sign-off made at a commit the tag differs from only by its
+records and notes. This section is rewritten on the release branch, with what it said kept.)*
+
 - **A tag is the only place a version is written.** `v0.1.0-beta.1` names `0.1.0-beta.1`. The
   projects carry `0.0.0-dev`, so a package packed by hand says plainly that it is not one.
 - **Pushing the tag runs `.github/workflows/release.yml`:**
