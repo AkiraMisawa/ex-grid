@@ -71,3 +71,10 @@ questions is a corpus case — the `uncertain` cases of `subtotal.json` (SUBTOTA
 `aggregate.json` (AGGREGATE-007, 008, 011 and 022 to 054), what counts as nested among them. Excel's popup
 texts for the function numbers and options, which the comment above asks the run to confirm, are
 Microsoft's documented ones (ADR-0058); like tickets 09 and 11's captions, nothing here waits on them.
+
+2026-10-11, after the second review: the layer-3 spec this ticket rewrote (`declarations.spec.mjs`,
+where `=SU` now lists `SUBTOTAL` second and the keyboard takes one more ↓ to reach `SUM`) had not been
+run locally. Its three DC-17 tests ran under both Chromes with `--project=chrome --repeat-each=3`, on
+Playwright's bundled Chromium (a container without Chrome or Edge, so no Step 4 record), headed under
+xvfb: 18 passed on the WebAssembly host (port 5441) and 18 on the Server host (port 5440). The full run,
+and the installed Chrome and Edge, are CI's.
