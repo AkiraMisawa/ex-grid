@@ -4,27 +4,27 @@
 |---|---|---|
 | ExGrid | 95.6% | 88.6% |
 | ExSheet | 95.3% | 88.4% |
-| ExPivot | 93.9% | 84.6% |
-| Data | 94.5% | 90.3% |
+| ExPivot | 93.8% | 84.6% |
+| Data | 94.4% | 90.2% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/11/2026 - 11:06:59 |
+| Generated on: | 10/11/2026 - 18:38:57 |
 | Parser: | MultiReport (12x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 796 |
 | Files: | 433 |
-| **Line coverage:** | 94.9% (53427 of 56271) |
-| Covered lines: | 53427 |
-| Uncovered lines: | 2844 |
-| Coverable lines: | 56271 |
-| Total lines: | 92606 |
-| **Branch coverage:** | 87.7% (30241 of 34452) |
-| Covered branches: | 30241 |
-| Total branches: | 34452 |
+| **Line coverage:** | 94.9% (53511 of 56363) |
+| Covered lines: | 53511 |
+| Uncovered lines: | 2852 |
+| Coverable lines: | 56363 |
+| Total lines: | 92815 |
+| **Branch coverage:** | 87.7% (30308 of 34532) |
+| Covered branches: | 30308 |
+| Total branches: | 34532 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -256,7 +256,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.6%**|**90.5%**|
 |ExGrid.Data.AggregateAccumulator|86%|87%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -345,7 +345,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -447,11 +447,11 @@
 |ExGrid.MudBlazor.RobotoGlyphTable|100%||
 
 </details>
-<details><summary>ExPivot - 90.1%</summary>
+<details><summary>ExPivot - 90%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**90.1%**|**79.4%**|
+|**ExPivot**|**90%**|**79.4%**|
 |ExPivot.Chrome.IPivotChrome|36.3%||
 |ExPivot.Chrome.PivotAreaEntryView|100%||
 |ExPivot.Chrome.PivotAreaView|100%||
@@ -473,12 +473,12 @@
 |ExPivot.Chrome.PivotToolbarContext|85.7%||
 |ExPivot.Chrome.PivotToolbarMenuView|100%||
 |ExPivot.Chrome.PivotValueFieldSettingsContext|100%||
-|ExPivot.Components.ExPivot|90.8%|80.6%|
+|ExPivot.Components.ExPivot|90.7%|80.6%|
 |ExPivot.Components.ExPivot.FieldDrag|100%||
 |ExPivot.Components.ExPivot.ItemsLoad|100%|100%|
 |ExPivot.Components.ExPivot.ItemsView|100%|100%|
 |ExPivot.Components.ExPivot.OpenSurface|100%|100%|
-|ExPivot.Components.ExPivot<TView, TContext>|90.8%|80.6%|
+|ExPivot.Components.ExPivot<TView, TContext>|90.7%|80.6%|
 |ExPivot.Components.PivotDetailsDialogView|100%||
 |ExPivot.Components.PivotDetailsGrid|93.1%|70%|
 |ExPivot.Components.PivotDetailsSheet|85.1%|60.4%|
@@ -507,11 +507,11 @@
 |ExPivot.PivotSummary|0%|0%|
 
 </details>
-<details><summary>ExPivot.Engine - 95.8%</summary>
+<details><summary>ExPivot.Engine - 95.9%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot.Engine**|**95.8%**|**87.2%**|
+|**ExPivot.Engine**|**95.9%**|**87.3%**|
 |ExPivot.Engine.AggregateValue|100%|100%|
 |ExPivot.Engine.AggregationPass|98.7%|96.1%|
 |ExPivot.Engine.AxisNode|87%|80%|
@@ -534,7 +534,7 @@
 |ExPivot.Engine.ComputationReport.Part|0%||
 |ExPivot.Engine.DetailsPass|100%|100%|
 |ExPivot.Engine.Exactly|98.8%|86.5%|
-|ExPivot.Engine.FetchingPivotReportSource|63.8%|37.7%|
+|ExPivot.Engine.FetchingPivotReportSource|65.1%|37.7%|
 |ExPivot.Engine.FetchingPivotSource|94.3%|68.4%|
 |ExPivot.Engine.FieldBinding|96.4%|94.4%|
 |ExPivot.Engine.FieldMeta|100%|100%|
@@ -600,7 +600,7 @@
 |ExPivot.Engine.PivotQueryField|86.6%|100%|
 |ExPivot.Engine.PivotQueryValue|83.3%|50%|
 |ExPivot.Engine.PivotReport|93.5%|82.4%|
-|ExPivot.Engine.PivotReportClient|89.2%|69%|
+|ExPivot.Engine.PivotReportClient|91.3%|72.9%|
 |ExPivot.Engine.PivotReportColumn|100%||
 |ExPivot.Engine.PivotReportCopyBlock|100%||
 |ExPivot.Engine.PivotReportCopyCell|100%||
@@ -688,7 +688,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**91.6%**|**84.8%**|
+|**ExSheet**|**91.6%**|**84.7%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -699,10 +699,10 @@
 |ExSheet.ColourItem|95.2%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|90.3%|84.5%|
+|ExSheet.Components.ExSheet|90.3%|84.3%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|90.3%|84.5%|
+|ExSheet.Components.ExSheet<T>|90.3%|84.3%|
 |ExSheet.Components.FormatCellsPanel|97.1%|87.4%|
 |ExSheet.DefaultToolbarRow|100%|50%|
 |ExSheet.FillItem|100%|50%|
