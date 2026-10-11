@@ -41,7 +41,35 @@ public class QuerySerialisationTests
                 ["Notional"] = new([new FilterClause(FilterOperator.IsNotBlank)]),
             }));
 
-        AssertSameQuery(query, RoundTrip(query));
+        var back = RoundTrip(query);
+        AssertSameQuery(query, back);
+        // "Round-trips equal" as a Consumer reads it: the Query read back is equal to the one written.
+        Assert.Equal(query, back);
+        Assert.Equal(query.GetHashCode(), back.GetHashCode());
+    }
+
+    [Fact] // ADR-0002 / ADR-0207 / FN-13: two Queries asking for the same thing are equal, whichever lists hold it, and a Query that differs in any part is not
+    public void FN13_queries_asking_for_the_same_thing_are_equal()
+    {
+        static GridQuery Query(int start = 120, SortDirection direction = SortDirection.Descending, object? operand = null, object? opaque = null)
+            => new(new RowRange(start, 60),
+                [new SortSpec("Book", SortDirection.Ascending), new SortSpec("Notional", direction)],
+                new GridFilter(new Dictionary<string, FilterSpec>
+                {
+                    ["Book"] = new([new FilterClause(FilterOperator.Equals, "Rates")]),
+                    ["Notional"] = new([new FilterClause(FilterOperator.GreaterThan, operand ?? 1.50m)]),
+                }, opaque));
+
+        Assert.Equal(Query(), Query());
+        Assert.Equal(Query().GetHashCode(), Query().GetHashCode());
+        Assert.Equal(Query(), Query(operand: 1.5m));
+        Assert.NotEqual(Query(), Query(start: 180));
+        Assert.NotEqual(Query(), Query(direction: SortDirection.Ascending));
+        Assert.NotEqual(Query(), Query(operand: 2m));
+        Assert.NotEqual(Query(), Query(operand: 1.5d));
+        Assert.NotEqual(Query(), Query(opaque: "desk"));
+        Assert.NotEqual(Query(), Query() with { Filter = null });
+        Assert.NotEqual(Query(), Query() with { Sorts = [] });
     }
 
     [Fact] // ADR-0002 / ADR-0207 / FN-13: no filter and no sort travel as themselves, not as something empty that means otherwise
@@ -49,7 +77,9 @@ public class QuerySerialisationTests
     {
         var query = new GridQuery(new RowRange(0, 1), [], null);
 
-        AssertSameQuery(query, RoundTrip(query));
+        var back = RoundTrip(query);
+        AssertSameQuery(query, back);
+        Assert.Equal(query, back);
     }
 
     [Fact] // ADR-0001 / FN-13: a range read back is the range written — and one no range may be is refused on the way in
@@ -71,7 +101,10 @@ public class QuerySerialisationTests
             var query = new GridQuery(new RowRange(0, 50), [],
                 new GridFilter(new Dictionary<string, FilterSpec> { [column] = new([clause]) }));
 
-            AssertSameQuery(query, RoundTrip(query));
+            var back = RoundTrip(query);
+            AssertSameQuery(query, back);
+            Assert.Equal(query, back);
+            Assert.Equal(query.GetHashCode(), back.GetHashCode());
         });
 
     [Theory]

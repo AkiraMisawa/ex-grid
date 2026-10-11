@@ -120,7 +120,7 @@ public sealed record GridViewState
     public bool Equals(GridViewState? other)
         => other is not null
             && (ReferenceEquals(this, other)
-                || (Columns.SequenceEqual(other.Columns) && Sorts.SequenceEqual(other.Sorts) && SameFilter(Filter, other.Filter)));
+                || (Columns.SequenceEqual(other.Columns) && Sorts.SequenceEqual(other.Sorts) && FilterEquality.SameFilter(Filter, other.Filter)));
 
     /// <summary>A hash agreeing with <see cref="Equals(GridViewState?)"/>: of the columns, the sort
     /// levels and the names of the filtered columns.</summary>
@@ -131,64 +131,9 @@ public sealed record GridViewState
             hash.Add(column);
         foreach (var sort in Sorts)
             hash.Add(sort);
-        if (Filter is { } filter)
-        {
-            // The filter's columns in any order: a dictionary orders nothing.
-            var names = 0;
-            foreach (var name in filter.Columns.Keys)
-                names ^= StringComparer.Ordinal.GetHashCode(name);
-            hash.Add(filter.Columns.Count);
-            hash.Add(names);
-        }
+        FilterEquality.AddFilter(ref hash, Filter);
         return hash.ToHashCode();
     }
-
-    private static bool SameFilter(GridFilter? a, GridFilter? b)
-    {
-        if (a is null || b is null)
-            return a is null && b is null;
-        if (a.Columns.Count != b.Columns.Count || !SameOperand(a.Opaque, b.Opaque))
-            return false;
-        foreach (var (column, spec) in a.Columns)
-        {
-            if (!b.Columns.TryGetValue(column, out var other) || !SameSpec(spec, other))
-                return false;
-        }
-        return true;
-    }
-
-    private static bool SameSpec(FilterSpec? a, FilterSpec? b)
-    {
-        if (a is null || b is null)
-            return a is null && b is null;
-        return a.Combinator == b.Combinator && SameList(a.Clauses, b.Clauses, SameClause);
-    }
-
-    private static bool SameClause(FilterClause? a, FilterClause? b)
-    {
-        if (a is null || b is null)
-            return a is null && b is null;
-        return a.Operator == b.Operator && SameOperand(a.Value, b.Value) && SameList(a.Values, b.Values, SameOperand);
-    }
-
-    private static bool SameList<T>(IReadOnlyList<T>? a, IReadOnlyList<T>? b, Func<T, T, bool> same)
-    {
-        if (a is null || b is null)
-            return a is null && b is null;
-        if (a.Count != b.Count)
-            return false;
-        for (var i = 0; i < a.Count; i++)
-        {
-            if (!same(a[i], b[i]))
-                return false;
-        }
-        return true;
-    }
-
-    // The engine decides by an operand's type (ADR-0023): a decimal and a double of one value, or a
-    // DateTime and a DateOnly of one day, are different conditions.
-    private static bool SameOperand(object? a, object? b)
-        => a is null || b is null ? a is null && b is null : a.GetType() == b.GetType() && a.Equals(b);
 }
 
 /// <summary>

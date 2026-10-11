@@ -38,7 +38,9 @@
             runs the reference implementation, <code>GridQueryEngine.Apply</code>. To send the query over the wire,
             <code>GridViewStateJson.WriteQuery</code> writes it as JSON and <code>ReadQuery</code> reads it back on
             the server, each filter operand with its type (<a href="exgrid/columns#keeping-a-view">Keeping a
-            view</a>). Pass <code>distinctValues</code>
+            view</a>), and the query read back is equal to the one written: two <code>GridQuery</code> values are
+            equal when they ask for the same range, sort and filter, whichever lists hold them, so a cache can be
+            keyed by one. Pass <code>distinctValues</code>
             to fill the filter panel's value lists and <code>find</code> to answer <kbd>Ctrl</kbd>+<kbd>F</kbd>; without
             <code>find</code>, the grid refuses to search rather than search only what it has painted. Pass
             <code>summarize</code> to answer the status-bar figures over a selection — a <code>SUM</code> on your
