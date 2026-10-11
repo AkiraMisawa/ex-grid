@@ -626,8 +626,10 @@
     {
         // The declared width, not the one painted on Device Pixels (ADR-0090): an Auto column is
         // exactly as wide as its widest estimate, and rounding it by under a Device Pixel must not
-        // turn the value it grew for into ####. The estimate is a bound charged at the widest glyph
-        // of each class, which leaves more than that pixel to spare.
+        // turn the value it grew for into ####. The estimate need not leave that pixel to spare —
+        // in DejaVu Sans a bold one does not — because a cell that shows a number may use one
+        // Device Pixel of its right padding (ADR-0090, 2026-10-11; VZ-19; ex-grid.css), so its
+        // content box is never narrower than the declared content.
         var widthPx = Styles.Geometry.DeclaredWidthPxOf(index);
         var metrics = Appearance?.IsBold(index) == true ? Metrics.Bold : Metrics;
         var painted = PaintedText?.Invoke(Row, column, metrics.ContentWidthPx(widthPx), metrics) ?? text;

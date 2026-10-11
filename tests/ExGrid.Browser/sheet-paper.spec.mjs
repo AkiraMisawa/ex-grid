@@ -12,7 +12,10 @@ import { painted, sameColour, resolvedColour, contrast, onDeviceGrid, pixelsApar
 // read from the pixels, text colours from the cascade, which a colour read off antialiased glyphs
 // would blur.
 
-test.use({ viewport: { width: 1280, height: 1000 } });
+// 1280×1000, but in chrome-150 the window Chrome draws at the display scale its command line sets, as
+// an OS sets it: a viewport of Playwright's own is emulated at a scale of 1 (deviceScaleFactor || 1),
+// which would take the 150% away. Only the bold edge's sweep runs there (VZ-19).
+test.use({ viewport: async ({}, use, testInfo) => use(testInfo.project.name === 'chrome-150' ? null : { width: 1280, height: 1000 }) });
 
 const CHROMES = [['built-in', ''], ['MudBlazor', '&chrome=mud']];
 const SCHEMES = ['light', 'dark'];
@@ -401,7 +404,7 @@ async function expectPaintedWhole(page, locator, what) {
 /**
  * Whether the browser paints system-ui in DejaVu Sans, as Linux does: measured in the page, as the
  * same text set in system-ui and in DejaVu Sans, bold. A face that is not installed falls back to
- * another, which measures differently.
+ * another, which measures differently. The bold edge's sweep records it: its hardest case is that face.
  */
 const paintsDejaVu = (page) => page.evaluate(() => {
     const context = new OffscreenCanvas(1, 1).getContext('2d');
@@ -430,17 +433,18 @@ for (const [chrome, query] of CHROMES) {
         }
     });
 
-    test(`SH-41 (${chrome} Chrome): a bold number shown a hundredth over the bold edge is painted whole, wherever its column's edges fall on Device Pixels (ADR-0071, ADR-0016, ADR-0090)`, async ({ page }) => {
+    test(`SH-41/VZ-19 (${chrome} Chrome): a bold number shown a hundredth over the bold edge is painted whole, wherever its column's edges fall on Device Pixels (ADR-0071, ADR-0016, ADR-0090)`, async ({ page }, testInfo) => {
         const grid = await openFit(page, 'bold', query);
-        // Left failing where it fails, until the decision it needs is made. The #### decision reads the
-        // declared width (ADR-0090), and a column is painted up to a Device Pixel narrower than declared.
-        // ADR-0090 counts on the estimate to leave more than that to spare, and in DejaVu Sans, which
-        // Linux paints system-ui in, the core's bold widths leave 0.35px over 12%: the column painted
-        // narrower cuts it with an ellipsis (found here, 2026-10-10; ticket 18).
-        test.fail(!query && await paintsDejaVu(page),
-            'SH-41: a bold number at its bold edge is cut where its column is painted narrower than declared, in DejaVu Sans; needs a decision on ADR-0090\'s estimate');
+        // The #### decision reads the declared width (ADR-0090), and a column is painted up to a Device
+        // Pixel narrower than declared. In DejaVu Sans, which Linux paints system-ui in, the core's bold
+        // widths leave 12% 0.35px, under that pixel, and the column painted narrower cut it with an
+        // ellipsis (found here, 2026-10-10; ticket 18). So a cell that shows a number may use one
+        // Device Pixel of its right padding (ADR-0090, 2026-10-11; VZ-19). Read here at 100% and, in
+        // chrome-150, at the 150% its command line sets.
+        expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
+        testInfo.annotations.push({ type: 'system-ui', description: await paintsDejaVu(page) ? 'DejaVu Sans' : 'not DejaVu Sans' });
         // Eight columns of one declared width, B to I, at eight offsets. Each is painted at one of the
-        // two whole widths either side of the declared one, as its offset falls (ADR-0090).
+        // two widths a Device Pixel apart either side of the declared one, as its offset falls (ADR-0090).
         const widths = [];
         for (const column of 'BCDEFGHI') {
             const target = cell(grid, `${column}2`);

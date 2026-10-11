@@ -1,6 +1,6 @@
 # 18: ExSheet in real browsers
 
-Status: ready-for-agent
+Status: done — but for Edge, which only CI runs
 
 **What to build:** Layer 3 for everything above, on Chrome and Edge, against both hosts. It covers typing, Point by
 keys and by mouse, completion accepted with Tab, the Formula Bar mirroring, the fill-handle drag,
@@ -10,7 +10,7 @@ layer 3 at a time.
 
 **Blocked by:** 06, 07, 10, 11, 13, 15, 16
 
-- [ ] Every ExSheet criterion marked layer 3 in the Definition of Done passes on both browsers and both hosts
+- [x] Every ExSheet criterion marked layer 3 in the Definition of Done passes on both browsers and both hosts
 - [x] Two ExSheets: keys, popovers, undo and the Formula Bar never cross (ADR-0018)
 - [x] No console message, and the DOM does not grow with the extent
 
@@ -163,3 +163,31 @@ decision changes; every number sits one Device Pixel further right. What is left
 - lift the `test.fail` from SH-41's sweep in `sheet-paper.spec.mjs`, and see the sweep pass under
   DejaVu Sans as well as here;
 - Edge, which only CI runs.
+
+*(2026-10-11, VZ-19 built.)* The first box is ticked. SH-41's sweep passes where `system-ui` is DejaVu
+Sans, and every §27 criterion that names Layer 3 still has a live test (the list above, read again).
+What is left is Edge, which only CI runs.
+- **Built in the core.** A cell wearing `ex-cell-numeric`, the numeric presentation, uses one Device
+  Pixel of its right padding. `ex-grid.css` gives it `padding-right: calc(var(--ex-cell-padding-x) -
+  var(--ex-number-dp))`, where `--ex-number-dp` is `var(--ex-dp)` on a number's cell and `0px` on
+  every other. Both lengths are Geometry Tokens C# already writes inline. A right line's generated rule
+  gives its width back out of what is left. No `####` decision, General fit or Auto width moves, and text
+  is not given the pixel. ExGrid's group and total rows, and ExPivot's cells, take it through the same
+  class. Layer 2 works the cascade out in pixels (`NumberDevicePixelTests`).
+- **The sweep.** Its `test.fail` is lifted, and its title names VZ-19, which the `chrome-150` project now
+  runs at a real 150%. `sheet-paper.spec.mjs` leaves that project's window to Chrome, since a viewport of
+  Playwright's own is painted at a scale of 1.
+- **Found while checking that the sweep bites.** With the pixel taken out again, in a scratch copy of the
+  spec, the sweep fails at 100% under the built-in Chrome alone (D2, as on 2026-10-10). At 150% it fails
+  under both Chromes: the Wrapper's Roboto too, where B2, E2 and G2 drew a bold 12% of 26.86px in 26.67px.
+- **Runs**, with Playwright's Chromium 1194 under xvfb, `--project=chrome` where no project is named:
+  - the whole of `sheet-paper.spec.mjs`, `--repeat-each=3`: 75 of 75 on each host;
+  - SH-41's eight tests under DejaVu Sans, `--repeat-each=3`: 24 of 24 on each host;
+  - the sweep in `chrome-150`, `--repeat-each=3`: 6 of 6 on each host, in DejaVu Sans and in this
+    container's face;
+  - `appearance`, `stripes`, `selection-look`, `part-c`, `format-cells`, `format-cells-mud`,
+    `format-keys`, `sheet-borders`, `sheet-vs-excel`, `sizing`, `presentation` and `mud`, once on each
+    host: 217 passed and 2 skipped by name on each (`sheet-vs-excel`'s items 18 and 24). UX-19 failed on
+    both: this Chromium (141) computes a range's `outline-width` as 0px under `outline-style: none`.
+    That reads the selection's outlines, which this change does not reach, so it is CI's to judge.
+  - No console message in any of them.

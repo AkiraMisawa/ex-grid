@@ -26,6 +26,10 @@ shows a later row once the height is compressed, which only a run at 150% can se
 once the grid has painted the slice for the offset the browser holds, as the offset the grid
 wrote on the Viewport says: compressed, the rows move when the grid is told of the scroll, a
 round trip later on the Server host, and a reading taken before that is of rows that are leaving.
+It also reads pixels that only a real 150% lays out: the Border lines (DC-59), and SH-41's sweep of
+the bold edge (VZ-19), where a number may use one Device Pixel of its cell's right padding
+(ADR-0090). `sheet-paper.spec.mjs` emulates its viewport everywhere else, and leaves the window to
+Chrome there, since an emulated viewport is painted at a scale of 1.
 It launches Chrome with `--force-device-scale-factor=1.5` and `viewport: null`, headed, so
 the display scale reaches layout the way the OS's does and Chrome clamps at 22,369,618 CSS
 px. Playwright's `deviceScaleFactor` would not do: it raises `devicePixelRatio` and leaves

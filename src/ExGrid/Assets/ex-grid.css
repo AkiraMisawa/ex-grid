@@ -200,6 +200,21 @@
 .ex-header-cell[aria-sort="ascending"]::after { content: "▲"; }
 .ex-header-cell[aria-sort="descending"]::after { content: "▼"; }
 .ex-cell-numeric { text-align: right; }
+/* A cell that shows a number may use one Device Pixel of its right padding (ADR-0090, decided
+   2026-10-11; VZ-19). Its column's edges lie on Device Pixels, so it can be painted up to one
+   narrower than declared, while the #### decision, General's fit and Auto width read the declared
+   width, and the estimate can leave less than that pixel to spare: 0.35px over a bold 12% in DejaVu
+   Sans, Linux's system-ui. With the pixel, the content box is never narrower than the declared
+   content, however the edges round, at every scale and zoom. Both lengths are Geometry Tokens C#
+   writes inline: the padding from the Grid Metrics, and the Device Pixel once the browser has told
+   it (its resolution steps below stand until then), so the stylesheet adds no pixel of its own
+   (ADR-0027/0028). A number aligned right sits that pixel further right; aligned left it gains the
+   room at its end. Text is not given it: an ellipsis is its decided overflow, and the pixel would
+   only move where. --ex-number-dp is what a cell gives: a Device Pixel on a number's, nothing on any
+   other, set on every cell so that a grid inside a cell inherits none. A right border's rule gives
+   its width back out of what is left (AppearanceStyles). */
+.ex-cell { --ex-number-dp: 0px; }
+.ex-cell-numeric { --ex-number-dp: var(--ex-dp); padding-right: calc(var(--ex-cell-padding-x, 8px) - var(--ex-number-dp)); }
 /* A Header Group's rectangle (ADR-0032): a caption over its members, centred, on the
    header's own ground. Absolutely positioned from the geometry, so it stands whether
    or not its leaves are in the DOM; cost is per rectangle (ADR-0008's economy). Its
