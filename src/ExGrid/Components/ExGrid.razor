@@ -7357,7 +7357,7 @@
         _editingCell = cell;
         // What the cell shows as the editor opens over it, and the order it opens under: a commit's
         // Overwrite Notice compares with the one, and lands by position under the other (ADR-0142).
-        NoteEditOpened(cell);
+        NoteEditOpened(cell, typed: mode == EditMode.Overwrite);
         _editText = initialText;
         _editCaret = initialText.Length;
         // Placed explicitly at the end of the opening text, never assumed to be where the
@@ -7943,7 +7943,7 @@
         _editSurface = EditSurface.Bar;
         _editMode = EditMode.Caret;
         _editingCell = focus;
-        NoteEditOpened(focus);
+        NoteEditOpened(focus, typed: false);
         _editText = OpeningTextOf(focus);
         if (ReportsCaret && string.Equals(_editText, shown, StringComparison.Ordinal))
         {

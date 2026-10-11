@@ -77,7 +77,8 @@ public partial class ExGrid<TRow>
     // double-click puts in the editor (OpeningTextOf). While the editor's text is still this, the
     // editor holds a copy of committed data and nothing the user typed, and it goes with its row
     // once the browser has said so (ADR-0007's note of 2026-10-11, refined the same day; ST-2). Null
-    // while no edit is open.
+    // while no edit is open, and for an edit a typed character opened (an Overwrite): the user typed,
+    // even when what they typed is the cell's text.
     private string? _editCommittedText;
 
     // Which edit is open: a number each opening takes, so that an answer about one edit is never
@@ -94,10 +95,13 @@ public partial class ExGrid<TRow>
     /// the user's own writes to the cell that have not settled (D1), whose settling moves the
     /// baseline. A change in the round trip between the gesture that opens the editor and the open is
     /// not seen under the editor, and is the user's to accept.</summary>
-    private void NoteEditOpened(CellPosition cell)
+    /// <param name="cell">The cell the editor opens over.</param>
+    /// <param name="typed">Whether a typed character opened it (an Overwrite), so that it is never an
+    /// untyped editor (ST-2), whatever the cell holds.</param>
+    private void NoteEditOpened(CellPosition cell, bool typed)
     {
         _editSeenText = PaintedTextNow(cell.Row, cell.Column);
-        _editCommittedText = OpeningTextOf(cell);
+        _editCommittedText = typed ? null : OpeningTextOf(cell);
         _editNumber++;
         _editSequence = _sequenceVersion;
         _editKey = _rowKey is { } rowKey && RowInHand(cell.Row) is { } row ? rowKey(row) : null;

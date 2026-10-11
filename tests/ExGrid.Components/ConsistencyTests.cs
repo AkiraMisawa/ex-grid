@@ -510,6 +510,42 @@ public class ConsistencyTests : GridTestContext
         Assert.Equal([true], editing);
     }
 
+    [Fact] // ADR-0007 (ST-2) / ADR-0010: an edit a typed character opened is never untyped — typing the cell's own text over it is still typing, and the editor stays when its row leaves the Window, never asked about
+    public async Task ST2_an_edit_opened_by_typing_the_cells_own_text_is_not_untyped()
+    {
+        var source = new TestSource();
+        var rows = TestRows.Many(500);
+        source.Push(rows[..60], totalCount: 500);
+        var question = Js.UnansweredUntouched();
+        var editing = new List<bool>();
+        var discards = new List<EditDiscardReason>();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 140)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnEdit, (GridEditIntent<TestRow> _) => { })
+            .Add(g => g.OnEditDiscarded, discards.Add)
+            .Add(g => g.OnEditingChanged, editing.Add));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 20, OffsetY = 30 });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs());
+        // "R" typed onto row 1's Book opens the editor over it, and the typing goes on to the cell's
+        // own text.
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("R", false, false, false, false, false));
+        Assert.Equal("R", cut.Find(".ex-viewport input.ex-editor").GetAttribute("value"));
+        await cut.Find(".ex-viewport input.ex-editor").InputAsync(new ChangeEventArgs { Value = "Row 000001" });
+
+        await cut.InvokeAsync(() => source.Push(rows[200..260], windowStart: 200, totalCount: 500));
+
+        cut.WaitForAssertion(() => Assert.Equal("Row 000001", cut.Find(".ex-formula-bar-text").GetAttribute("value")));
+        Assert.Empty(question.Invocations);
+        Assert.Equal([true], editing);
+        Assert.Empty(discards);
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
     [Fact] // ADR-0007 / ADR-0011 / ADR-0142 / ST-2: without a Row Key an untyped editor names its row by position under the order it opened under — an order move, the same rows reordered, closes it: nothing written, nothing discarded
     public async Task ST2_without_a_row_key_an_untyped_editor_closes_when_the_order_moves()
     {
