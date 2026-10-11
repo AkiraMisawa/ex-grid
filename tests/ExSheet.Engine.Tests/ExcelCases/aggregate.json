@@ -220,12 +220,10 @@
     {
       "id": "AGGREGATE-025",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: option 4 with a whole-Formula SUBTOTAL in the range is #VALUE!; Microsoft documents option 4 as ignoring nothing, so Excel is expected to count the nested SUBTOTAL, which no run has observed",
+      "description": "Refused until Excel is asked: option 4 with a whole-Formula SUBTOTAL in the range is #VALUE!; Microsoft documents option 4 as ignoring nothing, so Excel is expected to count the nested SUBTOTAL (6), and the engine follows Excel's answer once a run has read it (SH-68, 2026-10-11)",
       "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,4,D1:D3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047 (2026-10-10; SH-68, 2026-10-11): under options 4 to 7, a cell whose whole Formula is a SUBTOTAL makes the result #VALUE! until the sign-off's Windows run reads Excel's answer; then the engine follows Excel",
-      "excelExpect": {"value2": 6}
+      "expect": {"value2": "#VALUE!"}
     },
     {
       "id": "AGGREGATE-026",
@@ -372,6 +370,86 @@
       "description": "Refused until Excel is asked: a number as a further reference in the reference form is #VALUE!",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,6,B1:B3,5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-042",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 5 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,5,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-043",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 6 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,6,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-044",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 7 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,7,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-045",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 4 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(9,4,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-046",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 5 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(9,5,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-047",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 6 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(9,6,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-048",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 7 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(9,7,D1:D3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-049",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the array form (LARGE) under option 4 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(14,4,D1:D3,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-050",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the array form (LARGE) under option 6 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(14,6,D1:D3,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AGGREGATE-051",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the array form (LARGE) under option 4 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+      "cells": {"D1": "1", "D2": "2", "D3": "=AGGREGATE(9,0,D1:D2)", "ZZ1000": "=AGGREGATE(14,4,D1:D3,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
     }
