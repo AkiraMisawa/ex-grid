@@ -571,17 +571,23 @@ test('the cells in the DOM are the painted rows × (pinned + scrollable columns 
 });
 
 /**
- * Scrolls between `stops`, one each animation frame for `frames` frames, and looks after every
- * change the grid makes to its own DOM — so a state that lasts one render is seen without a wait
- * — at where each painted row of the Window has its pinned cells: present, wearing ex-pinned, and
- * at their place from the scrollport's left edge (Key at 0, Book at 140) however far the rest has
- * panned. That is `position: sticky`, which only a browser lays out. With no frames it looks once,
- * at what is there. Runs in the page; answers what was wrong, how many looks were taken, and how
- * many of them found a row painted as a Placeholder: mid-fling.
+ * Looks at where each painted row of the Window has its pinned cells: present, wearing ex-pinned,
+ * and at their place from the scrollport's left edge (Key at 0, Book at 140) however far the rest
+ * has panned. That is `position: sticky`, which only a browser lays out. With no `stops` it looks
+ * once, at what is there, and answers what it saw.
+ *
+ * With `stops` it flings between them, a stop each animation frame, and looks after every change
+ * the grid makes to its own DOM, so a state that lasts one render is seen without a wait. It keeps
+ * flinging until it has seen what it is there to see: `looks` looks, and at least one of them at a
+ * row painted as a Placeholder — a render in the middle of the fling. No count of frames is long
+ * enough everywhere: on the Server host each of those renders is a round trip behind the scroll.
+ * Then it stops by itself and marks what it saw `done`; the test waits for that under the suite's
+ * bound (`flingSeen`). It also stops if its grid leaves the document, as a failed test's does when
+ * the next test mounts its page, so nothing outlives the test it ran in. Runs in the page.
  */
-function flingAndLook(root, { first, last, stops, frames }) {
+function flingAndLook(root, { first, last, stops = [], looks = 0 }) {
     const scroller = root.querySelector(':scope > .ex-scroller');
-    const seen = { looks: 0, midFling: 0, wrong: [] };
+    const seen = { looks: 0, midFling: 0, wrong: [], done: false };
     const look = () => {
         const edge = scroller.getBoundingClientRect().left + scroller.clientLeft;
         let flung = false;
@@ -608,27 +614,37 @@ function flingAndLook(root, { first, last, stops, frames }) {
         seen.looks++;
         seen.midFling += flung ? 1 : 0;
     };
-    if (frames === 0) {
+    if (stops.length === 0) {
         look();
+        seen.done = true;
         return seen;
     }
-    return new Promise((resolve) => {
-        const observer = new MutationObserver(look);
-        observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style'] });
-        let frame = 0;
-        const step = () => {
-            if (frame === frames) {
-                observer.disconnect();
-                resolve(seen);
-                return;
-            }
-            const stop = stops[frame % stops.length];
-            scroller.scrollTop = stop.top;
-            scroller.scrollLeft = stop.left;
-            frame++;
-            requestAnimationFrame(step);
-        };
+    // Kept on the grid's own root, which the next test's page replaces, so the test can read it.
+    root.pinnedFling = seen;
+    const observer = new MutationObserver(look);
+    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style'] });
+    let frame = 0;
+    const step = () => {
+        if (!root.isConnected || (seen.midFling > 0 && seen.looks >= looks)) {
+            observer.disconnect();
+            seen.done = root.isConnected;
+            return;
+        }
+        const stop = stops[frame % stops.length];
+        scroller.scrollTop = stop.top;
+        scroller.scrollLeft = stop.left;
+        frame++;
         requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+    return null;
+}
+
+/** What the fling `flingAndLook` started has seen so far. */
+function flingSeen(grid) {
+    return grid.evaluate((root) => {
+        const seen = root.pinnedFling;
+        return seen && { looks: seen.looks, midFling: seen.midFling, wrong: [...seen.wrong], done: seen.done };
     });
 }
 
@@ -642,16 +658,22 @@ test('the Pinned Columns are painted at the left edge at every offset, mid-fling
     // Two stops a fling apart on both axes — 40 rows down, more than the 600px Viewport, and
     // 4,000px across, more than its width — both inside the Window, so every row painted in
     // between is a row in hand: a fling paints its pinned cells alone, and these must be there.
+    // It flings until it has looked 60 times and seen a render in the middle of the fling.
     const stops = [{ top: 0, left: 2000 }, { top: 40 * 28, left: 6000 }];
-    const flinging = await grid.evaluate(flingAndLook, { first, last, stops, frames: 90 });
+    await grid.evaluate(flingAndLook, { first, last, stops, looks: 60 });
+    // What it has seen so far is what a failure prints: how many looks, how many mid-fling.
+    await expect.poll(() => flingSeen(grid), {
+        message: 'the fling looked 60 times and saw a render in its middle',
+    }).toMatchObject({ done: true });
+    const flinging = await flingSeen(grid);
 
-    expect(flinging.wrong, `pinned cells while flinging (${flinging.looks} looks)`).toEqual([]);
+    expect(flinging.wrong, `pinned cells while flinging (${flinging.looks} looks, ${flinging.midFling} mid-fling)`).toEqual([]);
     expect(flinging.midFling, 'a render in the middle of the fling was seen').toBeGreaterThan(0);
 
     // And once it has settled where it stopped.
     await expect(grid.locator('.ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
     await circuitQuiet();
-    const settled = await grid.evaluate(flingAndLook, { first, last, stops, frames: 0 });
+    const settled = await grid.evaluate(flingAndLook, { first, last });
     expect(settled.wrong, 'pinned cells once settled').toEqual([]);
     expect(settled.midFling).toBe(0);
 });

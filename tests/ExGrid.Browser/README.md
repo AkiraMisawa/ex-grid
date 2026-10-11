@@ -434,9 +434,7 @@ nobody had asked for. What that means when writing a test:
   triangle in the corner alone, in its token's colour, a pinned one still sticky (UX-20), the dark
   scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2/3), the
   editor's box is the cell's (ED-9), the runaway auto-scroll stops (SL-14/15), the
-  Blazor error UI never shows (CON-5), and every class painted under a root — watched from
-  `/features`, `/cells`, `/tones`, `/stripes`, `/marks`, `/appearance` and `/sheet` while their
-  states are put on — is one ADR-0029 names, stable or internal, transcribed from the ADR (UX-4).
+  Blazor error UI never shows (CON-5).
 - `virtualisation.spec.mjs` — the large-data criteria at the Definition of Done's own
   scenario, `/wide` at 10⁶ rows × 100 columns (§12): the far corner reached and painted
   (BIG-1), the same element count at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1 —
@@ -448,7 +446,8 @@ nobody had asked for. What that means when writing a test:
   never pause (PF-1); the cells in the DOM exactly the painted rows × (pinned + the
   scrollable columns the readable width reaches), recomputed from the declared widths at four
   offsets (DOM-3); and the Pinned Columns present and at the left edge in every render of a
-  fling across both axes and once it settles (FN-6).
+  fling across both axes, flung until a render in its middle has been seen rather than for a
+  count of frames, and once it settles (FN-6).
 - `memory.spec.mjs` — on `/lifecycle`, a grid mounted and disposed fifty times leaves the
   browser's node and listener counts where they were (MEM-2), and a dispose takes the
   module's eight listeners off the root (MEM-4). The ten-minute soak (MEM-5, with the

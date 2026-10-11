@@ -126,6 +126,12 @@ public class ConsistencyTests : GridTestContext
     }
 
     // ---- ST-2: the grid holds no committed data ---------------------------------------------------
+    //
+    // Not asserted here, and not met: an editor opened with F2 and not typed into holds the cell's
+    // committed value as its text, and an open editor outlives its row leaving the Window
+    // (ADR-0011, ADR-0142), so after the Consumer's state is removed the Formula Bar still paints
+    // that value. Whether ADR-0007's "half-typed text in the editor" covers such text, or the grid
+    // must let it go, is a decision no ADR records; the test that is its pass condition waits for it.
 
     [Theory] // ADR-0001 / ADR-0007 / ST-2: after any sequence, an empty Window leaves the grid nothing to paint, and nothing throws
     [InlineData(20261011)]
