@@ -383,6 +383,45 @@ public class ConsistencyTests : GridTestContext
         Assert.False(Renderer.UnhandledException.IsCompleted);
     }
 
+    [Fact] // ADR-0007 / ADR-0011 / ADR-0142 / ST-2: without a Row Key an untyped editor names its row by position under the order it opened under — an order move, the same rows reordered, closes it: nothing written, nothing discarded
+    public async Task ST2_without_a_row_key_an_untyped_editor_closes_when_the_order_moves()
+    {
+        var source = new TestSource();
+        var rows = TestRows.Many(50);
+        source.Push(rows, totalCount: 50);
+        var editing = new List<bool>();
+        var edits = new List<GridEditIntent<TestRow>>();
+        var discards = new List<EditDiscardReason>();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 140)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnEdit, edits.Add)
+            .Add(g => g.OnEditDiscarded, discards.Add)
+            .Add(g => g.OnEditingChanged, editing.Add));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 20, OffsetY = 30 });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs());
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("F2", false, false, false, false, false));
+        Assert.Equal("Row 000001", cut.Find(".ex-viewport input.ex-editor").GetAttribute("value"));
+
+        // The same rows, reordered under a new order: position 1 now holds Row 000002, and the
+        // Window holds no row the position-bound editor can call its own.
+        TestRow[] reordered = [rows[0], rows[2], rows[1], .. rows[3..]];
+        await cut.InvokeAsync(() => source.Push(reordered, totalCount: 50, rowSequenceVersion: 1));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(cut.FindAll(".ex-editor:not(.ex-formula-bar-text)"));
+            Assert.Equal([true, false], editing);
+        });
+        Assert.Empty(edits);
+        Assert.Empty(discards);
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
     [Fact] // ADR-0007 / ADR-0140 / ST-2: with a Row Key an untyped editor goes with its row by key — a Window holding another row at its position closes it, one holding its row elsewhere does not
     public async Task ST2_with_a_row_key_an_untyped_editor_goes_with_its_row_not_its_position()
     {

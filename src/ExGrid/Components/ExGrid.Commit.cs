@@ -137,7 +137,8 @@ public partial class ExGrid<TRow>
     /// row now, and the Focus with it, while the Selection the order move dropped stays dropped. The
     /// grid does not scroll to follow it. A row the Window no longer holds leaves the editor where it
     /// is; its commit is refused as <c>RowLeftTheWindow</c>. Without a Row Key the editor stays where it is,
-    /// and its commit is refused as <c>OrderMoved</c> once the order has moved.
+    /// and its commit is refused as <c>OrderMoved</c> once the order has moved. An editor holding nothing
+    /// typed does not stay in either case: it closes (<see cref="CloseUntypedEditWhoseRowLeft"/>).
     /// </summary>
     private void FollowEditedRow()
     {
@@ -157,7 +158,9 @@ public partial class ExGrid<TRow>
     /// An editor whose text is still the committed value it opened on — opened with F2, a double-click
     /// or a press into the Formula Bar, and nothing typed, or typing taken back to that text — holds a
     /// copy of committed data and no half-typed text (ADR-0007's note of 2026-10-11, ST-2). When a
-    /// Window taken in no longer holds its row, it closes as Escape closes it: nothing is written and
+    /// Window taken in no longer holds its row — with a Row Key, no row answers its key; without one,
+    /// no row stands at its position, or the order moved, so that the position names another row
+    /// (<see cref="EditedRowInWindow"/>) — it closes as Escape closes it: nothing is written and
     /// nothing is discarded, the keyboard comes back to the root, and the Consumer hears the edit end
     /// (<see cref="OnEditingChanged"/>). An editor with typed text stays, as ADR-0142 has it. Not while
     /// the Consumer hears the editor's own commit, which decides what becomes of it.
@@ -175,12 +178,14 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>Whether the Window holds the row the editor was opened on, anywhere: with a Row Key,
-    /// the row under the editor's key; without one, a row at the editor's position — the only row it
-    /// can name (ADR-0142).</summary>
+    /// the row under the editor's key, wherever it stands now; without one, the row at the editor's
+    /// position while the order it was opened under holds — the only row it can name. Once the order
+    /// has moved, that position names another row, and the Window holds none the editor can call its
+    /// own (ADR-0011, ADR-0142, as <see cref="EditedRowInHand"/> has it).</summary>
     private bool EditedRowInWindow()
         => _rowKey is { } rowKey && _editKey is { } key
             ? PositionOfKey(rowKey, key, _editingCell.Row) is not null
-            : RowInHand(_editingCell.Row) is not null;
+            : _sequenceVersion == _editSequence && RowInHand(_editingCell.Row) is not null;
 
     /// <summary>Whether the row the editor stands at is out of the painted rows, as a row it followed
     /// can be: the grid does not scroll to follow it (ADR-0011's note of 2026-10-07).</summary>
