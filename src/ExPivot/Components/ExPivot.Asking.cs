@@ -30,6 +30,11 @@ public partial class ExPivot
     private PivotReportClient? _client;
     private PivotReportState? _state;
     private PivotReportWindow _wantedWindow = new(0, 64);
+
+    // The range the grid needs that _wantedWindow was read ahead from (ADR-0182): what a complete
+    // answer has to cover, checked before widening, when a server caps its answers below the rows
+    // read ahead. Null while _wantedWindow is a Window held, or the first: all of it is needed.
+    private PivotReportWindow? _neededWindow;
     private async ValueTask<PivotReportSource> ResolveReportSourceAsync()
     {
         if (ReportSource is { } reports)
@@ -341,8 +346,11 @@ public partial class ExPivot
             // notice may be all its server knows of them; an incremental source is asked for them.
             var refreshData = kind == Question.Data
                 || (kind == Question.Live && source.UpdateMode == PivotReportUpdateMode.FullRefresh);
+            // A Window read ahead is checked against the range the grid needs, before widening: a server
+            // that caps its answers may answer fewer rows, and the Window it answers is the one held
+            // (ADR-0182, ADR-0025).
             var adopted = await client.ReadAsync(layout, settings, _wantedWindow, _caps.MaxLeaves, asking.Token,
-                markChanges: kind != Question.Layout, refreshData: refreshData);
+                markChanges: kind != Question.Layout, refreshData: refreshData, needed: _neededWindow);
             // When the report answered ends before the Window asked for ends — a layout, a collapse,
             // a filter or newer data shrank it under the Window the grid was scrolled to — the Window
             // clamped into it is asked for, so the grid is never handed rows past the report's row
@@ -389,8 +397,10 @@ public partial class ExPivot
             _state = state;
             _report = state.Metadata;
             // Later questions ask for the Window shown — the one clamped into the report, when it
-            // shrank below the one asked for — until the grid asks for another (ADR-0151).
+            // shrank below the one asked for, or the shorter one a server that caps its answers gave —
+            // until the grid asks for another (ADR-0151, ADR-0182).
             _wantedWindow = state.Window;
+            _neededWindow = null;
             _reportSource = source;
             _shown = layout;
             if (previous is null || previous.SourceVersion != _report.SourceVersion) _shownAt = Now();
@@ -498,7 +508,8 @@ public partial class ExPivot
     /// input, where ADR-0025's rule would supersede it. With nothing in flight, a range the
     /// Window held covers, with the grid's margin either side, asks nothing; the grid asks again
     /// once a Window lands, if the margin is still not all in it (ADR-0183). Each answer is checked
-    /// against the Window asked for, whose rows include the range (ADR-0152).
+    /// against the range before widening: a complete one short of the rows read ahead that still
+    /// covers it is held as it came (ADR-0182, ADR-0025).
     /// <para>A Window asked for early, while every row on screen is held, is asked quietly: nothing on
     /// screen waits for it, and a report dimmed at every Window's edge would flicker, as a live one
     /// would (ADR-0067). Once the rows on screen leave the Window held while it is out, they wait
@@ -521,9 +532,11 @@ public partial class ExPivot
         {
             // Later questions ask for the Window shown, which holds the rows on screen.
             _wantedWindow = held;
+            _neededWindow = null;
             return Task.CompletedTask;
         }
         _wantedWindow = Widened(range, ReadAhead, rows);
+        _neededWindow = onScreen;
         return PursueAsync(raise: _raisePending, kind: Question.Window, quiet: Holds(onScreen));
     }
 

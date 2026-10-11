@@ -71,9 +71,10 @@ Link both stylesheets in your host page:
   newer question cancels the old one, unless the old one's Window holds the rows on screen. A
   server's report is read ahead: `Fetch` asks for 60 rows either side of the rows on screen unless
   given another `readAheadRows`, and the next Window is asked for ten rows before the one held runs
-  out, without dimming the report while every row on screen is held. The Consumer disposes a
-  `ReportSource` it owns; the component disposes the computation it makes over `Source`, leaving the
-  Pivot Source alive.
+  out, without dimming the report while every row on screen is held. A server that caps its answers
+  may send fewer rows than were read ahead, as long as they hold the rows on screen. The Consumer
+  disposes a `ReportSource` it owns; the component disposes the computation it makes over `Source`,
+  leaving the Pivot Source alive.
 - **Layout** is View State. `PivotLayoutJson.Write` and `Read` give it a versioned JSON form to
   store as a user's setting. `LayoutChanged` is raised for the layout the report shows.
 - **Show Details**, from a double click on a value or the Context Menu, opens the records behind

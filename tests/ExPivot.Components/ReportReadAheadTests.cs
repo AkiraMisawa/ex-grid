@@ -55,8 +55,10 @@ public sealed class ReportReadAheadTests : PivotTestContext
     /// <param name="readAheadRows">What the report source is given; null leaves Fetch's default.</param>
     /// <param name="answerWhen">Awaited before each Window question is answered: a test holds one.</param>
     /// <param name="answer">Rewrites the server's answer, as a faulty relay would.</param>
+    /// <param name="ask">Rewrites the question before the server sees it, as a server that caps its
+    /// answers does: the server answers the Window it was handed.</param>
     private Remote RenderRemote(int? readAheadRows = null, Func<PivotReportRequest, Task>? answerWhen = null,
-        Func<PivotReportUpdate, PivotReportUpdate>? answer = null)
+        Func<PivotReportUpdate, PivotReportUpdate>? answer = null, Func<PivotReportRequest, PivotReportRequest>? ask = null)
     {
         var data = PivotSource.From(Deals, DealFields, Whole);
         var server = PivotReportSource.From(data, timeProvider: Clock, slicing: Whole);
@@ -68,7 +70,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
                 asked.Add(request.Window);
             if (answerWhen is not null)
                 await answerWhen(request).WaitAsync(ct);
-            var update = Wire(await server.WindowAsync(Wire(request), ct));
+            var update = Wire(await server.WindowAsync(Wire(ask?.Invoke(request) ?? request), ct));
             update = answer?.Invoke(update) ?? update;
             lock (asked)
                 answers.Add(update);
@@ -378,11 +380,59 @@ public sealed class ReportReadAheadTests : PivotTestContext
 
         remote.Cut.WaitForAssertion(() => Assert.True(remote.Cut.Instance.IsStale));
         var message = remote.Cut.Instance.LastError?.Message ?? "";
-        Assert.Contains("rows 440", message, StringComparison.Ordinal);
+        Assert.Contains("answers rows 440 to 459", message, StringComparison.Ordinal);
+        Assert.Contains("the grid needs rows 500 to", message, StringComparison.Ordinal);
         Assert.Contains("ADR-0182", message, StringComparison.Ordinal);
         // Nothing of the answer reached the grid: it holds the Window it had.
         Assert.Same(shown, Grid(remote.Cut).Instance.Window);
         Assert.Equal(0, Grid(remote.Cut).Instance.WindowStart);
+        NoExceptionReachedTheRenderer();
+    }
+
+    [Fact] // ADR-0182/0025 (LV-34): a server that caps its answers below the rows read ahead is held at the Window it answered, which holds the rows on screen and the margin; later questions ask for that Window, and Window Changes are made against it
+    public async Task ADR0182_LV34_An_answer_short_of_the_read_ahead_that_holds_the_rows_on_screen_is_held_as_it_came()
+    {
+        int? cap = null;
+        await using var remote = RenderRemote(ask: request => cap is { } most && request.Window.Count > most
+            ? request with { Window = request.Window with { Count = most } }
+            : request);
+        await ScrollToRowAsync(remote.Cut, 500);
+        remote.Cut.WaitForAssertion(() => Assert.Equal(440, Grid(remote.Cut).Instance.WindowStart));
+        var onScreen = OnScreen(remote.Cut);
+        // From now on the server answers at most thirty rows fewer than are asked for: sixty rows above
+        // the rows on screen and thirty below, past the margin's ten.
+        cap = onScreen + 90;
+        var before = remote.Count;
+
+        await ScrollToRowAsync(remote.Cut, 800);
+
+        Assert.Equal(new PivotReportWindow(740, onScreen + 120), remote.Last);
+        remote.Cut.WaitForAssertion(() => Assert.Equal(740, Grid(remote.Cut).Instance.WindowStart));
+        Assert.Equal(onScreen + 90, Grid(remote.Cut).Instance.Window.Count);
+        Assert.Equal(before + 1, remote.Count);
+        Assert.False(remote.Cut.Instance.IsStale);
+        Assert.Null(remote.Cut.Instance.LastError);
+
+        // Region 0750 is ten rows into the Window held, out of sight above the rows on screen. Its new
+        // data is asked for the Window held, and answered as Window Changes against it.
+        Clock.Advance(TimeSpan.FromSeconds(1));
+        await remote.Cut.InvokeAsync(() => remote.Data.Apply(DealFields.Batch(changed: [Deals[750] with { Amount = 7500m }])));
+
+        remote.Cut.WaitForAssertion(() => Assert.Equal(before + 2, remote.Count));
+        Assert.Equal(new PivotReportWindow(740, onScreen + 90), remote.Last);
+        remote.Cut.WaitForAssertion(() => Assert.Contains(remote.Answers, a => a.Rows is null && a.Changes.Count > 0));
+        PivotReportUpdate changes;
+        lock (remote.Asked)
+            changes = remote.Answers[^1];
+        Assert.Null(changes.Rows);
+        Assert.Equal(new PivotReportWindow(740, onScreen + 90), changes.Window);
+        Assert.Equal([10], changes.Changes.Select(change => change.Offset));
+        Assert.False(remote.Cut.Instance.IsStale);
+
+        // Scrolled up to it: painted from the Window held, nothing asked.
+        await ScrollToRowAsync(remote.Cut, 750);
+        Assert.Equal("Region 0750 | 7500", RowTexts(remote.Cut)[0]);
+        Assert.Equal(before + 2, remote.Count);
         NoExceptionReachedTheRenderer();
     }
 

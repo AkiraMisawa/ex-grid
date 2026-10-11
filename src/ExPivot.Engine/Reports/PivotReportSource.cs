@@ -98,8 +98,11 @@ public abstract class PivotReportSource : IAsyncDisposable
     /// worth asking is a judgement about your data and your server, which is why it is a number
     /// here: every row read ahead is a row of every column in each answer, and in each update of a
     /// live report. 0 asks for exactly the range. A question in flight whose Window covers the
-    /// range the grid needs stays in flight while newer ranges arrive. An answer is still checked
-    /// against the Window asked for, and Window Changes and their digest cover all of it.</param>
+    /// range the grid needs stays in flight while newer ranges arrive. A server that caps its
+    /// answers may answer a complete Window shorter than the one asked for, within it, so long as
+    /// it holds the rows the grid needs: the check is made against the range before widening, and an
+    /// answer that does not reach it is refused by name (ADR-0025). The Window answered is the one
+    /// held, and Window Changes and their digest cover all of it.</param>
     public static FetchingPivotReportSource Fetch(IReadOnlyList<PivotField> fields, PivotSourceFeatures features,
         PivotReportUpdateMode updateMode,
         Func<PivotReportRequest, CancellationToken, ValueTask<PivotReportUpdate>> window,

@@ -553,8 +553,32 @@ public class ReportProtocolTests
         EntryLayout(), PivotReportSettings.Invariant, 1, [new("label", "Label", "Label")],
         [new("amount", "Amount", PivotColumnRole.Item, 0, [])], [], 0, ["Amount"]);
 
-    [Fact] // ADR-0182 (LV-34): an answer that is not the Window asked for — a relay that caps or moves it — is refused, naming the rows asked and the rows answered
-    public async Task ADR0182_LV34_an_answer_that_is_not_the_Window_asked_is_refused_naming_its_rows()
+    [Theory] // ADR-0182/0025 (LV-34): a complete answer that does not reach the rows the grid needs, checked before widening — short of them, or moved off the Window asked — is refused, naming the rows answered, asked and needed
+    // Short of the rows the grid needs: a relay that caps its answers at 20 rows.
+    [InlineData(440, 20)]
+    // Holding them, but not within the Window asked: moved.
+    [InlineData(480, 135)]
+    [InlineData(380, 135)]
+    public async Task ADR0182_LV34_an_answer_that_does_not_reach_the_rows_the_grid_needs_is_refused_naming_them(int start, int count)
+    {
+        var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
+            (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("v1"), [])
+                with { Window = new(start, count) }));
+        var client = new PivotReportClient(source);
+
+        // The grid needs rows 500 to 514, read ahead sixty rows either side.
+        Assert.False(await client.ReadAsync(PivotLayout.Empty, PivotReportSettings.Invariant, new(440, 135),
+            cancellationToken: TestContext.Current.CancellationToken, needed: new(500, 15)));
+
+        Assert.Null(client.Current);
+        Assert.Equal(PivotReportRefusalKind.InvalidResponse, client.Refusal!.Kind);
+        Assert.Contains($"answers rows {start} to {start + count - 1} where rows 440 to 574 were asked for and the grid needs rows 500 to 514",
+            client.Refusal.Message, StringComparison.Ordinal);
+        Assert.Contains("ADR-0182", client.Refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0182/0025 (LV-34): with no range named, the whole Window asked is needed — an answer short of it is refused, as before the read-ahead
+    public async Task ADR0182_LV34_with_no_range_named_an_answer_short_of_the_Window_asked_is_refused()
     {
         var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
             (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("v1"), [])
@@ -564,11 +588,79 @@ public class ReportProtocolTests
         Assert.False(await client.ReadAsync(PivotLayout.Empty, PivotReportSettings.Invariant, new(440, 135),
             cancellationToken: TestContext.Current.CancellationToken));
 
-        Assert.Null(client.Current);
         Assert.Equal(PivotReportRefusalKind.InvalidResponse, client.Refusal!.Kind);
-        Assert.Contains("rows 440 to 459", client.Refusal.Message, StringComparison.Ordinal);
-        Assert.Contains("rows 440 to 574", client.Refusal.Message, StringComparison.Ordinal);
-        Assert.Contains("ADR-0182", client.Refusal.Message, StringComparison.Ordinal);
+        Assert.Contains("answers rows 440 to 459 where rows 440 to 574 were asked for and the grid needs rows 440 to 574",
+            client.Refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0182/0025 (LV-34): a server that caps its answers below the rows read ahead is held at the Window it answered, which covers the rows the grid needs; Window Changes are then asked against that Window
+    public async Task ADR0182_LV34_a_complete_answer_short_of_the_read_ahead_that_holds_the_rows_the_grid_needs_is_held_as_it_came()
+    {
+        var fields = EntryFields();
+        var entries = Enumerable.Range(0, 200).Select(i => new Entry(i, $"L{i:D3}", i)).ToArray();
+        var data = PivotSource.From<Entry>(entries, fields);
+        await using var server = PivotReportSource.From(data);
+        var answers = new List<PivotReportUpdate>();
+        // A server that answers at most 100 rows, over JSON: the Window it answers starts where the one asked does.
+        var source = PivotReportSource.Fetch(data.Fields, data.Features, server.UpdateMode, async (request, ct) =>
+        {
+            var capped = request.Window.Count > 100 ? request with { Window = request.Window with { Count = 100 } } : request;
+            var update = PivotReportJson.Read<PivotReportUpdate>(PivotReportJson.Write(
+                await server.WindowAsync(PivotReportJson.Read<PivotReportRequest>(PivotReportJson.Write(capped)), ct)));
+            answers.Add(update);
+            return update;
+        });
+        var client = new PivotReportClient(source);
+        var layout = EntryLayout();
+        var ct = TestContext.Current.CancellationToken;
+
+        // The grid needs rows 100 to 114, read ahead sixty rows either side: rows 40 to 174 are asked for, and
+        // rows 40 to 139 answered.
+        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(40, 135), cancellationToken: ct,
+            needed: new(100, 15)));
+
+        Assert.Null(client.Refusal);
+        Assert.Equal(new PivotReportWindow(40, 100), client.Current!.Window);
+        Assert.Equal(100, client.Current.Rows.Count);
+        Assert.Equal("L100", client.Current.Rows[60].Labels[0].Text);
+
+        // Newer data, asked for the Window held: Window Changes against it, with its digest, applied.
+        data.Apply(fields.Batch(changed: [entries[50] with { Amount = 5000m }]));
+        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, client.Current.Window, cancellationToken: ct));
+
+        Assert.Null(answers[^1].Rows);
+        Assert.Equal(new PivotReportWindow(40, 100), answers[^1].Window);
+        Assert.Equal([10], answers[^1].Changes.Select(change => change.Offset));
+        Assert.Equal(new PivotReportWindow(40, 100), client.Current.Window);
+        Assert.Equal(5000m, client.Current.Rows[10].ValueAt(0)!.Exact);
+    }
+
+    [Fact] // ADR-0182/0152 (LV-34): Window Changes and a refusal answer the Window asked for itself — one naming another Window is refused by name
+    public async Task ADR0182_LV34_a_refusal_naming_another_Window_is_refused_by_name()
+    {
+        var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
+            (request, _) => ValueTask.FromResult(PivotReportUpdate.Refused(request, new(PivotReportRefusalKind.StaleReport, "busy"))
+                with { Window = request.Window with { Count = 100 } }));
+        var client = new PivotReportClient(source);
+
+        Assert.False(await client.ReadAsync(PivotLayout.Empty, PivotReportSettings.Invariant, new(440, 135),
+            cancellationToken: TestContext.Current.CancellationToken, needed: new(500, 15)));
+
+        Assert.Equal(PivotReportRefusalKind.InvalidResponse, client.Refusal!.Kind);
+        Assert.Contains("answers rows 440 to 539 where rows 440 to 574 were asked for. Window Changes and refusals answer the Window asked for",
+            client.Refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0182 (LV-34): the range the grid needs lies within the Window asked for, which is that range read ahead
+    public async Task ADR0182_LV34_a_range_needed_outside_the_Window_asked_is_refused_by_name()
+    {
+        var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
+            (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("v1"), [])));
+        var client = new PivotReportClient(source);
+
+        var refusal = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await client.ReadAsync(PivotLayout.Empty,
+            PivotReportSettings.Invariant, new(440, 135), cancellationToken: TestContext.Current.CancellationToken, needed: new(570, 15)));
+        Assert.Equal("needed", refusal.ParamName);
     }
 
     [Fact] // ADR-0182 (LV-34): a complete Window short of the rows the report has there is refused, naming them

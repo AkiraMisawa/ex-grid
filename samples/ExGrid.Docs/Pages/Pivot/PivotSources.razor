@@ -108,8 +108,16 @@
                 the page, <code>PivotSource.From</code> or <code>PivotReportSource.From</code>, has no round trip to hide
                 and reads nothing ahead. A Window asked for early, while every row on screen is held, does not dim the
                 report: nothing you see is waiting for it. Only rows on screen that wait for an answer bring the loading
-                indication. An answer is the Window asked for: one that is not, a relay that caps or moves it, is refused,
-                naming the rows asked and the rows answered, and the report stays as it was.
+                indication.
+            </li>
+            <li>
+                <strong>A server may answer fewer rows than it was asked for.</strong> One that caps its answers can send a
+                complete Window shorter than the one asked, within it, as long as it holds the rows on screen: the answer is
+                checked against those rows, not against the rows read ahead. ExPivot holds the Window it was sent, and asks
+                for that Window, and Window Changes against it, from then on. An answer that does not reach the rows on
+                screen, or lies outside the Window asked, is refused, naming the rows answered, asked and needed, and the
+                report stays as it was. A cap below the read-ahead from the start of the Window asked can never reach the
+                rows on screen: pass a smaller <code>readAheadRows</code>.
             </li>
             <li>
                 Once a Window is on screen, a server sends <strong>Window Changes</strong> in place of the whole Window: the rows that
