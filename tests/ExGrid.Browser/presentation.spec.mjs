@@ -520,12 +520,23 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
     await watchClassesWorn(page);
     const features = grid(page);
     // A range, copied: its dashes stand while the clipboard holds it (ADR-0170). Only a browser
-    // with the clipboardchange event draws them — Chrome and Edge from 143 — so an older build
-    // stops here, rightly.
+    // with the clipboardchange event draws them — Chrome and Edge from 143 — and the grid asks the
+    // browser as below. An older build, Playwright's own Chromium among them, draws none: the walk
+    // says so in an annotation and goes on without them, and the installed Chrome and Edge reach
+    // them.
+    const clipboardWatched = await page.evaluate(() => typeof globalThis.ClipboardChangeEvent === 'function'
+        && typeof navigator.clipboard?.addEventListener === 'function');
     await at(0, 1).click({ force: true });
     await page.keyboard.press('Shift+ArrowDown');
     await page.keyboard.press('ControlOrMeta+C');
-    await expect(features.locator('.ex-copied-range')).not.toHaveCount(0);
+    if (clipboardWatched) {
+        await expect(features.locator('.ex-copied-range')).not.toHaveCount(0);
+    } else {
+        test.info().annotations.push({
+            type: 'UX-4: not reached',
+            description: `ex-copied-range: this browser (${context.browser()?.version() ?? 'unknown'}) has no clipboardchange event, so the grid draws no Copied Range (ADR-0170)`,
+        });
+    }
     // A second range beside it, two cells wide: a range of one cell is painted as the Focus
     // alone, with no ex-range of its own.
     await at(3, 2).click({ force: true, modifiers: ['ControlOrMeta'] });
@@ -623,13 +634,14 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
 
     const worn = new Map(await page.evaluate(() => [...window.__exClassesWorn]));
     // The walk reached what it set out to: a list that stopped exercising a state would pass
-    // while checking nothing.
+    // while checking nothing. What it does not put on — Placeholder rows, the pager, the Size Tip,
+    // the change mark, and a loading grid, met only in passing — is named in the README.
     const reached = ['ex-grid', 'ex-header', 'ex-header-cell', 'ex-header-group', 'ex-row', 'ex-cell',
-        'ex-cell-numeric', 'ex-pinned', 'ex-state-error', 'ex-row-group', 'ex-row-total', 'ex-row-stripe',
-        'ex-tone-negative', 'ex-range', 'ex-focus', 'ex-editor', 'ex-editing', 'ex-action', 'ex-action-chosen',
+        'ex-cell-numeric', 'ex-pinned', 'ex-state-error', 'ex-state-stale', 'ex-state-missing', 'ex-state-modified',
+        'ex-row-group', 'ex-row-total', 'ex-row-stripe', 'ex-tone-negative', 'ex-tone-positive', 'ex-status', 'ex-range', 'ex-focus', 'ex-editor', 'ex-editing', 'ex-action', 'ex-action-chosen',
         'ex-mark', 'ex-mark-all', 'ex-resize-guide', 'ex-drop-indicator', 'ex-row-heading', 'ex-headings-corner',
-        'ex-formula-bar', 'ex-name-box', 'ex-fill-handle', 'ex-popover', 'ex-copied-range', 'ex-completion',
-        'ex-reference-outline'];
+        'ex-formula-bar', 'ex-name-box', 'ex-fill-handle', 'ex-popover', ...(clipboardWatched ? ['ex-copied-range'] : []),
+        'ex-completion', 'ex-reference-outline'];
     expect(reached.filter((name) => !worn.has(name)), 'states the walk set out to reach and did not').toEqual([]);
 
     // Each kind of name the section lists was met, so none of them is a pattern that matches nothing.
