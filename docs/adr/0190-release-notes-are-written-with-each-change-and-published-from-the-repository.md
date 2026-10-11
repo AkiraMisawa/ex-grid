@@ -100,8 +100,20 @@ repository does not have, and MudBlazor's fetch is a server call.
   - Filter chips select a product, or only the breaking and behaviour changes.
   - A site not published from a tag also shows an **Unreleased** section, built from the Change Notes,
     under a warning that names the commit or branch it came from.
-  - A Docs Site section that the newest version's notes link shows a "New in" chip. The chip is read
-    from those links, so there is no second record of what is new.
+  - A Docs Site section that the newest version's notes link shows a chip, read from those links, so
+    there is no second record of what is new:
+    - **"New in `<version>`"** when a Highlight or an Added line links it;
+    - **"Changed in `<version>`"** when only a Breaking, Behaviour or Fixed line does. "New in" wins when
+      both link the same section.
+  - On a site not published from a tag, a section a Change Note links shows **"Not on nuget.org yet"**,
+    linking the Unreleased section. A reader of a `main` or `lab/*` site then knows that the section
+    describes code no published version holds.
+
+  *(Amended with the user on 2026-10-11, while reviewing the Docs Site's change. The decision first
+  named only the "New in" chip. The site was built with the two others, because a section that the
+  newest notes link for a Behaviour or Breaking line is not new, and calling it new would be the site
+  quietly wrong about the product. The user chose to keep them and record them here rather than
+  cut them.)*
 - **On GitHub, as the release's text.** The release workflow renders the prerelease note (for a
   prerelease) followed by the version's file, with the site's routes made absolute, and passes it with
   `--notes-file`. It no longer asks for `--generate-notes`.
