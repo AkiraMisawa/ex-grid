@@ -335,9 +335,17 @@ for (const [chrome, query] of CHROMES) {
 // ?case=fit put columns a hundredth of a pixel from where a number stops fitting, in the Cell Metrics
 // the Sheet paints with under either Chrome (SheetCases). What the grid decided is read from the DOM.
 // That what it shows is painted whole is read in pixels: the cell as painted, and the same cell with
-// its clip and its ellipsis lifted, are one picture over the cell and the pixels either side of it. A
-// cut glyph or an ellipsis is their difference. The columns' edges are on Device Pixels (ADR-0090), so
-// the pictures' edges are too.
+// its ellipsis lifted and its clip moved out past the pixels pictured, are one picture over the cell
+// and the pixels either side of it. A cut glyph or an ellipsis is their difference. The columns' edges
+// are on Device Pixels (ADR-0090), so the pictures' edges are too.
+//
+// The clip is moved out, not lifted. At 150%, with LCD antialiasing on as CI's Linux has it, lifting
+// the clip of a row's last number had Chrome paint the whole row's text in grayscale: every glyph
+// differed, and none was cut (I2, found in CI, 2026-10-11). Lifting another cell's clip changed
+// nothing, and neither did moving any cell's clip out.
+
+/** How far either side of a cell its pictures reach, in CSS pixels; the unclipped picture's clip is there. */
+const AROUND = 12;
 
 /** Opens a case with the Focus off the cells read and the pointer off the Sheet, in the face the widths are for. */
 async function openFit(page, name, query) {
@@ -348,13 +356,15 @@ async function openFit(page, name, query) {
     // Roboto has arrived under the Wrapper's Chrome.
     await page.evaluate(() => document.fonts.ready);
     await page.mouse.move(0, 0);
-    // The second way each cell is pictured, set by stillPictures' mark: its clip and ellipsis lifted.
-    await alterPage(page, () => {
+    // The second way each cell is pictured, set by stillPictures' mark: its ellipsis lifted, and its
+    // clip moved out to the edge of the pictures.
+    await alterPage(page, (around) => {
         const style = document.createElement('style');
-        style.textContent = '.ex-cell[data-fit-picture="unclipped"] { overflow: visible !important; text-overflow: clip !important; }';
+        style.textContent = '.ex-cell[data-fit-picture="unclipped"] { overflow: clip !important; '
+            + `overflow-clip-margin: ${around}px !important; text-overflow: clip !important; }`;
         document.head.append(style);
         return () => style.remove();
-    });
+    }, AROUND);
     return grid;
 }
 
@@ -386,7 +396,7 @@ const fontOf = (locator) => locator.evaluate((el) => {
 async function expectPaintedWhole(page, locator, what) {
     const box = await locator.boundingBox();
     const scale = await page.evaluate(() => devicePixelRatio);
-    const region = onDeviceGrid(box, scale, 12);
+    const region = onDeviceGrid(box, scale, AROUND);
     const pictures = await stillPictures(locator, {
         mark: 'data-fit-picture',
         ways: ['painted', 'unclipped'],

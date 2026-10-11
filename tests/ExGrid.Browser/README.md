@@ -595,10 +595,13 @@ nobody had asked for. What that means when writing a test:
   of a pixel from where a number stops fitting in the Sheet's own Cell Metrics: a bold 12% `####`
   under its bold edge where the plain one shows; General fitting a bold number to the bold widths;
   an italic number not cut at either edge; each number shown painted whole, the cell as painted and
-  with its clip lifted being one picture. A bold 12% over its bold edge, in eight columns of one
-  declared width, is painted whole wherever their edges fall on Device Pixels — left failing
-  (`test.fail`) where `system-ui` is DejaVu Sans, as on Linux, where the column painted a pixel
-  narrower than declared cuts it to `1…` (ADR-0090; ticket 18, 2026-10-10).
+  with its ellipsis lifted and its clip moved out past the pixels pictured being one picture. (A clip
+  lifted outright had Chrome paint the row's text in grayscale at 150%, where CI's Linux paints it
+  with LCD antialiasing.) A bold 12% over its bold edge, in eight columns of one declared width, is
+  painted whole wherever their edges fall on Device Pixels, at 100% and at `chrome-150`'s 150%:
+  a number uses one Device Pixel of its cell's right padding (VZ-19, ADR-0090). Without it, where
+  `system-ui` is DejaVu Sans, as on Linux, the column painted a pixel narrower than declared cut it
+  to `1…` (ticket 18, 2026-10-10).
 - `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0071, SH-45, DC-60;
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as

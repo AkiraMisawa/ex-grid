@@ -116,8 +116,9 @@ is `needs-info`.
     narrower.
   - Italic: 12%, aligned right and aligned left, a hundredth over the regular edge, is not cut at
     either edge.
-  - "Painted whole" is read in pixels. The cell as painted and the same cell with its clip and ellipsis
-    lifted must be one picture (`stillPictures`, `pixelsApart` at 0).
+  - "Painted whole" is read in pixels. The cell as painted and the same cell with its ellipsis lifted
+    and its clip moved out past the pixels pictured must be one picture (`stillPictures`,
+    `pixelsApart` at 0).
 - **Every other §27 criterion that names Layer 3 has a live test**, confirmed by reading them: SH-14,
   18, 28 (DC-45's F4 tests), 29, 31, 32, 34, 35, 36, 39, 42, 43, 45, 46, 48, 50, 51, 52, 53 and 54,
   and SH-58 and SH-60 (`sheet-today.spec.mjs`'s TODAY() and NOW() tests, titled by ADR). None is
@@ -191,3 +192,17 @@ What is left is Edge, which only CI runs.
     both: this Chromium (141) computes a range's `outline-width` as 0px under `outline-style: none`.
     That reads the selection's outlines, which this change does not reach, so it is CI's to judge.
   - No console message in any of them.
+
+*(2026-10-11, CI's first run of the sweep.)* In `chrome-150` the sweep failed at I2 alone, on both
+hosts and under both Chromes. Its two pictures differed in every glyph, and no glyph was cut. CI's
+Linux paints text with LCD antialiasing, and at 150% lifting the clip of a row's last number had Chrome
+paint the whole row's text in grayscale; lifting another cell's clip changed nothing. Here, with LCD
+antialiasing turned on by a local fontconfig file, the sweep failed the same way, by the same counts
+(427 and 364 pixels). The unclipped picture now keeps the clip and moves it out to the edge of the
+pictures (`overflow: clip` with an `overflow-clip-margin` of their 12px), which left every cell's text
+as it was painted.
+- With LCD antialiasing on, `--repeat-each=3`: the sweep in `chrome-150`, 6 of 6 on each host; the
+  whole of `sheet-paper.spec.mjs` in `chrome`, 75 of 75 on each host. In grayscale, SH-41's tests
+  passed at 100% and 150%.
+- With the pixel taken out again, in a scratch copy, the sweep still fails, in either antialiasing: at
+  150% under both Chromes, and at 100% at D2 under the built-in one.
