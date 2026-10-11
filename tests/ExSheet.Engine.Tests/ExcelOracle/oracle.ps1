@@ -679,7 +679,8 @@ function Invoke-Action($Excel, $Sheet, $Action, [bool]$UseFormula2) {
         # set the way the Format Cells dialog sets it on a selected column or row.
         'format' { Set-ComProperty $Sheet.Range([string]$Action.range) 'NumberFormat' ([string]$Action.format) }
         'align' { $Sheet.Range([string]$Action.range).HorizontalAlignment = $AlignmentCodes[[string]$Action.align] }
-        'style' {
+        # "cellFormat" is the action's name since 2026-10-01, when "style" was renamed; both are read.
+        { $_ -in 'style', 'cellFormat' } {
             $range = $Sheet.Range([string]$Action.range)
             if (Has-Prop $Action 'format') { $range.NumberFormat = [string]$Action.format }
             if (Has-Prop $Action 'align') { $range.HorizontalAlignment = $AlignmentCodes[[string]$Action.align] }
