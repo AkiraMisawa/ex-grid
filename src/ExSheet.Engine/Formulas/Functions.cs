@@ -103,6 +103,7 @@ internal static partial class FunctionLibrary
         new("IFS", 2, 254, "logical_test1, value_if_true1, ...", "Checks whether one or more conditions are met, and returns a value that corresponds to the first TRUE condition.", Ifs) { InPairs = true },
         new("SWITCH", 3, 254, "expression, value1, result1, [default_or_value2], [result2], ...", "Evaluates an expression against a list of values, and returns the result corresponding to the first matching value.", Switch),
         new("NA", 0, 0, "", "Returns the error value #N/A.", Na),
+        new("ERROR.TYPE", 1, 1, "error_val", "Returns a number corresponding to an error type.", ErrorType),
         new("XMATCH", 2, 4, "lookup_value, lookup_array, [match_mode], [search_mode]", "Returns the relative position of an item in an array or range of cells.", XMatch),
         new("CHOOSE", 2, Open, "index_num, value1, [value2], ...", "Chooses a value from a list of values.", Choose),
         new("ROW", 0, 1, "[reference]", "Returns the row number of a reference.", Row),

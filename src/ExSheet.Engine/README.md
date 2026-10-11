@@ -130,6 +130,7 @@ them:
 | `IFERROR` | `value, value_if_error` |
 | `IFNA` | `value, value_if_na` |
 | `ISERROR`, `ISBLANK`, `ISNUMBER`, `ISTEXT`, `ISNA` | `value` |
+| `ERROR.TYPE` | `error_val` — Microsoft's number, 1 to 7; `#GETTING_DATA` and `#CIRC!` given back |
 | `NA`, `PI` | (none) |
 | `ROUND`, `ROUNDUP`, `ROUNDDOWN` | `number, num_digits` |
 | `TRUNC` | `number, [num_digits]` |
@@ -217,7 +218,8 @@ answer:
   where Excel shows 0. `IFERROR` and `IFNA` do not catch it.
 - **`#GETTING_DATA`**, a Linked Table's data on its way, is not an error to `IFERROR` and
   `ISERROR`, where Excel's are: a fallback never stands in for data that has not arrived.
-  `ISBLANK` and `ISNUMBER` give it back too, rather than FALSE.
+  `ISBLANK` and `ISNUMBER` give it back too, rather than FALSE, and `ERROR.TYPE` gives it and
+  `#CIRC!` back rather than a number (Microsoft's table numbers `#GETTING_DATA` 8).
 - **`TEXT` reads its code in the invariant spelling** under every culture (`"yyyy"`, never German
   Excel's `"JJJJ"`), as a cell's number format records it, and shows the Value as a cell in that
   format would under the Sheet's culture (ADR-0120). A code outside the cell formats' subset, an
@@ -231,7 +233,9 @@ answer:
   with a blank in its array, and `SORT` and `SORTBY` with a blank or an Error Value among their keys
   (`#VALUE!`); `SIN`, `COS` and `TAN` of 2^27 or more (`#NUM!`, the limit Microsoft documents for
   `COT` and its kin); `ACOTH` of an absolute value not above 1 (`#NUM!`; the page names `#VALUE!`
-  too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`).
+  too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`); `ERROR.TYPE` of an Error
+  Value outside Microsoft's table — `#SPILL!`, `#CALC!`, `#FIELD!`, `#BLOCKED!`, `#CONNECT!`,
+  `#UNKNOWN!` (`#VALUE!`).
 - **More of the refusal of unlifted functions.** `CONCATENATE` over a range of several cells, and a
   `TEXTJOIN` delimiter of several cells, are `#VALUE!`; `CONCAT` and `TEXTJOIN`'s texts take ranges.
 

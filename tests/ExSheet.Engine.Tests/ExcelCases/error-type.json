@@ -1,0 +1,183 @@
+{
+  "area": "error-type",
+  "about": "ERROR.TYPE (docs/specs/exsheet-functions ticket 17; ADR-0047, 2026-10-10). Microsoft's table numbers #NULL! to #N/A from 1 to 7, and anything that is not an error is #N/A. #GETTING_DATA and #CIRC! are given back, never numbered; an Error Value outside the table is #VALUE! until a Windows run asks Excel.",
+  "cases": [
+    {
+      "id": "ERRORTYPE-001",
+      "source": "documented",
+      "description": "Microsoft's table: #NULL! is 1 (its example, A2 holding #NULL!)",
+      "cells": {"A2": "#NULL!", "ZZ1000": "=ERROR.TYPE(A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "ERRORTYPE-002",
+      "source": "documented",
+      "description": "Microsoft's table: #DIV/0! is 2",
+      "cells": {"ZZ1000": "=ERROR.TYPE(1/0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "ERRORTYPE-003",
+      "source": "documented",
+      "description": "Microsoft's table: #VALUE! is 3",
+      "cells": {"ZZ1000": "=ERROR.TYPE(\"a\"+1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ERRORTYPE-004",
+      "source": "documented",
+      "description": "Microsoft's table: #REF! is 4",
+      "cells": {"ZZ1000": "=ERROR.TYPE(#REF!)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "ERRORTYPE-005",
+      "source": "documented",
+      "description": "Microsoft's table: #NAME? is 5 (a function nobody declared)",
+      "cells": {"ZZ1000": "=ERROR.TYPE(NOSUCHFUNCTION())"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "ERRORTYPE-006",
+      "source": "documented",
+      "description": "Microsoft's table: #NUM! is 6",
+      "cells": {"ZZ1000": "=ERROR.TYPE(SQRT(-1))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6}
+    },
+    {
+      "id": "ERRORTYPE-007",
+      "source": "documented",
+      "description": "Microsoft's table: #N/A is 7",
+      "cells": {"ZZ1000": "=ERROR.TYPE(NA())"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "ERRORTYPE-008",
+      "source": "documented",
+      "description": "Microsoft's table: a number, which is no error, is #N/A",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ERROR.TYPE(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERRORTYPE-009",
+      "source": "documented",
+      "description": "Microsoft's table: text, which is no error, is #N/A",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ERROR.TYPE(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERRORTYPE-010",
+      "source": "documented",
+      "description": "Microsoft's example: ERROR.TYPE of #DIV/0! chooses its message with CHOOSE",
+      "cells": {"A3": "=1/0", "ZZ1000": "=IF(ERROR.TYPE(A3)<3,CHOOSE(ERROR.TYPE(A3),\"Ranges do not intersect\",\"The divisor is zero\"))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "The divisor is zero"}
+    },
+    {
+      "id": "ERRORTYPE-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a blank cell, which is no error, is #N/A",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ERROR.TYPE(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERRORTYPE-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a boolean, which is no error, is #N/A",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ERROR.TYPE(A4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERRORTYPE-013",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: #SPILL! typed into a cell is outside Microsoft's table, so #VALUE!",
+      "cells": {"A1": "#SPILL!", "ZZ1000": "=ERROR.TYPE(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERRORTYPE-014",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: #SPILL! from a spill with an Entry in its way is outside Microsoft's table, so #VALUE!",
+      "cells": {"A2": "x", "A1": "=SEQUENCE(2)", "ZZ1000": "=ERROR.TYPE(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERRORTYPE-015",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: #CALC! from a FILTER that keeps nothing is outside Microsoft's table, so #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ERROR.TYPE(FILTER(E1:E2,E1:E2>100))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERRORTYPE-016",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: #FIELD! typed into a cell is outside Microsoft's table, so #VALUE!",
+      "cells": {"A1": "#FIELD!", "ZZ1000": "=ERROR.TYPE(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERRORTYPE-017",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: #BLOCKED! typed into a cell is outside Microsoft's table, so #VALUE!",
+      "cells": {"A1": "#BLOCKED!", "ZZ1000": "=ERROR.TYPE(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERRORTYPE-018",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: #CONNECT! typed into a cell is outside Microsoft's table, so #VALUE!",
+      "cells": {"A1": "#CONNECT!", "ZZ1000": "=ERROR.TYPE(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERRORTYPE-019",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: #UNKNOWN! typed into a cell is outside Microsoft's table, so #VALUE!",
+      "cells": {"A1": "#UNKNOWN!", "ZZ1000": "=ERROR.TYPE(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERRORTYPE-020",
+      "source": "uncertain",
+      "description": "ERROR.TYPE over a cycle is #CIRC!, given back rather than numbered",
+      "cells": {"A1": "=B1", "B1": "=A1", "ZZ1000": "=ERROR.TYPE(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a Formula that reads a cycle member is #CIRC!, where Excel shows 0, which is no error",
+      "excelExpect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERRORTYPE-021",
+      "source": "uncertain",
+      "description": "ERROR.TYPE over a range of several cells, where one Value is wanted, is refused",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ERROR.TYPE(C1:C2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0125: functions are not lifted over arrays yet; an array where the function wants one Value is #VALUE!, where Excel 365 lifts it and spills"
+    }
+  ]
+}

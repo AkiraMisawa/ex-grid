@@ -66,6 +66,12 @@
                 <code>IFERROR</code> and <code>ISERROR</code>: a fallback never stands in for data that has not
                 arrived. See <MudLink Href="exsheet/linked-tables">Linked Tables</MudLink>.
             </li>
+            <li>
+                <b><code>ERROR.TYPE</code></b> numbers Excel's seven Error Values as Microsoft's table does, but gives
+                <code>#GETTING_DATA</code> and <code>#CIRC!</code> back instead of a number, so that nothing shows a
+                figure while its data is on its way. An Error Value outside the table, such as <code>#SPILL!</code>
+                or <code>#CALC!</code>, is <code>#VALUE!</code> until Excel has been asked what it gives.
+            </li>
         </ul>
     </DocsSection>
 
