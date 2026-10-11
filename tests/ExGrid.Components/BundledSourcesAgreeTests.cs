@@ -16,8 +16,8 @@ namespace ExGrid.Components.Tests;
 ///
 /// <para>The grid's own renders are not the same, and FN-4 as restated on 2026-10-11 does not ask
 /// them to be: they exceed <c>From</c>'s by the states the fetching source pushes and <c>From</c>
-/// has no reason to — the dropped Window of a restart, the loading flag of a fetch (ADR-0025) —
-/// and by nothing else, which
+/// has no reason to — the dropped Window of a restart, the loading flag of a fetch, the answer to a
+/// Range Request past its read-ahead (ADR-0025) — and by nothing else, which
 /// <see cref="FN4_the_grid_renders_more_under_fetch_by_exactly_the_states_fetch_pushes"/> holds.
 /// The rows' renders are compared wherever both sources hold the rows: across a fling past the
 /// fetched Window the two hold different Windows.</para>
@@ -146,27 +146,28 @@ public class BundledSourcesAgreeTests : GridTestContext
 
     /// <summary>What FN-4, as restated on 2026-10-11, lets a step cost the grid under <c>Fetch</c> beyond
     /// <c>From</c>: nothing (<see cref="None"/>), or the states the fetching source pushes and <c>From</c>
-    /// does not — named by the criterion for a sort, a filter, and the restart when either is cleared
-    /// (<see cref="FetchStates"/>).</summary>
+    /// does not — named by the criterion for a sort, a filter, the restart when either is cleared, and
+    /// the answer to a Range Request past what it read ahead (<see cref="FetchStates"/>).</summary>
     private enum ExtraAllowed
     {
-        /// <summary>No state and no render beyond <c>From</c>'s: a scroll, a fling.</summary>
+        /// <summary>No state and no render beyond <c>From</c>'s: a scroll, a fling inside both Windows.</summary>
         None,
 
         /// <summary>The states <c>Fetch</c> pushes beyond <c>From</c>'s, each one render, and nothing else.</summary>
         FetchStates,
     }
 
-    [Fact] // FN-4 / ADR-0001 / ADR-0025: the same painting at every step, the same row renders where both sources hold the rows, and the grid renders more under Fetch only on a sort, a filter or either cleared, by exactly the states Fetch pushes there
+    [Fact] // FN-4 / ADR-0001 / ADR-0025: the same painting at every step, the same row renders where both sources hold the rows, and the grid renders more under Fetch only on a sort, a filter, either cleared or a fling past its read-ahead, by exactly the states Fetch pushes there
     public async Task FN4_the_grid_renders_more_under_fetch_by_exactly_the_states_fetch_pushes()
     {
         // FN-4 as restated on 2026-10-11: one push path, so the grids paint alike at every step and
         // their rows cost alike wherever both sources hold them; the grid's own renders may exceed
         // From's by the states Fetch pushes that From does not — the loading state of a sort and a
-        // filter, and the restart when either is cleared — and by nothing else. Each step says which it
-        // is: a scroll and a fling may cost no state and no render more under Fetch, a fling past the
-        // fetched Window included, which the criterion does not name; a sort, a filter and either
-        // cleared may cost exactly the states Fetch pushed beyond From's. The messages give every count.
+        // filter, the restart when either is cleared, and the answer to a Range Request past what it
+        // read ahead (named the same day) — and by nothing else. Each step says which it is: a scroll
+        // and a fling inside both Windows may cost no state and no render more under Fetch; a sort, a
+        // filter, either cleared and a fling past the fetched Window may cost exactly the states Fetch
+        // pushed beyond From's. The messages give every count.
         var rows = TestRows.Many(300);
         var inMemory = GridSource.From(rows);
         using var fetching = GridSource.Fetch<TestRow>((query, _) => Answer(rows, query), readAheadRows: 60);
@@ -186,11 +187,8 @@ public class BundledSourcesAgreeTests : GridTestContext
         var failures = new List<string>();
         var extraStatesWhereAllowed = 0;
 
-        // heldFor: the decision a step's failure waits on, where the product does something the
-        // criterion as worded does not name, and only the user can say whether the row should.
         async Task StepAsync(string step, ExtraAllowed allowed,
-            Func<IGridSource<TestRow>, IRenderedComponent<CountedGrid>, Task> gesture, bool bothHold = true,
-            string? heldFor = null)
+            Func<IGridSource<TestRow>, IRenderedComponent<CountedGrid>, Task> gesture, bool bothHold = true)
         {
             var (fromGridBefore, fromPushesBefore, fromRowsBefore) = (fromGrid.Instance.Renders, fromPushed.Count, RowRenders.Of(fromGrid));
             var (fetchGridBefore, fetchPushesBefore, fetchRowsBefore) = (fetchGrid.Instance.Renders, fetchPushed.Count, RowRenders.Of(fetchGrid));
@@ -208,8 +206,7 @@ public class BundledSourcesAgreeTests : GridTestContext
                 // Not a state the criterion names: Fetch may push nothing more than From, and the grid may
                 // render no more under it.
                 case ExtraAllowed.None when fetchStates != fromStates || fetchRenders != fromRenders:
-                    failures.Add($"{step}: FN-4 names no state Fetch may push beyond From's here, but {counts}"
-                        + (heldFor is null ? "" : $". HELD FOR A DECISION: {heldFor}"));
+                    failures.Add($"{step}: FN-4 names no state Fetch may push beyond From's here, but {counts}");
                     break;
                 // A state the criterion names: more under Fetch by exactly the states it pushed beyond From's.
                 case ExtraAllowed.FetchStates when fetchStates < fromStates || fetchRenders - fromRenders != fetchStates - fromStates:
@@ -247,14 +244,12 @@ public class BundledSourcesAgreeTests : GridTestContext
             await ScrollToAsync(grid.Find(".ex-scroller"), 40 * RowHeightPx);
             await grid.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
         });
-        await StepAsync("a fling past the fetched Window, settled and answered", ExtraAllowed.None, async (_, grid) =>
+        // FN-4 names it: the answer to the Range Request past Fetch's read-ahead is a state of Fetch's own.
+        await StepAsync("a fling past the fetched Window, settled and answered", ExtraAllowed.FetchStates, async (_, grid) =>
         {
             await ScrollToAsync(grid.Find(".ex-scroller"), 120 * RowHeightPx);
             await grid.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
-        }, bothHold: false, heldFor: "Fetch answers the Range Request past its read-ahead with a new Window, a state "
-            + "From, holding every row, never pushes. FN-4's row names a sort, a filter and the restart when either "
-            + "is cleared, and nothing else; whether this state is allowed too is the user's to decide, and the row "
-            + "would have to name it.");
+        }, bothHold: false);
         await StepAsync("the filter cleared", ExtraAllowed.FetchStates,
             (source, grid) => grid.InvokeAsync(() => source.OnFilterChanged(null)));
         await StepAsync("the sort cleared", ExtraAllowed.FetchStates,
