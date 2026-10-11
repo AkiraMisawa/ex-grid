@@ -248,8 +248,8 @@ answer:
   `LET` binding one draw. Each draw is a function of `Sheet.Seed`, the cell, the call's place in its
   Formula and `Sheet.Changes`, the count of changes since the Sheet was made or opened, so the same
   Entries, seed and count give the same draws whatever order cells are computed in. An edit, an
-  insertion or a deletion, the undo or redo of one, and a Linked Table's snapshot each count once and
-  draw again; a recalculation by the clock, a format, a rename of the Sheet (ADR-0180, 2026-10-11)
+  insertion or a deletion, the undo or redo of one, a Linked Table's snapshot, and a Linked Table's
+  declaration that declares it or replaces it each count once and draw again; a recalculation by the clock, a format, a rename of the Sheet (ADR-0180, 2026-10-11)
   and a new seed draw nothing. Without a seed,
   every Formula that draws is `#GETTING_DATA`. The engine never chooses a seed of its own:
   `Sheet.SetSeed(seed)` gives one, and `SetSeed(seed, changes)` the count as well, so a Sheet opened

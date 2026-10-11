@@ -88,3 +88,8 @@ READMEs say so. The Status is `done`: every box is ticked. Two questions are ADR
 Windows run, and are no corpus case, since the oracle cannot undo through COM: what Excel's undo does to a
 draw, and whether a rename draws again. Still left for a decision, as the comment above says: whether a
 Linked Table's declaration is a change; ADR-0180's list does not name it, and it draws nothing today.
+
+2026-10-11, decided with the user (ADR-0180's second note of that date): a Linked Table's declaration,
+and one that replaces it, is a change and draws again; the same declaration again draws nothing
+(`ADR0180_a_linked_tables_declaration_draws_again`). The Formulas page, both READMEs and the Change Note
+say so. The seventeenth Windows run asks Excel whether a refresh that brings the same data draws again.

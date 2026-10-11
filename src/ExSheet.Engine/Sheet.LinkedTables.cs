@@ -98,6 +98,9 @@ public sealed partial class Sheet
         {
             Declare(name, columns, key);
         }
+        // A declaration that takes effect is a change, as a snapshot is: what the Sheet's Formulas
+        // read changes (ADR-0180, 2026-10-11).
+        CountChange();
         return RecalculateReaders(name);
     }
 

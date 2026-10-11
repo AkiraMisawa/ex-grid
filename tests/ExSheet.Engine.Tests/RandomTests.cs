@@ -188,7 +188,7 @@ public class RandomTests
         Assert.NotEqual(drawn, sheet.Number("A1"));
     }
 
-    [Fact] // ADR-0180, SH-66: each kind of change counts once — an edit, an insertion, a deletion, an undo, a redo, a snapshot — and nothing else counts
+    [Fact] // ADR-0180, SH-66: each kind of change counts once — an edit, an insertion, a deletion, an undo, a redo, a snapshot, a declaration — and nothing else counts
     public void ADR0180_each_change_counts_once()
     {
         var sheet = Seeded();
@@ -217,11 +217,32 @@ public class RandomTests
         changes = sheet.Changes;
         Counts(1, () => pasted.Undo());
         Counts(1, () => sheet.PushLinkedTable("Rates", [[Value.FromText("EURUSD"), Value.FromNumber(1.08)]]));
+        Counts(1, () => sheet.DeclareLinkedTable("Fx", ["Pair"]));                         // a new declaration
+        Counts(0, () => sheet.DeclareLinkedTable("Fx", ["Pair"]));                         // the same one again: nothing changed
+        Counts(1, () => sheet.DeclareLinkedTable("Fx", ["Pair", "Spot"], key: "Pair"));    // one that replaces it
         Counts(0, () => sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse("A1:B4"), NumberFormat.Parse("0.00"))));
         Counts(0, () => sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("A:B"), 12)));
         Counts(0, () => sheet.RecalculateVolatile());
         Counts(0, () => sheet.SetToday(new DateOnly(2026, 10, 11)));
         Counts(0, () => sheet.SetSeed(Seed + 1));
+    }
+
+    [Fact] // ADR-0180 (2026-10-11): declaring a Linked Table, or replacing its declaration, is a change and draws again, whether or not a Formula reads the table
+    public void ADR0180_a_linked_tables_declaration_draws_again()
+    {
+        var sheet = Seeded();
+        sheet.Enter("A1", "=RAND()");
+        var drawn = sheet.Number("A1");
+
+        sheet.DeclareLinkedTable("Rates", ["Pair", "Spot"]);
+        var afterDeclaring = sheet.Number("A1");
+        Assert.NotEqual(drawn, afterDeclaring);
+
+        sheet.DeclareLinkedTable("Rates", ["Pair", "Spot"]);
+        Assert.Equal(afterDeclaring, sheet.Number("A1"));
+
+        sheet.DeclareLinkedTable("Rates", ["Pair", "Spot", "Asof"]);
+        Assert.NotEqual(afterDeclaring, sheet.Number("A1"));
     }
 
     [Fact] // ADR-0180 (2026-10-11): renaming the Sheet is not a change; it recalculates what INDIRECT reads by the Sheet's name, and the draws come out the same, as they do for its undo and redo

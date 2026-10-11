@@ -108,7 +108,8 @@
             <li>
                 <b><code>RAND</code> and <code>RANDBETWEEN</code></b> draw from the Sheet Seed. Each draw is made from
                 the seed, the cell, which call in its Formula it is and how many changes the Sheet has had since it
-                was opened, so every edit, insertion, deletion, undo, redo and Linked Table snapshot draws again,
+                was opened, so every edit, insertion, deletion, undo, redo, Linked Table snapshot and Linked Table
+                declaration draws again,
                 while the clock, a format or a width draws nothing. Unlike Excel, nothing draws without a change.
                 Renaming the Sheet is not a change: it recalculates what <code>INDIRECT</code> reads by the Sheet's
                 name, and the draws come out the same; whether Excel draws again on a rename has not been observed yet.
