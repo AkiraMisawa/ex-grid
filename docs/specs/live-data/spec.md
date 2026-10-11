@@ -1,9 +1,7 @@
 # Live data in ExGrid and ExPivot
 
-Status: done — but for [ticket 14](issues/14-a-remote-reports-window-is-read-ahead.md) and
-[ticket 15](issues/15-the-grid-asks-before-the-viewport-runs-out.md), built, with layer 3 run locally and CI still to judge it;
-[ticket 16](issues/16-measure-the-early-ask-on-gridsource-fetch.md), a measurement not yet made; and LV-15,
-observed only in part. Merged to `main` as #70 (554b3c2, 2026-10-10),
+Status: done — but for [ticket 16](issues/16-measure-the-early-ask-on-gridsource-fetch.md), a measurement not
+yet made, and LV-15, observed only in part. Tickets 14 and 15 are done (2026-10-11). Merged to `main` as #70 (554b3c2, 2026-10-10),
 carrying tickets 01 to 13 as their Statuses say. It was built on `claude/live-data-best`
 (2026-10-08), after the first version merged as #64. Tickets 01 to 03 were worked twice, side by
 side: by a Claude Code session on `claude/live-data-next-cc` (tickets 04 to 13 below, #67) and by a

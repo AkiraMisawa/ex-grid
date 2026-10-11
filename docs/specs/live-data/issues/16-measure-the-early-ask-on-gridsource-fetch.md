@@ -1,6 +1,7 @@
 # 16: Measure the early ask and the covering question on GridSource.Fetch's own path
 
 Status: ready-for-agent
+Roadmap: ExGrid — the bundled fetching source may ask for rows early and keep a covering fetch in flight, once measured
 
 **What to do:** measure what [ADR-0182](../../../adr/0182-a-remote-reports-window-is-read-ahead-sixty-rows-either-side.md)'s
 covering rule and [ADR-0183](../../../adr/0183-the-grid-may-ask-for-rows-before-the-viewport-runs-out-of-them.md)'s

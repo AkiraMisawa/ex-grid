@@ -1,6 +1,6 @@
 # 15: The grid asks for rows before the Viewport runs out of them
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the Range Request Margin of
 [ADR-0183](../../../adr/0183-the-grid-may-ask-for-rows-before-the-viewport-runs-out-of-them.md).
