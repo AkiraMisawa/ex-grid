@@ -20,7 +20,7 @@ start now.
       why the default is 0)
 - [x] ExPivot: the margin from its source's read-ahead, and the covering question kept in flight; the
       lab branch's 21d7a94 shows the condition, and its test fails under the first build's
-- [ ] Layer 3 over `/pivot-db`, or a page like the lab's `/lab-read-ahead`, behind the latency proxy:
+- [x] Layer 3 over `/pivot-db`, or a page like the lab's `/lab-read-ahead`, behind the latency proxy:
       count the report source's questions while scrolling, never a time
 - [x] The Docs Site: ExGrid's page on Range Requests and the Window says what the margin does and why
       it is 0 by default, with an Example; ExPivot's Sources page says a remote source asks early
@@ -64,3 +64,11 @@ layer 3's: the spec is written and has not run yet.
 - **Layer 3, written and not run yet:** the same `pivot-db.spec.mjs` test as ticket 14's. Under the
   Server host it runs behind the latency proxy at 150 ms. The demo API is not behind a proxy in the
   suite, so on WebAssembly it counts questions without a round trip.
+
+2026-10-11: Layer 3 ran, locally, on Playwright's bundled Chromium on both hosts. CI's Chrome and Edge
+are still to judge it. Ticket 14's comment of today has the runs. With ExPivot's margin set to 0, the
+test failed at row 555, where the next Window should have been asked for early.
+- **The Docs Site's Example was used once, under each Chrome.** A cell was clicked and ↓ pressed 200
+  times, about 30 a second, as a held key repeats. Without the margin, both questions were asked with
+  rows on screen waiting. With it, all five were asked with every row on screen held. The console stayed
+  clean.

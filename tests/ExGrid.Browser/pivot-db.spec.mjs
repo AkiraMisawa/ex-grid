@@ -123,15 +123,18 @@ test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows i
 // and asked for the next Window ten rows before the one held runs out. Counted in the questions the
 // page's status line says it has sent, never in time. On the Server host the circuit runs behind the
 // latency proxy at 150 ms; on WebAssembly the browser sends each question itself, and the Window it
-// names is read from the request.
+// names is read from the request. A request reaches the test as an event of its own, after the page
+// has counted it, so the Window is waited for, not read in passing; and the listener goes with the
+// test, since the page is handed on to the next one (ADR-0056).
 test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it read ahead asking nothing, and asks once ten rows before it runs out', async ({ page }) => {
     await open(page, 'builtin');
     const windowsAsked = [];
-    page.on('request', (request) => {
+    const askedWindow = (request) => {
         if (request.method() === 'POST' && /\/api\/pivot\/reports\/[0-9a-f]{32}\/window$/.test(request.url())) {
             windowsAsked.push(JSON.parse(request.postData() ?? '{}').window);
         }
-    });
+    };
+    page.on('request', askedWindow);
     await setRoundTrip(150);
     try {
         const grid = report(page, 'server');
@@ -147,7 +150,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it re
         const onScreen = await rows(page, 'server').count();
         const atFiveHundred = await asked(page, 'Window');
         if (!SERVER) {
-            expect(windowsAsked.at(-1)).toEqual({ start: 440, count: onScreen + 120 });
+            await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 440, count: onScreen + 120 });
         }
 
         // Down five rows at a time to row 550: ten rows below the rows on screen is still in the
@@ -167,9 +170,10 @@ test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it re
         await circuitQuiet();
         expect(await asked(page, 'Window')).toBe(atFiveHundred + 1);
         if (!SERVER) {
-            expect(windowsAsked.at(-1)).toEqual({ start: 495, count: onScreen + 120 });
+            await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 495, count: onScreen + 120 });
         }
     } finally {
+        page.off('request', askedWindow);
         await setRoundTrip(0);
     }
     // Whatever the host still had to say has been said before the console's verdict is read.

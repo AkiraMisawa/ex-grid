@@ -71,7 +71,7 @@ These are the user's, once the measurement is in.
   - an answer that does not reach the rows the grid needs is refused, as ADR-0025 refuses one;
   - Window Changes and their Window Digest cover the whole widened Window
 - [x] Layers 1 and 2 are green
-- [ ] Layer 3 counts the report source's Window questions while it scrolls, and never reads a time.
+- [x] Layer 3 counts the report source's Window questions while it scrolls, and never reads a time.
   `/pivot-db`'s status line already counts the questions of each kind.
 - [x] The Docs Site's ExPivot Sources page says it, and its server Example passes the number
 
@@ -204,3 +204,18 @@ ticked but layer 3's: the spec is written and has not run yet.
   names from the request.
 - **Docs Site:** the Sources page says how far a server's report is read ahead, that it is asked
   early, and how an answer is checked. The server Example passes `readAheadRows: 60`.
+
+2026-10-11: Layer 3 ran, locally, and passed on both hosts. CI's Chrome and Edge are still to judge it.
+- **The browser was Playwright's bundled Chromium (1194),** headed under `xvfb-run`, because this
+  machine has no Chrome or Edge installed. An untracked config replaced only the projects. The
+  hosts ran on this worktree's own ports (5411 for WebAssembly, 5410 for the Server host).
+- **The new test passed three times on each host,** with the Server host behind the latency proxy at
+  150 ms. The whole of `pivot-db.spec.mjs` passed three times on each host (33 of 33 each).
+  `pivot-live.spec.mjs`, the other remote report the read-ahead reaches, passed once on each host (9 of 9
+  each).
+- **It fails without the margin.** With ExPivot's margin set to 0, the test failed where it should, at
+  row 555: the next Window was never asked for (3 questions counted, 4 expected).
+- **Two changes to the test, neither to what it asserts.** On WebAssembly it now waits for the Window
+  each question names, since a request reaches the test as an event of its own after the page has
+  counted it. And it removes its request listener as it ends, since the page is handed on to the next
+  test of the file (ADR-0056).
