@@ -1,6 +1,6 @@
 import { test, expect, setRoundTrip, alterPage } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
-import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
+import { expectKeyboardOn, expectActiveDescendant, keyField } from './keyboard.mjs';
 import {
     sheet, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
     expectCommandsGreyedOut, expectCommandsOffered, expectSelectionIsCell,
@@ -707,6 +707,57 @@ test('SH-29 (ADR-0048/0049): the buttons follow each way an edit opens and ends,
     await expect(cell(grid, 'F3')).toHaveText('1');
     await expectCommandsOffered(page);
 });
+
+// ST-2 (ADR-0007's note of 2026-10-11): an edit whose text is still the committed value it opened on
+// holds a copy of committed data, not typing, so it closes as Escape would when a Window without its
+// row comes in. The Sheet pushes the rows around the ones in view (OnRangeNeeded), so scrolling far
+// takes the edited row out of its Window. The keyboard comes back to the grid — its Keyboard Field —
+// from the Cell Editor and from the Formula Bar alike, and a key pressed the moment it is back is the
+// grid's: ↓ moves the Focus, brought back into view. On a circuit the gate hears that the edit is over
+// a round trip after the keyboard is back, and the listener holds a key typed in between until it has
+// (ADR-0010's hold), so the key is the grid's with 150 ms on the Server host too. The page hears the
+// edit end (its buttons, greyed out while an edit is open, are offered again), and nothing is written.
+for (const surface of ['cell', 'bar']) {
+    for (const rtt of [0, 150]) {
+        test(`ST-2 (ADR-0007): an edit opened ${surface === 'cell' ? 'with F2' : 'by a press into the Formula Bar'} and not typed into closes when its row leaves the Window, and the next key is the grid's (${rtt} ms)`, async ({ page }) => {
+            test.skip(rtt > 0 && !SERVER, 'WebAssembly has no round trip: the 0 ms case is the one there is');
+            const grid = sheet(page);
+            const before = await cell(grid, 'C4').textContent();
+            await pressCell(grid, 'C4');
+            const field = surface === 'cell' ? editor(grid) : bar(grid);
+            if (surface === 'cell') {
+                await page.keyboard.press('F2');
+            } else {
+                await clickBarEnd(grid);
+            }
+            await expect(field).toBeFocused();
+            await expect(bar(grid)).toHaveValue(before);
+            await expectCommandsGreyedOut(page);
+            await setRoundTrip(rtt);
+
+            // Far down: the Window the Sheet pushes for the rows in view no longer holds row 4.
+            await grid.locator('.ex-scroller').first().evaluate((scroller) => { scroller.scrollTop = scroller.scrollHeight; });
+
+            // The moment the keyboard is back, read every frame, the key follows, as a user's can: it
+            // is the grid's, never the closed edit's. The Focus moves from C4 to C5, brought back into
+            // view.
+            const back = await keyField(grid).elementHandle();
+            await page.waitForFunction((f) => document.activeElement === f, back, { polling: 'raf' });
+            await page.keyboard.press('ArrowDown');
+            await expect(editor(grid)).toHaveCount(0);
+            await expectKeyboardOn(grid);
+            await expectFocusAt(grid, 'C5');
+            await expectCommandsOffered(page);
+            await expect(bar(grid)).not.toBeFocused();
+            // C4 holds what it held: nothing was written.
+            await page.keyboard.press('ArrowUp');
+            await expectFocusAt(grid, 'C4');
+            await expect(cell(grid, 'C4')).toHaveText(before);
+            await expect(editor(grid)).toHaveCount(0);
+            await setRoundTrip(0);
+        });
+    }
+}
 
 test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent', async ({ page }) => {
     const grid = sheet(page);

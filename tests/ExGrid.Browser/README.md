@@ -557,7 +557,11 @@ nobody had asked for. What that means when writing a test:
   2* pressed on a 150 ms circuit before the button has greyed out, refused by name in the status
   line, and `99` still in Plums' row; the buttons following an edit opened by typing and by the
   Formula Bar and ended by a cancel and by a commit after a Reject; a Linked Table push taken while
-  an edit is open (SH-29, ticket 26); the Focus
+  an edit is open (SH-29, ticket 26); an edit opened with F2, and one opened by a press into the
+  Formula Bar, closing untyped when the Sheet is scrolled so far that the Window it pushes no longer
+  holds the row — the keyboard back on the Keyboard Field, ↓ pressed the moment it is back moving
+  the Focus, at 0 ms and, on the Server host, at 150 ms, the buttons offered again, and nothing
+  written (ST-2, ADR-0007's note of 2026-10-11); the Focus
   at XFD1048576 with the DOM no larger than at A1 (SH-2); Home, End, Shift+Home and Shift+End in
   Caret in the Cell Editor and the Formula Bar moving and extending the caret with nothing
   scrolled and the edit kept, which on macOS the listener answers (ticket 32).
