@@ -332,8 +332,14 @@ public class GridViewStateJsonTests
         Assert.Equal(0, back.PinnedColumnCount);
     }
 
-    [Fact] // ADR-0207: the form written is the one documented — a reader in another language can rely on it
-    public void ADR0207_the_form_is_the_documented_one()
+    [Theory] // ADR-0207: the form written is the one documented — a reader in another language can rely on it, whatever the current culture
+    [InlineData("")]
+    [InlineData("de-DE")]
+    [InlineData("th-TH")]
+    public void ADR0207_the_form_is_the_documented_one(string culture)
+        => QuerySerialisationTests.InCulture(culture, TheFormIsTheDocumentedOne);
+
+    private static void TheFormIsTheDocumentedOne()
     {
         var view = new GridViewState(
             [new ColumnViewState("Notional", ColumnWidth.Fixed(120.5), pinned: true), new ColumnViewState("Book", ColumnWidth.Auto)],

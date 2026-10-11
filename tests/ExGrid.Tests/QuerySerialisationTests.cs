@@ -62,23 +62,59 @@ public class QuerySerialisationTests
     }
 
     [Theory]
-    [MemberData(nameof(Operands))] // ADR-0023 / ADR-0207 / FN-13: every operand the engine takes comes back in a Query as the type it went as
-    public void FN13_every_operand_comes_back_as_the_type_it_went_as(string column, FilterClause clause)
-    {
-        var query = new GridQuery(new RowRange(0, 50), [],
-            new GridFilter(new Dictionary<string, FilterSpec> { [column] = new([clause]) }));
+    [MemberData(nameof(OperandsUnderCultures))] // ADR-0023 / ADR-0207 / FN-13: every operand the engine takes comes back in a Query as the type it went as, whatever the current culture
+    public void FN13_every_operand_comes_back_as_the_type_it_went_as(string culture, string column, FilterClause clause)
+        => InCulture(culture, () =>
+        {
+            var query = new GridQuery(new RowRange(0, 50), [],
+                new GridFilter(new Dictionary<string, FilterSpec> { [column] = new([clause]) }));
 
-        AssertSameQuery(query, RoundTrip(query));
-    }
+            AssertSameQuery(query, RoundTrip(query));
+        });
 
     [Theory]
-    [MemberData(nameof(Operands))] // ADR-0023 / ADR-0207 / ST-4: every operand the engine takes comes back in a View State as the type it went as
-    public void ST4_every_operand_comes_back_as_the_type_it_went_as(string column, FilterClause clause)
-    {
-        var view = new GridViewState([new ColumnViewState(column, ColumnWidth.Auto)], [],
-            new GridFilter(new Dictionary<string, FilterSpec> { [column] = new([clause]) }));
+    [MemberData(nameof(OperandsUnderCultures))] // ADR-0023 / ADR-0207 / ST-4: every operand the engine takes comes back in a View State as the type it went as, whatever the current culture
+    public void ST4_every_operand_comes_back_as_the_type_it_went_as(string culture, string column, FilterClause clause)
+        => InCulture(culture, () =>
+        {
+            var view = new GridViewState([new ColumnViewState(column, ColumnWidth.Auto)], [],
+                new GridFilter(new Dictionary<string, FilterSpec> { [column] = new([clause]) }));
 
-        AssertSameFilter(view.Filter, RoundTrip(view).Filter);
+            AssertSameFilter(view.Filter, RoundTrip(view).Filter);
+        });
+
+    /// <summary>The cultures the form is held under, besides the one the run starts in (named ""): one
+    /// whose decimal separator is a comma, and one whose calendar is not the Gregorian (ADR-0207: the
+    /// form is the invariant culture's, whatever the current one is).</summary>
+    internal static readonly string[] Cultures = ["", "de-DE", "th-TH"];
+
+    /// <summary>Runs <paramref name="act"/> under <paramref name="culture"/> as the current culture, and
+    /// puts the one it found back after; "" leaves the current culture as it is.</summary>
+    internal static void InCulture(string culture, Action act)
+    {
+        var previous = CultureInfo.CurrentCulture;
+        if (culture.Length > 0)
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+        try
+        {
+            act();
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+        }
+    }
+
+    /// <summary><see cref="Operands"/>, each under every one of <see cref="Cultures"/>.</summary>
+    public static TheoryData<string, string, FilterClause> OperandsUnderCultures()
+    {
+        var data = new TheoryData<string, string, FilterClause>();
+        foreach (var culture in Cultures)
+        {
+            foreach (var row in Operands())
+                data.Add(culture, row.Data.Item1, row.Data.Item2);
+        }
+        return data;
     }
 
     /// <summary>Every operand type the filter model admits (ADR-0023): text, a Boolean, every number the
