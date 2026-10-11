@@ -15,11 +15,20 @@ internal enum ReleaseSectionKind
     /// <summary>A product's Added and Fixed lines.</summary>
     Product,
 
-    /// <summary>A release's sign-off: the record it was made against.</summary>
+    /// <summary>A release's known limitations, each naming its products and linking the page that says it in full (ADR-0202).</summary>
+    KnownLimitations,
+
+    /// <summary>A release's sign-off: the record, the commit X, and the toolchain, OS and browser versions it was made with (ADR-0205).</summary>
     SignedOff,
 
     /// <summary>A release's SHOULD criteria accepted failing, each with its reason.</summary>
     ShouldAccepted,
+
+    /// <summary>The Definition of Done's §21 items a release accepted in writing as out of its scope (ADR-0205).</summary>
+    OutOfScope,
+
+    /// <summary>What a release supports: its hosts, browsers, target framework and packages (ADR-0205).</summary>
+    Supported,
 }
 
 /// <summary>What a line of the notes, or a Change Note, says its change is.</summary>
@@ -281,7 +290,11 @@ internal static partial class ReleaseNotes
         {
             foreach (var item in section.Items)
             {
+                // Only a Highlight, an Added line, or a Breaking, Behaviour or Fixed line marks a section (ADR-0190): a
+                // page a release's Known limitations, sign-off or support lines link has not changed for linking it.
                 var isNew = section.Kind == ReleaseSectionKind.Highlights || item.Kind == ReleaseKind.Added;
+                if (!isNew && item.Kind is not (ReleaseKind.Breaking or ReleaseKind.Behaviour or ReleaseKind.Fixed))
+                    continue;
                 var chip = isNew
                     ? new DocsChip($"New in {newest.Version}", href, $"New in {newest.Version}{when}: its release notes", false)
                     : new DocsChip($"Changed in {newest.Version}", href, $"Changed in {newest.Version}{when}: its release notes", false);

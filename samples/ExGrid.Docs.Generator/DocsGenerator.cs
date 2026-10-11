@@ -176,14 +176,22 @@ public sealed class DocsGenerator : IIncrementalGenerator
             })
             .Where(file => file is not null)
             .Collect();
-        context.RegisterSourceOutput(notes.Combine(pages).Combine(adrs).Combine(build), (spc, all) =>
+        // A release's SHOULD criteria accepted failing and its §21 items out of scope are read against the
+        // Definition of Done (ADR-0190, ADR-0205).
+        var definitionOfDone = context.AdditionalTextsProvider
+            .Where(file => file.Path.Replace('\\', '/').EndsWith("/" + RecordCites.DefinitionOfDone, StringComparison.Ordinal))
+            .Select((file, cancel) => file.GetText(cancel))
+            .Collect()
+            .Select((texts, _) => texts.FirstOrDefault(text => text is not null));
+        context.RegisterSourceOutput(notes.Combine(pages).Combine(adrs).Combine(definitionOfDone).Combine(build), (spc, all) =>
         {
-            var (((files, scans), records), input) = all;
+            var ((((files, scans), records), dod), input) = all;
             var (diagnostics, source) = ReleaseNotes.Build(
                 files.Select(f => f!).ToImmutableArray(),
                 scans.Select(p => p!).ToImmutableArray(),
                 records,
-                input.Info);
+                input.Info,
+                dod);
             foreach (var diagnostic in diagnostics)
                 spc.ReportDiagnostic(diagnostic);
             spc.AddSource("ReleaseNotes.g.cs", source);
