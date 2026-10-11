@@ -425,6 +425,10 @@ runs when the browser acknowledges that render, a round trip after it.
 - **Open, not decided here:** a popover's opening focus (the column menu, the filter, Find) and a
   Template cell's own focus. Each is taken a round trip after a gesture in this grid too, so the same
   race exists there in principle. Nothing has been seen to fail there. It is recorded, not built.
+  *(Settled 2026-10-11, decided with the user, by
+  [ADR-0204](./0204-the-page-follows-what-a-move-reveals-and-a-scripted-focus-asks-whether-the-keyboard-is-still-here.md):
+  a popover's opening focus asks the editor's question first, a Wrapper's popover is handed the core's
+  focus function, and a Template cell takes the keyboard through `HandKeyboardToAsync`.)*
 - **Narrowed as the hand-back was** *(2026-10-01, decided with the user)*. The request also leaves a
   field beside the rows that holds the keyboard of its own, the Formula Bar's text or the Name Box (the
   band `reclaimFocus` checks, a Chrome's control inside it included), unless the core means to take the
