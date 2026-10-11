@@ -1,0 +1,20 @@
+@* The chips the Release Notes give a page or a section (ADR-0190): each leads to the notes that link
+   it. Read from the notes' own links, so there is no second record of what is new. *@
+@if (Chips.Count > 0)
+{
+    <span class="docs-release-chips">
+        @foreach (var chip in Chips)
+        {
+            <MudTooltip Text="@chip.Title">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Href="@chip.Href"
+                         Color="@(chip.Unreleased ? Color.Warning : Color.Primary)"
+                         Class="@(chip.Unreleased ? "docs-release-chip docs-release-chip-unreleased" : "docs-release-chip")">@chip.Text</MudChip>
+            </MudTooltip>
+        }
+    </span>
+}
+
+@code {
+    /// <summary>The chips to show.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<DocsChip> Chips { get; set; } = [];
+}

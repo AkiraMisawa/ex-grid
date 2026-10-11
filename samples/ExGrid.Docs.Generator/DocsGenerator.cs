@@ -30,6 +30,11 @@ namespace ExGrid.Docs.Generator;
 /// sections and Examples. A navigation entry with no page, a page in no group, a title that is not text
 /// and two sections with one anchor stop the build.
 /// </para>
+/// <para>
+/// And it reads the Release Notes under <c>docs/releases/</c> (<see cref="ReleaseNotes"/>), checks them,
+/// and emits them as <c>ReleaseNotes</c> for the Release notes page, the latest version on the start page
+/// and the "New in" chips (ADR-0190).
+/// </para>
 /// </summary>
 [Generator(LanguageNames.CSharp)]
 public sealed class DocsGenerator : IIncrementalGenerator
@@ -73,12 +78,15 @@ public sealed class DocsGenerator : IIncrementalGenerator
             .Where(example => example is not null)
             .Collect();
 
-        // The decision records' file names, so a summary's "ADR-0016" links to the record.
+        // The decision records' file names, so a summary's "ADR-0016" links to the record. Only the files
+        // under docs/adr/: a Change Note may begin with four digits too.
         var adrs = context.AdditionalTextsProvider
-            .Select((file, _) => Path.GetFileName(file.Path))
+            .Select((file, _) => file.Path.Replace('\\', '/'))
+            .Where(path => path.Contains(AdrFolder))
+            .Select((path, _) => Path.GetFileName(path))
             .Where(name => AdrFile.IsMatch(name))
             .Collect()
-            .Select((names, _) => names.ToImmutableDictionary(n => n.Substring(0, 4), n => n));
+            .Select((names, _) => names.Distinct().ToImmutableDictionary(n => n.Substring(0, 4), n => n));
 
         var gitRef = build.Select((input, _) => input.Info.GitRef);
 
@@ -139,7 +147,38 @@ public sealed class DocsGenerator : IIncrementalGenerator
                 spc.ReportDiagnostic(diagnostic);
             spc.AddSource("SiteMap.g.cs", SiteMap.Emit(scans));
         });
+
+        // The Release Notes (ADR-0190): every file under docs/releases/, read in the notes' Markdown subset
+        // and checked against the decision records, the site map and the version this build publishes.
+        var notes = context.AdditionalTextsProvider
+            .Select((file, cancel) =>
+            {
+                var path = file.Path.Replace('\\', '/');
+                var at = path.LastIndexOf(ReleasesFolder, StringComparison.Ordinal);
+                if (at < 0 || !path.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+                    return null;
+                var text = file.GetText(cancel);
+                return text is null ? null : new NotesInput(file.Path, path.Substring(at + ReleasesFolder.Length), text);
+            })
+            .Where(file => file is not null)
+            .Collect();
+        context.RegisterSourceOutput(notes.Combine(pages).Combine(adrs).Combine(build), (spc, all) =>
+        {
+            var (((files, scans), records), input) = all;
+            var (diagnostics, source) = ReleaseNotes.Build(
+                files.Select(f => f!).ToImmutableArray(),
+                scans.Select(p => p!).ToImmutableArray(),
+                records,
+                input.Info);
+            foreach (var diagnostic in diagnostics)
+                spc.ReportDiagnostic(diagnostic);
+            spc.AddSource("ReleaseNotes.g.cs", source);
+        });
     }
+
+    private const string AdrFolder = "/docs/adr/";
+
+    private const string ReleasesFolder = "/docs/releases/";
 
     // Whether the member a documentation id names is visible outside its assembly.
     private static bool IsPublic(string id, Compilation compilation)

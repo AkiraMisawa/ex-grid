@@ -1,0 +1,9 @@
+@page "/release-notes"
+
+@* The Release Notes (ADR-0190), a reference page: every version published to nuget.org, newest first,
+   one anchor each, read at build time from docs/releases/. A site not published from a tag also shows
+   what is unreleased, from the Change Notes. Its sections are the versions, which the rail lists. *@
+<DocsPage Title="Release notes"
+          Lead="Every version published to nuget.org, newest first. A version's packages ship together, at one version, from one tag.">
+    <ReleaseNotesView />
+</DocsPage>

@@ -325,3 +325,67 @@ body { font-family: Roboto, Helvetica, Arial, sans-serif; }
    on this site only; ExPivot's own value is a product question, not the site's. */
 .docs-content .ex-pivot-dialog-backdrop { z-index: calc(var(--mud-zindex-appbar) + 10); }
 .docs-content .ex-pivot-dialog { z-index: calc(var(--mud-zindex-appbar) + 11); }
+
+/* The Release Notes (ADR-0190): a version's heading and chip, the line of what it published, the
+   prerelease note, its headings and lines, each line led by what it is or whom it reaches. */
+.docs-notes-intro p { max-width: 820px; line-height: 1.7; margin: 0 0 12px; }
+.docs-notes-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 8px 0 0; }
+.docs-notes-version { max-width: 900px; }
+.docs-notes-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.docs-notes-title .docs-section-title { margin-bottom: 0; }
+.docs-notes-meta { margin: 8px 0 4px; color: var(--docs-muted); line-height: 1.6; }
+.docs-notes-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 12px; font-size: 0.9rem; }
+.docs-notes-links a, .docs-notes-version a:not(.docs-anchor):not(.mud-chip) { color: var(--mud-palette-primary); }
+.docs-notes-prerelease {
+    margin: 12px 0;
+    padding: 10px 14px;
+    border-left: 3px solid var(--mud-palette-lines-default);
+    background: var(--docs-code-bg);
+    line-height: 1.6;
+}
+.docs-notes-prerelease p { margin: 0; }
+.docs-notes-install { margin: 8px 0 0; }
+.docs-notes-warning { margin: 4px 0 8px; }
+.docs-notes-heading { font-weight: 600; margin: 20px 0 6px; }
+.docs-notes-none { color: var(--docs-muted); margin: 0 0 8px; }
+.docs-notes-paragraph { margin: 0 0 8px; line-height: 1.7; }
+.docs-notes-list { padding-left: 22px; margin: 0 0 8px; }
+.docs-notes-item { line-height: 1.7; margin: 0 0 6px; }
+.docs-notes-item ul { padding-left: 20px; margin: 4px 0 0; }
+.docs-notes-label, .docs-notes-kind {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 0 6px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.6;
+    vertical-align: 1px;
+    border: 1px solid var(--mud-palette-lines-default);
+    color: var(--docs-muted);
+}
+.docs-notes-kind-added { border-color: rgba(var(--mud-palette-success-rgb), 0.6); color: light-dark(#1b6b34, var(--mud-palette-success)); }
+.docs-notes-kind-fixed { border-color: rgba(var(--mud-palette-info-rgb), 0.6); color: light-dark(#0b5394, var(--mud-palette-info)); }
+.docs-notes-kind-breaking, .docs-notes-kind-behaviour { border-color: rgba(var(--mud-palette-warning-rgb), 0.7); color: light-dark(#8a5300, var(--mud-palette-warning)); }
+.docs-notes-more { margin-left: 8px; font-size: 0.85rem; white-space: nowrap; }
+
+/* The chips a page or a section carries because the Release Notes link it. The warning colour's words
+   take a readable shade on a light page, as the version chip's do. */
+.docs-release-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.docs-section-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; margin-bottom: 12px; }
+.docs-section-head .docs-section-title { margin-bottom: 0; }
+.docs-page-header .docs-release-chips { margin: 6px 0 0; }
+.docs-release-chip { font-weight: 500; }
+.docs-release-chip-unreleased.mud-chip-color-warning { color: light-dark(#8a5300, var(--mud-palette-warning)); }
+
+/* The start page's latest version. */
+.docs-latest { margin-top: 28px; padding: 16px 20px; max-width: 900px; }
+.docs-latest-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+.docs-latest-label { color: var(--docs-muted); font-weight: 700; }
+.docs-latest-version { font-weight: 700; font-size: 1.15rem; color: var(--mud-palette-text-primary); text-decoration: none; }
+.docs-latest-version:hover { color: var(--mud-palette-primary); }
+.docs-latest-highlights { margin: 10px 0 8px; padding-left: 22px; line-height: 1.65; }
+.docs-latest-highlights a { color: var(--mud-palette-primary); }
+.docs-latest-links { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.docs-latest-unreleased { color: light-dark(#8a5300, var(--mud-palette-warning)) !important; }
+.docs-notes-filters .mud-chip-color-warning { color: light-dark(#8a5300, var(--mud-palette-warning)); }

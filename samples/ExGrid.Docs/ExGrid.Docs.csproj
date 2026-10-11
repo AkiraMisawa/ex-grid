@@ -46,7 +46,8 @@
     <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
-    <!-- The build step that highlights the Examples and reads the API documentation. -->
+    <!-- The build step that highlights the Examples, reads the API documentation, maps the site and
+         reads the Release Notes. -->
     <ProjectReference Include="..\ExGrid.Docs.Generator\ExGrid.Docs.Generator.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
@@ -59,6 +60,9 @@
     <AdditionalFiles Include="Examples\**\*.cs;Examples\**\*.html;Examples\**\*.sh;Examples\**\*.css" />
     <!-- The decision records, by name only: an API summary's "ADR-0016" links to its file. -->
     <AdditionalFiles Include="..\..\docs\adr\*.md" />
+    <!-- The Release Notes (ADR-0190): each version's file, the prerelease note and the Change Notes,
+         read and checked by the generator for the Release notes page. -->
+    <AdditionalFiles Include="..\..\docs\releases\**\*.md" />
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
     <CompilerVisibleProperty Include="DocsVersion" />
     <CompilerVisibleProperty Include="DocsRef" />

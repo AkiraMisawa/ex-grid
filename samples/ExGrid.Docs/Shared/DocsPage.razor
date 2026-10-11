@@ -3,7 +3,8 @@
 @* A documentation page: its title, a lead paragraph, the body, and the way to the pages either
    side of it in the navigation. Beside it at wide widths, the rail (ADR-0110): the page's sections,
    read from the site map the build made, so it is whole on the first render, and the page's own
-   source at the commit the site was built from. A static list, with no scroll spy. *@
+   source at the commit the site was built from. A static list, with no scroll spy. Under the title,
+   the chips the Release Notes give the whole page (ADR-0190). *@
 <PageTitle>@Title — ExGrid</PageTitle>
 
 <div class="docs-page">
@@ -14,6 +15,7 @@
                 <MudText Typo="Typo.overline" Color="Color.Primary">@Product</MudText>
             }
             <MudText Typo="Typo.h3" HtmlTag="h1" Class="docs-title">@Title</MudText>
+            <ReleaseChips Chips="_chips" />
             @if (Lead is not null)
             {
                 <MudText Typo="Typo.subtitle1" Class="docs-lead">@Lead</MudText>
@@ -78,11 +80,22 @@
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private SitePage? _page;
+    private IReadOnlyList<DocsChip> _chips = [];
     private string _here = "";
     private DocsLink? _previous;
     private DocsLink? _next;
 
     private string SourcePath => "samples/ExGrid.Docs/" + _page!.Path;
+
+    // A link from another page to a section of this one — a chip, the banner, a line of prose — lands
+    // at the page's top: Blazor's own script scrolls to an anchor only when the page that has it is
+    // already shown. So once this page has rendered, its address is handed back to it, and that same
+    // script scrolls to the section. No script of the site's own (ADR-0110).
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && new Uri(Navigation.Uri).Fragment.Length > 1)
+            Navigation.NavigateTo(Navigation.Uri, replace: true);
+    }
 
     protected override void OnParametersSet()
     {
@@ -90,6 +103,7 @@
         _here = address.Split('#')[0];
         var route = _here.Split('?')[0].Trim('/');
         _page = SiteMap.Find(route);
+        _chips = ReleaseNotes.ChipsFor(route, null);
         var pages = DocsNav.Reading;
         var index = pages.ToList().FindIndex(l => string.Equals(l.Href, route, StringComparison.OrdinalIgnoreCase));
         _previous = index > 0 ? pages[index - 1] : null;

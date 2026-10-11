@@ -8,12 +8,16 @@
 # completes that release rather than making another.
 #
 # It refuses a version without a prerelease suffix, which is a release in the Definition of
-# Done's sense and waits for its sign-off, and a commit that is not on main. It runs the
-# whole of ci.yml on the tag, then pushes to nuget.org the very packages ci.yml's package job
-# tested. The key is a one-hour one from Trusted Publishing: nuget.org holds a policy naming
-# this repository and this file, and the secret NUGET_USER holds the nuget.org profile name.
-# Last, once nuget.org has the packages, it publishes the Docs Site for the version (docs.yml,
-# ADR-0110), with the UTC day of the push (ADR-0190).
+# Done's sense and waits for its sign-off, and a commit that is not on main. It refuses, too, a
+# commit whose Release Notes are not cut (ADR-0190): no docs/releases/<version>.md, or one whose
+# first line is not the version; a Change Note left under docs/releases/unreleased/; or another
+# version's notes still reading "Published: pending". It runs the whole of ci.yml on the tag,
+# whose build holds the Docs Site's Release Notes to the version, then pushes to nuget.org the
+# very packages ci.yml's package job tested. The key is a one-hour one from Trusted Publishing:
+# nuget.org holds a policy naming this repository and this file, and the secret NUGET_USER holds
+# the nuget.org profile name. The GitHub release's text is the version's Release Notes, after the
+# prerelease note. Last, once nuget.org has the packages, it publishes the Docs Site for the
+# version (docs.yml, ADR-0110), with the UTC day of the push (ADR-0190).
 name: Release
 
 on:
@@ -53,6 +57,40 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      # Before CI's twenty minutes: a tag publishes all of main, so its commit holds the version's
+      # Release Notes and no Change Note, and no other version still waits for its day (ADR-0190).
+      # Every refusal is said, not only the first.
+      - name: The Release Notes are cut
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          refused=0
+          notes="docs/releases/$VERSION.md"
+          if [[ ! -f "$notes" ]]; then
+            echo "::error::The tagged commit has no $notes. Cut the version first: gather the Change Notes into it under its headings, write its Highlights, delete the Change Notes, and write Published: pending (ADR-0190)."
+            refused=1
+          else
+            first=$(head -n 1 "$notes" | tr -d '\r')
+            if [[ "$first" != "# $VERSION" ]]; then
+              echo "::error file=$notes,line=1::$notes begins '$first', and a version's notes begin '# $VERSION' (ADR-0190)."
+              refused=1
+            fi
+          fi
+          while IFS= read -r note; do
+            echo "::error file=$note,line=1::$note is a Change Note still waiting: the cut gathers every one into $notes and deletes it, since a tag publishes all of main (ADR-0190)."
+            refused=1
+          done < <(find docs/releases/unreleased -type f -name '*.md' 2> /dev/null | sort)
+          for other in docs/releases/*.md; do
+            [[ "$other" == "$notes" || "$other" == docs/releases/prerelease-note.md ]] && continue
+            line=$(tr -d '\r' < "$other" | grep -n -x -m 1 'Published: pending' | cut -d: -f1 || true)
+            if [[ -n "$line" ]]; then
+              echo "::error file=$other,line=$line::$other still reads Published: pending. The cut of $VERSION writes the UTC day nuget.org received that version (ADR-0190)."
+              refused=1
+            fi
+          done
+          exit "$refused"
+
   verify:
     name: Every layer, and the packages
     needs: admit
@@ -80,6 +118,10 @@ jobs:
     env:
       VERSION: ${{ needs.admit.outputs.version }}
     steps:
+      # The tag's Release Notes, which become the release's text. Checked out first: a checkout
+      # empties the workspace.
+      - uses: actions/checkout@v7
+
       - uses: actions/download-artifact@v8
         with:
           name: packages
@@ -123,9 +165,40 @@ jobs:
             --skip-duplicate
           echo "published-on=$(date -u +%F)" >> "$GITHUB_OUTPUT"
 
-      # Whoever made the tag may have made its release too — GitHub's release page does both
-      # at once. Then that release is completed, not refused: marked prerelease, the packages
-      # attached, and the note ADR-0042 asks of a beta put above whatever it already says.
+      # The release's text is the version's Release Notes (ADR-0190), after the prerelease note for a
+      # prerelease (ADR-0042): the files the Docs Site renders, so the two cannot say different things.
+      # The first line, the version, is the release's title already; "pending" becomes the day just
+      # recorded; a route of the site becomes its whole address; and ADR-NNNN links the record at
+      # this commit, as the site links it. GitHub links #NN to the pull request itself.
+      - name: The release's text
+        env:
+          PUBLISHED_ON: ${{ steps.push.outputs.published-on }}
+          REPO: ${{ github.repository }}
+          SITE: https://akiramisawa.github.io/ex-grid/
+        run: |
+          set -euo pipefail
+          {
+            if [[ "$VERSION" == *-* ]]; then
+              cat docs/releases/prerelease-note.md
+              echo
+            fi
+            tail -n +2 "docs/releases/$VERSION.md"
+          } | perl -pe '
+            s/\r$//;
+            $body = 1 if /^## /;
+            s/\{ref\}/$ENV{GITHUB_SHA}/g;
+            unless ($body) {
+              s/^Published: pending$/Published: $ENV{PUBLISHED_ON}/;
+              s/^(Published|Packages|Target): (.*)$/**$1:** $2  /;
+            }
+            s{\]\((?!https://)([^)\s]+)\)}{]($ENV{SITE}$1)}g;
+            s{(?<![\w\[/-])ADR-(\d{4})(?!\w)}{my @f = glob("docs/adr/$1-*.md"); @f ? "[ADR-$1](https://github.com/$ENV{REPO}/blob/$ENV{GITHUB_SHA}/$f[0])" : "ADR-$1"}ge;
+          ' > "$RUNNER_TEMP/release-notes.md"
+          cat "$RUNNER_TEMP/release-notes.md"
+
+      # Whoever made the tag may have made its release too — GitHub's release page does both at once.
+      # Then that release is completed, not refused: marked prerelease, the packages attached, and its
+      # text replaced by the Release Notes (ADR-0190; ADR-0042's 2026-09-25 record).
       - name: The GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
@@ -133,19 +206,12 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          status="https://github.com/${REPO}/blob/${GITHUB_SHA}/docs/implementation-status.md"
-          note="A prerelease (ADR-0042): every test layer passed in CI on this commit, but the Definition of Done has not been signed off. What it still owes is listed in [docs/implementation-status.md at this commit]($status)."
           if gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
-            body=$(gh release view "$TAG" --repo "$REPO" --json body --jq .body)
-            case "$body" in
-              *"(ADR-0042)"*) ;;
-              *) body="${note}"$'\n\n'"${body}" ;;
-            esac
-            gh release edit "$TAG" --repo "$REPO" --prerelease --notes "$body"
+            gh release edit "$TAG" --repo "$REPO" --prerelease --notes-file "$RUNNER_TEMP/release-notes.md"
             gh release upload "$TAG" packages/* --repo "$REPO" --clobber
           else
             gh release create "$TAG" packages/* --repo "$REPO" \
-              --verify-tag --prerelease --title "$TAG" --generate-notes --notes "$note"
+              --verify-tag --prerelease --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
           fi
 
   # The Docs Site for this version, once nuget.org has it (ADR-0110, ADR-0042): the site states a

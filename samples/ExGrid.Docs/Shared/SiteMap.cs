@@ -51,6 +51,9 @@ public enum SiteSearchKind
 
     /// <summary>A type a page's API table lists.</summary>
     Type,
+
+    /// <summary>A line of the Release Notes, or a Change Note (ADR-0190).</summary>
+    ReleaseNote,
 }
 
 /// <summary>A place the search can lead to.</summary>
@@ -68,8 +71,15 @@ public sealed record SiteSearchEntry(string Title, string Context, string Href, 
 /// </summary>
 internal static partial class SiteMap
 {
-    /// <summary>Every routed page, by file.</summary>
-    public static IReadOnlyList<SitePage> Pages { get; } = Read();
+    /// <summary>
+    /// Every routed page, by file. The Release notes page's sections are its versions, which it renders
+    /// from the notes rather than writes as sections of its own (ADR-0190).
+    /// </summary>
+    public static IReadOnlyList<SitePage> Pages { get; } = Read()
+        .Select(p => p.Routes.Contains(ReleaseNotes.Route, StringComparer.OrdinalIgnoreCase)
+            ? p with { Sections = ReleaseNotes.PageSections().ToArray() }
+            : p)
+        .ToArray();
 
     private static readonly Dictionary<string, SitePage> ByRoute = Pages
         .SelectMany(p => p.Routes.Select(r => (Route: r, Page: p)))
@@ -77,7 +87,8 @@ internal static partial class SiteMap
 
     /// <summary>
     /// What the search leads to: each page the navigation lists, each of its sections, each titled
-    /// Example and each type an API table lists, in the navigation's order.
+    /// Example and each type an API table lists, in the navigation's order; then each line of the
+    /// Release Notes.
     /// </summary>
     public static IReadOnlyList<SiteSearchEntry> Entries { get; } = BuildEntries();
 
@@ -143,6 +154,7 @@ internal static partial class SiteMap
                 }
             }
         }
+        entries.AddRange(ReleaseNotes.SearchEntries());
         return entries.ToArray();
     }
 
