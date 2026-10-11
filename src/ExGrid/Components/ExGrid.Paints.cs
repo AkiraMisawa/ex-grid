@@ -1,4 +1,5 @@
 using ExGrid.Cells;
+using ExGrid.Chrome;
 using ExGrid.Clipboard;
 using ExGrid.Columns;
 using ExGrid.Selection;
@@ -333,12 +334,23 @@ public partial class ExGrid<TRow>
         return true;
     }
 
-    /// <summary>Raises the refusal of a positional write whose positions an order move or a replaced
-    /// Source gave to other rows (ADR-0011, ADR-0142): a gesture aimed under another order or at
-    /// another Source, a fill-handle drag made under one, a fill key whose source rows were read from
-    /// one, or a Ctrl+Enter fill whose editor opened under one.</summary>
-    private async Task RefuseWriteAsync(PasteRefusalReason reason)
+    /// <summary>Refuses a write by the one gate paste, fill and Delete go through (ADR-0035): the
+    /// Chrome's words for the reason are announced in the root's live region, once, as it happens —
+    /// naming <paramref name="column"/>, the column that refused, where the words hold its place —
+    /// and <see cref="OnPasteRefused"/> is raised with the reason whether or not they were (ADR-0203).
+    /// Among them the refusal of a positional write whose positions an order move or a replaced Source
+    /// gave to other rows (ADR-0011, ADR-0142): a gesture aimed under another order or at another
+    /// Source, a fill-handle drag made under one, a fill key whose source rows were read from one, or
+    /// a Ctrl+Enter fill whose editor opened under one.</summary>
+    private async Task RefuseWriteAsync(PasteRefusalReason reason, int column = -1)
     {
+        var words = RefusalWords(RefusalLabelIds.For(reason), column);
+        if (!string.IsNullOrWhiteSpace(words))
+        {
+            Announce(words);
+            _suppressRender = false;
+            StateHasChanged();
+        }
         if (OnPasteRefused.HasDelegate)
             await OnPasteRefused.InvokeAsync(reason);
     }

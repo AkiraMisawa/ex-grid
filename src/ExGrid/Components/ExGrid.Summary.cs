@@ -414,6 +414,7 @@ public partial class ExGrid<TRow>
             builder.AddComponentParameter(2, nameof(SummaryFiguresMenu.Label), (Func<string, string>)Label);
             builder.AddComponentParameter(3, nameof(SummaryFiguresMenu.Toggle), (Func<SummaryFigures, Task>)ToggleSummaryFigureAsync);
             builder.AddComponentParameter(4, nameof(SummaryFiguresMenu.Popover), context);
+            builder.AddComponentParameter(5, nameof(SummaryFiguresMenu.TakeFocus), TakePopoverFocus);
             builder.CloseComponent();
         }, Label(SummaryLabelIds.Menu));
 

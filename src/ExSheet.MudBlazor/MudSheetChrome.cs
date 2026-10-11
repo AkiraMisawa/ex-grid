@@ -100,6 +100,12 @@ public sealed class MudSheetChrome : ISheetChrome
     /// <summary>The Selection Summary (ADR-0130), as the Grid Chrome draws it.</summary>
     public RenderFragment? SelectionSummary(SelectionSummaryContext context) => GridSeams.SelectionSummary(context);
 
+    /// <summary>The words a refusal is said in (ADR-0203): <see cref="Grid"/>'s, with ExSheet's own
+    /// words beneath its <see cref="MudGridChrome.Label"/>, so a refusal on a Sheet is said once, in
+    /// the Sheet's words.</summary>
+    /// <param name="id">The id of the words asked for.</param>
+    public string? Words(string id) => GridSeams.Words(id);
+
     /// <summary>
     /// A Toolbar Item of the Sheet Toolbar in MudBlazor's controls (ADR-0100): a toggle as a
     /// <c>MudToggleIconButton</c>, a list as a <c>MudMenu</c>, a split control as a

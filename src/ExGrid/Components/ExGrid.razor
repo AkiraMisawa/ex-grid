@@ -49,6 +49,8 @@
 @* A reveal moves the scroller in the render that paints where it is going (ADR-0012,
    2026-09-29): the slice below is computed at the offset the write asks for. *@
 @{ StageReveal(); }
+@* The page follows what a move revealed, asked from the render that paints it (ADR-0204). *@
+@{ StageFollow(); }
 @{
     var keyFieldShown = KeyFieldShown;
     var activeDescendant = ActiveDescendant();
@@ -60,7 +62,7 @@
    script tells of each press handed over (ADR-0058, "On a circuit"). *@
 <div class="@RootClass" style="@RootStyle()" tabindex="@RootTabIndex" dir="ltr" @ref="_root"
      id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
-     data-ex-reveal="@_revealToken" data-ex-pointed-from="@PointedFrom"
+     data-ex-reveal="@_revealToken" data-ex-follow="@_followToken" data-ex-pointed-from="@PointedFrom"
      aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
      aria-activedescendant="@(keyFieldShown ? null : activeDescendant)"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
@@ -1594,7 +1596,9 @@
     [Parameter] public EventCallback<FindRefusalReason> OnFindRefused { get; set; }
 
     /// <summary>A refused copy, saying which rule it hit (ADR-0005): the clipboard was
-    /// left untouched, and this is where Chrome learns why.</summary>
+    /// left untouched, and this is where Chrome learns why. The grid has already announced it
+    /// in its live region, in the Chrome's words for the reason (<see cref="RefusalLabelIds"/>,
+    /// ADR-0203); binding this silences nothing.</summary>
     [Parameter] public EventCallback<CopyRefusalReason> OnCopyRefused { get; set; }
 
     /// <summary>A refused paste — or a refused Ctrl+Enter fill, which goes through the
@@ -1610,7 +1614,10 @@
     /// <see cref="PasteRefusalReason.OrderMoved"/>: the Selection it was aimed with went with that
     /// order (ADR-0011, ADR-0142). One aimed at what a <see cref="Source"/> since replaced by
     /// another instance painted is refused as <see cref="PasteRefusalReason.SourceChanged"/>,
-    /// whatever the two sources' Row Sequence Versions are.</summary>
+    /// whatever the two sources' Row Sequence Versions are. The grid has already announced each
+    /// refusal in its live region, once, in the Chrome's words for the reason — the column that
+    /// refused named for <see cref="PasteRefusalReason.TargetNotEditable"/>
+    /// (<see cref="RefusalLabelIds"/>, ADR-0203); binding this silences nothing.</summary>
     [Parameter] public EventCallback<PasteRefusalReason> OnPasteRefused { get; set; }
 
     /// <summary>Text the user had typed and not committed, thrown away because the grid
@@ -1662,12 +1669,30 @@
     /// without reimplementing the menu. Returning null for an id falls back to
     /// <see cref="BuiltInCommandLabels"/>. A substituted Chrome never consults this — it
     /// has the ids and resolves its own wording. The built-in Formula Bar's two fields take
-    /// their accessible names through it too, by <see cref="GridLabelIds"/> (ADR-0036/0051).</summary>
+    /// their accessible names through it too, by <see cref="GridLabelIds"/> (ADR-0036/0051), and
+    /// every refused copy, paste, fill and Delete is said in the words it answers for the
+    /// reason's <see cref="RefusalLabelIds"/> id (ADR-0203): null keeps the built-in English, and
+    /// the empty string silences the announcement for that reason. A substituted Chrome that
+    /// answers no words of its own through <see cref="IGridChrome.Words"/> leaves them to this
+    /// too.</summary>
     [Parameter] public Func<string, string?>? CommandLabel { get; set; }
 
     /// <summary>The built-in Chrome's word for an id: the Consumer's through
     /// <see cref="CommandLabel"/>, the built-in English where it says nothing (ADR-0036).</summary>
     private string WordFor(string id) => CommandLabel?.Invoke(id) ?? BuiltInCommandLabels.For(id);
+
+    /// <summary>The words a refusal is said in (ADR-0203): the Chrome's for the reason's
+    /// <see cref="RefusalLabelIds"/> id — a substituted Chrome's <see cref="IGridChrome.Words"/>, else the
+    /// built-in Chrome's through <see cref="CommandLabel"/>, else its English — with the header of the
+    /// column that refused written in for <see cref="RefusalLabelIds.ColumnPlaceholder"/>. Empty where
+    /// whoever answers has silenced it, and then nothing is announced.</summary>
+    private string RefusalWords(string id, int column = -1)
+    {
+        var words = Chrome?.Words(id) ?? CommandLabel?.Invoke(id) ?? BuiltInCommandLabels.For(id);
+        return column >= 0 && column < Columns.Count && words.Contains(RefusalLabelIds.ColumnPlaceholder, StringComparison.Ordinal)
+            ? words.Replace(RefusalLabelIds.ColumnPlaceholder, Columns[column].Header, StringComparison.Ordinal)
+            : words;
+    }
 
     /// <summary>The Consumer's own context-menu commands, appended to the core's
     /// (ADR-0010/0036). It is handed the target — the clicked row, the column, and the
@@ -1941,6 +1966,16 @@
     // and merely incomplete on one.
     private bool _metaIsPrimary;
     private bool _revealFocus;
+
+    // The page follow (ADR-0204): armed by a move the grid makes, for the Focus it moved to and the
+    // cell its reveal brought into the Viewport — the Focus, or the Extent while extending — and asked
+    // of the browser from inside the render that paints that cell (StageFollow). Numbered like a
+    // reveal, and the number rendered on the root (data-ex-follow): the script waits for the render
+    // that carries it.
+    private bool _followArmed;
+    private CellPosition _followFocus;
+    private CellPosition _followTarget;
+    private long _followToken;
 
     // Whether that reveal should also put the Viewport's left edge back at the start of
     // the row. Only ever set alongside _revealFocus, and cleared with it — see
@@ -3514,6 +3549,10 @@
         var firstRow = _visible?.Start ?? 0;
 
         var moved = firstRow != paintedFirstRow || _scrollable != paintedColumns;
+        // The user scrolled the rows: a page follow still waiting for its cell to be painted is not
+        // carried out when they scroll back to it (ADR-0204).
+        if (moved)
+            _followArmed = false;
         // Either axis on its own is enough. A diagonal fling that crosses screens
         // sideways while barely moving down is still a frame where every cell changes,
         // and testing only the rows would miss it entirely.
@@ -3920,8 +3959,7 @@
         }
         if (decision.IsRefused)
         {
-            if (OnPasteRefused.HasDelegate)
-                await OnPasteRefused.InvokeAsync(decision.Reason);
+            await RefuseWriteAsync(decision.Reason, decision.RefusedColumn);
             return;
         }
         // Nobody taking the intent is nobody accepting it: the Selection stays on the source.
@@ -4547,7 +4585,7 @@
         };
         var closing = Closing(commands);
         return new ColumnMenuContext(declared.Name, declared.Type, closing, CloseFromChrome,
-            _menuFocusRequest, InnerPopupChangedFromChrome, ColumnMenuKeysOver(closing, IsFilterable(column)));
+            _menuFocusRequest, InnerPopupChangedFromChrome, ColumnMenuKeysOver(closing, IsFilterable(column)), TakePopoverFocus);
     }
 
     /// <summary>Whether a column's filter stands under its commands (ADR-0044): a queryable
@@ -4837,7 +4875,7 @@
         var context = new ContextMenuContext<TRow>(
             _window[slice], declared.Name, declared.Type,
             _selection.Selection.Ranges, _sequenceVersion, core, CloseFromChrome, _popoverFocusRequest,
-            InnerPopupChangedFromChrome);
+            InnerPopupChangedFromChrome, TakeFocus: TakePopoverFocus);
         var commands = new List<GridCommand>(core);
         if (ContextCommands?.Invoke(context) is { } extra)
             commands.AddRange(extra);
@@ -5250,21 +5288,37 @@
         await FocusQuietlyAsync(element, preventScroll: true);
     }
 
-    /// <summary>Focuses an element the core rendered, if it is still there to focus. A
-    /// popover can close between the render that painted it and this call, and a closed
-    /// circuit cannot focus anything; neither is worth an exception.</summary>
-    private static async Task FocusQuietlyAsync(ElementReference element, bool preventScroll = false)
+    /// <summary>
+    /// Focuses an element of a popover, if it is still there to focus, and only while the keyboard
+    /// is still this grid's (ADR-0204): a popover's opening focus, a key's move inside a menu, and
+    /// Tab's wrap inside a popover each land a round trip after the gesture that asked for them, so
+    /// each asks the editor's question first — DOM focus inside this root or on nothing — through the
+    /// handle's <c>takeFocus</c>, and a grid or a control the user has pressed in the meantime keeps
+    /// the keyboard. A popover can close between the render that painted it and this call, and a
+    /// closed circuit cannot focus anything; neither is worth an exception.
+    /// </summary>
+    private async Task FocusQuietlyAsync(ElementReference element, bool preventScroll = false)
     {
-        if (element.Id is null)
+        if (element.Id is null || _disposed)
             return;
         try
         {
-            await element.FocusAsync(preventScroll);
+            if (_scrollHandle is null)
+                await element.FocusAsync(preventScroll);
+            else
+                await _scrollHandle.InvokeVoidAsync("takeFocus", element, preventScroll);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
+
+    /// <summary>The core's focus function a Chrome's popover is handed (ADR-0204), as a Chrome's
+    /// editor is handed its own (ADR-0010): the control, and whether it may scroll into view.</summary>
+    private Func<ElementReference, bool, Task> TakePopoverFocus
+        => _takePopoverFocus ??= (control, preventScroll) => InvokeAsync(() => FocusQuietlyAsync(control, preventScroll));
+
+    private Func<ElementReference, bool, Task>? _takePopoverFocus;
 
     /// <summary>
     /// A key on one of the built-in menu's items (ADR-0039): what it means is
@@ -5564,7 +5618,8 @@
             _panelFocusLastRequest,
             ValueListKeyFromChrome,
             _panelSearchRequest,
-            declared.DateType);
+            declared.DateType,
+            TakePopoverFocus);
     }
 
     /// <summary>The one write path a filter change takes (ADR-0009): the column's spec
@@ -6046,8 +6101,7 @@
 
         if ((text?.Length ?? 0) + (html?.Length ?? 0) > PasteByteCap)
         {
-            if (OnPasteRefused.HasDelegate)
-                await OnPasteRefused.InvokeAsync(PasteRefusalReason.TooLarge);
+            await RefuseWriteAsync(PasteRefusalReason.TooLarge);
             return;
         }
         await OnPasteAsync(await ReadAsync(text), await ReadAsync(html), paint);
@@ -6096,8 +6150,7 @@
             PasteMaySpill ? extent : null, plainTextOnly: !parsed.IsFromTable);
         if (decision.IsRefused)
         {
-            if (OnPasteRefused.HasDelegate)
-                await OnPasteRefused.InvokeAsync(decision.Reason);
+            await RefuseWriteAsync(decision.Reason, decision.RefusedColumn);
             return;
         }
         var version = _sequenceVersion;
@@ -6275,15 +6328,17 @@
     {
         if (_disposed)
             return;
-        if (sentence is not null)
+        // The Consumer's own sentence, relayed as a verdict's is (ADR-0034/0036), or the Chrome's
+        // words for the reason (ADR-0203): a copy that landed nothing and said nothing is the
+        // silence ADR-0005 refuses. Words a Consumer silenced say nothing, and it says them.
+        var words = sentence ?? RefusalWords(RefusalLabelIds.For(reason));
+        if (!string.IsNullOrWhiteSpace(words))
         {
-            // The Consumer's own sentence, relayed as a verdict's is (ADR-0034/0036): a
-            // copy that landed nothing and said nothing is the silence ADR-0005 refuses.
             _ = InvokeAsync(() =>
             {
                 if (_disposed)
                     return;
-                Announce(sentence);
+                Announce(words);
                 _suppressRender = false;
                 StateHasChanged();
             });
@@ -6595,6 +6650,7 @@
             _revealRowStart = false;
             _revealStepRows = 0;
             _revealFocus = true;
+            FollowPage(current.Focus);
             _suppressRender = false;
             StateHasChanged();
             return;
@@ -6676,6 +6732,8 @@
             ? SignedViewportRows(action.Direction)
             : 0;
         _revealFocus = true;
+        // And the page follows what the reveal brought into view (ADR-0204).
+        FollowPage(revealed);
         StateHasChanged();
     }
 
@@ -7028,7 +7086,8 @@
         () => InvokeAsync(() => FindStepAsync(backward: true)),
         CloseFromChrome,
         _findFocusRequest,
-        InnerPopupChangedFromChrome);
+        InnerPopupChangedFromChrome,
+        TakePopoverFocus);
 
     /// <summary>Enter in the built-in field is the form's implicit submission — which an IME
     /// confirming a candidate does not trigger — and Shift says which way it runs.</summary>
@@ -7169,8 +7228,7 @@
         var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(1, 1), ColumnIsEditable);
         if (decision.IsRefused)
         {
-            if (OnPasteRefused.HasDelegate)
-                await OnPasteRefused.InvokeAsync(decision.Reason);
+            await RefuseWriteAsync(decision.Reason, decision.RefusedColumn);
             return;
         }
         if (OnClear.HasDelegate)
@@ -7204,8 +7262,7 @@
         var decision = ClipboardRules.PlanFill(_selection.Selection, direction, ColumnIsEditable, CopyCellCap);
         if (decision.IsRefused)
         {
-            if (OnPasteRefused.HasDelegate)
-                await OnPasteRefused.InvokeAsync(decision.Reason);
+            await RefuseWriteAsync(decision.Reason, decision.RefusedColumn);
             return;
         }
 
@@ -7226,8 +7283,7 @@
         // positions they were asked by someone else's (ADR-0011).
         if (rows is null || version != _sequenceVersion)
         {
-            if (OnPasteRefused.HasDelegate)
-                await OnPasteRefused.InvokeAsync(PasteRefusalReason.SourceUnavailable);
+            await RefuseWriteAsync(PasteRefusalReason.SourceUnavailable);
             return;
         }
         var source = plan.Source;
@@ -7735,7 +7791,10 @@
             return;
         }
         if (Apply(move(_selection.Selection)))
+        {
             _revealFocus = true;
+            FollowPage(_selection.Selection.Focus);
+        }
         else
             _suppressRender = false;
         StateHasChanged();
@@ -7768,8 +7827,7 @@
             // operation and never the text, so the editor stays open with the typing in
             // it, and Enter — a gesture the refusal did not name — still commits the one
             // cell the editor was opened on, which is editable by construction.
-            if (OnPasteRefused.HasDelegate)
-                await OnPasteRefused.InvokeAsync(decision.Reason);
+            await RefuseWriteAsync(decision.Reason, decision.RefusedColumn);
             return;
         }
         // The fill lands over its target as entered (ADR-0142, LV-13). The edited cell lay under
@@ -8610,6 +8668,57 @@
     }
 
     /// <summary>
+    /// Arms the page follow for a move the grid made (ADR-0204): the arrows, Ctrl+arrows, Home and
+    /// End, PageUp and PageDown, Enter and Tab cycling, and Ctrl+Backspace — never a press, a
+    /// Consumer's placement, or the box changing. <paramref name="revealed"/> is the cell the move's
+    /// reveal brought into the Viewport: the Focus, or the Extent while extending (ADR-0052).
+    /// </summary>
+    private void FollowPage(CellPosition revealed)
+    {
+        _followArmed = true;
+        _followFocus = _selection.Selection.Focus;
+        _followTarget = revealed;
+    }
+
+    /// <summary>
+    /// Asks the browser, from inside the render that paints a move, to bring the cell it revealed
+    /// into the window at the nearest edge (ADR-0204): the request names the Focus by the
+    /// <c>aria-activedescendant</c> this render writes, and the render by <c>data-ex-follow</c>; the
+    /// script waits for both, runs only while the keyboard is still this grid's, and drops a request
+    /// whose Focus has moved on. A move whose cell is not painted yet — rows on their way after a far
+    /// jump — stays armed until the render that paints it; one the Focus has moved on from since, by
+    /// a press or by the Consumer, is dropped, and so is one the user has scrolled away from
+    /// (<see cref="ApplyScrollOffset"/>). Nothing is measured here, and nothing is sent per cell.
+    /// </summary>
+    private void StageFollow()
+    {
+        if (!_followArmed)
+            return;
+        if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty || _selection.Selection.Focus != _followFocus)
+        {
+            _followArmed = false;
+            return;
+        }
+        if (!CellIsPainted(_followTarget) || ActiveDescendant() is not { } focus)
+            return;
+        _followArmed = false;
+        _ = FollowPageAsync(focus, CellIds.Cell(_idPrefix, _followTarget.Row, _followTarget.Column), ++_followToken);
+    }
+
+    private async Task FollowPageAsync(string focus, string target, long token)
+    {
+        if (_scrollHandle is null || _disposed)
+            return;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("followFocus", focus, target, token);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
+    }
+
+    /// <summary>
     /// Moves the model to a reveal's offsets and sends the browser the same, from inside the render
     /// that paints them (<see cref="StageReveal"/>): nothing when the scroller is already going there.
     /// </summary>
@@ -8798,10 +8907,15 @@
     /// when the scrollable cells are skipped (ADR-0004). What aria-activedescendant may
     /// name (ADR-0033), and what a Template cell's focus request waits for (ADR-0037).</summary>
     private bool FocusCellIsPainted()
+        => !_selection.Selection.IsEmpty && CellIsPainted(_selection.Selection.Focus);
+
+    /// <summary>Whether <paramref name="focus"/> is in the DOM right now, by the rule
+    /// <see cref="FocusCellIsPainted"/> reads for the Focus: what the page follow brings into the
+    /// window, the Focus or the Extent, waits for it (ADR-0204).</summary>
+    private bool CellIsPainted(CellPosition focus)
     {
-        if (_selection.Selection.IsEmpty || _visible is not { } visible)
+        if (_visible is not { } visible)
             return false;
-        var focus = _selection.Selection.Focus;
         if (focus.Row < visible.Start || focus.Row >= visible.Start + visible.Count)
             return false;
         var slice = focus.Row - _windowStart;

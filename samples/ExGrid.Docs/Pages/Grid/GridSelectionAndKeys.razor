@@ -57,6 +57,27 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="The page follows the Focus">
+        <p>
+            A move the grid makes — the arrows, <kbd>Ctrl</kbd> + arrow, <kbd>Home</kbd> and <kbd>End</kbd>,
+            <kbd>PageUp</kbd> and <kbd>PageDown</kbd>, <kbd>Enter</kbd> and <kbd>Tab</kbd>, and
+            <kbd>Ctrl</kbd> + <kbd>Backspace</kbd> — first brings the cell into the grid's own Viewport, then asks the
+            browser to bring it into the window, at the nearest edge: on a grid taller than the window, the page
+            scrolls as the Focus walks past the fold, as a spreadsheet's window does. While a range is extended it
+            is the far end that is followed. Opening the editor follows the same rule, so a cell is followed the same
+            way whether it is reached or edited. A cell already in the window moves nothing.
+        </p>
+        <p>
+            Nothing is followed once the keyboard has left the grid, or once the Focus has moved on, and a resize, or
+            a panel opening beside the grid, never moves the page: only a move does.
+        </p>
+        <p>
+            <strong>A page with a fixed bar sets <code>scroll-padding</code></strong> on its scrolling element, so that
+            a cell is not brought in under the bar: the browser places it, and the bar is the page's to know about.
+            This site sets <code>html { scroll-padding-top: … }</code> to its app bar's height.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="Status-bar figures">
         <p>
             Select two cells or more and the status line under the grid shows what Excel's status bar shows:

@@ -12,8 +12,11 @@
         <MudText Typo="Typo.body2">@_lastAction</MudText>
     </ToolBarContent>
     <ChildContent>
-        <ExGrid TRow="Position" Source="_source" Columns="_columns" OnAction="OnAction" OnMarkRefused="OnMarkRefused"
-                PinnedColumnCount="2" Chrome="_chrome" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+        @* The Note template's control takes the keyboard through this grid: cascaded once, so it never changes. *@
+        <CascadingValue Name="TakeKeyboard" Value="TakeKeyboard" IsFixed="true">
+            <ExGrid TRow="Position" @ref="_grid" Source="_source" Columns="_columns" OnAction="OnAction" OnMarkRefused="OnMarkRefused"
+                    PinnedColumnCount="2" Chrome="_chrome" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+        </CascadingValue>
     </ChildContent>
 </MudExGridPaper>
 
@@ -30,6 +33,9 @@
             <span style="width: 36px; text-align: right">@cell.Row.LimitUsed.ToString("0%", Invariant)</span>
         </div>;
 
+    // Space enters this one: its control takes the keyboard (NoteField).
+    private static readonly RenderFragment<TemplateCellContext<Position>> Note = cell => @<NoteField Cell="cell" />;
+
     private static readonly GridColumn<Position>[] Columns =
     [
         GridColumn<Position>.MarkColumn(),
@@ -38,11 +44,20 @@
         new("Trader", ColumnType.Text, p => p.Trader),
         GridColumn<Position>.TemplateColumn("LimitUsed", ColumnType.Number, p => p.LimitUsed, LimitBar,
             header: "Limit used", width: new ColumnWidthSpec(ColumnWidth.Fixed(180))),
+        GridColumn<Position>.TemplateColumn("Note", ColumnType.Text, p => p.Trader, Note,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(140))),
         GridColumn<Position>.ActionColumn("Actions", [new GridAction("hedge", "Hedge"), new GridAction("close", "Close")]),
     ];
 
     private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
     private readonly IReadOnlyList<GridColumn<Position>> _columns = Columns;
+    private ExGrid<Position>? _grid;
+    private Func<ElementReference, Task>? _takeKeyboard;
+
+    // A template's control takes the keyboard through the grid, which gives it only while the
+    // keyboard is still the grid's. Held in a field, so the cascade is the same delegate throughout.
+    private Func<ElementReference, Task> TakeKeyboard => _takeKeyboard ??=
+        control => _grid is { } grid ? grid.HandKeyboardToAsync(control) : Task.CompletedTask;
     private string _lastAction = "";
 
     // The source keeps the marks, by row; this page only shows the count.

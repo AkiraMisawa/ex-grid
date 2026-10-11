@@ -35,18 +35,25 @@
     /// <summary>The frame's context: the counts that ask the contents to take the keyboard.</summary>
     [Parameter, EditorRequired] public GridPopoverContext Popover { get; set; } = default!;
 
+    /// <summary>The grid's focus function (ADR-0204): an item takes DOM focus through it, which the
+    /// grid grants only while the keyboard is still its own — on a circuit the request lands a round
+    /// trip after the press that opened the menu. Absent, the item's own focus.</summary>
+    [Parameter] public Func<ElementReference, bool, Task>? TakeFocus { get; set; }
+
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (Popover.FocusRequest != _focused)
         {
             _focused = Popover.FocusRequest;
-            await _items[0].FocusAsync();
+            await TakeAsync(_items[0]);
         }
         else if (Popover.FocusLastRequest != _focusedLast)
         {
             _focusedLast = Popover.FocusLastRequest;
-            await _items[^1].FocusAsync();
+            await TakeAsync(_items[^1]);
         }
     }
+
+    private Task TakeAsync(ElementReference item) => TakeFocus is { } take ? take(item, false) : item.FocusAsync().AsTask();
 }

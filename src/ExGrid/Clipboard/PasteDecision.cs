@@ -152,15 +152,24 @@ public sealed class PasteDecision
     private readonly PastePlan? _plan;
     private readonly PasteRefusalReason _reason;
 
-    private PasteDecision(PastePlan? plan, PasteRefusalReason reason)
+    private PasteDecision(PastePlan? plan, PasteRefusalReason reason, int refusedColumn = -1)
     {
         _plan = plan;
         _reason = reason;
+        RefusedColumn = refusedColumn;
     }
 
     internal static PasteDecision Approve(PastePlan plan) => new(plan, default);
 
     internal static PasteDecision Refuse(PasteRefusalReason reason) => new(null, reason);
+
+    /// <summary>A <see cref="PasteRefusalReason.TargetNotEditable"/> refusal, naming the first
+    /// column, in the current order, that is not Editable — the column the words name (ADR-0203).</summary>
+    internal static PasteDecision RefuseNotEditable(int column) => new(null, PasteRefusalReason.TargetNotEditable, column);
+
+    /// <summary>The column a <see cref="PasteRefusalReason.TargetNotEditable"/> refusal was for, by
+    /// position in the current order; -1 for every other answer.</summary>
+    internal int RefusedColumn { get; }
 
     /// <summary>Whether the paste is refused: read <see cref="Reason"/> if so, and
     /// <see cref="Plan"/> if not.</summary>

@@ -59,8 +59,10 @@
     @formatCellsFrame
 }
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
-   Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
-<div class="ex-sheet-notice" role="status">@_notice</div>
+   Sheet refused. The same element throughout, so a screen reader hears each change to it. A refusal
+   the grid has already announced in its own live region, in the Sheet's words (ADR-0203), is shown
+   here and hidden from assistive technology, so that it is said once. *@
+<div class="ex-sheet-notice" role="status">@if (_noticeSaidByGrid) {<span aria-hidden="true">@_notice</span>} else {<text>@_notice</text>}</div>
 @* The browser's answer to a render, which a focusout waits for (ADR-0058). Renders nothing. *@
 @BrowserTurnMarkup
 </div>
@@ -158,6 +160,9 @@
     // A notice raised by a commit: the grid moves the Focus after the commit, as part of the
     // same gesture, and that move does not clear it.
     private bool _noticeOutlivesCommitMove;
+    // A notice the grid has announced already — a refusal of a paste or a copy, in the Sheet's words
+    // through the grid's label seam (ADR-0203): shown, and not said a second time.
+    private bool _noticeSaidByGrid;
     // The copy this Sheet last wrote, recognised on a paste by its fields (ADR-0050 item 9).
     internal SheetOwnCopy? OwnCopy { get; private set; }
     // The engine's sentence for the copy refused last, for the notice the refusal raises.
@@ -448,7 +453,10 @@
     /// <summary>
     /// The wording for a command id in the menus the built-in Chrome renders (ADR-0036): the
     /// grid's own ids and ExSheet's (<see cref="SheetCommandIds"/>). Null for an id falls back to
-    /// ExSheet's English for its own commands and the grid's for the rest.
+    /// ExSheet's English for its own commands and the grid's for the rest. It also words a refusal
+    /// of a copy or a paste by its id in ExGrid's <c>RefusalLabelIds</c> (ADR-0203), which the
+    /// grid's live region announces once and the Sheet's notice shows: null keeps the Sheet's own
+    /// words, and the empty string silences the announcement for that refusal.
     /// </summary>
     [Parameter] public Func<string, string?>? CommandLabel { get; set; }
 
@@ -1196,10 +1204,15 @@
     /// a selection change); a Consumer's programmatic change leaves it. A notice raised by a
     /// commit outlives the move that completes the commit gesture.
     /// </summary>
-    private void Tell(string sentence, bool outlivesCommitMove = false)
+    /// <param name="sentence">What the notice says.</param>
+    /// <param name="outlivesCommitMove">Whether the move that completes a commit gesture leaves it.</param>
+    /// <param name="saidByGrid">Whether the grid's live region has announced it already (ADR-0203):
+    /// it is then shown and not said again.</param>
+    private void Tell(string sentence, bool outlivesCommitMove = false, bool saidByGrid = false)
     {
         _notice = sentence;
         _noticeOutlivesCommitMove = outlivesCommitMove;
+        _noticeSaidByGrid = saidByGrid;
     }
 
     /// <summary>The user acted: what the notice said is behind them.</summary>
@@ -1207,7 +1220,14 @@
     {
         _notice = null;
         _noticeOutlivesCommitMove = false;
+        _noticeSaidByGrid = false;
     }
+
+    /// <summary>The words the grid announced a refusal in (ADR-0203): the Chrome's for the id, the
+    /// way the grid asks for them — a substituted Chrome's, else <see cref="CommandLabel"/> and the
+    /// Sheet's own (<see cref="SheetCommandIds.EnglishFor"/>), else the grid's English.</summary>
+    private string WordsTheGridSaid(string id)
+        => Chrome?.Words(id) ?? _commandLabel(id) ?? BuiltInCommandLabels.For(id);
 
     private async Task OnNameBoxEnteredAsync(string typed)
     {
@@ -1532,18 +1552,23 @@
         _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, "Not a direction a fill extends in."),
     };
 
+    /// <summary>A write the grid refused (ADR-0035). The grid has announced it, in the Sheet's words
+    /// through its label seam (ADR-0203: <see cref="SheetCommandIds.EnglishFor"/>), so the notice shows
+    /// the same words and does not say them a second time.</summary>
     private void OnPasteRefused(global::ExGrid.Clipboard.PasteRefusalReason reason)
     {
-        Tell(SheetWords.PasteRefused(reason));
+        Tell(WordsTheGridSaid(RefusalLabelIds.For(reason)), saidByGrid: true);
         StateHasChanged();
     }
 
+    /// <summary>A copy the grid refused, announced by the grid as a paste's refusal is (ADR-0203): a
+    /// refusal of the Sheet's own in the engine's words, which the grid relayed from the copy answer,
+    /// and the grid's by its reason.</summary>
     private void OnCopyRefused(global::ExGrid.Clipboard.CopyRefusalReason reason)
     {
-        // A refusal of the Sheet's own is said in the engine's words; the grid's by its reason.
         Tell(reason == global::ExGrid.Clipboard.CopyRefusalReason.RefusedByConsumer && _copyRefusal is { } sentence
             ? sentence
-            : SheetWords.CopyRefused(reason));
+            : WordsTheGridSaid(RefusalLabelIds.For(reason)), saidByGrid: true);
         StateHasChanged();
     }
 

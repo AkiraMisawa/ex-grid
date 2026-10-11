@@ -75,7 +75,7 @@ public static class FillRules
         for (var column = extension.Target.LeftColumn; column <= extension.Target.RightColumn; column++)
         {
             if (!columnIsEditable(column))
-                return FillDecision.Refuse(PasteRefusalReason.TargetNotEditable);
+                return FillDecision.RefuseNotEditable(column);
         }
         return FillDecision.Approve(extension);
     }
@@ -107,15 +107,24 @@ public sealed class FillDecision
     private readonly FillExtension? _extension;
     private readonly PasteRefusalReason _reason;
 
-    private FillDecision(FillExtension? extension, PasteRefusalReason reason)
+    private FillDecision(FillExtension? extension, PasteRefusalReason reason, int refusedColumn = -1)
     {
         _extension = extension;
         _reason = reason;
+        RefusedColumn = refusedColumn;
     }
 
     internal static FillDecision Approve(FillExtension extension) => new(extension, default);
 
     internal static FillDecision Refuse(PasteRefusalReason reason) => new(null, reason);
+
+    /// <summary>A <see cref="PasteRefusalReason.TargetNotEditable"/> refusal, naming the first
+    /// target column that is not Editable — the column the words name (ADR-0203).</summary>
+    internal static FillDecision RefuseNotEditable(int column) => new(null, PasteRefusalReason.TargetNotEditable, column);
+
+    /// <summary>The column a <see cref="PasteRefusalReason.TargetNotEditable"/> refusal was for, by
+    /// position in the current order; -1 for every other answer.</summary>
+    internal int RefusedColumn { get; }
 
     /// <summary>Whether the fill is refused: read <see cref="Reason"/> if so, and
     /// <see cref="Extension"/> if not.</summary>

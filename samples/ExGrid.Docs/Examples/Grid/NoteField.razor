@@ -1,0 +1,31 @@
+@using ExGrid.Cells
+
+@* A template's control the keyboard can enter: Space on the cell asks for it through the context.
+   It takes the keyboard through the grid's HandKeyboardToAsync, which your page cascades, not with
+   its own FocusAsync: over Blazor Server the request lands a round trip after the Space, and the
+   grid gives the keyboard only while it is still the grid's — another grid pressed in the meantime
+   keeps it. ex-interactive lets the pointer reach it; tabindex="-1" keeps the grid one tab stop. *@
+<input class="ex-interactive" tabindex="-1" placeholder="note" aria-label="@($"Note for position {Cell.Row.Id}")"
+       style="width: 100%; height: 100%; box-sizing: border-box; border: 0; padding: 0 8px; background: transparent; color: inherit; font: inherit"
+       @ref="_input" />
+
+@code {
+    /// <summary>The cell this control stands in.</summary>
+    [Parameter, EditorRequired] public TemplateCellContext<Position> Cell { get; set; }
+
+    /// <summary>The grid's <c>HandKeyboardToAsync</c>, as the page cascades it.</summary>
+    [CascadingParameter(Name = "TakeKeyboard")] public Func<ElementReference, Task>? TakeKeyboard { get; set; }
+
+    private ElementReference _input;
+    private int _acted;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Each request is non-zero on one render only: act once per number.
+        if (Cell.FocusRequest == 0 || Cell.FocusRequest == _acted)
+            return;
+        _acted = Cell.FocusRequest;
+        if (TakeKeyboard is { } take)
+            await take(_input);
+    }
+}
