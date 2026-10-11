@@ -31,7 +31,9 @@ block on `main` before it uses the first number.
 | 0160–0169 | `claude/live-data-next-cc` | Live data continued, the Claude Code track run beside `claude/live-data-next` for comparison: the same tickets, decided separately. `claude/live-data-best`, the two merged on 2026-10-08, carries ADR-0160 and ADR-0161 and continues this block: 0162 is next |
 | 0170–0179 | `claude/modified-mark-and-copy-range` | The Copied Range: a copy outlined with dashes while the clipboard still holds it (decided 2026-10-07) |
 | 0180–0189 | `claude/backlog-cleanup` | ExSheet's last Decide functions: the random functions (ADR-0180) and `LET` (ADR-0181), decided with the user 2026-10-10; a remote report's read-ahead (ADR-0182) and the Range Request Margin (ADR-0183), decided 2026-10-11 |
-| 0190– | free | reserve a block of ten |
+| 0190–0199 | `claude/docs-site-releases-roadmap` | The Docs Site restructured after mudblazor.com and ag-grid.com: Release Notes, the Roadmap, and how the site is published (decided with the user 2026-10-11) |
+| 0200–0209 | `claude/first-stable-release` | What the first stable version needs: its scope, the public C# surface, the Blazor Server declaration, and ADR-0042 rewritten at sign-off (decided with the user from 2026-10-11) |
+| 0210– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
