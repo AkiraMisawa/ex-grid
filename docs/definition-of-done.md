@@ -106,7 +106,8 @@ the rest of §30 still does not.
 **ExGrid's live data is §32** (added 2026-10-05, with ADR-0140 to ADR-0142; ADR-0142 rewritten on
 2026-10-07): the Row Key, the bundled sources' live data, what a write over live data does — it lands
 as the user entered it, on the row it was aimed at — and ExPivot's report Windows over live data
-(ADR-0151 to ADR-0153). It is ExGrid code, and §32 gates the release like §26.
+(ADR-0151 to ADR-0153). It is ExGrid code, and §32 gates the release like §26. *(Narrowed
+2026-10-11, ADR-0200: the rows on ExPivot's report Windows are ExPivot's code, and judge ExPivot.)*
 
 **"Finished" means every ADR from 0001 to 0030 is implemented** — and, since 2026-09-27, the
 ExGrid half of [ADR-0050](adr/0050-what-exsheet-asks-of-exgrids-core.md) and
@@ -117,6 +118,23 @@ both refused. The consequence is accepted rather than discovered: **the whole of
 release**, including the ARIA surface that ADR-0029 records as not designed and the two gestures
 (column resize, column reordering) that no ADR specifies. Nothing here may be marked done while
 any of them is open.
+
+**What gates `0.1.0`** *(added 2026-10-11, decided with the user: [ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md))*. The first stable version
+is `0.1.0`, and it carries all ten packages stable at that one version. One tag publishes them all,
+so the tag waits for every product's judgement, not only ExGrid's:
+
+- ExGrid's sections as above (the preconditions, §3–§20, §25, §26, §28, §31 but SM-12 and SM-13,
+  §32 but its ExPivot rows, and DA-18);
+- **§23**, for `ExGrid.MudBlazor`;
+- **§24**, because `0.1.0` claims Blazor Server: its declaration ADR is written once every §24 MUST
+  passes, before the tag;
+- **§27**, for ExSheet's three packages; **§29**, for ExPivot's three, with §32's rows on ExPivot's
+  report Windows (LV-24 to LV-31, LV-34), which judge ExPivot and not ExGrid; **§30**, for
+  `ExGrid.Data` and `ExGrid.Data.Arrow`.
+
+Each product section gains, for its own packages, the preconditions this section has for ExGrid, and
+is signed off in the same Step 7. Where a sentence below says a section "never gates ExGrid's
+release", it still never gates ExGrid's *finished*; it gates the tag that carries its product.
 
 ### Preconditions — checked first, because everything else assumes them
 
@@ -969,6 +987,8 @@ ADR-0018, ADR-0019, ADR-0021.)* The criteria above are the grid's on any host. T
 how they are run on the second host, which of them are WebAssembly's by definition, and adds what
 only a circuit can fail. **The claim that ExGrid runs on Blazor Server is made by an ADR, and only
 once every MUST here passes**; until then the Server host is a fixture, not a promise.
+*(2026-10-11, [ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md): `0.1.0` makes the claim, so this section gates it, and the declaration is written
+before the tag.)*
 
 The host is `samples/ExGrid.DemoHost.Server`: the same pages as the WebAssembly DemoHost, from
 `samples/ExGrid.DemoPages`, in `InteractiveServer` render mode with prerendering on. Layer 3 is
@@ -1095,7 +1115,8 @@ nothing sees nothing change.
 *(Added 2026-09-27, with ADR-0046 to ADR-0049.)* **These criteria judge ExSheet and never gate
 ExGrid's release** (§2). They are written now so that "ExSheet works" has a meaning while it is
 built; when ExSheet is proposed for a release of its own, this section becomes its gate and gains
-the preconditions §2 has for ExGrid.
+the preconditions §2 has for ExGrid. *(That happened on 2026-10-11: `0.1.0` carries ExSheet stable,
+so this section gates the tag ([ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md)).)*
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
@@ -1202,7 +1223,8 @@ grilling that added ADR-0064 to ADR-0069.)*
 **These criteria judge ExPivot, ExPivot.Engine and ExPivot.MudBlazor, and never gate ExGrid's
 release** (§2). Like §27, they give "ExPivot works" a meaning while it is built. When ExPivot is
 proposed for a release of its own, this section becomes its gate and gains the preconditions §2 has
-for ExGrid.
+for ExGrid. *(That happened on 2026-10-11: `0.1.0` carries ExPivot stable, so this section gates the
+tag, together with §32's rows on ExPivot's report Windows ([ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md)).)*
 
 Where a criterion says "as Excel", the behaviour was read from Excel's documentation and has not
 yet been run beside Excel on Windows. `docs/specs/expivot/excel-behaviours.md` lists each such
@@ -1264,7 +1286,8 @@ reading until a run settles it.
 
 **These criteria judge `ExGrid.Data` and `ExGrid.Data.Arrow`, which ship with ExPivot and never
 gate ExGrid's release** (§2). When ExGrid adopts the Snapshot, by an ADR of its own, the criteria it
-then relies on move into the release.
+then relies on move into the release. *(2026-10-11: `0.1.0` carries both packages stable, so this
+section gates the tag ([ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md)).)*
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
@@ -1340,7 +1363,10 @@ LV-27 to LV-31 were restated with what the comparison found.)*
 [ADR-0142](adr/0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md), decided with the
 user the same day.)* The Row Key, the bundled sources' live data, and what a write over live data
 does: it lands as the user entered it, on the row it was aimed at. **They are ExGrid code, and they
-gate the release** (§2), as §26 does. Without a Row Key declared, the Row Key's criteria change nothing
+gate the release** (§2), as §26 does. *(Narrowed 2026-10-11, decided with the user ([ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md)): the rows on
+ExPivot's report Windows, LV-24 to LV-31 and LV-34, are ExPivot's code, in `ExPivot.Engine` and
+`ExPivot`. They judge ExPivot with §29, not ExGrid; `0.1.0` carries ExPivot, so they still gate the
+tag.)* Without a Row Key declared, the Row Key's criteria change nothing
 (DC-1); the rules for a write over live data hold for every grid.
 
 | ID | Level | Statement | Verification | Pass |

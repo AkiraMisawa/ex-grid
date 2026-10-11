@@ -119,6 +119,11 @@ proves only what packaging changes.
 
 ## What a stable version needs besides Step 7
 
+*(2026-10-11, decided with the user: the first stable version is `0.1.0`, it carries all ten packages,
+and it claims Blazor Server —
+[ADR-0200](./0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md). What it needs of
+the public surface below is decided in an ADR of its own.)*
+
 - **A reviewed public surface.** Nothing has decided which C# types are the Consumer's contract.
   The core has 98 public types, and some of them, such as `ViewportGeometry` and `EdgeBand`, are
   public only so the test projects can reach them. A `0.x` beta may ship that. `1.0` may not.
