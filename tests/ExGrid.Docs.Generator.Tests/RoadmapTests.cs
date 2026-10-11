@@ -413,7 +413,7 @@ public class RoadmapTests
     [InlineData("""new("Right-to-left layout.", ["ExGrid"], ["ADR-0999"])""", "EXDOCS013", "ADR-0999 names no decision record")]
     [InlineData("""new("Right-to-left layout.", ["ExGrid"], ["DoD §99.1"])""", "EXDOCS013", "none begins with '99.1'")]
     [InlineData("""new("Right-to-left layout.", ["ExGrid"], ["DoD Step 9"])""", "EXDOCS013", "none begins with 'Step 9'")]
-    [InlineData("""new("Right-to-left layout.", ["ExGrid"], ["the RTL decision"])""", "EXDOCS013", "'the RTL decision' is not a citation the Roadmap reads")]
+    [InlineData("""new("Right-to-left layout.", ["ExGrid"], ["the RTL decision"])""", "EXDOCS013", "'the RTL decision' is not a citation the build reads")]
     [InlineData("""new("Right-to-left layout.", ["ExGrid"], ["docs/roadmap.md"])""", "EXDOCS013", "docs/roadmap.md is not a file the build reads")]
     [InlineData("""new("Right-to-left layout.", ["ExGrid"], [])""", "EXDOCS013", "This Roadmap row cites nothing")]
     [InlineData("""new("Right-to-left layout.", ["Fluxor"], ["ADR-0031"])""", "EXDOCS012", "'Fluxor' is not one of the Roadmap's products")]

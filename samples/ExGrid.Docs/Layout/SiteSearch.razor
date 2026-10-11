@@ -1,8 +1,10 @@
 @inject NavigationManager Navigation
 
 @* The search (ADR-0110): C# over the site map the build made — pages, sections, Examples, the
-   types the API tables list, the lines of the Release Notes and the items of the Roadmap. No index service, and no key to open it: every page holds live grids
-   that take keys. Picking a place goes there, and the box empties for the next search. *@
+   types the API tables list, the lines of the Release Notes, the items of the Roadmap, ExSheet's
+   functions and the keys of the Keyboard reference. No index service, and no key to open it: every
+   page holds live grids that take keys. Picking a place goes there, and the box empties for the next
+   search. *@
 <MudAutocomplete @ref="_box" T="SiteSearchEntry" Value="_picked" ValueChanged="Go"
                  SearchFunc="Search" ToStringFunc="@(e => e?.Title)" MaxItems="12"
                  Placeholder="Search the docs" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
@@ -52,6 +54,8 @@
         SiteSearchKind.Example => Icons.Material.Outlined.PlayCircle,
         SiteSearchKind.ReleaseNote => Icons.Material.Outlined.NewReleases,
         SiteSearchKind.Roadmap => Icons.Material.Outlined.Map,
+        SiteSearchKind.Function => Icons.Material.Outlined.Functions,
+        SiteSearchKind.Key => Icons.Material.Outlined.Keyboard,
         _ => Icons.Material.Outlined.DataObject,
     };
 }

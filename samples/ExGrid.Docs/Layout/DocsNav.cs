@@ -83,6 +83,8 @@ public static class DocsNav
         [
             new("Introduction", ""),
             new("Installation", "getting-started"),
+            new("Packages", "getting-started/packages"),
+            new("Feature matrix", "features"),
             new("Design", "design"),
         ]),
         new("ExGrid", DocsNavSection.Docs,
@@ -100,6 +102,7 @@ public static class DocsNav
         [
             new("Overview", "exsheet"),
             new("Formulas", "exsheet/formulas"),
+            new("Functions", "exsheet/functions"),
             new("Formatting", "exsheet/formatting"),
             new("Linked Tables", "exsheet/linked-tables"),
         ]),
@@ -122,6 +125,10 @@ public static class DocsNav
             new("Trade blotter", "showcase/blotter", DocsLinkKind.Showcase),
             new("Budget sheet", "showcase/budget", DocsLinkKind.Showcase),
             new("Sales analysis", "showcase/sales", DocsLinkKind.Showcase),
+        ]),
+        new("Reference", DocsNavSection.Reference,
+        [
+            new("Keyboard", "reference/keyboard"),
         ]),
         new("Project", DocsNavSection.Project,
         [
@@ -156,6 +163,10 @@ public static class DocsNav
         new(new("ExPivot", "expivot"), "Excel's PivotTable, drawn by ExGrid"),
         new(new("Data", "data"), "The Snapshot, the family's immutable data, and Apache Arrow"),
     ];
+
+    /// <summary>The Products menu's last entry, under the products, and the footer's (ADR-0110).</summary>
+    public static DocsProduct FeatureMatrix { get; } =
+        new(new("Feature matrix", "features"), "Where the family runs, and what each MudBlazor Wrapper draws");
 
     /// <summary>The app bar's link to the Showcases.</summary>
     public static DocsLink Showcases { get; } = new("Showcases", "showcases");

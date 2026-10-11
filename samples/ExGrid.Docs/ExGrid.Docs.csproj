@@ -46,8 +46,8 @@
     <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
-    <!-- The build step that highlights the Examples, reads the API documentation, maps the site and
-         reads the Release Notes and the Roadmap. -->
+    <!-- The build step that highlights the Examples, reads the API documentation, maps the site,
+         reads the Release Notes and the Roadmap, and reads what the reference pages list. -->
     <ProjectReference Include="..\ExGrid.Docs.Generator\ExGrid.Docs.Generator.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
@@ -69,6 +69,12 @@
          are ADR-0046's and ADR-0059's, among the decision records above. -->
     <AdditionalFiles Include="..\..\docs\specs\*\issues\*.md" />
     <AdditionalFiles Include="..\..\docs\definition-of-done.md;..\..\docs\implementation-status.md" />
+    <!-- The reference pages (ADR-0110): the Packages page reads ADR-0042's table of the family (among the
+         decision records above), the ids release.yml publishes and each shipped project's references; the
+         Functions page reads the categories of ExSheet's function catalogue. -->
+    <AdditionalFiles Include="..\..\.github\workflows\release.yml" />
+    <AdditionalFiles Include="..\..\src\*\*.csproj" />
+    <AdditionalFiles Include="..\..\docs\specs\exsheet-functions\spec.md" />
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
     <CompilerVisibleProperty Include="DocsVersion" />
     <CompilerVisibleProperty Include="DocsRef" />

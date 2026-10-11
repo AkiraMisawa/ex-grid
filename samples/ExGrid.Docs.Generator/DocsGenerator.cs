@@ -40,6 +40,15 @@ namespace ExGrid.Docs.Generator;
 /// lines, the scope tables of ADR-0046 and ADR-0059, and the rows <c>RoadmapByHand</c> writes, each
 /// citing its record. It emits them as <c>Roadmap</c> for the Roadmap page and the search (ADR-0191).
 /// </para>
+/// <para>
+/// And what the reference pages list (ADR-0110): the family's packages for the Packages page
+/// (<see cref="Packages"/>), from ADR-0042's table checked against the ids <c>release.yml</c> publishes,
+/// each package's description from its assembly and its family dependencies from its project; the
+/// Feature matrix's rows and each Wrapper's Chrome seams (<see cref="FeatureMatrix"/>); the categories of
+/// ExSheet's function catalogue (<see cref="FunctionCatalogue"/>); and the Keyboard reference's rows, each
+/// linking a section the site map holds (<see cref="KeyboardReference"/>). A hand-written row of these
+/// pages cites a record that exists, which <see cref="RecordCites"/> resolves.
+/// </para>
 /// </summary>
 [Generator(LanguageNames.CSharp)]
 public sealed class DocsGenerator : IIncrementalGenerator
@@ -212,6 +221,83 @@ public sealed class DocsGenerator : IIncrementalGenerator
                 spc.ReportDiagnostic(diagnostic);
             spc.AddSource("Roadmap.g.cs", source);
         });
+
+        // The reference pages (ADR-0110). Packages: ADR-0042's table of the family, the ids release.yml
+        // publishes, each package's project, and each one's description read from its assembly.
+        // Functions: the catalogue's categories. Both are checked when the site has the page.
+        var referenceFiles = context.AdditionalTextsProvider
+            .Select((file, cancel) =>
+            {
+                var path = file.Path.Replace('\\', '/');
+                var repo = Packages.RepoPathOf(path)
+                    ?? (path.EndsWith("/" + FunctionCatalogue.Path, StringComparison.Ordinal) ? FunctionCatalogue.Path : null);
+                if (repo is null)
+                    return null;
+                var text = file.GetText(cancel);
+                return text is null ? null : new RecordInput(file.Path, repo, text);
+            })
+            .Where(file => file is not null)
+            .Collect()
+            .Select((files, _) => files.Select(f => f!).ToImmutableArray());
+        var scannedPages = pages.Select((all, _) => all.Select(p => p!).ToImmutableArray());
+        var descriptions = context.CompilationProvider.Select((compilation, _) => compilation.SourceModule.ReferencedAssemblySymbols
+            .GroupBy(a => a.Name, StringComparer.Ordinal)
+            .ToImmutableDictionary(g => g.Key, g => Description(g.First()), StringComparer.Ordinal));
+        context.RegisterSourceOutput(referenceFiles.Combine(scannedPages).Combine(descriptions), (spc, all) =>
+        {
+            var ((files, scans), described) = all;
+            var (diagnostics, source) = Packages.Build(files, scans, described);
+            foreach (var diagnostic in diagnostics)
+                spc.ReportDiagnostic(diagnostic);
+            spc.AddSource("Packages.g.cs", source);
+        });
+        context.RegisterSourceOutput(referenceFiles.Combine(scannedPages), (spc, all) =>
+        {
+            var (diagnostics, source) = FunctionCatalogue.Build(all.Left, all.Right);
+            foreach (var diagnostic in diagnostics)
+                spc.ReportDiagnostic(diagnostic);
+            spc.AddSource("FunctionCatalogue.g.cs", source);
+        });
+
+        // The Feature matrix: the rows FeatureMatrixByHand writes, and each Wrapper's Chrome read from the
+        // compilation. The Keyboard reference: the rows KeyboardByHand writes, checked against the site map.
+        var records = roadmapFiles.Select((files, _) => files.Select(f => f!).ToImmutableArray());
+        var matrixHand = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                (node, _) => FeatureMatrix.IsHand(node),
+                (syntax, cancel) => HandReader.Read((ClassDeclarationSyntax)syntax.Node, syntax.SemanticModel, FeatureMatrix.Types, cancel))
+            .Collect()
+            .Select((rows, _) => rows.SelectMany(r => r).ToImmutableArray());
+        context.RegisterSourceOutput(matrixHand.Combine(records).Combine(adrs).Combine(scannedPages).Combine(context.CompilationProvider), (spc, all) =>
+        {
+            var ((((rows, files), names), scans), compilation) = all;
+            var (diagnostics, source) = FeatureMatrix.Build(rows, files, names, scans, compilation);
+            foreach (var diagnostic in diagnostics)
+                spc.ReportDiagnostic(diagnostic);
+            spc.AddSource("FeatureMatrix.g.cs", source);
+        });
+        var keyHand = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                (node, _) => KeyboardReference.IsHand(node),
+                (syntax, cancel) => HandReader.Read((ClassDeclarationSyntax)syntax.Node, syntax.SemanticModel, KeyboardReference.Types, cancel))
+            .Collect()
+            .Select((rows, _) => rows.SelectMany(r => r).ToImmutableArray());
+        context.RegisterSourceOutput(keyHand.Combine(records).Combine(adrs).Combine(scannedPages), (spc, all) =>
+        {
+            var (((rows, files), names), scans) = all;
+            var (diagnostics, source) = KeyboardReference.Build(rows, files, names, scans);
+            foreach (var diagnostic in diagnostics)
+                spc.ReportDiagnostic(diagnostic);
+            spc.AddSource("Keyboard.g.cs", source);
+        });
+    }
+
+    // An assembly's description, which the SDK writes from the project's <Description>: what nuget.org shows.
+    private static string? Description(IAssemblySymbol assembly)
+    {
+        var attribute = assembly.GetAttributes()
+            .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "System.Reflection.AssemblyDescriptionAttribute");
+        return attribute is { ConstructorArguments.Length: 1 } && attribute.ConstructorArguments[0].Value is string text ? text : null;
     }
 
     private const string AdrFolder = "/docs/adr/";

@@ -9,6 +9,7 @@
             {
                 <a href="@product.Link.Url">@product.Link.Title</a>
             }
+            <a href="@DocsNav.FeatureMatrix.Link.Url">@DocsNav.FeatureMatrix.Link.Title</a>
         </nav>
         @foreach (var group in DocsNav.Groups.Where(g => g.Section is not DocsNavSection.Docs))
         {

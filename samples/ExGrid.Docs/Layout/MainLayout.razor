@@ -43,6 +43,11 @@
                         <div class="docs-product-caption">@product.Caption</div>
                     </MudMenuItem>
                 }
+                <MudDivider />
+                <MudMenuItem Href="@DocsNav.FeatureMatrix.Link.Url">
+                    <div class="docs-product-title">@DocsNav.FeatureMatrix.Link.Title</div>
+                    <div class="docs-product-caption">@DocsNav.FeatureMatrix.Caption</div>
+                </MudMenuItem>
             </MudMenu>
             <MudButton Href="@DocsNav.Showcases.Url" Variant="Variant.Text" Color="Color.Inherit">@DocsNav.Showcases.Title</MudButton>
             <MudButton Href="@DocsNav.ReleaseNotes.Url" Variant="Variant.Text" Color="Color.Inherit">@DocsNav.ReleaseNotes.Title</MudButton>

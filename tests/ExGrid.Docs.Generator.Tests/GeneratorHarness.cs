@@ -23,7 +23,8 @@ internal static class GeneratorHarness
     /// <summary>The site's folder, as the build passes MSBuildProjectDirectory.</summary>
     public const string SiteDir = "/repo/samples/ExGrid.Docs";
 
-    private static readonly ImmutableArray<MetadataReference> Platform =
+    /// <summary>The platform's assemblies a test compilation references.</summary>
+    public static readonly ImmutableArray<MetadataReference> Platform =
     [
         .. ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
@@ -36,12 +37,13 @@ internal static class GeneratorHarness
         IEnumerable<(string Path, string Text)> files,
         string version = "dev",
         string docsRef = "",
-        string publishedOn = "")
+        string publishedOn = "",
+        IEnumerable<MetadataReference>? references = null)
     {
         var compilation = CSharpCompilation.Create(
             "Docs",
             sources.Select((s, k) => CSharpSyntaxTree.ParseText(s, path: $"{SiteDir}/Source{k}.cs")),
-            Platform,
+            [.. Platform, .. references ?? []],
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
         var options = new Options(new Dictionary<string, string>
         {
@@ -56,6 +58,23 @@ internal static class GeneratorHarness
             optionsProvider: options);
         var result = driver.RunGenerators(compilation).GetRunResult().Results.Single();
         return new GeneratorRun(result.Diagnostics, result.GeneratedSources);
+    }
+
+    /// <summary>
+    /// An assembly the site references, compiled from <paramref name="source"/>, as a shipped package is: its
+    /// name and, unless <paramref name="description"/> is null, an <c>AssemblyDescriptionAttribute</c>.
+    /// </summary>
+    public static MetadataReference Assembly(string name, string? description, string source = "")
+    {
+        var attribute = description is null
+            ? ""
+            : $"[assembly: System.Reflection.AssemblyDescription({SymbolDisplay.FormatLiteral(description, quote: true)})]\n";
+        var compilation = CSharpCompilation.Create(
+            name,
+            [CSharpSyntaxTree.ParseText(attribute + source)],
+            Platform,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        return compilation.ToMetadataReference();
     }
 
     private sealed class InMemoryFile(string path, string text) : AdditionalText

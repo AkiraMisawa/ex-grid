@@ -51,21 +51,11 @@
             Each function gives Excel's result. A name outside this set is <code>#NAME?</code>, never an
             approximation of what the function might have meant.
         </p>
-        <MudSimpleTable Dense="true" Outlined="true" Class="mb-4">
-            <thead>
-                <tr><th>Function</th><th>Arguments</th><th>Returns</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var function in DeclaredFunction.All)
-                {
-                    <tr>
-                        <td><code>@function.Name</code></td>
-                        <td><code>@function.Arguments</code></td>
-                        <td>@function.Description</td>
-                    </tr>
-                }
-            </tbody>
-        </MudSimpleTable>
+        <p>
+            The engine supports @DeclaredFunction.All.Count functions. Each one, with its arguments as Excel writes them
+            and what it returns, is on the <a href="exsheet/functions">Functions</a> page, by category, with a filter
+            and the functions that are not supported yet.
+        </p>
         <p>Where the engine cannot give Excel's answer, it gives an Error Value instead of a different answer:</p>
         <ul>
             <li>

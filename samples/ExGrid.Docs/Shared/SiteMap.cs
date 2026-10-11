@@ -57,6 +57,12 @@ public enum SiteSearchKind
 
     /// <summary>An item of the Roadmap: a ticket, a row of a scope table, or a row written by hand (ADR-0191).</summary>
     Roadmap,
+
+    /// <summary>A function ExSheet supports, on the Functions page.</summary>
+    Function,
+
+    /// <summary>A key of the Keyboard reference.</summary>
+    Key,
 }
 
 /// <summary>A place the search can lead to.</summary>
@@ -76,12 +82,15 @@ internal static partial class SiteMap
 {
     /// <summary>
     /// Every routed page, by file. The Release notes page's sections are its versions, which it renders
-    /// from the notes rather than writes as sections of its own (ADR-0190).
+    /// from the notes rather than writes as sections of its own (ADR-0190); the Functions page's are the
+    /// catalogue's categories, which it renders from the build's reading of the catalogue.
     /// </summary>
     public static IReadOnlyList<SitePage> Pages { get; } = Read()
         .Select(p => p.Routes.Contains(ReleaseNotes.Route, StringComparer.OrdinalIgnoreCase)
             ? p with { Sections = ReleaseNotes.PageSections().ToArray() }
-            : p)
+            : p.Routes.Contains(FunctionCatalogue.Route, StringComparer.OrdinalIgnoreCase)
+                ? p with { Sections = [.. p.Sections, .. FunctionCatalogue.PageSections()] }
+                : p)
         .ToArray();
 
     private static readonly Dictionary<string, SitePage> ByRoute = Pages
@@ -91,7 +100,8 @@ internal static partial class SiteMap
     /// <summary>
     /// What the search leads to: each page the navigation lists, each of its sections, each titled
     /// Example and each type an API table lists, in the navigation's order; then each line of the
-    /// Release Notes, and each item of the Roadmap.
+    /// Release Notes, each item of the Roadmap, each function ExSheet supports and each key of the
+    /// Keyboard reference.
     /// </summary>
     public static IReadOnlyList<SiteSearchEntry> Entries { get; } = BuildEntries();
 
@@ -159,6 +169,8 @@ internal static partial class SiteMap
         }
         entries.AddRange(ReleaseNotes.SearchEntries());
         entries.AddRange(Roadmap.SearchEntries());
+        entries.AddRange(FunctionCatalogue.SearchEntries());
+        entries.AddRange(Keyboard.SearchEntries());
         return entries.ToArray();
     }
 

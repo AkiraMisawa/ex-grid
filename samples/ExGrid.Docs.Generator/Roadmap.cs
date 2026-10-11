@@ -51,10 +51,10 @@ public static class Roadmap
         new Dictionary<string, string> { ["0046"] = "ExSheet", ["0059"] = "ExPivot" }.ToImmutableDictionary();
 
     /// <summary>The Definition of Done, which a hand-written row may cite by a section or a step.</summary>
-    public const string DefinitionOfDone = "docs/definition-of-done.md";
+    public const string DefinitionOfDone = RecordCites.DefinitionOfDone;
 
     /// <summary>What the Definition of Done still owes, which the page links rather than copies.</summary>
-    public const string ImplementationStatus = "docs/implementation-status.md";
+    public const string ImplementationStatus = RecordCites.ImplementationStatus;
 
     private const string Adr = "ADR-0191";
 
@@ -130,12 +130,6 @@ public static class Roadmap
         @"^\s*\|\s*\|\s*First version\s*\|\s*Later\s*\|\s*Why later\s*\|\s*$", RegexOptions.CultureInvariant);
 
     private static readonly Regex ScopeSeparator = new(@"^\s*\|(\s*:?-{3,}:?\s*\|){4}\s*$", RegexOptions.CultureInvariant);
-
-    private static readonly Regex AdrCite = new(@"^ADR-([0-9]{4})$", RegexOptions.CultureInvariant);
-
-    private static readonly Regex DodCite = new(@"^DoD (§([0-9]+(?:\.[0-9]+[a-z]?)*)|Step ([0-9]+))$", RegexOptions.CultureInvariant);
-
-    private static readonly Regex PathCite = new(@"^docs/[A-Za-z0-9._/-]+\.md$", RegexOptions.CultureInvariant);
 
     private static readonly Regex AdrMention = new(@"\bADR-([0-9]{4})\b", RegexOptions.CultureInvariant);
 
@@ -217,24 +211,8 @@ public static class Roadmap
         return null;
     }
 
-    /// <summary>
-    /// The anchor GitHub gives a Markdown heading: its text in lower case, every character that is not a
-    /// letter, a digit, a hyphen or an underscore dropped, and each space made a hyphen. "Step 7 — Sign-off"
-    /// is <c>step-7--sign-off</c>.
-    /// </summary>
-    public static string GitHubAnchor(string heading)
-    {
-        var text = MarkdownLink.Replace(heading, "$1").Replace("`", "").Replace("**", "");
-        var anchor = new StringBuilder();
-        foreach (var c in text.Trim().ToLowerInvariant())
-        {
-            if (char.IsLetterOrDigit(c) || c is '-' or '_')
-                anchor.Append(c);
-            else if (c == ' ')
-                anchor.Append('-');
-        }
-        return anchor.ToString();
-    }
+    /// <summary>The anchor GitHub gives a Markdown heading (<see cref="RecordCites.GitHubAnchor"/>).</summary>
+    public static string GitHubAnchor(string heading) => RecordCites.GitHubAnchor(heading);
 
     /// <summary>Reads, checks and emits the Roadmap.</summary>
     /// <param name="files">The tickets and the records the Roadmap reads (<see cref="RepoPathOf"/>).</param>
@@ -263,9 +241,6 @@ public static class Roadmap
     internal sealed record ScopeRow(
         string Product, string Adr, string AdrFile, string Scope, string LabelHtml, string Label, string WhyHtml, string Why);
 
-    /// <summary>A record a hand-written row cites, and where it is read.</summary>
-    internal sealed record Cite(string Name, string Title, string Path, string? Anchor);
-
     private sealed class Reader(
         ImmutableArray<RecordInput> files,
         ImmutableArray<RoadmapHandRow> hand,
@@ -279,11 +254,11 @@ public static class Roadmap
 
         public List<ScopeRow> Scope { get; } = [];
 
-        public SortedDictionary<string, Cite> Cites { get; } = new(StringComparer.Ordinal);
+        public SortedDictionary<string, RecordCite> Cites { get; } = new(StringComparer.Ordinal);
 
         private NotesContext Context => new(adrs, build.GitRef, AllowRef: false);
 
-        private List<(string Text, string Anchor)>? _dodHeadings;
+        private readonly RecordCites _records = new(adrs, files, Adr);
 
         public void Run()
         {
@@ -661,7 +636,7 @@ public static class Roadmap
                     Diagnostics.Add(Diagnostic.Create(CiteNowhere, cite.Location, $"This citation is not written as text, so the build cannot check that its record exists. Write it as a string literal ({Adr})."));
                     continue;
                 }
-                if (Resolve(cite.Value, out var why) is { } resolved)
+                if (_records.Resolve(cite.Value, out var why) is { } resolved)
                     Cites[cite.Value] = resolved;
                 else
                     Diagnostics.Add(Diagnostic.Create(CiteNowhere, cite.Location, why));
@@ -688,91 +663,6 @@ public static class Roadmap
                     $"{what}'s {part} holds {promise.What}, '{text.Substring(promise.Index, promise.Length)}'. The Roadmap has no dates, quarters or target versions: "
                     + $"work is ordered by the state of its decision, never by a calendar ({Adr}). Say what is required or refused, and leave out when."));
             }
-        }
-
-        // The record a citation names, or null with why not.
-        private Cite? Resolve(string cite, out string why)
-        {
-            why = "";
-            if (AdrCite.Match(cite) is { Success: true } adr)
-            {
-                var number = adr.Groups[1].Value;
-                if (adrs.TryGetValue(number, out var file))
-                    return new Cite(cite, cite, "docs/adr/" + file, null);
-                why = $"{cite} names no decision record: docs/adr/ has no file {number}-….md. Correct the number ({Adr}).";
-                return null;
-            }
-            if (DodCite.Match(cite) is { Success: true } dod)
-            {
-                var headings = DodHeadings();
-                if (headings is null)
-                {
-                    why = $"{cite} cites the Definition of Done, and {DefinitionOfDone} did not reach the build. ExGrid.Docs.csproj hands it over as an AdditionalFiles item; restore it ({Adr}).";
-                    return null;
-                }
-                var section = dod.Groups[2].Success ? dod.Groups[2].Value : null;
-                var prefix = section is not null
-                    ? new Regex("^" + Regex.Escape(section) + @"\.?(\s|$)", RegexOptions.CultureInvariant)
-                    : new Regex("^Step " + dod.Groups[3].Value + @"(\s|$)", RegexOptions.CultureInvariant);
-                var match = headings.FirstOrDefault(h => prefix.IsMatch(h.Text));
-                if (match.Text is null)
-                {
-                    why = $"{cite} names no heading of the Definition of Done: none begins with '{(section ?? "Step " + dod.Groups[3].Value)}'. Cite a section by its number, as DoD §21.11, or a step, as DoD Step 7 ({Adr}).";
-                    return null;
-                }
-                var title = section is not null ? $"Definition of Done §{section}" : $"Definition of Done, Step {dod.Groups[3].Value}";
-                return new Cite(cite, title, DefinitionOfDone, match.Anchor);
-            }
-            if (PathCite.IsMatch(cite))
-            {
-                if (files.Any(f => f.RepoPath == cite))
-                    return new Cite(cite, cite, cite, null);
-                why = $"{cite} is not a file the build reads. A hand-written row may cite {DefinitionOfDone} and {ImplementationStatus}, which ExGrid.Docs.csproj hands over; "
-                    + $"restore that item, or cite an ADR ({Adr}).";
-                return null;
-            }
-            why = $"'{cite}' is not a citation the Roadmap reads. Write an ADR as ADR-0031, the Definition of Done as DoD §21.11 or DoD Step 7, or a record as {ImplementationStatus} ({Adr}).";
-            return null;
-        }
-
-        // The Definition of Done's headings with GitHub's anchors, outside code fences; null when it did not reach the build.
-        private List<(string Text, string Anchor)>? DodHeadings()
-        {
-            if (_dodHeadings is not null)
-                return _dodHeadings;
-            var file = files.FirstOrDefault(f => f.RepoPath == DefinitionOfDone);
-            if (file is null)
-                return null;
-            var headings = new List<(string, string)>();
-            var seen = new Dictionary<string, int>(StringComparer.Ordinal);
-            var fenced = false;
-            foreach (var line in file.Text.Lines)
-            {
-                var raw = line.ToString();
-                if (raw.TrimStart().StartsWith("```", StringComparison.Ordinal))
-                {
-                    fenced = !fenced;
-                    continue;
-                }
-                if (fenced)
-                    continue;
-                var match = Regex.Match(raw, @"^#{1,6}\s+(.+?)(?:\s+#+)?\s*$");
-                if (!match.Success)
-                    continue;
-                var text = match.Groups[1].Value;
-                var anchor = GitHubAnchor(text);
-                if (seen.TryGetValue(anchor, out var count))
-                {
-                    seen[anchor] = count + 1;
-                    anchor = $"{anchor}-{count + 1}";
-                }
-                else
-                {
-                    seen[anchor] = 0;
-                }
-                headings.Add((text.Replace("`", "").Replace("**", ""), anchor));
-            }
-            return _dodHeadings = headings;
         }
 
         private static Location At(RecordInput file, int start, int length)
@@ -827,14 +717,7 @@ public static class Roadmap
         }
         code.AppendLine("    ];");
         code.AppendLine();
-        code.AppendLine("    private static partial global::ExGrid.Docs.RoadmapCite[] ReadCites() =>");
-        code.AppendLine("    [");
-        foreach (var cite in reader.Cites.Values)
-        {
-            code.Append("        new(").Append(Literal(cite.Name)).Append(", ").Append(Literal(cite.Title)).Append(", ")
-                .Append(Literal(cite.Path)).Append(", ").Append(Literal(cite.Anchor)).AppendLine("),");
-        }
-        code.AppendLine("    ];");
+        RecordCites.EmitReadCites(code, reader.Cites.Values, "global::ExGrid.Docs.RoadmapCite");
         code.AppendLine("}");
         return SourceText.From(code.ToString(), Encoding.UTF8);
     }
