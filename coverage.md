@@ -5,25 +5,25 @@
 | ExGrid | 95.7% | 88.7% |
 | ExSheet | 95.4% | 88.5% |
 | ExPivot | 93.8% | 84.7% |
-| Data | 94.4% | 90.2% |
+| Data | 94.5% | 90.3% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/11/2026 - 22:06:02 |
+| Generated on: | 10/11/2026 - 23:30:04 |
 | Parser: | MultiReport (13x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 802 |
 | Files: | 440 |
-| **Line coverage:** | 94.9% (54146 of 57000) |
-| Covered lines: | 54146 |
-| Uncovered lines: | 2854 |
+| **Line coverage:** | 94.9% (54147 of 57000) |
+| Covered lines: | 54147 |
+| Uncovered lines: | 2853 |
 | Coverable lines: | 57000 |
 | Total lines: | 94015 |
-| **Branch coverage:** | 87.8% (30747 of 34995) |
-| Covered branches: | 30747 |
+| **Branch coverage:** | 87.8% (30748 of 34995) |
+| Covered branches: | 30748 |
 | Total branches: | 34995 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -153,8 +153,8 @@
 |ExGrid.Components.ExGrid.SummaryQuestion<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenAt<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|91.6%|88.3%|
 |ExGrid.Components.ExGrid<TRow>|95.3%|89.9%|
+|ExGrid.Components.ExGrid<TRow>|91.6%|88.3%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
@@ -256,7 +256,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.5%**|
+|**ExGrid.Data**|**94.6%**|**90.6%**|
 |ExGrid.Data.AggregateAccumulator|86%|87%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -345,7 +345,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
