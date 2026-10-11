@@ -73,6 +73,12 @@ public partial class ExGrid<TRow>
     // commit can tell that the row is gone (ADR-0011's note of 2026-10-07). Null without a Row Key.
     private object? _editKey;
 
+    // The committed value's text as an edit opens on it, read when the editor opened: what F2 or a
+    // double-click puts in the editor (OpeningTextOf). While the editor's text is still this, the
+    // editor holds a copy of committed data and nothing the user typed, and it goes with its row
+    // (ADR-0007's note of 2026-10-11, ST-2). Null while no edit is open.
+    private string? _editCommittedText;
+
     /// <summary>Notes what the edit opening over <paramref name="cell"/> starts from (ADR-0142,
     /// LV-11): the baseline — what the cell paints now — the order in force, the row's Row Key, and
     /// the user's own writes to the cell that have not settled (D1), whose settling moves the
@@ -81,6 +87,7 @@ public partial class ExGrid<TRow>
     private void NoteEditOpened(CellPosition cell)
     {
         _editSeenText = PaintedTextNow(cell.Row, cell.Column);
+        _editCommittedText = OpeningTextOf(cell);
         _editSequence = _sequenceVersion;
         _editKey = _rowKey is { } rowKey && RowInHand(cell.Row) is { } row ? rowKey(row) : null;
         _editAwaits.Clear();
@@ -97,6 +104,7 @@ public partial class ExGrid<TRow>
     private void ForgetEditBaseline()
     {
         _editSeenText = null;
+        _editCommittedText = null;
         _editKey = null;
         _editAwaits.Clear();
         _editRebaseOwed = false;
@@ -144,6 +152,35 @@ public partial class ExGrid<TRow>
             _selectionChanged = true;
         }
     }
+
+    /// <summary>
+    /// An editor whose text is still the committed value it opened on — opened with F2, a double-click
+    /// or a press into the Formula Bar, and nothing typed, or typing taken back to that text — holds a
+    /// copy of committed data and no half-typed text (ADR-0007's note of 2026-10-11, ST-2). When a
+    /// Window taken in no longer holds its row, it closes as Escape closes it: nothing is written and
+    /// nothing is discarded, the keyboard comes back to the root, and the Consumer hears the edit end
+    /// (<see cref="OnEditingChanged"/>). An editor with typed text stays, as ADR-0142 has it. Not while
+    /// the Consumer hears the editor's own commit, which decides what becomes of it.
+    /// </summary>
+    private void CloseUntypedEditWhoseRowLeft()
+    {
+        if (_editMode == EditMode.None || _hearingCommit
+            || !string.Equals(_editText, _editCommittedText, StringComparison.Ordinal) || EditedRowInWindow())
+            return;
+        // Asked before the render that removes the editor holding it, as the commit's own end asks
+        // (HandBackKeyboardUnderCommit): asked after, DOM focus would fall to the page meanwhile, where
+        // the root hears no key.
+        _ = ReclaimFocusAsync(fromField: _editSurface == EditSurface.Bar);
+        TakeDownEdit();
+    }
+
+    /// <summary>Whether the Window holds the row the editor was opened on, anywhere: with a Row Key,
+    /// the row under the editor's key; without one, a row at the editor's position — the only row it
+    /// can name (ADR-0142).</summary>
+    private bool EditedRowInWindow()
+        => _rowKey is { } rowKey && _editKey is { } key
+            ? PositionOfKey(rowKey, key, _editingCell.Row) is not null
+            : RowInHand(_editingCell.Row) is not null;
 
     /// <summary>Whether the row the editor stands at is out of the painted rows, as a row it followed
     /// can be: the grid does not scroll to follow it (ADR-0011's note of 2026-10-07).</summary>

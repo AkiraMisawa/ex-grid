@@ -24,7 +24,8 @@
             with it, and <kbd>Enter</kbd> writes to that row wherever it stands now; the grid does not scroll to
             follow it. Without a Row Key the editor stays where it is, and <kbd>Enter</kbd> is refused through
             <code>OnCommitRefused</code> as <code>OrderMoved</code>, the text kept, because the position now names
-            another row; <kbd>Escape</kbd> leaves without writing. See
+            another row; <kbd>Escape</kbd> leaves without writing. An editor opened with <kbd>F2</kbd> and not typed
+            into closes instead when its row leaves the Window. See
             <a href="exgrid/editing#editing-while-values-change">Editing while values change</a>.
         </p>
     </DocsSection>
@@ -148,7 +149,11 @@
                 in the Window answers the key of the edited or pressed row. It may have left the data or only been
                 scrolled out of a pushed or fetched Window; bring it back into view and commit or press again, or
                 press <kbd>Escape</kbd>. Without a Row Key, an open edit whose row left the Window goes, and
-                <code>OnEditDiscarded</code> says <code>RowLeftTheWindow</code>.
+                <code>OnEditDiscarded</code> says <code>RowLeftTheWindow</code>. An editor that holds nothing typed —
+                opened with <kbd>F2</kbd>, a double-click or a press into the Formula Bar, its text still the cell's
+                value — is not kept waiting for its row: it holds a copy of your data, which the grid does not keep,
+                so it closes as soon as a Window without its row comes in, as <kbd>Escape</kbd> would close it. Nothing
+                is written or discarded, and <code>OnEditingChanged</code> says the edit ended.
             </li>
             <li>
                 <code>SourceChanged</code> — the <code>Source</code> was replaced by another instance. That is a new

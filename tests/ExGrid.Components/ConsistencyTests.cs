@@ -3,6 +3,7 @@ using ExGrid.Cells;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Selection;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 
@@ -127,12 +128,9 @@ public class ConsistencyTests : GridTestContext
 
     // ---- ST-2: the grid holds no committed data ---------------------------------------------------
     //
-    // ST2_an_edit_opened_with_f2_... FAILS, and is left failing: an editor opened with F2 and not
-    // typed into holds the cell's committed value as its text, and an open editor outlives its row
-    // leaving the Window (ADR-0011, ADR-0142), so after the Consumer's state is removed the Formula
-    // Bar still paints that value. Whether ADR-0007's "half-typed text in the editor" covers such
-    // text, or the grid must let it go, is a decision no ADR records; the test asserts ST-2 as the
-    // Definition of Done words it.
+    // An editor opened with F2 and not typed into holds the cell's committed value as its text: a copy
+    // of committed data, not half-typed text, so it closes when its row leaves the Window. An editor
+    // with typed text stays, as ADR-0142 has it (ADR-0007's note of 2026-10-11).
 
     [Theory] // ADR-0001 / ADR-0007 / ST-2: after any sequence, an empty Window leaves the grid nothing to paint, and nothing throws
     [InlineData(20261011)]
@@ -282,6 +280,146 @@ public class ConsistencyTests : GridTestContext
         AssertNothingPainted(cut);
     }
 
+    [Fact] // ADR-0007 / ADR-0142 / ST-2: an editor opened with F2 and typed into holds the user's text, not committed data — it stays when its row leaves the Window
+    public async Task ST2_an_edit_opened_with_f2_and_typed_into_stays_when_its_row_leaves_the_window()
+    {
+        var source = new TestSource();
+        var rows = TestRows.Many(50);
+        source.Push(rows, totalCount: 50);
+        var editing = new List<bool>();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 140)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnEdit, (GridEditIntent<TestRow> _) => { })
+            .Add(g => g.OnEditingChanged, editing.Add));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 20, OffsetY = 30 });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs());
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("F2", false, false, false, false, false));
+        await cut.Find(".ex-viewport input.ex-editor").InputAsync(new ChangeEventArgs { Value = "Typed" });
+
+        await cut.InvokeAsync(() => source.Push([], totalCount: 0));
+
+        // The rows' data is gone; the typing is the grid's to hold, and the edit has not ended.
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(cut.FindAll(".ex-row"));
+            Assert.Empty(cut.FindAll(".ex-cell"));
+            Assert.DoesNotContain("Row 0", cut.Markup, StringComparison.Ordinal);
+        });
+        Assert.Equal([true], editing);
+
+        // The row back in the Window: the editor is still there with what was typed.
+        await cut.InvokeAsync(() => source.Push(rows, totalCount: 50));
+        cut.WaitForAssertion(() => Assert.Equal("Typed", cut.Find(".ex-formula-bar-text").GetAttribute("value")));
+        Assert.Equal([true], editing);
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
+    [Fact] // ADR-0007 / ST-2: an untyped editor goes only with its row — a Window that still holds the row leaves it open
+    public async Task ST2_an_edit_opened_with_f2_stays_while_the_window_holds_its_row()
+    {
+        var source = new TestSource();
+        var rows = TestRows.Many(50);
+        source.Push(rows, totalCount: 50);
+        var editing = new List<bool>();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 140)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnEdit, (GridEditIntent<TestRow> _) => { })
+            .Add(g => g.OnEditingChanged, editing.Add));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 20, OffsetY = 30 });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs());
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("F2", false, false, false, false, false));
+
+        // Another Window that still holds row 1: a refresh, with the rows past 30 gone.
+        await cut.InvokeAsync(() => source.Push(rows[..30], totalCount: 30));
+
+        cut.WaitForAssertion(() => Assert.Equal("Row 000001", cut.Find(".ex-viewport input.ex-editor").GetAttribute("value")));
+        Assert.Equal([true], editing);
+    }
+
+    [Fact] // ADR-0007 / ST-2: an untyped editor whose row a moved Window no longer holds closes, as Escape would — nothing written, nothing discarded, the edit ended
+    public async Task ST2_an_edit_opened_with_f2_closes_when_a_moved_window_no_longer_holds_its_row()
+    {
+        var source = new TestSource();
+        var rows = TestRows.Many(500);
+        source.Push(rows[..60], totalCount: 500);
+        var editing = new List<bool>();
+        var edits = new List<GridEditIntent<TestRow>>();
+        var discards = new List<EditDiscardReason>();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 140)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnEdit, edits.Add)
+            .Add(g => g.OnEditDiscarded, discards.Add)
+            .Add(g => g.OnEditingChanged, editing.Add));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 20, OffsetY = 30 });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs());
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("F2", false, false, false, false, false));
+        Assert.Equal("Row 000001", cut.Find(".ex-viewport input.ex-editor").GetAttribute("value"));
+
+        // The Window moves on to rows 200 to 259: row 1 is no longer in it.
+        await cut.InvokeAsync(() => source.Push(rows[200..260], windowStart: 200, totalCount: 500));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(cut.FindAll(".ex-editor:not(.ex-formula-bar-text)"));
+            Assert.Equal([true, false], editing);
+        });
+        Assert.Empty(edits);
+        Assert.Empty(discards);
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
+    [Fact] // ADR-0007 / ADR-0140 / ST-2: with a Row Key an untyped editor goes with its row by key — a Window holding another row at its position closes it, one holding its row elsewhere does not
+    public async Task ST2_with_a_row_key_an_untyped_editor_goes_with_its_row_not_its_position()
+    {
+        var source = new TestSource();
+        var rows = TestRows.Many(50);
+        source.Push(rows, totalCount: 50);
+        var editing = new List<bool>();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowKey, (Func<TestRow, object>)(row => row.Book))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 140)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnEdit, (GridEditIntent<TestRow> _) => { })
+            .Add(g => g.OnEditingChanged, editing.Add));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 20, OffsetY = 30 });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs());
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("F2", false, false, false, false, false));
+
+        // Row 000001 moved to position 3, under a new order: the editor follows it and stays.
+        TestRow[] moved = [rows[0], rows[2], rows[3], rows[1], .. rows[4..]];
+        await cut.InvokeAsync(() => source.Push(moved, totalCount: 50, rowSequenceVersion: 1));
+        cut.WaitForAssertion(() => Assert.Equal("Row 000001", cut.Find(".ex-viewport input.ex-editor").GetAttribute("value")));
+        Assert.Equal([true], editing);
+
+        // Row 000001 gone, another row at every position it stood at: the editor closes.
+        TestRow[] without = [.. moved.Where(row => !ReferenceEquals(row, rows[1]))];
+        await cut.InvokeAsync(() => source.Push(without, totalCount: 49, rowSequenceVersion: 2));
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(cut.FindAll(".ex-editor:not(.ex-formula-bar-text)"));
+            Assert.Equal([true, false], editing);
+        });
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
 
     /// <summary>ST-2's pass condition: no row, cell, Placeholder, Focus or range is painted, the
     /// Formula Bar shows nothing, no value of the data is anywhere in the markup, and nothing was
