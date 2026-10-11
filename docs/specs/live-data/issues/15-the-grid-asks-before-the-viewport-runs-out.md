@@ -25,7 +25,8 @@ start now.
 - [x] The Docs Site: ExGrid's page on Range Requests and the Window says what the margin does and why
       it is 0 by default, with an Example; ExPivot's Sources page says a remote source asks early
 - [x] `GridSource.Fetch` is left as ADR-0025 has it. Whether it takes the margin is measured first on
-      its own path, as a ticket of its own
+      its own path, as a ticket of its own:
+      [16](16-measure-the-early-ask-on-gridsource-fetch.md)
 
 ## Comments
 
@@ -72,3 +73,10 @@ test failed at row 555, where the next Window should have been asked for early.
   times, about 30 a second, as a held key repeats. Without the margin, both questions were asked with
   rows on screen waiting. With it, all five were asked with every row on screen held. The console stayed
   clean.
+
+2026-10-11, after the branch's review: the last box's ticket is written,
+[16](16-measure-the-early-ask-on-gridsource-fetch.md). The layer-3 box is now met behind a held answer as well.
+On WebAssembly, a route holds the early question while the report scrolls. Before, no browser run had a question
+in flight while it scrolled: the proxy delays only the circuit, and the demo API answers at once. The early
+question no longer dims the report while every row on screen is held. Ticket 14's comment of the same time has
+the tests.

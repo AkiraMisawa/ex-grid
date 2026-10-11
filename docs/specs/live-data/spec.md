@@ -1,7 +1,8 @@
 # Live data in ExGrid and ExPivot
 
 Status: done — but for [ticket 14](issues/14-a-remote-reports-window-is-read-ahead.md) and
-[ticket 15](issues/15-the-grid-asks-before-the-viewport-runs-out.md), built, with layer 3 run locally and CI still to judge it, and LV-15,
+[ticket 15](issues/15-the-grid-asks-before-the-viewport-runs-out.md), built, with layer 3 run locally and CI still to judge it;
+[ticket 16](issues/16-measure-the-early-ask-on-gridsource-fetch.md), a measurement not yet made; and LV-15,
 observed only in part. Merged to `main` as #70 (554b3c2, 2026-10-10),
 carrying tickets 01 to 13 as their Statuses say. It was built on `claude/live-data-best`
 (2026-10-08), after the first version merged as #64. Tickets 01 to 03 were worked twice, side by
@@ -163,6 +164,9 @@ git -C <scratchpad>/ag-grid rev-parse HEAD   # 0fee5b7b1e839ae23fe860e404042448f
 - [15: The grid asks for rows before the Viewport runs out of them](issues/15-the-grid-asks-before-the-viewport-runs-out.md)
   — the Range Request Margin (ADR-0183), decided the same day. Built with ticket 14; its layer-3 spec
   is the same one.
+- [16: Measure the early ask and the covering question on GridSource.Fetch's own path](issues/16-measure-the-early-ask-on-gridsource-fetch.md)
+  — what ADR-0182 and ADR-0183 left to be measured on ExGrid's bundled fetching source. Ready to measure;
+  the decisions after it are the user's.
 
 ## Numbers for the next decisions
 

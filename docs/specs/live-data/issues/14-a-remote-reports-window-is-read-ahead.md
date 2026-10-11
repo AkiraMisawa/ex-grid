@@ -219,3 +219,34 @@ ticked but layer 3's: the spec is written and has not run yet.
   each question names, since a request reaches the test as an event of its own after the page has
   counted it. And it removes its request listener as it ends, since the page is handed on to the next
   test of the file (ADR-0056).
+
+2026-10-11, after the branch's review: the check now follows ADR-0182 and LV-34 as written, against the range
+before widening.
+- **An answer short of the read-ahead is held when it reaches the rows on screen.** `PivotReportClient.ReadAsync`
+  takes `needed`, the range the grid needs, and ExPivot passes it with a Window it read ahead. A complete answer
+  may then be a Window within the one asked for, as a server that caps its answers sends. It must cover the
+  range, as ADR-0025's bundled source requires. ExPivot holds the Window answered, and asks for it, and for
+  Window Changes against it, from then on. One that does not reach the range, or lies outside the Window
+  asked, is refused, naming the rows answered, asked and needed. Window Changes and refusals still answer the
+  Window asked for itself (ADR-0152). The comment above read the protocol as requiring every answer to be the
+  Window asked for. That made the check against the widened Window, which LV-34 rules out. Before this fix, a
+  server capping its answers at 100 rows was refused at every scroll.
+- **A Window asked for early is asked quietly.** While every row on screen is held, the report is not dimmed.
+  The loading indication comes once rows on screen leave the Window held while the question is out, as it comes
+  for a Window asked once they had left. Until then the report dimmed for a round trip each time a scroll came
+  within ten rows of the Window's edge.
+- **Tests:** layer 1, `ReportProtocolTests.ADR0182_LV34_…` (an answer that does not reach the rows the grid needs,
+  three cases; none named; a capped answer held, then Window Changes against it; a refusal naming another Window;
+  a needed range outside the Window). Layer 2, `ReportReadAheadTests.ADR0182_LV34_An_answer_short_of_the_read_ahead_that_holds_the_rows_on_screen_is_held_as_it_came`
+  and `ADR0183_LV34_A_Window_asked_early_is_asked_quietly_until_the_rows_on_screen_leave_the_Window_held`, and the
+  loading indication pinned in the superseding test. The tests of this ticket and ticket 15 now carry their ADR
+  in their names (`ADR0182_LV34_…`, `ADR0183_LV34_…`).
+- **Layer 3:** a second `pivot-db.spec.mjs` test, on WebAssembly. It holds the early question's answer behind a
+  route the test opens itself. The question stays in flight while the report scrolls past the Window held, and
+  nothing else is asked. The report is dimmed only once rows on screen wait. After the answer lands, exactly one
+  more question is asked, ten rows short of the new Window. The Server host asks the demo API from the server,
+  where no route can hold the answer. It passed three times on WebAssembly in Playwright's bundled Chromium.
+  It failed there with the early question dimming the report. CI's Chrome and Edge are still to judge it.
+- **Docs Site:** the Sources page says how a capped answer is checked and held, and that an early Window does
+  not dim the report. ExGrid's Data sources page says to pass `IsLoading` only while rows on screen wait. Its
+  Example now does so.
