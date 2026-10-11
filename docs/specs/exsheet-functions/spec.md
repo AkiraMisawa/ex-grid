@@ -116,7 +116,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `ROWS` | Supported | — | |
 | `COLUMNS` | Supported | — | |
 | `OFFSET` | Supported | — | Volatile (ADR-0124): recalculated after every change, its computed Reference read as it stands |
-| `INDIRECT` | Ready | P3 | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; R1C1, structured and `A1#` text are `#VALUE!` (ADR-0124, 2026-10-10). Ticket 18 |
+| `INDIRECT` | Supported | — | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; R1C1, structured and `A1#` text are `#VALUE!`, and text that names no place is `#REF!` (ADR-0124, 2026-10-10). Ticket 18 |
 
 ### Math and rounding
 

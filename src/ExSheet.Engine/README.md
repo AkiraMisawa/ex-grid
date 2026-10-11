@@ -169,6 +169,7 @@ them:
 | `INDEX` | `array, row_num, [column_num]` |
 | `CHOOSE` | `index_num, value1, [value2], ...` |
 | `OFFSET` | `reference, rows, cols, [height], [width]` — volatile (ADR-0124) |
+| `INDIRECT` | `ref_text, [a1]` — A1-style text naming a place on the same Sheet; volatile (ADR-0124) |
 | `ROW`, `COLUMN` | `[reference]` |
 | `ROWS`, `COLUMNS` | `array` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
@@ -238,6 +239,13 @@ answer:
   too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`); `ERROR.TYPE` of an Error
   Value outside Microsoft's table — `#SPILL!`, `#CALC!`, `#FIELD!`, `#BLOCKED!`, `#CONNECT!`,
   `#UNKNOWN!` (`#VALUE!`).
+- **`INDIRECT` reads A1-style text naming a cell or a range of this Sheet** (ADR-0124, 2026-10-10),
+  with or without the Sheet's own qualifier, as it stands after the recalculation; it is volatile,
+  as `OFFSET` is. Its text is text: an insertion or a deletion rewrites the References beside it and
+  never it, so `INDIRECT("B5")` names B5 whatever moved. Text in a form Excel reads but no Windows
+  run has observed is `#VALUE!` — R1C1 style (`a1` FALSE), a structured reference (`Positions[PV]`)
+  and a Spill Range (`A1#`) — and text that names no place is `#REF!`, as in Excel, another Sheet's
+  name included.
 - **`SUBTOTAL` and `AGGREGATE` while no row can be hidden** (ADR-0047, 2026-10-10). A Sheet cannot hide
   a row yet, so `SUBTOTAL`'s 101 to 111 give what 1 to 11 give, and `AGGREGATE`'s options 1, 3, 5
   and 7 what 0, 2, 4 and 6 give, as Excel's do over such a sheet; a test fails on the day a row can

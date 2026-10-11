@@ -19,7 +19,7 @@ public class FormulaEntryTests
     [Theory] // ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case
     [InlineData("=SU|", new[] { "SUBSTITUTE", "SUBTOTAL", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT" })]
     [InlineData("=su|", new[] { "SUBSTITUTE", "SUBTOTAL", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT" })]
-    [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT" })]
+    [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INDIRECT", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT" })]
     [InlineData("=IFE|", new[] { "IFERROR" })]
     [InlineData("=1+co|", new[] { "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COS", "COSH", "COT", "COTH", "COUNT", "COUNTA", "COUNTBLANK", "COUNTIF", "COUNTIFS" })]
     [InlineData("=SUM(A1,m|", new[] { "MATCH", "MAX", "MAXIFS", "MEDIAN", "MID", "MIN", "MINIFS", "MINUTE", "MOD", "MONTH", "MROUND" })]

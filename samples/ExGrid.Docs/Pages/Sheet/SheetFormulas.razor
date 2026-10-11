@@ -81,6 +81,13 @@
                 <code>AGGREGATE</code> function number for a function the Sheet does not have, such as 13,
                 <code>MODE.SNGL</code>.
             </li>
+            <li>
+                <b><code>INDIRECT</code></b> reads A1-style text naming a cell or a range of the same Sheet. Like
+                <code>OFFSET</code> it is recalculated after every change, and its text is only text: inserting a row
+                rewrites the References beside it, never the text. R1C1 text (<code>a1</code> FALSE), a structured
+                reference's text and <code>A1#</code> are <code>#VALUE!</code> until Excel has been asked how it reads
+                them; text that names no place, another Sheet's name included, is <code>#REF!</code>, as in Excel.
+            </li>
         </ul>
     </DocsSection>
 

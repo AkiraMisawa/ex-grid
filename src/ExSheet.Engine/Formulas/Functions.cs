@@ -195,6 +195,7 @@ internal static partial class FunctionLibrary
         new("VALUE", 1, 1, "text", "Converts a text argument to a number, read under the Sheet's culture.", ValueOf),
         new("NOW", 0, 0, "", "Returns the serial number of the current date and time.", Now),
         new("OFFSET", 3, 5, "reference, rows, cols, [height], [width]", "Returns a reference offset from a given reference.", Offset),
+        new("INDIRECT", 1, 2, "ref_text, [a1]", "Returns a reference indicated by a text value.", Indirect),
         new("FILTER", 2, 3, "array, include, [if_empty]", "Filters a range of data based on criteria you define.", Filter),
         new("UNIQUE", 1, 3, "array, [by_col], [exactly_once]", "Returns a list of unique values in a list or range.", Unique),
         new("SORT", 1, 4, "array, [sort_index], [sort_order], [by_col]", "Sorts the contents of a range or array.", Sort),
