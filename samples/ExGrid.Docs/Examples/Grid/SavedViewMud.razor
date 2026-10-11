@@ -53,9 +53,20 @@
     private string? _saved;
     private string? _said;
 
+    // The view on screen now.
+    private GridViewState Shown() => GridViewState.Of(_columns, _pinned, _source.Sorts, _source.Filter);
+
     private void Save()
     {
-        _saved = GridViewStateJson.Write(GridViewState.Of(_columns, _pinned, _source.Sorts, _source.Filter));
+        var shown = Shown();
+        // A View State compares by what it holds, so the stored one, read back, equals what it was
+        // saved from until the user changes something.
+        if (_saved is not null && GridViewStateJson.Read(_saved, All.Select(c => c.Name)) == shown)
+        {
+            _said = "Nothing has changed since the view was saved.";
+            return;
+        }
+        _saved = GridViewStateJson.Write(shown);
         _said = "Saved.";
     }
 
@@ -71,6 +82,11 @@
         catch (JsonException refused)
         {
             _said = refused.Message;
+            return;
+        }
+        if (view == Shown())
+        {
+            _said = "The grid already shows the saved view.";
             return;
         }
         _order = [.. view.Columns.Select(c => c.Column)];

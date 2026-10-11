@@ -110,7 +110,9 @@
             its exact digits, a <code>DateTime</code> with its kind, a <code>DateTimeOffset</code> with its offset,
             so a restored condition means what it meant. A width is <code>"Auto"</code> or its pixels, never the
             width an Auto column was painted at, so a restored Auto column measures itself again. A column the user
-            hid is one the view leaves out.
+            hid is one the view leaves out. A <code>GridViewState</code> is one value: two compare equal when they
+            hold the same view, so a view read back equals the one written, and comparing the stored view with
+            <code>GridViewState.Of</code> tells you whether the user has changed it.
         </p>
         <p>
             A stored view that cannot be read is refused with a <code>JsonException</code> that names what is wrong
@@ -119,12 +121,18 @@
             than rounded), a version this release does not read — rather than restored in part. The JSON carries a version from its
             first release. <code>GridViewStateJson.WriteQuery</code> and <code>ReadQuery</code> do the same for a
             <code>GridQuery</code> alone, for your own server. An Opaque Filter has no JSON form here: its meaning
-            is yours, so keep it beside the view.
+            is yours, so keep it beside the view. Nor does a view have any other: a <code>GridViewState</code>, a
+            <code>ColumnViewState</code> or a <code>ColumnWidth</code> handed to <code>System.Text.Json</code>
+            directly is refused with a <code>NotSupportedException</code> that names
+            <code>GridViewStateJson</code>, since written that way a width and an operand would not come back as
+            they went. Put the string <code>Write</code> returns into your own document instead.
         </p>
         <DocsExample Title="Save and restore a view" Builtin="typeof(SavedView)" Mud="typeof(SavedViewMud)"
                      Files="@(["Examples/Grid/Position.cs"])">
             Widen a column, drag a header, pin from a column's ▾ menu, sort, and filter <em>P&amp;L</em> to values
             above 0. Save the view, press Reset, and restore it: the stored JSON below the grid is what comes back.
+            Save or restore again without changing anything, and the Example says so: it compares the view read
+            back with the one on screen.
         </DocsExample>
     </DocsSection>
 

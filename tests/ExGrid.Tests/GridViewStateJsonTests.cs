@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using ExGrid.Columns;
 using Xunit;
 
@@ -102,6 +103,40 @@ public class GridViewStateJsonTests
     {
         Refused("""{"version":1,"columns":[],"columns":[],"sorts":[]}""");
         Refused("""{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Book":{"combinator":"And","clauses":[]},"Book":{"combinator":"Or","clauses":[]}}}}""");
+    }
+
+    [Theory] // ADR-0207: a misshapen document is refused in the form's words, naming the member and where it stands — never in the serializer's, which name the internal types the form is read into
+    [InlineData(false, """{"version":1,"columns":[],"sorts":[],"layout":"wide"}""", "$", "it has no member 'layout' in version 1")]
+    [InlineData(false, """{"version":1,"Columns":[],"sorts":[]}""", "$", "it has no member 'Columns' in version 1")]
+    [InlineData(false, """{"version":1,"sorts":[]}""", "$", "its member 'columns' is missing")]
+    [InlineData(false, """{"version":1,"columns":[{"column":"Book","pinned":false}],"sorts":[]}""", "$.columns[0]", "its member 'width' is missing")]
+    [InlineData(false, """{"version":1,"columns":[{"column":null,"width":"Auto","pinned":false}],"sorts":[]}""", "$.columns[0].column", "'column' is null, and it is a string")]
+    [InlineData(false, """{"version":1,"columns":null,"sorts":[]}""", "$.columns", "'columns' is null, and it is an array")]
+    [InlineData(false, """{"version":1,"columns":[{"column":"Book","width":"Auto","pinned":"yes"}],"sorts":[]}""", "$.columns[0].pinned", "'pinned' is true or false, and here it is a string")]
+    [InlineData(false, """{"version":1,"columns":[{"column":"Book","width":"Auto","pinned":null}],"sorts":[]}""", "$.columns[0].pinned", "'pinned' is null, and it is true or false")]
+    [InlineData(false, """{"version":1,"columns":{},"sorts":[]}""", "$.columns", "'columns' is an array, and here it is an object")]
+    [InlineData(false, """{"version":1,"columns":[7],"sorts":[]}""", "$.columns[0]", "item 1 of 'columns' is an object, and here it is the number 7")]
+    [InlineData(false, """{"version":1,"columns":[],"sorts":[{"column":"Book","direction":1}]}""", "$.sorts[0].direction", "'direction' is a string, and here it is the number 1")]
+    [InlineData(false, """{"version":1,"columns":[],"sorts":[],"filter":{"columns":[]}}""", "$.filter.columns", "'columns' is an object, and here it is an array")]
+    [InlineData(false, """{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Notional":{"combinator":"And","clauses":[{"operator":"Equals","value":{"type":"Decimal","value":25000000.50}}]}}}}""",
+        "$.filter.columns['Notional'].clauses[0].value.value", "'value' is a string, and here it is the number 25000000.50")]
+    [InlineData(false, """{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Notional":{"combinator":"And","clauses":[{"operator":"Equals","value":25}]}}}}""",
+        "$.filter.columns['Notional'].clauses[0].value", "'value' is an object, and here it is the number 25")]
+    [InlineData(false, """{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Notional":{"combinator":"And","clauses":[{"operator":"In","values":[{"type":"Decimal"}]}]}}}}""",
+        "$.filter.columns['Notional'].clauses[0].values[0]", "its member 'value' is missing")]
+    [InlineData(true, """{"version":1,"range":{"start":1.5,"count":2},"sorts":[]}""", "$.range.start", "'start' is a whole number, and here it is the number 1.5")]
+    [InlineData(true, """{"version":1,"range":{"start":0,"count":3000000000},"sorts":[]}""", "$.range.count", "'count' is a whole number, and here it is the number 3000000000")]
+    [InlineData(true, """{"version":1,"range":null,"sorts":[]}""", "$.range", "'range' is null, and it is an object")]
+    [InlineData(true, """{"version":1,"range":{"start":0,"count":1},"sorts":[],"columns":[]}""", "$", "it has no member 'columns' in version 1")]
+    public void ADR0207_a_misshapen_document_is_refused_in_the_forms_words(bool query, string json, string path, string named)
+    {
+        var refusal = query ? QueryRefused(json) : Refused(json);
+
+        Assert.Equal(path, refusal.Path);
+        Assert.Contains($"cannot be read at {path}: {named} (ADR-0207).", refusal.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("ExGrid.", refusal.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("Document", refusal.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.", refusal.Message, StringComparison.Ordinal);
     }
 
     [Theory] // ADR-0207: a member of the wrong JSON type is refused
@@ -321,6 +356,86 @@ public class GridViewStateJsonTests
         Assert.Null(GridViewStateJson.Read(GridViewStateJson.Write(new GridViewState([], [], filter with { Opaque = null })), []).Filter!.Opaque);
     }
 
+    [Theory] // ADR-0207: what reading would refuse is refused on the way out too, by name, so that nothing written fails to read back
+    [InlineData("a range left at its default", "A Query's range is a run of at least one row, and 0 rows at 0 is not")]
+    [InlineData("a sort level naming no column", "Sort level 1 names no column.")]
+    [InlineData("a null sort level", "Sort level 2 is null.")]
+    [InlineData("a direction its enum does not name", "Sort level 1: 5 is not a SortDirection")]
+    [InlineData("a filter naming no column", "The filter names no column.")]
+    [InlineData("a null column filter", "The filter on 'Book' is null.")]
+    [InlineData("no list of clauses", "The filter on 'Book' has no list of clauses")]
+    [InlineData("a null clause", "The filter on 'Book', clause 2 is null.")]
+    [InlineData("a combinator its enum does not name", "The filter on 'Book': 7 is not a FilterCombinator")]
+    [InlineData("an operator its enum does not name", "The filter on 'Book', clause 1: 99 is not a FilterOperator")]
+    public void ADR0207_writing_refuses_what_reading_would_refuse(string what, string named)
+    {
+        SortSpec[] sorts = what switch
+        {
+            "a sort level naming no column" => [new SortSpec("", SortDirection.Ascending)],
+            "a null sort level" => [new SortSpec("Book", SortDirection.Ascending), null!],
+            "a direction its enum does not name" => [new SortSpec("Book", (SortDirection)5)],
+            _ => [],
+        };
+        var isBlank = new FilterClause(FilterOperator.IsBlank);
+        FilterSpec? spec = what switch
+        {
+            "a null column filter" => null,
+            "no list of clauses" => new FilterSpec(null!),
+            "a null clause" => new FilterSpec([isBlank, null!]),
+            "a combinator its enum does not name" => new FilterSpec([isBlank], (FilterCombinator)7),
+            "an operator its enum does not name" => new FilterSpec([new FilterClause((FilterOperator)99)]),
+            _ => new FilterSpec([isBlank]),
+        };
+        var filter = new GridFilter(new Dictionary<string, FilterSpec> { [what == "a filter naming no column" ? "" : "Book"] = spec! });
+        var query = new GridQuery(what == "a range left at its default" ? default : new RowRange(0, 1), sorts, filter);
+
+        var refusal = Assert.Throws<ArgumentException>(() => GridViewStateJson.WriteQuery(query));
+        Assert.Contains(named, refusal.Message, StringComparison.Ordinal);
+        Assert.Equal("query", refusal.ParamName);
+        if (what != "a range left at its default" && what != "a null sort level")
+        {
+            // A View State is held to the same; its constructor already refuses a null sort level.
+            refusal = Assert.Throws<ArgumentException>(() => GridViewStateJson.Write(new GridViewState([], sorts, filter)));
+            Assert.Contains(named, refusal.Message, StringComparison.Ordinal);
+            Assert.Equal("viewState", refusal.ParamName);
+        }
+    }
+
+    // ---- What has no JSON form but the entry point's ------------------------------------------
+
+    public static TheoryData<object> ViewStateParts() => new()
+    {
+        new GridViewState([new ColumnViewState("Book", ColumnWidth.Fixed(80))], [],
+            new GridFilter(new Dictionary<string, FilterSpec> { ["Book"] = new([new FilterClause(FilterOperator.GreaterThan, 1_000_000m)]) })),
+        new ColumnViewState("Book", ColumnWidth.Fixed(80)),
+        ColumnWidth.Auto,
+        ColumnWidth.Fixed(80),
+    };
+
+    [Theory]
+    [MemberData(nameof(ViewStateParts))] // ADR-0207: a View State, a column of one or a width handed to System.Text.Json directly is refused by name, pointing to the entry point — written that way an Auto width threw, a Fixed one read back as Auto, and an operand as a JsonElement
+    public void ADR0207_a_view_state_handed_to_system_text_json_directly_is_refused_by_name(object part)
+    {
+        var type = part.GetType();
+
+        var refusal = Assert.Throws<NotSupportedException>(() => JsonSerializer.Serialize(part, type));
+        Assert.Contains($"A {type.Name} has no JSON form of its own", refusal.Message, StringComparison.Ordinal);
+        Assert.Contains("GridViewStateJson.Write", refusal.Message, StringComparison.Ordinal);
+        refusal = Assert.Throws<NotSupportedException>(() => JsonSerializer.Deserialize(part is ColumnWidth ? "120" : "{}", type));
+        Assert.Contains("GridViewStateJson.Read", refusal.Message, StringComparison.Ordinal);
+        // Inside a Consumer's own document, too.
+        Assert.Throws<NotSupportedException>(() => JsonSerializer.Serialize(new Dictionary<string, object> { ["view"] = part }));
+    }
+
+    [Fact] // ADR-0207: under a Consumer's own source-generated context a View State is refused too, never written quietly wrong — the generator cannot reach the refusal, so the build warns (SYSLIB1220, naming it; SYSLIB1030) and nothing is generated for the type, which the serializer then refuses
+    public void ADR0207_a_view_state_under_a_consumers_source_generated_context_is_refused()
+    {
+        var kept = new ConsumerSettings { View = new GridViewState([new ColumnViewState("Book", ColumnWidth.Fixed(80))], [], null) };
+
+        Assert.Throws<NotSupportedException>(() => JsonSerializer.Serialize(kept, ConsumerSettingsContext.Default.ConsumerSettings));
+        Assert.Throws<NotSupportedException>(() => JsonSerializer.Deserialize("""{"View":{"columns":[],"sorts":[]}}""", ConsumerSettingsContext.Default.ConsumerSettings));
+    }
+
     [Fact] // ADR-0207: an empty View State round-trips as itself — no columns, no sort, no filter
     public void ADR0207_an_empty_view_state_round_trips()
     {
@@ -359,3 +474,18 @@ public class GridViewStateJsonTests
             GridViewStateJson.Write(view));
     }
 }
+
+/// <summary>A Consumer's own settings, holding a View State as a member, to be written by a
+/// source-generated context of the Consumer's own (ADR-0207).</summary>
+public sealed class ConsumerSettings
+{
+    /// <summary>The view kept.</summary>
+    public GridViewState? View { get; set; }
+}
+
+// What a Consumer's build says when a View State is put into a context of their own: the refusal is
+// internal, so the generator cannot use it (SYSLIB1220, naming OnlyThroughGridViewStateJson) and
+// generates nothing for the type (SYSLIB1030). Both are suppressed in ExGrid.Tests.csproj, which says
+// why, so the test can run.
+[JsonSerializable(typeof(ConsumerSettings))]
+internal sealed partial class ConsumerSettingsContext : JsonSerializerContext;

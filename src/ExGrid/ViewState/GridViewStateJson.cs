@@ -32,10 +32,11 @@ namespace ExGrid;
 /// operands of <c>In</c> is written as <c>null</c>: it selects Blanks.</para>
 ///
 /// <para><b>What reading refuses</b>, with a <see cref="JsonException"/> whose message names the
-/// part: text that is not JSON; a document that is not an object; a version that is missing, not a
-/// number, or not <see cref="Version"/> — an earlier one or a later one; a member this version does
-/// not have, a member it requires that is missing or null, a member of the wrong JSON type, and a
-/// member named twice; a column the grid does not have, in the View State's columns, its sort or its
+/// part, and whose <see cref="JsonException.Path"/> says where it stands: text that is not JSON; a
+/// document that is not an object; a version that is missing, not a number, or not
+/// <see cref="Version"/> — an earlier one or a later one; a member this version does not have, a
+/// member it requires that is missing or null, a member of the wrong JSON type, and a member named
+/// twice; a column the grid does not have, in the View State's columns, its sort or its
 /// filter (<see cref="Read"/> is told the grid's columns); a column named twice among the columns, or
 /// pinned after one that is not; a width that is neither <c>"Auto"</c> nor a finite, positive number;
 /// a sort direction, a combinator or an operator this version does not name; an operand whose tag
@@ -50,7 +51,17 @@ namespace ExGrid;
 /// <para><b>What writing refuses</b>, with a <see cref="NotSupportedException"/>: an operand of a type
 /// the filter model does not admit, or a <c>Double</c> or <c>Single</c> that is not finite, which
 /// the filter refuses too (ADR-0023); and an Opaque Filter, whose meaning is the Consumer's alone
-/// (ADR-0002), so the Consumer keeps it beside the View State and writes the filter without it.</para>
+/// (ADR-0002), so the Consumer keeps it beside the View State and writes the filter without it. And,
+/// with an <see cref="ArgumentException"/> naming the part, what reading would refuse, so that nothing
+/// written fails to read back: a sort level, a column's filter, its clauses or a clause that is null;
+/// a sort level or a filter that names no column; a sort direction, a combinator or an operator its
+/// enum does not name; and a Query's range that is no range — a <see cref="RowRange"/> left at its
+/// default, with no rows.</para>
+///
+/// <para>A <see cref="GridViewState"/>, a <see cref="ColumnViewState"/> or a
+/// <see cref="ColumnWidth"/> handed to <c>System.Text.Json</c> directly is refused with a
+/// <see cref="NotSupportedException"/> naming this entry point: written that way, an Auto width
+/// threw, a Fixed one read back as Auto, and an operand as a <see cref="JsonElement"/>.</para>
 /// </summary>
 public static class GridViewStateJson
 {
@@ -78,7 +89,8 @@ public static class GridViewStateJson
 
     /// <summary>A whole View State as JSON. Refuses an operand of a type the filter model does not
     /// admit, a non-finite <c>Double</c> or <c>Single</c>, and an Opaque Filter, with a
-    /// <see cref="NotSupportedException"/> naming the part.</summary>
+    /// <see cref="NotSupportedException"/> naming the part, and what reading would refuse with an
+    /// <see cref="ArgumentException"/> naming it (the class lists both).</summary>
     /// <param name="viewState">The View State to write.</param>
     public static string Write(GridViewState viewState)
     {
@@ -92,8 +104,8 @@ public static class GridViewStateJson
                 Width = WidthElement(column.Width),
                 Pinned = column.Pinned,
             })],
-            Sorts = WriteSorts(viewState.Sorts),
-            Filter = WriteFilter(viewState.Filter),
+            Sorts = WriteSorts(viewState.Sorts, nameof(viewState)),
+            Filter = WriteFilter(viewState.Filter, nameof(viewState)),
         };
         return JsonSerializer.Serialize(document, Context.ViewStateDocument);
     }
@@ -104,12 +116,19 @@ public static class GridViewStateJson
     public static string WriteQuery(GridQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
+        if (query.Range.Count < 1)
+        {
+            // Only a RowRange left at its default holds no rows; its constructor refuses one (ADR-0001).
+            throw new ArgumentException(FormattableString.Invariant(
+                $"A Query's range is a run of at least one row, and {query.Range.Count} rows at {query.Range.Start} is not: a RowRange left at its default (ADR-0001)."),
+                nameof(query));
+        }
         var document = new QueryDocument
         {
             Version = Version,
             Range = new RangeDocument { Start = query.Range.Start, Count = query.Range.Count },
-            Sorts = WriteSorts(query.Sorts),
-            Filter = WriteFilter(query.Filter),
+            Sorts = WriteSorts(query.Sorts ?? throw new ArgumentException("A Query's sorts are a list, empty for none.", nameof(query)), nameof(query)),
+            Filter = WriteFilter(query.Filter, nameof(query)),
         };
         return JsonSerializer.Serialize(document, Context.QueryDocument);
     }
@@ -122,13 +141,26 @@ public static class GridViewStateJson
         return parsed.RootElement.Clone();
     }
 
-    private static List<SortDocument> WriteSorts(IReadOnlyList<SortSpec> sorts)
-        => [.. sorts.Select(sort => new SortDocument { Column = sort.Column, Direction = Name(sort.Direction) })];
+    private static List<SortDocument> WriteSorts(IReadOnlyList<SortSpec> sorts, string parameter)
+    {
+        var written = new List<SortDocument>(sorts.Count);
+        for (var i = 0; i < sorts.Count; i++)
+        {
+            var where = $"Sort level {i + 1}";
+            var sort = sorts[i] ?? throw new ArgumentException($"{where} is null.", parameter);
+            if (string.IsNullOrEmpty(sort.Column))
+                throw new ArgumentException($"{where} names no column.", parameter);
+            written.Add(new SortDocument { Column = sort.Column, Direction = Name(sort.Direction, where, parameter) });
+        }
+        return written;
+    }
 
-    private static FilterDocument? WriteFilter(GridFilter? filter)
+    private static FilterDocument? WriteFilter(GridFilter? filter, string parameter)
     {
         if (filter is null)
             return null;
+        if (filter.Columns is null)
+            throw new ArgumentException("The filter's columns are a dictionary, empty for none.", parameter);
         if (filter.Opaque is not null)
         {
             throw new NotSupportedException(
@@ -138,15 +170,24 @@ public static class GridViewStateJson
         var columns = new Dictionary<string, FilterSpecDocument>(StringComparer.Ordinal);
         foreach (var (column, spec) in filter.Columns)
         {
+            if (string.IsNullOrEmpty(column))
+                throw new ArgumentException("The filter names no column.", parameter);
+            var on = $"the filter on '{column}'";
+            if (spec is null)
+                throw new ArgumentException($"{Capital(on)} is null.", parameter);
+            if (spec.Clauses is null)
+                throw new ArgumentException($"{Capital(on)} has no list of clauses; its clauses are a list, empty for none.", parameter);
             columns[column] = new FilterSpecDocument
             {
-                Combinator = Name(spec.Combinator),
+                Combinator = Name(spec.Combinator, on, parameter),
                 Clauses = [.. spec.Clauses.Select((clause, i) =>
                 {
-                    var where = $"the filter on '{column}', clause {i + 1}";
+                    var where = $"{on}, clause {i + 1}";
+                    if (clause is null)
+                        throw new ArgumentException($"{Capital(where)} is null.", parameter);
                     return new ClauseDocument
                     {
-                        Operator = Name(clause.Operator),
+                        Operator = Name(clause.Operator, where, parameter),
                         Value = clause.Value is null ? null : WriteOperand(clause.Value, where),
                         Values = clause.Values is null
                             ? null
@@ -267,15 +308,137 @@ public static class GridViewStateJson
             throw Refused($"{what} names its version as a number; this reader reads version {Version} (ADR-0207).");
         if (!version.TryGetInt32(out var number) || number != Version)
             throw Refused($"{what} of version {version.GetRawText()} cannot be read; this reader reads version {Version} (ADR-0207).");
+        CheckShape(root, typeInfo, "$", "the document", what);
         try
         {
             return root.Deserialize(typeInfo) ?? throw Refused($"{what} is a JSON object.");
         }
         catch (JsonException ex)
         {
-            throw new JsonException($"{what} cannot be read at {ex.Path ?? "$"}: {ex.Message}", ex.Path, ex.LineNumber, ex.BytePositionInLine, ex);
+            // The shape was held to the form above, so the serializer has nothing left to refuse; were
+            // it to, the refusal is still the form's, never the serializer's own words, which name the
+            // internal types the form is read into.
+            throw new JsonException($"{what} cannot be read at {ex.Path ?? "$"}: it is not in the form of version {Version} (ADR-0207).",
+                ex.Path, ex.LineNumber, ex.BytePositionInLine, ex);
         }
     }
+
+    // ---- The form's shape -----------------------------------------------------------------------
+    //
+    // Held on the parsed document before the serializer reads it, against the documents' own metadata
+    // (GridViewStateJsonContext), so that a member this version does not have, a member it requires
+    // that is missing or null, and a member of the wrong JSON type are refused in the form's words,
+    // naming the member and where it stands — never in the serializer's, which name the internal types
+    // the form is read into. A null inside a list or a dictionary is left to the reader, which refuses
+    // it by what it stands for, or takes it: a Blank among In's operands.
+
+    private static void CheckShape(JsonElement element, JsonTypeInfo type, string path, string label, string what)
+    {
+        switch (type.Kind)
+        {
+            case JsonTypeInfoKind.Object:
+                if (element.ValueKind != JsonValueKind.Object)
+                    throw Misshapen(what, path, $"{label} is an object, and here it is {Described(element)}");
+                foreach (var member in element.EnumerateObject())
+                {
+                    var property = PropertyNamed(type, member.Name)
+                        ?? throw Misshapen(what, path, $"it has no member '{member.Name}' in version {Version}");
+                    CheckMember(member.Value, property, $"{path}.{member.Name}", what);
+                }
+                foreach (var property in type.Properties)
+                {
+                    if (property.IsRequired && !element.TryGetProperty(property.Name, out _))
+                        throw Misshapen(what, path, $"its member '{property.Name}' is missing");
+                }
+                return;
+            case JsonTypeInfoKind.Enumerable:
+            {
+                if (element.ValueKind != JsonValueKind.Array)
+                    throw Misshapen(what, path, $"{label} is an array, and here it is {Described(element)}");
+                var item = TypeInfoOf(type.ElementType!);
+                var i = 0;
+                foreach (var value in element.EnumerateArray())
+                {
+                    if (value.ValueKind != JsonValueKind.Null)
+                        CheckShape(value, item, $"{path}[{i}]", $"item {i + 1} of {label}", what);
+                    i++;
+                }
+                return;
+            }
+            case JsonTypeInfoKind.Dictionary:
+            {
+                if (element.ValueKind != JsonValueKind.Object)
+                    throw Misshapen(what, path, $"{label} is an object, and here it is {Described(element)}");
+                var entry = TypeInfoOf(type.ElementType!);
+                foreach (var member in element.EnumerateObject())
+                {
+                    if (member.Value.ValueKind != JsonValueKind.Null)
+                        CheckShape(member.Value, entry, $"{path}['{member.Name}']", $"'{member.Name}' in {label}", what);
+                }
+                return;
+            }
+            default:
+                var fits = type.Type == typeof(string) ? element.ValueKind == JsonValueKind.String
+                    : type.Type == typeof(bool) ? element.ValueKind is JsonValueKind.True or JsonValueKind.False
+                    : type.Type == typeof(int) ? element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out _)
+                    : type.Type == typeof(JsonElement);
+                if (!fits)
+                    throw Misshapen(what, path, $"{label} is {Expected(type)}, and here it is {Described(element)}");
+                return;
+        }
+    }
+
+    private static void CheckMember(JsonElement value, JsonPropertyInfo property, string path, string what)
+    {
+        // A width is any JSON here: ReadWidth refuses what is neither form, naming its column.
+        if (property.PropertyType == typeof(JsonElement))
+            return;
+        var type = TypeInfoOf(property.PropertyType);
+        if (value.ValueKind == JsonValueKind.Null)
+        {
+            if (property.IsSetNullable)
+                return;
+            throw Misshapen(what, path, $"'{property.Name}' is null, and it is {Expected(type)}");
+        }
+        CheckShape(value, type, path, $"'{property.Name}'", what);
+    }
+
+    private static JsonPropertyInfo? PropertyNamed(JsonTypeInfo type, string name)
+    {
+        foreach (var property in type.Properties)
+        {
+            if (string.Equals(property.Name, name, StringComparison.Ordinal))
+                return property;
+        }
+        return null;
+    }
+
+    private static JsonTypeInfo TypeInfoOf(Type type)
+        => Context.GetTypeInfo(type) ?? throw new System.Diagnostics.UnreachableException($"The View State's form has no metadata for {type}.");
+
+    private static string Expected(JsonTypeInfo type) => type.Kind switch
+    {
+        JsonTypeInfoKind.Object or JsonTypeInfoKind.Dictionary => "an object",
+        JsonTypeInfoKind.Enumerable => "an array",
+        _ when type.Type == typeof(string) => "a string",
+        _ when type.Type == typeof(bool) => "true or false",
+        _ when type.Type == typeof(int) => "a whole number",
+        _ => "a value of this form",
+    };
+
+    private static string Described(JsonElement element) => element.ValueKind switch
+    {
+        JsonValueKind.Object => "an object",
+        JsonValueKind.Array => "an array",
+        JsonValueKind.String => "a string",
+        JsonValueKind.Number => $"the number {element.GetRawText()}",
+        JsonValueKind.True => "true",
+        JsonValueKind.False => "false",
+        _ => "null",
+    };
+
+    private static JsonException Misshapen(string what, string path, string text)
+        => new($"{what} cannot be read at {path}: {text} (ADR-0207).", path, null, null);
 
     private static string Known(string? column, HashSet<string>? known, string where)
     {
@@ -415,14 +578,14 @@ public static class GridViewStateJson
         (FilterOperator.In, "In"), (FilterOperator.IsBlank, "IsBlank"), (FilterOperator.IsNotBlank, "IsNotBlank"),
     ];
 
-    private static string Name(FilterOperator value)
+    private static string Name(FilterOperator value, string where, string parameter)
     {
         foreach (var (member, name) in Operators)
         {
             if (member == value)
                 return name;
         }
-        throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown FilterOperator.");
+        throw new ArgumentException($"{Capital(where)}: {value} is not a FilterOperator this version names.", parameter);
     }
 
     private static FilterOperator ParseOperator(string name, string where)
@@ -435,11 +598,11 @@ public static class GridViewStateJson
         throw Refused($"{Capital(where)}: '{name}' is not an operator this reader knows (ADR-0023, ADR-0207).");
     }
 
-    private static string Name(SortDirection direction) => direction switch
+    private static string Name(SortDirection direction, string where, string parameter) => direction switch
     {
         SortDirection.Ascending => "Ascending",
         SortDirection.Descending => "Descending",
-        _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, "Unknown SortDirection."),
+        _ => throw new ArgumentException($"{where}: {direction} is not a SortDirection this version names.", parameter),
     };
 
     private static SortDirection ParseDirection(string name, string where) => name switch
@@ -449,11 +612,11 @@ public static class GridViewStateJson
         _ => throw Refused($"{where}: '{name}' is not a sort direction; a direction is Ascending or Descending (ADR-0207)."),
     };
 
-    private static string Name(FilterCombinator combinator) => combinator switch
+    private static string Name(FilterCombinator combinator, string where, string parameter) => combinator switch
     {
         FilterCombinator.And => "And",
         FilterCombinator.Or => "Or",
-        _ => throw new ArgumentOutOfRangeException(nameof(combinator), combinator, "Unknown FilterCombinator."),
+        _ => throw new ArgumentException($"{Capital(where)}: {combinator} is not a FilterCombinator this version names.", parameter),
     };
 
     private static FilterCombinator ParseCombinator(string name, string where) => name switch

@@ -438,7 +438,13 @@ nobody had asked for. What that means when writing a test:
   `/features`, `/cells`, `/tones`, `/stripes`, `/marks`, `/appearance` and `/sheet` while their
   states are put on — is one ADR-0029 names, stable or internal, by name, by an internal prefix
   (`ex-popover-`, `ex-find-`) or as one of a Sheet's appearance families, transcribed from the ADR
-  (UX-4). A class nothing names fails it by name.
+  (UX-4). A class nothing names fails it by name. What the walk does not put on, it does not
+  check: Placeholder rows (`ex-placeholder`), the pager (`ex-pager`; no route sets `PageSize`), the
+  Size Tip (`ex-size-tip`; no resize is held on a Sheet's headings), the change mark (`ex-changed`),
+  and a loading grid (`ex-loading`), which it meets on the way into a page but does not require.
+  The Copied Range (`ex-copied-range`) is reached only in a browser with the `clipboardchange`
+  event — the installed Chrome and Edge from 143. In a browser without it, Playwright's own
+  Chromium among them, the walk says so in an annotation and goes on.
 - `virtualisation.spec.mjs` — the large-data criteria at the Definition of Done's own
   scenario, `/wide` at 10⁶ rows × 100 columns (§12): the far corner reached and painted
   (BIG-1), the same element count at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1 —

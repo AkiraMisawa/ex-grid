@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ExGrid.Columns;
 
 namespace ExGrid;
@@ -14,7 +15,13 @@ namespace ExGrid;
 /// held as Auto, never as the width it was painted at, so a restored Auto column measures itself
 /// again (ADR-0016). The pinned columns are the leading ones (ADR-0004), and the constructor refuses
 /// a pinned column after one that is not, a column named twice and a column with no name.</para>
+///
+/// <para>Two View States are equal when they hold the same view (<see cref="Equals(GridViewState?)"/>),
+/// so one read back equals the one written. Its JSON is <see cref="GridViewStateJson"/>'s alone:
+/// handed to <c>System.Text.Json</c> directly, it is refused with a
+/// <see cref="NotSupportedException"/> that names the entry point (ADR-0207).</para>
 /// </summary>
+[JsonConverter(typeof(OnlyThroughGridViewStateJson<GridViewState>))]
 public sealed record GridViewState
 {
     /// <summary>A View State of <paramref name="columns"/>, in display order, under
@@ -95,13 +102,102 @@ public sealed record GridViewState
     /// <summary>How many leading columns are pinned: what the grid's <c>PinnedColumnCount</c>
     /// takes.</summary>
     public int PinnedColumnCount { get; }
+
+    /// <summary>
+    /// Whether <paramref name="other"/> is the same View State, by what it holds rather than by which
+    /// lists hold it (ADR-0207, ST-4): the same columns in the same order, each with the same width
+    /// intent and pinning; the same sort levels in the same order; and the same filter — the same
+    /// columns, each with the same combinator and the same clauses in the same order, each with the
+    /// same operator and operands of the same type and value — and the same Opaque Filter. So a View
+    /// State read back from <see cref="GridViewStateJson"/> equals the one written, and a view the
+    /// user has not changed equals the one kept.
+    ///
+    /// <para>An operand is the same when it is of the same type and equal by that type's own
+    /// equality, as the filter compares it (ADR-0023): <c>1.50m</c> and <c>1.5m</c> are the same, and a
+    /// <c>decimal</c> and a <c>double</c> of one value are not.</para>
+    /// </summary>
+    /// <param name="other">The View State to compare with.</param>
+    public bool Equals(GridViewState? other)
+        => other is not null
+            && (ReferenceEquals(this, other)
+                || (Columns.SequenceEqual(other.Columns) && Sorts.SequenceEqual(other.Sorts) && SameFilter(Filter, other.Filter)));
+
+    /// <summary>A hash agreeing with <see cref="Equals(GridViewState?)"/>: of the columns, the sort
+    /// levels and the names of the filtered columns.</summary>
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        foreach (var column in Columns)
+            hash.Add(column);
+        foreach (var sort in Sorts)
+            hash.Add(sort);
+        if (Filter is { } filter)
+        {
+            // The filter's columns in any order: a dictionary orders nothing.
+            var names = 0;
+            foreach (var name in filter.Columns.Keys)
+                names ^= StringComparer.Ordinal.GetHashCode(name);
+            hash.Add(filter.Columns.Count);
+            hash.Add(names);
+        }
+        return hash.ToHashCode();
+    }
+
+    private static bool SameFilter(GridFilter? a, GridFilter? b)
+    {
+        if (a is null || b is null)
+            return a is null && b is null;
+        if (a.Columns.Count != b.Columns.Count || !SameOperand(a.Opaque, b.Opaque))
+            return false;
+        foreach (var (column, spec) in a.Columns)
+        {
+            if (!b.Columns.TryGetValue(column, out var other) || !SameSpec(spec, other))
+                return false;
+        }
+        return true;
+    }
+
+    private static bool SameSpec(FilterSpec? a, FilterSpec? b)
+    {
+        if (a is null || b is null)
+            return a is null && b is null;
+        return a.Combinator == b.Combinator && SameList(a.Clauses, b.Clauses, SameClause);
+    }
+
+    private static bool SameClause(FilterClause? a, FilterClause? b)
+    {
+        if (a is null || b is null)
+            return a is null && b is null;
+        return a.Operator == b.Operator && SameOperand(a.Value, b.Value) && SameList(a.Values, b.Values, SameOperand);
+    }
+
+    private static bool SameList<T>(IReadOnlyList<T>? a, IReadOnlyList<T>? b, Func<T, T, bool> same)
+    {
+        if (a is null || b is null)
+            return a is null && b is null;
+        if (a.Count != b.Count)
+            return false;
+        for (var i = 0; i < a.Count; i++)
+        {
+            if (!same(a[i], b[i]))
+                return false;
+        }
+        return true;
+    }
+
+    // The engine decides by an operand's type (ADR-0023): a decimal and a double of one value, or a
+    // DateTime and a DateOnly of one day, are different conditions.
+    private static bool SameOperand(object? a, object? b)
+        => a is null || b is null ? a is null && b is null : a.GetType() == b.GetType() && a.Equals(b);
 }
 
 /// <summary>
 /// One column of a <see cref="GridViewState"/>: which column, named as the grid names it, its width
 /// and whether it is pinned (ADR-0207). Its place in the View State's list is its place in the
-/// column order.
+/// column order. Its JSON is <see cref="GridViewStateJson"/>'s, as part of a View State: handed to
+/// <c>System.Text.Json</c> directly, it is refused, naming the entry point (ADR-0207).
 /// </summary>
+[JsonConverter(typeof(OnlyThroughGridViewStateJson<ColumnViewState>))]
 public sealed record ColumnViewState
 {
     /// <summary>The column named <paramref name="column"/> at <paramref name="width"/>.</summary>
