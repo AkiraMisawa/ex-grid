@@ -489,6 +489,12 @@ nobody had asked for. What that means when writing a test:
   It skips itself unless `EXGRID_MEASURE=live`, and on the Server host. Timed in the page's own
   clock as `measure-pivot.spec.mjs` times `/pivot-live`'s 1,000 changes: the page's status line
   says how long `Apply` took, and the probe keeps the task that wrote it and the frame after.
+- `measure-sheet.spec.mjs` — SH-19's circuit half, recorded and never gated: completion's
+  keystroke-to-list time on `/sheet` on the Server host with 150 ms injected, as the list opens
+  (`=S`) and as it narrows (`=SU`), and the same keys with no round trip for comparison. It skips
+  itself unless `EXGRID_MEASURE=sheet`, and on WebAssembly. Timed in the page's own clock, from
+  the keydown's `timeStamp` to the frame after the DOM change that shows the list for what was
+  typed. SH-19's recalculation half is CoreCLR's: `tests/ExSheet.Engine.Tests`' `Measurements`.
 - `mud.spec.mjs` — the Wrapper contract with a real Wrapper, `ExGrid.MudBlazor` on
   `/mud` (ADR-0030): painted geometry equals declared under the Wrapper's stylesheet
   and Roboto (UX-3), nothing under the Viewport animates (UX-6), the Focus outline

@@ -1,0 +1,498 @@
+{
+  "machine": {
+    "container": "cloud container, KVM guest: Intel(R) Xeon(R) Processor @ 2.10GHz, 4 vCPUs, 15 GiB, no GPU (/dev/dri absent)",
+    "os": "Ubuntu 24.04.5 LTS, Linux 6.18.44",
+    "dotnet": "SDK 10.0.203 (nix), runtime 10.0.7 (CoreCLR, workstation GC); tests built -c Release",
+    "browser": "Playwright's bundled Chromium 141.0.7390.37 (build 1194), headed under xvfb-run -a (1280x1024x24), software rasteriser (SwiftShader); Playwright 1.62.1, Node 24.14.1",
+    "serverHost": "samples/ExGrid.DemoHost.Server, Debug, started by dotnet run behind latency-proxy.mjs",
+    "shared": "other agents built and tested on the same container; each pass names its load average"
+  },
+  "coreclr": {
+    "SH-19's case (second pass, 22:18-22:19 UTC)": {
+      "loadAverageAtEachStart": [
+        "3.64 9.69 13.31",
+        "4.51 9.67 13.27",
+        "4.90 9.58 13.20"
+      ],
+      "measured": {
+        "SH-19's case: an edit to A1, which the whole running total reads": {
+          "medianMs": 87.2,
+          "bestMs": 74.0,
+          "worstMs": 103.4,
+          "runs": 7,
+          "note": "10,010 recalculated, 10,011 Values changed",
+          "collectionsByRun": "g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0"
+        },
+        "SH-19's case: an edit to A10000, which its own row and the totals read": {
+          "medianMs": 41.0,
+          "bestMs": 39.2,
+          "worstMs": 83.5,
+          "runs": 7,
+          "note": "11 recalculated, 12 Values changed",
+          "collectionsByRun": "g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0"
+        },
+        "SH-19's case: an edit to O5000, which only its column's total reads": {
+          "medianMs": 17.0,
+          "bestMs": 16.2,
+          "worstMs": 19.2,
+          "runs": 7,
+          "note": "1 recalculated, 2 Values changed",
+          "collectionsByRun": "g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0"
+        },
+        "SH-19's case: Sheet.Open, every Value computed": {
+          "medianMs": 620.7,
+          "bestMs": 604.5,
+          "worstMs": 812.9,
+          "runs": 7,
+          "collectionsByRun": "g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0"
+        },
+        "SH-19's case: a row inserted at row 2": {
+          "medianMs": 1798.4,
+          "bestMs": 1669.6,
+          "worstMs": 1952.0,
+          "runs": 7,
+          "note": "50,015 recalculated, 10,000 rows changed",
+          "collectionsByRun": "g0+7/g2+1 g0+7/g2+1 g0+6/g2+0 g0+7/g2+1 g0+7/g2+1 g0+6/g2+0 g0+6/g2+0"
+        },
+        "SH-19's case: that insertion undone": {
+          "medianMs": 2479.4,
+          "bestMs": 2229.4,
+          "worstMs": 2741.6,
+          "runs": 7,
+          "collectionsByRun": "g0+8/g2+1 g0+9/g2+2 g0+8/g2+1 g0+8/g2+1 g0+9/g2+2 g0+9/g2+2 g0+9/g2+2"
+        }
+      }
+    },
+    "first pass, all four measurements (21:51-22:08 UTC)": {
+      "loadAverageAtEachStart": [
+        "20.81 13.95 9.66",
+        "22.16 14.59 9.94",
+        "8.92 13.97 14.51",
+        "10.52 14.13 14.55"
+      ],
+      "measured": {
+        "SH-19's case: an edit to A1, which the whole running total reads": {
+          "medianMs": 139.9,
+          "bestMs": 70.7,
+          "worstMs": 233.5,
+          "runs": 7,
+          "note": "10,010 recalculated, 10,011 Values changed",
+          "collectionsByRun": "g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0"
+        },
+        "SH-19's case: an edit to A10000, which its own row and the totals read": {
+          "medianMs": 78.9,
+          "bestMs": 46.5,
+          "worstMs": 133.4,
+          "runs": 7,
+          "note": "11 recalculated, 12 Values changed",
+          "collectionsByRun": "g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0"
+        },
+        "SH-19's case: an edit to O5000, which only its column's total reads": {
+          "medianMs": 29.8,
+          "bestMs": 22.2,
+          "worstMs": 130.9,
+          "runs": 7,
+          "note": "1 recalculated, 2 Values changed",
+          "collectionsByRun": "g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0"
+        },
+        "every row's share of a whole-column SUM: Sheet.Open, every Value computed": {
+          "medianMs": 84083.0,
+          "bestMs": 79923.3,
+          "worstMs": 110388.9,
+          "runs": 3,
+          "collectionsByRun": "g0+72/g2+12 g0+60/g2+12 g0+63/g2+12"
+        },
+        "every row's share of a whole-column SUM: an edit to A1, which the whole running total reads": {
+          "medianMs": 46735.6,
+          "bestMs": 44706.3,
+          "worstMs": 52416.0,
+          "runs": 3,
+          "note": "20,009 recalculated, 20,010 Values changed",
+          "collectionsByRun": "g0+32/g2+14 g0+36/g2+18 g0+36/g2+18"
+        },
+        "every row's share of a whole-column SUM: an edit to A10000, which its own row and the totals read": {
+          "medianMs": 46153.3,
+          "bestMs": 43236.3,
+          "worstMs": 47895.0,
+          "runs": 3,
+          "note": "10,010 recalculated, 10,011 Values changed",
+          "collectionsByRun": "g0+36/g2+18 g0+36/g2+18 g0+36/g2+18"
+        },
+        "every row's share of a whole-column SUM: an edit to O5000, which only its column's total reads": {
+          "medianMs": 51.4,
+          "bestMs": 41.2,
+          "worstMs": 76.1,
+          "runs": 3,
+          "note": "1 recalculated, 2 Values changed",
+          "collectionsByRun": "g0+0/g2+0 g0+0/g2+0 g0+0/g2+0"
+        },
+        "every row's share of a whole-column SUM: a row inserted at row 2": {
+          "medianMs": 44911.4,
+          "bestMs": 44074.5,
+          "worstMs": 54325.4,
+          "runs": 3,
+          "note": "50,016 recalculated, 10,000 rows changed",
+          "collectionsByRun": "g0+76/g2+12 g0+73/g2+11 g0+76/g2+12 g0+78/g2+8 g0+79/g2+13 g0+63/g2+9"
+        },
+        "every row's share of a whole-column SUM: that insertion undone": {
+          "medianMs": 49759.8,
+          "bestMs": 48936.3,
+          "worstMs": 54482.5,
+          "runs": 3,
+          "collectionsByRun": ""
+        },
+        "SH-19's case: Sheet.Open, every Value computed": {
+          "medianMs": 648.6,
+          "bestMs": 598.3,
+          "worstMs": 857.1,
+          "runs": 7,
+          "collectionsByRun": "g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0"
+        },
+        "SH-19's case: a row inserted at row 2": {
+          "medianMs": 1780.9,
+          "bestMs": 1621.4,
+          "worstMs": 1952.9,
+          "runs": 7,
+          "note": "50,015 recalculated, 10,000 rows changed",
+          "collectionsByRun": "g0+6/g2+0 g0+8/g2+1 g0+7/g2+1 g0+9/g2+2 g0+6/g2+0 g0+9/g2+2 g0+6/g2+0 g0+9/g2+2 g0+6/g2+0 g0+9/g2+2 g0+6/g2+0 g0+9/g2+2 g0+6/g2+0 g0+9/g2+2"
+        },
+        "SH-19's case: that insertion undone": {
+          "medianMs": 2618.4,
+          "bestMs": 2469.5,
+          "worstMs": 2858.1,
+          "runs": 7,
+          "collectionsByRun": ""
+        }
+      }
+    },
+    "variant, every row's share of a whole-column SUM (third pass)": {
+      "loadAverageAtEachStart": [
+        "4.07 7.57 10.48"
+      ],
+      "measured": {
+        "every row's share of a whole-column SUM: Sheet.Open, every Value computed": {
+          "medianMs": 66300.2,
+          "bestMs": 65944.8,
+          "worstMs": 70883.9,
+          "runs": 3,
+          "collectionsByRun": "g0+70/g2+13 g0+64/g2+12 g0+67/g2+11"
+        },
+        "every row's share of a whole-column SUM: an edit to A1, which the whole running total reads": {
+          "medianMs": 47957.6,
+          "bestMs": 46580.4,
+          "worstMs": 50351.8,
+          "runs": 3,
+          "note": "20,009 recalculated, 20,010 Values changed",
+          "collectionsByRun": "g0+33/g2+14 g0+36/g2+18 g0+36/g2+18"
+        },
+        "every row's share of a whole-column SUM: an edit to A10000, which its own row and the totals read": {
+          "medianMs": 44832.1,
+          "bestMs": 44466.4,
+          "worstMs": 45043.2,
+          "runs": 3,
+          "note": "10,010 recalculated, 10,011 Values changed",
+          "collectionsByRun": "g0+36/g2+18 g0+36/g2+18 g0+36/g2+18"
+        },
+        "every row's share of a whole-column SUM: an edit to O5000, which only its column's total reads": {
+          "medianMs": 26.0,
+          "bestMs": 21.8,
+          "worstMs": 28.0,
+          "runs": 3,
+          "note": "1 recalculated, 2 Values changed",
+          "collectionsByRun": "g0+0/g2+0 g0+0/g2+0 g0+0/g2+0"
+        },
+        "every row's share of a whole-column SUM: a row inserted at row 2": {
+          "medianMs": 47166.1,
+          "bestMs": 45777.9,
+          "worstMs": 48845.1,
+          "runs": 3,
+          "note": "50,016 recalculated, 10,000 rows changed",
+          "collectionsByRun": "g0+65/g2+12 g0+70/g2+12 g0+65/g2+12"
+        },
+        "every row's share of a whole-column SUM: that insertion undone": {
+          "medianMs": 49437.0,
+          "bestMs": 49422.0,
+          "worstMs": 50297.6,
+          "runs": 3,
+          "collectionsByRun": "g0+65/g2+9 g0+63/g2+9 g0+63/g2+9"
+        }
+      }
+    }
+  },
+  "chromium-local": {
+    "chrome": {
+      "SH-19 completion, the list opens (=S), Server host, 0 ms round trip": {
+        "runs": 12,
+        "keyToListMs": {
+          "median": 8.6,
+          "min": 7.1,
+          "max": 14.9
+        },
+        "keyToFrameMs": {
+          "median": 20.5,
+          "min": 8,
+          "max": 31.9
+        },
+        "keyToFrameMsByRun": [
+          31.9,
+          21,
+          19.4,
+          22,
+          16.4,
+          20.5,
+          16.6,
+          21.8,
+          21.4,
+          20.5,
+          8,
+          16.3
+        ],
+        "candidates": 20,
+        "first": "SEARCH"
+      },
+      "SH-19 completion, the list narrows (=SU), Server host, 0 ms round trip": {
+        "runs": 12,
+        "keyToListMs": {
+          "median": 8.2,
+          "min": 6,
+          "max": 18.9
+        },
+        "keyToFrameMs": {
+          "median": 19.8,
+          "min": 15,
+          "max": 33.2
+        },
+        "keyToFrameMsByRun": [
+          20,
+          33.2,
+          21.1,
+          16.6,
+          16.2,
+          15,
+          18.8,
+          22.2,
+          19.8,
+          24.1,
+          17.6,
+          17.8
+        ],
+        "candidates": 5,
+        "first": "SUBSTITUTE"
+      },
+      "SH-19 completion, the list opens (=S), Server host, 150 ms round trip": {
+        "runs": 12,
+        "keyToListMs": {
+          "median": 159,
+          "min": 157.5,
+          "max": 161.9
+        },
+        "keyToFrameMs": {
+          "median": 159.9,
+          "min": 158.5,
+          "max": 163
+        },
+        "keyToFrameMsByRun": [
+          161,
+          158.5,
+          159.8,
+          163,
+          161.5,
+          159.1,
+          160.8,
+          159.6,
+          162.7,
+          159.9,
+          159.5,
+          159.8
+        ],
+        "candidates": 20,
+        "first": "SEARCH"
+      },
+      "SH-19 completion, the list narrows (=SU), Server host, 150 ms round trip": {
+        "runs": 12,
+        "keyToListMs": {
+          "median": 199.7,
+          "min": 156.1,
+          "max": 204
+        },
+        "keyToFrameMs": {
+          "median": 200.4,
+          "min": 156.9,
+          "max": 204.8
+        },
+        "keyToFrameMsByRun": [
+          204.8,
+          198.5,
+          200.4,
+          204,
+          197.7,
+          200.2,
+          156.9,
+          201.4,
+          200.6,
+          197.8,
+          201.2,
+          199.6
+        ],
+        "candidates": 5,
+        "first": "SUBSTITUTE"
+      }
+    },
+    "SH-19 completion, the final pass's three repetitions pooled": {
+      "SH-19 completion, the list opens (=S), Server host, 0 ms round trip": {
+        "runs": 36,
+        "keyToFrameMs": {
+          "median": 22.8,
+          "min": 8,
+          "max": 49.8
+        },
+        "atOrAbove190Ms": 0
+      },
+      "SH-19 completion, the list narrows (=SU), Server host, 0 ms round trip": {
+        "runs": 36,
+        "keyToFrameMs": {
+          "median": 20,
+          "min": 11,
+          "max": 44.7
+        },
+        "atOrAbove190Ms": 0
+      },
+      "SH-19 completion, the list opens (=S), Server host, 150 ms round trip": {
+        "runs": 36,
+        "keyToFrameMs": {
+          "median": 160.1,
+          "min": 157.7,
+          "max": 190.3
+        },
+        "atOrAbove190Ms": 1
+      },
+      "SH-19 completion, the list narrows (=SU), Server host, 150 ms round trip": {
+        "runs": 36,
+        "keyToFrameMs": {
+          "median": 199.1,
+          "min": 156.9,
+          "max": 206.6
+        },
+        "atOrAbove190Ms": 29
+      }
+    },
+    "experiment, not committed: the latency proxy with Nagle off, one repetition": {
+      "SH-19 completion, the list opens (=S), Server host, 0 ms round trip": {
+        "runs": 12,
+        "keyToListMs": {
+          "median": 28.8,
+          "min": 12.1,
+          "max": 146.9
+        },
+        "keyToFrameMs": {
+          "median": 33.6,
+          "min": 15.5,
+          "max": 148.2
+        },
+        "keyToFrameMsByRun": [
+          148.2,
+          41.6,
+          43,
+          33.6,
+          37.9,
+          28.5,
+          15.5,
+          26.8,
+          21.3,
+          35.7,
+          29.9,
+          23.2
+        ],
+        "candidates": 20,
+        "first": "SEARCH"
+      },
+      "SH-19 completion, the list narrows (=SU), Server host, 0 ms round trip": {
+        "runs": 12,
+        "keyToListMs": {
+          "median": 23.5,
+          "min": 6.7,
+          "max": 43.4
+        },
+        "keyToFrameMs": {
+          "median": 25.6,
+          "min": 16.7,
+          "max": 48.5
+        },
+        "keyToFrameMsByRun": [
+          34.7,
+          16.7,
+          29,
+          48.5,
+          30.9,
+          33,
+          25.6,
+          23.7,
+          16.7,
+          23.1,
+          20.2,
+          20.8
+        ],
+        "candidates": 5,
+        "first": "SUBSTITUTE"
+      },
+      "SH-19 completion, the list opens (=S), Server host, 150 ms round trip": {
+        "runs": 12,
+        "keyToListMs": {
+          "median": 162.2,
+          "min": 158,
+          "max": 249.6
+        },
+        "keyToFrameMs": {
+          "median": 163.3,
+          "min": 159.6,
+          "max": 251.2
+        },
+        "keyToFrameMsByRun": [
+          168.5,
+          163.2,
+          163.3,
+          159.6,
+          162.5,
+          162.2,
+          159.9,
+          185.4,
+          251.2,
+          167.7,
+          160.4,
+          175.6
+        ],
+        "candidates": 20,
+        "first": "SEARCH"
+      },
+      "SH-19 completion, the list narrows (=SU), Server host, 150 ms round trip": {
+        "runs": 12,
+        "keyToListMs": {
+          "median": 158,
+          "min": 156,
+          "max": 184.8
+        },
+        "keyToFrameMs": {
+          "median": 159,
+          "min": 157.3,
+          "max": 186.7
+        },
+        "keyToFrameMsByRun": [
+          157.4,
+          161.7,
+          177.2,
+          157.7,
+          158.4,
+          159,
+          159.7,
+          157.5,
+          158.7,
+          159.8,
+          186.7,
+          157.3
+        ],
+        "candidates": 5,
+        "first": "SUBSTITUTE"
+      }
+    }
+  }
+}
