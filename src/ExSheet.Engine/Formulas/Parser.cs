@@ -44,6 +44,9 @@ internal sealed partial class Parser
         var parser = new Parser(formula, Lexer.Tokenize(formula, 1));
         tokens = parser._tokens;
         if (parser.Peek.Kind == TokenKind.End) throw new FormulaSyntaxException(formula, 1, "the Formula is empty.");
+        // Outside a LET, a name of another script is refused where it stands, before anything after
+        // it, as the lexer refused it before LET was admitted (ADR-0181).
+        if (Lexer.WideNameOutsideLet(parser._tokens) is { } wide) throw parser.NotSyntax(wide.Position + Lexer.FirstWide(wide.Text));
         var node = parser.ParseComparison();
         if (parser.Peek.Kind != TokenKind.End) throw parser.Unexpected();
         parser.RefuseUnboundWideNames();
@@ -77,7 +80,10 @@ internal sealed partial class Parser
     private FormulaSyntaxException Unexpected() =>
         Peek.Kind == TokenKind.End
             ? new FormulaSyntaxException(_formula, Peek.Position, "the Formula ends too early.")
-            : new FormulaSyntaxException(_formula, Peek.Position, $"'{Peek.Text}' is not expected here.");
+            // A name of another script that no LET around it binds is refused as the lexer refused one (ADR-0181).
+            : Peek.Kind == TokenKind.Name && Lexer.FirstWide(Peek.Text) is var wide and >= 0 && Resolve(Peek.Text) is null
+                ? NotSyntax(Peek.Position + wide)
+                : new FormulaSyntaxException(_formula, Peek.Position, $"'{Peek.Text}' is not expected here.");
 
     private Node ParseComparison()
     {

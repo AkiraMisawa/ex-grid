@@ -62,3 +62,12 @@ the orchestrator.
 
 2026-10-11, with ticket 15: LET-017 and LET-018 are in the corpus, and `RandomTests`'
 `ADR0180_a_let_binding_is_one_draw` is the one-draw test both tickets left to whichever landed second.
+
+2026-10-11, after review: the names refused as a function's are now Excel's own, declared or not
+(`ExcelFunctionNames`, Microsoft's alphabetical list), as ADR-0181 says "the name of a function" for
+what Excel may refuse. So `IRR`, `RATE`, `N` and `T` are refused too, and declaring a function later
+cannot stop a stored `LET` from opening; a test refuses every declared and catalogued name. LET-111
+(`IRR`) and LET-112 (`N`) join the `uncertain` cases for the next Windows run. A refusal outside a
+`LET` now matches the one before `LET` was admitted in every case the review found (`=A1é`, `=1é`,
+`=é!A1`): the lexer and the parser refuse a name of another script at its first such character, before
+anything after it, when the Formula has no `LET`.

@@ -72,3 +72,11 @@ with its MudBlazor twin: the same draws after a reload, new ones after an edit. 
 Windows run asks Excel what an undo does to a draw. Not counted, as ADR-0180's list does not name it: a
 rename, though it recalculates the volatile Formulas, since `INDIRECT`'s text can name the Sheet. ADR-0047's
 dated addition naming the functions is left to the orchestrator.
+
+2026-10-11, after review: a prerender chooses no seed. Without the Consumer's `Seed`, the instance a
+circuit or the browser runs after a prerender chose another, so every draw on the page changed when it
+became interactive, with nothing done. The prerender's draws now wait with `#GETTING_DATA`, as `TODAY`
+waits for the browser's zone, and a `Seed` given draws there as well (`SeedWiringTests`). The Formulas
+page and both READMEs say so, and no longer call an undo's new draw a difference from Excel: what
+Excel's undo does has not been observed. Still not counted as a change, and left for a decision: a
+rename, and a Linked Table's declaration.

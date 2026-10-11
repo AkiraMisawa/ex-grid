@@ -16,7 +16,7 @@ namespace ExSheet.Engine.Tests;
 public class SubtotalTests
 {
     /// <summary>Names a public member of the engine would carry if a row could be hidden, filtered out or folded away.</summary>
-    private static readonly Regex Hiding = new("hid(e|den|ing)|rowheight|filter(ed|s)?row|autofilter|collapse|outline(level|row)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly Regex Hiding = new("hid(e|den|ing)|rowheight|visib|filter(ed|s)?row|autofilter|collapse|outline(level|row)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static string RowsCanBeHidden(string what) =>
         $"A row can now be hidden: {what}. SUBTOTAL's 101 to 111 and AGGREGATE's options 1, 3, 5 and 7 were admitted only while no row could be, "

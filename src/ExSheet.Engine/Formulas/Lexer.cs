@@ -100,6 +100,39 @@ internal static partial class Lexer
     public static List<Token> Tokenize(string formula, int start)
     {
         var tokens = new List<Token>();
+        try
+        {
+            Read(formula, start, tokens);
+            return tokens;
+        }
+        catch (FormulaSyntaxException) when (WideNameOutsideLet(tokens) is { } wide)
+        {
+            // Before LET was admitted (ADR-0181) the lexer refused a name of another script where it
+            // stood, before anything after it; outside a LET it still does.
+            var at = wide.Position + FirstWide(wide.Text);
+            throw new FormulaSyntaxException(formula, at, $"'{formula[at]}' is not part of the formula syntax ExSheet reads.");
+        }
+    }
+
+    /// <summary>
+    /// The first name of another script than ASCII among <paramref name="tokens"/>, when none of them
+    /// is <c>LET</c>: such a name is a <c>LET</c> name or nothing (ADR-0181). <see langword="null"/>
+    /// otherwise.
+    /// </summary>
+    public static Token? WideNameOutsideLet(IReadOnlyList<Token> tokens)
+    {
+        Token? wide = null;
+        foreach (var token in tokens)
+        {
+            if (token.Kind != TokenKind.Name) continue;
+            if (token.Text.Equals("LET", StringComparison.OrdinalIgnoreCase)) return null;
+            if (wide is null && FirstWide(token.Text) >= 0) wide = token;
+        }
+        return wide;
+    }
+
+    private static void Read(string formula, int start, List<Token> tokens)
+    {
         var i = start;
         while (true)
         {
@@ -116,7 +149,7 @@ internal static partial class Lexer
             if (i >= formula.Length)
             {
                 tokens.Add(new Token(TokenKind.End, i, "", afterSpace));
-                return tokens;
+                return;
             }
 
             var c = formula[i];

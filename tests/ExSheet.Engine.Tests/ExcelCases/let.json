@@ -1231,6 +1231,32 @@
         "value2": 3
       },
       "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-111",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the name of one of Excel's functions that the engine does not declare, as a LET name (ADR-0181)",
+      "cells": {
+        "A10": "=LET(IRR,1,IRR)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-112",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a one-letter name that is one of Excel's functions, as a LET name, where c and r alone are names (ADR-0181)",
+      "cells": {
+        "A10": "=LET(N,1,N)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
     }
   ]
 }

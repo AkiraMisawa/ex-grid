@@ -45,3 +45,11 @@ whole numbers, arguments that are no reference where one is wanted, and `AGGREGA
 are `#VALUE!`. Completion lists `SUBTOTAL`'s 22 numbers, and `AGGREGATE`'s supported numbers and eight
 options, with Microsoft's documented texts; the Windows run should confirm Excel's popup texts. ADR-0047's
 dated addition naming the functions is left to the orchestrator.
+
+2026-10-11, after review: what a computed Reference reads is tainted as a Reference the text names
+is, so a `SUBTOTAL` or an `AGGREGATE` over `INDIRECT` or `OFFSET` that reaches a cycle, its own cell or
+a waiting cell is `#CIRC!` or `#GETTING_DATA`, where it passed over the Error Value or the nested call
+before (`IndirectTests`). AGGREGATE-025 is `documented`, with Excel's 6 as `excelExpect` (Microsoft
+documents options 4 to 7 as ignoring nothing) beside the engine's `#VALUE!`. AGGREGATE-007, 008 and 011
+are `uncertain`, since Microsoft does not document which Error Value comes back, and the other
+`documented` values worked from Microsoft's definitions say so.

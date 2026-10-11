@@ -108,8 +108,11 @@ and the clock, a format or a width draws nothing.
 ```
 
 The count of changes starts from 0 when a Sheet Document is opened, and neither the seed nor a draw
-is part of the document. Without the component, the engine is given both as data:
-`sheet.SetSeed(20261011, changes: 3)` shows what the Sheet showed after its third change.
+is part of the document. A prerendered page chooses no seed: without `Seed`, its drawing cells show
+`#GETTING_DATA` until the page is interactive, as `TODAY()` waits for the browser's time zone, so
+the draws a reader sees never change with nothing done. Without the component, the engine is given
+both as data: `sheet.SetSeed(20261011, changes: 3)` shows what the Sheet showed after its third
+change.
 
 ## Linked Tables
 

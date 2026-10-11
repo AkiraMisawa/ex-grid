@@ -38,3 +38,10 @@ before (ADR-0124 says every change); and a structural edit left the volatile and
 cells' old addresses. `IndirectTests` pins both, and the corpus holds Microsoft's example as `documented`
 and the open forms as `uncertain`. ADR-0047's dated addition naming the function is left to the
 orchestrator.
+
+2026-10-11, after review: a Formula that reaches itself through `INDIRECT` or `OFFSET` is `#CIRC!`
+whatever reads it, and one that reaches a waiting cell waits. The recalculation now records what each
+Formula's reads met, a cell still being computed or one in a cycle, or a waiting one, and taints the
+Formula as `Taint` taints a Reference its text names; before, `COUNT`, `COUNTA`, `SUBTOTAL` and
+`AGGREGATE`'s error-skipping options answered a number. `IndirectTests` holds each form the review
+found.

@@ -111,7 +111,8 @@ internal sealed partial class Parser
     /// starts with a letter of any script or <c>_</c>, goes on with letters, ASCII digits and <c>_</c>,
     /// and is at most 249 characters. A name that could mean something else is refused until a
     /// Windows run shows that Excel's keyboard accepts it: an R1C1 shape (<c>R1C1</c>, <c>R2</c>,
-    /// <c>C3</c>, <c>RC</c>), and the name of a declared function. <c>c</c> and <c>r</c> alone are names,
+    /// <c>C3</c>, <c>RC</c>), and the name of one of Excel's functions, declared or not
+    /// (<see cref="ExcelFunctionNames"/>). <c>c</c> and <c>r</c> alone are names,
     /// as observed (LET-KEYS-002, 003). A name that reads as an A1 Reference is read as one, and
     /// refused before it reaches here.
     /// </summary>
@@ -123,7 +124,7 @@ internal sealed partial class Parser
             return $"'{name}' cannot be a LET name: a name begins with a letter or _, and holds only letters, digits and _.";
         }
         if (RowColumnShape().IsMatch(name)) return $"'{name}' reads as an R1C1 Reference, and cannot be a LET name.";
-        if (FunctionLibrary.Find(name) is not null) return $"'{name}' is the name of a function, and cannot be a LET name.";
+        if (ExcelFunctionNames.Contains(name)) return $"'{name}' is the name of a function, and cannot be a LET name.";
         return null;
     }
 

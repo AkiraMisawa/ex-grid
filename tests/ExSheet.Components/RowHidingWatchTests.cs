@@ -12,8 +12,15 @@ namespace ExSheet.Components.Tests;
 /// </summary>
 public class RowHidingWatchTests
 {
-    /// <summary>Names a public member would carry if a row could be hidden, filtered out or folded away.</summary>
-    private static readonly Regex Hiding = new("hiddenrow|hiderow|rowhidden|rowshidden|rowheights|filter(ed|s)?row|autofilter|collapse|outline(level|row)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    /// <summary>
+    /// Names a public member would carry if a row could be hidden, filtered out or folded away: a row's
+    /// own height (<c>SetRowHeight(row, 0)</c>), its visibility, an unhide. Narrower than the engine's,
+    /// since the component's own <c>RowHeight</c> is every row's and its <c>Hide…</c> parameters hide
+    /// parts of the grid's Chrome.
+    /// </summary>
+    private static readonly Regex Hiding = new(
+        "hiddenrow|hiderow|rowhidden|rowshidden|rowheights|setrowheight|rowheight(of|at|for)|rowvisib|visiblerow|rowsvisib|unhide|filter(ed|s)?row|autofilter|collapse|outline(level|row)",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     [Fact] // ADR-0047 (2026-10-10), SH-68: fails on the day the Sheet's component can hide a row, and says to revisit SUBTOTAL and AGGREGATE
     public void ADR0047_the_sheet_cannot_hide_a_row()

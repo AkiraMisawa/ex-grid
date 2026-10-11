@@ -253,7 +253,8 @@ answer:
   every Formula that draws is `#GETTING_DATA`. The engine never chooses a seed of its own:
   `Sheet.SetSeed(seed)` gives one, and `SetSeed(seed, changes)` the count as well, so a Sheet opened
   from a document shows another Sheet's draws (SH-17). Neither is part of a Sheet Document. Unlike
-  Excel, nothing draws without a change, there is no manual recalculation, and an undo draws again.
+  Excel, nothing draws without a change, and there is no manual recalculation. An undo draws again;
+  what Excel's undo does to a draw has not been observed yet.
   `RANDBETWEEN` refuses a fractional bound and a bound past 2^53 in magnitude with `#VALUE!`, and
   otherwise answers as Excel was observed to: a bottom above the top is `#NUM!`, a boolean and text
   that is not a number are `#VALUE!`, a numeric string is its number and a blank is 0.
@@ -264,8 +265,9 @@ answer:
   a `LET` binds at most 126. Refused on entry, as a Formula that cannot be read is: an even number
   of arguments, a missing calculation or value, a name bound twice, and a name that could mean
   something else until a Windows run shows that Excel's keyboard accepts it — one that reads as a
-  Reference in A1 or R1C1 shape (`A1`, `R1C1`, `R2`, `C3`; `c` and `r` alone are names), a declared
-  function's name, `TRUE` and `FALSE`. Each binding is computed at most once, when first read, so an
+  Reference in A1 or R1C1 shape (`A1`, `R1C1`, `R2`, `C3`; `c` and `r` alone are names), the name
+  of any of Excel's functions, declared by the engine or not (`SUM`, `IRR`, `RATE`, `N`), `TRUE` and
+  `FALSE`. Each binding is computed at most once, when first read, so an
   unused binding's Error Value never reaches the result; but a `LET` depends on everything its text
   names, so an unused binding over a cycle is `#CIRC!`, and one over a waiting Linked Table waits.
   `Table[Column]` always reads the Linked Table, whatever is bound. Two bound names with a space
@@ -276,7 +278,10 @@ answer:
   never it, so `INDIRECT("B5")` names B5 whatever moved. Text in a form Excel reads but no Windows
   run has observed is `#VALUE!` — R1C1 style (`a1` FALSE), a structured reference (`Positions[PV]`)
   and a Spill Range (`A1#`) — and text that names no place is `#REF!`, as in Excel, another Sheet's
-  name included.
+  name included. What a computed Reference (`INDIRECT`'s or `OFFSET`'s) reads taints the Formula as a
+  Reference its text names does: one that reaches a cycle, or its own cell, is `#CIRC!`, and one that
+  reaches a waiting cell waits, whatever the function reading it does with an Error Value — `COUNT`,
+  `COUNTA`, `SUBTOTAL` and `AGGREGATE`'s options that pass over errors included.
 - **`SUBTOTAL` and `AGGREGATE` while no row can be hidden** (ADR-0047, 2026-10-10). A Sheet cannot hide
   a row yet, so `SUBTOTAL`'s 101 to 111 give what 1 to 11 give, and `AGGREGATE`'s options 1, 3, 5
   and 7 what 0, 2, 4 and 6 give, as Excel's do over such a sheet; a test fails on the day a row can

@@ -1,7 +1,9 @@
 using System.Globalization;
 using Bunit;
 using ExSheet.Components.Tests.Support;
+using ExGrid;
 using ExSheet.Engine;
+using Microsoft.AspNetCore.Components;
 using Xunit;
 
 namespace ExSheet.Components.Tests;
@@ -95,6 +97,24 @@ public class SeedWiringTests : SheetTestContext
         cut.Render(ps => ps.Add(s => s.Document, Draws()));
 
         Assert.Equal(opened, Shown(cut));
+    }
+
+    [Fact] // ADR-0180, ADR-0122: a prerender chooses no seed, so its draws wait rather than show numbers the interactive page would replace with nothing done; a Seed given draws there too
+    public void ADR0180_a_prerender_without_a_seed_waits_and_one_with_a_seed_draws()
+    {
+        SetRendererInfo(new RendererInfo("Static", isInteractive: false));
+        IRenderedComponent<Components.ExSheet> Prerender(ulong? seed) => Render<Components.ExSheet>(ps => ps
+            .Add(s => s.ViewportHeight, (ViewportSize)400)
+            .Add(s => s.ViewportWidth, (ViewportSize)700)
+            .Add(s => s.Culture, CultureInfo.GetCultureInfo("en-US"))
+            .Add(s => s.Document, Draws())
+            .Add(s => s.Seed, seed));
+
+        var unseeded = Prerender(null);
+        var seeded = Prerender(Seed);
+
+        Assert.All(Drawn, a => Assert.Equal("#GETTING_DATA", CellText(unseeded, a)));
+        Assert.Equal(Alone(Draws(), Seed, 0), Shown(seeded));
     }
 
     [Fact] // ADR-0180, SH-66: without a Seed, ExSheet chooses one, so the draws show at once; a new Seed draws again; the document records neither

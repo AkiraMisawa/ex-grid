@@ -37,7 +37,7 @@
     {
       "id": "SUBTOTAL-005",
       "source": "documented",
-      "description": "1 is AVERAGE: a range's numbers only, text, booleans and blanks passed over",
+      "description": "Worked from Microsoft's definitions: 1 is AVERAGE: a range's numbers only, text, booleans and blanks passed over",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(1,A1:A7)"},
       "check": "ZZ1000",
@@ -46,7 +46,7 @@
     {
       "id": "SUBTOTAL-006",
       "source": "documented",
-      "description": "2 is COUNT: a range's numbers only",
+      "description": "Worked from Microsoft's definitions: 2 is COUNT: a range's numbers only",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(2,A1:A7)"},
       "check": "ZZ1000",
@@ -55,7 +55,7 @@
     {
       "id": "SUBTOTAL-007",
       "source": "documented",
-      "description": "3 is COUNTA: every cell that is not blank",
+      "description": "Worked from Microsoft's definitions: 3 is COUNTA: every cell that is not blank",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(3,A1:A7)"},
       "check": "ZZ1000",
@@ -64,7 +64,7 @@
     {
       "id": "SUBTOTAL-008",
       "source": "documented",
-      "description": "4 is MAX",
+      "description": "Worked from Microsoft's definitions: 4 is MAX",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(4,A1:A7)"},
       "check": "ZZ1000",
@@ -73,7 +73,7 @@
     {
       "id": "SUBTOTAL-009",
       "source": "documented",
-      "description": "5 is MIN",
+      "description": "Worked from Microsoft's definitions: 5 is MIN",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(5,A1:A7)"},
       "check": "ZZ1000",
@@ -82,7 +82,7 @@
     {
       "id": "SUBTOTAL-010",
       "source": "documented",
-      "description": "6 is PRODUCT",
+      "description": "Worked from Microsoft's definitions: 6 is PRODUCT",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(6,A1:A7)"},
       "check": "ZZ1000",
@@ -91,7 +91,7 @@
     {
       "id": "SUBTOTAL-011",
       "source": "documented",
-      "description": "7 is STDEV, the sample's",
+      "description": "Worked from Microsoft's definitions: 7 is STDEV, the sample's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(7,A1:A7)"},
       "check": "ZZ1000",
@@ -100,7 +100,7 @@
     {
       "id": "SUBTOTAL-012",
       "source": "documented",
-      "description": "8 is STDEVP, the population's",
+      "description": "Worked from Microsoft's definitions: 8 is STDEVP, the population's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(8,A1:A7)"},
       "check": "ZZ1000",
@@ -109,7 +109,7 @@
     {
       "id": "SUBTOTAL-013",
       "source": "documented",
-      "description": "9 is SUM",
+      "description": "Worked from Microsoft's definitions: 9 is SUM",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(9,A1:A7)"},
       "check": "ZZ1000",
@@ -118,7 +118,7 @@
     {
       "id": "SUBTOTAL-014",
       "source": "documented",
-      "description": "10 is VAR, the sample's",
+      "description": "Worked from Microsoft's definitions: 10 is VAR, the sample's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(10,A1:A7)"},
       "check": "ZZ1000",
@@ -127,7 +127,7 @@
     {
       "id": "SUBTOTAL-015",
       "source": "documented",
-      "description": "11 is VARP, the population's",
+      "description": "Worked from Microsoft's definitions: 11 is VARP, the population's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBTOTAL(11,A1:A7)"},
       "check": "ZZ1000",

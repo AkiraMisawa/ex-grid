@@ -34,6 +34,10 @@ public class LetTests
     [InlineData("=LET(rc,2,1)")]
     [InlineData("=LET(SUM,2,1)")]            // a function's name
     [InlineData("=LET(let,2,1)")]
+    [InlineData("=LET(IRR,1,IRR)")]          // one of Excel's functions the engine does not declare (LET-111)
+    [InlineData("=LET(N,1,N)")]              // one letter, unlike c and r (LET-112)
+    [InlineData("=LET(t,1,t)")]
+    [InlineData("=LET(rate,0.05,rate*100)")]
     [InlineData("=LET(TRUE,2,1)")]
     [InlineData("=LET(false,2,1)")]
     [InlineData("=LET(a.b,2,a.b)")]          // a dot (LET-024)
@@ -49,6 +53,31 @@ public class LetTests
 
         Assert.Throws<FormulaSyntaxException>(() => sheet.Enter("A1", formula));
         Assert.Null(sheet.GetEntry(CellAddress.Parse("A1")));
+    }
+
+    [Fact] // ADR-0181, SH-67: the name of every function the engine declares, and of every one the catalogue queues, is refused as a LET name, so declaring one later leaves every stored LET as it opened
+    public void ADR0181_every_declared_and_catalogued_function_name_is_refused_as_a_let_name()
+    {
+        var names = DeclaredFunction.All.Select(f => f.Name)
+            .Concat(FunctionCatalogueTests.Catalogue().Select(r => r.Name))
+            .Where(name => !name.Contains('.'))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        Assert.NotEmpty(names);
+        var accepted = names.Where(name =>
+        {
+            try
+            {
+                NewSheet().Enter("A1", $"=LET({name},1,1)");
+                return true;
+            }
+            catch (FormulaSyntaxException)
+            {
+                return false;
+            }
+        }).ToList();
+
+        Assert.True(accepted.Count == 0, $"Accepted as LET names: {string.Join(", ", accepted)}");
     }
 
     [Fact] // ADR-0181, SH-67: a name of 250 characters, and a 127th pair, are refused; 249 characters and 126 pairs are not
@@ -105,6 +134,23 @@ public class LetTests
         var sheet = NewSheet();
 
         Assert.Throws<FormulaSyntaxException>(() => sheet.Enter("A1", formula));
+    }
+
+    [Theory] // ADR-0047, ADR-0181: outside a LET, a name of another script is refused at its first such character and with the same words as before LET was admitted, whatever follows it
+    [InlineData("=A1é", 3)]
+    [InlineData("=1é", 2)]
+    [InlineData("=é!A1", 1)]
+    [InlineData("=1+é)", 3)]
+    [InlineData("=SUM(A1,é", 8)]
+    [InlineData("=é+\"x", 1)]
+    [InlineData("=Aé", 2)]
+    [InlineData("=1+名前+", 3)]
+    public void ADR0181_outside_a_let_a_name_of_another_script_is_refused_where_it_stands(string formula, int position)
+    {
+        var refused = Assert.Throws<FormulaSyntaxException>(() => NewSheet().Enter("A1", formula));
+
+        Assert.Equal(position, refused.Position);
+        Assert.Equal($"'{formula[position]}' is not part of the formula syntax ExSheet reads.", refused.Reason);
     }
 
     [Fact] // ADR-0048: text typed with a leading minus that does not read as a Formula is still text
@@ -243,9 +289,9 @@ public class LetTests
     public void ADR0181_names_are_written_as_typed()
     {
         var sheet = NewSheet();
-        sheet.Enter("A1", "=let(Rate,0.05,Amount,100,rate*amount)");
+        sheet.Enter("A1", "=let(Share,0.05,Amount,100,share*amount)");
 
-        Assert.Equal("=LET(Rate,0.05,Amount,100,rate*amount)", sheet.GetEntry(CellAddress.Parse("A1"))!.Formula);
+        Assert.Equal("=LET(Share,0.05,Amount,100,share*amount)", sheet.GetEntry(CellAddress.Parse("A1"))!.Formula);
         Assert.Equal(5, sheet.Number("A1"));
     }
 

@@ -50,7 +50,7 @@
     {
       "id": "AGGREGATE-006",
       "source": "documented",
-      "description": "SUM with Error Values passed over (option 6)",
+      "description": "Worked from Microsoft's definitions: SUM with Error Values passed over (option 6)",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,6,A1:A11)"},
       "check": "ZZ1000",
@@ -58,8 +58,8 @@
     },
     {
       "id": "AGGREGATE-007",
-      "source": "documented",
-      "description": "Option 4 passes over nothing: the first Error Value is the result",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked which Error Value comes back: option 4 passes over nothing: the first Error Value is the result",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,4,A1:A11)"},
       "check": "ZZ1000",
@@ -67,8 +67,8 @@
     },
     {
       "id": "AGGREGATE-008",
-      "source": "documented",
-      "description": "Option 0 passes over only nested SUBTOTAL and AGGREGATE: the first Error Value is the result",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked which Error Value comes back: option 0 passes over only nested SUBTOTAL and AGGREGATE: the first Error Value is the result",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,0,A1:A11)"},
       "check": "ZZ1000",
@@ -77,7 +77,7 @@
     {
       "id": "AGGREGATE-009",
       "source": "documented",
-      "description": "Option 2 passes over Error Values",
+      "description": "Worked from Microsoft's definitions: option 2 passes over Error Values",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,2,A1:A11)"},
       "check": "ZZ1000",
@@ -86,7 +86,7 @@
     {
       "id": "AGGREGATE-010",
       "source": "documented",
-      "description": "With no row hidden, option 7 gives what option 6 gives",
+      "description": "Worked from Microsoft's definitions: with no row hidden, option 7 gives what option 6 gives",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,7,A1:A11)"},
       "check": "ZZ1000",
@@ -94,8 +94,8 @@
     },
     {
       "id": "AGGREGATE-011",
-      "source": "documented",
-      "description": "With no row hidden, option 5 gives what option 4 gives",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked which Error Value comes back: with no row hidden, option 5 gives what option 4 gives",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,5,A1:A11)"},
       "check": "ZZ1000",
@@ -104,7 +104,7 @@
     {
       "id": "AGGREGATE-012",
       "source": "documented",
-      "description": "With no row hidden, options 1 and 3 give what 0 and 2 give",
+      "description": "Worked from Microsoft's definitions: with no row hidden, options 1 and 3 give what 0 and 2 give",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,3,A1:A11)"},
       "check": "ZZ1000",
@@ -113,7 +113,7 @@
     {
       "id": "AGGREGATE-013",
       "source": "documented",
-      "description": "COUNT with Error Values passed over",
+      "description": "Worked from Microsoft's definitions: COUNT with Error Values passed over",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(2,6,A1:A11)"},
       "check": "ZZ1000",
@@ -122,7 +122,7 @@
     {
       "id": "AGGREGATE-014",
       "source": "documented",
-      "description": "MIN with Error Values passed over",
+      "description": "Worked from Microsoft's definitions: MIN with Error Values passed over",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(5,6,A1:A11)"},
       "check": "ZZ1000",
@@ -131,7 +131,7 @@
     {
       "id": "AGGREGATE-015",
       "source": "documented",
-      "description": "AVERAGE with Error Values passed over",
+      "description": "Worked from Microsoft's definitions: AVERAGE with Error Values passed over",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(1,6,A1:A11)"},
       "check": "ZZ1000",
@@ -140,7 +140,7 @@
     {
       "id": "AGGREGATE-016",
       "source": "documented",
-      "description": "The second smallest, Error Values passed over",
+      "description": "Worked from Microsoft's definitions: the second smallest, Error Values passed over",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(15,6,A1:A11,2)"},
       "check": "ZZ1000",
@@ -149,7 +149,7 @@
     {
       "id": "AGGREGATE-017",
       "source": "documented",
-      "description": "PRODUCT",
+      "description": "Worked from Microsoft's definitions: PRODUCT",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(6,6,B1:B3)"},
       "check": "ZZ1000",
@@ -158,7 +158,7 @@
     {
       "id": "AGGREGATE-018",
       "source": "documented",
-      "description": "MEDIAN of one reference, Error Values passed over",
+      "description": "Worked from Microsoft's definitions: MEDIAN of one reference, Error Values passed over",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(12,6,A1:A11)"},
       "check": "ZZ1000",
@@ -167,7 +167,7 @@
     {
       "id": "AGGREGATE-019",
       "source": "documented",
-      "description": "Several references are taken together in the reference form",
+      "description": "Worked from Microsoft's definitions: several references are taken together in the reference form",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,6,A1:A11,B1:B11)"},
       "check": "ZZ1000",
@@ -176,7 +176,7 @@
     {
       "id": "AGGREGATE-020",
       "source": "documented",
-      "description": "A k past the count of numbers is #NUM!, as LARGE's",
+      "description": "Worked from Microsoft's definitions: a k past the count of numbers is #NUM!, as LARGE's",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(14,6,A1:A11,10)"},
       "check": "ZZ1000",
@@ -219,11 +219,13 @@
     },
     {
       "id": "AGGREGATE-025",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: option 4 with a nested SUBTOTAL in the range is #VALUE!",
+      "source": "documented",
+      "description": "Option 4 with a nested SUBTOTAL in the range: Microsoft documents option 4 as ignoring nothing, so Excel counts the nested SUBTOTAL; the engine refuses it with #VALUE!",
       "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,4,D1:D3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-10): a call of SUBTOTAL or AGGREGATE in the range that is not passed over, as options 4 to 7 pass over none, is #VALUE! until a Windows run asks Excel",
+      "excelExpect": {"value2": 6}
     },
     {
       "id": "AGGREGATE-026",

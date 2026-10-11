@@ -17,7 +17,7 @@ public class FunctionCatalogueTests
 
     private static readonly string[] Statuses = ["Supported", "Ready", "Observe", "Decide", "Blocked"];
 
-    private static IReadOnlyList<(string Name, string Status, string Priority)> Catalogue()
+    internal static IReadOnlyList<(string Name, string Status, string Priority)> Catalogue()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ExGrid.slnx")))
