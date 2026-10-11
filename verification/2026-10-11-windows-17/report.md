@@ -246,6 +246,51 @@ Excel's answer beside the corpus's `expect` (or its `excelExpect`). "refused" is
   6); 027 to 029 agree (0, 62, 7).
 - **TABLE-011, TABLE-013, COPY-025**, carried since the first run, disagree as before.
 
-## Parts B to H
+## Part B — what the corpus cannot ask, by hand in Excel
+
+**How it ran.** `excel/xl-server.ps1`, fed one command at a time by `excel/part_b.py` (and `excel/xs.py`): for each case
+an Excel of the script's own (`New-Object`; each one's process id was checked to be new), a new workbook of one sheet,
+maximised at 100%, its window on the English (UK) keyboard. Every key went through SendInput as a virtual-key and a scan
+code; every press with the real pointer; a Value was read through COM only after a step, with Excel Ready. Each step is a
+line of `records/part-b.jsonl` (every command and answer in `records/part-b-xs.jsonl`). Pictures are PrintWindow's;
+the committed ones are crops (`shots/part-b/`), cut clear of the title bar, which shows the account. 23:15 to 23:28.
+Each Excel was ended by `Stop-Process` (its own process) when it had not quit within 10 s of `Quit`.
+
+| # | What was done | What was read | Asked by |
+|---|---|---|---|
+| b1 | A1 `=RAND()`, Enter; ↑ →; B1 `1`, Enter; Ctrl+Z; Ctrl+Y; then, as an addition, Ctrl+Z and Ctrl+Y again | A1: **0.728584010700264** after its entry; **0.035222293413679884** after B1; after Ctrl+Z **0.63343631701647329**: neither the draw before B1 nor the one after it, **a new draw**. After Ctrl+Y **0.94031907607955856**, again new. The second Ctrl+Z 0.96869660901116994 and Ctrl+Y 0.39002255258321294: new each time. B1 empty after each Ctrl+Z, 1 after each Ctrl+Y | ADR-0180, "Undo draws again" |
+| b2 | A1 `=RAND()`, Enter; a double click on the tab `Sheet1` (it went into its name's edit, the name selected); `Data`, Enter; Ctrl+Z | A1 0.21946455506413098 after its entry; **after the rename 0.50683781294117847: drawn again**. **Excel offered the undo** (the Undo button enabled after the rename); **Ctrl+Z put the name back to `Sheet1`**, and **A1 drew again: 0.3434572829235909** | ADR-0180's first note of 2026-10-11 |
+| b3 | `b3.csv` written to disk (`Key,Val` / `a,1` / `b,2` / `c,3`, CRLF). A new workbook: A1 `=RAND()`, Enter. Data › From Text/CSV (KeyTips Alt, A, F, T), the file's path typed into the dialog's File name and Enter; the preview (1252: Western European (Windows), Comma, Based on first 200 rows; Key/Val a 1, b 2, c 3), **Load**: a table on a new sheet `b3`, placed left of Sheet1 and shown. Back on Sheet1 (Ctrl+PgDn): Refresh All (Ctrl+Alt+F5) twice with the file unchanged; then **the file rewritten outside Excel** (`c,3` → `c,30`), Refresh All; Refresh All once more | A1: 0.66587690107406272 after its entry; 0.39872817435436025 after the Load; 0.41572896601076748 back on Sheet1 (two Refresh Alls had run while the sheet `b3` was shown, below). **Refresh All with the file unchanged: 0.21801555519652582, then 0.082116763526578929: each refresh drew again.** **After the file changed: 0.81199667908518791**, and the table's `c` row read 30: drawn again. Refresh All once more, unchanged since: 0.23499631821526956, drawn again | ADR-0180's second note of 2026-10-11 |
+| b4 | `=SUBTOTAL(` typed in A1, the list read, ↓ to its end, Escape twice; the same for `=AGGREGATE(` and `=AGGREGATE(1,` | `=SUBTOTAL(` (`function_num`): **1 - AVERAGE, 2 - COUNT, 3 - COUNTA, 4 - MAX, 5 - MIN, 6 - PRODUCT, 7 - STDEV.S, 8 - STDEV.P, 9 - SUM, 10 - VAR.S, 11 - VAR.P, 101 - AVERAGE, 102 - COUNT, 103 - COUNTA, 104 - MAX, 105 - MIN, 106 - PRODUCT, 107 - STDEV.S, 108 - STDEV.P, 109 - SUM, 110 - VAR.S, 111 - VAR.P** (22). `=AGGREGATE(` (`function_num`, the tip showing both forms, `array, [k]` and `ref1, ...`): **1 - AVERAGE, 2 - COUNT, 3 - COUNTA, 4 - MAX, 5 - MIN, 6 - PRODUCT, 7 - STDEV.S, 8 - STDEV.P, 9 - SUM, 10 - VAR.S, 11 - VAR.P, 12 - MEDIAN, 13 - MODE.SNGL, 14 - LARGE, 15 - SMALL, 16 - PERCENTILE.INC, 17 - QUARTILE.INC, 18 - PERCENTILE.EXC, 19 - QUARTILE.EXC** (19). `=AGGREGATE(1,` (`options`): **0 - Ignore nested SUBTOTAL and AGGREGATE functions, 1 - Ignore hidden rows, nested SUBTOTAL and AGGREGATE functions, 2 - Ignore error values, nested SUBTOTAL and AGGREGATE functions, 3 - Ignore hidden rows, error values, nested SUBTOTAL and AGGREGATE functions, 4 - Ignore nothing, 5 - Ignore hidden rows, 6 - Ignore error values, 7 - Ignore hidden rows and error values** (8). Beside `src/ExSheet.Engine/Formulas/Functions.cs` at the verified commit: below | ticket 16 |
+| b5 | A right click on the status bar: the menu **Customise Status Bar**, Average, Count and Sum ticked, Numerical Count, Minimum and Maximum not; those three ticked by a click each, Escape. A1 `1`, A2 `2`, A3 `=1/0`, A4 `x`, A5 blank (typed); a press on A1, Shift+press on A5 | **`Count: 4    Numerical Count: 2`**, and nothing else: no Average, Min., Max. or Sum | SM-7 (ADR-0130) |
+| b6 | A3 cleared (Delete); A1:A5 selected again | **`Average: 1.5    Count: 3    Numerical Count: 2    Min.: 1    Max.: 2    Sum: 3`** | SM-7's control |
+| b7 | A1:A5 cleared; A1 `1`, A2 `TRUE`, A3 `2026-10-11` (read as the date 46306, shown `11/10/2026`), A4 `x`; A1:A4; A1:A2; A3 | A1:A4: **`Average: 23153.5    Count: 4    Numerical Count: 2    Min.: 1    Max.: 46306    Sum: 46307`**: the Boolean counted but not numerically, the date counted as a number, the figures in General. A1:A2: **`Average: 1    Count: 2    Numerical Count: 1    Min.: 1    Max.: 1    Sum: 1`**. A3 alone: **no figure** | ADR-0130's table |
+| b8 | A1:A5 cleared; the formats set through COM on the empty cells (setup): A1 `#,##0.00`, A2 `0%`; A1 `1000`, A2 `2000` typed. **A2 became 20, shown `2000%`**: Excel's automatic percent entry on a cell formatted `0%`. A press on A1, Shift+press on A2; then a press on A2, Shift+press on A1 | From A1 (the active cell A1): **`Average: 510.00    Count: 2    Numerical Count: 2    Min.: 20.00    Max.: 1,000.00    Sum: 1,020.00`**. From A2 (active A2): **`Average: 51000%    Count: 2    Numerical Count: 2    Min.: 2000%    Max.: 100000%    Sum: 102000%`**. Every figure takes the active cell's format | SM-9 (ADR-0130) |
+| b9 | `by-hand.ps1`'s gestures (`verification/2026-09-27-windows-excel-2/`), sent through SendInput instead of its SendKeys (which reached Excel garbled in the eighth run), each in a new Excel: the ribbon by its KeyTips (Alt, H, O, W for Column Width; Alt, H, D, C and Alt, H, D, R for Delete Sheet Columns and Rows; Alt, H, N then `Number` for the number-format box), Ctrl+Shift+5 for `0%`, a press on a heading for a whole column or row, Ctrl+press for a second one; then Ctrl+Z | **CW-013**: B 20, Ctrl+Z: **B's standard width again** (`UseStandardWidth` True, 8.09) — `expect` `width: null`: **agrees**. **CW-014**: B 20, column B deleted (B then 8.09), Ctrl+Z: **B 20** — `expect` 20: **agrees**. **LVL-023**: B2 `0.5` at `0%`, column B set to Number (B2 `0.50`, B5 `0.00`), Ctrl+Z: **B2 `50%` `0%`**, B5 General — **agrees**. **LVL-024**: row 2 at `0%` (B2 `50%`, E2 `0%`), row 2 deleted, Ctrl+Z: **B2 `50%` `0%`**, E2 `0%` — **agrees**. **LVL-030**: B2 `0%`; column B and row 2 selected (`B:B,2:2`) and set to Number at once; Ctrl+Z: **B2 `50%` `0%`**, B5 and E2 General — **agrees** | the corpus (ADR-0208) |
+| b10 | In a new Excel each: B1 (C1 for CW-025) typed `12345678901`, which widens a standard column; then the case's own gesture; the column's width read through COM and, from a copy saved to the temporary folder and deleted at once, its `<col>` in the sheet's XML | **CW-021**: the entry widened B to **11.18** (the file: `width="11.81640625" bestFit="1" customWidth="1"`). **CW-022**: then Column Width 11: **11**, `customWidth="1"`, `bestFit` gone. **CW-023**: then a column inserted at C (Alt, H, I, C): **the new C 11.18**, `customWidth="1"` without `bestFit`; B unchanged. **CW-025**: C widened to 11.18 (`bestFit`, `customWidth`), column B deleted: **B 11.18**, `bestFit="1" customWidth="1"`. **CW-026**: B widened, Column Width 20 (`customWidth`), Ctrl+Z: **11.18 again, `bestFit="1" customWidth="1"`**. The corpus's `expect` is `width 11, custom true` in each (the engine's width for its own entry): Excel's width is the one its entry gives, and the custom flag is set in every case | as b9 |
+
+**Notes.**
+
+- b3's first attempt to go back to Sheet1 was Ctrl+PgUp, which did nothing: the loaded sheet `b3` stands left of Sheet1.
+  Two Refresh Alls ran while `b3` was shown, and Sheet1's A1 was not read after them (records' steps 6, 7 and 7b); the
+  readings above are those taken on Sheet1 after Ctrl+PgDn.
+- b3's file was rewritten from WSL, not edited in Notepad: Notepad on this machine restores the user's own unsaved tabs
+  when it starts. The change reached Excel from outside the workbook, which is what the step asks.
+- b8: the procedure's "A2 `2000` formatted `0%`" typed into a cell already formatted `0%` becomes 20 under Excel's
+  automatic percent entry. The rule asked about (the format of the figures) does not depend on it.
+- b4 beside `Functions.cs` (ticket 16): **SUBTOTAL's list differs** in eight entries: ExSheet's `7 - STDEV`, `8 - STDEVP`,
+  `10 - VAR`, `11 - VARP`, `107 - STDEV`, `108 - STDEVP`, `110 - VAR`, `111 - VARP` where Excel shows `7 - STDEV.S`,
+  `8 - STDEV.P`, `10 - VAR.S`, `11 - VAR.P`, `107 - STDEV.S`, `108 - STDEV.P`, `110 - VAR.S`, `111 - VAR.P`; the other
+  fourteen match. **AGGREGATE's `options` match**, all eight, word for word. **AGGREGATE's `function_num`**: each of
+  ExSheet's fourteen entries matches Excel's text; Excel also lists 13 - MODE.SNGL and 16 to 19, which ExSheet leaves
+  out by its comment's decision (the engine answers `#VALUE!` for them).
+- **The status bar was put back.** The three figures were unticked again in the same menu (`shots/part-b/b5-9-menu.png`).
+  Ticking them had created `HKCU\Software\Microsoft\Office\16.0\Excel\StatusBar` (absent before, by the export taken
+  before b5), and unticking left it holding `NumberCount`, `MinValue` and `MaxValue` at 0, Excel's defaults. **The key
+  was deleted**, so the export after b10 holds no `StatusBar` key, as before. Its other differences from the export
+  before b5 are Excel's own session counters (`ExcelPreviousSessionId`, the AutoRecover sentinels, an add-in's load
+  times), which change with every Excel started. `Excel15.xlb` is unchanged since 22:47:48 (the last oracle pass).
+
+## Parts C to H
 
 *(Below, as each Part is finished.)*

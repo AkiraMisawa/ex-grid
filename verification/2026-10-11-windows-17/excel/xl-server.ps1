@@ -19,7 +19,7 @@
                                    prefixes + ^ % (Shift, Ctrl, Alt held) before a {NAME} or a
                                    character; {c} a character the notation reserves; any other
                                    character as itself, through the UK layout
-    click|dblclick|rclick|shiftclick <x> <y>
+    click|dblclick|rclick|shiftclick|ctrlclick <x> <y>
                                    the pointer moved there as a hand moves it (15 steps of 15 ms), then
                                    the press; screen pixels (the process is DPI-aware)
     move <x> <y>                   the pointer moved there, no press
@@ -30,7 +30,8 @@
     crop <src> <x> <y> <w> <h> <dst> <scale>
                                    a part of a picture, enlarged <scale> times (nearest neighbour)
     ready                          whether Excel answers COM (it refuses every call while it edits)
-    cell <A1> [<A1> ...]           Value2 (with its type), Formula2 and Text of each, through COM
+    cell <A1> [<A1> ...]           Value2 (with its type), Formula2, Text and NumberFormat (en-US) of
+                                   each, through COM
     geo <A1> [<A1> ...]            each cell's box in screen pixels (PointsToScreenPixels), and the
                                    window's
     uia                            the places of the Formula Bar, the Name Box, the status bar and the
@@ -168,6 +169,7 @@ function Parse-Keys([string]$Spec) {
     }
     return , $groups
 }
+function Pid-Of([IntPtr]$H) { [uint32]$q = 0; [void][Xl.Native]::GetWindowThreadProcessId($H, [ref]$q); return [int]$q }
 function Front-Pid { [uint32]$p = 0; [void][Xl.Native]::GetWindowThreadProcessId([Xl.Native]::GetForegroundWindow(), [ref]$p); return [int]$p }
 function Show-Excel {
     if ($script:XlPid -eq 0) { throw 'no Excel started' }
@@ -227,9 +229,11 @@ while ($true) {
                 if ($script:Xl) { throw 'an Excel of this script''s is already running' }
                 $before = @(Get-Process excel -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
                 $x = New-Object -ComObject Excel.Application
-                [uint32]$p = 0; [void][Xl.Native]::GetWindowThreadProcessId([IntPtr][long]$x.Hwnd, [ref]$p)
-                if ($before -contains [int]$p) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($x); throw "New-Object gave an Excel already running ($p); nothing changed in it" }
-                $script:Xl = $x; $script:XlPid = [int]$p
+                # (A type-constrained [uint32] variable here, in the script's scope, would refuse every later
+                # assignment of another type to the same name: the process id goes through a helper.)
+                $xp = Pid-Of ([IntPtr][long]$x.Hwnd)
+                if ($before -contains $xp) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($x); throw "New-Object gave an Excel already running ($xp); nothing changed in it" }
+                $script:Xl = $x; $script:XlPid = $xp
                 $x.Visible = $true; $x.DisplayAlerts = $false
                 $opened = @($x.Workbooks | ForEach-Object { [string]$_.Name })
                 $wb = $x.Workbooks.Add(); $wb.EnableAutoRecover = $false
@@ -240,7 +244,7 @@ while ($true) {
                 $script:Hwnd = [IntPtr][long]$win.Hwnd
                 Show-Excel
                 [void][Xl.Native]::PostMessage($script:Hwnd, 0x0050, [IntPtr]::Zero, [IntPtr]0x08090809); Start-Sleep -Milliseconds 600
-                Answer ('ok start pid={0} book={1} sheet={2} openedByItself={3} before={4} layout={5} version={6}' -f $p, $wb.Name, $wb.Worksheets.Item(1).Name, ($opened -join '|'), ($before -join '|'), (Layout-Of $script:Hwnd), $x.Version)
+                Answer ('ok start pid={0} book={1} sheet={2} openedByItself={3} before={4} layout={5} version={6}' -f $xp, $wb.Name, $wb.Worksheets.Item(1).Name, ($opened -join '|'), ($before -join '|'), (Layout-Of $script:Hwnd), $x.Version)
             }
             'stop' {
                 $id = $script:XlPid; $how = 'quit'
@@ -271,6 +275,13 @@ while ($true) {
                 $e = New-Events; $e.Add([Xl.Keys+INPUT]::Key(0x10, $true, $false)); [Xl.Keys]::Send($e)
                 Answer 'ok shiftclick'
             }
+            'ctrlclick' {
+                $a = $rest.Split(' ') | % { [int]$_ }; Show-Excel; Hand $a[0] $a[1]
+                $e = New-Events; $e.Add([Xl.Keys+INPUT]::Key(0x11, $false, $false)); [Xl.Keys]::Send($e); Start-Sleep -Milliseconds 40
+                Press 0x2 0x4
+                $e = New-Events; $e.Add([Xl.Keys+INPUT]::Key(0x11, $true, $false)); [Xl.Keys]::Send($e)
+                Answer 'ok ctrlclick'
+            }
             'move' { $a = $rest.Split(' ') | % { [int]$_ }; Hand $a[0] $a[1]; Answer 'ok move' }
             'shot' { Answer ('ok shot ' + (Grab $rest)) }
             'screen' {
@@ -297,7 +308,8 @@ while ($true) {
                     $sheet = $ws; $addr = $a
                     if ($a.Contains('!')) { $q = $a.Split('!'); $sheet = $script:Book.Worksheets.Item($q[0]); $addr = $q[1] }
                     $r = $sheet.Range($addr)
-                    $o += ('{0}: {1} | formula {2} | text {3}' -f $a, (Value-Of $r.Value2), (ConvertTo-Json -InputObject ([string]$r.Formula2) -Compress), (ConvertTo-Json -InputObject ([string]$r.Text) -Compress))
+                    $nf = [string]$r.GetType().InvokeMember('NumberFormat', [Reflection.BindingFlags]::GetProperty, $null, $r, $null, [Globalization.CultureInfo]::GetCultureInfo('en-US'))
+                    $o += ('{0}: {1} | formula {2} | text {3} | numberFormat {4}' -f $a, (Value-Of $r.Value2), (ConvertTo-Json -InputObject ([string]$r.Formula2) -Compress), (ConvertTo-Json -InputObject ([string]$r.Text) -Compress), (ConvertTo-Json -InputObject $nf -Compress))
                 }
                 Answer ('ok cell ' + ($o -join ' ;; '))
             }
