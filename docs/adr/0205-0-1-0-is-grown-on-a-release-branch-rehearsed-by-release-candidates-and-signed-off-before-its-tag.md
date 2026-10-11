@@ -86,6 +86,10 @@ The Docs Site's notes parser requires each of them of an unsuffixed version.
 
 - **Every version without a suffix passes all of §22, a patch included.** The Definition of Done's "a
   criterion that could not be verified is not passed" is not narrowed for patches.
+  *(2026-10-11, decided with the user, [ADR-0208](./0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md):
+  every automated step of §22 still runs on every such version. The rows a person checks by hand are run
+  again only when the code each names has changed since its last record, and a question to Excel is
+  asked when its feature is built, never at a release.)*
 - **An urgent fix ships first as a release candidate** from `release/0.1` (`0.1.1-rc.1`), the same day,
   and the stable patch follows its sign-off. Patches come from the release branch; new features go on
   `main` toward the next minor version, whose prereleases are `0.2.0-beta.N`.
@@ -104,7 +108,9 @@ The Docs Site's notes parser requires each of them of an unsuffixed version.
 - **CI's long-run artifacts as the record**, saving the watched soak. It would change ADR-0041's rule
   that a record is written from a run someone watched.
 - **Patches verified only where their diff reaches.** Faster, but it narrows "not verified is not
-  passed" for exactly the versions most often installed without reading.
+  passed" for exactly the versions most often installed without reading. *(2026-10-11: still rejected
+  for the automated layers. For the rows checked by hand it is taken, with each row naming its code,
+  ADR-0208.)*
 - **A prerelease republishing the site, or a second site under `/next/`.** The first documents
   parameters a stable Consumer cannot install, which ADR-0110 refused for `main`; the second doubles the
   publishing for a need nobody has yet.
