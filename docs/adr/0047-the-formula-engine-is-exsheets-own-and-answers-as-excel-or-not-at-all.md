@@ -528,3 +528,11 @@ The rows of the function catalogue that still waited on a decision were put to t
     is the table's answer for a Value that is no error, and would read as one.
 - **`INDIRECT`** is admitted for A1-style text naming a place on the same Sheet:
   [ADR-0124](./0124-volatile-functions-are-recalculated-after-every-change.md)'s note of this date.
+
+*(2026-10-11)* Admitted as the catalogue's tickets 14 to 18, as decided above: `LET`, `RAND`,
+`RANDBETWEEN`, `SUBTOTAL`, `AGGREGATE`, `ERROR.TYPE` and `INDIRECT`. The questions each leaves for Excel
+are uncertain cases in the corpus, which the sign-off's Windows run puts to Excel
+([ADR-0202](./0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md)).
+`LET` refuses as a name any of Excel's function names, not only the declared ones
+([ADR-0181](./0181-let-binds-names-inside-one-formula-as-excel-accepts-them-from-the-keyboard.md), note of
+this date).
