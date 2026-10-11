@@ -1,7 +1,9 @@
 # The Docs Site (ADR-0110), published to GitHub Pages, two ways:
 #
 # - by the release (release.yml's last job), once the packages are on nuget.org: it passes the
-#   version, its tag and the UTC day of the push (ADR-0190), and the site states that version;
+#   version, its tag and the UTC day of the push (ADR-0190), and the site states that version. A
+#   version without a suffix always publishes it; a prerelease only while no version without a
+#   suffix is tagged, since the site then describes the latest stable version (ADR-0205);
 # - on demand (workflow_dispatch), from main or a lab/* branch and from no other ref: the site then
 #   states the branch and the commit, and says above every page that it describes changes that are
 #   not on nuget.org. A lab/* site says that it is an experiment.
@@ -96,6 +98,24 @@ jobs:
           fi
 
       - uses: actions/checkout@v7
+
+      # Once a version without a suffix is tagged, a prerelease publishes no site: the site describes
+      # the latest stable version (ADR-0205). The release decides that before it calls this workflow
+      # (tools/release/ExGrid.Release, admit); a call for a prerelease that comes anyway is refused
+      # here rather than put a prerelease's pages over a stable version's.
+      - name: No prerelease's site over a stable version's
+        if: inputs.ref != ''
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" == *-* ]] || exit 0
+          stable=$(git ls-remote --tags --refs origin 'v*' | sed 's#.*refs/tags/##' \
+            | grep -E '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' | tr '\n' ' ' || true)
+          if [[ -n "$stable" ]]; then
+            echo "::error::$VERSION is a prerelease, and ${stable}is tagged: once a stable version exists, a prerelease publishes no Docs Site (ADR-0205)."
+            exit 1
+          fi
 
       - uses: actions/setup-dotnet@v6
         with:

@@ -21,6 +21,7 @@
   <Project Path="tests/ExGrid.DemoApi.Tests/ExGrid.DemoApi.Tests.csproj" />
   <Project Path="tests/ExGrid.Docs.Generator.Tests/ExGrid.Docs.Generator.Tests.csproj" />
   <Project Path="tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj" />
+  <Project Path="tests/ExGrid.Release.Tests/ExGrid.Release.Tests.csproj" />
   <Project Path="tests/ExGrid.Tests/ExGrid.Tests.csproj" />
   <Project Path="tests/ExPivot.Components/ExPivot.Components.csproj" />
   <Project Path="tests/ExPivot.Engine.Tests/ExPivot.Engine.Tests.csproj" />
@@ -28,4 +29,5 @@
   <Project Path="tests/ExSheet.Components/ExSheet.Components.csproj" />
   <Project Path="tests/ExSheet.Engine.Tests/ExSheet.Engine.Tests.csproj" />
   <Project Path="tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj" />
+  <Project Path="tools/release/ExGrid.Release/ExGrid.Release.csproj" />
 </Solution>

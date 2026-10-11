@@ -1,0 +1,248 @@
+{
+  "about": "ADR-0208: the rows the Definition of Done checks by hand, the code each covers, and each row's latest record. A row's record holds while its paths are unchanged between the commit the record was made at and the commit being signed off; the release workflow checks it (tools/release/ExGrid.Release, ByHand) and refuses a version without a suffix, and a release candidate, when a row's paths changed since its record, when its latest record is not a pass, or when it has none. The rows and paths are the Definition of Done's Step 4 table, 'Rows checked by hand, and the code each covers', word for word: tests/ExGrid.Release.Tests holds the two together. A record is the file under verification/ that gives the row's verdict, and the commit it names as verified, in full. A run that records a row replaces its record here, in the same commit as the record; 'record' is null for a row never recorded. 'note' is for a reader and is not read by the check.",
+  "rows": [
+    {
+      "row": "VZ-14",
+      "where": "Windows",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/Keys/",
+        "src/ExGrid/Selection/",
+        "src/ExGrid/ColumnGeometry.cs",
+        "src/ExGrid/GridMetrics.cs",
+        "src/ExGrid/ViewportBox.cs",
+        "src/ExGrid/ViewportGeometry.cs",
+        "src/ExGrid/ViewportSize.cs",
+        "samples/ExGrid.DemoPages/Pages/Wide.razor",
+        "tests/ExGrid.Browser/fixtures.mjs",
+        "tests/ExGrid.Browser/scrollbar.spec.mjs"
+      ],
+      "record": {
+        "commit": "16552992f8fa6838114b7934c81190b788b3f32c",
+        "path": "verification/2026-10-01-windows-15/report.md",
+        "verdict": "pass"
+      },
+      "note": "The fifteenth Windows run's Part A: scrollbar.spec.mjs's VZ-14 block at 150%, on both browsers and both hosts. 125% was not run, and the row has named 150% since its rewrite of 2026-10-01."
+    },
+    {
+      "row": "VZ-16",
+      "where": "Windows",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Cells/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/ColumnGeometry.cs",
+        "src/ExGrid/GridMetrics.cs",
+        "src/ExSheet/Assets/",
+        "src/ExSheet/wwwroot/",
+        "src/ExSheet/Components/",
+        "src/ExSheet/SheetAppearance.cs",
+        "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
+        "samples/ExGrid.DemoPages/Pages/Wide.razor",
+        "samples/ExGrid.DemoPages/SheetCases.cs"
+      ],
+      "record": null,
+      "note": "Never checked as written. The eleventh run's Part C read lines at a real devicePixelRatio of 2.25 (verification/2026-10-02-windows-excel-11c/beside-excel.md) before ADR-0090 decided the Device Pixel, and read neither a zoom told as it changes nor VZ-16's thin line and gridline."
+    },
+    {
+      "row": "FN-12e",
+      "where": "Windows",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Columns/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/DisplayText.cs",
+        "src/ExGrid/GridDensity.cs",
+        "src/ExGrid/GridMetrics.cs",
+        "src/ExSheet/Assets/",
+        "src/ExSheet/wwwroot/",
+        "src/ExSheet/Components/",
+        "src/ExSheet/SheetCellText.cs",
+        "src/ExSheet.Engine/NumberFormat.cs",
+        "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
+        "samples/ExGrid.DemoPages/Pages/Sizing.razor",
+        "samples/ExGrid.DemoPages/SheetCases.cs",
+        "tests/GlyphWidths/classes.mjs",
+        "tests/GlyphWidths/corpus.json",
+        "tests/GlyphWidths/measure.mjs"
+      ],
+      "record": null,
+      "note": "Never measured on Windows: tests/GlyphWidths/README.md records macOS and Linux only."
+    },
+    {
+      "row": "FN-12e",
+      "where": "macOS",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Columns/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/DisplayText.cs",
+        "src/ExGrid/GridDensity.cs",
+        "src/ExGrid/GridMetrics.cs",
+        "src/ExSheet/Assets/",
+        "src/ExSheet/wwwroot/",
+        "src/ExSheet/Components/",
+        "src/ExSheet/SheetCellText.cs",
+        "src/ExSheet.Engine/NumberFormat.cs",
+        "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
+        "samples/ExGrid.DemoPages/Pages/Sizing.razor",
+        "samples/ExGrid.DemoPages/SheetCases.cs",
+        "tests/GlyphWidths/classes.mjs",
+        "tests/GlyphWidths/corpus.json",
+        "tests/GlyphWidths/measure.mjs"
+      ],
+      "record": null,
+      "note": "The macOS glyph widths are measured (tests/GlyphWidths/*.macos.json, held by layer 1), but no record under verification/ names a commit at which a bold amount and #### were read painted on macOS."
+    },
+    {
+      "row": "ED-30",
+      "where": "Windows",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Cells/",
+        "src/ExGrid/Chrome/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/Keys/",
+        "src/ExGrid/Selection/",
+        "src/ExGrid.MudBlazor/",
+        "src/ExSheet/Assets/",
+        "src/ExSheet/wwwroot/",
+        "src/ExSheet/Components/",
+        "src/ExSheet/SheetFormulaAids.cs",
+        "src/ExSheet.MudBlazor/",
+        "samples/ExGrid.DemoPages/DemoChrome.cs",
+        "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
+        "samples/ExGrid.DemoPages/SheetCases.cs"
+      ],
+      "record": {
+        "commit": "bf13de1950975a5ec5f1ce9db675358db9e97aa9",
+        "path": "verification/2026-10-02-windows-16/report.md",
+        "verdict": "fail"
+      },
+      "note": "The sixteenth Windows run gave no verdict by row. Its differences 1 and 3 read against ED-30's statement (keys typed after a composition's end lost one on WebAssembly; a press on D12 mid-composition never reached the page), so its record is not a pass."
+    },
+    {
+      "row": "SH-42",
+      "where": "Windows",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/Keys/",
+        "src/ExSheet/Components/",
+        "src/ExSheet/SheetFormatKeys.cs",
+        "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
+        "samples/ExGrid.DemoPages/SheetCases.cs"
+      ],
+      "record": {
+        "commit": "76d3866c3233fc76b79956f157c2e3f7ee18a14a",
+        "path": "verification/2026-10-01-windows-browser-11/keys.md",
+        "verdict": "pass"
+      },
+      "note": "The eleventh run's Part B, the run the row names: Ctrl+1 to Ctrl+5 reached a standalone keys.html in Chrome and Edge, and no tab was selected. Never read on ExSheet; the seventeenth run's Part D reads them on /sheet."
+    },
+    {
+      "row": "SH-51",
+      "where": "Windows",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/Keys/",
+        "src/ExSheet/Components/",
+        "src/ExSheet/Toolbar/",
+        "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
+        "samples/ExGrid.DemoPages/SheetCases.cs"
+      ],
+      "record": null,
+      "note": "Never checked by hand (ADR-0202): the seventeenth run's Part D is its first."
+    },
+    {
+      "row": "SH-52",
+      "where": "Windows",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/Keys/",
+        "src/ExGrid.MudBlazor/",
+        "src/ExSheet/Assets/",
+        "src/ExSheet/wwwroot/",
+        "src/ExSheet/Components/",
+        "src/ExSheet/Toolbar/",
+        "src/ExSheet.MudBlazor/",
+        "samples/ExGrid.DemoPages/DemoChrome.cs",
+        "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
+        "samples/ExGrid.DemoPages/SheetCases.cs"
+      ],
+      "record": null,
+      "note": "Never checked by hand (ADR-0202): the seventeenth run's Part D is its first."
+    },
+    {
+      "row": "KB-3",
+      "where": "macOS",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Cells/",
+        "src/ExGrid/Chrome/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/Keys/",
+        "src/ExGrid.MudBlazor/",
+        "src/ExSheet/Components/",
+        "src/ExSheet/SheetFormatKeys.cs",
+        "src/ExSheet/SheetStructureKeys.cs",
+        "src/ExSheet/Toolbar/",
+        "src/ExSheet.MudBlazor/",
+        "tests/ExGrid.Browser/"
+      ],
+      "record": null,
+      "note": "The macOS records under verification/ are layer-3 runs' metrics.json and console.json, which name no commit (2026-09-23 to 2026-10-01), a targeted run of other specs (2026-10-03) and measurements; none names the commit of a layer-3 run on macOS that this row could hold on."
+    },
+    {
+      "row": "VZ-18",
+      "where": "the Citrix PC",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/Keys/",
+        "src/ExGrid/Selection/",
+        "src/ExGrid/GridMetrics.cs",
+        "src/ExGrid/ViewportBox.cs",
+        "src/ExGrid/ViewportGeometry.cs",
+        "src/ExGrid/ViewportSize.cs",
+        "src/ExGrid.MudBlazor/",
+        "samples/ExGrid.Docs/Examples/Grid/Blotter/",
+        "samples/ExGrid.Docs/Showcases/Blotter.razor"
+      ],
+      "record": null,
+      "note": "Checked on 2026-10-08 on that PC against a v0.1.0-beta.2 build carrying the repaint, published to the Docs Site (ADR-0012's note), but no record under verification/ names its commit; verification/2026-10-09-windows-remote-isolation/README.md records the investigation that followed, not the row."
+    },
+    {
+      "row": "§21.11",
+      "where": "Windows",
+      "paths": [
+        "src/ExGrid/Assets/",
+        "src/ExGrid/wwwroot/",
+        "src/ExGrid/Chrome/",
+        "src/ExGrid/Components/",
+        "src/ExGrid/Keys/",
+        "src/ExGrid/Selection/",
+        "src/ExSheet/Assets/",
+        "src/ExSheet/wwwroot/",
+        "src/ExSheet/Components/",
+        "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
+        "samples/ExGrid.DemoPages/SheetCases.cs"
+      ],
+      "record": null,
+      "note": "The sixteenth run's Part D listened under Narrator for the wording. Where DOM focus is after an arrow key, under NVDA and Narrator, with and without a Focus, which is the check §21.11 names since 2026-10-11, has not been run: the seventeenth run's Part F is its first."
+    }
+  ]
+}

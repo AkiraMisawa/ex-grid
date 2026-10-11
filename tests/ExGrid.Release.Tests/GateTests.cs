@@ -1,0 +1,103 @@
+using Xunit;
+
+namespace ExGrid.Release.Tests;
+
+public class GateTests
+{
+    private static Report Run(Repo repo, string tag, string commit)
+    {
+        var report = new Report();
+        Gate.Run(repo.Git, TagVersion.Read(tag, report)!, commit, report);
+        return report;
+    }
+
+    [Fact] // ADR-0042: a beta is gated by CI alone — no sign-off, no corpus, no rows checked by hand
+    public void A_prerelease_runs_no_stable_check()
+    {
+        using var repo = new Repo();
+        var commit = repo.Write("README.md", "Nothing a stable version needs.").Commit();
+
+        var report = Run(repo, "v0.1.0-beta.3", commit);
+
+        Assert.Empty(report.Refusals);
+        Assert.Contains("is a prerelease", Assert.Single(report.Notices));
+    }
+
+    [Fact] // ADR-0205, ADR-0208: a stable version signed off, its corpus answered and its rows holding, is admitted
+    public void A_signed_off_stable_version_is_admitted()
+    {
+        using var repo = new Repo();
+        var x = Fixture.ReadyToSignOff(repo);
+        var y = Fixture.SignedOff(repo, x);
+
+        var report = Run(repo, "v0.1.0", y);
+
+        Assert.Empty(report.Refusals);
+    }
+
+    [Fact] // ADR-0205: a candidate rehearses the stable path without a sign-off of its own
+    public void A_candidate_runs_every_check_but_the_sign_offs()
+    {
+        using var repo = new Repo();
+        var commit = Fixture.ReadyToSignOff(repo);
+
+        var report = Run(repo, "v0.1.0-rc.1", commit);
+
+        Assert.Empty(report.Refusals);
+        Assert.Contains(report.Notices, n => n.Contains("is a release candidate"));
+        Assert.Contains(report.Notices, n => n.Contains("Every case under"));
+        Assert.Contains(report.Notices, n => n.Contains("Every row checked by hand holds"));
+    }
+
+    [Fact] // ADR-0205, ADR-0208: a candidate is refused on an open question or a row to run, as a stable version is
+    public void A_candidate_is_refused_where_a_stable_version_would_be()
+    {
+        using var repo = new Repo();
+        Fixture.ReadyToSignOff(repo);
+        var commit = repo.Write($"{Fixture.Corpus}/round.json", Fixture.Cases(("ROUND-001", "uncertain", null, null)))
+            .Write("src/Code/a.cs", "class A { int changed; }")
+            .Commit("An open case and a change the row covers");
+
+        var report = Run(repo, "v0.1.0-rc.2", commit);
+
+        Assert.Contains(report.Refusals, r => r.Message.Contains("ROUND-001"));
+        Assert.Contains(report.Refusals, r => r.Message.Contains("VZ-14 on Windows: the code it covers changed"));
+        Assert.DoesNotContain(report.Refusals, r => r.Message.Contains("Signed off"));
+    }
+
+    [Fact] // ADR-0205, ADR-0208: a stable version says every refusal at once
+    public void A_stable_version_says_every_refusal()
+    {
+        using var repo = new Repo();
+        var x = Fixture.ReadyToSignOff(repo);
+        repo.Write($"{Fixture.Corpus}/round.json", Fixture.Cases(("ROUND-001", "documented", null, null))).Commit("An open case after X");
+        var y = Fixture.SignedOff(repo, x);
+
+        var report = Run(repo, "v0.1.0", y);
+
+        Assert.Contains(report.Refusals, r => r.Message.Contains("differs from the signed-off commit") && r.Message.Contains("round.json"));
+        Assert.Contains(report.Refusals, r => r.Message.Contains("ROUND-001"));
+    }
+
+    [Fact] // ADR-0208: a stable version's rows are judged at X, so records filed after X do not move the target
+    public void A_stable_versions_rows_are_judged_at_the_signed_off_commit()
+    {
+        using var repo = new Repo();
+        var coded = repo.Write("src/Code/a.cs", "a")
+            .Write($"{Fixture.Corpus}/abs.json", Fixture.Cases(("ABS-001", "observed", null, null)))
+            .Commit("Code");
+        var row = new Row("VZ-14", "Windows", ["src/Code/"]);
+        repo.Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        var x = repo.Commit("The row, never recorded");
+        // The sign-off's own run records the row at X, after X.
+        repo.Write("verification/2026-11-02-windows/report.md", $"Verified commit: {x}")
+            .Write("verification/by-hand.json", Fixture.Index(row with { Record = (x, "verification/2026-11-02-windows/report.md", "pass") }));
+        repo.Commit("Records the row at X");
+        var y = Fixture.SignedOff(repo, x);
+
+        var report = Run(repo, "v0.1.0", y);
+
+        Assert.Empty(report.Refusals);
+        Assert.NotEqual(coded, x);
+    }
+}

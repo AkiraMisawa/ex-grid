@@ -1,23 +1,41 @@
-# Publishes a prerelease of the family's ten packages, at one version, from a v* tag (ADR-0042):
+# Publishes the family's ten packages, at one version, from a v* tag (ADR-0042, ADR-0205):
 # ExGrid, ExGrid.MudBlazor, ExSheet.Engine, ExSheet, ExSheet.MudBlazor, ExGrid.Data,
 # ExGrid.Data.Arrow, ExPivot.Engine, ExPivot and ExPivot.MudBlazor.
 #
-#   git tag v0.1.0-beta.1 <a commit on main> && git push origin v0.1.0-beta.1
+#   git tag v0.1.0-rc.1 <a commit on main or a release/* branch> && git push origin v0.1.0-rc.1
 #
 # or GitHub's release page, which makes the tag and a release with it; the last step then
 # completes that release rather than making another.
 #
-# It refuses a version without a prerelease suffix, which is a release in the Definition of
-# Done's sense and waits for its sign-off, and a commit that is not on main. It refuses, too, a
-# commit whose Release Notes are not cut (ADR-0190): no docs/releases/<version>.md, or one whose
-# first line is not the version; a Change Note left under docs/releases/unreleased/; or another
-# version's notes still reading "Published: pending". It runs the whole of ci.yml on the tag,
-# whose build holds the Docs Site's Release Notes to the version, then pushes to nuget.org the
-# very packages ci.yml's package job tested. The key is a one-hour one from Trusted Publishing:
-# nuget.org holds a policy naming this repository and this file, and the secret NUGET_USER holds
-# the nuget.org profile name. The GitHub release's text is the version's Release Notes, after the
-# prerelease note. Last, once nuget.org has the packages, it publishes the Docs Site for the
-# version (docs.yml, ADR-0110), with the UTC day of the push (ADR-0190).
+# What the tag's version is decides what its release must carry. The checks are
+# tools/release/ExGrid.Release, whose tests (tests/ExGrid.Release.Tests) are layer 1:
+#
+# - Every tag: a version as SemVer writes it, on a commit on main or a release/* branch
+#   (ADR-0205), whose Release Notes are cut (ADR-0190): docs/releases/<version>.md, its first line
+#   the version; no Change Note left under docs/releases/unreleased/; no other version's notes
+#   still reading "Published: pending". Then every layer of ci.yml on the tag, whose build holds
+#   the Docs Site's Release Notes to the version, and the push of the very packages ci.yml's
+#   package job tested.
+# - A prerelease (-beta.N and the like): that is all (ADR-0042). Its GitHub release is a
+#   prerelease, and its text begins with the prerelease note.
+# - A release candidate (-rc.N), so that the stable path is rehearsed before it is used
+#   (ADR-0205): besides, ADR-0208's checks before CI's twenty minutes — no Excel case uncertain or
+#   documented without a written reason it cannot be asked, and every row checked by hand holding
+#   on a record its code has not changed since, judged at the tagged commit — and CI's long run,
+#   the soak and ST-1 at 10⁶ rows. Its GitHub release is a prerelease.
+# - A version without a suffix, a release in the Definition of Done's sense: besides, its notes'
+#   "Signed off" block names a verification/<date>/results.md that is at the tag and the commit X
+#   the sign-off was made against, in full; the tag differs from X only under verification/ and
+#   docs/releases/; and the rows checked by hand are judged at X (ADR-0205, ADR-0208). This replaces
+#   the refusal of every version without a suffix that ADR-0042 held until the sign-off. Its GitHub
+#   release is a release, with no prerelease note.
+#
+# The key is a one-hour one from Trusted Publishing: nuget.org holds a policy naming this
+# repository and this file, and the secret NUGET_USER holds the nuget.org profile name. The GitHub
+# release's text is the version's Release Notes. Last, once nuget.org has the packages, the Docs
+# Site is published for the version (docs.yml, ADR-0110), with the UTC day of the push (ADR-0190):
+# by a version without a suffix always, and by a prerelease only while no version without a suffix
+# is tagged, since the site then describes the latest stable version (ADR-0205).
 name: Release
 
 on:
@@ -33,36 +51,40 @@ concurrency:
 
 jobs:
   admit:
-    name: A prerelease, on main
+    name: The tag, and what its version must carry
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      version: ${{ steps.admit.outputs.version }}
+      kind: ${{ steps.admit.outputs.kind }}
+      long: ${{ steps.admit.outputs.long }}
+      site: ${{ steps.admit.outputs.site }}
     steps:
+      # Every branch and every tag: main and release/* for where the tag is, the tags for whether a
+      # stable version exists, and the branches that hold the commits the by-hand records were made at.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - id: version
-        name: Read the version from the tag
-        run: |
-          set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*$ ]]; then
-            echo "::error::$GITHUB_REF_NAME is not a prerelease. A version without a suffix is a release, and waits for the Definition of Done's sign-off (ADR-0042)."
-            exit 1
-          fi
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "::error::$GITHUB_REF_NAME points at a commit that is not on main (ADR-0042)."
-            exit 1
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # The version and its kind; the branch; whether the long run gates it and whether its release
+      # publishes the Docs Site (ADR-0042, ADR-0205).
+      - id: admit
+        name: The version, and the branch it is on
+        run: dotnet run --project tools/release/ExGrid.Release -c Release -- admit --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA"
 
       # Before CI's twenty minutes: a tag publishes all of main, so its commit holds the version's
       # Release Notes and no Change Note, and no other version still waits for its day (ADR-0190).
       # Every refusal is said, not only the first.
       - name: The Release Notes are cut
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.admit.outputs.version }}
         run: |
           set -euo pipefail
           refused=0
@@ -91,12 +113,24 @@ jobs:
           done
           exit "$refused"
 
+      # The stable path, for a version without a suffix and for a release candidate, before CI's
+      # twenty minutes (ADR-0205, ADR-0208): the sign-off and the structural check (a version without
+      # a suffix only), the corpus check, and the rows checked by hand. Run even when the notes were
+      # refused, so that one run names everything the tag still needs. A record made at a commit no
+      # branch holds is asked of the remote by its name.
+      - name: The stable path's checks
+        if: ${{ !cancelled() && steps.admit.outcome == 'success' && steps.admit.outputs.kind != 'prerelease' }}
+        run: dotnet run --project tools/release/ExGrid.Release -c Release -- gate --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --fetch-missing
+
   verify:
     name: Every layer, and the packages
     needs: admit
     uses: ./.github/workflows/ci.yml
     with:
       version: ${{ needs.admit.outputs.version }}
+      # The soak on both browsers and both hosts, and ST-1 at 10⁶ rows, for a version without a
+      # suffix and a release candidate: the tag's own proof at the commit it publishes (ADR-0205).
+      long: ${{ needs.admit.outputs.long == 'true' }}
     # ci.yml's badges job asks for contents: write. It never runs on a tag, but a called
     # workflow may not ask for more than its caller grants.
     permissions:
@@ -117,6 +151,7 @@ jobs:
       published-on: ${{ steps.push.outputs.published-on }}
     env:
       VERSION: ${{ needs.admit.outputs.version }}
+      KIND: ${{ needs.admit.outputs.kind }}
     steps:
       # The tag's Release Notes, which become the release's text. Checked out first: a checkout
       # empties the workspace.
@@ -166,10 +201,10 @@ jobs:
           echo "published-on=$(date -u +%F)" >> "$GITHUB_OUTPUT"
 
       # The release's text is the version's Release Notes (ADR-0190), after the prerelease note for a
-      # prerelease (ADR-0042): the files the Docs Site renders, so the two cannot say different things.
-      # The first line, the version, is the release's title already; "pending" becomes the day just
-      # recorded; a route of the site becomes its whole address; and ADR-NNNN links the record at
-      # this commit, as the site links it. GitHub links #NN to the pull request itself. These rewrites
+      # prerelease, a release candidate among them (ADR-0042, ADR-0205): the files the Docs Site
+      # renders, so the two cannot say different things. The first line, the version, is the
+      # release's title already; "pending" becomes the day just recorded; a route of the site becomes
+      # its whole address; and ADR-NNNN links the record at this commit, as the site links it. GitHub links #NN to the pull request itself. These rewrites
       # see no Markdown structure, so the site's build refuses what they would render otherwise than the
       # site does (NotesMarkdown, EXDOCS007): an ADR-NNNN inside a link's text, in a code span or joined to
       # the text before it, a ]( in a code span, a bare address, and an @ joined to a name.
@@ -181,7 +216,7 @@ jobs:
         run: |
           set -euo pipefail
           {
-            if [[ "$VERSION" == *-* ]]; then
+            if [[ "$KIND" != stable ]]; then
               cat docs/releases/prerelease-note.md
               echo
             fi
@@ -200,29 +235,39 @@ jobs:
           cat "$RUNNER_TEMP/release-notes.md"
 
       # Whoever made the tag may have made its release too — GitHub's release page does both at once.
-      # Then that release is completed, not refused: marked prerelease, the packages attached, and its
-      # text replaced by the Release Notes (ADR-0190; ADR-0042's 2026-09-25 record).
-      - name: The GitHub prerelease
+      # Then that release is completed, not refused: marked a prerelease or a release, the packages
+      # attached, and its text replaced by the Release Notes (ADR-0190; ADR-0042's 2026-09-25 record).
+      # A version without a suffix is a release, not a prerelease (ADR-0205).
+      - name: The GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
+          if [[ "$KIND" == stable ]]; then
+            prerelease=--prerelease=false
+          else
+            prerelease=--prerelease
+          fi
           if gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
-            gh release edit "$TAG" --repo "$REPO" --prerelease --notes-file "$RUNNER_TEMP/release-notes.md"
+            gh release edit "$TAG" --repo "$REPO" "$prerelease" --notes-file "$RUNNER_TEMP/release-notes.md"
             gh release upload "$TAG" packages/* --repo "$REPO" --clobber
           else
             gh release create "$TAG" packages/* --repo "$REPO" \
-              --verify-tag --prerelease --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
+              --verify-tag "$prerelease" --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
           fi
 
   # The Docs Site for this version, once nuget.org has it (ADR-0110, ADR-0042): the site states a
   # version only after its packages can be installed, and the day they could be (ADR-0190).
   # Trusted Publishing stays in the publish job above, since nuget.org's policy names this file.
+  # Once a version without a suffix is tagged, a prerelease publishes no site: the site describes
+  # the latest stable version, and a prerelease's notes are on its GitHub release (ADR-0205). The
+  # admit job decides it, and says so.
   docs:
     name: The Docs Site
     needs: [admit, publish]
+    if: needs.admit.outputs.site == 'true'
     uses: ./.github/workflows/docs.yml
     with:
       version: ${{ needs.admit.outputs.version }}
