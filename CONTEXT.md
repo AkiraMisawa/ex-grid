@@ -162,6 +162,12 @@ does not fetch anything itself. Data arrives when the Consumer hands over a new 
 ([ADR-0001](./docs/adr/0001-consumer-pushes-the-window-grid-does-not-fetch.md)).
 _Avoid_: fetch, request, load
 
+**Range Request Margin**:
+How many rows short of the Window's edge the grid raises its Range Request, while the rows on screen
+are still held. It is 0 by default, which waits until they are not. The request still names the rows
+on screen ([ADR-0183](./docs/adr/0183-the-grid-may-ask-for-rows-before-the-viewport-runs-out-of-them.md)).
+_Avoid_: row buffer, prefetch distance, lookahead
+
 **Window**:
 The contiguous block of rows the Consumer pushes in. Taken wider than the Viewport
 (read-ahead). With a pager, one page is the Window — **paging only changes what drives Range

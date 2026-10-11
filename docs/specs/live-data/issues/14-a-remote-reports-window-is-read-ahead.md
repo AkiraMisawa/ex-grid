@@ -1,6 +1,6 @@
 # 14: A remote report's Window is read ahead
 
-Status: needs-triage
+Status: ready-for-agent
 
 **What to do:** measure what reading ahead would buy a report served over a network. Then, once the
 user has decided, build it: ExPivot asks a remote report source for more rows than the grid needs. Ordinary
@@ -63,8 +63,8 @@ These are the user's, once the measurement is in.
 
 ## Done when
 
-- [ ] The measurement is recorded, and the user has decided
-- [ ] The decision is in an ADR, and the Definition of Done says what holds
+- [x] The measurement is recorded, and the user has decided
+- [x] The decision is in an ADR, and the Definition of Done says what holds (ADR-0182, LV-34)
 - [ ] Built, and each of these holds:
   - a scroll within the read-ahead asks nothing;
   - a scroll past it asks once, for the widened Window clamped into the report;
@@ -160,3 +160,18 @@ What it found:
   and 7%.
 
 The default is still the user's to decide, and the early ask beside it is a separate question.
+
+2026-10-11, decided with the user after the second record
+(`verification/2026-10-11-linux-remote-read-ahead-blocks/`): **60 rows either side by default**, as
+`readAheadRows` on `PivotReportSource.Fetch`, and not blocks. Over one contiguous Window, blocks bought
+nothing that N either side of the same size did not. The decision is
+[ADR-0182](../../../adr/0182-a-remote-reports-window-is-read-ahead-sixty-rows-either-side.md), and
+the criterion is LV-34. The Status is `ready-for-agent` for the build: the boxes left above.
+
+Asking early, 10 rows before the Window's edge as ag-grid does, gave the largest gain. It was adopted
+as its own decision,
+[ADR-0183](../../../adr/0183-the-grid-may-ask-for-rows-before-the-viewport-runs-out-of-them.md), and
+is built by ticket 15. ExPivot's use of it needs this ticket's read-ahead first.
+
+The lab branch `lab/remote-read-ahead` (21d7a94, on origin, never merged) holds the prototypes both
+records measured.

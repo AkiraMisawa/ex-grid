@@ -1,7 +1,8 @@
 # Live data in ExGrid and ExPivot
 
-Status: done — but for [ticket 14](issues/14-a-remote-reports-window-is-read-ahead.md)
-(`needs-triage`) and LV-15, observed only in part. Merged to `main` as #70 (554b3c2, 2026-10-10),
+Status: done — but for [ticket 14](issues/14-a-remote-reports-window-is-read-ahead.md) and
+[ticket 15](issues/15-the-grid-asks-before-the-viewport-runs-out.md), decided and ready to build, and LV-15,
+observed only in part. Merged to `main` as #70 (554b3c2, 2026-10-10),
 carrying tickets 01 to 13 as their Statuses say. It was built on `claude/live-data-best`
 (2026-10-08), after the first version merged as #64. Tickets 01 to 03 were worked twice, side by
 side: by a Claude Code session on `claude/live-data-next-cc` (tickets 04 to 13 below, #67) and by a
@@ -155,8 +156,11 @@ git -C <scratchpad>/ag-grid rev-parse HEAD   # 0fee5b7b1e839ae23fe860e404042448f
     [`2026-10-06-macos-live-report-after`](../../../verification/2026-10-06-macos-live-report-after/README.md).
     The merged code was measured on 2026-10-10, as PV-48 asks:
     [`2026-10-10-linux-merged-live-costs`](../../../verification/2026-10-10-linux-merged-live-costs/README.md).
-- [14: A remote report's Window is read ahead](issues/14-a-remote-reports-window-is-read-ahead.md) — needs
-  triage. Written up on 2026-10-10. It is to be measured first, then decided with the user.
+- [14: A remote report's Window is read ahead](issues/14-a-remote-reports-window-is-read-ahead.md) —
+  measured twice and decided with the user on 2026-10-11 (ADR-0182): 60 rows either side by default.
+  Ready to build.
+- [15: The grid asks for rows before the Viewport runs out of them](issues/15-the-grid-asks-before-the-viewport-runs-out.md)
+  — the Range Request Margin (ADR-0183), decided the same day. Ready to build.
 
 ## Numbers for the next decisions
 
