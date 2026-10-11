@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace ExGrid.Docs.Generator;
@@ -23,6 +24,12 @@ namespace ExGrid.Docs.Generator;
 /// Three build properties reach it too: <c>DocsVersion</c>, <c>DocsRef</c> and <c>DocsPublishedOn</c>,
 /// which it reads together (<see cref="DocsBuildInfo"/>) and emits as <c>DocsBuild</c>, what the site
 /// states it was built from. A summary's links into the repository point at that build's ref.
+/// <para>
+/// It also reads every routed <c>.razor</c> page (<see cref="PageReader"/>) and the navigation,
+/// <c>DocsNav</c> (<see cref="NavReader"/>), and emits the <see cref="SiteMap"/>: each page's title,
+/// sections and Examples. A navigation entry with no page, a page in no group, a title that is not text
+/// and two sections with one anchor stop the build.
+/// </para>
 /// </summary>
 [Generator(LanguageNames.CSharp)]
 public sealed class DocsGenerator : IIncrementalGenerator
@@ -96,6 +103,42 @@ public sealed class DocsGenerator : IIncrementalGenerator
         });
 
         context.RegisterSourceOutput(publicDocs, (spc, all) => spc.AddSource("ApiDocs.g.cs", EmitDocs(all)));
+
+        // The site map: every routed page the site's own folders hold, read from its markup, and the
+        // navigation read from DocsNav's C#. Each is checked against the other.
+        var pages = context.AdditionalTextsProvider
+            .Where(file => file.Path.EndsWith(".razor", StringComparison.OrdinalIgnoreCase))
+            .Combine(projectDir)
+            .Select((pair, cancel) =>
+            {
+                var (file, dir) = pair;
+                var relative = Relative(dir, file.Path);
+                if (relative is null || relative.StartsWith("bin/", StringComparison.Ordinal) || relative.StartsWith("obj/", StringComparison.Ordinal))
+                    return null;
+                var text = file.GetText(cancel);
+                if (text is null)
+                    return null;
+                var scan = PageReader.Read(relative, text.ToString());
+                return scan.Page.Routes.IsEmpty ? null : new PageInput(file.Path, text, scan);
+            })
+            .Where(page => page is not null)
+            .Collect();
+        var nav = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                (node, _) => NavReader.IsNav(node),
+                (syntax, cancel) => NavReader.Read((ClassDeclarationSyntax)syntax.Node, syntax.SemanticModel, cancel))
+            .Collect();
+        context.RegisterSourceOutput(pages.Combine(nav), (spc, pair) =>
+        {
+            var (all, navs) = pair;
+            var scans = all.Select(p => p!).ToImmutableArray();
+            var declared = navs.IsEmpty
+                ? null
+                : new NavScan(navs.SelectMany(n => n.Links).ToImmutableArray(), navs.SelectMany(n => n.Unlisted).ToImmutableArray(), navs[0].Location);
+            foreach (var diagnostic in SiteMap.Check(scans, declared))
+                spc.ReportDiagnostic(diagnostic);
+            spc.AddSource("SiteMap.g.cs", SiteMap.Emit(scans));
+        });
     }
 
     // Whether the member a documentation id names is visible outside its assembly.

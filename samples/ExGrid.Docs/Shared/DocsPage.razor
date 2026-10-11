@@ -1,34 +1,68 @@
 @inject NavigationManager Navigation
 
 @* A documentation page: its title, a lead paragraph, the body, and the way to the pages either
-   side of it in the navigation. *@
+   side of it in the navigation. Beside it at wide widths, the rail (ADR-0110): the page's sections,
+   read from the site map the build made, so it is whole on the first render, and the page's own
+   source at the commit the site was built from. A static list, with no scroll spy. *@
 <PageTitle>@Title — ExGrid</PageTitle>
 
-<header class="docs-page-header">
-    @if (Product is not null)
-    {
-        <MudText Typo="Typo.overline" Color="Color.Primary">@Product</MudText>
-    }
-    <MudText Typo="Typo.h3" HtmlTag="h1" Class="docs-title">@Title</MudText>
-    @if (Lead is not null)
-    {
-        <MudText Typo="Typo.subtitle1" Class="docs-lead">@Lead</MudText>
-    }
-</header>
+<div class="docs-page">
+    <article class="docs-page-main">
+        <header class="docs-page-header">
+            @if (Product is not null)
+            {
+                <MudText Typo="Typo.overline" Color="Color.Primary">@Product</MudText>
+            }
+            <MudText Typo="Typo.h3" HtmlTag="h1" Class="docs-title">@Title</MudText>
+            @if (Lead is not null)
+            {
+                <MudText Typo="Typo.subtitle1" Class="docs-lead">@Lead</MudText>
+            }
+        </header>
 
-@ChildContent
+        @ChildContent
 
-<nav class="docs-prev-next" aria-label="Pages">
-    @if (_previous is not null)
+        @if (_previous is not null || _next is not null)
+        {
+            <nav class="docs-prev-next" aria-label="Pages">
+                @if (_previous is not null)
+                {
+                    <MudButton Variant="Variant.Text" Href="@_previous.Href" StartIcon="@Icons.Material.Filled.ChevronLeft">@_previous.Title</MudButton>
+                }
+                <MudSpacer />
+                @if (_next is not null)
+                {
+                    <MudButton Variant="Variant.Text" Href="@_next.Href" EndIcon="@Icons.Material.Filled.ChevronRight">@_next.Title</MudButton>
+                }
+            </nav>
+        }
+    </article>
+
+    @if (_page is not null)
     {
-        <MudButton Variant="Variant.Text" Href="@_previous.Href" StartIcon="@Icons.Material.Filled.ChevronLeft">@_previous.Title</MudButton>
+        <aside class="docs-rail" aria-label="On this page">
+            @if (_page.Sections.Count > 0)
+            {
+                <MudText Typo="Typo.overline" HtmlTag="h2" Class="docs-rail-heading">On this page</MudText>
+                <ul class="docs-rail-list">
+                    @foreach (var heading in _page.Sections)
+                    {
+                        <li><a href="@($"{_here}#{heading.Anchor}")" class="docs-rail-link">@heading.Title</a></li>
+                    }
+                </ul>
+                <a href="@($"{_here}#top")" class="docs-rail-link docs-rail-top">
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" /> Back to top
+                </a>
+            }
+            <div class="docs-rail-source">
+                <a href="@DocsBuild.BlobUrl(SourcePath)" target="_blank" rel="noopener" class="docs-rail-link">
+                    <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" /> Source of this page
+                </a>
+                <MudText Typo="Typo.caption" Class="docs-muted">at @DocsBuild.RefTitle</MudText>
+            </div>
+        </aside>
     }
-    <MudSpacer />
-    @if (_next is not null)
-    {
-        <MudButton Variant="Variant.Text" Href="@_next.Href" EndIcon="@Icons.Material.Filled.ChevronRight">@_next.Title</MudButton>
-    }
-</nav>
+</div>
 
 @code {
     /// <summary>The page's title.</summary>
@@ -43,14 +77,21 @@
     /// <summary>The page's body.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    private SitePage? _page;
+    private string _here = "";
     private DocsLink? _previous;
     private DocsLink? _next;
 
+    private string SourcePath => "samples/ExGrid.Docs/" + _page!.Path;
+
     protected override void OnParametersSet()
     {
-        var here = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].TrimEnd('/');
-        var pages = DocsNav.All.Where(l => !l.Href.StartsWith("showcase/", StringComparison.Ordinal)).ToList();
-        var index = pages.FindIndex(l => l.Href == here);
+        var address = Navigation.ToBaseRelativePath(Navigation.Uri);
+        _here = address.Split('#')[0];
+        var route = _here.Split('?')[0].Trim('/');
+        _page = SiteMap.Find(route);
+        var pages = DocsNav.Reading;
+        var index = pages.ToList().FindIndex(l => string.Equals(l.Href, route, StringComparison.OrdinalIgnoreCase));
         _previous = index > 0 ? pages[index - 1] : null;
         _next = index >= 0 && index + 1 < pages.Count ? pages[index + 1] : null;
     }

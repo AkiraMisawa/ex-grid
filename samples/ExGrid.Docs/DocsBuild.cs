@@ -53,6 +53,17 @@ internal static partial class DocsBuild
         ? "release-notes#" + DocsAnchor.Of(Version)
         : "release-notes#unreleased";
 
+    /// <summary>
+    /// What a link into the repository points at, as a reader names it: the tag, the commit on its
+    /// branch, or <c>main</c> for a local build, whose working tree GitHub does not have.
+    /// </summary>
+    public static string RefTitle => Kind switch
+    {
+        DocsBuildKind.Tag => GitRef,
+        DocsBuildKind.Branch or DocsBuildKind.Experiment => $"{ShortCommit} on {Branch}",
+        _ => "main",
+    };
+
     /// <summary>The commit on GitHub; empty when the build names none.</summary>
     public static string CommitUrl => Commit.Length > 0 ? $"{Repository}/commit/{Commit}" : "";
 

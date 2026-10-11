@@ -1,10 +1,4 @@
-using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
-using ExGrid.Docs.Generator;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
 namespace ExGrid.Docs.Generator.Tests;
@@ -83,66 +77,20 @@ public class DocsGeneratorTests
         Assert.Contains("Kind => DocsBuildKind.Local;", run.Source("DocsBuild.g.cs"));
     }
 
-    private sealed record RunResult(ImmutableArray<Diagnostic> Diagnostics, ImmutableArray<GeneratedSourceResult> Sources)
-    {
-        public string Source(string hintName) =>
-            Sources.Single(s => s.HintName == hintName).SourceText.ToString();
-    }
-
-    private static RunResult Run(string version, string docsRef, string publishedOn)
-    {
-        var compilation = CSharpCompilation.Create(
-            "Docs",
-            [CSharpSyntaxTree.ParseText("namespace Shipped { public class Grid { public int RowHeight { get; set; } } }")],
-            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-        AdditionalText[] files =
-        [
-            new File("/repo/docs/adr/0016-row-height-is-a-parameter.md", "# Row height is a parameter\n"),
-            new File("/repo/src/Shipped/bin/Shipped.xml", """
-                <?xml version="1.0"?>
-                <doc>
-                  <assembly><name>Shipped</name></assembly>
-                  <members>
-                    <member name="P:Shipped.Grid.RowHeight"><summary>The row height (ADR-0016).</summary></member>
-                  </members>
-                </doc>
-                """),
-        ];
-        var options = new Options(new Dictionary<string, string>
-        {
-            ["build_property.MSBuildProjectDirectory"] = "/repo/samples/ExGrid.Docs",
-            ["build_property.DocsVersion"] = version,
-            ["build_property.DocsRef"] = docsRef,
-            ["build_property.DocsPublishedOn"] = publishedOn,
-        });
-        var driver = CSharpGeneratorDriver.Create(
-            [new DocsGenerator().AsSourceGenerator()], additionalTexts: files, optionsProvider: options);
-        var result = driver.RunGenerators(compilation).GetRunResult().Results.Single();
-        return new RunResult(result.Diagnostics, result.GeneratedSources);
-    }
-
-    private sealed class File(string path, string text) : AdditionalText
-    {
-        public override string Path => path;
-
-        public override SourceText GetText(CancellationToken cancellationToken = default) => SourceText.From(text);
-    }
-
-    private sealed class Options(Dictionary<string, string> global) : AnalyzerConfigOptionsProvider
-    {
-        public override AnalyzerConfigOptions GlobalOptions { get; } = new Values(global);
-
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => Values.None;
-
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Values.None;
-    }
-
-    private sealed class Values(Dictionary<string, string> values) : AnalyzerConfigOptions
-    {
-        public static Values None { get; } = new([]);
-
-        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value) =>
-            values.TryGetValue(key, out value);
-    }
+    private static GeneratorRun Run(string version, string docsRef, string publishedOn) =>
+        GeneratorHarness.Run(
+            ["namespace Shipped { public class Grid { public int RowHeight { get; set; } } }"],
+            [
+                ("/repo/docs/adr/0016-row-height-is-a-parameter.md", "# Row height is a parameter\n"),
+                ("/repo/src/Shipped/bin/Shipped.xml", """
+                    <?xml version="1.0"?>
+                    <doc>
+                      <assembly><name>Shipped</name></assembly>
+                      <members>
+                        <member name="P:Shipped.Grid.RowHeight"><summary>The row height (ADR-0016).</summary></member>
+                      </members>
+                    </doc>
+                    """),
+            ],
+            version, docsRef, publishedOn);
 }

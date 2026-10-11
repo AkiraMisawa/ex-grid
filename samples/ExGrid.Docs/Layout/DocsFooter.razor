@@ -1,0 +1,43 @@
+@* The footer (ADR-0110): the navigation's links once more, from DocsNav, and the line that says
+   what the site was built from, its licence, and that nothing on it counts its readers. *@
+<footer class="docs-footer">
+    <div class="docs-footer-columns">
+        <nav class="docs-footer-column" aria-label="Docs">
+            <MudText Typo="Typo.overline" HtmlTag="h2" Class="docs-footer-heading">Docs</MudText>
+            <a href="@DocsNav.GetStarted.Url">@DocsNav.GetStarted.Title</a>
+            @foreach (var product in DocsNav.Products)
+            {
+                <a href="@product.Link.Url">@product.Link.Title</a>
+            }
+        </nav>
+        @foreach (var group in DocsNav.Groups.Where(g => g.Section is not DocsNavSection.Docs))
+        {
+            <nav class="docs-footer-column" aria-label="@group.Title">
+                <MudText Typo="Typo.overline" HtmlTag="h2" Class="docs-footer-heading">@group.Title</MudText>
+                @foreach (var link in group.Links)
+                {
+                    <a href="@link.Url" target="@link.Target" rel="@(link.Kind is DocsLinkKind.Page or DocsLinkKind.Showcase ? null : "noopener")">@link.Title</a>
+                }
+            </nav>
+        }
+    </div>
+    <MudText Typo="Typo.caption" Class="docs-footer-line docs-muted">
+        @switch (DocsBuild.Kind)
+        {
+            case DocsBuildKind.Tag:
+                <text>Built from <a href="@($"{DocsBuild.Repository}/tree/{DocsBuild.GitRef}")" target="_blank" rel="noopener">@DocsBuild.GitRef</a></text>
+                break;
+            case DocsBuildKind.Branch:
+                <text>Built from @DocsBuild.Branch at <a href="@DocsBuild.CommitUrl" target="_blank" rel="noopener"><code>@DocsBuild.ShortCommit</code></a></text>
+                break;
+            case DocsBuildKind.Experiment:
+                <text>An experiment, built from @DocsBuild.Branch at <a href="@DocsBuild.CommitUrl" target="_blank" rel="noopener"><code>@DocsBuild.ShortCommit</code></a></text>
+                break;
+            default:
+                <text>A local build</text>
+                break;
+        }
+        · MIT licence · No analytics ·
+        <a href="@DocsBuild.Repository" target="_blank" rel="noopener">GitHub</a>
+    </MudText>
+</footer>
