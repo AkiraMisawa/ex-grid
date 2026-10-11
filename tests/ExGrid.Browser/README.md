@@ -443,7 +443,11 @@ nobody had asked for. What that means when writing a test:
   the Layout Ceiling can have been heard, not undone by the ceiling's re-anchoring (BIG-5,
   ADR-0053) — Ctrl+A over 10⁸ cells as one rectangle with the next key answered (BIG-3),
   and at most one interop call per scroll frame, counted over CDP by breakpoints that
-  never pause (PF-1).
+  never pause (PF-1); the cells in the DOM exactly the painted rows × (pinned + the
+  scrollable columns the readable width reaches), recomputed from the declared widths at four
+  offsets (DOM-3); and the Pinned Columns present and at the left edge in every render of a
+  fling across both axes, flung until a render in its middle has been seen rather than for a
+  count of frames, and once it settles (FN-6).
 - `memory.spec.mjs` — on `/lifecycle`, a grid mounted and disposed fifty times leaves the
   browser's node and listener counts where they were (MEM-2), and a dispose takes the
   module's eight listeners off the root (MEM-4). The ten-minute soak (MEM-5, with the
@@ -741,7 +745,17 @@ nobody had asked for. What that means when writing a test:
   from either host. A server report scrolls beyond its first Window with a bounded number of rendered
   rows (LV-24); a report scrolled to its last row and then shrunk by a layout, computed in the page
   and on the server alike, shows the new report's last rows, breaks nothing, and scrolls back to its
-  top (LV-24, ADR-0151); and a whole-column Copy and Selection Summary of a remote report include the rows
+  top (LV-24, ADR-0151); a server report scrolled five rows at a time within the Window it read ahead
+  asks the server nothing, and asks once, for the rows on screen and 60 either side, as the tenth row
+  below the rows on screen leaves the Window while every row on screen is still held — counted in the
+  page's own tally of questions, never timed, behind the latency proxy on the Server host, and with the
+  Window each question names read from the request on WebAssembly (LV-34, FN-3a, ADR-0182/0183); on
+  WebAssembly, the question asked early, its answer held behind a gate the test opens (a route, never a
+  timer), stays in flight while the report scrolls past the Window held and within the question's, the
+  report undimmed until rows on screen wait for it, and once it lands one question more is asked, ten
+  rows before the new Window runs out (the Server host asks the demo API from the server, where no
+  route can hold it); and a
+  whole-column Copy and Selection Summary of a remote report include the rows
   outside the Window and equal the local report's (LV-28). **Run once per Chrome**: its trades read over
   Arrow into a Snapshot the page pivots in its own process, at the version `/api/status` names, and
   asked of the server through `PivotReportSource.Fetch`, whose server computes the report and returns
