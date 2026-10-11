@@ -130,6 +130,12 @@ the public surface below is decided in an ADR of its own.)*
   First an ADR states what is public. Then the rest becomes internal, reachable by the test
   projects and never by the Wrapper (ADR-0030: a Wrapper has only the seams every Consumer has).
   From then on a baseline file makes every change to the surface show up in review.
+  *(Settled 2026-10-11 by
+  [ADR-0201](./0201-the-public-surface-is-what-consumers-chromes-and-the-sibling-products-use.md),
+  decided with the user. The count was stale: the core exports 193 public types and the ten packages
+  524. "A `0.x` beta may ship that. `1.0` may not." was written when a stable version meant `1.0`; the
+  first stable is `0.1.0` (ADR-0200), and it ships a surface reviewed type by type, with members
+  reviewed before `1.0`.)*
 - **Removing the prerelease-only refusal from `release.yml`**, in the same change that rewrites
   this ADR.
 
