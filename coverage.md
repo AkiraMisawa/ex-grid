@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.6% | 88.6% |
+| ExGrid | 95.7% | 88.7% |
 | ExSheet | 95.3% | 88.4% |
 | ExPivot | 93.8% | 84.6% |
 | Data | 94.5% | 90.3% |
@@ -12,18 +12,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/11/2026 - 18:47:06 |
+| Generated on: | 10/11/2026 - 18:55:46 |
 | Parser: | MultiReport (12x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 796 |
 | Files: | 433 |
-| **Line coverage:** | 94.9% (53512 of 56363) |
-| Covered lines: | 53512 |
-| Uncovered lines: | 2851 |
+| **Line coverage:** | 94.9% (53518 of 56363) |
+| Covered lines: | 53518 |
+| Uncovered lines: | 2845 |
 | Coverable lines: | 56363 |
-| Total lines: | 92815 |
-| **Branch coverage:** | 87.7% (30311 of 34532) |
-| Covered branches: | 30311 |
+| Total lines: | 92823 |
+| **Branch coverage:** | 87.8% (30323 of 34532) |
+| Covered branches: | 30323 |
 | Total branches: | 34532 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -34,7 +34,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**95.3%**|**88.8%**|
+|**ExGrid**|**95.3%**|**89%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -153,8 +153,8 @@
 |ExGrid.Components.ExGrid.SummaryQuestion<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenAt<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.3%|89.7%|
-|ExGrid.Components.ExGrid<TRow>|91.4%|88%|
+|ExGrid.Components.ExGrid<TRow>|91.6%|88.3%|
+|ExGrid.Components.ExGrid<TRow>|95.3%|89.9%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
