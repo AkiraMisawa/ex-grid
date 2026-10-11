@@ -36,6 +36,8 @@ change nothing, but it would mislead a reader.
   the row names. Its code has changed since, so the check asks for the seventeenth run's Part D.
 - **ED-30's latest record, the sixteenth run, is seeded as `fail`.** That run gave no verdict by row.
   Its differences 1 and 3 read against ED-30's statement.
+- **A record names the commit it verified**, in full or by seven digits or more, and the check holds the
+  index to it. A slip in the index's commit would otherwise move a row's baseline unseen.
 
 ## The text to commit
 
@@ -52,6 +54,7 @@ Each row a person checks, where it is checked, and the paths whose change could 
   - a path changed;
   - the row has no record;
   - its latest record is not a pass;
+  - its record does not name the commit the index gives it;
   - a path names nothing.
 - **The records are indexed in `verification/by-hand.json`.** For each row it names the same paths as
   this table, the row's latest record, and the commit that record was made at. A layer-1 test

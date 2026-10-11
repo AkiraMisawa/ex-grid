@@ -47,7 +47,7 @@ public class ByHandTests
         repo.Write("src/Code/a.cs", "a").Write("src/Code/sub/b.cs", "b").Write("src/CodeX/c.cs", "c").Write("src/one.cs", "1").Write("src/one.cs.bak", "x");
         var recorded = repo.Commit();
         var row = new Row("VZ-14", "Windows", ["src/Code/", "src/one.cs"], (recorded, "verification/r/report.md", "pass"));
-        repo.Write("verification/r/report.md", "r").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        repo.Write("verification/r/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var indexed = repo.Commit();
         Assert.Empty(Check(repo, indexed, indexed).Refusals);
 
@@ -80,7 +80,7 @@ public class ByHandTests
         using var repo = new Repo();
         var recorded = repo.Write("src/Code/a.cs", "a").Commit();
         var row = new Row("ED-30", "Windows", ["src/Code/"], (recorded, "verification/r/report.md", verdict));
-        repo.Write("verification/r/report.md", "r").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        repo.Write("verification/r/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var commit = repo.Commit();
 
         Assert.Contains($"reads '{verdict}', and a row holds only on a pass", Assert.Single(Check(repo, commit, commit).Refusals).Message);
@@ -92,7 +92,7 @@ public class ByHandTests
         using var repo = new Repo();
         repo.Write("src/Code/a.cs", "a");
         var row = new Row("VZ-14", "Windows", ["src/Code/"], (new string('c', 40), "verification/r/report.md", "pass"));
-        repo.Write("verification/r/report.md", "r").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        repo.Write("verification/r/report.md", $"Verified commit: {new string('c', 40)}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var commit = repo.Commit();
 
         Assert.Contains("which this repository does not have", Assert.Single(Check(repo, commit, commit).Refusals).Message);
@@ -110,6 +110,21 @@ public class ByHandTests
         Assert.Contains("verification/r/report.md, is not at the tag", Assert.Single(Check(repo, commit, commit).Refusals).Message);
     }
 
+    [Fact] // ADR-0208: a record names the commit it verified, so a slip in the index cannot move a row's baseline
+    public void A_record_that_does_not_name_its_commit_is_refused()
+    {
+        using var repo = new Repo();
+        var verified = repo.Write("src/Code/a.cs", "a").Commit();
+        var recorded = repo.Write("src/Code/a.cs", "a, later").Commit();
+        var row = new Row("VZ-14", "Windows", ["src/Code/"], (recorded, "verification/r/report.md", "pass"));
+        repo.Write("verification/r/report.md", $"Verified commit: `{verified[..7]}`").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        var commit = repo.Commit();
+
+        var refusal = Assert.Single(Check(repo, commit, commit).Refusals);
+        Assert.Contains($"does not name the commit {recorded[..12]}", refusal.Message);
+        Assert.Equal("verification/r/report.md", refusal.File);
+    }
+
     [Fact] // ADR-0208: a path that names nothing is a list that was not reviewed when its code moved
     public void A_path_that_names_nothing_is_refused()
     {
@@ -117,7 +132,7 @@ public class ByHandTests
         repo.Write("src/Code/a.cs", "a").Write("src/Moved/b.cs", "b");
         var recorded = repo.Commit();
         var row = new Row("VZ-14", "Windows", ["src/Code/", "src/Gone/", "src/Code/a.cs/", "src/Moved"], (recorded, "verification/r/report.md", "pass"));
-        repo.Write("verification/r/report.md", "r").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        repo.Write("verification/r/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var commit = repo.Commit();
 
         var refusal = Assert.Single(Check(repo, commit, commit).Refusals);
@@ -143,7 +158,7 @@ public class ByHandTests
         var indexed = new Row("VZ-14", "Windows", ["src/Code/"], (recorded, "verification/r/report.md", "pass"));
         var listed = new Row("VZ-14", "Windows", ["src/Code/", "src/Other/"]);
         var onlyListed = new Row("KB-3", "macOS", ["src/Code/"]);
-        repo.Write("verification/r/report.md", "r")
+        repo.Write("verification/r/report.md", $"Verified commit: {recorded}")
             .Write("verification/by-hand.json", Fixture.Index(indexed))
             .Write("docs/definition-of-done.md", Fixture.Table(listed, onlyListed));
         var commit = repo.Commit();
@@ -184,6 +199,7 @@ public class ByHandTests
     [InlineData("| Row | Where | Checked by hand | The code it covers |\n|---|---|---|---|\n| VZ-14 | Windows | A check. |", "has 3 cells")]
     [InlineData("| Row | Where | Checked by hand | The code it covers |\n|---|---|---|---|\n| VZ-14 | Windows | A check. | a/ |", "does not name a row, where it is checked, and the paths")]
     [InlineData("No table follows.\n\n### Step 5", "has no table under")]
+    [InlineData("| Row | Where | Checked by hand | The code it covers |\n|---|---|---|---|\n| VZ-14 | Windows | A check. | `a/` |\n| **VZ-14** | Windows | Again. | `b/` |", "VZ-14 on Windows is written twice")]
     public void A_table_out_of_shape_is_refused(string body, string why)
     {
         var report = new Report();

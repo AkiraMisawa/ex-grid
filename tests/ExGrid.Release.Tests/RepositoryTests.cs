@@ -48,6 +48,8 @@ public class RepositoryTests
             .Where(p => p.path.EndsWith('/') ? !Tree.IsDirectory(p.path) : !Tree.IsFile(p.path))
             .Select(p => $"{p.row.Name}: {p.path}")
             .Concat(index.Where(r => r.Record is { } record && !Tree.IsFile(record.Path)).Select(r => $"{r.Name}'s record: {r.Record!.Path}"))
+            .Concat(index.Where(r => r.Record is { } record && Tree.ReadText(record.Path) is { } text && !SignOff.Names(text, record.Commit))
+                .Select(r => $"{r.Name}'s record {r.Record!.Path} does not name {r.Record.Commit}"))
             .ToList();
 
         Assert.True(missing.Count == 0, "Not in the repository: " + string.Join(", ", missing));

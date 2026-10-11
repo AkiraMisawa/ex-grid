@@ -113,10 +113,12 @@ public static partial class SignOff
         return (null, 0);
     }
 
-    // A record names the commit by its full name or by a prefix of seven digits or more, as the
-    // Windows runs' reports write "Verified commit: `1655299`".
-    private static bool Names(string results, string commit) =>
-        HexWord().Matches(results).Any(m => commit.StartsWith(m.Value, StringComparison.Ordinal));
+    /// <summary>
+    /// Whether a record names <paramref name="commit"/>: by its full name, or by a prefix of seven
+    /// digits or more, as the Windows runs' reports write "Verified commit: `1655299`".
+    /// </summary>
+    public static bool Names(string record, string commit) =>
+        HexWord().Matches(record).Any(m => commit.StartsWith(m.Value, StringComparison.Ordinal));
 
     [GeneratedRegex(@"verification/[^/\s`()\[\]]+/results\.md", RegexOptions.CultureInvariant)]
     private static partial Regex RecordPath();

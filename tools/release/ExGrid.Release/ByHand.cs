@@ -157,8 +157,11 @@ public static partial class ByHand
                 continue;
             }
             var record = row.Record;
-            if (!tree.IsFile(record.Path))
+            var held = tree.ReadText(record.Path);
+            if (held is null)
                 report.Refuse($"{row.Name}'s record, {record.Path}, is not at the tag.", IndexPath);
+            else if (!SignOff.Names(held, record.Commit))
+                report.Refuse($"{row.Name}'s record, {record.Path}, does not name the commit {record.Commit[..12]} that {IndexPath} says it was made at. A record names the commit it verified.", record.Path);
             if (record.Verdict != "pass")
             {
                 report.Refuse($"{row.Name}'s latest record, {record.Path}, reads '{record.Verdict}', and a row holds only on a pass (ADR-0208; the Definition of Done's Step 7).", IndexPath);
@@ -321,6 +324,8 @@ public static partial class ByHandTable
                 report.Refuse($"Line {i + 1} of {source} does not name a row, where it is checked, and the paths it covers as code spans.", source, i + 1);
                 continue;
             }
+            if (rows.Any(r => r.Row == row && r.Where == where))
+                report.Refuse($"{row} on {where} is written twice in the table '{Heading}' in {source}.", source, i + 1);
             rows.Add(new Listed(row, where, paths, i + 1));
         }
         return new Table(source, rows);
