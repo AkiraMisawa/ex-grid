@@ -186,6 +186,55 @@ public class JapaneseWordsTests : PivotTestContext
             "details-title", "report-tab", "sheets", "close-tab", "close", "refused-too-many-columns", "subtotals-at-top"]), asked);
     }
 
+    /// <summary>Every id the report's grid asks a refusal's words by (ADR-0203): each paste reason, on a
+    /// grid that spills and one that does not, and each copy reason.</summary>
+    private static IEnumerable<string> EveryRefusalId()
+        => Enum.GetValues<ExGrid.Clipboard.PasteRefusalReason>()
+            .SelectMany(reason => new[] { RefusalLabelIds.For(reason), RefusalLabelIds.For(reason, pasteMaySpill: true) })
+            .Concat(Enum.GetValues<ExGrid.Clipboard.CopyRefusalReason>().Select(RefusalLabelIds.For))
+            .Distinct(StringComparer.Ordinal);
+
+    [Fact] // ADR-0060 (PV-33), ADR-0203: every sentence the report's grid says when it refuses a copy or a paste has a word of the Japanese edition, the column it names left to the grid
+    public void Every_refusal_the_report_grid_says_has_a_japanese_word()
+    {
+        var cut = RenderJapanese(PivotWords.Japanese);
+        var grid = Grid(cut).Instance;
+
+        Assert.All(EveryRefusalId(), id =>
+        {
+            var word = grid.CommandLabel!(id);
+            Assert.True(word is not null, $"'{id}' has no Japanese word");
+            Assert.DoesNotMatch(Latin, word!.Replace(RefusalLabelIds.ColumnPlaceholder, "", StringComparison.Ordinal));
+        });
+        Assert.Contains(RefusalLabelIds.ColumnPlaceholder, grid.CommandLabel!(RefusalLabelIds.PasteTargetNotEditable));
+    }
+
+    [Fact] // ADR-0060 (PV-33), ADR-0203: Ctrl+V on the report is refused and said in Japanese, naming the column by its Japanese header — no English word in the live region
+    public async Task A_paste_refused_on_the_report_is_said_in_japanese()
+    {
+        var cut = RenderJapanese(PivotWords.Japanese);
+        var grid = Grid(cut).Instance;
+        await cut.InvokeAsync(() => grid.PlaceSelectionAsync(new SelectionRange(0, 0, 1, 1), new CellPosition(0, 0), grid.RowSequenceVersion));
+
+        await cut.InvokeAsync(() => grid.OnPasteAsync("x", null));
+
+        var expected = PivotWords.JapaneseFor(RefusalLabelIds.PasteTargetNotEditable)!
+            .Replace(RefusalLabelIds.ColumnPlaceholder, "行ラベル", StringComparison.Ordinal);
+        cut.WaitForAssertion(() => Assert.Equal(expected, cut.Find(".ex-pivot-sheet > .ex-grid .ex-announce").TextContent));
+        Assert.DoesNotMatch(Latin, cut.Find(".ex-pivot-sheet > .ex-grid .ex-announce").TextContent);
+    }
+
+    [Fact] // ADR-0060 (PV-33), ADR-0203: a copy the report's grid refuses — here, nothing selected — is said in Japanese
+    public async Task A_copy_refused_on_the_report_is_said_in_japanese()
+    {
+        var cut = RenderJapanese(PivotWords.Japanese);
+
+        await cut.InvokeAsync(() => Grid(cut).Instance.BuildCopyPayloadAsync());
+
+        var expected = PivotWords.JapaneseFor(RefusalLabelIds.CopyEmptySelection);
+        cut.WaitForAssertion(() => Assert.Equal(expected, cut.Find(".ex-pivot-sheet > .ex-grid .ex-announce").TextContent));
+    }
+
     [Fact] // ADR-0060 (PV-33): the words never follow the culture on their own — a Japanese culture without the Label keeps the English
     public void The_culture_alone_changes_no_word()
     {

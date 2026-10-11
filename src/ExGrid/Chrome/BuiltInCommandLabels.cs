@@ -60,10 +60,14 @@ public static class BuiltInCommandLabels
             "Nothing was pasted: the copied block would spill out of the one selected cell. Select a range of the copied block's shape.",
         RefusalLabelIds.PasteShapeMismatch =>
             "Nothing was pasted: the selection is not a whole multiple of the copied block. Select a range of the copied block's shape, or one it repeats over exactly.",
+        // Where a paste may spill, one cell takes the block from its top-left (ADR-0050 item 3).
+        RefusalLabelIds.PasteShapeMismatchMaySpill =>
+            "Nothing was pasted: the selection is not a whole multiple of the copied block. Select a range of the copied block's shape, one it repeats over exactly, or a single cell.",
         RefusalLabelIds.PasteDisjointTarget =>
             "Nothing was pasted: a block of several cells goes into one range, not several. Select one range.",
         RefusalLabelIds.PasteTargetNotEditable =>
-            "Nothing was changed: the selection covers " + RefusalLabelIds.ColumnPlaceholder + ", which cannot be edited.",
+            "Nothing was changed: the selection covers " + RefusalLabelIds.ColumnPlaceholder
+            + ", which cannot be edited. Select cells only in columns that can be edited.",
         RefusalLabelIds.PasteTooLarge => "Nothing was changed: that is more than the grid reads at once. Use a smaller block.",
         RefusalLabelIds.PasteSpillPastExtent =>
             "Nothing was pasted: the copied block would run past the last row or column. Select a cell further from the edge.",
@@ -77,7 +81,10 @@ public static class BuiltInCommandLabels
         RefusalLabelIds.CopyEmptySelection => "Nothing was copied: no cell is selected. Select the cells to copy.",
         RefusalLabelIds.CopyMisalignedShape =>
             "Nothing was copied: the selected ranges do not line up into one block. Select ranges that share their rows or their columns.",
-        RefusalLabelIds.CopyTooLarge => "Nothing was copied: the selection holds more cells than one copy carries. Select fewer cells.",
+        // ADR-0005: past the cap a copy points at export, never at a smaller selection — a part of
+        // the rows pasted elsewhere is the quietly wrong total the cap exists to prevent.
+        RefusalLabelIds.CopyTooLarge =>
+            "Nothing was copied: the selection holds more cells than one copy carries. Export the data instead.",
         RefusalLabelIds.CopyRowsUnavailable => "Nothing was copied: the rows of the selection could not all be read.",
         RefusalLabelIds.CopyClipboardUnavailable =>
             "Nothing was copied: the browser refused the clipboard, which still holds what it held before.",

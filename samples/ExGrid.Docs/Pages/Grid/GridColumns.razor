@@ -128,7 +128,8 @@
                 Blazor Server the request lands a round trip after the <kbd>Space</kbd>, and the grid gives the keyboard
                 only while it is still the grid's, so a user who has moved on to another grid in the meantime keeps it
                 there. The Example's Note column does this, with the grid cascaded to its control; <kbd>Esc</kbd> brings
-                the keyboard back.
+                the keyboard back. What is typed there is the page's, kept by position, and the column's value reads it
+                back, so a note sorts, filters and copies like any other value.
             </li>
             <li>
                 <strong><code>GridColumn.ActionColumn(...)</code></strong> carries buttons and no value. A press raises

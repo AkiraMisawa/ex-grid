@@ -15,29 +15,62 @@ public class RefusalWordsTests
 
     public static TheoryData<CopyRefusalReason> CopyReasons() => new(Enum.GetValues<CopyRefusalReason>());
 
+    /// <summary>Every id the grid asks a refusal's words by: each paste reason on a grid whose paste
+    /// spills and on one whose paste does not, and each copy reason.</summary>
     private static IEnumerable<string> EveryId()
         => Enum.GetValues<PasteRefusalReason>().Select(RefusalLabelIds.For)
-            .Concat(Enum.GetValues<CopyRefusalReason>().Select(RefusalLabelIds.For));
+            .Concat(Enum.GetValues<PasteRefusalReason>().Select(reason => RefusalLabelIds.For(reason, pasteMaySpill: true)))
+            .Concat(Enum.GetValues<CopyRefusalReason>().Select(RefusalLabelIds.For))
+            .Distinct(StringComparer.Ordinal);
 
-    [Fact] // ADR-0203 / ERR-2: one id per reason, paste and copy, none shared and none a command's
-    public void Every_refusal_reason_has_an_id_of_its_own()
+    [Theory] // ADR-0203 / ERR-2: one id per reason, paste and copy, none shared and none a command's — on a grid whose paste spills, and on one whose paste does not
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Every_refusal_reason_has_an_id_of_its_own(bool pasteMaySpill)
     {
-        var ids = EveryId().ToList();
+        var ids = Enum.GetValues<PasteRefusalReason>().Select(reason => RefusalLabelIds.For(reason, pasteMaySpill))
+            .Concat(Enum.GetValues<CopyRefusalReason>().Select(RefusalLabelIds.For))
+            .ToList();
 
         Assert.Equal(ids.Count, ids.Distinct(StringComparer.Ordinal).Count());
         Assert.DoesNotContain(ids, id => typeof(GridCommandIds).GetFields().Any(f => Equals(f.GetValue(null), id)));
     }
 
-    [Theory] // ADR-0203 / ERR-2: every paste refusal reason is worded by the built-in Chrome, as a sentence and not its id
+    [Theory] // ADR-0203 / ERR-2: every paste refusal reason is worded by the built-in Chrome, as a sentence and not its id, whether or not a paste may spill
     [MemberData(nameof(PasteReasons))]
     public void Every_paste_refusal_reason_is_worded(PasteRefusalReason reason)
     {
-        var id = RefusalLabelIds.For(reason);
-        var words = BuiltInCommandLabels.For(id);
+        foreach (var id in new[] { RefusalLabelIds.For(reason), RefusalLabelIds.For(reason, pasteMaySpill: true) })
+        {
+            var words = BuiltInCommandLabels.For(id);
 
-        Assert.NotEqual(id, words);
-        Assert.False(string.IsNullOrWhiteSpace(words));
-        Assert.EndsWith(".", words);
+            Assert.NotEqual(id, words);
+            Assert.False(string.IsNullOrWhiteSpace(words));
+            Assert.EndsWith(".", words);
+        }
+    }
+
+    [Fact] // ADR-0203 / ADR-0050 item 3: where a paste may spill, a shape mismatch offers a single cell too — and only there, since without the spill one cell refuses a block
+    public void A_shape_mismatch_offers_a_single_cell_only_where_a_paste_may_spill()
+    {
+        var spilling = BuiltInCommandLabels.For(RefusalLabelIds.For(PasteRefusalReason.ShapeMismatch, pasteMaySpill: true));
+        var bounded = BuiltInCommandLabels.For(RefusalLabelIds.For(PasteRefusalReason.ShapeMismatch, pasteMaySpill: false));
+
+        Assert.Equal(RefusalLabelIds.PasteShapeMismatchMaySpill, RefusalLabelIds.For(PasteRefusalReason.ShapeMismatch, pasteMaySpill: true));
+        Assert.Contains("or a single cell.", spilling);
+        Assert.Contains("Select a range of the copied block's shape", spilling);
+        Assert.DoesNotContain("single cell", bounded);
+    }
+
+    [Theory] // ADR-0203: a reason other than a shape mismatch has one id, whether or not a paste may spill
+    [MemberData(nameof(PasteReasons))]
+    public void Only_a_shape_mismatch_is_worded_apart_where_a_paste_may_spill(PasteRefusalReason reason)
+    {
+        if (reason == PasteRefusalReason.ShapeMismatch)
+            return;
+
+        Assert.Equal(RefusalLabelIds.For(reason), RefusalLabelIds.For(reason, pasteMaySpill: true));
+        Assert.Equal(RefusalLabelIds.For(reason), RefusalLabelIds.For(reason, pasteMaySpill: false));
     }
 
     [Theory] // ADR-0203 / ERR-2: every copy refusal reason is worded by the built-in Chrome, as a sentence and not its id
@@ -70,17 +103,27 @@ public class RefusalWordsTests
     [Theory] // ADR-0203 / ERR-2: a copy refusal with a next step says it
     [InlineData(CopyRefusalReason.EmptySelection, "Select the cells to copy.")]
     [InlineData(CopyRefusalReason.MisalignedShape, "Select ranges that share their rows or their columns.")]
-    [InlineData(CopyRefusalReason.TooLarge, "Select fewer cells.")]
+    [InlineData(CopyRefusalReason.TooLarge, "Export the data instead.")]
     public void A_copy_refusal_with_a_next_step_says_it(CopyRefusalReason reason, string nextStep)
         => Assert.Contains(nextStep, BuiltInCommandLabels.For(RefusalLabelIds.For(reason)));
 
-    [Fact] // ADR-0203 / ADR-0035: a target that is not editable names the column that refused, and advises no reselection — none would be accepted
-    public void A_target_that_is_not_editable_names_the_column_and_advises_no_reselection()
+    [Fact] // ADR-0005: a copy past the cap points at export, never at a smaller selection — part of the rows pasted elsewhere is the quietly wrong total the cap prevents
+    public void A_copy_past_the_cap_points_at_export_and_not_at_fewer_cells()
+    {
+        var words = BuiltInCommandLabels.For(RefusalLabelIds.CopyTooLarge);
+
+        Assert.Contains("Export", words);
+        Assert.DoesNotContain("fewer", words);
+        Assert.DoesNotContain("smaller", words);
+    }
+
+    [Fact] // ADR-0203 / ERR-2, ADR-0035: a target that is not editable names the column that refused, and says to select cells only in columns that edit — never a reshaped target over the same columns
+    public void A_target_that_is_not_editable_names_the_column_and_says_what_to_select()
     {
         var words = BuiltInCommandLabels.For(RefusalLabelIds.PasteTargetNotEditable);
 
         Assert.Contains(RefusalLabelIds.ColumnPlaceholder, words);
-        Assert.DoesNotContain("Select", words);
+        Assert.EndsWith("Select cells only in columns that can be edited.", words);
         Assert.DoesNotContain("shape", words);
     }
 

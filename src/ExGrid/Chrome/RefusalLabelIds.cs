@@ -16,12 +16,18 @@ namespace ExGrid.Chrome;
 /// <c>OnCopyRefused</c> silences nothing; both still receive the reason.</para>
 ///
 /// <para>The words for <see cref="PasteTargetNotEditable"/> name the column that refused: the
-/// grid writes that column's header where the words hold <see cref="ColumnPlaceholder"/>.</para>
+/// grid writes that column's header — its name, where the header is blank, as a Mark or an Action
+/// Column's is — where the words hold <see cref="ColumnPlaceholder"/>.</para>
+///
+/// <para>The grid asks for a paste refusal's words by <see cref="For(PasteRefusalReason, bool)"/>, with
+/// whether a paste may spill: a shape mismatch has words of its own there
+/// (<see cref="PasteShapeMismatchMaySpill"/>).</para>
 /// </summary>
 public static class RefusalLabelIds
 {
     /// <summary>Where the words for <see cref="PasteTargetNotEditable"/> name the column that
-    /// refused: the grid writes the column's header in its place.</summary>
+    /// refused: the grid writes the column's header in its place, or its name where the header is
+    /// blank.</summary>
     public const string ColumnPlaceholder = "{column}";
 
     /// <summary>The id of the words for a refused paste, fill or Delete — the one gate all three go
@@ -44,6 +50,16 @@ public static class RefusalLabelIds
         _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A paste refusal with no words: every reason has an id (ADR-0203)."),
     };
 
+    /// <summary>The id of the words for a refused paste, fill or Delete on a grid that lets a paste
+    /// spill, or does not (<c>ExGrid.PasteMaySpill</c>, ADR-0050 item 3): the grid asks with this. Only
+    /// a shape mismatch is worded apart — where a paste may spill, one cell is a target the copied
+    /// block is accepted on, and the words say so (<see cref="PasteShapeMismatchMaySpill"/>, ADR-0203);
+    /// every other reason has the one id <see cref="For(PasteRefusalReason)"/> answers.</summary>
+    /// <param name="reason">Why the write was refused.</param>
+    /// <param name="pasteMaySpill">Whether the grid lets a paste spill from one cell.</param>
+    public static string For(PasteRefusalReason reason, bool pasteMaySpill)
+        => pasteMaySpill && reason == PasteRefusalReason.ShapeMismatch ? PasteShapeMismatchMaySpill : For(reason);
+
     /// <summary>The id of the words for a refused copy.</summary>
     /// <param name="reason">Why the copy was refused.</param>
     public static string For(CopyRefusalReason reason) => reason switch
@@ -64,16 +80,24 @@ public static class RefusalLabelIds
     /// of the copied block's shape (ADR-0014).</summary>
     public const string PasteSingleCellTarget = "refused-paste-single-cell-target";
 
-    /// <summary><see cref="PasteRefusalReason.ShapeMismatch"/>: the words say to select a target the
-    /// copied block divides into (ADR-0014).</summary>
+    /// <summary><see cref="PasteRefusalReason.ShapeMismatch"/> on a grid where a paste does not spill:
+    /// the words say to select a target of the copied block's shape, or one it divides into
+    /// (ADR-0014).</summary>
     public const string PasteShapeMismatch = "refused-paste-shape-mismatch";
+
+    /// <summary><see cref="PasteRefusalReason.ShapeMismatch"/> on a grid where a paste may spill
+    /// (<c>ExGrid.PasteMaySpill</c>): the words say to select a target of the copied block's shape, one
+    /// it divides into, or a single cell, which takes the block from its top-left (ADR-0203, ADR-0050
+    /// item 3).</summary>
+    public const string PasteShapeMismatchMaySpill = "refused-paste-shape-mismatch-may-spill";
 
     /// <summary><see cref="PasteRefusalReason.DisjointTarget"/>.</summary>
     public const string PasteDisjointTarget = "refused-paste-disjoint-target";
 
     /// <summary><see cref="PasteRefusalReason.TargetNotEditable"/>: the words name the column that
-    /// refused (<see cref="ColumnPlaceholder"/>), and give no reselection advice, since none would be
-    /// accepted (ADR-0035).</summary>
+    /// refused (<see cref="ColumnPlaceholder"/>), by its header, or its name where the header is blank,
+    /// and say to select cells only in columns that can be edited — a target of another shape over the
+    /// same columns would be refused the same way (ADR-0035).</summary>
     public const string PasteTargetNotEditable = "refused-paste-target-not-editable";
 
     /// <summary><see cref="PasteRefusalReason.TooLarge"/>.</summary>

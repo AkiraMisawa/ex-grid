@@ -104,19 +104,23 @@
             <tbody>
                 <tr><td><code>SingleCellTarget</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteSingleCellTarget)</td></tr>
                 <tr><td><code>ShapeMismatch</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteShapeMismatch)</td></tr>
-                <tr><td><code>TargetNotEditable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteTargetNotEditable).Replace(RefusalLabelIds.ColumnPlaceholder, "Desk") — naming the column that refused, by its header.</td></tr>
+                <tr><td><code>ShapeMismatch</code>, with <code>PasteMaySpill</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteShapeMismatchMaySpill) — where a paste may spill, one cell takes the block from its top-left, so the words offer it.</td></tr>
+                <tr><td><code>TargetNotEditable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteTargetNotEditable).Replace(RefusalLabelIds.ColumnPlaceholder, "Desk") — naming the column that refused, by its header, or by its name where the header is blank, as a Mark Column's is.</td></tr>
                 <tr><td><code>TooLarge</code> (copy)</td><td>@BuiltInCommandLabels.For(RefusalLabelIds.CopyTooLarge)</td></tr>
                 <tr><td><code>ClipboardUnavailable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.CopyClipboardUnavailable)</td></tr>
             </tbody>
         </MudSimpleTable>
         <p>
             The words are the built-in Chrome's, keyed by the reason, and replaced the way its menu labels are:
-            through <code>CommandLabel</code>, which is asked with each reason's id in <code>RefusalLabelIds</code>.
+            through <code>CommandLabel</code>, which is asked with each reason's id in <code>RefusalLabelIds</code>
+            — a shape mismatch by <code>PasteShapeMismatchMaySpill</code> on a grid with <code>PasteMaySpill</code>.
             Answer your own sentence to replace one, <code>null</code> to keep the English, and the empty string to
             silence one — you then own saying it. Where the words hold <code>{column}</code>
             (<code>RefusalLabelIds.ColumnPlaceholder</code>), the grid writes the refusing column's header. Under
             ExGrid.MudBlazor the Chrome's <code>Label</code> answers the same ids (MudBlazor has no localised text
-            for these), and a Chrome of your own answers them through <code>IGridChrome.Words</code>.
+            for these), and a Chrome of your own answers them through <code>IGridChrome.Words</code>. A copy past
+            the cap points at export, never at a smaller selection, for the reason above: if your page has no
+            export, replace those words with what it does offer.
         </p>
         <p>
             <code>OnPasteRefused</code> and <code>OnCopyRefused</code> still receive the reason, whatever was said,

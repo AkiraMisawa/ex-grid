@@ -10,7 +10,8 @@ import { expectKeyboardOn, activeDescendant, expectTabStopTaken } from './keyboa
 // page, to the nearest edge; a cell already in the window moves nothing, nor does a resize. Opening the
 // editor follows the same rule. ?second=1 adds a second grid below, which a press can give the keyboard
 // to while a Note's request for it is on its way. /features holds two grids, for a column menu's
-// opening focus on its way while the other grid is pressed.
+// opening focus on its way while the other grid is pressed. /marks holds a million rows in a grid
+// 600px tall, for an extension that carries the grid's own Viewport past the Focus.
 //
 // On the Server host the round trip is set to 150 ms for the scripted-focus cases; on WebAssembly
 // there is no round trip, and the same test is the case without one.
@@ -107,6 +108,44 @@ test('KB-45: while extending, the page follows the Extent, and the Focus may be 
     const extent = grid.locator("[id$='-r12c0']");
     await expectInWindow(extent);
     await expect.poll(() => activeDescendant(grid)).toMatch(/-r0c0$/);
+});
+
+test('KB-45: extending past the grid\'s own Viewport still brings the Extent into the window, the Focus left off the painted rows (ADR-0204, ADR-0052)', async ({ page }) => {
+    // /marks holds 1,000,000 rows in a grid 600px tall, its top at the window's top and its lower
+    // part below the fold. Shift+PageDown carries the Extent, and the grid's own Viewport with it, a
+    // page down: the Focus on row 0 leaves the painted rows, and the Extent stands at the grid's top,
+    // in the window, so nothing has been followed yet. From there each Shift+↓ walks the Extent
+    // down the grid, past the fold, and the page follows it there.
+    await page.setViewportSize(WINDOW);
+    await page.goto('/marks');
+    const grid = page.locator('.ex-grid').first();
+    const first = grid.locator("[id$='-r0c1']");
+    await expect(first).toBeVisible();
+    await expectTabStopTaken(grid);
+    await grid.evaluate((root) => root.scrollIntoView({ block: 'start' }));
+    await first.click({ force: true });
+    await expectKeyboardOn(grid);
+    await expect.poll(() => activeDescendant(grid)).toMatch(/-r0c1$/);
+    const start = await pageTop(page);
+
+    await page.keyboard.press('Shift+PageDown');
+    await expect(first).toHaveCount(0);
+    // Where the page down put the Extent, read from what the grid says is selected.
+    const region = grid.locator('.ex-announce');
+    await expect(region).toHaveText(/ rows by 1 columns selected, Index 1 to Index \d+$/);
+    const down = Number((await region.textContent()).match(/to Index (\d+)$/)[1]) - 1;
+    const target = grid.locator(`[id$='-r${down + 12}c1']`);
+    await expect(target).not.toBeInViewport();
+    expect(await pageTop(page)).toBe(start);
+
+    for (let i = 0; i < 12; i++) {
+        await page.keyboard.press('Shift+ArrowDown');
+    }
+
+    await expectInWindow(target);
+    expect(await pageTop(page)).toBeGreaterThan(start);
+    await expect(first).toHaveCount(0);
+    await expectKeyboardOn(grid);
 });
 
 test('KB-45: a resize is not followed — the page stays where it is when the window shrinks over the Focus (ADR-0204)', async ({ page }) => {

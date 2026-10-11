@@ -37,8 +37,10 @@
 
     /// <summary>The grid's focus function (ADR-0204): an item takes DOM focus through it, which the
     /// grid grants only while the keyboard is still its own — on a circuit the request lands a round
-    /// trip after the press that opened the menu. Absent, the item's own focus.</summary>
-    [Parameter] public Func<ElementReference, bool, Task>? TakeFocus { get; set; }
+    /// trip after the press that opened the menu. Absent, the item's own focus. The grid sets it; it is
+    /// public only because a component's parameter is, and is no part of the contract (ADR-0201).</summary>
+    [Parameter, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public Func<ElementReference, bool, Task>? TakeFocus { get; set; }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)

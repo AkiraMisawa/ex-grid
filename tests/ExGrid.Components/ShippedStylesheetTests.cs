@@ -756,11 +756,13 @@ public class ShippedStylesheetTests
         Assert.Contains("setTimeout(", after.Value, StringComparison.Ordinal);
         Assert.Contains("if (pendingReveal || repaint)", after.Value, StringComparison.Ordinal);
 
-        // Only while the keyboard is still this grid's, and only for the Focus it was taken for, found
-        // inside this root by the id its own render wrote.
+        // Only while the keyboard is still this grid's, and only for the Focus it was taken for — as the
+        // root names it, painted or not (ADR-0052: the Focus may be off the painted rows while the
+        // Extent is followed) — found inside this root by the id its own render wrote.
         var awaited = Regex.Match(script, @"const awaitFollowedRender = \(\) => \{.*?\n    \};", RegexOptions.Singleline);
         Assert.True(awaited.Success, "awaitFollowedRender is not in the module");
-        Assert.Contains("!keyboardStillHere() || holder.getAttribute('aria-activedescendant') !== request.focus", awaited.Value, StringComparison.Ordinal);
+        Assert.Contains("!keyboardStillHere() || root.getAttribute('data-ex-follow-focus') !== request.focus", awaited.Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("aria-activedescendant", awaited.Value, StringComparison.Ordinal);
         Assert.Contains("root.querySelector(`#${CSS.escape(request.target)}`)", awaited.Value, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const keyboardStillHere = \(\) => \{\s*const active = document\.activeElement;\s*return !!root && \(!active \|\| active === document\.body \|\| active === document\.documentElement \|\| root\.contains\(active\)\);"), script);
 

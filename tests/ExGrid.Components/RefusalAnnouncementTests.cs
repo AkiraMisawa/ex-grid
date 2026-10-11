@@ -4,6 +4,7 @@ using ExGrid.Chrome;
 using ExGrid.Clipboard;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
+using ExGrid.Rows;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
@@ -81,7 +82,10 @@ public class RefusalAnnouncementTests : GridTestContext
         Assert.Equal(1, RegionsSaying(cut, words));
     }
 
-    [Fact] // ADR-0203 / ERR-2, ADR-0035: a target that is not editable is said naming the column that refused, by its header
+    private const string DeskRefused =
+        "Nothing was changed: the selection covers Desk, which cannot be edited. Select cells only in columns that can be edited.";
+
+    [Fact] // ADR-0203 / ERR-2, ADR-0035: a target that is not editable is said naming the column that refused, by its header, and what to select instead
     public async Task A_target_that_is_not_editable_is_said_naming_the_column()
     {
         var cut = RenderGrid();
@@ -90,7 +94,61 @@ public class RefusalAnnouncementTests : GridTestContext
 
         await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x", null));
 
-        Assert.Equal("Nothing was changed: the selection covers Desk, which cannot be edited.", Announced(cut));
+        Assert.Equal(DeskRefused, Announced(cut));
+    }
+
+    [Fact] // ADR-0203 / ADR-0043: a column whose header is blank — a Mark Column's, by default — is named by its name, never as nothing
+    public async Task A_column_with_a_blank_header_is_named_by_its_name()
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, [GridColumn<TestRow>.MarkColumn(), .. Columns()])
+            .Add(g => g.Marks, new NoMarks())
+            .Add(g => g.RowHeight, 20)
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.ViewportWidth, 450));
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("a", true, false, false, false, false));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Delete", false, false, false, false, false));
+
+        Assert.Equal("Nothing was changed: the selection covers Mark, which cannot be edited. Select cells only in columns that can be edited.",
+            Announced(cut));
+    }
+
+    [Theory] // ADR-0203 / ADR-0050 item 3: a shape mismatch says a single cell would take the block only where a paste may spill, where it would
+    [InlineData(false, RefusalLabelIds.PasteShapeMismatch)]
+    [InlineData(true, RefusalLabelIds.PasteShapeMismatchMaySpill)]
+    public async Task A_shape_mismatch_offers_a_single_cell_where_a_paste_may_spill(bool pasteMaySpill, string id)
+    {
+        var cut = RenderGrid(ps => ps.Add(g => g.PasteMaySpill, pasteMaySpill));
+        await ClickCellAsync(cut, 50, 10);
+        await ExtendRightAsync(cut);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));   // three rows by two
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+
+        Assert.Equal(BuiltInCommandLabels.For(id), Announced(cut));
+        Assert.Equal(pasteMaySpill, Announced(cut).Contains("single cell", StringComparison.Ordinal));
+    }
+
+    [Fact] // ADR-0033, principle 6: a refusal made while the selection it follows is still settling is not replaced by that selection's description when the settle runs out — and a later selection is described as ever
+    public async Task A_refusal_is_not_replaced_by_the_description_of_the_selection_before_it()
+    {
+        var cut = RenderGrid();
+        await ClickCellAsync(cut, 50, 10);
+        await ExtendRightAsync(cut);                              // one row by two, its description on its way
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+
+        var words = BuiltInCommandLabels.For(RefusalLabelIds.PasteShapeMismatch);
+        Assert.Equal(words, Announced(cut));
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+
+        Assert.Contains("2 rows by 2 columns selected", Announced(cut));
     }
 
     [Fact] // ADR-0203: binding OnPasteRefused silences nothing — the reason is raised and the words are announced
@@ -121,7 +179,7 @@ public class RefusalAnnouncementTests : GridTestContext
         await ClickCellAsync(cut, 150, 10);
         await ExtendRightAsync(cut);
         await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x", null));
-        Assert.Equal("Nothing was changed: the selection covers Desk, which cannot be edited.", Announced(cut));
+        Assert.Equal(DeskRefused, Announced(cut));
     }
 
     [Fact] // ADR-0203: the Consumer's words name the column where they hold its place
@@ -218,6 +276,26 @@ public class RefusalAnnouncementTests : GridTestContext
         await PasteBlockOntoOneCellAsync(cut);
 
         Assert.Equal(BuiltInCommandLabels.For(RefusalLabelIds.PasteSingleCellTarget), Announced(cut));
+    }
+
+    /// <summary>Row Marks nobody holds: enough for a Mark Column to be painted.</summary>
+    private sealed class NoMarks : IRowMarks<TestRow>
+    {
+        public RowMarkCounts? Counts => null;
+
+        public event Action? Changed
+        {
+            add { }
+            remove { }
+        }
+
+        public bool IsMarked(TestRow row) => false;
+
+        public Task OnMarkIntentAsync(RowMarkIntent<TestRow> intent) => Task.CompletedTask;
+
+        public void OnRowKindChanged(Func<TestRow, RowKind>? rowKind)
+        {
+        }
     }
 
     /// <summary>A Chrome that draws nothing of its own and words refusals by the function it is given.</summary>

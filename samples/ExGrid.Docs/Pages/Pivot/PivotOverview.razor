@@ -45,9 +45,18 @@
                 <code>####</code>, never a shorter number. A copy carries the full-precision values, not the
                 painted ones. Money held as <code>decimal</code> is summed exactly. A layout whose report would
                 be too large to read is refused by name (<code>PivotCaps</code>), and the report on screen
-                stays. A copy the report's grid refuses is announced as ExGrid announces it, in the words
-                <a href="exgrid/clipboard#what-a-refusal-sounds-like">its Clipboard page</a> lists, which
-                <code>Label</code> replaces by the same ids.
+                stays. A copy, or a paste, the report's grid refuses is announced as ExGrid announces it, in
+                the words <a href="exgrid/clipboard#what-a-refusal-sounds-like">its Clipboard page</a> lists,
+                which <code>Label</code> replaces by the same ids; <code>PivotWords.Japanese</code> words
+                every one of them.
+            </li>
+            <li>
+                <strong>The page follows the report's Focus.</strong> The report is an ExGrid, so a move made
+                with the keys — the arrows, <kbd>Home</kbd> and <kbd>End</kbd>, <kbd>PageUp</kbd> and
+                <kbd>PageDown</kbd>, <kbd>Enter</kbd> and <kbd>Tab</kbd> — brings the cell into the window when
+                the report runs past the fold, as
+                <a href="exgrid/selection#the-page-follows-the-focus">ExGrid's page follows it</a>; a page with a
+                fixed bar sets <code>scroll-padding</code>.
             </li>
             <li>
                 <strong>Your application owns the layout.</strong> The <code>PivotLayout</code> is View State:

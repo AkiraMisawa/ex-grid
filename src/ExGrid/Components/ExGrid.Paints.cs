@@ -344,7 +344,8 @@ public partial class ExGrid<TRow>
     /// a Ctrl+Enter fill whose editor opened under one.</summary>
     private async Task RefuseWriteAsync(PasteRefusalReason reason, int column = -1)
     {
-        var words = RefusalWords(RefusalLabelIds.For(reason), column);
+        // Asked with whether a paste may spill: a shape mismatch then has a single cell to offer.
+        var words = RefusalWords(RefusalLabelIds.For(reason, PasteMaySpill), column);
         if (!string.IsNullOrWhiteSpace(words))
         {
             Announce(words);

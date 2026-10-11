@@ -449,11 +449,11 @@ test('a refusal is announced in the root\'s live region in the built-in words, a
     await page.evaluate(() => navigator.clipboard.writeText('intruder'));
     await clickCell(page, 0, 0);                   // Book, never declared editable
     await page.keyboard.press('Shift+ArrowRight');
-    // The range is described once it settles; the refusal comes after that.
-    await expect(region).toHaveText(/by 2 columns selected/);
+    // Straight on, while the range's description is still settling: the refusal is newer, and the
+    // description stands down rather than replacing it when the settle runs out (principle 6).
     await page.keyboard.press('ControlOrMeta+V');
 
-    const words = 'Nothing was changed: the selection covers Book, which cannot be edited.';
+    const words = 'Nothing was changed: the selection covers Book, which cannot be edited. Select cells only in columns that can be edited.';
     await expect(region).toHaveText(words);
     await expect(page.locator('#paste-refused-status')).toContainText('TargetNotEditable');
     await circuitQuiet();

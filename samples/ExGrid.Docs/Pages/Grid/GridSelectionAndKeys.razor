@@ -64,8 +64,12 @@
             <kbd>Ctrl</kbd> + <kbd>Backspace</kbd> — first brings the cell into the grid's own Viewport, then asks the
             browser to bring it into the window, at the nearest edge: on a grid taller than the window, the page
             scrolls as the Focus walks past the fold, as a spreadsheet's window does. While a range is extended it
-            is the far end that is followed. Opening the editor follows the same rule, so a cell is followed the same
-            way whether it is reached or edited. A cell already in the window moves nothing.
+            is the far end that is followed, however far it has carried the Viewport from the Focus. Every other key
+            that the grid answers by bringing a cell into its Viewport is followed the same way — <kbd>Ctrl</kbd> +
+            <kbd>A</kbd>, <kbd>Shift</kbd> + <kbd>Space</kbd> and <kbd>Ctrl</kbd> + <kbd>Space</kbd>, and
+            <kbd>Ctrl</kbd> + <kbd>.</kbd> among them — so what the grid shows and what the window shows never
+            part. Opening the editor follows the same rule, so a cell is followed the same way whether it is reached
+            or edited. A cell already in the window moves nothing.
         </p>
         <p>
             Nothing is followed once the keyboard has left the grid, or once the Focus has moved on, and a resize, or

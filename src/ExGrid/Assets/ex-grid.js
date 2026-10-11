@@ -174,8 +174,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // waits for it; it then waits for the frame that paints it, and for a reveal's write and repaint,
     // and runs in the task after that frame, so nothing is read on the path to a paint. It runs only
     // while the keyboard is still this grid's — DOM focus inside this root or on nothing, the
-    // editor's question — and only for the Focus it was taken for: a request whose Focus has moved
-    // on, or whose keyboard has left, is dropped. The Cell Editor opening is followed by the same
+    // editor's question — and only for the Focus it was taken for, which the root names whether or
+    // not that cell is painted (data-ex-follow-focus: while extending, the Focus may be far above the
+    // painted rows, ADR-0052): a request whose Focus has moved on, or whose keyboard has left, is
+    // dropped. The Cell Editor opening is followed by the same
     // rule (focusEditor). The grid's own scroller is the grid's, and is put back where the reveal
     // left it if the browser moved it. The scroll entry of ADR-0021, applied to the page.
     let follow = null;
@@ -222,8 +224,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         followObserver.disconnect();
         request.token = undefined;
         afterPaint(request, () => {
-            const holder = keyFieldOf() ?? root;
-            if (!keyboardStillHere() || holder.getAttribute('aria-activedescendant') !== request.focus) {
+            if (!keyboardStillHere() || root.getAttribute('data-ex-follow-focus') !== request.focus) {
                 return;
             }
             // Found inside this root, by the id its own render wrote: never another instance's cell.
@@ -3025,10 +3026,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             scroller.scrollTop = top;
             return true;
         },
-        // The page follows a move the grid made (ADR-0204, above): focus names the
-        // aria-activedescendant the move's render writes — the Focus it was taken for — target the
-        // id of the cell to bring into the window (the Extent's while extending), and token the
-        // render (data-ex-follow). A newer request replaces one still waiting.
+        // The page follows a move the grid made (ADR-0204, above): focus names the Focus it was taken
+        // for, as the root's data-ex-follow-focus does, target the id of the cell to bring into the
+        // window (the Extent's while extending), and token the render (data-ex-follow). A newer
+        // request replaces one still waiting.
         followFocus: (focus, target, token) => {
             if (!root || !scroller) {
                 return;

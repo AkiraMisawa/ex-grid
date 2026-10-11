@@ -62,7 +62,8 @@
    script tells of each press handed over (ADR-0058, "On a circuit"). *@
 <div class="@RootClass" style="@RootStyle()" tabindex="@RootTabIndex" dir="ltr" @ref="_root"
      id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
-     data-ex-reveal="@_revealToken" data-ex-follow="@_followToken" data-ex-pointed-from="@PointedFrom"
+     data-ex-reveal="@_revealToken" data-ex-follow="@_followToken" data-ex-follow-focus="@FollowFocusId()"
+     data-ex-pointed-from="@PointedFrom"
      aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
      aria-activedescendant="@(keyFieldShown ? null : activeDescendant)"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
@@ -1683,15 +1684,19 @@
 
     /// <summary>The words a refusal is said in (ADR-0203): the Chrome's for the reason's
     /// <see cref="RefusalLabelIds"/> id — a substituted Chrome's <see cref="IGridChrome.Words"/>, else the
-    /// built-in Chrome's through <see cref="CommandLabel"/>, else its English — with the header of the
-    /// column that refused written in for <see cref="RefusalLabelIds.ColumnPlaceholder"/>. Empty where
-    /// whoever answers has silenced it, and then nothing is announced.</summary>
+    /// built-in Chrome's through <see cref="CommandLabel"/>, else its English — with the column that
+    /// refused written in for <see cref="RefusalLabelIds.ColumnPlaceholder"/>: by its header, or by its
+    /// name where the header is blank, as a Mark or an Action Column's is by default — a refusal never
+    /// names a column as nothing. Empty where whoever answers has silenced it, and then nothing is
+    /// announced.</summary>
     private string RefusalWords(string id, int column = -1)
     {
         var words = Chrome?.Words(id) ?? CommandLabel?.Invoke(id) ?? BuiltInCommandLabels.For(id);
-        return column >= 0 && column < Columns.Count && words.Contains(RefusalLabelIds.ColumnPlaceholder, StringComparison.Ordinal)
-            ? words.Replace(RefusalLabelIds.ColumnPlaceholder, Columns[column].Header, StringComparison.Ordinal)
-            : words;
+        if (column < 0 || column >= Columns.Count || !words.Contains(RefusalLabelIds.ColumnPlaceholder, StringComparison.Ordinal))
+            return words;
+        var refused = Columns[column];
+        return words.Replace(RefusalLabelIds.ColumnPlaceholder,
+            string.IsNullOrWhiteSpace(refused.Header) ? refused.Name : refused.Header, StringComparison.Ordinal);
     }
 
     /// <summary>The Consumer's own context-menu commands, appended to the core's
@@ -1971,7 +1976,8 @@
     // cell its reveal brought into the Viewport — the Focus, or the Extent while extending — and asked
     // of the browser from inside the render that paints that cell (StageFollow). Numbered like a
     // reveal, and the number rendered on the root (data-ex-follow): the script waits for the render
-    // that carries it.
+    // that carries it, and checks the Focus the root names then (data-ex-follow-focus) against the
+    // one the request was taken for.
     private bool _followArmed;
     private CellPosition _followFocus;
     private CellPosition _followTarget;
@@ -8682,13 +8688,16 @@
 
     /// <summary>
     /// Asks the browser, from inside the render that paints a move, to bring the cell it revealed
-    /// into the window at the nearest edge (ADR-0204): the request names the Focus by the
-    /// <c>aria-activedescendant</c> this render writes, and the render by <c>data-ex-follow</c>; the
-    /// script waits for both, runs only while the keyboard is still this grid's, and drops a request
-    /// whose Focus has moved on. A move whose cell is not painted yet — rows on their way after a far
-    /// jump — stays armed until the render that paints it; one the Focus has moved on from since, by
-    /// a press or by the Consumer, is dropped, and so is one the user has scrolled away from
-    /// (<see cref="ApplyScrollOffset"/>). Nothing is measured here, and nothing is sent per cell.
+    /// into the window at the nearest edge (ADR-0204): the request names the Focus it was taken for by
+    /// the id the root carries in <c>data-ex-follow-focus</c>, and the render by <c>data-ex-follow</c>;
+    /// the script waits for both, runs only while the keyboard is still this grid's, and drops a
+    /// request whose Focus has moved on. Only the cell to bring in has to be painted: while extending,
+    /// the Focus stays where the extension started and leaves the painted rows once the Extent has
+    /// carried the Viewport past it (ADR-0052), and the Extent is still followed. A move whose cell is
+    /// not painted yet — rows on their way after a far jump — stays armed until the render that paints
+    /// it; one the Focus has moved on from since, by a press or by the Consumer, is dropped, and so is
+    /// one the user has scrolled away from (<see cref="ApplyScrollOffset"/>). Nothing is measured here,
+    /// and nothing is sent per cell.
     /// </summary>
     private void StageFollow()
     {
@@ -8699,11 +8708,35 @@
             _followArmed = false;
             return;
         }
-        if (!CellIsPainted(_followTarget) || ActiveDescendant() is not { } focus)
+        if (!CellIsPainted(_followTarget))
             return;
         _followArmed = false;
-        _ = FollowPageAsync(focus, CellIds.Cell(_idPrefix, _followTarget.Row, _followTarget.Column), ++_followToken);
+        _ = FollowPageAsync(CellIds.Cell(_idPrefix, _followFocus.Row, _followFocus.Column),
+            CellIds.Cell(_idPrefix, _followTarget.Row, _followTarget.Column), ++_followToken);
     }
+
+    /// <summary>
+    /// The id of the Focus cell, painted or not, which the root carries as <c>data-ex-follow-focus</c>
+    /// (ADR-0204): what a page follow's request names the Focus it was taken for by, so the script can
+    /// drop one whose Focus has moved on even while the Focus is off the painted rows — where
+    /// <c>aria-activedescendant</c> names nothing (ADR-0033). Null with no Focus. Built once per Focus,
+    /// not once per render.
+    /// </summary>
+    private string? FollowFocusId()
+    {
+        if (_selection.Selection.IsEmpty)
+            return null;
+        var focus = _selection.Selection.Focus;
+        if (_followFocusId is null || _followFocusIdOf != focus)
+        {
+            _followFocusIdOf = focus;
+            _followFocusId = CellIds.Cell(_idPrefix, focus.Row, focus.Column);
+        }
+        return _followFocusId;
+    }
+
+    private CellPosition _followFocusIdOf;
+    private string? _followFocusId;
 
     private async Task FollowPageAsync(string focus, string target, long token)
     {
@@ -8816,11 +8849,23 @@
 
     /// <summary>Says something through the root's one live region (ADR-0033). A repeat
     /// is made audible by emptying the region for one render and putting the text back
-    /// on the next — a mutation, where identical text would be none.</summary>
+    /// on the next — a mutation, where identical text would be none.
+    ///
+    /// <para>A sentence said is newer than the selection it was said over: a description of that
+    /// selection still waiting to settle stands down, and the selection counts as described. Without
+    /// that, a refusal made within <see cref="SettleDelay"/> of a selection change — Shift+→ and then
+    /// Ctrl+V, at machine speed — would be replaced by the description when the timer fired, and what
+    /// the region last said would depend on timing (principle 6). A later change of the selection is
+    /// described as ever.</para></summary>
     private void Announce(string? sentence)
     {
         var text = sentence ?? "";
         _announcementDescribesSelection = false;
+        if (text.Length > 0)
+        {
+            _announcedRanges = _selection.Selection.Ranges;
+            _announceTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        }
         if (text.Length > 0 && text == _announcement)
         {
             // Identical text is no mutation, and the second refusal is the one the user

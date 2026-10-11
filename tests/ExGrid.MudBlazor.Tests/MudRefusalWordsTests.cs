@@ -81,7 +81,11 @@ public class MudRefusalWordsTests : MudTestContext
         IGridChrome chrome = MudGridChrome.Default;
 
         foreach (var reason in Enum.GetValues<PasteRefusalReason>())
+        {
             Assert.Equal(BuiltInCommandLabels.For(RefusalLabelIds.For(reason)), chrome.Words(RefusalLabelIds.For(reason)));
+            var spilling = RefusalLabelIds.For(reason, pasteMaySpill: true);
+            Assert.Equal(BuiltInCommandLabels.For(spilling), chrome.Words(spilling));
+        }
         foreach (var reason in Enum.GetValues<CopyRefusalReason>())
             Assert.Equal(BuiltInCommandLabels.For(RefusalLabelIds.For(reason)), chrome.Words(RefusalLabelIds.For(reason)));
     }

@@ -1554,10 +1554,11 @@
 
     /// <summary>A write the grid refused (ADR-0035). The grid has announced it, in the Sheet's words
     /// through its label seam (ADR-0203: <see cref="SheetCommandIds.EnglishFor"/>), so the notice shows
-    /// the same words and does not say them a second time.</summary>
+    /// the same words and does not say them a second time — asked by the id the grid asked with, on a
+    /// grid whose paste may spill.</summary>
     private void OnPasteRefused(global::ExGrid.Clipboard.PasteRefusalReason reason)
     {
-        Tell(WordsTheGridSaid(RefusalLabelIds.For(reason)), saidByGrid: true);
+        Tell(WordsTheGridSaid(RefusalLabelIds.For(reason, pasteMaySpill: true)), saidByGrid: true);
         StateHasChanged();
     }
 

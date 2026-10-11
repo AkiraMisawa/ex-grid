@@ -10,9 +10,10 @@ namespace ExGrid.Components.Tests;
 /// <summary>
 /// The page follows what a move reveals (ADR-0204, KB-45): after a move the grid makes, the
 /// browser is asked — from the render that paints the move — to bring the cell the move revealed
-/// into the window, naming the Focus it was taken for by the <c>aria-activedescendant</c> that
-/// render writes. What the browser then does, and whether the keyboard is still the grid's, is the
-/// script's and layer 3's; what is asked, and when, is pinned here.
+/// into the window, naming the Focus it was taken for by the id that render writes on the root
+/// (<c>data-ex-follow-focus</c>), painted or not. What the browser then does, and whether the
+/// keyboard is still the grid's, is the script's and layer 3's; what is asked, and when, is pinned
+/// here.
 ///
 /// 100 columns of 100px in a 350px Viewport, 20px rows in a 100px Viewport of which the header
 /// takes the first 20: four rows painted.
@@ -44,7 +45,11 @@ public class PageFollowTests : GridTestContext
     private static string? ActiveDescendant(IRenderedComponent<ExGrid<TestRow>> cut)
         => (cut.FindAll(".ex-key-field").FirstOrDefault() ?? cut.Find(".ex-grid")).GetAttribute("aria-activedescendant");
 
-    [Fact] // ADR-0204 / KB-45: an arrow asks the page to follow the Focus it moved to, named by the aria-activedescendant its render writes, and the render by data-ex-follow
+    /// <summary>The Focus the root names for the script (ADR-0204), painted or not.</summary>
+    private static string? FollowFocus(IRenderedComponent<ExGrid<TestRow>> cut)
+        => cut.Find(".ex-grid").GetAttribute("data-ex-follow-focus");
+
+    [Fact] // ADR-0204 / KB-45: an arrow asks the page to follow the Focus it moved to, named as the root names it (data-ex-follow-focus) — the cell aria-activedescendant names — and the render by data-ex-follow
     public async Task An_arrow_asks_the_page_to_follow_the_focus()
     {
         var cut = RenderGrid();
@@ -57,6 +62,7 @@ public class PageFollowTests : GridTestContext
         Assert.EndsWith("r1c0", focus);
         Assert.Equal(focus, target);
         Assert.Equal(ActiveDescendant(cut), focus);
+        Assert.Equal(FollowFocus(cut), focus);
         var token = (long)Js.PageFollowed.Invocations.Single().Arguments[2]!;
         Assert.Equal(token.ToString(System.Globalization.CultureInfo.InvariantCulture), cut.Find(".ex-grid").GetAttribute("data-ex-follow"));
     }
@@ -90,6 +96,28 @@ public class PageFollowTests : GridTestContext
         var (focus, target) = Assert.Single(Js.Followed);
         Assert.EndsWith("r0c0", focus);
         Assert.EndsWith("r1c0", target);
+    }
+
+    [Fact] // ADR-0204 / ADR-0052, KB-45: extending past the grid's own Viewport carries the Focus off the painted rows, and the Extent is still followed at every press — the request names the Focus by the root's attribute, not by aria-activedescendant, which names nothing then
+    public async Task Extending_past_the_viewport_still_follows_the_extent()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 10);
+
+        for (var press = 1; press <= 6; press++)
+        {
+            await PressAsync(cut, "ArrowDown", shift: true);
+
+            Assert.Equal(press, Js.Followed.Count);
+            var (focus, target) = Js.Followed[^1];
+            Assert.EndsWith("r0c0", focus);
+            Assert.EndsWith($"r{press}c0", target);
+            Assert.Equal(FollowFocus(cut), focus);
+        }
+        // Rows 3 to 6 are painted: the Focus, on row 0, is not, and nothing names it as active.
+        Assert.Null(ActiveDescendant(cut));
+        Assert.Empty(cut.FindAll("[id$='-r0c0']"));
+        Assert.Single(cut.FindAll("[id$='-r6c0']"));
     }
 
     [Fact] // ADR-0204: a key that moves nothing asks nothing — the Focus already at the first row

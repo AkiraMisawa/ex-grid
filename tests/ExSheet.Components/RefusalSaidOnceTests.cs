@@ -96,11 +96,29 @@ public class RefusalSaidOnceTests : SheetTestContext
         Assert.Equal(1, RegionsSaying(cut, "'nonsense' is not a cell address"));
     }
 
-    [Fact] // ADR-0203: every refusal the grid raises has the Sheet's words behind the label seam
+    [Fact] // ADR-0203 / ADR-0050 item 3: a shape mismatch on a Sheet, whose paste may spill, is said once, in the Sheet's words, which offer one cell — the notice shows the same words
+    public async Task A_shape_mismatch_is_said_once_in_the_sheets_words()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "A1:C3");
+
+        await PasteAsync(cut, "1\t2\r\n3\t4\r\n");
+
+        var words = SheetWords.PasteRefused(PasteRefusalReason.ShapeMismatch);
+        Assert.Contains("Select one cell", words);
+        Assert.Equal(words, Announced(cut));
+        Assert.Equal(words, Notice(cut));
+        Assert.Equal(1, RegionsSaying(cut, words));
+    }
+
+    [Fact] // ADR-0203: every refusal the grid raises has the Sheet's words behind the label seam, by either id the grid asks with
     public void Every_refusal_has_the_sheets_words()
     {
         foreach (var reason in Enum.GetValues<PasteRefusalReason>())
+        {
             Assert.Equal(SheetWords.PasteRefused(reason), SheetCommandIds.EnglishFor(RefusalLabelIds.For(reason)));
+            Assert.Equal(SheetWords.PasteRefused(reason), SheetCommandIds.EnglishFor(RefusalLabelIds.For(reason, pasteMaySpill: true)));
+        }
         foreach (var reason in Enum.GetValues<CopyRefusalReason>())
             Assert.Equal(SheetWords.CopyRefused(reason), SheetCommandIds.EnglishFor(RefusalLabelIds.For(reason)));
     }
