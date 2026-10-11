@@ -27,7 +27,9 @@
             <b>A number that does not fit shows <code>####</code>.</b> General rounds its decimals to fit the column,
             as Excel's does; any other format is never shortened, because a formatted figure cut short would read as
             a different figure. Widen the column and the number appears. Setting a Number Format widens a column the
-            user has not sized, as Excel's formatting keys do.
+            user has not sized, as Excel's formatting keys do. A number that fits is painted whole, bold too: it
+            may use one screen pixel of its cell's right padding, so a column whose edges round narrower on screen
+            never cuts it.
         </p>
         <DocsExample Builtin="typeof(CellFormats)" Mud="typeof(CellFormatsMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
             Every format here is set in code, with <code>SheetEdit.SetCellFormat</code>, before the document is

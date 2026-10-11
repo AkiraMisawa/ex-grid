@@ -355,6 +355,34 @@ test('active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter
     await expectSelection(page, 'E6', 'G8');
 });
 
+test('third run, main keys case 5: Ctrl+Enter with =A1 over B2:C3 writes it in the Focus and shifts its relative References into the other cells, as one undo step (ADR-0050, 2026-09-28; SH-27)', async ({ page }) => {
+    // Excel's case 5 (verification/2026-09-28-windows-excel-3/main-keys.jsonl), over /sheet's own
+    // cells: B2:C3 selected with the mouse from B2, =A1 typed and Ctrl+Enter. B2 held =A1, C2 =B1, B3
+    // =A2 and C3 =B2, showing Item, Qty, Apples and Item; the Selection stayed B2:C3, B2 active.
+    await click(page, 'B2');
+    await click(page, 'C3', { modifiers: ['Shift'] });
+    await expectSelection(page, 'B2', 'C3');
+    await page.keyboard.type('=A1');
+    await page.keyboard.press('Control+Enter');
+    for (const [a1, shown] of [['B2', 'Item'], ['C2', 'Qty'], ['B3', 'Apples'], ['C3', 'Item']]) {
+        await expect(cell(page, a1)).toHaveText(shown);
+    }
+    await expectSelection(page, 'B2', 'C3');
+    await expectActive(page, 'B2');
+    for (const [a1, entry] of [['B2', '=A1'], ['C2', '=B1'], ['B3', '=A2'], ['C3', '=B2']]) {
+        expect(await entryOf(page, a1)).toBe(entry);
+    }
+    // Not observed in the run: ExSheet records the four as one step (SH-13, SH-27), so one Ctrl+Z
+    // gives every cell back its Entry, and D2's =B2*C2 its Value.
+    await page.keyboard.press('ControlOrMeta+Z');
+    for (const [a1, shown] of [['B2', '12'], ['C2', '0.5'], ['B3', '7'], ['C3', '0.75'], ['D2', '6']]) {
+        await expect(cell(page, a1)).toHaveText(shown);
+    }
+    for (const [a1, entry] of [['B2', '12'], ['C2', '0.5'], ['B3', '7'], ['C3', '0.75']]) {
+        expect(await entryOf(page, a1)).toBe(entry);
+    }
+});
+
 test('item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09)', async ({ page }) => {
     const viewport = await sheet(page).locator('.ex-scroller').boundingBox();
     await nameBox(page).click();
@@ -518,20 +546,26 @@ test('item 15: Escape in the Formula Bar cancels the edit and gives the keys bac
 
 // ---- Clipboard (ADR-0048, ADR-0050) ------------------------------------------------------------
 
-waitsOn(14)('item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)', async ({ page }) => {
     await enter(page, 'E1', '=B2');
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     await click(page, 'E1');
     await page.keyboard.press('Control+C');
+    // On the Server host the copy lands a round trip later (ADR-0005).
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
     await click(page, 'E3');
     await page.keyboard.press('Control+V');
     // Excel: =A1 copied from B1 into B3 is =A3.
     expect(await entryOf(page, 'E3')).toBe('=B4');
 });
 
-waitsOn(14)('item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)', async ({ page }) => {
+test('item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)', async ({ page }) => {
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     await click(page, 'B2');
     await click(page, 'D4', { modifiers: ['Shift'] });
     await page.keyboard.press('Control+C');
+    // On the Server host the copy lands a round trip later (ADR-0005).
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
     await click(page, 'C6');
     await page.keyboard.press('Control+V');
     // Excel: E5:G7 selected with the Focus on E5, and B2's =A2*2 written as =E6*2 at F6.
@@ -554,17 +588,17 @@ async function pasteText(page, a1, text) {
     await page.keyboard.press('Control+V');
 }
 
-waitsOn(14)('item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)', async ({ page }) => {
     await pasteText(page, 'E5', '=A1+1');
     expect(await entryOf(page, 'E5')).toBe('=A1+1');
 });
 
-waitsOn(14)('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)', async ({ page }) => {
     await pasteText(page, 'E5', '1,234');
     await expect(cell(page, 'E5')).toHaveText('1,234');
 });
 
-waitsOn(14)('item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)', async ({ page }) => {
     await pasteText(page, 'E5', '=1+');
     // Excel took unreadable Formula text as the text itself, with no refusal and no dialog.
     await expect(cell(page, 'E5')).toHaveText('=1+');

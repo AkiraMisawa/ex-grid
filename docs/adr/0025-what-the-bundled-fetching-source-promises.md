@@ -122,3 +122,12 @@ is safe — the existing positions still mean what they meant.
   gesture that changes either yet — no header click, no column menu (ADR-0010) — so the
   interface would be publishing a method nothing calls. The notification joins the
   interface with the code that raises it.
+
+## ExPivot's report Windows keep a covering question *(decided with the user, 2026-10-11)*
+
+ExPivot's remote report path reads ahead too, 60 rows either side by default. Unlike this ADR's rule,
+it keeps a question in flight while that question's Window covers the range the grid needs
+([ADR-0182](./0182-a-remote-reports-window-is-read-ahead-sixty-rows-either-side.md)). Measured over a
+held scroll, cancelling it at every new range left Placeholders for 85–88% of the scroll at 60 rows.
+`GridSource.Fetch` keeps the rule above until its own path is measured
+([ADR-0183](./0183-the-grid-may-ask-for-rows-before-the-viewport-runs-out-of-them.md)).

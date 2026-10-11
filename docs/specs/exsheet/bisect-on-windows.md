@@ -1,6 +1,10 @@
 # Bisect the Windows-only layer-3 failures
 
-Status: ready-for-human
+Status: done — run at e9c448a on 2026-09-27, as the second run's Part E
+(`verification/2026-09-27-windows-bisect/`): the first bad commit is 062be53. Step 3, the runs at
+100% and 125%, was blocked, since a change of display scale needs a sign-out. No run needs it now:
+ADR-0053 fixed what the bisect chased, and VZ-14, BIG-1 and BIG-5 pass at 150% from the third run
+on. *(Set from the records on 2026-10-10.)*
 
 For a Claude Code session on the Windows machine used on 2026-09-27
 (`verification/2026-09-27-windows/results.md`). Decide nothing, and record everything.

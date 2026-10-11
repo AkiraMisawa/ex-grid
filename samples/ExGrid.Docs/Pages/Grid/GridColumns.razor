@@ -43,6 +43,12 @@
             short: a truncated amount looks like a smaller one. Widen the <em>Market value</em> column below and the
             values come back.
         </p>
+        <p>
+            One that fits is painted whole. Column edges are drawn on the screen's own pixels, so a column can come
+            out up to one of them narrower than its width; a cell that shows a number or a date may use that pixel
+            of its right padding. Text is not given it, so figures stand a pixel nearer the column's right edge than
+            text aligned right.
+        </p>
         <DocsExample Title="Types, widths, formats and tones" Builtin="typeof(ColumnTypes)" Mud="typeof(ColumnTypesMud)"
                      Files="@(["Examples/Grid/Position.cs"])" />
     </DocsSection>

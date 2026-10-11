@@ -1,6 +1,8 @@
 # Row inspectors in the DemoHost, and a page index
 
-Status: ready-for-agent
+Status: done — built in #24. The question in "Further Notes" was decided and built (ADR-0037
+amended, KB-36), and the RI tests pass on `chrome` and `msedge`
+(`verification/2026-09-29-windows-5/`). *(Set on 2026-10-10.)*
 
 A DemoHost feature, not a grid feature. It rests on decisions already recorded:
 [ADR-0020](../../adr/0020-action-and-template-columns.md) ("what a detail action opens happens

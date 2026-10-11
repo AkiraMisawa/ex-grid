@@ -1,12 +1,14 @@
 # ExSheet, first version
 
-Status: ready-for-agent
+Status: ready-for-agent — what is left for an agent is tickets 18 and 25, each with what remains in
+its last comment. Ticket 31 waits on a decision (`needs-triage`), and every other ticket is done.
+*(Set on 2026-10-10.)*
 
 Decided by [ADR-0046](../../adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)
 to [ADR-0051](../../adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md), with
 notes recorded in ADR-0007, 0008, 0012, 0014, 0016, 0019 and 0021. The vocabulary is `CONTEXT.md`'s
-"Sheets" section, plus Point, Formula Bar, Name Box and Fill Intent. Exit criteria are not yet
-written: the first ticket writes them into `docs/definition-of-done.md`. This spec synthesises
+"Sheets" section, plus Point, Formula Bar, Name Box and Fill Intent. Exit criteria are §27 of
+`docs/definition-of-done.md`, which the first ticket wrote. This spec synthesises
 those decisions; where it and they disagree, they win.
 
 ## Problem Statement

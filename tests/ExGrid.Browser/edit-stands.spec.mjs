@@ -658,3 +658,131 @@ for (const rtt of [0, 150]) {
         });
     });
 }
+
+// ED-22 as the keyboard comes back (ticket 25; ADR-0010, widened 2026-09-29; ADR-0018 section 6;
+// ADR-0021's mousedown notes of 2026-09-27 and 2026-09-29). A press back on a Sheet's rows, while its
+// edit stands with the keyboard in another grid, puts the keyboard back into the edit before anything
+// hears the press. The press is then a press on the rows while an edit is open: the keys typed
+// straight after it are held until the core has answered it, a further press is held behind them,
+// and each is handed on in the order it was made. Every test types or presses at once, and reads
+// only the outcome, which another order would change: a Reference in another place, a Formula that
+// cannot be read, a number with its digits swapped. With 150 ms injected on the Server host each
+// one lands inside the hold; without, on both hosts, some may land after it, with the same outcome.
+// Out of scope is the one accepted gap, a press back within one round trip of the key that opened
+// the edit (ADR-0018 section 6, last bullet): each test waits for the edit to open and for the
+// keyboard to leave before the round trip is set.
+for (const rtt of [0, 150]) {
+    test.describe(`ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, ${rtt ? `${rtt} ms round trip` : 'no injected latency'}`, () => {
+        test.beforeEach(() => {
+            test.skip(rtt > 0 && !SERVER, 'a round trip is injected on the Server host only; the case without one runs here');
+        });
+
+        for (const chrome of ['builtin', 'mud']) {
+            test(`ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (${chrome} Chrome)`, async ({ page }) => {
+                await openSheet(page, chrome);
+                const grid = sheet(page);
+                await pressCell(grid, 'C4');
+                await page.keyboard.type('=');
+                await expect(editor(grid)).toHaveValue('=');
+                await pressPositions(page);
+                await expect(editor(grid)).toHaveValue('=');
+                await setRoundTrip(rtt);
+
+                // No wait between any of them.
+                await clickCell(grid, 'B2');
+                await page.keyboard.type('*3-4');
+                await page.keyboard.press('Enter');
+
+                // =B2*3-4, B2 being 12.
+                await expect(cell(grid, 'C4')).toHaveText('32');
+                await expect(editor(grid)).toHaveCount(0);
+                await expectFocusAt(grid, 'C5');
+                await expectKeyboardOn(grid);
+                await pressCell(grid, 'C4');
+                await expect(bar(grid)).toHaveValue('=B2*3-4');
+            });
+
+            test(`ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (${chrome} Chrome)`, async ({ page }) => {
+                await openSheet(page, chrome);
+                const grid = sheet(page);
+                await pressCell(grid, 'C4');
+                await page.keyboard.type('99');
+                await expect(editor(grid)).toHaveValue('99');
+                await pressPositions(page);
+                await expect(editor(grid)).toHaveValue('99');
+                await setRoundTrip(rtt);
+
+                await clickCell(grid, 'B2');
+                await page.keyboard.type('456');
+                await page.keyboard.press('Enter');
+
+                await expect(cell(grid, 'C4')).toHaveText('99');
+                await expect(cell(grid, 'B2')).toHaveText('456');
+                await expect(editor(grid)).toHaveCount(0);
+                await expectFocusAt(grid, 'B3');
+                await expectKeyboardOn(grid);
+            });
+
+            test(`ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (${chrome} Chrome)`, async ({ page }) => {
+                await openSheet(page, chrome);
+                const grid = sheet(page);
+                await pressCell(grid, 'C4');
+                await page.keyboard.type('=');
+                await expect(editor(grid)).toHaveValue('=');
+                await pressPositions(page);
+                await expect(editor(grid)).toHaveValue('=');
+                await setRoundTrip(rtt);
+
+                await clickCell(grid, 'B2');
+                await page.keyboard.type('+');
+                await clickCell(grid, 'B3');
+                await page.keyboard.type('*2');
+                await page.keyboard.press('Enter');
+
+                // =B2+B3*2: 12 + 7 × 2. Answered ahead of the +, the press on B3 would have pointed in
+                // B2's place.
+                await expect(cell(grid, 'C4')).toHaveText('26');
+                await expect(editor(grid)).toHaveCount(0);
+                await expectFocusAt(grid, 'C5');
+                await expectKeyboardOn(grid);
+                await pressCell(grid, 'C4');
+                await expect(bar(grid)).toHaveValue('=B2+B3*2');
+            });
+        }
+
+        test('ADR-0010/ADR-0018/ED-22: on /sheets, a press back on the left while the right holds an edit of its own: a key, a second press and keys after it go into the left edit in order, and the right edit stands', async ({ page }) => {
+            await page.goto('/sheets');
+            const left = sheet(page, 0);
+            const right = sheet(page, 1);
+            await expect(cell(left, 'A1')).toHaveText('Left');
+            await expect(cell(right, 'A1')).toHaveText('Right');
+            await pressCell(left, 'D1');
+            await page.keyboard.type('=');
+            await expect(editor(left)).toHaveValue('=');
+            await pressCell(right, 'D2');
+            await expectKeyboardOn(right);
+            await page.keyboard.type('5');
+            await expect(editor(right)).toHaveValue('5');
+            await expect(editor(right)).toBeFocused();
+            await expect(editor(left)).toHaveValue('=');
+            await setRoundTrip(rtt);
+
+            await clickCell(left, 'B1');
+            await page.keyboard.type('*');
+            await clickCell(left, 'C1');
+            await page.keyboard.type('-1');
+            await page.keyboard.press('Enter');
+
+            // =B1*C1-1: 10 × 20 − 1.
+            await expect(cell(left, 'D1')).toHaveText('199');
+            await expect(editor(left)).toHaveCount(0);
+            await expectFocusAt(left, 'D2');
+            await expectKeyboardOn(left);
+            // Nothing reached the right: its edit stands as it was typed.
+            await expect(editor(right)).toHaveValue('5');
+            await expect(cell(right, 'D2')).toHaveText('');
+            await pressCell(left, 'D1');
+            await expect(bar(left)).toHaveValue('=B1*C1-1');
+        });
+    });
+}

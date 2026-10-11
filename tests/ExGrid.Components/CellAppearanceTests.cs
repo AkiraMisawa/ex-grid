@@ -199,8 +199,9 @@ public class CellAppearanceTests : GridTestContext
         // Two pixels on and above the gridline, as the upper cell's border, and one past it as a layer.
         Assert.Contains(".ex-cell.ex-lb-thick-000000{border-bottom:calc(2 * var(--ex-dp)) solid #000000}", Css(cut));
         Assert.Contains(".ex-lt-thick-000000{--ex-line-t:linear-gradient(to bottom,#000000 0 var(--ex-dp),transparent 0);", Css(cut));
-        // A right border gives its width back out of the padding, so the text stays where it was.
-        Assert.Contains(".ex-cell.ex-lr-thick-ff0000{border-right:calc(2 * var(--ex-dp)) solid #ff0000;padding-right:calc(var(--ex-cell-padding-x, 8px) - calc(2 * var(--ex-dp)))}", Css(cut));
+        // A right border gives its width back out of the padding, so the text stays where it was; a
+        // number's cell still gives its Device Pixel out of what is left (ADR-0090, VZ-19).
+        Assert.Contains(".ex-cell.ex-lr-thick-ff0000{border-right:calc(2 * var(--ex-dp)) solid #ff0000;padding-right:calc(var(--ex-cell-padding-x, 8px) - calc(2 * var(--ex-dp)) - var(--ex-number-dp, 0px))}", Css(cut));
     }
 
     [Fact] // DC-59 / ADR-0071, the fourteenth Windows run's case 17: double is a line either side of its gridline, whose own pixel shows what the gridline would — the lower Fill, else the upper, else the ground

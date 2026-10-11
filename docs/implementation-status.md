@@ -486,6 +486,9 @@ clean. The property is unchanged: the dependency points one way.
    `msedge` on Linux, headed, and kept `console.json` and `metrics.json` as the run's
    artifacts — the 2026-09-24 fixes have met `msedge`. Still owed: the soak on both browsers,
    which the weekly long run does, and the filed record, which a CI artifact is not.)*
+   *(2026-10-10: the soak passed on `chrome` and `msedge` against both hosts in the weekly long
+   run of 2026-10-05, run 37260612255 at 60d522e. Still owed: the filed record, and PF-8 on real
+   hardware.)*
 2. ~~**VZ-14 at 125%.**~~ Discharged on 2026-09-24 on a Windows desktop at 125%, on both
    browsers. (The Edge run and VZ-10, which this item used to hold, were discharged on
    2026-09-01.)
@@ -581,10 +584,14 @@ clean. The property is unchanged: the dependency points one way.
      Chromium.~~ Discharged the same day by CI: `popovers.spec.mjs`, `stripes.spec.mjs`,
      `mud-app.spec.mjs` and the ADR-0039 half of `features.spec.mjs` pass on `chrome` and
      `msedge`, on Linux, headed (the Verification table).
-   - The soak (`EXGRID_SOAK=1`), per browser.
+   - ~~The soak (`EXGRID_SOAK=1`), per browser.~~ Discharged by CI's weekly long run of
+     2026-10-05 (run 37260612255), on both browsers and both hosts. No record of it is filed
+     under `verification/` yet (item 1).
    - A real IME is not reachable from the container: the claim that Enter confirming a
      candidate does not apply a filter rests on the browser's implicit-submission rule, and
-     is owed a manual check with a Japanese IME on both browsers.
+     is owed a manual check with a Japanese IME on both browsers. *(Still owed on 2026-10-10.
+     The fifteenth and sixteenth Windows runs used a real IME in the Cell Editor, the Formula
+     Bar, the Name Box, Find and the Keyboard Field, and never in a filter panel.)*
 
 6. **The first prerelease, `0.1.0-beta.1`: published 2026-09-25**
    ([ADR-0042](adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
@@ -605,7 +612,8 @@ clean. The property is unchanged: the dependency points one way.
    workflow refused to make a second one. That release has neither the packages nor the note.
    The workflow now completes such a release instead. The one for `0.1.0-beta.1` needs deleting
    (the tag stays) and the failed job re-running; the re-run's push skips the packages
-   nuget.org already has.
+   nuget.org already has. *(Still so on 2026-10-10: that release stands, and run 36074956853
+   has not been re-run.)*
 
    A stable version still owes a review of the public C# surface, which nothing has decided
    yet (ADR-0042).
@@ -615,6 +623,8 @@ clean. The property is unchanged: the dependency points one way.
    packages join ExGrid's two, all at the tag's one version. The package check packs the ten
    into the release feed and fails if it holds anything else; `release.yml` expects the ten and
    their symbol packages. §27, §29 and §30 still judge their products, and never gate ExGrid.
+   *(2026-10-10: it did. `0.1.0-beta.2` was tagged at 92bdfae on 2026-10-04, and its release
+   run, 37243418696, passed.)*
 
 7. **`MaxWidth` bounds only what the grid computes (ADR-0016, FN-12 rewritten 2026-09-25).**
    Decided with the user. The contradiction came up while documenting the public API. ADR-0016
@@ -693,8 +703,9 @@ clean. The property is unchanged: the dependency points one way.
    tests skipped were the three the WebAssembly run skips too: SRV-6, which runs when asked
    for; the MEM-5/MEM-6 soak, which runs weekly; and VZ-14, which is Windows only.
    Still owed before the §24 claim is made:
-   - The soak on the Server host, which is MEM-6 read from the server process. It comes
-     with CI's next long run.
+   - ~~The soak on the Server host, which is MEM-6 read from the server process. It comes
+     with CI's next long run.~~ Discharged by the long run of 2026-10-05 (run 37260612255), on
+     both browsers.
    - The declaration ADR, which also rewrites ADR-0017's WebAssembly premise.
 
 9. ~~**Found on 2026-09-26, not fixed: `ViewportHeight = Fill` paints no rows in a sized box.**~~
@@ -709,10 +720,13 @@ clean. The property is unchanged: the dependency points one way.
    also why UX-11a has no layer-3 test yet. Which element takes the box's height is a decision
    for ADR-0028, not a fix to make quietly.
 
-10. **Observed on 2026-09-26: the column menu buttons are tab stops.** On `/features`, Shift+Tab
+10. ~~**Observed on 2026-09-26: the column menu buttons are tab stops.**~~ On `/features`, Shift+Tab
    from after the grid lands on a ▾, not on the root. A11Y-4's test tolerates this ("the next
    stop can be … the menu buttons"), but its criterion says focus "leaves the grid entirely".
    The criterion and the test disagree, and the disagreement is not resolved here.
+   *Settled with the user on 2026-10-02 (ADR-0080): every ▾ carries `tabindex="-1"` on every
+   grid, and A11Y-4 now reads that no ▾ is reached by Tab or Shift+Tab. `KeyboardFieldTests`,
+   `key-field.spec.mjs`, `features.spec.mjs` and `MudMenuTests` pin it.*
 
 ## Where the exit criteria stand
 

@@ -127,3 +127,11 @@ The reasons only surfaced after editing was added to the scope.
   content-addressed, version-stamped immutable snapshot, so pinning a query to a feed version
   keeps paging consistent. For a Consumer whose data streams continuously, that assumption does
   not hold.
+
+## Asking before the Viewport runs out *(amended with the user, 2026-10-11)*
+
+A grid may now be given a Range Request Margin of M rows
+([ADR-0183](./0183-the-grid-may-ask-for-rows-before-the-viewport-runs-out-of-them.md)). It then raises
+its Range Request as soon as the rows on screen plus M either side are not all in the Window, while
+the rows on screen may still be held. The request still names the rows on screen. At M = 0, the
+default, everything above stands as written.

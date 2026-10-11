@@ -1,6 +1,6 @@
 # 42: An edit in the Formula Bar never enters Overwrite
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0051's note of 2026-09-30, "An edit in the Formula Bar never enters
 Overwrite". Found by Part B of the eighth Windows run
@@ -24,7 +24,7 @@ ADR-0051's note was: this first said typing had ended Point in Overwrite.)*
       still commit and move there (ADR-0012)
 - [x] Layer 2: the mode after typing in the bar, after a press into the bar mid-edit, after F2 in
       the bar, and in the cell (ED-29)
-- [ ] Layer 3 on `/sheet` under both Chromes: `=A1+B1` typed into the bar, F2, `Home`, →, three
+- [x] Layer 3 on `/sheet` under both Chromes: `=A1+B1` typed into the bar, F2, `Home`, →, three
       Deletes (case `7k`); the same after pointing from the bar, and after an edit begun in the cell
       is pressed into the bar: the bar holds `=B1`, the edit is open, and the Focus has not moved
       (ED-29). Write it; the orchestrator runs it. *Written, not run*
@@ -90,3 +90,9 @@ layer 2 test for it became three (cases 20, 23, 24), and ED-29's case `7k` now e
 entered into D10 and the Focus on A10. Typing in the bar, and an edit carried into it, still go into
 Caret, as Excel's bar stays in Edit (cases 14–19). The ticket keeps its file name; its title now reads
 past what the tenth run corrected.
+
+*(2026-10-10, backlog cleanup.)* Status set to done, and the last box ticked: written then, run in
+CI since. `declarations.spec.mjs` runs "ED-29: =A1+B1 {typed into the bar | pointed from the bar,
+then typed on | begun in the cell, then pressed into the bar}, then Home, → and three Deletes" under
+both Chromes, the same edit on a 150 ms round trip, and case 7k. Case 7k asserts the tenth Windows
+run's reversal (above), not the box's first wording.

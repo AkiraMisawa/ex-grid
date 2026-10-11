@@ -1,6 +1,7 @@
 # ExSheet's function catalogue
 
-Status: ready-for-agent
+Status: ready-for-agent — tickets 14 to 18 are Ready, decided with the user on 2026-10-10 (item 11
+below). Ticket 13 is Blocked: no algorithm reproduces Excel's, and it is not pursued for now.
 
 The functions ExSheet's engine supports, and the queue of those it may support next, each with its
 status and a priority. **ADR-0047 decides whether a function is admitted; this file only orders the
@@ -17,9 +18,10 @@ here fails the build, and so does changing a row without admitting the function.
 | Status | Meaning | What moves it on |
 |---|---|---|
 | **Supported** | Declared in `FunctionLibrary`, with a table of Excel's results in the tests | — |
-| **Ready** | Microsoft's documentation pins its behaviour, blanks, text, booleans and Error Values included. Its tests can be written from that documentation now | A ticket |
+| **Ready** | Microsoft's documentation pins its behaviour, blanks, text, booleans and Error Values included, or an ADR does with the observations. Its tests can be written now | A ticket |
 | **Observe** | The documentation leaves cases open that a user meets. A Windows run has to ask Excel before those tests are written | A Windows run (`docs/specs/exsheet/verify-on-windows-N.md`) |
 | **Decide** | It cannot be admitted under the existing ADRs. An ADR has to be written first, with the user | An ADR |
+| **Blocked** | Observed in Excel, but nothing yet reproduces every observed case to the digits ADR-0047 compares | An implementation that does |
 
 ## Priority
 
@@ -74,8 +76,8 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `STDEV.P` | Supported | — | |
 | `VAR.S` | Supported | — | |
 | `VAR.P` | Supported | — | |
-| `SUBTOTAL` | Decide | P3 | Its meaning turns on hidden rows, and a Sheet has none yet (ADR-0046) |
-| `AGGREGATE` | Decide | P3 | As `SUBTOTAL` |
+| `SUBTOTAL` | Ready | P3 | Admitted while a Sheet cannot hide a row, behind a test that fails when one can; a nested call other than a whole-Formula `SUBTOTAL` is `#VALUE!` until observed (ADR-0047, 2026-10-10). Ticket 16 |
+| `AGGREGATE` | Ready | P3 | As `SUBTOTAL`; a function number for a function the engine does not support is `#VALUE!`. Ticket 16 |
 
 ### Logic and errors
 
@@ -96,7 +98,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `SWITCH` | Supported | — | |
 | `XOR` | Supported | — | |
 | `NA` | Supported | — | |
-| `ERROR.TYPE` | Decide | P3 | `#CIRC!` and `#GETTING_DATA` have no number in Excel's table |
+| `ERROR.TYPE` | Ready | P3 | `#GETTING_DATA` and `#CIRC!` are given back, never numbered; an Error Value outside Microsoft's table is `#VALUE!` (ADR-0047, 2026-10-10). Ticket 17 |
 
 ### Lookup and reference
 
@@ -114,7 +116,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `ROWS` | Supported | — | |
 | `COLUMNS` | Supported | — | |
 | `OFFSET` | Supported | — | Volatile (ADR-0124): recalculated after every change, its computed Reference read as it stands |
-| `INDIRECT` | Decide | P3 | As `OFFSET`, and its text names cells that an insertion does not rewrite |
+| `INDIRECT` | Ready | P3 | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; R1C1, structured and `A1#` text are `#VALUE!` (ADR-0124, 2026-10-10). Ticket 18 |
 
 ### Math and rounding
 
@@ -230,9 +232,9 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `FV` | Supported | — | |
 | `NPV` | Supported | — | |
 | `XNPV` | Supported | — | |
-| `IRR` | Observe | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Ticket 13 |
-| `XIRR` | Observe | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Ticket 13 |
-| `RATE` | Observe | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Ticket 13 |
+| `IRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
+| `XIRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
+| `RATE` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
 
 ### Dynamic arrays
 
@@ -246,14 +248,14 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 | `UNIQUE` | Supported | — | Spills (ADR-0125); a blank in the array is refused until Excel is asked |
 | `SEQUENCE` | Supported | — | Spills (ADR-0125) |
 | `TRANSPOSE` | Supported | — | Spills (ADR-0125) |
-| `LET` | Decide | P3 | Observed through COM and real keys; Formula-local names, binding and entry grammar still need an ADR. Ticket 14 |
+| `LET` | Ready | P3 | Names bound inside one Formula, as Excel's keyboard accepts them (ADR-0181). Ticket 14 |
 
 ### Random
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `RAND` | Decide | P3 | Observed; reproducible random input, recalculation identity and persistence still need an ADR. Ticket 15 |
-| `RANDBETWEEN` | Decide | P3 | As `RAND` |
+| `RAND` | Ready | P3 | Draws from the Sheet Seed, and draws again at each change (ADR-0180). Ticket 15 |
+| `RANDBETWEEN` | Ready | P3 | As `RAND`; a fractional bound and a bound past 2^53 are `#VALUE!` (ADR-0180). Ticket 15 |
 
 ## Order of work
 
@@ -272,8 +274,13 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 8. **Financial iteration remains open**, ticket 13: the measured Excel results are available,
    but the tested candidate solvers do not meet the admission rule.
 9. **LET and random functions need decisions**, tickets 14–15. Their observation is complete.
+   *(Decided on 2026-10-10: item 11.)*
 10. **Existing Supported functions' `uncertain` cases remain a separate Oracle backlog.** The
     October 3 run did not ask them, including LOG and trigonometry's remaining cases.
+11. **The last Decide rows, decided with the user on 2026-10-10.** Ready: `RAND` and `RANDBETWEEN`
+    (ADR-0180, ticket 15), `LET` (ADR-0181, ticket 14), `SUBTOTAL` and `AGGREGATE` (ticket 16),
+    `ERROR.TYPE` (ticket 17) and `INDIRECT` (ticket 18). Blocked: `IRR`, `XIRR` and `RATE`, which
+    are not pursued for now (ticket 13). No row is Decide any more.
 
 The retained evidence is `verification/2026-10-03-windows-functions/`. New corpus cases preserve
 its IDs, typed fixtures and exact numeric expectations. A deliberate refusal keeps Excel's

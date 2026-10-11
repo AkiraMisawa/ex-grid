@@ -289,9 +289,21 @@
         return sheet.ToDocument();
     }
 
+    // The Cell Metrics the Sheet paints with, resolved from what its paper cascades as ExSheet resolves
+    // them (ADR-0028, ADR-0030): the core's Compact preset, or Roboto's widths on the Wrapper's paper
+    // under ?chrome=mud. A case that sets a column at the edge of what fits computes its width from them.
+    private CellTextMetrics SheetCellMetrics
+    {
+        get
+        {
+            var presentation = DemoChrome.IsMud(ChromeName) ? MudExGridPresentation.For(dense: false, hover: false) : null;
+            return GridMetrics.Resolve(presentation?.Density ?? GridDensity.Compact, defaults: presentation).CellMetrics;
+        }
+    }
+
     protected override void OnInitialized()
     {
-        _document = SheetCases.Document(Case, Culture) ?? Opening();
+        _document = SheetCases.Document(Case, Culture, SheetCellMetrics) ?? Opening();
         _positionsPointedAt = _scope.RegisterGrid<Position>(Table, TableRow);
         // Held in a field: a method group would be a new delegate on every render (AGENTS.md,
         // the Blazor traps).

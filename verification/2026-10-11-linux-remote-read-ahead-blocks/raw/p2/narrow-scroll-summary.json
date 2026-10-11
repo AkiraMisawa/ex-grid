@@ -1,0 +1,2356 @@
+{
+ "b50": {
+  "reportRows": 16823,
+  "paintedRows": 15,
+  "pageRows": 13,
+  "answers": {
+   "answered": 146,
+   "failedOrCancelled": 21,
+   "rows": {
+    "median": 100,
+    "min": 100,
+    "max": 100,
+    "n": 146
+   },
+   "changes": null,
+   "rawBytes": {
+    "median": 64794,
+    "min": 64233,
+    "max": 65207,
+    "n": 146
+   },
+   "metadataBytes": {
+    "median": 6796,
+    "min": 6796,
+    "max": 6796,
+    "n": 146
+   },
+   "rowsBytes": {
+    "median": 57817,
+    "min": 57254,
+    "max": 58229,
+    "n": 146
+   },
+   "encodedBytes": {
+    "median": 12148,
+    "min": 11845,
+    "max": 12385,
+    "n": 146
+   },
+   "requestBytes": {
+    "median": 5874,
+    "min": 5873,
+    "max": 5875,
+    "n": 146
+   },
+   "encodings": [
+    "br"
+   ],
+   "filledCells": {
+    "median": 223,
+    "min": 214,
+    "max": 229,
+    "n": 146
+   },
+   "valueColumns": {
+    "median": 6,
+    "min": 6,
+    "max": 6,
+    "n": 146
+   },
+   "server": {
+    "computeMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 146
+    },
+    "projectMs": {
+     "median": 0.3,
+     "min": 0.3,
+     "max": 12.4,
+     "n": 146
+    },
+    "digestMs": {
+     "median": 0.1,
+     "min": 0.1,
+     "max": 8.7,
+     "n": 146
+    },
+    "serializeMs": {
+     "median": 0.5,
+     "min": 0.4,
+     "max": 18.3,
+     "n": 146
+    },
+    "endpointMs": {
+     "median": 1.5,
+     "min": 1.1,
+     "max": 49.1,
+     "n": 146
+    }
+   },
+   "client": {
+    "arrivedMs": {
+     "median": 161.2,
+     "min": 158.4,
+     "max": 229.1,
+     "n": 145
+    },
+    "parseMs": {
+     "median": 19.3,
+     "min": 15.7,
+     "max": 57.2,
+     "n": 145
+    },
+    "checkMs": {
+     "median": 2,
+     "min": 1.7,
+     "max": 16.2,
+     "n": 145
+    }
+   }
+  },
+  "by": {
+   "wheel step": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 478,
+     "min": 478,
+     "max": 478,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 1773.2,
+     "min": 1760.7,
+     "max": 2026.3,
+     "n": 3
+    },
+    "episodes": {
+     "median": 9,
+     "min": 8,
+     "max": 10,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 205.4,
+     "min": 184.9,
+     "max": 240.5,
+     "n": 27
+    },
+    "episodeMaxRows": {
+     "median": 4,
+     "min": 1,
+     "max": 4,
+     "n": 27
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 9,
+     "min": 8,
+     "max": 10,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 67.2,
+     "min": 67,
+     "max": 67.6,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 10976,
+     "min": 10549,
+     "max": 11076,
+     "n": 3
+    },
+    "answers": {
+     "answered": 27,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 100,
+      "min": 100,
+      "max": 100,
+      "n": 27
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 64794,
+      "min": 64233,
+      "max": 65207,
+      "n": 27
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 27
+     },
+     "rowsBytes": {
+      "median": 57817,
+      "min": 57254,
+      "max": 58229,
+      "n": 27
+     },
+     "encodedBytes": {
+      "median": 12154,
+      "min": 11847,
+      "max": 12385,
+      "n": 27
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 27
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 223,
+      "min": 214,
+      "max": 229,
+      "n": 27
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 27
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 27
+      },
+      "projectMs": {
+       "median": 0.4,
+       "min": 0.3,
+       "max": 2.3,
+       "n": 27
+      },
+      "digestMs": {
+       "median": 0.2,
+       "min": 0.1,
+       "max": 8.7,
+       "n": 27
+      },
+      "serializeMs": {
+       "median": 0.6,
+       "min": 0.4,
+       "max": 18.3,
+       "n": 27
+      },
+      "endpointMs": {
+       "median": 2.2,
+       "min": 1.5,
+       "max": 20.1,
+       "n": 27
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 163.1,
+       "min": 160.8,
+       "max": 203.1,
+       "n": 27
+      },
+      "parseMs": {
+       "median": 35.9,
+       "min": 20.8,
+       "max": 57.2,
+       "n": 27
+      },
+      "checkMs": {
+       "median": 2.7,
+       "min": 1.9,
+       "max": 16.2,
+       "n": 27
+      }
+     }
+    }
+   },
+   "wheel held": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 478,
+     "min": 478,
+     "max": 478,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 1743.5,
+     "min": 1687.4,
+     "max": 1919.1,
+     "n": 3
+    },
+    "episodes": {
+     "median": 9,
+     "min": 9,
+     "max": 10,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 187.9,
+     "min": 182.1,
+     "max": 228.6,
+     "n": 28
+    },
+    "episodeMaxRows": {
+     "median": 15,
+     "min": 8,
+     "max": 15,
+     "n": 28
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 9,
+     "min": 9,
+     "max": 10,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 51.1,
+     "min": 50.4,
+     "max": 51.3,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 7067,
+     "min": 7001,
+     "max": 7148,
+     "n": 3
+    },
+    "answers": {
+     "answered": 28,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 100,
+      "min": 100,
+      "max": 100,
+      "n": 28
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 64794,
+      "min": 64233,
+      "max": 65207,
+      "n": 28
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 28
+     },
+     "rowsBytes": {
+      "median": 57817,
+      "min": 57254,
+      "max": 58229,
+      "n": 28
+     },
+     "encodedBytes": {
+      "median": 12153,
+      "min": 11847,
+      "max": 12385,
+      "n": 28
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 28
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 223,
+      "min": 214,
+      "max": 229,
+      "n": 28
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 28
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 28
+      },
+      "projectMs": {
+       "median": 0.3,
+       "min": 0.3,
+       "max": 0.5,
+       "n": 28
+      },
+      "digestMs": {
+       "median": 0.2,
+       "min": 0.1,
+       "max": 8.1,
+       "n": 28
+      },
+      "serializeMs": {
+       "median": 0.5,
+       "min": 0.4,
+       "max": 1.1,
+       "n": 28
+      },
+      "endpointMs": {
+       "median": 1.5,
+       "min": 1.2,
+       "max": 44.3,
+       "n": 28
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 160.6,
+       "min": 159.1,
+       "max": 203.3,
+       "n": 28
+      },
+      "parseMs": {
+       "median": 20.3,
+       "min": 18,
+       "max": 32.4,
+       "n": 28
+      },
+      "checkMs": {
+       "median": 2.2,
+       "min": 1.7,
+       "max": 6.6,
+       "n": 28
+      }
+     }
+    }
+   },
+   "arrow step": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 480,
+     "min": 480,
+     "max": 480,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 1652.2,
+     "min": 1600.2,
+     "max": 1869.2,
+     "n": 3
+    },
+    "episodes": {
+     "median": 9,
+     "min": 9,
+     "max": 10,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 180.4,
+     "min": 171.1,
+     "max": 223,
+     "n": 28
+    },
+    "episodeMaxRows": {
+     "median": 1,
+     "min": 1,
+     "max": 1,
+     "n": 28
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 9,
+     "min": 9,
+     "max": 10,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 67.5,
+     "min": 67.1,
+     "max": 67.9,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 34570,
+     "min": 34170,
+     "max": 34770,
+     "n": 3
+    },
+    "answers": {
+     "answered": 28,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 100,
+      "min": 100,
+      "max": 100,
+      "n": 28
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 64794,
+      "min": 64233,
+      "max": 65207,
+      "n": 28
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 28
+     },
+     "rowsBytes": {
+      "median": 57817,
+      "min": 57254,
+      "max": 58229,
+      "n": 28
+     },
+     "encodedBytes": {
+      "median": 12148,
+      "min": 11845,
+      "max": 12384,
+      "n": 28
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 28
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 223,
+      "min": 214,
+      "max": 229,
+      "n": 28
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 28
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 28
+      },
+      "projectMs": {
+       "median": 0.3,
+       "min": 0.3,
+       "max": 12.4,
+       "n": 28
+      },
+      "digestMs": {
+       "median": 0.1,
+       "min": 0.1,
+       "max": 0.1,
+       "n": 28
+      },
+      "serializeMs": {
+       "median": 0.5,
+       "min": 0.4,
+       "max": 1.2,
+       "n": 28
+      },
+      "endpointMs": {
+       "median": 1.3,
+       "min": 1.1,
+       "max": 45.1,
+       "n": 28
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 160.8,
+       "min": 158.4,
+       "max": 203.9,
+       "n": 28
+      },
+      "parseMs": {
+       "median": 18.5,
+       "min": 16.3,
+       "max": 35.5,
+       "n": 28
+      },
+      "checkMs": {
+       "median": 2,
+       "min": 1.8,
+       "max": 4.1,
+       "n": 28
+      }
+     }
+    }
+   },
+   "arrow held": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 480,
+     "min": 480,
+     "max": 480,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 1843.2,
+     "min": 1759.8,
+     "max": 2265.4,
+     "n": 3
+    },
+    "episodes": {
+     "median": 9,
+     "min": 9,
+     "max": 10,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 198.9,
+     "min": 178.4,
+     "max": 253.1,
+     "n": 28
+    },
+    "episodeMaxRows": {
+     "median": 6,
+     "min": 4,
+     "max": 8,
+     "n": 28
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 9,
+     "min": 9,
+     "max": 10,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 34.1,
+     "min": 34,
+     "max": 34.9,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 16746,
+     "min": 16378,
+     "max": 17471,
+     "n": 3
+    },
+    "answers": {
+     "answered": 28,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 100,
+      "min": 100,
+      "max": 100,
+      "n": 28
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 64794,
+      "min": 64233,
+      "max": 65207,
+      "n": 28
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 28
+     },
+     "rowsBytes": {
+      "median": 57817,
+      "min": 57254,
+      "max": 58229,
+      "n": 28
+     },
+     "encodedBytes": {
+      "median": 12148,
+      "min": 11846,
+      "max": 12384,
+      "n": 28
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 28
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 223,
+      "min": 214,
+      "max": 229,
+      "n": 28
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 28
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 28
+      },
+      "projectMs": {
+       "median": 0.3,
+       "min": 0.3,
+       "max": 0.5,
+       "n": 28
+      },
+      "digestMs": {
+       "median": 0.1,
+       "min": 0.1,
+       "max": 0.1,
+       "n": 28
+      },
+      "serializeMs": {
+       "median": 0.5,
+       "min": 0.4,
+       "max": 1.2,
+       "n": 28
+      },
+      "endpointMs": {
+       "median": 1.6,
+       "min": 1.1,
+       "max": 49.1,
+       "n": 28
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 175.8,
+       "min": 160.6,
+       "max": 229.1,
+       "n": 28
+      },
+      "parseMs": {
+       "median": 18,
+       "min": 15.9,
+       "max": 33.2,
+       "n": 28
+      },
+      "checkMs": {
+       "median": 1.8,
+       "min": 1.7,
+       "max": 2.7,
+       "n": 28
+      }
+     }
+    }
+   },
+   "pagedown step": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 481,
+     "min": 481,
+     "max": 481,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 1621.1,
+     "min": 1596.3,
+     "max": 1859,
+     "n": 3
+    },
+    "episodes": {
+     "median": 9,
+     "min": 9,
+     "max": 10,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 179.8,
+     "min": 169.7,
+     "max": 222.5,
+     "n": 28
+    },
+    "episodeMaxRows": {
+     "median": 7,
+     "min": 1,
+     "max": 13,
+     "n": 28
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 9,
+     "min": 9,
+     "max": 10,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 83.4,
+     "min": 81.9,
+     "max": 86.1,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 4358,
+     "min": 4113,
+     "max": 4453,
+     "n": 3
+    },
+    "answers": {
+     "answered": 28,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 100,
+      "min": 100,
+      "max": 100,
+      "n": 28
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 64794,
+      "min": 64233,
+      "max": 65207,
+      "n": 28
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 28
+     },
+     "rowsBytes": {
+      "median": 57817,
+      "min": 57254,
+      "max": 58229,
+      "n": 28
+     },
+     "encodedBytes": {
+      "median": 12152,
+      "min": 11846,
+      "max": 12385,
+      "n": 28
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 28
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 223,
+      "min": 214,
+      "max": 229,
+      "n": 28
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 28
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 28
+      },
+      "projectMs": {
+       "median": 0.3,
+       "min": 0.3,
+       "max": 3.2,
+       "n": 28
+      },
+      "digestMs": {
+       "median": 0.1,
+       "min": 0.1,
+       "max": 0.1,
+       "n": 28
+      },
+      "serializeMs": {
+       "median": 0.4,
+       "min": 0.4,
+       "max": 1.1,
+       "n": 28
+      },
+      "endpointMs": {
+       "median": 1.2,
+       "min": 1.1,
+       "max": 41.2,
+       "n": 28
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 160,
+       "min": 158.4,
+       "max": 200.7,
+       "n": 28
+      },
+      "parseMs": {
+       "median": 17.4,
+       "min": 15.7,
+       "max": 24.5,
+       "n": 28
+      },
+      "checkMs": {
+       "median": 1.8,
+       "min": 1.7,
+       "max": 3.4,
+       "n": 28
+      }
+     }
+    }
+   },
+   "pagedown held": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 481,
+     "min": 481,
+     "max": 481,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 1362.5,
+     "min": 1207.8,
+     "max": 1453.9,
+     "n": 3
+    },
+    "episodes": {
+     "median": 2,
+     "min": 1,
+     "max": 3,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 989.2,
+     "min": 177.5,
+     "max": 1276.4,
+     "n": 6
+    },
+    "episodeMaxRows": {
+     "median": 15,
+     "min": 15,
+     "max": 15,
+     "n": 6
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 9,
+     "min": 9,
+     "max": 10,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 8,
+     "min": 6,
+     "max": 8,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 39.2,
+     "min": 32.8,
+     "max": 39.5,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 1540,
+     "min": 1400,
+     "max": 1582,
+     "n": 3
+    },
+    "answers": {
+     "answered": 7,
+     "failedOrCancelled": 21,
+     "rows": {
+      "median": 100,
+      "min": 100,
+      "max": 100,
+      "n": 7
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 64794,
+      "min": 64652,
+      "max": 64935,
+      "n": 7
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 7
+     },
+     "rowsBytes": {
+      "median": 57817,
+      "min": 57675,
+      "max": 57956,
+      "n": 7
+     },
+     "encodedBytes": {
+      "median": 12143,
+      "min": 12061,
+      "max": 12284,
+      "n": 7
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 7
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 223,
+      "min": 220,
+      "max": 226,
+      "n": 7
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 7
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 7
+      },
+      "projectMs": {
+       "median": 0.3,
+       "min": 0.3,
+       "max": 0.4,
+       "n": 7
+      },
+      "digestMs": {
+       "median": 0.1,
+       "min": 0.1,
+       "max": 0.1,
+       "n": 7
+      },
+      "serializeMs": {
+       "median": 0.5,
+       "min": 0.4,
+       "max": 0.7,
+       "n": 7
+      },
+      "endpointMs": {
+       "median": 1.1,
+       "min": 1.1,
+       "max": 2.3,
+       "n": 7
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 165.4,
+       "min": 160.1,
+       "max": 166.6,
+       "n": 6
+      },
+      "parseMs": {
+       "median": 17.9,
+       "min": 16,
+       "max": 24.7,
+       "n": 6
+      },
+      "checkMs": {
+       "median": 1.8,
+       "min": 1.7,
+       "max": 1.9,
+       "n": 6
+      }
+     }
+    }
+   }
+  }
+ },
+ "b200": {
+  "reportRows": 16823,
+  "paintedRows": 15,
+  "pageRows": 13,
+  "answers": {
+   "answered": 48,
+   "failedOrCancelled": 0,
+   "rows": {
+    "median": 400,
+    "min": 400,
+    "max": 400,
+    "n": 48
+   },
+   "changes": null,
+   "rawBytes": {
+    "median": 238292,
+    "min": 237689,
+    "max": 238801,
+    "n": 48
+   },
+   "metadataBytes": {
+    "median": 6796,
+    "min": 6796,
+    "max": 6796,
+    "n": 48
+   },
+   "rowsBytes": {
+    "median": 231315,
+    "min": 230710,
+    "max": 231822,
+    "n": 48
+   },
+   "encodedBytes": {
+    "median": 39306,
+    "min": 38858,
+    "max": 39651,
+    "n": 48
+   },
+   "requestBytes": {
+    "median": 5874,
+    "min": 5873,
+    "max": 5875,
+    "n": 48
+   },
+   "encodings": [
+    "br"
+   ],
+   "filledCells": {
+    "median": 891,
+    "min": 882,
+    "max": 900,
+    "n": 48
+   },
+   "valueColumns": {
+    "median": 6,
+    "min": 6,
+    "max": 6,
+    "n": 48
+   },
+   "server": {
+    "computeMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 48
+    },
+    "projectMs": {
+     "median": 1,
+     "min": 0.8,
+     "max": 2,
+     "n": 48
+    },
+    "digestMs": {
+     "median": 0.2,
+     "min": 0.2,
+     "max": 0.6,
+     "n": 48
+    },
+    "serializeMs": {
+     "median": 1.4,
+     "min": 1.2,
+     "max": 9.3,
+     "n": 48
+    },
+    "endpointMs": {
+     "median": 3,
+     "min": 2.5,
+     "max": 51.7,
+     "n": 48
+    }
+   },
+   "client": {
+    "arrivedMs": {
+     "median": 168.5,
+     "min": 161.3,
+     "max": 221.9,
+     "n": 48
+    },
+    "parseMs": {
+     "median": 67.7,
+     "min": 54.1,
+     "max": 163.1,
+     "n": 48
+    },
+    "checkMs": {
+     "median": 6.5,
+     "min": 5.3,
+     "max": 23.5,
+     "n": 48
+    }
+   }
+  },
+  "by": {
+   "wheel step": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 478,
+     "min": 478,
+     "max": 478,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 795.4,
+     "min": 702.4,
+     "max": 871.6,
+     "n": 3
+    },
+    "episodes": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 281.1,
+     "min": 251.6,
+     "max": 359.2,
+     "n": 8
+    },
+    "episodeMaxRows": {
+     "median": 4,
+     "min": 1,
+     "max": 4,
+     "n": 8
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 66.8,
+     "min": 66.8,
+     "max": 68.6,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 9968,
+     "min": 9880,
+     "max": 10452,
+     "n": 3
+    },
+    "answers": {
+     "answered": 8,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 400,
+      "min": 400,
+      "max": 400,
+      "n": 8
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 238292,
+      "min": 237689,
+      "max": 238801,
+      "n": 8
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 8
+     },
+     "rowsBytes": {
+      "median": 231315,
+      "min": 230710,
+      "max": 231822,
+      "n": 8
+     },
+     "encodedBytes": {
+      "median": 39312,
+      "min": 38866,
+      "max": 39651,
+      "n": 8
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 8
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 891,
+      "min": 882,
+      "max": 900,
+      "n": 8
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 8
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 8
+      },
+      "projectMs": {
+       "median": 1.1,
+       "min": 0.9,
+       "max": 1.9,
+       "n": 8
+      },
+      "digestMs": {
+       "median": 0.3,
+       "min": 0.2,
+       "max": 0.4,
+       "n": 8
+      },
+      "serializeMs": {
+       "median": 1.8,
+       "min": 1.3,
+       "max": 5.2,
+       "n": 8
+      },
+      "endpointMs": {
+       "median": 4.6,
+       "min": 2.9,
+       "max": 46.9,
+       "n": 8
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 168.2,
+       "min": 166.3,
+       "max": 209,
+       "n": 8
+      },
+      "parseMs": {
+       "median": 100.8,
+       "min": 75.5,
+       "max": 163.1,
+       "n": 8
+      },
+      "checkMs": {
+       "median": 8,
+       "min": 7.1,
+       "max": 23.5,
+       "n": 8
+      }
+     }
+    }
+   },
+   "wheel held": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 478,
+     "min": 478,
+     "max": 478,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 723.3,
+     "min": 534.6,
+     "max": 837.9,
+     "n": 3
+    },
+    "episodes": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 249.2,
+     "min": 233.3,
+     "max": 348.9,
+     "n": 8
+    },
+    "episodeMaxRows": {
+     "median": 15,
+     "min": 8,
+     "max": 15,
+     "n": 8
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 50.7,
+     "min": 50.5,
+     "max": 50.9,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 7252,
+     "min": 7136,
+     "max": 7255,
+     "n": 3
+    },
+    "answers": {
+     "answered": 8,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 400,
+      "min": 400,
+      "max": 400,
+      "n": 8
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 238292,
+      "min": 237689,
+      "max": 238801,
+      "n": 8
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 8
+     },
+     "rowsBytes": {
+      "median": 231315,
+      "min": 230710,
+      "max": 231822,
+      "n": 8
+     },
+     "encodedBytes": {
+      "median": 39306,
+      "min": 38866,
+      "max": 39649,
+      "n": 8
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 8
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 891,
+      "min": 882,
+      "max": 900,
+      "n": 8
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 8
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 8
+      },
+      "projectMs": {
+       "median": 1,
+       "min": 0.9,
+       "max": 1.5,
+       "n": 8
+      },
+      "digestMs": {
+       "median": 0.3,
+       "min": 0.2,
+       "max": 0.4,
+       "n": 8
+      },
+      "serializeMs": {
+       "median": 1.6,
+       "min": 1.2,
+       "max": 2.5,
+       "n": 8
+      },
+      "endpointMs": {
+       "median": 3.1,
+       "min": 2.7,
+       "max": 4.9,
+       "n": 8
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 167.8,
+       "min": 164.6,
+       "max": 173.9,
+       "n": 8
+      },
+      "parseMs": {
+       "median": 71.1,
+       "min": 58.4,
+       "max": 151.3,
+       "n": 8
+      },
+      "checkMs": {
+       "median": 7.7,
+       "min": 5.6,
+       "max": 18.1,
+       "n": 8
+      }
+     }
+    }
+   },
+   "arrow step": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 480,
+     "min": 480,
+     "max": 480,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 684.2,
+     "min": 488.5,
+     "max": 753.6,
+     "n": 3
+    },
+    "episodes": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 241.2,
+     "min": 215,
+     "max": 267.8,
+     "n": 8
+    },
+    "episodeMaxRows": {
+     "median": 1,
+     "min": 1,
+     "max": 1,
+     "n": 8
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 70,
+     "min": 69.6,
+     "max": 78.1,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 36453,
+     "min": 35789,
+     "max": 37429,
+     "n": 3
+    },
+    "answers": {
+     "answered": 8,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 400,
+      "min": 400,
+      "max": 400,
+      "n": 8
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 238292,
+      "min": 237689,
+      "max": 238801,
+      "n": 8
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 8
+     },
+     "rowsBytes": {
+      "median": 231315,
+      "min": 230710,
+      "max": 231822,
+      "n": 8
+     },
+     "encodedBytes": {
+      "median": 39311,
+      "min": 38858,
+      "max": 39648,
+      "n": 8
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 8
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 891,
+      "min": 882,
+      "max": 900,
+      "n": 8
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 8
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 8
+      },
+      "projectMs": {
+       "median": 0.9,
+       "min": 0.8,
+       "max": 1.3,
+       "n": 8
+      },
+      "digestMs": {
+       "median": 0.2,
+       "min": 0.2,
+       "max": 0.4,
+       "n": 8
+      },
+      "serializeMs": {
+       "median": 1.3,
+       "min": 1.2,
+       "max": 2.1,
+       "n": 8
+      },
+      "endpointMs": {
+       "median": 2.7,
+       "min": 2.7,
+       "max": 4.3,
+       "n": 8
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 165.9,
+       "min": 162.7,
+       "max": 170.4,
+       "n": 8
+      },
+      "parseMs": {
+       "median": 72.5,
+       "min": 55.9,
+       "max": 94.2,
+       "n": 8
+      },
+      "checkMs": {
+       "median": 6.5,
+       "min": 5.6,
+       "max": 9.1,
+       "n": 8
+      }
+     }
+    }
+   },
+   "arrow held": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 480,
+     "min": 480,
+     "max": 480,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 784.7,
+     "min": 524.7,
+     "max": 787.3,
+     "n": 3
+    },
+    "episodes": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 256.3,
+     "min": 229.4,
+     "max": 301.6,
+     "n": 8
+    },
+    "episodeMaxRows": {
+     "median": 5,
+     "min": 4,
+     "max": 6,
+     "n": 8
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 34.9,
+     "min": 34.2,
+     "max": 36.4,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 17324,
+     "min": 17166,
+     "max": 18292,
+     "n": 3
+    },
+    "answers": {
+     "answered": 8,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 400,
+      "min": 400,
+      "max": 400,
+      "n": 8
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 238292,
+      "min": 237689,
+      "max": 238801,
+      "n": 8
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 8
+     },
+     "rowsBytes": {
+      "median": 231315,
+      "min": 230710,
+      "max": 231822,
+      "n": 8
+     },
+     "encodedBytes": {
+      "median": 39311,
+      "min": 38865,
+      "max": 39650,
+      "n": 8
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 8
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 891,
+      "min": 882,
+      "max": 900,
+      "n": 8
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 8
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 8
+      },
+      "projectMs": {
+       "median": 1,
+       "min": 0.9,
+       "max": 1.5,
+       "n": 8
+      },
+      "digestMs": {
+       "median": 0.2,
+       "min": 0.2,
+       "max": 0.6,
+       "n": 8
+      },
+      "serializeMs": {
+       "median": 1.3,
+       "min": 1.2,
+       "max": 9.3,
+       "n": 8
+      },
+      "endpointMs": {
+       "median": 3.3,
+       "min": 2.7,
+       "max": 51.7,
+       "n": 8
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 177.3,
+       "min": 164.1,
+       "max": 221.9,
+       "n": 8
+      },
+      "parseMs": {
+       "median": 61.6,
+       "min": 56.8,
+       "max": 93.9,
+       "n": 8
+      },
+      "checkMs": {
+       "median": 6.3,
+       "min": 5.9,
+       "max": 9.3,
+       "n": 8
+      }
+     }
+    }
+   },
+   "pagedown step": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 481,
+     "min": 481,
+     "max": 481,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 672.6,
+     "min": 534.4,
+     "max": 759.9,
+     "n": 3
+    },
+    "episodes": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 233.9,
+     "min": 220.8,
+     "max": 310.5,
+     "n": 8
+    },
+    "episodeMaxRows": {
+     "median": 10,
+     "min": 3,
+     "max": 13,
+     "n": 8
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 84.1,
+     "min": 82.9,
+     "max": 86.3,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 3676,
+     "min": 3617,
+     "max": 3897,
+     "n": 3
+    },
+    "answers": {
+     "answered": 8,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 400,
+      "min": 400,
+      "max": 400,
+      "n": 8
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 238292,
+      "min": 237689,
+      "max": 238801,
+      "n": 8
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 8
+     },
+     "rowsBytes": {
+      "median": 231315,
+      "min": 230710,
+      "max": 231822,
+      "n": 8
+     },
+     "encodedBytes": {
+      "median": 39312,
+      "min": 38864,
+      "max": 39643,
+      "n": 8
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 8
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 891,
+      "min": 882,
+      "max": 900,
+      "n": 8
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 8
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 8
+      },
+      "projectMs": {
+       "median": 1,
+       "min": 0.8,
+       "max": 1,
+       "n": 8
+      },
+      "digestMs": {
+       "median": 0.2,
+       "min": 0.2,
+       "max": 0.3,
+       "n": 8
+      },
+      "serializeMs": {
+       "median": 1.2,
+       "min": 1.2,
+       "max": 1.4,
+       "n": 8
+      },
+      "endpointMs": {
+       "median": 3,
+       "min": 2.5,
+       "max": 43.5,
+       "n": 8
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 163.3,
+       "min": 161.3,
+       "max": 205.7,
+       "n": 8
+      },
+      "parseMs": {
+       "median": 59.8,
+       "min": 54.1,
+       "max": 92.7,
+       "n": 8
+      },
+      "checkMs": {
+       "median": 6.8,
+       "min": 5.3,
+       "max": 9.6,
+       "n": 8
+      }
+     }
+    }
+   },
+   "pagedown held": {
+    "samples": 3,
+    "rowsScrolled": {
+     "median": 481,
+     "min": 481,
+     "max": 481,
+     "n": 3
+    },
+    "placeholderMs": {
+     "median": 721.3,
+     "min": 527.4,
+     "max": 736.1,
+     "n": 3
+    },
+    "episodes": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "episodeMs": {
+     "median": 248.6,
+     "min": 229.8,
+     "max": 283.7,
+     "n": 8
+    },
+    "episodeMaxRows": {
+     "median": 15,
+     "min": 15,
+     "max": 15,
+     "n": 8
+    },
+    "flingEpisodes": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "flingMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "questionsAsked": {
+     "median": 3,
+     "min": 2,
+     "max": 3,
+     "n": 3
+    },
+    "questionsCancelled": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 3
+    },
+    "inputIntervalMs": {
+     "median": 37.9,
+     "min": 37.4,
+     "max": 38.8,
+     "n": 3
+    },
+    "elapsedMs": {
+     "median": 1658,
+     "min": 1607,
+     "max": 1766,
+     "n": 3
+    },
+    "answers": {
+     "answered": 8,
+     "failedOrCancelled": 0,
+     "rows": {
+      "median": 400,
+      "min": 400,
+      "max": 400,
+      "n": 8
+     },
+     "changes": null,
+     "rawBytes": {
+      "median": 238292,
+      "min": 237689,
+      "max": 238801,
+      "n": 8
+     },
+     "metadataBytes": {
+      "median": 6796,
+      "min": 6796,
+      "max": 6796,
+      "n": 8
+     },
+     "rowsBytes": {
+      "median": 231315,
+      "min": 230710,
+      "max": 231822,
+      "n": 8
+     },
+     "encodedBytes": {
+      "median": 39312,
+      "min": 38859,
+      "max": 39649,
+      "n": 8
+     },
+     "requestBytes": {
+      "median": 5874,
+      "min": 5873,
+      "max": 5875,
+      "n": 8
+     },
+     "encodings": [
+      "br"
+     ],
+     "filledCells": {
+      "median": 891,
+      "min": 882,
+      "max": 900,
+      "n": 8
+     },
+     "valueColumns": {
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "n": 8
+     },
+     "server": {
+      "computeMs": {
+       "median": 0,
+       "min": 0,
+       "max": 0,
+       "n": 8
+      },
+      "projectMs": {
+       "median": 1,
+       "min": 0.8,
+       "max": 2,
+       "n": 8
+      },
+      "digestMs": {
+       "median": 0.3,
+       "min": 0.2,
+       "max": 0.4,
+       "n": 8
+      },
+      "serializeMs": {
+       "median": 1.4,
+       "min": 1.2,
+       "max": 5.1,
+       "n": 8
+      },
+      "endpointMs": {
+       "median": 3,
+       "min": 2.6,
+       "max": 45.8,
+       "n": 8
+      }
+     },
+     "client": {
+      "arrivedMs": {
+       "median": 171.3,
+       "min": 163.1,
+       "max": 212.3,
+       "n": 8
+      },
+      "parseMs": {
+       "median": 59.5,
+       "min": 55.7,
+       "max": 75.3,
+       "n": 8
+      },
+      "checkMs": {
+       "median": 6.1,
+       "min": 5.6,
+       "max": 7.5,
+       "n": 8
+      }
+     }
+    }
+   }
+  }
+ }
+}

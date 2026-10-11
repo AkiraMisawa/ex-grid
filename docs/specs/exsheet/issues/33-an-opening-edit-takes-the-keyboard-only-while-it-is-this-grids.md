@@ -1,6 +1,6 @@
 # 33: An edit that opens takes the keyboard only while it is still this grid's
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0021's note of 2026-09-30, with ADR-0018 section 6 and ADR-0010's notes of
 the same day. Found by CI on PR #34 (msedge, Server host): ED-26's test on `/sheets` typed `=` on the
@@ -68,3 +68,7 @@ Measured on the Server host with 40 ms injected, headless:
 
 ED-26's `/sheets` test passes on both hosts under the suite's runner; the ED-28 tests skip on
 WebAssembly, which has no round trip for a press to land in.
+
+*(2026-10-10, backlog cleanup.)* Status set to done. Every box was ticked, and
+`edit-stands.spec.mjs` runs ED-28 under both Chromes on the Server host, and ED-26 on `/sheets`, in
+CI.

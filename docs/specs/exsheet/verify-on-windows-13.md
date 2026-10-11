@@ -1,7 +1,8 @@
 # What to verify on Windows, thirteenth run
 
-Status: ready-for-human — **Part A is Excel only and needs no build**; **Part B once tickets 70–73 are
-done.**
+Status: done — Parts A and B at 6ebc186 on 2026-10-01 (`verification/2026-10-01-windows-13/`), run
+while this page was still named `verify-on-windows-12.md` and tickets 70–73 were numbered 55–58.
+What it settled is in ADR-0058. *(Set from the records on 2026-10-10.)*
 
 For the Claude Code session on the Windows desktop of the earlier runs. Read
 [`verify-on-windows-9.md`](verify-on-windows-9.md) and [`verify-on-windows-10.md`](verify-on-windows-10.md)

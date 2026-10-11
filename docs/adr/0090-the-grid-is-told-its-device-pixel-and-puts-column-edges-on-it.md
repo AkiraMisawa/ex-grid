@@ -104,6 +104,36 @@ the total width is the declared total rounded once, and the rounding never accum
 - **The fallback steps.** Until the first report, a resolution between two steps still draws a little
   under a Device Pixel, as before.
 
+## A shown number may use one Device Pixel of its cell's right padding *(decided with the user, 2026-10-11)*
+
+Ticket 18 of ExSheet found the spare this ADR counts on missing (`sheet-paper.spec.mjs`, SH-41).
+- With `system-ui` in DejaVu Sans, which Linux paints it in (ADR-0016), a bold `12%` a hundredth of a
+  pixel over its bold edge was drawn `1…`. The `####` decision had passed it, as the estimate said it
+  fit.
+- The column was declared 49.87px and painted 49px, its edges rounded to Device Pixels. That left 33px
+  of content for a 33.516px text, and the ellipsis cut it.
+- DejaVu Sans Bold's digit is 9.742px against the 9.75 the core charges, so the estimate left 0.35px,
+  not the Device Pixel this ADR assumed.
+
+A number cut short, looking like another number, is the one thing ADR-0016 never allows.
+
+- **A cell that shows a number may use one Device Pixel of its right padding.** A painted column is
+  under one Device Pixel narrower than declared, since each edge moves by at most half of one. So with
+  that pixel the content box is never narrower than the declared content, however the edges round, at
+  every scale and zoom, below 100% included.
+- **No decision changes.** The `####` decision, General's fit and Auto width still read the declared
+  width, with the estimate as ADR-0016 charges it. What Excel was observed to do still holds.
+- **Every number sits one Device Pixel further right than before**, in every grid: ExGrid's cells, its
+  group and total rows, and ExSheet's. A number aligned left gains the room at its end, and does not
+  move.
+- **Text is not given the pixel.** A text that does not fit is cut with an ellipsis by decision
+  (ADR-0016), and the pixel would only move where.
+- **Considered: charging the estimate one more pixel.** Rejected with the user, for three reasons:
+  - `####` would come up to a pixel before Excel's observed thresholds;
+  - Auto columns would grow a pixel wider;
+  - below 100% a Device Pixel is more than a CSS pixel, so the charge would not cover it.
+- **The criterion is VZ-19.** ExSheet's ticket 18 builds it, and lifts SH-41's `test.fail`.
+
 ## Considered options
 
 - **More `resolution` steps in the stylesheet.** It would need a step for every zoom on every display

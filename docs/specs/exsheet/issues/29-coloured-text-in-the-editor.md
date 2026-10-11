@@ -1,6 +1,6 @@
 # 29: The References coloured in the editor's text
 
-Status: ready-for-agent
+Status: done — but for a real IME, which a Windows run checks
 
 **What to build:** ADR-0057, "The coloured text is a layer that shows only while it is up to date".
 Beneath each editor surface, a layer draws the text with its References coloured. The field's own
@@ -46,3 +46,10 @@ text turns transparent only while the layer holds the field's current value.
       DC-48 were fixed: a word the spelling check marks was drawn a second time over the layer; End
       on macOS scrolled the grid away (ticket 32); and `/sheet?chrome=mud` lacked the Wrapper's
       shape (ADR-0057, "The Wrapper's shape is required…"). Linux and Edge are CI's.*
+
+## Comments
+
+*(2026-10-10, backlog cleanup.)* Status set to done: every box is built, and
+`reference-text.spec.mjs` runs on both hosts in CI, the composition through CDP included. A real IME
+is still a run by hand. One was seen hiding the layer while composing (ADR-0057), and no record
+shows the colours coming back when a real composition ends.

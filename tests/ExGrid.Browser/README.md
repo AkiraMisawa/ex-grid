@@ -26,6 +26,10 @@ shows a later row once the height is compressed, which only a run at 150% can se
 once the grid has painted the slice for the offset the browser holds, as the offset the grid
 wrote on the Viewport says: compressed, the rows move when the grid is told of the scroll, a
 round trip later on the Server host, and a reading taken before that is of rows that are leaving.
+It also reads pixels that only a real 150% lays out: the Border lines (DC-59), and SH-41's sweep of
+the bold edge (VZ-19), where a number may use one Device Pixel of its cell's right padding
+(ADR-0090). `sheet-paper.spec.mjs` emulates its viewport everywhere else, and leaves the window to
+Chrome there, since an emulated viewport is painted at a scale of 1.
 It launches Chrome with `--force-device-scale-factor=1.5` and `viewport: null`, headed, so
 the display scale reaches layout the way the OS's does and Chrome clamps at 22,369,618 CSS
 px. Playwright's `deviceScaleFactor` would not do: it raises `devicePixelRatio` and leaves
@@ -586,7 +590,18 @@ nobody had asked for. What that means when writing a test:
   Formula Bar dark in the dark scheme and light in the light one; the Selection, the Cell Editor,
   a Reference Outline and the pointed shade keeping their light-scheme look on the Paper, and the
   Formula Bar's References taking the dark scheme's; and `--ex-sheet-paper` and `--ex-sheet-ink`
-  set by a Consumer changing the Paper and the Ink.
+  set by a Consumer changing the Paper and the Ink. And what fits (SH-41; ADR-0071, "Bold, and what
+  fits") under both Chromes, on `/sheet?case=bold` and `?case=fit`, whose columns stand a hundredth
+  of a pixel from where a number stops fitting in the Sheet's own Cell Metrics: a bold 12% `####`
+  under its bold edge where the plain one shows; General fitting a bold number to the bold widths;
+  an italic number not cut at either edge; each number shown painted whole, the cell as painted and
+  with its ellipsis lifted and its clip moved out past the pixels pictured being one picture. (A clip
+  lifted outright had Chrome paint the row's text in grayscale at 150%, where CI's Linux paints it
+  with LCD antialiasing.) A bold 12% over its bold edge, in eight columns of one declared width, is
+  painted whole wherever their edges fall on Device Pixels, at 100% and at `chrome-150`'s 150%:
+  a number uses one Device Pixel of its cell's right padding (VZ-19, ADR-0090). Without it, where
+  `system-ui` is DejaVu Sans, as on Linux, the column painted a pixel narrower than declared cut it
+  to `1…` (ticket 18, 2026-10-10).
 - `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0071, SH-45, DC-60;
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as
@@ -796,7 +811,11 @@ nobody had asked for. What that means when writing a test:
   committing the edit and opening that cell's text, on `/features` and on the Sheet; outside an
   edit, a press and an arrow holding nothing, read by a page listener the held keys never reach;
   and a press on the rows of a stand-in for a grid nested in the Sheet starting no hold of the
-  Sheet's, the key after it reaching the nested grid as the browser's own keydown. And ED-27 on `/sheets` under both
+  Sheet's, the key after it reaching the nested grid as the browser's own keydown. And the same
+  hold as the keyboard comes back, without latency and at 150 ms on the Server host: keys, and a
+  key with a second press and keys after it, typed at once after a press back, answered in the order
+  they were made — on `/sheet` under both Chromes, behind a press back that points and one that
+  commits, and on `/sheets` while the other Sheet holds an edit of its own. And ED-27 on `/sheets` under both
   Chromes (`?chrome=mud` puts each Sheet on the Wrapper's paper): the computed outline of each
   Sheet's Cell Editor is 1px wide while DOM focus is outside its root, and at the token's full
   width, in the same colour, while the keyboard is its own.

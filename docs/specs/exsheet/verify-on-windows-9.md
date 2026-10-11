@@ -1,6 +1,9 @@
 # What to verify on Windows, ninth run
 
-Status: ready-for-human — **Part A done 2026-09-30** (`verification/2026-09-30-windows-excel-9/`); **Part B once tickets 34–38 and 41 are done.**
+Status: done — Part A at 6b02036 on 2026-09-30 (`verification/2026-09-30-windows-excel-9/`), Part B
+at 3622d2c on 2026-10-01 (`verification/2026-10-01-windows-9/`). Its one item that could not be run
+as written, the narrowed grid's scrollbars, ran in the thirteenth run. What it settled is in
+ADR-0058. *(Set from the records on 2026-10-10.)*
 
 For the Claude Code session on the Windows desktop of the earlier runs (Excel, Chrome, Edge, WSL2 with
 nix). Read [`verify-on-windows-8.md`](verify-on-windows-8.md) and

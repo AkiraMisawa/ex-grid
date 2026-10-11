@@ -259,7 +259,9 @@ internal sealed class AppearanceStyles
             // A solid line on and above (left of) the gridline is the cell's own border (ticket 47's
             // measurement: it draws case 9's pixels, as the layer does, and costs a little less). A
             // right border gives its width back out of the right padding, so no text moves and the
-            // content box the #### decision assumes stays where it was (ADR-0016).
+            // content box the #### decision assumes stays where it was (ADR-0016). What is left still
+            // gives a number's cell its Device Pixel, --ex-number-dp (ex-grid.css; ADR-0090, VZ-19):
+            // one rule for every cell, which reads none on any other.
             var width = Device(UpPixels(share.Style));
             _rules.Append(".ex-cell.").Append(name).Append('{');
             if (horizontal)
@@ -269,7 +271,8 @@ internal sealed class AppearanceStyles
             else
             {
                 _rules.Append("border-right:").Append(width).Append(" solid ").Append(colour)
-                    .Append(";padding-right:calc(var(--ex-cell-padding-x, 8px) - ").Append(width).Append(')');
+                    .Append(";padding-right:calc(var(--ex-cell-padding-x, 8px) - ").Append(width)
+                    .Append(" - var(--ex-number-dp, 0px))");
             }
             _rules.Append("}\n");
             Version++;

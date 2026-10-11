@@ -1,7 +1,7 @@
 # What to verify on Windows, fourteenth run
 
-Status: ready-for-human. Part A asks Excel only and needs no build. (Part C of the
-[eleventh run](verify-on-windows-11.md) still waits for tickets 48 and 49.)
+Status: done — Part A at 523c0b9 on 2026-10-01 (`verification/2026-10-01-windows-excel-14/`). What
+it settled is in ADR-0071. *(Set from the records on 2026-10-10.)*
 
 This is for the Claude Code session on the Windows desktop of the earlier runs. (The thirteenth run is
 `claude/exsheet-start-8cx3v1`'s, about Pointing Scope; this one follows it.)

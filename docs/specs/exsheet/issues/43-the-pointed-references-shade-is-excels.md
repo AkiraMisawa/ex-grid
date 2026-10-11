@@ -1,6 +1,6 @@
 # 43: The pointed Reference's shade is Excel's
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0057, "What Part B of the eighth Windows run settled", and ADR-0029's change
 of the same day. The Reference Point is writing wears a dark shade of its colour on the grey ground.
@@ -19,7 +19,7 @@ The shade was approximated (55% toward black); Excel's are `#0401a2` for the fir
       and ticket 29's mention are updated (ADR-0029)
 - [x] `--ex-reference-pointed-background` is unchanged
 - [x] The shipped-stylesheet tests cover the seven tokens and the two Excel defaults (DC-56)
-- [ ] Layer 3 under both Chromes: `=D11+`, ↓↓ in the cell gives the pointed text `#0401a2` on
+- [x] Layer 3 under both Chromes: `=D11+`, ↓↓ in the cell gives the pointed text `#0401a2` on
       `#c6c6c6`, and a second Reference pointed gives `#630101` (DC-56). Write it; the orchestrator runs
       it. *Written, not run*
 - [x] The next Windows run asks Excel for the other five shades (`verify-on-windows-10.md`, group
@@ -56,3 +56,7 @@ The shade was approximated (55% toward black); Excel's are `#0401a2` for the fir
 2026-09-30, after the tenth Windows run: the other five shades were observed and are now the light
 defaults of `--ex-reference-3-pointed` to `--ex-reference-7-pointed`. The shipped-stylesheet test
 pins all seven.
+
+*(2026-10-10, backlog cleanup.)* Status set to done, and the last box ticked.
+`reference-text.spec.mjs`, "DC-56: the pointed Reference's text is Excel's shade of its colour —
+#0401a2 for the first, #630101 for the second — on #c6c6c6", runs under both Chromes in CI.

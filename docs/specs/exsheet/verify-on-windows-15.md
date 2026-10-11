@@ -1,6 +1,9 @@
 # What to verify on Windows, fifteenth run
 
-Status: ready-for-human
+Status: done — run at 1655299 on 2026-10-01 (`verification/2026-10-01-windows-15/`). Part A ran at
+150% only. Its 125% half was not run, and nothing asks for it now: VZ-14, rewritten with the user
+the same day, is discharged by 125% with the native bar on 2026-09-23 and 150% with the grid's own
+in this run. What it settled is in ADR-0058 and ADR-0080. *(Set from the records on 2026-10-10.)*
 
 For the Claude Code session on the Windows desktop of the earlier runs. Read
 [`verify-on-windows-9.md`](verify-on-windows-9.md) and [`verify-on-windows-13.md`](verify-on-windows-13.md)

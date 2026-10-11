@@ -125,6 +125,21 @@ public class SheetDisplayTests : SheetTestContext
         Assert.Equal(HorizontalAlignment.Center, Assert.Single(raised!.Cells).Alignment);
     }
 
+    [Fact] // ADR-0090 (2026-10-11) / VZ-19: a number wears the numeric presentation, to which the core gives one Device Pixel of the right padding, aligned left as right; text aligned right does not
+    public async Task The_numbers_device_pixel_follows_the_kind_not_the_alignment()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf("en-US", ("A1", "Amount"), ("A2", "12.5"))));
+        await GoToAsync(cut, "A1");
+        Assert.True(await cut.Instance.SetAlignmentAsync(HorizontalAlignment.Right));
+        await GoToAsync(cut, "A2");
+        Assert.True(await cut.Instance.SetAlignmentAsync(HorizontalAlignment.Left));
+
+        Assert.Contains("ex-align-right", Cell(cut, "A1").ClassName);
+        Assert.DoesNotContain("ex-cell-numeric", Cell(cut, "A1").ClassName);
+        Assert.Contains("ex-align-left", Cell(cut, "A2").ClassName);
+        Assert.Contains("ex-cell-numeric", Cell(cut, "A2").ClassName);
+    }
+
     [Fact] // ADR-0050 item 7, DC-29: General leaves the kind to align — numbers right, text left — with no class of its own
     public void General_alignment_leaves_the_kind_to_decide()
     {

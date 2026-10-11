@@ -1,6 +1,8 @@
 # What to verify on Windows, tenth run
 
-Status: ready-for-human — **Excel only; it needs no build.**
+Status: done — run on 2026-09-30, groups 1 to 3 at 261666c and group 4 at 632b323
+(`verification/2026-09-30-windows-excel-10/`). What it settled is in ADR-0051. *(Set from the
+records on 2026-10-10.)*
 
 For the Claude Code session on the Windows desktop of the earlier runs. Read
 [`verify-on-windows-9.md`](verify-on-windows-9.md) and [`verify-on-windows-8.md`](verify-on-windows-8.md)

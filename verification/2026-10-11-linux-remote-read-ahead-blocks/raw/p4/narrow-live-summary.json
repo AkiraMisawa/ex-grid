@@ -1,0 +1,1442 @@
+{
+ "30 rows, 20 trades a tick": {
+  "readAhead": "30",
+  "tickTrades": 20,
+  "reportRows": 16823,
+  "windowRows": {
+   "median": 75,
+   "min": 75,
+   "max": 75,
+   "n": 10
+  },
+  "windowChanges": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "completeAnswers": 0,
+  "perTick": [
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7064,
+    "changesBytes": 2,
+    "metadataBytes": 6840,
+    "encodedBytes": 3083,
+    "computeMs": 115.683,
+    "projectMs": 0.99
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7109,
+    "changesBytes": 2,
+    "metadataBytes": 6885,
+    "encodedBytes": 3089,
+    "computeMs": 121.166,
+    "projectMs": 0.922
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7109,
+    "changesBytes": 2,
+    "metadataBytes": 6885,
+    "encodedBytes": 3092,
+    "computeMs": 114.303,
+    "projectMs": 1.716
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7109,
+    "changesBytes": 2,
+    "metadataBytes": 6885,
+    "encodedBytes": 3091,
+    "computeMs": 131.188,
+    "projectMs": 1.29
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7109,
+    "changesBytes": 2,
+    "metadataBytes": 6885,
+    "encodedBytes": 3087,
+    "computeMs": 126.698,
+    "projectMs": 0.968
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7110,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3089,
+    "computeMs": 140.809,
+    "projectMs": 0.869
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7110,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3088,
+    "computeMs": 111.605,
+    "projectMs": 0.92
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7110,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3091,
+    "computeMs": 118.862,
+    "projectMs": 0.942
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7110,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3093,
+    "computeMs": 97.159,
+    "projectMs": 1.045
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7110,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3087,
+    "computeMs": 113.845,
+    "projectMs": 0.875
+   }
+  ],
+  "answers": {
+   "answered": 10,
+   "failedOrCancelled": 0,
+   "rows": {
+    "median": 0,
+    "min": 0,
+    "max": 0,
+    "n": 10
+   },
+   "changes": {
+    "median": 0,
+    "min": 0,
+    "max": 0,
+    "n": 10
+   },
+   "rawBytes": {
+    "median": 7110,
+    "min": 7064,
+    "max": 7110,
+    "n": 10
+   },
+   "metadataBytes": {
+    "median": 6886,
+    "min": 6840,
+    "max": 6886,
+    "n": 10
+   },
+   "rowsBytes": {
+    "median": 2,
+    "min": 2,
+    "max": 2,
+    "n": 10
+   },
+   "encodedBytes": {
+    "median": 3089,
+    "min": 3083,
+    "max": 3093,
+    "n": 10
+   },
+   "requestBytes": {
+    "median": 5871,
+    "min": 5871,
+    "max": 5871,
+    "n": 10
+   },
+   "encodings": [
+    "br"
+   ],
+   "filledCells": {
+    "median": 0,
+    "min": 0,
+    "max": 0,
+    "n": 10
+   },
+   "valueColumns": {
+    "median": 6,
+    "min": 6,
+    "max": 6,
+    "n": 10
+   },
+   "server": {
+    "computeMs": {
+     "median": 118.9,
+     "min": 97.2,
+     "max": 140.8,
+     "n": 10
+    },
+    "projectMs": {
+     "median": 1,
+     "min": 0.9,
+     "max": 1.7,
+     "n": 10
+    },
+    "digestMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0.1,
+     "n": 10
+    },
+    "serializeMs": {
+     "median": 0.2,
+     "min": 0.1,
+     "max": 0.3,
+     "n": 10
+    },
+    "endpointMs": {
+     "median": 120.4,
+     "min": 98.8,
+     "max": 142.3,
+     "n": 10
+    }
+   },
+   "client": {
+    "arrivedMs": {
+     "median": 282.7,
+     "min": 257.3,
+     "max": 322.8,
+     "n": 10
+    },
+    "parseMs": {
+     "median": 9,
+     "min": 4.1,
+     "max": 11.1,
+     "n": 10
+    },
+    "checkMs": {
+     "median": 3.5,
+     "min": 2.2,
+     "max": 8,
+     "n": 10
+    }
+   }
+  },
+  "placed": {
+   "answered": 1,
+   "failedOrCancelled": 0,
+   "rows": {
+    "median": 75,
+    "min": 75,
+    "max": 75,
+    "n": 1
+   },
+   "changes": null,
+   "rawBytes": {
+    "median": 50021,
+    "min": 50021,
+    "max": 50021,
+    "n": 1
+   },
+   "metadataBytes": {
+    "median": 6796,
+    "min": 6796,
+    "max": 6796,
+    "n": 1
+   },
+   "rowsBytes": {
+    "median": 43045,
+    "min": 43045,
+    "max": 43045,
+    "n": 1
+   },
+   "encodedBytes": {
+    "median": 9924,
+    "min": 9924,
+    "max": 9924,
+    "n": 1
+   },
+   "requestBytes": {
+    "median": 5872,
+    "min": 5872,
+    "max": 5872,
+    "n": 1
+   },
+   "encodings": [
+    "br"
+   ],
+   "filledCells": {
+    "median": 162,
+    "min": 162,
+    "max": 162,
+    "n": 1
+   },
+   "valueColumns": {
+    "median": 6,
+    "min": 6,
+    "max": 6,
+    "n": 1
+   },
+   "server": {
+    "computeMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 1
+    },
+    "projectMs": {
+     "median": 0.3,
+     "min": 0.3,
+     "max": 0.3,
+     "n": 1
+    },
+    "digestMs": {
+     "median": 0.1,
+     "min": 0.1,
+     "max": 0.1,
+     "n": 1
+    },
+    "serializeMs": {
+     "median": 0.4,
+     "min": 0.4,
+     "max": 0.4,
+     "n": 1
+    },
+    "endpointMs": {
+     "median": 1,
+     "min": 1,
+     "max": 1,
+     "n": 1
+    }
+   },
+   "client": {
+    "arrivedMs": {
+     "median": 177.1,
+     "min": 177.1,
+     "max": 177.1,
+     "n": 1
+    },
+    "parseMs": {
+     "median": 66.8,
+     "min": 66.8,
+     "max": 66.8,
+     "n": 1
+    },
+    "checkMs": {
+     "median": 5.7,
+     "min": 5.7,
+     "max": 5.7,
+     "n": 1
+    }
+   }
+  },
+  "kept": {
+   "computed": false,
+   "computeMs": 0,
+   "projectMs": 0,
+   "digestMs": 0,
+   "totalMs": 0,
+   "windowStart": 0,
+   "windowRows": 0,
+   "valueColumns": 0,
+   "reportRows": 0,
+   "complete": false,
+   "changes": 0,
+   "keptWindows": 2,
+   "keptRows": 150,
+   "keptDistinctRows": 75,
+   "keptValueCells": 450,
+   "keptFilledCells": 162
+  },
+  "keptHeapBytes": 71000
+ },
+ "120 rows, 20 trades a tick": {
+  "readAhead": "120",
+  "tickTrades": 20,
+  "reportRows": 16823,
+  "windowRows": {
+   "median": 255,
+   "min": 255,
+   "max": 255,
+   "n": 10
+  },
+  "windowChanges": {
+   "median": 0,
+   "min": 0,
+   "max": 0,
+   "n": 10
+  },
+  "completeAnswers": 0,
+  "perTick": [
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7066,
+    "changesBytes": 2,
+    "metadataBytes": 6841,
+    "encodedBytes": 3096,
+    "computeMs": 112.322,
+    "projectMs": 1.567
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7111,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3096,
+    "computeMs": 123.542,
+    "projectMs": 3.095
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7111,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3098,
+    "computeMs": 115.332,
+    "projectMs": 3.021
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7111,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3095,
+    "computeMs": 131.542,
+    "projectMs": 3.504
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7111,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3097,
+    "computeMs": 108.298,
+    "projectMs": 3.424
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7111,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3092,
+    "computeMs": 116.871,
+    "projectMs": 2.918
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7111,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3094,
+    "computeMs": 126.309,
+    "projectMs": 2.606
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7111,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3091,
+    "computeMs": 98.459,
+    "projectMs": 2.643
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7111,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3089,
+    "computeMs": 116.575,
+    "projectMs": 4.046
+   },
+   {
+    "changes": 0,
+    "complete": false,
+    "rawBytes": 7111,
+    "changesBytes": 2,
+    "metadataBytes": 6886,
+    "encodedBytes": 3093,
+    "computeMs": 96.311,
+    "projectMs": 2.699
+   }
+  ],
+  "answers": {
+   "answered": 10,
+   "failedOrCancelled": 0,
+   "rows": {
+    "median": 0,
+    "min": 0,
+    "max": 0,
+    "n": 10
+   },
+   "changes": {
+    "median": 0,
+    "min": 0,
+    "max": 0,
+    "n": 10
+   },
+   "rawBytes": {
+    "median": 7111,
+    "min": 7066,
+    "max": 7111,
+    "n": 10
+   },
+   "metadataBytes": {
+    "median": 6886,
+    "min": 6841,
+    "max": 6886,
+    "n": 10
+   },
+   "rowsBytes": {
+    "median": 2,
+    "min": 2,
+    "max": 2,
+    "n": 10
+   },
+   "encodedBytes": {
+    "median": 3095,
+    "min": 3089,
+    "max": 3098,
+    "n": 10
+   },
+   "requestBytes": {
+    "median": 5872,
+    "min": 5872,
+    "max": 5872,
+    "n": 10
+   },
+   "encodings": [
+    "br"
+   ],
+   "filledCells": {
+    "median": 0,
+    "min": 0,
+    "max": 0,
+    "n": 10
+   },
+   "valueColumns": {
+    "median": 6,
+    "min": 6,
+    "max": 6,
+    "n": 10
+   },
+   "server": {
+    "computeMs": {
+     "median": 116.6,
+     "min": 96.3,
+     "max": 131.5,
+     "n": 10
+    },
+    "projectMs": {
+     "median": 3,
+     "min": 1.6,
+     "max": 4,
+     "n": 10
+    },
+    "digestMs": {
+     "median": 0.1,
+     "min": 0.1,
+     "max": 0.2,
+     "n": 10
+    },
+    "serializeMs": {
+     "median": 0.1,
+     "min": 0.1,
+     "max": 0.2,
+     "n": 10
+    },
+    "endpointMs": {
+     "median": 120.7,
+     "min": 99.7,
+     "max": 135.8,
+     "n": 10
+    }
+   },
+   "client": {
+    "arrivedMs": {
+     "median": 281.7,
+     "min": 257.3,
+     "max": 295.3,
+     "n": 10
+    },
+    "parseMs": {
+     "median": 7.4,
+     "min": 3.8,
+     "max": 20.9,
+     "n": 10
+    },
+    "checkMs": {
+     "median": 6.9,
+     "min": 5.1,
+     "max": 19.7,
+     "n": 10
+    }
+   }
+  },
+  "placed": {
+   "answered": 1,
+   "failedOrCancelled": 0,
+   "rows": {
+    "median": 255,
+    "min": 255,
+    "max": 255,
+    "n": 1
+   },
+   "changes": null,
+   "rawBytes": {
+    "median": 154166,
+    "min": 154166,
+    "max": 154166,
+    "n": 1
+   },
+   "metadataBytes": {
+    "median": 6797,
+    "min": 6797,
+    "max": 6797,
+    "n": 1
+   },
+   "rowsBytes": {
+    "median": 147188,
+    "min": 147188,
+    "max": 147188,
+    "n": 1
+   },
+   "encodedBytes": {
+    "median": 26127,
+    "min": 26127,
+    "max": 26127,
+    "n": 1
+   },
+   "requestBytes": {
+    "median": 5873,
+    "min": 5873,
+    "max": 5873,
+    "n": 1
+   },
+   "encodings": [
+    "br"
+   ],
+   "filledCells": {
+    "median": 567,
+    "min": 567,
+    "max": 567,
+    "n": 1
+   },
+   "valueColumns": {
+    "median": 6,
+    "min": 6,
+    "max": 6,
+    "n": 1
+   },
+   "server": {
+    "computeMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 1
+    },
+    "projectMs": {
+     "median": 0.6,
+     "min": 0.6,
+     "max": 0.6,
+     "n": 1
+    },
+    "digestMs": {
+     "median": 0.2,
+     "min": 0.2,
+     "max": 0.2,
+     "n": 1
+    },
+    "serializeMs": {
+     "median": 0.8,
+     "min": 0.8,
+     "max": 0.8,
+     "n": 1
+    },
+    "endpointMs": {
+     "median": 1.9,
+     "min": 1.9,
+     "max": 1.9,
+     "n": 1
+    }
+   },
+   "client": {
+    "arrivedMs": {
+     "median": 180.2,
+     "min": 180.2,
+     "max": 180.2,
+     "n": 1
+    },
+    "parseMs": {
+     "median": 165,
+     "min": 165,
+     "max": 165,
+     "n": 1
+    },
+    "checkMs": {
+     "median": 11.5,
+     "min": 11.5,
+     "max": 11.5,
+     "n": 1
+    }
+   }
+  },
+  "kept": {
+   "computed": false,
+   "computeMs": 0,
+   "projectMs": 0,
+   "digestMs": 0,
+   "totalMs": 0,
+   "windowStart": 0,
+   "windowRows": 0,
+   "valueColumns": 0,
+   "reportRows": 0,
+   "complete": false,
+   "changes": 0,
+   "keptWindows": 2,
+   "keptRows": 510,
+   "keptDistinctRows": 255,
+   "keptValueCells": 1530,
+   "keptFilledCells": 567
+  },
+  "keptHeapBytes": 236280
+ },
+ "30 rows, 1000 trades a tick": {
+  "readAhead": "30",
+  "tickTrades": 1000,
+  "reportRows": 16823,
+  "windowRows": {
+   "median": 75,
+   "min": 75,
+   "max": 75,
+   "n": 10
+  },
+  "windowChanges": {
+   "median": 5,
+   "min": 5,
+   "max": 8,
+   "n": 7
+  },
+  "completeAnswers": 3,
+  "perTick": [
+   {
+    "changes": null,
+    "complete": true,
+    "rawBytes": 50798,
+    "changesBytes": 43777,
+    "metadataBytes": 6841,
+    "encodedBytes": 10274,
+    "computeMs": 95.575,
+    "projectMs": 0.594
+   },
+   {
+    "changes": 5,
+    "complete": false,
+    "rawBytes": 10893,
+    "changesBytes": 3785,
+    "metadataBytes": 6886,
+    "encodedBytes": 4036,
+    "computeMs": 128.214,
+    "projectMs": 1.225
+   },
+   {
+    "changes": null,
+    "complete": true,
+    "rawBytes": 51247,
+    "changesBytes": 44181,
+    "metadataBytes": 6886,
+    "encodedBytes": 10480,
+    "computeMs": 116.094,
+    "projectMs": 1.22
+   },
+   {
+    "changes": 6,
+    "complete": false,
+    "rawBytes": 11590,
+    "changesBytes": 4482,
+    "metadataBytes": 6886,
+    "encodedBytes": 4169,
+    "computeMs": 111.271,
+    "projectMs": 0.992
+   },
+   {
+    "changes": 5,
+    "complete": false,
+    "rawBytes": 10884,
+    "changesBytes": 3776,
+    "metadataBytes": 6886,
+    "encodedBytes": 4053,
+    "computeMs": 123.833,
+    "projectMs": 1.338
+   },
+   {
+    "changes": 8,
+    "complete": false,
+    "rawBytes": 12948,
+    "changesBytes": 5840,
+    "metadataBytes": 6886,
+    "encodedBytes": 4381,
+    "computeMs": 96.091,
+    "projectMs": 0.945
+   },
+   {
+    "changes": 5,
+    "complete": false,
+    "rawBytes": 10884,
+    "changesBytes": 3776,
+    "metadataBytes": 6886,
+    "encodedBytes": 4019,
+    "computeMs": 100.16,
+    "projectMs": 1.47
+   },
+   {
+    "changes": 5,
+    "complete": false,
+    "rawBytes": 10880,
+    "changesBytes": 3772,
+    "metadataBytes": 6886,
+    "encodedBytes": 3991,
+    "computeMs": 165.519,
+    "projectMs": 0.87
+   },
+   {
+    "changes": 5,
+    "complete": false,
+    "rawBytes": 10881,
+    "changesBytes": 3773,
+    "metadataBytes": 6886,
+    "encodedBytes": 4008,
+    "computeMs": 98.296,
+    "projectMs": 1.019
+   },
+   {
+    "changes": null,
+    "complete": true,
+    "rawBytes": 52053,
+    "changesBytes": 44987,
+    "metadataBytes": 6886,
+    "encodedBytes": 10938,
+    "computeMs": 99.837,
+    "projectMs": 1.165
+   }
+  ],
+  "answers": {
+   "answered": 10,
+   "failedOrCancelled": 0,
+   "rows": {
+    "median": 6,
+    "min": 5,
+    "max": 75,
+    "n": 10
+   },
+   "changes": {
+    "median": 5,
+    "min": 5,
+    "max": 8,
+    "n": 7
+   },
+   "rawBytes": {
+    "median": 11590,
+    "min": 10880,
+    "max": 52053,
+    "n": 10
+   },
+   "metadataBytes": {
+    "median": 6886,
+    "min": 6841,
+    "max": 6886,
+    "n": 10
+   },
+   "rowsBytes": {
+    "median": 4482,
+    "min": 3772,
+    "max": 44987,
+    "n": 10
+   },
+   "encodedBytes": {
+    "median": 4169,
+    "min": 3991,
+    "max": 10938,
+    "n": 10
+   },
+   "requestBytes": {
+    "median": 5871,
+    "min": 5871,
+    "max": 5871,
+    "n": 10
+   },
+   "encodings": [
+    "br"
+   ],
+   "filledCells": {
+    "median": 17,
+    "min": 14,
+    "max": 162,
+    "n": 10
+   },
+   "valueColumns": {
+    "median": 6,
+    "min": 6,
+    "max": 6,
+    "n": 10
+   },
+   "server": {
+    "computeMs": {
+     "median": 111.3,
+     "min": 95.6,
+     "max": 165.5,
+     "n": 10
+    },
+    "projectMs": {
+     "median": 1.2,
+     "min": 0.6,
+     "max": 1.5,
+     "n": 10
+    },
+    "digestMs": {
+     "median": 0.1,
+     "min": 0,
+     "max": 0.1,
+     "n": 10
+    },
+    "serializeMs": {
+     "median": 0.3,
+     "min": 0.2,
+     "max": 0.8,
+     "n": 10
+    },
+    "endpointMs": {
+     "median": 118.1,
+     "min": 96.9,
+     "max": 167,
+     "n": 10
+    }
+   },
+   "client": {
+    "arrivedMs": {
+     "median": 293.2,
+     "min": 256,
+     "max": 340.9,
+     "n": 10
+    },
+    "parseMs": {
+     "median": 11.9,
+     "min": 6.6,
+     "max": 61.8,
+     "n": 10
+    },
+    "checkMs": {
+     "median": 4.6,
+     "min": 2.2,
+     "max": 8.3,
+     "n": 10
+    }
+   }
+  },
+  "placed": {
+   "answered": 1,
+   "failedOrCancelled": 0,
+   "rows": {
+    "median": 75,
+    "min": 75,
+    "max": 75,
+    "n": 1
+   },
+   "changes": null,
+   "rawBytes": {
+    "median": 50022,
+    "min": 50022,
+    "max": 50022,
+    "n": 1
+   },
+   "metadataBytes": {
+    "median": 6797,
+    "min": 6797,
+    "max": 6797,
+    "n": 1
+   },
+   "rowsBytes": {
+    "median": 43045,
+    "min": 43045,
+    "max": 43045,
+    "n": 1
+   },
+   "encodedBytes": {
+    "median": 9964,
+    "min": 9964,
+    "max": 9964,
+    "n": 1
+   },
+   "requestBytes": {
+    "median": 5872,
+    "min": 5872,
+    "max": 5872,
+    "n": 1
+   },
+   "encodings": [
+    "br"
+   ],
+   "filledCells": {
+    "median": 162,
+    "min": 162,
+    "max": 162,
+    "n": 1
+   },
+   "valueColumns": {
+    "median": 6,
+    "min": 6,
+    "max": 6,
+    "n": 1
+   },
+   "server": {
+    "computeMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 1
+    },
+    "projectMs": {
+     "median": 0.3,
+     "min": 0.3,
+     "max": 0.3,
+     "n": 1
+    },
+    "digestMs": {
+     "median": 0.1,
+     "min": 0.1,
+     "max": 0.1,
+     "n": 1
+    },
+    "serializeMs": {
+     "median": 0.6,
+     "min": 0.6,
+     "max": 0.6,
+     "n": 1
+    },
+    "endpointMs": {
+     "median": 1.4,
+     "min": 1.4,
+     "max": 1.4,
+     "n": 1
+    }
+   },
+   "client": {
+    "arrivedMs": {
+     "median": 176.5,
+     "min": 176.5,
+     "max": 176.5,
+     "n": 1
+    },
+    "parseMs": {
+     "median": 79,
+     "min": 79,
+     "max": 79,
+     "n": 1
+    },
+    "checkMs": {
+     "median": 8.7,
+     "min": 8.7,
+     "max": 8.7,
+     "n": 1
+    }
+   }
+  },
+  "kept": {
+   "computed": false,
+   "computeMs": 0,
+   "projectMs": 0,
+   "digestMs": 0,
+   "totalMs": 0,
+   "windowStart": 0,
+   "windowRows": 0,
+   "valueColumns": 0,
+   "reportRows": 0,
+   "complete": false,
+   "changes": 0,
+   "keptWindows": 2,
+   "keptRows": 150,
+   "keptDistinctRows": 81,
+   "keptValueCells": 486,
+   "keptFilledCells": 179
+  },
+  "keptHeapBytes": 80632
+ },
+ "120 rows, 1000 trades a tick": {
+  "readAhead": "120",
+  "tickTrades": 1000,
+  "reportRows": 16823,
+  "windowRows": {
+   "median": 255,
+   "min": 255,
+   "max": 255,
+   "n": 10
+  },
+  "windowChanges": {
+   "median": 18,
+   "min": 16,
+   "max": 22,
+   "n": 7
+  },
+  "completeAnswers": 3,
+  "perTick": [
+   {
+    "changes": null,
+    "complete": true,
+    "rawBytes": 156374,
+    "changesBytes": 149352,
+    "metadataBytes": 6841,
+    "encodedBytes": 27089,
+    "computeMs": 96.073,
+    "projectMs": 1.659
+   },
+   {
+    "changes": 22,
+    "complete": false,
+    "rawBytes": 23556,
+    "changesBytes": 16447,
+    "metadataBytes": 6886,
+    "encodedBytes": 6514,
+    "computeMs": 100.298,
+    "projectMs": 2.789
+   },
+   {
+    "changes": null,
+    "complete": true,
+    "rawBytes": 158119,
+    "changesBytes": 151052,
+    "metadataBytes": 6886,
+    "encodedBytes": 28244,
+    "computeMs": 107.805,
+    "projectMs": 6.779
+   },
+   {
+    "changes": 18,
+    "complete": false,
+    "rawBytes": 20915,
+    "changesBytes": 13806,
+    "metadataBytes": 6886,
+    "encodedBytes": 6269,
+    "computeMs": 95.42,
+    "projectMs": 2.762
+   },
+   {
+    "changes": 17,
+    "complete": false,
+    "rawBytes": 20271,
+    "changesBytes": 13162,
+    "metadataBytes": 6886,
+    "encodedBytes": 5978,
+    "computeMs": 98.936,
+    "projectMs": 2.891
+   },
+   {
+    "changes": 22,
+    "complete": false,
+    "rawBytes": 23920,
+    "changesBytes": 16811,
+    "metadataBytes": 6886,
+    "encodedBytes": 6724,
+    "computeMs": 105.525,
+    "projectMs": 3.044
+   },
+   {
+    "changes": 17,
+    "complete": false,
+    "rawBytes": 20354,
+    "changesBytes": 13245,
+    "metadataBytes": 6886,
+    "encodedBytes": 5985,
+    "computeMs": 109.7,
+    "projectMs": 3.109
+   },
+   {
+    "changes": 16,
+    "complete": false,
+    "rawBytes": 19723,
+    "changesBytes": 12614,
+    "metadataBytes": 6886,
+    "encodedBytes": 5998,
+    "computeMs": 91.781,
+    "projectMs": 2.772
+   },
+   {
+    "changes": 19,
+    "complete": false,
+    "rawBytes": 21742,
+    "changesBytes": 14633,
+    "metadataBytes": 6886,
+    "encodedBytes": 6499,
+    "computeMs": 130.664,
+    "projectMs": 3.056
+   },
+   {
+    "changes": null,
+    "complete": true,
+    "rawBytes": 161955,
+    "changesBytes": 154888,
+    "metadataBytes": 6886,
+    "encodedBytes": 30047,
+    "computeMs": 105.023,
+    "projectMs": 2.831
+   }
+  ],
+  "answers": {
+   "answered": 10,
+   "failedOrCancelled": 0,
+   "rows": {
+    "median": 22,
+    "min": 16,
+    "max": 255,
+    "n": 10
+   },
+   "changes": {
+    "median": 18,
+    "min": 16,
+    "max": 22,
+    "n": 7
+   },
+   "rawBytes": {
+    "median": 23556,
+    "min": 19723,
+    "max": 161955,
+    "n": 10
+   },
+   "metadataBytes": {
+    "median": 6886,
+    "min": 6841,
+    "max": 6886,
+    "n": 10
+   },
+   "rowsBytes": {
+    "median": 16447,
+    "min": 12614,
+    "max": 154888,
+    "n": 10
+   },
+   "encodedBytes": {
+    "median": 6514,
+    "min": 5978,
+    "max": 30047,
+    "n": 10
+   },
+   "requestBytes": {
+    "median": 5872,
+    "min": 5872,
+    "max": 5872,
+    "n": 10
+   },
+   "encodings": [
+    "br"
+   ],
+   "filledCells": {
+    "median": 62,
+    "min": 51,
+    "max": 567,
+    "n": 10
+   },
+   "valueColumns": {
+    "median": 6,
+    "min": 6,
+    "max": 6,
+    "n": 10
+   },
+   "server": {
+    "computeMs": {
+     "median": 105,
+     "min": 91.8,
+     "max": 130.7,
+     "n": 10
+    },
+    "projectMs": {
+     "median": 2.9,
+     "min": 1.7,
+     "max": 6.8,
+     "n": 10
+    },
+    "digestMs": {
+     "median": 0.2,
+     "min": 0.2,
+     "max": 0.2,
+     "n": 10
+    },
+    "serializeMs": {
+     "median": 0.3,
+     "min": 0.2,
+     "max": 1.1,
+     "n": 10
+    },
+    "endpointMs": {
+     "median": 109.3,
+     "min": 95.5,
+     "max": 134.5,
+     "n": 10
+    }
+   },
+   "client": {
+    "arrivedMs": {
+     "median": 294.4,
+     "min": 257.9,
+     "max": 318.1,
+     "n": 10
+    },
+    "parseMs": {
+     "median": 14.9,
+     "min": 8.6,
+     "max": 181.3,
+     "n": 10
+    },
+    "checkMs": {
+     "median": 7.1,
+     "min": 4.8,
+     "max": 15.3,
+     "n": 10
+    }
+   }
+  },
+  "placed": {
+   "answered": 1,
+   "failedOrCancelled": 0,
+   "rows": {
+    "median": 255,
+    "min": 255,
+    "max": 255,
+    "n": 1
+   },
+   "changes": null,
+   "rawBytes": {
+    "median": 154166,
+    "min": 154166,
+    "max": 154166,
+    "n": 1
+   },
+   "metadataBytes": {
+    "median": 6797,
+    "min": 6797,
+    "max": 6797,
+    "n": 1
+   },
+   "rowsBytes": {
+    "median": 147188,
+    "min": 147188,
+    "max": 147188,
+    "n": 1
+   },
+   "encodedBytes": {
+    "median": 26126,
+    "min": 26126,
+    "max": 26126,
+    "n": 1
+   },
+   "requestBytes": {
+    "median": 5873,
+    "min": 5873,
+    "max": 5873,
+    "n": 1
+   },
+   "encodings": [
+    "br"
+   ],
+   "filledCells": {
+    "median": 567,
+    "min": 567,
+    "max": 567,
+    "n": 1
+   },
+   "valueColumns": {
+    "median": 6,
+    "min": 6,
+    "max": 6,
+    "n": 1
+   },
+   "server": {
+    "computeMs": {
+     "median": 0,
+     "min": 0,
+     "max": 0,
+     "n": 1
+    },
+    "projectMs": {
+     "median": 0.9,
+     "min": 0.9,
+     "max": 0.9,
+     "n": 1
+    },
+    "digestMs": {
+     "median": 0.3,
+     "min": 0.3,
+     "max": 0.3,
+     "n": 1
+    },
+    "serializeMs": {
+     "median": 1.5,
+     "min": 1.5,
+     "max": 1.5,
+     "n": 1
+    },
+    "endpointMs": {
+     "median": 3.2,
+     "min": 3.2,
+     "max": 3.2,
+     "n": 1
+    }
+   },
+   "client": {
+    "arrivedMs": {
+     "median": 183.8,
+     "min": 183.8,
+     "max": 183.8,
+     "n": 1
+    },
+    "parseMs": {
+     "median": 161.2,
+     "min": 161.2,
+     "max": 161.2,
+     "n": 1
+    },
+    "checkMs": {
+     "median": 11.5,
+     "min": 11.5,
+     "max": 11.5,
+     "n": 1
+    }
+   }
+  },
+  "kept": {
+   "computed": false,
+   "computeMs": 0,
+   "projectMs": 0,
+   "digestMs": 0,
+   "totalMs": 0,
+   "windowStart": 0,
+   "windowRows": 0,
+   "valueColumns": 0,
+   "reportRows": 0,
+   "complete": false,
+   "changes": 0,
+   "keptWindows": 2,
+   "keptRows": 510,
+   "keptDistinctRows": 275,
+   "keptValueCells": 1650,
+   "keptFilledCells": 628
+  },
+  "keptHeapBytes": 253856
+ }
+}

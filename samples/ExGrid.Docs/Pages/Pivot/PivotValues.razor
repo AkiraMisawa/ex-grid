@@ -50,7 +50,9 @@
         </p>
         <p>
             A value too wide for its column is painted <code>####</code>, as in Excel, never cut short to a
-            smaller-looking number: drag a column's edge narrower in any report on this page to see it. The
+            smaller-looking number: drag a column's edge narrower in any report on this page to see it. A value that
+            fits is painted whole, a subtotal's bold too: it may use one screen pixel of its cell's right padding,
+            so a column whose edges round narrower on screen never cuts it. The
             text a cell paints is not what a copy carries: copying puts the full-precision value on the
             clipboard, so Excel receives the number, not its rounding.
         </p>

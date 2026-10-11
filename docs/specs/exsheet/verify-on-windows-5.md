@@ -1,6 +1,8 @@
 # What to verify on Windows, fifth run
 
-Status: ready-for-human — **A, B, C in order**.
+Status: done — run at 3fa16a9 on 2026-09-29 (`verification/2026-09-29-windows-excel-5/`,
+`verification/2026-09-29-windows-5/`). What it settled is in ADR-0012 and ADR-0033. *(Set from the
+records on 2026-10-10.)*
 
 For the Claude Code session on the Windows desktop of the earlier runs. The fourth run's method,
 tools and advance authorisation still apply: read [`verify-on-windows-4.md`](verify-on-windows-4.md)

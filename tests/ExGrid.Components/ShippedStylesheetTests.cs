@@ -216,15 +216,22 @@ public class ShippedStylesheetTests
     /// cascade picks it — the most specific matching selector, then the last declared — or null when
     /// none sets it. A pseudo-element's rule styles the pseudo-element, never the element.</summary>
     internal static string? Winning(IElement element, string property)
-        => UnconditionalRules()
+        => Winning(element, UnconditionalRules(), property)?.Value;
+
+    /// <summary>The declaration the cascade picks for an element out of <paramref name="rules"/>, in the
+    /// order it meets them, among <paramref name="properties"/> — a shorthand and its longhand compete
+    /// as one: the most specific matching selector, then the last declared; or null when none sets any.
+    /// A pseudo-element's rule styles the pseudo-element, never the element.</summary>
+    internal static (string Property, string Value)? Winning(IElement element, IReadOnlyList<(string[] Selectors, string Body)> rules, params string[] properties)
+        => rules
             .SelectMany((rule, order) => Declarations(rule.Body)
-                .Where(declared => declared.Property == property)
+                .Where(declared => properties.Contains(declared.Property))
                 .SelectMany(declared => rule.Selectors
                     .Where(selector => !selector.Contains("::", StringComparison.Ordinal) && element.Matches(selector))
-                    .Select(selector => (Specificity: Specificity(selector), Order: order, declared.Value))))
+                    .Select(selector => (Specificity: Specificity(selector), Order: order, declared.Property, declared.Value))))
             .OrderBy(candidate => candidate.Specificity)
             .ThenBy(candidate => candidate.Order)
-            .Select(candidate => candidate.Value)
+            .Select(candidate => ((string Property, string Value)?)(candidate.Property, candidate.Value))
             .LastOrDefault();
 
     private static readonly CssSelectorParser SelectorParser = new();

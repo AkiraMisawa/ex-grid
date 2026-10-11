@@ -1,6 +1,7 @@
 # 24: The Focus and a single range look like Excel's, and the header's rule is whole
 
-Status: ready-for-agent
+Status: done — but for the three readings a Windows run takes beside Excel (below; ADR-0008 waits on
+them), and the re-run of the selection-hole measurement (`verification/2026-09-29-selection-hole/`)
 
 **What to build:** ADR-0008, "Excel's look for the Focus and a single range" (2026-09-29), and
 ADR-0030's change of the same day, for ExGrid as a whole. Found on `/sheet`: the active cell's left
@@ -145,3 +146,10 @@ fails on the unchanged base (dd63bb6), in a full headless run on the same machin
 scrollbar (UX-10, the scrollbar spec, the stripes thumb), the system clipboard (the two sheet-vs-excel
 copies), DC-13, and WR-7's Drawer and tab. Nothing fails here that passes there. Headless macOS cannot
 answer the scrollbar cases; CI's Linux run is where they count.
+
+*(2026-10-10, backlog cleanup.)* Status set to done. Every box is built, and CI runs its tests on
+both browsers and both hosts: `selection-look.spec.mjs` for UX-17 to UX-19, `mud.spec.mjs` for UX-9.
+The run noted above as written and not yet run has run since, and UX-9 passes. Two things stay: the
+three readings under "To observe on the next Windows run", which no run has taken yet (ADR-0008
+still says "Read, not observed"), and the re-run of the selection-hole measurement, still pending in
+its README.

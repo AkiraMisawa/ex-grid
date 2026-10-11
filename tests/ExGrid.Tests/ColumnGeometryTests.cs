@@ -414,6 +414,35 @@ public class ColumnGeometryTests
         }
     }
 
+    [Theory] // ADR-0090 (2026-10-11) / VZ-19: a column is painted under one Device Pixel narrower than declared, so the one a number may use of its right padding leaves it at least its declared content, below 100% too
+    [InlineData(0.5)]
+    [InlineData(0.67)]
+    [InlineData(0.8)]
+    [InlineData(0.9)]
+    [InlineData(1.0)]
+    [InlineData(1.1)]
+    [InlineData(1.25)]
+    [InlineData(1.5)]
+    [InlineData(1.75)]
+    [InlineData(2.25)]
+    [InlineData(3.0)]
+    public void A_column_is_painted_under_one_device_pixel_narrower_than_declared(double ratio)
+    {
+        // SH-41's 49.87 and widths a little past it, after a lead band, so the edges fall at every
+        // offset from the Device Pixels.
+        double[] widths = [.. Enumerable.Range(0, 120).Select(i => 49.87 + (i % 7 * 0.137) + (i % 5 * 0.011))];
+        var geometry = new ColumnGeometry(widths, 0, 400, leadWidthPx: 41.3, devicePixelRatio: ratio);
+
+        for (var c = 0; c < geometry.Count; c++)
+        {
+            // Each edge moves by at most half a Device Pixel, so a width by under one.
+            var shortBy = geometry.DeclaredWidthPxOf(c) - geometry.WidthPxOf(c);
+            Assert.True(shortBy < (1 / ratio) + 1e-9, $"column {c}: declared {geometry.DeclaredWidthPxOf(c)}px, painted {geometry.WidthPxOf(c)}px");
+        }
+        // And some are painted narrower, which is why a number is given the pixel at all.
+        Assert.Contains(Enumerable.Range(0, geometry.Count), c => geometry.WidthPxOf(c) < geometry.DeclaredWidthPxOf(c));
+    }
+
     [Fact] // ADR-0090: what a column declares is kept beside what it is painted at
     public void The_declared_widths_are_kept_beside_the_painted_ones()
     {

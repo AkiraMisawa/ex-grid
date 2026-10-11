@@ -1,6 +1,6 @@
 # 32: Home and End on macOS move the caret and keep the edit
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0010's note of 2026-09-30. In Caret, Home and End belong to the editor and
 move the caret (ADR-0010's key table). Chrome on macOS binds them to scrolling the document instead.
@@ -43,3 +43,8 @@ placement as the Apple path, on every platform.
 *(2026-09-30, decided with the user.)* PageUp and PageDown are dropped while an edit is open on
 every platform, not only on a Mac. The layer-3 test asserts it everywhere.
 
+*(2026-10-10, backlog cleanup.)* Status set to done. Every box was ticked, and `sheet.spec.mjs`,
+"ticket 32/ADR-0010: in Caret in the {Cell Editor|Formula Bar}, Home and End move the caret, with
+Shift extend the selection, and nothing scrolls the grid away", runs in CI on both hosts, PageUp and
+PageDown included. The question put to the user above was decided with the user on 2026-09-30, in
+the last comment before this one.

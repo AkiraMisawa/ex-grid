@@ -1,6 +1,9 @@
 # What to verify on a Windows machine
 
-Status: ready-for-human
+Status: done — run at 9a78a14 on 2026-09-27 (`verification/2026-09-27-windows-excel/`,
+`verification/2026-09-27-windows/`). Part C was recorded as not run, as this page asks while its
+tests are unwritten; DC-8 and DC-13 ran in the second run's Part D, and the IME cases in the
+fifteenth run. What it settled is in ADR-0047 and ADR-0048. *(Set from the records on 2026-10-10.)*
 
 This is written for a Claude Code session started on a Windows desktop that has **Excel, Chrome
 and Edge**. The Linux container where ExSheet is being built has none of the three. Everything
