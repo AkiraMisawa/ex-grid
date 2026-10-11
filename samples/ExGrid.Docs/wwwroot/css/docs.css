@@ -59,6 +59,36 @@ body { font-family: Roboto, Helvetica, Arial, sans-serif; }
 }
 
 .docs-content { padding-top: 32px; padding-bottom: 64px; }
+
+/* The banner above every page of a site that is not a version's (ADR-0110), and its one-line
+   form above a page that fills the window, which leaves --docs-banner-height for it. */
+.docs-banner { margin-bottom: 24px; max-width: 980px; }
+.docs-banner code, .docs-banner-strip code {
+    font-family: ui-monospace, SFMono-Regular, "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 0.9em;
+}
+.docs-banner-link { margin-left: 6px; font-weight: 500; white-space: nowrap; }
+/* MudBlazor's warning and info are too light to read as words on a light page. The banner keeps
+   them for its icon and its tint, and the chip for its border; the words take a readable colour. */
+.docs-banner .mud-alert-message { color: var(--mud-palette-text-primary); }
+.docs-version.mud-chip-color-warning { color: light-dark(#8a5300, var(--mud-palette-warning)); }
+.docs-bare-banner { --docs-banner-height: 32px; }
+.docs-banner-strip {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: var(--docs-banner-height);
+    padding: 0 14px;
+    font: 13px Roboto, Helvetica, Arial, sans-serif;
+    white-space: nowrap;
+    background: rgba(var(--mud-palette-warning-rgb), 0.16);
+    border-bottom: 1px solid rgba(var(--mud-palette-warning-rgb), 0.6);
+    color: var(--mud-palette-text-primary);
+}
+.docs-banner-strip-icon { flex: none; color: var(--mud-palette-warning); }
+.docs-banner-strip-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.docs-banner-strip-link { flex: none; margin-left: auto; color: var(--mud-palette-primary); }
 .docs-page-header { margin-bottom: 32px; max-width: 820px; }
 .docs-title { font-weight: 700; letter-spacing: -0.02em; }
 .docs-lead { color: var(--docs-muted); margin-top: 8px; font-size: 1.1rem; line-height: 1.6; }
@@ -206,7 +236,7 @@ body { font-family: Roboto, Helvetica, Arial, sans-serif; }
     width: 100%;
 }
 
-.docs-showcase { min-height: 100vh; display: flex; flex-direction: column; }
+.docs-showcase { min-height: calc(100vh - var(--docs-banner-height, 0px)); display: flex; flex-direction: column; }
 
 /* A built-in Example's own controls: MudBlazor's reset leaves a plain button, select or input
    looking like text, and the built-in Examples use plain HTML as an application without MudBlazor

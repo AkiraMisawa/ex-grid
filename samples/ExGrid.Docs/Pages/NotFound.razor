@@ -1,0 +1,16 @@
+@page "/{*path}"
+
+@* Every address no page claims. A route of its own, not the Router's NotFound: the Router answers
+   a followed link to an address it does not know by reloading the page from the server, and a
+   link with an anchor (release-notes#unreleased) cannot reload, since the browser only moves to
+   the anchor. The Router then tries again, and the tab hangs in that loop. Here the address is
+   matched, and the reader is told plainly that there is no page. *@
+<PageTitle>Not found — ExGrid</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mt-8">Not found</MudText>
+<MudText Class="mt-2">There is no page at this address. <MudLink Href="">Go to the start.</MudLink></MudText>
+
+@code {
+    /// <summary>The address no page claims.</summary>
+    [Parameter] public string? Path { get; set; }
+}

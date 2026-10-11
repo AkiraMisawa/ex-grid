@@ -12,6 +12,8 @@
 # whole of ci.yml on the tag, then pushes to nuget.org the very packages ci.yml's package job
 # tested. The key is a one-hour one from Trusted Publishing: nuget.org holds a policy naming
 # this repository and this file, and the secret NUGET_USER holds the nuget.org profile name.
+# Last, once nuget.org has the packages, it publishes the Docs Site for the version (docs.yml,
+# ADR-0110), with the UTC day of the push (ADR-0190).
 name: Release
 
 on:
@@ -72,6 +74,9 @@ jobs:
     permissions:
       contents: write   # the GitHub release
       id-token: write   # Trusted Publishing
+    outputs:
+      # The UTC day the packages reached nuget.org, for the Docs Site (ADR-0190).
+      published-on: ${{ steps.push.outputs.published-on }}
     env:
       VERSION: ${{ needs.admit.outputs.version }}
     steps:
@@ -104,12 +109,19 @@ jobs:
 
       # The symbol packages go with them. --skip-duplicate lets a re-run finish a push
       # that stopped halfway; nuget.org never replaces a version that is already there.
+      # The day is recorded once the push has succeeded: a version's date is the UTC day it
+      # reached nuget.org (ADR-0190).
       - name: Push
-        run: >
-          dotnet nuget push "packages/*.nupkg"
-          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
-          --source https://api.nuget.org/v3/index.json
-          --skip-duplicate
+        id: push
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          dotnet nuget push "packages/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+          echo "published-on=$(date -u +%F)" >> "$GITHUB_OUTPUT"
 
       # Whoever made the tag may have made its release too — GitHub's release page does both
       # at once. Then that release is completed, not refused: marked prerelease, the packages
@@ -135,3 +147,20 @@ jobs:
             gh release create "$TAG" packages/* --repo "$REPO" \
               --verify-tag --prerelease --title "$TAG" --generate-notes --notes "$note"
           fi
+
+  # The Docs Site for this version, once nuget.org has it (ADR-0110, ADR-0042): the site states a
+  # version only after its packages can be installed, and the day they could be (ADR-0190).
+  # Trusted Publishing stays in the publish job above, since nuget.org's policy names this file.
+  docs:
+    name: The Docs Site
+    needs: [admit, publish]
+    uses: ./.github/workflows/docs.yml
+    with:
+      version: ${{ needs.admit.outputs.version }}
+      ref: ${{ github.ref_name }}
+      published-on: ${{ needs.publish.outputs.published-on }}
+    # What a Pages deployment needs. A called workflow may not ask for more than its caller grants.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

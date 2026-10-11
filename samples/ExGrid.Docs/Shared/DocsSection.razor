@@ -15,5 +15,5 @@
     /// <summary>The section's body.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private string Id => new(Title.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray());
+    private string Id => DocsAnchor.Of(Title);
 }

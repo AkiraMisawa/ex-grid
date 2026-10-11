@@ -22,7 +22,13 @@
         <a href="" class="docs-brand">
             <span class="docs-brand-mark">Ex</span><span>Grid</span>
         </a>
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Inherit" Class="docs-version">@DocsVersion.Value</MudChip>
+        @* The version the site states (ADR-0110): a tag's version, leading to its Release Notes; or,
+           in the warning colour, the branch and commit of a site that is not on nuget.org. *@
+        <MudTooltip Text="@DocsBuild.ChipTitle">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                     Color="@(DocsBuild.Kind is DocsBuildKind.Branch or DocsBuildKind.Experiment ? Color.Warning : Color.Inherit)"
+                     Href="@DocsBuild.ReleaseNotesHref" Class="docs-version">@DocsBuild.Chip</MudChip>
+        </MudTooltip>
         <MudSpacer />
         <ChromeSwitch Class="docs-appbar-switch" />
         <MudTooltip Text="@(State.Dark ? "Light mode" : "Dark mode")">
@@ -32,7 +38,7 @@
         </MudTooltip>
         <MudTooltip Text="GitHub">
             <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit"
-                           Href="https://github.com/AkiraMisawa/ex-grid" Target="_blank" aria-label="GitHub" />
+                           Href="@DocsBuild.Repository" Target="_blank" aria-label="GitHub" />
         </MudTooltip>
     </MudAppBar>
     <MudDrawer @bind-Open="_drawer" ClipMode="DrawerClipMode.Always" Elevation="0"
@@ -41,6 +47,10 @@
     </MudDrawer>
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.Large" Class="docs-content">
+            @if (DocsBuild.Unreleased)
+            {
+                <UnreleasedBanner />
+            }
             @Body
         </MudContainer>
     </MudMainContent>

@@ -1,11 +1,31 @@
-# The Docs Site (ADR-0110), published to GitHub Pages: from a v* tag, so the site describes the
-# version on nuget.org, and on demand, which publishes the branch it is run on and states its
-# commit. CI builds the site with the solution on every push; this workflow only publishes.
+# The Docs Site (ADR-0110), published to GitHub Pages, two ways:
+#
+# - by the release (release.yml's last job), once the packages are on nuget.org: it passes the
+#   version, its tag and the UTC day of the push (ADR-0190), and the site states that version;
+# - on demand (workflow_dispatch), from main or a lab/* branch and from no other ref: the site then
+#   states the branch and the commit, and says above every page that it describes changes that are
+#   not on nuget.org. A lab/* site says that it is an experiment.
+#
+# A tag no longer starts it: run beside the release, the site stated a version before nuget.org had
+# it, and would have stated it had the release failed. CI builds the site with the solution on
+# every push; this workflow only publishes.
 name: Docs
 
 on:
-  push:
-    tags: ['v*']
+  workflow_call:
+    inputs:
+      version:
+        description: 'The version the release pushed to nuget.org, as 0.1.0-beta.3'
+        type: string
+        required: true
+      ref:
+        description: 'The tag it was published from, as v0.1.0-beta.3'
+        type: string
+        required: true
+      published-on:
+        description: 'The UTC day the release pushed the packages to nuget.org, as 2026-10-12'
+        type: string
+        default: ''
   workflow_dispatch:
 
 permissions:
@@ -28,25 +48,70 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # What the site states, refused before anything is built when it would not be true of the
+      # commit checked out below: a version's tag, or main or a lab/* branch and its commit.
+      - name: What the site states
+        id: states
+        env:
+          VERSION: ${{ inputs.version }}
+          TAG: ${{ inputs.ref }}
+          PUBLISHED_ON: ${{ inputs.published-on }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$TAG" ]]; then
+            # Called by the release, on the tag it published.
+            if [[ "$TAG" != "v$VERSION" ]]; then
+              echo "::error::The tag $TAG does not name the version $VERSION (ADR-0042)."
+              exit 1
+            fi
+            if [[ "$GITHUB_REF" != "refs/tags/$TAG" ]]; then
+              echo "::error::Called on $GITHUB_REF, not on the tag $TAG: a version's site is built from the commit its release published."
+              exit 1
+            fi
+            if [[ -n "$PUBLISHED_ON" && ! "$PUBLISHED_ON" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+              echo "::error::published-on '$PUBLISHED_ON' is not a day, as 2026-10-12 (ADR-0190)."
+              exit 1
+            fi
+            {
+              echo "version=$VERSION"
+              echo "ref=$TAG"
+              echo "published-on=$PUBLISHED_ON"
+            } >> "$GITHUB_OUTPUT"
+          else
+            # On demand: main or a lab/* branch, and its commit.
+            branch="${GITHUB_REF#refs/heads/}"
+            if [[ "$GITHUB_REF" != refs/heads/* || ( "$branch" != main && "$branch" != lab/* ) ]]; then
+              echo "::error::The Docs Site is published on demand only from main or a lab/* branch (ADR-0110), and $GITHUB_REF is neither. A version's site is published by its release, once nuget.org has the packages."
+              exit 1
+            fi
+            if [[ ! "$branch" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+              echo "::error::The branch '$branch' has a character the site cannot state; name it with letters, digits, '.', '_', '-' and '/'."
+              exit 1
+            fi
+            {
+              echo "version=dev"
+              echo "ref=$branch@$GITHUB_SHA"
+              echo "published-on="
+            } >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      - name: The version the site states
-        id: version
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          fi
-
+      # The build reads the three together and refuses inputs that disagree (ADR-0110).
       - name: Publish
-        run: >
-          dotnet publish samples/ExGrid.Docs/ExGrid.Docs.csproj -c Release -o publish
-          -p:DocsVersion=${{ steps.version.outputs.value }}
+        env:
+          DOCS_VERSION: ${{ steps.states.outputs.version }}
+          DOCS_REF: ${{ steps.states.outputs.ref }}
+          DOCS_PUBLISHED_ON: ${{ steps.states.outputs.published-on }}
+        run: |
+          set -euo pipefail
+          dotnet publish samples/ExGrid.Docs/ExGrid.Docs.csproj -c Release -o publish \
+            "-p:DocsVersion=$DOCS_VERSION" "-p:DocsRef=$DOCS_REF" \
+            ${DOCS_PUBLISHED_ON:+"-p:DocsPublishedOn=$DOCS_PUBLISHED_ON"}
 
       # GitHub Pages serves a project site under /<repository>/. A deep link has no file of its
       # own, so 404.html is the app too; .nojekyll lets _framework/ through. The precompressed
@@ -66,6 +131,8 @@ jobs:
         with:
           path: publish/wwwroot
 
+  # The github-pages environment checks the run's ref against its deployment rules: on the
+  # release's call, the caller's ref, which is the tag; on demand, the branch.
   deploy:
     name: Deploy to GitHub Pages
     needs: build

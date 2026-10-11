@@ -19,6 +19,7 @@
   <Project Path="tests/ExGrid.Data.Arrow.Tests/ExGrid.Data.Arrow.Tests.csproj" />
   <Project Path="tests/ExGrid.Data.Tests/ExGrid.Data.Tests.csproj" />
   <Project Path="tests/ExGrid.DemoApi.Tests/ExGrid.DemoApi.Tests.csproj" />
+  <Project Path="tests/ExGrid.Docs.Generator.Tests/ExGrid.Docs.Generator.Tests.csproj" />
   <Project Path="tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj" />
   <Project Path="tests/ExGrid.Tests/ExGrid.Tests.csproj" />
   <Project Path="tests/ExPivot.Components/ExPivot.Components.csproj" />
