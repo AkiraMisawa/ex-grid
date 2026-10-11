@@ -125,6 +125,10 @@ forbid a commit the grid has no objection to, turning a mis-sized selection into
   "always reported". The obligation is stated here, in `tests/ExGrid.Browser/README.md`, and met
   by the reference Chrome in the DemoHost; a Chrome that ignores it is silent, and that is the
   cost of the grid holding no strings.
+  *(Amended 2026-10-11, decided with the user, by
+  [ADR-0203](./0203-a-refusal-is-worded-by-the-built-in-chrome-unless-someone-else-words-it.md): the
+  built-in Chrome now words every refusal and announces it in the root's live region. The grid still
+  holds no sentence; the built-in Chrome does, behind its label seam.)*
 - **Hiding a column does not change this.** Editability is judged on the columns the selection
   actually covers, in the current order.
 - The Consumer is still free to ignore an approved paste. `Editable` is the grid's gate, not a

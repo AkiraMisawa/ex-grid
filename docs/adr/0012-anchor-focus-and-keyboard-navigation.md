@@ -413,6 +413,11 @@ handlers ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)'s economy).
   window drag, which is the user resizing, not the user moving. One case stays revealed: a
   scrollbar that appears because the content began to overflow, and covers the Focus where it
   stood. Nobody asked for that change, so the grid owes the reveal.
+  *(Widened 2026-10-11, decided with the user, by
+  [ADR-0204](./0204-the-page-follows-what-a-move-reveals-and-a-scripted-focus-asks-whether-the-keyboard-is-still-here.md):
+  after a move the grid makes, and when the editor opens, the **page** follows what the grid revealed,
+  to the nearest edge, while the keyboard is still this grid's. The box changing is still not
+  followed.)*
 - **When the Focus leaves the Window, a Range Request is raised**
   ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). A range taller than the
   Window will move the Focus onto rows that have not been fetched. The Focus cell is a Placeholder

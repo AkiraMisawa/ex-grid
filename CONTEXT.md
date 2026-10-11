@@ -109,7 +109,8 @@ The non-data settings a user has applied to a screen — column widths, column o
 columns, sort order, filter conditions. **Being serialisable for external persistence is a
 requirement** (the Consumer stores it as a personal setting). **Anything decided automatically
 is excluded** — an Auto width is not persisted; only the intent "this column is Auto" is
-([ADR-0016](./docs/adr/0016-column-width-and-overflow.md)).
+([ADR-0016](./docs/adr/0016-column-width-and-overflow.md)). It is written and read as JSON through ExGrid's own entry point, each filter operand with its type
+([ADR-0207](./docs/adr/0207-the-view-state-travels-as-json-through-an-entry-point-of-exgrids-own-each-operand-with-its-type.md)).
 _Avoid_: layout, settings, preferences
 
 **Saved View**:

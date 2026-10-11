@@ -1,0 +1,42 @@
+@using ExGrid.Docs.Examples.Data
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ToolBarContent>
+        <MudSwitch T="bool" @bind-Value="_early" @bind-Value:after="_trades.ResetCounts" Color="Color.Primary"
+                   Label="@($"Ask {ReadAheadTrades.Margin} rows before the Window runs out")" />
+        <MudSpacer />
+        <MudText Typo="Typo.body2">
+            Asked @(_trades.Early + _trades.Late) times: @_trades.Early with every row on screen held,
+            @_trades.Late with rows on screen waiting
+        </MudText>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="Trade" Window="_trades.Window" WindowStart="_trades.WindowStart" TotalCount="MillionTrades.Count"
+                IsLoading="_trades.IsLoading" OnRangeNeeded="_trades.RangeNeededAsync"
+                RangeRequestMargin="@(_early ? ReadAheadTrades.Margin : 0)"
+                Columns="Columns" Chrome="_chrome" RowKey="TradeId" VouchesDistinctRows="true"
+                ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    // The server's side: a round trip of 150 ms, 50 rows read either side, a covering question kept.
+    private readonly ReadAheadTrades _trades = new();
+
+    // Off at first: the grid asks once the rows on screen are not all held, as by default.
+    private bool _early;
+
+    private static readonly GridColumn<Trade>[] Columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("Price", ColumnType.Number, t => t.Price),
+    ];
+
+    private static readonly Func<Trade, object> TradeId = static t => t.Id;
+}

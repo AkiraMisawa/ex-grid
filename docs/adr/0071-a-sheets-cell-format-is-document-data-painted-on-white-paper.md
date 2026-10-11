@@ -811,6 +811,10 @@ own. Under the built-in Chrome:
   - **Not in a Pinned Column.** The pinned part of the Selection stands in a layer of its own, above the
     pinned cells (ADR-0004, ADR-0008), and a layer can only multiply with what is inside it. So over a
     Pinned Column the shade still lies over the lines, as before. That stays owed.
+    *(Settled 2026-10-11, decided with the user, by [ADR-0206](./0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md): the pinned tints lie in a shade layer of
+    their own, which multiplies as one group. Reading it also found that the scrollable side of a range
+    crossing the pinned boundary did not multiply either, its clip isolating the tint, and that SH-54 had
+    been checked only where nothing is pinned.)*
 - **The Focus cell stays unshaded**, as today.
 - **The fill handle is the outline's colour**, as Excel's is: green under the built-in Chrome, the
   primary under `ExSheet.MudBlazor`.

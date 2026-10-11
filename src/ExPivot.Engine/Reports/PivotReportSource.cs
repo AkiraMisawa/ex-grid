@@ -14,6 +14,16 @@ public abstract class PivotReportSource : IAsyncDisposable
     /// full-refresh source's notice of newer data by asking it to refresh
     /// (<see cref="PivotReportRequest.RefreshData"/>).</summary>
     public abstract PivotReportUpdateMode UpdateMode { get; }
+    /// <summary>
+    /// How many rows ExPivot asks this source for either side of the range its grid needs,
+    /// clamped into the report (ADR-0182): rows read ahead, so that ordinary scrolling and a key
+    /// that scrolls by a row are painted from rows already held while a round trip is out. 0, the
+    /// default, asks for exactly that range: a source with no round trip to hide — a local report
+    /// (<see cref="From"/>) — declares none. <see cref="Fetch"/> declares the number it was given,
+    /// 60 unless told. ExPivot also asks before the Window runs out by the smaller of 10 and this
+    /// number, its grid's Range Request Margin (ADR-0183).
+    /// </summary>
+    public virtual int ReadAheadRows => 0;
     /// <summary>A complete report Window, or Window Changes from the Baseline Window the request
     /// names.</summary>
     public abstract ValueTask<PivotReportUpdate> WindowAsync(PivotReportRequest request, CancellationToken cancellationToken = default);
@@ -82,6 +92,17 @@ public abstract class PivotReportSource : IAsyncDisposable
     /// <param name="refresh">Asks the server to refresh.</param>
     /// <param name="reportItems">Answers Items labelled and ordered by the report.</param>
     /// <param name="dispose">Releases the server's report state.</param>
+    /// <param name="readAheadRows">Rows ExPivot asks the server for either side of the range its
+    /// grid needs, clamped into the report, so that ordinary scrolling is painted from rows already
+    /// held rather than from Placeholders while a round trip is out (ADR-0182). How far ahead is
+    /// worth asking is a judgement about your data and your server, which is why it is a number
+    /// here: every row read ahead is a row of every column in each answer, and in each update of a
+    /// live report. 0 asks for exactly the range. A question in flight whose Window covers the
+    /// range the grid needs stays in flight while newer ranges arrive. A server that caps its
+    /// answers may answer a complete Window shorter than the one asked for, within it, so long as
+    /// it holds the rows the grid needs: the check is made against the range before widening, and an
+    /// answer that does not reach it is refused by name (ADR-0025). The Window answered is the one
+    /// held, and Window Changes and their digest cover all of it.</param>
     public static FetchingPivotReportSource Fetch(IReadOnlyList<PivotField> fields, PivotSourceFeatures features,
         PivotReportUpdateMode updateMode,
         Func<PivotReportRequest, CancellationToken, ValueTask<PivotReportUpdate>> window,
@@ -91,8 +112,9 @@ public abstract class PivotReportSource : IAsyncDisposable
         Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>>? details = null,
         Func<CancellationToken, ValueTask>? refresh = null,
         Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? reportItems = null,
-        Func<ValueTask>? dispose = null)
-        => new(fields, features, updateMode, window, items, copy, summary, details, refresh, reportItems, dispose);
+        Func<ValueTask>? dispose = null,
+        int readAheadRows = 60)
+        => new(fields, features, updateMode, window, items, copy, summary, details, refresh, reportItems, dispose, readAheadRows);
 }
 
 /// <summary>
@@ -123,8 +145,10 @@ public sealed class FetchingPivotReportSource : PivotReportSource
         Func<PivotReportSummaryQuery, CancellationToken, ValueTask<PivotReportSummaryResult>>? summary,
         Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>>? details,
         Func<CancellationToken, ValueTask>? refresh,
-        Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? reportItems, Func<ValueTask>? dispose)
+        Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? reportItems, Func<ValueTask>? dispose,
+        int readAheadRows)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(readAheadRows);
         Fields = Array.AsReadOnly(fields.ToArray());
         Features = features;
         UpdateMode = updateMode;
@@ -136,6 +160,7 @@ public sealed class FetchingPivotReportSource : PivotReportSource
         _refresh = refresh;
         _reportItems = reportItems;
         _dispose = dispose;
+        ReadAheadRows = readAheadRows;
     }
     /// <inheritdoc />
     public override IReadOnlyList<PivotField> Fields { get; }
@@ -143,6 +168,9 @@ public sealed class FetchingPivotReportSource : PivotReportSource
     public override PivotSourceFeatures Features { get; }
     /// <inheritdoc />
     public override PivotReportUpdateMode UpdateMode { get; }
+    /// <summary>The rows either side of the range the grid needs that ExPivot asks the server for,
+    /// as <see cref="PivotReportSource.Fetch"/> was given them: 60 unless told (ADR-0182).</summary>
+    public override int ReadAheadRows { get; }
     /// <summary>Informs the report Consumer of a server notification.</summary>
     public void NotifyChanged(string? sourceVersion = null) => OnChanged(new(sourceVersion));
     /// <inheritdoc />

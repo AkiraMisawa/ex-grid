@@ -41,6 +41,13 @@ release in the Definition of Done's sense, and waits for Step 7.**
 
 ### How a version is published
 
+*(2026-10-11, decided with the user:
+[ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)
+rewrites this for stable versions. `0.1.0` is grown on `release/0.1` and rehearsed by release
+candidates; a tag may be on `main` or a release branch; the refusal of an unsuffixed version is
+replaced by a check that the notes name a sign-off made at a commit the tag differs from only by its
+records and notes. This section is rewritten on the release branch, with what it said kept.)*
+
 - **A tag is the only place a version is written.** `v0.1.0-beta.1` names `0.1.0-beta.1`. The
   projects carry `0.0.0-dev`, so a package packed by hand says plainly that it is not one.
 - **Pushing the tag runs `.github/workflows/release.yml`:**
@@ -135,12 +142,23 @@ proves only what packaging changes.
 
 ## What a stable version needs besides Step 7
 
+*(2026-10-11, decided with the user: the first stable version is `0.1.0`, it carries all ten packages,
+and it claims Blazor Server —
+[ADR-0200](./0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md). What it needs of
+the public surface below is decided in an ADR of its own.)*
+
 - **A reviewed public surface.** Nothing has decided which C# types are the Consumer's contract.
   The core has 98 public types, and some of them, such as `ViewportGeometry` and `EdgeBand`, are
   public only so the test projects can reach them. A `0.x` beta may ship that. `1.0` may not.
   First an ADR states what is public. Then the rest becomes internal, reachable by the test
   projects and never by the Wrapper (ADR-0030: a Wrapper has only the seams every Consumer has).
   From then on a baseline file makes every change to the surface show up in review.
+  *(Settled 2026-10-11 by
+  [ADR-0201](./0201-the-public-surface-is-what-consumers-chromes-and-the-sibling-products-use.md),
+  decided with the user. The count was stale: the core exports 193 public types and the ten packages
+  524. "A `0.x` beta may ship that. `1.0` may not." was written when a stable version meant `1.0`; the
+  first stable is `0.1.0` (ADR-0200), and it ships a surface reviewed type by type, with members
+  reviewed before `1.0`.)*
 - **Removing the prerelease-only refusal from `release.yml`**, in the same change that rewrites
   this ADR.
 

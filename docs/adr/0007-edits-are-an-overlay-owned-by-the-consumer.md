@@ -20,7 +20,7 @@ only reports the intent and does not own the data, an editable DataGrid is not a
 
 | | Held by | Examples |
 |---|---|---|
-| **Uncommitted** (transient) | **the grid** | half-typed text in the editor, Selection, Focus, scroll position. Never saved, never shared |
+| **Uncommitted** (transient) | **the grid** | half-typed text in the editor, Selection, Focus, scroll position. Never saved, never shared. *(2026-10-11, decided with the user: an editor whose text is still the committed value — opened with F2, nothing typed — holds no half-typed text but a copy of committed data, so it closes when its row leaves the Window; one with typed text stays, as ADR-0142 has it. ST-2.)* |
 | **Committed** | **the Consumer** | the fact that a row now carries a break date. Saved (as a JSON blob), shared with other screens, sent to the backend |
 
 For the first Consumer, the scenario is persisted as a document in a mutable store and rows are a
