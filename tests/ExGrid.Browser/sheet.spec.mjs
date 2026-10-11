@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, circuitQuiet, scrollRowToTop } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant, keyField } from './keyboard.mjs';
 import {
@@ -708,15 +708,16 @@ test('SH-29 (ADR-0048/0049): the buttons follow each way an edit opens and ends,
     await expectCommandsOffered(page);
 });
 
-// ST-2 (ADR-0007's note of 2026-10-11): an edit whose text is still the committed value it opened on
-// holds a copy of committed data, not typing, so it closes as Escape would when a Window without its
-// row comes in. The Sheet pushes the rows around the ones in view (OnRangeNeeded), so scrolling far
-// takes the edited row out of its Window. The keyboard comes back to the grid — its Keyboard Field —
-// from the Cell Editor and from the Formula Bar alike, and a key pressed the moment it is back is the
-// grid's: ↓ moves the Focus, brought back into view. On a circuit the gate hears that the edit is over
-// a round trip after the keyboard is back, and the listener holds a key typed in between until it has
-// (ADR-0010's hold), so the key is the grid's with 150 ms on the Server host too. The page hears the
-// edit end (its buttons, greyed out while an edit is open, are offered again), and nothing is written.
+// ST-2 (ADR-0007's note of 2026-10-11, refined the same day): an edit whose text is still the
+// committed value it opened on holds a copy of committed data, not typing, so it closes as Escape
+// would when a Window without its row comes in — once the browser has said its field still holds that
+// text. The Sheet pushes the rows around the ones in view (OnRangeNeeded), so scrolling far takes the
+// edited row out of its Window. The keyboard comes back to the grid — its Keyboard Field — from the
+// Cell Editor and from the Formula Bar alike, and a key pressed the moment it is back is the grid's:
+// ↓ moves the Focus, brought back into view. The listener holds a key typed while the core closes the
+// edit (ADR-0010's hold), so the key is the grid's with 150 ms on the Server host too. The page hears
+// the edit end (its buttons, greyed out while an edit is open, are offered again), and nothing is
+// written.
 for (const surface of ['cell', 'bar']) {
     for (const rtt of [0, 150]) {
         test(`ST-2 (ADR-0007): an edit opened ${surface === 'cell' ? 'with F2' : 'by a press into the Formula Bar'} and not typed into closes when its row leaves the Window, and the next key is the grid's (${rtt} ms)`, async ({ page }) => {
@@ -758,6 +759,52 @@ for (const surface of ['cell', 'bar']) {
         });
     }
 }
+
+// ST-2 as refined (ADR-0007's note of 2026-10-11): a character typed as the Window moves off the row,
+// on a 150 ms circuit, reaches the field before the grid's question does. The field no longer holds the
+// text the edit opened with, so the browser answers that something was typed, and the edit stays with
+// it, as ADR-0142 has it — the core's own copy of the text, a round trip behind, took it for untyped
+// and lost the character. Brought back into view, Enter writes it.
+test('ST-2 (ADR-0007, refined): a character typed as the Window moves off an F2 edit, on a 150 ms circuit, keeps the edit with it, and Enter writes it', async ({ page }) => {
+    test.skip(!SERVER, 'WebAssembly has no round trip: the core holds the text as it is typed');
+    const grid = sheet(page);
+    const before = await cell(grid, 'C4').textContent();
+    await pressCell(grid, 'C4');
+    await page.keyboard.press('F2');
+    await expect(editor(grid)).toBeFocused();
+    await expect(editor(grid)).toHaveValue(before);
+    await expectCommandsGreyedOut(page);
+    await setRoundTrip(150);
+
+    // The Sheet scrolled far, and a character typed into the edit as soon as the far rows are on
+    // screen, read every frame. By then the browser has acknowledged the render that painted them,
+    // which is when the grid asks the Sheet for their Window, so the character reaches the host after
+    // the Window has moved off C4's row; and the grid's question reaches the browser after the
+    // character is in the field.
+    const scroller = grid.locator('.ex-scroller').first();
+    const viewport = await grid.locator('.ex-viewport').first().elementHandle();
+    await scroller.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    await page.waitForFunction((v) => Number(v.getAttribute('data-ex-first-row')) > 1000, viewport, { polling: 'raf' });
+    await page.keyboard.type('9');
+
+    // Everything the host will say, said: the Window moved, the question asked and answered.
+    await circuitQuiet();
+    await expect(editor(grid)).toHaveValue(`${before}9`);
+    await expect(bar(grid)).toHaveValue(`${before}9`);
+    await expectCommandsGreyedOut(page);
+    await expect(editor(grid)).toBeFocused();
+
+    // Back in view — the row painted, the editor standing over C4 again — the edit commits what was
+    // typed into C4.
+    await scrollRowToTop(grid, 0);
+    await expect(cell(grid, 'C4')).toHaveText(before);
+    await expect(editor(grid)).not.toHaveClass(/\bex-editor-away\b/);
+    await page.keyboard.press('Enter');
+    await expect(editor(grid)).toHaveCount(0);
+    await expect(cell(grid, 'C4')).toHaveText(`${before}9`);
+    await expectCommandsOffered(page);
+    await setRoundTrip(0);
+});
 
 test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent', async ({ page }) => {
     const grid = sheet(page);

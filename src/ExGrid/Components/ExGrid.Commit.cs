@@ -76,8 +76,18 @@ public partial class ExGrid<TRow>
     // The committed value's text as an edit opens on it, read when the editor opened: what F2 or a
     // double-click puts in the editor (OpeningTextOf). While the editor's text is still this, the
     // editor holds a copy of committed data and nothing the user typed, and it goes with its row
-    // (ADR-0007's note of 2026-10-11, ST-2). Null while no edit is open.
+    // once the browser has said so (ADR-0007's note of 2026-10-11, refined the same day; ST-2). Null
+    // while no edit is open.
     private string? _editCommittedText;
+
+    // Which edit is open: a number each opening takes, so that an answer about one edit is never
+    // taken for another (AskWhetherUntypedAsync).
+    private int _editNumber;
+
+    // The question about the open edit the browser has not answered yet (ST-2), by its number among
+    // all asked; 0 while none is.
+    private int _untypedQuestion;
+    private int _untypedQuestionsAsked;
 
     /// <summary>Notes what the edit opening over <paramref name="cell"/> starts from (ADR-0142,
     /// LV-11): the baseline — what the cell paints now — the order in force, the row's Row Key, and
@@ -88,6 +98,7 @@ public partial class ExGrid<TRow>
     {
         _editSeenText = PaintedTextNow(cell.Row, cell.Column);
         _editCommittedText = OpeningTextOf(cell);
+        _editNumber++;
         _editSequence = _sequenceVersion;
         _editKey = _rowKey is { } rowKey && RowInHand(cell.Row) is { } row ? rowKey(row) : null;
         _editAwaits.Clear();
@@ -105,6 +116,7 @@ public partial class ExGrid<TRow>
     {
         _editSeenText = null;
         _editCommittedText = null;
+        _untypedQuestion = 0;
         _editKey = null;
         _editAwaits.Clear();
         _editRebaseOwed = false;
@@ -138,7 +150,8 @@ public partial class ExGrid<TRow>
     /// grid does not scroll to follow it. A row the Window no longer holds leaves the editor where it
     /// is; its commit is refused as <c>RowLeftTheWindow</c>. Without a Row Key the editor stays where it is,
     /// and its commit is refused as <c>OrderMoved</c> once the order has moved. An editor holding nothing
-    /// typed does not stay in either case: it closes (<see cref="CloseUntypedEditWhoseRowLeft"/>).
+    /// typed does not stay in either case: it closes, once the browser has said nothing was typed
+    /// (<see cref="AskWhetherUntypedEditCanClose"/>).
     /// </summary>
     private void FollowEditedRow()
     {
@@ -160,21 +173,87 @@ public partial class ExGrid<TRow>
     /// copy of committed data and no half-typed text (ADR-0007's note of 2026-10-11, ST-2). When a
     /// Window taken in no longer holds its row — with a Row Key, no row answers its key; without one,
     /// no row stands at its position, or the order moved, so that the position names another row
-    /// (<see cref="EditedRowInWindow"/>) — it closes as Escape closes it: nothing is written and
-    /// nothing is discarded, the keyboard comes back to the root, and the Consumer hears the edit end
-    /// (<see cref="OnEditingChanged"/>). An editor with typed text stays, as ADR-0142 has it. Not while
-    /// the Consumer hears the editor's own commit, which decides what becomes of it.
+    /// (<see cref="EditedRowInWindow"/>) — it is not taken down here: the text the core holds is a
+    /// round trip behind the typing on a circuit, so whether nothing was typed is the browser's to say
+    /// (the note as refined the same day). The editor's listener is asked, and answers in its turn
+    /// (<see cref="AskWhetherUntypedAsync"/>). Asked once for the edit at a time, and not while the
+    /// Consumer hears the editor's own commit, which decides what becomes of it. An editor the core
+    /// already knows to hold typing is not asked about: it stays, as ADR-0142 has it.
     /// </summary>
-    private void CloseUntypedEditWhoseRowLeft()
+    private void AskWhetherUntypedEditCanClose()
     {
-        if (_editMode == EditMode.None || _hearingCommit
-            || !string.Equals(_editText, _editCommittedText, StringComparison.Ordinal) || EditedRowInWindow())
+        if (_editMode == EditMode.None || _hearingCommit || _commitInFlight is not null || _untypedQuestion != 0 || _scrollHandle is null || _disposed
+            || _editCommittedText is not { } opening || !string.Equals(_editText, opening, StringComparison.Ordinal)
+            || EditedRowInWindow())
             return;
-        // Asked before the render that removes the editor holding it, as the commit's own end asks
-        // (HandBackKeyboardUnderCommit): asked after, DOM focus would fall to the page meanwhile, where
-        // the root hears no key.
-        _ = ReclaimFocusAsync(fromField: _editSurface == EditSurface.Bar);
-        TakeDownEdit();
+        _untypedQuestion = ++_untypedQuestionsAsked;
+        _ = AskWhetherUntypedAsync(_untypedQuestion, _editNumber, opening);
+    }
+
+    /// <summary>
+    /// Asks the editor's listener whether the open edit's fields still hold <paramref name="opening"/>
+    /// and nothing composes in them (ADR-0007's note of 2026-10-11, refined; ADR-0021's note of the
+    /// same day), and acts on the answer. Asked after the render that took the Window in, never inside
+    /// it: what the answer leads to raises the Consumer's <see cref="OnEditingChanged"/>.
+    ///
+    /// <para>Every input the browser sent before its answer reaches the core ahead of it, so the text
+    /// the core holds when the answer comes is the browser's. "Untouched": the listener holds the keys,
+    /// presses and pastes that follow, with the edit's fields read-only meanwhile, and the edit closes as
+    /// Escape closes it — nothing written,
+    /// nothing discarded, the gate told and the keyboard handed back before the render that removes the
+    /// editor — if it is still this edit, still holds nothing typed and its row is still out of the
+    /// Window; otherwise it stays. Either way the listener is then told the answer is in, and what it
+    /// held goes on against the mode the gate was told. Anything typed: the edit stays, as ADR-0142 has
+    /// it, holding what was typed. No answer — a browser gone — leaves the edit as it is.</para>
+    /// </summary>
+    private async Task AskWhetherUntypedAsync(int question, int edit, string opening)
+    {
+        await Task.Yield();
+        bool untouched;
+        try
+        {
+            untouched = _scrollHandle is { } handle && !_disposed
+                && await handle.InvokeAsync<bool>("askUntouched", opening);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            untouched = false;
+        }
+        var current = _untypedQuestion == question;
+        if (current)
+            _untypedQuestion = 0;
+        if (!untouched)
+            return;
+        try
+        {
+            // A commit asked for before the answer — Enter typed before the question reached the
+            // browser — is the edit's end, and decides what becomes of it.
+            if (current && _editNumber == edit && _editMode != EditMode.None && !_hearingCommit && _commitInFlight is null && !_disposed
+                && string.Equals(_editText, opening, StringComparison.Ordinal) && !EditedRowInWindow())
+            {
+                await EndEditingAsync();
+                StateHasChanged();
+            }
+        }
+        finally
+        {
+            await TellCloseAnsweredAsync();
+        }
+    }
+
+    /// <summary>Tells the editor's listener that the core has answered its "untouched": what it held
+    /// goes on, after the gate's new mode and the hand-back, which were sent first.</summary>
+    private async Task TellCloseAnsweredAsync()
+    {
+        if (_scrollHandle is null || _disposed)
+            return;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("closeAnswered");
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
     }
 
     /// <summary>Whether the Window holds the row the editor was opened on, anywhere: with a Row Key,

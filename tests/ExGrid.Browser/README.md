@@ -561,7 +561,9 @@ nobody had asked for. What that means when writing a test:
   Formula Bar, closing untyped when the Sheet is scrolled so far that the Window it pushes no longer
   holds the row — the keyboard back on the Keyboard Field, ↓ pressed the moment it is back moving
   the Focus, at 0 ms and, on the Server host, at 150 ms, the buttons offered again, and nothing
-  written (ST-2, ADR-0007's note of 2026-10-11); the Focus
+  written; and on the Server host at 150 ms, a character typed as the Window moves off an F2 edit
+  keeping the edit with it, which Enter writes once the row is back in view (ST-2, ADR-0007's note of
+  2026-10-11 as refined the same day: the browser says whether anything was typed); the Focus
   at XFD1048576 with the DOM no larger than at A1 (SH-2); Home, End, Shift+Home and Shift+End in
   Caret in the Cell Editor and the Formula Bar moving and extending the caret with nothing
   scrolled and the edit kept, which on macOS the listener answers (ticket 32).
