@@ -967,6 +967,17 @@ npx playwright test 2>&1 | tee ../../verification/<date>/layer3.log
 **On Chrome and on Edge** (ADR-0017/0026 — the `chrome` and `msedge` projects), and **on Windows or Linux at least once** — VZ-10 is a
 tautology where scrollbars are overlays, and macOS alone does not discharge it.
 
+*(2026-10-11, decided with the user,
+[ADR-0208](adr/0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md):
+**the rows checked by hand are run again only when the code they cover has changed.** They are VZ-14,
+VZ-16's real zoom and 225%, FN-12e's measurements, ED-30's real IME, SH-42's, SH-51's and SH-52's
+browser keys, KB-3 on macOS, VZ-18 on the remote-isolation PC, and §21.11's screen-reader check. Each
+names the paths whose change could change its result. A row's latest record holds while those paths
+are unchanged, and the release workflow checks that. The table of rows and paths is written here with
+that check. Every automated command in this step runs in full, every time. A question to Excel is asked
+when its feature is built, never at a release, and the corpus may hold no `uncertain` or `documented`
+case without a written reason.)*
+
 The run must capture `page.on('console')` and `page.on('pageerror')` into `console.json` for
 CON-1..4 and CON-8, and read `Performance.getMetrics` into `metrics.json` for MEM-2/5, DOM-5,
 BIG-6/7, PF-6/7.
@@ -1055,7 +1066,8 @@ ExSheet, ExPivot and the data packages (ADR-0200), and Step 7 asks for every OBS
 
 `results.md` is complete when:
 
-- every **MUST** is `pass`, or the release does not happen;
+- every **MUST** is `pass`, or the release does not happen. A row checked by hand passes on its latest
+  record while the code it covers is unchanged since (Step 4, ADR-0208);
 - every **SHOULD** is `pass` or carries a written reason naming the criterion;
 - every **OBSERVATIONAL** number is recorded, with its comparison;
 - **§21 lists no open question, and no criterion reads `BLOCKED`.** Both are true as this document
