@@ -59,7 +59,13 @@ a cell in range whose whole Formula is a `SUBTOTAL` makes the result `#VALUE!` u
 Windows run reads Excel's answer, then the engine follows Excel): already so, and pinned by
 `ADR0047_SH68_aggregate_options_4_to_7_over_a_whole_formula_subtotal_are_value`, each option beside the
 one of 0 to 3 that passes over the same cells. AGGREGATE-025 is `uncertain` again, with Microsoft's
-counted 6 as `excelExpect`, so the run compares Excel with it. The Formulas page now says which options
+counted 6 as `excelExpect`, so the run compares Excel with it. *(Corrected the same day, after review:
+with an `excelExpect` beside `engineDiffersByDecision`, Excel's 6 would have read as agreement, and
+`-Update` would have marked the case observed while the engine stayed `#VALUE!`. AGGREGATE-025 now
+expects `#VALUE!` with no `excelExpect`, as AGGREGATE-026 does, so Excel's answer reads as a
+disagreement, which is corrected before the tag. AGGREGATE-042 to AGGREGATE-051 ask the rest of what
+the test pins: options 5 to 7 over a whole-Formula `SUBTOTAL`, options 4 to 7 over a whole-Formula
+`AGGREGATE`, and the array form.)* The Formulas page now says which options
 pass over what. The Status is `done`: the one open box is the sign-off's Windows run, and each of its
 questions is a corpus case — the `uncertain` cases of `subtotal.json` (SUBTOTAL-020 to SUBTOTAL-034) and
 `aggregate.json` (AGGREGATE-007, 008, 011 and 022 to 041), what counts as nested among them. Excel's popup

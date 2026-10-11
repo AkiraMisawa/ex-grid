@@ -5,8 +5,9 @@ Status: ready-for-human
 *(Numbered seventeenth from `docs/agents/numbering.md`. It is the first half of the sign-off's Windows
 run: ADR-0202's note of 2026-10-11 splits that run in two. This run asks Excel, and the platform,
 everything whose answer does not depend on the build, before the release candidate, so that a
-disagreement can be corrected before the tag. The eighteenth run, on `0.1.0-rc.1`, runs ExGrid's
-by-hand rows on the candidate itself.)*
+disagreement can be corrected before the tag. Its Part G is the record of ExGrid's by-hand rows. The
+eighteenth run, on `0.1.0-rc.1`, runs again only the rows whose code changes before then, and is not made
+if none does (ADR-0208).)*
 
 For the Claude Code session on the Windows desktop of the earlier runs. Read
 [`verify-on-windows-16.md`](verify-on-windows-16.md) and its report
@@ -31,7 +32,7 @@ What only this desktop can answer:
 | D | KeyTips, Ctrl+F1 and F10, in Excel and in the browsers | SH-51, SH-52 (ticket 160) |
 | E | ExPivot's 28 readings, beside Excel | §29, ExPivot ticket 07: twelve readings gate `0.1.0` |
 | F | Where the keyboard is after ↓, under NVDA and Narrator | the Definition of Done's §21.11, "The Cell Editor's own ARIA semantics" |
-| G | A dry run of ExGrid's by-hand rows | VZ-14, VZ-16, FN-12e and ED-30, before the eighteenth run makes them count |
+| G | ExGrid's by-hand rows | VZ-14, VZ-16, FN-12e and ED-30: the record each holds until its code changes (ADR-0208) |
 
 The Parts are independent. **Run them in the order A, B, C, D, E, F, G.** Commit and push after each
 one, so that a run stopped half way leaves every finished Part on the branch.
@@ -218,10 +219,12 @@ Expected of the build:
 
 Record any step where that does not hold, under each reader and without one.
 
-## Part G — a dry run of ExGrid's by-hand rows
+## Part G — ExGrid's by-hand rows
 
-These rows count only on the release candidate, in the eighteenth run. Running them here finds a defect
-while it can still be fixed. Record each verdict, and the difference from the earlier runs.
+This Part is the record of these rows, made at the verified commit. It holds until a commit changes the
+code a row covers (ADR-0208). Record each row's verdict against its criterion as written in the
+Definition of Done, exactly as a sign-off would, and the difference from the earlier runs. A row that
+cannot be run here is `not run`, with the reason, never a pass.
 
 - **VZ-14.** Run `tests/ExGrid.Browser/scrollbar.spec.mjs`'s "on a Windows desktop at fractional
   display scaling (VZ-14)" block at **150%**, headed, under both browsers, on both hosts, as the
