@@ -113,7 +113,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
         => Assert.False(Renderer.UnhandledException.IsCompleted, "an exception reached the renderer");
 
     [Fact] // ADR-0182 (LV-34): a report source asked through Fetch reads sixty rows ahead unless told; a local one none
-    public async Task LV34_A_remote_source_reads_sixty_rows_ahead_by_default_and_a_local_one_none()
+    public async Task ADR0182_LV34_A_remote_source_reads_sixty_rows_ahead_by_default_and_a_local_one_none()
     {
         var data = PivotSource.From(Deals, DealFields, Whole);
         await using var local = PivotReportSource.From(data, timeProvider: Clock, slicing: Whole);
@@ -137,7 +137,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     // Rows past the end of a report that shrank under them: never short of them, and the answer's
     // row count clamps the Window (ADR-0151).
     [InlineData(500, 15, 60, 503, 440, 75)]
-    public void LV34_The_Window_asked_is_the_rows_on_screen_widened_and_clamped_into_the_report(
+    public void ADR0182_LV34_The_Window_asked_is_the_rows_on_screen_widened_and_clamped_into_the_report(
         int start, int count, int readAhead, int rows, int windowStart, int windowCount)
         => Assert.Equal(new PivotReportWindow(windowStart, windowCount),
             PivotComponent.Widened(new RowRange(start, count), readAhead, rows));
@@ -147,7 +147,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     [InlineData(5, 5)]
     [InlineData(60, 10)]
     [InlineData(120, 10)]
-    public async Task LV34_The_grids_margin_is_the_smaller_of_10_and_the_read_ahead(int readAhead, int margin)
+    public async Task ADR0183_LV34_The_grids_margin_is_the_smaller_of_10_and_the_read_ahead(int readAhead, int margin)
     {
         await using var remote = RenderRemote(readAhead);
 
@@ -155,7 +155,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     }
 
     [Fact] // ADR-0183 (LV-34): a local report reads nothing ahead, and its grid asks only once the rows on screen run out
-    public void LV34_A_local_report_sets_no_margin()
+    public void ADR0183_LV34_A_local_report_sets_no_margin()
     {
         var cut = RenderPivot(ByRegion, ps => ps.Add(p => p.RowHeight, RowHeightPx).Add(p => p.ShowFieldList, false)
             .Add(p => p.Slicing, Whole), source: PivotSource.From(Deals, DealFields, Whole));
@@ -165,7 +165,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     }
 
     [Fact] // ADR-0182 (LV-34): the first Window is as it was; a scroll past it asks once, for the rows on screen and sixty either side
-    public async Task LV34_A_scroll_past_the_Window_asks_once_for_it_widened_sixty_rows_either_side()
+    public async Task ADR0182_LV34_A_scroll_past_the_Window_asks_once_for_it_widened_sixty_rows_either_side()
     {
         await using var remote = RenderRemote();
         // The first Window, as before: 64 rows from the top.
@@ -182,7 +182,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     }
 
     [Fact] // ADR-0182/0183 (LV-34, FN-3a): a scroll within the Window held asks nothing; ten rows before it runs out, it asks once, with every row on screen still held
-    public async Task LV34_A_scroll_within_the_Window_asks_nothing_and_ten_rows_before_its_end_asks_once()
+    public async Task ADR0183_LV34_A_scroll_within_the_Window_asks_nothing_and_ten_rows_before_its_end_asks_once()
     {
         TaskCompletionSource? hold = null;
         await using var remote = RenderRemote(answerWhen: _ => hold?.Task ?? Task.CompletedTask);
@@ -215,7 +215,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     }
 
     [Fact] // ADR-0182/0183 (LV-34): a question in flight whose Window covers the rows on screen stays in flight, though the margin is not in it; the next is asked once it lands
-    public async Task LV34_A_question_in_flight_that_covers_the_rows_on_screen_stays_in_flight()
+    public async Task ADR0183_LV34_A_question_in_flight_that_covers_the_rows_on_screen_stays_in_flight()
     {
         TaskCompletionSource? hold = null;
         await using var remote = RenderRemote(answerWhen: request => hold is { } held && request.Window.Start == 491 ? held.Task : Task.CompletedTask);
@@ -248,7 +248,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     }
 
     [Fact] // ADR-0182 (LV-34): a question whose Window does not cover the rows on screen is superseded by the next
-    public async Task LV34_A_question_in_flight_that_does_not_cover_the_rows_on_screen_is_superseded()
+    public async Task ADR0182_LV34_A_question_in_flight_that_does_not_cover_the_rows_on_screen_is_superseded()
     {
         var hold = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         await using var remote = RenderRemote(answerWhen: request => request.Window.Start == 440 ? hold.Task : Task.CompletedTask);
@@ -268,7 +268,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     }
 
     [Fact] // ADR-0182 (LV-34): the Window asked is clamped into the report at both ends
-    public async Task LV34_The_Window_read_ahead_is_clamped_into_the_report()
+    public async Task ADR0182_LV34_The_Window_read_ahead_is_clamped_into_the_report()
     {
         await using var remote = RenderRemote();
         await ScrollToRowAsync(remote.Cut, 500);
@@ -287,7 +287,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     }
 
     [Fact] // ADR-0182/0151 (LV-34): a report that shrinks under a Window read ahead is shown at its last rows, the Window clamped into it at its height
-    public async Task LV34_A_Window_read_ahead_is_clamped_into_a_report_that_shrank()
+    public async Task ADR0182_LV34_A_Window_read_ahead_is_clamped_into_a_report_that_shrank()
     {
         await using var remote = RenderRemote();
         await ScrollToRowAsync(remote.Cut, 500);
@@ -308,7 +308,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     }
 
     [Fact] // ADR-0182 (LV-34): read ahead 0 asks for exactly the rows on screen, as ExPivot did before
-    public async Task LV34_A_source_that_reads_nothing_ahead_is_asked_for_exactly_the_rows_on_screen()
+    public async Task ADR0182_LV34_A_source_that_reads_nothing_ahead_is_asked_for_exactly_the_rows_on_screen()
     {
         await using var remote = RenderRemote(readAheadRows: 0);
         await ScrollToRowAsync(remote.Cut, 500);
@@ -318,7 +318,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     }
 
     [Fact] // ADR-0182 (LV-34): an answer that does not reach the rows the grid needs is refused by name, and the report stays
-    public async Task LV34_An_answer_short_of_the_rows_the_grid_needs_is_refused_by_name()
+    public async Task ADR0182_LV34_An_answer_short_of_the_rows_the_grid_needs_is_refused_by_name()
     {
         // A relay that caps its answers at 20 rows from the start of the Window asked: short of the
         // rows on screen, which start 60 rows in.
@@ -340,7 +340,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     }
 
     [Fact] // ADR-0182/0152 (LV-34): Window Changes and their Window Digest cover the whole Window read ahead — a row changed out of sight is shown when scrolled to, asking nothing
-    public async Task LV34_Window_Changes_cover_the_rows_read_ahead()
+    public async Task ADR0182_LV34_Window_Changes_cover_the_rows_read_ahead()
     {
         await using var remote = RenderRemote();
         await ScrollToRowAsync(remote.Cut, 500);

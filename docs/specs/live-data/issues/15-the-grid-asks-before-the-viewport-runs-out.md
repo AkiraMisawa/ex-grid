@@ -48,7 +48,7 @@ layer 3's: the spec is written and has not run yet.
   `RangeRequestMarginTests` pins it beside 0, 3 and 20 rows read ahead.
 - **ExPivot** passes the smaller of 10 and its source's `ReadAheadRows` as its grid's margin. It keeps
   a question in flight whose Window covers the rows on screen. The test that keeps one,
-  `ReportReadAheadTests.LV34_A_question_in_flight_that_covers_the_rows_on_screen_stays_in_flight`,
+  `ReportReadAheadTests.ADR0183_LV34_A_question_in_flight_that_covers_the_rows_on_screen_stays_in_flight`,
   was run against the first build's condition (a question kept only while it covers the margin too),
   and failed there.
 - **`GridSource.Fetch` is untouched.** Its grid can still be given a margin. The early request then

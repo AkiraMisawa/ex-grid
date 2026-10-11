@@ -554,7 +554,7 @@ public class ReportProtocolTests
         [new("amount", "Amount", PivotColumnRole.Item, 0, [])], [], 0, ["Amount"]);
 
     [Fact] // ADR-0182 (LV-34): an answer that is not the Window asked for — a relay that caps or moves it — is refused, naming the rows asked and the rows answered
-    public async Task LV34_an_answer_that_is_not_the_Window_asked_is_refused_naming_its_rows()
+    public async Task ADR0182_LV34_an_answer_that_is_not_the_Window_asked_is_refused_naming_its_rows()
     {
         var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
             (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("v1"), [])
@@ -572,7 +572,7 @@ public class ReportProtocolTests
     }
 
     [Fact] // ADR-0182 (LV-34): a complete Window short of the rows the report has there is refused, naming them
-    public async Task LV34_a_complete_Window_short_of_its_rows_is_refused_naming_them()
+    public async Task ADR0182_LV34_a_complete_Window_short_of_its_rows_is_refused_naming_them()
     {
         var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
             (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("v1") with { RowCount = 1000 }, [])));
