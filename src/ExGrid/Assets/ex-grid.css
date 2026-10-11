@@ -930,7 +930,8 @@
     text-transform: none;
     text-indent: 0;
     text-shadow: none;
-    text-align: start;
+    /* Physical, as all the grid's geometry is: the root is dir="ltr" (ADR-0031, DIR-4). */
+    text-align: left;
     white-space: pre;
     pointer-events: none;
     visibility: hidden;
@@ -1074,7 +1075,7 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    text-align: start;
+    text-align: left;
     background: none;
     border: 0;
     padding: 2px var(--ex-cell-padding-x, 8px) 2px 0;

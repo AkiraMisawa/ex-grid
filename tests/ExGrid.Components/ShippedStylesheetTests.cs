@@ -54,6 +54,26 @@ public class ShippedStylesheetTests
         Assert.Empty(offenders);
     }
 
+    [Fact] // ADR-0031 / DIR-4: no CSS logical property in the core's stylesheet — the geometry is physical by decision, not by omission
+    public void DIR4_the_shipped_stylesheet_uses_no_logical_property()
+    {
+        // DIR-4's grep, as the Definition of Done writes it. The root is dir="ltr" (DIR-1), so a
+        // logical property paints as its physical twin today; one that crept in would follow the
+        // direction the day something under the root took a dir of its own, while every offset the
+        // arithmetic computes stays physical (ADR-0031).
+        var forbidden = new Regex(@"inline-start|inline-end|margin-inline|padding-inline|inset-inline|text-align: *(start|end)");
+
+        var offenders = ShippedAssets()
+            .Where(asset => asset.Path.EndsWith(".css", StringComparison.Ordinal))
+            .SelectMany(asset => asset.Text.Split('\n')
+                .Select((line, index) => (asset.Path, Number: index + 1, Line: line.Trim()))
+                .Where(entry => forbidden.IsMatch(entry.Line)))
+            .Select(entry => $"{Path.GetFileName(entry.Path)}:{entry.Number} {entry.Line}")
+            .ToList();
+
+        Assert.Empty(offenders);
+    }
+
     [Fact] // ADR-0021: the allowlist is a count anyone can check, not a claim in a comment
     public void The_module_installs_only_the_listeners_the_allowlist_names()
     {
