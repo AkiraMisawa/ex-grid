@@ -97,6 +97,11 @@ number it returns there is not something a guess may supply.
   Seed.
 - **`RANDBETWEEN`'s bounds.** Fractional bounds, and bounds past 2^53, are refused.
 
+*(2026-10-11, decided with the user: renaming the Sheet is not a change that draws again; it is not in
+the list above. It still recalculates volatile Formulas, since `INDIRECT`'s text can name the Sheet, and
+those draws come out the same. Whether Excel draws again on a rename is asked on the sign-off's Windows
+run, and this follows Excel's answer.)*
+
 ## Considered options
 
 - **An unseeded generator inside the engine.** Rejected. The Values would depend on the order cells

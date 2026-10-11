@@ -383,6 +383,30 @@ The considered alternative was to keep the band as the design, and have the Wrap
 shadow. It was set aside: the band was never what was meant, and a token that is a colour
 everywhere but one place is the defect that made the Wrapper's mark vanish.
 
+## The classes UX-4's walk found unnamed *(2026-10-11, decided with the user)*
+
+A walk of every class the grid paints, written for UX-4, found classes that neither the stable
+table nor an internal list named. **All of them are internal**, and may change without notice; none
+is added to the stable table, so what a Consumer may style does not grow:
+
+- `ex-ceiling-probe`, `ex-focus-wrap`, `ex-hashes`, `ex-hover-row`, `ex-message`, `ex-select-all`,
+  `ex-value-list`, `ex-mark-result`, `ex-editor-away`, `ex-point-on-reference`;
+- the Keyboard Field's `ex-key-field`, `ex-key-field-layer`, `ex-key-field-held`,
+  `ex-key-field-composing`;
+- the popovers' parts: every class that begins `ex-popover-` and is not named above (`-body`,
+  `-commands`, `-filter`, `-form`, `-find`, `-find-body`, `-consumer`, `-join`, `-refusal`, `-second`,
+  `-add`, …);
+- Find's parts: every class that begins `ex-find-` (`-field`, `-match-case`, `-next`, `-previous`,
+  `-outcome`, `-whole-cell`, …);
+- the Sheet's appearance families, generated from document data: `ex-lined`, `ex-fill-<rgb>`,
+  `ex-font-xb`, `ex-font-xi`, and the Border sides `ex-lt-…`, `ex-lr-…`, `ex-lb-…`, `ex-ll-…` (a side,
+  a style and a colour);
+- the selection's tint and the pinned shade layer
+  ([ADR-0206](./0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md)).
+
+UX-4's walk checks each class against the stable table, the internal names, and these prefixes and
+families; a class that matches none fails it, so the next unnamed class is caught by name.
+
 ## Added by ADR-0170 *(2026-10-07, decided with the user)*
 
 - **Internal class**, which may change without notice: `ex-copied-range`, the dashes around a
