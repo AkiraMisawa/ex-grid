@@ -3,28 +3,28 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.7% | 88.7% |
-| ExSheet | 95.3% | 88.4% |
+| ExSheet | 95.4% | 88.5% |
 | ExPivot | 93.8% | 84.7% |
-| Data | 94.5% | 90.3% |
+| Data | 94.4% | 90.2% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/11/2026 - 21:48:04 |
+| Generated on: | 10/11/2026 - 22:06:02 |
 | Parser: | MultiReport (13x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 796 |
-| Files: | 433 |
-| **Line coverage:** | 94.9% (53519 of 56363) |
-| Covered lines: | 53519 |
-| Uncovered lines: | 2844 |
-| Coverable lines: | 56363 |
-| Total lines: | 92823 |
-| **Branch coverage:** | 87.8% (30325 of 34532) |
-| Covered branches: | 30325 |
-| Total branches: | 34532 |
+| Classes: | 802 |
+| Files: | 440 |
+| **Line coverage:** | 94.9% (54146 of 57000) |
+| Covered lines: | 54146 |
+| Uncovered lines: | 2854 |
+| Coverable lines: | 57000 |
+| Total lines: | 94015 |
+| **Branch coverage:** | 87.8% (30747 of 34995) |
+| Covered branches: | 30747 |
+| Total branches: | 34995 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -153,8 +153,8 @@
 |ExGrid.Components.ExGrid.SummaryQuestion<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenAt<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.3%|89.9%|
 |ExGrid.Components.ExGrid<TRow>|91.6%|88.3%|
+|ExGrid.Components.ExGrid<TRow>|95.3%|89.9%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
@@ -256,7 +256,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.6%**|**90.5%**|
 |ExGrid.Data.AggregateAccumulator|86%|87%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -345,7 +345,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -684,11 +684,11 @@
 |ExPivot.MudBlazor.MudPivotValueFieldSettings|100%|77.2%|
 
 </details>
-<details><summary>ExSheet - 91.6%</summary>
+<details><summary>ExSheet - 91.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**91.6%**|**84.8%**|
+|**ExSheet**|**91.7%**|**84.8%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -699,10 +699,10 @@
 |ExSheet.ColourItem|95.2%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|90.3%|84.5%|
+|ExSheet.Components.ExSheet|90.5%|84.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|90.3%|84.5%|
+|ExSheet.Components.ExSheet<T>|90.5%|84.7%|
 |ExSheet.Components.FormatCellsPanel|97.1%|87.4%|
 |ExSheet.DefaultToolbarRow|100%|50%|
 |ExSheet.FillItem|100%|50%|
@@ -765,11 +765,11 @@
 |ExSheet.UnderlineItem|75%|100%|
 
 </details>
-<details><summary>ExSheet.Engine - 97.3%</summary>
+<details><summary>ExSheet.Engine - 97.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.3%**|**89.7%**|
+|**ExSheet.Engine**|**97.4%**|**89.8%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -789,7 +789,7 @@
 |ExSheet.Engine.ConstantParser|96.4%|81.5%|
 |ExSheet.Engine.DateSerial|100%|100%|
 |ExSheet.Engine.DeclaredFunction|100%|100%|
-|ExSheet.Engine.Entry|93.8%|100%|
+|ExSheet.Engine.Entry|97.9%|100%|
 |ExSheet.Engine.EntryText|100%|100%|
 |ExSheet.Engine.ErrorValues|100%|90%|
 |ExSheet.Engine.FormulaCompletion|100%||
@@ -801,26 +801,32 @@
 |ExSheet.Engine.Formulas.Arithmetic|100%|88.8%|
 |ExSheet.Engine.Formulas.BinaryNode|100%||
 |ExSheet.Engine.Formulas.BooleanNode|100%||
+|ExSheet.Engine.Formulas.Draws|71.4%|25%|
 |ExSheet.Engine.Formulas.ErrorNode|100%||
-|ExSheet.Engine.Formulas.Evaluator|94.6%|90.2%|
+|ExSheet.Engine.Formulas.Evaluator|95.4%|89.8%|
+|ExSheet.Engine.Formulas.Evaluator.BindingSlot|100%||
+|ExSheet.Engine.Formulas.ExcelFunctionNames|100%||
 |ExSheet.Engine.Formulas.FormulaText|100%|97.5%|
 |ExSheet.Engine.Formulas.FunctionCall|100%|100%|
 |ExSheet.Engine.Formulas.FunctionDefinition|100%||
-|ExSheet.Engine.Formulas.FunctionLibrary|95.4%|84.5%|
+|ExSheet.Engine.Formulas.FunctionLibrary|95.7%|85.1%|
 |ExSheet.Engine.Formulas.FunctionLibrary.CriteriaRange|79.1%|43.7%|
 |ExSheet.Engine.Formulas.FunctionLibrary.Criterion|100%|86.3%|
 |ExSheet.Engine.Formulas.FunctionLibrary.SearchOutcome|100%||
 |ExSheet.Engine.Formulas.FunctionLibrary.Vector|92%|83.3%|
 |ExSheet.Engine.Formulas.FunctionNode|100%|100%|
 |ExSheet.Engine.Formulas.IntersectionNode|100%||
-|ExSheet.Engine.Formulas.Lexer|100%|91.8%|
+|ExSheet.Engine.Formulas.LetBinding|100%||
+|ExSheet.Engine.Formulas.LetNode|100%|100%|
+|ExSheet.Engine.Formulas.Lexer|100%|91.4%|
 |ExSheet.Engine.Formulas.MissingNode|100%||
 |ExSheet.Engine.Formulas.NameNode|100%||
 |ExSheet.Engine.Formulas.Node|100%||
 |ExSheet.Engine.Formulas.NumberNode|100%||
 |ExSheet.Engine.Formulas.Operand|100%|90%|
 |ExSheet.Engine.Formulas.ParenthesesNode|100%||
-|ExSheet.Engine.Formulas.Parser|98.7%|96.7%|
+|ExSheet.Engine.Formulas.Parser|99.2%|93.8%|
+|ExSheet.Engine.Formulas.Parser.LetScope|100%||
 |ExSheet.Engine.Formulas.PercentNode|100%||
 |ExSheet.Engine.Formulas.PortableRegex|94.6%|90.7%|
 |ExSheet.Engine.Formulas.Reference|100%|97.4%|
@@ -853,7 +859,7 @@
 |ExSheet.Engine.Sheet.CellFormatOutcome|100%||
 |ExSheet.Engine.Sheet.CellFormatsOutcome|100%||
 |ExSheet.Engine.Sheet.RenameOutcome|100%||
-|ExSheet.Engine.Sheet.StagedReader|100%|88.4%|
+|ExSheet.Engine.Sheet.StagedReader|100%|84%|
 |ExSheet.Engine.Sheet.StructuralOutcome|100%||
 |ExSheet.Engine.Sheet.TableState|100%||
 |ExSheet.Engine.Sheet.TrendDigits|92%|71.8%|
