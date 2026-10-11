@@ -79,3 +79,34 @@ These are the user's, once the measurement is in.
 
 2026-10-10: Written up with the user after PR #70's review. It started from two questions. Does
 scrolling a server's report recompute it? It does not. Would reading ahead serve the user better?
+
+2026-10-11: Measured. The record is
+[`verification/2026-10-10-linux-remote-read-ahead`](../../../../verification/2026-10-10-linux-remote-read-ahead/README.md).
+The prototype and harness are on `lab/remote-read-ahead` at `f4ec680`, never merged. The setup:
+- a published WebAssembly build, Playwright's bundled Chromium on a Linux container;
+- the demo API server behind `latency-proxy.mjs`, at 150 ms a round trip;
+- 0, 30, 60 and 120 rows read ahead.
+
+It covers everything "What to measure first" asks. The first box stays unticked: it also says the user
+has decided, and the decisions above are still the user's. What it found:
+- **Without read-ahead, every row a scroll brings in is a Placeholder for a round trip** (a median 164–184
+  ms). ArrowDown pressed one at a time met one 480 times in 480 rows. Held keys and wheel showed
+  Placeholders 96–100% of the scroll's time, each input superseding the question before it.
+- **Read ahead, an episode is as long, and rarer.** ArrowDown met one every N + 1 rows. Held wheel and
+  ArrowDown showed Placeholders for 36–38% and 16–19% of the time at 30, 19–21% and 7–8% at 60, and 8–11%
+  and 3–4% at 120. Held PageDown, about 300 rows a second, still did for 63–72% at 60.
+- **This holds only if a question in flight whose Window covers the range is kept.** Superseding it as
+  `GridSource.Fetch` does (ADR-0025), 60 rows left held scrolling at 85–88%.
+- **An answer weighs its rows times its columns, plus the report's metadata every time.** The browser
+  parses it on its one thread:
+
+  | Report | 0 rows read ahead | 120 rows read ahead |
+  |---|---|---|
+  | narrow (6 columns) | 15 KiB of JSON, 5 ms to parse | 151 KiB, 43 ms |
+  | wide (251 columns, sparse) | 91 KiB, 16 ms | 832 KiB, 93 ms |
+  | dense (251 columns, a million trades) | 282 KiB, 76 ms | 3.9 MiB, 675 ms |
+- **A live update carries more rows as the Window widens.** With 1,000-trade ticks its Window Changes held
+  0, 5, 9 and 18 rows at 0 to 120, and nearly the whole Window over the dense report. The server projects
+  every row of the Window for each update, changed or not: 0.3 to 3.3 ms narrow, 9 to 175 ms over 251
+  columns.
+- **The source keeps two Windows (LV-22), each read ahead:** up to 0.24, 1.3 and 12.6 MiB a report at 120.
