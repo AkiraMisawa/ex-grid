@@ -309,6 +309,7 @@ public class ReleaseNotesTests
     [InlineData("A [bracket] alone.", "This [ starts no link")]
     [InlineData("A [link](exgrid/selection with a space.", "never closed")]
     [InlineData("A\ttab.", "A tab is not in the notes' subset")]
+    [InlineData("A bare www.example.com address.", "A bare address")]
     public void A_construct_outside_the_subset_is_an_error_at_its_line(string paragraph, string message)
     {
         var text = Version("0.1.0-beta.2", replace: ("ExSheet", "No change. Its packages are republished at this version.\n\n" + paragraph));
@@ -317,6 +318,34 @@ public class ReleaseNotesTests
         var error = Notices(run).First(d => d.GetMessage().Contains(message));
         Assert.Equal("EXDOCS007", error.Id);
         Assert.Equal(text.Split('\n').ToList().IndexOf(paragraph) + 1, Line(error));
+    }
+
+    [Theory] // ADR-0190: what the release workflow's rewrite, or GitHub alone, would render otherwise than the site is refused, so the two say one thing
+    [InlineData("See [ADR-0130 and the summary](exgrid/selection).", "ADR-0130 inside a link's text")]
+    [InlineData("See [the summary, ADR-0130](exgrid/selection).", "ADR-0130 inside a link's text")]
+    [InlineData("Read `ADR-0130` first.", "ADR-0130 in a code span")]
+    [InlineData("Write `[a](exgrid/selection)` as it is.", "A ]( in a code span")]
+    [InlineData("Read x/ADR-0130 first.", "ADR-0130 is joined to the text beside it by '/'")]
+    [InlineData("Read \\[ADR-0130 first.", "ADR-0130 is joined to the text beside it by '['")]
+    [InlineData("Read ADR-0130_x first.", "ADR-0130 is joined to the text beside it by '_'")]
+    [InlineData("Ask @AkiraMisawa about it.", "An @ joined to a name is a mention")]
+    [InlineData("Write to someone@example.com.", "An @ joined to a name is a mention")]
+    public void What_the_release_text_would_render_otherwise_is_an_error_at_its_line(string paragraph, string message)
+    {
+        var text = Version("0.1.0-beta.2", replace: ("ExSheet", "No change. Its packages are republished at this version.\n\n" + paragraph));
+        var run = Run(Valid().Where(f => !f.Item1.EndsWith("0.1.0-beta.2.md")).Append(Notes("0.1.0-beta.2.md", text)));
+
+        var error = Notices(run).Single(d => d.GetMessage().Contains(message));
+        Assert.Equal("EXDOCS007", error.Id);
+        Assert.Equal(text.Split('\n').ToList().IndexOf(paragraph) + 1, Line(error));
+    }
+
+    [Fact] // ADR-0190: the forms beside those refused are ones the site and the release text render alike
+    public void The_forms_beside_them_build_cleanly()
+    {
+        var paragraph = "[ADR-free text](exgrid/selection) (ADR-0130), `@bind` and `x](y`, Ctrl+Shift+@ and (ADR-0042, ADR-0130).";
+        var text = Version("0.1.0-beta.2", replace: ("ExSheet", "No change. Its packages are republished at this version.\n\n" + paragraph));
+        Assert.Empty(Notices(Run(Valid().Where(f => !f.Item1.EndsWith("0.1.0-beta.2.md")).Append(Notes("0.1.0-beta.2.md", text)))));
     }
 
     [Fact] // ADR-0190: bullets nest one level and no deeper, and a bullet holds one paragraph

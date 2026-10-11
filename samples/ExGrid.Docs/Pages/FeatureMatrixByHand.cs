@@ -24,8 +24,8 @@ internal static class FeatureMatrixByHand
         new("WebAssembly", "ExGrid is verified under WebAssembly.", ["ADR-0041"]),
         new("Blazor Server", "Every browser test also runs under Blazor Server.", ["DoD §24"]),
         new("Licence", "MIT, for every package.", ["ADR-0042"]),
-        new("Maturity", "Prerelease. Every version is 0.1.0-beta.N, published before the Definition of Done is signed off, and its API may change between betas. A version without a suffix waits for the sign-off.",
-            ["ADR-0042", "DoD Step 7"]),
+        new("Maturity", "Prerelease: 0.1.0-beta.N, or a release candidate, 0.1.0-rc.N, each published before the Definition of Done is signed off, and its API may change from one to the next. The first stable version, 0.1.0, waits for the sign-off; being 0.x, it promises the sign-off, not a frozen API.",
+            ["ADR-0042", "ADR-0200", "ADR-0205", "DoD Step 7"]),
     ];
 
     /// <summary>

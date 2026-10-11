@@ -169,7 +169,10 @@ jobs:
       # prerelease (ADR-0042): the files the Docs Site renders, so the two cannot say different things.
       # The first line, the version, is the release's title already; "pending" becomes the day just
       # recorded; a route of the site becomes its whole address; and ADR-NNNN links the record at
-      # this commit, as the site links it. GitHub links #NN to the pull request itself.
+      # this commit, as the site links it. GitHub links #NN to the pull request itself. These rewrites
+      # see no Markdown structure, so the site's build refuses what they would render otherwise than the
+      # site does (NotesMarkdown, EXDOCS007): an ADR-NNNN inside a link's text, in a code span or joined to
+      # the text before it, a ]( in a code span, a bare address, and an @ joined to a name.
       - name: The release's text
         env:
           PUBLISHED_ON: ${{ steps.push.outputs.published-on }}

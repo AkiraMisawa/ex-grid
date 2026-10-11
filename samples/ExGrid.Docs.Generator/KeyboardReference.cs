@@ -13,6 +13,9 @@ namespace ExGrid.Docs.Generator;
 /// every key of the three products, one <c>KeyRow</c> each, under the property named for its product. Each
 /// row links the section of the page that explains it, and cites the decision behind it. A row that links
 /// a page or a section the site does not have, or cites a record that does not exist, stops the build.
+/// So does a key a row names in the grid's canonical form (<c>Canonical</c>) that is not written in it. That
+/// the rows name every key the products' tables take is read from the tables themselves, which run only
+/// outside the compiler: <c>KeyboardCompletenessTests</c> holds the rows against them.
 /// </summary>
 public static class KeyboardReference
 {
@@ -38,7 +41,7 @@ public static class KeyboardReference
         category: "ExGrid.Docs",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Every key on the Keyboard page is a KeyRow under ExGrid, ExSheet or ExPivot, written as literals, linking the section of the page that explains it and citing the decision behind it (ADR-0110).");
+        description: "Every key on the Keyboard page is a KeyRow under ExGrid, ExSheet or ExPivot, written as literals, linking the section of the page that explains it and citing the decision behind it, and naming the keys it explains in the grid's canonical form (ADR-0110).");
 
     /// <summary>Whether <paramref name="node"/> declares the rows.</summary>
     public static bool IsHand(SyntaxNode node) =>
@@ -80,6 +83,8 @@ public static class KeyboardReference
             Plain(row.Text("Keys"), "keys", keys: true);
             Plain(row.Text("What"), "description", keys: true);
             Explained(row.Text("Explained"));
+            foreach (var key in row.List("Canonical"))
+                Canonical(key);
             var list = row.List("Cites");
             if (list.IsEmpty)
             {
@@ -125,6 +130,23 @@ public static class KeyboardReference
             }
         }
 
+        // A key as the grid's key table and a Consumer's declared keys name it: the modifiers Control, Meta, Shift
+        // and Alt in that order, each at most once, then the key as KeyboardEvent.key reports it (GridKeys.Canonical).
+        void Canonical(HandValue value)
+        {
+            if (value.Value is not { } key)
+            {
+                Report(value.Location, $"This KeyRow's canonical key is not written as text, so the build cannot check it. Write it as a string literal ({Adr}).");
+                return;
+            }
+            if (!IsCanonicalForm(key))
+            {
+                Report(value.Location,
+                    $"This KeyRow names the key '{key}', which is not in the grid's canonical form: [Control+][Meta+][Shift+][Alt+]{{key}}, the key as "
+                    + $"KeyboardEvent.key reports it, as Control+Shift+ArrowDown, Shift+F10 or Control+ (a space). Write it as the grid's key table names it ({Adr}).");
+            }
+        }
+
         void Explained(HandValue value)
         {
             var href = value.Value;
@@ -156,6 +178,33 @@ public static class KeyboardReference
                     + $"{string.Join(", ", page.Scan.Page.Sections.Select(s => s.Anchor))} ({Adr}).");
             }
         }
+    }
+
+    /// <summary>
+    /// Whether <paramref name="key"/> is in the canonical form <c>GridKeys</c> names keys in: the modifiers in its
+    /// order, each at most once, then a key that is not a modifier, whose name holds no <c>+</c> unless it is
+    /// <c>+</c> itself. <c>Alt+Alt</c>, the Alt key's own press, is the one modifier that may stand as the key.
+    /// </summary>
+    public static bool IsCanonicalForm(string key)
+    {
+        var rest = key ?? "";
+        var control = TakePrefix(ref rest, "Control+");
+        var meta = TakePrefix(ref rest, "Meta+");
+        var shift = TakePrefix(ref rest, "Shift+");
+        var alt = TakePrefix(ref rest, "Alt+");
+        if (rest == "Alt" && alt && !control && !meta && !shift)
+            return true;
+        return rest.Length > 0
+            && (rest == "+" || rest.IndexOf('+') < 0)
+            && rest is not ("Control" or "Meta" or "Shift" or "Alt");
+    }
+
+    private static bool TakePrefix(ref string rest, string prefix)
+    {
+        if (!rest.StartsWith(prefix, StringComparison.Ordinal) || rest.Length == prefix.Length)
+            return false;
+        rest = rest.Substring(prefix.Length);
+        return true;
     }
 
     // Whether every bracket in the text closes, holds a name, and holds no other bracket.

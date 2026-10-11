@@ -27,4 +27,12 @@
     <ProjectReference Include="..\..\samples\ExGrid.Docs.Generator\ExGrid.Docs.Generator.csproj" />
   </ItemGroup>
 
+  <!-- The Keyboard reference held against the keys the products take (ADR-0110): ExGrid's key table, and
+       the keys ExSheet and ExPivot declare to their grids, read from the components as bUnit renders them. -->
+  <ItemGroup>
+    <PackageReference Include="bunit" Version="2.9.0" />
+    <ProjectReference Include="..\..\src\ExSheet\ExSheet.csproj" />
+    <ProjectReference Include="..\..\src\ExPivot\ExPivot.csproj" />
+  </ItemGroup>
+
 </Project>

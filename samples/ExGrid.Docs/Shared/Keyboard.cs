@@ -9,7 +9,15 @@ namespace ExGrid.Docs;
 /// <param name="What">What they do, in plain text; a key named in it is in brackets too.</param>
 /// <param name="Explained">The section of the page that explains it: <c>exgrid/selection#the-keyboard</c>.</param>
 /// <param name="Cites">The decisions behind it: <c>ADR-0012</c>.</param>
-public sealed record KeyRow(string Group, string Keys, string What, string Explained, IReadOnlyList<string> Cites);
+/// <param name="Canonical">
+/// The keys it explains as the grid's key table and a product's declared keys name them, in the canonical form:
+/// <c>Control+Shift+ArrowDown</c>, <c>Shift+F10</c>, <c>Control+ </c> (a space). A letter in either case, and a
+/// character typed with Control with Shift or without, are one key here, as the tables take both. The build checks
+/// the form, and <c>KeyboardCompletenessTests</c> that every key the tables take is named by a row of its product,
+/// and every key named is one the product answers. A key a menu, a panel or an open edit answers in its own
+/// handler has no table to be read from, and its row names none.
+/// </param>
+public sealed record KeyRow(string Group, string Keys, string What, string Explained, IReadOnlyList<string> Cites, IReadOnlyList<string>? Canonical = null);
 
 /// <summary>
 /// The Keyboard reference (ADR-0110): every key of ExGrid, ExSheet and ExPivot, each linking the section of

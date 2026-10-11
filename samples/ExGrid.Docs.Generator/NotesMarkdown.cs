@@ -110,7 +110,10 @@ public sealed record NotesContext(ImmutableDictionary<string, string> Adrs, stri
 /// The Release Notes' Markdown subset (ADR-0190): <c>##</c> headings, bullets with one nested level,
 /// paragraphs, bold, code spans and links, and nothing else. Anything else is refused with the line it
 /// is on, because the same file is the GitHub release's text, and a construct the site renders one way
-/// and GitHub another would make the two say different things.
+/// and GitHub another would make the two say different things. So is what the release workflow would
+/// rewrite where the site does not — an <c>ADR-NNNN</c> inside a link's text or a code span, or joined to the
+/// text before it — and what GitHub alone would link: a bare address, and an <c>@</c> joined to a name, which
+/// GitHub makes a mention that notifies whoever has the name.
 /// </summary>
 public static class NotesMarkdown
 {
@@ -122,6 +125,12 @@ public static class NotesMarkdown
     private static readonly Regex Entity = new(@"^&(#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);", RegexOptions.CultureInvariant);
     private static readonly Regex AdrMention = new(@"^ADR-([0-9]{4})(?![0-9A-Za-z])", RegexOptions.CultureInvariant);
     private static readonly Regex PullMention = new(@"^#([0-9]{1,6})(?![0-9A-Za-z])", RegexOptions.CultureInvariant);
+
+    // What the release workflow rewrites wherever it stands, a code span included (release.yml, "The release's
+    // text"): an ADR-NNNN, made a link to the record, and a link's ]( with a route, made a whole address. Inside a
+    // code span the site shows either as code, and GitHub would show the rewritten Markdown as code.
+    private static readonly Regex AdrInCode = new(@"ADR-[0-9]{4}", RegexOptions.CultureInvariant);
+    private static readonly Regex RouteInCode = new(@"\]\((?!https://)[^)\s]+\)", RegexOptions.CultureInvariant);
 
     /// <summary>
     /// Reads the blocks of <paramref name="text"/> from line <paramref name="firstLine"/> (0-based) to
@@ -397,6 +406,18 @@ public static class NotesMarkdown
                     Plain.Append(code);
                     if (code.Contains("{ref}") && !context.AllowRef)
                         RefOutside(i + 1 + code.IndexOf("{ref}", StringComparison.Ordinal));
+                    if (AdrInCode.Match(code) is { Success: true } adrInCode)
+                    {
+                        Problem(NotesProblemKind.Subset, i + 1 + adrInCode.Index, adrInCode.Length,
+                            $"{adrInCode.Value} in a code span is made a link inside the code by the GitHub release, which then shows the link's Markdown as code, "
+                            + "and stays code on the site. Write it outside the code span.");
+                    }
+                    if (RouteInCode.Match(code) is { Success: true } routeInCode)
+                    {
+                        Problem(NotesProblemKind.Subset, i + 1 + routeInCode.Index, routeInCode.Length,
+                            "A ]( in a code span is read by the GitHub release as a link to the site, whose address it makes whole inside the code, "
+                            + "and stays code on the site. Write the code without it, or write a link outside the code span.");
+                    }
                     i = close + 1;
                     continue;
                 }
@@ -472,7 +493,16 @@ public static class NotesMarkdown
                     i++;
                     continue;
                 }
-                if (!inLink && (At(i, "https://") || At(i, "http://")))
+                if (c == '@' && (char.IsLetterOrDigit(next) || next == '_'))
+                {
+                    Problem(NotesProblemKind.Subset, i, 2,
+                        "An @ joined to a name is a mention on the GitHub release, which links that account and notifies it, or part of an address "
+                        + "GitHub links, and is plain text on the site. Write it in a code span, as `@bind`, or leave the @ out.");
+                    Char(c);
+                    i++;
+                    continue;
+                }
+                if (!inLink && (At(i, "https://") || At(i, "http://") || (At(i, "www.") && (i == 0 || !char.IsLetterOrDigit(_s[i - 1])))))
                 {
                     var end = i;
                     while (end < to && !char.IsWhiteSpace(_s[end]) && _s[end] is not (')' or ']'))
@@ -487,14 +517,26 @@ public static class NotesMarkdown
                 if (c == 'A' && (i == 0 || !char.IsLetterOrDigit(_s[i - 1])) && AdrMention.Match(_s.Substring(i, Math.Min(9, to - i))) is { Success: true } adr)
                 {
                     var number = adr.Groups[1].Value;
-                    if (!context.Adrs.TryGetValue(number, out var file))
+                    var before = i > 0 ? _s[i - 1] : ' ';
+                    var after = i + adr.Length < _s.Length ? _s[i + adr.Length] : ' ';
+                    if (inLink)
+                    {
+                        Problem(NotesProblemKind.Subset, i, adr.Length,
+                            $"{adr.Value} inside a link's text is made a second link, inside the first, by the GitHub release, and stays text on the site. "
+                            + "Write it after the link, as [Selection](exgrid/selection) (ADR-0012).");
+                        Html.Append(adr.Value);
+                    }
+                    else if (before is '[' or '/' or '-' or '_' || after == '_')
+                    {
+                        Problem(NotesProblemKind.Subset, i, adr.Length,
+                            $"{adr.Value} is joined to the text beside it by '{(after == '_' ? after : before)}', so the GitHub release leaves it unlinked "
+                            + "while the site links it. Put a space between them.");
+                        Html.Append(adr.Value);
+                    }
+                    else if (!context.Adrs.TryGetValue(number, out var file))
                     {
                         Problem(NotesProblemKind.Link, i, adr.Length,
                             $"{adr.Value} names no decision record: docs/adr/ has no file {number}-….md. Correct the number.");
-                        Html.Append(adr.Value);
-                    }
-                    else if (inLink)
-                    {
                         Html.Append(adr.Value);
                     }
                     else

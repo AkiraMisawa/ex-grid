@@ -28,7 +28,8 @@ public class KeyboardReferenceTests
     private const string Hand = """
         namespace ExGrid.Docs
         {
-            internal sealed record KeyRow(string Group, string Keys, string What, string Explained, System.Collections.Generic.IReadOnlyList<string> Cites);
+            internal sealed record KeyRow(string Group, string Keys, string What, string Explained, System.Collections.Generic.IReadOnlyList<string> Cites,
+                System.Collections.Generic.IReadOnlyList<string>? Canonical = null);
 
             internal static class KeyboardByHand
             {
@@ -36,7 +37,7 @@ public class KeyboardReferenceTests
 
                 public static System.Collections.Generic.IReadOnlyList<KeyRow> ExGrid { get; } =
                 [
-                    new("Moving and selecting", "[Ctrl] + [A]", "Select everything.", Selection, ["ADR-0012"]),
+                    new("Moving and selecting", "[Ctrl] + [A]", "Select everything.", Selection, ["ADR-0012"], Canonical: ["Control+a"]),
                     new("Moving and selecting", "[Home] / [End]", "The row's first or last cell. With [Shift], extend to it.", Selection, ["ADR-0012", "DoD §10"]),
                 ];
 
@@ -118,6 +119,43 @@ public class KeyboardReferenceTests
         var run = Run(Hand.Replace(from, to));
 
         Assert.Contains(message, One(run).GetMessage());
+    }
+
+    [Theory] // ADR-0110: a key a row names for the completeness check is written as the grid's key table names it
+    [InlineData("Ctrl+A")]
+    [InlineData("Shift+Control+a")]
+    [InlineData("Control+Control+a")]
+    [InlineData("Control+")]
+    [InlineData("Control+Shift")]
+    [InlineData("")]
+    public void A_key_not_in_the_canonical_form_stops_the_build(string key)
+    {
+        var run = Run(Hand.Replace("Canonical: [\"Control+a\"]", $"Canonical: [\"{key}\"]"));
+
+        Assert.Contains($"names the key '{key}', which is not in the grid's canonical form", One(run).GetMessage());
+    }
+
+    [Theory] // ADR-0110: the canonical form is GridKeys': the modifiers in order, then one key, a space, + and the Alt key's own press among them
+    [InlineData("Control+Shift+ArrowDown")]
+    [InlineData("Control+ ")]
+    [InlineData(" ")]
+    [InlineData("Control++")]
+    [InlineData("Control+Shift++")]
+    [InlineData("Alt+Alt")]
+    [InlineData("Shift+F10")]
+    public void A_key_in_the_canonical_form_builds(string key)
+    {
+        var run = Run(Hand.Replace("Canonical: [\"Control+a\"]", $"Canonical: [\"{key}\"]"));
+
+        Assert.Empty(run.Diagnostics);
+    }
+
+    [Fact] // ADR-0110: a canonical key the build cannot read as text stops it
+    public void A_key_not_written_as_text_stops_the_build()
+    {
+        var run = Run(Hand.Replace("Canonical: [\"Control+a\"]", "Canonical: [string.Empty + \"a\"]"));
+
+        Assert.Contains("canonical key is not written as text", One(run).GetMessage());
     }
 
     [Fact] // ADR-0110: a row under a property that is not a product cannot be placed on the page
