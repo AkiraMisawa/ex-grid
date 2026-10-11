@@ -89,6 +89,21 @@
             Answer each by pushing back a new <code>Columns</code> list. Drag a column edge, drag a header, or hide
             a column from its ▾ menu.
         </p>
+        <p>
+            The column order, the pinned count, the sort and the column widths are part of a user's View State,
+            which your application keeps for them, and each goes through <code>System.Text.Json</code>: the order
+            is a list of names, the pinned count a number, the sort a list of <code>SortSpec</code>. A
+            <code>ColumnWidth</code> is written as <code>"Auto"</code> or as its pixels, never as the width an Auto
+            column was painted at, so a restored Auto column measures itself again. A stored width that no column
+            could declare is refused when it is read.
+        </p>
+        <p>
+            Two things cannot be kept this way yet, until their JSON form is decided. The View State's filter
+            conditions: an operand comes back as a <code>JsonElement</code>, which the filter refuses when it is
+            applied. And a <code>ColumnWidth</code> through a <code>JsonSerializerContext</code>: it is written and
+            read by reflection-based serialisation only, so an app that serialises through source generation, as a
+            trimmed WebAssembly app does, cannot yet hold one.
+        </p>
         <DocsExample Title="Pinned columns, two tiers of groups, and layout events" Builtin="typeof(ColumnLayout)" Mud="typeof(ColumnLayoutMud)"
                      Files="@(["Examples/Grid/Position.cs"])" />
     </DocsSection>

@@ -19,7 +19,8 @@ namespace ExGrid.Components.Tests;
 /// <c>From</c> has no reason to — the dropped Window of a restart, the loading flag of a fetch
 /// (ADR-0025) — and the rows' renders across a fling past the fetched Window, where the two sources
 /// hold different Windows. Whether FN-4's counts are read to allow either is a decision no ADR
-/// records; the test that is its pass condition waits for it.</para>
+/// records. <see cref="FN4_from_and_fetch_render_the_same_counts_at_every_step"/> asserts FN-4 as
+/// written, and fails until it is made.</para>
 /// </summary>
 public class BundledSourcesAgreeTests : GridTestContext
 {
@@ -109,6 +110,92 @@ public class BundledSourcesAgreeTests : GridTestContext
         }, bothHold: false);
         await StepAsync("the filter cleared", (source, grid) => grid.InvokeAsync(() => source.OnFilterChanged(null)));
         await StepAsync("the sort cleared", (source, grid) => grid.InvokeAsync(() => source.OnSortChanged([])));
+    }
+
+    // ---- FN-4 as the Definition of Done words it ------------------------------------------------
+
+    /// <summary>The grid, counting its own renders: bUnit's <c>RenderCount</c> on the root also
+    /// counts each render of a row beneath it, which is what <see cref="ExGridRow{TRow}"/>'s own
+    /// count is for.</summary>
+    internal sealed class CountedGrid : ExGrid<TestRow>
+    {
+        internal int Renders { get; private set; }
+
+        protected override void OnAfterRender(bool firstRender)
+        {
+            Renders++;
+            base.OnAfterRender(firstRender);
+        }
+    }
+
+    [Fact] // FN-4 / ADR-0001: identical painted output and identical render counts at every step — the grid's own and every row's
+    public async Task FN4_from_and_fetch_render_the_same_counts_at_every_step()
+    {
+        // FN-4's pass condition as the Definition of Done words it. It FAILS today: the fetching
+        // source pushes states From has no reason to — the dropped Window of a restart, the loading
+        // flag of a fetch (ADR-0025) — each a render of the grid, and past its read-ahead it holds a
+        // different Window, so its rows render differently there. Whether FN-4's counts are read to
+        // allow either is the decision this test waits for; the messages give the counts.
+        var rows = TestRows.Many(300);
+        var inMemory = GridSource.From(rows);
+        using var fetching = GridSource.Fetch<TestRow>((query, _) => Answer(rows, query), readAheadRows: 60);
+        var pushes = new Dictionary<IGridSource<TestRow>, int> { [inMemory] = 0, [fetching] = 0 };
+        inMemory.StateChanged += () => pushes[inMemory]++;
+        fetching.StateChanged += () => pushes[fetching]++;
+
+        IRenderedComponent<CountedGrid> Counted(IGridSource<TestRow> source)
+            => Render<CountedGrid>(ps => ps
+                .Add(g => g.Source, source)
+                .Add(g => g.Columns, Columns)
+                .Add(g => g.RowHeight, RowHeightPx)
+                .Add(g => g.ViewportHeight, 140)
+                .Add(g => g.ViewportWidth, 450));
+        var fromGrid = Counted(inMemory);
+        var fetchGrid = Counted(fetching);
+        var failures = new List<string>();
+
+        async Task StepAsync(string step, Func<IGridSource<TestRow>, IRenderedComponent<CountedGrid>, Task> gesture)
+        {
+            var (fromGridBefore, fromPushesBefore, fromRowsBefore) = (fromGrid.Instance.Renders, pushes[inMemory], RowRenders.Of(fromGrid));
+            var (fetchGridBefore, fetchPushesBefore, fetchRowsBefore) = (fetchGrid.Instance.Renders, pushes[fetching], RowRenders.Of(fetchGrid));
+            await gesture(inMemory, fromGrid);
+            await gesture(fetching, fetchGrid);
+            fetchGrid.WaitForAssertion(() => Assert.Equal(Painted(fromGrid), Painted(fetchGrid)));
+
+            var fromRenders = fromGrid.Instance.Renders - fromGridBefore;
+            var fetchRenders = fetchGrid.Instance.Renders - fetchGridBefore;
+            if (fromRenders != fetchRenders)
+                failures.Add($"{step}: the grid rendered {fromRenders} times under From for {pushes[inMemory] - fromPushesBefore} "
+                    + $"pushes, and {fetchRenders} times under Fetch for {pushes[fetching] - fetchPushesBefore}");
+            var fromRows = fromRowsBefore.Since(fromGrid);
+            var fetchRows = fetchRowsBefore.Since(fetchGrid);
+            if (!fromRows.SequenceEqual(fetchRows))
+                failures.Add($"{step}: the rows rendered differently — From {string.Join(" ", fromRows)}, Fetch {string.Join(" ", fetchRows)}");
+        }
+
+        await StepAsync("a scroll inside the Viewport", (_, grid) => ScrollToAsync(grid.Find(".ex-scroller"), 3 * RowHeightPx));
+        await StepAsync("a sort", (source, grid) => grid.InvokeAsync(() =>
+            source.OnSortChanged([new SortSpec("Amount", SortDirection.Descending)])));
+        await StepAsync("a filter", (source, grid) => grid.InvokeAsync(() =>
+            source.OnFilterChanged(new GridFilter(new Dictionary<string, FilterSpec>
+            {
+                ["Active"] = new([new FilterClause(FilterOperator.Equals, true)]),
+            }))));
+        await StepAsync("another scroll", (_, grid) => ScrollToAsync(grid.Find(".ex-scroller"), 7 * RowHeightPx));
+        await StepAsync("a fling inside both Windows, settled", async (_, grid) =>
+        {
+            await ScrollToAsync(grid.Find(".ex-scroller"), 40 * RowHeightPx);
+            await grid.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        });
+        await StepAsync("a fling past the fetched Window, settled and answered", async (_, grid) =>
+        {
+            await ScrollToAsync(grid.Find(".ex-scroller"), 120 * RowHeightPx);
+            await grid.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        });
+        await StepAsync("the filter cleared", (source, grid) => grid.InvokeAsync(() => source.OnFilterChanged(null)));
+        await StepAsync("the sort cleared", (source, grid) => grid.InvokeAsync(() => source.OnSortChanged([])));
+
+        Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
     }
 
     private static void AssertSamePaint(

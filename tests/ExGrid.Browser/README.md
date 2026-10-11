@@ -434,7 +434,10 @@ nobody had asked for. What that means when writing a test:
   triangle in the corner alone, in its token's colour, a pinned one still sticky (UX-20), the dark
   scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2/3), the
   editor's box is the cell's (ED-9), the runaway auto-scroll stops (SL-14/15), the
-  Blazor error UI never shows (CON-5).
+  Blazor error UI never shows (CON-5), and every class painted under a root — watched from
+  `/features`, `/cells`, `/tones`, `/stripes`, `/marks`, `/appearance` and `/sheet` while their
+  states are put on — is one ADR-0029 names, stable or internal, transcribed from the ADR (UX-4).
+  It fails until ADR-0029 is amended for the classes the grid paints and the ADR does not name.
 - `virtualisation.spec.mjs` — the large-data criteria at the Definition of Done's own
   scenario, `/wide` at 10⁶ rows × 100 columns (§12): the far corner reached and painted
   (BIG-1), the same element count at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1 —

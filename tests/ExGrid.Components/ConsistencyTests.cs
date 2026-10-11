@@ -127,11 +127,12 @@ public class ConsistencyTests : GridTestContext
 
     // ---- ST-2: the grid holds no committed data ---------------------------------------------------
     //
-    // Not asserted here, and not met: an editor opened with F2 and not typed into holds the cell's
-    // committed value as its text, and an open editor outlives its row leaving the Window
-    // (ADR-0011, ADR-0142), so after the Consumer's state is removed the Formula Bar still paints
-    // that value. Whether ADR-0007's "half-typed text in the editor" covers such text, or the grid
-    // must let it go, is a decision no ADR records; the test that is its pass condition waits for it.
+    // ST2_an_edit_opened_with_f2_... FAILS, and is left failing: an editor opened with F2 and not
+    // typed into holds the cell's committed value as its text, and an open editor outlives its row
+    // leaving the Window (ADR-0011, ADR-0142), so after the Consumer's state is removed the Formula
+    // Bar still paints that value. Whether ADR-0007's "half-typed text in the editor" covers such
+    // text, or the grid must let it go, is a decision no ADR records; the test asserts ST-2 as the
+    // Definition of Done words it.
 
     [Theory] // ADR-0001 / ADR-0007 / ST-2: after any sequence, an empty Window leaves the grid nothing to paint, and nothing throws
     [InlineData(20261011)]
@@ -256,6 +257,31 @@ public class ConsistencyTests : GridTestContext
         });
         Assert.False(Renderer.UnhandledException.IsCompleted);
     }
+
+    [Fact] // ADR-0007 / ST-2: an editor opened with F2 and not typed into holds the committed value as its text — and that must go with the Window
+    public async Task ST2_an_edit_opened_with_f2_keeps_no_committed_value_when_the_window_empties()
+    {
+        var source = new TestSource();
+        source.Push(TestRows.Many(50), totalCount: 50);
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 140)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnEdit, (GridEditIntent<TestRow> _) => { }));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 20, OffsetY = 30 });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs());
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("F2", false, false, false, false, false));
+        // F2 seeds the editor with the cell's committed value: the user has typed nothing.
+        Assert.Equal("Row 000001", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+
+        await cut.InvokeAsync(() => source.Push([], totalCount: 0));
+
+        AssertNothingPainted(cut);
+    }
+
 
     /// <summary>ST-2's pass condition: no row, cell, Placeholder, Focus or range is painted, the
     /// Formula Bar shows nothing, no value of the data is anywhere in the markup, and nothing was
