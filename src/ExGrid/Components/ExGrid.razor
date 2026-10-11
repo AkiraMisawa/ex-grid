@@ -1236,6 +1236,17 @@
     /// </summary>
     [Parameter] public EventCallback<RowRange> OnRangeNeeded { get; set; }
 
+    /// <summary>
+    /// LAB ONLY, never merged (<c>lab/remote-read-ahead</c>, ticket 14 of the live-data spec): the
+    /// rows either side of the rows on screen that must be in the Window too, as ag-grid's
+    /// <c>rowBuffer</c> rows are rendered and ask for their block before the Viewport reaches it.
+    /// Above 0, <see cref="OnRangeNeeded"/> is raised with the rows on screen as soon as those rows
+    /// widened by this many either side, clamped into the total, are not all in the Window: before
+    /// the Window runs out. 0, the default, raises it once the rows on screen are not all in the
+    /// Window (ADR-0001).
+    /// </summary>
+    [Parameter] public int RangeMarginRows { get; set; }
+
     /// <summary>Whether an answer is in flight. Forgetting to pass it means a stale
     /// Window is shown as if it were current (ADR-0001).</summary>
     [Parameter] public bool IsLoading { get; set; }
@@ -8826,6 +8837,18 @@
     private bool IsCovered(RowRange range)
         => range.Start >= _windowStart && range.Start + range.Count <= _windowStart + _window.Count;
 
+    // LAB ONLY (RangeMarginRows): the rows on screen widened by the margin either side, clamped
+    // into the total, and never short of the rows on screen.
+    private RowRange WithMargin(RowRange range)
+    {
+        if (RangeMarginRows <= 0)
+            return range;
+        var end = (long)range.Start + range.Count;
+        var start = Math.Max(0, range.Start - RangeMarginRows);
+        var last = Math.Max(end, Math.Min(TotalRows, end + RangeMarginRows));
+        return new RowRange(start, (int)(last - start));
+    }
+
     private async Task RaiseRangeIfUncoveredAsync()
     {
         // Mid-fling the visible range is passing through; asking for every range it
@@ -8833,7 +8856,7 @@
         // range that was actually landed on.
         if (_disposed || _placeholderMode || (Source is null && !OnRangeNeeded.HasDelegate))
             return;
-        if (_visible is not { } range || IsCovered(range))
+        if (_visible is not { } range || IsCovered(WithMargin(range)))
         {
             _lastRaised = null;
             return;

@@ -19,9 +19,11 @@ import path from 'node:path';
 // needs is kept; "60s" is 60 rows with any other Window superseding it instead, as GridSource.Fetch
 // supersedes (ADR-0025), for comparison. "b100" asks aligned blocks of 100 rows instead, as ag-grid's
 // Server-Side row model does: the blocks that cover the range widened by 10 rows either side, its
-// rowBuffer (ExPivot.ReadAheadBlockRows); "b100m0" covers the range alone. EXGRID_MEASURE_LAYOUTS,
-// _PARTS, _INPUTS, _PACES, _SAMPLES, _READ_AHEAD and _LIVE_READ_AHEAD narrow a run. For each layout
-// and each read-ahead it records:
+// rowBuffer (ExPivot.ReadAheadBlockRows); "b100m0" covers the range alone. A "t10" after either asks
+// before the Window runs out, once the rows on screen and 10 either side are not all in it, as
+// ag-grid's rendered rows ask (ExPivot.ReadAheadTriggerRows): "b100t10" is ag-grid's rule.
+// EXGRID_MEASURE_LAYOUTS, _PARTS, _INPUTS, _PACES, _SAMPLES, _READ_AHEAD and _LIVE_READ_AHEAD narrow
+// a run. For each layout and each read-ahead it records:
 //
 // - scrolling: how long Placeholders are on screen while the report is scrolled by the wheel, by
 //   ArrowDown at the Viewport's foot (a key that scrolls by a row) and by PageDown, each a step at a
@@ -50,11 +52,16 @@ const list = (name, fallback) => (process.env[name] ?? fallback).split(',').map(
 // A read-ahead is a number of rows; with an `s` after it, a question in flight is superseded by any
 // other Window, as GridSource.Fetch's is (ADR-0025) — the comparison, scrolling only. `b` and a
 // number is aligned blocks of that many rows, covering the range and 10 rows either side, or the
-// rows an `m` and a number after it says.
+// rows an `m` and a number after it says. A `t` and a number after either asks once the rows on
+// screen and that many either side are not all in the Window, before it runs out.
 const variant = (text) => {
-    const block = /^b(\d+)(?:m(\d+))?$/.exec(text);
-    if (block) return { key: text, rows: 0, supersedes: false, block: Number(block[1]), margin: block[2] === undefined ? 10 : Number(block[2]) };
-    return { key: text, rows: Number.parseInt(text, 10), supersedes: text.endsWith('s'), block: 0, margin: 10 };
+    const m = /^(?:b(\d+)(?:m(\d+))?|(\d+)(s?))(?:t(\d+))?$/.exec(text);
+    if (!m) throw new Error(`a read-ahead is a number of rows, 60s, b100, b100m0 or either with t10 after it, not "${text}"`);
+    const trigger = m[5] === undefined ? 0 : Number(m[5]);
+    if (m[1] !== undefined) {
+        return { key: text, rows: 0, supersedes: false, block: Number(m[1]), margin: m[2] === undefined ? 10 : Number(m[2]), trigger };
+    }
+    return { key: text, rows: Number(m[3]), supersedes: m[4] === 's', block: 0, margin: 10, trigger };
 };
 const SCROLL_READ_AHEADS = list('EXGRID_MEASURE_READ_AHEAD', '0,30,60,120,60s').map(variant);
 const LIVE_READ_AHEADS = list('EXGRID_MEASURE_LIVE_READ_AHEAD', '0,30,60,120').map(variant);
@@ -377,11 +384,12 @@ async function pageLog(page) {
 /** Opens the lab page for a layout and a read-ahead, the probe in place, and waits for the report. */
 async function open(page, layout, readAhead, more = '') {
     await page.goto(`/lab-read-ahead?layout=${layout}&readAhead=${readAhead.rows}&supersede=${readAhead.supersedes ? 1 : 0}`
-        + `&block=${readAhead.block}&blockMargin=${readAhead.margin}${more}`, { timeout: 600_000 });
+        + `&block=${readAhead.block}&blockMargin=${readAhead.margin}&trigger=${readAhead.trigger}${more}`, { timeout: 600_000 });
     await expect(page.locator('#lab-read-ahead')).toHaveText(String(readAhead.rows));
     await expect(page.locator('#lab-supersedes')).toHaveText(readAhead.supersedes ? /superseding/ : /^$/);
     await expect(page.locator('#lab-block')).toHaveText(String(readAhead.block));
     await expect(page.locator('#lab-block-margin')).toHaveText(String(readAhead.margin));
+    await expect(page.locator('#lab-trigger')).toHaveText(String(readAhead.trigger));
     await expect(page.locator(`${REPORT} .ex-viewport .ex-row`).first()).toBeVisible({ timeout: 300_000 });
     const state = await settled(page);
     expect(state.rowCount, 'the report has rows to scroll').toBeGreaterThan(0);

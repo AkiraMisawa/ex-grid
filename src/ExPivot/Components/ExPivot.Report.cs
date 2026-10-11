@@ -455,7 +455,10 @@ public partial class ExPivot
         builder.AddComponentParameter(33, nameof(ExGrid<PivotDisplayRow>.OnRangeNeeded), _rangeNeeded);
         builder.AddComponentParameter(34, nameof(ExGrid<PivotDisplayRow>.CopyAnswerAsync), _copyAnswer);
         builder.AddComponentParameter(35, nameof(ExGrid<PivotDisplayRow>.VouchesDistinctRows), true);
-        builder.AddComponentReferenceCapture(36, grid => _grid = (ExGrid<PivotDisplayRow>)grid);
+        // LAB ONLY (lab/remote-read-ahead): ask before the Window runs out.
+        if (ReadAheadTriggerRows > 0)
+            builder.AddComponentParameter(36, nameof(ExGrid<PivotDisplayRow>.RangeMarginRows), ReadAheadTriggerRows);
+        builder.AddComponentReferenceCapture(37, grid => _grid = (ExGrid<PivotDisplayRow>)grid);
         builder.CloseComponent();
     }
 

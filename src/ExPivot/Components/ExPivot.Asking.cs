@@ -511,27 +511,40 @@ public partial class ExPivot
     /// </summary>
     [Parameter] public int ReadAheadBlockMargin { get; set; } = 10;
 
+    /// <summary>
+    /// LAB ONLY, never merged (<c>lab/remote-read-ahead</c>): ask before the Window runs out. Above 0,
+    /// the grid raises its Range Request as soon as the rows on screen widened by this many either
+    /// side are not all in its Window (ExGrid's lab <c>RangeMarginRows</c>), as ag-grid's
+    /// <c>rowBuffer</c> rows ask for their block before the Viewport reaches it; and a range the
+    /// Window asked for covers, with these rows either side, asks nothing while that question is out
+    /// or its answer is held. The Window asked then reaches at least this far either side. 0, the
+    /// default, asks once the rows on screen are not all in the Window (ADR-0001).
+    /// </summary>
+    [Parameter] public int ReadAheadTriggerRows { get; set; }
+
     private Task WindowNeededAsync(RowRange range)
     {
-        // LAB ONLY: a range inside the Window asked for, whose answer is out or held, asks nothing;
-        // otherwise the range widened by ReadAheadRows either side, or the aligned blocks that cover
-        // it widened by ReadAheadBlockMargin, clamped into the report. With ReadAheadRows 0 and no
-        // blocks this asks exactly what ExPivot asked before: the range itself, unless it is the
+        // LAB ONLY: a range inside the Window asked for, with ReadAheadTriggerRows either side, whose
+        // answer is out or held, asks nothing; otherwise the range widened by ReadAheadRows either
+        // side, or the aligned blocks that cover it widened by ReadAheadBlockMargin, clamped into the
+        // report — either at least as wide as the trigger. With ReadAheadRows 0, no blocks and no
+        // trigger this asks exactly what ExPivot asked before: the range itself, unless it is the
         // Window already asked for.
         var asked = _wantedWindow;
         var held = _state?.Window;
-        if (Covers(asked, range) && ((_asking is not null && !ReadAheadSupersedes) || held == asked))
-            return Task.CompletedTask;
         var rows = (long)(_report?.RowCount ?? int.MaxValue);
+        var trigger = Math.Max(0, ReadAheadTriggerRows);
+        if (Covers(asked, Widened(range, trigger, rows)) && ((_asking is not null && !ReadAheadSupersedes) || held == asked))
+            return Task.CompletedTask;
         var wanted = ReadAheadBlockRows > 0
-            ? BlocksCovering(range, ReadAheadBlockRows, Math.Max(0, ReadAheadBlockMargin), rows)
-            : Widened(range, Math.Max(0, ReadAheadRows), rows);
+            ? BlocksCovering(range, ReadAheadBlockRows, Math.Max(trigger, ReadAheadBlockMargin), rows)
+            : Widened(range, Math.Max(trigger, ReadAheadRows), rows);
         if (wanted == _wantedWindow) return Task.CompletedTask;
         _wantedWindow = wanted;
         return PursueAsync(raise: _raisePending, kind: Question.Window);
     }
 
-    private static bool Covers(PivotReportWindow window, RowRange range)
+    private static bool Covers(PivotReportWindow window, PivotReportWindow range)
         => range.Start >= window.Start && (long)range.Start + range.Count <= (long)window.Start + window.Count;
 
     /// <summary>LAB ONLY: <paramref name="range"/> widened by <paramref name="readAhead"/> rows either

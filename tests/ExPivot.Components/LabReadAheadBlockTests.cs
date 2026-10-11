@@ -1,5 +1,6 @@
 using Bunit;
 using ExGrid;
+using Microsoft.AspNetCore.Components;
 using ExPivot.Components.Tests.Support;
 using ExPivot.Engine;
 using Xunit;
@@ -72,11 +73,12 @@ public sealed class LabReadAheadBlockTests : PivotTestContext
 
     private static readonly PivotSlicing Whole = new() { Budget = TimeSpan.FromDays(1) };
 
-    [Fact] // Ticket 14, lab: a remote report scrolled under blocks of 100 asks two blocks at a boundary, nothing inside them, and once past them
-    public async Task Ticket14_lab_a_remote_report_asks_aligned_blocks_once_a_scroll_leaves_them()
+    /// <summary>A remote report of 1,000 rows, asked over JSON, every Window it is asked for recorded.</summary>
+    private (IRenderedComponent<PivotComponent> Cut, List<PivotReportWindow> Asked, LocalPivotReportSource Server) RenderRemote(
+        Action<ComponentParameterCollectionBuilder<PivotComponent>> lab)
     {
         var data = PivotSource.From([.. Enumerable.Range(0, 999).Select(i => new Deal(i, $"Region {i:D4}", i))], DealFields, Whole);
-        await using var server = PivotReportSource.From(data, timeProvider: Clock, slicing: Whole);
+        var server = PivotReportSource.From(data, timeProvider: Clock, slicing: Whole);
         var asked = new List<PivotReportWindow>();
         static T Wire<T>(T value) => PivotReportJson.Read<T>(PivotReportJson.Write(value));
         var remote = PivotReportSource.Fetch(server.Fields, server.Features, server.UpdateMode,
@@ -88,34 +90,69 @@ public sealed class LabReadAheadBlockTests : PivotTestContext
             },
             items: server.RawItemsAsync,
             reportItems: async (query, ct) => Wire(await server.ItemsAsync(Wire(query), ct)));
-        var cut = RenderPivot(ByRegion, ps => ps
-            .Add(p => p.RowHeight, RowHeightPx)
-            .Add(p => p.ShowFieldList, false)
-            .Add(p => p.Slicing, Whole)
-            .Add(p => p.ReadAheadBlockRows, 100), reportSource: remote);
+        var cut = RenderPivot(ByRegion, ps =>
+        {
+            ps.Add(p => p.RowHeight, RowHeightPx)
+              .Add(p => p.ShowFieldList, false)
+              .Add(p => p.Slicing, Whole);
+            lab(ps);
+        }, reportSource: remote);
         cut.WaitForAssertion(() => Assert.Equal(1000, Grid(cut).Instance.TotalCount));
-        int Asked() { lock (asked) return asked.Count; }
-        PivotReportWindow Last() { lock (asked) return asked[^1]; }
+        return (cut, asked, server);
+    }
+
+    private static int Count(List<PivotReportWindow> asked) { lock (asked) return asked.Count; }
+
+    private static PivotReportWindow Last(List<PivotReportWindow> asked) { lock (asked) return asked[^1]; }
+
+    [Fact] // Ticket 14, lab: a remote report scrolled under blocks of 100 asks two blocks at a boundary, nothing inside them, and once past them
+    public async Task Ticket14_lab_a_remote_report_asks_aligned_blocks_once_a_scroll_leaves_them()
+    {
+        var (cut, asked, server) = RenderRemote(ps => ps.Add(p => p.ReadAheadBlockRows, 100));
+        await using var _ = server;
 
         // Row 500 at the top: the range and 10 rows above it reach into the block before.
-        var before = Asked();
+        var before = Count(asked);
         await ScrollReportAsync(cut, 500 * RowHeightPx);
         cut.WaitForAssertion(() => Assert.Equal(400, Grid(cut).Instance.WindowStart));
-        Assert.Equal(before + 1, Asked());
-        Assert.Equal(new PivotReportWindow(400, 200), Last());
+        Assert.Equal(before + 1, Count(asked));
+        Assert.Equal(new PivotReportWindow(400, 200), Last(asked));
         Assert.Equal(200, Grid(cut).Instance.Window.Count);
 
-        // Further down inside those blocks: nothing is asked.
-        before = Asked();
+        // Further down inside those blocks, to within a few rows of their end: nothing is asked.
+        before = Count(asked);
         await ScrollReportAsync(cut, 540 * RowHeightPx);
-        cut.WaitForAssertion(() => Assert.Contains("Region 0540", RowTexts(cut)[0], StringComparison.Ordinal));
-        Assert.Equal(before, Asked());
+        await ScrollReportAsync(cut, 575 * RowHeightPx);
+        cut.WaitForAssertion(() => Assert.Contains("Region 0575", RowTexts(cut)[0], StringComparison.Ordinal));
+        Assert.Equal(before, Count(asked));
 
         // Past the second block's end: one question, for that block and the next.
         await ScrollReportAsync(cut, 590 * RowHeightPx);
         cut.WaitForAssertion(() => Assert.Equal(500, Grid(cut).Instance.WindowStart));
-        Assert.Equal(before + 1, Asked());
-        Assert.Equal(new PivotReportWindow(500, 200), Last());
+        Assert.Equal(before + 1, Count(asked));
+        Assert.Equal(new PivotReportWindow(500, 200), Last(asked));
+        Assert.False(Renderer.UnhandledException.IsCompleted, "an exception reached the renderer");
+    }
+
+    [Fact] // Ticket 14, lab: with a trigger of 10, the next blocks are asked while every row on screen is still held, as ag-grid's rowBuffer asks
+    public async Task Ticket14_lab_a_trigger_asks_the_next_blocks_before_the_Window_runs_out()
+    {
+        var (cut, asked, server) = RenderRemote(ps => ps
+            .Add(p => p.ReadAheadBlockRows, 100)
+            .Add(p => p.ReadAheadTriggerRows, 10));
+        await using var _ = server;
+        await ScrollReportAsync(cut, 500 * RowHeightPx);
+        cut.WaitForAssertion(() => Assert.Equal(400, Grid(cut).Instance.WindowStart));
+        Assert.Equal(new PivotReportWindow(400, 200), Last(asked));
+
+        // Row 575 at the top: the rows on screen are all held, but 10 below them are not.
+        var before = Count(asked);
+        await ScrollReportAsync(cut, 540 * RowHeightPx);
+        await ScrollReportAsync(cut, 575 * RowHeightPx);
+        cut.WaitForAssertion(() => Assert.Equal(500, Grid(cut).Instance.WindowStart));
+        Assert.Equal(before + 1, Count(asked));
+        Assert.Equal(new PivotReportWindow(500, 200), Last(asked));
+        Assert.Contains("Region 0575", RowTexts(cut)[0], StringComparison.Ordinal);
         Assert.False(Renderer.UnhandledException.IsCompleted, "an exception reached the renderer");
     }
 }

@@ -15,7 +15,9 @@
     side of the range its grid needs (ExPivot.ReadAheadRows), or with ?block= the aligned blocks of that
     many rows that cover the range widened by ?blockMargin= rows either side, 10 unless asked
     (ExPivot.ReadAheadBlockRows and ReadAheadBlockMargin, as ag-grid's Server-Side row model asks its
-    cacheBlockSize blocks for its rowBuffer). The layouts are fixed by ?layout=:
+    cacheBlockSize blocks for its rowBuffer). ?trigger= asks before the Window runs out: once the rows
+    on screen widened by that many either side are not all in it (ExPivot.ReadAheadTriggerRows, as
+    ag-grid's rowBuffer rows ask for their block). The layouts are fixed by ?layout=:
     narrow (6 value columns), wide (Product and Quantity in Columns, hundreds of value columns) and
     wide-dense (the same columns over Trade date alone, for a server holding a million trades).
     measure-read-ahead.spec.mjs drives it. The page writes nothing while it is measured but its
@@ -35,7 +37,9 @@
     Layout <code id="lab-layout">@LayoutName</code>, <code id="lab-read-ahead">@ReadAhead</code> rows asked either side of
     the range the grid needs<span id="lab-supersedes">@(Supersedes ? ", any other Window superseding a question in flight" : "")</span>;
     aligned blocks of <code id="lab-block">@Block</code> rows (0: none) covering the range and
-    <code id="lab-block-margin">@BlockMargin</code> rows either side. Never merged: ticket 14's measurement.
+    <code id="lab-block-margin">@BlockMargin</code> rows either side; asked once the rows on screen and
+    <code id="lab-trigger">@Trigger</code> rows either side are not all in the Window. Never merged: ticket 14's
+    measurement.
 </p>
 
 <div class="demo-toolbar">
@@ -47,7 +51,7 @@
 @if (_source is not null)
 {
     <ExPivot ReportSource="_source" @bind-Layout="_layout" ReadAheadRows="ReadAhead" ReadAheadSupersedes="Supersedes"
-             ReadAheadBlockRows="Block" ReadAheadBlockMargin="BlockMargin"
+             ReadAheadBlockRows="Block" ReadAheadBlockMargin="BlockMargin" ReadAheadTriggerRows="Trigger"
              ShowFieldList="false" Culture="Culture" ViewportHeight="Height" />
 }
 
@@ -99,11 +103,18 @@
     [SupplyParameterFromQuery(Name = "blockMargin")]
     public int? BlockMarginAsked { get; set; }
 
+    // ?trigger=: ask once the rows on screen and that many either side are not all in the Window
+    // (ExPivot.ReadAheadTriggerRows); 0, as ExPivot asks, once the rows on screen are not.
+    [SupplyParameterFromQuery(Name = "trigger")]
+    public int? TriggerAsked { get; set; }
+
     private int ReadAhead => ReadAheadAsked is >= 0 and var rows ? rows : 0;
 
     private int Block => BlockAsked is > 0 and var rows ? rows : 0;
 
     private int BlockMargin => BlockMarginAsked is >= 0 and var rows ? rows : 10;
+
+    private int Trigger => TriggerAsked is > 0 and var rows ? rows : 0;
 
     private bool Supersedes => SupersedeAsked == 1;
 
