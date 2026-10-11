@@ -580,6 +580,9 @@ that looks like success.
 | **ERR-6** | MUST | A missing or broken JS module does not take the Range Request down with it | Layer 2 | rows still requested; the grid does not sit on Placeholders forever |
 | **ERR-7** | MUST | Disposal racing an in-flight interop call is not a fault and is not logged as one | Layer 2 + Layer 3 | no error; no exception |
 | **ERR-8** | MUST | A configuration that cannot work is refused at the earliest point it is knowable, naming the parameter the user actually wrote | Layer 1/2 | e.g. the gutter refusal names the gutter, not `ViewportWidth` |
+| **ERR-9** | MUST | The grid imports its script, and each UI package links its stylesheet, at an address that changes with the shipped file's content: the host's fingerprinted address where `Assets` knows it, else the plain one with the first twelve hex digits of the file's SHA-256 (or the hash in the file's name, if ADR-0123's measurement of GitHub Pages' CDN so decides). A deploy of a new version is therefore met with the new files on a normal reload, in a Blazor Web App and in a standalone WebAssembly app on GitHub Pages' headers ([ADR-0123](adr/0123-shipped-scripts-and-stylesheets-are-minified-and-each-package-asks-for-the-files-it-was-built-with.md), 2026-10-11) | Layer 1/2: the address per hosting model, the hash `ShippedAssetTests` checks; Layer 3: a standalone app served with `max-age=600`, its files swapped for another version's, then a normal reload | the new script and the new stylesheet run beside the new assemblies; no hard refresh |
+| **ERR-10** | MUST | A script that is not the one the grid was built with, or none, is refused before anything attaches: the grid shows, in the built-in Chrome's words and in its live region, that the page holds another version's script and is to be reloaded, and never sits busy and silent (ADR-0123, ADR-0021's note of 2026-10-11) | Layer 2: a module answering another stamp, no stamp, and no module; Layer 3: the same with a stale script served | the refusal shown and announced once; nothing attached; no console exception |
+| **ERR-11** | MUST | A stylesheet of another version shows the product's notice, by the stylesheet's own rules and with no script; the matching stylesheet hides it, and a stylesheet not yet loaded shows nothing (ADR-0123) | Layer 2: the notice element and its stamp per product; Layer 3: the notice hidden with the matching stylesheet, shown with another version's | as stated, for each of the six UI packages |
 
 ---
 
@@ -859,7 +862,7 @@ when a step cannot be run.
 **A check that reads a shipped script or stylesheet reads its source, in `src/<Package>/Assets/`**
 — `ex-grid.js` and `ex-grid.css` are `src/ExGrid/Assets/ex-grid.js` and `src/ExGrid/Assets/ex-grid.css`
 wherever a row names them. `wwwroot` holds only the minified builds and their source maps
-([ADR-0123](adr/0123-shipped-scripts-and-stylesheets-are-minified-and-their-freshness-is-the-consumers.md)),
+([ADR-0123](adr/0123-shipped-scripts-and-stylesheets-are-minified-and-each-package-asks-for-the-files-it-was-built-with.md)),
 which `ShippedAssetTests` holds to those sources: grepped, a minified file is one long line and a
 source map carries the comments, so a check there misses or mis-finds. *(Added 2026-10-11, decided
 with the user, when the rows that read `wwwroot` were restated.)*
