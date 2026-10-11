@@ -1,0 +1,134 @@
+@using System.Globalization
+@using System.Text
+@using System.Text.Json
+@using ExGrid.Columns
+
+<MudExGridPaper Elevation="0" Outlined="true">
+    <ToolBarContent>
+        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="Save">Save the view</MudButton>
+        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="Reset">Reset</MudButton>
+        <MudButton Size="Size.Small" Variant="Variant.Text" Disabled="@(_saved is null)" OnClick="Restore">Restore the saved view</MudButton>
+        <MudSpacer />
+        <MudText Typo="Typo.body2" role="status">@_said</MudText>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="Position" Source="_source" Columns="_columns" PinnedColumnCount="_pinned"
+                OnColumnWidthChanged="OnWidthChanged" OnColumnOrderChanged="OnOrderChanged" OnPinnedCountChanged="OnPinned"
+                Chrome="_chrome" ViewportHeight="260" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+@if (_saved is not null)
+{
+    <MudPaper Outlined="true" Class="mt-2 pa-2" Style="max-height: 220px; overflow: auto">
+        <pre style="margin: 0; font-size: 12px">@Indented(_saved)</pre>
+    </MudPaper>
+}
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static readonly GridColumn<Position>[] All =
+    [
+        new("Id", ColumnType.Number, p => p.Id, width: Fixed(70), align: CellAlign.Left),
+        new("Instrument", ColumnType.Text, p => p.Instrument),
+        new("Desk", ColumnType.Text, p => p.Desk, width: Fixed(100)),
+        new("Trader", ColumnType.Text, p => p.Trader),
+        new("Quantity", ColumnType.Number, p => p.Quantity, width: Fixed(100), format: v => ((int)v).ToString("N0", Invariant)),
+        new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", width: Fixed(120), format: v => ((decimal)v).ToString("N2", Invariant)),
+        new("TradeDate", ColumnType.Date, p => p.TradeDate, header: "Trade date", width: Fixed(130), dateType: DateType.DateOnly),
+        new("Hedged", ColumnType.Boolean, p => p.Hedged, width: Fixed(96)),
+    ];
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+
+    // The View State is yours: the order, the widths and the pinned count here, the sort and the
+    // filter in the source. The grid only reports the gestures.
+    private List<string> _order = [.. All.Select(c => c.Name)];
+    private Dictionary<string, ColumnWidth> _widths = [];
+    private IReadOnlyList<GridColumn<Position>> _columns = All;
+    private int _pinned = 1;
+
+    // What your application keeps for the user: in local storage, or in a settings table.
+    private string? _saved;
+    private string? _said;
+
+    private void Save()
+    {
+        _saved = GridViewStateJson.Write(GridViewState.Of(_columns, _pinned, _source.Sorts, _source.Filter));
+        _said = "Saved.";
+    }
+
+    private void Restore()
+    {
+        GridViewState view;
+        try
+        {
+            // Told every column the grid can show: a stored view that names one it no longer has,
+            // or holds anything else it cannot read, is refused by name.
+            view = GridViewStateJson.Read(_saved!, All.Select(c => c.Name));
+        }
+        catch (JsonException refused)
+        {
+            _said = refused.Message;
+            return;
+        }
+        _order = [.. view.Columns.Select(c => c.Column)];
+        _widths = view.Columns.ToDictionary(c => c.Column, c => c.Width);
+        _pinned = view.PinnedColumnCount;
+        Rebuild();
+        _source.OnSortChanged(view.Sorts);
+        _source.OnFilterChanged(view.Filter);
+        _said = "Restored.";
+    }
+
+    private void Reset()
+    {
+        _order = [.. All.Select(c => c.Name)];
+        _widths = [];
+        _pinned = 1;
+        Rebuild();
+        _source.OnSortChanged([]);
+        _source.OnFilterChanged(null);
+        _said = null;
+    }
+
+    private void OnWidthChanged(ColumnWidthChange change)
+    {
+        _widths[change.Column] = ColumnWidth.Fixed(change.WidthPx);
+        Rebuild();
+    }
+
+    private void OnOrderChanged(IReadOnlyList<string> order)
+    {
+        _order = [.. order, .. _order.Where(name => !order.Contains(name))];
+        Rebuild();
+    }
+
+    private void OnPinned(int count) => _pinned = count;
+
+    // A new list each time something changed: the list instance is what tells the grid.
+    private void Rebuild() => _columns = [.. _order.Select(name => Sized(All.First(c => c.Name == name)))];
+
+    // A column at the width the user gave it — Fixed after a drag, or as the stored view holds it,
+    // where Auto stays Auto and measures itself again.
+    private GridColumn<Position> Sized(GridColumn<Position> column)
+        => _widths.TryGetValue(column.Name, out var width) && width != column.Width.Width
+            ? new(column.Name, column.Type, column.Value, column.Header,
+                new ColumnWidthSpec(width, column.Width.MinWidthPx, column.Width.MaxWidthPx),
+                align: column.Align, format: column.Format,
+                dateType: column.Type == ColumnType.Date ? column.DateType : null)
+            : column;
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+
+    // The stored text, laid out to read.
+    private static string Indented(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        using var buffer = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+            document.WriteTo(writer);
+        return Encoding.UTF8.GetString(buffer.ToArray());
+    }
+}
