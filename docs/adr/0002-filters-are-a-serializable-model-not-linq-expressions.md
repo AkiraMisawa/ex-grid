@@ -33,6 +33,10 @@ internals, which is what happens when the grid owns state the Consumer needs to 
 
 ## Consequences
 
+*(2026-10-11, decided with the user: the model round-trips through an entry point of ExGrid's own, each
+operand carrying its type — [ADR-0207](./0207-the-view-state-travels-as-json-through-an-entry-point-of-exgrids-own-each-operand-with-its-type.md). A test found that an untyped operand read
+back as a `JsonElement`, equal to nothing.)*
+
 - **There is an escape hatch alongside, for conditions the model cannot express.** An **Opaque
   Filter** sits next to the structured filter. The grid renders UI only for the former and passes
   the latter through untouched. It exists for conditions that no general model should carry.

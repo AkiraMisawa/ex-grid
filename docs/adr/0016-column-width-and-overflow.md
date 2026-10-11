@@ -68,6 +68,9 @@ actual value, not `####`.**
 This is what resolves the objection to "widen automatically" above. **A width decided
 automatically is not persisted**, so a saved view is never rewritten behind the user's back; what
 is persisted is the intent.
+*(2026-10-11, decided with the user, [ADR-0207](./0207-the-view-state-travels-as-json-through-an-entry-point-of-exgrids-own-each-operand-with-its-type.md): in the View State's JSON a width is
+`"Auto"` or a number of pixels, written and read by ExGrid's own entry point, and anything else is
+refused by name.)*
 
 **`MaxWidth` is what gives `####` meaning.** Without an upper bound the column would simply keep
 growing and overflow would never occur.

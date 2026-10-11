@@ -83,6 +83,11 @@ ExSheet's Formulas are typed (ADR-0047, "Observed in Excel").
   `#CIRC!`; if it reads a waiting Linked Table, the `LET` is `#GETTING_DATA`. Excel shows neither as a
   Value, and was not asked.
 
+*(2026-10-11, decided with the user: **a name is refused if it is the name of any of Excel's functions**,
+not only of one ExSheet declares, as the catalogue in `docs/specs/exsheet-functions/spec.md` lists them.
+Refusing only the declared ones would let a Sheet saved today with `LET(IRR, …)` stop opening on the
+day `IRR` is declared.)*
+
 ## Considered options
 
 - **Microsoft's documented name rules.** Rejected. They call `c` invalid, which Excel's keyboard
