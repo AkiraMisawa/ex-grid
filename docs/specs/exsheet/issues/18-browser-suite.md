@@ -1,6 +1,6 @@
 # 18: ExSheet in real browsers
 
-Status: done — but for Edge, which only CI runs
+Status: done
 
 **What to build:** Layer 3 for everything above, on Chrome and Edge, against both hosts. It covers typing, Point by
 keys and by mouse, completion accepted with Tab, the Formula Bar mirroring, the fill-handle drag,
@@ -206,3 +206,7 @@ as it was painted.
   passed at 100% and 150%.
 - With the pixel taken out again, in a scratch copy, the sweep still fails, in either antialiasing: at
   150% under both Chromes, and at 100% at D2 under the built-in one.
+
+*(2026-10-11, CI on 16dd712.)* CI's run of 16dd712 (38131122358) passed layer 3 on Edge as well as
+Chrome, on both hosts. It also passed SH-41's sweep in `chrome-150`, and ran the spec files this
+branch changed three times on each browser and host. Edge was what was left, so the ticket is done.
