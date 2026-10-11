@@ -745,7 +745,12 @@ nobody had asked for. What that means when writing a test:
   asks the server nothing, and asks once, for the rows on screen and 60 either side, as the tenth row
   below the rows on screen leaves the Window while every row on screen is still held — counted in the
   page's own tally of questions, never timed, behind the latency proxy on the Server host, and with the
-  Window each question names read from the request on WebAssembly (LV-34, FN-3a, ADR-0182/0183); and a
+  Window each question names read from the request on WebAssembly (LV-34, FN-3a, ADR-0182/0183); on
+  WebAssembly, the question asked early, its answer held behind a gate the test opens (a route, never a
+  timer), stays in flight while the report scrolls past the Window held and within the question's, the
+  report undimmed until rows on screen wait for it, and once it lands one question more is asked, ten
+  rows before the new Window runs out (the Server host asks the demo API from the server, where no
+  route can hold it); and a
   whole-column Copy and Selection Summary of a remote report include the rows
   outside the Window and equal the local report's (LV-28). **Run once per Chrome**: its trades read over
   Arrow into a Snapshot the page pivots in its own process, at the version `/api/status` names, and

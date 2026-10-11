@@ -284,7 +284,9 @@ public partial class ExPivot
     /// <param name="force">Ask even when the answer held would lay the layout out: a new source,
     /// new caps, Refresh, Retry, a change of data.</param>
     /// <param name="kind">What the question is for.</param>
-    private async Task PursueAsync(bool raise, bool force = false, Question kind = Question.Layout)
+    /// <param name="quiet">Asked without the loading indication: a Window asked for early, while
+    /// every row on screen is held, which nothing on screen waits for (ADR-0183).</param>
+    private async Task PursueAsync(bool raise, bool force = false, Question kind = Question.Layout, bool quiet = false)
     {
         var source = _source!;
         var layout = _layout;
@@ -315,7 +317,7 @@ public partial class ExPivot
         _askingCarries = carried || _changed || kind is Question.Data or Question.Live;
         _changed = false;
         DisarmRedraw();
-        SetLoading(kind != Question.Live);
+        SetLoading(kind != Question.Live && !quiet);
         _ = AskWindowAsync(source, layout, generation, asking, raise, kind);
         StateHasChanged();
     }
@@ -497,12 +499,24 @@ public partial class ExPivot
     /// Window held covers, with the grid's margin either side, asks nothing; the grid asks again
     /// once a Window lands, if the margin is still not all in it (ADR-0183). Each answer is checked
     /// against the Window asked for, whose rows include the range (ADR-0152).
+    /// <para>A Window asked for early, while every row on screen is held, is asked quietly: nothing on
+    /// screen waits for it, and a report dimmed at every Window's edge would flicker, as a live one
+    /// would (ADR-0067). Once the rows on screen leave the Window held while it is out, they wait
+    /// for it, under the loading indication, as they do for a Window asked once they had left.</para>
     /// </summary>
     private Task WindowNeededAsync(RowRange range)
     {
         var rows = (long)(_report?.RowCount ?? int.MaxValue);
-        if (_asking is not null && Covers(_wantedWindow, Widened(range, 0, rows)))
+        var onScreen = Widened(range, 0, rows);
+        if (_asking is not null && Covers(_wantedWindow, onScreen))
+        {
+            if (!_loading && !Holds(onScreen))
+            {
+                SetLoading(true);
+                StateHasChanged();
+            }
             return Task.CompletedTask;
+        }
         if (_asking is null && _state?.Window is { } held && Covers(held, Widened(range, RangeRequestMargin, rows)))
         {
             // Later questions ask for the Window shown, which holds the rows on screen.
@@ -510,8 +524,11 @@ public partial class ExPivot
             return Task.CompletedTask;
         }
         _wantedWindow = Widened(range, ReadAhead, rows);
-        return PursueAsync(raise: _raisePending, kind: Question.Window);
+        return PursueAsync(raise: _raisePending, kind: Question.Window, quiet: Holds(onScreen));
     }
+
+    /// <summary>Whether the Window held, the one the grid paints, holds <paramref name="range"/>.</summary>
+    private bool Holds(PivotReportWindow range) => _state?.Window is { } held && Covers(held, range);
 
     private static bool Covers(PivotReportWindow window, PivotReportWindow range)
         => range.Start >= window.Start && (long)range.Start + range.Count <= (long)window.Start + window.Count;

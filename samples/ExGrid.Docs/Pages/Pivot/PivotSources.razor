@@ -10,7 +10,8 @@
             ExPivot requests a report Window and the metadata describing its full extent. Local data is
             calculated by the same engine that a server uses. A slow answer leaves the report under its loading
             indication, and a newer question cancels the older one, unless the older one is for a Window that
-            already holds the rows now on screen. Copy and Selection Summary can include rows outside the Window,
+            already holds the rows now on screen. A question asked for newer data the source announced, or for a
+            Window asked early while every row on screen is held, leaves the report undimmed. Copy and Selection Summary can include rows outside the Window,
             and name the Report Version they answer; Show Details names the Source Version the report was computed
             from.
         </p>
@@ -105,8 +106,10 @@
                 read ahead is a row of every column, in each answer and in each live update, so a wide report may want
                 fewer, and a slow network more. <code>0</code> asks for exactly the rows on screen. A report computed in
                 the page, <code>PivotSource.From</code> or <code>PivotReportSource.From</code>, has no round trip to hide
-                and reads nothing ahead. An answer is the Window asked for: one that is not, a relay that caps or moves it,
-                is refused, naming the rows asked and the rows answered, and the report stays as it was.
+                and reads nothing ahead. A Window asked for early, while every row on screen is held, does not dim the
+                report: nothing you see is waiting for it. Only rows on screen that wait for an answer bring the loading
+                indication. An answer is the Window asked for: one that is not, a relay that caps or moves it, is refused,
+                naming the rows asked and the rows answered, and the report stays as it was.
             </li>
             <li>
                 Once a Window is on screen, a server sends <strong>Window Changes</strong> in place of the whole Window: the rows that

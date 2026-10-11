@@ -256,6 +256,10 @@ public sealed class ReportReadAheadTests : PivotTestContext
         var onScreen = OnScreen(remote.Cut);
         remote.Cut.WaitForAssertion(() => Assert.Equal(new PivotReportWindow(440, onScreen + 120), remote.Last));
         var before = remote.Count;
+        // Asked once the rows on screen had left the Window held: they wait for it, under the
+        // loading indication (ADR-0066).
+        Assert.True(remote.Cut.Instance.IsLoading);
+        Assert.True(Grid(remote.Cut).Instance.IsLoading);
 
         // Far past the Window asked for: it covers none of the rows on screen, so another question
         // replaces it, and its answer is what is shown.
@@ -263,7 +267,50 @@ public sealed class ReportReadAheadTests : PivotTestContext
         Assert.Equal(before + 1, remote.Count);
         Assert.Equal(new PivotReportWindow(740, onScreen + 120), remote.Last);
         Assert.Equal(740, Grid(remote.Cut).Instance.WindowStart);
+        Assert.False(remote.Cut.Instance.IsLoading);
         hold.SetResult();
+        NoExceptionReachedTheRenderer();
+    }
+
+    [Fact] // ADR-0183 (LV-34, FN-3a): a Window asked early, every row on screen held, is asked without the loading indication; once the rows on screen leave the Window held while it is out, they wait for it under the indication
+    public async Task ADR0183_LV34_A_Window_asked_early_is_asked_quietly_until_the_rows_on_screen_leave_the_Window_held()
+    {
+        TaskCompletionSource? hold = null;
+        await using var remote = RenderRemote(answerWhen: request => hold is { } held && request.Window.Start == 491 ? held.Task : Task.CompletedTask);
+        await ScrollToRowAsync(remote.Cut, 500);
+        remote.Cut.WaitForAssertion(() => Assert.Equal(440, Grid(remote.Cut).Instance.WindowStart));
+        var onScreen = OnScreen(remote.Cut);
+        Assert.False(remote.Cut.Instance.IsLoading);
+
+        // Ten rows before the Window's end: rows 491 on are asked for, and the answer held. Nothing on
+        // screen waits for it, and the report is not dimmed.
+        hold = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        var before = remote.Count;
+        await ScrollToRowAsync(remote.Cut, 550);
+        await ScrollToRowAsync(remote.Cut, 551);
+        remote.Cut.WaitForAssertion(() => Assert.Equal(before + 1, remote.Count));
+        Assert.False(remote.Cut.Instance.IsLoading);
+        Assert.False(Grid(remote.Cut).Instance.IsLoading);
+
+        // Down to the Window held's last row: still every row on screen held, still quiet.
+        var last = 440 + onScreen + 120 - onScreen;
+        await ScrollToRowAsync(remote.Cut, last);
+        Assert.False(remote.Cut.Instance.IsLoading);
+        Assert.False(Grid(remote.Cut).Instance.IsLoading);
+
+        // One row on: the last row on screen is not held, and waits for the question out — the one
+        // asked early, still in flight — under the loading indication.
+        await ScrollToRowOrPlaceholderAsync(remote.Cut, last + 1);
+        remote.Cut.WaitForAssertion(() => Assert.True(Grid(remote.Cut).Instance.IsLoading));
+        Assert.True(remote.Cut.Instance.IsLoading);
+        Assert.Equal(before + 1, remote.Count);
+
+        // It lands: the rows are painted, and the indication goes.
+        hold.SetResult();
+        remote.Cut.WaitForAssertion(() => Assert.Equal(491, Grid(remote.Cut).Instance.WindowStart));
+        remote.Cut.WaitForAssertion(() => Assert.False(Grid(remote.Cut).Instance.IsLoading));
+        Assert.False(remote.Cut.Instance.IsLoading);
+        Assert.Empty(Grid(remote.Cut).FindAll(".ex-viewport .ex-placeholder"));
         NoExceptionReachedTheRenderer();
     }
 

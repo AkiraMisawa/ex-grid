@@ -8,7 +8,8 @@ namespace ExGrid.Docs.Examples.Grid;
 /// rows asked for and <see cref="ReadAhead"/> either side. A question in flight whose rows cover the
 /// rows on screen is kept rather than asked again (ADR-0182): replacing it at every scroll would
 /// restart the round trip for as long as a key is held. It counts the questions, and how many of
-/// them found every row on screen already held.
+/// them found every row on screen already held. A question asked early is asked quietly: the grid
+/// is dimmed only while rows on screen wait for an answer.
 /// </summary>
 public sealed class ReadAheadTrades
 {
@@ -31,8 +32,10 @@ public sealed class ReadAheadTrades
     /// <summary>Where <see cref="Window"/> starts among the million.</summary>
     public int WindowStart { get; private set; }
 
-    /// <summary>Whether a question is out.</summary>
-    public bool IsLoading => _asked is not null;
+    /// <summary>Whether rows on screen wait for the question out: the grid's loading indication.
+    /// A question asked while every row on screen is held raises none, or the grid would dim at
+    /// every Window's edge with nothing on screen missing.</summary>
+    public bool IsLoading { get; private set; }
 
     /// <summary>Questions asked while every row on screen was held: asked early.</summary>
     public int Early { get; private set; }
@@ -46,12 +49,18 @@ public sealed class ReadAheadTrades
     /// <summary>The grid's Range Request: it names the rows on screen, early or not.</summary>
     public async Task RangeNeededAsync(RowRange range)
     {
+        var held = Covers(WindowStart, Window.Count, range);
         if (_asked is { } inFlight && Covers(inFlight.Start, inFlight.Count, range))
+        {
+            // Kept; but once the rows on screen leave the rows held, they wait for it.
+            IsLoading |= !held;
             return;
-        if (Covers(WindowStart, Window.Count, range))
+        }
+        if (held)
             Early++;
         else
             Late++;
+        IsLoading = !held;
         var start = Math.Max(0, range.Start - ReadAhead);
         var end = Math.Min(MillionTrades.Count, range.Start + range.Count + ReadAhead);
         var asked = (start, end - start);
@@ -64,6 +73,7 @@ public sealed class ReadAheadTrades
         Window = MillionTrades.Range(start, end - start);
         WindowStart = start;
         _asked = null;
+        IsLoading = false;
     }
 
     private static bool Covers(int start, int count, RowRange range)
