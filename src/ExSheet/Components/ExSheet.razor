@@ -524,6 +524,7 @@
             _cultureParameter = Culture;
             Open(Document);
             FollowTheDayParameters();
+            FollowTheSeedParameter();
             RefreshToolbar();
             return;
         }
@@ -548,6 +549,7 @@
         // Widths are recorded in characters; the pixels they paint at follow the Cell Metrics.
         if (_columns.Metrics is { } metrics && !metrics.Equals(CellMetrics)) _columns = SheetColumnList.Of(CurrentSheet, CellMetrics);
         FollowTheDayParameters();
+        FollowTheSeedParameter();
         RefreshToolbar();
     }
 
@@ -563,6 +565,7 @@
     protected override async Task OnParametersSetAsync()
     {
         await PaintTheDayAsync();
+        await PaintTheSeedAsync();
         if (!_documentReplaced) return;
         _documentReplaced = false;
         // Opened by the Consumer's answer to a write the Sheet is hearing: the edit that write ends
@@ -1098,6 +1101,8 @@
         _sheet = document is null ? new Sheet(Culture ?? CultureInfo.CurrentCulture) : Sheet.Open(document);
         // A Sheet opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
         GiveTheDay(_sheet);
+        // Nor a seed: the Consumer's, or one chosen now, at a count of 0 changes (ADR-0180).
+        GiveTheSeed(_sheet);
         _edges = SheetEdges.Of(_sheet);
         _history.Clear();
         _resizing = null;

@@ -80,7 +80,66 @@
                 <code>IFERROR</code> and <code>ISERROR</code>: a fallback never stands in for data that has not
                 arrived. See <MudLink Href="exsheet/linked-tables">Linked Tables</MudLink>.
             </li>
+            <li>
+                <b><code>ERROR.TYPE</code></b> numbers Excel's seven Error Values as Microsoft's table does, but gives
+                <code>#GETTING_DATA</code> and <code>#CIRC!</code> back instead of a number, so that nothing shows a
+                figure while its data is on its way. An Error Value outside the table, such as <code>#SPILL!</code>
+                or <code>#CALC!</code>, is <code>#VALUE!</code> until Excel has been asked what it gives.
+            </li>
+            <li>
+                <b><code>SUBTOTAL</code> and <code>AGGREGATE</code></b> answer while a Sheet cannot hide a row, so
+                <code>SUBTOTAL</code>'s 101 to 111 give what 1 to 11 give, as Excel's do when nothing is hidden.
+                <code>SUBTOTAL</code> passes over a cell whose whole Formula is a <code>SUBTOTAL</code>, and
+                <code>AGGREGATE</code>'s options 0 to 3 pass over one whose whole Formula is a <code>SUBTOTAL</code> or
+                an <code>AGGREGATE</code>; any other call of either inside their range is <code>#VALUE!</code>, because
+                Excel does not document which cells it counts as nested. That includes a whole-Formula
+                <code>SUBTOTAL</code> under <code>AGGREGATE</code>'s options 4 to 7, which Microsoft documents as
+                counted, until Excel has been asked. So is an <code>AGGREGATE</code> function number for a function the
+                Sheet does not have, such as 13, <code>MODE.SNGL</code>.
+            </li>
+            <li>
+                <b><code>INDIRECT</code></b> reads A1-style text naming a cell or a range of the same Sheet. Like
+                <code>OFFSET</code> it is recalculated after every change, and its text is only text: inserting a row
+                rewrites the References beside it, never the text. R1C1 text (<code>a1</code> FALSE), a structured
+                reference's text and <code>A1#</code> are <code>#VALUE!</code> until Excel has been asked how it reads
+                them; text that names no place, another Sheet's name included, is <code>#REF!</code>, as in Excel.
+                What <code>INDIRECT</code> or <code>OFFSET</code> reaches counts as a Reference typed in the Formula
+                would: one that reaches its own cell or a circular reference is <code>#CIRC!</code>, and one that
+                reaches data still on its way waits, even under <code>COUNT</code> or an <code>AGGREGATE</code>
+                option that passes over errors.
+            </li>
+            <li>
+                <b><code>LET</code></b> takes the names Excel's keyboard accepts: a letter of any script or
+                <code>_</code>, then letters, digits and <code>_</code>, at most 249 characters, and at most 126
+                of them. A name that could mean something else — <code>A1</code>, an R1C1 shape such as
+                <code>R2</code>, the name of any of Excel's functions (<code>rate</code> and <code>n</code> among
+                them, whether this engine has the function or not), <code>TRUE</code> — is refused as the Formula is typed, as a
+                Formula that cannot be read is, because Excel's keyboard was not seen to accept it; so are a
+                name bound twice and a missing calculation. A binding is computed only when its name is read,
+                but the <code>LET</code> still depends on everything its text names, so an unused binding over
+                a cycle shows <code>#CIRC!</code> and one over a Linked Table still on its way waits.
+            </li>
+            <li>
+                <b><code>RAND</code> and <code>RANDBETWEEN</code></b> draw from the Sheet Seed. Each draw is made from
+                the seed, the cell, which call in its Formula it is and how many changes the Sheet has had since it
+                was opened, so every edit, insertion, deletion, undo, redo, Linked Table snapshot and Linked Table
+                declaration draws again,
+                while the clock, a format or a width draws nothing. Unlike Excel, nothing draws without a change.
+                Renaming the Sheet is not a change: it recalculates what <code>INDIRECT</code> reads by the Sheet's
+                name, and the draws come out the same; whether Excel draws again on a rename has not been observed yet.
+                An undo draws again rather than bringing back the draws it undoes; what Excel's undo does to a
+                draw has not been observed yet. <code>RANDBETWEEN</code>
+                refuses a fractional bound, and one past 2<sup>53</sup>, with <code>#VALUE!</code>.
+            </li>
         </ul>
+        <DocsExample Title="A seeded simulation" Builtin="typeof(SeededDraws)" Mud="typeof(SeededDrawsMud)" Files="@(["Examples/Sheet/DiceRolls.cs"])">
+            <code>Seed</code> fixes the Sheet Seed, so the same draws show whenever the document is opened: reload the
+            page and they are back. Type into any cell and every draw changes, together with everything that reads it;
+            undo, and they change again. Without <code>Seed</code>, ExSheet chooses a seed each time it opens a document;
+            a prerendered page chooses none, and its drawing cells show <code>#GETTING_DATA</code> until the page is
+            interactive, as <code>TODAY()</code> waits for the browser's time zone, so no draw changes with nothing done.
+            Neither the seed nor a draw is saved in the Sheet Document.
+        </DocsExample>
     </DocsSection>
 
     <DocsSection Title="Completion, hints and pointing">

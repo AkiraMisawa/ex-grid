@@ -6,7 +6,7 @@ namespace ExSheet.Engine;
 public sealed partial class Sheet
 {
     /// <summary>The functions whose answer can change while no cell their Formula names changes.</summary>
-    private static readonly HashSet<string> VolatileFunctions = new(StringComparer.Ordinal) { "NOW", "OFFSET" };
+    private static readonly HashSet<string> VolatileFunctions = new(StringComparer.Ordinal) { "NOW", "OFFSET", "INDIRECT", "RAND", "RANDBETWEEN" };
 
     /// <summary>The Formula cells that call a volatile function.</summary>
     private readonly HashSet<CellAddress> _volatileFormulas = [];

@@ -103,6 +103,7 @@ internal static partial class FunctionLibrary
         new("IFS", 2, 254, "logical_test1, value_if_true1, ...", "Checks whether one or more conditions are met, and returns a value that corresponds to the first TRUE condition.", Ifs) { InPairs = true },
         new("SWITCH", 3, 254, "expression, value1, result1, [default_or_value2], [result2], ...", "Evaluates an expression against a list of values, and returns the result corresponding to the first matching value.", Switch),
         new("NA", 0, 0, "", "Returns the error value #N/A.", Na),
+        new("ERROR.TYPE", 1, 1, "error_val", "Returns a number corresponding to an error type.", ErrorType),
         new("XMATCH", 2, 4, "lookup_value, lookup_array, [match_mode], [search_mode]", "Returns the relative position of an item in an array or range of cells.", XMatch),
         new("CHOOSE", 2, Open, "index_num, value1, [value2], ...", "Chooses a value from a list of values.", Choose),
         new("ROW", 0, 1, "[reference]", "Returns the row number of a reference.", Row),
@@ -133,6 +134,49 @@ internal static partial class FunctionLibrary
         new("VAR.S", 1, Open, "number1, [number2], ...", "Estimates variance based on a sample.", VarS),
         new("VAR.P", 1, Open, "number1, [number2], ...", "Calculates variance based on the entire population.", VarP),
         new("XOR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if an odd number of its arguments are TRUE.", Xor),
+        new("SUBTOTAL", 2, Open, "function_num, ref1, [ref2], ...", "Returns a subtotal in a list or database.", Subtotal)
+        {
+            // Excel's list, as Microsoft documents it: the functions 1 to 11, and 101 to 111 that pass
+            // over hidden rows (ADR-0047, 2026-10-10; a Sheet cannot hide a row yet).
+            Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
+            {
+                [0] =
+                [
+                    new("1", "1 - AVERAGE"), new("2", "2 - COUNT"), new("3", "3 - COUNTA"), new("4", "4 - MAX"),
+                    new("5", "5 - MIN"), new("6", "6 - PRODUCT"), new("7", "7 - STDEV"), new("8", "8 - STDEVP"),
+                    new("9", "9 - SUM"), new("10", "10 - VAR"), new("11", "11 - VARP"),
+                    new("101", "101 - AVERAGE"), new("102", "102 - COUNT"), new("103", "103 - COUNTA"), new("104", "104 - MAX"),
+                    new("105", "105 - MIN"), new("106", "106 - PRODUCT"), new("107", "107 - STDEV"), new("108", "108 - STDEVP"),
+                    new("109", "109 - SUM"), new("110", "110 - VAR"), new("111", "111 - VARP"),
+                ],
+            },
+        },
+        new("AGGREGATE", 3, Open, "function_num, options, ref1, [ref2], ...", "Returns an aggregate in a list or database.", Aggregate)
+        {
+            // The functions the engine supports, of Excel's nineteen (13 and 16 to 19 are #VALUE!), and
+            // the eight options, as Microsoft documents them (ADR-0047, 2026-10-10).
+            Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
+            {
+                [0] =
+                [
+                    new("1", "1 - AVERAGE"), new("2", "2 - COUNT"), new("3", "3 - COUNTA"), new("4", "4 - MAX"),
+                    new("5", "5 - MIN"), new("6", "6 - PRODUCT"), new("7", "7 - STDEV.S"), new("8", "8 - STDEV.P"),
+                    new("9", "9 - SUM"), new("10", "10 - VAR.S"), new("11", "11 - VAR.P"), new("12", "12 - MEDIAN"),
+                    new("14", "14 - LARGE"), new("15", "15 - SMALL"),
+                ],
+                [1] =
+                [
+                    new("0", "0 - Ignore nested SUBTOTAL and AGGREGATE functions"),
+                    new("1", "1 - Ignore hidden rows, nested SUBTOTAL and AGGREGATE functions"),
+                    new("2", "2 - Ignore error values, nested SUBTOTAL and AGGREGATE functions"),
+                    new("3", "3 - Ignore hidden rows, error values, nested SUBTOTAL and AGGREGATE functions"),
+                    new("4", "4 - Ignore nothing"),
+                    new("5", "5 - Ignore hidden rows"),
+                    new("6", "6 - Ignore error values"),
+                    new("7", "7 - Ignore hidden rows and error values"),
+                ],
+            },
+        },
         new("ROWS", 1, 1, "array", "Returns the number of rows in a reference.", Rows),
         new("COLUMNS", 1, 1, "array", "Returns the number of columns in a reference.", Columns),
         new("SIGN", 1, 1, "number", "Returns the sign of a number: 1, 0 or -1.", Sign),
@@ -150,13 +194,17 @@ internal static partial class FunctionLibrary
         new("XNPV", 3, 3, "rate, values, dates", "Returns the net present value for a schedule of cash flows that is not necessarily periodic.", XNpv),
         new("VALUE", 1, 1, "text", "Converts a text argument to a number, read under the Sheet's culture.", ValueOf),
         new("NOW", 0, 0, "", "Returns the serial number of the current date and time.", Now),
+        new("RAND", 0, 0, "", "Returns a random number from 0 up to 1, drawn from the Sheet Seed.", Rand),
+        new("RANDBETWEEN", 2, 2, "bottom, top", "Returns a random whole number between the numbers you specify, drawn from the Sheet Seed.", RandBetween),
         new("OFFSET", 3, 5, "reference, rows, cols, [height], [width]", "Returns a reference offset from a given reference.", Offset),
+        new("INDIRECT", 1, 2, "ref_text, [a1]", "Returns a reference indicated by a text value.", Indirect),
         new("FILTER", 2, 3, "array, include, [if_empty]", "Filters a range of data based on criteria you define.", Filter),
         new("UNIQUE", 1, 3, "array, [by_col], [exactly_once]", "Returns a list of unique values in a list or range.", Unique),
         new("SORT", 1, 4, "array, [sort_index], [sort_order], [by_col]", "Sorts the contents of a range or array.", Sort),
         new("SORTBY", 2, Open, "array, by_array1, [sort_order1], ...", "Sorts the contents of a range or array based on the values in a corresponding range or array.", SortBy),
         new("SEQUENCE", 1, 4, "rows, [columns], [start], [step]", "Generates a list of sequential numbers in an array.", Sequence),
         new("TRANSPOSE", 1, 1, "array", "Returns the transpose of an array.", Transpose),
+        new("LET", 3, 253, "name1, name_value1, calculation_or_name2, [name_value2, calculation_or_name3...]", "Assigns names to calculation results, to be used inside the Formula.", Let),
         new("SUMPRODUCT", 1, Open, "array1, [array2], ...", "Returns the sum of the products of corresponding array components.", SumProduct),
         new("LOG", 1, 2, "number, [base]", "Returns the logarithm of a number to the base you specify.", Log),
         new("SIN", 1, 1, "number", "Returns the sine of an angle.", Sin),
@@ -253,8 +301,15 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
-        // SUM's last addition cancels as a Formula's final addition does (ADR-0047, second run:
-        // =SUM(0.1,0.2,-0.3) is 0), wherever SUM stands in the Formula.
+        return SumOf(numbers);
+    }
+
+    /// <summary>
+    /// SUM of the numbers taken. Its last addition cancels as a Formula's final addition does
+    /// (ADR-0047, second run: <c>=SUM(0.1,0.2,-0.3)</c> is 0), wherever SUM stands in the Formula.
+    /// </summary>
+    private static Operand SumOf(List<double> numbers)
+    {
         var total = 0.0;
         for (var i = 0; i < numbers.Count; i++) total = i == numbers.Count - 1 ? Arithmetic.FinalAdd(total, numbers[i]) : total + numbers[i];
         return Operand.Of(Evaluator.Number(total));
@@ -264,6 +319,12 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
+        return AverageOf(numbers);
+    }
+
+    /// <summary>AVERAGE of the numbers taken; with none, <c>#DIV/0!</c>.</summary>
+    private static Operand AverageOf(List<double> numbers)
+    {
         if (numbers.Count == 0) return Operand.Of(ErrorValue.Div0);
         var total = 0.0;
         foreach (var n in numbers) total += n;
@@ -274,15 +335,21 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
-        return Operand.Of(Value.FromNumber(numbers.Count == 0 ? 0 : numbers.Min()));
+        return MinOf(numbers);
     }
+
+    /// <summary>MIN of the numbers taken; with none, 0.</summary>
+    private static Operand MinOf(List<double> numbers) => Operand.Of(Value.FromNumber(numbers.Count == 0 ? 0 : numbers.Min()));
 
     private static Operand Max(FunctionCall call)
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
-        return Operand.Of(Value.FromNumber(numbers.Count == 0 ? 0 : numbers.Max()));
+        return MaxOf(numbers);
     }
+
+    /// <summary>MAX of the numbers taken; with none, 0.</summary>
+    private static Operand MaxOf(List<double> numbers) => Operand.Of(Value.FromNumber(numbers.Count == 0 ? 0 : numbers.Max()));
 
     // ---- COUNT, COUNTA ---------------------------------------------------------------------
 
