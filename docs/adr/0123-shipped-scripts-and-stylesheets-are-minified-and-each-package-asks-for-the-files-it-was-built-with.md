@@ -80,6 +80,8 @@ What happens today was measured on 2026-10-11:
     In place of its rows it shows, in the built-in Chrome's words (ADR-0203) and in its live region
     (ADR-0033), that the page holds another version's script and is to be reloaded.
   - A script that does not load at all is shown the same way, never left busy.
+  - A grid that refused its script is neither busy nor a tab stop. It waits for nothing, and nothing
+    would hear a key (ADR-0033).
   - The outcome depends on what arrived, never on timing or on a cache: the DLL carries what it was
     built against, and refuses the script when that no longer holds. A caller that is still wrong, such
     as a CDN that ignores the query or a tab opened before the deploy, is caught by this.
@@ -92,10 +94,26 @@ What happens today was measured on 2026-10-11:
     nothing, so there is no flash on a cold load. A missing stylesheet leaves the grid visibly unstyled,
     which is not plausible.
   - The notice's appearance is Visual Tokens (ADR-0028); no colour comes from C#.
+  - **A Wrapper's stylesheet is checked the same way.** The Wrappers have no root element of their
+    own (ADR-0062), so each Chrome declares the stylesheets it brings: a default interface member,
+    empty for the built-in Chrome. The product's root renders a notice for each, beside its own.
+    *(2026-10-11, at the implementation. The other ways were rejected: a notice in `MudExGridPaper`
+    reaches only one of the three Wrappers, and a notice inside a seam such as the toolbar fails
+    when a Consumer fills that seam.)*
+  - **The notice's markup is a contract between versions, and never changes.** A stylesheet of one
+    version has to find the notice a DLL of any other version renders. So the notice is
+    `data-ex-notice="stylesheet"`, `data-ex-stylesheet="<the file's name>"` and
+    `data-ex-stamp="<the stamp>"`, and the script's is `data-ex-notice="script"`. These are
+    attributes, not classes, so they are on neither of ADR-0029's lists, and no Consumer styles by
+    them. An internal class "may change without notice", which this selector must not.
 - **The address's shape follows a measurement of GitHub Pages' CDN** (decided with the user: measure,
   then decide). Two deploys of the Docs Site, read immediately after the second, show whether the CDN
   serves an old body under a new `?v=`. If it does, the hash goes into the file's name
   (`ex-grid.<hash>.min.js`) instead of the query, and this ADR records the result. Until then, `?v=`.
+  *(Measured on 2026-10-11, between deploys, every 21 seconds for two hours: the CDN's cache key
+  ignores the query. A `?v=` never asked for before is a hit, with the plain address's age. So a new
+  `?v=` meets an old body unless a deploy purges the CDN, and only the two deploys show that. Either
+  way the handshake refuses what arrives, so the outcome is a notice and never a wrong grid.)*
 
 ## What this replaced, and why
 
