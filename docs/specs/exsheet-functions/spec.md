@@ -1,7 +1,8 @@
 # ExSheet's function catalogue
 
-Status: ready-for-agent — tickets 14 to 18 are Ready, decided with the user on 2026-10-10 (item 11
-below). Ticket 13 is Blocked: no algorithm reproduces Excel's, and it is not pursued for now.
+Status: ready-for-human — tickets 14 to 18, decided with the user on 2026-10-10 (item 11 below), are
+built (item 12); what is left is their questions for the next Windows run, which a person runs. Ticket
+13 is Blocked: no algorithm reproduces Excel's, and it is not pursued for now.
 
 The functions ExSheet's engine supports, and the queue of those it may support next, each with its
 status and a priority. **ADR-0047 decides whether a function is admitted; this file only orders the
@@ -254,8 +255,8 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `RAND` | Ready | P3 | Draws from the Sheet Seed, and draws again at each change (ADR-0180). Ticket 15 |
-| `RANDBETWEEN` | Ready | P3 | As `RAND`; a fractional bound and a bound past 2^53 are `#VALUE!` (ADR-0180). Ticket 15 |
+| `RAND` | Supported | — | Draws from the Sheet Seed, and draws again at each change, never on the clock (ADR-0180). Ticket 15 |
+| `RANDBETWEEN` | Supported | — | As `RAND`; a fractional bound and a bound past 2^53 are `#VALUE!` (ADR-0180). Ticket 15 |
 
 ## Order of work
 
@@ -281,6 +282,9 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
     (ADR-0180, ticket 15), `LET` (ADR-0181, ticket 14), `SUBTOTAL` and `AGGREGATE` (ticket 16),
     `ERROR.TYPE` (ticket 17) and `INDIRECT` (ticket 18). Blocked: `IRR`, `XIRR` and `RATE`, which
     are not pursued for now (ticket 13). No row is Decide any more.
+12. **Tickets 14 to 18 built** (2026-10-11): `ERROR.TYPE`, `SUBTOTAL`, `AGGREGATE`, `INDIRECT`, `LET`,
+    `RAND` and `RANDBETWEEN` are Supported. Their `uncertain` cases, and the questions their tickets
+    name, go to the next Windows run. No row is Ready any more.
 
 The retained evidence is `verification/2026-10-03-windows-functions/`. New corpus cases preserve
 its IDs, typed fixtures and exact numeric expectations. A deliberate refusal keeps Excel's

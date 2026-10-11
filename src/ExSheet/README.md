@@ -91,6 +91,26 @@ and moved on as each minute turns (ADR-0124). A fixed `Today` does not fix it. I
 clock. The Sheet Day is not part of a Sheet Document. Without the component, the engine is given it
 as data: `sheet.SetToday(new DateOnly(2026, 10, 3))`.
 
+## Random draws
+
+`RAND()` and `RANDBETWEEN` draw from the **Sheet Seed** (ADR-0180). Each draw is made from the seed,
+the cell, which call in its Formula it is, and how many changes the Sheet has had since it was
+opened — never from a clock or a stream another draw moved on. So everything that reads a draw sees
+the same Value, every edit, insertion, deletion, undo, redo and Linked Table snapshot draws again,
+and the clock, a format or a width draws nothing.
+
+```razor
+@* A new seed whenever the document is opened, as Excel's reopened workbook draws again. *@
+<ExSheet @bind-Document="_document" />
+
+@* A simulation someone else reviews: the same draws whenever it is opened. *@
+<ExSheet @bind-Document="_document" Seed="20261011" />
+```
+
+The count of changes starts from 0 when a Sheet Document is opened, and neither the seed nor a draw
+is part of the document. Without the component, the engine is given both as data:
+`sheet.SetSeed(20261011, changes: 3)` shows what the Sheet showed after its third change.
+
 ## Linked Tables
 
 A Formula can read the application's own data as a **Linked Table**, by key or by column, in

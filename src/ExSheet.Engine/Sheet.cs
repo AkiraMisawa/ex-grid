@@ -82,6 +82,8 @@ public sealed partial class Sheet
             };
         }
         sheet.SetEntries(document.Cells.Where(c => c.Entry is not null).Select(c => new KeyValuePair<CellAddress, Entry?>(c.Address, c.Entry)));
+        // Opening is no change: the count starts from 0, and the Sheet has no seed yet (ADR-0180).
+        sheet.Changes = 0;
         return sheet;
     }
 
@@ -330,6 +332,7 @@ public sealed partial class Sheet
             rows.Add(address.Row);
         }
         if (changed.Count == 0) return SheetChange.None;
+        CountChange();
         return Recalculate(changed, rows);
     }
 
@@ -355,6 +358,7 @@ public sealed partial class Sheet
         RegisterTableReaders(formulaCell, formula);
         RegisterTodayReader(formulaCell, formula);
         RegisterVolatile(formulaCell, formula);
+        RegisterRandomReader(formulaCell, formula);
     }
 
     private void Unregister(CellAddress formulaCell, Node formula)
@@ -372,6 +376,7 @@ public sealed partial class Sheet
         UnregisterTableReaders(formulaCell, formula);
         _todayReaders.Remove(formulaCell);
         _volatileFormulas.Remove(formulaCell);
+        _randomReaders.Remove(formulaCell);
     }
 
     /// <summary>The Formula cells that read <paramref name="address"/> directly.</summary>
@@ -533,12 +538,12 @@ public sealed partial class Sheet
 
     /// <summary>
     /// A Formula that reads a cell in a cycle is <c>#CIRC!</c> whatever it computes; one that reads
-    /// a waiting cell, or calls <c>TODAY</c> before the Sheet Day is known, waits (ADR-0047, ADR-0049,
-    /// ADR-0121). Neither can be caught by <c>IFERROR</c>.
+    /// a waiting cell, or calls <c>TODAY</c> before the Sheet Day is known, or draws before the Sheet
+    /// has a seed, waits (ADR-0047, ADR-0049, ADR-0121, ADR-0180). Neither can be caught by <c>IFERROR</c>.
     /// </summary>
     private Value? Taint(Node node, StagedReader reader)
     {
-        var gettingData = ReadsWaitingTable(node) || WaitsForToday(node) || WaitsForNow(node);
+        var gettingData = ReadsWaitingTable(node) || WaitsForToday(node) || WaitsForNow(node) || WaitsForSeed(node);
         foreach (var reference in node.References)
         {
             if (!IsLocal(reference)) continue;
@@ -608,6 +613,8 @@ public sealed partial class Sheet
         public DateOnly? Today => sheet.Today;
 
         public DateTime? Now => sheet._moment;
+
+        public ulong? Draw(CellAddress cell, int place) => sheet.Draw(cell, place);
 
         /// <summary>
         /// The Anchor's array as this pass computed it, or as it stood. Whether it spills is the last

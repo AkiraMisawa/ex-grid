@@ -128,6 +128,13 @@ internal sealed class FunctionNode(string name, IReadOnlyList<Node> arguments, F
     /// <summary>The declared function, or <see langword="null"/> for a name outside the set (<c>#NAME?</c>).</summary>
     public FunctionDefinition? Function { get; } = function;
 
+    /// <summary>
+    /// For <c>RAND</c> and <c>RANDBETWEEN</c>: which of the Formula's draws this call is, counted in
+    /// the Formula's text from 0 (ADR-0180). Two calls are two draws; one call read twice, as a
+    /// <c>LET</c> binding is, is one.
+    /// </summary>
+    public int Place { get; init; }
+
     public override IEnumerable<Reference> References => Arguments.SelectMany(a => a.References)
         .Concat(FunctionLibrary.CriteriaResultReferences(this));
 

@@ -336,6 +336,12 @@ public class ExcelCaseTests
     [Theory, MemberData(nameof(Ids), "indirect")] // ADR-0124 (2026-10-10), docs/specs/exsheet-functions ticket 18
     public void IndirectFunction(string id) => Run("indirect", id);
 
+    [Theory, MemberData(nameof(Ids), "rand")] // ADR-0180, docs/specs/exsheet-functions ticket 15: the observations with one outcome
+    public void Rand(string id) => Run("rand", id);
+
+    [Theory, MemberData(nameof(Ids), "randbetween")] // ADR-0180, docs/specs/exsheet-functions ticket 15: the observations with one outcome, and the refused bounds
+    public void RandBetween(string id) => Run("randbetween", id);
+
     [Theory, MemberData(nameof(Ids), "let")] // ADR-0181, docs/specs/exsheet-functions ticket 14: the October 3 observations, typed answers where COM differs
     public void Let(string id) => Run("let", id);
 
@@ -446,7 +452,7 @@ public class ExcelCaseTests
 
     private static readonly string[] Read =
     [
-        "abs", "acos", "acosh", "acot", "acoth", "aggregate", "and", "arithmetic", "asin", "asinh", "atan", "atan2", "atanh", "average", "averageif", "averageifs", "ceiling-math", "choose", "column", "column-widths", "columns", "concat", "concatenate", "copy", "cos", "cosh", "cot", "coth", "count", "counta", "countblank", "countif", "countifs", "csc", "csch", "date", "datedif", "dates", "day", "days", "degrees", "edate", "eomonth", "error-type", "errors", "exact", "exp", "fill", "filter", "find", "floor-math", "format-levels", "formula-formats", "formula-text", "fv", "general-width", "hlookup", "hour", "if", "iferror", "ifna", "ifs", "index", "indirect", "int", "isblank", "iserror", "isna", "isnumber", "istext", "large", "left", "len", "let", "linked-tables", "ln", "log", "log10", "lower", "match", "max", "maxifs", "median", "mid", "min", "minifs", "minute", "mod", "month", "mround", "na", "networkdays", "not", "npv", "number-formats", "numbervalue", "offset", "or", "pi", "pmt", "power", "product", "proper", "pv", "radians", "rank-eq", "references", "replace", "rept", "right", "round", "rounddown", "roundup", "row", "rows", "search", "sec", "sech", "second", "sequence", "sheet-names", "sign", "sin", "sinh", "small", "sort", "sortby", "sqrt", "stdev-p", "stdev-s", "structure", "substitute", "subtotal", "sum", "sumif", "sumifs", "sumproduct", "switch", "tan", "tanh", "text", "textjoin", "time", "transpose", "trim", "trunc", "typed-constants", "unique", "upper", "value", "var-p", "var-s", "vlookup", "weekday", "workday", "xlookup", "xmatch", "xnpv", "xor", "year", "yearfrac",
+        "abs", "acos", "acosh", "acot", "acoth", "aggregate", "and", "arithmetic", "asin", "asinh", "atan", "atan2", "atanh", "average", "averageif", "averageifs", "ceiling-math", "choose", "column", "column-widths", "columns", "concat", "concatenate", "copy", "cos", "cosh", "cot", "coth", "count", "counta", "countblank", "countif", "countifs", "csc", "csch", "date", "datedif", "dates", "day", "days", "degrees", "edate", "eomonth", "error-type", "errors", "exact", "exp", "fill", "filter", "find", "floor-math", "format-levels", "formula-formats", "formula-text", "fv", "general-width", "hlookup", "hour", "if", "iferror", "ifna", "ifs", "index", "indirect", "int", "isblank", "iserror", "isna", "isnumber", "istext", "large", "left", "len", "let", "linked-tables", "ln", "log", "log10", "lower", "match", "max", "maxifs", "median", "mid", "min", "minifs", "minute", "mod", "month", "mround", "na", "networkdays", "not", "npv", "number-formats", "numbervalue", "offset", "or", "pi", "pmt", "power", "product", "proper", "pv", "radians", "rand", "randbetween", "rank-eq", "references", "replace", "rept", "right", "round", "rounddown", "roundup", "row", "rows", "search", "sec", "sech", "second", "sequence", "sheet-names", "sign", "sin", "sinh", "small", "sort", "sortby", "sqrt", "stdev-p", "stdev-s", "structure", "substitute", "subtotal", "sum", "sumif", "sumifs", "sumproduct", "switch", "tan", "tanh", "text", "textjoin", "time", "transpose", "trim", "trunc", "typed-constants", "unique", "upper", "value", "var-p", "var-s", "vlookup", "weekday", "workday", "xlookup", "xmatch", "xnpv", "xor", "year", "yearfrac",
     ];
 
     [Fact] // ADR-0047: a corpus file no theory reads would be a set of cases that silently never runs

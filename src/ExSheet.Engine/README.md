@@ -146,6 +146,8 @@ them:
 | `DATE` | `year, month, day` |
 | `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Sheet.SetToday`, ADR-0121) |
 | `NOW` | (none) — the moment `Sheet.NowSource` gives, read once per recalculation; volatile (ADR-0124) |
+| `RAND` | (none) — drawn from the Sheet Seed (`Sheet.SetSeed`), `#GETTING_DATA` until it is set; volatile (ADR-0180) |
+| `RANDBETWEEN` | `bottom, top` — as `RAND`, a whole number with both bounds drawn |
 | `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND` | `serial_number` |
 | `TIME` | `hour, minute, second` |
 | `WEEKDAY` | `serial_number, [return_type]` |
@@ -240,6 +242,21 @@ answer:
   too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`); `ERROR.TYPE` of an Error
   Value outside Microsoft's table — `#SPILL!`, `#CALC!`, `#FIELD!`, `#BLOCKED!`, `#CONNECT!`,
   `#UNKNOWN!` (`#VALUE!`).
+- **`RAND` and `RANDBETWEEN` draw from the Sheet Seed** (ADR-0180). Excel names no generator and no
+  seed, so its numbers cannot be matched; what is Excel's is its contract — a draw of `RAND` in
+  [0,1), evenly spread; `RANDBETWEEN`'s whole numbers, both bounds drawn; two calls two draws; a
+  `LET` binding one draw. Each draw is a function of `Sheet.Seed`, the cell, the call's place in its
+  Formula and `Sheet.Changes`, the count of changes since the Sheet was made or opened, so the same
+  Entries, seed and count give the same draws whatever order cells are computed in. An edit, an
+  insertion or a deletion, the undo or redo of one, and a Linked Table's snapshot each count once and
+  draw again; a recalculation by the clock, a format and a new seed draw nothing. Without a seed,
+  every Formula that draws is `#GETTING_DATA`. The engine never chooses a seed of its own:
+  `Sheet.SetSeed(seed)` gives one, and `SetSeed(seed, changes)` the count as well, so a Sheet opened
+  from a document shows another Sheet's draws (SH-17). Neither is part of a Sheet Document. Unlike
+  Excel, nothing draws without a change, there is no manual recalculation, and an undo draws again.
+  `RANDBETWEEN` refuses a fractional bound and a bound past 2^53 in magnitude with `#VALUE!`, and
+  otherwise answers as Excel was observed to: a bottom above the top is `#NUM!`, a boolean and text
+  that is not a number are `#VALUE!`, a numeric string is its number and a blank is 0.
 - **`LET` takes the names Excel's keyboard accepts** (ADR-0181). A name is bound for the values
   after it and its own calculation, sequentially and lexically, and compared without regard to
   case; a name read before its binding, or inside its own value, is `#NAME?`. A name starts with a
@@ -318,9 +335,8 @@ An argument outside these domains gives `#VALUE!` unless another Error Value is 
 
 `IRR`, `XIRR` and `RATE` remain undeclared (`#NAME?`). The solver experiment in
 `spikes/exsheet-financial-solvers/` does not yet reproduce Excel's chosen roots, stopping results
-and failures. `RAND` and `RANDBETWEEN` are not declared yet (ADR-0180, catalogue ticket 15). The
-October 3 observation run did not resolve existing Supported functions' other `uncertain` corpus
-cases.
+and failures. The October 3 observation run did not resolve existing Supported functions' other
+`uncertain` corpus cases.
 
 ## Operations, and undoing them
 

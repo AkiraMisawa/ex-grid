@@ -1,0 +1,329 @@
+{
+  "area": "randbetween",
+  "about": "RANDBETWEEN (docs/specs/exsheet-functions ticket 15; ADR-0180): Windows Excel 16.0.20430.20092, en-GB; October 3 observations. Only the cases with one outcome are compared here; the samples (RANDBETWEEN-001, 003, 010, 011, 017) are the contract tests' (RandomTests). Fractional bounds and bounds past 2^53 are refused by decision, with Excel's outcome kept where it had one.",
+  "cases": [
+    {
+      "id": "RANDBETWEEN-002",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-002",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(3,3)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "RANDBETWEEN-004",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-004",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(-1.9,1.9)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "engineDiffersByDecision": "ADR-0180: a fractional bound is #VALUE!; which whole number Excel draws for one is not something a guess may supply"
+    },
+    {
+      "id": "RANDBETWEEN-005",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-005",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(1.1,1.9)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 2.0
+      },
+      "engineDiffersByDecision": "ADR-0180: a fractional bound is #VALUE!; which whole number Excel draws for one is not something a guess may supply"
+    },
+    {
+      "id": "RANDBETWEEN-006",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-006",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(-1.9,-1.1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": -1.0
+      },
+      "engineDiffersByDecision": "ADR-0180: a fractional bound is #VALUE!; which whole number Excel draws for one is not something a guess may supply"
+    },
+    {
+      "id": "RANDBETWEEN-007",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-007",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(3,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "RANDBETWEEN-008",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-008",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(0,0)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "RANDBETWEEN-009",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-009",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(TRUE,3)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "RANDBETWEEN-012",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-012",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(\"x\",3)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "RANDBETWEEN-013",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-013",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(NA(),3)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "RANDBETWEEN-014",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-014",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(1,NA())"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "RANDBETWEEN-015",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-015",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(1,1E+16)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "engineDiffersByDecision": "ADR-0180: a bound above 2^53 in magnitude is #VALUE!, past which a double no longer holds every whole number"
+    },
+    {
+      "id": "RANDBETWEEN-016",
+      "source": "observed",
+      "description": "Inclusive integer bounds, fractional rounding, coercion, invalid bounds and large doubles",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-016",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(-1E+16,1E+16)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "engineDiffersByDecision": "ADR-0180: a bound above 2^53 in magnitude is #VALUE!, past which a double no longer holds every whole number"
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-001",
+      "source": "observed",
+      "description": "Followup: fractional bounds with/no whole integer",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-FOLLOWUP-001",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(1.1,2.1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 2.0
+      },
+      "engineDiffersByDecision": "ADR-0180: a fractional bound is #VALUE!; which whole number Excel draws for one is not something a guess may supply"
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-002",
+      "source": "observed",
+      "description": "Followup: fractional bounds with/no whole integer",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-FOLLOWUP-002",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(-2.1,-1.1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": -2.0
+      },
+      "engineDiffersByDecision": "ADR-0180: a fractional bound is #VALUE!; which whole number Excel draws for one is not something a guess may supply"
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-003",
+      "source": "observed",
+      "description": "Followup: fractional bounds with/no whole integer",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-FOLLOWUP-003",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(-0.9,-0.1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 0.0
+      },
+      "engineDiffersByDecision": "ADR-0180: a fractional bound is #VALUE!; which whole number Excel draws for one is not something a guess may supply"
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-004",
+      "source": "observed",
+      "description": "Followup: fractional bounds with/no whole integer",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-FOLLOWUP-004",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(0.1,0.9)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 1.0
+      },
+      "engineDiffersByDecision": "ADR-0180: a fractional bound is #VALUE!; which whole number Excel draws for one is not something a guess may supply"
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-005",
+      "source": "observed",
+      "description": "Followup: fractional bounds with/no whole integer",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-FOLLOWUP-005",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(-1.9,-1.9)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": -1.0
+      },
+      "engineDiffersByDecision": "ADR-0180: a fractional bound is #VALUE!; which whole number Excel draws for one is not something a guess may supply"
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-006",
+      "source": "observed",
+      "description": "Followup: fractional bounds with/no whole integer",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-FOLLOWUP-006",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(1.9,1.9)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 2.0
+      },
+      "engineDiffersByDecision": "ADR-0180: a fractional bound is #VALUE!; which whole number Excel draws for one is not something a guess may supply"
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-007",
+      "source": "observed",
+      "description": "Followup: fractional bounds with/no whole integer (a Formula's number constant is read at 15 significant digits, so both bounds are 1)",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RANDBETWEEN-FOLLOWUP-007",
+      "values": {},
+      "cells": {
+        "Z1": "=RANDBETWEEN(1.000000000000001,1.000000000000001)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    }
+  ]
+}

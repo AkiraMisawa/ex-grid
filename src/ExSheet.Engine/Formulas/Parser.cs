@@ -52,6 +52,24 @@ internal sealed partial class Parser
 
     private Token Peek => _tokens[_at];
 
+    /// <summary>
+    /// For <c>RAND</c> and <c>RANDBETWEEN</c>: how many calls of either stand before this one in the
+    /// Formula's text — its place among the Formula's draws (ADR-0180). 0 for any other function.
+    /// </summary>
+    private int DrawPlace(Token name)
+    {
+        if (!IsDraw(name.Text)) return 0;
+        var place = 0;
+        for (var i = 0; _tokens[i].Position < name.Position; i++)
+        {
+            if (_tokens[i].Kind == TokenKind.Name && IsDraw(_tokens[i].Text) && _tokens[i + 1] is { Kind: TokenKind.LeftParenthesis, AfterSpace: false }) place++;
+        }
+        return place;
+
+        static bool IsDraw(string text) =>
+            text.Equals("RAND", StringComparison.OrdinalIgnoreCase) || text.Equals("RANDBETWEEN", StringComparison.OrdinalIgnoreCase);
+    }
+
     private Token Next() => _tokens[_at++];
 
     private bool PeekOperator(params string[] ops) => Peek.Kind == TokenKind.Operator && Array.IndexOf(ops, Peek.Text) >= 0;
@@ -256,6 +274,6 @@ internal sealed partial class Parser
         {
             throw new FormulaSyntaxException(_formula, name.Position, $"{function.Name} takes its arguments in pairs.");
         }
-        return new FunctionNode(function.Name, arguments, function);
+        return new FunctionNode(function.Name, arguments, function) { Place = DrawPlace(name) };
     }
 }

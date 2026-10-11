@@ -1,6 +1,6 @@
 {
   "area": "let",
-  "about": "LET (docs/specs/exsheet-functions ticket 14; ADR-0181): Windows Excel 16.0.20430.20092, en-GB; October 3 observations through COM (Formula2) and typed with real keys (LET-KEYS-*). Where the two differ the keyboard is Excel's answer (LET-023). The random cases (LET-017, LET-018, LET-031) are ticket 15's.",
+  "about": "LET (docs/specs/exsheet-functions ticket 14; ADR-0181): Windows Excel 16.0.20430.20092, en-GB; October 3 observations through COM (Formula2) and typed with real keys (LET-KEYS-*). Where the two differ the keyboard is Excel's answer (LET-023). LET-031's sample is a random draw, so its lifecycle is RandomTests'.",
   "cases": [
     {
       "id": "LET-001",
@@ -300,6 +300,43 @@
       "excelBits": "4026000000000000",
       "expect": {
         "value2": 11.0
+      }
+    },
+    {
+      "id": "LET-017",
+      "source": "observed",
+      "description": "One random binding reused",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-017",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,RAND(),x=x)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": true
+      }
+    },
+    {
+      "id": "LET-018",
+      "source": "observed",
+      "description": "Same random value in subtraction",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-018",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,RAND(),x-x)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
       }
     },
     {

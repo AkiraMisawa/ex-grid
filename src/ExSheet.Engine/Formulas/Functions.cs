@@ -194,6 +194,8 @@ internal static partial class FunctionLibrary
         new("XNPV", 3, 3, "rate, values, dates", "Returns the net present value for a schedule of cash flows that is not necessarily periodic.", XNpv),
         new("VALUE", 1, 1, "text", "Converts a text argument to a number, read under the Sheet's culture.", ValueOf),
         new("NOW", 0, 0, "", "Returns the serial number of the current date and time.", Now),
+        new("RAND", 0, 0, "", "Returns a random number from 0 up to 1, drawn from the Sheet Seed.", Rand),
+        new("RANDBETWEEN", 2, 2, "bottom, top", "Returns a random whole number between the numbers you specify, drawn from the Sheet Seed.", RandBetween),
         new("OFFSET", 3, 5, "reference, rows, cols, [height], [width]", "Returns a reference offset from a given reference.", Offset),
         new("INDIRECT", 1, 2, "ref_text, [a1]", "Returns a reference indicated by a text value.", Indirect),
         new("FILTER", 2, 3, "array, include, [if_empty]", "Filters a range of data based on criteria you define.", Filter),

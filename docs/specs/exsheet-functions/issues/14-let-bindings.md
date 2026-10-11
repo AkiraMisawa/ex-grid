@@ -59,3 +59,6 @@ reading an outer name, a final subtraction inside the calculation, and a name pa
 function's are the declared functions' names; should one later be declared, a stored `LET` binding that
 name would no longer open — the orchestrator is told. ADR-0047's dated addition naming `LET` is left to
 the orchestrator.
+
+2026-10-11, with ticket 15: LET-017 and LET-018 are in the corpus, and `RandomTests`'
+`ADR0180_a_let_binding_is_one_draw` is the one-draw test both tickets left to whichever landed second.

@@ -116,6 +116,7 @@ public sealed partial class Sheet
         _tableReaders.Clear();
         _todayReaders.Clear();
         _volatileFormulas.Clear();
+        _randomReaders.Clear();
         foreach (var cell in _cells.Values)
         {
             if (cell.Entry?.Parsed is { } parsed) Register(cell.Address, parsed);

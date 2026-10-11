@@ -23,6 +23,9 @@ internal static class ExcelCorpus
 
     private static readonly Dictionary<string, IReadOnlyList<JsonElement>> Areas = new(StringComparer.Ordinal);
 
+    /// <summary>The Sheet Seed every case's Sheet is given (ADR-0180).</summary>
+    private const ulong CorpusSeed = 20261011;
+
     /// <summary>The area files present, by name, without <c>fixtures.json</c>.</summary>
     public static IEnumerable<string> AreaFiles =>
         System.IO.Directory.EnumerateFiles(Directory, "*.json")
@@ -212,6 +215,9 @@ internal static class ExcelCorpus
     {
         var culture = CultureInfo.GetCultureInfo(c.TryGetProperty("culture", out var cu) ? cu.GetString()! : "en-US");
         var sheet = c.TryGetProperty("sheetName", out var name) ? new Sheet(culture, name.GetString()!) : new Sheet(culture);
+        // ExSheet gives every Sheet it opens a Sheet Seed (ADR-0180), and so does the harness; Excel
+        // has none to give, and its cases compare only what does not depend on one.
+        sheet.SetSeed(CorpusSeed);
 
         if (c.TryGetProperty("tables", out var tables))
         {

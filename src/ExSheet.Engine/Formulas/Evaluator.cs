@@ -27,6 +27,13 @@ internal interface ICellReader
     bool IsLocal(Reference reference);
 
     /// <summary>
+    /// The draw of the <c>RAND</c> or <c>RANDBETWEEN</c> call at <paramref name="place"/> in the
+    /// Formula of <paramref name="cell"/> (ADR-0180), from the Sheet Seed and the count of changes;
+    /// <see langword="null"/> while the Sheet has no seed.
+    /// </summary>
+    ulong? Draw(CellAddress cell, int place);
+
+    /// <summary>
     /// <c>A1#</c> (ADR-0125): the array the Anchor at <paramref name="anchor"/> spills, as this
     /// recalculation leaves it; <c>#REF!</c> when it does not spill.
     /// </summary>
@@ -162,7 +169,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         UnaryNode u => Map(Operand(u.Operand), value => Negate(u.Operator, value)),
         PercentNode p => Map(Operand(p.Operand), Percent),
         BinaryNode b => Binary(b),
-        FunctionNode f => f.Function is null ? Formulas.Operand.Of(ErrorValue.Name) : f.Function.Invoke(new FunctionCall(this, f.Arguments)),
+        FunctionNode f => f.Function is null ? Formulas.Operand.Of(ErrorValue.Name) : f.Function.Invoke(new FunctionCall(this, f.Arguments) { Place = f.Place }),
         _ => throw new InvalidOperationException($"No evaluation for {node.GetType().Name}."),
     };
 

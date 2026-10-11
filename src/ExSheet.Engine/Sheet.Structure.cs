@@ -110,6 +110,7 @@ public sealed partial class Sheet
     internal StructuralOutcome Restructure(StructuralEdit edit, bool formatInserted = true)
     {
         if (CheckStructural(edit) is { } refusal) throw new SheetRefusedException(refusal);
+        CountChange();
 
         var before = Snapshot();
         var shownBefore = ShownSnapshot();
