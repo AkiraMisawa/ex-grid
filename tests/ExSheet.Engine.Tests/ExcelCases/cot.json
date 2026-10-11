@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "COT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COT(30)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "COT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COT(45)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "COT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Documented: COT(0) is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COT(0)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "COT-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Documented: the absolute value must be less than 2^27",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COT(2^27)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "COT-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Documented: a non-numeric value is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COT(A6)"},

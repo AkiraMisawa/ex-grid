@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SUBSTITUTE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: every occurrence",
       "cells": {"A1": "Sales Data", "ZZ1000": "=SUBSTITUTE(A1,\"Sales\",\"Cost\")"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "SUBSTITUTE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the first occurrence only",
       "cells": {"A1": "Quarter 1, 2008", "ZZ1000": "=SUBSTITUTE(A1,\"1\",\"2\",1)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "SUBSTITUTE-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the third occurrence only",
       "cells": {"A1": "Quarter 1, 2011", "ZZ1000": "=SUBSTITUTE(A1,\"1\",\"2\",3)"},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "SUBSTITUTE-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Case is told apart",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBSTITUTE(\"Abc\",\"a\",\"x\")"},
@@ -46,7 +46,7 @@
     },
     {
       "id": "SUBSTITUTE-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an instance below 1 is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBSTITUTE(\"abc\",\"a\",\"x\",0)"},

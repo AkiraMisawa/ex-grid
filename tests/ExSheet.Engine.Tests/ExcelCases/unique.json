@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "UNIQUE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "The distinct values, in the order they first appear",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=UNIQUE(G1:G5)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "UNIQUE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Four distinct values of five",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=ROWS(UNIQUE(G1:G5))"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "UNIQUE-003",
-      "source": "documented",
+      "source": "observed",
       "description": "exactly_once keeps only the values that appear once",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=UNIQUE(G1:G5,,TRUE)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "UNIQUE-004",
-      "source": "documented",
+      "source": "observed",
       "description": "by_col compares columns",
       "fixture": "lookupData",
       "cells": {"Z1": "1", "AA1": "2", "AB1": "1", "ZZ1000": "=COLUMNS(UNIQUE(Z1:AB1,TRUE))"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "UNIQUE-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Rows of two columns are compared whole",
       "fixture": "lookupData",
       "cells": {"Z1": "a", "AA1": "1", "Z2": "a", "AA2": "2", "Z3": "a", "AA3": "1", "ZZ1000": "=ROWS(UNIQUE(Z1:AA3))"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "UNIQUE-006",
-      "source": "documented",
+      "source": "observed",
       "description": "Nothing that appears once is #CALC!",
       "fixture": "lookupData",
       "cells": {"Z1": "1", "Z2": "1", "ZZ1000": "=UNIQUE(Z1:Z2,,TRUE)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "UNIQUE-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text is compared without regard to case",
       "fixture": "lookupData",
       "cells": {"Z1": "a", "Z2": "A", "ZZ1000": "=ROWS(UNIQUE(Z1:Z2))"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "UNIQUE-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number and text that reads as it are different",
       "fixture": "lookupData",
       "cells": {"Z1": "1", "Z2": "'1", "ZZ1000": "=ROWS(UNIQUE(Z1:Z2))"},

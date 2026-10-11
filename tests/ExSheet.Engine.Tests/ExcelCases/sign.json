@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SIGN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIGN(10)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SIGN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIGN(4-4)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "SIGN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIGN(-0.00001)"},

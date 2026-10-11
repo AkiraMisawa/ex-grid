@@ -1,0 +1,170 @@
+{
+    "ran":  "2026-10-11T22:47:16",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20146",
+    "windowsRegionalFormat":  "en-US",
+    "formulasEnteredThrough":  "typed (keyboard input), as every other cell of a case",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  0,
+                    "disagree":  5,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "ERRORTYPE-013",
+                      "area":  "error-type",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: #SPILL! typed into a cell is outside Microsoft\u0027s table, so #VALUE!",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  9,
+                                    "kind":  "number",
+                                    "number":  "9",
+                                    "text":  "9",
+                                    "formula":  "=ERROR.TYPE(A1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 9 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "ERRORTYPE-016",
+                      "area":  "error-type",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: #FIELD! typed into a cell is outside Microsoft\u0027s table, so #VALUE!",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  13,
+                                    "kind":  "number",
+                                    "number":  "13",
+                                    "text":  "13",
+                                    "formula":  "=ERROR.TYPE(A1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 13 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "ERRORTYPE-017",
+                      "area":  "error-type",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: #BLOCKED! typed into a cell is outside Microsoft\u0027s table, so #VALUE!",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  11,
+                                    "kind":  "number",
+                                    "number":  "11",
+                                    "text":  "11",
+                                    "formula":  "=ERROR.TYPE(A1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 11 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "ERRORTYPE-018",
+                      "area":  "error-type",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: #CONNECT! typed into a cell is outside Microsoft\u0027s table, so #VALUE!",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  10,
+                                    "kind":  "number",
+                                    "number":  "10",
+                                    "text":  "10",
+                                    "formula":  "=ERROR.TYPE(A1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 10 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "ERRORTYPE-019",
+                      "area":  "error-type",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: #UNKNOWN! typed into a cell is outside Microsoft\u0027s table, so #VALUE!",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  12,
+                                    "kind":  "number",
+                                    "number":  "12",
+                                    "text":  "12",
+                                    "formula":  "=ERROR.TYPE(A1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 12 (number)"
+                                      ]
+                  }
+              ]
+}

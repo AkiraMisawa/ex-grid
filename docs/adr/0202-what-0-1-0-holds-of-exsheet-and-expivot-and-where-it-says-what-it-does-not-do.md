@@ -104,5 +104,20 @@ The run ExGrid's own by-hand rows need anyway (VZ-14, VZ-16, FN-12e, ED-30, SM-7
 - The sign-off's Windows run is one script, numbered from the Windows-run block when it is written, and
   holds ExGrid's by-hand rows, the corpus, the seventh run's Parts A and B, ticket 160's readings,
   tickets 15 to 18's questions and ticket 07.
+
+  *(2026-10-11, decided with the user: **the run is split in two.** The questions put to Excel, and the
+  screen readers, are asked before the release candidate, by the seventeenth Windows run
+  (`docs/specs/exsheet/verify-on-windows-17.md`). That run covers the corpus, the seventh run's Parts A
+  and B, ticket 160's readings, tickets 15 to 18's questions, ticket 07 and SM-7, and it dry-runs
+  ExGrid's by-hand rows. A disagreement found there can then be corrected before the tag, not after a
+  candidate. Excel's answers do not depend on the build. What the corpus observes is held at every
+  commit after it by layer 1. The eighteenth run runs ExGrid's by-hand rows (VZ-14, VZ-16, FN-12e,
+  ED-30), on `0.1.0-rc.1` itself. Those rows count only there.)*
+
+  *(Corrected the same day, decided with the user,
+  [ADR-0208](./0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md):
+  the seventeenth run's Part G is the record of those rows, not a dry run. The eighteenth runs only the
+  rows whose code changes between the seventeenth's commit and `0.1.0-rc.1`. If none changes, there is
+  no eighteenth run.)*
 - `0.1.0`'s Known limitations will hold at least: `IRR`, `XIRR` and `RATE`; dragging a Reference Outline;
   ExPivot's speed near its cap; and whatever of ExPivot's layout and wording the run finds different.

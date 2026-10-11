@@ -21,7 +21,7 @@
     },
     {
       "id": "NPV-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text and blanks in a range are passed over",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.1,A1:A7)"},
@@ -30,7 +30,7 @@
     },
     {
       "id": "NPV-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a rate of -1 is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(-1,1,2)"},

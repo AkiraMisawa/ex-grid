@@ -1,0 +1,11 @@
+set ja-JP at 22:48:15
+a new PowerShell reads en-GB
+22:48:21 DATE-009     agree       1.7 s
+22:48:22 DATE-010     agree       0.9 s
+22:48:22 FMT-030      agree       0.6 s
+22:48:23 TEXTFN-008   agree       0.5 s
+22:48:24 TYPED-010    agree       1.0 s
+22:48:25 TYPED-027    agree       1.0 s
+
+agree 6, disagree 0, blocked 0, recorded 0 -> %LOCALAPPDATA%\exgrid-layer3\run-2026-10-11-17\update-keys-ja-JP.json
+-Update: 6 agreeing cases now say source "observed"; disagreeing ones are untouched.

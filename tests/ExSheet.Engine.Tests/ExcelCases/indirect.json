@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "INDIRECT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the Value of the cell A2's text names (B2)",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(A2)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "INDIRECT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the Value of the cell A3's text names (B3)",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(A3)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "INDIRECT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example without its defined name: George names no place in this Sheet, so #REF!",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(A4)"},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "INDIRECT-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a reference built from text and A5's value (B5)",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"B\"&A5)"},
       "check": "ZZ1000",
@@ -36,7 +36,7 @@
     },
     {
       "id": "INDIRECT-005",
-      "source": "documented",
+      "source": "observed",
       "description": "a1 TRUE is A1 style, as when it is left out",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"B3\",TRUE)"},
       "check": "ZZ1000",
@@ -44,7 +44,7 @@
     },
     {
       "id": "INDIRECT-006",
-      "source": "documented",
+      "source": "observed",
       "description": "A range's text gives a range, which SUM reads",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=SUM(INDIRECT(\"B2:B5\"))"},
       "check": "ZZ1000",
@@ -52,7 +52,7 @@
     },
     {
       "id": "INDIRECT-007",
-      "source": "documented",
+      "source": "observed",
       "description": "Text that is not a reference is #REF!",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"no place\")"},
       "check": "ZZ1000",
@@ -60,7 +60,7 @@
     },
     {
       "id": "INDIRECT-008",
-      "source": "documented",
+      "source": "observed",
       "description": "A reference into a Sheet that does not exist names no place: #REF!",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"Sheet2!B2\")"},
       "check": "ZZ1000",
@@ -68,7 +68,7 @@
     },
     {
       "id": "INDIRECT-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the text qualified with the Sheet's own name reads its cell",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"Sheet1!B3\")"},
       "check": "ZZ1000",
@@ -76,7 +76,7 @@
     },
     {
       "id": "INDIRECT-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the Sheet's name quoted reads its cell",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"'Sheet1'!B3\")"},
       "check": "ZZ1000",
@@ -84,7 +84,7 @@
     },
     {
       "id": "INDIRECT-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the text in lower case reads its cell",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"b3\")"},
       "check": "ZZ1000",
@@ -92,7 +92,7 @@
     },
     {
       "id": "INDIRECT-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: $ in the text reads its cell",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"$B$3\")"},
       "check": "ZZ1000",
@@ -100,7 +100,7 @@
     },
     {
       "id": "INDIRECT-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: whole columns are a range",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=SUM(INDIRECT(\"B:B\"))"},
       "check": "ZZ1000",
@@ -108,7 +108,7 @@
     },
     {
       "id": "INDIRECT-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a range as the result spills (ADR-0125), the Anchor showing its first Value",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "C1": "=INDIRECT(\"B2:B3\")"},
       "check": "C1",
@@ -116,7 +116,7 @@
     },
     {
       "id": "INDIRECT-015",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a blank cell named by text reads as 0",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"B9\")"},
       "check": "ZZ1000",
@@ -124,7 +124,7 @@
     },
     {
       "id": "INDIRECT-016",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: empty text names no place",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"\")"},
       "check": "ZZ1000",
@@ -132,7 +132,7 @@
     },
     {
       "id": "INDIRECT-017",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a column past XFD names no place",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"XFE1\")"},
       "check": "ZZ1000",
@@ -140,7 +140,7 @@
     },
     {
       "id": "INDIRECT-018",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number is read as its text, which names no place",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(5)"},
       "check": "ZZ1000",
@@ -148,7 +148,7 @@
     },
     {
       "id": "INDIRECT-019",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a space before the reference names no place",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\" B3\")"},
       "check": "ZZ1000",
@@ -156,7 +156,7 @@
     },
     {
       "id": "INDIRECT-020",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a leading = names no place",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"=B3\")"},
       "check": "ZZ1000",
@@ -164,7 +164,7 @@
     },
     {
       "id": "INDIRECT-021",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: two ranges with a space between (an intersection) name no place",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"B2:B5 B3:C3\")"},
       "check": "ZZ1000",
@@ -172,7 +172,7 @@
     },
     {
       "id": "INDIRECT-022",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R1C1 text read in A1 style names no place",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"R3C2\")"},
       "check": "ZZ1000",
@@ -216,7 +216,7 @@
     },
     {
       "id": "INDIRECT-027",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an insertion above the cell named leaves the text as it was, and it now names a blank cell",
       "cells": {"B5": "62", "A1": "=INDIRECT(\"B5\")"},
       "action": {"do": "insertRows", "row": 4},
@@ -225,7 +225,7 @@
     },
     {
       "id": "INDIRECT-028",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an insertion rewrites the Reference beside the text, and not the text",
       "cells": {"B5": "62", "A1": "=INDIRECT(\"B5\")+B5"},
       "action": {"do": "insertRows", "row": 4},
@@ -234,7 +234,7 @@
     },
     {
       "id": "INDIRECT-029",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a deletion above the cell named leaves the text, which now names the cell moved up into it",
       "cells": {"B5": "62", "B6": "7", "A1": "=INDIRECT(\"B5\")"},
       "action": {"do": "deleteRows", "row": 3},

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SIN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(PI()/2)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SIN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: 30 degrees",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(30*PI()/180)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "SIN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: RADIANS",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(RADIANS(30))"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "SIN-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 2^27, the limit COT documents, is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(2^27)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "SIN-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: just under 2^27 is answered",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(2^27-1)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "SIN-007",
-      "source": "documented",
+      "source": "observed",
       "description": "Text that is no number is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(A6)"},

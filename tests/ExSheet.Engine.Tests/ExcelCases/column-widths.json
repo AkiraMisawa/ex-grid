@@ -287,7 +287,7 @@
     },
     {
       "id": "CW-027",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a typed date that widens its column makes the width custom, as a typed number does (CW-018 observed the flag for a number only)",
       "cells": {"B2": "9/26/2026"},
       "check": "B2",
@@ -305,7 +305,7 @@
     },
     {
       "id": "CW-029",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a typed Formula whose number widens its column (WD-007's shape) makes the width custom, as a typed number does",
       "cells": {"B2": "=123456789*10"},
       "check": "B2",

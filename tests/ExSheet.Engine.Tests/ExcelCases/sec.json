@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SEC-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SEC(45)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SEC-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SEC(30)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "SEC-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Documented: the absolute value must be less than 2^27",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SEC(-2^27)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "SEC-004",
-      "source": "documented",
+      "source": "observed",
       "description": "1/COS(0)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SEC(0)"},

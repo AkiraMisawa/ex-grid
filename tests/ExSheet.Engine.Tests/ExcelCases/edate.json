@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "EDATE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: one month after 15 January 2011",
       "cells": {"A1": "1/15/2011", "ZZ1000": "=EDATE(A1,1)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "EDATE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: one month before",
       "cells": {"A1": "1/15/2011", "ZZ1000": "=EDATE(A1,-1)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "EDATE-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: two months after",
       "cells": {"A1": "1/15/2011", "ZZ1000": "=EDATE(A1,2)"},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "EDATE-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a day the month does not have is its last day",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(DATE(2011,1,31),1)"},
@@ -37,7 +37,7 @@
     },
     {
       "id": "EDATE-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: into February of a leap year",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(DATE(2024,1,31),1)"},
@@ -46,7 +46,7 @@
     },
     {
       "id": "EDATE-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: months that are not whole are truncated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(DATE(2011,1,15),-1.9)"},
@@ -55,7 +55,7 @@
     },
     {
       "id": "EDATE-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a start date below 0 is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(-1,1)"},
@@ -73,7 +73,7 @@
     },
     {
       "id": "EDATE-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Refused until Excel is asked: a boolean typed as an argument",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(TRUE,1)"},

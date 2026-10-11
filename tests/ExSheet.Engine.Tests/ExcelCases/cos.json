@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "COS-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COS(1.047)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "COS-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: 60 degrees",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COS(60*PI()/180)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "COS-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: RADIANS",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COS(RADIANS(60))"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "COS-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an absolute value of 2^27 is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COS(-2^27)"},

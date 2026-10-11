@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "MOD-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(3,2)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "MOD-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the sign is the divisor's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(-3,2)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "MOD-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the sign is the divisor's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(3,-2)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "MOD-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the sign is the divisor's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(-3,-2)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "MOD-005",
-      "source": "documented",
+      "source": "observed",
       "description": "A divisor of 0 is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(3,0)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "MOD-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a fractional remainder",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(5.5,2)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "MOD-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a fractional remainder of a negative number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(-7.5,2)"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "MOD-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 0.3 over 0.1 leaves almost 0.1 in doubles",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(0.3,0.1)"},

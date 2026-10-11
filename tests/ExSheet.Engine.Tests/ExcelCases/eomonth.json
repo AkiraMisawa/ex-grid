@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "EOMONTH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the last day of the month after 1 January 2011",
       "cells": {"A1": "1/1/2011", "ZZ1000": "=EOMONTH(A1,1)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "EOMONTH-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the last day of the month three months before",
       "cells": {"A1": "1/1/2011", "ZZ1000": "=EOMONTH(A1,-3)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "EOMONTH-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Months that are not whole are truncated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(DATE(2011,1,1),1.9)"},
@@ -29,7 +29,7 @@
     },
     {
       "id": "EOMONTH-004",
-      "source": "documented",
+      "source": "observed",
       "description": "A start date that is not a valid date is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(-1,0)"},
@@ -38,7 +38,7 @@
     },
     {
       "id": "EOMONTH-005",
-      "source": "documented",
+      "source": "observed",
       "description": "A result that is not a valid date is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(DATE(9999,12,1),1)"},
@@ -47,7 +47,7 @@
     },
     {
       "id": "EOMONTH-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: February of a leap year",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(DATE(2024,1,31),1)"},
@@ -56,7 +56,7 @@
     },
     {
       "id": "EOMONTH-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the start date's time of day is ignored",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(45000.75,0)"},
@@ -74,7 +74,7 @@
     },
     {
       "id": "EOMONTH-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Refused until Excel is asked: a boolean typed as an argument",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(45000,TRUE)"},
