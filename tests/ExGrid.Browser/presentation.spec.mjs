@@ -1,7 +1,7 @@
 import { test, expect, alterPage, circuitQuiet } from './fixtures.mjs';
 import { painted, sameColour } from './pixels.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
-import { sheet, openSheet, clickCell as clickSheetCell, editor as sheetEditor } from './sheet-helpers.mjs';
+import { sheet, openSheet, pressCell as pressSheetCell, editor as sheetEditor } from './sheet-helpers.mjs';
 
 // The presentation contract, measured (ADR-0027/0028/0029/0031): tokens win where the
 // contract says they win, the painted geometry equals the declared geometry, nothing
@@ -494,13 +494,17 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
     await open(page);
     await watchClassesWorn(page);
     const features = grid(page);
-    // A range, copied: its dashes stand while the clipboard holds it (ADR-0170).
+    // A range, copied: its dashes stand while the clipboard holds it (ADR-0170). Only a browser
+    // with the clipboardchange event draws them — Chrome and Edge from 143 — so an older build
+    // stops here, rightly.
     await at(0, 1).click({ force: true });
     await page.keyboard.press('Shift+ArrowDown');
     await page.keyboard.press('ControlOrMeta+C');
     await expect(features.locator('.ex-copied-range')).not.toHaveCount(0);
-    // A second range beside it.
+    // A second range beside it, two cells wide: a range of one cell is painted as the Focus
+    // alone, with no ex-range of its own.
     await at(3, 2).click({ force: true, modifiers: ['ControlOrMeta'] });
+    await page.keyboard.press('Shift+ArrowRight');
     await expect(features.locator('.ex-range')).toHaveCount(2);
     // The Cell Editor, typed into, and left.
     await at(0, 1).click({ force: true });
@@ -515,7 +519,7 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
     await page.keyboard.press('Enter');
     await expect(at(0, 2)).toHaveClass(/ex-state-error/);
     await at(0, 2).click({ force: true });
-    await expect(features.locator('.ex-message')).toHaveCount(1, { timeout: 3000 });
+    await expect(features.locator('.ex-message')).toHaveCount(1);
     // The Context Menu, the column menu and the find panel, each opened and closed.
     await at(0, 1).click({ button: 'right', force: true });
     await expect(features.locator('[role=menu]')).toBeVisible();
@@ -579,14 +583,14 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
     // Formula's Reference Outlines and coloured text (ADR-0050/0051/0057).
     await openSheet(page);
     const sheetGrid = sheet(page);
-    await clickSheetCell(sheetGrid, 'F2');
+    await pressSheetCell(sheetGrid, 'F2');
     await expect(sheetGrid.locator('.ex-fill-handle')).toBeAttached();
     await page.keyboard.type('=SU');
     await expect(sheetGrid.locator('.ex-completion')).toBeVisible();
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
     await expect(sheetEditor(sheetGrid)).toHaveCount(0);
-    await clickSheetCell(sheetGrid, 'F2');
+    await pressSheetCell(sheetGrid, 'F2');
     await page.keyboard.type('=A1+B2:C3');
     await expect(sheetGrid.locator('.ex-reference-outline')).toHaveCount(2);
     await page.keyboard.press('Escape');
