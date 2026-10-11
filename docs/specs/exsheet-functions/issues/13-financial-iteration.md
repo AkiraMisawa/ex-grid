@@ -1,6 +1,8 @@
 # 13: Financial iteration that reproduces Excel
 
 Status: needs-info
+Roadmap: ExSheet — IRR, XIRR and RATE, once an iteration is found that gives every answer Excel was
+seen to give; until then they are `#NAME?` (ADR-0047).
 
 **What to build:** IRR, XIRR and RATE under ADR-0047's existing admission rule, including the
 selected root, stopping result and failure cases at 15 significant digits.

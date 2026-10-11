@@ -1,0 +1,12 @@
+@* The products a Roadmap row reaches (ADR-0191), as the Release Notes label theirs. *@
+<span class="docs-roadmap-products">
+    @foreach (var product in Products)
+    {
+        <span class="docs-notes-label">@product</span>
+    }
+</span>
+
+@code {
+    /// <summary>The products.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<string> Products { get; set; } = [];
+}

@@ -136,7 +136,13 @@ Sheet has to rewrite the References to it in the other.
   | Protecting cells | | ✓ | `Editable` is per column ([ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md)); per cell is a core change |
   | Several Sheets (a workbook) | | ✓ | above |
   | Reading and writing `.xlsx` | | ✓ | a separate package (ADR-0048) |
-  | Spilled arrays (Excel 365's dynamic arrays) | | ✓ | refused with `#VALUE!` until an ADR of their own (ADR-0047, settled 2026-09-27) |
+  | Spilled arrays (Excel 365's dynamic arrays) | ✓ | | in the first version since [ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md) (2026-10-03) |
+
+  *(Row changed 2026-10-11, when the Docs Site's Roadmap began reading this table
+  ([ADR-0191](./0191-the-roadmap-is-read-from-the-tickets-and-the-adrs-and-carries-no-dates.md)).
+  It read: Later, "refused with `#VALUE!` until an ADR of their own (ADR-0047, settled
+  2026-09-27)". ADR-0125 moved spilled arrays into the first version on 2026-10-03, and they shipped
+  in `0.1.0-beta.2`; the table had not followed.)*
 
 - **ExSheet is built alongside ExGrid**, before ExGrid's sign-off. A change ExSheet needs in the
   core is made through an ADR, and it has to be right for a plain ExGrid Consumer as well.

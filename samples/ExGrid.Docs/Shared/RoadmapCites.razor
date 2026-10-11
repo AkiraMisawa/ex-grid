@@ -1,0 +1,12 @@
+@* The records a hand-written Roadmap row cites (ADR-0191), each linked at the tag or the commit the
+   site was built from. The build has checked that every one exists. *@
+@foreach (var name in Of)
+{
+    var cite = Roadmap.Cite(name);
+    <a href="@cite.Url" target="_blank" rel="noopener" class="docs-roadmap-cite">@cite.Title</a>
+}
+
+@code {
+    /// <summary>The citations, as the row writes them.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<string> Of { get; set; } = [];
+}

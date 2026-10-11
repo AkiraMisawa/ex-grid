@@ -1,6 +1,8 @@
 # 16: SUBTOTAL and AGGREGATE, while a Sheet cannot hide a row
 
 Status: ready-for-agent
+Roadmap: ExSheet — SUBTOTAL and AGGREGATE, answering as Excel does over a sheet whose rows are all
+shown (ADR-0047).
 
 **What to build:** `SUBTOTAL` and `AGGREGATE` under
 [ADR-0047](../../../adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)'s

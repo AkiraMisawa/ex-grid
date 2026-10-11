@@ -1,0 +1,128 @@
+@page "/getting-started/packages"
+
+@* The Packages page (ADR-0110), a reference page: the family's packages by product, in ADR-0042's table
+   order, which the build checks is exactly what release.yml publishes. Each description is the
+   package's assembly's, which is the text nuget.org shows, and what each brings with it is read from
+   its project. Nothing here is typed twice. *@
+<DocsPage Title="Packages"
+          Lead="The family's packages by product, with what each one is and what it brings with it. Add the products you use, and in a MudBlazor application each one's Wrapper; every package of the family is installed at one version.">
+
+    <DocsSection Title="The packages">
+        <ReferenceAsOf>
+            Each description is the one nuget.org shows, read from the package's own assembly, and the list is the
+            one the release publishes from a tag.
+        </ReferenceAsOf>
+        @foreach (var product in Packages.ByProduct)
+        {
+            <MudText Typo="Typo.h6" HtmlTag="h3" Class="docs-reference-heading">
+                @if (Packages.PageOf(product.Key) is { } productRoute)
+                {
+                    <a href="@productRoute">@product.Key</a>
+                }
+                else
+                {
+                    @product.Key
+                }
+            </MudText>
+            <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table docs-reference-table">
+                <thead>
+                    <tr><th style="width: 22%">Package</th><th>What it is</th><th style="width: 22%">Brings with it</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var package in product)
+                    {
+                        <tr>
+                            <td>
+                                <a href="@package.NuGetUrl" target="_blank" rel="noopener"><code>@package.Id</code></a>
+                                <div><a href="@package.ReadmeUrl" target="_blank" rel="noopener" class="docs-muted docs-reference-small">Readme</a></div>
+                            </td>
+                            <td>@package.Description</td>
+                            <td>
+                                @if (package.DependsOn.Count == 0)
+                                {
+                                    <span class="docs-muted">No package of the family</span>
+                                }
+                                else
+                                {
+                                    @for (var k = 0; k < package.DependsOn.Count; k++)
+                                    {
+                                        @(k > 0 ? ", " : "")<code>@package.DependsOn[k]</code>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </DocsSection>
+
+    <DocsSection Title="Which to install">
+        <p>
+            Add the package of each product you use. NuGet brings what it depends on, so a product's component is
+            one line:
+        </p>
+        <ul>
+            <li><b>A grid</b>: <code>ExGrid</code>. It brings @Brings("ExGrid").</li>
+            <li><b>A sheet</b>: <code>ExSheet</code>. It brings @Brings("ExSheet").</li>
+            <li><b>A pivot table</b>: <code>ExPivot</code>. It brings @Brings("ExPivot").</li>
+            <li>
+                <b>In a MudBlazor application</b>, add each product's Wrapper too: <code>ExGrid.MudBlazor</code>,
+                <code>ExSheet.MudBlazor</code>, <code>ExPivot.MudBlazor</code>. A Wrapper draws the product's menus,
+                panels and editors with MudBlazor's controls, and never changes what the product does. See the
+                <a href="features#what-each-wrapper-draws">Feature matrix</a> for what each one draws.
+            </li>
+            <li>
+                <b>On a server, with no UI</b>: <code>ExSheet.Engine</code> computes a Sheet Document's Values and
+                <code>ExPivot.Engine</code> a pivot report, by the same rules as the screen; <code>ExGrid.Data</code>
+                holds the data as a Snapshot.
+            </li>
+            <li><b>Apache Arrow</b>: <code>ExGrid.Data.Arrow</code> reads a Snapshot from Arrow and writes one as Arrow.</li>
+        </ul>
+        <CodeBlock Path="Examples/Setup/install.sh" />
+        <p>
+            Each package's readme, linked above, gives its stylesheet link and a first page. The
+            <a href="getting-started">Installation</a> page puts the first grid on a page.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="One version for the family">
+        <p>
+            Every package of the family is published at one version, from one tag. Each depends on <b>exactly</b>
+            the version of the others it was built and tested with: the range is <code>[x]</code>, not
+            <code>&gt;= x</code>. So upgrade them together.
+        </p>
+        <ul>
+            <li>
+                An application that upgrades one package and not another is told at restore, never left running a
+                Wrapper against a core it never met: <b>NU1608</b> where the application references both packages
+                directly, and <b>NU1107</b> where two of its dependencies ask for different versions.
+            </li>
+            <li>
+                Every version so far is a prerelease, <code>0.1.0-beta.N</code>, published before the Definition of
+                Done is signed off. NuGet offers one only when prereleases are asked for: <code>--prerelease</code>, or
+                the box that includes them. A version without a suffix waits for the sign-off.
+            </li>
+        </ul>
+        <p class="docs-reference-cites">
+            Decided in <a href="@DocsBuild.BlobUrl(Packages.FamilyRecordPath)" target="_blank" rel="noopener">ADR-0042</a>.
+            What each version holds is in the <a href="release-notes">Release notes</a>.
+        </p>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    // What a product's component package depends on, in words: "ExSheet.Engine and ExGrid".
+    private static MarkupString Brings(string id)
+    {
+        var dependsOn = Packages.All.FirstOrDefault(p => p.Id == id)?.DependsOn ?? [];
+        var names = dependsOn.Select(d => $"<code>{System.Net.WebUtility.HtmlEncode(d)}</code>").ToList();
+        var words = names.Count switch
+        {
+            0 => "no other package of the family",
+            1 => names[0],
+            _ => string.Join(", ", names.Take(names.Count - 1)) + " and " + names[^1],
+        };
+        return new MarkupString(words);
+    }
+}

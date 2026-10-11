@@ -1,6 +1,8 @@
 # 14: LET, as Excel's keyboard accepts it
 
 Status: ready-for-agent
+Roadmap: ExSheet — LET, to name a value once and use it across one Formula, accepting the names
+Excel's keyboard accepts (ADR-0181).
 
 **What to build:** `LET` under
 [ADR-0181](../../../adr/0181-let-binds-names-inside-one-formula-as-excel-accepts-them-from-the-keyboard.md).

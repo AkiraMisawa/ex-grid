@@ -63,6 +63,22 @@ records and notes. This section is rewritten on the release branch, with what it
      the release already says. *(Added 2026-09-25: the first tag was made that way. The
      workflow refused the second release after the packages were already on nuget.org, and
      the release it left behind carried neither the packages nor the note.)*
+- *(Rewritten 2026-10-11, decided with the user with
+  [ADR-0190](./0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md).)*
+  **The release's text and the Docs Site.** Steps 1 and 4 above change, and a step follows them:
+  - **Step 1 refuses more, before CI's twenty minutes**: a tagged commit with no
+    `docs/releases/<version>.md`, or whose first line is not the version; one that still holds a Change
+    Note under `docs/releases/unreleased/`; and one where an older version's file still reads
+    `Published: pending`.
+  - **Step 2 builds the Docs Site with the version it is about to publish**, so the site's own checks of
+    the Release Notes run on the tag before anything is pushed.
+  - **Step 4's text is the Release Notes**, passed with `--notes-file`, after the prerelease note for a
+    prerelease. The prerelease note is held once, in `docs/releases/prerelease-note.md`. GitHub's
+    generated list is no longer asked for. A release GitHub's page already made is given that text,
+    replacing what it said, rather than having the note put above it.
+  - **Then the release publishes the Docs Site** ([ADR-0110](./0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)),
+    with the version, the tag and the UTC day the packages were pushed. The site states a version only
+    once nuget.org has it.
 - **Trusted Publishing, not a stored key.** The publish job exchanges GitHub's OIDC token for a
   nuget.org key that lives an hour (`NuGet/login`). The only standing configuration:
   - a policy on nuget.org naming this repository and `release.yml`;

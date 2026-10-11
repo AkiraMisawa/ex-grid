@@ -1,6 +1,7 @@
 # 17: ERROR.TYPE
 
 Status: ready-for-agent
+Roadmap: ExSheet — ERROR.TYPE, the number Microsoft's table gives an Error Value (ADR-0047).
 
 **What to build:** `ERROR.TYPE` under
 [ADR-0047](../../../adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)'s
