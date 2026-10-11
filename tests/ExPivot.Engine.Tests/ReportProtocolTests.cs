@@ -553,6 +553,38 @@ public class ReportProtocolTests
         EntryLayout(), PivotReportSettings.Invariant, 1, [new("label", "Label", "Label")],
         [new("amount", "Amount", PivotColumnRole.Item, 0, [])], [], 0, ["Amount"]);
 
+    [Fact] // ADR-0182 (LV-34): an answer that is not the Window asked for — a relay that caps or moves it — is refused, naming the rows asked and the rows answered
+    public async Task LV34_an_answer_that_is_not_the_Window_asked_is_refused_naming_its_rows()
+    {
+        var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
+            (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("v1"), [])
+                with { Window = request.Window with { Count = 20 } }));
+        var client = new PivotReportClient(source);
+
+        Assert.False(await client.ReadAsync(PivotLayout.Empty, PivotReportSettings.Invariant, new(440, 135),
+            cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Null(client.Current);
+        Assert.Equal(PivotReportRefusalKind.InvalidResponse, client.Refusal!.Kind);
+        Assert.Contains("rows 440 to 459", client.Refusal.Message, StringComparison.Ordinal);
+        Assert.Contains("rows 440 to 574", client.Refusal.Message, StringComparison.Ordinal);
+        Assert.Contains("ADR-0182", client.Refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0182 (LV-34): a complete Window short of the rows the report has there is refused, naming them
+    public async Task LV34_a_complete_Window_short_of_its_rows_is_refused_naming_them()
+    {
+        var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
+            (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("v1") with { RowCount = 1000 }, [])));
+        var client = new PivotReportClient(source);
+
+        Assert.False(await client.ReadAsync(PivotLayout.Empty, PivotReportSettings.Invariant, new(440, 135),
+            cancellationToken: TestContext.Current.CancellationToken));
+
+        Assert.Equal(PivotReportRefusalKind.InvalidResponse, client.Refusal!.Kind);
+        Assert.Contains("holds 0 rows where the report has 135 in rows 440 to 574", client.Refusal.Message, StringComparison.Ordinal);
+    }
+
     private static PivotReportMetadata Metadata(string version) => new(
         new(version), "source-1", "rows-1", PivotLayout.Empty, PivotReportSettings.Invariant,
         0, [], [], [], 0, []);

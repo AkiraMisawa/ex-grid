@@ -1,6 +1,6 @@
-import { test, expect, scrollRowToTop, circuitQuiet } from './fixtures.mjs';
+import { test, expect, scrollRowToTop, circuitQuiet, setRoundTrip } from './fixtures.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
-import { API_URL } from './hosting.mjs';
+import { API_URL, SERVER } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
 // /pivot-db (ADR-0065/0066/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
@@ -116,6 +116,63 @@ test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows i
     }
     // Whatever the host still had to say has been said before the console's verdict is read: no
     // console error, no page error, no unhandled exception in the host's log (CON-1, CON-2, CON-6).
+    await circuitQuiet();
+});
+
+// ADR-0182/0183 (LV-34, FN-3a): the server's report is asked for the rows on screen and 60 either side,
+// and asked for the next Window ten rows before the one held runs out. Counted in the questions the
+// page's status line says it has sent, never in time. On the Server host the circuit runs behind the
+// latency proxy at 150 ms; on WebAssembly the browser sends each question itself, and the Window it
+// names is read from the request.
+test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it read ahead asking nothing, and asks once ten rows before it runs out', async ({ page }) => {
+    await open(page, 'builtin');
+    const windowsAsked = [];
+    page.on('request', (request) => {
+        if (request.method() === 'POST' && /\/api\/pivot\/reports\/[0-9a-f]{32}\/window$/.test(request.url())) {
+            windowsAsked.push(JSON.parse(request.postData() ?? '{}').window);
+        }
+    });
+    await setRoundTrip(150);
+    try {
+        const grid = report(page, 'server');
+        const placeholders = rows(page, 'server').and(page.locator('.ex-placeholder'));
+        await section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
+        await expect.poll(async () => Number(await grid.getAttribute('aria-rowcount'))).toBeGreaterThan(1000);
+        await circuitQuiet();
+
+        // Row 500 at the top: past the Window, a jump the grid asks about once it settles (ADR-0004).
+        await scrollRowToTop(grid, 500);
+        await expect(placeholders).toHaveCount(0);
+        await circuitQuiet();
+        const onScreen = await rows(page, 'server').count();
+        const atFiveHundred = await asked(page, 'Window');
+        if (!SERVER) {
+            expect(windowsAsked.at(-1)).toEqual({ start: 440, count: onScreen + 120 });
+        }
+
+        // Down five rows at a time to row 550: ten rows below the rows on screen is still in the
+        // Window, which reaches sixty rows past the rows the grid asked for at 500. Nothing is asked.
+        for (let row = 505; row <= 550; row += 5) {
+            await scrollRowToTop(grid, row);
+            await expect(placeholders).toHaveCount(0);
+            await circuitQuiet();
+            expect(await asked(page, 'Window'), `asked at row ${row}`).toBe(atFiveHundred);
+        }
+
+        // Row 555: every row on screen is held, but the tenth row below them is not. The next Window
+        // is asked for, once, and the rows on screen stay painted while it is out.
+        await scrollRowToTop(grid, 555);
+        await expect.poll(() => asked(page, 'Window')).toBe(atFiveHundred + 1);
+        await expect(placeholders).toHaveCount(0);
+        await circuitQuiet();
+        expect(await asked(page, 'Window')).toBe(atFiveHundred + 1);
+        if (!SERVER) {
+            expect(windowsAsked.at(-1)).toEqual({ start: 495, count: onScreen + 120 });
+        }
+    } finally {
+        await setRoundTrip(0);
+    }
+    // Whatever the host still had to say has been said before the console's verdict is read.
     await circuitQuiet();
 });
 

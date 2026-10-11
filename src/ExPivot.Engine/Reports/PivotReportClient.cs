@@ -107,8 +107,13 @@ public sealed class PivotReportClient
     {
         state = null;
         if (update is null) return Invalid("The report response is null.");
-        if (update.RequestId != request.RequestId || update.Window != request.Window)
-            return Invalid("The report response names another request or Window.");
+        if (update.RequestId != request.RequestId)
+            return Invalid("The report response names another request.");
+        // An answer is the Window asked for: read ahead or not, its rows hold the rows the grid
+        // needs, and a relay that caps or moves it would leave those on Placeholders (ADR-0182).
+        if (update.Window != request.Window)
+            return Invalid($"The report response answers {Rows(update.Window)} where {Rows(request.Window)} were asked for. "
+                + "An answer is the Window asked for, which holds the rows the grid needs (ADR-0152, ADR-0182).");
         if (update.Refusal is { } refusal) return refusal;
         if (update.Metadata is not { } metadata || string.IsNullOrEmpty(metadata.Version.Value)
             || metadata.RowCount < 0 || metadata.HeaderTierCount < 0)
@@ -121,7 +126,9 @@ public sealed class PivotReportClient
         if (update.Rows is { } complete)
         {
             if (update.Baseline is not null || update.Changes.Count != 0 || complete.Count != count)
-                return Invalid("The complete report Window has a different extent.");
+                return Invalid($"The complete report Window holds {complete.Count} rows where the report has {count} in "
+                    + $"{Rows(request.Window)}. An answer holds every row of the Window asked for, the rows the grid needs "
+                    + "among them (ADR-0152, ADR-0182).");
             rows = complete.ToArray();
         }
         else
@@ -179,4 +186,9 @@ public sealed class PivotReportClient
     }
 
     private static PivotReportRefusal Invalid(string message) => new(PivotReportRefusalKind.InvalidResponse, message);
+
+    /// <summary>A Window's rows in words, for a refusal: "rows 440 to 574", or none.</summary>
+    private static string Rows(PivotReportWindow? window) => window is null ? "no Window"
+        : window.Count <= 0 ? $"no rows at {window.Start}"
+        : $"rows {window.Start} to {(long)window.Start + window.Count - 1}";
 }

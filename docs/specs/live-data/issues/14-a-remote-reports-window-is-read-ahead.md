@@ -65,15 +65,15 @@ These are the user's, once the measurement is in.
 
 - [x] The measurement is recorded, and the user has decided
 - [x] The decision is in an ADR, and the Definition of Done says what holds (ADR-0182, LV-34)
-- [ ] Built, and each of these holds:
+- [x] Built, and each of these holds:
   - a scroll within the read-ahead asks nothing;
   - a scroll past it asks once, for the widened Window clamped into the report;
   - an answer that does not reach the rows the grid needs is refused, as ADR-0025 refuses one;
   - Window Changes and their Window Digest cover the whole widened Window
-- [ ] Layers 1 and 2 are green
+- [x] Layers 1 and 2 are green
 - [ ] Layer 3 counts the report source's Window questions while it scrolls, and never reads a time.
   `/pivot-db`'s status line already counts the questions of each kind.
-- [ ] The Docs Site's ExPivot Sources page says it, and its server Example passes the number
+- [x] The Docs Site's ExPivot Sources page says it, and its server Example passes the number
 
 ## Comments
 
@@ -175,3 +175,32 @@ is built by ticket 15. ExPivot's use of it needs this ticket's read-ahead first.
 
 The lab branch `lab/remote-read-ahead` (21d7a94, on origin, never merged) holds the prototypes both
 records measured.
+
+2026-10-11: Built on `claude/remote-read-ahead`, test-first, with ticket 15's ExPivot half. Every box is
+ticked but layer 3's: the spec is written and has not run yet.
+- **The number is the source's.** `PivotReportSource.ReadAheadRows` is virtual and 0 by default;
+  `LocalPivotReportSource` declares 0; `PivotReportSource.Fetch(..., readAheadRows: 60)` takes it as its
+  last argument, refusing a negative one by name, and `FetchingPivotReportSource.ReadAheadRows` says it.
+- **ExPivot widens and keeps.** `WindowNeededAsync` asks for the range the grid needs widened by the
+  source's read-ahead, clamped into the report, and the first Window is 64 rows as before. A question in
+  flight whose Window covers the rows on screen stays in flight. With nothing in flight, a range the
+  Window held covers, with the grid's margin either side, asks nothing.
+- **An answer short of the rows the grid needs is refused by name.** The report protocol already
+  required every answer to be the Window asked for (ADR-0152). So a short answer was refused, but as
+  "another request or Window" or "a different extent". The refusals now name the rows asked and the
+  rows answered, and cite ADR-0182. This is stricter than ADR-0025, which accepts an answer short of
+  the read-ahead that still reaches the rows the grid needs. Accepting one here would change ADR-0152's
+  rule that an answer is the Window asked for, and nothing in ADR-0182 asks for that.
+- **Window Changes over the widened Window** are pinned: a deal ten rows into the read-ahead, out of
+  sight, changes, and its row arrives as a Window Change against the whole Window, with its digest.
+  Scrolled to, it is painted from the Window held, and nothing is asked.
+- **Tests:** `ReportReadAheadTests` (layer 2, 20 cases), two refusals in `ReportProtocolTests`
+  (layer 1). `ReportShrinkTests`' transports now pass `readAheadRows: 0`, so their Windows are still
+  where the grid stands, as ADR-0151's clamp is stated there. A shrink under a Window read ahead is
+  pinned in `ReportReadAheadTests`.
+- **Layer 3, written and not run yet:** `pivot-db.spec.mjs`, "LV-34/FN-3a/ADR-0182/0183: a server report
+  scrolls within the Window it read ahead asking nothing, and asks once ten rows before it runs out".
+  It counts the page's tally of Window questions, and on WebAssembly reads the Window each question
+  names from the request.
+- **Docs Site:** the Sources page says how far a server's report is read ahead, that it is asked
+  early, and how an answer is checked. The server Example passes `readAheadRows: 60`.

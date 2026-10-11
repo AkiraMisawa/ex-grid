@@ -9,13 +9,15 @@
         <p>
             ExPivot requests a report Window and the metadata describing its full extent. Local data is
             calculated by the same engine that a server uses. A slow answer leaves the report under its loading
-            indication, and a newer question cancels the older one. Copy and Selection Summary can include rows
-            outside the Window, and name the Report Version they answer; Show Details names the Source Version
-            the report was computed from.
+            indication, and a newer question cancels the older one, unless the older one is for a Window that
+            already holds the rows now on screen. Copy and Selection Summary can include rows outside the Window,
+            and name the Report Version they answer; Show Details names the Source Version the report was computed
+            from.
         </p>
         <p>
-            The Window asked for is the one the grid is scrolled to. When a layout, a collapse, a filter or newer
-            data makes a report that ends before that Window does, ExPivot asks again for a Window of the same
+            The Window asked for is the one the grid is scrolled to, with the rows the source reads ahead either
+            side: none for a local report, 60 for a server's unless you say otherwise (below). When a layout, a
+            collapse, a filter or newer data makes a report that ends before that Window does, ExPivot asks again for a Window of the same
             height ending at the new report's last row, and shows that one, as the grid moves its own view to the
             end of a result that shrank. The report you were reading stays on screen until it lands, and later
             questions ask for that Window until you scroll elsewhere. A source therefore needs nothing of its own
@@ -94,6 +96,19 @@
             <li>Culture, formats and display words are explicit; custom Order Keys select policies registered on the server.</li>
             <li>The Consumer owns transport and report-state disposal. A missing baseline is recovered automatically; an unavailable older operation refuses by name.</li>
             <li>
+                <strong>A server's report is read ahead, and asked for early.</strong> Each round trip to the server would
+                otherwise leave the rows a scroll brings in as placeholders until the answer lands. <code>Fetch</code>'s
+                <code>readAheadRows</code>, 60 unless you pass another number, asks for that many rows either side of the
+                rows on screen, clamped into the report, so ordinary scrolling and a key that moves a row are painted from
+                rows already held. ExPivot also asks for the next Window ten rows before the one it holds runs out, while
+                the rows on screen are still there, and keeps a question in flight while its Window holds them. Every row
+                read ahead is a row of every column, in each answer and in each live update, so a wide report may want
+                fewer, and a slow network more. <code>0</code> asks for exactly the rows on screen. A report computed in
+                the page, <code>PivotSource.From</code> or <code>PivotReportSource.From</code>, has no round trip to hide
+                and reads nothing ahead. An answer is the Window asked for: one that is not, a relay that caps or moves it,
+                is refused, naming the rows asked and the rows answered, and the report stays as it was.
+            </li>
+            <li>
                 Once a Window is on screen, a server sends <strong>Window Changes</strong> in place of the whole Window: the rows that
                 changed since the Window ExPivot holds, the Baseline Window, with the digest of the Window they make
                 (<code>PivotReportUpdate.Changed</code>, <code>PivotReportUpdate.WindowDigest</code>). ExPivot applies them to the
@@ -106,7 +121,9 @@
         </ul>
         <DocsExample Builtin="typeof(ServerSource)" Mud="typeof(ServerSourceMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
             The server here is simulated in the page, with half a second of latency: change the layout and watch the
-            report wait under its loading indication.
+            report wait under its loading indication. Tick Date in the field list for a report hundreds of rows long,
+            and scroll it: the rows read ahead come with each answer, and the next Window is asked for before you
+            reach the end of the one held.
         </DocsExample>
     </DocsSection>
 

@@ -80,7 +80,8 @@ public partial class ExPivot
 
     // A further change cancels the question in flight, and an answer to a superseded question is
     // discarded, always: the generation is what makes that correct, the cancellation is a courtesy
-    // to the source (ADR-0025's rule, which ADR-0066 gives the pivot).
+    // to the source (ADR-0025's rule, which ADR-0066 gives the pivot). A scroll to rows the Window
+    // asked for in flight covers is not a further change: that question stays (ADR-0182).
     private int _generation;
     private CancellationTokenSource? _asking;
     private bool _loading;
@@ -471,12 +472,62 @@ public partial class ExPivot
         return new PivotReportWindow(Math.Max(0, rows - window.Count), window.Count);
     }
 
+    /// <summary>
+    /// How many rows short of the Window's edge ExPivot's grid asks for the next one, at most: ten,
+    /// ag-grid's <c>rowBuffer</c> and the number measured (ADR-0183).
+    /// </summary>
+    internal const int MostRangeRequestMargin = 10;
+
+    /// <summary>The rows the report source reads ahead either side of the range the grid needs
+    /// (ADR-0182): what it declares, 0 for a local one.</summary>
+    private int ReadAhead => Math.Max(0, _source?.ReadAheadRows ?? 0);
+
+    /// <summary>The grid's Range Request Margin (ADR-0183): the smaller of ten and the source's
+    /// read-ahead — 10 for a remote source at ADR-0182's default, 0 for a local one, which has no
+    /// round trip to hide. Never more than the read-ahead, or the Window that answers an early
+    /// request would not reach the margin, and the next move would ask again.</summary>
+    private int RangeRequestMargin => Math.Min(MostRangeRequestMargin, ReadAhead);
+
+    /// <summary>
+    /// The grid needs <paramref name="range"/>, the rows on screen (ADR-0151). ExPivot asks its
+    /// report source for that range widened by the source's read-ahead either side, clamped into
+    /// the report (ADR-0182) — unless a question in flight already asks for a Window that covers
+    /// the range: it stays in flight, and a held scroll is answered rather than restarted at every
+    /// input, where ADR-0025's rule would supersede it. With nothing in flight, a range the
+    /// Window held covers, with the grid's margin either side, asks nothing; the grid asks again
+    /// once a Window lands, if the margin is still not all in it (ADR-0183). Each answer is checked
+    /// against the Window asked for, whose rows include the range (ADR-0152).
+    /// </summary>
     private Task WindowNeededAsync(RowRange range)
     {
-        var wanted = new PivotReportWindow(range.Start, range.Count);
-        if (wanted == _wantedWindow) return Task.CompletedTask;
-        _wantedWindow = wanted;
+        var rows = (long)(_report?.RowCount ?? int.MaxValue);
+        if (_asking is not null && Covers(_wantedWindow, Widened(range, 0, rows)))
+            return Task.CompletedTask;
+        if (_asking is null && _state?.Window is { } held && Covers(held, Widened(range, RangeRequestMargin, rows)))
+        {
+            // Later questions ask for the Window shown, which holds the rows on screen.
+            _wantedWindow = held;
+            return Task.CompletedTask;
+        }
+        _wantedWindow = Widened(range, ReadAhead, rows);
         return PursueAsync(raise: _raisePending, kind: Question.Window);
+    }
+
+    private static bool Covers(PivotReportWindow window, PivotReportWindow range)
+        => range.Start >= window.Start && (long)range.Start + range.Count <= (long)window.Start + window.Count;
+
+    /// <summary>
+    /// <paramref name="range"/> widened by <paramref name="readAhead"/> rows either side, clamped
+    /// into a report of <paramref name="rows"/> rows, and never short of the range itself: a range
+    /// past the end of a report that shrank under it is asked for as it is, and the answer's
+    /// metadata clamps it (ADR-0151).
+    /// </summary>
+    internal static PivotReportWindow Widened(RowRange range, int readAhead, long rows)
+    {
+        var end = (long)range.Start + range.Count;
+        var start = Math.Max(0L, (long)range.Start - readAhead);
+        var last = Math.Max(end, Math.Min(rows, end + readAhead));
+        return new PivotReportWindow((int)start, (int)(last - start));
     }
 
     /// <summary>The question in flight has landed: nothing is out any more. Returns whether it
