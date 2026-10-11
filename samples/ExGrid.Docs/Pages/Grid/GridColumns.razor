@@ -89,6 +89,13 @@
             Answer each by pushing back a new <code>Columns</code> list. Drag a column edge, drag a header, or hide
             a column from its ▾ menu.
         </p>
+        <p>
+            Keep the layout as a user's setting with <code>System.Text.Json</code>. The order is a list of names,
+            the pinned count a number and the sort a list of <code>SortSpec</code>. A <code>ColumnWidth</code> is
+            written as <code>"Auto"</code> or as its pixels, never as the width an Auto column was painted at, so a
+            restored Auto column measures itself again. A stored width that no column could declare is refused
+            when it is read.
+        </p>
         <DocsExample Title="Pinned columns, two tiers of groups, and layout events" Builtin="typeof(ColumnLayout)" Mud="typeof(ColumnLayoutMud)"
                      Files="@(["Examples/Grid/Position.cs"])" />
     </DocsSection>
