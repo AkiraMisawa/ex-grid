@@ -110,3 +110,21 @@ has decided, and the decisions above are still the user's. What it found:
   every row of the Window for each update, changed or not: 0.3 to 3.3 ms narrow, 9 to 175 ms over 251
   columns.
 - **The source keeps two Windows (LV-22), each read ahead:** up to 0.24, 1.3 and 12.6 MiB a report at 120.
+
+2026-10-11, decided with the user, from the record of 2026-10-10:
+- **A question whose Window covers the range stays in flight.** A newer question does not supersede
+  it. This departs from ADR-0025's rule for `GridSource.Fetch`, and the ADR says why: under that
+  rule, 60 rows ahead still left Placeholders 85–88% of a held scroll.
+- **The number lives on the source,** as an argument of `PivotReportSource.Fetch`, as ADR-0025 puts
+  `readAheadRows` on the bundled fetching source. A local source declares none.
+- **It is recorded in an ADR of its own, ADR-0182,** from `claude/backlog-cleanup`'s block. The 0162
+  named above belonged to `claude/live-data-best`'s block. That branch has merged, so its unused
+  numbers stay unused (`docs/agents/numbering.md`).
+- **The default is not decided yet.** The user asked how ag-grid compares. Its Server-Side and
+  Infinite row models fetch aligned blocks of `cacheBlockSize` = 100 rows. A block is asked for when
+  the rendered rows, the Viewport and `rowBuffer` = 10 either side, reach a block not yet held, and
+  every block is kept (`maxBlocksInCache` = -1). Its Viewport row model adds
+  `viewportRowModelBufferSize` = 5 either side, rounded out to pages of 5. These defaults are from
+  `packages/ag-grid-community/src/gridOptionsDefault.ts`, ag-grid `latest` at
+  12c6bb02b11f2e7f2b6451f6bbb9ee267339603b. Before choosing, the user asked for aligned 100-row
+  blocks to be measured beside N rows either side.
