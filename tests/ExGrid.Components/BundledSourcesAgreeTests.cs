@@ -14,13 +14,13 @@ namespace ExGrid.Components.Tests;
 /// The fetching source answers at once here, with the reference implementation over the same row
 /// instances, so whatever else differed would be the path.
 ///
-/// <para>Not asserted here, and not met as the Definition of Done words it ("identical render
-/// counts"): the grid's own renders, which differ by the states the fetching source pushes and
-/// <c>From</c> has no reason to — the dropped Window of a restart, the loading flag of a fetch
-/// (ADR-0025) — and the rows' renders across a fling past the fetched Window, where the two sources
-/// hold different Windows. Whether FN-4's counts are read to allow either is a decision no ADR
-/// records. <see cref="FN4_from_and_fetch_render_the_same_counts_at_every_step"/> asserts FN-4 as
-/// written, and fails until it is made.</para>
+/// <para>The grid's own renders are not the same, and FN-4 as restated on 2026-10-11 does not ask
+/// them to be: they exceed <c>From</c>'s by the states the fetching source pushes and <c>From</c>
+/// has no reason to — the dropped Window of a restart, the loading flag of a fetch (ADR-0025) —
+/// and by nothing else, which
+/// <see cref="FN4_the_grid_renders_more_under_fetch_by_exactly_the_states_fetch_pushes"/> holds.
+/// The rows' renders are compared wherever both sources hold the rows: across a fling past the
+/// fetched Window the two hold different Windows.</para>
 /// </summary>
 public class BundledSourcesAgreeTests : GridTestContext
 {
@@ -112,7 +112,7 @@ public class BundledSourcesAgreeTests : GridTestContext
         await StepAsync("the sort cleared", (source, grid) => grid.InvokeAsync(() => source.OnSortChanged([])));
     }
 
-    // ---- FN-4 as the Definition of Done words it ------------------------------------------------
+    // ---- FN-4 as restated on 2026-10-11: the grid's own renders ----------------------------------
 
     /// <summary>The grid, counting its own renders: bUnit's <c>RenderCount</c> on the root also
     /// counts each render of a row beneath it, which is what <see cref="ExGridRow{TRow}"/>'s own
@@ -128,20 +128,33 @@ public class BundledSourcesAgreeTests : GridTestContext
         }
     }
 
-    [Fact] // FN-4 / ADR-0001: identical painted output and identical render counts at every step — the grid's own and every row's
-    public async Task FN4_from_and_fetch_render_the_same_counts_at_every_step()
+    /// <summary>The states a source pushed to a grid: each push noted with the grid's render count
+    /// at that moment, so pushes no render separates — a fetch answered in the call that asked for
+    /// it — are the one state the next render takes in.</summary>
+    private sealed class PushedStates
     {
-        // FN-4's pass condition as the Definition of Done words it. It FAILS today: the fetching
-        // source pushes states From has no reason to — the dropped Window of a restart, the loading
-        // flag of a fetch (ADR-0025) — each a render of the grid, and past its read-ahead it holds a
-        // different Window, so its rows render differently there. Whether FN-4's counts are read to
-        // allow either is the decision this test waits for; the messages give the counts.
+        private readonly List<int> _rendersAtPush = [];
+
+        internal PushedStates(IGridSource<TestRow> source, Func<int> renders)
+            => source.StateChanged += () => _rendersAtPush.Add(renders());
+
+        internal int Count => _rendersAtPush.Count;
+
+        /// <summary>The states pushed since <paramref name="pushesBefore"/> pushes had been noted.</summary>
+        internal int StatesSince(int pushesBefore) => _rendersAtPush.Skip(pushesBefore).Distinct().Count();
+    }
+
+    [Fact] // FN-4 / ADR-0001 / ADR-0025: the same painting at every step, the same row renders where both sources hold the rows, and the grid renders more under Fetch only for the states Fetch pushes that From does not
+    public async Task FN4_the_grid_renders_more_under_fetch_by_exactly_the_states_fetch_pushes()
+    {
+        // FN-4 as restated on 2026-10-11: one push path, so the grids paint alike at every step and
+        // their rows cost alike wherever both sources hold them; the grid's own renders may exceed
+        // From's by the states Fetch pushes that From does not — the loading state of a sort and a
+        // filter, the restart when either is cleared, a fetch past its read-ahead (ADR-0025) — and by
+        // nothing else. The messages give every count.
         var rows = TestRows.Many(300);
         var inMemory = GridSource.From(rows);
         using var fetching = GridSource.Fetch<TestRow>((query, _) => Answer(rows, query), readAheadRows: 60);
-        var pushes = new Dictionary<IGridSource<TestRow>, int> { [inMemory] = 0, [fetching] = 0 };
-        inMemory.StateChanged += () => pushes[inMemory]++;
-        fetching.StateChanged += () => pushes[fetching]++;
 
         IRenderedComponent<CountedGrid> Counted(IGridSource<TestRow> source)
             => Render<CountedGrid>(ps => ps
@@ -152,21 +165,35 @@ public class BundledSourcesAgreeTests : GridTestContext
                 .Add(g => g.ViewportWidth, 450));
         var fromGrid = Counted(inMemory);
         var fetchGrid = Counted(fetching);
+        var fromPushed = new PushedStates(inMemory, () => fromGrid.Instance.Renders);
+        var fetchPushed = new PushedStates(fetching, () => fetchGrid.Instance.Renders);
+        AssertSamePaint("first paint", fromGrid, fetchGrid);
         var failures = new List<string>();
+        var extraRenders = 0;
 
-        async Task StepAsync(string step, Func<IGridSource<TestRow>, IRenderedComponent<CountedGrid>, Task> gesture)
+        async Task StepAsync(string step, Func<IGridSource<TestRow>, IRenderedComponent<CountedGrid>, Task> gesture,
+            bool bothHold = true)
         {
-            var (fromGridBefore, fromPushesBefore, fromRowsBefore) = (fromGrid.Instance.Renders, pushes[inMemory], RowRenders.Of(fromGrid));
-            var (fetchGridBefore, fetchPushesBefore, fetchRowsBefore) = (fetchGrid.Instance.Renders, pushes[fetching], RowRenders.Of(fetchGrid));
+            var (fromGridBefore, fromPushesBefore, fromRowsBefore) = (fromGrid.Instance.Renders, fromPushed.Count, RowRenders.Of(fromGrid));
+            var (fetchGridBefore, fetchPushesBefore, fetchRowsBefore) = (fetchGrid.Instance.Renders, fetchPushed.Count, RowRenders.Of(fetchGrid));
             await gesture(inMemory, fromGrid);
             await gesture(fetching, fetchGrid);
-            fetchGrid.WaitForAssertion(() => Assert.Equal(Painted(fromGrid), Painted(fetchGrid)));
+            AssertSamePaint(step, fromGrid, fetchGrid);
 
+            // The grid's own renders: more under Fetch by exactly the states Fetch pushed beyond From's.
             var fromRenders = fromGrid.Instance.Renders - fromGridBefore;
             var fetchRenders = fetchGrid.Instance.Renders - fetchGridBefore;
-            if (fromRenders != fetchRenders)
-                failures.Add($"{step}: the grid rendered {fromRenders} times under From for {pushes[inMemory] - fromPushesBefore} "
-                    + $"pushes, and {fetchRenders} times under Fetch for {pushes[fetching] - fetchPushesBefore}");
+            var (fromStates, fetchStates) = (fromPushed.StatesSince(fromPushesBefore), fetchPushed.StatesSince(fetchPushesBefore));
+            extraRenders += fetchRenders - fromRenders;
+            if (fetchRenders - fromRenders != fetchStates - fromStates)
+                failures.Add($"{step}: the grid rendered {fromRenders} times under From for {fromStates} states pushed, "
+                    + $"and {fetchRenders} times under Fetch for {fetchStates}");
+
+            // Every painted row cost the same renders through either source (ADR-0003), wherever both hold
+            // it: past Fetch's read-ahead the two Windows differ — From's rows paint as Placeholders that
+            // become rows at the settle, and Fetch's are not there to paint until its answer (ADR-0004).
+            if (!bothHold)
+                return;
             var fromRows = fromRowsBefore.Since(fromGrid);
             var fetchRows = fetchRowsBefore.Since(fetchGrid);
             if (!fromRows.SequenceEqual(fetchRows))
@@ -191,11 +218,14 @@ public class BundledSourcesAgreeTests : GridTestContext
         {
             await ScrollToAsync(grid.Find(".ex-scroller"), 120 * RowHeightPx);
             await grid.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
-        });
+        }, bothHold: false);
         await StepAsync("the filter cleared", (source, grid) => grid.InvokeAsync(() => source.OnFilterChanged(null)));
         await StepAsync("the sort cleared", (source, grid) => grid.InvokeAsync(() => source.OnSortChanged([])));
 
         Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
+        // The fetching source's own states are there to count: a run in which it pushed nothing more
+        // than From would assert nothing about them.
+        Assert.True(extraRenders > 0, "Fetch pushed no state that From did not, so nothing was compared.");
     }
 
     private static void AssertSamePaint(
