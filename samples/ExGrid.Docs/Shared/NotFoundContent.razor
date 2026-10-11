@@ -1,0 +1,16 @@
+@* What a reader sees at an address no page claims: the plain fact, never a near match (principle 1),
+   then the search and each product's first page, so the way on is one step. *@
+<PageTitle>Not found — ExGrid</PageTitle>
+
+<div class="docs-not-found">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mt-8">Not found</MudText>
+    <MudText Class="mt-2">There is no page at this address. Search for what you came for, or start from a product.</MudText>
+    <SiteSearch Class="docs-not-found-search mt-6" />
+    <div class="docs-not-found-links mt-6">
+        @foreach (var product in DocsNav.Products)
+        {
+            <MudButton Href="@product.Link.Url" Variant="Variant.Outlined" Size="Size.Small">@product.Link.Title</MudButton>
+        }
+        <MudButton Href="" Variant="Variant.Text" Size="Size.Small">Go to the start</MudButton>
+    </div>
+</div>

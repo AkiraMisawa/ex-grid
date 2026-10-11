@@ -1,0 +1,21 @@
+@page "/reference/keyboard"
+
+@* The Keyboard reference (ADR-0110), a reference page: every key of the three products, one table per
+   product, each row linking the section of the page that explains it and the decision behind it. The rows
+   are KeyboardByHand's, which the build checks; the selection page's own table is drawn from the same rows. *@
+<DocsPage Title="Keyboard"
+          Lead="Every key of ExGrid, ExSheet and ExPivot, each with the page that explains it. The keys are Excel's; Ctrl is the Command key on a Mac. ExSheet and ExPivot are drawn by ExGrid, so ExGrid's keys hold in both.">
+    <ReferenceAsOf>Each row links the section that explains it, and the decision behind it.</ReferenceAsOf>
+
+    <DocsSection Title="ExGrid">
+        <KeyTable Rows="@KeyboardByHand.ExGrid" />
+    </DocsSection>
+
+    <DocsSection Title="ExSheet">
+        <KeyTable Rows="@KeyboardByHand.ExSheet" />
+    </DocsSection>
+
+    <DocsSection Title="ExPivot">
+        <KeyTable Rows="@KeyboardByHand.ExPivot" />
+    </DocsSection>
+</DocsPage>

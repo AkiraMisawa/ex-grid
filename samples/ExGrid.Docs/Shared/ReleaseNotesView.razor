@@ -1,0 +1,255 @@
+@* The Release Notes (ADR-0190): what each version published, newest first, and on a site not published
+   from a tag, what is not on nuget.org yet. Every heading is shown, and one with nothing under it says
+   "None.", so a reader can tell nothing from not written. The chips filter by product, or keep only the
+   breaking and behaviour changes. Nothing is fetched: the notes were read when the site was built. *@
+<div class="docs-notes-intro">
+    <p>
+        A version's day is the UTC day nuget.org received its packages.
+        @if (!ReleaseNotes.AnyRelease)
+        {
+            <text>
+                None of these is a release in the Definition of Done's sense yet: each is a prerelease, published
+                before its sign-off (ADR-0042). A <code>0.x</code> prerelease may break the API between numbers, and
+                its Breaking changes say where it did.
+            </text>
+        }
+    </p>
+</div>
+
+<div class="docs-notes-filters" role="group" aria-label="Show the notes of">
+    <MudChipSet T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="@(_product ?? Every)"
+                SelectedValueChanged="SetProduct" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                CheckMark="true">
+        <MudChip T="string" Value="@Every">Every product</MudChip>
+        @foreach (var product in ReleaseNotes.Products)
+        {
+            <MudChip T="string" Value="@product">@product</MudChip>
+        }
+    </MudChipSet>
+    <MudChipSet T="string" SelectionMode="SelectionMode.ToggleSelection" SelectedValue="@(_breakingOnly ? BreakingOnly : null)"
+                SelectedValueChanged="SetBreaking" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning"
+                CheckMark="true">
+        <MudChip T="string" Value="@BreakingOnly">Breaking and behaviour changes only</MudChip>
+    </MudChipSet>
+</div>
+
+@if (ReleaseNotes.ShowsUnreleased)
+{
+    <section class="docs-section docs-notes-version" id="@ReleaseNotes.UnreleasedAnchor">
+        <MudText Typo="Typo.h5" HtmlTag="h2" Class="docs-section-title">
+            <a href="@($"{ReleaseNotes.Route}#{ReleaseNotes.UnreleasedAnchor}")" class="docs-anchor">Unreleased</a>
+        </MudText>
+        <MudAlert Severity="Severity.Warning" Dense="true" Class="docs-banner docs-notes-warning">
+            @switch (DocsBuild.Kind)
+            {
+                case DocsBuildKind.Experiment:
+                    <text>
+                        An experiment, published from the branch <b>@DocsBuild.Branch</b> at
+                        <MudLink Href="@DocsBuild.CommitUrl" Target="_blank"><code>@DocsBuild.ShortCommit</code></MudLink>.
+                        What it holds beyond @NewestName is not on nuget.org, and may never be.
+                    </text>
+                    break;
+                case DocsBuildKind.Branch:
+                    <text>
+                        Published from <b>@DocsBuild.Branch</b> at
+                        <MudLink Href="@DocsBuild.CommitUrl" Target="_blank"><code>@DocsBuild.ShortCommit</code></MudLink>.
+                        What it holds beyond @NewestName is not on nuget.org yet: it reaches a package with the next
+                        version, and may change before then.
+                    </text>
+                    break;
+                default:
+                    <text>
+                        From the working tree this site was built in. What it holds beyond @NewestName is not on
+                        nuget.org yet.
+                    </text>
+                    break;
+            }
+            Read from the Change Notes, one written with each change.
+        </MudAlert>
+        @if (ReleaseNotes.ChangeNotes.Count == 0 && !Filtered)
+        {
+            <p class="docs-notes-none">
+                No Change Note is waiting: as far as its notes say, @ReleaseNotes.UnreleasedSource holds what @NewestName holds.
+            </p>
+        }
+        else
+        {
+            @foreach (var group in UnreleasedGroups())
+            {
+                <MudText Typo="Typo.h6" HtmlTag="h3" Class="docs-notes-heading">@group.Title</MudText>
+                @if (group.Notes.Count == 0)
+                {
+                    <p class="docs-notes-none">None.</p>
+                }
+                else
+                {
+                    <ul class="docs-notes-list">
+                        @foreach (var note in group.Notes)
+                        {
+                            <li class="docs-notes-item">
+                                @if (group.Product is null)
+                                {
+                                    <span class="docs-notes-label">@note.Product</span>@(" ")
+                                }
+                                else
+                                {
+                                    <span class="@KindClass(note.Kind)">@note.Kind</span>@(" ")
+                                }
+                                @((MarkupString)note.Html)
+                                @if (note.Docs is not null)
+                                {
+                                    @(" ")<a href="@note.Docs" class="docs-notes-more">In the docs</a>
+                                }
+                                @foreach (var adr in note.Adrs)
+                                {
+                                    @(" ")<a href="@adr.Url" target="_blank" rel="noopener" class="docs-notes-more">ADR-@adr.Number</a>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            }
+        }
+    </section>
+}
+
+@foreach (var version in ReleaseNotes.Versions)
+{
+    <section class="docs-section docs-notes-version" id="@version.Anchor">
+        <div class="docs-notes-title">
+            <MudText Typo="Typo.h5" HtmlTag="h2" Class="docs-section-title">
+                <a href="@($"{ReleaseNotes.Route}#{version.Anchor}")" class="docs-anchor">@version.Version</a>
+            </MudText>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                     Color="@(version.Prerelease ? Color.Default : Color.Success)">@(version.Prerelease ? "Prerelease" : "Release")</MudChip>
+        </div>
+        <p class="docs-notes-meta">
+            @ReleaseNotes.PublishedText(version) · Packages: @string.Join(", ", version.Packages) · Target: <code>@version.Target</code>
+        </p>
+        <p class="docs-notes-links">
+            <a href="@version.NuGetUrl" target="_blank" rel="noopener">On nuget.org</a>
+            <a href="@version.ReleaseUrl" target="_blank" rel="noopener">GitHub release</a>
+            <a href="@version.SourceUrl" target="_blank" rel="noopener">Source at @version.Tag</a>
+            @if (ReleaseNotes.CompareUrl(version) is { } compare)
+            {
+                <a href="@compare" target="_blank" rel="noopener">Commits since @ReleaseNotes.Previous(version)!.Tag</a>
+            }
+        </p>
+        @if (!Filtered)
+        {
+            @if (version.Prerelease)
+            {
+                <div class="docs-notes-prerelease">@((MarkupString)ReleaseNotes.PrereleaseNote(version))</div>
+            }
+            <p class="docs-notes-install">Install: <code>dotnet add package ExGrid --version @version.Version</code></p>
+        }
+        @foreach (var heading in version.Sections.Where(Visible))
+        {
+            var items = Items(heading);
+            <MudText Typo="Typo.h6" HtmlTag="h3" Class="docs-notes-heading">@heading.Title</MudText>
+            @if (heading.IsNone || items.Count == 0)
+            {
+                <p class="docs-notes-none">None.</p>
+            }
+            else
+            {
+                @foreach (var run in Runs(items))
+                {
+                    @if (run[0].Bullet)
+                    {
+                        <ul class="docs-notes-list">
+                            @foreach (var item in run)
+                            {
+                                <li class="docs-notes-item">
+                                    @if (heading.Kind is ReleaseSectionKind.Breaking or ReleaseSectionKind.Behaviour)
+                                    {
+                                        <span class="docs-notes-label">@string.Join(", ", item.Products)</span>@(" ")
+                                    }
+                                    else if (item.Kind is ReleaseKind.Added or ReleaseKind.Fixed)
+                                    {
+                                        <span class="@KindClass(item.Kind)">@item.Kind</span>@(" ")
+                                    }
+                                    @((MarkupString)item.Html)
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        @foreach (var item in run)
+                        {
+                            <p class="docs-notes-paragraph">@((MarkupString)item.Html)</p>
+                        }
+                    }
+                }
+            }
+        }
+    </section>
+}
+
+@code {
+    private const string Every = "every";
+    private const string BreakingOnly = "breaking";
+
+    private string? _product;
+    private bool _breakingOnly;
+
+    private bool Filtered => _product is not null || _breakingOnly;
+
+    private static string NewestName => ReleaseNotes.Newest?.Version ?? "the last version";
+
+    private void SetProduct(string? value) => _product = value is null or Every ? null : value;
+
+    private void SetBreaking(string? value) => _breakingOnly = value == BreakingOnly;
+
+    // Which headings the filters keep: the breaking and behaviour changes always; a product's own
+    // heading when no product, or that product, is chosen; the rest only when nothing is filtered.
+    private bool Visible(ReleaseSection section) => section.Kind switch
+    {
+        ReleaseSectionKind.Breaking or ReleaseSectionKind.Behaviour => true,
+        ReleaseSectionKind.Product => !_breakingOnly && (_product is null || section.Product == _product),
+        _ => !Filtered,
+    };
+
+    private IReadOnlyList<ReleaseItem> Items(ReleaseSection section) =>
+        _product is not null && section.Kind is ReleaseSectionKind.Breaking or ReleaseSectionKind.Behaviour
+            ? section.Items.Where(i => i.Products.Contains(_product)).ToList()
+            : section.Items;
+
+    // Consecutive bullets make one list; each paragraph stands alone.
+    private static IEnumerable<List<ReleaseItem>> Runs(IReadOnlyList<ReleaseItem> items)
+    {
+        var run = new List<ReleaseItem>();
+        foreach (var item in items)
+        {
+            if (run.Count > 0 && run[0].Bullet != item.Bullet)
+            {
+                yield return run;
+                run = [];
+            }
+            run.Add(item);
+        }
+        if (run.Count > 0)
+            yield return run;
+    }
+
+    private sealed record NoteGroup(string Title, string? Product, IReadOnlyList<ChangeNote> Notes);
+
+    // The Change Notes under the headings a version's notes have, but the Highlights, which the cut writes.
+    private IEnumerable<NoteGroup> UnreleasedGroups()
+    {
+        bool Chosen(ChangeNote note) => _product is null || note.Product == _product;
+        yield return new NoteGroup("Breaking changes", null, ReleaseNotes.ChangeNotes.Where(n => n.Kind == ReleaseKind.Breaking && Chosen(n)).ToList());
+        yield return new NoteGroup("Behaviour changes", null, ReleaseNotes.ChangeNotes.Where(n => n.Kind == ReleaseKind.Behaviour && Chosen(n)).ToList());
+        if (_breakingOnly)
+            yield break;
+        foreach (var product in ReleaseNotes.Products.Where(p => _product is null || p == _product))
+        {
+            yield return new NoteGroup(product, product, ReleaseNotes.ChangeNotes
+                .Where(n => n.Product == product && n.Kind is ReleaseKind.Added or ReleaseKind.Fixed).ToList());
+        }
+    }
+
+    private static string KindClass(ReleaseKind kind) =>
+        "docs-notes-kind docs-notes-kind-" + kind.ToString().ToLowerInvariant();
+}

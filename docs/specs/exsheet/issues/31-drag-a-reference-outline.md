@@ -1,6 +1,8 @@
 # 31: Drag a Reference Outline to rewrite its Reference, with its corner squares
 
 Status: needs-triage
+Roadmap: ExSheet — Dragging a Reference Outline to move or resize the Reference it outlines, by the
+corner squares Excel draws as its handles (ADR-0057).
 
 **Not built, and kept in view on purpose** (ADR-0057, "Not done", decided with the user
 2026-09-30). The corner squares of a Reference Outline wait for this gesture, so that they never

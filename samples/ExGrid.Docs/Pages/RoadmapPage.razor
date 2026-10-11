@@ -1,0 +1,44 @@
+@page "/roadmap"
+
+@* The Roadmap (ADR-0191), a reference page: what is decided next, what is left for later and what the
+   family will not do, read when the site was built from the Change Notes, the tickets, the scope tables
+   of ADR-0046 and ADR-0059, and the rows RoadmapByHand writes, each citing its record. Six sections, in
+   ADR-0191's order; the build refuses any other. No dates, quarters or target versions, and nothing is
+   fetched. The chips choose a product; every section follows them. *@
+<DocsPage Title="Roadmap"
+          Lead="What is decided next, what is left for later, and what the family will not do. Nothing here has a date or a target version: work is ordered by the state of its decision, never by a calendar. A listed item is not a promise, and a later decision can drop it.">
+    <RoadmapHead Product="@_product" ProductChanged="@_setProduct" />
+
+    <DocsSection Title="On main, not in a version yet">
+        <RoadmapPart Part="RoadmapPartKind.OnMain" Product="@_product" />
+    </DocsSection>
+
+    <DocsSection Title="Decided, ready to build">
+        <RoadmapPart Part="RoadmapPartKind.Decided" Product="@_product" />
+    </DocsSection>
+
+    <DocsSection Title="Waiting on a decision">
+        <RoadmapPart Part="RoadmapPartKind.Waiting" Product="@_product" />
+    </DocsSection>
+
+    <DocsSection Title="Later">
+        <RoadmapPart Part="RoadmapPartKind.Later" Product="@_product" />
+    </DocsSection>
+
+    <DocsSection Title="Toward the next stable version">
+        <RoadmapPart Part="RoadmapPartKind.TowardStable" Product="@_product" />
+    </DocsSection>
+
+    <DocsSection Title="Not planned">
+        <RoadmapPart Part="RoadmapPartKind.NotPlanned" Product="@_product" />
+    </DocsSection>
+</DocsPage>
+
+@code {
+    private string? _product;
+    private EventCallback<string?> _setProduct;
+
+    // Cached, so that the head's parameters compare equal between renders (CLAUDE.md).
+    protected override void OnInitialized() =>
+        _setProduct = EventCallback.Factory.Create<string?>(this, product => _product = product);
+}

@@ -1,8 +1,8 @@
 # ExSheet, first version
 
-Status: ready-for-agent — what is left for an agent is tickets 18 and 25, each with what remains in
-its last comment. Ticket 31 waits on a decision (`needs-triage`), and every other ticket is done.
-*(Set on 2026-10-10.)*
+Status: done — but for ticket 31, which waits on a decision (`needs-triage`). Tickets 18 and 25 were
+finished on 2026-10-11 (#73). *(Set on 2026-10-11; on 2026-10-10 it read `ready-for-agent`, with
+tickets 18 and 25 left.)*
 
 Decided by [ADR-0046](../../adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)
 to [ADR-0051](../../adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md), with
@@ -289,6 +289,9 @@ find and replace, protecting cells, and `.xlsx`. Also:
 - **Spilled arrays** (Excel 365's dynamic arrays): a Formula whose result is more than one cell
   is `#VALUE!`, never implicitly intersected, so that spilling can arrive later without changing
   any written sheet (ADR-0047, decided with the user 2026-09-27).
+  *(No longer out of scope: [ADR-0125](../../adr/0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md)
+  made a Formula whose result is an array spill, as Excel 365's does, on 2026-10-03. Noted
+  2026-10-11.)*
 - **A Formula Bar placed outside the grid** (ADR-0051).
 - **Functions beyond ADR-0047's list** (their queue is [`exsheet-functions`](../exsheet-functions/spec.md)), and fill patterns beyond copy, linear series and dates by
   day.
