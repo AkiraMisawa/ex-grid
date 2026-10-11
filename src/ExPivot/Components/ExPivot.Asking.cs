@@ -516,25 +516,29 @@ public partial class ExPivot
     /// the grid raises its Range Request as soon as the rows on screen widened by this many either
     /// side are not all in its Window (ExGrid's lab <c>RangeMarginRows</c>), as ag-grid's
     /// <c>rowBuffer</c> rows ask for their block before the Viewport reaches it; and a range the
-    /// Window asked for covers, with these rows either side, asks nothing while that question is out
-    /// or its answer is held. The Window asked then reaches at least this far either side. 0, the
-    /// default, asks once the rows on screen are not all in the Window (ADR-0001).
+    /// Window held covers, with these rows either side, asks nothing. A question in flight stays in
+    /// flight while its Window covers the range itself, the decided rule; once it lands, the grid
+    /// asks again if these rows are still not all in it. The Window asked reaches at least this far
+    /// either side. 0, the default, asks once the rows on screen are not all in the Window
+    /// (ADR-0001).
     /// </summary>
     [Parameter] public int ReadAheadTriggerRows { get; set; }
 
     private Task WindowNeededAsync(RowRange range)
     {
-        // LAB ONLY: a range inside the Window asked for, with ReadAheadTriggerRows either side, whose
-        // answer is out or held, asks nothing; otherwise the range widened by ReadAheadRows either
-        // side, or the aligned blocks that cover it widened by ReadAheadBlockMargin, clamped into the
-        // report — either at least as wide as the trigger. With ReadAheadRows 0, no blocks and no
-        // trigger this asks exactly what ExPivot asked before: the range itself, unless it is the
-        // Window already asked for.
+        // LAB ONLY: a range inside the Window asked for, whose answer is out, asks nothing — and so
+        // does one inside the Window held with ReadAheadTriggerRows either side; otherwise the range
+        // widened by ReadAheadRows either side, or the aligned blocks that cover it widened by
+        // ReadAheadBlockMargin, clamped into the report — either at least as wide as the trigger. With
+        // ReadAheadRows 0, no blocks and no trigger this asks exactly what ExPivot asked before: the
+        // range itself, unless it is the Window already asked for.
         var asked = _wantedWindow;
         var held = _state?.Window;
         var rows = (long)(_report?.RowCount ?? int.MaxValue);
         var trigger = Math.Max(0, ReadAheadTriggerRows);
-        if (Covers(asked, Widened(range, trigger, rows)) && ((_asking is not null && !ReadAheadSupersedes) || held == asked))
+        var inFlightCovers = _asking is not null && !ReadAheadSupersedes && Covers(asked, Widened(range, 0, rows));
+        var heldCovers = held == asked && Covers(asked, Widened(range, trigger, rows));
+        if (inFlightCovers || heldCovers)
             return Task.CompletedTask;
         var wanted = ReadAheadBlockRows > 0
             ? BlocksCovering(range, ReadAheadBlockRows, Math.Max(trigger, ReadAheadBlockMargin), rows)

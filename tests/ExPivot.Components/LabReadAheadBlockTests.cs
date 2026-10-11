@@ -75,7 +75,7 @@ public sealed class LabReadAheadBlockTests : PivotTestContext
 
     /// <summary>A remote report of 1,000 rows, asked over JSON, every Window it is asked for recorded.</summary>
     private (IRenderedComponent<PivotComponent> Cut, List<PivotReportWindow> Asked, LocalPivotReportSource Server) RenderRemote(
-        Action<ComponentParameterCollectionBuilder<PivotComponent>> lab)
+        Action<ComponentParameterCollectionBuilder<PivotComponent>> lab, Func<PivotReportRequest, Task>? answerWhen = null)
     {
         var data = PivotSource.From([.. Enumerable.Range(0, 999).Select(i => new Deal(i, $"Region {i:D4}", i))], DealFields, Whole);
         var server = PivotReportSource.From(data, timeProvider: Clock, slicing: Whole);
@@ -86,6 +86,8 @@ public sealed class LabReadAheadBlockTests : PivotTestContext
             {
                 lock (asked)
                     asked.Add(request.Window);
+                if (answerWhen is not null)
+                    await answerWhen(request).WaitAsync(ct);
                 return Wire(await server.WindowAsync(Wire(request), ct));
             },
             items: server.RawItemsAsync,
@@ -153,6 +155,39 @@ public sealed class LabReadAheadBlockTests : PivotTestContext
         Assert.Equal(before + 1, Count(asked));
         Assert.Equal(new PivotReportWindow(500, 200), Last(asked));
         Assert.Contains("Region 0575", RowTexts(cut)[0], StringComparison.Ordinal);
+        Assert.False(Renderer.UnhandledException.IsCompleted, "an exception reached the renderer");
+    }
+
+    [Fact] // Ticket 14, lab: asked early, a question in flight stays in flight while its Window covers the rows on screen, the decided rule; the next is asked once it lands
+    public async Task Ticket14_lab_a_trigger_keeps_a_question_in_flight_that_covers_the_rows_on_screen()
+    {
+        TaskCompletionSource? hold = null;
+        var (cut, asked, server) = RenderRemote(ps => ps
+            .Add(p => p.ReadAheadBlockRows, 100)
+            .Add(p => p.ReadAheadTriggerRows, 10),
+            request => hold is { } held && request.Window.Start == 500 ? held.Task : Task.CompletedTask);
+        await using var _ = server;
+        await ScrollReportAsync(cut, 500 * RowHeightPx);
+        cut.WaitForAssertion(() => Assert.Equal(400, Grid(cut).Instance.WindowStart));
+        var painted = RowTexts(cut).Length;
+
+        // Within 10 rows of the Window's end: blocks 5 and 6 are asked for, and their answer held.
+        hold = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        var before = Count(asked);
+        await ScrollReportAsync(cut, 540 * RowHeightPx);
+        await ScrollReportAsync(cut, 575 * RowHeightPx);
+        cut.WaitForAssertion(() => Assert.Equal(before + 1, Count(asked)));
+        Assert.Equal(new PivotReportWindow(500, 200), Last(asked));
+
+        // On to rows the question out covers, though not the 10 rows below them: it stays in flight.
+        await ScrollReportAsync(cut, 630 * RowHeightPx);
+        await ScrollReportAsync(cut, (697 - painted) * RowHeightPx);
+        Assert.Equal(before + 1, Count(asked));
+
+        // Once it lands, the rows below are asked for.
+        hold.SetResult();
+        cut.WaitForAssertion(() => Assert.Equal(before + 2, Count(asked)));
+        Assert.Equal(new PivotReportWindow(600, 200), Last(asked));
         Assert.False(Renderer.UnhandledException.IsCompleted, "an exception reached the renderer");
     }
 }
