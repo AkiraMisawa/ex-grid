@@ -33,6 +33,7 @@ public class LetWiringTests : SheetTestContext
     [InlineData("=LET(x,1,y,2,x+y,3)")]
     [InlineData("=LET(A1,2,A1)")]
     [InlineData("=LET(SUM,2,SUM+1)")]
+    [InlineData("=LET(IRR,2,IRR+1)")] // one of Excel's functions the engine does not declare (ADR-0181, 2026-10-11)
     [InlineData("=LET(TRUE,2,1)")]
     [InlineData("=LET(R1C1,2,1)")]
     [InlineData("=LET(a.b,2,a.b)")]
@@ -48,6 +49,21 @@ public class LetWiringTests : SheetTestContext
         Assert.Equal(Unreadable(typed), Message(cut));
         Assert.Equal("true", cut.Find(".ex-viewport .ex-editor").GetAttribute("aria-invalid"));
         Assert.DoesNotContain(cut.Instance.ToDocument().Cells, c => c.Address == CellAddress.Parse("B2"));
+    }
+
+    [Fact] // ADR-0181 (2026-10-11), ADR-0034, SH-67: the name of an Excel function the engine does not declare is refused at the same character, in the same words, as a declared one's
+    public async Task ADR0181_an_undeclared_excel_functions_name_is_refused_as_a_declared_ones_is()
+    {
+        var declared = RenderSheet();
+        var undeclared = RenderSheet();
+
+        await CommitAsync(declared, "B2", "=LET(SUM,1,SUM)");
+        await CommitAsync(undeclared, "B2", "=LET(IRR,1,IRR)");
+
+        Assert.True(undeclared.Instance.IsEditing);
+        Assert.Equal("This Formula cannot be read at character 6: 'IRR' is the name of a function, and cannot be a LET name.", Message(undeclared));
+        Assert.Equal(Message(declared).Replace("'SUM'", "'IRR'", StringComparison.Ordinal), Message(undeclared));
+        Assert.DoesNotContain(undeclared.Instance.ToDocument().Cells, c => c.Address == CellAddress.Parse("B2"));
     }
 
     [Fact] // ADR-0181, SH-67: a LET Excel's keyboard accepts is entered, written as typed, and computed

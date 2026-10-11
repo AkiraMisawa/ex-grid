@@ -219,12 +219,12 @@
     },
     {
       "id": "AGGREGATE-025",
-      "source": "documented",
-      "description": "Option 4 with a nested SUBTOTAL in the range: Microsoft documents option 4 as ignoring nothing, so Excel counts the nested SUBTOTAL; the engine refuses it with #VALUE!",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: option 4 with a whole-Formula SUBTOTAL in the range is #VALUE!; Microsoft documents option 4 as ignoring nothing, so Excel is expected to count the nested SUBTOTAL, which no run has observed",
       "cells": {"D1": "1", "D2": "2", "D3": "=SUBTOTAL(9,D1:D2)", "ZZ1000": "=AGGREGATE(9,4,D1:D3)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047 (2026-10-10): a call of SUBTOTAL or AGGREGATE in the range that is not passed over, as options 4 to 7 pass over none, is #VALUE! until a Windows run asks Excel",
+      "engineDiffersByDecision": "ADR-0047 (2026-10-10; SH-68, 2026-10-11): under options 4 to 7, a cell whose whole Formula is a SUBTOTAL makes the result #VALUE! until the sign-off's Windows run reads Excel's answer; then the engine follows Excel",
       "excelExpect": {"value2": 6}
     },
     {

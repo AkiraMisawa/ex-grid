@@ -33,3 +33,6 @@ the cases outside it as `uncertain`, each with the engine's answer, for the next
 a cycle, read directly and through `OFFSET`). The catalogue row is Supported, and the engine's README
 and the Docs Site's Formulas page say what differs from Excel. ADR-0047's dated addition naming the
 function is left to the orchestrator: a background agent does not edit an ADR.
+
+2026-10-11: the Status is `done`. The one open box is the sign-off's Windows run, and each of its
+questions is a corpus case: ERRORTYPE-011 to ERRORTYPE-021, `uncertain` in `error-type.json`.

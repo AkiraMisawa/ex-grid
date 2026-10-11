@@ -92,6 +92,29 @@ public class SubtotalTests
         Assert.Equal(ErrorValue.Value, sheet.Evaluate("=AGGREGATE(9,6,A1:A3)").Error);
     }
 
+    [Theory] // ADR-0047 (2026-10-10), SH-68 (2026-10-11): AGGREGATE's options 4 to 7 pass over no nested call, so a cell whose whole Formula is a SUBTOTAL or an AGGREGATE makes them #VALUE! until the sign-off's Windows run reads Excel's answer (AGGREGATE-025), which Microsoft documents as counted
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    public void ADR0047_SH68_aggregate_options_4_to_7_over_a_whole_formula_subtotal_are_value(int option)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("A2", "2");
+        sheet.Enter("A3", "=SUBTOTAL(9,A1:A2)");
+        sheet.Enter("B1", "1");
+        sheet.Enter("B2", "2");
+        sheet.Enter("B3", "=AGGREGATE(9,0,B1:B2)");
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate($"=AGGREGATE(9,{option},A1:A3)").Error);
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate($"=AGGREGATE(14,{option},A1:A3,1)").Error);
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate($"=AGGREGATE(9,{option},B1:B3)").Error);
+        // The option it stands beside, 0 to 3, passes over the same cells.
+        Assert.Equal(3, sheet.Evaluate($"=AGGREGATE(9,{option - 4},A1:A3)").Number);
+        Assert.Equal(3, sheet.Evaluate($"=AGGREGATE(9,{option - 4},B1:B3)").Number);
+    }
+
     [Fact] // ADR-0047 (2026-10-10), ADR-0125: a cell spilled from a Formula that calls SUBTOTAL holds a value of a nested call, which is refused
     public void ADR0047_a_spill_from_a_formula_that_calls_subtotal_is_refused()
     {

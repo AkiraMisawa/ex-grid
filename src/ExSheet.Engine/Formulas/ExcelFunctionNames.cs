@@ -3,11 +3,14 @@ using System.Collections.Frozen;
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
-/// The names of Excel's own worksheet functions, as Microsoft's alphabetical list of them gives them,
-/// whether or not the engine declares them. A <c>LET</c> name is refused when it is one (ADR-0181):
-/// Excel was not seen to accept a function's name as a <c>LET</c> name, and refusing only the declared
-/// ones would make a stored <c>LET</c> stop opening on the day its name is declared. A name Excel
-/// adds after this list was written is refused once it is declared, as every declared name is.
+/// The names of Excel's own worksheet functions, as Microsoft documents them,
+/// whether or not the engine declares them. A <c>LET</c> name is refused when it is one (ADR-0181 and
+/// its note of 2026-10-11): Excel was not seen to accept a function's name as a <c>LET</c> name, and
+/// refusing only the declared ones would make a stored <c>LET</c> stop opening on the day its name is
+/// declared. The catalogue, <c>docs/specs/exsheet-functions/spec.md</c>, lists the same names: its rows
+/// and its list of Excel's functions not in the queue. <c>FunctionCatalogueTests</c> holds the two
+/// equal, so a function catalogued or declared is a name refused here, and a name Excel adds is added to
+/// both at once.
 /// </summary>
 internal static class ExcelFunctionNames
 {
@@ -88,6 +91,9 @@ internal static class ExcelFunctionNames
         "Z.TEST", "ZTEST",
     }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Whether <paramref name="name"/> names one of Excel's worksheet functions, or one the engine declares, without regard to case.</summary>
-    public static bool Contains(string name) => Names.Contains(name) || FunctionLibrary.Find(name) is not null;
+    /// <summary>Every name, in upper case, as the catalogue lists them; what <c>FunctionCatalogueTests</c> compares with the catalogue.</summary>
+    public static IEnumerable<string> All => Names.Order(StringComparer.Ordinal);
+
+    /// <summary>Whether <paramref name="name"/> names one of Excel's worksheet functions, declared or not, without regard to case.</summary>
+    public static bool Contains(string name) => Names.Contains(name);
 }

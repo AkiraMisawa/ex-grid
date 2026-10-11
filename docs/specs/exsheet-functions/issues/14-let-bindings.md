@@ -71,3 +71,14 @@ cannot stop a stored `LET` from opening; a test refuses every declared and catal
 `LET` now matches the one before `LET` was admitted in every case the review found (`=A1é`, `=1é`,
 `=é!A1`): the lexer and the parser refuse a name of another script at its first such character, before
 anything after it, when the Formula has no `LET`.
+
+2026-10-11, with ADR-0181's note of that date (decided with the user: a name is refused if it is the
+name of any of Excel's functions, as the catalogue lists them): the catalogue now lists every one of
+Excel's functions, its rows and a list of those not in the queue, and `FunctionCatalogueTests` holds that
+list equal to `ExcelFunctionNames`, the one list the parser refuses from; the fallback to the declared
+set is gone, since a declared function is a catalogued one. `LetTests` refuses every catalogued name, each
+name-shaped one at its own character with the words a declared one's gets, and `IRR`, `NPER`, `XIRR` and
+`N` exactly as `SUM`, `RAND`, `ROWS` and `PI`; `LetWiringTests` shows `IRR`'s refusal through the
+component in `SUM`'s words. The Status is `done`: every box is ticked, and the questions left for the
+sign-off's Windows run are corpus cases, LET-101 to LET-112 (`uncertain`), asked by keys where the corpus
+says so.

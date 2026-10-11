@@ -53,3 +53,15 @@ before (`IndirectTests`). AGGREGATE-025 is `documented`, with Excel's 6 as `exce
 documents options 4 to 7 as ignoring nothing) beside the engine's `#VALUE!`. AGGREGATE-007, 008 and 011
 are `uncertain`, since Microsoft does not document which Error Value comes back, and the other
 `documented` values worked from Microsoft's definitions say so.
+
+2026-10-11, with SH-68's note of that date (decided with the user: under `AGGREGATE`'s options 4 to 7,
+a cell in range whose whole Formula is a `SUBTOTAL` makes the result `#VALUE!` until the sign-off's
+Windows run reads Excel's answer, then the engine follows Excel): already so, and pinned by
+`ADR0047_SH68_aggregate_options_4_to_7_over_a_whole_formula_subtotal_are_value`, each option beside the
+one of 0 to 3 that passes over the same cells. AGGREGATE-025 is `uncertain` again, with Microsoft's
+counted 6 as `excelExpect`, so the run compares Excel with it. The Formulas page now says which options
+pass over what. The Status is `done`: the one open box is the sign-off's Windows run, and each of its
+questions is a corpus case — the `uncertain` cases of `subtotal.json` (SUBTOTAL-020 to SUBTOTAL-034) and
+`aggregate.json` (AGGREGATE-007, 008, 011 and 022 to 041), what counts as nested among them. Excel's popup
+texts for the function numbers and options, which the comment above asks the run to confirm, are
+Microsoft's documented ones (ADR-0058); like tickets 09 and 11's captions, nothing here waits on them.

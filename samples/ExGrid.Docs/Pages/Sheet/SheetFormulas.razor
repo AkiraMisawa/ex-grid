@@ -74,12 +74,14 @@
             </li>
             <li>
                 <b><code>SUBTOTAL</code> and <code>AGGREGATE</code></b> answer while a Sheet cannot hide a row, so
-                <code>SUBTOTAL</code>'s 101 to 111 give what 1 to 11 give, as Excel's do when nothing is hidden. They
-                pass over a cell whose whole Formula is a <code>SUBTOTAL</code> (and, for <code>AGGREGATE</code>'s
-                options 0 to 3, an <code>AGGREGATE</code>); any other call of either inside their range is
-                <code>#VALUE!</code>, because Excel does not document which cells it counts as nested. So is an
-                <code>AGGREGATE</code> function number for a function the Sheet does not have, such as 13,
-                <code>MODE.SNGL</code>.
+                <code>SUBTOTAL</code>'s 101 to 111 give what 1 to 11 give, as Excel's do when nothing is hidden.
+                <code>SUBTOTAL</code> passes over a cell whose whole Formula is a <code>SUBTOTAL</code>, and
+                <code>AGGREGATE</code>'s options 0 to 3 pass over one whose whole Formula is a <code>SUBTOTAL</code> or
+                an <code>AGGREGATE</code>; any other call of either inside their range is <code>#VALUE!</code>, because
+                Excel does not document which cells it counts as nested. That includes a whole-Formula
+                <code>SUBTOTAL</code> under <code>AGGREGATE</code>'s options 4 to 7, which Microsoft documents as
+                counted, until Excel has been asked. So is an <code>AGGREGATE</code> function number for a function the
+                Sheet does not have, such as 13, <code>MODE.SNGL</code>.
             </li>
             <li>
                 <b><code>INDIRECT</code></b> reads A1-style text naming a cell or a range of the same Sheet. Like
@@ -108,6 +110,8 @@
                 the seed, the cell, which call in its Formula it is and how many changes the Sheet has had since it
                 was opened, so every edit, insertion, deletion, undo, redo and Linked Table snapshot draws again,
                 while the clock, a format or a width draws nothing. Unlike Excel, nothing draws without a change.
+                Renaming the Sheet is not a change: it recalculates what <code>INDIRECT</code> reads by the Sheet's
+                name, and the draws come out the same; whether Excel draws again on a rename has not been observed yet.
                 An undo draws again rather than bringing back the draws it undoes; what Excel's undo does to a
                 draw has not been observed yet. <code>RANDBETWEEN</code>
                 refuses a fractional bound, and one past 2<sup>53</sup>, with <code>#VALUE!</code>.

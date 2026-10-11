@@ -80,3 +80,11 @@ waits for the browser's zone, and a `Seed` given draws there as well (`SeedWirin
 page and both READMEs say so, and no longer call an undo's new draw a difference from Excel: what
 Excel's undo does has not been observed. Still not counted as a change, and left for a decision: a
 rename, and a Linked Table's declaration.
+
+2026-10-11, with ADR-0180's note of that date (decided with the user: renaming the Sheet is not a
+change): a rename recalculates the volatile Formulas, since `INDIRECT`'s text can name the Sheet, and
+draws nothing, nor do its undo and redo (`ADR0180_a_rename_draws_nothing`); the Formulas page and both
+READMEs say so. The Status is `done`: every box is ticked. Two questions are ADR-0180's for the sign-off's
+Windows run, and are no corpus case, since the oracle cannot undo through COM: what Excel's undo does to a
+draw, and whether a rename draws again. Still left for a decision, as the comment above says: whether a
+Linked Table's declaration is a change; ADR-0180's list does not name it, and it draws nothing today.

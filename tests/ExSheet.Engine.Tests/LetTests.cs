@@ -1,3 +1,4 @@
+using System.Globalization;
 using ExSheet.Engine;
 using Xunit;
 using static ExSheet.Engine.Tests.SheetTestExtensions;
@@ -55,15 +56,18 @@ public class LetTests
         Assert.Null(sheet.GetEntry(CellAddress.Parse("A1")));
     }
 
-    [Fact] // ADR-0181, SH-67: the name of every function the engine declares, and of every one the catalogue queues, is refused as a LET name, so declaring one later leaves every stored LET as it opened
-    public void ADR0181_every_declared_and_catalogued_function_name_is_refused_as_a_let_name()
+    private static FormulaSyntaxException Refusal(string formula) =>
+        Assert.Throws<FormulaSyntaxException>(() => NewSheet().Enter("A1", formula));
+
+    /// <summary>The words a LET name is refused with for being a function's name, and nothing else (ADR-0181).</summary>
+    private static string FunctionNameRefused(string name) => $"'{name}' is the name of a function, and cannot be a LET name.";
+
+    [Fact] // ADR-0181 (2026-10-11), SH-67: the name of every one of Excel's functions the catalogue lists, declared or not, is refused as a LET name, so declaring one later leaves every stored LET as it opened
+    public void ADR0181_every_excel_function_the_catalogue_lists_is_refused_as_a_let_name()
     {
-        var names = DeclaredFunction.All.Select(f => f.Name)
-            .Concat(FunctionCatalogueTests.Catalogue().Select(r => r.Name))
-            .Where(name => !name.Contains('.'))
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-        Assert.NotEmpty(names);
+        var names = FunctionCatalogueTests.ExcelFunctions();
+        Assert.Contains("IRR", names);
+        Assert.Contains("NPER", names);
         var accepted = names.Where(name =>
         {
             try
@@ -78,6 +82,44 @@ public class LetTests
         }).ToList();
 
         Assert.True(accepted.Count == 0, $"Accepted as LET names: {string.Join(", ", accepted)}");
+    }
+
+    [Fact] // ADR-0181 (2026-10-11), SH-67: every one of Excel's function names that is a name in shape, and no Reference or boolean, is refused where it stands with the words a declared one is refused with
+    public void ADR0181_every_excel_function_name_is_refused_with_a_function_names_words()
+    {
+        var names = FunctionCatalogueTests.ExcelFunctions()
+            .Where(name => !name.Contains('.') && name is not ("TRUE" or "FALSE") && !CellAddress.TryParse(name, out _))
+            .ToList();
+        Assert.Contains("IRR", names);
+        Assert.Contains("SUM", names);
+
+        Assert.All(names, name =>
+        {
+            var refused = Refusal($"=LET({name},1,1)");
+            Assert.Equal(5, refused.Position);
+            Assert.Equal(FunctionNameRefused(name), refused.Reason);
+        });
+    }
+
+    [Theory] // ADR-0181 (2026-10-11), SH-67: the name of an Excel function the engine does not declare is refused at the same character, with the same words, as a declared one's
+    [InlineData("IRR", "SUM")]
+    [InlineData("NPER", "RAND")]
+    [InlineData("xirr", "rows")]
+    [InlineData("N", "PI")]
+    public void ADR0181_an_undeclared_excel_function_is_refused_as_a_declared_one_is(string undeclared, string declared)
+    {
+        Assert.Null(DeclaredFunction.Find(undeclared));
+        Assert.NotNull(DeclaredFunction.Find(declared));
+
+        foreach (var formula in new[] { "=LET({0},1,{0})", "=1+LET(x,2,{0},3,x)", "=LET(x,LET({0},1,{0}),x)" })
+        {
+            var byDeclared = Refusal(string.Format(CultureInfo.InvariantCulture, formula, declared));
+            var byUndeclared = Refusal(string.Format(CultureInfo.InvariantCulture, formula, undeclared));
+
+            Assert.Equal(byDeclared.Position, byUndeclared.Position);
+            Assert.Equal(byDeclared.Reason.Replace($"'{declared}'", $"'{undeclared}'", StringComparison.Ordinal), byUndeclared.Reason);
+            Assert.Equal(FunctionNameRefused(undeclared), byUndeclared.Reason);
+        }
     }
 
     [Fact] // ADR-0181, SH-67: a name of 250 characters, and a 127th pair, are refused; 249 characters and 126 pairs are not

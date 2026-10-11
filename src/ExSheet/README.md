@@ -97,7 +97,7 @@ as data: `sheet.SetToday(new DateOnly(2026, 10, 3))`.
 the cell, which call in its Formula it is, and how many changes the Sheet has had since it was
 opened — never from a clock or a stream another draw moved on. So everything that reads a draw sees
 the same Value, every edit, insertion, deletion, undo, redo and Linked Table snapshot draws again,
-and the clock, a format or a width draws nothing.
+and the clock, a format, a width or a rename of the Sheet draws nothing.
 
 ```razor
 @* A new seed whenever the document is opened, as Excel's reopened workbook draws again. *@

@@ -249,7 +249,8 @@ answer:
   Formula and `Sheet.Changes`, the count of changes since the Sheet was made or opened, so the same
   Entries, seed and count give the same draws whatever order cells are computed in. An edit, an
   insertion or a deletion, the undo or redo of one, and a Linked Table's snapshot each count once and
-  draw again; a recalculation by the clock, a format and a new seed draw nothing. Without a seed,
+  draw again; a recalculation by the clock, a format, a rename of the Sheet (ADR-0180, 2026-10-11)
+  and a new seed draw nothing. Without a seed,
   every Formula that draws is `#GETTING_DATA`. The engine never chooses a seed of its own:
   `Sheet.SetSeed(seed)` gives one, and `SetSeed(seed, changes)` the count as well, so a Sheet opened
   from a document shows another Sheet's draws (SH-17). Neither is part of a Sheet Document. Unlike
@@ -289,8 +290,8 @@ answer:
   nested. A cell whose whole Formula is a `SUBTOTAL` is passed over by `SUBTOTAL`, and one whose
   whole Formula is a `SUBTOTAL` or an `AGGREGATE` by `AGGREGATE`'s options 0 to 3; any other call
   of either inside the range — inside a larger Formula, behind a spill, an `AGGREGATE` in a
-  `SUBTOTAL`'s range, or any call with options 4 to 7 — makes the result `#VALUE!` until a Windows
-  run asks Excel. So do a function number or an option that is not a whole number, an argument that
+  `SUBTOTAL`'s range, or any call with options 4 to 7, which Microsoft documents as counted (SH-68,
+  2026-10-11) — makes the result `#VALUE!` until a Windows run asks Excel. So do a function number or an option that is not a whole number, an argument that
   is no reference where a reference is wanted (a computed array, a number), and `AGGREGATE`'s
   function numbers for functions the engine does not support: 13 (`MODE.SNGL`) and 16 to 19
   (`PERCENTILE` and `QUARTILE`).

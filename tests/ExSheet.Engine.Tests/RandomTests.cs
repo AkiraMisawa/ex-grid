@@ -224,6 +224,40 @@ public class RandomTests
         Counts(0, () => sheet.SetSeed(Seed + 1));
     }
 
+    [Fact] // ADR-0180 (2026-10-11): renaming the Sheet is not a change; it recalculates what INDIRECT reads by the Sheet's name, and the draws come out the same, as they do for its undo and redo
+    public void ADR0180_a_rename_draws_nothing()
+    {
+        var sheet = Seeded();
+        sheet.Enter("A1", "=RAND()");
+        sheet.Enter("A2", "=RANDBETWEEN(1,1000000)");
+        sheet.Enter("B1", "7");
+        sheet.Enter("C1", "=INDIRECT(\"Prices!B1\")+RAND()*0");
+        var changes = sheet.Changes;
+        var drawn = (Rand: sheet.Number("A1"), Between: sheet.Number("A2"));
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C1"));
+
+        var renamed = sheet.Do(SheetEdit.Rename("Prices"));
+
+        Assert.Equal(7, sheet.Number("C1"));                                              // recalculated: INDIRECT's text names the Sheet now
+        Assert.Equal(changes, sheet.Changes);
+        Assert.Equal(drawn, (sheet.Number("A1"), sheet.Number("A2")));
+
+        renamed.Undo();
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C1"));
+        Assert.Equal(changes, sheet.Changes);
+        Assert.Equal(drawn, (sheet.Number("A1"), sheet.Number("A2")));
+
+        renamed.Redo();
+        sheet.Rename("Costs");
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C1"));
+        Assert.Equal(changes, sheet.Changes);
+        Assert.Equal(drawn, (sheet.Number("A1"), sheet.Number("A2")));
+
+        sheet.Enter("Z1", "x");                                                           // an edit still draws again
+        Assert.Equal(changes + 1, sheet.Changes);
+        Assert.NotEqual(drawn.Rand, sheet.Number("A1"));
+    }
+
     [Fact] // ADR-0180: an undo is a change like any other, so the Values it brings back draw again
     public void ADR0180_an_undo_draws_again()
     {

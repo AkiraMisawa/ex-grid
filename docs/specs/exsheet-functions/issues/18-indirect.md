@@ -45,3 +45,7 @@ Formula's reads met, a cell still being computed or one in a cycle, or a waiting
 Formula as `Taint` taints a Reference its text names; before, `COUNT`, `COUNTA`, `SUBTOTAL` and
 `AGGREGATE`'s error-skipping options answered a number. `IndirectTests` holds each form the review
 found.
+
+2026-10-11: the Status is `done`. The one open box is the sign-off's Windows run, and each of its
+questions is a corpus case: INDIRECT-023 (`documented`, Excel's 45 beside the engine's refusal) and the
+`uncertain` cases of `indirect.json`, INDIRECT-009 to INDIRECT-022 and INDIRECT-024 to INDIRECT-029.
