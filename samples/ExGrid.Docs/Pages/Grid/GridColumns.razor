@@ -114,8 +114,9 @@
         </p>
         <p>
             A stored view that cannot be read is refused with a <code>JsonException</code> that names what is wrong
-            — a column you no longer declare, a width that is neither form, an operand that is not its type, a
-            version this release does not read — rather than restored in part. The JSON carries a version from its
+            — a column you no longer declare, a width that is neither form, an operand that is not its type (a
+            <code>decimal</code> with more digits than a <code>decimal</code> holds included, which is refused rather
+            than rounded), a version this release does not read — rather than restored in part. The JSON carries a version from its
             first release. <code>GridViewStateJson.WriteQuery</code> and <code>ReadQuery</code> do the same for a
             <code>GridQuery</code> alone, for your own server. An Opaque Filter has no JSON form here: its meaning
             is yours, so keep it beside the view.

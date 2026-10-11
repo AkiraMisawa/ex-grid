@@ -19,6 +19,17 @@ public class GridViewStateJsonTests
 
     private static JsonException QueryRefused(string json) => Assert.Throws<JsonException>(() => GridViewStateJson.ReadQuery(json));
 
+    /// <summary>That <paramref name="refusal"/> names <paramref name="member"/> itself: quoted in its
+    /// message, or as the last segment of the path it was refused at — never only as part of a longer
+    /// name (<c>column</c> within <c>columns</c>, which every View State's path holds).</summary>
+    private static void AssertNames(JsonException refusal, string member)
+    {
+        var path = refusal.Path ?? "";
+        var last = path[(path.LastIndexOf('.') + 1)..];
+        Assert.True(refusal.Message.Contains($"'{member}'", StringComparison.Ordinal) || last == member,
+            $"The refusal does not name '{member}': {refusal.Message} (at {path})");
+    }
+
     /// <summary>A View State whose only filter clause carries <paramref name="operand"/>.</summary>
     private static string WithOperand(string operand)
         => """{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Notional":{"combinator":"And","clauses":[{"operator":"Equals","value":"""
@@ -72,7 +83,7 @@ public class GridViewStateJsonTests
     [InlineData("""{"version":1,"columns":[],"sorts":[],"filter":{"columns":{},"opaque":"x"}}""", "opaque")]
     [InlineData("""{"version":1,"columns":[],"sorts":[{"column":"Book","direction":"Ascending","nulls":"first"}]}""", "nulls")]
     public void ADR0207_a_member_this_version_does_not_have_is_refused_by_name(string json, string member)
-        => Assert.Contains(member, Refused(json).Message, StringComparison.Ordinal);
+        => AssertNames(Refused(json), member);
 
     [Theory] // ADR-0207: a member the form requires, missing or null, is refused by name
     [InlineData("""{"version":1,"sorts":[]}""", "columns")]
@@ -80,9 +91,11 @@ public class GridViewStateJsonTests
     [InlineData("""{"version":1,"columns":[{"column":"Book","pinned":false}],"sorts":[]}""", "width")]
     [InlineData("""{"version":1,"columns":[{"column":"Book","width":"Auto"}],"sorts":[]}""", "pinned")]
     [InlineData("""{"version":1,"columns":[{"column":null,"width":"Auto","pinned":false}],"sorts":[]}""", "column")]
+    [InlineData("""{"version":1,"columns":[{"width":"Auto","pinned":false}],"sorts":[]}""", "column")]
     [InlineData("""{"version":1,"columns":[],"sorts":[{"column":"Book"}]}""", "direction")]
+    [InlineData("""{"version":1,"columns":[],"sorts":[{"direction":"Ascending"}]}""", "column")]
     public void ADR0207_a_required_member_that_is_missing_is_refused_by_name(string json, string member)
-        => Assert.Contains(member, Refused(json).Message, StringComparison.Ordinal);
+        => AssertNames(Refused(json), member);
 
     [Fact] // ADR-0207: a member named twice is refused, never settled by whichever came last
     public void ADR0207_a_member_named_twice_is_refused()
@@ -170,10 +183,24 @@ public class GridViewStateJsonTests
     [InlineData("Decimal", "1e3")]
     [InlineData("Decimal", " 1")]
     [InlineData("Decimal", "")]
+    [InlineData("Decimal", "0.00000000000000000000000000001")]
+    [InlineData("Decimal", "-0.00000000000000000000000000001")]
+    [InlineData("Decimal", "1.00000000000000000000000000001")]
+    [InlineData("Decimal", "25000000.500000000000000000000001")]
+    [InlineData("Decimal", "+1")]
+    [InlineData("Decimal", "01")]
+    [InlineData("Decimal", ".5")]
+    [InlineData("Decimal", "1.")]
+    [InlineData("Decimal", "-0")]
     [InlineData("Double", "NaN")]
     [InlineData("Double", "Infinity")]
     [InlineData("Double", "0,5")]
+    [InlineData("Double", "1e-400")]
+    [InlineData("Double", "-1e-400")]
+    [InlineData("Double", "0.00001e-320")]
     [InlineData("Single", "1e39")]
+    [InlineData("Single", "1e-50")]
+    [InlineData("Single", "1e-400")]
     [InlineData("Int32", "1.5")]
     [InlineData("Int32", "2147483648")]
     [InlineData("Int64", "1e3")]

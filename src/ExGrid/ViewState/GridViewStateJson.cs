@@ -39,8 +39,11 @@ namespace ExGrid;
 /// filter (<see cref="Read"/> is told the grid's columns); a column named twice among the columns, or
 /// pinned after one that is not; a width that is neither <c>"Auto"</c> nor a finite, positive number;
 /// a sort direction, a combinator or an operator this version does not name; an operand whose tag
-/// is none of the above, whose value does not parse as its tag's type in the invariant culture, a
-/// <c>DateTime</c> with no kind, and a kind on any other type; and a Query's range that no grid could
+/// is none of the above, whose value does not parse as its tag's type in the invariant culture — a
+/// <c>Decimal</c> that is not the exact digits the writer writes, so that one with more digits than a
+/// <c>decimal</c> holds is refused rather than rounded, and a <c>Double</c> or <c>Single</c> that
+/// writes a figure other than zero and reads as zero — a <c>DateTime</c> with no kind, and a kind on
+/// any other type; and a Query's range that no grid could
 /// ask for (ADR-0001). Reading never guesses a type and never drops a part it does not
 /// understand.</para>
 ///
@@ -342,9 +345,16 @@ public static class GridViewStateJson
         {
             "String" => text,
             "Boolean" => text switch { "true" => true, "false" => false, _ => null },
-            "Decimal" => decimal.TryParse(text, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, Invariant, out var number) ? number : null,
-            "Double" => double.TryParse(text, FloatStyles, Invariant, out var number) && double.IsFinite(number) ? number : null,
-            "Single" => float.TryParse(text, FloatStyles, Invariant, out var number) && float.IsFinite(number) ? number : null,
+            // Its exact digits, as the writer writes them: a text with more digits than a decimal holds
+            // would be rounded, or flattened to zero, by the parse, and money read back as another
+            // amount is quietly wrong (principle 1).
+            "Decimal" => decimal.TryParse(text, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, Invariant, out var number)
+                         && string.Equals(number.ToString(Invariant), text, StringComparison.Ordinal) ? number : null,
+            // A figure too small for the type reads as zero: refused, not flattened, unless it was written as zero.
+            "Double" => double.TryParse(text, FloatStyles, Invariant, out var number) && double.IsFinite(number)
+                        && (number != 0 || WrittenAsZero(text)) ? number : null,
+            "Single" => float.TryParse(text, FloatStyles, Invariant, out var number) && float.IsFinite(number)
+                        && (number != 0 || WrittenAsZero(text)) ? number : null,
             "Int64" => long.TryParse(text, NumberStyles.AllowLeadingSign, Invariant, out var number) ? number : null,
             "Int32" => int.TryParse(text, NumberStyles.AllowLeadingSign, Invariant, out var number) ? number : null,
             "Int16" => short.TryParse(text, NumberStyles.AllowLeadingSign, Invariant, out var number) ? number : null,
@@ -364,6 +374,14 @@ public static class GridViewStateJson
     }
 
     private const NumberStyles FloatStyles = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent;
+
+    /// <summary>Whether a floating-point text that parsed writes zero: no digit but 0 before its
+    /// exponent. A text that writes another figure and reads as zero has underflowed the type.</summary>
+    private static bool WrittenAsZero(string text)
+    {
+        var exponent = text.AsSpan().IndexOfAny('e', 'E');
+        return !(exponent < 0 ? text.AsSpan() : text.AsSpan(0, exponent)).ContainsAnyInRange('1', '9');
+    }
 
     private static object? ReadDateTime(string text, string? kind, string where)
     {
