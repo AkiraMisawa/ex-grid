@@ -128,3 +128,35 @@ has decided, and the decisions above are still the user's. What it found:
   `packages/ag-grid-community/src/gridOptionsDefault.ts`, ag-grid `latest` at
   12c6bb02b11f2e7f2b6451f6bbb9ee267339603b. Before choosing, the user asked for aligned 100-row
   blocks to be measured beside N rows either side.
+
+2026-10-11: Measured aligned blocks beside N rows either side, as the user asked. The record is
+[`verification/2026-10-11-linux-remote-read-ahead-blocks`](../../../../verification/2026-10-11-linux-remote-read-ahead-blocks/README.md).
+The prototype is on `lab/remote-read-ahead` at `21d7a94`, never merged. The setup was the first record's:
+- the same harness, pace and three layouts, at 150 ms a round trip, in Playwright's bundled Chromium on a Linux
+  container;
+- blocks of 50, 100 and 200 rows: the aligned blocks covering the range and 10 rows either side, as ag-grid's
+  `cacheBlockSize` and `rowBuffer` ask;
+- N = 30, 60 and 120 again, N = 60 as the anchor;
+- b100 and N = 60 asked before the Window runs out ("t10"): once the rows on screen and 10 either side are not all in
+  it, as ag-grid's rendered rows ask.
+
+What it found:
+- **Over one contiguous Window, blocks are N rows either side by another name.** Their Placeholders fall where their
+  Window's size puts them. Held, the wheel and ArrowDown showed them 15% and 6% of the time at b100 over the narrow
+  report, between N = 60's 19% and 8% and N = 120's 10% and 4%. b200's 400 rows did no better than N = 120's 255.
+- **Per row scrolled, blocks carry a little less, in fewer and larger questions.** They answer 2.00 rows for each row
+  scrolled, against 2.21 at N = 60. A block cache would halve that, as ag-grid's does. ExPivot's report source keeps
+  one contiguous Window, so ag-grid's "every block kept" is not reproduced.
+- **Asking before the Window runs out is what removes the Placeholders, blocks or not.**
+  - One input at a time, the t10s met none, and held ArrowDown none.
+  - The held wheel fell from 15% to 4% at b100 and from 19% to 8% at N = 60 (narrow).
+  - Held PageDown, 11 to 13 rows a press, gained little.
+  - It needs ExGrid to raise its Range Request before the rows on screen leave its Window, against ADR-0001. That
+    would be a decision of its own.
+- **A live update and the kept Windows grow with the Window's rows, whatever its shape.** Over the wide report the
+  server projected b100's 200 rows in 138 ms an update and N = 60's 133 in 90 ms. Their kept Windows held 1.1 and
+  0.7 MiB.
+- **N = 60 again matched the first record where the pace did**: held 19% and 8% over the narrow report, against 19%
+  and 7%.
+
+The default is still the user's to decide, and the early ask beside it is a separate question.
