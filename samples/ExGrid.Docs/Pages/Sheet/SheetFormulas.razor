@@ -88,6 +88,16 @@
                 reference's text and <code>A1#</code> are <code>#VALUE!</code> until Excel has been asked how it reads
                 them; text that names no place, another Sheet's name included, is <code>#REF!</code>, as in Excel.
             </li>
+            <li>
+                <b><code>LET</code></b> takes the names Excel's keyboard accepts: a letter of any script or
+                <code>_</code>, then letters, digits and <code>_</code>, at most 249 characters, and at most 126
+                of them. A name that could mean something else — <code>A1</code>, an R1C1 shape such as
+                <code>R2</code>, a function's name, <code>TRUE</code> — is refused as the Formula is typed, as a
+                Formula that cannot be read is, because Excel's keyboard was not seen to accept it; so are a
+                name bound twice and a missing calculation. A binding is computed only when its name is read,
+                but the <code>LET</code> still depends on everything its text names, so an unused binding over
+                a cycle shows <code>#CIRC!</code> and one over a Linked Table still on its way waits.
+            </li>
         </ul>
     </DocsSection>
 

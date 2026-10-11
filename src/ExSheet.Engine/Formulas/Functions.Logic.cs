@@ -99,6 +99,13 @@ internal static partial class FunctionLibrary
     /// <summary>ISNA: TRUE for <c>#N/A</c> only.</summary>
     private static Operand IsNa(FunctionCall call) => Inspect(call, value => value is { IsError: true, Error: ErrorValue.NA });
 
+    /// <summary>
+    /// LET is read into a <see cref="LetNode"/> of its own, with its names in scope (ADR-0181), and
+    /// never called as a function: declared here so that completion, the argument hint and the
+    /// catalogue know it.
+    /// </summary>
+    private static Operand Let(FunctionCall call) => throw new InvalidOperationException("LET is evaluated as a LetNode, never as a call.");
+
     /// <summary>NA: the Error Value <c>#N/A</c>.</summary>
     private static Operand Na(FunctionCall call) => Operand.Of(ErrorValue.NA);
 

@@ -184,6 +184,7 @@ them:
 | `SORTBY` | `array, by_array1, [sort_order1], ...` |
 | `SEQUENCE` | `rows, [columns], [start], [step]` |
 | `TRANSPOSE` | `array` |
+| `LET` | `name1, name_value1, calculation_or_name2, [name_value2, calculation_or_name3...]` |
 | `SUMPRODUCT` | `array1, [array2], ...` |
 
 A Formula whose result is an array of more than one Value **spills** (ADR-0125): its cell, the
@@ -239,6 +240,19 @@ answer:
   too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`); `ERROR.TYPE` of an Error
   Value outside Microsoft's table — `#SPILL!`, `#CALC!`, `#FIELD!`, `#BLOCKED!`, `#CONNECT!`,
   `#UNKNOWN!` (`#VALUE!`).
+- **`LET` takes the names Excel's keyboard accepts** (ADR-0181). A name is bound for the values
+  after it and its own calculation, sequentially and lexically, and compared without regard to
+  case; a name read before its binding, or inside its own value, is `#NAME?`. A name starts with a
+  letter of any script or `_` and goes on with letters, digits and `_`, at most 249 characters, and
+  a `LET` binds at most 126. Refused on entry, as a Formula that cannot be read is: an even number
+  of arguments, a missing calculation or value, a name bound twice, and a name that could mean
+  something else until a Windows run shows that Excel's keyboard accepts it — one that reads as a
+  Reference in A1 or R1C1 shape (`A1`, `R1C1`, `R2`, `C3`; `c` and `r` alone are names), a declared
+  function's name, `TRUE` and `FALSE`. Each binding is computed at most once, when first read, so an
+  unused binding's Error Value never reaches the result; but a `LET` depends on everything its text
+  names, so an unused binding over a cycle is `#CIRC!`, and one over a waiting Linked Table waits.
+  `Table[Column]` always reads the Linked Table, whatever is bound. Two bound names with a space
+  between them, Excel's intersection, are refused by name.
 - **`INDIRECT` reads A1-style text naming a cell or a range of this Sheet** (ADR-0124, 2026-10-10),
   with or without the Sheet's own qualifier, as it stands after the recalculation; it is volatile,
   as `OFFSET` is. Its text is text: an insertion or a deletion rewrites the References beside it and
@@ -304,9 +318,9 @@ An argument outside these domains gives `#VALUE!` unless another Error Value is 
 
 `IRR`, `XIRR` and `RATE` remain undeclared (`#NAME?`). The solver experiment in
 `spikes/exsheet-financial-solvers/` does not yet reproduce Excel's chosen roots, stopping results
-and failures. `LET`, `RAND` and `RANDBETWEEN` still need the decisions recorded in catalogue
-tickets 14 and 15. The October 3 observation run did not resolve existing Supported functions'
-other `uncertain` corpus cases.
+and failures. `RAND` and `RANDBETWEEN` are not declared yet (ADR-0180, catalogue ticket 15). The
+October 3 observation run did not resolve existing Supported functions' other `uncertain` corpus
+cases.
 
 ## Operations, and undoing them
 

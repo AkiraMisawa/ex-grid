@@ -248,7 +248,7 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 | `UNIQUE` | Supported | — | Spills (ADR-0125); a blank in the array is refused until Excel is asked |
 | `SEQUENCE` | Supported | — | Spills (ADR-0125) |
 | `TRANSPOSE` | Supported | — | Spills (ADR-0125) |
-| `LET` | Ready | P3 | Names bound inside one Formula, as Excel's keyboard accepts them (ADR-0181). Ticket 14 |
+| `LET` | Supported | — | Names bound inside one Formula, as Excel's keyboard accepts them; a function's name, `TRUE`, `FALSE` and R1C1 shapes are refused on entry until observed (ADR-0181). Ticket 14 |
 
 ### Random
 

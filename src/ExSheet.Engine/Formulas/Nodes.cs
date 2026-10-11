@@ -56,10 +56,50 @@ internal sealed class StructuredReferenceNode(string table, string column) : Nod
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => [this];
 }
 
-/// <summary>A name that is not a function call, a Reference or a boolean: ExSheet defines no names, so it is <c>#NAME?</c>.</summary>
-internal sealed class NameNode(string name) : Node
+/// <summary>
+/// A name that is not a function call, a Reference or a boolean. ExSheet defines no names of its
+/// own, so it is <c>#NAME?</c> — unless a <c>LET</c> around it binds it (ADR-0181).
+/// </summary>
+internal sealed class NameNode(string name, int position, LetBinding? binding) : Node
 {
     public string Name { get; } = name;
+
+    /// <summary>Where the name stands in the Formula's text.</summary>
+    public int Position { get; } = position;
+
+    /// <summary>The <c>LET</c> binding the name reads, as the text's scopes resolve it; <see langword="null"/> for none (<c>#NAME?</c>).</summary>
+    public LetBinding? Binding { get; } = binding;
+}
+
+/// <summary>One name a <c>LET</c> binds, and the value it is bound to (ADR-0181).</summary>
+internal sealed class LetBinding(string name)
+{
+    /// <summary>The name as typed; names compare without regard to case.</summary>
+    public string Name { get; } = name;
+
+    /// <summary>The value's syntax, computed when the name is first read, and at most once (ADR-0181).</summary>
+    public Node Value { get; set; } = MissingNode.Instance;
+}
+
+/// <summary>
+/// <c>LET(name1, value1, …, calculation)</c> (ADR-0181): names bound inside one Formula, each seen by
+/// the values after it and by the calculation. Its References, Linked Tables and calls are every one
+/// its text names, the bindings' whether they are read or not, so the dependency graph, a cycle and a
+/// waiting Linked Table follow the text.
+/// </summary>
+internal sealed class LetNode(IReadOnlyList<LetBinding> bindings, Node calculation) : Node
+{
+    public IReadOnlyList<LetBinding> Bindings { get; } = bindings;
+
+    public Node Calculation { get; } = calculation;
+
+    private IEnumerable<Node> Parts => Bindings.Select(b => b.Value).Append(Calculation);
+
+    public override IEnumerable<Reference> References => Parts.SelectMany(p => p.References);
+
+    public override IEnumerable<StructuredReferenceNode> StructuredReferences => Parts.SelectMany(p => p.StructuredReferences);
+
+    public override IEnumerable<FunctionNode> Calls => Parts.SelectMany(p => p.Calls);
 }
 
 /// <summary>

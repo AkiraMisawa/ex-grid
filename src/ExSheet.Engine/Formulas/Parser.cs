@@ -12,11 +12,21 @@ namespace ExSheet.Engine.Formulas;
 /// Excel reads <c>- item one</c> typed as the Formula <c>=- item one</c> (ADR-0047, second run):
 /// ExSheet defines no names, so it is <c>#NAME?</c> whatever the other side is.
 /// </summary>
-internal sealed class Parser
+internal sealed partial class Parser
 {
     private readonly string _formula;
     private readonly List<Token> _tokens;
     private int _at;
+
+    /// <summary>The <c>LET</c>s being read, the innermost on top: the scopes a name is resolved in (ADR-0181).</summary>
+    private readonly Stack<LetScope> _lets = new();
+
+    /// <summary>
+    /// The names of another script than ASCII that no scope bound where they stand, with the
+    /// <c>LET</c>s around them. Each must be a name one of those <c>LET</c>s binds, later in its text,
+    /// or the Formula is refused, as it was before <c>LET</c> was admitted (ADR-0181).
+    /// </summary>
+    private readonly List<(NameNode Name, LetScope[] Around)> _wideNames = [];
 
     private Parser(string formula, List<Token> tokens)
     {
@@ -36,6 +46,7 @@ internal sealed class Parser
         if (parser.Peek.Kind == TokenKind.End) throw new FormulaSyntaxException(formula, 1, "the Formula is empty.");
         var node = parser.ParseComparison();
         if (parser.Peek.Kind != TokenKind.End) throw parser.Unexpected();
+        parser.RefuseUnboundWideNames();
         return node;
     }
 
@@ -141,7 +152,8 @@ internal sealed class Parser
         {
             var at = Peek;
             var right = ParsePrimary();
-            if (node is ReferenceNode && right is ReferenceNode)
+            // A LET name stands for what it is bound to, which may be a range: Excel would intersect them (ADR-0181).
+            if (node is ReferenceNode or NameNode { Binding: not null } && right is ReferenceNode or NameNode { Binding: not null })
             {
                 throw new FormulaSyntaxException(_formula, at.Position, "the intersection operator (a space between two References) is not implemented.") { IsUnimplemented = true };
             }
@@ -191,14 +203,20 @@ internal sealed class Parser
                 if (Peek.Kind == TokenKind.LeftParenthesis && !Peek.AfterSpace) return ParseCall(token);
                 if (token.Text.Equals("TRUE", StringComparison.OrdinalIgnoreCase)) return new BooleanNode(true);
                 if (token.Text.Equals("FALSE", StringComparison.OrdinalIgnoreCase)) return new BooleanNode(false);
-                return new NameNode(token.Text);
+                var name = new NameNode(token.Text, token.Position, Resolve(token.Text));
+                if (name.Binding is null && Lexer.FirstWide(token.Text) >= 0) _wideNames.Add((name, [.. _lets]));
+                return name;
             default:
                 throw Unexpected();
         }
     }
 
-    private FunctionNode ParseCall(Token name)
+    private Node ParseCall(Token name)
     {
+        // A function's name is ASCII: one of another script is refused as it was before LET (ADR-0181).
+        if (Lexer.FirstWide(name.Text) is var wide and >= 0) throw NotSyntax(name.Position + wide);
+        var function = FunctionLibrary.Find(name.Text);
+        if (function?.Name == "LET") return ParseLet(name);
         Next(); // (
         var arguments = new List<Node>();
         if (Peek.Kind == TokenKind.RightParenthesis)
@@ -224,7 +242,6 @@ internal sealed class Parser
             }
         }
 
-        var function = FunctionLibrary.Find(name.Text);
         if (function is null) return new FunctionNode(name.Text, arguments, null);
         // Excel refuses a call with too few or too many arguments when the Formula is entered.
         if (arguments.Count < function.MinimumArguments)

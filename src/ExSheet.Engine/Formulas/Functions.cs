@@ -202,6 +202,7 @@ internal static partial class FunctionLibrary
         new("SORTBY", 2, Open, "array, by_array1, [sort_order1], ...", "Sorts the contents of a range or array based on the values in a corresponding range or array.", SortBy),
         new("SEQUENCE", 1, 4, "rows, [columns], [start], [step]", "Generates a list of sequential numbers in an array.", Sequence),
         new("TRANSPOSE", 1, 1, "array", "Returns the transpose of an array.", Transpose),
+        new("LET", 3, 253, "name1, name_value1, calculation_or_name2, [name_value2, calculation_or_name3...]", "Assigns names to calculation results, to be used inside the Formula.", Let),
         new("SUMPRODUCT", 1, Open, "array1, [array2], ...", "Returns the sum of the products of corresponding array components.", SumProduct),
         new("LOG", 1, 2, "number, [base]", "Returns the logarithm of a number to the base you specify.", Log),
         new("SIN", 1, 1, "number", "Returns the sine of an angle.", Sin),

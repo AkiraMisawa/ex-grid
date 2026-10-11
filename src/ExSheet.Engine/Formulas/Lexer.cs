@@ -66,6 +66,24 @@ internal static partial class Lexer
     [GeneratedRegex(@"\G[A-Za-z_\\][A-Za-z0-9_.]*", RegexOptions.CultureInvariant)]
     private static partial Regex NamePattern();
 
+    /// <summary>
+    /// A name that may hold a letter of any script, as a <c>LET</c> name may (<c>名前</c>, <c>é</c>;
+    /// ADR-0181). The parser takes one only where a <c>LET</c> binds it, and refuses it elsewhere as
+    /// it refused it before <c>LET</c> was admitted.
+    /// </summary>
+    [GeneratedRegex(@"\G[\p{L}_\\][\p{L}0-9_.]*", RegexOptions.CultureInvariant)]
+    private static partial Regex WideNamePattern();
+
+    /// <summary>Where the first character outside ASCII stands in <paramref name="text"/>, or −1.</summary>
+    public static int FirstWide(string text)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (!char.IsAscii(text[i])) return i;
+        }
+        return -1;
+    }
+
     private static readonly string[] Operators = ["<>", "<=", ">=", "=", "<", ">", "+", "-", "*", "/", "^", "&", "%"];
 
     /// <summary>The largest number constant a Formula may hold: 9.99999999999999E+307, as Microsoft documents Excel's.</summary>
@@ -191,12 +209,14 @@ internal static partial class Lexer
                 continue;
             }
 
-            var name = NamePattern().Match(formula, i);
+            var name = WideNamePattern().Match(formula, i);
             if (name.Success)
             {
                 var end = i + name.Length;
                 if (end < formula.Length && formula[end] == '[')
                 {
+                    // A Linked Table's name is ASCII (ADR-0049): a wider one is no structured reference.
+                    if (FirstWide(name.Value) is var wide and >= 0) throw new FormulaSyntaxException(formula, i + wide, $"'{formula[i + wide]}' is not part of the formula syntax ExSheet reads.");
                     var column = ReadStructuredColumn(formula, end, out var after);
                     tokens.Add(new Token(TokenKind.StructuredReference, i, column, afterSpace) { TableName = name.Value, Length = after - i });
                     i = after;

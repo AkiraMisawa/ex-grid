@@ -155,7 +155,9 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
             : r.Reference.Spilled ? Cells.Spill(new CellAddress(r.Reference.Row1, r.Reference.Column1))
             : Formulas.Operand.Of(r.Reference.Area),
         StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
+        NameNode { Binding: { } binding } => Read(binding),
         NameNode or IntersectionNode => Formulas.Operand.Of(ErrorValue.Name),
+        LetNode l => Let(l),
         ParenthesesNode p => Operand(p.Inner),
         UnaryNode u => Map(Operand(u.Operand), value => Negate(u.Operator, value)),
         PercentNode p => Map(Operand(p.Operand), Percent),
@@ -190,6 +192,65 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     };
 
     public Value? Scalar(Node node) => ScalarOf(Operand(node));
+
+    /// <summary>The <c>LET</c> bindings in scope while their <c>LET</c> is evaluated, each computed when first read (ADR-0181).</summary>
+    private readonly Dictionary<LetBinding, BindingSlot> _bindings = [];
+
+    /// <summary>A binding's one Value, once it has been read.</summary>
+    private sealed class BindingSlot
+    {
+        public Operand? Value { get; set; }
+    }
+
+    /// <summary>
+    /// <c>LET</c> (ADR-0181): its calculation, with its names in scope. A binding is computed when its
+    /// name is first read and at most once, every read giving that one Value; one never read is never
+    /// computed, so its Error Value does not reach the result.
+    /// </summary>
+    private Operand Let(LetNode let)
+    {
+        var outer = new BindingSlot?[let.Bindings.Count];
+        for (var i = 0; i < outer.Length; i++)
+        {
+            var binding = let.Bindings[i];
+            outer[i] = _bindings.GetValueOrDefault(binding);
+            _bindings[binding] = new BindingSlot();
+        }
+        try
+        {
+            return Operand(let.Calculation);
+        }
+        finally
+        {
+            for (var i = 0; i < outer.Length; i++)
+            {
+                if (outer[i] is { } slot) _bindings[let.Bindings[i]] = slot;
+                else _bindings.Remove(let.Bindings[i]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A name's binding: its Value, computed now if this is its first read. The parser resolves a name
+    /// only where its binding is in scope, so a binding is never read outside its <c>LET</c> nor
+    /// inside its own value; were it, it would be <c>#NAME?</c>, as an unbound name is.
+    /// </summary>
+    private Operand Read(LetBinding binding)
+    {
+        if (!_bindings.TryGetValue(binding, out var slot)) return Formulas.Operand.Of(ErrorValue.Name);
+        if (slot.Value is { } value) return value;
+        _bindings.Remove(binding);
+        try
+        {
+            value = Operand(binding.Value);
+        }
+        finally
+        {
+            _bindings[binding] = slot;
+        }
+        slot.Value = value;
+        return value;
+    }
 
     private Value Negate(char op, Value? value)
     {
