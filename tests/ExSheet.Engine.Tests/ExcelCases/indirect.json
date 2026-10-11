@@ -181,12 +181,10 @@
     {
       "id": "INDIRECT-023",
       "source": "documented",
-      "description": "R1C1 style (a1 FALSE) is refused",
+      "description": "R1C1 style (a1 FALSE) is refused until a Windows run observes it (ADR-0124, 2026-10-10); Microsoft documents 45, and with no excelExpect Excel's answer reads as a disagreement, so whether the engine follows it or keeps refusing is decided with the answer",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"R3C2\",FALSE)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0124 (2026-10-10): R1C1 text is #VALUE! until a Windows run observes it",
-      "excelExpect": {"value2": 45}
+      "expect": {"value2": "#VALUE!"}
     },
     {
       "id": "INDIRECT-024",

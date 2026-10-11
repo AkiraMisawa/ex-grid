@@ -289,6 +289,38 @@
       "cells": {"ZZ1000": "=SUBTOTAL(1,A3:A6)"},
       "check": "ZZ1000",
       "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "SUBTOTAL-035",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a SUBTOTAL in parentheses in the range is a call inside a larger Formula, #VALUE! (ADR-0047, SH-68)",
+      "cells": {"A1": "1", "A2": "2", "A3": "=(SUBTOTAL(9,A1:A2))", "ZZ1000": "=SUBTOTAL(9,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SUBTOTAL-036",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a SUBTOTAL under IF in the range is #VALUE! (ADR-0047, SH-68)",
+      "cells": {"A1": "1", "A2": "2", "A3": "=IF(TRUE,SUBTOTAL(9,A1:A2))", "ZZ1000": "=SUBTOTAL(9,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SUBTOTAL-037",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an AGGREGATE plus 0 in SUBTOTAL's range is #VALUE! (ADR-0047, SH-68)",
+      "cells": {"A1": "1", "A2": "2", "A3": "=AGGREGATE(9,0,A1:A2)+0", "ZZ1000": "=SUBTOTAL(9,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SUBTOTAL-038",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a cell spilled from a Formula that calls SUBTOTAL holds a nested call's value, #VALUE! (ADR-0047, SH-68)",
+      "cells": {"C1": "1", "A1": "=SEQUENCE(2,1,SUBTOTAL(9,C1))", "ZZ1000": "=SUBTOTAL(9,A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }
