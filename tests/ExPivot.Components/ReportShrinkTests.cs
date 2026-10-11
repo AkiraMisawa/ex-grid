@@ -107,7 +107,9 @@ public sealed class ReportShrinkTests : PivotTestContext
 
     /// <summary>A server's report source over the data, asked over JSON as a transport would ask
     /// it, its notices passed on, and every Window it is asked for recorded — each answered once
-    /// <paramref name="answerWhen"/> says, when given.</summary>
+    /// <paramref name="answerWhen"/> says, when given. It reads nothing ahead, so a Window asked is
+    /// where the grid stands, as these tests state the clamp; a report read ahead is clamped the same
+    /// way (ReportReadAheadTests, ADR-0182).</summary>
     private static (FetchingPivotReportSource Remote, LocalPivotReportSource Server) OverJson(
         SnapshotPivotSource data, TimeProvider clock, List<PivotReportRequest> asked,
         Func<PivotReportRequest, Task>? answerWhen = null)
@@ -124,7 +126,8 @@ public sealed class ReportShrinkTests : PivotTestContext
                 return Wire(await server.WindowAsync(Wire(request), ct));
             },
             items: server.RawItemsAsync,
-            reportItems: async (query, ct) => Wire(await server.ItemsAsync(Wire(query), ct)));
+            reportItems: async (query, ct) => Wire(await server.ItemsAsync(Wire(query), ct)),
+            readAheadRows: 0);
         data.Changed += change => remote.NotifyChanged(change.SourceVersion);
         return (remote, server);
     }
@@ -354,7 +357,9 @@ public sealed class ReportShrinkTests : PivotTestContext
                         PivotRowRole.Item, -1, true, [new($"R {i}")], [new(i, i, null, i.ToString(System.Globalization.CultureInfo.InvariantCulture))],
                         [new(field, PivotItemKey.Text($"R {i}"))])).ToArray();
                 return ValueTask.FromResult(PivotReportUpdate.Complete(request, metadata, rows));
-            }, items: (query, _) => ValueTask.FromResult(new PivotItemPage(query.SourceVersion, [], 0)));
+            }, items: (query, _) => ValueTask.FromResult(new PivotItemPage(query.SourceVersion, [], 0)),
+            // Nothing read ahead: the Windows asked are where the grid stands (ADR-0182).
+            readAheadRows: 0);
         var cut = RenderPivot(byRegion, ps => ps.Add(p => p.RowHeight, RowHeightPx).Add(p => p.ShowFieldList, false),
             reportSource: source);
         cut.WaitForAssertion(() => Assert.Equal(1001, Grid(cut).Instance.TotalCount));

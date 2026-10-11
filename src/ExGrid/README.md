@@ -89,7 +89,9 @@ through the fingerprint, and keep the import map, through which the grid's scrip
 `GridSource.From` is the bundled in-memory source. It sorts and filters a list you already hold,
 and its behaviour is the reference for what sorting and filtering mean. When the rows live
 elsewhere, you push a `Window` of rows instead and answer the grid's `OnRangeNeeded`,
-`OnSortChanged` and `OnFilterChanged`.
+`OnSortChanged` and `OnFilterChanged`. When your answers read ahead, `RangeRequestMargin` has the
+grid ask that many rows before the Viewport runs out of rows, so the next Window can land before
+it is needed.
 
 For data that changes while it is read, give the source a Row Key:
 `GridSource.From(trades, t => t.TradeId)` takes Change Batches (`Apply`) and whole new lists

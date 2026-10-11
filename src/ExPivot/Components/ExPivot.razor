@@ -118,7 +118,10 @@
     /// for and its Window Changes, so the leaves and the rows outside the Window stay on that server,
     /// or a <c>PivotReportSource.From</c> the Consumer keeps itself. It owns the computation; ExPivot
     /// receives the report's metadata and the Windows it asks for. Its lifetime is the Consumer's.
-    /// Hand this or <see cref="Source"/>, not both.
+    /// Hand this or <see cref="Source"/>, not both. ExPivot asks it for the rows on screen and its
+    /// <see cref="PivotReportSource.ReadAheadRows"/> either side — 60 for <c>Fetch</c> unless told,
+    /// none for <c>From</c> — and, when it reads ahead, asks for the next Window ten rows before the
+    /// one held runs out (ADR-0182/0183).
     /// </summary>
     [Parameter] public PivotReportSource? ReportSource { get; set; }
 
