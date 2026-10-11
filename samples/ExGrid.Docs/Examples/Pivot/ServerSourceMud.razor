@@ -28,7 +28,11 @@
             copy: async (query, token) => PivotReportJson.Read<PivotReportCopyResult>(await _server.CopyAsync(PivotReportJson.Write(query), token)),
             summary: async (query, token) => PivotReportJson.Read<PivotReportSummaryResult>(await _server.SummaryAsync(PivotReportJson.Write(query), token)),
             details: async (query, token) => PivotReportJson.Read<PivotDetailPage>(await _server.DetailsAsync(PivotReportJson.Write(query), token)),
-            reportItems: async (query, token) => PivotReportJson.Read<PivotReportItemsResult>(await _server.ItemsAsync(PivotReportJson.Write(query), token)));
+            reportItems: async (query, token) => PivotReportJson.Read<PivotReportItemsResult>(await _server.ItemsAsync(PivotReportJson.Write(query), token)),
+            // Rows asked for either side of the rows on screen, so a scroll is painted from rows
+            // already held while the next Window is on its way. 60 is the default; each one is a
+            // row of every column in every answer, so a wide report may want fewer.
+            readAheadRows: 60);
     }
 
     public ValueTask DisposeAsync() => _server.DisposeAsync();

@@ -121,6 +121,10 @@ public sealed class LocalPivotReportSource : PivotReportSource
     /// <inheritdoc />
     public override PivotReportUpdateMode UpdateMode => _source is SnapshotPivotSource
         ? PivotReportUpdateMode.Incremental : PivotReportUpdateMode.FullRefresh;
+    /// <summary>None: a report computed where it is shown has no round trip to hide, so ExPivot
+    /// asks it for exactly the range its grid needs (ADR-0182). On a server behind a transport,
+    /// the browser's <see cref="PivotReportSource.Fetch"/> declares the read-ahead.</summary>
+    public override int ReadAheadRows => 0;
 
     private void SourceChanged(PivotSourceChanged change)
     {

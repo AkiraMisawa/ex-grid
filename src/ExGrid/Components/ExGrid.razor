@@ -1232,9 +1232,29 @@
     /// Raised when the rows on screen are not all in the Window: "I need these rows".
     /// The grid does not wait and does not fetch — it keeps painting Placeholders until
     /// a Window that covers them arrives (ADR-0001). Read-ahead, throttling and
-    /// discarding stale answers belong to the Consumer.
+    /// discarding stale answers belong to the Consumer. With a
+    /// <see cref="RangeRequestMargin"/> it is raised earlier, while the rows on screen are
+    /// still held, and still names them (ADR-0183).
     /// </summary>
     [Parameter] public EventCallback<RowRange> OnRangeNeeded { get; set; }
+
+    /// <summary>
+    /// The Range Request Margin (ADR-0183): how many rows short of the Window's edge the
+    /// grid raises its Range Request. At M, it is raised as soon as the rows on screen
+    /// plus M rows either side, clamped into the total, are not all in the Window — while
+    /// the rows on screen may still be held, so a source that reads ahead is asked before
+    /// the Viewport reaches rows it does not hold, and a round trip passes with no
+    /// Placeholder on screen. The request still names the rows on screen: those are what
+    /// the grid needs, and what an answer is judged against (ADR-0025). It is not raised
+    /// again until the Window moves, as at 0 (ADR-0001).
+    /// <para>0, the default, waits until the rows on screen are not all in the Window. A
+    /// source that answers exactly the rows asked for would otherwise be asked again at
+    /// every move near the Window's edge: set the margin only where the answer reads
+    /// ahead at least this far. ExPivot sets its grid's to the smaller of 10 and its report
+    /// source's read-ahead; <c>GridSource.Fetch</c> sets none, and does not act on an early
+    /// request, since its Window still covers the rows on screen (ADR-0025).</para>
+    /// </summary>
+    [Parameter] public int RangeRequestMargin { get; set; }
 
     /// <summary>Whether an answer is in flight. Forgetting to pass it means a stale
     /// Window is shown as if it were current (ADR-0001).</summary>
@@ -2811,6 +2831,12 @@
         {
             throw new ArgumentOutOfRangeException(nameof(PageSize), PageSize,
                 "A page holds at least one row; continuous scrolling is PageSize left unset (ADR-0015).");
+        }
+        if (RangeRequestMargin < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(RangeRequestMargin), RangeRequestMargin,
+                "The Range Request Margin is a number of rows, 0 or more; 0 asks once the rows on screen are not all " +
+                "in the Window (ADR-0183).");
         }
         ValidateWindowPlacement();
         ResolveRowHeadingWidth();
@@ -8830,6 +8856,23 @@
     private bool IsCovered(RowRange range)
         => range.Start >= _windowStart && range.Start + range.Count <= _windowStart + _window.Count;
 
+    /// <summary>
+    /// The rows on screen and the Range Request Margin either side, clamped into the total
+    /// (ADR-0183): what the Window must hold for no request to be raised. The rows on screen
+    /// themselves, at a margin of 0.
+    /// </summary>
+    private RowRange WithMargin(RowRange onScreen)
+    {
+        if (RangeRequestMargin <= 0)
+            return onScreen;
+        var end = (long)onScreen.Start + onScreen.Count;
+        var start = Math.Max(0L, (long)onScreen.Start - RangeRequestMargin);
+        // Never short of the rows on screen, whatever the total says: a Window that does not
+        // hold them is uncovered at any margin.
+        var last = Math.Max(end, Math.Min(TotalRows, end + RangeRequestMargin));
+        return new RowRange((int)start, (int)(last - start));
+    }
+
     private async Task RaiseRangeIfUncoveredAsync()
     {
         // Mid-fling the visible range is passing through; asking for every range it
@@ -8837,7 +8880,10 @@
         // range that was actually landed on.
         if (_disposed || _placeholderMode || (Source is null && !OnRangeNeeded.HasDelegate))
             return;
-        if (_visible is not { } range || IsCovered(range))
+        // With a margin, the Window must hold the rows either side of the rows on screen too,
+        // or they are asked for now, while those on screen may still be held. The request
+        // names the rows on screen all the same (ADR-0183).
+        if (_visible is not { } range || IsCovered(WithMargin(range)))
         {
             _lastRaised = null;
             return;
@@ -8847,7 +8893,9 @@
         // where the Window sits, never which instance it is: a Consumer that builds its
         // Window inline hands over a fresh list on every render, and re-asking for that
         // would spin — as would a Consumer that answers, honestly but unhelpfully, with
-        // rows that still do not cover the Viewport.
+        // rows that still do not cover the Viewport. With a margin this is what asks again
+        // once a Window lands that holds the rows on screen and not the margin: one request
+        // per Window position, as at 0 (ADR-0183).
         if (_lastRaised == range
             && _lastRaisedWindowStart == _windowStart
             && _lastRaisedWindowCount == _window.Count)

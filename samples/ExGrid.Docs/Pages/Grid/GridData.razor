@@ -87,6 +87,53 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="Asking before the Viewport runs out">
+        <p>
+            However far you read ahead, the grid says it needs rows only once a row on screen is not in the Window,
+            and that row stays a placeholder until your answer arrives. Over a network that is one round trip of
+            placeholders each time the read-ahead runs out. <code>RangeRequestMargin</code> asks earlier: at
+            <em>M</em> rows, the grid raises <code>OnRangeNeeded</code> as soon as the rows on screen and
+            <em>M</em> rows either side are not all in the Window, while every row on screen may still be held.
+            Scrolled steadily, the next Window lands before the Viewport reaches it.
+        </p>
+        <ul>
+            <li>
+                <strong>The request still names the rows on screen.</strong> Those are the rows the grid needs, and an
+                answer that reaches them is a good answer. The margin changes only when it is asked, and the same rows
+                are not asked for again until the Window moves, as without it.
+            </li>
+            <li>
+                <strong>Read ahead at least as far as the margin.</strong> An answer of exactly the rows asked for leaves
+                the margin outside the Window again, so the grid would ask at every row you scroll. That is why the
+                margin is 0 unless you set it.
+            </li>
+            <li>
+                <strong>Keep a question whose rows cover the rows on screen.</strong> While it is out, the grid asks
+                again at every scroll, and each request names rows the question in flight will bring. Cancelling it in
+                favour of the newer one starts the round trip again, and a held key would never see an answer. Replace a
+                question only when its rows do not cover the rows on screen.
+            </li>
+            <li>
+                <strong>Pass <code>IsLoading</code> only while rows on screen wait.</strong> An early request finds every
+                row on screen held, and the grid dims under <code>IsLoading</code>: raised for each early question, it
+                would dim at every Window's edge with nothing missing. Raise it when you ask for rows that are not held,
+                or when the rows on screen leave the rows held while your question is out.
+            </li>
+        </ul>
+        <p>
+            ExPivot sets its grid's margin for a report a server sends: 10 rows, against 60 rows read either side.
+            <code>GridSource.Fetch</code> does not use a margin. If you set one on its grid, an early request finds the
+            rows on screen in the source's Window and fetches nothing, and the source fetches when they leave it, as
+            without a margin.
+        </p>
+        <DocsExample Title="Asked ten rows early" Builtin="typeof(AskEarly)" Mud="typeof(AskEarlyMud)"
+                     Files="@(["Examples/Grid/ReadAheadTrades.cs", "Examples/Grid/MillionTrades.cs", "Examples/Data/Trade.cs"])">
+            The server answers after 150&nbsp;ms with 50 rows either side of the rows asked for. Click a cell and hold
+            <kbd>↓</kbd> past the bottom of the grid. Without the margin, each time the rows held run out the next rows
+            wait as placeholders. With it, they are asked for ten rows early, and the count of waits stays where it was.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="Live updates and the Change Highlight">
         <p>
             A live feed is a stream of replaced rows: with <code>GridSource.From</code>, call
