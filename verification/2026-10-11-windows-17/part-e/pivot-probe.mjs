@@ -17,7 +17,7 @@ import path from 'node:path';
 
 const [BASE, ITEMS, CSVDIR, OUT, ONLY] = process.argv.slice(2);
 const spec = JSON.parse(fs.readFileSync(ITEMS, 'utf8'));
-const items = spec.items.filter((i) => !ONLY || ONLY.split(',').includes(i.id));
+const items = spec.items.filter((i) => !ONLY || ONLY.split(/[,+]/).includes(i.id));
 const out = { base: BASE, started: new Date().toISOString(), items: [] };
 const save = () => fs.writeFileSync(OUT, JSON.stringify(out, null, 1));
 
@@ -40,9 +40,17 @@ const quiet = () => page.waitForTimeout(500);
 async function entries(title) {
     return (await area(title).getByRole('button').evaluateAll((bs) => bs.map((b) => b.getAttribute('aria-label')).filter((n) => n?.startsWith('Options for ')))).map((n) => n.slice(12));
 }
+// A field dragged onto an Area, as the layer-3 tests drag it; checked by the Area's entries, and dragged once
+// more when it did not land (the first drag after a file is read can come before the pane takes drops).
 async function dropOn(caption, title) {
-    await fieldItem(caption).dragTo(area(title).locator('xpath=..'), { targetPosition: { x: 12, y: 8 } });
-    await quiet();
+    const before = (await entries(title)).length;
+    for (let i = 0; i < 3; i++) {
+        await fieldItem(caption).dragTo(area(title).locator('xpath=..'), { targetPosition: { x: 12, y: 8 } });
+        await quiet();
+        if ((await entries(title)).length > before) return i + 1;
+        await page.waitForTimeout(800);
+    }
+    throw new Error(`${caption} did not land on ${title} after three drags`);
 }
 async function readReport() {
     if ((await report().count()) === 0) return { empty: await pivot().locator('.ex-pivot-empty').textContent().catch(() => null) };
@@ -98,16 +106,18 @@ for (const it of items) {
         }
         await page.locator('#csv-confirm').click();
         await pane().waitFor({ timeout: 30_000 });
+        await fieldItem(it.rows[0] ?? it.values[0].field).waitFor();
+        await page.waitForTimeout(800);
         row.status = await page.locator('#csv-status').textContent();
         row.refusal = await page.locator('#csv-refusal').textContent();
-        for (const f of it.rows) { await dropOn(f, 'Rows'); row.steps.push(`${f} dragged onto Rows`); }
-        for (const f of it.cols) { await dropOn(f, 'Columns'); row.steps.push(`${f} dragged onto Columns`); }
+        for (const f of it.rows) { const n = await dropOn(f, 'Rows'); row.steps.push(`${f} dragged onto Rows${n > 1 ? ` (it landed on drag ${n})` : ''}`); }
+        for (const f of it.cols) { const n = await dropOn(f, 'Columns'); row.steps.push(`${f} dragged onto Columns${n > 1 ? ` (it landed on drag ${n})` : ''}`); }
         for (const v of it.values) {
             const before = await entries('Values');
-            await dropOn(v.field, 'Values');
+            const n = await dropOn(v.field, 'Values');
             const after = await entries('Values');
             const added = after.find((c) => !before.includes(c)) ?? after.at(-1);
-            row.steps.push(`${v.field} dragged onto Values: ${added}`);
+            row.steps.push(`${v.field} dragged onto Values: ${added}${n > 1 ? ` (it landed on drag ${n})` : ''}`);
             const wantedCaption = `${v.agg} of ${v.field}`;
             if (!added.startsWith(`${v.agg} of `) || v.show) {
                 const r = await setValueField(added, added.startsWith(`${v.agg} of `) ? null : v.agg, v.show);
@@ -128,9 +138,16 @@ for (const it of items) {
         if (it.layout) {
             const name = { compact: 'Show in Compact Form', outline: 'Show in Outline Form', tabular: 'Show in Tabular Form' }[it.layout];
             await pivot().locator('.ex-pivot-report').getByRole('button', { name: 'Layout', exact: true }).click();
-            await page.getByRole('menuitemradio', { name, exact: true }).click();
+            const item = page.getByRole('menuitemradio', { name, exact: true });
+            if (await item.isDisabled()) {
+                // A command that would change nothing is disabled (excel-behaviours.md, item 23): the form is already this.
+                row.steps.push(`Layout: ${name} offered disabled (aria-checked ${await item.getAttribute('aria-checked')}): the report is in that form already`);
+                await page.keyboard.press('Escape');
+            } else {
+                await item.click();
+                row.steps.push(`Layout: ${name}`);
+            }
             await quiet();
-            row.steps.push(`Layout: ${name}`);
         }
         row.areas = { filters: await entries('Filters'), columns: await entries('Columns'), rows: await entries('Rows'), values: await entries('Values') };
         await page.waitForTimeout(800);

@@ -8,9 +8,9 @@
     Excel is driven through COM, as docs/specs/expivot/excel-behaviours.md says: an Excel of the script's own
     (New-Object; refused if it is an Excel already running), visible; the CSV opened with Workbooks.Open as the
     user's regional format reads it (Local), as a double click would; a PivotCache over its used range and a
-    PivotTable on a new sheet at A3; each row and column field's Orientation and Position in the item's order;
-    each Value Field added with AddDataField and its Function (Sum, Count, Average, Max, Min, Product, Count
-    Numbers, StdDev, StdDevp, Var, Varp), and its Calculation for Show Values As; an Item hidden by
+    PivotTable on a new sheet at A3; each Value Field added with AddDataField and its Function (Sum, Count, Average, Max, Min, Product, Count
+    Numbers, StdDev, StdDevp, Var, Varp), and its Calculation for Show Values As; then each row and column
+    field's Orientation and Position in the item's order; an Item hidden by
     PivotItem.Visible; the form by RowAxisLayout. Then TableRange1 (and TableRange2, the filters too): each
     cell's Text, Value2 and NumberFormat, row by row; the Value Fields' captions as Excel named them; and a
     picture of Excel's window (PrintWindow), the account's corner of the title bar left out. Nothing is saved.
@@ -70,8 +70,6 @@ foreach ($it in $spec.items) {
         $ws = $wb.Worksheets.Add()
         $pc = $wb.PivotCaches().Create(1, $src)
         $pt = $pc.CreatePivotTable($ws.Range('A3'), 'PT')
-        $i = 1; foreach ($f in $it.rows) { $pf = $pt.PivotFields($f); $pf.Orientation = 1; $pf.Position = $i; $i++; $res.steps += "$f to Rows" }
-        $i = 1; foreach ($f in $it.cols) { $pf = $pt.PivotFields($f); $pf.Orientation = 2; $pf.Position = $i; $i++; $res.steps += "$f to Columns" }
         $captions = @()
         foreach ($v in $it.values) {
             $df = $pt.AddDataField($pt.PivotFields($v.field), $M, $Functions[$v.agg])
@@ -79,6 +77,11 @@ foreach ($it in $spec.items) {
             $captions += [ordered]@{ field = $v.field; agg = $v.agg; show = $v.show; caption = [string]$df.Caption; function = [int]$df.Function; calculation = [int]$df.Calculation; numberFormat = [string]$df.NumberFormat }
         }
         $res.valueFields = $captions
+        # The row and column fields after the Value Fields: a field set as a row field first and then given to
+        # AddDataField left the rows (e03's first try, 2026-10-12); a data field added first stays when its
+        # source field is then made a row field, as a field dragged to both Areas does in Excel's own pane.
+        $i = 1; foreach ($f in $it.rows) { $pf = $pt.PivotFields($f); $pf.Orientation = 1; $pf.Position = $i; $i++; $res.steps += "$f to Rows" }
+        $i = 1; foreach ($f in $it.cols) { $pf = $pt.PivotFields($f); $pf.Orientation = 2; $pf.Position = $i; $i++; $res.steps += "$f to Columns" }
         if ($it.hide) {
             foreach ($p in $it.hide.PSObject.Properties) { foreach ($h in $p.Value) { $pt.PivotFields($p.Name).PivotItems($h).Visible = $false; $res.steps += "$h hidden in $($p.Name)" } }
         }
@@ -88,6 +91,14 @@ foreach ($it in $spec.items) {
         $res.tableRange1 = [string]$pt.TableRange1.Address($false, $false)
         $res.tableRange2 = [string]$pt.TableRange2.Address($false, $false)
         $res.cells = Cells-Of $pt.TableRange2
+        # Each cell's text again with its column 40 characters wide: General shows what fits the column, and the
+        # PivotTable's own width is what its refresh fitted.
+        $tr2 = $pt.TableRange2; $widths = @()
+        for ($c = 1; $c -le $tr2.Columns.Count; $c++) { $widths += [double]$tr2.Columns.Item($c).ColumnWidth }
+        $res.columnWidths = $widths
+        $pt.HasAutoFormat = $false
+        for ($c = 1; $c -le $tr2.Columns.Count; $c++) { $tr2.Columns.Item($c).ColumnWidth = 40 }
+        for ($r = 1; $r -le $tr2.Rows.Count; $r++) { for ($c = 1; $c -le $tr2.Columns.Count; $c++) { $res.cells[$r - 1][$c - 1].wideText = [string]$tr2.Cells.Item($r, $c).Text } }
         $res.layout = [ordered]@{ rowAxisLayout = $it.layout; compactLayoutRowHeader = [string]$pt.CompactLayoutRowHeader; compactLayoutColumnHeader = [string]$pt.CompactLayoutColumnHeader; grandTotalName = [string]$pt.GrandTotalName; rowGrand = [bool]$pt.RowGrand; columnGrand = [bool]$pt.ColumnGrand }
         # The picture: Excel's window drawn by itself, cut to the PivotTable's area (clear of the title bar).
         [void]$ws.Activate(); [void]$ws.Range('A1').Select()

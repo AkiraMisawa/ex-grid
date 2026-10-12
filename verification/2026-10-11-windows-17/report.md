@@ -494,6 +494,19 @@ The same in all four configurations, and each format undone with Ctrl+Z, the dia
 record lists "tab opened: Number; …; Fill" after Ctrl+1: UI Automation's TabItem search reached Format Cells' own tabs
 inside the page. The browser's selected tab stayed `sheet-verify-17` throughout.)
 
-## Parts E to H
+## Part E — ExPivot's readings beside Excel (ticket 07)
+
+The record is **`expivot.md`**, one row per item; the cells side by side in `part-e/expivot-cells.md`. In short:
+
+- **The twelve readings that gate `0.1.0`**: **observed** for items 2, 3, 5 (b), 6 (a), 6 (b), 7, 8, 15 and 17: the same
+  cells in Excel and in ExPivot. **Contradicted**: item 4's Count Numbers (Excel 1, 2, 3; ExPivot 0 over a column it read
+  as Text), item 5 (a) (Excel and ExPivot both an empty cell, not `#DIV/0!`), item 16 (Excel's General is eleven
+  characters, ExPivot's fifteen digits; Excel truncates a CSV's numbers to fifteen digits on opening it).
+- **Observed besides**: items 1 (for text), 9, 12 (with Excel's `Column Labels` corner row, which ExPivot does not draw)
+  and 14. **Item 13** differs in wording: Excel's `Total Sum of Amount` grand total columns.
+- **Not run in this pass**: items 10, 11, 18 to 26 and 28 (layout and wording only; Excel's Field List gestures need its
+  pane driven by hand), and 27 (Excel's display language is English (UK); the user is to be asked at the end).
+
+## Parts F to H
 
 *(Below, as each Part is finished.)*
