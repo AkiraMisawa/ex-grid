@@ -25,3 +25,9 @@ number longer than 11 characters (TEXTFN-017) and an empty code (TEXTFN-018). Re
 2026-10-12: the seventeenth Windows run answered TEXTFN-017 (`0.333333333`, General fitted to 11 characters)
 and TEXTFN-018 (empty text). Fractions and conditions stay refused with Excel's answers recorded, and
 TEXTFN-009 records German Excel's (ADR-0120's notes).
+
+2026-10-12, the area pass (`verification/2026-10-12-windows-area/`): Excel answered TEXTFN-025
+(`TEXT(-1/3,"General")`, `-0.333333333`) and TEXTFN-028 (`TEXT(1/3,"@")`, `0.333333333`), and both follow it.
+`General` is General at its own limit, 11 characters with the minus sign beside them, and a code of a text section
+alone shows a number as that General does, not as General in full. TEXTFN-029 to 034 are `uncertain` for the next
+pass (ADR-0120's note).

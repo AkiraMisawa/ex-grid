@@ -63,6 +63,15 @@
       "cells": {"ZZ1000": "=YEAR(A6)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "YEAR-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a serial between -1 and 0 is cut down to its day, -1, below 0, and #NUM! as YEAR-005's -1 is; truncated, it would be serial 0, in 1900 (YEAR-003)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=YEAR(-0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
     }
   ]
 }

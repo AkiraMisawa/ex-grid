@@ -38,3 +38,11 @@ over doubles that sit beside a decimal boundary (`0.1+0.2`, `0.3-0.1`); and `MOD
 
 2026-10-12: the seventeenth Windows run answered EOMONTH-008 and EDATE-008 (59 and 46). Before 1 March 1900
 the months are counted on the real calendar; a start of serial 0 or 60 stays refused (ADR-0047's note).
+
+2026-10-12, the area pass (`verification/2026-10-12-windows-area/`): Excel answered EOMONTH-010 (`EOMONTH(0,1)`,
+59) and EDATE-010 (`EDATE(60,1)`, 89), and both follow it. The start is read as `YEAR`, `MONTH` and `DAY` read it,
+serial 0 in January 1900 and serial 60 the 29th of February, and the months are counted on the real calendar.
+`EDATE` from serial 0, whose day is 0, stays refused (EDATE-016), and so does a start between -1 and 0, which is
+serial 0 truncated and -1 cut down to its day, until Excel is asked which (EOMONTH-016 and 017, EDATE-017).
+EOMONTH-012 to 017 and EDATE-013 to 017 are `uncertain` for the next pass, and YEAR-008, MONTH-005 and DAY-005
+ask how those read a serial between -1 and 0 (ADR-0047's note).

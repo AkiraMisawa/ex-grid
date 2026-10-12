@@ -7,7 +7,9 @@ namespace ExSheet.Engine.Tests;
 /// <summary>
 /// The dates before 1 March 1900, SUBSTITUTE's instances, and TEXT's General and empty code, as the
 /// seventeenth Windows run observed Excel to answer them (2026-10-11,
-/// <c>verification/2026-10-11-windows-17/</c>; ADR-0047, ADR-0120, ADR-0202).
+/// <c>verification/2026-10-11-windows-17/</c>), and serial 0 and 60 under EOMONTH and EDATE, and
+/// TEXT's General with a minus sign and under a lone <c>@</c>, as the area pass did (2026-10-12,
+/// <c>verification/2026-10-12-windows-area/</c>; ADR-0047, ADR-0120, ADR-0202).
 /// </summary>
 public class ObservedDatesAndTextTests
 {
@@ -31,19 +33,59 @@ public class ObservedDatesAndTextTests
     public void Adr0047_EDate_and_EOMonth_count_months_on_the_real_calendar_before_March_1900(string formula, double serial) =>
         Assert.Equal(Number(serial), NewSheet().Evaluate(formula));
 
-    [Theory] // ADR-0047: a start that is no day of the real calendar is refused until Excel is asked (EDATE-010, EOMONTH-010)
-    [InlineData("=EDATE(60,1)")]
+    [Theory] // ADR-0047: EOMONTH-010 and EDATE-010, observed; the start is read as YEAR, MONTH and DAY read it (EOMONTH-012 to 015, EDATE-013 to 015, to be asked)
+    [InlineData("=EOMONTH(0,1)", 59)]
+    [InlineData("=EOMONTH(0,0)", 31)]
+    [InlineData("=EOMONTH(0.75,2)", 91)]
+    [InlineData("=EOMONTH(60,0)", 59)]
+    [InlineData("=EOMONTH(60,1)", 91)]
+    [InlineData("=EOMONTH(60.5,-1)", 31)]
+    [InlineData("=EDATE(60,1)", 89)]
+    [InlineData("=EDATE(60,0)", 59)]
+    [InlineData("=EDATE(60,12)", 425)]
+    [InlineData("=EDATE(60,48)", 1521)]
+    [InlineData("=EDATE(60,-1)", 29)]
+    [InlineData("=EDATE(60.9,1.5)", 89)]
+    public void Adr0047_EDate_and_EOMonth_read_serial_0_and_the_day_that_never_existed_as_Day_and_Month_do(string formula, double serial) =>
+        Assert.Equal(Number(serial), NewSheet().Evaluate(formula));
+
+    [Theory] // ADR-0047: EOMONTH from serial 0 to before 1900 is no date, as EOMONTH-005's after 9999 is not (EOMONTH-015)
+    [InlineData("=EOMONTH(0,-1)")]
+    [InlineData("=EOMONTH(0.5,-13)")]
+    public void Adr0047_EOMonth_from_serial_0_to_before_1900_is_NUM(string formula) =>
+        Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
+
+    [Theory] // ADR-0047: EDATE from serial 0, day 0 of a month, is refused until Excel is asked (EDATE-016)
     [InlineData("=EDATE(0,1)")]
-    [InlineData("=EOMONTH(60,0)")]
-    [InlineData("=EOMONTH(60.5,-1)")]
-    [InlineData("=EOMONTH(0,1)")]
-    public void Adr0047_EDate_and_EOMonth_refuse_serial_0_and_the_day_that_never_existed(string formula) =>
+    [InlineData("=EDATE(0,0)")]
+    [InlineData("=EDATE(0.5,12)")]
+    [InlineData("=EDATE(0,-1)")]
+    public void Adr0047_EDate_refuses_serial_0_whose_day_is_0(string formula) =>
         Assert.Equal(Error(ErrorValue.Value), NewSheet().Evaluate(formula));
 
     [Theory] // ADR-0047: a result before 1900 is no date, as a result after 9999 is not (EOMONTH-005)
     [InlineData("=EDATE(15,-1)")]
     [InlineData("=EOMONTH(59,-2)")]
     public void Adr0047_EDate_and_EOMonth_before_1900_are_NUM(string formula) =>
+        Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
+
+    [Theory] // ADR-0047: a start between -1 and 0 is serial 0 truncated and -1 cut down to its day; no run has observed which, so it is refused until Excel is asked (EOMONTH-016 and 017, EDATE-017)
+    [InlineData("=EOMONTH(-0.5,0)")]
+    [InlineData("=EOMONTH(-0.5,1)")]
+    [InlineData("=EOMONTH(-0.0001,12)")]
+    [InlineData("=EOMONTH(-0.5,-1)")]
+    [InlineData("=EDATE(-0.5,1)")]
+    [InlineData("=EDATE(-0.9999,0)")]
+    [InlineData("=EDATE(-0.5,-1)")]
+    public void Adr0047_EDate_and_EOMonth_refuse_a_start_between_minus_1_and_0(string formula) =>
+        Assert.Equal(Error(ErrorValue.Value), NewSheet().Evaluate(formula));
+
+    [Theory] // ADR-0047: a start of -1 is #NUM! (EOMONTH-004, EDATE-007), and one below it is below 0 truncated or cut down
+    [InlineData("=EOMONTH(-1,0)")]
+    [InlineData("=EDATE(-1,1)")]
+    [InlineData("=EOMONTH(-1.5,1)")]
+    [InlineData("=EDATE(-1.0001,12)")]
+    public void Adr0047_EDate_and_EOMonth_from_minus_1_or_below_are_NUM(string formula) =>
         Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
 
     // ---- NETWORKDAYS and WORKDAY ------------------------------------------------------------------
@@ -109,6 +151,7 @@ public class ObservedDatesAndTextTests
     [InlineData("=TEXT(1/3,\"General\")", "0.333333333")]
     [InlineData("=TEXT(22/7,\"General\")", "3.142857143")]
     [InlineData("=TEXT(123456789012,\"General\")", "1.23457E+11")]
+    [InlineData("=TEXT(12345678901,\"General\")", "12345678901")]
     [InlineData("=TEXT(0.00001,\"General\")", "0.00001")]
     [InlineData("=TEXT(5,\"General\")", "5")]
     [InlineData("=TEXT(-5,\"General\")", "-5")]
@@ -121,13 +164,47 @@ public class ObservedDatesAndTextTests
     public void Adr0120_Text_General_takes_the_cultures_separator() =>
         Assert.Equal(Text("0,333333333"), new Sheet(CultureInfo.GetCultureInfo("de-DE")).Evaluate("=TEXT(1/3,\"General\")"));
 
-    [Theory] // ADR-0120: refused until Excel is asked whether the minus sign takes one of the 11 characters (TEXTFN-025), and what @ alone shows (TEXTFN-028)
-    [InlineData("=TEXT(-1/3,\"General\")")]
-    [InlineData("=TEXT(-12345678901,\"General\")")]
-    [InlineData("=TEXT(1/3,\"@\")")]
-    [InlineData("=TEXT(0.00001,\"@\")")]
-    public void Adr0120_Text_General_refuses_where_the_unobserved_readings_disagree(string formula) =>
-        Assert.Equal(Error(ErrorValue.Value), NewSheet().Evaluate(formula));
+    [Theory] // ADR-0120: TEXTFN-025, observed; the minus sign is not one of General's 11 characters (TEXTFN-029, 030, to be asked)
+    [InlineData("=TEXT(-1/3,\"General\")", "-0.333333333")]
+    [InlineData("=TEXT(-22/7,\"General\")", "-3.142857143")]
+    [InlineData("=TEXT(-12345678901,\"General\")", "-12345678901")]
+    [InlineData("=TEXT(-123456789012,\"General\")", "-1.23457E+11")]
+    [InlineData("=TEXT(-0.00001,\"General\")", "-0.00001")]
+    [InlineData("=TEXT(-1E-20,\"General\")", "-1E-20")]
+    public void Adr0120_Text_General_leaves_the_minus_sign_out_of_its_11_characters(string formula, string expected) =>
+        Assert.Equal(Text(expected), NewSheet().Evaluate(formula));
+
+    [Theory] // ADR-0120: TEXTFN-028, observed; a code of a text section alone shows a number as TEXT's General does (TEXTFN-031 to 034, to be asked)
+    [InlineData("=TEXT(1/3,\"@\")", "0.333333333")]
+    [InlineData("=TEXT(-1/3,\"@\")", "-0.333333333")]
+    [InlineData("=TEXT(123456789012,\"@\")", "1.23457E+11")]
+    [InlineData("=TEXT(0.00001,\"@\")", "0.00001")]
+    [InlineData("=TEXT(1/3,\"\"\"x\"\"@\")", "0.333333333")]
+    public void Adr0120_Text_under_a_text_section_alone_shows_a_number_as_its_General_does(string formula, string expected) =>
+        Assert.Equal(Text(expected), NewSheet().Evaluate(formula));
+
+    [Fact] // ADR-0120: every number TEXT's General shows under General, it shows under @ alone
+    public void Adr0120_Text_General_and_a_lone_at_sign_agree()
+    {
+        var sheet = NewSheet();
+        foreach (var number in new[] { "1/3", "-1/3", "2/3", "-2/3", "1E-5", "-1E-5", "12345678901", "-12345678901", "123456789012", "-123456789012", "1E+300", "-1E-300", "0", "0.1+0.2" })
+        {
+            var general = sheet.Evaluate($"=TEXT({number},\"General\")");
+            Assert.Equal(ValueKind.Text, general.Kind);
+            Assert.Equal(general, sheet.Evaluate($"=TEXT({number},\"@\")"));
+        }
+    }
+
+    [Fact] // ADR-0120: a negative number shows as its magnitude does, with the minus sign before it
+    public void Adr0120_Text_General_of_a_negative_number_is_its_magnitudes_with_a_minus_sign()
+    {
+        var sheet = NewSheet();
+        foreach (var number in new[] { "1/3", "2/3", "1/7", "22/7", "1E-5", "1.5E-9", "12345678901", "123456789012", "99999999999.5", "1E+300", "0.1+0.2" })
+        {
+            var positive = sheet.Evaluate($"=TEXT({number},\"General\")").Text;
+            Assert.Equal(Text("-" + positive), sheet.Evaluate($"=TEXT(-({number}),\"General\")"));
+        }
+    }
 
     [Theory] // ADR-0120: TEXTFN-018, observed; text and booleans as under a code without a text section (TEXTFN-023, 024)
     [InlineData("=TEXT(5,\"\")", "")]

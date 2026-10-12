@@ -69,6 +69,15 @@
       "cells": {"ZZ1000": "=NETWORKDAYS(60,60)"},
       "check": "ZZ1000",
       "expect": {"value2": 1}
+    },
+    {
+      "id": "NETWORKDAYS-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a start between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; truncated, it would be serial 0, a Saturday, and serials 0 to 6 hold five workdays, 5",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NETWORKDAYS(-0.5,6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
     }
   ]
 }
