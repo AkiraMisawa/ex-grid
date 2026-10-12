@@ -9,7 +9,7 @@ by a Claude Code session in WSL2 on the Windows desktop of the earlier runs. **N
 Segoe UI. Under a Japanese display language, `system-ui` is expected to be Yu Gothic UI. This run measures that face
 the same way, and the records' painters say which face painted each glyph.
 
-*(Written in two parts: this part before the first sign-out, the rest after the measurements.)*
+*(Written in two parts: the plan and the switch before the first sign-out, the measurements after it.)*
 
 ## Environment
 
@@ -56,3 +56,78 @@ The Japanese display language pack was already installed (`ja-JP`: `LpCab`, `LXP
 4. The records' painters are read: which face painted `system-ui`.
 5. The override is cleared again (`Set-WinUILanguageOverride` with no language), and `lang-state.ps1` is compared
    with `logs/lang-before.json`. The user signs out and signs in again, back in English (United Kingdom).
+
+## After the sign-in (21:33 BST)
+
+`logs/lang-signed-in-ja.json`:
+- the UI culture **ja-JP**, `PreferredUILanguages` ja-JP, the override `ja`;
+- the regional format **en-GB**, as it was put back; the scale **150%** (`LogPixels` 144);
+- the message font **Yu Gothic UI**.
+
+## The measurements (21:33 to 21:34 BST)
+
+`scripts/measure-ja.cmd`, `logs/measure.log`. Every run exited 0. Each record holds 523 glyphs and 3091 strings, and
+its corpus hash (`0508ec5d…`) is the English records'. The records are `glyphs/<face>.windows-ja.<browser>.json`:
+
+| Record | Browser |
+|---|---|
+| `system-ui.windows-ja.chrome.json` | Chrome 154.0.8037.98, headless |
+| `system-ui.windows-ja.msedge.json` | Edge 155.0.4283.45, headless |
+| `roboto.windows-ja.chrome.json` | Chrome 154.0.8037.98, headless |
+| `roboto.windows-ja.msedge.json` | Edge 155.0.4283.45, headless |
+
+## Which faces painted (`painters.md`, from `painters.py`)
+
+**`system-ui` painted Yu Gothic UI, in Chrome and in Edge.** The counts, per weight, are the same in both browsers:
+
+| Weight | English (UK) display, the seventeenth run | Japanese display |
+|---|---|---|
+| 400 | Segoe UI 483; Tahoma 28; Microsoft YaHei (Chrome) or Noto Sans JP (Edge) 11; Malgun Gothic 1 | **Yu Gothic UI 467**; Tahoma 37; Segoe UI 18; Malgun Gothic 1 |
+| 500 | Segoe UI Semibold 483; Tahoma 28; the same 11; Malgun Gothic 1 | **Yu Gothic UI Semibold 467**; Tahoma 37; Segoe UI Semibold 18; Malgun Gothic 1 |
+| 600 | Segoe UI Semibold 483; Tahoma 28; the same 11; Malgun Gothic 1 | **Yu Gothic UI Semibold 467**; Tahoma 37; Segoe UI Semibold 18; Malgun Gothic 1 |
+| 700 | Segoe UI 483; Tahoma 28; the same 11; Malgun Gothic 1 | **Yu Gothic UI 467**; Tahoma 37; Segoe UI 18; Malgun Gothic 1 |
+
+- At 400, 476 of the 523 glyphs changed face. Segoe UI → Yu Gothic UI: 456, the Latin letters, the digits and the
+  signs. Microsoft YaHei or Noto Sans JP → Yu Gothic UI: 11, the kanji numerals and 月. Segoe UI → Tahoma: 9, the
+  currency signs `؋₭₲₴₵₼₽₾₿`, which Yu Gothic UI lacks.
+- 18 glyphs stayed in Segoe UI: glyphs Yu Gothic UI lacks that Segoe UI has.
+- **`roboto` is unchanged but for the 11 CJK glyphs in Chrome**, which moved from Microsoft YaHei to Noto Sans JP, the
+  face Edge used under both displays.
+
+## Each class's widest glyph (`glyph-classes.txt`)
+
+Run 17's `part-g/glyph-classes.py`: each `CellTextMetrics` class's widest glyph, at 14 px and 12 px, regular (the
+widest of 400, 500 and 600) and bold (700), against the core's defaults. The defaults in `GridMetrics.cs` are the same
+at `f5b9f093` as at `8436e45e`. The class members are the script's, as run 17 used them.
+
+| `system-ui` under the Japanese display, Chrome and Edge alike | widest | default |
+|---|---|---|
+| wide, 14 px regular / bold | 14.000 (`−`) | 14.04 / 14.36 |
+| digit, 14 px regular / bold | **9.703** (`₺`) | 9.75 |
+| narrow, 14 px | 5.797 (`/`) | 6.41 |
+| wide, 12 px regular / bold | 12.000 (`−`) | 12.04 / 12.44 |
+| digit, 12 px | **8.328** (`₺`) | 8.36 |
+| narrow, 12 px | 4.969 (`/`) | 5.49 |
+| other, 14 px (full-width aside) | **15.438** (`ѝ`, 700) | 15.46 |
+| other, 12 px (full-width aside) | 13.234 (`ѝ`, 700) | 13.26 |
+
+- **By class, every widest glyph is within its default**, in both faces and both browsers. Three are within 0.05 px:
+  the digit `₺` at both sizes, and the other class's `ѝ` at 14 px bold.
+- `roboto` under the Japanese display is within too, as under the English one (wide 12.453, digit 9.344, narrow 4.672
+  at 14 px).
+- **Per glyph** (layer 1's `Every_glyph_is_charged_at_least_its_width`, and `tables.mjs`'s tables) is not run here. The
+  requester folds these records into `tests/GlyphWidths/` and runs `tables.mjs` there.
+
+## The switch back (21:37 BST)
+
+- `Set-WinUILanguageOverride` with no language cleared the override, and left the regional format en-GB.
+  `PreferredUILanguagesPending` is en-GB, for the next sign-in (`logs/lang-switched-back.json`).
+- **`HKCU\Control Panel\International` is byte for byte the export of 16:13** (SHA-256 `071C2B47…456B1AF`,
+  `logs/international-switched-back.log`). `User Profile\WindowsOverride` is gone.
+- Left until the next sign-in: `PreferredUILanguages` ja-JP, which the pending en-GB replaces, and the UI culture and
+  the message font, which follow it.
+
+## Nothing for the Docs Site
+
+This branch adds a verification record only.
+
