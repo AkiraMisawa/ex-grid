@@ -9,7 +9,7 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COT(30)"},
       "check": "ZZ1000",
-      "expect": {"value2": -0.156, "digits": 3}
+      "expect": {"value2": -0.15611995216165922}
     },
     {
       "id": "COT-002",
@@ -18,7 +18,7 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COT(45)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.617, "digits": 3}
+      "expect": {"value2": 0.6173696237835551}
     },
     {
       "id": "COT-003",
@@ -46,6 +46,33 @@
       "cells": {"ZZ1000": "=COT(A6)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "COT-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1/TAN; the cotangent rounded once, 1/tan of the remainder, or COS over SIN as doubles give 0.6420926159343308",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COT(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.6420926159343306}
+    },
+    {
+      "id": "COT-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1/TAN; the cotangent rounded once gives 0.8636911544506166",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COT(4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.8636911544506167}
+    },
+    {
+      "id": "COT-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1/TAN; COS over SIN as doubles gives -2.2108454109991946",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COT(9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -2.210845410999195}
     }
   ]
 }

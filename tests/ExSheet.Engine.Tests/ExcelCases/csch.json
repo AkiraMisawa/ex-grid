@@ -13,12 +13,12 @@
     },
     {
       "id": "CSCH-002",
-      "source": "documented",
-      "description": "Documented: the absolute value must be less than 2^27",
+      "source": "observed",
+      "description": "Microsoft documents a limit of 2^27, but Excel answers past it: 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=CSCH(2^27)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": 0}
     },
     {
       "id": "CSCH-003",

@@ -9,7 +9,7 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COS(1.047)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.5001711, "digits": 7}
+      "expect": {"value2": 0.5001710745970701}
     },
     {
       "id": "COS-002",
@@ -18,7 +18,7 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COS(60*PI()/180)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.5, "digits": 12}
+      "expect": {"value2": 0.5000000000000001}
     },
     {
       "id": "COS-003",
@@ -27,16 +27,16 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COS(RADIANS(60))"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.5, "digits": 12}
+      "expect": {"value2": 0.5000000000000001}
     },
     {
       "id": "COS-004",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the double's remainder, not 0",
+      "source": "observed",
+      "description": "Excel reduces the angle by pi to the x87's 64 bits: half the difference between that pi and PI()'s double, not 0 and not the double's own cosine",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COS(PI()/2)"},
       "check": "ZZ1000",
-      "expect": {"value2": 6.123233995736766e-17}
+      "expect": {"value2": 6.1257422745431e-17}
     },
     {
       "id": "COS-005",
@@ -46,6 +46,15 @@
       "cells": {"ZZ1000": "=COS(-2^27)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "COS-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a large angle reduced by Excel's pi/2 (the double's true cosine is -0.3633850893556905)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COS(100000000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.3633850893542029}
     }
   ]
 }

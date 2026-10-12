@@ -9,7 +9,7 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SEC(45)"},
       "check": "ZZ1000",
-      "expect": {"value2": 1.90359, "digits": 5}
+      "expect": {"value2": 1.9035944074044246}
     },
     {
       "id": "SEC-002",
@@ -18,7 +18,7 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SEC(30)"},
       "check": "ZZ1000",
-      "expect": {"value2": 6.48292, "digits": 5}
+      "expect": {"value2": 6.482921234962678}
     },
     {
       "id": "SEC-003",
@@ -37,6 +37,15 @@
       "cells": {"ZZ1000": "=SEC(0)"},
       "check": "ZZ1000",
       "expect": {"value2": 1}
+    },
+    {
+      "id": "SEC-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1/COS as doubles; the secant rounded once gives 1.8508157176809257",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SEC(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.8508157176809255}
     }
   ]
 }

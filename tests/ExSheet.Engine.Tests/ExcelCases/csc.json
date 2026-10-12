@@ -9,7 +9,7 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=CSC(15)"},
       "check": "ZZ1000",
-      "expect": {"value2": 1.538, "digits": 3}
+      "expect": {"value2": 1.5377805615408537}
     },
     {
       "id": "CSC-002",
