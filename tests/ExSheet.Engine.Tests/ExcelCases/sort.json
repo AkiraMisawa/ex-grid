@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SORT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Descending: the largest first",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(H1:H5,1,-1)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SORT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Descending: the smallest last",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(H1:H5,1,-1)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "SORT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "By the first column, ascending, when nothing more is given",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(G1:H5)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "SORT-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Equal keys keep their order",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(G1:H5)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "SORT-005",
-      "source": "documented",
+      "source": "observed",
       "description": "By the second column, descending",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(G1:H5,2,-1)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "SORT-006",
-      "source": "documented",
+      "source": "observed",
       "description": "by_col sorts the columns by a row",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(M1:O2,2,-1,TRUE)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "SORT-007",
-      "source": "documented",
+      "source": "observed",
       "description": "An index past the array is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(G1:H5,3)"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "SORT-008",
-      "source": "documented",
+      "source": "observed",
       "description": "An order other than 1 and -1 is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(H1:H5,1,0)"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "SORT-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text sorts without regard to case",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=SORT(D1:D5,1,-1)"},
@@ -85,7 +85,7 @@
     },
     {
       "id": "SORT-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: numbers sort before text, and text before booleans",
       "fixture": "lookupData",
       "cells": {"Z1": "b", "Z2": "1", "Z3": "TRUE", "ZZ1000": "=SORT(Z1:Z3)"},
@@ -94,12 +94,43 @@
     },
     {
       "id": "SORT-011",
-      "source": "uncertain",
-      "description": "Engine's refusal, Excel to be asked: a blank key is #VALUE!",
+      "source": "observed",
+      "description": "Engine's refusal: a blank key is #VALUE!. Excel's Anchor shows 7, so the blank does not sort first as 0; where it goes, what its spilled cell shows and how a descending sort places it were not read",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(Q1:Q2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; the seventeenth Windows run read only the Anchor (7), and following it would guess the rest",
+      "excelExpect": {"value2": 7}
+    },
+    {
+      "id": "SORT-012",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: what the blank key's spilled cell shows below the 7 of SORT-011 (0, or empty text)",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(Q1:Q2)"},
+      "check": "ZZ1001",
+      "expect": {"value2": null},
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
+    },
+    {
+      "id": "SORT-013",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a blank key in a descending sort (7 first if a blank sorts last whatever the order)",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(Q1:Q2,1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
+    },
+    {
+      "id": "SORT-014",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a blank key among text (a first if a blank sorts last, not as empty text)",
+      "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
     }
   ]
 }

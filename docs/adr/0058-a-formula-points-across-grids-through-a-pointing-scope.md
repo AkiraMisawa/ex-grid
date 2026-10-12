@@ -584,6 +584,11 @@ heading (`$B$2`, then `$B$3`). Three things were decided with the user.
 - **`=SUM(A` lists the functions ExSheet computes**: `AVERAGE` alone, where Excel lists every function
   beginning with A. A function it cannot compute would make the Formula an error the moment it was
   chosen, as a candidate the grammar refuses would. A deliberate difference.
+- **An argument's list offers only the values ExSheet computes** *(2026-10-12, the seventeenth Windows
+  run, Part B's b4)*. Excel's list for `AGGREGATE`'s `function_num` offers 13 (`MODE.SNGL`) and 16 to
+  19 (`PERCENTILE.INC`, `QUARTILE.INC`, `PERCENTILE.EXC`, `QUARTILE.EXC`). ExSheet's leaves them out,
+  because it answers them `#VALUE!` (ADR-0047's note of 2026-10-10): offering them would make the
+  Formula an error the moment one was chosen, as above. A deliberate difference.
 - **A defect, seen and not asked:** after `Home` or Shift+→ over Point writes `A10` or `D10:E10`, the
   Cell Editor's own `scrollLeft` stays where it was (81.3 px), and the caret and the written Reference
   lie 24 to 50 px past its right edge, in all six configurations. What Point writes is to be seen as it

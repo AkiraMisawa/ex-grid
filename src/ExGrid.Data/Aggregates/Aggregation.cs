@@ -59,7 +59,9 @@ public enum AggregateError
     NotANumber,
 
     /// <summary>An error value was among the values (ExSheet's <c>#N/A</c> and the rest): every
-    /// Aggregation but <see cref="Aggregation.Count"/> is that error, as in Excel (ADR-0130).</summary>
+    /// Aggregation that reads numbers is that error. <see cref="Aggregation.Count"/> and
+    /// <see cref="Aggregation.CountNumbers"/> still answer, as Excel's status bar still shows Count
+    /// and Numerical Count (ADR-0130).</summary>
     ErrorAmongValues,
 }
 

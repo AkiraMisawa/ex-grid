@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ASINH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ASINH(-2.5)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ASINH-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ASINH(10)"},

@@ -1,0 +1,22 @@
+a new PowerShell reads en-GB
+Excel still running before the pass: 25812 10/11/2026 22:21:42
+22:33:49 LET-023      disagree    1.3 s
+22:33:50 LET-KEYS-001 agree       0.6 s
+22:33:50 LET-KEYS-002 agree       0.5 s
+22:33:51 LET-KEYS-003 agree       0.5 s
+22:33:51 LET-KEYS-004 disagree    0.5 s
+22:33:51 LET-KEYS-005 agree       0.1 s
+22:33:52 LET-KEYS-006 agree       0.5 s
+22:33:52 LET-KEYS-007 agree       0.1 s
+22:33:52 LET-KEYS-008 agree       0.7 s
+22:33:53 LET-KEYS-009 agree       0.5 s
+22:33:54 LET-KEYS-010 agree       0.5 s
+22:33:54 LET-KEYS-011 agree       0.1 s
+22:33:54 LET-KEYS-012 agree       0.1 s
+22:33:54 LET-KEYS-013 agree       0.1 s
+22:33:54 LET-KEYS-014 agree       0.1 s
+
+agree 13, disagree 2, blocked 0, recorded 0 -> %LOCALAPPDATA%\exgrid-layer3\run-2026-10-11-17\update-keys-en-GB.json
+DISAGREE LET-023: expected the entry refused; Excel entered it
+DISAGREE LET-KEYS-004: expected the entry refused; Excel entered it
+-Update: 13 agreeing cases now say source "observed"; disagreeing ones are untouched.

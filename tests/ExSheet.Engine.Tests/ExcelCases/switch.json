@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SWITCH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the value matched",
       "cells": {"A1": "2", "ZZ1000": "=SWITCH(A1,1,\"Sunday\",2,\"Monday\",3,\"Tuesday\",\"No match\")"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "SWITCH-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: no match, the default",
       "cells": {"A1": "99", "ZZ1000": "=SWITCH(A1,1,\"Sunday\",2,\"Monday\",3,\"Tuesday\",\"No match\")"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "SWITCH-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: no match and no default is #N/A",
       "cells": {"A1": "99", "ZZ1000": "=SWITCH(A1,1,\"Sunday\",2,\"Monday\",3,\"Tuesday\")"},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "SWITCH-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text matches without regard to case",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SWITCH(\"b\",\"B\",1,0)"},
@@ -37,7 +37,7 @@
     },
     {
       "id": "SWITCH-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a blank cell matches 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SWITCH(A5,0,\"zero\",\"other\")"},
@@ -46,7 +46,7 @@
     },
     {
       "id": "SWITCH-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the expression's Error Value is the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SWITCH(1/0,1,\"x\")"},

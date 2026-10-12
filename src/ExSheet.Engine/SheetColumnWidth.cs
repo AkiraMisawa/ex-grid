@@ -13,8 +13,9 @@ public enum SheetColumnWidthKind
     WidenedByEntry,
 
     /// <summary>
-    /// Set by the user — a drag, a size to fit, a command (<see cref="Sheet.SetColumnWidth"/>): an
-    /// entry never widens it.
+    /// Set by the user — a drag, a size to fit, a command (<see cref="Sheet.SetColumnWidth"/>) — or
+    /// taken by a column inserted to the right of a recorded width (<see cref="Sheet.InsertColumns"/>):
+    /// an entry never widens it.
     /// </summary>
     SetByUser,
 }

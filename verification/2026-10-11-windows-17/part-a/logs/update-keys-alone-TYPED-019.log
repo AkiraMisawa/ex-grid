@@ -1,0 +1,5 @@
+a new PowerShell reads en-US
+22:47:41 TYPED-019    agree       2.3 s, dialogs: 1
+
+agree 1, disagree 0, blocked 0, recorded 0 -> %LOCALAPPDATA%\exgrid-layer3\run-2026-10-11-17\update-keys-alone-TYPED-019.json
+-Update: 1 agreeing cases now say source "observed"; disagreeing ones are untouched.

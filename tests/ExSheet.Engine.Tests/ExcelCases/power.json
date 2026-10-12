@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "POWER-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=POWER(5,2)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "POWER-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=POWER(98.6,3.2)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "POWER-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=POWER(4,5/4)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "POWER-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, as the ^ operator's: 0 to the power 0 is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=POWER(0,0)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "POWER-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, as the ^ operator's: 0 to a negative power is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=POWER(0,-1)"},

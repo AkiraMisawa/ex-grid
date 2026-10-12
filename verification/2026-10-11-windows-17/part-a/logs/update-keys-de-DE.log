@@ -1,0 +1,27 @@
+set de-DE at 22:47:56
+a new PowerShell reads en-GB
+22:47:59 COPY-024     agree       1,5 s
+22:48:00 COPY-025     disagree    0,9 s
+22:48:01 DATE-006     agree       1,1 s
+22:48:02 DATE-007     agree       1,0 s
+22:48:03 DATE-008     agree       1,0 s
+22:48:05 FILL-047     agree       1,3 s
+22:48:05 GW-018       agree       0,5 s
+22:48:06 FMT-029      agree       0,6 s
+22:48:07 FMT-039      agree       0,6 s
+22:48:07 FMT-060      agree       0,6 s
+22:48:08 TEXTFN-009   disagree    0,5 s
+22:48:08 TEXTFN-010   agree       0,5 s
+22:48:09 TYPED-008    agree       0,9 s
+22:48:10 TYPED-009    agree       0,9 s
+22:48:10 TYPED-015    agree       0,5 s
+22:48:11 TYPED-023    agree       0,9 s
+22:48:12 TYPED-040    agree       0,9 s
+22:48:13 TYPED-044    agree       0,9 s
+22:48:14 TYPED-050    agree       0,9 s
+22:48:14 VALUEFN-007  recorded    0,5 s
+
+agree 17, disagree 2, blocked 0, recorded 1 -> %LOCALAPPDATA%\exgrid-layer3\run-2026-10-11-17\update-keys-de-DE.json
+DISAGREE COPY-025: value2: expected 3.5, Excel "=SUM(1.5,2)" (text)
+DISAGREE TEXTFN-009: value2: expected "1.234,50", Excel "1234,5000" (text)
+-Update: 17 agreeing cases now say source "observed"; disagreeing ones are untouched.

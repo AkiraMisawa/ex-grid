@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ATAN2-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: x first, then y",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ATAN2(1,1)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ATAN2-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: -3pi/4",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ATAN2(-1,-1)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ATAN2-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: in degrees",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ATAN2(-1,-1)*180/PI()"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "ATAN2-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: DEGREES",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=DEGREES(ATAN2(-1,-1))"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "ATAN2-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Documented: both 0 is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ATAN2(0,0)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "ATAN2-006",
-      "source": "documented",
+      "source": "observed",
       "description": "The x argument comes first: the point (0, 1) is pi/2",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ATAN2(0,1)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "ATAN2-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the negative x axis is pi, never -pi",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ATAN2(-1,0)"},

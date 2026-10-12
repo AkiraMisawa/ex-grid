@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SEQUENCE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: four rows by five columns, the last 20",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SEQUENCE(4,5)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SEQUENCE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "From a start, by a step",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SEQUENCE(3,1,10,5)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "SEQUENCE-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Row by row: the second row's second number",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SEQUENCE(2,2,0,-1)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "SEQUENCE-004",
-      "source": "documented",
+      "source": "observed",
       "description": "A function that reduces an array takes it",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SUM(SEQUENCE(10))"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "SEQUENCE-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a size of 0 is #CALC!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SEQUENCE(0)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "SEQUENCE-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a size below 0 is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SEQUENCE(-1)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "SEQUENCE-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a size is truncated",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=ROWS(SEQUENCE(2.9))"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "SEQUENCE-008",
-      "source": "documented",
+      "source": "observed",
       "description": "Past the Sheet's edge is #SPILL!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SEQUENCE(1,16384)"},

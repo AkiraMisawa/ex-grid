@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SINH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=2.868*SINH(0.0342*1.03)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SINH-002",
-      "source": "documented",
+      "source": "observed",
       "description": "The documented formula, (e^x - e^-x)/2",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SINH(1)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "SINH-003",
-      "source": "documented",
+      "source": "observed",
       "description": "The documented formula: the function is odd",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SINH(-1)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "SINH-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: past what a number holds is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SINH(711)"},

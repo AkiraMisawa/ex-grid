@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "TEXTJOIN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a delimiter between each, blanks ignored",
       "cells": {"A1": "a", "A3": "c", "ZZ1000": "=TEXTJOIN(\", \",TRUE,A1:A3)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "TEXTJOIN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Blanks kept as empty items when ignore_empty is FALSE",
       "cells": {"A1": "a", "A3": "c", "ZZ1000": "=TEXTJOIN(\",\",FALSE,A1:A3)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "TEXTJOIN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Texts and ranges together",
       "cells": {"A1": "a", "A3": "c", "ZZ1000": "=TEXTJOIN(\"-\",TRUE,\"x\",A1:A3,\"y\")"},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "TEXTJOIN-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an Error Value is the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXTJOIN(\",\",TRUE,C1:C3)"},
@@ -37,7 +37,7 @@
     },
     {
       "id": "TEXTJOIN-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a Formula's empty text is ignored too",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXTJOIN(\",\",TRUE,C1,D1,C3)"},

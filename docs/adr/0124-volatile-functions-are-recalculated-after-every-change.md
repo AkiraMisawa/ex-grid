@@ -81,3 +81,21 @@ locale is the Sheet's ([ADR-0048](./0048-a-sheet-document-holds-entries-and-exsh
   - **Text that names no place is `#REF!`, as in Excel.** That includes another Sheet's name, since
     an ExSheet holds one Sheet
     ([ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).
+
+*(2026-10-12, after the seventeenth Windows run: **the three refused forms were observed, and `INDIRECT` reads them as
+Excel does.** `INDIRECT("R3C2",FALSE)` and `INDIRECT("R3C2",0)` are 45, `INDIRECT("Positions[PV]")` is 250.5 and
+`SUM(INDIRECT("A1#"))` over `=SEQUENCE(3)` is 6 (INDIRECT-023 to 026). R1C1 text — `a1` FALSE, 0, a blank or left
+empty — naming an absolute cell, or a range of two such cells, is the Reference it names, with or without the Sheet's
+own qualifier. A structured reference's text is the Linked Table's column, read as `Table[Column]` typed is: a table
+still waiting for its data waits, even under `IFERROR`, and a table never declared, or a column it does not have,
+names no place, `#REF!`. `A1#` is the Spill Range of the Formula in A1, read as `A1#` typed is, and `#REF!` where it
+does not spill. **R1C1 text in a form no run has observed stays `#VALUE!`**: relative (`R[1]C[-1]`, `RC`), whole rows
+or columns (`R3`, `C2`), a number with a leading 0, and structured or `#` text in R1C1 style. INDIRECT-030 to 042 put
+the forms generalised from the observed ones to the next run. Excel reads R1C1 text in the letters of its display
+language (`Z1S1` in a German Excel); ExSheet reads R and C in every culture, as its function names are English in
+every culture, and the run's Excel was English. **A volatile Formula is computed once more after each layout of the
+spills that changes something**, since what it computes a Reference to is no Dependent of the cells the layout
+changed: a Reference `INDIRECT` or `OFFSET` computes into a Spill Range follows it when it is blocked or freed, as a
+typed one does. An Anchor computed again with an array of the shape its layout blocked stays `#SPILL!`, so the
+recalculation ends on a layout that changes nothing: a change that blocks or frees one spill computes each volatile
+Formula twice, and one that moves no spill once.)*

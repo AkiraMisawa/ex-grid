@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "NETWORKDAYS-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: workdays from 1 October 2012 to 1 March 2013",
       "cells": {"A1": "10/1/2012", "A2": "3/1/2013", "A3": "11/22/2012", "A4": "12/4/2012", "A5": "1/21/2013", "ZZ1000": "=NETWORKDAYS(A1,A2)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "NETWORKDAYS-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: less one holiday",
       "cells": {"A1": "10/1/2012", "A2": "3/1/2013", "A3": "11/22/2012", "A4": "12/4/2012", "A5": "1/21/2013", "ZZ1000": "=NETWORKDAYS(A1,A2,A3)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "NETWORKDAYS-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: less three holidays",
       "cells": {"A1": "10/1/2012", "A2": "3/1/2013", "A3": "11/22/2012", "A4": "12/4/2012", "A5": "1/21/2013", "ZZ1000": "=NETWORKDAYS(A1,A2,A3:A5)"},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "NETWORKDAYS-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the start after the end is negative",
       "cells": {"A1": "10/1/2012", "A2": "3/1/2013", "A3": "11/22/2012", "A4": "12/4/2012", "A5": "1/21/2013", "ZZ1000": "=NETWORKDAYS(A2,A1)"},
       "check": "ZZ1000",
@@ -36,12 +36,39 @@
     },
     {
       "id": "NETWORKDAYS-005",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a date before 1 March 1900",
+      "source": "observed",
+      "description": "Dates before 1 March 1900 count, each on the day of the week WEEKDAY gives it: 71 days less 20 Saturdays and Sundays",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NETWORKDAYS(30,100)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 51}
+    },
+    {
+      "id": "NETWORKDAYS-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 1 is a Sunday, as WEEKDAY says, and no workday (on the real calendar 1 January 1900 was a Monday)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NETWORKDAYS(1,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "NETWORKDAYS-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 6 is a Friday, as WEEKDAY says, and a workday (on the real calendar 6 January 1900 was a Saturday)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NETWORKDAYS(6,6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "NETWORKDAYS-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 60, the day that never existed, is a Wednesday and a workday",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NETWORKDAYS(60,60)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
     }
   ]
 }

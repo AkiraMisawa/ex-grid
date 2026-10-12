@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "CONCATENATE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: text and cells joined",
       "cells": {"A1": "brook trout", "A2": "species", "A3": "32", "ZZ1000": "=CONCATENATE(\"Stream population for \",A1,\" \",A2,\" is \",A3,\"/mile.\")"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "CONCATENATE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: two cells and a space",
       "cells": {"A1": "Andreas", "A2": "Hauser", "ZZ1000": "=CONCATENATE(A1,\" \",A2)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "CONCATENATE-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A range of several cells would spill",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=CONCATENATE(A1:A2)"},

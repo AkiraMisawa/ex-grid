@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ISNA-001",
-      "source": "documented",
+      "source": "observed",
       "description": "#N/A is #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNA(#N/A)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ISNA-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Another Error Value is not #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNA(1/0)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ISNA-003",
-      "source": "documented",
+      "source": "observed",
       "description": "A number is not #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNA(A1)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "ISNA-004",
-      "source": "documented",
+      "source": "observed",
       "description": "A failed lookup is #N/A",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=ISNA(XLOOKUP(\"Fig\",G1:G5,H1:H5))"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "ISNA-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "ISNA over a range where one Value is wanted is refused",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISNA(A1:A2)"},
