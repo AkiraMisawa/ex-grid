@@ -82,6 +82,14 @@
 .ex-sheet .ex-editing .ex-range-single::after {
     box-shadow: none;
 }
+/* The Focus among several ranges (ADR-0008, 2026-10-12): the core's thin border of one Device Pixel
+   inside the cell, black on the Paper where no Theme or Wrapper names --ex-focus-among-ranges-outline,
+   and with no white line of its own. Three classes, so it outranks the Focus outline's green above in
+   any order. */
+.ex-sheet .ex-focus.ex-focus-among-ranges::after {
+    border-color: var(--ex-focus-among-ranges-outline, #000);
+    box-shadow: none;
+}
 /* The Copied Range's dashes (ADR-0170) are the outline's colour, as Excel's are: its green where no
    Theme or Wrapper names one, or they would be the core's CanvasText round a green outline. */
 .ex-sheet .ex-copied-range::after { outline-color: var(--ex-focus-outline, #217346); }

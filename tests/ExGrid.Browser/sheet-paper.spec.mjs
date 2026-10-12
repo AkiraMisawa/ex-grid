@@ -1,6 +1,6 @@
-import { test, expect, alterPage } from './fixtures.mjs';
-import { sheet, cell, pressCell, editor, bar, stretchesOf } from './sheet-helpers.mjs';
-import { painted, sameColour, resolvedColour, contrast, onDeviceGrid, pixelsApart, stillPictures } from './pixels.mjs';
+import { test, expect, alterPage, circuitQuiet, twoFrames } from './fixtures.mjs';
+import { sheet, cell, pressCell, clickCell, expectFocusAt, editor, bar, stretchesOf } from './sheet-helpers.mjs';
+import { painted, sameColour, resolvedColour, contrast, onDeviceGrid, pixelsApart, stillPictures, edgePixels } from './pixels.mjs';
 
 // ExSheet paints Font and Fill on white Paper (ticket 48; ADR-0071, "Paper and Ink"; SH-39, SH-40,
 // DC-58). The Paper is Excel's white and the Ink Excel's black under the light and the dark scheme
@@ -184,6 +184,49 @@ for (const [chrome, query] of CHROMES) {
         // The Formula Bar frames the Paper: its References take the dark scheme's shade there.
         expect(read.light.bar).toEqual([0x32, 0x6a, 0xc7]);
         expect(read.dark.bar, 'the Formula Bar follows the scheme').not.toEqual(read.light.bar);
+    });
+}
+
+// The Focus among several ranges on the Paper (ADR-0008, 2026-10-12): the core's thin border of one
+// Device Pixel inside the cell, black where no token names it, in either scheme and under either
+// Chrome. Read where something above the selection layer stands beside the cell — the Headings, a
+// Pinned Column, the header — and in the open: lying inside the cell, no side is covered. The page's
+// own scale here, and a real 150% under the chrome-150 project, as an OS sets it (Playwright's
+// emulated scale is selection-look.spec.mjs's, on ExGrid's own look).
+for (const [chrome, query] of CHROMES) {
+    test(`UX-19/SH-39 (${chrome} Chrome): on the Paper the Focus among several ranges is one Device Pixel of black inside its cell, beside the Headings, a Pinned Column and the header and in the open, in either scheme (ADR-0008, 2026-10-12; ADR-0071)`, async ({ page }, testInfo) => {
+        for (const scheme of SCHEMES) {
+            await page.goto(`/sheet?case=paper&pin=1&scheme=${scheme}${query}`);
+            const grid = sheet(page);
+            await expect(cell(grid, 'A1')).toHaveText('red');
+            await expect(page.locator('#sheet-positions .ex-row').first()).toBeVisible();
+            const found = {};
+            // A8 beside the Headings and pinned, B8 beside the pinned A, E1 under the header, E8 in the open.
+            for (const address of ['A8', 'B8', 'E1', 'E8']) {
+                await clickCell(grid, 'B3');
+                await clickCell(grid, 'C4', { modifiers: ['Shift'] });
+                await expect(grid.locator('.ex-range-single')).toHaveCount(1);
+                await clickCell(grid, address, { modifiers: ['ControlOrMeta'] });
+                await expectFocusAt(grid, address);
+                await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
+                await expect(grid.locator('.ex-range-single')).toHaveCount(0);
+                await page.mouse.move(0, 0);
+                await circuitQuiet();
+                await twoFrames(page);
+                found[address] = await edgePixels(page, await cell(grid, address).boundingBox(), BLACK);
+            }
+            for (const [address, { off, ...edges }] of Object.entries(found)) {
+                // A gridline is whole Device Pixels: one at 100% and 150% (ADR-0090). Where the page
+                // lays the Sheet at a fraction of a device pixel (`off`), Chrome paints each box from
+                // the device pixel nearest its edge, and the reading counts from there.
+                const gridline = Math.max(1, Math.floor(edges.scale + 1e-9));
+                // The display's scale, as its project sets it: under chrome-150 the reading is at 150%.
+                expect(edges.scale).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
+                expect(edges, `${scheme}, ${address}: ${JSON.stringify({ edges, off })}`).toEqual({
+                    scale: edges.scale, left: [1], top: [1], right: [gridline + 1], bottom: [gridline + 1],
+                });
+            }
+        }
     });
 }
 

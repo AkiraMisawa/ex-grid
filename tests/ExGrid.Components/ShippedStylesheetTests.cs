@@ -1576,6 +1576,37 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"outline-style:\s*solid;"), box.Body);
     }
 
+    [Fact] // ADR-0008 (2026-10-12) / UX-19 / ADR-0090: among several ranges the Focus's border is one Device Pixel inside its cell, in a token of its own that defaults to CanvasText
+    public void Among_several_ranges_the_focus_border_is_one_device_pixel_in_its_own_token()
+    {
+        var (css, _) = CoreStylesheet();
+        var (outside, forced) = ForcedColorsSplit();
+
+        var rule = Assert.Single(outside, rule => rule.Selectors.Contains(".ex-focus.ex-focus-among-ranges::after"));
+        var declared = Declarations(rule.Body).ToDictionary(d => d.Property, d => d.Value);
+        // One Device Pixel, the token's colour, CanvasText where no Theme or Wrapper names it.
+        Assert.Equal("var(--ex-dp, 1px) solid var(--ex-focus-among-ranges-outline, CanvasText)", declared["border"]);
+        // Inside the cell: a Device Pixel in from its top and left edges and from the gridline it holds
+        // on its right and bottom, so every side is whole Device Pixels from an edge that lies on one.
+        Assert.Equal("var(--ex-dp, 1px)", declared["top"]);
+        Assert.Equal("var(--ex-dp, 1px)", declared["left"]);
+        Assert.Equal("calc(var(--ex-rule-dp, 1px) + var(--ex-dp, 1px))", declared["right"]);
+        Assert.Equal("calc(var(--ex-rule-dp, 1px) + var(--ex-dp, 1px))", declared["bottom"]);
+        // It changes the Focus's box of its own and nothing else: its content and its place in the
+        // cascade are the Focus outline's, which it outranks.
+        Assert.DoesNotContain("content", declared.Keys);
+        Assert.True(Specificity(".ex-focus.ex-focus-among-ranges::after").CompareTo(Specificity(".ex-focus::after")) > 0);
+        // The token is that border's alone.
+        Assert.Single(Regex.Matches(css, "--ex-focus-among-ranges-outline"));
+
+        // Under forced colors the Focus's box is not drawn, and the Focus is restated by its outline,
+        // as everywhere there, beside ranges that are each outlined.
+        var none = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-focus::after"));
+        Assert.Matches(new Regex(@"content:\s*none;"), none.Body);
+        Assert.DoesNotContain(forced, rule => rule.Selectors.Any(selector => selector.Contains("ex-focus-among-ranges", StringComparison.Ordinal)));
+        Assert.Contains(forced, rule => rule.Selectors.Contains(".ex-focus") && Regex.IsMatch(rule.Body, @"outline-style:\s*solid;"));
+    }
+
     [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-66: a mark comes and goes in one step — nothing in the core's stylesheet transitions or animates
     public void Nothing_in_the_core_stylesheet_transitions_or_animates()
     {

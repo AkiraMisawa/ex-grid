@@ -209,6 +209,48 @@ export function onDeviceGrid({ x, y, width, height }, scale, margin = 0) {
     return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
+/**
+ * Which device pixels paint `colour` exactly (`paints`), counted from each edge of a CSS box: 0 is
+ * the box's own device pixel at that edge, 1 the next one in, and -1 the first outside it. Each edge
+ * is read across on one line, `inset` CSS px in from the box's top left corner, which is clear of a
+ * cell's text, padded further in; from `outside` device pixels out to `inside` in. What a line drawn
+ * inside a box at whole Device Pixels from its edges is read with: where each side lies, and how
+ * wide it is. A box the page lays at a fraction of a device pixel (/wide's rows start at 471.875 CSS
+ * px, and Chrome lays out in 64ths, so a third of a pixel at 150% is never exact) is painted from
+ * the device pixel nearest its edge, and so are the boxes laid over it: each reading is a device
+ * pixel's centre counted from that edge, which holds while the edge is under half a device pixel
+ * from the grid. `off` names the edges that are off it, for a message. A line blended over two
+ * device pixels paints neither exactly, and is read as none.
+ */
+export async function edgePixels(page, box, colour, { inset = 4, outside = 2, inside = 4 } = {}) {
+    const scale = await page.evaluate(() => devicePixelRatio);
+    // The region's corners on whole CSS pixels that are whole device pixels too: a clip whose
+    // corner is a fraction of a CSS pixel is moved by the screenshot, and at 150% a device pixel's
+    // edge is a whole CSS pixel only every second one (device-pixel-225.spec.mjs reads at 2.25 on
+    // multiples of 4 for the same reason).
+    let step = 1;
+    while (step < 64 && Math.abs(step * scale - Math.round(step * scale)) > 1e-6) step++;
+    const margin = (outside + 1) / scale;
+    const left = Math.floor((box.x - margin) / step) * step;
+    const top = Math.floor((box.y - margin) / step) * step;
+    const right = Math.ceil((box.x + box.width + margin) / step) * step;
+    const bottom = Math.ceil((box.y + box.height + margin) / step) * step;
+    const region = await painted(page, { x: left, y: top, width: right - left, height: bottom - top });
+    const reach = [];
+    for (let i = -outside; i <= inside; i++) reach.push(i);
+    const boxRight = box.x + box.width;
+    const boxBottom = box.y + box.height;
+    const on = (x, y) => paints(region.at(x, y), colour);
+    return {
+        scale,
+        off: offDevicePixels(box, scale),
+        left: reach.filter((i) => on(box.x + (i + 0.5) / scale, box.y + inset)),
+        right: reach.filter((i) => on(boxRight - (i + 0.5) / scale, box.y + inset)),
+        top: reach.filter((i) => on(box.x + inset, box.y + (i + 0.5) / scale)),
+        bottom: reach.filter((i) => on(box.x + inset, boxBottom - (i + 0.5) / scale)),
+    };
+}
+
 // ---------------------------------------------------------------------------------------------
 // Pictures compared with each other
 

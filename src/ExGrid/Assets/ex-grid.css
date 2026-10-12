@@ -635,6 +635,22 @@
    cell out. Its element stays, because under forced colors no tint is painted to mark it, and the
    forced-colors block below outlines it again. */
 .ex-range-single ~ .ex-focus::after { content: none; }
+/* The Focus among several ranges (ADR-0008, 2026-10-12). No range carries an outline there, as none
+   of Excel's does, and the Focus, which the core marks, takes a thin border of one Device Pixel in a
+   token of its own: --ex-focus-among-ranges-outline, CanvasText unless a Theme or Wrapper names it.
+   It lies inside the cell, a Device Pixel in from its top and left edges and from its own gridline,
+   as Excel's active cell among several ranges did at 150% in the seventeenth Windows run (h2). Inside,
+   nothing above the selection layer covers any side of it, beside the Headings, a Pinned Column or
+   under the header, so it needs none of the sides the core marks (UX-18); and every side is a whole
+   Device Pixel from an edge that lies on one, so it lies on Device Pixels as the other lines do
+   (ADR-0090). Paint only: nothing in C# reads its width. */
+.ex-focus.ex-focus-among-ranges::after {
+    top: var(--ex-dp, 1px);
+    left: var(--ex-dp, 1px);
+    right: calc(var(--ex-rule-dp, 1px) + var(--ex-dp, 1px));
+    bottom: calc(var(--ex-rule-dp, 1px) + var(--ex-dp, 1px));
+    border: var(--ex-dp, 1px) solid var(--ex-focus-among-ranges-outline, CanvasText);
+}
 /* The Copied Range (ADR-0170): dashes round a rectangle the clipboard holds as the grid copied it,
    Excel's moving border standing still (ADR-0027 P8). They lie where the Selection's outline lies,
    and are painted after it, because a copy usually shares its range: a band of the grid's ground
@@ -1162,7 +1178,9 @@
     /* The selection and the Focus stay visible: outlines, which forced colors keeps, drawn
        inside the range on every side, so none is covered (UX-18). The Focus inside a single
        range is marked only by its missing tint, and no tint is painted here, so it takes its
-       outline back. */
+       outline back. The Focus among several ranges is restated as the Focus is everywhere here:
+       its outline, in place of its thin border (ADR-0008, 2026-10-12), beside ranges that are
+       each outlined. */
     .ex-range { outline-style: solid; outline-color: Highlight; }
     .ex-focus { outline-style: solid; }
     /* The tints are not painted at all (ADR-0206): stated here rather than left to how a browser

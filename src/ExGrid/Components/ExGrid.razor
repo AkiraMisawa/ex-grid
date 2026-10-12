@@ -301,8 +301,9 @@
                             {
                                 @* Each range's box, a single range outlined; the Focus's own element
                                    follows, so the stylesheet can tell it stands inside a single
-                                   range (ADR-0008, 2026-09-29). Its tint is in the shade layer
-                                   beneath (ADR-0206). *@
+                                   range (ADR-0008, 2026-09-29), and it is marked among several,
+                                   where it takes a thin border of its own (2026-10-12). Its tint is
+                                   in the shade layer beneath (ADR-0206). *@
                                 @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
                                 {
                                     @if (SelectionStyles.Box(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedRangeBox)
@@ -312,7 +313,7 @@
                                 }
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedFocus)
                                 {
-                                    <div class="ex-focus" style="@pinnedFocus"></div>
+                                    <div class="@FocusClass" style="@pinnedFocus"></div>
                                 }
                                 @* The Copied Range (ADR-0170): dashes round each rectangle the clipboard
                                    holds as the grid copied it, after the Focus, so they lie over the
@@ -402,7 +403,7 @@
                                 }
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } focus)
                                 {
-                                    <div class="ex-focus" style="@focus"></div>
+                                    <div class="@FocusClass" style="@focus"></div>
                                 }
                                 @foreach (var copiedRange in CopiedRectangles)
                                 {
@@ -2555,6 +2556,13 @@
     /// one outline, around the whole range, and several ranges carry none. Interned, so a
     /// render composes nothing for them.</summary>
     private string RangeClass => _selection.Selection.Ranges.Count == 1 ? "ex-range ex-range-single" : "ex-range";
+
+    /// <summary>The Focus's classes (ADR-0008, 2026-10-12): among several ranges, where no range
+    /// carries an outline, the Focus is marked, and the stylesheet draws it as Excel draws the
+    /// active cell there, a thin border of one Device Pixel inside its cell, in a token of its own
+    /// (<c>--ex-focus-among-ranges-outline</c>). Decided by the Selection, not the layer, because a
+    /// layer may hold the Focus and no range's box. Interned, as <see cref="RangeClass"/> is.</summary>
+    private string FocusClass => _selection.Selection.Ranges.Count > 1 ? "ex-focus ex-focus-among-ranges" : "ex-focus";
 
     /// <summary>
     /// Whether the pinned shade layer holds anything over the painted rows (ADR-0206): the hover
