@@ -2706,77 +2706,73 @@
 
     private readonly Dictionary<string, object?> _heldParameters = new(StringComparer.Ordinal);
 
-    // The elements of each list or array parameter as they were when the grid last rendered for
-    // its parameters: identity is the change signal element by element as well (ADR-0003/0006/
-    // 0024/0068), so a column added to the same Columns list, or a row replaced in the same
-    // Window array, still repaints. Only the Window the grid was last given is held (ADR-0160).
-    private readonly Dictionary<string, object?[]> _heldElements = new(StringComparer.Ordinal);
+    // The rows the grid last painted from a pushed Window, by reference, with where they stood
+    // and the Window's count then: a row replaced in place in the same Window array is a new
+    // instance where it is painted, so a Consumer render that hands that array again repaints
+    // it (ADR-0003's identity, element by element where the reader can see it). Only painted
+    // rows are compared, so the cost follows the painted rows and not the Window (ADR-0141), and
+    // only rows of the Window last given are held (ADR-0160). Off screen, the grid reads the
+    // Window afresh as it scrolls. Every other list parameter — Columns above all — is compared
+    // by instance alone, as ADR-0003 has it.
+    private TRow[] _paintedRows = [];
+    private int _paintedFrom;
+    private int _paintedWindowCount = -1;
 
     /// <summary>Whether every parameter in <paramref name="parameters"/> is the one the grid
     /// already holds: the same instance for a reference type — a delegate re-created by the
     /// Consumer's render, a RenderFragment above all, is new, since what it answers may have
-    /// changed — and an equal value for a value type; and, for a list or an array, the same
-    /// elements in the same order as when the grid last rendered for its parameters. When
-    /// anything differs, records what it was handed, for the render that follows. A push of no
-    /// parameters at all is a request to render, never a Consumer's render, which hands every
-    /// parameter it writes, and it renders as before.</summary>
+    /// changed — and an equal value for a value type; and, for the Window, the same rows where
+    /// the grid painted them, and the same count. A push of no parameters at all is a request to
+    /// render, never a Consumer's render, which hands every parameter it writes, and it renders
+    /// as before.</summary>
     private bool HandsNothingNew(ParameterView parameters)
     {
         var same = _bound && parameters.GetEnumerator().MoveNext();
         foreach (var parameter in parameters)
         {
-            if (!same)
-                break;
-            same = _heldParameters.TryGetValue(parameter.Name, out var held)
-                && SameParameter(held, parameter.Value)
-                && (!_heldElements.TryGetValue(parameter.Name, out var elements) || SameElements(elements, parameter.Value));
-        }
-        if (same)
-            return true;
-        foreach (var parameter in parameters)
-        {
+            if (same && !(_heldParameters.TryGetValue(parameter.Name, out var held) && SameParameter(held, parameter.Value)))
+                same = false;
             _heldParameters[parameter.Name] = parameter.Value;
-            if (ElementsOf(parameter.Value) is { } elements)
-                _heldElements[parameter.Name] = elements;
-            else
-                _heldElements.Remove(parameter.Name);
         }
-        return false;
+        // Last, so a scalar that moved spares the walk of the painted rows.
+        if (same && parameters.TryGetValue<IReadOnlyList<TRow>>(nameof(Window), out var window) && window is not null)
+            same = PaintedRowsStand(window);
+        return same;
     }
 
     private static bool SameParameter(object? held, object? handed)
         => ReferenceEquals(held, handed)
             || (handed is not null && handed.GetType().IsValueType && handed.Equals(held));
 
-    /// <summary>A list or array parameter's elements, in order — a materialised collection only,
-    /// never a sequence that would be evaluated by reading it — or null for any other value.</summary>
-    private static object?[]? ElementsOf(object? value)
+    /// <summary>Notes the rows a render paints from a pushed Window (see <see cref="_paintedRows"/>).</summary>
+    private void NotePaintedRows()
     {
-        if (value is string || value is not System.Collections.IEnumerable sequence
-            || value is not (System.Collections.ICollection or IReadOnlyCollection<object?>))
+        if (Source is not null || _visible is not { } visible)
         {
-            return null;
+            _paintedRows = [];
+            _paintedWindowCount = -1;
+            return;
         }
-        var elements = new List<object?>();
-        foreach (var element in sequence)
-            elements.Add(element);
-        return [.. elements];
+        var from = Math.Clamp(visible.Start - _windowStart, 0, _window.Count);
+        var to = Math.Clamp(visible.Start + visible.Count - _windowStart, from, _window.Count);
+        if (_paintedRows.Length != to - from)
+            _paintedRows = new TRow[to - from];
+        for (var i = from; i < to; i++)
+            _paintedRows[i - from] = _window[i];
+        _paintedFrom = from;
+        _paintedWindowCount = _window.Count;
     }
 
-    /// <summary>Whether <paramref name="handed"/> holds exactly <paramref name="held"/>, element by
-    /// element, read once and without copying.</summary>
-    private static bool SameElements(object?[] held, object? handed)
+    private bool PaintedRowsStand(IReadOnlyList<TRow> window)
     {
-        if (handed is not System.Collections.IEnumerable sequence)
+        if (window.Count != _paintedWindowCount)
             return false;
-        var at = 0;
-        foreach (var element in sequence)
+        for (var i = 0; i < _paintedRows.Length; i++)
         {
-            if (at == held.Length || !SameParameter(held[at], element))
+            if (!ReferenceEquals(window[_paintedFrom + i], _paintedRows[i]))
                 return false;
-            at++;
         }
-        return at == held.Length;
+        return true;
     }
 
     protected override void OnParametersSet()
@@ -3350,6 +3346,7 @@
         }
         var local = _geometry.SliceAt(_scrollTopPx);
         _visible = local is { } slice ? new RowRange(_pageStartRow + slice.Start, slice.Count) : null;
+        NotePaintedRows();
         ObserveAutoWidths();
         ResolveColumnGeometry();
         NotePaintLayout();
