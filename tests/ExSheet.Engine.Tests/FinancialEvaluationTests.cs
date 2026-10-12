@@ -140,6 +140,23 @@ public class FinancialEvaluationTests
     public void ADR0047_At_a_rate_other_than_0_a_number_of_periods_past_2_to_the_53_is_refused(string formula) =>
         Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
 
+    [Fact] // ADR-0047: XNPV-004, asked to tell e^(x ln(1+rate)) from a correctly rounded power: Excel's is the first, Math.Pow 8 units in the last place away
+    public void ADR0047_XNPV_discounts_by_e_to_the_years_times_ln_one_plus_rate()
+    {
+        var sheet = NewSheet();
+        string[] values = ["-10000", "2750", "2750", "2750", "4250"];
+        string[] dates = ["39448", "39522", "40089", "40217", "40327"];
+        for (var i = 0; i < values.Length; i++)
+        {
+            sheet.Enter($"A{i + 1}", values[i]);
+            sheet.Enter($"B{i + 1}", dates[i]);
+        }
+        Assert.Equal(Value.FromNumber(342.0430874765725), sheet.Evaluate("=XNPV(0.12,A1:A5,B1:B5)"));
+        var byPow = 0.0;
+        for (var i = 0; i < values.Length; i++) byPow += double.Parse(values[i]) / Math.Pow(1.12, (double.Parse(dates[i]) - 39448) / 365);
+        Assert.Equal(342.04308747657205, byPow);
+    }
+
     [Theory] // ADR-0202, note of 2026-10-12: NPV is undeclared for 0.1.0, #NAME? as IRR is; XNPV stays
     [InlineData("=NPV(10%,-10000,3000,4200,6800)")]
     [InlineData("=NPV(-1,1,2)")]

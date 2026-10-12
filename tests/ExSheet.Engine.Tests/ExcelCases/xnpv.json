@@ -8,7 +8,7 @@
       "description": "Microsoft's example: five cash flows at irregular dates",
       "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "A4": "3250", "A5": "2750", "B1": "39448", "B2": "39508", "B3": "39751", "B4": "39859", "B5": "39904", "ZZ1000": "=XNPV(0.09,A1:A5,B1:B5)"},
       "check": "ZZ1000",
-      "expect": {"value2": 2086.647602031535, "digits": 6}
+      "expect": {"value2": 2086.647602031535}
     },
     {
       "id": "XNPV-002",
@@ -29,10 +29,26 @@
     {
       "id": "XNPV-004",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: dates where a correctly rounded power and e^(x ln(1+rate)), the ^ operator's, differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "description": "Dates where a correctly rounded power and e^(x ln(1+rate)), the ^ operator's, differ in the last place: Excel's double is e^(x ln(1+rate))'s, and Math.Pow's is 8 units in the last place away (spikes/exsheet-financial-evaluation/)",
       "cells": {"A1": "-10000", "A2": "2750", "A3": "2750", "A4": "2750", "A5": "4250", "B1": "39448", "B2": "39522", "B3": "40089", "B4": "40217", "B5": "40327", "ZZ1000": "=XNPV(0.12,A1:A5,B1:B5)"},
       "check": "ZZ1000",
-      "expect": {"value2": 342.04308747657205, "digits": 6}
+      "expect": {"value2": 342.0430874765725}
+    },
+    {
+      "id": "XNPV-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: whole years apart, where e^(x ln(1+rate)) and a correctly rounded power, or squaring, differ in the last place (the power gives 2023.0065393622904)",
+      "cells": {"A1": "-10000", "A2": "3000", "A3": "4200", "A4": "6800", "B1": "39448", "B2": "39813", "B3": "40178", "B4": "40543", "ZZ1000": "=XNPV(0.07,A1:A4,B1:B4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2023.0065393622895}
+    },
+    {
+      "id": "XNPV-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: whole years apart, where squaring, as PV and FV raise to a whole number, gives 2277.5848519247406, and e^(x ln(1+rate)) and a correctly rounded power give this double",
+      "cells": {"A1": "-10000", "A2": "3000", "A3": "4200", "A4": "6800", "B1": "39448", "B2": "39813", "B3": "40178", "B4": "40543", "ZZ1000": "=XNPV(0.06,A1:A4,B1:B4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2277.5848519247415}
     }
   ]
 }

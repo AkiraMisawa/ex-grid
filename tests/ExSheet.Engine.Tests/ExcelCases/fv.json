@@ -140,7 +140,7 @@
     {
       "id": "FV-016",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: half a period, where the square root of 1+rate, which the ^ operator takes for an exponent of 0.5 (ARITH-133), and e^(0.5 ln(1+rate)) differ in the last place",
+      "description": "Engine's answer, Excel to be asked: half a period, where the square root of 1+rate, which the ^ operator takes for an exponent of 0.5 (ARITH-133), and e^(0.5 ln(1+rate)) differ in the last place (the square root gives 45.627983043166275)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.42,0.5,-100)"},
       "check": "ZZ1000",

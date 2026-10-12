@@ -224,7 +224,10 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// XNPV: each value discounted by the years from the first date, at 365 days a year. The values
     /// and the dates are ranges of the same count, numbers only; a date before the first is
-    /// <c>#NUM!</c>; anything else among them is refused with <c>#VALUE!</c>.
+    /// <c>#NUM!</c>; anything else among them is refused with <c>#VALUE!</c>. Each discount is
+    /// e^(years ln(1+rate)) in doubles, as Excel's is: XNPV-004, asked to tell it from a correctly
+    /// rounded power, is Excel's double to the bit, where <see cref="Math.Pow"/> is 8 units in the last
+    /// place away (<c>spikes/exsheet-financial-evaluation/</c>).
     /// </summary>
     private static Operand XNpv(FunctionCall call)
     {
@@ -238,7 +241,7 @@ internal static partial class FunctionLibrary
         {
             var date = Math.Floor(dates[i]);
             if (date < first) return Operand.Of(ErrorValue.Num);
-            total += values[i] / Math.Pow(1 + rate, (date - first) / 365);
+            total += values[i] / Math.Exp((date - first) / 365 * Math.Log(1 + rate));
         }
         return Operand.Of(Evaluator.Number(total));
     }

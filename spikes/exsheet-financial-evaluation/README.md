@@ -155,8 +155,9 @@ Excel's doubles where they differ.
 
 XNPV-001 and XNPV-004 are both given by e^(x ln(1+rate)) in doubles, with x the days over 365 (divided,
 or multiplied by 1/365). A correctly rounded power, and `Math.Pow`, are 8 units in the last place from
-XNPV-004, which was asked to tell them apart; the corpus compares XNPV at 6 decimals, so the oracle
-counted it as agreeing.
+XNPV-004, which was asked to tell them apart; the corpus compared XNPV at 6 decimals, so the oracle
+counted it as agreeing. The engine now takes e^(x ln(1+rate)), and XNPV-001 and 004 compare every bit.
+XNPV-005 and 006 ask whole years, where squaring, a correctly rounded power and e^(x ln(1+rate)) part.
 
 ## The C# port
 
