@@ -323,8 +323,11 @@ answer:
   place but which no run has shown wrapped round to the far side or stopped at the edge; and, in
   either style, `#` after a range, a row or a column, whatever the parts joined (`A1:A2#`, `A:A#`,
   `R2C2:R3C2#`, `R3#`, `C2#`, `R2C2:R3#`), which could name no place, the first cell's Spill Range,
-  the cells themselves or the first cell joined to the second's Spill Range. `#VALUE!` by decision,
-  in either style: a declared Linked Table's bare name (`INDIRECT("Positions")`), which Excel reads as
+  the cells themselves or the first cell joined to the second's Spill Range; and `#` inside a join,
+  after its first part (`A1#:A2`, `R1C1#:R2C1`), which could name no place, the first cell's Spill
+  Range joined to the second part, as `A1#` is read, or the cells themselves with the `#` passed over.
+  Another Sheet's name is judged first, so `Sheet2!A1#:A2` is `#REF!`. `#VALUE!` by decision, in
+  either style: a declared Linked Table's bare name (`INDIRECT("Positions")`), which Excel reads as
   the table's data, every column and every row without the header. A Formula could then read the
   table by position, and a Linked Table is read by key, never by position (ADR-0049's rule 2)
   *(2026-10-12, decided with the user: the bare name stays `#VALUE!`, in either style)*. Typed, the

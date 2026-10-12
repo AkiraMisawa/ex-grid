@@ -89,7 +89,14 @@ Status: done
       it, and the readings part (no place, as the intersection is; the first cell's Spill Range; the
       cells themselves, the `#` passed over; or the first cell joined to the second's Spill Range,
       `A1:(A2#)`). Another Sheet's name in A1 style is `#REF!` whatever follows it, a `#` included
-- [ ] For the next Windows run: INDIRECT-067 to INDIRECT-084 and INDIRECT-090 to INDIRECT-097. The
+- [x] A `#` inside a join, after its first part (`A1#:A2`, `A1#:A2#`, `$A$1#:A2`, `Sheet1!A1#:A2`,
+      `1#:2`, `R1C1#:R2C1`, `R1C1#:R2C1#`, `R1#:R2`), is `#VALUE!` until Excel is asked, in either
+      style, where it was the engine's `#REF!`: no run has observed it, and the readings part (no
+      place; the first cell's Spill Range joined to the second part, `(A1#):A2`, the `#` bound to the
+      cell before it as `A1#` is read; or the cells themselves, the `#` passed over). Another Sheet's
+      name is judged first, so `Sheet2!A1#:A2` is `#REF!`; and A1 text past the Sheet's edge is
+      `#REF!` whatever comes before it in a join (`A1#:XFE1`)
+- [ ] For the next Windows run: INDIRECT-067 to INDIRECT-084 and INDIRECT-090 to INDIRECT-099. The
       forms read by generalising what the second area pass observed (INDIRECT-067 to 072: an R or a C
       with no number beside a number or second in a rectangle, a zero offset on the column, a leading
       0 in an offset or a column number; 075 to 077: parts of two kinds joined in the other orders;
@@ -100,7 +107,10 @@ Status: done
       edges, likewise; 090, 092: `#` after a range in R1C1 and A1 style over `=SEQUENCE(3)` in A1,
       and 096, 097 the same with A1 holding 1 and `=SEQUENCE(2)` in A2, which together tell no place,
       the first cell's Spill Range, the cells themselves and the first cell joined to the second's
-      Spill Range apart; 091: `#` after a whole column; 094: `#` after a cell joined to a whole row)
+      Spill Range apart; 091: `#` after a whole column; 094: `#` after a cell joined to a whole row;
+      098, 099: `#` inside a join, `A1#:A2` and `R1C1#:R2C1`, over `=SEQUENCE(3)` in A1, which give
+      `#REF!` for no place, 6 for A1's Spill Range joined to A2 and 3 for the range with the `#`
+      passed over)
 
 ## Comments
 
@@ -265,3 +275,21 @@ passed over, and `#REF!` for no place or A1's Spill Range, so that the two pairs
 apart. The texts no longer say that any case asks other text that is not R1C1 notation, or A1 text that
 goes on past its Reference: both are `#REF!` by the rule INDIRECT-035 and INDIRECT-021 settle, and no
 case asks them.
+
+2026-10-12, after the verifier's fourth review: a `#` inside a join, before its `:`, was the engine's
+`#REF!` — in A1 style as text that goes on past its Reference (`A1#:A2` reads `A1`, then `#:A2`), in R1C1
+style as text that is not R1C1 notation — though its readings part as `A1:A2#`'s do. With `=SEQUENCE(3)`
+in A1, `A1#:A2` is `#REF!` if it names no place, generalised from the intersection (INDIRECT-021); 6 if
+the `#` binds to the cell before it, as `A1#` is read (INDIRECT-026, 060), and A1's Spill Range is joined
+to A2, `(A1#):A2`, which is A1:A3; and 3 if the `#` is passed over. No run has observed any of these
+forms, so it is refused, `#VALUE!`, in either style: in A1 style where the text with that `#` taken out
+is a range, whole rows or whole columns, followed by nothing or one more `#`
+(`ADR0124_indirect_refuses_a_hash_after_an_a1_range_row_or_column`); in R1C1 style where a `#` stands
+before the `:` of a join, whatever the parts, judged before the join as a `#` after it is
+(`ADR0124_indirect_refuses_a_hash_after_an_r1c1_range_row_or_column`). Another Sheet's name is judged
+first, so `Sheet2!A1#:A2` and `Sheet2!R1C1#:R2C1` are `#REF!`. Text in which the `#` stands before no
+join's `:` stays as it was: A1 text past the Sheet's edge is `#REF!` whatever comes before it in a join
+(`A1#:XFE1`, `B1#:B1048577`), and `R1C1##` and `R1C1#:` are not R1C1 notation, `#REF!`. INDIRECT-098 (`A1#:A2`) and 099 (`R1C1#:R2C1`) ask it, holding the engine's `#VALUE!`. This
+branch's own choice: the refusal also takes whole rows and whole columns (`1#:2`, `A#:B`, `R1#:R2`,
+`C1#:C2`) and parts of two kinds in R1C1 style (`R2C2#:R3`), whose readings part the same way (no place,
+or the cells with the `#` passed over).
