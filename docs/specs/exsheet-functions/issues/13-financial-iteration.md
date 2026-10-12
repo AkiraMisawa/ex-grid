@@ -66,15 +66,30 @@ six and refuses where they part (XNPV-005, 006 and 011); the 72 part at 1,668 of
 wherever the 72 part, or asked before the tag is the user's question (ADR-0202); XNPV-012 to 017 are the
 inputs that tell the 72 apart (`discriminate-xnpv.txt`).
 
-2026-10-12, the second area pass (`verification/2026-10-12-windows-area-2/`): `XNPV` is settled and leaves
-this ticket's questions. Its nine observed doubles and eight Error Values are given by one evaluation of the
-2,592 the third search tries (`spikes/exsheet-financial-evaluation/`): the days over 365, whole years by
-squaring and e^(years ln(1+rate)) with the exponential and the logarithm correctly rounded otherwise, each
-value divided, summed from the first, and `#NUM!` at a rate below 0. XNPV-013 is the correctly rounded
-exponential's double where glibc's is a unit low, so the engine now computes both functions correctly
-rounded on every platform; PV and FV take the same power, and every one of their observed doubles and Error
-Values is its. `NPV` stays here, undeclared: none of the 5,796 evaluations gives all 21 observed doubles, and
-the best give 7 (NPV-009 to 022 are recorded with Excel's doubles). `PMT` stays Supported with its last
-digits open: none of the 39,602 evaluations gives all 29 observed payments, and the best give 16; PMT-013 to
-016, 018, 020, 021 and 023 to 032 differ from the engine's by 1 to 11 units in the last place. Whether PMT is
-refused for 0.1.0 is the user's question (ADR-0202; `docs/agents/proposals/area-financial.md`, section 1).
+2026-10-12, the second area pass (`verification/2026-10-12-windows-area-2/`): `XNPV` is settled as far as its
+doubles go, and leaves this ticket's questions. Of the 2,592 candidates the third search tries
+(`spikes/exsheet-financial-evaluation/`), 4 give its nine observed doubles, and they are two evaluations: the
+days over 365, whole years by squaring and e^(years ln(1+rate)) otherwise, each value divided, summed from the
+first, with or without Excel's last-addition adjustment, which part only where the last addition nearly
+cancels (the engine refuses there; XNPV-018 asks). None of the 4 gives Excel's six `#NUM!` at negative rates
+(XNPV-007 to 010, 012, 017), where each gives numbers at some: the engine checks the rate before it evaluates and is `#NUM!`
+below 0, which is Excel's answer at -0.5, -1, -1.5 and -2 and the engine's at other negative rates (XNPV-020
+asks -0.01), and refuses a rate of exactly 0 (XNPV-019). XNPV-013 is the correctly rounded exponential's
+double where glibc's is a unit low, so the engine now computes the exponential correctly rounded on every
+platform, and the logarithm too, which no observed double tells from glibc's (FV-023 and PV-016 ask); PV and
+FV take the same power, and every one of their observed doubles and Error Values is its. `NPV` stays here,
+undeclared: none of the 5,796 evaluations gives all 21 observed doubles, and the best give 7 (NPV-009 to 022
+are recorded with Excel's doubles). None of the 39,602 evaluations gives all 29 of `PMT`'s observed payments
+at a rate other than 0, and the best give 16; PMT-013 to 016, 018, 020, 021 and 023 to 032 differ from the
+engine's by 1 to 11 units in the last place.
+
+2026-10-12, decided with the user: `PMT` is kept, with an exception to ADR-0047 for `PMT` alone. Its result
+may differ from Excel's in digits no format displays (observed up to 11 units in the last place, PMT-026, a
+relative error of about 1e-15), because the engine gives the exact payment rounded once and the difference is
+Excel's own rounding; 0.1.0 lists it under Known limitations (ADR-0202). The payments that differ are recorded
+as differences by that decision, and PMT-011 and 012 (an `nper` of 10.5 and of -10), refused before only
+because PMT's evaluation is not Excel's, are answered by the same exact model with 1+rate raised as `PV` and
+`FV` raise it, each one unit in the last place from Excel's. Where its forms part in kind, a number against an
+Error Value or one Error Value against another, `PMT` refuses until Excel is asked (PMT-034, 035 and 038).
+`PMT` leaves this ticket's questions; an evaluation found later that gives every payment Excel gave would end
+the exception. `NPV` is not part of the exception and stays here, undeclared.

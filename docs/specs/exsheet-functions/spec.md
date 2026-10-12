@@ -244,11 +244,11 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `PMT` | Supported | — | At a rate other than 0, an `nper` that is not a whole number from 0 is #VALUE! (ADR-0047, note of 2026-10-12). 17 of the 29 payments Excel was asked differ from ExSheet's by 1 to 11 units in the last place, and no evaluation searched gives them all; whether PMT is refused for 0.1.0 is the user's question (ADR-0202, ticket 13). Excel gives a General cell its currency format on entry (the area pass of 2026-10-12 read `$#,##0.00_);[Red]($#,##0.00)` for PMT, PV, FV and NPV); ExSheet gives none |
-| `PV` | Supported | — | `type` is read as a truth value; 1+rate is raised to any `nper` as Excel raises it, Error Values included: squaring, 1 over the power to a negative `nper`, the square root at 0.5, else e^(nper ln(1+rate)) correctly rounded (ADR-0047, note of 2026-10-12). At a rate of -1 with an `nper` above 0, #VALUE! until Excel is asked (PV-013) |
-| `FV` | Supported | — | As `PV`, at a rate of -1 too; with both a present value and a payment, the sum as Excel writes it (FV-014, FV-015, FV-019) |
+| `PMT` | Supported | — | The exact payment rounded once, by ADR-0047's exception for `PMT` alone (decided with the user, 2026-10-12): 19 of the 30 payments Excel was asked differ from ExSheet's by 1 to 11 units in the last place, digits no format displays, and no evaluation searched gives them all; a Known limitation of 0.1.0 (ADR-0202). 1+rate is raised to any `nper` by the power `PV` and `FV` share, exactly (PMT-011, PMT-012; PMT-036 and PMT-037 ask its edges); #VALUE! at a rate of -1 with an `nper` above 0 (PMT-034), where 1+rate raised is exactly 1 (PMT-035) and where it passes a double's range (PMT-038), until Excel is asked. Excel gives a General cell its currency format on entry (the area pass of 2026-10-12 read `$#,##0.00_);[Red]($#,##0.00)` for PMT, PV, FV and NPV); ExSheet gives none |
+| `PV` | Supported | — | `type` is read as a truth value; 1+rate is raised to any `nper` by a power that gives every double and Error Value Excel was observed to give for `PV` and `FV`: squaring, 1 over the power to a negative `nper`, the square root at 0.5, else e^(nper ln(1+rate)), the exponential correctly rounded, as XNPV-013 found Excel's, and the logarithm correctly rounded too (ADR-0047, note of 2026-10-12). Where `PV`'s own observations leave other readings (PV-014, PV-015) and where a correctly rounded logarithm parts from glibc's (PV-016), that is the engine's reading, which those cases ask. At a rate of -1 with an `nper` above 0, #VALUE! until Excel is asked (PV-013) |
+| `FV` | Supported | — | As `PV`, at a rate of -1 too (FV-023 and FV-024 ask where the power is the engine's reading); with both a present value and a payment, the sum as written, which gives Excel's doubles (FV-014, FV-015, FV-019) |
 | `NPV` | Blocked | P3 | Observed: no evaluation searched gives every double Excel gave, to the last bit (NPV-001 to 022, none of 5,796 in `spikes/exsheet-financial-evaluation/`). Refused for 0.1.0 as IRR is (ADR-0202, note of 2026-10-12). Ticket 13 |
-| `XNPV` | Supported | — | Each value divided by 1+rate raised as `PV` raises it to the days over 365, summed from the first (XNPV-001, 004 to 006, 011, 013 to 016). #NUM! at a rate below 0, as Excel's (XNPV-007 to 010, 012, 017); #VALUE! at a rate of 0 (XNPV-019) and where the last addition nearly cancels (XNPV-018), until Excel is asked |
+| `XNPV` | Supported | — | Each value divided by 1+rate raised as `PV` raises it to the days over 365, summed from the first: one of the two evaluations that give every observed double (XNPV-001, 004 to 006, 011, 013 to 016). #NUM! at a rate below 0, a check of the rate no evaluation gives: Excel's at -0.5, -1, -1.5 and -2 (XNPV-007 to 010, 012, 017), the engine's at other negative rates (XNPV-020 asks -0.01). #VALUE! at a rate of 0 whose counts and dates are in order (XNPV-019) and where the last addition nearly cancels (XNPV-018), until Excel is asked |
 | `IRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
 | `XIRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
 | `RATE` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
@@ -390,13 +390,23 @@ function Excel adds is listed here.
     question. `NPV` is Blocked: no evaluation searched gives every double Excel gave for it. Ticket 13
     holds both.
 15. **The second area pass of 2026-10-12 asked what the first left open**
-    (`verification/2026-10-12-windows-area-2/`). `PV`, `FV` and `XNPV` raise 1+rate by one power that
-    gives every double and Error Value Excel was observed to give for them, the exponential and the
-    logarithm correctly rounded, and no longer refuse where the first round's readings parted. `PV` at a
-    rate of -1 with an `nper` above 0, and `XNPV` at a rate of 0 and where its last addition nearly
-    cancels, are refused until Excel is asked. `PMT`'s last digits stay open (none of 39,602 evaluations
-    gives its 29 observed payments), and `NPV` stays Blocked (none of 5,796 gives its 21 observed
-    doubles). Ticket 13 holds both.
+    (`verification/2026-10-12-windows-area-2/`). `PV` and `FV` raise 1+rate by a power that gives every
+    double and Error Value Excel was observed to give for them, with the exponential and the logarithm
+    correctly rounded: Excel's exponential is the correctly rounded one where glibc's is not (XNPV-013),
+    and no observed double tells logarithms apart (FV-023 and PV-016 ask). `XNPV` divides by
+    that power and sums from the first value, one of the two evaluations (4 candidates) that give its nine
+    observed doubles, and is `#NUM!` below 0, a check of the rate none of them gives, which Excel gave at
+    -0.5 to -2 and XNPV-020 asks at -0.01. They no longer refuse where the first round's readings parted.
+    `PV` at a rate of -1 with an `nper` above 0, and `XNPV` at a rate of 0 and where its last addition
+    nearly cancels, are refused until Excel is asked. `NPV` stays Blocked (none of 5,796 evaluations gives
+    its 21 observed doubles); ticket 13 holds it.
+16. **`PMT` is kept under an exception to ADR-0047** (decided with the user, 2026-10-12): none of 39,602
+    evaluations gives its 29 observed payments at a rate other than 0, and the engine gives the exact
+    payment rounded once, which Excel's differs from in digits no format displays (up to 11 units in the
+    last place, PMT-026). Its cases that differ are recorded as differences by that decision; it answers
+    an `nper` that is not a whole number, or is negative, by the same exact model and the power `PV` and
+    `FV` share (PMT-011, PMT-012), and refuses where its forms part in kind (PMT-034, PMT-035, PMT-038).
+    0.1.0 lists its last digits under Known limitations (ADR-0202). `NPV` is not part of the exception.
 
 The retained evidence is `verification/2026-10-03-windows-functions/`. New corpus cases preserve
 its IDs, typed fixtures and exact numeric expectations. A deliberate refusal keeps Excel's
