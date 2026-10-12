@@ -160,7 +160,7 @@ public class SelectionLookTests : SelectionGridContext
     {
         var cut = RenderGrid(pinnedColumnCount: 1);
         await PressCellAsync(cut, 0, 0);
-        await PressCellAsync(cut, 0, 2, shift: true);
+        await PressCellAsync(cut, 1, 2, shift: true);
         var before = (Pinned: Ranges(cut, ".ex-selection-pinned"), Scrollable: Ranges(cut));
         var tints = (Pinned: Tints(cut, Shade), Scrollable: Tints(cut));
 
@@ -173,11 +173,34 @@ public class SelectionLookTests : SelectionGridContext
         Assert.Equal(before.Scrollable, Ranges(cut));
         Assert.Equal(tints.Pinned, Tints(cut, Shade));
         Assert.Equal(tints.Scrollable, Tints(cut));
-        // The pinned tint is the Focus's cell alone, its hole the whole of it; the scrollable one
+        // The pinned tint is column 0 of both rows, the Focus's cell its hole; the scrollable one
         // starts at the boundary.
-        Assert.Equal([Rect(0, 0, 100, 20) + Hole(0, 0, 100, 20)], tints.Pinned);
-        Assert.Equal([Rect(100, 0, 200, 20)], tints.Scrollable);
-        Assert.Equal("; clip-path: inset(-20px -20px -20px 100px)" + InsideTopAndLeft, before.Scrollable.Single().Style[Rect(0, 0, 300, 20).Length..]);
+        Assert.Equal([Rect(0, 0, 100, 40) + Hole(0, 0, 100, 20)], tints.Pinned);
+        Assert.Equal([Rect(100, 0, 200, 40)], tints.Scrollable);
+        Assert.Equal("; clip-path: inset(-20px -20px -20px 100px)" + InsideTopAndLeft, before.Scrollable.Single().Style[Rect(0, 0, 300, 40).Length..]);
+    }
+
+    [Fact] // ADR-0206 / DOM-2: a range's part that is the Focus's cell alone has no tint, since the hole would cut it out whole, and stands no pinned shade layer
+    public async Task A_part_that_is_the_focus_alone_has_no_tint_and_stands_no_shade_layer()
+    {
+        var cut = RenderGrid(pinnedColumnCount: 1);
+
+        // A whole row with the Focus in the one Pinned Column, as on a Sheet with column A pinned:
+        // the pinned part is the Focus's cell, so the tint is the scrollable one's alone, and the
+        // pinned layer keeps the range's box, which draws the outline.
+        await PlaceAsync(cut, new SelectionRange(1, 0, 1, 100), new CellPosition(1, 0));
+        Assert.Empty(cut.FindAll(Shade));
+        Assert.Equal([Rect(100, 20, 9_900, 20)], Tints(cut));
+        Assert.Single(Ranges(cut, ".ex-selection-pinned"));
+        Assert.Single(Ranges(cut));
+
+        // The other way round: the scrollable part is the Focus's cell, so only the pinned part is
+        // tinted, with no hole, since the Focus is not on its side.
+        await PlaceAsync(cut, new SelectionRange(1, 0, 1, 2), new CellPosition(1, 1));
+        Assert.Equal([Rect(0, 20, 100, 20)], Tints(cut, Shade));
+        Assert.Empty(Tints(cut));
+        Assert.Single(Ranges(cut, ".ex-selection-pinned"));
+        Assert.Single(Ranges(cut));
     }
 
     [Fact] // ADR-0008 (2026-09-29) / ADR-0053: a Focus scrolled out of the painted rows makes no hole in what is painted

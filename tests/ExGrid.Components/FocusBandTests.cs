@@ -76,6 +76,8 @@ public class FocusBandTests : GridTestContext
         var cut = RenderGrid(highlight: true, pinned: 2);
         await ClickAsync(cut, 150, 30); // row 1, column 1: pinned
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+        // Two rows, so the range's pinned part is more than the Focus's cell, which has no tint.
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
 
         // The band alone would stand the layer; with a range across the boundary, the band comes
         // before the range's pinned tint.

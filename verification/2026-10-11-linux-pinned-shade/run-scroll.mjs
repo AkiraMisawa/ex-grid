@@ -3,7 +3,7 @@
 //
 //     xvfb-run -a node run-scroll.mjs
 //
-// The hosts as run-drag.mjs takes them; EXGRID_ROUNDS the rounds (3).
+// The hosts as run-drag.mjs takes them; EXGRID_ROUNDS the rounds (2, as raw/scroll-layers.json was taken).
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 
@@ -12,7 +12,7 @@ const host = {
     server: [['before', process.env.EXGRID_BEFORE_SERVER ?? 'http://localhost:7470'], ['after', process.env.EXGRID_AFTER_SERVER ?? 'http://localhost:6470']],
     wasm: [['before', process.env.EXGRID_BEFORE_WASM ?? 'http://localhost:8471'], ['after', process.env.EXGRID_AFTER_WASM ?? 'http://localhost:5471']],
 };
-const ROUNDS = Number(process.env.EXGRID_ROUNDS ?? 3);
+const ROUNDS = Number(process.env.EXGRID_ROUNDS ?? 2);
 const runs = [];
 for (const hostName of Object.keys(host)) {
     for (const scale of ['1', '1.5']) {

@@ -1,5 +1,5 @@
 import { test, expect, alterPage, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet } from './fixtures.mjs';
-import { sheet, cell, pressCell, clickCell, expectFocusAt } from './sheet-helpers.mjs';
+import { sheet, cell, at, pressCell, clickCell, expectFocusAt } from './sheet-helpers.mjs';
 import { sameColour, resolvedColour, paints, painted } from './pixels.mjs';
 import { across, along, pattern, expected, isDark } from './line-pixels.mjs';
 
@@ -40,8 +40,44 @@ async function selectB2toC3(page, grid, layers = 1) {
     await pressCell(grid, 'B2');
     await page.keyboard.press('Shift+ArrowRight');
     await page.keyboard.press('Shift+ArrowDown');
-    await expect(grid.locator('.ex-range-single')).toHaveCount(layers);
+    await expectRangeLanded(page, grid, 'B2', 'C3', layers);
+}
+
+/**
+ * Waits until the range a gesture ends on is the one painted, then parks the pointer and lets the
+ * circuit fall quiet, so the pixels read next are of that range. A count of boxes alone is reached
+ * half way: B2:C2 already has as many as B2:C3, so a test waiting only for it could read the
+ * picture of the first key's answer on the Server host (principle 6). Each box is drawn whole and
+ * clipped to its side (ADR-0206), so each covers the whole range.
+ */
+async function expectRangeLanded(page, grid, from, to, layers) {
+    const boxes = grid.locator('.ex-range-single');
+    await expect(boxes).toHaveCount(layers);
+    for (let i = 0; i < layers; i++) await expectSpans(grid, '.ex-range-single', i, from, to);
     await page.mouse.move(0, 0);
+    await circuitQuiet();
+}
+
+/**
+ * Waits until the nth element matching `selector` covers exactly the cells from..to, to within a
+ * pixel. The element and the two cells are read in one evaluation, each time again: a key's answer
+ * may scroll the Sheet to keep the range's end in view, so where the cells were when the wait began
+ * is not where the range is painted once it has landed.
+ */
+async function expectSpans(grid, selector, nth, from, to) {
+    const [a, b] = [at(from), at(to)];
+    await expect.poll(() => grid.evaluate((root, { selector, nth, a, b }) => {
+        const rect = (el) => el?.getBoundingClientRect();
+        const box = rect(root.querySelectorAll(selector)[nth]);
+        const first = rect(root.querySelector(`[id$='-r${a.row}c${a.column}']`));
+        const last = rect(root.querySelector(`[id$='-r${b.row}c${b.column}']`));
+        if (!box || !first || !last) return 'not painted';
+        const want = { x: first.x, y: first.y, width: last.right - first.x, height: last.bottom - first.y };
+        const near = (p, q) => Math.abs(p - q) <= 1.5;
+        return near(box.x, want.x) && near(box.y, want.y) && near(box.width, want.width) && near(box.height, want.height)
+            ? 'covers'
+            : JSON.stringify({ box: { x: box.x, y: box.y, width: box.width, height: box.height }, want });
+    }, { selector, nth, a, b }), { message: `${selector} covers ${from}:${to}` }).toBe('covers');
 }
 
 // ---- The Selection on the Paper (SH-54) ----------------------------------------------------------
@@ -163,10 +199,29 @@ for (const [place, pin] of PLACES) {
         // black line black (ADR-0206: (16, 13, 41) where it did not multiply).
         expect(Math.max(...fill.colour) - Math.min(...fill.colour), JSON.stringify(fill)).toBeGreaterThan(40);
 
+        // The outline is the palette's primary, read from the box the pinned selection layer draws,
+        // and on B3's bottom, a pinned edge at either pin, it is two Device Pixels with the white line
+        // inside them, as where nothing is pinned.
+        const outline = await resolvedColour(page, await grid.locator('.ex-selection-pinned > .ex-range-single')
+            .evaluate((el) => getComputedStyle(el, '::after').borderTopColor));
+        expect(sameColour(outline, EXCEL_GREEN, 8), `the outline is not the built-in green: ${outline}`).toBe(false);
+        const b3Bottom = await across(page, await cell(grid, 'B3').boundingBox(), 'bottom', 0.5);
+        for (const offset of [-1, 0]) expect(sameColour(b3Bottom.pixel(offset), outline, 2), `the outline at ${offset} on B3's bottom (pin=${pin}): ${b3Bottom.pixel(offset)} against ${outline}`).toBe(true);
+        expect(sameColour(b3Bottom.pixel(1), outline, 2), `only two Device Pixels of outline on B3's bottom (pin=${pin}): ${b3Bottom.pixel(1)}`).toBe(false);
+        expect(sameColour(b3Bottom.pixel(-2), WHITE, 2), `the white line inside on B3's bottom (pin=${pin}): ${b3Bottom.pixel(-2)}`).toBe(true);
+
         const lines = await linesInside(page, grid);
         for (const [edge, { line, shade }] of Object.entries(lines)) {
             expect(sameColour(line, BLACK, 2), `the line between ${edge} (pin=${pin}): ${line}`).toBe(true);
             expect(paints(shade, multiplied(fill, WHITE)), `the shade beside the line between ${edge} (pin=${pin}): ${shade}, exact ${multiplied(fill, WHITE)}`).toBe(true);
+            // The primary mixed into white: lighter than the primary, and of its hue, not a grey —
+            // the shade tied to the outline, not only to whatever the token resolved to.
+            expect(Math.max(...shade) - Math.min(...shade), `the shade is tinted (${edge}, pin=${pin}): ${shade}`).toBeGreaterThan(8);
+            const [r, g, b] = shade;
+            const [pr, pg, pb] = outline;
+            expect(Math.sign(b - r), `the shade leans as the primary does (${edge}, pin=${pin}): ${shade} against ${outline}`).toBe(Math.sign(pb - pr));
+            expect(Math.sign(b - g), `the shade leans as the primary does (${edge}, pin=${pin}): ${shade} against ${outline}`).toBe(Math.sign(pb - pg));
+            expect(Math.min(...shade), `the shade is lighter than the primary (${edge}, pin=${pin}): ${shade} against ${outline}`).toBeGreaterThan(Math.max(...outline) - 40);
         }
         // The Focus cell stays unshaded.
         const b2 = await across(page, await cell(grid, 'B2').boundingBox(), 'bottom', 0.25);
@@ -208,8 +263,7 @@ test('DC-59: a Consumer\'s coloured --ex-selection-fill multiplies over a pinned
         await page.keyboard.press('Shift+ArrowLeft');
         await page.keyboard.press('Shift+ArrowUp');
         await page.keyboard.press('Shift+ArrowUp');
-        await expect(grid.locator('.ex-range-single')).toHaveCount(pin === 3 ? 1 : 2);
-        await page.mouse.move(0, 0);
+        await expectRangeLanded(page, grid, 'B2', 'C4', pin === 3 ? 1 : 2);
         const fill = await selectionFill(grid);
         expect(fill.colour, place).toEqual([0, 0, 255]);
 
@@ -286,11 +340,20 @@ test('DC-59: with a pinned tint on screen and the page a third of a pixel across
     // first pixels, where it would be read as part of a line.
     await pressCell(grid, 'A2');
     for (let i = 0; i < 12; i++) await page.keyboard.press('Shift+ArrowDown');
+    // The twelfth key answered, and nothing else on its way, before F3's place is read. The last keys'
+    // answers each scroll the Sheet a little to keep A14 in view, so on the Server host a place read
+    // while they were still landing was a row off by the time of the press, which took F4 (found
+    // here, 3 runs of 6; principle 6).
+    await expectSpans(grid, '.ex-selection-pinned > .ex-range-single', 0, 'A2', 'A14');
+    await circuitQuiet();
     await clickCell(grid, 'F3', { modifiers: ['ControlOrMeta'] });
     await expectFocusAt(grid, 'F3');
     await expect(grid.locator('.ex-range-single')).toHaveCount(0);
     await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
     await expect(grid.locator('.ex-selection > .ex-range-tint')).toHaveCount(0);
+    // The blend this gates is on: ExSheet's Paper multiplies the shade layer. Were its rule to stop
+    // matching, the lines would keep their pixels for want of a blend, and this would gate nothing.
+    expect(await grid.locator('.ex-shade-pinned').evaluate((el) => getComputedStyle(el).mixBlendMode)).toBe('multiply');
     for (const style of ['Thin', 'Thick', 'Double', 'Dotted', 'MediumDashDotDot']) {
         for (const side of ['bottom', 'right']) {
             await expect(grid.locator('.ex-shade-pinned > .ex-range-tint'), 'the pinned tint stays on screen').toHaveCount(1);

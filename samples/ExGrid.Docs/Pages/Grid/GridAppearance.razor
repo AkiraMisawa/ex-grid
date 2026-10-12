@@ -51,6 +51,11 @@
             </tbody>
         </MudSimpleTable>
         <p>
+            The selection's shade is set by <code>--ex-selection-fill</code> alone. It is painted by an element of
+            the grid's own, beneath each selected range's box, so a rule on <code>ex-range</code>, the box that draws
+            the outline, or on anything inside it, does not reach the shade.
+        </p>
+        <p>
             The font family is the exception. The grid decides whether a number fits — or becomes <code>####</code> —
             from the width of its glyphs, so <code>--ex-font-family</code> is a metric as much as a look: whoever
             changes it also passes matching <code>CellMetrics</code>. <code>MudExGridPaper</code> does this for

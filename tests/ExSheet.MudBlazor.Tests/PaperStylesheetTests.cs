@@ -70,9 +70,16 @@ public class PaperStylesheetTests
         // Paper; the shade layer keeps its own, since the layer is what blends.
         Assert.Contains(rules, rule => rule.Selectors.SequenceEqual([".ex-sheet .ex-selection"]) && rule.Body.Contains("z-index: auto", StringComparison.Ordinal));
         Assert.DoesNotContain(rules, rule => rule.Selectors.Any(selector => selector.Contains(".ex-shade-pinned", StringComparison.Ordinal)) && rule.Body.Contains("z-index", StringComparison.Ordinal));
-        // The overrides that took the range's isolation and its tint's z-index away are gone with them.
-        Assert.DoesNotContain("isolation", outside, StringComparison.Ordinal);
-        Assert.DoesNotContain("::before", outside, StringComparison.Ordinal);
+        // The overrides that took the range's isolation and its tint's z-index away are gone with them:
+        // no rule on the selection's layers or a range isolates, and none paints a ::before. Rules on
+        // anything else are not this decision's.
+        var selection = rules.Where(rule => rule.Selectors.Any(selector =>
+            selector.Contains(".ex-range", StringComparison.Ordinal)
+            || selector.Contains(".ex-selection", StringComparison.Ordinal)
+            || selector.Contains(".ex-shade-pinned", StringComparison.Ordinal))).ToList();
+        Assert.NotEmpty(selection);
+        Assert.DoesNotContain(selection, rule => rule.Body.Contains("isolation", StringComparison.Ordinal));
+        Assert.DoesNotContain(selection, rule => rule.Selectors.Any(selector => selector.Contains("::before", StringComparison.Ordinal)));
         // The shade is black at 22% where no token names it: #C7C7C7 over white Paper.
         Assert.Contains(rules, rule => rule.Selectors.SequenceEqual([".ex-sheet .ex-range-tint"])
             && rule.Body.Contains("background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22));", StringComparison.Ordinal));

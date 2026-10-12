@@ -557,9 +557,10 @@
    Order in here: cells, selection (1), Pinned Columns (2), the pinned shade and then the pinned
    selection (both 3, in that order by tree order); the header (4, 5) is outside and covers the lot. */
 .ex-selection { position: absolute; top: 0; left: 0; z-index: 1; }
-/* The pinned part of a range travels with the Pinned Columns. Zero-sized and first in the
-   flow, so it displaces no row; `left` with no `top` sticks it to the Viewport's left
-   edge and to nothing else. The pinned shade (ADR-0206) is the same kind of layer, placed
+/* The pinned part of a range travels with the Pinned Columns. Zero-sized and ahead of the rows
+   in the flow — after the Keyboard Field, and after the pinned shade while that stands — so it
+   displaces no row; `left` with no `top` sticks it to the Viewport's left edge and to nothing
+   else. The pinned shade (ADR-0206) is the same kind of layer, placed
    immediately before it: the pinned bands and tints, the washes, in a layer of their own, so a
    stylesheet can blend that layer as one group with the pinned cells it lies over (ExSheet's Paper
    does; the core blends nothing). Everything drawn on top — boxes and outlines, the Focus, the

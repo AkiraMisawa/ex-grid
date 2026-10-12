@@ -25,8 +25,11 @@ average is recorded with each run.
 
 - An Intel Xeon at 2.10 GHz, 4 cores, 15 GB, Linux 6.18.44, in a container. Node 22.22.
 - Chromium 141.0.7390.37 (`/opt/pw-browsers/chromium-1194`), driven by Playwright 1.56.
-- **before**: `e3ad9a50`, the base of `claude/pinned-shade` (main as the branch was cut), whose
-  selection is ADR-0008's: one element per range per layer, its tint a `::before` beneath its outline.
+- **before**: `e3ad9a50`, main as `claude/pinned-shade` was cut, whose selection is ADR-0008's: one
+  element per range per layer, its tint a `::before` beneath its outline. The branch was rebased
+  afterwards onto `0186cc98`; none of the commits between touches the selection's code or its
+  stylesheets' selection rules, so these comparisons were not taken again. PF-6 and PF-7, taken after
+  the rebase, compare against `0186cc98` instead (below).
 - **after**: the change, as committed with this record on `claude/pinned-shade`.
 - Each a Release `dotnet publish` of `samples/ExGrid.DemoHost.Server` and `samples/ExGrid.DemoHost`,
   started as below: the Server host directly (no latency proxy, so no injected round trip), the
@@ -185,6 +188,12 @@ on the WebAssembly host and on the Server host, three times each (`--repeat-each
 `/sheet?case=lines&pin=2` selected beside the lines (a pinned tint on screen, no outline on the lines),
 the page shifted 0.33 px across and down, and Thin, Thick, Double, Dotted and MediumDashDotDot read on
 B's bottoms (a Pinned Column) and D's rights (a scrollable one) at their exact Device Pixels.
+
+**Where the gate has not run.** Only under software compositing: SwiftShader here, and CI's Linux
+Chrome and Edge, which have no GPU either. The risk the ADR names is an offscreen backdrop at a
+fractional offset under a GPU's compositor, which is where Windows users are. So the gate is owed a run
+by hand on the next Windows run, at 100% and at 150% (`part-c.spec.mjs`, the test named "the sub-pixel
+gate", on both hosts), before DC-59 is signed off.
 
 Before that run counted, the tests were checked against the base build: on `e3ad9a50`, under
 `ExSheet.MudBlazor`, the black line between C2 and C3 of B2:C3 read (16, 13, 41) both with B2:C3 wholly

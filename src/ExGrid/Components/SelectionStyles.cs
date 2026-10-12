@@ -3,10 +3,10 @@ using ExGrid.Selection;
 namespace ExGrid.Components;
 
 /// <summary>
-/// Where a selected rectangle is painted, written as an inline style (ADR-0008). One
-/// element per range, so what this costs depends on how many rectangles there are and
-/// never on how many cells they cover — which is the whole reason selection is an
-/// overlay and not a class on every selected cell.
+/// Where a selected rectangle is painted, written as an inline style (ADR-0008). A tint and
+/// a box per range in each layer it reaches (ADR-0206), so what this costs depends on how
+/// many rectangles there are and never on how many cells they cover — which is the whole
+/// reason selection is an overlay and not a class on every selected cell.
 ///
 /// Coordinates are relative to the painted slice rather than to the content, because the
 /// overlay lives inside the row Viewport: that element carries the scroll translation and
@@ -73,9 +73,12 @@ internal static class SelectionStyles
     /// <summary>
     /// A selected range's tint as one layer paints it (ADR-0206): the range's part on the layer's
     /// side of the pinned boundary, cut at the boundary as the bands are, or null when the layer
-    /// holds no part of it — and null for a range that is the Focus's cell alone, which is not
-    /// tinted at all. The pinned tints stand in the pinned shade layer, the scrollable ones in the
-    /// scrollable layer, each before every box.
+    /// holds no part of it — and null where that part is the Focus's cell alone, which the hole
+    /// would cut out whole: a range that is that cell, and the pinned part of a whole-row selection
+    /// whose Focus is in the one Pinned Column. Such a tint would paint nothing, and in the pinned
+    /// shade layer it would still stand the layer, with what the browser composites for it. The
+    /// pinned tints stand in the pinned shade layer, the scrollable ones in the scrollable layer,
+    /// each before every box.
     ///
     /// A range holding the <paramref name="focus"/> carries a hole where the Focus is, in the
     /// layer the Focus's cell belongs to: the selection's tint never covers the Focus cell, as
@@ -90,9 +93,8 @@ internal static class SelectionStyles
         SelectionRange range, CellPosition focus, ColumnGeometry columns, double rowHeightPx, RowRange painted,
         bool pinnedLayer)
     {
-        if (range.CellCount == 1 && range.Contains(focus))
-            return null;
-        if (Side(range, columns, pinnedLayer) is not { } side || Clip(range, painted) is not { } rows)
+        if (Side(range, columns, pinnedLayer) is not { } side || FocusAlone(range, side, focus)
+            || Clip(range, painted) is not { } rows)
             return null;
         var leftPx = columns.OffsetPxOf(side.First);
         var style = Rect(leftPx, columns.OffsetPxOf(side.Last + 1) - leftPx, rows, rowHeightPx, painted.Start);
@@ -113,9 +115,19 @@ internal static class SelectionStyles
     /// <summary>
     /// Whether one layer paints a tint for a selected range (<see cref="Tint"/>), answered without
     /// writing it down: what decides whether the pinned shade layer is emitted at all (ADR-0206).
+    /// It answers exactly when <see cref="Tint"/> answers one, so the layer never stands for a tint
+    /// that is not there.
     /// </summary>
     public static bool Tinted(SelectionRange range, CellPosition focus, ColumnGeometry columns, RowRange painted, bool pinnedLayer)
-        => !(range.CellCount == 1 && range.Contains(focus)) && Reaches(range, columns, painted, pinnedLayer);
+        => Side(range, columns, pinnedLayer) is { } side && !FocusAlone(range, side, focus) && Clip(range, painted) is not null;
+
+    /// <summary>
+    /// Whether a range's part on one side of the pinned boundary, its columns <paramref name="side"/>,
+    /// is the Focus's cell and nothing else: the hole would cut its tint out whole.
+    /// </summary>
+    private static bool FocusAlone(SelectionRange range, (int First, int Last) side, CellPosition focus)
+        => range.TopRow == range.BottomRow && side.First == side.Last
+            && focus.Row == range.TopRow && focus.Column == side.First;
 
     /// <summary>
     /// Whether a rectangle has a part in one layer among the painted rows — whether

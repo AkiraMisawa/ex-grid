@@ -304,6 +304,10 @@ test('scrolling changes which rows exist, not how many elements do (ADR-0004 P1,
 test('Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next key is answered (BIG-3, SL-6, DOM-2)', async ({ page }) => {
     await openWide(page);
     await cell(page, 0, 0).click({ force: true });
+    // The press painted: one cell is the Focus outline alone, and nothing more is on its way.
+    await expect(page.locator('#selection-status')).toContainText('Selected: 1 ');
+    await expect(page.locator('.ex-grid .ex-focus')).toHaveCount(1);
+    await circuitQuiet();
     const before = await elementCount(page);
 
     await page.keyboard.press('ControlOrMeta+A');
@@ -312,9 +316,17 @@ test('Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next 
     // One rectangle: the page names the range count only when there is more than one.
     await expect(status).not.toContainText('ranges');
 
+    // Ctrl+A over 10^8 cells adds the overlay rectangles and nothing else: with A and B pinned and
+    // the Focus in A, a tint and a box in each layer the range reaches, and the pinned shade layer
+    // that holds its pinned tint (ADR-0206, DOM-2 as restated on 2026-10-11).
+    const grid = page.locator('.ex-grid');
+    await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
+    await expect(grid.locator('.ex-selection-pinned > .ex-range')).toHaveCount(1);
+    await expect(grid.locator('.ex-selection > .ex-range-tint')).toHaveCount(1);
+    await expect(grid.locator('.ex-selection > .ex-range')).toHaveCount(1);
+    await circuitQuiet();
     const after = await elementCount(page);
-    // Ctrl+A over 10^8 cells adds the overlay rectangles and nothing else.
-    expect(after - before).toBeLessThanOrEqual(6);
+    expect(after - before).toBe(5);
 
     // Not frozen: the next key is taken and collapses the selection to one cell.
     await page.keyboard.press('ArrowDown');
