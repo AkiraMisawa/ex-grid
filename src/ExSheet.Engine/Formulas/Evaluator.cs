@@ -20,15 +20,6 @@ internal interface ICellReader
     /// <summary>Whether a Linked Table of this name is declared, the name read without regard to case (ADR-0049).</summary>
     bool IsLinkedTable(string name);
 
-    /// <summary>
-    /// A declared Linked Table's data, as Excel reads the table's bare name through <c>INDIRECT</c>
-    /// (ADR-0124, 2026-10-12; INDIRECT-053 to 057): every column in its declared order and every row,
-    /// without the header, as an array that is a Reference. <c>#GETTING_DATA</c> before its first
-    /// snapshot, <c>#VALUE!</c> for a snapshot of no rows, as a column of none read whole is, and
-    /// <c>#NUM!</c> past the most Values one array holds.
-    /// </summary>
-    Operand LinkedTable(string name);
-
     /// <summary>The Sheet Day <c>TODAY</c> answers (ADR-0121), or <see langword="null"/> while it is not known.</summary>
     DateOnly? Today { get; }
 

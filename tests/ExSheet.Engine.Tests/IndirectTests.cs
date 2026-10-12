@@ -202,78 +202,23 @@ public class IndirectTests
         Assert.Equal(1.08, sheet.Number("A1"));
     }
 
-    [Fact] // ADR-0124 (2026-10-12), ADR-0049, the second area pass (INDIRECT-043, 053 to 057; 085 to 089 ask what follows): a declared Linked Table's bare name reads the table's data, every column in order and every row without the header, in either style; it waits while the table does, follows each snapshot, and any other name is #REF!
-    public void ADR0124_a_linked_tables_bare_name_reads_the_tables_data()
+    [Fact] // ADR-0049 (rule 2), ADR-0124, decided with the user 2026-10-12: a declared Linked Table's bare name is #VALUE!, in R1C1 style as in A1 style, though Excel reads it as the table's data (INDIRECT-043, 053 to 057 record Excel's answers): a Linked Table is read by key, never by position; any other name is #REF!
+    public void ADR0049_a_linked_tables_bare_name_is_refused_and_any_other_name_ref()
     {
         var sheet = NewSheet();
-        sheet.Enter("A1", "=COLUMNS(INDIRECT(\"Positions\"))");
-        sheet.Enter("A2", "=SUM(INDIRECT(\"positions\"))");
-        sheet.Enter("A3", "=ROWS(INDIRECT(\"Positions\",FALSE))");
-        sheet.Enter("A4", "=IFERROR(INDEX(INDIRECT(\"Positions\"),2,1),\"none\")");
-        sheet.Enter("A5", "=COUNTA(INDIRECT(\"Positions\"))");
-        Assert.Equal(ErrorValue.Ref, sheet.Error("A1"));
-        Assert.Equal(ErrorValue.Ref, sheet.Error("A2"));
-        Assert.Equal(ErrorValue.Ref, sheet.Error("A3"));
-        Assert.Equal("none", sheet.Value("A4")!.Value.Text);
-
-        // The declaration is a change, and INDIRECT is volatile: it reads its text again, and the
-        // table waits for its data, even under IFERROR and COUNTA (ADR-0049).
-        sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
-        foreach (var cell in new[] { "A1", "A2", "A3", "A4", "A5" }) Assert.Equal(ErrorValue.GettingData, sheet.Error(cell));
-
-        sheet.PushLinkedTable("Positions", [[Value.FromText("R-1"), Value.FromNumber(250.5)], [Value.FromText("R-2"), Value.FromNumber(50)]]);
-        Assert.Equal(2, sheet.Number("A1"));
-        Assert.Equal(300.5, sheet.Number("A2"));
-        Assert.Equal(2, sheet.Number("A3"));
-        Assert.Equal("R-2", sheet.Value("A4")!.Value.Text);
-        Assert.Equal(4, sheet.Number("A5"));
-
-        sheet.PushLinkedTable("Positions", [[Value.FromText("R-1"), Value.FromNumber(250.5)]]);
-        Assert.Equal(250.5, sheet.Number("A2"));
-        Assert.Equal(1, sheet.Number("A3"));
-        Assert.Equal("none", sheet.Value("A4")!.Value.Text);
-    }
-
-    [Fact] // ADR-0124 (2026-10-12), ADR-0125, the second area pass (INDIRECT-055, 057): a declared Linked Table's bare name spills as the table's data where it is the result, a blank showing 0 as a spilled blank does, and is a Reference to INDEX, as Excel's table in cells is
-    public void ADR0124_a_linked_tables_bare_name_spills_as_the_tables_data()
-    {
-        var sheet = NewSheet();
-        sheet.DeclareLinkedTable("Positions", ["Id", "PV", "Desk"]);
-        sheet.PushLinkedTable("Positions", [
-            [Value.FromText("R-1"), Value.FromNumber(250.5), null],
-            [Value.FromText("R-2"), Value.FromNumber(50), Value.FromText("Rates")],
-        ]);
-        sheet.Enter("B2", "=INDIRECT(\"Positions\")");
-        sheet.Enter("A1", "=COUNTA(INDIRECT(\"Positions\"))");
-        sheet.Enter("A2", "=INDEX(INDIRECT(\"Positions\"),2)");
-        sheet.Enter("A3", "=SUM(INDEX(INDIRECT(\"Positions\"),0,2))");
-        sheet.Enter("A4", "=INDEX(INDIRECT(\"Positions\",FALSE),1,3)");
-
-        Assert.Equal("R-1", sheet.Value("B2")!.Value.Text);
-        Assert.Equal(250.5, sheet.Number("C2"));
-        Assert.Equal(0, sheet.Number("D2"));
-        Assert.Equal("R-2", sheet.Value("B3")!.Value.Text);
-        Assert.Equal(50, sheet.Number("C3"));
-        Assert.Equal("Rates", sheet.Value("D3")!.Value.Text);
-        // A blank is not counted, as a blank cell of Excel's table is not.
-        Assert.Equal(5, sheet.Number("A1"));
-        // column_num left out over a Reference of several rows and columns is #REF!, as INDEX-012 read Excel's.
-        Assert.Equal(ErrorValue.Ref, sheet.Error("A2"));
-        Assert.Equal(300.5, sheet.Number("A3"));
-        Assert.Equal(0, sheet.Number("A4"));
-    }
-
-    [Fact] // ADR-0124 (2026-10-12), ADR-0049: a declared Linked Table's bare name over a snapshot of no rows is #VALUE!, as a column of none read whole is
-    public void ADR0124_a_linked_tables_bare_name_over_no_rows_is_value()
-    {
-        var sheet = NewSheet();
-        sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
-        sheet.PushLinkedTable("Positions", []);
         sheet.Enter("A1", "=INDIRECT(\"Positions\")");
-        sheet.Enter("A2", "=ROWS(INDIRECT(\"Positions\"))");
+        sheet.Enter("A2", "=SUM(INDIRECT(\"positions\"))");
+        sheet.Enter("A3", "=INDIRECT(\"Positions\",FALSE)");
+        sheet.Enter("A4", "=INDEX(INDIRECT(\"Positions\"),2,1)");
+        foreach (var cell in new[] { "A1", "A2", "A3", "A4" }) Assert.Equal(ErrorValue.Ref, sheet.Error(cell));
 
-        Assert.Equal(ErrorValue.Value, sheet.Error("A1"));
-        Assert.Equal(ErrorValue.Value, sheet.Error("A2"));
+        // The declaration is a change, and INDIRECT is volatile: it reads its text again.
+        sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
+        foreach (var cell in new[] { "A1", "A2", "A3", "A4" }) Assert.Equal(ErrorValue.Value, sheet.Error(cell));
+
+        // A table with its data, a row of which Excel's INDEX would read by position, is refused alike.
+        sheet.PushLinkedTable("Positions", [[Value.FromText("R-1"), Value.FromNumber(250.5)], [Value.FromText("R-2"), Value.FromNumber(50)]]);
+        foreach (var cell in new[] { "A1", "A2", "A3", "A4" }) Assert.Equal(ErrorValue.Value, sheet.Error(cell));
     }
 
     private static Sheet MicrosoftsExample()

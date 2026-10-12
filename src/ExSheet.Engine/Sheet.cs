@@ -648,14 +648,6 @@ public sealed partial class Sheet
 
         public bool IsLinkedTable(string name) => sheet._tables.ContainsKey(name);
 
-        /// <summary>A Linked Table's data, which <c>INDIRECT</c>'s text names by the table's bare name; one still waiting waits, as a column met through text does (ADR-0049, ADR-0124).</summary>
-        public Operand LinkedTable(string name)
-        {
-            var read = sheet.TableData(name);
-            if (read.IsError && read.Scalar!.Value.Error == ErrorValue.GettingData && Met != ErrorValue.Circ) Met = ErrorValue.GettingData;
-            return read;
-        }
-
         public Node? FormulaAt(CellAddress address)
         {
             if (sheet._cells.GetValueOrDefault(address) is not { } cell) return null;
