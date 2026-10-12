@@ -66,7 +66,12 @@ lines, in the order they apply; each old text occurs once in its file at the bra
   Bar's selection was empty there. R1's pictures show `D11` on the grey ground after `=`, ↓
   (`shots/r1-vi-2-cells.png`), `$D$11:$D$12` after F4 (`r1-vi-4-cells.png`) and `A11:D11` after
   Shift+Home (`r1-viii-3-cells.png`), with UI Automation giving each as the bar's selection. The two
-  Excel runs disagree; ExGrid follows ADR-0057, and this area changed nothing there. Asked below.
+  Excel runs disagree; ExGrid follows ADR-0057, and this area changed nothing there. Timing does not
+  obviously explain it: the eighth run took its pictures 600 ms and about 1 s after the keys (case
+  19: 652 and 1014 ms, `verification/2026-09-29-windows-excel-8/range-finder.md`), and the tenth run's
+  grey that depended on timing was after `+`, not `=` (ADR-0057) — a reading. The options: (a) keep
+  ADR-0057 (no grey straight after `=`); (b) show the grey there too, as R1 pictured it; (c) keep (a)
+  until the next Windows run asks again (question 6). Built: (a), as it was.
 
 ## ADR-0051, "Formula entry: completion, Point mode, and a Formula Bar inside the grid's root"
 
