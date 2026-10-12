@@ -4,7 +4,7 @@ ADR-0205 gives each MudBlazor Wrapper — `ExGrid.MudBlazor`, `ExSheet.MudBlazor
 MudBlazor `[9.0.0,10.0.0)`, and asks for the Wrappers' layer-3 specs to be run once against a DemoHost
 pinned to the floor, 9.0.0. This is that run, and the bisection that followed it.
 
-**The run fails at 9.0.0 on both hosts. Bisected over the published 9.x releases, the lowest version
+**The run fails at 9.0.0 on both hosts. Bisected over every 9.x from 9.0.0 to 9.9.0, the lowest version
 at which the selection passes is 9.6.0, on both hosts.** Every failure below 9.6.0 is one of two
 MudBlazor behaviours, each ended by a MudBlazor change named below:
 
@@ -22,8 +22,16 @@ at every version in this container, 9.9.0 included, because its Chromium has no 
 and ED-30's third-composition test under the mud Chrome fails now and then on WebAssembly, at 9.5.0,
 9.6.0 and 9.8.0 alike, and follows no MudBlazor version (§4).
 
+This record is a bisection on Playwright's bundled Chromium, run as the one `chrome` project: it says
+where the floor run should pass, and is not that run. `msedge` and `chrome-150` never ran, and the Copied
+Range test could not (the proposal's §6 says what the floor run is, and why this is not it).
+
 The declared range is unchanged by this record. Whether the floor moves to 9.6.0, or the Wrappers change
 to hold at 9.0.0, is the user's question: `docs/agents/proposals/mudblazor-range.md`.
+
+*(Added after the review, the same day: the Wrappers' layer-2 suites, run with MudBlazor pinned to each
+published 9.x, find a third MudBlazor behaviour that this layer-3 selection could not: from 9.3.0 to
+9.5.0 a refused filter operand loses its words (§6).)*
 
 ## The machine
 
@@ -64,8 +72,10 @@ strings -el samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/MudBlazor.dll | gre
 
 Both hosts' `bin` and `obj/Debug` go first because, on this branch, two WebAssembly runs made straight
 after a re-pin without them (to 9.4.0, then to 9.9.0) failed tests that pass at that version, and passed
-once both hosts were rebuilt from clean. `builds.log` holds every pin's readback; each names the pinned
-version for both hosts. After the last run the demo pages were put back with `git checkout`, at 9.9.0.
+once both hosts were rebuilt from clean. Every pin but the first was built this way: the first, 9.0.0 for
+the full runs, was the builder's, made before this step, and has no readback (below). `builds.log` holds
+the readback of every other pin; each names the pinned version for both hosts. After the last run the
+demo pages were put back with `git checkout`, at 9.9.0.
 
 **The selection** is the layer-3 tests that run under a Wrapper: those whose file, `describe` or title
 names MudBlazor or `mud` (the `?chrome=mud` variants among them), and those that open a page under a
@@ -103,7 +113,9 @@ run at 9.6.0 (it passes) and at 9.5.0 (it fails), on both hosts. Below a failing
 were targeted runs only — one or two tests of each kind of failure, and the diagnostic — which shows that
 each fails and where each kind starts and stops. 9.1.0 and 9.2.0 ran on WebAssembly only, where both kinds
 show. 9.7.0 to 9.9.0 were not run in full here: 9.9.0 is what the demo pages pin, and CI runs the whole
-suite at it on every push. Every published 9.x version restored; none was skipped.
+suite at it on every push. Every 9.x from 9.0.0 to 9.9.0 restored; none was skipped. 9.10.0 (published
+2026-09-13) and 9.11.0 (2026-09-27) are inside `[9.0.0,10.0.0)` and were not run in layer 3: they are
+untested there. Layer 2 ran at both (§6).
 
 ## Results
 
@@ -271,6 +283,50 @@ Yes, in both cases, at a cost. Not made here.
 The cost — a copy of MudBlazor's ARIA wiring kept in step by hand, and every later Wrapper change held at
 9.0.0 as well as at 9.9.0 — is set against raising the floor in the proposal.
 
+## 6. Layer 2 at every 9.x *(added after the review, the same day)*
+
+The Wrappers' layer-2 suites take the lowest version the range allows, 9.0.0, so CI runs them there and
+nowhere else. Here each was run with MudBlazor pinned in its test project to every published 9.x, 9.0.0 to
+9.11.0, at the branch's tip after its merge of `main` (`be20e74e`). A `<PackageReference
+Include="MudBlazor" Version="<v>" />` added to the test project is the nearest reference, as the demo
+pages' is for the hosts. The version each `ExGrid.MudBlazor.Tests` run loaded was read back by its probe,
+whose output is named for it; for the other two, the last run's `MudBlazor.dll` was read back as
+9.11.0.0. Each project was put back after its last run. `layer2-sweep.log` holds every summary and every
+failure; `zz-layer2-probes.cs` holds the probes, which assert nothing and were removed after.
+
+| MudBlazor | `ExGrid.MudBlazor.Tests` (235) | `ExSheet.MudBlazor.Tests` (62) | `ExPivot.MudBlazor.Tests` (76) | The Operator's focusable `<div>` | Its hidden `<input>` |
+|---|---|---|---|---|---|
+| 9.0.0, 9.1.0, 9.2.0 | pass | pass | pass | no role, no name | no role, no name |
+| 9.3.0 | **7 fail** | pass | pass | no role, no name | no role, no name |
+| 9.4.0, 9.5.0 | **7 fail** | pass | pass | no role, no name | `combobox`, "Operator" |
+| 9.6.0 to 9.11.0 | pass | pass | pass | `combobox`, "Operator" | `combobox`, "Operator" |
+
+**The Operator.** The probe reads, in bUnit, what the browser diagnostic of §1 read at each version both
+ran, and 9.10.0 and 9.11.0 read as 9.6.0 does. Layer 2 renders the element; no layer-2 test asserts its
+role or name, which is why the suite passes at 9.0.0. Field Settings' focus (§2) is the browser's, and
+`ExPivot.MudBlazor.Tests` passes at every version.
+
+**A refused operand loses its words, 9.3.0 to 9.5.0.** The seven failures are WR-2's and ADR-0023's
+"refused by name" tests: the five cases of `MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name`,
+its `The_chromes_own_word_for_a_refusal_stands`, and `MudDeclaredDateOperandTests`' `DateTimeOffset` case.
+In each, the operand's text is its label twice ("ValueValue", the legend's and the label's) where the
+refusal should follow. The operand probe's markup after "1.234" in de-DE: at 9.5.0 the field has no
+`mud-input-error` class, `aria-invalid="false"`, and no helper text; at 9.6.0 it has all three, with the
+refusal. The Apply probe at 9.5.0: Apply is disabled and nothing was applied. So the filter refuses, and
+does not say why.
+
+The operand is a `MudTextField` to which the Wrapper gives `Value`, `ValueChanged`, `Error` and
+`ErrorText`. [MudBlazor#12892](https://github.com/MudBlazor/MudBlazor/pull/12892), "Inputs: Fix
+validation on programmatic value change" (in 9.3.0), makes a touched input re-validate when its `Value`
+parameter changes, and that validation, with nothing of its own to refuse, sets `Error` back to false.
+[MudBlazor#13312](https://github.com/MudBlazor/MudBlazor/pull/13312), "Inputs: Don't re-validate on the
+`@bind-Value` echo" (in 9.6.0), skips it when the new `Value` is the input's own `ValueChanged` coming
+back. Matched by reading the two diffs in MudBlazor's history, not by building MudBlazor at each commit.
+
+Not seen in a browser: no layer-3 test types a refused operand under the mud Chrome, so neither the layer-3
+selection above nor its bisection could see it. It lies inside `[9.0.0,10.0.0)` and above its floor: a floor
+run at 9.0.0 would not see it either.
+
 ## Files
 
 | File | What it holds |
@@ -281,6 +337,8 @@ The cost — a copy of MudBlazor's ARIA wiring kept in step by hand, and every l
 | `ed30-<version>-x<n>-wasm.log` | ED-30 under the mud Chrome repeated on WebAssembly (`both-chromes`: under each Chrome; `merged`: after the merge of `main`) |
 | `builds.log` | Each pin's build, with the MudBlazor version each host loads |
 | `zz-floor-focus.spec.mjs` | The diagnostic, as run (copied into `tests/ExGrid.Browser`, removed after each run) |
+| `layer2-sweep.log` | §6: the three Wrappers' layer-2 suites at every published 9.x, and the probes' readings |
+| `zz-layer2-probes.cs` | §6's probes, as run (appended to two test classes of `tests/ExGrid.MudBlazor.Tests`, removed after) |
 
 The full logs, with every passing test's line, and the failing tests' traces were not kept; a trimmed
 log keeps every failure's error and every count.
