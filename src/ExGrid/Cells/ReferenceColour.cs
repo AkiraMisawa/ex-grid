@@ -23,7 +23,7 @@ public readonly record struct ReferenceColour
     /// <summary>The colour at <paramref name="place"/> in the palette.</summary>
     /// <param name="place">1 to <see cref="PaletteLength"/>.</param>
     /// <exception cref="ArgumentOutOfRangeException">The place is outside the palette.</exception>
-    public ReferenceColour(int place)
+    internal ReferenceColour(int place)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(place, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(place, PaletteLength);
@@ -38,7 +38,7 @@ public readonly record struct ReferenceColour
     /// refers to, counted from 0 in order of first appearance: round the palette, so the eighth
     /// takes the first colour again.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The count is negative.</exception>
-    public static ReferenceColour ForAppearance(int appearance)
+    internal static ReferenceColour ForAppearance(int appearance)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(appearance);
         return new ReferenceColour((appearance % PaletteLength) + 1);

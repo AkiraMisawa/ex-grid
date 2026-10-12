@@ -4,7 +4,7 @@ namespace ExGrid.Selection;
 /// The order Enter/Tab cycling walks a range — Enter runs down columns, Tab runs across
 /// rows; both wrap and return to the start (ADR-0012).
 /// </summary>
-public enum CycleOrder
+internal enum CycleOrder
 {
     /// <summary>Enter: down each column, then on to the next column.</summary>
     ColumnMajor,

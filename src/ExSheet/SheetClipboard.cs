@@ -13,7 +13,7 @@ namespace ExSheet;
 /// browser clipboard names no owner, so equal content is the strongest evidence a page has.
 /// </summary>
 /// <param name="Block">The Entries, formats and alignment copied, and where from.</param>
-/// <param name="Fields">What <see cref="ClipboardParse.ParseBlock"/> reads from the two flavours written.</param>
+/// <param name="Fields">What <see cref="ClipboardParse.Parse"/> reads from the two flavours written.</param>
 internal sealed record SheetOwnCopy(SheetBlock Block, IReadOnlyList<IReadOnlyList<string>> Fields)
 {
     /// <summary>Whether a paste's fields are this copy's, field for field.</summary>
@@ -72,7 +72,7 @@ internal static partial class SheetClipboard
         {
             var copy = copies[0];
             var html = Marked(copy.Html!);
-            var fields = ClipboardParse.ParseBlock(html, copy.Text)?.Values
+            var fields = ClipboardParse.Parse(html, copy.Text)
                 ?? throw new InvalidOperationException("The engine's copy of a range read back as nothing.");
             return (GridCopyAnswer.Write(copy.Text!, html), new SheetOwnCopy(copy.Block!, fields));
         }

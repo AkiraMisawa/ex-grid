@@ -151,8 +151,10 @@ public static class FilterPanelChoices
     /// A condition form's filter with an optional second condition, as Excel's Custom
     /// AutoFilter (ADR-0009, 2026-09-26): each finished condition is a clause, joined by
     /// <paramref name="combinator"/>. A condition whose operator takes an operand and has
-    /// none is unfinished and left out; one finished condition is
-    /// <see cref="FromCondition"/>'s answer, and none is no filter.
+    /// none is unfinished and left out; one finished condition is a filter of its one clause,
+    /// and none is no filter. <c>In</c> offered in a condition form is membership of the one
+    /// value given, so its operand becomes a one-member list: a clause the engine reads from
+    /// <c>Values</c> and would refuse with <c>Value</c> alone.
     /// </summary>
     public static FilterSpec? FromConditions(
         FilterOperator first, object? firstOperand, FilterCombinator combinator,
@@ -222,7 +224,7 @@ public static class FilterPanelChoices
     /// value given, so its operand becomes a one-member list: a clause the engine reads from
     /// <c>Values</c> and would refuse with <c>Value</c> alone.
     /// </summary>
-    public static FilterSpec? FromCondition(FilterOperator op, object? operand)
+    internal static FilterSpec? FromCondition(FilterOperator op, object? operand)
     {
         if (!TakesOperand(op))
             return new FilterSpec([new FilterClause(op)]);
@@ -238,7 +240,7 @@ public static class FilterPanelChoices
     /// (<see cref="ReadOperand"/>): null where the text does not read, or reads two ways — an
     /// operand that cannot be read applies nothing, and the panel stands.
     /// </summary>
-    public static object? ParseOperand(ColumnType type, string text, DateType dateType = DateType.DateTime)
+    internal static object? ParseOperand(ColumnType type, string text, DateType dateType = DateType.DateTime)
         => ReadOperand(type, text, CultureInfo.CurrentCulture, dateType).Value;
 
     /// <summary>

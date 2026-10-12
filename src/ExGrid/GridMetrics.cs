@@ -50,7 +50,7 @@ public sealed record GridMetrics
 
     /// <summary>The Name Box's width (ADR-0051): <c>XFD1048576</c>, the longest address a
     /// Sheet has, as the Cell Metrics estimate it with a cell's padding — as text, which
-    /// never becomes <c>####</c> (<see cref="CellTextMetrics.For"/>). Emitted inline, never a
+    /// never becomes <c>####</c>, so its letters at the digit. Emitted inline, never a
     /// stylesheet value.</summary>
     public double NameBoxWidthPx => CellMetrics.For(ColumnType.Text).EstimatePx("XFD1048576");
 
@@ -113,7 +113,7 @@ public sealed record GridMetrics
     /// so a header click never chops its label nor moves the columns to its right. The
     /// slack is there because a label is proportional letters no per-class charge can
     /// bound (<c>W</c> is 15.44px where <c>i</c> is 4), so the label is charged as text,
-    /// its letters at the digit (<see cref="CellTextMetrics.For"/>). Auto and Size to fit
+    /// its letters at the digit, as a Text value is. Auto and Size to fit
     /// both read this, so they agree on what a header needs.
     /// </summary>
     public double HeaderRequiredPx(string label, bool menuButton, bool sortable)

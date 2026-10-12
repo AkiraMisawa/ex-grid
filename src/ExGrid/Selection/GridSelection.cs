@@ -23,12 +23,11 @@ namespace ExGrid.Selection;
 /// transition applied to a state that no longer fits the extent throws — that is a missed
 /// drop, and positions would quietly point at different cells.</para>
 ///
-/// <para>Mouse drag is not a distinct transition: the holder maps mousedown to
-/// <see cref="Click"/> and mousemove to <see cref="ExtendTo"/>. Do not invent a third path
-/// in the binding layer. A drag across Headings maps them the same way onto the whole-column
-/// and whole-row transitions: the press to <see cref="SelectColumn"/>, <see cref="ExtendToColumn"/>
-/// or <see cref="ToggleColumn"/> (and their row forms), each move to <see cref="ExtendToColumn"/>
-/// or <see cref="ExtendToRow"/> (ADR-0050, item 1).</para>
+/// <para>Mouse drag is not a distinct transition: the grid maps the press to the transition a
+/// click makes and each move to the one a Shift+click makes, and a drag across Headings the same
+/// way onto the whole-column and whole-row transitions (ADR-0050, item 1). The transitions are
+/// the grid's; a Consumer reads a selection, and places one through the grid's
+/// <c>PlaceSelectionAsync</c> (ADR-0201).</para>
 /// </summary>
 public sealed record GridSelection
 {
@@ -172,7 +171,7 @@ public sealed record GridSelection
     }
 
     /// <summary>Click: the Focus is the cell and the selection collapses to it (ADR-0012).</summary>
-    public GridSelection Click(CellPosition cell, GridExtent extent)
+    internal GridSelection Click(CellPosition cell, GridExtent extent)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -187,7 +186,7 @@ public sealed record GridSelection
     /// had walked the Focus inside it. The other ranges stand. From Empty it behaves as a
     /// plain click.
     /// </summary>
-    public GridSelection ExtendTo(CellPosition cell, GridExtent extent)
+    internal GridSelection ExtendTo(CellPosition cell, GridExtent extent)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -208,7 +207,7 @@ public sealed record GridSelection
     /// Enter or Tab had moved it (ADR-0052, "What the third run settled"). The only selected
     /// cell cannot be taken out: the selection is returned unchanged.
     /// </summary>
-    public GridSelection ToggleRange(CellPosition cell, GridExtent extent)
+    internal GridSelection ToggleRange(CellPosition cell, GridExtent extent)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -232,7 +231,7 @@ public sealed record GridSelection
     /// the only selected cell cannot be taken out (ADR-0052). From Empty, the column alone.
     /// Ctrl+drag is this followed by <see cref="ExtendToColumn"/>.
     /// </summary>
-    public GridSelection ToggleColumn(int column, GridExtent extent, int focusRow)
+    internal GridSelection ToggleColumn(int column, GridExtent extent, int focusRow)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -254,7 +253,7 @@ public sealed record GridSelection
     /// the other axis, with the Focus on <paramref name="focusColumn"/> of an added row — the
     /// holder passes its first visible column.
     /// </summary>
-    public GridSelection ToggleRow(int row, GridExtent extent, int focusColumn)
+    internal GridSelection ToggleRow(int row, GridExtent extent, int focusColumn)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -362,7 +361,7 @@ public sealed record GridSelection
 
     /// <summary>Arrow: collapses the selection to one cell and moves from the Focus, clamped
     /// at the grid edge (ADR-0012). A no-op on Empty — there is no Focus to start from.</summary>
-    public GridSelection Move(GridDirection direction, GridExtent extent)
+    internal GridSelection Move(GridDirection direction, GridExtent extent)
         => MoveFocusTo(extent, focus => Step(focus, direction, extent));
 
     /// <summary>Shift+arrow: the Extent moves one step and the Focus stays, so the range holding
@@ -370,17 +369,17 @@ public sealed record GridSelection
     /// the Focus is on neither edge of the axis, the key changes nothing. The other axis keeps
     /// its span, so whole columns stay whole under ← / → and whole rows under ↑ / ↓
     /// (ADR-0012, 2026-09-25).</summary>
-    public GridSelection Extend(GridDirection direction, GridExtent extent)
+    internal GridSelection Extend(GridDirection direction, GridExtent extent)
         => ExtendAlong(extent, IsHorizontal(direction), from => Step(from, direction, extent));
 
     /// <summary>Ctrl+arrow: collapses and jumps to the last / first row or column — not
     /// Excel's block edge, which the grid cannot find without the data (ADR-0011).</summary>
-    public GridSelection MoveToEdge(GridDirection direction, GridExtent extent)
+    internal GridSelection MoveToEdge(GridDirection direction, GridExtent extent)
         => MoveFocusTo(extent, focus => EdgeOf(focus, direction, extent));
 
     /// <summary>Shift+Ctrl+arrow: the Extent runs to the edge (ADR-0012 / 0052). From the
     /// first row, Ctrl+Shift+Down is effectively a whole-column selection.</summary>
-    public GridSelection ExtendToEdge(GridDirection direction, GridExtent extent)
+    internal GridSelection ExtendToEdge(GridDirection direction, GridExtent extent)
         => ExtendAlong(extent, IsHorizontal(direction), from => EdgeOf(from, direction, extent));
 
     /// <summary>Ctrl+arrow with the Consumer's edge answer (ADR-0050, item 2): collapses and
@@ -389,7 +388,7 @@ public sealed record GridSelection
     /// <see cref="MoveToEdge(GridDirection, GridExtent)"/>: the grid's edge (ADR-0012). An
     /// answer off the Focus's line, behind it, or outside the grid is refused by name
     /// rather than followed.</summary>
-    public GridSelection MoveToEdge(
+    internal GridSelection MoveToEdge(
         GridDirection direction, GridExtent extent, Func<CellPosition, GridDirection, CellPosition>? edge)
         => edge is null
             ? MoveToEdge(direction, extent)
@@ -401,7 +400,7 @@ public sealed record GridSelection
     /// the moving end is asked, so a second press goes on from where the first stopped
     /// (ADR-0052). Whole columns and whole rows stay whole the same way. Null is the grid's
     /// edge.</summary>
-    public GridSelection ExtendToEdge(
+    internal GridSelection ExtendToEdge(
         GridDirection direction, GridExtent extent, Func<CellPosition, GridDirection, CellPosition>? edge)
         => edge is null
             ? ExtendToEdge(direction, extent)
@@ -437,12 +436,12 @@ public sealed record GridSelection
     /// <summary>PageUp / PageDown (ADR-0012): collapse and move the Focus by one
     /// Viewport of rows. How many rows that is is view geometry the model never holds,
     /// so the caller passes the signed delta; the grid edge clamps it.</summary>
-    public GridSelection MoveByViewport(int rowDelta, GridExtent extent)
+    internal GridSelection MoveByViewport(int rowDelta, GridExtent extent)
         => MoveFocusTo(extent, focus => StepRows(focus, rowDelta, extent));
 
     /// <summary>Shift+PageUp / Shift+PageDown (ADR-0012 / 0052): the Extent moves by one
     /// Viewport of rows and the Focus stays.</summary>
-    public GridSelection ExtendByViewport(int rowDelta, GridExtent extent)
+    internal GridSelection ExtendByViewport(int rowDelta, GridExtent extent)
         => ExtendAlong(extent, horizontal: false, from => StepRows(from, rowDelta, extent));
 
     /// <summary>
@@ -450,7 +449,7 @@ public sealed record GridSelection
     /// expressible without holding the data (ADR-0011). The Focus stays where it is
     /// (ADR-0052, case 10); from Empty it lands on (0, 0).
     /// </summary>
-    public GridSelection SelectAll(GridExtent extent)
+    internal GridSelection SelectAll(GridExtent extent)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -467,7 +466,7 @@ public sealed record GridSelection
     /// move the active cell (ADR-0012). From Empty it lands on the context's first cell —
     /// as it does when it stands outside the context (the selection came from another
     /// page), because a range must contain its own Focus.</summary>
-    public GridSelection SelectAll(GridExtent extent, int firstRow, int rowCount)
+    internal GridSelection SelectAll(GridExtent extent, int firstRow, int rowCount)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -482,12 +481,12 @@ public sealed record GridSelection
 
     /// <summary>Ctrl+Space: the range holding the Focus expands to every row, keeping its
     /// column span (ADR-0012 / 0052). The Focus stays. A no-op on Empty.</summary>
-    public GridSelection SelectWholeColumns(GridExtent extent)
+    internal GridSelection SelectWholeColumns(GridExtent extent)
         => GrowFocusRange(extent, range => new(0, range.LeftColumn, extent.RowCount, range.ColumnCount));
 
     /// <summary>Shift+Space: the range holding the Focus expands to every visible column,
     /// keeping its row span (ADR-0012 / 0052). The Focus stays. A no-op on Empty.</summary>
-    public GridSelection SelectWholeRows(GridExtent extent)
+    internal GridSelection SelectWholeRows(GridExtent extent)
         => GrowFocusRange(extent, range => new(range.TopRow, 0, range.RowCount, extent.ColumnCount));
 
     /// <summary>
@@ -498,7 +497,7 @@ public sealed record GridSelection
     /// selection follows, and the grid edge clamps. The <see cref="Extent"/> follows the
     /// Focus to its new place in its range (ADR-0052).
     /// </summary>
-    public GridSelection CycleFocus(CycleOrder order, bool backward, GridExtent extent)
+    internal GridSelection CycleFocus(CycleOrder order, bool backward, GridExtent extent)
     {
         if (order is not (CycleOrder.ColumnMajor or CycleOrder.RowMajor))
             throw new ArgumentOutOfRangeException(nameof(order), order, null);
@@ -526,7 +525,7 @@ public sealed record GridSelection
     /// at a corner, the next corner clockwise along that edge; from inside the range, the
     /// top-left. A single cell does not move.
     /// </summary>
-    public GridSelection MoveFocusToNextCorner(GridExtent extent)
+    internal GridSelection MoveFocusToNextCorner(GridExtent extent)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -564,7 +563,7 @@ public sealed record GridSelection
 
     /// <summary>Shift+Backspace: the Selection collapses to the Focus (ADR-0052, case 7). A
     /// no-op on Empty.</summary>
-    public GridSelection CollapseToFocus(GridExtent extent)
+    internal GridSelection CollapseToFocus(GridExtent extent)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -582,7 +581,7 @@ public sealed record GridSelection
     /// does after Enter / Tab cycling (ADR-0052). Throws when the cell is selected nowhere:
     /// moving the Focus out of the selection is <see cref="Click"/>.
     /// </summary>
-    public GridSelection FocusOn(CellPosition cell)
+    internal GridSelection FocusOn(CellPosition cell)
     {
         for (var i = Ranges.Count - 1; i >= 0; i--)
         {
@@ -688,7 +687,7 @@ public sealed record GridSelection
     /// column alone, with the Focus on <paramref name="focusRowIfEmpty"/> — the holder passes
     /// its first visible row, so the Viewport does not move (KB-9).
     /// </summary>
-    public GridSelection ExtendToColumn(int column, GridExtent extent, int focusRowIfEmpty = 0)
+    internal GridSelection ExtendToColumn(int column, GridExtent extent, int focusRowIfEmpty = 0)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -711,7 +710,7 @@ public sealed record GridSelection
     /// or a Focus outside the range, is refused by name rather than clamped: the Consumer
     /// named cells that are not there.
     /// </summary>
-    public GridSelection Place(SelectionRange range, CellPosition focus, GridExtent extent)
+    internal GridSelection Place(SelectionRange range, CellPosition focus, GridExtent extent)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -736,7 +735,7 @@ public sealed record GridSelection
     /// click on the header (KB-9's rule, as Shift+click already has it). Every other range
     /// goes, as a plain click on a cell collapses.
     /// </summary>
-    public GridSelection SelectColumn(int column, GridExtent extent, int focusRow)
+    internal GridSelection SelectColumn(int column, GridExtent extent, int focusRow)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -753,7 +752,7 @@ public sealed record GridSelection
     /// holder passes its first visible column. The Row Headings stand outside the column
     /// index space, so nothing here names them.
     /// </summary>
-    public GridSelection SelectRow(int row, GridExtent extent, int focusColumn)
+    internal GridSelection SelectRow(int row, GridExtent extent, int focusColumn)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -770,7 +769,7 @@ public sealed record GridSelection
     /// stays, and its range is replaced. From Empty, the clicked row alone, with the Focus on
     /// <paramref name="focusColumnIfEmpty"/>.
     /// </summary>
-    public GridSelection ExtendToRow(int row, GridExtent extent, int focusColumnIfEmpty = 0)
+    internal GridSelection ExtendToRow(int row, GridExtent extent, int focusColumnIfEmpty = 0)
     {
         if (IsDegenerate(extent))
             return Empty;
