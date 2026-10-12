@@ -8,9 +8,9 @@ Two of the financial answers rest on a choice the seventeenth run's observations
 
 - **NPV disagrees.** No evaluation the search tried gives all three observed doubles. The engine's NPV differs from
   Excel's by 4 units in the last place on NPV-001 and 32 on NPV-002, in ordinary cash flows (section 4).
-- **PMT at small rates is unobserved, and the candidates part there.** The engine takes the exact payment rounded once,
-  one of 2504 evaluations that give all four observed payments (rates of 0.5% to 10% a period). The 304 of them in an
-  x87's 64 bits part from it as the rate shrinks: one unit in the last place at PMT-016, seven at a daily rate over a
+- **PMT at small rates is unobserved, and the candidates part there.** The engine takes the exact payment rounded once.
+  It gives all four observed payments (rates of 0.5% to 10% a period), and so do 2504 of the evaluations the search
+  tried. The 304 of those in an x87's 64 bits part from it as the rate shrinks: one unit in the last place at PMT-016, seven at a daily rate over a
   year (PMT-018, `=PMT(0.0365/365,365,10000)`), 3,390 from the 13th significant digit at a rate of 10^-7 (PMT-017,
   `=PMT(1/10000000,12,1000)`). No observation disagrees with the engine, and none tells which candidate Excel is.
 
@@ -47,10 +47,11 @@ differ from Excel, and the question below is the user's.
 
 At the end of ADR-0047, after the note of 2026-10-11:
 
-> *(2026-10-12)* **PMT, PV and FV give Excel's double.** The seventeenth Windows run read Excel's
-> double for every financial case. Seven of PMT's, PV's and FV's differed from the engine's in the 13th
-> to 15th significant digit, and PMT-008 was refused: the engine evaluated Microsoft's identity in
-> doubles with a correctly rounded power, and Excel does neither. `spikes/exsheet-financial-evaluation/` searched for the evaluation that gives every
+> *(2026-10-12)* **PV and FV give Excel's double, and PMT every double Excel was seen to give.** The
+> seventeenth Windows run read Excel's double for every financial case. Seven of PMT's, PV's and FV's
+> differed from the engine's in the 13th to 15th significant digit, and PMT-008 was refused: the
+> engine evaluated Microsoft's identity in doubles with a correctly rounded power, and Excel does
+> neither. `spikes/exsheet-financial-evaluation/` searched for the evaluation that gives every
 > observed double, the agreeing cases included, among some 13,000 candidates:
 >
 > - **PV and FV** are evaluated in doubles, in the identity's order, with 1+rate raised to `nper` by
@@ -59,10 +60,10 @@ At the end of ADR-0047, after the note of 2026-10-11:
 > - **PMT** is not. Excel's payments equal the payment at the end of each period carried beyond a
 >   double and rounded once, and, at the start, that double divided by 1+rate, unrounded, and rounded
 >   once (PMT-001 to 003 and 008). The engine takes the exact model: the payment computed exactly over
->   Excel's doubles and rounded once. That is one of 2504 evaluations that give all four observed
->   doubles, not the one they prove. 304 of them are in an x87's 64 bits. They agree with the exact
->   model at the rates observed, 0.5% to 10% a period, and part from it as the rate shrinks, because an
->   x87's 1+rate keeps only the rate's bits above 2^-64. At PMT-016, 38 of them are one unit in the
+>   Excel's doubles and rounded once. It gives all four observed doubles, and so do 2504 of the
+>   evaluations the search tried, so the observations do not choose it. 304 of those are in an x87's
+>   64 bits. They agree with the exact model at the rates observed, 0.5% to 10% a period, and part
+>   from it as the rate shrinks, because an x87's 1+rate keeps only the rate's bits above 2^-64. At PMT-016, 38 of them are one unit in the
 >   last place away. At a daily rate over a year they give four doubles across 7 units (PMT-018). At a
 >   rate of 10^-7 they give nine across 3,390 units, from the 13th significant digit (PMT-017). PMT-013
 >   to 018 ask Excel.

@@ -108,9 +108,9 @@ internal static partial class FunctionLibrary
     /// </summary>
     /// <remarks>
     /// This is a choice among several evaluations that give all four observed payments, not the one
-    /// they prove. The spike (<c>spikes/exsheet-financial-evaluation/</c>) found 2504, 304 of them in
-    /// an x87's 64 bits. Those agree with this one at the rates observed and part from it as the rate
-    /// shrinks, because an x87's 1+rate keeps only the rate's bits above 2^-64: at
+    /// they prove. The spike (<c>spikes/exsheet-financial-evaluation/</c>) found 2504 others that give
+    /// them, 304 of them in an x87's 64 bits. Those agree with this one at the rates observed and part
+    /// from it as the rate shrinks, because an x87's 1+rate keeps only the rate's bits above 2^-64: at
     /// <c>=PMT(0.045/12,12,250000,-5000)</c> 38 of the 304 are one unit in the last place away, at
     /// <c>=PMT(0.0365/365,365,10000)</c> they give four doubles across 7 units, and at
     /// <c>=PMT(1/10000000,12,1000)</c> nine across 3390, from the 13th significant digit. PMT-016 to

@@ -72,7 +72,7 @@ A note at the end of "What differs from Excel, by decision", after the note of 2
 > 106), and a value left empty: `LET(x,,x)` is 0 (LET-107). It refused `TRUE`, `R2` and `C3` (LET-102, 104,
 > 105). Under this ADR's own rule, each shape it entered is now a name: the name of any function, and an
 > R1C1 shape that does not read as an A1 Reference. A name followed by `(` is still the function's call,
-> so `LET(SUM,2,SUM(SUM,1))` is 3. `R2` and `C3` stay refused because they read as A1 References, and
+> so `LET(SUM,2,SUM(SUM,1))` is 3, which the run did not type. `R2` and `C3` stay refused because they read as A1 References, and
 > `TRUE` and `FALSE` because they read as booleans. A value left empty binds the name to that empty
 > argument, and where the name stands it reads as the empty argument would read there; only
 > `LET(x,,x)` has been observed. **The note above is superseded**: its reason, that a Sheet saved with

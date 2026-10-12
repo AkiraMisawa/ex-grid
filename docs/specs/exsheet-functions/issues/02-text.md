@@ -21,3 +21,7 @@ is dropped.
 2026-10-03: admitted. 22 cases, every one passing. Refused until Excel answers: `General` with a
 number longer than 11 characters (TEXTFN-017) and an empty code (TEXTFN-018). Refused because
 `NumberFormat` refuses them for a cell: fractions, conditions and the rest outside its subset.
+
+2026-10-12: the seventeenth Windows run answered TEXTFN-017 (`0.333333333`, General fitted to 11 characters)
+and TEXTFN-018 (empty text). Fractions and conditions stay refused with Excel's answers recorded, and
+TEXTFN-009 records German Excel's (ADR-0120's notes).
