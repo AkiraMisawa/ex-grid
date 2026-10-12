@@ -1,0 +1,35 @@
+node v24.14.1, dotnet 10.0.203
+== 2026-10-12T09:02:37Z host=server tag=sel-9.6.0 base=http://localhost:5490 head=0c0ab368 locations=
+Running 282 tests using 1 worker
+  ✘   14 [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) (1.0m)
+
+  1) [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) 
+
+    Error: expect(locator).not.toHaveCount(expected) failed
+
+    Locator:  locator('.ex-sheet .ex-grid').first().locator('.ex-copied-range')
+    Expected: not 0
+    Received: 0
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "not toHaveCount" with timeout 60000ms
+      - waiting for locator('.ex-sheet .ex-grid').first().locator('.ex-copied-range')
+        123 × locator resolved to 0 elements
+            - unexpected value "0"
+
+
+      165 |         await page.keyboard.press('Shift+ArrowRight');
+      166 |         await page.keyboard.press('ControlOrMeta+C');
+    > 167 |         await expect(sheet.locator('.ex-copied-range')).not.toHaveCount(0);
+          |                                                             ^
+      168 |
+      169 |         const colours = await sheet.evaluate((root) => ({
+      170 |             outline: getComputedStyle(root.querySelector('.ex-range-single'), '::after').borderTopColor,
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/copied-range.spec.mjs:167:61
+
+  1 failed
+    [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) 
+  1 skipped
+  280 passed (13.5m)
+== exit 1 at 2026-10-12T09:16:08Z

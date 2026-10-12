@@ -1,0 +1,359 @@
+node v24.14.1, dotnet 10.0.203
+== 2026-10-12T09:50:33Z host=server tag=sel-9.5.0 base=http://localhost:5490 head=0c0ab368 locations=
+Running 282 tests using 1 worker
+  ✘    4 [chrome] › circuit.spec.mjs:260:5 › an Escape pressed straight after the operator list opens is not the grid's (KB-35, ADR-0039) (1.0m)
+  ✘    5 [chrome] › circuit.spec.mjs:260:5 › an Escape pressed straight after the date calendar opens is not the grid's (KB-35, ADR-0039) (1.0m)
+  ✘    6 [chrome] › circuit.spec.mjs:309:1 › a value typed and Enter pressed at once apply the condition (KB-31, SRV-5) (1.0m)
+  ✘    7 [chrome] › circuit.spec.mjs:328:1 › Escape, Escape straight after an Inner Popup closes it and then the panel (ADR-0039, SRV-5) (1.0m)
+  ✘   14 [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) (1.0m)
+  ✘  127 [chrome] › mud-app.spec.mjs:355:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039) (1.0m)
+  ✘  214 [chrome] › popovers.spec.mjs:399:9 › under the mud Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) (1.0m)
+  ✘  219 [chrome] › popovers.spec.mjs:556:9 › under the mud Chrome › Enter in the value field applies exactly what OK applies (KB-31, ADR-0039) (1.0m)
+  ✘  223 [chrome] › popovers.spec.mjs:664:5 › Inner Popups under the mud Chrome › an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21) (1.0m)
+  ✘  224 [chrome] › popovers.spec.mjs:690:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the operator list and the panel, and keeps its meaning (FN-21, ModalOverlay off) (1.0m)
+  ✘  225 [chrome] › popovers.spec.mjs:690:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the date calendar and the panel, and keeps its meaning (FN-21, ModalOverlay off) (1.0m)
+  ✘  226 [chrome] › popovers.spec.mjs:718:9 › Inner Popups under the mud Chrome › Escape closes the operator list first, and the next Escape the panel (FN-21, KB-32) (1.0m)
+  ✘  227 [chrome] › popovers.spec.mjs:718:9 › Inner Popups under the mud Chrome › Escape closes the date calendar first, and the next Escape the panel (FN-21, KB-32) (1.0m)
+  ✘  228 [chrome] › popovers.spec.mjs:740:5 › Inner Popups under the mud Chrome › under ModalOverlay the press is the overlay's: only the Inner Popup closes, and Escape then closes the panel (FN-21) (1.0m)
+  ✘  229 [chrome] › popovers.spec.mjs:765:5 › Inner Popups under the mud Chrome › choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the grid (FN-21, KB-32, ADR-0080) (1.0m)
+
+  1) [chrome] › circuit.spec.mjs:260:5 › an Escape pressed straight after the operator list opens is not the grid's (KB-35, ADR-0039) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "combobox"
+    Received: null
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      268 |         await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role=menu]'))).toBe(true);
+      269 |         await page.keyboard.press('Tab');
+    > 270 |         await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('combobox');
+          |                                                                                                    ^
+      271 |         if (column === 4) {
+      272 |             await page.keyboard.press('Tab');
+      273 |         }
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/circuit.spec.mjs:270:100
+
+
+  2) [chrome] › circuit.spec.mjs:260:5 › an Escape pressed straight after the date calendar opens is not the grid's (KB-35, ADR-0039) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "combobox"
+    Received: null
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      268 |         await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role=menu]'))).toBe(true);
+      269 |         await page.keyboard.press('Tab');
+    > 270 |         await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('combobox');
+          |                                                                                                    ^
+      271 |         if (column === 4) {
+      272 |             await page.keyboard.press('Tab');
+      273 |         }
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/circuit.spec.mjs:270:100
+
+
+  3) [chrome] › circuit.spec.mjs:309:1 › a value typed and Enter pressed at once apply the condition (KB-31, SRV-5) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "combobox"
+    Received: null
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      303 |     await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role=menu]'))).toBe(true);
+      304 |     await page.keyboard.press('Tab');
+    > 305 |     await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('combobox');
+          |                                                                                                ^
+      306 |     return panel;
+      307 | }
+      308 |
+        at openMudNotionalPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/circuit.spec.mjs:305:96)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/circuit.spec.mjs:310:19
+
+
+  4) [chrome] › circuit.spec.mjs:328:1 › Escape, Escape straight after an Inner Popup closes it and then the panel (ADR-0039, SRV-5) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "combobox"
+    Received: null
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      303 |     await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role=menu]'))).toBe(true);
+      304 |     await page.keyboard.press('Tab');
+    > 305 |     await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('combobox');
+          |                                                                                                ^
+      306 |     return panel;
+      307 | }
+      308 |
+        at openMudNotionalPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/circuit.spec.mjs:305:96)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/circuit.spec.mjs:329:19
+
+
+  5) [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) 
+
+    Error: expect(locator).not.toHaveCount(expected) failed
+
+    Locator:  locator('.ex-sheet .ex-grid').first().locator('.ex-copied-range')
+    Expected: not 0
+    Received: 0
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "not toHaveCount" with timeout 60000ms
+      - waiting for locator('.ex-sheet .ex-grid').first().locator('.ex-copied-range')
+        123 × locator resolved to 0 elements
+            - unexpected value "0"
+
+
+      165 |         await page.keyboard.press('Shift+ArrowRight');
+      166 |         await page.keyboard.press('ControlOrMeta+C');
+    > 167 |         await expect(sheet.locator('.ex-copied-range')).not.toHaveCount(0);
+          |                                                             ^
+      168 |
+      169 |         const colours = await sheet.evaluate((root) => ({
+      170 |             outline: getComputedStyle(root.querySelector('.ex-range-single'), '::after').borderTopColor,
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/copied-range.spec.mjs:167:61
+
+
+  6) [chrome] › mud-app.spec.mjs:355:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('#dialog-paper .ex-grid').locator('.ex-popover').getByRole('combobox', { name: 'Operator' })
+    Expected: visible
+    Timeout: 60000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 60000ms
+      - waiting for locator('#dialog-paper .ex-grid').locator('.ex-popover').getByRole('combobox', { name: 'Operator' })
+
+
+      402 |     await dialogGrid.locator('.ex-menu-button').nth(3).click();
+      403 |     const operator = popover.getByRole('combobox', { name: 'Operator' });
+    > 404 |     await expect(operator).toBeVisible();
+          |                            ^
+      405 |     await operator.click();
+      406 |     const item = page.locator('.mud-popover-open .mud-list-item').first();
+      407 |     await expect(item).toBeVisible();
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/mud-app.spec.mjs:404:28
+
+
+  7) [chrome] › popovers.spec.mjs:399:9 › under the mud Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      65 |     await expect(panel).toBeVisible();
+      66 |     await page.keyboard.press('Tab');
+    > 67 |     await expect.poll(() => activeIsOperator(page)).toBe(true);
+         |                                                     ^
+      68 |     return panel;
+      69 | }
+      70 |
+        at openNotionalPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:67:53)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:400:13
+
+
+  8) [chrome] › popovers.spec.mjs:556:9 › under the mud Chrome › Enter in the value field applies exactly what OK applies (KB-31, ADR-0039) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      65 |     await expect(panel).toBeVisible();
+      66 |     await page.keyboard.press('Tab');
+    > 67 |     await expect.poll(() => activeIsOperator(page)).toBe(true);
+         |                                                     ^
+      68 |     return panel;
+      69 | }
+      70 |
+        at openNotionalPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:67:53)
+        at rowCountAfterFilter (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:113:19)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:557:26
+
+
+  9) [chrome] › popovers.spec.mjs:664:5 › Inner Popups under the mud Chrome › an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      659 |         await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+      660 |         await page.keyboard.press('Tab');
+    > 661 |         await expect.poll(() => activeIsOperator(page)).toBe(true);
+          |                                                         ^
+      662 |     }
+      663 |
+      664 |     test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
+        at openPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:661:57)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:670:9
+
+
+  10) [chrome] › popovers.spec.mjs:690:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the operator list and the panel, and keeps its meaning (FN-21, ModalOverlay off) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      659 |         await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+      660 |         await page.keyboard.press('Tab');
+    > 661 |         await expect.poll(() => activeIsOperator(page)).toBe(true);
+          |                                                         ^
+      662 |     }
+      663 |
+      664 |     test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
+        at openPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:661:57)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:691:13
+
+
+  11) [chrome] › popovers.spec.mjs:690:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the date calendar and the panel, and keeps its meaning (FN-21, ModalOverlay off) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      659 |         await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+      660 |         await page.keyboard.press('Tab');
+    > 661 |         await expect.poll(() => activeIsOperator(page)).toBe(true);
+          |                                                         ^
+      662 |     }
+      663 |
+      664 |     test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
+        at openPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:661:57)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:691:13
+
+
+  12) [chrome] › popovers.spec.mjs:718:9 › Inner Popups under the mud Chrome › Escape closes the operator list first, and the next Escape the panel (FN-21, KB-32) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      659 |         await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+      660 |         await page.keyboard.press('Tab');
+    > 661 |         await expect.poll(() => activeIsOperator(page)).toBe(true);
+          |                                                         ^
+      662 |     }
+      663 |
+      664 |     test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
+        at openPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:661:57)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:719:13
+
+
+  13) [chrome] › popovers.spec.mjs:718:9 › Inner Popups under the mud Chrome › Escape closes the date calendar first, and the next Escape the panel (FN-21, KB-32) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      659 |         await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+      660 |         await page.keyboard.press('Tab');
+    > 661 |         await expect.poll(() => activeIsOperator(page)).toBe(true);
+          |                                                         ^
+      662 |     }
+      663 |
+      664 |     test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
+        at openPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:661:57)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:719:13
+
+
+  14) [chrome] › popovers.spec.mjs:740:5 › Inner Popups under the mud Chrome › under ModalOverlay the press is the overlay's: only the Inner Popup closes, and Escape then closes the panel (FN-21) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      659 |         await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+      660 |         await page.keyboard.press('Tab');
+    > 661 |         await expect.poll(() => activeIsOperator(page)).toBe(true);
+          |                                                         ^
+      662 |     }
+      663 |
+      664 |     test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
+        at openPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:661:57)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:744:9
+
+
+  15) [chrome] › popovers.spec.mjs:765:5 › Inner Popups under the mud Chrome › choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the grid (FN-21, KB-32, ADR-0080) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      659 |         await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+      660 |         await page.keyboard.press('Tab');
+    > 661 |         await expect.poll(() => activeIsOperator(page)).toBe(true);
+          |                                                         ^
+      662 |     }
+      663 |
+      664 |     test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
+        at openPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:661:57)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:766:9
+
+  15 failed
+    [chrome] › circuit.spec.mjs:260:5 › an Escape pressed straight after the operator list opens is not the grid's (KB-35, ADR-0039) 
+    [chrome] › circuit.spec.mjs:260:5 › an Escape pressed straight after the date calendar opens is not the grid's (KB-35, ADR-0039) 
+    [chrome] › circuit.spec.mjs:309:1 › a value typed and Enter pressed at once apply the condition (KB-31, SRV-5) 
+    [chrome] › circuit.spec.mjs:328:1 › Escape, Escape straight after an Inner Popup closes it and then the panel (ADR-0039, SRV-5) 
+    [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) 
+    [chrome] › mud-app.spec.mjs:355:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039) 
+    [chrome] › popovers.spec.mjs:399:9 › under the mud Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) 
+    [chrome] › popovers.spec.mjs:556:9 › under the mud Chrome › Enter in the value field applies exactly what OK applies (KB-31, ADR-0039) 
+    [chrome] › popovers.spec.mjs:664:5 › Inner Popups under the mud Chrome › an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21) 
+    [chrome] › popovers.spec.mjs:690:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the operator list and the panel, and keeps its meaning (FN-21, ModalOverlay off) 
+    [chrome] › popovers.spec.mjs:690:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the date calendar and the panel, and keeps its meaning (FN-21, ModalOverlay off) 
+    [chrome] › popovers.spec.mjs:718:9 › Inner Popups under the mud Chrome › Escape closes the operator list first, and the next Escape the panel (FN-21, KB-32) 
+    [chrome] › popovers.spec.mjs:718:9 › Inner Popups under the mud Chrome › Escape closes the date calendar first, and the next Escape the panel (FN-21, KB-32) 
+    [chrome] › popovers.spec.mjs:740:5 › Inner Popups under the mud Chrome › under ModalOverlay the press is the overlay's: only the Inner Popup closes, and Escape then closes the panel (FN-21) 
+    [chrome] › popovers.spec.mjs:765:5 › Inner Popups under the mud Chrome › choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the grid (FN-21, KB-32, ADR-0080) 
+  1 skipped
+  266 passed (28.3m)
+== exit 1 at 2026-10-12T10:18:55Z
