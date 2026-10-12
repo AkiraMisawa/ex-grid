@@ -10,7 +10,8 @@ namespace ExSheet.Engine.Tests;
 /// <c>SUBTOTAL</c> and <c>AGGREGATE</c> (ADR-0047's note of 2026-10-10, docs/specs/exsheet-functions
 /// ticket 16, SH-68): admitted while a Sheet cannot hide a row. What the Excel case corpus cannot
 /// state is here: the test that fails on the day a row can be hidden, what a nested call is as the
-/// Sheet changes, and Linked Tables. Their answers to Excel's cases are in
+/// Sheet changes and across the forms of a Formula that calls one (the seventeenth Windows run read
+/// Excel's rule), and Linked Tables. Their answers to Excel's cases are in
 /// <c>ExcelCases/subtotal.json</c> and <c>ExcelCases/aggregate.json</c>.
 /// </summary>
 public class SubtotalTests
@@ -53,7 +54,7 @@ public class SubtotalTests
         }
     }
 
-    [Fact] // ADR-0047 (2026-10-10): a cell that becomes a whole-Formula SUBTOTAL is passed over from then on, and one that stops is counted again
+    [Fact] // ADR-0047 (2026-10-10), SH-68: a cell that becomes a nested SUBTOTAL is passed over from then on, and one that stops is counted again
     public void ADR0047_a_cell_that_becomes_a_nested_subtotal_is_passed_over()
     {
         var sheet = NewSheet();
@@ -76,28 +77,54 @@ public class SubtotalTests
         Assert.Equal(6, sheet.Number("B2"));
     }
 
-    [Theory] // ADR-0047 (2026-10-10), SH-68: any call of SUBTOTAL or AGGREGATE in the range but a whole-Formula one passed over is #VALUE!
+    [Theory] // ADR-0047, SH-68 (the seventeenth Windows run: SUBTOTAL-020, 021, 035 to 037, AGGREGATE-026, 052 to 054): a cell whose Formula calls SUBTOTAL or AGGREGATE anywhere is nested; SUBTOTAL and AGGREGATE's options 0 to 3 pass over it, and options 4 to 7 count it
+    [InlineData("=SUBTOTAL(9,A1:A2)")]
+    [InlineData("=AGGREGATE(9,0,A1:A2)")]
     [InlineData("=SUBTOTAL(9,A1:A2)*2")]
+    [InlineData("=1+SUBTOTAL(9,A1:A2)")]
     [InlineData("=(SUBTOTAL(9,A1:A2))")]
     [InlineData("=IF(TRUE,SUBTOTAL(9,A1:A2))")]
     [InlineData("=AGGREGATE(9,0,A1:A2)+0")]
-    public void ADR0047_a_call_inside_a_larger_formula_is_refused(string nested)
+    [InlineData("=LET(x,SUBTOTAL(9,A1:A2),x+1)")]
+    public void ADR0047_SH68_a_call_anywhere_in_a_cells_formula_is_nested(string nested)
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "1");
         sheet.Enter("A2", "2");
         sheet.Enter("A3", nested);
+        var counted = 3 + sheet.Number("A3");
 
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=SUBTOTAL(9,A1:A3)").Error);
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=AGGREGATE(9,6,A1:A3)").Error);
+        Assert.Equal(3, sheet.Evaluate("=SUBTOTAL(9,A1:A3)").Number);
+        Assert.Equal(3, sheet.Evaluate("=SUBTOTAL(109,A1:A3)").Number);
+        Assert.Equal(2, sheet.Evaluate("=SUBTOTAL(2,A1:A3)").Number);
+        for (var option = 0; option <= 3; option++)
+        {
+            Assert.Equal(3, sheet.Evaluate($"=AGGREGATE(9,{option},A1:A3)").Number);
+        }
+        for (var option = 4; option <= 7; option++)
+        {
+            Assert.Equal(counted, sheet.Evaluate($"=AGGREGATE(9,{option},A1:A3)").Number);
+        }
     }
 
-    [Theory] // ADR-0047 (2026-10-10), SH-68 (2026-10-11): AGGREGATE's options 4 to 7 pass over no nested call, so a cell whose whole Formula is a SUBTOTAL or an AGGREGATE makes them #VALUE! until the sign-off's Windows run reads Excel's answer (AGGREGATE-025), which Microsoft documents as counted
+    [Fact] // ADR-0047, SH-68: what counts as nested is the Formula's text, so a call in a branch IF never takes is nested too (SUBTOTAL-039 asks Excel)
+    public void ADR0047_SH68_a_call_in_a_branch_never_taken_is_nested_by_its_text()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("A2", "2");
+        sheet.Enter("A3", "=IF(FALSE,SUBTOTAL(9,A1:A2),5)");
+
+        Assert.Equal(3, sheet.Evaluate("=SUBTOTAL(9,A1:A3)").Number);
+        Assert.Equal(8, sheet.Evaluate("=AGGREGATE(9,6,A1:A3)").Number);
+    }
+
+    [Theory] // ADR-0047, SH-68 (the seventeenth Windows run: AGGREGATE-025, 042 to 051): AGGREGATE's options 4 to 7 count a nested SUBTOTAL or AGGREGATE as its Value, in the reference form and the array form, where options 0 to 3 pass over it
     [InlineData(4)]
     [InlineData(5)]
     [InlineData(6)]
     [InlineData(7)]
-    public void ADR0047_SH68_aggregate_options_4_to_7_over_a_whole_formula_subtotal_are_value(int option)
+    public void ADR0047_SH68_aggregate_options_4_to_7_count_a_nested_cell(int option)
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "1");
@@ -107,23 +134,77 @@ public class SubtotalTests
         sheet.Enter("B2", "2");
         sheet.Enter("B3", "=AGGREGATE(9,0,B1:B2)");
 
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate($"=AGGREGATE(9,{option},A1:A3)").Error);
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate($"=AGGREGATE(14,{option},A1:A3,1)").Error);
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate($"=AGGREGATE(9,{option},B1:B3)").Error);
+        Assert.Equal(6, sheet.Evaluate($"=AGGREGATE(9,{option},A1:A3)").Number);
+        Assert.Equal(3, sheet.Evaluate($"=AGGREGATE(14,{option},A1:A3,1)").Number);
+        Assert.Equal(6, sheet.Evaluate($"=AGGREGATE(9,{option},B1:B3)").Number);
         // The option it stands beside, 0 to 3, passes over the same cells.
         Assert.Equal(3, sheet.Evaluate($"=AGGREGATE(9,{option - 4},A1:A3)").Number);
+        Assert.Equal(2, sheet.Evaluate($"=AGGREGATE(14,{option - 4},A1:A3,1)").Number);
         Assert.Equal(3, sheet.Evaluate($"=AGGREGATE(9,{option - 4},B1:B3)").Number);
     }
 
-    [Fact] // ADR-0047 (2026-10-10), ADR-0125: a cell spilled from a Formula that calls SUBTOTAL holds a value of a nested call, which is refused
-    public void ADR0047_a_spill_from_a_formula_that_calls_subtotal_is_refused()
+    [Fact] // ADR-0047, ADR-0125, SH-68 (the seventeenth Windows run: SUBTOTAL-038): a cell spilled from a Formula that calls SUBTOTAL is nested, as its Anchor is
+    public void ADR0047_SH68_a_cell_spilled_from_a_formula_that_calls_subtotal_is_nested()
     {
         var sheet = NewSheet();
         sheet.Enter("C1", "1");
         sheet.Enter("A1", "=SEQUENCE(2,1,SUBTOTAL(9,C1))");
         Assert.Equal(2, sheet.Number("A2"));
 
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=SUBTOTAL(9,A2)").Error);
+        Assert.Equal(0, sheet.Evaluate("=SUBTOTAL(9,A2)").Number);
+        Assert.Equal(0, sheet.Evaluate("=AGGREGATE(9,2,A1:A2)").Number);
+        Assert.Equal(3, sheet.Evaluate("=AGGREGATE(9,6,A1:A2)").Number);
+    }
+
+    [Theory] // ADR-0047 (the seventeenth Windows run: SUBTOTAL-027): a function number that is not whole is truncated toward zero, and the range is checked after; AGGREGATE's function number and option the same way (AGGREGATE-055, 056 ask Excel)
+    [InlineData("=SUBTOTAL(9.5,A1:A3)", "=SUBTOTAL(9,A1:A3)")]
+    [InlineData("=SUBTOTAL(9.99,A1:A3)", "=SUBTOTAL(9,A1:A3)")]
+    [InlineData("=SUBTOTAL(1.5,A1:A3)", "=SUBTOTAL(1,A1:A3)")]
+    [InlineData("=SUBTOTAL(11.9,A1:A3)", "=SUBTOTAL(11,A1:A3)")]
+    [InlineData("=SUBTOTAL(109.5,A1:A3)", "=SUBTOTAL(109,A1:A3)")]
+    [InlineData("=AGGREGATE(9.5,6,A1:A4)", "=AGGREGATE(9,6,A1:A4)")]
+    [InlineData("=AGGREGATE(9,6.9,A1:A4)", "=AGGREGATE(9,6,A1:A4)")]
+    [InlineData("=AGGREGATE(14.5,6,A1:A4,1)", "=AGGREGATE(14,6,A1:A4,1)")]
+    public void ADR0047_a_function_number_that_is_not_whole_is_truncated(string fractional, string whole)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("A2", "2");
+        sheet.Enter("A3", "4");
+        sheet.Enter("A4", "=1/0");
+        var expected = sheet.Evaluate(whole);
+        Assert.Equal(ValueKind.Number, expected.Kind);
+
+        Assert.Equal(expected, sheet.Evaluate(fractional));
+    }
+
+    [Theory] // ADR-0047: truncated, a function number outside Excel's ranges is still #VALUE!
+    [InlineData("=SUBTOTAL(0.5,A1:A3)")]
+    [InlineData("=SUBTOTAL(11.5+1,A1:A3)")]
+    [InlineData("=SUBTOTAL(100.5,A1:A3)")]
+    [InlineData("=SUBTOTAL(-9.5,A1:A3)")]
+    [InlineData("=AGGREGATE(19.5+1,6,A1:A3)")]
+    [InlineData("=AGGREGATE(9,7.5+1,A1:A3)")]
+    [InlineData("=AGGREGATE(9,-0.5-1,A1:A3)")]
+    public void ADR0047_a_truncated_function_number_outside_the_range_is_value(string formula)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
+    }
+
+    [Fact] // ADR-0047 (the seventeenth Windows run: AGGREGATE-039): the array form takes a number given directly as an array of that one Value
+    public void ADR0047_the_array_form_takes_a_number_given_directly()
+    {
+        var sheet = NewSheet();
+
+        Assert.Equal(5, sheet.Evaluate("=AGGREGATE(14,6,5,1)").Number);
+        Assert.Equal(5, sheet.Evaluate("=AGGREGATE(15,4,2+3,1)").Number);
+        Assert.Equal(ErrorValue.Num, sheet.Evaluate("=AGGREGATE(14,6,5,2)").Error);
+        // Text and a boolean given directly are not asked yet (AGGREGATE-061), and stay refused.
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=AGGREGATE(14,6,\"5\",1)").Error);
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=AGGREGATE(14,6,TRUE,1)").Error);
     }
 
     [Fact] // ADR-0047 (2026-10-10), ADR-0049: a Linked Table's column is a reference to SUBTOTAL and AGGREGATE, and they wait for its data

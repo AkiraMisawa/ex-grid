@@ -28,6 +28,22 @@ internal sealed class FunctionDefinition(string name, int minimum, int maximum, 
     /// <summary>Arguments before the repeating pairs: one for the result range of SUMIFS and its partners.</summary>
     public int PairOffset { get; init; }
 
+    /// <summary>
+    /// The arguments, by index from <c>First</c> to <c>Last</c>, that Excel takes only as a Reference:
+    /// a Formula that gives one of them something that can never be a Reference — a constant, an
+    /// operator's result, a call of a function that never returns one — is refused on entry, as Excel
+    /// refuses it (ADR-0047; the seventeenth Windows run: SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005,
+    /// AGGREGATE-040). <see langword="null"/> for a function that takes a Value everywhere.
+    /// </summary>
+    public (int First, int Last)? ReferenceOnly { get; init; }
+
+    /// <summary>
+    /// Whether a call of it can give a Reference (<c>INDIRECT</c>, <c>OFFSET</c>, <c>INDEX</c>,
+    /// <c>CHOOSE</c>, <c>IF</c> and their kin): such a call is taken where only a Reference is
+    /// (<see cref="ReferenceOnly"/>), and what it gives is judged when it is computed.
+    /// </summary>
+    public bool ReturnsReference { get; init; }
+
     private static readonly IReadOnlyDictionary<int, IReadOnlyList<ArgumentValue>> NoValues = new Dictionary<int, IReadOnlyList<ArgumentValue>>();
 
     public Operand Invoke(FunctionCall call) => invoke(call);

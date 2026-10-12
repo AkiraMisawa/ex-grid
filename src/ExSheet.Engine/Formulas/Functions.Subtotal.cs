@@ -3,55 +3,41 @@ namespace ExSheet.Engine.Formulas;
 /// <summary>
 /// SUBTOTAL and AGGREGATE (ADR-0047's note of 2026-10-10), admitted while a Sheet cannot hide a
 /// row (ADR-0046): the function numbers and options that pass over hidden rows give what the others
-/// give, as they do in Excel over such a sheet. Microsoft documents that both pass over nested
-/// subtotals, but not which cells count as nested; only a cell whose whole Formula is one call is
-/// passed over, and any other call of either function inside the range is <c>#VALUE!</c> until a
-/// Windows run asks Excel.
+/// give, as they do in Excel over such a sheet. A cell is nested when its Formula, or for a cell of a
+/// Spill Range its Anchor's, calls SUBTOTAL or AGGREGATE anywhere in its text, as the seventeenth
+/// Windows run read Excel's answers (SH-68): SUBTOTAL and AGGREGATE's options 0 to 3 pass over it,
+/// and AGGREGATE's options 4 to 7 count its Value.
 /// </summary>
 internal static partial class FunctionLibrary
 {
-    /// <summary>What a cell inside SUBTOTAL's or AGGREGATE's range is, as a nested call.</summary>
-    private enum Nesting
-    {
-        /// <summary>A constant, a blank, or a Formula that calls neither function.</summary>
-        None,
-
-        /// <summary>A cell whose whole Formula is a SUBTOTAL.</summary>
-        Subtotal,
-
-        /// <summary>A cell whose whole Formula is an AGGREGATE.</summary>
-        Aggregate,
-
-        /// <summary>Any other call of either: inside a larger Formula, or behind a spill.</summary>
-        Other,
-    }
-
-    private static Nesting NestingOf(Node? formula)
-    {
-        if (formula is null) return Nesting.None;
-        if (formula is FunctionNode { Function: not null, Name: "SUBTOTAL" }) return Nesting.Subtotal;
-        if (formula is FunctionNode { Function: not null, Name: "AGGREGATE" }) return Nesting.Aggregate;
-        return formula.Calls.Any(call => call.Function is not null && call.Name is "SUBTOTAL" or "AGGREGATE") ? Nesting.Other : Nesting.None;
-    }
+    /// <summary>
+    /// Whether a cell holding <paramref name="formula"/> is a nested SUBTOTAL or AGGREGATE: its
+    /// Formula calls either anywhere in its text — the whole Formula, inside a larger expression, in
+    /// parentheses, under <c>IF</c> — as Excel counts one (SUBTOTAL-020, 021, 035 to 038,
+    /// AGGREGATE-026, 052 to 054). <see langword="false"/> for a constant or a blank.
+    /// </summary>
+    private static bool IsNested(Node? formula) =>
+        formula is not null && formula.Calls.Any(call => call.Function is not null && call.Name is "SUBTOTAL" or "AGGREGATE");
 
     /// <summary>
     /// SUBTOTAL: function numbers 1 to 11 — AVERAGE, COUNT, COUNTA, MAX, MIN, PRODUCT, STDEV.S,
     /// STDEV.P, SUM, VAR.S, VAR.P — over its references, each function as it reads a range; 101 to
-    /// 111 give the same while no row can be hidden. A cell whose whole Formula is a SUBTOTAL is
-    /// passed over. Refused with <c>#VALUE!</c>: another function number, one that is not a whole
-    /// number, an argument that is no reference (a computed array, a number), and any other call of
-    /// SUBTOTAL or AGGREGATE in the range, an AGGREGATE whole included.
+    /// 111 give the same while no row can be hidden. A function number that is not whole is truncated
+    /// toward zero, as Excel's is (SUBTOTAL-027: 9.5 is 9). A nested cell (<see cref="IsNested"/>)
+    /// is passed over. Refused with <c>#VALUE!</c>: another function number, and an argument that
+    /// is no reference when it is computed (a Formula that gives one something that can never be a
+    /// Reference is refused on entry, <see cref="FunctionDefinition.ReferenceOnly"/>).
     /// </summary>
     private static Operand Subtotal(FunctionCall call)
     {
-        if (!TryWhole(call, 0, out var number, out var failure)) return failure;
+        if (!TryTruncated(call, 0, out var number, out var failure)) return failure;
         // No row can be hidden yet (ADR-0046), so 101 to 111 skip nothing 1 to 11 do not.
         var function = number is >= 101 and <= 111 ? number - 100 : number;
         if (function is < 1 or > 11) return Operand.Of(ErrorValue.Value);
         var values = new List<Value>();
         for (var i = 1; i < call.Count; i++)
         {
-            if (!TryCollect(call, call.Operand(i), arrays: false, skipSubtotal: true, skipAggregate: false, passOverErrors: false, values, out failure)) return failure;
+            if (!TryCollect(call, call.Operand(i), arrays: false, skipNested: true, passOverErrors: false, values, out failure)) return failure;
         }
         return Reduce(function, values, k: null);
     }
@@ -59,65 +45,74 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// AGGREGATE: function numbers 1 to 12 over references (the reference form) and 14 and 15 —
     /// LARGE and SMALL — over an array and its k (the array form), with options 0 to 7. Options 0 to 3
-    /// pass over a cell whose whole Formula is a SUBTOTAL or an AGGREGATE; options 2, 3, 6 and 7 pass
-    /// over Error Values; options 1, 3, 5 and 7, which pass over hidden rows, give what 0, 2, 4 and 6
-    /// give, since no row can be hidden. Refused with <c>#VALUE!</c>: the function numbers of
-    /// functions the engine does not support (13, MODE.SNGL; 16 to 19, PERCENTILE and QUARTILE), a
-    /// number or option outside Excel's, one that is not a whole number, LARGE or SMALL without its k
-    /// (as Microsoft documents) or with an argument after it, an argument of the reference form that
-    /// is no reference, and any call of SUBTOTAL or AGGREGATE in the range that is not passed over.
+    /// pass over a nested cell (<see cref="IsNested"/>), and options 4 to 7 count its Value, as Excel
+    /// does (AGGREGATE-025, 042 to 051); options 2, 3, 6 and 7 pass over Error Values; options 1, 3,
+    /// 5 and 7, which pass over hidden rows, give what 0, 2, 4 and 6 give, since no row can be hidden.
+    /// A function number or option that is not whole is truncated toward zero, as SUBTOTAL's is. The
+    /// array form takes a number given directly as an array of that one Value (AGGREGATE-039).
+    /// Refused with <c>#VALUE!</c>: the function numbers of functions the engine does not support
+    /// (13, MODE.SNGL; 16 to 19, PERCENTILE and QUARTILE), a number or option outside Excel's, LARGE
+    /// or SMALL without its k (as Microsoft documents) or with an argument after it, and an argument
+    /// of the reference form that is no reference when it is computed.
     /// </summary>
     private static Operand Aggregate(FunctionCall call)
     {
-        if (!TryWhole(call, 0, out var function, out var failure)) return failure;
+        if (!TryTruncated(call, 0, out var function, out var failure)) return failure;
         var option = 0;
-        if (call.Has(1) && !TryWhole(call, 1, out option, out failure)) return failure;
+        if (call.Has(1) && !TryTruncated(call, 1, out option, out failure)) return failure;
         if (function is < 1 or > 19 || option is < 0 or > 7) return Operand.Of(ErrorValue.Value);
         // MODE.SNGL, PERCENTILE.INC, QUARTILE.INC, PERCENTILE.EXC and QUARTILE.EXC are not declared.
         if (function is 13 or > 15) return Operand.Of(ErrorValue.Value);
-        var nested = option <= 3;
+        var skipNested = option <= 3;
         var passOverErrors = option is 2 or 3 or 6 or 7;
         var values = new List<Value>();
         if (function <= 12)
         {
             for (var i = 2; i < call.Count; i++)
             {
-                if (!TryCollect(call, call.Operand(i), arrays: false, skipSubtotal: nested, skipAggregate: nested, passOverErrors, values, out failure)) return failure;
+                if (!TryCollect(call, call.Operand(i), arrays: false, skipNested, passOverErrors, values, out failure)) return failure;
             }
             return Reduce(function, values, k: null);
         }
 
         // The array form: the array, and k.
         if (call.Count != 4) return Operand.Of(ErrorValue.Value);
-        if (!TryCollect(call, call.Operand(2), arrays: true, skipSubtotal: nested, skipAggregate: nested, passOverErrors, values, out failure)) return failure;
+        if (!TryCollect(call, call.Operand(2), arrays: true, skipNested, passOverErrors, values, out failure)) return failure;
         if (values.FirstOrDefault(v => v.IsError) is { IsError: true } error) return Operand.Of(error);
         if (!TryNumber(call, 3, out var k, out failure)) return failure;
         return Reduce(function, values, k);
     }
 
-    /// <summary>Argument <paramref name="index"/> as a whole number; a fraction is refused with <c>#VALUE!</c> until Excel is asked how it reads one.</summary>
-    private static bool TryWhole(FunctionCall call, int index, out int whole, out Operand failure)
+    /// <summary>
+    /// Argument <paramref name="index"/> truncated toward zero to a whole number, as Excel reads
+    /// SUBTOTAL's function number (SUBTOTAL-027) and, by the same rule, AGGREGATE's function number and
+    /// option; one past what an <see cref="int"/> holds is refused with <c>#VALUE!</c>, outside every
+    /// range either takes.
+    /// </summary>
+    private static bool TryTruncated(FunctionCall call, int index, out int whole, out Operand failure)
     {
         whole = 0;
         if (!TryNumber(call, index, out var number, out failure)) return false;
-        if (number != Math.Floor(number) || number < int.MinValue || number > int.MaxValue)
+        var truncated = Math.Truncate(number);
+        if (truncated < int.MinValue || truncated > int.MaxValue)
         {
             failure = Operand.Of(ErrorValue.Value);
             return false;
         }
-        whole = (int)number;
+        whole = (int)truncated;
         return true;
     }
 
     /// <summary>
     /// The Values of one argument that SUBTOTAL or AGGREGATE reduces, added in order to
     /// <paramref name="values"/>: a reference's cells that are not blank, a Linked Table's column, or,
-    /// where <paramref name="arrays"/> allows it, a computed array. A nested call is passed over or
-    /// refused (<see cref="NestingOf"/>), and an Error Value is passed over when
-    /// <paramref name="passOverErrors"/>. <see langword="false"/> with <paramref name="failure"/> when
-    /// the argument is refused, or is an Error Value itself.
+    /// where <paramref name="arrays"/> allows it, a computed array or a number given directly, which is
+    /// an array of that one Value. A nested cell (<see cref="IsNested"/>) is passed over when
+    /// <paramref name="skipNested"/>, and its Value counted otherwise; an Error Value is passed over
+    /// when <paramref name="passOverErrors"/>. <see langword="false"/> with <paramref name="failure"/>
+    /// when the argument is refused, or is an Error Value itself.
     /// </summary>
-    private static bool TryCollect(FunctionCall call, Operand operand, bool arrays, bool skipSubtotal, bool skipAggregate, bool passOverErrors, List<Value> values, out Operand failure)
+    private static bool TryCollect(FunctionCall call, Operand operand, bool arrays, bool skipNested, bool passOverErrors, List<Value> values, out Operand failure)
     {
         failure = default;
         var cells = call.Evaluator.Cells;
@@ -126,18 +121,8 @@ internal static partial class FunctionLibrary
             case OperandKind.Area:
                 foreach (var address in cells.NonBlankIn(operand.Area))
                 {
-                    switch (NestingOf(cells.FormulaAt(address)))
-                    {
-                        case Nesting.Subtotal when skipSubtotal:
-                        case Nesting.Aggregate when skipAggregate:
-                            continue;
-                        case Nesting.None:
-                            Add(cells.Read(address)!.Value);
-                            continue;
-                        default:
-                            failure = Operand.Of(ErrorValue.Value);
-                            return false;
-                    }
+                    if (skipNested && IsNested(cells.FormulaAt(address))) continue;
+                    Add(cells.Read(address)!.Value);
                 }
                 return true;
             case OperandKind.Column:
@@ -145,6 +130,10 @@ internal static partial class FunctionLibrary
                 return true;
             case OperandKind.Array when arrays:
                 foreach (var value in operand.Array!.NonBlank()) Add(value);
+                return true;
+            // A number given directly (AGGREGATE-039); text or a boolean is not asked yet, and stays refused.
+            case OperandKind.Scalar when arrays && operand.Scalar is { Kind: ValueKind.Number } number:
+                Add(number);
                 return true;
             default:
                 failure = operand.IsError ? operand : Operand.Of(ErrorValue.Value);

@@ -54,11 +54,51 @@
     },
     {
       "id": "LARGE-007",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a k that is not a whole number",
+      "source": "observed",
+      "description": "A k that is not whole is rounded up: 1.5 is the 2nd largest (the seventeenth Windows run)",
       "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,1.5)"},
       "check": "ZZ1000",
+      "expect": {"value2": 6}
+    },
+    {
+      "id": "LARGE-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a k of 1.2 is rounded up to 2 (6), not rounded to 1 (7)",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,1.2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6}
+    },
+    {
+      "id": "LARGE-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a k of 9.5 over ten numbers is rounded up to 10, the smallest",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,9.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "LARGE-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a k of 10.5 over ten numbers is rounded up past their count, #NUM!",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,10.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "LARGE-011",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a k between 0 and 1 is #VALUE! (LibreOffice rounds it up to 1, Gnumeric gives #NUM!)",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,0.5)"},
+      "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "LARGE-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: k is read at 15 significant digits, so 1+2^-52 is 1 (7), not rounded up to 2 (6)",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,1+2^-52)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
     }
   ]
 }
