@@ -1,6 +1,6 @@
 {
   "area": "indirect",
-  "about": "INDIRECT (docs/specs/exsheet-functions ticket 18; ADR-0124's notes of 2026-10-10 and 2026-10-12): A1-style text naming a cell or a range of the same Sheet, with or without its own qualifier, read as it stands after the recalculation (volatile). Its text is not rewritten by an insertion or a deletion. The forms the seventeenth Windows run and the two area passes of 2026-10-12 observed are read as Excel reads them, and so are those that follow from them by the rule they settle. R1C1 text (a1 FALSE, 0, a blank or left empty): R and C each with a number counted from 1, leading 0s and all (R3C2, R03C2), an offset in brackets from the Formula's own cell, 0 and a + included (R[1]C[-1], R[0], R[-0], R[+1]), or no number, the Formula's own row or column (RC[-1], R[2]C); a row part alone a whole row (R3, R[1]), a column part alone a whole column (C2, C[-1]); two parts of the same kind joined by ':' the rectangle they span (R2:R3, RC[-1]:R[1]C[-1]); parts of two kinds joined name no place, #REF! (R2C2:R3, R3:C2); and a cell followed by # its Spill Range, as A1# is (R1C1#). A structured reference's text is read as the typed Table[Column] is, whatever a1 says, and A1# as the typed A1# is. INDIRECT-067 to INDIRECT-081 ask the forms that follow from the observed ones. #VALUE! until a run observes them: in R1C1 style, a row or column number 0 (INDIRECT-073) and an offset past the Sheet's edge, which Excel reads as a place (INDIRECT-052 is 0, a blank cell) though no run has told whether it wraps round to the far side or stops at the edge (INDIRECT-082 to INDIRECT-084 ask it); and a declared Linked Table's bare name (INDIRECT-053 to INDIRECT-057 ask what it reads). Text that names no place is #REF!: a number past the Sheet's edge, as XFE1 is (INDIRECT-017; INDIRECT-074 asks it in R1C1 style), another Sheet's name, and a table or column that does not exist.",
+  "about": "INDIRECT (docs/specs/exsheet-functions ticket 18; ADR-0124's notes of 2026-10-10 and 2026-10-12): A1-style text naming a cell or a range of the same Sheet, with or without its own qualifier, read as it stands after the recalculation (volatile). Its text is not rewritten by an insertion or a deletion. The forms the seventeenth Windows run and the two area passes of 2026-10-12 observed are read as Excel reads them, and so are those that follow from them by the rule they settle. R1C1 text (a1 FALSE, 0, a blank or left empty): R and C each with a number counted from 1, leading 0s and all (R3C2, R03C2), an offset in brackets from the Formula's own cell, 0 and a + included (R[1]C[-1], R[0], R[-0], R[+1]), or no number, the Formula's own row or column (RC[-1], R[2]C); a row part alone a whole row (R3, R[1]), a column part alone a whole column (C2, C[-1]); two parts of the same kind joined by ':' the rectangle they span (R2:R3, RC[-1]:R[1]C[-1]); parts of two kinds joined name no place, #REF! (R2C2:R3, R3:C2); and a cell followed by # its Spill Range, as A1# is (R1C1#). A structured reference's text is read as the typed Table[Column] is, whatever a1 says; a declared Linked Table's bare name is the table's data, every column in its order and every row without the header (INDIRECT-043, INDIRECT-053 to INDIRECT-057), whatever a1 says; and A1# is read as the typed A1# is. INDIRECT-067 to INDIRECT-081 and INDIRECT-085 to INDIRECT-089 ask the forms that follow from the observed ones. #VALUE! until a run observes them: in R1C1 style, a row or column number 0 (INDIRECT-073) and an offset past the Sheet's edge, which Excel reads as a place (INDIRECT-052 is 0, a blank cell) though no run has told whether it wraps round to the far side or stops at the edge (INDIRECT-082 to INDIRECT-084 ask it). Text that names no place is #REF!: a number past the Sheet's edge, as XFE1 is (INDIRECT-017; INDIRECT-074 asks it in R1C1 style), another Sheet's name, and a table or column that does not exist.",
 
   "cases": [
     {
@@ -349,13 +349,11 @@
     {
       "id": "INDIRECT-043",
       "source": "observed",
-      "description": "Engine's refusal: a declared table's bare name is #VALUE!. Excel's SUM over it is 250.5, the table's PV column; over a table of one row whose other column is text, that does not tell the table's data from one column, and INDIRECT-053 to INDIRECT-057 ask what it reads",
+      "description": "A declared table's bare name reads the table's data, which SUM reads: 250.5 over a table of one row whose other column is text, as the area pass of 2026-10-12 observed (INDIRECT-053 to INDIRECT-057 read what the data is)",
       "cells": {"ZZ1000": "=SUM(INDIRECT(\"Positions\"))"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5]]}},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0124 (2026-10-10, 2026-10-12): a declared Linked Table's bare name is #VALUE! until a run observes what it reads; the area pass of 2026-10-12 read only SUM over it (250.5), which every reading of a one-row table with one numeric column gives, so following it would guess the rest; INDIRECT-053 to INDIRECT-057 ask its columns, rows, first cell, count and spill",
-      "excelExpect": {"value2": 250.5}
+      "expect": {"value2": 250.5}
     },
     {
       "id": "INDIRECT-044",
@@ -433,53 +431,48 @@
     },
     {
       "id": "INDIRECT-053",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: how many columns a declared table's bare name reads (2 if it is the table's data, 1 if one column)",
+      "source": "observed",
+      "description": "A declared table's bare name reads the table's data, every column: 2, as the second area pass of 2026-10-12 observed",
       "cells": {"ZZ1000": "=COLUMNS(INDIRECT(\"Positions\"))"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0124 (2026-10-10, 2026-10-12): a declared Linked Table's bare name is #VALUE! until a run observes what it reads; recorded, so that a run reads Excel's answer"
+      "expect": {"value2": 2}
     },
     {
       "id": "INDIRECT-054",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: how many rows a declared table's bare name reads (2 if the header is left out)",
+      "source": "observed",
+      "description": "A declared table's bare name reads the table's data, every row without the header: 2, as the second area pass of 2026-10-12 observed",
       "cells": {"ZZ1000": "=ROWS(INDIRECT(\"Positions\"))"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0124 (2026-10-10, 2026-10-12): a declared Linked Table's bare name is #VALUE! until a run observes what it reads; recorded, so that a run reads Excel's answer"
+      "expect": {"value2": 2}
     },
     {
       "id": "INDIRECT-055",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the first cell of what a declared table's bare name reads (R-1 if it is the table's data, Id if the header is in it)",
+      "source": "observed",
+      "description": "The first cell of what a declared table's bare name reads is the first row's first Value, R-1, not the header, as the second area pass of 2026-10-12 observed",
       "cells": {"ZZ1000": "=INDEX(INDIRECT(\"Positions\"),1,1)"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0124 (2026-10-10, 2026-10-12): a declared Linked Table's bare name is #VALUE! until a run observes what it reads; recorded, so that a run reads Excel's answer"
+      "expect": {"value2": "R-1"}
     },
     {
       "id": "INDIRECT-056",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: how many Values a declared table's bare name reads (4 if it is the table's data); the engine's COUNTA counts its refusal, #VALUE!, as one Value, as it counts any Error Value",
+      "source": "observed",
+      "description": "COUNTA over a declared table's bare name counts the table's four Values, as the second area pass of 2026-10-12 observed",
       "cells": {"ZZ1000": "=COUNTA(INDIRECT(\"Positions\"))"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
       "check": "ZZ1000",
-      "expect": {"value2": 1},
-      "engineDiffersByDecision": "ADR-0124 (2026-10-10, 2026-10-12): a declared Linked Table's bare name is #VALUE! until a run observes what it reads; recorded, so that a run reads Excel's answer"
+      "expect": {"value2": 4}
     },
     {
       "id": "INDIRECT-057",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a declared table's bare name as the result spills, and the cell right of the Anchor shows the first row's second Value (250.5 if it is the table's data)",
+      "source": "observed",
+      "description": "A declared table's bare name as the result spills the table's data, and the cell right of the Anchor shows the first row's second Value, as the second area pass of 2026-10-12 observed",
       "cells": {"ZZ1000": "=INDIRECT(\"Positions\")"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
       "check": "AAA1000",
-      "expect": {"value2": null},
-      "engineDiffersByDecision": "ADR-0124 (2026-10-10, 2026-10-12): a declared Linked Table's bare name is #VALUE! until a run observes what it reads; recorded, so that a run reads Excel's answer"
+      "expect": {"value2": 250.5}
     },
     {
       "id": "INDIRECT-058",
@@ -703,6 +696,51 @@
       "check": "C2",
       "expect": {"value2": "#VALUE!"},
       "engineDiffersByDecision": "ADR-0124 (2026-10-12): an offset past the Sheet's edge is #VALUE! until a run tells where it lands (INDIRECT-052 is 0 in Excel, a blank cell, which both readings give there); recorded, so that a run reads Excel's answer"
+    },
+    {
+      "id": "INDIRECT-085",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a declared table's bare name read in R1C1 style reads the table's data, as in A1 style, as a structured reference's text does (INDIRECT-061)",
+      "cells": {"ZZ1000": "=COLUMNS(INDIRECT(\"Positions\",FALSE))"},
+      "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "INDIRECT-086",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: INDEX reads the second row's second Value of what a declared table's bare name reads, by position as in any range",
+      "cells": {"ZZ1000": "=INDEX(INDIRECT(\"Positions\"),2,2)"},
+      "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
+      "check": "ZZ1000",
+      "expect": {"value2": 50}
+    },
+    {
+      "id": "INDIRECT-087",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: COUNTA over a declared table's bare name passes over a blank Value of the table, as over a blank cell",
+      "cells": {"ZZ1000": "=COUNTA(INDIRECT(\"Positions\"))"},
+      "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", null]]}},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "INDIRECT-088",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: INDEX with column_num left out over what a declared table's bare name reads, two rows and two columns, is #REF!, as over a typed range of several rows and columns (INDEX-012): the table's data is a Reference",
+      "cells": {"ZZ1000": "=INDEX(INDIRECT(\"Positions\"),2)"},
+      "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "INDIRECT-089",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a declared table's bare name in lower case reads its data, every column in the table's order: the second row's third Value",
+      "cells": {"ZZ1000": "=INDEX(INDIRECT(\"positions\"),2,3)"},
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1", 250.5, "Rates"], ["R-2", 50, "FX"]]}},
+      "check": "ZZ1000",
+      "expect": {"value2": "FX"}
     }
   ]
 }

@@ -278,6 +278,30 @@ public sealed partial class Sheet
         return table.ColumnIndex.TryGetValue(column, out var index) ? Operand.Of(table.Data[index]) : Operand.Of(ErrorValue.Ref);
     }
 
+    /// <summary>
+    /// What a declared Linked Table's bare name reads through <c>INDIRECT</c>'s text (ADR-0124,
+    /// 2026-10-12): the table's data, every column in its declared order and every row, without the
+    /// header, as the second area pass read Excel's (INDIRECT-053 to 057). A Reference in Excel, whose
+    /// table holds it in cells, so it is read as one (<see cref="Operand.OfLinkedTable"/>).
+    /// </summary>
+    private Operand TableData(string name)
+    {
+        if (!_tables.TryGetValue(name, out var table)) return Operand.Of(ErrorValue.Name);
+        if (table.Data is null) return Operand.Of(ErrorValue.GettingData);
+        var rows = table.RowCount;
+        var columns = table.Columns.Count;
+        // A snapshot of no rows is read as a column of none is read whole (Evaluator.ToArray).
+        if (rows == 0) return Operand.Of(ErrorValue.Value);
+        if ((long)rows * columns > ValueArray.MostCells) return Operand.Of(ErrorValue.Num);
+        var data = new ValueArray(rows, columns);
+        for (var c = 0; c < columns; c++)
+        {
+            var column = table.Data[c];
+            for (var r = 0; r < rows; r++) data[r, c] = column[r];
+        }
+        return Operand.OfLinkedTable(data);
+    }
+
     /// <summary>Whether a Formula reads a declared Linked Table whose first snapshot has not arrived.</summary>
     private bool ReadsWaitingTable(Node node)
     {

@@ -214,13 +214,14 @@ internal static partial class FunctionLibrary
     /// from them by the rule its answers settle: R1C1 text (<c>a1</c> FALSE, 0, a blank or left empty;
     /// the seventeenth Windows run and the two area passes of 2026-10-12, INDIRECT-023, 036 to 038, 044
     /// and 051 to 066; <see cref="IndirectRowColumn"/>); a structured reference's text,
-    /// <c>Positions[PV]</c>, read as the typed one is, in either style (INDIRECT-025, 061); and a Spill
-    /// Range, <c>A1#</c> or <c>R1C1#</c>, read as the typed <c>A1#</c> is (INDIRECT-026, 060). Still
-    /// <c>#VALUE!</c>, forms no run has observed and the observed ones leave open: in R1C1 style, a row
-    /// or column number 0 (<c>R0C2</c>) and an offset past the Sheet's edge (<c>R[-5]C[-1]</c> from C2,
-    /// which Excel reads as a place, INDIRECT-052, though no run has told whether it wraps round to the
-    /// far side or stops at the edge); in either style, a declared Linked Table's bare name and the
-    /// structured forms a Formula does not take (<c>#All</c>, <c>@</c>). Relative R1C1 text in a Formula
+    /// <c>Positions[PV]</c>, read as the typed one is, in either style (INDIRECT-025, 061); a declared
+    /// Linked Table's bare name, <c>Positions</c>, the table's data (INDIRECT-043, 053 to 057); and a
+    /// Spill Range, <c>A1#</c> or <c>R1C1#</c>, read as the typed <c>A1#</c> is (INDIRECT-026, 060).
+    /// Still <c>#VALUE!</c>, forms no run has observed and the observed ones leave open: in R1C1 style,
+    /// a row or column number 0 (<c>R0C2</c>) and an offset past the Sheet's edge (<c>R[-5]C[-1]</c>
+    /// from C2, which Excel reads as a place, INDIRECT-052, though no run has told whether it wraps
+    /// round to the far side or stops at the edge); in either style, the structured forms a Formula
+    /// does not take (<c>#All</c>, <c>@</c>). Relative R1C1 text in a Formula
     /// evaluated in no cell is <c>#VALUE!</c> too, as <c>ROW()</c> there is. Text that names no place is
     /// <c>#REF!</c>, as in Excel: another Sheet's name, a table never declared, a column the table does
     /// not have, R1C1 parts of two kinds joined by <c>:</c> (INDIRECT-058, 062), and a number past the
@@ -268,8 +269,9 @@ internal static partial class FunctionLibrary
     /// as the typed one is (ADR-0049), so that a table still waiting for its data waits, and one never
     /// declared names no place, as a column it lacks does; any other text a structured reference begins
     /// as, a form a Formula does not take (<c>#All</c>, <c>@</c>), refused; and a declared table's bare
-    /// name, which Excel reads as a structured reference to the table's data, refused until a run
-    /// observes what it reads (ADR-0124's note of 2026-10-10; INDIRECT-043, 053 to 057).
+    /// name, the table's data as the second area pass read Excel's: every column in its declared order
+    /// and every row, without the header, a Reference that spills where it is the result and waits
+    /// while the table does (ADR-0124's notes of 2026-10-10 and 2026-10-12; INDIRECT-043, 053 to 057).
     /// </summary>
     private static Operand? IndirectTableText(FunctionCall call, string text)
     {
@@ -280,8 +282,7 @@ internal static partial class FunctionLibrary
             return column.IsError && column.Scalar!.Value.Error == ErrorValue.Name ? Operand.Of(ErrorValue.Ref) : column;
         }
         if (StructuredText().IsMatch(text)) return Operand.Of(ErrorValue.Value);
-        if (cells.IsLinkedTable(text)) return Operand.Of(ErrorValue.Value);
-        return null;
+        return cells.IsLinkedTable(text) ? cells.LinkedTable(text) : null;
     }
 
     /// <summary>
@@ -294,11 +295,11 @@ internal static partial class FunctionLibrary
     /// row (<c>R3</c>, <c>R[1]</c>), a column part alone a whole column (<c>C2</c>), two parts of the
     /// same kind joined by <c>:</c> name the rectangle they span (<c>R2:R3</c>,
     /// <c>RC[-1]:R[1]C[-1]</c>), and a cell followed by <c>#</c> names its Spill Range, as <c>A1#</c>
-    /// does (<c>R1C1#</c>). A Linked Table's text is read as in A1 style
-    /// (<see cref="IndirectTableText"/>). <c>#REF!</c>, text that names no place: parts of two kinds
-    /// joined (<c>R2C2:R3</c>, <c>R3:C2</c>), a <c>#</c> after anything but one cell, as after a range
-    /// in A1 style, a number past the Sheet's edge, another Sheet's name, and text that is not R1C1
-    /// notation. <c>#VALUE!</c> where Excel's answer is still open: a row or column number 0, and an
+    /// does (<c>R1C1#</c>). A Linked Table's text, structured or the table's bare name, is read as in
+    /// A1 style (<see cref="IndirectTableText"/>). <c>#REF!</c>, text that names no place: parts of two
+    /// kinds joined (<c>R2C2:R3</c>, <c>R3:C2</c>), a <c>#</c> after anything but one cell, as after a
+    /// range in A1 style, a number past the Sheet's edge, another Sheet's name, and text that is not
+    /// R1C1 notation. <c>#VALUE!</c> where Excel's answer is still open: a row or column number 0, and an
     /// offset past the Sheet's edge, which Excel reads as a place (INDIRECT-052 is 0, a blank cell, not
     /// <c>#REF!</c>), though no run has told whether it wraps round to the Sheet's far side or stops at
     /// the edge (INDIRECT-082 to 084 ask it).
