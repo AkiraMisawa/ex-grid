@@ -26,8 +26,9 @@ internal static class FillRules
     }
 
     /// <summary>
-    /// Which corner of <paramref name="range"/> the handle stands at (ADR-0050, item 5; decided
-    /// with the user 2026-10-12, from the seventeenth Windows run's h3), or null where there is none.
+    /// Which corner of <paramref name="range"/> the handle stands at (ADR-0050, item 5; 2026-10-12,
+    /// decided with the user: the handle on a whole axis follows Excel, from the seventeenth Windows
+    /// run's h3), or null where there is none.
     /// A range spanning every row of <paramref name="extent"/> (whole columns) at its first row's
     /// top-right corner, beside the column's Heading; one spanning every column (whole rows) at its
     /// first column's bottom-left, beside the row's Heading — a bottom-right corner a million rows

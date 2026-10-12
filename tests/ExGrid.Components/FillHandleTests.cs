@@ -358,8 +358,8 @@ public class FillHandleTests : GridTestContext
         Assert.Empty(fills);
     }
 
-    // ---- The handle on a whole axis (decided with the user, 2026-10-12, from the seventeenth Windows run's h3;
-    //      several of them, every cell and a column scrolled away observed by the readings of 2026-10-12, R5) ----
+    // ---- The handle on a whole axis (2026-10-12, decided with the user: it follows Excel, from the seventeenth Windows run's h3).
+    //      Several of them, every cell and a column scrolled away: observed by the readings of 2026-10-12, R5 ----
 
     private static GridColumn<TestRow>[] EditableColumns() =>
     [

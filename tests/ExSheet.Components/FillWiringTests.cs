@@ -124,7 +124,7 @@ public class FillWiringTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    // ---- The handle on a whole axis (ADR-0050 item 5; decided with the user 2026-10-12; the readings of 2026-10-12, R5) ----
+    // ---- The handle on a whole axis (ADR-0050 item 5; 2026-10-12, decided with the user: it follows Excel; the readings of 2026-10-12, R5) ----
 
     /// <summary>The fill handle's box, as its inline style places it in its layer.</summary>
     private static (double Left, double Top, double Size) HandleBox(IRenderedComponent<ExSheet> cut)

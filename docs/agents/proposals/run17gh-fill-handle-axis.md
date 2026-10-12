@@ -1,17 +1,21 @@
 # Run 17 G-H, the fill handle on a whole axis: what the orchestrator writes
 
-Branch `claude/run17gh-fill-handle-axis`, from `main` at `a533de01`. Round 3, after the readings of
-2026-10-12 (`verification/2026-10-12-windows-readings/report.md` on
-`claude/exsheet-windows-readings-2026-10-12`, R5; its pictures `shots/r5-*`).
+Branch `claude/run17gh-fill-handle-axis`, from `main` at `a533de01`, with `main` merged in at
+`2265cda6` (#89). Round 3, after the readings of 2026-10-12
+(`verification/2026-10-12-windows-readings/report.md` on `claude/exsheet-windows-readings-2026-10-12`,
+R5; its pictures `shots/r5-*`).
 
-**The user's decision**, taken on 2026-10-12 on the seventeenth Windows run's h3
+**The user's decision**, on the seventeenth Windows run's h3
 (`verification/2026-10-11-windows-17/report.md` on `claude/exsheet-windows-verify-17`, Part H;
 `part-h/shots/h-h3-1-corner-zoom.png`, `h-h3-2-corner-zoom.png`):
 
-> The fill handle on a whole axis follows Excel: a range spanning every row puts its handle at its
-> first row's top-right corner, one spanning every column at its first column's bottom-left. Ctrl+A,
-> several whole columns or rows, and which way the drag fills are asked next run, and keep today's
-> behaviour until then.
+> (2026-10-12, decided with the user: the fill handle on a whole axis follows Excel; a range spanning
+> every row puts its handle at its first row's top-right corner, one spanning every column at its
+> first column's bottom-left. Ctrl+A, several whole columns or rows, and which way the drag fills are
+> asked next run, and keep today's behaviour until then.)
+
+R5 has since answered all three, so nothing below keeps "today's behaviour" on the decision's word:
+each part says what R5 observed, or that it is by generalisation.
 
 **What R5 observed**, which this round builds (each text below says "observed (R5, case)", "by
 generalisation" or "a reading"):
@@ -53,12 +57,16 @@ need no cell writes either. The engine tests below pin it, and fail on round 2's
 each, `GC.GetTotalMemory(true)` before and after; Debug build, .NET 10 on this Linux container; one
 process per case; the scratch test is not committed):
 
-| Case | Round 2's code (`3d1f3a11`) | This round |
-|---|---|---|
-| C1 `1`, C2 `2`, C3 `=C1+C2`; C:C into D:D, no format | Check 14 ms, Do 17 ms; heap 1 → 1 MB | Check 16 ms, Do 23 ms; 1 → 1 MB |
-| R5's column C, C:C bold, into D:E | Check 2,472 ms, Do 14,058 ms, Undo 1,631 ms, Redo 3,702 ms; heap 1 → 931 MB; Sheet Document 79,567,034 characters | Check 37 ms, Do 17 ms, Undo 1 ms, Redo 0 ms; 1 → 1 MB; 424 characters |
-| A2 `1`; row 2 into rows 3:4, no format | Check 17 ms, Do 22 ms; 1 MB | Check 13 ms, Do 36 ms; 1 MB |
-| The whole Sheet bold, A3 `1`; row 3 into rows 4:100 | Check 597 ms, Do 3,637 ms; heap 3 → 391 MB | Check 9 ms, Do 75 ms; 3 → 6 MB |
+| Case | Round 2's code (`3d1f3a11`) | This round (`6d0e28e9`) | Again, with `main` merged in (`8c78eaf4`) |
+|---|---|---|---|
+| C1 `1`, C2 `2`, C3 `=C1+C2`; C:C into D:D, no format | Check 14 ms, Do 17 ms; heap 1 → 1 MB | Check 16 ms, Do 23 ms; 1 → 1 MB | Check 21 ms, Do 33 ms; 2 → 2 MB; 221 characters |
+| R5's column C, C:C bold, into D:E | Check 2,472 ms, Do 14,058 ms, Undo 1,631 ms, Redo 3,702 ms; heap 1 → 931 MB; Sheet Document 79,567,034 characters | Check 37 ms, Do 17 ms, Undo 1 ms, Redo 0 ms; 1 → 1 MB; 424 characters | Check 47 ms, Do 30 ms, Undo 1 ms, Redo 0 ms; 2 → 2 MB; 424 characters |
+| A2 `1`; row 2 into rows 3:4, no format | Check 17 ms, Do 22 ms; 1 MB | Check 13 ms, Do 36 ms; 1 MB | Check 28 ms, Do 49 ms; 2 → 2 MB |
+| The whole Sheet bold, A3 `1`; row 3 into rows 4:100 | Check 597 ms, Do 3,637 ms; heap 3 → 391 MB | Check 9 ms, Do 75 ms; 3 → 6 MB | Check 11 ms, Do 98 ms; 4 → 7 MB |
+| C1 `1`, C3 `a`, C:C bold; Ctrl+R from C into D:E (`FillCopy`) | — | — | Check 7 ms, Do 20 ms; 2 → 2 MB; 241 characters |
+
+The cost the ExSheet Change Note states is the third column's: a fill from whole columns or rows,
+with a format along it or not, costs the cells that hold something and the target's few levels.
 
 **Choices of this branch, not the user's:**
 
@@ -110,6 +118,9 @@ process per case; the scratch test is not committed):
   `a`, F9 `9` and `=ROW()` in the bar, G1 empty, one Ctrl+Z; A6 `1`, C6 `a`, E6 `=COLUMN()`: dragged
   across inside row 6, nothing; dragged to D8, A7 `2`, A8 `3`, C8 `a`, E8 `5`, one Ctrl+Z), and a
   new case: E:E scrolled three rows, its handle at E4's top-right, dragged to F6, F5 `x` and F1 `2`.
+  After each fill the handle is waited for at its new place (F1's top-right: the Selection is E:F,
+  whole columns; A8's bottom-left: rows 6:8), and after each drag along the axis at its old one (the
+  Selection still the whole column or row, so the press was the handle's, not a drag over cells).
   `selection-look.spec.mjs`: under both Chromes, column C scrolled three rows, the handle centred on
   C4's right edge, its top on C4's top, below the Heading, its middle pixel the handle's colour; and
   Ctrl+A from F12 draws a range and no handle.
@@ -174,10 +185,11 @@ New:
 
 ## The handle on a whole axis *(2026-10-12)*
 
-*(2026-10-12, decided with the user, on the seventeenth Windows run's h3: the fill handle on a whole
-axis follows Excel; a range spanning every row puts its handle at its first row's top-right corner,
-and one spanning every column at its first column's bottom-left. Ctrl+A, several whole columns or
-rows, and which way the drag fills were to be asked next, with today's behaviour kept until then.)*
+*(2026-10-12, decided with the user: the fill handle on a whole axis follows Excel, as the seventeenth
+Windows run's h3 pictured it; a range spanning every row puts its handle at its first row's top-right
+corner, and one spanning every column at its first column's bottom-left. Ctrl+A, several whole
+columns or rows, and which way the drag fills were to be asked next, with today's behaviour kept until
+then.)*
 The core had put the handle at the bottom-right of every range, so a whole column's stood a million
 rows down and a whole row's sixteen thousand columns across, and ExSheet showed none that could be
 grabbed. The run pictured column C and row 3 (`verification/2026-10-11-windows-17/`, Part H, h3).
@@ -386,12 +398,15 @@ orchestrator runs the site again once they are.
   `exgrid/editing#bulk-changes--delete-and-undo`.
 - `docs/releases/unreleased/run17gh-fill-handle-axis-exsheet.md`: ExSheet, Fixed, `exsheet#a-first-sheet`.
 
-## When `main` is merged in
+## `main` merged in
 
-`main`'s #89 (ADR-0201) lists `PressTakenAt` in `src/ExGrid/PublicAPI.Unshipped.txt`. Its line becomes
+`main` at `2265cda6` (#89, ADR-0201) is merged into this branch, with no conflict. Its
+`src/ExGrid/PublicAPI.Unshipped.txt` lists `PressTakenAt`, and the merge commit gives that line this
+branch's argument:
 `ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout) -> void`.
-`FillHandleCorner` and `FillRules.HandleCorner` are internal. #89 also touched `ExGrid.razor`,
-`FillRules.cs` and `GridEditing.razor`; the edits above are checked against this branch's tip.
+No other public member changed: `FillHandleCorner`, `FillRules.HandleCorner` (FillRules is internal
+since #89), `SelectionStyles`, `FillPlan`, `FillLevels`, `LevelsOf` and `DoFillWithLevels` are
+internal or private. The edits above are checked against the merged tip.
 
 ## Questions for the next Windows run
 
