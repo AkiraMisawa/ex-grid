@@ -36,12 +36,12 @@
     },
     {
       "id": "RANKEQ-005",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a ref that is no range is #VALUE!",
+      "source": "observed",
+      "description": "A ref that can never be a Reference, a number, is refused on entry (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=RANK.EQ(1,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"refusedEntry": true}
     }
   ]
 }

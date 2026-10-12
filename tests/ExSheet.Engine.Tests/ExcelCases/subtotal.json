@@ -1,6 +1,6 @@
 {
   "area": "subtotal",
-  "about": "SUBTOTAL (docs/specs/exsheet-functions ticket 16; ADR-0047, 2026-10-10): admitted while a Sheet cannot hide a row, so 101-111 give what 1-11 give. Only a cell whose whole Formula is a SUBTOTAL is passed over as nested; any other call of SUBTOTAL or AGGREGATE in the range is #VALUE! until a Windows run asks Excel what it counts as nested.",
+  "about": "SUBTOTAL (docs/specs/exsheet-functions ticket 16; ADR-0047, 2026-10-10): admitted while a Sheet cannot hide a row, so 101-111 give what 1-11 give. A cell is nested when its Formula, or for a cell of a Spill Range its Anchor's, calls SUBTOTAL or AGGREGATE anywhere in its text, as the seventeenth Windows run read Excel's answers (SH-68); SUBTOTAL passes over every nested cell. A function number that is not whole is truncated, and a ref that can never be a Reference is refused on entry.",
   "cases": [
     {
       "id": "SUBTOTAL-001",
@@ -167,19 +167,19 @@
     },
     {
       "id": "SUBTOTAL-020",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a SUBTOTAL inside a larger Formula in the range is #VALUE!",
+      "source": "observed",
+      "description": "A SUBTOTAL inside a larger Formula in the range is nested, and passed over (the seventeenth Windows run)",
       "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "A6": "=SUBTOTAL(9,A2:A5)*1", "ZZ1000": "=SUBTOTAL(9,A2:A6)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 303}
     },
     {
       "id": "SUBTOTAL-021",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: an AGGREGATE in SUBTOTAL's range is #VALUE!",
+      "source": "observed",
+      "description": "An AGGREGATE in SUBTOTAL's range is nested, and passed over (the seventeenth Windows run)",
       "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "A6": "=AGGREGATE(9,0,A2:A5)", "ZZ1000": "=SUBTOTAL(9,A2:A6)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 303}
     },
     {
       "id": "SUBTOTAL-022",
@@ -226,11 +226,11 @@
     },
     {
       "id": "SUBTOTAL-027",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a function number that is not a whole number is #VALUE!",
+      "source": "observed",
+      "description": "A function number that is not whole is truncated: 9.5 is 9 (the seventeenth Windows run)",
       "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9.5,A2:A5)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 303}
     },
     {
       "id": "SUBTOTAL-028",
@@ -242,19 +242,19 @@
     },
     {
       "id": "SUBTOTAL-029",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a computed array, which is no reference, is #VALUE!",
+      "source": "observed",
+      "description": "A computed array, which can never be a Reference, is refused on entry (the seventeenth Windows run)",
       "cells": {"ZZ1000": "=SUBTOTAL(9,SEQUENCE(3))"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"refusedEntry": true}
     },
     {
       "id": "SUBTOTAL-030",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a number, which is no reference, is #VALUE!",
+      "source": "observed",
+      "description": "A number, which can never be a Reference, is refused on entry (the seventeenth Windows run)",
       "cells": {"ZZ1000": "=SUBTOTAL(9,5)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"refusedEntry": true}
     },
     {
       "id": "SUBTOTAL-031",
@@ -292,35 +292,83 @@
     },
     {
       "id": "SUBTOTAL-035",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a SUBTOTAL in parentheses in the range is a call inside a larger Formula, #VALUE! (ADR-0047, SH-68)",
+      "source": "observed",
+      "description": "A SUBTOTAL in parentheses in the range is nested, and passed over (the seventeenth Windows run)",
       "cells": {"A1": "1", "A2": "2", "A3": "=(SUBTOTAL(9,A1:A2))", "ZZ1000": "=SUBTOTAL(9,A1:A3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 3}
     },
     {
       "id": "SUBTOTAL-036",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a SUBTOTAL under IF in the range is #VALUE! (ADR-0047, SH-68)",
+      "source": "observed",
+      "description": "A SUBTOTAL under IF in the range is nested, and passed over (the seventeenth Windows run)",
       "cells": {"A1": "1", "A2": "2", "A3": "=IF(TRUE,SUBTOTAL(9,A1:A2))", "ZZ1000": "=SUBTOTAL(9,A1:A3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 3}
     },
     {
       "id": "SUBTOTAL-037",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: an AGGREGATE plus 0 in SUBTOTAL's range is #VALUE! (ADR-0047, SH-68)",
+      "source": "observed",
+      "description": "An AGGREGATE plus 0 in SUBTOTAL's range is nested, and passed over (the seventeenth Windows run)",
       "cells": {"A1": "1", "A2": "2", "A3": "=AGGREGATE(9,0,A1:A2)+0", "ZZ1000": "=SUBTOTAL(9,A1:A3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 3}
     },
     {
       "id": "SUBTOTAL-038",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a cell spilled from a Formula that calls SUBTOTAL holds a nested call's value, #VALUE! (ADR-0047, SH-68)",
+      "source": "observed",
+      "description": "A cell spilled from a Formula that calls SUBTOTAL is nested, and passed over (the seventeenth Windows run)",
       "cells": {"C1": "1", "A1": "=SEQUENCE(2,1,SUBTOTAL(9,C1))", "ZZ1000": "=SUBTOTAL(9,A2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SUBTOTAL-039",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a cell whose Formula calls SUBTOTAL in a branch IF never takes is nested by its text, and passed over (SH-68)",
+      "cells": {"A1": "1", "A2": "2", "A3": "=IF(FALSE,SUBTOTAL(9,A1:A2),5)", "ZZ1000": "=SUBTOTAL(9,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "SUBTOTAL-040",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text, which can never be a Reference, is refused on entry",
+      "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9,\"A2:A5\")"},
+      "check": "ZZ1000",
+      "expect": {"refusedEntry": true}
+    },
+    {
+      "id": "SUBTOTAL-041",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an operator's result over a range, which is no Reference, is refused on entry",
+      "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9,A2:A5*1)"},
+      "check": "ZZ1000",
+      "expect": {"refusedEntry": true}
+    },
+    {
+      "id": "SUBTOTAL-042",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negated range is an operator's result, refused on entry",
+      "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9,-A2:A5)"},
+      "check": "ZZ1000",
+      "expect": {"refusedEntry": true}
+    },
+    {
+      "id": "SUBTOTAL-043",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: IF can give a Reference, so it is taken, and the Reference it gives is read",
+      "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9,IF(TRUE,A2:A5))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 303}
+    },
+    {
+      "id": "SUBTOTAL-044",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Reference in parentheses is a Reference",
+      "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9,(A2:A5))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 303}
     }
   ]
 }

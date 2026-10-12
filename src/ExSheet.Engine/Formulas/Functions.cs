@@ -31,7 +31,7 @@ internal static partial class FunctionLibrary
         new("MAXIFS", 3, Open, "max_range, criteria_range1, criteria1, ...", "Returns the greatest number whose corresponding cells meet every condition.", MaxIfs) { InPairs = true, PairOffset = 1 },
         new("MINIFS", 3, Open, "min_range, criteria_range1, criteria1, ...", "Returns the least number whose corresponding cells meet every condition.", MinIfs) { InPairs = true, PairOffset = 1 },
         new("COUNTBLANK", 1, 1, "range", "Counts blank cells and cells whose formulas return empty text.", CountBlank),
-        new("IF", 2, 3, "logical_test, value_if_true, [value_if_false]", "Returns one value if a condition is TRUE and another if it is FALSE.", If),
+        new("IF", 2, 3, "logical_test, value_if_true, [value_if_false]", "Returns one value if a condition is TRUE and another if it is FALSE.", If) { ReturnsReference = true },
         new("ROUND", 2, 2, "number, num_digits", "Rounds a number to a specified number of digits, half away from zero.", Round),
         new("IFERROR", 2, 2, "value, value_if_error", "Returns value_if_error if value is an Error Value, and value otherwise. #GETTING_DATA is not an error to it.", IfError),
         new("ISERROR", 1, 1, "value", "Returns TRUE if value is an Error Value. #GETTING_DATA is not an error to it.", IsError),
@@ -93,19 +93,19 @@ internal static partial class FunctionLibrary
                 [2] = [new("1", "1 - Less than"), new("0", "0 - Exact match"), new("-1", "-1 - Greater than")],
             },
         },
-        new("INDEX", 2, 3, "array, row_num, [column_num]", "Returns the value of the cell at the intersection of a row and a column of a range.", Index),
+        new("INDEX", 2, 3, "array, row_num, [column_num]", "Returns the value of the cell at the intersection of a row and a column of a range.", Index) { ReturnsReference = true },
         new("PRODUCT", 1, Open, "number1, [number2], ...", "Multiplies its arguments.", Product),
         new("MEDIAN", 1, Open, "number1, [number2], ...", "Returns the median of the given numbers.", Median),
         new("LARGE", 2, 2, "array, k", "Returns the k-th largest value in a data set.", Large),
         new("SMALL", 2, 2, "array, k", "Returns the k-th smallest value in a data set.", Small),
         new("ISTEXT", 1, 1, "value", "Returns TRUE if value is text.", IsText),
         new("ISNA", 1, 1, "value", "Returns TRUE if value is the #N/A error value.", IsNa),
-        new("IFS", 2, 254, "logical_test1, value_if_true1, ...", "Checks whether one or more conditions are met, and returns a value that corresponds to the first TRUE condition.", Ifs) { InPairs = true },
-        new("SWITCH", 3, 254, "expression, value1, result1, [default_or_value2], [result2], ...", "Evaluates an expression against a list of values, and returns the result corresponding to the first matching value.", Switch),
+        new("IFS", 2, 254, "logical_test1, value_if_true1, ...", "Checks whether one or more conditions are met, and returns a value that corresponds to the first TRUE condition.", Ifs) { InPairs = true, ReturnsReference = true },
+        new("SWITCH", 3, 254, "expression, value1, result1, [default_or_value2], [result2], ...", "Evaluates an expression against a list of values, and returns the result corresponding to the first matching value.", Switch) { ReturnsReference = true },
         new("NA", 0, 0, "", "Returns the error value #N/A.", Na),
         new("ERROR.TYPE", 1, 1, "error_val", "Returns a number corresponding to an error type.", ErrorType),
         new("XMATCH", 2, 4, "lookup_value, lookup_array, [match_mode], [search_mode]", "Returns the relative position of an item in an array or range of cells.", XMatch),
-        new("CHOOSE", 2, Open, "index_num, value1, [value2], ...", "Chooses a value from a list of values.", Choose),
+        new("CHOOSE", 2, Open, "index_num, value1, [value2], ...", "Chooses a value from a list of values.", Choose) { ReturnsReference = true },
         new("ROW", 0, 1, "[reference]", "Returns the row number of a reference.", Row),
         new("COLUMN", 0, 1, "[reference]", "Returns the column number of a reference.", Column),
         new("TRUNC", 1, 2, "number, [num_digits]", "Truncates a number to an integer, or to num_digits.", Trunc),
@@ -128,7 +128,7 @@ internal static partial class FunctionLibrary
         new("PV", 3, 5, "rate, nper, pmt, [fv], [type]", "Returns the present value of an investment.", Pv),
         new("FV", 3, 5, "rate, nper, pmt, [pv], [type]", "Returns the future value of an investment.", Fv),
         new("NPV", 2, Open, "rate, value1, [value2], ...", "Returns the net present value of an investment based on a series of periodic cash flows and a discount rate.", Npv),
-        new("RANK.EQ", 2, 3, "number, ref, [order]", "Returns the rank of a number in a list of numbers.", RankEq),
+        new("RANK.EQ", 2, 3, "number, ref, [order]", "Returns the rank of a number in a list of numbers.", RankEq) { ReferenceOnly = (1, 1) },
         new("STDEV.S", 1, Open, "number1, [number2], ...", "Estimates standard deviation based on a sample.", StdevS),
         new("STDEV.P", 1, Open, "number1, [number2], ...", "Calculates standard deviation based on the entire population.", StdevP),
         new("VAR.S", 1, Open, "number1, [number2], ...", "Estimates variance based on a sample.", VarS),
@@ -136,25 +136,31 @@ internal static partial class FunctionLibrary
         new("XOR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if an odd number of its arguments are TRUE.", Xor),
         new("SUBTOTAL", 2, Open, "function_num, ref1, [ref2], ...", "Returns a subtotal in a list or database.", Subtotal)
         {
-            // Excel's list, as Microsoft documents it: the functions 1 to 11, and 101 to 111 that pass
-            // over hidden rows (ADR-0047, 2026-10-10; a Sheet cannot hide a row yet).
+            // Excel's list, character for character, as the seventeenth Windows run read it (Part B's
+            // b4): the functions 1 to 11, and 101 to 111 that pass over hidden rows (ADR-0047,
+            // 2026-10-10; a Sheet cannot hide a row yet).
             Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
             {
                 [0] =
                 [
                     new("1", "1 - AVERAGE"), new("2", "2 - COUNT"), new("3", "3 - COUNTA"), new("4", "4 - MAX"),
-                    new("5", "5 - MIN"), new("6", "6 - PRODUCT"), new("7", "7 - STDEV"), new("8", "8 - STDEVP"),
-                    new("9", "9 - SUM"), new("10", "10 - VAR"), new("11", "11 - VARP"),
+                    new("5", "5 - MIN"), new("6", "6 - PRODUCT"), new("7", "7 - STDEV.S"), new("8", "8 - STDEV.P"),
+                    new("9", "9 - SUM"), new("10", "10 - VAR.S"), new("11", "11 - VAR.P"),
                     new("101", "101 - AVERAGE"), new("102", "102 - COUNT"), new("103", "103 - COUNTA"), new("104", "104 - MAX"),
-                    new("105", "105 - MIN"), new("106", "106 - PRODUCT"), new("107", "107 - STDEV"), new("108", "108 - STDEVP"),
-                    new("109", "109 - SUM"), new("110", "110 - VAR"), new("111", "111 - VARP"),
+                    new("105", "105 - MIN"), new("106", "106 - PRODUCT"), new("107", "107 - STDEV.S"), new("108", "108 - STDEV.P"),
+                    new("109", "109 - SUM"), new("110", "110 - VAR.S"), new("111", "111 - VAR.P"),
                 ],
             },
+            // Its references take nothing but a Reference: Excel refuses SUBTOTAL(9,5) on entry.
+            ReferenceOnly = (1, Open - 1),
         },
         new("AGGREGATE", 3, Open, "function_num, options, ref1, [ref2], ...", "Returns an aggregate in a list or database.", Aggregate)
         {
             // The functions the engine supports, of Excel's nineteen (13 and 16 to 19 are #VALUE!), and
-            // the eight options, as Microsoft documents them (ADR-0047, 2026-10-10).
+            // the eight options, with Excel's texts as the seventeenth Windows run read them (Part B's b4;
+            // ADR-0047, 2026-10-10). Its third and fourth arguments take a Value (the array form's array
+            // and k); from the fifth on, a Reference only: Excel refuses AGGREGATE(14,6,A1:A11,1,2) on entry.
+            ReferenceOnly = (4, Open - 1),
             Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
             {
                 [0] =
@@ -196,15 +202,15 @@ internal static partial class FunctionLibrary
         new("NOW", 0, 0, "", "Returns the serial number of the current date and time.", Now),
         new("RAND", 0, 0, "", "Returns a random number from 0 up to 1, drawn from the Sheet Seed.", Rand),
         new("RANDBETWEEN", 2, 2, "bottom, top", "Returns a random whole number between the numbers you specify, drawn from the Sheet Seed.", RandBetween),
-        new("OFFSET", 3, 5, "reference, rows, cols, [height], [width]", "Returns a reference offset from a given reference.", Offset),
-        new("INDIRECT", 1, 2, "ref_text, [a1]", "Returns a reference indicated by a text value.", Indirect),
+        new("OFFSET", 3, 5, "reference, rows, cols, [height], [width]", "Returns a reference offset from a given reference.", Offset) { ReturnsReference = true },
+        new("INDIRECT", 1, 2, "ref_text, [a1]", "Returns a reference indicated by a text value.", Indirect) { ReturnsReference = true },
         new("FILTER", 2, 3, "array, include, [if_empty]", "Filters a range of data based on criteria you define.", Filter),
         new("UNIQUE", 1, 3, "array, [by_col], [exactly_once]", "Returns a list of unique values in a list or range.", Unique),
         new("SORT", 1, 4, "array, [sort_index], [sort_order], [by_col]", "Sorts the contents of a range or array.", Sort),
         new("SORTBY", 2, Open, "array, by_array1, [sort_order1], ...", "Sorts the contents of a range or array based on the values in a corresponding range or array.", SortBy),
         new("SEQUENCE", 1, 4, "rows, [columns], [start], [step]", "Generates a list of sequential numbers in an array.", Sequence),
         new("TRANSPOSE", 1, 1, "array", "Returns the transpose of an array.", Transpose),
-        new("LET", 3, 253, "name1, name_value1, calculation_or_name2, [name_value2, calculation_or_name3...]", "Assigns names to calculation results, to be used inside the Formula.", Let),
+        new("LET", 3, 253, "name1, name_value1, calculation_or_name2, [name_value2, calculation_or_name3...]", "Assigns names to calculation results, to be used inside the Formula.", Let) { ReturnsReference = true },
         new("SUMPRODUCT", 1, Open, "array1, [array2], ...", "Returns the sum of the products of corresponding array components.", SumProduct),
         new("LOG", 1, 2, "number, [base]", "Returns the logarithm of a number to the base you specify.", Log),
         new("SIN", 1, 1, "number", "Returns the sine of an angle.", Sin),
@@ -232,6 +238,7 @@ internal static partial class FunctionLibrary
         new("RADIANS", 1, 1, "angle", "Converts degrees to radians.", Radians),
         new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup)
         {
+            ReturnsReference = true,
             // Excel's lists, character for character: match_mode's as the Windows runs of
             // 2026-09-27 (item 14) and 2026-09-30 (case 13) saw them, search_mode's as the
             // second of them saw it (case 12).
