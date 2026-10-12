@@ -69,6 +69,18 @@ public class ObservedDatesAndTextTests
     public void Adr0047_EDate_and_EOMonth_before_1900_are_NUM(string formula) =>
         Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
 
+    [Theory] // ADR-0047: the start is cut down to its day as YEAR, MONTH and DAY cut it, so one between -1 and 0 is below 0, not serial 0 (EOMONTH-016 and 017, EDATE-017, to be asked)
+    [InlineData("=EOMONTH(-0.5,0)")]
+    [InlineData("=EOMONTH(-0.5,1)")]
+    [InlineData("=EOMONTH(-0.0001,12)")]
+    [InlineData("=EDATE(-0.5,1)")]
+    [InlineData("=EDATE(-0.9999,0)")]
+    [InlineData("=YEAR(-0.5)")]
+    [InlineData("=MONTH(-0.5)")]
+    [InlineData("=DAY(-0.5)")]
+    public void Adr0047_EDate_and_EOMonth_read_a_start_between_minus_1_and_0_as_Year_Month_and_Day_do_NUM(string formula) =>
+        Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
+
     // ---- NETWORKDAYS and WORKDAY ------------------------------------------------------------------
 
     [Theory] // ADR-0047: NETWORKDAYS-005, observed; each serial takes WEEKDAY's day (WEEKDAY-005, 006)

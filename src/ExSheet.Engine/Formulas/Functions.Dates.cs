@@ -80,17 +80,19 @@ internal static partial class FunctionLibrary
     private static Operand EDate(FunctionCall call) => MonthsAway(call, endOfMonth: false);
 
     /// <summary>
-    /// EOMONTH and EDATE: the start date and the months are truncated to whole numbers. The start is
-    /// read as YEAR, MONTH and DAY read it, so serial 0 is 0 January 1900 and serial 60 is 29
-    /// February 1900. EDATE keeps the start's day, or the month's last day where the month is
+    /// EOMONTH and EDATE: the start is read as YEAR, MONTH and DAY read it, cut down to its day, so
+    /// serial 0 is 0 January 1900 and serial 60 is 29 February 1900; the months are truncated to a
+    /// whole number. EDATE keeps the start's day, or the month's last day where the month is
     /// shorter; EOMONTH gives the month's last day. The months are counted on the real calendar,
     /// where February 1900 has 28 days, and a day before 1 March 1900 is its own serial, 1 to 59:
     /// <c>EOMONTH(31,1)</c> is 28 February 1900, 59, <c>EOMONTH(0,1)</c> is 59 too,
     /// <c>EDATE(DATE(1900,3,15),-1)</c> is 15 February, 46, and <c>EDATE(60,1)</c> is 29 March,
     /// 89, as Excel was observed to answer (ADR-0047; EOMONTH-008 and EDATE-008, the seventeenth
-    /// Windows run; EOMONTH-010 and EDATE-010, the area pass of 2026-10-12). A start below 0, or a
-    /// result outside 1900 to 9999, is <c>#NUM!</c>, and a boolean typed as either argument is
-    /// <c>#VALUE!</c>, as in Excel (EOMONTH-009, EDATE-009).
+    /// Windows run; EOMONTH-010 and EDATE-010, the area pass of 2026-10-12). A start below 0 is
+    /// <c>#NUM!</c>, one between -1 and 0 included, as YEAR, MONTH and DAY answer it:
+    /// <c>EOMONTH(-0.5,0)</c> is <c>#NUM!</c>, as <c>YEAR(-0.5)</c> is (EOMONTH-016 and 017,
+    /// EDATE-017, to be asked). A result outside 1900 to 9999 is <c>#NUM!</c>, and a boolean typed
+    /// as either argument is <c>#VALUE!</c>, as in Excel (EOMONTH-009, EDATE-009).
     /// </summary>
     /// <remarks>
     /// EDATE from serial 0 is refused with <c>#VALUE!</c> until Excel is asked (EDATE-016): its day
@@ -105,7 +107,7 @@ internal static partial class FunctionLibrary
         }
         if (!TryNumber(call, 0, out var start, out var error)) return error;
         if (!TryNumber(call, 1, out var months, out error)) return error;
-        start = Math.Truncate(start);
+        start = Math.Floor(start);
         months = Math.Truncate(months);
         if (start < 0 || start > DateSerial.Maximum) return Operand.Of(ErrorValue.Num);
 

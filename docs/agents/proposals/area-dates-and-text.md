@@ -29,7 +29,10 @@ four); each old text is otherwise exact and occurs once in its file, and the edi
   code of a text section alone: fitted General, not General in full.
 
 **In the engine.** `Functions.Dates.cs`: `MonthsAway` no longer refuses a start of 0 or 60; it refuses only
-`EDATE` from a start whose day is 0, which is serial 0 alone (the `NeverExisted` constant goes, unused).
+`EDATE` from a start whose day is 0, which is serial 0 alone (the `NeverExisted` constant goes, unused). It cuts
+the start down to its day as `YEAR`, `MONTH` and `DAY` cut it, with `Math.Floor`, so a start between -1 and 0 is
+below 0 and `#NUM!`, as `YEAR(-0.5)` is: truncated, it would have been read as serial 0, and `EOMONTH(-0.5,0)`
+would have answered 31 where the base refused (a verifier's finding on this branch).
 `Functions.Text.cs`: `TextGeneral` is `NumberText.General(number, NumberText.GeneralLimit + 1 for a minus sign,
 culture)`, with no refusal where 11 and 12 characters differ and none where the fitted General is not General in
 full; `TextGeneralWidth` goes, as `NumberText.GeneralLimit` is the same 11. `NumberText.cs` is not touched. A code
@@ -39,7 +42,8 @@ of a text section alone, as `NumberFormat.ShowsNumbersAsGeneral` reads it, takes
 **Layer 1.** `tests/ExSheet.Engine.Tests/ObservedDatesAndTextTests.cs`:
 `Adr0047_EDate_and_EOMonth_refuse_serial_0_and_the_day_that_never_existed` became
 `Adr0047_EDate_and_EOMonth_read_serial_0_and_the_day_that_never_existed_as_Day_and_Month_do` (12 answers),
-`Adr0047_EOMonth_from_serial_0_to_before_1900_is_NUM` and `Adr0047_EDate_refuses_serial_0_whose_day_is_0`.
+`Adr0047_EOMonth_from_serial_0_to_before_1900_is_NUM` and `Adr0047_EDate_refuses_serial_0_whose_day_is_0`, and
+`Adr0047_EDate_and_EOMonth_read_a_start_between_minus_1_and_0_as_Year_Month_and_Day_do_NUM` was added.
 `Adr0120_Text_General_refuses_where_the_unobserved_readings_disagree` became
 `Adr0120_Text_General_leaves_the_minus_sign_out_of_its_11_characters` and
 `Adr0120_Text_under_a_text_section_alone_shows_a_number_as_its_General_does`, with two facts:
@@ -61,6 +65,9 @@ Each holds the engine's answer, or its refusal, for the next Windows run
 | EOMONTH-013 | `=EOMONTH(60,1)` | 91 | from serial 60 into March |
 | EOMONTH-014 | `=EOMONTH(0,0)` | 31 | serial 0's own month |
 | EOMONTH-015 | `=EOMONTH(0,-1)` | `#NUM!` | from serial 0 to before 1900 |
+| EOMONTH-016 | `=EOMONTH(-0.5,0)` | `#NUM!` | a start between -1 and 0 cut down to -1, as `YEAR` cuts it, not truncated to serial 0 (31) |
+| EOMONTH-017 | `=EOMONTH(-0.5,1)` | `#NUM!` | the same a month on (59 if truncated) |
+| EDATE-017 | `=EDATE(-0.5,1)` | `#NUM!` | the same under `EDATE` (serial 0's day 0 if truncated) |
 | TEXTFN-029 | `=TEXT(-123456789012,"General")` | `-1.23457E+11` | a negative twelve digits, scientific beside the sign |
 | TEXTFN-030 | `=TEXT(-12345678901,"General")` | `-12345678901` | a negative eleven digits, whole beside the sign |
 | TEXTFN-031 | `=TEXT(-1/3,"@")` | `-0.333333333` | the sign under a lone `@` |
@@ -107,7 +114,9 @@ New:
 >   month's last day where the month is shorter: `EDATE(60,0)` is 59, 28 February.
 > - **`EDATE` from serial 0 stays `#VALUE!`.** Its day is 0, and no run has observed what day 0 of a month
 >   becomes (EDATE-016 asks).
-> - The rule's other cases are `uncertain` for the next pass: EOMONTH-012 to 015 and EDATE-013 to 015.
+> - **A start between -1 and 0 is `#NUM!`**: it is cut down to its day as `YEAR`, `MONTH` and `DAY` cut it, to
+>   -1, below 0, and not truncated to serial 0 (EOMONTH-016 and 017, EDATE-017, to be asked).
+> - The rule's other cases are `uncertain` for the next pass: EOMONTH-012 to 017 and EDATE-013 to 015 and 017.
 
 ## ADR-0120
 

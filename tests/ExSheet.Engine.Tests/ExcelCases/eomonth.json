@@ -134,6 +134,24 @@
       "cells": {"ZZ1000": "=EOMONTH(0,-1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "EOMONTH-016",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a start between -1 and 0 is cut down to its day as YEAR, MONTH and DAY cut it, to -1, below 0, #NUM! as EOMONTH-004's -1 is, not truncated to serial 0's January 1900, 31",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EOMONTH(-0.5,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "EOMONTH-017",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a start between -1 and 0 is below 0 a month on too, #NUM!, not the end of February 1900, 59",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EOMONTH(-0.5,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
     }
   ]
 }
