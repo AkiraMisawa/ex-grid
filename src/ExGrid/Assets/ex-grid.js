@@ -1191,6 +1191,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     const onSentinel = (target) => target instanceof Element && target.classList.contains('ex-focus-wrap')
         && popoverOf(target) !== null;
+    // A popover closing, and the keyboard in flight back from it (decided with the user on
+    // 2026-10-12, ADR-0044's note of that day): Escape in one of this grid's popovers closes it as the
+    // core answers it, as a command or a choice made in one does (handsOver, onPress). On a circuit the
+    // popover stands a round trip after it, and a key typed meanwhile was the popover's: ↓ moved in a
+    // menu about to go and was lost. So the keys after it are held, as behind a command run, until the
+    // popover is gone and the keyboard has landed — on the root, or wherever the core or the Consumer
+    // handed it on meanwhile (handOff) — and are then handed on there in order. Not an Escape a popup of
+    // the contents' own answers (innerPopup), which closes only that popup and leaves the keyboard where
+    // it is, nor a held Escape's repeat, which the core answers with nothing (ADR-0070).
+    const escapeCloses = (target, k) => {
+        if (k.key !== 'Escape' || !plain(k) || k.shiftKey || k.repeat === true || innerPopup || editing !== 'none') {
+            return null;
+        }
+        const popover = popoverOf(target);
+        return popover ? { from: target, closes: popover } : null;
+    };
     const moved = () => {
         if (!awaitingMove) {
             return true;
@@ -1594,7 +1610,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     dropHeld();
                     break;
                 }
-                const move = handsOver(target, k);
+                const move = handsOver(target, k) ?? escapeCloses(target, k);
                 handToPopover(target, k);
                 if (move) {
                     awaitingMove = move;
@@ -1775,6 +1791,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             return;
         }
+        // Read before the gate, which spends an Inner Popup's Escape (escapeCloses).
+        const closing = replaying ? null : escapeCloses(event.target, k);
         const verdict = gate(k);
         if (verdict === 'out') {
             // The browser takes the keyboard out of the grid with it, and the release is spent.
@@ -1810,6 +1828,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (verdict === 'mode' || verdict === 'popover') {
             awaitingPopover = verdict === 'popover';
             startHold(answer);
+        } else if (verdict === 'core' && closing !== null) {
+            // Escape closing a popover: the keys after it wait until it is gone (escapeCloses).
+            awaitingMove = closing;
+            if (answering) {
+                holdStartedAt = performance.now();
+            } else {
+                startHold(answer);
+            }
         }
     };
 
@@ -2448,9 +2474,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // A press on one of the menu's items runs its command and closes the menu, as Enter on it
         // does (handsOver): a change of who holds the keyboard, and the keys typed after it wait
         // until the keyboard has followed — to the root, or to what the command opened (handOff;
-        // ADR-0039, 2026-10-01).
+        // ADR-0039, 2026-10-01). So does a press on one choice among others (menuitemradio), which
+        // makes it and closes its list: the keyboard is in flight back from a closing popover
+        // (ADR-0044's note of 2026-10-12, decided with the user).
         if (core && !replaying && event.button === 0 && event.target instanceof Element) {
-            const item = event.target.closest('[role=menuitem]');
+            const item = event.target.closest('[role=menuitem], [role=menuitemradio]');
             const menu = item ? popoverOf(item) : null;
             if (item && menu && !item.matches(':disabled, [aria-disabled=true]')) {
                 awaitingMove = { from: item, closes: menu };

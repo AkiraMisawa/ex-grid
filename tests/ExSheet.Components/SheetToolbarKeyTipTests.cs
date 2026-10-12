@@ -37,8 +37,13 @@ public class SheetToolbarKeyTipTests : SheetTestContext
     private static Task KeyUpAsync(IRenderedComponent<SheetComponent> cut, string key) =>
         cut.Find(".ex-sheet").KeyUpAsync(new KeyboardEventArgs { Key = key });
 
-    private static Task TypeOnToolbarAsync(IRenderedComponent<SheetComponent> cut, string key) =>
-        cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = key });
+    // A key typed on the band, which holds the keyboard while the KeyTips stand: the grid handed it there
+    // (HandKeyboardToAsync), and the browser tells the band it has DOM focus before the key reaches it.
+    private static async Task TypeOnToolbarAsync(IRenderedComponent<SheetComponent> cut, string key)
+    {
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = key });
+    }
 
     private static IReadOnlyList<string> ShownKeyTips(IRenderedComponent<SheetComponent> cut) =>
         [.. cut.FindAll(".ex-sheet-toolbar .ex-sheet-keytip").Select(k => k.TextContent)];
@@ -209,14 +214,13 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Equal(CellFill.None, FormatAt(cut, "B2").Fill);
     }
 
-    [Fact] // ADR-0100's CloseRequest (decided with the user, 2026-10-12): Escape typed on the toolbar after a KeyTip opened a list asks the item to close it, as the opening it closes; the built-in list closes, and the key gate stops waiting for it
-    public async Task Escape_on_the_toolbar_closes_the_list_a_keytip_opened()
+    [Fact] // ADR-0100's CloseRequest (decided with the user, 2026-10-12) and R2 (b) of the Windows readings of 2026-10-12 (observed: Escape after Alt, H, F, C shows the Home tab's KeyTips): Escape typed on the toolbar before the list a KeyTip opened has the keyboard closes it, as the opening it closes, and goes back to its row's KeyTips, with the band taking the keyboard through the grid
+    public async Task Escape_on_the_toolbar_closes_the_list_a_keytip_opened_and_goes_back_to_its_rows_keytips()
     {
         var chrome = new RecordingChrome();
         var cut = RenderToolbarSheet(ps => ps.Add(s => s.Chrome, chrome));
         await GoToAsync(cut, "B2");
         await PressAsync(cut, "F10");
-        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
         await TypeOnToolbarAsync(cut, "H");
         await TypeOnToolbarAsync(cut, "F");
         await TypeOnToolbarAsync(cut, "C");
@@ -224,7 +228,9 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Equal(1, opened.OpenRequest);
         Assert.Equal(0, opened.CloseRequest);
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice")));
-        var returned = KeyboardReturns;
+        Assert.Empty(ShownKeyTips(cut));
+        var taken = TakeBackCount;
+        var handedTo = HandedToCount;
 
         await TypeOnToolbarAsync(cut, "Escape");
 
@@ -232,13 +238,115 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Equal(1, closing.CloseRequest);
         Assert.Equal(closing.OpenRequest, closing.CloseRequest);
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice")));
-        Assert.Equal(["frame", "popover", "none"], HandOffs);
-        Assert.True(KeyboardReturns > returned);
+        // The Home row's letters again, and the keyboard kept on the band: not given back to the Sheet.
+        Assert.Contains("FC", ShownKeyTips(cut));
+        Assert.Contains("1", ShownKeyTips(cut));
+        Assert.Equal(taken, TakeBackCount);
+        Assert.Equal(handedTo + 1, HandedToCount);
+        Assert.Equal(["frame", "popover", "frame", "none"], HandOffs);
         // No other item was asked: only a list that may be open from the keys is.
         Assert.All(chrome.Drawn.Where(c => c.Name != "Font Colour"), c => Assert.Equal(0, c.CloseRequest));
+
+        // Escape goes back a level, and from the rows' letters ends them, with the keyboard on the Sheet.
+        await TypeOnToolbarAsync(cut, "Escape");
+        Assert.Equal(["H"], ShownKeyTips(cut));
+        await TypeOnToolbarAsync(cut, "Escape");
+        Assert.Empty(ShownKeyTips(cut));
+        Assert.Equal(taken + 1, TakeBackCount);
     }
 
-    [Fact] // ADR-0100's note of 2026-10-12, SH-52: Format Cells is Excel's O, E — O narrows the KeyTips to it and opens nothing, and E opens it
+    [Fact] // R2 (b) of the Windows readings of 2026-10-12 (observed: after Alt, H, F, C one Escape shows the Home tab's KeyTips, a second the tabs', a third none), under the built-in Chrome: Escape in the list a KeyTip opened, in the grid's popover, goes back to its row's KeyTips, and the band takes the keyboard through the grid with the keys typed after the Escape
+    public async Task Escape_in_the_list_a_keytip_opened_goes_back_to_its_rows_keytips()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        await PressAsync(cut, "F10");
+        await TypeOnToolbarAsync(cut, "H");
+        await TypeOnToolbarAsync(cut, "H");
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice")));
+        // The list takes the keyboard: the band holds it no longer.
+        await cut.Find(".ex-popover-consumer > .ex-popover-body").FocusInAsync(new FocusEventArgs());
+        await cut.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
+        var taken = TakeBackCount;
+        var handedTo = HandedToCount;
+        var handOffs = HandOffs.Count;
+
+        await PressAsync(cut, "Escape", fromDescendant: true);
+
+        Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice"));
+        Assert.Contains("FC", ShownKeyTips(cut));
+        Assert.Contains("H", ShownKeyTips(cut));
+        Assert.Equal(["frame"], HandOffs.Skip(handOffs));
+        Assert.Equal(handedTo + 1, HandedToCount);
+        Assert.Equal(taken, TakeBackCount);
+        Assert.Equal(CellFill.None, FormatAt(cut, "B2").Fill);
+
+        // The keys after it are the KeyTips': 1 sets bold and gives the keyboard back.
+        await TypeOnToolbarAsync(cut, "1");
+        Assert.True(FormatAt(cut, "B2").Font.Bold);
+        Assert.Empty(ShownKeyTips(cut));
+    }
+
+    [Fact] // ADR-0100's note of 2026-10-12: a list opened from the band's own keys, not a KeyTip, closes on Escape with the keyboard back on the Sheet, as before; and a choice in a list a KeyTip opened gives it to the Sheet, after which Escape on the band is the band's again
+    public async Task Escape_in_a_list_the_band_opened_and_a_choice_give_the_keyboard_to_the_sheet()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        var band = cut.Find(".ex-sheet-toolbar");
+        await band.FocusAsync(new FocusEventArgs());
+        foreach (var _ in Enumerable.Range(0, 5)) await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice")));
+        await cut.Find(".ex-popover-consumer > .ex-popover-body").FocusInAsync(new FocusEventArgs());
+        await cut.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
+        var handOffs = HandOffs.Count;
+
+        await PressAsync(cut, "Escape", fromDescendant: true);
+
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.Empty(ShownKeyTips(cut));
+        Assert.Empty(HandOffs.Skip(handOffs));
+
+        // A choice in a list a KeyTip opened: the cell is filled, no KeyTips stand, and the list is
+        // forgotten — Escape on the band later gives the keyboard back, as the band's own Escape does.
+        await PressAsync(cut, "F10");
+        await TypeOnToolbarAsync(cut, "H");
+        await TypeOnToolbarAsync(cut, "H");
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice")));
+        await cut.FindAll(".ex-popover .ex-sheet-swatch-choice").First().ClickAsync(new MouseEventArgs());
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-popover")));
+        Assert.NotEqual(CellFill.None, FormatAt(cut, "B2").Fill);
+        Assert.Empty(ShownKeyTips(cut));
+        var taken = TakeBackCount;
+        await TypeOnToolbarAsync(cut, "Escape");
+        Assert.Empty(ShownKeyTips(cut));
+        Assert.Equal(taken + 1, TakeBackCount);
+    }
+
+    [Fact] // ADR-0100 (Escape goes back one level) and R2 (a) of the Windows readings of 2026-10-12 (observed: after Alt, H, O three Escapes leave Excel Ready): letters that narrow a level are a level of their own, as Excel's Format menu is behind O
+    public async Task Escape_after_narrowing_letters_shows_the_levels_letters_again()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        await PressAsync(cut, "F10");
+        await TypeOnToolbarAsync(cut, "H");
+        await TypeOnToolbarAsync(cut, "O");
+        Assert.Equal(["OE"], ShownKeyTips(cut));
+        var taken = TakeBackCount;
+
+        await TypeOnToolbarAsync(cut, "Escape");
+        Assert.Contains("OE", ShownKeyTips(cut));
+        Assert.Contains("1", ShownKeyTips(cut));
+        await TypeOnToolbarAsync(cut, "Escape");
+        Assert.Equal(["H"], ShownKeyTips(cut));
+        await TypeOnToolbarAsync(cut, "Escape");
+
+        Assert.Empty(ShownKeyTips(cut));
+        Assert.Equal(taken + 1, TakeBackCount);
+        Assert.Empty(cut.FindAll(".ex-format-cells"));
+    }
+
+    [Fact] // ADR-0100's note of 2026-10-12, SH-52 (R2 (a) of the Windows readings of 2026-10-12, observed: Alt, H, O, E): Format Cells is Excel's O, E — O narrows the KeyTips to it and opens nothing, and E opens it
     public async Task Format_cells_is_o_then_e()
     {
         var cut = RenderToolbarSheet();
@@ -247,9 +355,9 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         await TypeOnToolbarAsync(cut, "H");
 
         await TypeOnToolbarAsync(cut, "O");
-        // Excel's O opens the Cells group's Format menu, whose E is Format Cells…, as Microsoft
-        // documents Alt, H, O, E (the next Windows run confirms the E): an E typed after O is a
-        // KeyTip's, never the dialog's.
+        // Excel's Alt, H, O opens the Cells group's Format menu, whose KeyTip for Format Cells… is E,
+        // observed (the Windows readings of 2026-10-12, R2 (a)): an E typed after O is a KeyTip's,
+        // never the dialog's.
         Assert.Equal(["OE"], ShownKeyTips(cut));
         Assert.Empty(cut.FindAll(".ex-format-cells"));
         var returned = KeyboardReturns;

@@ -15,7 +15,7 @@ namespace ExSheet;
 public sealed class SheetToolbarContext
 {
     private readonly List<ToolbarItemBase> _items = [];
-    private readonly Func<string, IReadOnlyList<ToolbarChoice>, Task> _openChoices;
+    private readonly Func<string, IReadOnlyList<ToolbarChoice>, Func<Task>?, Action?, Task> _openChoices;
     private readonly Func<Task> _returnKeyboard;
     private readonly Action<string> _tell;
     private readonly Action _rowsChanged;
@@ -23,7 +23,7 @@ public sealed class SheetToolbarContext
     private int _nextId;
 
     internal SheetToolbarContext(
-        SheetComponent sheet, string idPrefix, Func<string, IReadOnlyList<ToolbarChoice>, Task> openChoices,
+        SheetComponent sheet, string idPrefix, Func<string, IReadOnlyList<ToolbarChoice>, Func<Task>?, Action?, Task> openChoices,
         Func<Task> returnKeyboard, Action<string> tell, Action rowsChanged)
     {
         Sheet = sheet;
@@ -113,8 +113,38 @@ public sealed class SheetToolbarContext
     /// </summary>
     public Task ReturnKeyboardAsync()
     {
+        KeyTipList = null;
         foreach (var item in _items.ToList()) item.RequestCloseOfChoices();
         return LeaveToolbar?.Invoke() ?? _returnKeyboard();
+    }
+
+    /// <summary>
+    /// The item whose list a KeyTip opened, while that list may stand (ADR-0100's note of 2026-10-12,
+    /// the Windows readings' R2 (b)): Escape in it, or on the band before it has the keyboard, goes
+    /// back to its row's KeyTips rather than to the Sheet.
+    /// </summary>
+    internal ToolbarItemBase? KeyTipList { get; set; }
+
+    /// <summary>A Chrome's list begins to close (<see cref="ToolbarItemContext.ChoicesClosing"/>). Set by the toolbar.</summary>
+    internal Func<ToolbarItemBase, KeyboardEventArgs?, Action<KeyboardEventArgs>>? ListClosingHook { get; set; }
+
+    /// <summary>A Chrome's list has closed (<see cref="ToolbarItemContext.ChoicesClosed"/>). Set by the toolbar.</summary>
+    internal Func<ToolbarItemBase, Task>? ListClosedHook { get; set; }
+
+    /// <summary>Escape closed an item's list in the Sheet's built-in frame. Set by the toolbar.</summary>
+    internal Func<ToolbarItemBase, Task>? ListEscapedHook { get; set; }
+
+    /// <summary>A Chrome's list of <paramref name="item"/> begins to close: where the keys typed in it go meanwhile.</summary>
+    internal Action<KeyboardEventArgs> ListClosing(ToolbarItemBase item, KeyboardEventArgs? closedBy) =>
+        ListClosingHook?.Invoke(item, closedBy) ?? (static _ => { });
+
+    /// <summary>A Chrome's list of <paramref name="item"/> has closed: the keyboard goes on from the toolbar.</summary>
+    internal Task ListClosedAsync(ToolbarItemBase item) => ListClosedHook?.Invoke(item) ?? ReturnKeyboardAsync();
+
+    /// <summary>The built-in frame's list of <paramref name="item"/> has gone, however it closed.</summary>
+    internal void ListGone(ToolbarItemBase item)
+    {
+        if (ReferenceEquals(KeyTipList, item)) KeyTipList = null;
     }
 
     /// <summary>The toolbar's own way of giving the keyboard back, while it is shown.</summary>
@@ -156,7 +186,14 @@ public sealed class SheetToolbarContext
     /// </summary>
     /// <param name="title">The list's accessible name.</param>
     /// <param name="choices">The choices, in order.</param>
-    public Task OpenChoicesAsync(string title, IReadOnlyList<ToolbarChoice> choices) => _openChoices(title, choices);
+    public Task OpenChoicesAsync(string title, IReadOnlyList<ToolbarChoice> choices) => _openChoices(title, choices, null, null);
+
+    /// <summary>
+    /// Opens <paramref name="item"/>'s choices in the Sheet's built-in frame, which tells the toolbar
+    /// when Escape closes them and when they have gone (ADR-0100's note of 2026-10-12).
+    /// </summary>
+    internal Task OpenChoicesOfAsync(ToolbarItemBase item, string title, IReadOnlyList<ToolbarChoice> choices) =>
+        _openChoices(title, choices, () => ListEscapedHook?.Invoke(item) ?? Task.CompletedTask, () => ListGone(item));
 
     internal string NextId() => $"{IdPrefix}-item-{_nextId++}";
 

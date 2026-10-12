@@ -30,21 +30,26 @@
     the keyboard where it is; Escape closes the list. Every key's default is prevented, and none
     reaches MudMenu, whose Escape and Tab would hand the keyboard to its button rather than the Sheet.
 
-    When a list closes — a choice, Escape, or MudBlazor's own means — the keyboard is given back to
-    the Sheet. The core's focus function is granted only while DOM focus is in the grid, on nothing,
+    When a list closes — a choice, Escape, or MudBlazor's own means — the toolbar takes the keyboard on:
+    back to the Sheet, or, after Escape in a list a KeyTip opened, to its KeyTips (ADR-0100's note of
+    2026-10-12). The core's focus function is granted only while DOM focus is in the grid, on nothing,
     or in the toolbar's band it is taken back from (ADR-0021's note of 2026-09-30; ADR-0050 item 16's
     note of 2026-10-12), and the list is drawn in MudBlazor's popover provider, outside the band, which
     removes it in a render of its own. So where the keyboard was in the list, it is first put on an
     empty element of this item's own, inside the band; the list closes, the choice is made, and the
-    toolbar takes the keyboard back from there. A key typed on that element meanwhile reaches the band,
-    which holds it and hands it to the Sheet with the keyboard, so it is never the toolbar's — Enter
-    pressed the last item again. The element goes once the keyboard has left it. It is never
-    aria-hidden: it holds focus. No script is added (ADR-0021): DOM focus moves by Blazor's FocusAsync.
+    toolbar takes the keyboard on from there. The keyboard is in flight from the key that closes the
+    list (decided with the user, 2026-10-12): the toolbar is told then (ChoicesClosing), and the keys
+    typed in the list from that moment, which on a circuit it stands a round trip to hear, are passed to
+    it in order, as the keys typed on that element reach its band; it holds them all and hands them on
+    with the keyboard. None is the list's, about to go, or the toolbar's — Enter pressed the last item
+    again. The element goes once the keyboard has left it. It is never aria-hidden: it holds focus. No
+    script is added (ADR-0021): DOM focus moves by Blazor's FocusAsync.
 
     When the toolbar takes the keyboard back while the list may still be on its way (CloseRequest:
     Escape typed on the band before the list took the keyboard), the list closes, a focus not yet
     given is dropped, and the toolbar has the keyboard back already; a list that was given the
-    keyboard first holds it, and closes as Escape in it does (ADR-0100's note of 2026-10-12).
+    keyboard first holds it, and closes through this item's element as any close from here does,
+    telling the toolbar it is closing and that it has closed (ADR-0100's note of 2026-10-12).
 *@
 <span class="@WrapperClass" id="@Context.Id" @onmousedown:preventDefault="true">
     @switch (Context.Kind)
@@ -154,6 +159,8 @@
     private bool _keyboardInList;
 
     // The list closing from here: the choice made, if any, and the element the keyboard leaves from.
+    // Where the keys typed in the list meanwhile go: the toolbar's (ToolbarItemContext.ChoicesClosing).
+    private Action<KeyboardEventArgs>? _typedWhileClosing;
     private bool _closing;
     private ToolbarChoice? _chosen;
     private bool _leaving;
@@ -187,7 +194,7 @@
                 // The list is closed from here, never by MudMenu's own AutoClose, which hands the
                 // keyboard to the menu's button.
                 list.AddComponentParameter(12, nameof(MudMenuItem.AutoClose), false);
-                list.AddComponentParameter(13, nameof(MudMenuItem.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseAsync(made)));
+                list.AddComponentParameter(13, nameof(MudMenuItem.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseAsync(made, null)));
                 list.AddAttribute(14, "aria-checked", made.Selected ? "true" : "false");
                 list.AddAttribute(15, "role", "menuitemradio");
                 // Noted without a render: a focus changes nothing drawn.
@@ -228,7 +235,7 @@
                 list.AddAttribute(35, "aria-label", made.Label);
                 list.AddAttribute(36, "aria-checked", made.Selected ? "true" : "false");
                 list.AddAttribute(37, "style", $"background-color: {made.Colour}");
-                list.AddAttribute(38, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseAsync(made)));
+                list.AddAttribute(38, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseAsync(made, null)));
                 list.AddAttribute(39, "onfocus", (Action)(() => Focused(at)));
                 list.AddElementReferenceCapture(40, element => _swatches[at] = element);
                 list.CloseElement();
@@ -250,15 +257,15 @@
     {
         // The toolbar took the keyboard back while the list may have been on its way (ADR-0100's note
         // of 2026-10-12): it closes, and a focus into it not yet given is dropped. One that was given
-        // first holds the keyboard, which the toolbar's hand-back does not take from it: it closes as
-        // Escape in it does, and gives the keyboard back.
+        // first holds the keyboard, which the toolbar's hand-back does not take from it: it closes through
+        // this item's element as any close from here does, and the toolbar takes the keyboard on.
         if (Context.CloseRequest != _answeredClose)
         {
             _answeredClose = Context.CloseRequest;
             _keyboardIntoList = false;
             if (_keyboardInList && !_closing)
             {
-                await CloseAsync(null);
+                await CloseAsync(null, closedBy: null);
                 return;
             }
             if (_menu is not null && _open && !_closing)
@@ -305,6 +312,7 @@
                 await chosen.Choose();
             }
             await Context.ChoicesClosed();
+            _typedWhileClosing = null;
             _leaving = false;
             _leftFromElement = false;
             _closing = false;
@@ -322,13 +330,15 @@
 
     private Task OnToggledAsync(bool _) => Context.Invoke();
 
-    private Task ChooseAsync(ToolbarChoice choice) =>
-        choice.DisabledReason is null ? CloseAsync(choice) : Task.CompletedTask;
+    private Task ChooseAsync(ToolbarChoice choice, KeyboardEventArgs? closedBy) =>
+        choice.DisabledReason is null ? CloseAsync(choice, closedBy) : Task.CompletedTask;
 
-    // Closes the list from here, with a choice or without, through this item's own element.
-    private Task CloseAsync(ToolbarChoice? chosen)
+    // Closes the list from here, with a choice or without, through this item's own element. The toolbar
+    // is told at once, with the key that closed it: the keyboard is in flight from now.
+    private Task CloseAsync(ToolbarChoice? chosen, KeyboardEventArgs? closedBy)
     {
         if (_closing) return Task.CompletedTask;
+        _typedWhileClosing = Context.ChoicesClosing(closedBy);
         _closing = true;
         _chosen = chosen;
         _keyboardIntoList = false;
@@ -351,6 +361,7 @@
             // Closed by MudBlazor's own means while the keyboard was in the list: it leaves through
             // this item's element, as a close from here does.
             _keyboardInList = false;
+            _typedWhileClosing = Context.ChoicesClosing(null);
             _closing = true;
             _leaving = true;
             StateHasChanged();
@@ -388,14 +399,20 @@
     // behaviour (ADR-0100, ADR-0039).
     private async Task OnChoiceKeyAsync(KeyboardEventArgs e)
     {
-        if (_closing || _drawn.Count == 0) return;
+        // Typed while the list closes: the toolbar's to hold, in order, for where the keyboard lands.
+        if (_closing)
+        {
+            _typedWhileClosing?.Invoke(e);
+            return;
+        }
+        if (_drawn.Count == 0) return;
         switch (e.Key)
         {
             case "Escape":
-                await CloseAsync(null);
+                await CloseAsync(null, e);
                 return;
             case "Enter" or " ":
-                if (_focused >= 0 && _focused < _drawn.Count) await ChooseAsync(_drawn[_focused]);
+                if (_focused >= 0 && _focused < _drawn.Count) await ChooseAsync(_drawn[_focused], e);
                 return;
         }
         var across = _focused >= 0 && _focused < _drawn.Count && _drawn[_focused].Colour is not null ? SwatchesAcross : 1;

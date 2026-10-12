@@ -6699,11 +6699,16 @@
                     // for itself while the grid waits — a MudSelect puts DOM focus back
                     // on itself — and removing the popover then would leave focus on the
                     // page's body (KB-32, ADR-0039).
+                    // A Consumer that asked to hear Escape close its popover hears it first,
+                    // before the hand-back (ADR-0050 item 16's note of 2026-10-12).
+                    var escaped = fromDescendant ? ConsumerPopoverEscaping() : null;
                     if (fromDescendant)
                         ClosePopoverAndReturnFocus();
                     else
                         CloseMenus();
                     StateHasChanged();
+                    if (escaped is not null)
+                        await escaped;
                     return;
                 }
                 if (fromDescendant)

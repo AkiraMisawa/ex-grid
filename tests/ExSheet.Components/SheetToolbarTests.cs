@@ -480,23 +480,31 @@ public class SheetToolbarTests : SheetTestContext
         Assert.Equal(Item(cut, "Italic").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
     }
 
-    [Fact] // ADR-0100, ADR-0050 item 16's note of 2026-10-12: a key typed on an element inside the band while the band does not hold the keyboard — a Chrome's, on the way out of its list — is the Sheet's, handed on with the keyboard
-    public async Task A_key_typed_inside_the_band_while_it_does_not_hold_the_keyboard_is_the_sheets()
+    [Fact] // ADR-0100 (the verifier's round-2 finding 1, a keyboard trap): a key typed on a control inside the band that holds the keyboard itself — a Chrome's own, which a Tab reaches — is that control's: the band holds nothing and presses nothing, and its own keys work after it
+    public async Task A_key_typed_on_a_control_inside_the_band_is_that_controls_and_holds_nothing()
     {
         var cut = RenderToolbarSheet();
         await GoToAsync(cut, "B2");
         var toolbar = cut.Find(".ex-sheet-toolbar");
         await toolbar.FocusAsync(new FocusEventArgs());
+        // Tab moves DOM focus to a control inside the band: the band itself holds the keyboard no longer.
         await cut.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
+        var returned = KeyboardReturns;
 
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "x" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
         Assert.False(FormatAt(cut, "B2").Font.Bold);
+        Assert.Equal(returned, KeyboardReturns);
+        // Nothing is held: the band keeps no key's default from the control.
+        Assert.False(cut.Find(".ex-sheet-toolbar").HasAttribute("blazor:onkeydown:preventdefault"));
+        // Shift+Tab back to the band: its keys are its own, and nothing held before reaches the Sheet.
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        Assert.True(FormatAt(cut, "B2").Font.Bold);
+        Assert.Equal(returned + 1, KeyboardReturns);
         Assert.Empty(AnswerTakeBacks(cut));
-        var toolbarContext = cut.FindComponent<SheetToolbar>().Instance.Context;
-        await cut.InvokeAsync(() => toolbarContext.ReturnKeyboardAsync());
-        Assert.Equal(["Enter"], AnswerTakeBacks(cut).Select(k => k.Key));
-        Assert.False(FormatAt(cut, "B2").Font.Bold);
     }
 
     // ---- The Chrome draws, the meaning stays (SH-50) ----

@@ -61,6 +61,10 @@ public abstract class SheetTestContext : BunitContext
     /// from it, with the keys typed there on the way (ADR-0050 item 16's note of 2026-10-12).</summary>
     internal int TakeBackCount => _handle.Invocations["takeKeyboardBack"].Count;
 
+    /// <summary>How many times a control of the Sheet's own — the toolbar's band — has been handed the
+    /// keyboard through the grid (ADR-0050 item 16's note of 2026-10-12).</summary>
+    internal int HandedToCount => _handle.Invocations["handKeyboardTo"].Count;
+
     /// <summary>How many times the keyboard has been asked back for the Sheet, either way.</summary>
     internal int KeyboardReturns => ReclaimCount + TakeBackCount;
 
@@ -143,10 +147,10 @@ public abstract class SheetTestContext : BunitContext
     internal static IRenderedComponent<ExGrid<SheetRow>> Grid(IRenderedComponent<SheetComponent> cut) =>
         cut.FindComponent<ExGrid<SheetRow>>();
 
-    internal static Task PressAsync(IRenderedComponent<SheetComponent> cut, string key, bool ctrl = false, bool shift = false)
+    internal static Task PressAsync(IRenderedComponent<SheetComponent> cut, string key, bool ctrl = false, bool shift = false, bool fromDescendant = false)
     {
         var grid = Grid(cut);
-        return grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, ctrl, shift, false, false, false));
+        return grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, ctrl, shift, false, false, false, fromDescendant: fromDescendant));
     }
 
     /// <summary>

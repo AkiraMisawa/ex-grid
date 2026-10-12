@@ -296,6 +296,64 @@ public class ConsumerPopoverTests : GridTestContext
         Assert.Equal(root, Js.Focused.Skip(before).Last());
     }
 
+    [Fact] // ADR-0050 item 16's note of 2026-10-12 (decided with the user: keys typed while the keyboard is in flight back from a closing popover go where it lands): a Consumer that asked hears Escape close its popover before the grid takes the keyboard back, so its hand-off reaches the key gate first
+    public async Task Escape_closing_it_tells_the_consumer_who_asked_before_the_root_takes_the_keyboard()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        var escaped = 0;
+        var handOffsAtReclaim = -1;
+        Js.OnFocusReclaimed(() => handOffsAtReclaim = Js.HandedOff.Invocations.Count);
+        await cut.Instance.OpenPopoverAsync(new Probe().Content, "Probe", async () =>
+        {
+            escaped++;
+            await cut.Instance.HandKeyboardToFrameAsync();
+        });
+        cut.Render();
+        // The contents hold the keyboard, as the Escape typed in them says.
+        await cut.Find(".ex-popover-consumer > .ex-popover-body").FocusInAsync(new FocusEventArgs());
+
+        await PressAsync(cut, "Escape", fromDescendant: true);
+
+        Assert.Empty(cut.FindAll(".ex-popover-consumer"));
+        Assert.Equal(1, escaped);
+        Assert.Equal(["popover", "frame"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
+        // Told before the hand-back: the keys held behind the Escape wait for the frame, not the root.
+        Assert.Equal(2, handOffsAtReclaim);
+    }
+
+    [Fact] // ADR-0050 item 16's note of 2026-10-12: a popover closed any other way than by Escape tells the Consumer nothing
+    public async Task Closed_otherwise_it_tells_the_consumer_nothing()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        var escaped = 0;
+        Task Escaped()
+        {
+            escaped++;
+            return Task.CompletedTask;
+        }
+        var probe = new Probe();
+
+        await cut.Instance.OpenPopoverAsync(probe.Content, "Probe", Escaped);
+        cut.Render();
+        await cut.Instance.ClosePopoverAsync();
+        await cut.Instance.OpenPopoverAsync(probe.Content, "Probe", Escaped);
+        cut.Render();
+        await cut.InvokeAsync(() => probe.Context!.Close());
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-popover-consumer")));
+        await cut.Instance.OpenPopoverAsync(probe.Content, "Probe", Escaped);
+        cut.Render();
+        await ClickCellAsync(cut, 50, 30);
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-popover-consumer")));
+        // Opened without asking, Escape tells nobody.
+        await OpenAsync(cut, probe);
+        await PressAsync(cut, "Escape", fromDescendant: true);
+
+        Assert.Empty(cut.FindAll(".ex-popover-consumer"));
+        Assert.Equal(0, escaped);
+    }
+
     [Fact] // ADR-0050 item 16 / DC-60 / ADR-0010: a pointer-down elsewhere in the instance closes it
     public async Task A_press_on_the_rows_closes_it()
     {

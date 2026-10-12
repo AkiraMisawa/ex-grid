@@ -1,5 +1,5 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, editor } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
 
@@ -106,19 +106,22 @@ test.describe('on /sheet?chrome=mud', () => {
             // On a circuit the frame's own element holds focus a round trip or more, while the dialog is drawn.
             await setRoundTrip(80);
 
+            // At machine speed: the letters typed before the KeyTips have taken the keyboard are held by the
+            // grid's key gate and handed to the toolbar in order (ADR-0100, ADR-0050 item 16; decided with
+            // the user, 2026-10-12), and nothing here waits for the KeyTips.
             await page.keyboard.press('Alt');
-            // The letters once the KeyTips have taken the keyboard: on a circuit, one typed before reaches the cell.
-            await expect(page.locator('.ex-sheet-toolbar .ex-sheet-keytip')).toHaveText(['H', 'Y']);
-            await expect(page.locator('.ex-sheet-toolbar').first()).toBeFocused();
             await page.keyboard.press('h');
             await page.keyboard.press('o');
             await page.keyboard.press('e');
 
             await expect(formatCells(page)).toBeVisible();
             await expect(tab(page, 'Number')).toBeFocused();
+            // No letter reached the cell: no edit opened under the KeyTips.
+            await expect(editor(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
             await expect(formatCells(page)).toHaveCount(0);
             await expectKeyboardOn(grid);
+            await expect(cell(grid, 'C2')).toHaveText('0.5');
 
             expect(await hidden.read(), 'no element holding focus is aria-hidden').toEqual([]);
         } finally {

@@ -119,8 +119,18 @@ public sealed record ToolbarChoice(
 /// <see cref="ChoicesClosed"/>. It takes the value <see cref="OpenRequest"/> had when the close was asked
 /// for, so a Chrome that answers both after one render knows which came last: an opening it has not yet
 /// answered is still asked for only while the two differ.</param>
-/// <param name="ChoicesClosed">A Chrome whose list is its own calls this when the list closes without a
-/// choice, so the Sheet takes the keyboard back.</param>
+/// <param name="ChoicesClosed">A Chrome whose list is its own calls this once the list has closed, without a
+/// choice or after making one, so the Sheet Toolbar takes the keyboard on from wherever the close left it: back
+/// to the Sheet, or, after Escape in a list a KeyTip opened, to the toolbar's KeyTips, as Excel goes back one
+/// level (ADR-0100's note of 2026-10-12).</param>
+/// <param name="ChoicesClosing">A Chrome whose list is its own calls this as the list begins to close — a
+/// choice made, Escape, or the design system's own means while the keyboard is in it — with the key that
+/// closes it (null when no key does), and passes every key typed in the list from then until it has gone to
+/// the action this returns, in order (decided with the user, 2026-10-12). On a circuit the list stands a round
+/// trip after that key, and the keys typed meanwhile are not the list's: the Sheet Toolbar holds them, with
+/// the keys typed on its band, and hands them all on, in order, to where the keyboard goes when
+/// <see cref="ChoicesClosed"/> is called. A Chrome that does not call it leaves those keys to its list, which
+/// is about to go.</param>
 /// <param name="Content">A Consumer item's own content, drawn in place of a picture and text; null for
 /// ExSheet's items.</param>
 /// <param name="KeyTip">The item's KeyTip letters; null for none.</param>
@@ -142,6 +152,7 @@ public sealed record ToolbarItemContext(
     int OpenRequest,
     int CloseRequest,
     Func<Task> ChoicesClosed,
+    Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs>> ChoicesClosing,
     Microsoft.AspNetCore.Components.RenderFragment? Content,
     string? KeyTip,
     bool ShowKeyTip)
@@ -158,7 +169,7 @@ public sealed record ToolbarItemContext(
         && DisabledReason == other.DisabledReason && ReferenceEquals(Invoke, other.Invoke)
         && Choices.SequenceEqual(other.Choices) && Colour == other.Colour && Active == other.Active
         && OpenRequest == other.OpenRequest && CloseRequest == other.CloseRequest
-        && ReferenceEquals(ChoicesClosed, other.ChoicesClosed)
+        && ReferenceEquals(ChoicesClosed, other.ChoicesClosed) && ReferenceEquals(ChoicesClosing, other.ChoicesClosing)
         && ReferenceEquals(Content, other.Content) && KeyTip == other.KeyTip && ShowKeyTip == other.ShowKeyTip;
 
     /// <inheritdoc />

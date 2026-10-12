@@ -54,6 +54,7 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     private bool _choicesMayBeOpen;
     private Func<Task>? _invoke;
     private Func<Task>? _choicesClosed;
+    private Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs>>? _choicesClosing;
     private string? _id;
 
     /// <summary>The Sheet Toolbar this item stands in.</summary>
@@ -109,13 +110,14 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
         _choicesClosed ??= () =>
         {
             _choicesMayBeOpen = false;
-            return Context.ReturnKeyboardAsync();
+            return Context.ListClosedAsync(this);
         };
+        _choicesClosing ??= closedBy => Context.ListClosing(this, closedBy);
         return new ToolbarItemContext(
             _id, face.Kind, face.Name, face.Shortcut, face.Icon, face.Text, face.Pressed,
             Enabled: face.Kind != ToolbarItemKind.Separator && disabledReason is null,
             disabledReason, _invoke, face.Choices, face.Colour,
-            Active: ReferenceEquals(context.Active, this), _openRequest, _closeRequest, _choicesClosed, face.Content,
+            Active: ReferenceEquals(context.Active, this), _openRequest, _closeRequest, _choicesClosed, _choicesClosing, face.Content,
             KeyTipLetters, ShowKeyTip: context.ShowsKeyTip(this));
     }
 
@@ -128,6 +130,8 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
         if (openChoices && !fromKeyTip && face.Kind is not (ToolbarItemKind.Menu or ToolbarItemKind.Split)) return;
         if (face.Kind == ToolbarItemKind.Menu || (openChoices && face.Kind == ToolbarItemKind.Split))
         {
+            // Opened from a KeyTip, Escape goes back to the KeyTips (ADR-0100's note of 2026-10-12).
+            Context.KeyTipList = fromKeyTip ? this : null;
             _openRequest++;
             _choicesMayBeOpen = true;
             StateHasChanged();
@@ -138,7 +142,7 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     }
 
     /// <summary>Opens the item's choices in the Sheet's built-in frame.</summary>
-    internal Task OpenChoicesAsync() => Context.OpenChoicesAsync(Face().Name, Face().Choices);
+    internal Task OpenChoicesAsync() => Context.OpenChoicesOfAsync(this, Face().Name, Face().Choices);
 
     /// <summary>Closes the item's choices in the Sheet's built-in frame, if they are what it shows.</summary>
     internal Task CloseChoicesAsync() => Context.CloseChoicesAsync(Face().Name);

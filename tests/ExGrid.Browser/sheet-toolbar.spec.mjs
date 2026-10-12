@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, circuitQuiet } from './fixtures.mjs';
+import { test, expect, setRoundTrip, circuitQuiet, alterPage } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
@@ -57,6 +57,41 @@ async function keyTips(page, ...letters) {
     for (const letter of letters) {
         await page.keyboard.press(letter);
     }
+}
+
+/** The KeyTips the toolbar shows. */
+function tips(page) {
+    return toolbar(page).locator('.ex-sheet-keytip');
+}
+
+/**
+ * Where each key typed from now lands, by its keydown's target, read on the document in the capture
+ * phase, before any listener of the page's can stop it: in a toolbar list, on the element a list
+ * leaves through, on the band, in a popover, in the grid, or elsewhere. Only keys typed, not the
+ * grid's replays of held keys. Answers a reader of what has landed so far.
+ */
+async function watchWhereKeysLand(page) {
+    await alterPage(page, () => {
+        window.__keysLanded = [];
+        const listener = (e) => {
+            if (!e.isTrusted) {
+                return;
+            }
+            const t = e.target instanceof Element ? e.target : null;
+            const where = t?.closest('.ex-sheet-choices, .mud-ex-sheet-toolbar-choices') ? 'list'
+                : t?.closest('.mud-ex-sheet-toolbar-leaving') ? 'leaving'
+                    : t?.closest('.ex-sheet-toolbar') ? 'band'
+                        : t?.closest('.ex-popover') ? 'popover'
+                            : t?.closest('.ex-grid') ? 'grid' : 'page';
+            window.__keysLanded.push({ key: e.key, where });
+        };
+        document.addEventListener('keydown', listener, true);
+        return () => {
+            document.removeEventListener('keydown', listener, true);
+            delete window.__keysLanded;
+        };
+    });
+    return () => page.evaluate(() => window.__keysLanded);
 }
 
 for (const chrome of ['builtin', 'mud']) {
@@ -205,11 +240,16 @@ for (const chrome of ['builtin', 'mud']) {
 // What the seventeenth Windows run found in Part D. Under the MudBlazor Chrome each list a KeyTip
 // opened left the keyboard on the toolbar, so Escape gave it back to the Sheet and left the list
 // standing, and the next letter's list opened beside it, four at once: under either Chrome the list
-// takes the keyboard into its choices, and Escape closes it with the keyboard back on the Sheet.
-// Excel reaches Format Cells… by O, E, through its Format menu. And the element the keyboard leaves
-// the toolbar through was aria-hidden while it held focus, which Chromium says in the console.
+// takes the keyboard into its choices, and Escape closes it. Where the keyboard goes then is Excel's
+// as the Windows readings of 2026-10-12 observed it (R2 (b)): back to the Home row's KeyTips. Excel
+// reaches Format Cells… by O, E, through its Format menu (observed, R2 (a)). And the element the
+// keyboard leaves the toolbar through was aria-hidden while it held focus, which Chromium says in the
+// console.
 for (const chrome of ['builtin', 'mud']) {
-    test(`SH-52/ADR-0100/ADR-0039: Alt, H, F, C puts the keyboard in the Font Colour list; Escape closes it with the keyboard on the Sheet, and the next list is the only one (${chrome})`, async ({ page }) => {
+    test(`SH-52/ADR-0100/ADR-0039 (R2 (b), 2026-10-12): Alt, H, F, C puts the keyboard in the Font Colour list; Escape goes back to the Home row's KeyTips, Escape to the rows', Escape to the Sheet, and the next list is the only one (${chrome})`, async ({ page }) => {
+        // R2 (b) of the Windows readings of 2026-10-12, observed: after Alt, H, F, C one Escape showed
+        // the Home tab's KeyTips with the keyboard not back in the cell, a second the tabs', a third none.
+        // Each step waited for here; typed at once below.
         await openSheet(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'B3');
@@ -222,6 +262,14 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(page.locator(':focus')).toContainText('Automatic');
         await page.keyboard.press('Escape');
         await expect(openLists(page)).toHaveCount(0);
+        await expect(tips(page).filter({ hasText: /^FC$/ })).toHaveCount(1);
+        await expect(tips(page).filter({ hasText: /^1$/ })).toHaveCount(1);
+        await expect(toolbar(page)).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(tips(page)).toHaveText(['H', 'Y']);
+        await expect(toolbar(page)).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(tips(page)).toHaveCount(0);
         await expectKeyboardOn(grid);
 
         await keyTips(page, 'h', 'h');
@@ -230,16 +278,21 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('ArrowDown');
         await expect(page.locator(':focus')).toHaveAttribute('aria-label', 'White, Background 1');
         await page.keyboard.press('Escape');
-
         await expect(openLists(page)).toHaveCount(0);
+        await expect(tips(page).filter({ hasText: /^FC$/ })).toHaveCount(1);
+        // From the Home row's KeyTips, 1 sets bold and gives the keyboard back to the Sheet.
+        await page.keyboard.press('1');
+        await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
+        await expect(tips(page)).toHaveCount(0);
         await expectKeyboardOn(grid);
         // Escape chose nothing, and the next arrow moves the Focus.
         await expect(cell(grid, 'B3')).toHaveCSS('background-color', fill);
         await page.keyboard.press('ArrowDown');
         await expectFocusAt(grid, 'B4');
+        await page.keyboard.press('Control+z');
     });
 
-    test(`SH-52/ADR-0100 (2026-10-12): Format Cells is Alt, H, O, E, as Excel's Format menu reaches it — O narrows the KeyTips, E opens it (${chrome})`, async ({ page }) => {
+    test(`SH-52/ADR-0100 (2026-10-12; R2 (a), observed): Format Cells is Alt, H, O, E, as Excel's Format menu reaches it — O narrows the KeyTips, E opens it (${chrome})`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'C2');
@@ -281,6 +334,60 @@ for (const chrome of ['builtin', 'mud']) {
             await setRoundTrip(0);
         }
         await page.keyboard.press('Control+z');
+        await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+    });
+}
+
+// The verifier's round-2 finding 1: under MudSheetChrome the toolbar held every key typed on a control
+// inside it while its band did not hold the keyboard, taking MudMenu's buttons, which a Tab reaches, for
+// the element a list leaves through, and never let go. A key is held only while a hand-back is under way.
+for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0100: Tab goes through every control of the toolbar and out of it; the keys typed on each are that control's, nothing is held, and the band's own keys work after (${chrome})`, async ({ page }) => {
+        await openSheet(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'B3');
+        const before = (await cell(grid, 'B3').textContent()).trim();
+        const band = toolbar(page);
+        await band.focus();
+        await expect(band).toBeFocused();
+        const where = () => page.evaluate(() => {
+            const active = document.activeElement;
+            return active?.closest('.ex-sheet-toolbar')
+                ? (active.classList.contains('ex-sheet-toolbar') ? 'band' : active.getAttribute('aria-label') ?? active.className)
+                : null;
+        });
+
+        // Forward through the toolbar's tab stops, a letter typed on each.
+        const stops = [];
+        for (let i = 0; i < 16; i++) {
+            await page.keyboard.press('Tab');
+            const at = await where();
+            if (at === null) {
+                break;
+            }
+            stops.push(at);
+            await page.keyboard.press('x');
+            await expect.poll(where).toBe(at);
+        }
+        // The built-in Chrome's band is the one stop; MudBlazor's menus keep buttons of their own.
+        expect(stops).toEqual(chrome === 'mud' ? ['Font Colour, more', 'Fill Colour, more', 'Borders, more', 'Number Format'] : []);
+        await expect(openLists(page)).toHaveCount(0);
+        await expect(cell(grid, 'B3')).toHaveText(before);
+
+        // And back to the band, a letter typed on each again; there Escape gives the keyboard to the Sheet.
+        for (let i = 0; i < 16 && await where() !== 'band'; i++) {
+            await page.keyboard.press('Shift+Tab');
+            if (await where() !== 'band' && await where() !== null) {
+                await page.keyboard.press('x');
+            }
+        }
+        await expect.poll(where).toBe('band');
+        await page.keyboard.press('Escape');
+        await expectKeyboardOn(grid);
+        await page.keyboard.press('ArrowDown');
+        await expectFocusAt(grid, 'B4');
+        await expect(tips(page)).toHaveCount(0);
+        await expect(editor(grid)).toHaveCount(0);
         await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
     });
 }
@@ -361,22 +468,68 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
         });
 
-        test(`SH-52/ADR-0100: Alt, H, F, C, Escape typed at once closes the list, with the keyboard on the Sheet (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, Escape, Escape typed at once leaves no list and no KeyTips, with the keyboard on the Sheet (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await setRoundTrip(80);
 
-            await keyTips(page, 'h', 'f', 'c', 'Escape');
+            await keyTips(page, 'h', 'f', 'c', 'Escape', 'Escape', 'Escape');
 
             await circuitQuiet();
             await expect(openLists(page)).toHaveCount(0);
-            await expect(toolbar(page).locator('.ex-sheet-keytip')).toHaveCount(0);
+            await expect(tips(page)).toHaveCount(0);
+            await expect(editor(grid)).toHaveCount(0);
             await expectKeyboardOn(grid);
             await page.keyboard.press('ArrowDown');
             await expectFocusAt(grid, 'B4');
         });
 
-        test(`SH-52/ADR-0100/ADR-0050: Escape in a list, then Alt, H, H typed at once opens the next list, the only one (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, 1 typed at once sets bold from the Home row's KeyTips, as typed slowly (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'A4');
+            await setRoundTrip(80);
+
+            await keyTips(page, 'h', 'f', 'c', 'Escape', '1');
+
+            await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
+            await circuitQuiet();
+            await expect(openLists(page)).toHaveCount(0);
+            await expect(tips(page)).toHaveCount(0);
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'A4')).toHaveText('Plums');
+            await expectKeyboardOn(grid);
+            await page.keyboard.press('Control+z');
+            await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+        });
+
+        test(`SH-52/ADR-0100 (R2 (b), decided with the user 2026-10-12): Escape typed in a list a KeyTip opened, then 1 at once, sets bold: the 1 typed while the list closes is the KeyTips' (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'A4');
+            await keyTips(page, 'h', 'h');
+            await expect(openLists(page)).toHaveCount(1);
+            await expect(page.locator(':focus')).toContainText('No Fill');
+            const landed = await watchWhereKeysLand(page);
+            const circuit = await setRoundTrip(80);
+
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('1');
+
+            await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
+            await circuitQuiet();
+            await expect(openLists(page)).toHaveCount(0);
+            await expect(tips(page)).toHaveCount(0);
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'A4')).toHaveText('Plums');
+            await expectKeyboardOn(grid);
+            if (circuit) {
+                // On a circuit the 1 was typed while the list still stood: the case the hold is for.
+                expect(await landed()).toEqual([{ key: 'Escape', where: 'list' }, { key: '1', where: 'list' }]);
+            }
+            await page.keyboard.press('Control+z');
+            await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+        });
+
+        test(`SH-52/ADR-0100/ADR-0050: Escape three times in a list a KeyTip opened, typed at once, then Alt, H, H opens the next list, the only one (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await keyTips(page, 'h', 'f', 'c');
@@ -384,11 +537,13 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator(':focus')).toContainText('Automatic');
             await setRoundTrip(80);
 
+            // In the list, then on its way to the band and back to the Sheet: each Escape goes back a level.
             await page.keyboard.press('Escape');
-            // A key typed in a list while it closes is still the list's under either Chrome, and an Alt
-            // typed on the way back is not heard as alone (stop 4 in
-            // docs/agents/proposals/run17cf-toolbar-mud.md): the Alt goes down once the keyboard is back
-            // on the Sheet, while the toolbar's hand-back may still be standing, and the letters at once.
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('Escape');
+            // An Alt typed while the keyboard is still on its way back to the Sheet is not yet heard as
+            // alone (the stop on the Alt-alone hold in docs/agents/proposals/run17cf-toolbar-mud.md): the
+            // Alt goes down once the keyboard is back on the Sheet, the letters at once.
             await expectKeyboardOn(grid);
             await keyTips(page, 'h', 'h');
 
@@ -399,7 +554,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
             await expect(openLists(page)).toHaveCount(0);
-            await expectKeyboardOn(grid);
+            await expect(tips(page).filter({ hasText: /^FC$/ })).toHaveCount(1);
         });
 
         test(`ADR-0100/ADR-0050: Enter typed at once after a KeyTip's command reaches the Sheet, not the toolbar (${chrome})`, async ({ page }) => {
@@ -440,7 +595,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('italic');
         });
 
-        test(`ADR-0100/ADR-0050: a colour chosen in a list, then Enter typed before the keyboard is back, fills the cell and moves the Focus (${chrome})`, async ({ page }) => {
+        test(`ADR-0100/ADR-0050 (decided with the user, 2026-10-12): a colour chosen in a list, then Enter typed in the list as it closes, fills the cell once and moves the Focus (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await keyTips(page, 'h', 'h');
@@ -449,22 +604,25 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('ArrowDown');
             await page.keyboard.press('ArrowRight');
             await expect(page.locator(':focus')).toHaveAttribute('aria-label', 'Black, Text 1');
-            await setRoundTrip(80);
+            const landed = await watchWhereKeysLand(page);
+            const circuit = await setRoundTrip(80);
 
+            // The second Enter at once, while the list the first one closes still stands: under either
+            // Chrome it is held, from the list itself, and is the Sheet's once the keyboard is back.
             await page.keyboard.press('Enter');
-            if (chrome === 'mud') {
-                // Under MudBlazor's Chrome a key typed in the list itself while it closes is the list's
-                // (a stop in docs/agents/proposals/run17cf-toolbar-mud.md): the second Enter is typed
-                // once the keyboard has left the list, on the element it goes back through or beyond.
-                await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.mud-popover') == null)).toBe(true);
-            }
             await page.keyboard.press('Enter');
 
             await expectFocusAt(grid, 'B4');
             await circuitQuiet();
             await expect(openLists(page)).toHaveCount(0);
             await expect(cell(grid, 'B3')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+            await expect(cell(grid, 'B4')).not.toHaveCSS('background-color', 'rgb(0, 0, 0)');
             await expectKeyboardOn(grid);
+            if (circuit) {
+                // On a circuit both Enters were typed in the list, a round trip before it could close:
+                // without the hold the second chose again or was lost, and the Focus stayed on B3.
+                expect(await landed()).toEqual([{ key: 'Enter', where: 'list' }, { key: 'Enter', where: 'list' }]);
+            }
         });
     });
 }

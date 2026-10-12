@@ -17,6 +17,7 @@
    choices, and no Consumer places it. It is public only because Razor makes every component public,
    is hidden from a Consumer's editor, and may change in any version. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@implements IDisposable
 
 @*
     A Toolbar Item's choices under the built-in Chrome (ADR-0100): a menu in the grid's popover frame,
@@ -66,6 +67,13 @@
 
     /// <summary>The grid's popover frame.</summary>
     [Parameter, EditorRequired] public GridPopoverContext Popover { get; set; } = default!;
+
+    /// <summary>Told when the list has gone, however it closed: the Sheet Toolbar stops treating it as one
+    /// a KeyTip opened (ADR-0100's note of 2026-10-12).</summary>
+    [Parameter] public Action? Gone { get; set; }
+
+    /// <inheritdoc />
+    public void Dispose() => Gone?.Invoke();
 
     // Ten swatches to a row, as Excel's palette lays them out.
     private const int SwatchesAcross = 10;

@@ -402,12 +402,12 @@ public sealed class FormatCellsItem : ToolbarItemBase
     /// <inheritdoc />
     protected override ToolbarItemFace Face() => new(ToolbarItemKind.Button, "Format Cells", ToolbarIcon.FormatCells) { Shortcut = "Ctrl+1" };
 
-    // Excel's Home tab reaches Format Cells… through the Cells group's Format menu: O opens the menu
-    // (the seventeenth Windows run read the Home tab's letters, d1), and the menu's E is Format
-    // Cells…, as Microsoft documents Alt, H, O, E. That E is Excel's documentation, not a reading:
-    // the next Windows run confirms it. ExSheet has no such menu, so its letters are both: O narrows
-    // the KeyTips to this one and E runs it, as Excel's hands do, and an E typed after O never lands
-    // in the dialog (ADR-0100's note of 2026-10-12).
+    // Excel's Home tab reaches Format Cells… through the Cells group's Format menu: Alt, H, O opens the
+    // menu, and the menu's KeyTip for Format Cells… is E — observed (the Windows readings of
+    // 2026-10-12, R2 (a); the seventeenth run's d1 read the Home tab's letters). ExSheet has no such
+    // menu, so its letters are both: O narrows the KeyTips to this one and E runs it, as Excel's hands
+    // do, and an E typed after O never lands in the dialog. Escape after O shows the Home row's every
+    // letter again, as Escape closes Excel's Format menu (ADR-0100's note of 2026-10-12).
     /// <inheritdoc />
     protected override string? DefaultKeyTip => "OE";
 }

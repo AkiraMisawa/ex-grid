@@ -29,7 +29,7 @@ public partial class ExGrid<TRow>
     // the popover replaced. Shift+Tab there lands on the trailing sentinel, from behind.
     private bool _consumerContentsHeld;
 
-    private sealed record ConsumerPopover(RenderFragment<GridPopoverContext> Content, string Label);
+    private sealed record ConsumerPopover(RenderFragment<GridPopoverContext> Content, string Label, Func<Task>? ClosedByEscape = null);
 
     /// <summary>
     /// Shows a Consumer's own contents in the grid's popover frame (ADR-0050, item 16). The frame
@@ -49,14 +49,63 @@ public partial class ExGrid<TRow>
     /// take the keyboard from with its text uncommitted, and once the grid is disposed.</returns>
     /// <exception cref="ArgumentException"><paramref name="label"/> is empty: a dialog that names
     /// nothing says nothing to assistive technology (ADR-0033).</exception>
-    public async Task<bool> OpenPopoverAsync(RenderFragment<GridPopoverContext> content, string label)
+    public Task<bool> OpenPopoverAsync(RenderFragment<GridPopoverContext> content, string label)
+        => OpenPopoverCoreAsync(content, label, null);
+
+    /// <summary>
+    /// Shows a Consumer's own contents in the grid's popover frame, as
+    /// <see cref="OpenPopoverAsync(RenderFragment{GridPopoverContext}, string)"/> does, and tells the
+    /// Consumer when Escape closes it (ADR-0050 item 16's note of 2026-10-12): a list that goes back a
+    /// level, as ExSheet's toolbar lists go back to the KeyTips that opened them (ADR-0100).
+    ///
+    /// <para><paramref name="closedByEscape"/> is called on the renderer's context as Escape closes the
+    /// popover, before the grid takes the keyboard back to its root. The keys typed after that Escape
+    /// are held until the popover is gone and the keyboard has landed, and a hand-off the Consumer tells
+    /// before its first await — <see cref="HandKeyboardToFrameAsync"/>, then
+    /// <see cref="HandKeyboardToAsync"/> — is where they land, in order. Told nothing, they are the
+    /// root's. It is not called when the popover closes any other way: a press elsewhere, the box
+    /// shrinking, the contents' own <see cref="GridPopoverContext.Close"/>, another popover opened in
+    /// its place, or <see cref="ClosePopoverAsync"/>.</para>
+    /// </summary>
+    /// <param name="content">The contents, rendered with the frame's context.</param>
+    /// <param name="label">The popover's accessible name, in the Consumer's words.</param>
+    /// <param name="closedByEscape">Called as Escape closes the popover.</param>
+    /// <returns>Whether it opened: false while an edit is open, and once the grid is disposed.</returns>
+    /// <exception cref="ArgumentException"><paramref name="label"/> is empty.</exception>
+    public Task<bool> OpenPopoverAsync(RenderFragment<GridPopoverContext> content, string label, Func<Task> closedByEscape)
+    {
+        ArgumentNullException.ThrowIfNull(closedByEscape);
+        return OpenPopoverCoreAsync(content, label, closedByEscape);
+    }
+
+    private async Task<bool> OpenPopoverCoreAsync(RenderFragment<GridPopoverContext> content, string label, Func<Task>? closedByEscape)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentException.ThrowIfNullOrWhiteSpace(label);
         // On the renderer's own context, as every request of the Consumer's is.
         var opened = false;
-        await InvokeAsync(() => opened = OpenConsumerPopover(content, label));
+        await InvokeAsync(() => opened = OpenConsumerPopover(content, label, closedByEscape));
         return opened;
+    }
+
+    /// <summary>
+    /// Escape closes the Consumer's popover (ADR-0050 item 16's note of 2026-10-12): the Consumer's
+    /// own word on it, if it asked for one, is started before the grid takes the keyboard back, so
+    /// that a hand-off it tells before its first await reaches the key gate first. Answers what
+    /// remains of it, for the core to await once the popover has closed.
+    /// </summary>
+    private Task? ConsumerPopoverEscaping()
+    {
+        if (_consumerPopover?.ClosedByEscape is not { } escaped)
+            return null;
+        try
+        {
+            return escaped();
+        }
+        catch (Exception ex)
+        {
+            return Task.FromException(ex);
+        }
     }
 
     /// <summary>
@@ -221,7 +270,7 @@ public partial class ExGrid<TRow>
     /// a grid that edits — as it closes, so that the keys typed meanwhile land where they are held,
     /// not on nothing, where no grid hears them.</para>
     ///
-    /// <para>A popover the Consumer opens in the grid's own frame (<see cref="OpenPopoverAsync"/>)
+    /// <para>A popover the Consumer opens in the grid's own frame (<see cref="OpenPopoverAsync(RenderFragment{GridPopoverContext}, string)"/>)
     /// needs no call: the grid hands the keyboard to it itself.</para>
     /// </summary>
     public Task HandKeyboardToFrameAsync()
@@ -247,12 +296,12 @@ public partial class ExGrid<TRow>
         }
     }
 
-    private bool OpenConsumerPopover(RenderFragment<GridPopoverContext> content, string label)
+    private bool OpenConsumerPopover(RenderFragment<GridPopoverContext> content, string label, Func<Task>? closedByEscape = null)
     {
         if (_disposed || _editMode != EditMode.None)
             return false;
         CloseMenus();
-        _consumerPopover = new ConsumerPopover(content, label);
+        _consumerPopover = new ConsumerPopover(content, label, closedByEscape);
         BeginPopoverFocus();
         // The contents are the Consumer's, and focus themselves on their count.
         _popoverFocusPending = PopoverFocus.None;

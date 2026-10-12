@@ -1086,6 +1086,7 @@ ExGrid.Components.ExGrid<TRow>.OnUndo.get -> Microsoft.AspNetCore.Components.Eve
 ExGrid.Components.ExGrid<TRow>.OnUndo.set -> void
 ExGrid.Components.ExGrid<TRow>.OnViewportReportAsync(double gutterWidthPx, double gutterHeightPx, double widthPx, double heightPx) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OpenPopoverAsync(Microsoft.AspNetCore.Components.RenderFragment<ExGrid.Chrome.GridPopoverContext!>! content, string! label) -> System.Threading.Tasks.Task<bool>!
+ExGrid.Components.ExGrid<TRow>.OpenPopoverAsync(Microsoft.AspNetCore.Components.RenderFragment<ExGrid.Chrome.GridPopoverContext!>! content, string! label, System.Func<System.Threading.Tasks.Task!>! closedByEscape) -> System.Threading.Tasks.Task<bool>!
 ExGrid.Components.ExGrid<TRow>.OutlinedColumns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Cells.OutlinedColumn!>?
 ExGrid.Components.ExGrid<TRow>.OutlinedColumns.set -> void
 ExGrid.Components.ExGrid<TRow>.PageSize.get -> int?

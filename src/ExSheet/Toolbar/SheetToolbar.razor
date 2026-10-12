@@ -44,6 +44,16 @@
     The KeyTips take the keyboard here the other way: the grid's key gate is told the keyboard is
     going to a frame of the Sheet's own, so the letters typed before the band holds it are held there
     and handed to the band in order (ADR-0050 item 16; ADR-0100's note of 2026-10-12).
+
+    Escape goes back one level, as Excel's does (the Windows readings of 2026-10-12, R2 (b)): from a
+    list a KeyTip opened to its row's letters, with the keyboard on the band, from a row's letters to
+    the rows', and from the rows' to the Sheet; typed letters that narrow a level are a level of their
+    own, as Excel's Format menu is behind O. A list closing is the keyboard in flight: the keys typed
+    meanwhile, in the list itself (ToolbarItemContext.ChoicesClosing) or on the band, are held and
+    handed on in order to where the keyboard lands (decided with the user, 2026-10-12).
+
+    The band answers only its own keys. A Chrome's control inside it that a Tab reaches — MudMenu's
+    button — keeps the keys typed on it: none of them is held, and none presses another item.
 *@
 <div class="ex-sheet-toolbar" role="toolbar" aria-label="@SheetWords.ToolbarName" aria-orientation="horizontal"
      tabindex="0" style="@Style" aria-activedescendant="@ActiveId" @ref="_band"
@@ -79,9 +89,19 @@
 
     private string? ActiveId => Context.Active?.Describe().Id;
 
-    // The keys typed on the band, or on an element inside it, while the keyboard is on its way back to
-    // the Sheet: held, in order, until the grid has the keyboard and asks for them; null otherwise.
+    // The keys typed on the band, on an element inside it, or in a Chrome's list closing, while the
+    // keyboard is in flight: held, in order, until it lands — on the Sheet, once the grid has it and asks
+    // for them (HandKeysOn), or on this band, once it holds DOM focus (_heldForBand); null otherwise.
     private List<KeyboardEventArgs>? _typedOnTheWay;
+    private bool _heldForBand;
+    // The toolbar has asked the grid to take the keyboard back, and the grid has not yet asked for the keys.
+    private bool _handingBack;
+    // A Chrome's list closing (ChoicesClosing), whether Escape closed it, until it says it has closed.
+    private ToolbarItemBase? _closingList;
+    private bool _closingByEscape;
+    // The band is to take DOM focus, with the KeyTips standing: a focusout that comes first is the keyboard
+    // on its way here, not leaving the toolbar.
+    private bool _bandTakePending;
     private readonly Func<IReadOnlyList<KeyboardEventArgs>> _handKeysOn;
 
     /// <summary>The handler the grid asks for the held keys through, held in a field (AGENTS.md, the Blazor traps).</summary>
@@ -103,6 +123,9 @@
     {
         Context.LeaveToolbar = GiveKeyboardBackAsync;
         Context.StartKeyTips = StartKeyTipsAsync;
+        Context.ListClosingHook = ListClosing;
+        Context.ListClosedHook = ListClosedAsync;
+        Context.ListEscapedHook = ListEscapedAsync;
         Context.Changed += OnToolbarChanged;
     }
 
@@ -121,21 +144,35 @@
     {
         if (Context.Rows.Count > 0 && Context.Rows.All(row => row.KeyTip is null)) return;
         Context.ShowKeyTips(KeyTipStage.Rows);
+        Context.KeyTipList = null;
+        await BandTakesKeyboardFromGridAsync();
+    }
+
+    /// <summary>
+    /// The band takes the keyboard from the grid with the KeyTips standing: as they start, and as they
+    /// come back from a list in the grid's popover. The grid's key gate is told before anything else that
+    /// the keyboard is going to a frame of the Sheet's own, so the keys typed until the band holds it are
+    /// held there and handed to it (ADR-0050 item 16; ADR-0100's note of 2026-10-12), and the band takes
+    /// it through the grid, which gives it in turn, with the keys held for it: a key typed straight on the
+    /// band never overtakes one still held. Both are told before this method first waits, which the gate's
+    /// hold relies on: it waits only for its question to the core to be answered.
+    /// </summary>
+    private async Task BandTakesKeyboardFromGridAsync()
+    {
         _keysAreKeyTips = true;
-        // Told before anything else, as the release is heard: the grid's key gate holds the letters
-        // typed until the band has the keyboard, and hands them to it (ADR-0050 item 16; ADR-0100's
-        // note of 2026-10-12). It answers after this, whatever was typed. The band takes the keyboard
-        // through the grid, which gives it in turn, with the letters held for it, so a letter typed
-        // straight on the band never overtakes one still held.
+        _bandTakePending = true;
         var handedOff = Context.HandKeyboardToToolbar?.Invoke() ?? Task.CompletedTask;
         StateHasChanged();
         try
         {
             await (Context.GiveToolbarTheKeyboard?.Invoke(_band) ?? _band.FocusAsync(preventScroll: true).AsTask());
+            // The band holds the keyboard already, or will once the grid's hold reaches it (OnFocus).
+            if (_hasFocus) _bandTakePending = false;
             await handedOff;
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
+            _bandTakePending = false;
             Context.ShowKeyTips(KeyTipStage.Off);
         }
     }
@@ -145,6 +182,14 @@
     // key ends them and does nothing. The keyboard goes back to the Sheet when they end.
     private async Task OnKeyTipKeyAsync(KeyboardEventArgs e)
     {
+        // Escape goes back one level (ADR-0100; the Windows readings of 2026-10-12, R2 (b)). Letters typed
+        // that narrow a level are a level of their own, as Excel's Format menu is behind O: Escape shows the
+        // level's every letter again. From the rows' letters it ends them.
+        if (e.Key == "Escape" && Context.KeyTipTyped.Length > 0)
+        {
+            Context.ShowKeyTips(Context.KeyTips, Context.KeyTipRow);
+            return;
+        }
         if (e.Key == "Escape" && Context.KeyTips == KeyTipStage.Items)
         {
             Context.ShowKeyTips(KeyTipStage.Rows);
@@ -197,8 +242,104 @@
 
     private async Task EndKeyTipsAsync()
     {
+        _bandTakePending = false;
         Context.ShowKeyTips(KeyTipStage.Off);
         await Context.ReturnKeyboardAsync();
+    }
+
+    // ---- A list closing (ADR-0100's note of 2026-10-12, decided with the user) ----
+
+    /// <summary>
+    /// A Chrome's list begins to close (<see cref="ToolbarItemContext.ChoicesClosing"/>): the keys typed
+    /// from now — in the list, through the action answered, and on the band or an element inside it — are
+    /// held until the list has closed and the keyboard has landed.
+    /// </summary>
+    private Action<KeyboardEventArgs> ListClosing(ToolbarItemBase item, KeyboardEventArgs? closedBy)
+    {
+        _closingList = item;
+        _closingByEscape = closedBy is { Key: "Escape" };
+        if (_typedOnTheWay is null)
+        {
+            _typedOnTheWay = [];
+            _heldForBand = false;
+            StateHasChanged();
+        }
+        return key =>
+        {
+            if (ReferenceEquals(_closingList, item)) _typedOnTheWay?.Add(key);
+        };
+    }
+
+    /// <summary>
+    /// A Chrome's list has closed (<see cref="ToolbarItemContext.ChoicesClosed"/>), with the keyboard on an
+    /// element of the item's own inside the band, or wherever the close left it. Escape in a list a KeyTip
+    /// opened goes back to that row's KeyTips, as does any list closing while the KeyTips stand; anything
+    /// else gives the keyboard back to the Sheet. The keys held meanwhile go with it.
+    /// </summary>
+    private async Task ListClosedAsync(ToolbarItemBase item)
+    {
+        var escaped = ReferenceEquals(_closingList, item) && _closingByEscape;
+        if (ReferenceEquals(_closingList, item)) _closingList = null;
+        var fromKeyTip = ReferenceEquals(Context.KeyTipList, item);
+        if (fromKeyTip) Context.KeyTipList = null;
+        if (KeyTipsShown || (escaped && fromKeyTip))
+        {
+            if (!KeyTipsShown) Context.ShowKeyTips(KeyTipStage.Items, item.Row);
+            await BandTakesKeyboardBackAsync();
+            return;
+        }
+        await Context.ReturnKeyboardAsync();
+    }
+
+    /// <summary>
+    /// Escape closed an item's list in the grid's popover (the built-in Chrome): one a KeyTip opened goes
+    /// back to that row's KeyTips, and the band takes the keyboard from the grid, with the keys typed
+    /// after the Escape; otherwise the grid keeps the keyboard it takes back.
+    /// </summary>
+    private Task ListEscapedAsync(ToolbarItemBase item)
+    {
+        if (!ReferenceEquals(Context.KeyTipList, item)) return Task.CompletedTask;
+        Context.KeyTipList = null;
+        Context.ShowKeyTips(KeyTipStage.Items, item.Row);
+        return BandTakesKeyboardFromGridAsync();
+    }
+
+    /// <summary>
+    /// Escape on the band before the list a KeyTip opened has taken the keyboard: the list closes, as Escape
+    /// in it would close it, and the KeyTips go back to its row's letters, with the keyboard on the band —
+    /// taken back through the grid, in turn, should the list have taken it meanwhile.
+    /// </summary>
+    private Task BackFromKeyTipListAsync(ToolbarItemBase item)
+    {
+        Context.KeyTipList = null;
+        item.RequestCloseOfChoices();
+        Context.ShowKeyTips(KeyTipStage.Items, item.Row);
+        return BandTakesKeyboardFromGridAsync();
+    }
+
+    /// <summary>
+    /// The band takes DOM focus back from an element inside it, with the KeyTips standing: the keys held,
+    /// and those typed until it holds the keyboard, are its own, in order, once it does (OnFocus).
+    /// </summary>
+    private async Task BandTakesKeyboardBackAsync()
+    {
+        _typedOnTheWay ??= [];
+        _heldForBand = true;
+        _handingBack = false;
+        _keysAreKeyTips = true;
+        _bandTakePending = true;
+        StateHasChanged();
+        try
+        {
+            await _band.FocusAsync(preventScroll: true);
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            _typedOnTheWay = null;
+            _heldForBand = false;
+            _bandTakePending = false;
+            Context.ShowKeyTips(KeyTipStage.Off);
+        }
     }
 
     /// <summary>
@@ -207,7 +348,11 @@
     /// </summary>
     private Task GiveKeyboardBackAsync()
     {
+        _bandTakePending = false;
         if (Context.TakeKeyboardBack is not { } takeBack) return Context.ReturnKeyboardToSheetAsync();
+        // The keys held for this band, or for a list closing, are the Sheet's now, ahead of any typed after.
+        _heldForBand = false;
+        _handingBack = true;
         if (_typedOnTheWay is null)
         {
             _typedOnTheWay = [];
@@ -222,6 +367,8 @@
     {
         var keys = _typedOnTheWay ?? [];
         _typedOnTheWay = null;
+        _handingBack = false;
+        _closingList = null;
         _defaultsHeld = true;
         _ = LetDefaultsGoAsync();
         return keys;
@@ -238,7 +385,7 @@
     {
         await Task.Yield();
         _defaultsHeld = false;
-        if (_typedOnTheWay is null) _keysAreKeyTips = false;
+        if (_typedOnTheWay is null && !KeyTipsShown) _keysAreKeyTips = false;
         StateHasChanged();
     }
 
@@ -258,14 +405,35 @@
         Context.Changed -= OnToolbarChanged;
         if (Context.LeaveToolbar == GiveKeyboardBackAsync) Context.LeaveToolbar = null;
         if (Context.StartKeyTips == StartKeyTipsAsync) Context.StartKeyTips = null;
+        if (Context.ListClosingHook == ListClosing) Context.ListClosingHook = null;
+        if (Context.ListClosedHook == ListClosedAsync) Context.ListClosedHook = null;
+        if (Context.ListEscapedHook == ListEscapedAsync) Context.ListEscapedHook = null;
         Context.ShowKeyTips(KeyTipStage.Off);
     }
 
-    private void OnFocus()
+    private async Task OnFocus()
     {
         _hasFocus = true;
+        _bandTakePending = false;
+        if (_typedOnTheWay is { } held && (_heldForBand || !_handingBack))
+        {
+            // The keyboard has landed here: the keys held for the band are its own, in order — one of them
+            // giving the keyboard back holds the rest for the Sheet. A hold nothing is handing back, a
+            // Chrome's list that began to close and never said it had, holds no more: its keys are dropped,
+            // rather than kept from a toolbar that has the keyboard (a trap) or given to a place they were
+            // not typed for.
+            var forBand = _heldForBand;
+            _typedOnTheWay = null;
+            _heldForBand = false;
+            _closingList = null;
+            StateHasChanged();
+            if (forBand)
+            {
+                foreach (var key in held) await OnKeyAsync(key);
+            }
+        }
         // Tab arrives on the item the keyboard was on last, else on the first that can be pressed.
-        if (Context.Active is { CanPress: true }) return;
+        if (Context.Active is { CanPress: true } || KeyTipsShown) return;
         Context.Activate(Pressable().FirstOrDefault());
         StateHasChanged();
     }
@@ -273,7 +441,9 @@
     private void OnFocusOut(FocusEventArgs _)
     {
         _hasFocus = false;
-        // The KeyTips end when the keyboard leaves: a list an item opened, or a press elsewhere.
+        // The KeyTips end when the keyboard leaves: a list an item opened, or a press elsewhere. Not while
+        // the band is taking the keyboard itself, from an element inside it or one the grid hands it from.
+        if (_bandTakePending) return;
         Context.ShowKeyTips(KeyTipStage.Off);
         if (_keysAreKeyTips && _typedOnTheWay is null)
         {
@@ -296,19 +466,27 @@
 
     private async Task OnKeyAsync(KeyboardEventArgs e)
     {
-        // On its way back to the Sheet, the keyboard's keys are the Sheet's: held, and handed on once
-        // the grid has it. So are the keys typed on an element inside the band while the band itself
-        // does not hold the keyboard: a Chrome's, which its list closing put the keyboard on (no Toolbar
-        // Item is a tab stop, and a press on one takes no focus), and which gives it back next.
-        if (_typedOnTheWay is null && !_hasFocus && !KeyTipsShown) _typedOnTheWay = [];
+        // While the keyboard is in flight — back to the Sheet, on its way here, or out of a Chrome's list
+        // closing — the keys are held, in order, for where it lands. Only then: a hold stands only while a
+        // hand-back or a list's close is under way.
         if (_typedOnTheWay is { } onTheWay)
         {
             onTheWay.Add(e);
             return;
         }
+        // The band answers its own keys only. One typed on a control inside it that holds the keyboard
+        // itself — a Chrome's own, a Tab reaches MudMenu's button — is that control's, and presses nothing.
+        if (!_hasFocus) return;
         if (KeyTipsShown)
         {
             await OnKeyTipKeyAsync(e);
+            return;
+        }
+        // Escape before the list a KeyTip opened has the keyboard: the list closes and the KeyTips go back
+        // a level, as Escape in the list does (R2 (b)).
+        if (e.Key == "Escape" && Context.KeyTipList is { } keyTipList)
+        {
+            await BackFromKeyTipListAsync(keyTipList);
             return;
         }
         var items = Pressable().ToList();

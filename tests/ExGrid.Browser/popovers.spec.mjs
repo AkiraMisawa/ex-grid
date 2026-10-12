@@ -1,4 +1,4 @@
-import { test, expect, alterPage, twoFrames } from './fixtures.mjs';
+import { test, expect, alterPage, twoFrames, setRoundTrip, circuitQuiet } from './fixtures.mjs';
 import { expectKeyboardOn, keyboardCarrier, activeDescendant, expectActiveDescendant } from './keyboard.mjs';
 
 // The popovers' behaviour on /features, run once per Chrome (WR-5, FN-17): the built-in
@@ -119,6 +119,28 @@ async function rowCountAfterFilter(page, chrome, apply) {
     await expect.poll(() => grid(page).getAttribute('aria-rowcount'), 'the condition filters something out')
         .not.toBe(before);
     return grid(page).getAttribute('aria-rowcount');
+}
+
+// Where each key typed from now lands, by its keydown's target, read on the document in the capture
+// phase, before any listener of the page's can stop it: in one of the grid's popovers, in the grid, or
+// elsewhere. Only keys typed, not the grid's replays of held keys. Answers a reader of what has landed.
+async function watchWhereKeysLand(page) {
+    await alterPage(page, () => {
+        window.__keysLanded = [];
+        const listener = (e) => {
+            if (!e.isTrusted) {
+                return;
+            }
+            const t = e.target instanceof Element ? e.target : null;
+            window.__keysLanded.push({ key: e.key, where: t?.closest('.ex-popover') ? 'popover' : t?.closest('.ex-grid') ? 'grid' : 'page' });
+        };
+        document.addEventListener('keydown', listener, true);
+        return () => {
+            document.removeEventListener('keydown', listener, true);
+            delete window.__keysLanded;
+        };
+    });
+    return () => page.evaluate(() => window.__keysLanded);
 }
 
 for (const chrome of CHROMES) {
@@ -317,6 +339,61 @@ for (const chrome of CHROMES) {
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
             await expectKeyboardOn(grid(page));
             await focusAfterDown();
+        });
+
+        // Decided with the user on 2026-10-12 (ADR-0044's note of that day): the keys typed while the
+        // keyboard is in flight back from a closing popover are held, and handed on in order to where it
+        // lands, so the outcome is the same at any speed (the spine's sixth principle). On the Server host
+        // at an 80 ms round trip the popover stands a round trip after the key or press that closes it,
+        // and a key typed then was the popover's: ↓ moved in a menu about to go, and was lost.
+        test('keys typed while Escape closes a menu are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12)', async ({ page }) => {
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+            const landed = await watchWhereKeysLand(page);
+            const circuit = await setRoundTrip(80);
+            try {
+                await page.keyboard.press('Escape');
+                await page.keyboard.press('ArrowDown');
+                await page.keyboard.press('ArrowDown');
+
+                await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+                await circuitQuiet();
+                await expectKeyboardOn(grid(page));
+                await expectActiveDescendant(grid(page), /r3c0$/);
+                await expect(grid(page).locator('.ex-header-cell[aria-sort]')).toHaveCount(0);
+                if (circuit) {
+                    // Typed in the menu, a round trip before it could go: the case the hold is for.
+                    expect(await landed()).toEqual([
+                        { key: 'Escape', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
+                }
+            } finally {
+                await setRoundTrip(0);
+            }
+        });
+
+        test('a key typed while a command pressed in a menu closes it is the grid\'s: ↓ typed at once moves the Focus (ADR-0044, 2026-10-12)', async ({ page }) => {
+            await clickCell(page, 2, 1);
+            await grid(page).locator("[id$='r2c1']").click({ button: 'right', force: true });
+            const command = grid(page).locator('[role=menu] button[role=menuitem]').last();
+            await expect(command).toBeVisible();
+            const landed = await watchWhereKeysLand(page);
+            const circuit = await setRoundTrip(80);
+            try {
+                await command.click();
+                await page.keyboard.press('ArrowDown');
+
+                await expect(grid(page).locator('[role=menu]')).toHaveCount(0);
+                await expect(page.locator('#context-status')).toContainText('(1 cells selected');
+                await circuitQuiet();
+                await expectKeyboardOn(grid(page));
+                await expectActiveDescendant(grid(page), /r3c1$/);
+                if (circuit) {
+                    expect(await landed()).toEqual([{ key: 'ArrowDown', where: 'popover' }]);
+                }
+            } finally {
+                await setRoundTrip(0);
+            }
         });
 
         test('in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039)', async ({ page }) => {

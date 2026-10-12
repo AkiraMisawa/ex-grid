@@ -1819,10 +1819,16 @@
 
     // A Toolbar Item's choices under the built-in Chrome: a menu in the grid's popover frame, which
     // takes the keyboard and gives it back when it closes (ADR-0039, ADR-0040).
-    private async Task OpenToolbarChoicesAsync(string title, IReadOnlyList<ToolbarChoice> choices)
+    // A Toolbar Item's choices in the grid's popover frame. Escape there goes back to the KeyTips that
+    // opened them, as Excel goes back one level (ADR-0100's note of 2026-10-12), so the toolbar hears it
+    // as the grid closes the popover, and hears when they have gone, however they closed.
+    private async Task OpenToolbarChoicesAsync(string title, IReadOnlyList<ToolbarChoice> choices, Func<Task>? escaped, Action? gone)
     {
         if (_grid is not { } grid || choices.Count == 0) return;
-        if (await grid.OpenPopoverAsync(popover => ToolbarChoices(title, choices, popover), title)) _toolbarChoicesTitle = title;
+        var opened = escaped is null
+            ? await grid.OpenPopoverAsync(popover => ToolbarChoices(title, choices, popover, gone), title)
+            : await grid.OpenPopoverAsync(popover => ToolbarChoices(title, choices, popover, gone), title, escaped);
+        if (opened) _toolbarChoicesTitle = title;
     }
 
     // The toolbar list the grid's popover frame was last opened with, by its title: the one a close
@@ -1849,8 +1855,8 @@
         return Task.CompletedTask;
     }
 
-    private static RenderFragment ToolbarChoices(string title, IReadOnlyList<ToolbarChoice> choices, GridPopoverContext popover) =>
-        @<ToolbarChoicesPanel Title="@title" Choices="choices" Popover="popover" />;
+    private static RenderFragment ToolbarChoices(string title, IReadOnlyList<ToolbarChoice> choices, GridPopoverContext popover, Action? gone) =>
+        @<ToolbarChoicesPanel Title="@title" Choices="choices" Popover="popover" Gone="gone" />;
 
     private Task ChangedAsync(SheetChange change, bool raiseDocument = true, bool byUser = true) => ChangedAsync([change], raiseDocument, byUser);
 
