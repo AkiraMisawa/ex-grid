@@ -320,8 +320,8 @@ public class ColumnWidthTests
         Assert.Equal([1], undone.Columns);
     }
 
-    [Fact] // ADR-0046: inserted columns take the width of the column to their left with its kind, the rest move with theirs, and undoing puts both back
-    public void Insertion_and_deletion_carry_the_kind()
+    [Fact] // ADR-0046 (seventeenth Windows run, b10; CW-023): an inserted column takes the width widened by entry of the column to its left as the user's, as Excel's file holds it (customWidth without bestFit), the column to its left keeps its kind, and undoing and redoing are exact
+    public void An_inserted_column_takes_a_width_widened_by_entry_as_the_users()
     {
         var sheet = NewSheet();
         sheet.SetAutomaticColumnWidth(Columns("B:B"), 11);
@@ -330,18 +330,60 @@ public class ColumnWidthTests
 
         var inserted = sheet.Do(SheetEdit.InsertColumns(2, 2));
 
-        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(2));
-        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(3));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(2));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(3));
         Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(4));
+        Assert.Equal([2, 3, 4], inserted.Change.Columns);
+        var after = sheet.ToDocument().ToJson();
+
         inserted.Undo();
         Assert.Equal(before, sheet.ToDocument().ToJson());
+        inserted.Redo();
+        Assert.Equal(after, sheet.ToDocument().ToJson());
+    }
+
+    [Fact] // ADR-0046 (SH-22): an inserted column takes the user's width to its left as the user's, unchanged by the rule for a width widened by entry (CW-024)
+    public void An_inserted_column_takes_the_users_width_as_the_users()
+    {
+        var sheet = NewSheet();
+        sheet.SetColumnWidth(Columns("B:B"), 20);
+
+        sheet.Do(SheetEdit.InsertColumns(2));
+
+        Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(2));
+    }
+
+    [Fact] // ADR-0046 (seventeenth Windows run, b10; CW-025): deletion moves every width with its kind, one widened by entry staying widened by entry, and undoing puts both back
+    public void Deletion_moves_a_width_with_its_kind()
+    {
+        var sheet = NewSheet();
+        sheet.SetAutomaticColumnWidth(Columns("B:B"), 11);
+        sheet.SetColumnWidth(Columns("C:C"), 20);
+        sheet.SetAutomaticColumnWidth(Columns("D:D"), 12);
+        var before = sheet.ToDocument().ToJson();
 
         var deleted = sheet.Do(SheetEdit.DeleteColumns(1));
 
         Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(12, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(2));
         deleted.Undo();
         Assert.Equal(before, sheet.ToDocument().ToJson());
         Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(1));
+    }
+
+    [Fact] // ADR-0046 (seventeenth Windows run, b10; CW-023): undoing a deletion is not an insertion: the deleted column's width widened by entry comes back of its own kind, not the user's
+    public void Undoing_a_deletion_puts_back_a_width_widened_by_entry_of_its_kind()
+    {
+        var sheet = NewSheet();
+        sheet.SetAutomaticColumnWidth(Columns("B:C"), 11);
+
+        var deleted = sheet.Do(SheetEdit.DeleteColumns(2));
+        deleted.Undo();
+
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(2));
     }
 
     [Fact] // ADR-0046 (2026-09-28)/0048: the document records each width's kind, adjacent columns alike in both as one run, and round-trips it

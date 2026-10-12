@@ -264,8 +264,8 @@
     },
     {
       "id": "LVL-023",
-      "source": "uncertain",
-      "description": "Undoing a column's format puts back the cell formatted before it",
+      "source": "observed",
+      "description": "Undoing a column's format puts back the cell formatted before it (asked by hand: verification/2026-10-11-windows-17, b9)",
       "cells": {"B2": "0.5"},
       "action": [
         {"do": "format", "range": "B2", "format": "0%"},
@@ -277,8 +277,8 @@
     },
     {
       "id": "LVL-024",
-      "source": "uncertain",
-      "description": "Undoing a row's deletion puts back its format",
+      "source": "observed",
+      "description": "Undoing a row's deletion puts back its format (asked by hand: verification/2026-10-11-windows-17, b9)",
       "cells": {"B2": "0.5"},
       "action": [
         {"do": "format", "range": "2:2", "format": "0%"},
@@ -336,8 +336,8 @@
     },
     {
       "id": "LVL-030",
-      "source": "uncertain",
-      "description": "Undoing a format set on several ranges at once puts back the cell formatted before it",
+      "source": "observed",
+      "description": "Undoing a format set on several ranges at once puts back the cell formatted before it (asked by hand: verification/2026-10-11-windows-17, b9)",
       "cells": {"B2": "0.5"},
       "action": [
         {"do": "format", "range": "B2", "format": "0%"},
@@ -349,7 +349,7 @@
     },
     {
       "id": "LVL-031",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a whole number typed into a percent cell is divided by 100 too: 10 is 10%",
       "cells": {},
       "action": [
@@ -362,7 +362,7 @@
     },
     {
       "id": "LVL-032",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a percentage typed into a percent cell is not divided again",
       "cells": {},
       "action": [
@@ -375,7 +375,7 @@
     },
     {
       "id": "LVL-033",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number typed into a column formatted 0.00% is divided by 100",
       "cells": {},
       "action": [
@@ -400,7 +400,7 @@
     },
     {
       "id": "LVL-035",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative number typed into a percent cell is divided by 100",
       "cells": {},
       "action": [

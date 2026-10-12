@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "MID-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: five characters from the first",
       "cells": {"A1": "Fluid Flow", "ZZ1000": "=MID(A1,1,5)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "MID-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: more characters than remain give the rest",
       "cells": {"A1": "Fluid Flow", "ZZ1000": "=MID(A1,7,20)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "MID-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a start past the end gives empty text",
       "cells": {"A1": "Fluid Flow", "ZZ1000": "=MID(A1,20,5)&\"x\""},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "MID-004",
-      "source": "documented",
+      "source": "observed",
       "description": "start_num below 1 is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MID(\"abc\",0,1)"},
@@ -37,7 +37,7 @@
     },
     {
       "id": "MID-005",
-      "source": "documented",
+      "source": "observed",
       "description": "num_chars below 0 is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MID(\"abc\",1,-1)"},
@@ -46,7 +46,7 @@
     },
     {
       "id": "MID-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number is read as its text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MID(12345,2,3)"},

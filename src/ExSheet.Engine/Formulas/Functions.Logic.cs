@@ -8,16 +8,30 @@ internal static partial class FunctionLibrary
     private static Operand Or(FunctionCall call) => Logical(call, all: false);
 
     /// <summary>
-    /// AND and OR. Inside a range or a Reference, numbers and booleans count, a number being TRUE
-    /// unless it is 0, and text and blanks are ignored. Typed as an argument, text counts only when
-    /// it spells TRUE or FALSE, and other text is <c>#VALUE!</c>. With nothing that counts, the
-    /// result is <c>#VALUE!</c>. An Error Value anywhere is the result, the first one found left to
-    /// right; every argument is read, so an error after a FALSE is still the result.
+    /// AND and OR, over the logical values <see cref="TryReadLogicals"/> reads. With nothing that
+    /// counts, the result is <c>#VALUE!</c>.
     /// </summary>
     private static Operand Logical(FunctionCall call, bool all)
     {
-        var evaluator = call.Evaluator;
         bool? result = null;
+        if (!TryReadLogicals(call, truth => result = all ? (result ?? true) && truth : (result ?? false) || truth, out var failure)) return failure;
+        return result is { } answer ? Operand.Of(Value.FromBoolean(answer)) : Operand.Of(ErrorValue.Value);
+    }
+
+    /// <summary>
+    /// The logical values AND, OR and XOR take, left to right, each handed to <paramref name="take"/>.
+    /// Inside a range or a Reference, numbers and booleans count, a number being TRUE unless it is 0,
+    /// and text and blanks are passed over. Typed as an argument, a number or a boolean counts, and
+    /// so does text that spells TRUE or FALSE; other text is passed over, as text inside a range is
+    /// (AND-011: Excel's <c>AND("abc",TRUE)</c> is TRUE, read by the seventeenth Windows run). An
+    /// argument left empty is FALSE. An Error Value anywhere is the <paramref name="failure"/>, the
+    /// first one found left to right; no value decides the result early, so an error after a FALSE
+    /// is still the result.
+    /// </summary>
+    private static bool TryReadLogicals(FunctionCall call, Action<bool> take, out Operand failure)
+    {
+        var evaluator = call.Evaluator;
+        failure = default;
         for (var i = 0; i < call.Count; i++)
         {
             var operand = call.Operand(i);
@@ -26,24 +40,30 @@ internal static partial class FunctionLibrary
                 case OperandKind.Area or OperandKind.Column or OperandKind.Array:
                     foreach (var value in evaluator.RangeValues(operand))
                     {
-                        if (value.IsError) return Operand.Of(value);
-                        if (value.Kind == ValueKind.Number) Fold(value.Number != 0);
-                        else if (value.Kind == ValueKind.Boolean) Fold(value.Boolean);
+                        if (value.IsError)
+                        {
+                            failure = Operand.Of(value);
+                            return false;
+                        }
+                        if (value.Kind == ValueKind.Number) take(value.Number != 0);
+                        else if (value.Kind == ValueKind.Boolean) take(value.Boolean);
                     }
                     break;
                 case OperandKind.Missing:
-                    Fold(false);
+                    take(false);
                     break;
                 default:
                     if (operand.Scalar is not { } scalar) break;
-                    if (!TryTruth(scalar, out var truth)) return Operand.Of(scalar.IsError ? scalar.Error : ErrorValue.Value);
-                    Fold(truth);
+                    if (scalar.IsError)
+                    {
+                        failure = Operand.Of(scalar);
+                        return false;
+                    }
+                    if (TryTruth(scalar, out var truth)) take(truth);
                     break;
             }
         }
-        return result is { } answer ? Operand.Of(Value.FromBoolean(answer)) : Operand.Of(ErrorValue.Value);
-
-        void Fold(bool truth) => result = all ? (result ?? true) && truth : (result ?? false) || truth;
+        return true;
     }
 
     /// <summary>NOT: a blank is FALSE, so its NOT is TRUE; otherwise the test <c>IF</c> applies.</summary>
@@ -112,12 +132,14 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// ERROR.TYPE (ADR-0047's note of 2026-10-10): Microsoft's number for an Error Value —
     /// <c>#NULL!</c> 1, <c>#DIV/0!</c> 2, <c>#VALUE!</c> 3, <c>#REF!</c> 4, <c>#NAME?</c> 5,
-    /// <c>#NUM!</c> 6, <c>#N/A</c> 7 — and <c>#N/A</c> for a Value that is no error.
+    /// <c>#NUM!</c> 6, <c>#N/A</c> 7 — and <c>#N/A</c> for a Value that is no error. Excel's newer
+    /// Error Values, outside Microsoft's table, take the numbers Excel gave them when the seventeenth
+    /// Windows run asked (ERRORTYPE-013 to 019): <c>#SPILL!</c> 9, <c>#CONNECT!</c> 10,
+    /// <c>#BLOCKED!</c> 11, <c>#UNKNOWN!</c> 12, <c>#FIELD!</c> 13, <c>#CALC!</c> 14.
     /// <c>#GETTING_DATA</c> and <c>#CIRC!</c> are given back, never numbered: Microsoft's table numbers
     /// <c>#GETTING_DATA</c> 8, and a number would let a Formula show something while its data is on its
-    /// way (ADR-0049). An Error Value outside the table — <c>#SPILL!</c>, <c>#CALC!</c>, <c>#FIELD!</c>,
-    /// <c>#BLOCKED!</c>, <c>#CONNECT!</c>, <c>#UNKNOWN!</c> — is <c>#VALUE!</c> until a Windows run asks
-    /// Excel; not <c>#N/A</c>, which is the table's answer for a Value that is no error.
+    /// way (ADR-0049). An Error Value added later is <c>#VALUE!</c> until Excel is asked; not
+    /// <c>#N/A</c>, which is the answer for a Value that is no error.
     /// </summary>
     private static Operand ErrorType(FunctionCall call)
     {
@@ -133,6 +155,12 @@ internal static partial class FunctionLibrary
             ErrorValue.Name => Operand.Of(Value.FromNumber(5)),
             ErrorValue.Num => Operand.Of(Value.FromNumber(6)),
             ErrorValue.NA => Operand.Of(Value.FromNumber(7)),
+            ErrorValue.Spill => Operand.Of(Value.FromNumber(9)),
+            ErrorValue.Connect => Operand.Of(Value.FromNumber(10)),
+            ErrorValue.Blocked => Operand.Of(Value.FromNumber(11)),
+            ErrorValue.Unknown => Operand.Of(Value.FromNumber(12)),
+            ErrorValue.Field => Operand.Of(Value.FromNumber(13)),
+            ErrorValue.Calc => Operand.Of(Value.FromNumber(14)),
             ErrorValue.GettingData or ErrorValue.Circ => Operand.Of(value),
             _ => Operand.Of(ErrorValue.Value),
         };
@@ -181,32 +209,9 @@ internal static partial class FunctionLibrary
     /// <summary>XOR: TRUE when an odd number of the logical values AND and OR take are TRUE; with none, <c>#VALUE!</c>.</summary>
     private static Operand Xor(FunctionCall call)
     {
-        var evaluator = call.Evaluator;
         var any = false;
         var odd = false;
-        for (var i = 0; i < call.Count; i++)
-        {
-            var operand = call.Operand(i);
-            switch (operand.Kind)
-            {
-                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
-                    foreach (var value in evaluator.RangeValues(operand))
-                    {
-                        if (value.IsError) return Operand.Of(value);
-                        if (value.Kind == ValueKind.Number) Count(value.Number != 0);
-                        else if (value.Kind == ValueKind.Boolean) Count(value.Boolean);
-                    }
-                    break;
-                case OperandKind.Missing:
-                    Count(false);
-                    break;
-                default:
-                    if (operand.Scalar is not { } scalar) break;
-                    if (!TryTruth(scalar, out var truth)) return Operand.Of(scalar.IsError ? scalar.Error : ErrorValue.Value);
-                    Count(truth);
-                    break;
-            }
-        }
+        if (!TryReadLogicals(call, Count, out var failure)) return failure;
         return any ? Operand.Of(Value.FromBoolean(odd)) : Operand.Of(ErrorValue.Value);
 
         void Count(bool truth)

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SORTBY-001",
-      "source": "documented",
+      "source": "observed",
       "description": "By another column, descending",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORTBY(G1:G5,H1:H5,-1)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SORTBY-002",
-      "source": "documented",
+      "source": "observed",
       "description": "By two keys, the first deciding first",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORTBY(H1:H5,G1:G5,1,H1:H5,-1)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "SORTBY-003",
-      "source": "documented",
+      "source": "observed",
       "description": "By two keys: the second orders the equal first keys",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORTBY(H1:H5,G1:G5,1,H1:H5,-1)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "SORTBY-004",
-      "source": "documented",
+      "source": "observed",
       "description": "A by_array of another size is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORTBY(G1:G5,H1:H3)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "SORTBY-005",
-      "source": "documented",
+      "source": "observed",
       "description": "An order other than 1 and -1 is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORTBY(G1:G5,H1:H5,2)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "SORTBY-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a row as by_array for a column is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORTBY(G1:G5,M2:O2)"},

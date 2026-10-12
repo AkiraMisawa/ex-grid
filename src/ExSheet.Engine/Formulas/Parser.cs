@@ -8,7 +8,9 @@ namespace ExSheet.Engine.Formulas;
 /// Anything it cannot read is refused with a <see cref="FormulaSyntaxException"/>, as Excel
 /// refuses such a Formula; that includes the union (<c>,</c>) operator, array constants, a range
 /// operator between anything but two addresses, and the intersection (space) operator between
-/// two References, which ExSheet does not read. An intersection with a name in it is read, as
+/// two References, which ExSheet does not read; and, as Excel refuses it, a call that gives an
+/// argument Excel takes only as a Reference something that can never be one
+/// (<see cref="FunctionDefinition.ReferenceOnly"/>). An intersection with a name in it is read, as
 /// Excel reads <c>- item one</c> typed as the Formula <c>=- item one</c> (ADR-0047, second run):
 /// ExSheet defines no names, so it is <c>#NAME?</c> whatever the other side is.
 /// </summary>
@@ -280,6 +282,35 @@ internal sealed partial class Parser
         {
             throw new FormulaSyntaxException(_formula, name.Position, $"{function.Name} takes its arguments in pairs.");
         }
+        if (function.ReferenceOnly is var (first, last))
+        {
+            for (var i = first; i <= last && i < arguments.Count; i++)
+            {
+                if (NeverAReference(arguments[i]))
+                {
+                    throw new FormulaSyntaxException(_formula, name.Position, $"{function.Name} takes only a Reference as its argument {i + 1}.");
+                }
+            }
+        }
         return new FunctionNode(function.Name, arguments, function) { Place = DrawPlace(name) };
     }
+
+    /// <summary>
+    /// Whether an argument can never be a Reference, as Excel tells one when a Formula is entered
+    /// (<see cref="FunctionDefinition.ReferenceOnly"/>): a number, a text or a boolean, an operator's
+    /// result (but parentheses around a Reference), or a call of a declared function that never gives
+    /// one, such as <c>SEQUENCE</c>. A Reference, a structured reference, a name (a <c>LET</c>'s may
+    /// stand for a range), an Error Value (where a deletion left <c>#REF!</c>), an argument left empty,
+    /// a <c>LET</c>, and a call of a function that can give a Reference (<c>INDIRECT</c>,
+    /// <c>OFFSET</c>, <c>INDEX</c>, <c>CHOOSE</c>, <c>IF</c> and their kin) or of a name outside the
+    /// declared set are taken, and judged when they are computed.
+    /// </summary>
+    private static bool NeverAReference(Node argument) => argument switch
+    {
+        NumberNode or TextNode or BooleanNode => true,
+        BinaryNode or UnaryNode or PercentNode => true,
+        ParenthesesNode parentheses => NeverAReference(parentheses.Inner),
+        FunctionNode { Function: { } declared } => !declared.ReturnsReference,
+        _ => false,
+    };
 }

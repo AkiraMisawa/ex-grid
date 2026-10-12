@@ -90,10 +90,15 @@ public sealed partial class Sheet
             .Order()];
 
     /// <summary>
-    /// The widths after an insertion or deletion of columns: moved with their columns, those
-    /// deleted or pushed off the right edge dropped, and inserted columns given the width of the
-    /// column to their left, of its kind, when <paramref name="formatInserted"/>,
-    /// as they take its formats (ADR-0046).
+    /// The widths after an insertion or deletion of columns: moved with their columns, each of its
+    /// kind, those deleted or pushed off the right edge dropped, and inserted columns given the
+    /// width of the column to their left when <paramref name="formatInserted"/>, as they take its
+    /// formats (ADR-0046). An inserted column takes that width as the user's
+    /// (<see cref="SheetColumnWidthKind.SetByUser"/>) whichever its kind: Excel's file marks a
+    /// column inserted beside one an entry widened <c>customWidth</c> without <c>bestFit</c>, the
+    /// flag ECMA-376 gives a column a typed number widens again, while the column to its left keeps
+    /// it (the seventeenth Windows run, b10; CW-023). An undo's inverse insertion takes nothing,
+    /// and puts back the widths as they were, each of its kind.
     /// </summary>
     private void ShiftColumnWidths(StructuralEdit edit, bool formatInserted)
     {
@@ -105,7 +110,8 @@ public sealed partial class Sheet
         }
         if (edit.IsInsert && formatInserted && edit.Start > 0 && _columnWidths.TryGetValue(edit.Start - 1, out var left))
         {
-            for (var i = 0; i < edit.Count; i++) shifted[edit.Start + i] = left;
+            var taken = left with { Kind = SheetColumnWidthKind.SetByUser };
+            for (var i = 0; i < edit.Count; i++) shifted[edit.Start + i] = taken;
         }
         _columnWidths = shifted;
     }

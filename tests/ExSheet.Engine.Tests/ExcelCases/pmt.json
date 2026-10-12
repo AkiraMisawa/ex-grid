@@ -4,34 +4,34 @@
   "cases": [
     {
       "id": "PMT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a loan's monthly payment",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(8%/12,10,10000)"},
       "check": "ZZ1000",
-      "expect": {"value2": -1037.0320893591636, "digits": 12}
+      "expect": {"value2": -1037.0320893591522}
     },
     {
       "id": "PMT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: payments at the start of each period",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(8%/12,10,10000,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -1030.1643271779772, "digits": 12}
+      "expect": {"value2": -1030.1643271779658}
     },
     {
       "id": "PMT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: saving to a future value",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(6%/12,18*12,0,50000)"},
       "check": "ZZ1000",
-      "expect": {"value2": -129.0811608679954, "digits": 12}
+      "expect": {"value2": -129.08116086799092}
     },
     {
       "id": "PMT-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a rate of 0 divides evenly",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0,10,1000)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "PMT-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: no periods is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,0,1000)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "PMT-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an Error Value is the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(C2,10,1000)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "PMT-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text that is not a number is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(A6,10,1000)"},
@@ -67,12 +67,102 @@
     },
     {
       "id": "PMT-008",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a type other than 0 or 1",
+      "source": "observed",
+      "description": "A type of 2 is payment at the start of each period, as 1 is",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,2)"},
       "check": "ZZ1000",
+      "expect": {"value2": -147.95035898410148}
+    },
+    {
+      "id": "PMT-009",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a type that is not a whole number",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,0.5)"},
+      "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative type is payment at the start of each period, as 2 is",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -147.95035898410148}
+    },
+    {
+      "id": "PMT-011",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a number of periods that is not a whole number, which squaring cannot raise to",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(8%/12,10.5,10000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-012",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a negative number of periods",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(8%/12,-10,10000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: with a future value. Every evaluation in an x87's 64 bits that gives PMT-001 to 008 gives this double, as the engine's exact payment rounded once does; the evaluations that carry (1+rate)^n-1 in excess forms give six others, a few units in the last place away (spikes/exsheet-financial-evaluation/, --spread)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.05/12,36,250000,-5000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -7363.703123976373}
+    },
+    {
+      "id": "PMT-014",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at the start of each period. Every evaluation in an x87's 64 bits that gives PMT-001 to 008 gives this double, as the engine's exact payment rounded once does; the excess forms give three others, a few units in the last place away (spikes/exsheet-financial-evaluation/, --spread)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.0725/12,12,250000,0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -21530.430018725492}
+    },
+    {
+      "id": "PMT-015",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at the start of each period. Every evaluation in an x87's 64 bits that gives PMT-001 to 008 gives this double, as the engine's exact payment rounded once does; the excess forms give four others, a few units in the last place away (spikes/exsheet-financial-evaluation/, --spread)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.05/12,12,10000,0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -852.5226402170998}
+    },
+    {
+      "id": "PMT-016",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: with a future value. The evaluations that give PMT-001 to 008 part here, the 64-bit ones among themselves: the engine's exact payment rounded once and 266 of the 304 in an x87's 64 bits give this double, the other 38 give -20936.487788661154, one unit in the last place away, and the excess forms others (spikes/exsheet-financial-evaluation/, --spread)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.045/12,12,250000,-5000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -20936.48778866115}
+    },
+    {
+      "id": "PMT-017",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at a small rate the evaluations that give PMT-001 to 008 part widely, because an x87's 1+rate keeps only the rate's bits above 2^-64. The 304 in an x87's 64 bits give nine doubles across 3390 units in the last place, differing from the 13th significant digit (-83.33338750000993 to -83.33338750005811); the engine's exact payment rounded once is the first of them (spikes/exsheet-financial-evaluation/, --spread)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(1/10000000,12,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -83.33338750000993}
+    },
+    {
+      "id": "PMT-018",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a daily rate over a year. The 304 evaluations in an x87's 64 bits that give PMT-001 to 008 give four doubles across 7 units in the last place, and all 2504 that give them nine across 12; the engine's exact payment rounded once is one of the four (spikes/exsheet-financial-evaluation/, --spread)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.0365/365,365,10000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -27.90167156122446}
     }
   ]
 }

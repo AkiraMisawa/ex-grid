@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ROW-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the row of the Formula's own cell",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROW()"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ROW-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the row of a Reference",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROW(C10)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ROW-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: one row of several columns",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROW(A3:C3)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "ROW-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Several rows spill, each row's number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROW(A1:A3)"},

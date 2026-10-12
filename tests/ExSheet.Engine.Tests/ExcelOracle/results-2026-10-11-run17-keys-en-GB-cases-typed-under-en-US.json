@@ -1,0 +1,423 @@
+{
+    "ran":  "2026-10-11T22:21:27",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20146",
+    "windowsRegionalFormat":  "en-US",
+    "formulasEnteredThrough":  "typed (keyboard input), as every other cell of a case",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  15,
+                    "disagree":  0,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "LET-023",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "A1 reference cannot be name",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "the keyboard entry of =LET(A1,2,A1) was refused: LET-023: typing =LET(A1,2,A1): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "22:21:06.680 LET-023: typing =LET(A1,2,A1): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                     ]
+                  },
+                  {
+                      "id":  "LET-KEYS-001",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  3
+                                   },
+                      "engineExpect":  {
+                                           "value2":  3
+                                       },
+                      "excel":  {
+                                    "value2":  3,
+                                    "kind":  "number",
+                                    "number":  "3",
+                                    "text":  "3",
+                                    "formula":  "=LET(x,2,x+1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-002",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  2
+                                   },
+                      "engineExpect":  {
+                                           "value2":  2
+                                       },
+                      "excel":  {
+                                    "value2":  2,
+                                    "kind":  "number",
+                                    "number":  "2",
+                                    "text":  "2",
+                                    "formula":  "=LET(c,2,c)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-003",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  2
+                                   },
+                      "engineExpect":  {
+                                           "value2":  2
+                                       },
+                      "excel":  {
+                                    "value2":  2,
+                                    "kind":  "number",
+                                    "number":  "2",
+                                    "text":  "2",
+                                    "formula":  "=LET(r,2,r)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-004",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "the keyboard entry of =LET(A1,2,A1) was refused: LET-KEYS-004: typing =LET(A1,2,A1): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "22:21:10.871 LET-KEYS-004: typing =LET(A1,2,A1): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                     ]
+                  },
+                  {
+                      "id":  "LET-KEYS-005",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "the keyboard entry of =LET(a.b,2,a.b) was refused: LET-KEYS-005: typing =LET(a.b,2,a.b): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "22:21:12.137 LET-KEYS-005: typing =LET(a.b,2,a.b): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                     ]
+                  },
+                  {
+                      "id":  "LET-KEYS-006",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  2
+                                   },
+                      "engineExpect":  {
+                                           "value2":  2
+                                       },
+                      "excel":  {
+                                    "value2":  2,
+                                    "kind":  "number",
+                                    "number":  "2",
+                                    "text":  "2",
+                                    "formula":  "=LET(_x,2,_x)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-007",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "Excel did not commit the keyboard entry of =LET(x,1,x,2,x); it stayed in Edit mode after the dialog it raised (keyDialogs)"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "22:21:14.011 LET-KEYS-007: typing =LET(x,1,x,2,x): [Microsoft Excel] Microsoft Excel | Warning Icon | You can’t define the same name twice in a LET function. | OK | System Menu Bar | System | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "LET-KEYS-008",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#NAME?"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#NAME?"
+                                       },
+                      "excel":  {
+                                    "value2":  "#NAME?",
+                                    "kind":  "error",
+                                    "text":  "#NAME?",
+                                    "formula":  "=LET(x,y,y,2,x)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-009",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  1
+                                   },
+                      "engineExpect":  {
+                                           "value2":  1
+                                       },
+                      "excel":  {
+                                    "value2":  1,
+                                    "kind":  "number",
+                                    "number":  "1",
+                                    "text":  "1",
+                                    "formula":  "=LET(x,NA(),1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-010",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  3
+                                   },
+                      "engineExpect":  {
+                                           "value2":  3
+                                       },
+                      "excel":  {
+                                    "value2":  3,
+                                    "kind":  "number",
+                                    "number":  "3",
+                                    "text":  "3",
+                                    "formula":  "=LET(名前,2,名前+1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-011",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "Excel did not commit the keyboard entry of =LET(x,1); it stayed in Edit mode after the dialog it raised (keyDialogs)"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "22:21:19.005 LET-KEYS-011: typing =LET(x,1): [Microsoft Excel] Microsoft Excel | Warning Icon | You\u0027ve entered too few arguments for this function. | OK | System Menu Bar | System | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "LET-KEYS-012",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "Excel did not commit the keyboard entry of =LET(x,1,y,2,x+y,3); it stayed in Edit mode after the dialog it raised (keyDialogs)"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "22:21:21.278 LET-KEYS-012: typing =LET(x,1,y,2,x+y,3): [Microsoft Excel] Microsoft Excel | Warning Icon | You can’t include a parameter to a LET function after defining its calculation. | OK | System Menu Bar | System | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "LET-KEYS-013",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "the keyboard entry of =LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1) was refused: LET-KEYS-013: typing =LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "22:21:24.860 LET-KEYS-013: typing =LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                     ]
+                  },
+                  {
+                      "id":  "LET-KEYS-014",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "the keyboard entry of =LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1) was refused: LET-KEYS-014: typing =LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "22:21:27.338 LET-KEYS-014: typing =LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                     ]
+                  }
+              ]
+}

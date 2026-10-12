@@ -7,8 +7,9 @@ namespace ExPivot;
 /// ExPivot's answer to a Selection Summary (ADR-0130): the cells it lays out, as they read — a
 /// Value Field's figure, a subtotal's and a grand total's alike, summed with the rest when selected,
 /// as Excel sums them — folded into the family's one definition of the figures. A figure exact in
-/// <c>decimal</c> stays exact; an error value (<c>#DIV/0!</c>, <c>#NUM!</c>) is counted and leaves
-/// Count alone; a label is counted; an empty cell is in none.
+/// <c>decimal</c> stays exact; an error value (<c>#DIV/0!</c>, <c>#NUM!</c>) is counted, is never a
+/// number, and leaves only Count and Numerical Count, as Excel's status bar does; a label is counted;
+/// an empty cell is in none.
 /// </summary>
 internal static class PivotSummary
 {

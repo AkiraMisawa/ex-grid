@@ -1,6 +1,9 @@
 # 16: SUBTOTAL and AGGREGATE, while a Sheet cannot hide a row
 
-Status: done
+Status: ready-for-human
+Roadmap: ExSheet — `SUBTOTAL` and `AGGREGATE` checked against Excel for the forms no Windows run has
+asked yet: a call in a branch `IF` never takes, a function number or option that is not whole, and what
+may stand where only a Reference is taken.
 
 **What to build:** `SUBTOTAL` and `AGGREGATE` under
 [ADR-0047](../../../adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)'s
@@ -19,14 +22,27 @@ note of 2026-10-10, "The catalogue's last Decide rows".
       - a cell whose whole Formula is a `SUBTOTAL` or an `AGGREGATE` is skipped by `AGGREGATE`'s
         options 0–3;
       - any other call of either in the range makes the result `#VALUE!`
+      *(2026-10-12: replaced by Excel's rule, as the seventeenth Windows run read it — see the box below
+      and the comment of that date.)*
 - [x] Corpus cases: Microsoft's documented cases as `documented`, and the open ones as `uncertain`
       for the next Windows run. That run also asks what Excel counts as nested
 - [x] The catalogue rows Supported. The Docs Site's Formulas page lists them from the declared set,
       and says what is refused
-- [ ] For the next Windows run: the `uncertain` cases of `ExcelCases/subtotal.json` and
+- [x] For the next Windows run: the `uncertain` cases of `ExcelCases/subtotal.json` and
       `ExcelCases/aggregate.json`, and what Excel counts as nested — a call inside a larger Formula
       (SUBTOTAL-020, AGGREGATE-026), an `AGGREGATE` in `SUBTOTAL`'s range (SUBTOTAL-021), and a nested
-      call under `AGGREGATE`'s options 4 to 7 (AGGREGATE-025), which Microsoft documents as counted
+      call under `AGGREGATE`'s options 4 to 7 (AGGREGATE-025), which Microsoft documents as counted.
+      *Answered by the seventeenth Windows run (2026-10-11,
+      `verification/2026-10-11-windows-17/report.md`): a cell is nested when its Formula, or for a cell
+      of a Spill Range its Anchor's, calls `SUBTOTAL` or `AGGREGATE` anywhere; `SUBTOTAL` (every
+      function number) and `AGGREGATE`'s options 0 to 3 pass over it, and options 4 to 7 count its
+      Value. The engine follows it (comment of 2026-10-12)*
+- [ ] `oracle.ps1 -Area subtotal,aggregate` before the tag (ADR-0208): the `uncertain` cases the
+      seventeenth run's answers led to, SUBTOTAL-039 to 044 and AGGREGATE-055 to 061. The engine agrees
+      with each answer, or is corrected to it, before this ticket is done. *(Added 2026-10-12 after
+      review: ADR-0208 does not close a ticket on "the next Windows run asks", and these questions came
+      after the seventeenth run.)* The `LARGE`, `SMALL` and `MOD` cases asked with them are not this
+      ticket's
 
 ## Comments
 
@@ -78,3 +94,43 @@ run locally. Its three DC-17 tests ran under both Chromes with `--project=chrome
 Playwright's bundled Chromium (a container without Chrome or Edge, so no Step 4 record), headed under
 xvfb: 18 passed on the WebAssembly host (port 5441) and 18 on the Server host (port 5440). The full run,
 and the installed Chrome and Edge, are CI's.
+
+2026-10-12, with the seventeenth Windows run's answers (`verification/2026-10-11-windows-17/report.md`,
+Part A and Part B's b4): the engine follows Excel, as SH-68's note and ADR-0047's of 2026-10-10 said it
+would once a run had read it.
+
+- **Nesting.** Excel passed over, or counted, every form asked: a call inside a larger Formula
+  (SUBTOTAL-020, AGGREGATE-026), an `AGGREGATE` in `SUBTOTAL`'s range (SUBTOTAL-021), a call in
+  parentheses, under `IF` or plus 0 (SUBTOTAL-035 to 037, AGGREGATE-052 to 054), and a cell spilled from
+  a Formula that calls `SUBTOTAL` (SUBTOTAL-038, 0). `AGGREGATE`'s options 4 to 7 counted the nested
+  cell's Value, in the reference form and the array form (AGGREGATE-025, 042 to 051). So a cell is nested
+  when its Formula's text calls either function anywhere (`IsNested`), and no `#VALUE!` for nesting
+  remains. Whether a call in a branch `IF` never takes counts is asked next (SUBTOTAL-039).
+- **Function numbers.** `SUBTOTAL(9.5,…)` is 303 in Excel (SUBTOTAL-027): a function number that is
+  not whole is truncated, and the range checked after. `AGGREGATE`'s function number and option are
+  truncated the same way, as LibreOffice does (AGGREGATE-055 and 056 ask Excel).
+- **Arguments that take only a Reference.** Excel refused on entry `SUBTOTAL(9,SEQUENCE(3))`,
+  `SUBTOTAL(9,5)`, `RANK.EQ(1,1)` and `AGGREGATE(14,6,A1:A11,1,2)`, and entered
+  `AGGREGATE(9,6,A1:A11*1)`, `AGGREGATE(14,6,5,1)` and a number as `AGGREGATE`'s fourth argument. The
+  parser now refuses, as it refuses an argument count, a constant, an operator's result or a call of a
+  function that never gives a Reference where `FunctionDefinition.ReferenceOnly` says only a Reference
+  is taken; `INDIRECT`, `OFFSET`, `INDEX`, `CHOOSE`, `IF`, `IFS`, `SWITCH`, `XLOOKUP` and `LET` are
+  taken (`ReturnsReference`). AGGREGATE-057, 058 and SUBTOTAL-040 to 044 ask the forms not yet seen.
+- **The array form over a number.** `AGGREGATE(14,6,5,1)` is 5 (AGGREGATE-039): a number given directly
+  is an array of that one Value. Text and a boolean are not asked yet, and stay `#VALUE!` (AGGREGATE-061).
+- **k.** `AGGREGATE(14,6,A1:A11,1.5)` is 81 and `LARGE(A1:B5,1.5)` 6: the 2nd largest, so k is rounded
+  up, as ODF 1.3, LibreOffice and Gnumeric all have `LARGE` do. `SMALL`'s k, where LibreOffice rounds
+  down and Gnumeric up, stays `#VALUE!` until asked (SMALL-004, 005, AGGREGATE-060).
+- **The unsupported function numbers** 13 and 16 to 19 stay `#VALUE!` by decision; AGGREGATE-027 to 031
+  now carry Excel's answers as `excelExpect` (`#N/A`, 34, 32, 34, 31.5), observed.
+- **Completion** (Part B's b4): `SUBTOTAL`'s list now reads `STDEV.S`, `STDEV.P`, `VAR.S` and `VAR.P`
+  for 7, 8, 10, 11 and 107, 108, 110, 111, as Excel's does; `AGGREGATE`'s fourteen numbers and eight
+  options already matched Excel's texts. Excel's list also offers 13 and 16 to 19, which completion
+  leaves out because the engine refuses them. `CompletionTriggerTests` pins every text.
+
+The new `uncertain` cases need an `oracle.ps1 -Area` run over `subtotal`, `aggregate`, `large`, `small`
+and `mod` before the tag (ADR-0208).
+
+2026-10-12, after review: the Status is `ready-for-human` again, with an open box for that run. The ticket
+had been closed with its own feature's questions open, SUBTOTAL-039 to 044 and AGGREGATE-055 to 061, which
+ADR-0208 does not allow.

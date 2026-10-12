@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "EXACT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EXACT(\"word\",\"word\")"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "EXACT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: case is told apart",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EXACT(\"Word\",\"word\")"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "EXACT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a space is told apart",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EXACT(\"w ord\",\"word\")"},

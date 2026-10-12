@@ -1,12 +1,16 @@
 # ExSheet's function catalogue
 
 Status: done — but for [ticket 13](issues/13-financial-iteration.md) (`needs-info`): `IRR`, `XIRR` and
-`RATE` are Blocked, since no algorithm reproduces Excel's, and are not pursued for now. Tickets 14 to 18,
+`RATE` are Blocked, since no algorithm reproduces Excel's, and are not pursued for now. And but for
+tickets [07](issues/07-log-and-trigonometry.md) and [16](issues/16-subtotal-and-aggregate.md)
+(`ready-for-human`): the `uncertain` cases the seventeenth run's answers led to are asked by an
+`oracle.ps1 -Area` run before the tag (ADR-0208). Tickets 14 to 18,
 decided with the user on 2026-10-10 (item 11 below), are built and done (item 12); their questions, with
 every other ticket's `uncertain` cases, are corpus cases the sign-off's Windows run puts to Excel, but
-for three of ticket 15's that the corpus cannot ask (what an undo does to a draw, whether a rename draws
-again, and whether a refresh that brings the same data draws again; ADR-0180 and its notes of
-2026-10-11), which that run asks by hand.
+for two of ticket 15's that the corpus cannot ask (what an undo does to a draw, and whether a rename draws
+again), which that run asks by hand. *(The seventeenth run asked them, 2026-10-11: an undo and a rename
+each draw again in Excel; ExSheet's undo already did, and its rename now does, ADR-0180's note of
+2026-10-12.)*
 *(Set on 2026-10-11.)*
 
 The functions ExSheet's engine supports, and the queue of those it may support next, each with its
@@ -17,9 +21,11 @@ change that rule, and a function listed here is not a promise.
 
 `tests/ExSheet.Engine.Tests/FunctionCatalogueTests.cs` reads this file: the rows marked
 **Supported** must be exactly `DeclaredFunction.All`. Admitting a function without changing its row
-here fails the build, and so does changing a row without admitting the function. Every name the
-file lists, its rows and its list of [Excel's functions not in the queue](#excels-functions-not-in-the-queue),
-must be exactly the names the engine refuses as a `LET` name for being a function's (ADR-0181).
+here fails the build, and so does changing a row without admitting the function. It also reads the
+file's list of [Excel's functions not in the queue](#excels-functions-not-in-the-queue): each name is
+listed once, under its letter, and has no row; and `LetTests` binds every name the rows and the list
+hold that is a name in shape as a `LET` name, as Excel's keyboard took `SUM`, `IRR` and `N` (ADR-0181,
+the seventeenth run).
 
 ## Status
 
@@ -77,15 +83,15 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `SUMPRODUCT` | Supported | — | Its arrays, operators on ranges included, reduced to one Value (ADR-0125) |
 | `PRODUCT` | Supported | — | |
 | `MEDIAN` | Supported | — | |
-| `LARGE` | Supported | — | |
-| `SMALL` | Supported | — | |
-| `RANK.EQ` | Supported | — | |
+| `LARGE` | Supported | — | A `k` that is not whole is rounded up, as Excel's (ADR-0047, 2026-10-12) |
+| `SMALL` | Supported | — | A `k` that is not whole is `#VALUE!` until observed |
+| `RANK.EQ` | Supported | — | A `ref` that can never be a Reference is refused on entry |
 | `STDEV.S` | Supported | — | |
 | `STDEV.P` | Supported | — | |
 | `VAR.S` | Supported | — | |
 | `VAR.P` | Supported | — | |
-| `SUBTOTAL` | Supported | — | Admitted while a Sheet cannot hide a row, behind a test that fails when one can; a nested call other than a whole-Formula `SUBTOTAL` is `#VALUE!` until observed (ADR-0047, 2026-10-10). Ticket 16 |
-| `AGGREGATE` | Supported | — | As `SUBTOTAL`; options 0 to 3 pass over a whole-Formula `SUBTOTAL` or `AGGREGATE`, and a function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`. Ticket 16 |
+| `SUBTOTAL` | Supported | — | Admitted while a Sheet cannot hide a row, behind a test that fails when one can; a cell whose Formula calls `SUBTOTAL` or `AGGREGATE` anywhere is nested and passed over, as Excel does (ADR-0047, 2026-10-10 and 2026-10-12). Ticket 16 |
+| `AGGREGATE` | Supported | — | As `SUBTOTAL`; options 0 to 3 pass over a nested cell and 4 to 7 count it, and a function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`. Ticket 16 |
 
 ### Logic and errors
 
@@ -106,7 +112,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `SWITCH` | Supported | — | |
 | `XOR` | Supported | — | |
 | `NA` | Supported | — | |
-| `ERROR.TYPE` | Supported | — | `#GETTING_DATA` and `#CIRC!` are given back, never numbered; an Error Value outside Microsoft's table is `#VALUE!` until Excel is asked (ADR-0047, 2026-10-10). Ticket 17 |
+| `ERROR.TYPE` | Supported | — | `#GETTING_DATA` and `#CIRC!` are given back, never numbered; Excel's newer Error Values take Excel's numbers, 9 to 14, read by the seventeenth Windows run (ADR-0047, 2026-10-10 and its note of 2026-10-12). Ticket 17 |
 
 ### Lookup and reference
 
@@ -115,16 +121,16 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `XLOOKUP` | Supported | — | Binary search only over data sorted as the mode says (ADR-0047) |
 | `VLOOKUP` | Supported | — | Observed exact/approximate duplicates. Approximate searches require homogeneous, nonblank, error-free, sorted keys; exact text is ASCII; unobserved error-key outcomes are refused. Ticket 09 |
 | `HLOOKUP` | Supported | — | As VLOOKUP, with the keys across the first row |
-| `INDEX` | Supported | — | One value only. A row or column of 0, which returns a whole range, is `#VALUE!` until arrays get their ADR |
+| `INDEX` | Supported | — | Spills a whole row or column for a row or a column of 0 (ADR-0125); over a range of several rows and several columns, a Spill Range included, `column_num` left out is `#REF!`, as Excel's is (seventeenth run) |
 | `MATCH` | Supported | — | As VLOOKUP; descending equality takes the first duplicate. Descending nearest non-equal duplicate choice is refused pending observation |
-| `XMATCH` | Supported | — | The modes as `XLOOKUP`'s |
+| `XMATCH` | Supported | — | The modes as `XLOOKUP`'s, and its binary search refused where `XLOOKUP`'s is (Excel's answer recorded, XMATCH-008) |
 | `CHOOSE` | Supported | — | |
 | `ROW` | Supported | — | |
 | `COLUMN` | Supported | — | |
 | `ROWS` | Supported | — | |
 | `COLUMNS` | Supported | — | |
 | `OFFSET` | Supported | — | Volatile (ADR-0124): recalculated after every change, its computed Reference read as it stands |
-| `INDIRECT` | Supported | — | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; R1C1, structured and `A1#` text are `#VALUE!`, and text that names no place is `#REF!` (ADR-0124, 2026-10-10). Ticket 18 |
+| `INDIRECT` | Supported | — | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; absolute R1C1 text, a Linked Table's column as structured text and `A1#`, as the seventeenth run observed; relative and whole-row or whole-column R1C1 text is `#VALUE!`, and text that names no place is `#REF!` (ADR-0124, 2026-10-10 and 2026-10-12). Ticket 18 |
 
 ### Math and rounding
 
@@ -135,7 +141,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `ROUNDDOWN` | Supported | — | |
 | `ABS` | Supported | — | |
 | `INT` | Supported | — | |
-| `MOD` | Supported | — | Excel's sign follows the divisor |
+| `MOD` | Supported | — | Excel's sign follows the divisor; `#NUM!` from a quotient of 1,125,900,000,000 |
 | `MROUND` | Supported | — | Whole-number multiples; fractional multiples with nonzero same-sign operands are #VALUE! until Excel's binary midpoint algorithm is reproduced. Ticket 10 |
 | `CEILING.MATH` | Supported | — | Observed sign, significance, mode and coercion; almost-integral division boundaries are #VALUE!, quotient underflow is #NUM!; ticket 10 |
 | `FLOOR.MATH` | Supported | — | As CEILING.MATH; ticket 10 |
@@ -146,22 +152,23 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `EXP` | Supported | — | |
 | `LN` | Supported | — | |
 | `LOG10` | Supported | — | |
-| `LOG` | Supported | — | Base 10 when left out, through `LOG10`'s logarithm; base 1 is `#DIV/0!` until Excel is asked |
+| `LOG` | Supported | — | Base 10 when left out, through `LOG10`'s logarithm; base 1 is `#DIV/0!`, as Excel's (the seventeenth run, LOG-007) |
 | `PI` | Supported | — | |
 
 ### Trigonometry
 
-Angles are in radians. Microsoft documents a limit of 2^27 on the argument of `COT`, `CSC`, `SEC`,
-`COTH`, `CSCH` and `SECH`; `SIN`, `COS` and `TAN` refuse an argument that large with `#NUM!` as
-well, until Excel is asked (ticket 07).
+Angles are in radians, reduced by pi as Excel holds it, to 64 bits (ADR-0047, 2026-10-12). Microsoft
+documents a limit of 2^27 on the argument of `COT`, `CSC`, `SEC`, `COTH`, `CSCH` and `SECH`; Excel
+applies it to `SIN`, `COS`, `TAN`, `COT`, `CSC` and `SEC` (`#NUM!`) and answers `COTH`, `CSCH` and
+`SECH` past it, as the engine does (ticket 07; observed 2026-10-11).
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `SIN` | Supported | — | `#NUM!` from 2^27, until Excel is asked |
+| `SIN` | Supported | — | `#NUM!` from 2^27, as Excel's |
 | `COS` | Supported | — | As `SIN` |
 | `TAN` | Supported | — | As `SIN` |
 | `COT` | Supported | — | `COT(0)` is `#DIV/0!`, as documented |
-| `CSC` | Supported | — | At 0, `#DIV/0!` until Excel is asked |
+| `CSC` | Supported | — | At 0, `#DIV/0!`, as Excel's |
 | `SEC` | Supported | — | |
 | `ASIN` | Supported | — | Outside −1 to 1, `#NUM!` |
 | `ACOS` | Supported | — | As `ASIN` |
@@ -171,13 +178,13 @@ well, until Excel is asked (ticket 07).
 | `SINH` | Supported | — | Past what a number holds, `#NUM!` |
 | `COSH` | Supported | — | As `SINH` |
 | `TANH` | Supported | — | |
-| `COTH` | Supported | — | At 0, `#DIV/0!` until Excel is asked |
+| `COTH` | Supported | — | At 0, `#DIV/0!`, as Excel's; no limit at 2^27, as Excel's |
 | `CSCH` | Supported | — | As `COTH` |
-| `SECH` | Supported | — | |
+| `SECH` | Supported | — | No limit at 2^27, as Excel's |
 | `ASINH` | Supported | — | |
 | `ACOSH` | Supported | — | Below 1, `#NUM!` |
 | `ATANH` | Supported | — | Not strictly between −1 and 1, `#NUM!` |
-| `ACOTH` | Supported | — | An absolute value not above 1 is `#NUM!`; the documentation names `#VALUE!` as well, so Excel is to be asked |
+| `ACOTH` | Supported | — | An absolute value not above 1 is `#NUM!`, as Excel's (the documentation names `#VALUE!` as well) |
 | `DEGREES` | Supported | — | |
 | `RADIANS` | Supported | — | |
 
@@ -251,12 +258,12 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 | Function | Status | Priority | Notes |
 |---|---|---|---|
 | `FILTER` | Supported | — | Spills (ADR-0125); nothing kept is `#CALC!` without `if_empty` |
-| `SORT` | Supported | — | Spills (ADR-0125); a blank or Error Value among the keys is refused until Excel is asked |
-| `SORTBY` | Supported | — | Spills (ADR-0125); keys refused as `SORT`'s |
-| `UNIQUE` | Supported | — | Spills (ADR-0125); a blank in the array is refused until Excel is asked |
+| `SORT` | Supported | — | Spills (ADR-0125); a blank or Error Value among the keys is refused until Excel is asked; Excel's Anchor recorded (SORT-011), the refusal kept until a run reads the rest |
+| `SORTBY` | Supported | — | Spills (ADR-0125); keys refused as `SORT`'s; Excel's Anchor recorded (SORT-011), the refusal kept until a run reads the rest |
+| `UNIQUE` | Supported | — | Spills (ADR-0125); a blank in the array is refused until Excel is asked; Excel's Anchor recorded (UNIQUE-009), the refusal kept until a run reads the rest |
 | `SEQUENCE` | Supported | — | Spills (ADR-0125) |
 | `TRANSPOSE` | Supported | — | Spills (ADR-0125) |
-| `LET` | Supported | — | Names bound inside one Formula, as Excel's keyboard accepts them; the name of any of Excel's functions this file lists, declared or not, `TRUE`, `FALSE` and R1C1 shapes are refused on entry until observed (ADR-0181). Ticket 14 |
+| `LET` | Supported | — | Names bound inside one Formula, as Excel's keyboard accepts them; a function's name, declared or not, and an R1C1 shape that is no A1 Reference are names, a value may be left empty, and `TRUE`, `FALSE` and a name that reads as an A1 Reference are refused on entry (ADR-0181, the seventeenth run). Ticket 14 |
 
 ### Random
 
@@ -268,15 +275,15 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 ## Excel's functions not in the queue
 
 The rest of Excel's worksheet functions, as Microsoft documents them. None of them is queued: each
-is `#NAME?` (ADR-0047), and none has a status or a priority until a row above catalogues it. They are
-listed because a `LET` name is refused if it is the name of any of Excel's functions, as the rows
-above and this list name them, whether or not the engine declares it (ADR-0181's note of
-2026-10-11): a Sheet saved with `LET(NPER, …)` would otherwise stop opening on the day `NPER` is
-declared.
+is `#NAME?` (ADR-0047), and none has a status or a priority until a row above catalogues it.
+*(They were listed because a `LET` name was refused if it was the name of any of Excel's functions
+(ADR-0181's note of 2026-10-11). The seventeenth Windows run saw Excel's keyboard take `SUM`, `IRR`
+and `N` as `LET` names, so none is refused now. The list stays as the catalogue's account of what
+Excel has beyond its rows, and `LetTests` binds each name-shaped one as a `LET` name.)*
 
-`FunctionCatalogueTests` reads this list with the rows above, and together they must be exactly the
-names the engine refuses as a function's (`ExcelFunctionNames`). Cataloguing a function moves its name
-from here to a row; a function Excel adds is listed here, and in the engine, in the same change.
+`FunctionCatalogueTests` reads this list with the rows above: each name is listed once, under its own
+letter, in order, and has no row. Cataloguing a function moves its name from here to a row; a
+function Excel adds is listed here.
 
 - **A**: `ACCRINT`, `ACCRINTM`, `ADDRESS`, `AMORDEGRC`, `AMORLINC`, `ARABIC`, `AREAS`,
   `ARRAYTOTEXT`, `ASC`, `AVEDEV`, `AVERAGEA`
@@ -346,7 +353,7 @@ from here to a row; a function Excel adds is listed here, and in the engine, in 
 4. **The P2 Ready functions** — done, ticket 04.
 5. **The P3 Ready functions** — done, ticket 05. No function is Ready any more.
 6. **`LOG` and the trigonometric functions** — done, ticket 07. Their `uncertain` cases go to the
-   next Windows run.
+   next Windows run. The seventeenth Windows run answered them (2026-10-11).
 7. **The October 3 Windows observation run is complete:** all 24 Observe functions and `LET`,
    `RAND`, `RANDBETWEEN`. Tickets 08–12 admit 21 functions within explicitly documented argument
    domains. Observation alone does not mark a function Supported.
@@ -366,6 +373,8 @@ from here to a row; a function Excel adds is listed here, and in the engine, in 
 13. **Excel's functions not in the queue are listed** (2026-10-11, ADR-0181's note of that date): a
     `LET` name is refused if it is the name of any of Excel's functions, as this file lists them, so
     the list beside the rows is what the engine refuses, kept equal to it by `FunctionCatalogueTests`.
+    *(2026-10-11, the seventeenth run: Excel's keyboard took a function's name as a `LET` name, so the
+    list is no longer what the engine refuses; see the list's paragraph.)*
 
 The retained evidence is `verification/2026-10-03-windows-functions/`. New corpus cases preserve
 its IDs, typed fixtures and exact numeric expectations. A deliberate refusal keeps Excel's
