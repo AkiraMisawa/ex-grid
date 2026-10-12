@@ -55,6 +55,33 @@
       "cells": {"ZZ1000": "=SORTBY(G1:G5,M2:O2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORTBY-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a blank key sorts last in SORTBY as in SORT, so 20, whose key is 7, comes first",
+      "fixture": "lookupData",
+      "cells": {"Z2": "7", "ZZ1000": "=SORTBY(H1:H2,Z1:Z2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "SORTBY-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: among equal first keys, a blank second key sorts last, so 20, whose second key is 5, comes first",
+      "fixture": "lookupData",
+      "cells": {"Z1": "x", "Z2": "x", "AA2": "5", "ZZ1000": "=SORTBY(H1:H2,Z1:Z2,1,AA1:AA2,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "SORTBY-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: two blank first keys are equal, so the second key orders them (descending: 20 before 10, after 30)",
+      "fixture": "lookupData",
+      "cells": {"Z3": "1", "AA1": "1", "AA2": "2", "ZZ1000": "=SORTBY(H1:H3,Z1:Z3,1,AA1:AA3,-1)"},
+      "check": "ZZ1001",
+      "expect": {"value2": 20}
     }
   ]
 }
