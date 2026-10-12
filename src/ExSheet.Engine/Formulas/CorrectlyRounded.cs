@@ -70,45 +70,6 @@ internal static class CorrectlyRounded
     }
 
     /// <summary>
-    /// ln <paramref name="x"/> for a positive double-double, not rounded: the series <see cref="Log"/> sums
-    /// before it rounds, about 100 bits. PMT raises 1+rate, carried exactly, to an <c>nper</c> that is not a
-    /// whole number by it and <see cref="ExpWide"/> (<c>Functions.Financial.cs</c>).
-    /// </summary>
-    internal static Wide LogWide(Wide x)
-    {
-        // x = m * 2^e with m in [sqrt(1/2), sqrt(2)]; scaling both parts by a power of 2 is exact.
-        var e = Math.ILogB(x.High);
-        var m = new Wide(Math.ScaleB(x.High, -e), Math.ScaleB(x.Low, -e));
-        if (m.High > Sqrt2)
-        {
-            m = new Wide(m.High / 2, m.Low / 2);
-            e++;
-        }
-        var s = (m - 1) / (m + 1);
-        var t = s * s;
-        var series = AtanhCoefficients[^1];
-        for (var j = AtanhCoefficients.Length - 2; j >= 0; j--) series = AtanhCoefficients[j] + (t * series);
-        return (s * series) + new Wide(e * Ln2High, 0) + Wide.Product(e, Ln2Low) + new Wide(e * Ln2Lowest, 0);
-    }
-
-    /// <summary>
-    /// e^<paramref name="x"/> for a double-double, not rounded: the reduction and series <see cref="Exp"/>
-    /// computes before it rounds, about 100 bits. Past a double's range it is infinite or 0.
-    /// </summary>
-    internal static Wide ExpWide(Wide x)
-    {
-        if (x.High > 710) return double.PositiveInfinity;
-        if (x.High < -746) return 0;
-        var k = Math.Round(x.High * InverseLn2);
-        var reduced = x - new Wide(k * Ln2High, 0) - Wide.Product(k, Ln2Low) - new Wide(k * Ln2Lowest, 0);
-        var s = reduced * (1.0 / 16);
-        Wide power = 1;
-        for (var j = 14; j >= 1; j--) power = 1 + (s * power / j);
-        for (var i = 0; i < 4; i++) power *= power;
-        return new Wide(Math.ScaleB(power.High, (int)k), Math.ScaleB(power.Low, (int)k));
-    }
-
-    /// <summary>
     /// The double nearest <paramref name="value"/>, when every number within <see cref="Bound"/> of it rounds
     /// to that same double; false where a rounding boundary lies so close that the error could cross it.
     /// </summary>
@@ -218,7 +179,7 @@ internal static class CorrectlyRounded
     }
 
     /// <summary>The double nearest <paramref name="m"/> * 2^<paramref name="e"/>, ties to even, subnormal and infinite results included.</summary>
-    private static double RoundToDouble(BigInteger m, int e)
+    internal static double RoundToDouble(BigInteger m, int e)
     {
         if (m.IsZero) return 0;
         var negative = m.Sign < 0;

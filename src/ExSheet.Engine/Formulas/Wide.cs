@@ -4,8 +4,8 @@ namespace ExSheet.Engine.Formulas;
 /// A number carried as the unevaluated sum of two doubles, about 106 bits, normalised so that
 /// <see cref="High"/> is the double nearest the sum. Every operation is the standard error-free one
 /// (Dekker, Knuth; the QD library's accurate forms, each with a relative error of a few times 2^-106), so
-/// the result is the same on every platform. PMT carries its payment in it (<c>Functions.Financial.cs</c>),
-/// and <see cref="CorrectlyRounded"/> its exponential and logarithm.
+/// the result is the same on every platform. <see cref="CorrectlyRounded"/> computes its exponential and
+/// logarithm in it before it rounds them.
 /// </summary>
 internal readonly record struct Wide(double High, double Low)
 {
@@ -59,19 +59,5 @@ internal readonly record struct Wide(double High, double Low)
         rest -= b * second;
         var third = rest.High / b.High;
         return QuickSum(first, second) + third;
-    }
-
-    /// <summary><paramref name="value"/> to a whole power, by squaring.</summary>
-    public static Wide Raise(Wide value, long exponent)
-    {
-        Wide result = 1;
-        var square = value;
-        while (exponent > 0)
-        {
-            if ((exponent & 1) != 0) result *= square;
-            exponent >>= 1;
-            if (exponent > 0) square *= square;
-        }
-        return result;
     }
 }

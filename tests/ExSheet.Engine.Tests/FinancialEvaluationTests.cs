@@ -130,12 +130,11 @@ public class FinancialEvaluationTests
         Assert.Equal(excel, Number(formula));
     }
 
-    [Theory] // ADR-0047: FV-020, FV-021 and PV-012, the second area pass: 0 to a negative power is #DIV/0!, as the ^ operator's =0^-1 is (ARITH-042); PMT raises 1+rate by the same power (PMT-037 asks)
+    [Theory] // ADR-0047: FV-020, FV-021 and PV-012, the second area pass: 0 to a negative power is #DIV/0!, as the ^ operator's =0^-1 is (ARITH-042)
     [InlineData("=FV(-1,-0.5,-100)", "#DIV/0!")]
     [InlineData("=FV(-1,-10,-100)", "#DIV/0!")]
     [InlineData("=PV(-1,-10,-100)", "#DIV/0!")]
     [InlineData("=PV(-1,-0.5,-100,1000,1)", "#DIV/0!")]
-    [InlineData("=PMT(-1,-10,100)", "#DIV/0!")]
     public void ADR0047_A_negative_number_of_periods_at_a_rate_of_minus_1_is_DIV0(string formula, string error) =>
         Assert.Equal(error, NewSheet().Evaluate(formula).ToString());
 
@@ -154,12 +153,12 @@ public class FinancialEvaluationTests
         Assert.Equal(100, Number("=FV(-1,10,-100)")); // FV multiplies by the growth, 0, and answers
     }
 
-    [Theory] // ADR-0047: FV-017 and PV-011, the second area pass: a negative 1+rate has an odd root where 1/nper is odd, as the ^ operator's =(-8)^(1/3) (ARITH-043), and no other fractional power (#NUM!); PMT raises 1+rate by the same power (PMT-036 asks)
+    [Theory] // ADR-0047: FV-017 and PV-011, the second area pass: a negative 1+rate has an odd root where 1/nper is odd, as the ^ operator's =(-8)^(1/3) (ARITH-043), and no other fractional power (#NUM!); PMT is #NUM! there too, where none of its readings has a power or a logarithm
     [InlineData("=FV(-9,1/3,-1)", "0.3333333333333333")]
     [InlineData("=PV(-1.5,0.5,-100)", "#NUM!")]
     [InlineData("=FV(-2,10.5,-100)", "#NUM!")]
     [InlineData("=PMT(-2,10.5,100)", "#NUM!")]
-    [InlineData("=PMT(-9,1/3,-1)", "-6")]
+    [InlineData("=PMT(-9,0.25,100,0,1)", "#NUM!")]
     public void ADR0047_At_a_rate_below_minus_1_a_fractional_number_of_periods_is_an_odd_root_or_NUM(string formula, string expected) =>
         Assert.Equal(expected, NewSheet().Evaluate(formula).ToString());
 
@@ -231,7 +230,7 @@ public class FinancialEvaluationTests
         Assert.Equal(1, Math.Abs(BitConverter.DoubleToInt64Bits(exact) - BitConverter.DoubleToInt64Bits(excel)));
     }
 
-    [Theory] // ADR-0047, the exception for PMT: the exact payment, computed with Python's decimal at 150 digits and rounded once, at inputs no run has asked; 2,710 such inputs gave it on 2026-10-12
+    [Theory] // ADR-0047, the exception for PMT: the exact payment, computed with Python's decimal and rounded once, at inputs no run has asked; spikes/exsheet-financial-evaluation/pmt_exact.py checks 20,000 such inputs
     [InlineData("=PMT(0.1,0.5,1000)", -2148.8088481701516)]
     [InlineData("=PMT(0.1,-1,1000,0,1)", 909.0909090909091)]
     [InlineData("=PMT(-0.3,-0.5,0,20000,0)", 30733.20053068151)]
@@ -241,19 +240,74 @@ public class FinancialEvaluationTests
     [InlineData("=PMT(1E-7,0.25,10000,0,1)", -39999.99850000012)]
     [InlineData("=PMT(0.42,-1/3,250000,20000,1)", 649988.3863764966)]
     [InlineData("=PMT(-0.3,-1/3,0,20000,1)", 67893.64337294643)]
+    [InlineData("=PMT(1,1,1000,-2000)", 0)]
     public void ADR0047_PMT_raises_one_plus_rate_exactly_to_any_number_of_periods(string formula, double exact) =>
         Assert.Equal(exact, Number(formula));
 
-    [Theory] // ADR-0047: PMT-034, 035 and 038 ask: at a rate of -1 with periods the forms of the identity part between -fv and an Error Value; a growth of exactly 1 divides every form by 0, with an Error Value no run has observed; past a double's range doubles give #NUM! and an x87's exponent the payment
+    [Theory] // ADR-0047, the exception for PMT: below a rate of about 1e-15, 1+rate in double-double held (1+rate)^nper - 1 to about 53 bits, and the previous round's payment was 1 or 2 units in the last place from the exact one at 874 of 3,167 such inputs of pmt_exact.py's; the payment is now held between bounds that decide its double. Python's decimal at 1200 digits, rounded once
+    [InlineData("=PMT(1E-20,12,1000)", -83.33333333333333)]
+    [InlineData("=PMT(1.35964379977615E-261,109.10388740984,-3.72021037548094,0,0)", 0.034097871888893086)]
+    [InlineData("=PMT(-1.66782567493401E-214,450.154168942057,13857.7460935048,-0.000477145499331959,0)", -30.784443580579264)]
+    [InlineData("=PMT(1.47177375994885E-17,410,235.577961475681,16010356.1114486,1)", -39050.223632707384)]
+    [InlineData("=PMT(-1.85280934809099E-24,-145,-55549223.7358894,1.89338060457055E+68,0)", 1.3057797272900346E+66)]
+    [InlineData("=PMT(5.7413834832409E-21,10.5,-249.243481190686,17175.8914195337,0)", -1612.0617084136202)]
+    [InlineData("=PMT(-1.12980118685588E-18,0.5,14939049.7964629,-2167881.96100433,1)", -25542335.67091714)]
+    [InlineData("=PMT(0.0001,1.12427561208993E-12,0,2146708.76746529,0)", -1.9095105132842696E+18)]
+    public void ADR0047_PMT_is_the_exact_payment_at_rates_where_one_plus_rate_holds_none_of_the_rate(string formula, double exact) =>
+        Assert.Equal(exact, Number(formula));
+
+    [Theory] // ADR-0047: PMT-034 to 037 ask: at a rate of -1 the forms of the identity part between -fv and an Error Value, and with negative periods a power gives #DIV/0! and ln(0) #NUM!; below -1 a power gives a number, or a growth of exactly 1 every form divides by, and ln(1+rate) none
     [InlineData("=PMT(-1,10,1000,500)")]
     [InlineData("=PMT(-1,10.5,1000,500,1)")]
+    [InlineData("=PMT(-1,-10,100)")]
+    [InlineData("=PMT(-1,-0.5,100,0,1)")]
     [InlineData("=PMT(-2,2,1000)")]
     [InlineData("=PMT(-2,10,1000,0,1)")]
-    [InlineData("=PMT(1,1100,1000)")]
+    [InlineData("=PMT(-9,1/3,-1)")]
+    [InlineData("=PMT(-1.5,10,1000)")]
     [InlineData("=PMT(-9,360,1000,500)")]
-    [InlineData("=PMT(3,1000.5,1000)")]
-    public void ADR0047_PMT_refuses_where_its_forms_part_in_kind(string formula) =>
+    public void ADR0047_PMT_refuses_at_a_rate_of_minus_1_or_below_where_its_readings_part(string formula) =>
         Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
+
+    [Theory] // ADR-0047: PMT-038 to 044 ask: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, some readings give an Error Value or a number of few digits and others the payment
+    [InlineData("=PMT(1,1100,1000)")] // the growth past the range
+    [InlineData("=PMT(3,1000.5,1000)")]
+    [InlineData("=PMT(1,1020,1000)")] // pv times the growth past it, the growth within
+    [InlineData("=PMT(0.5,1740,1000)")]
+    [InlineData("=PMT(1E10,30,1)")] // the rate times pv times the growth
+    [InlineData("=PMT(-0.99,160,1000,500)")] // the growth below the normal numbers, so that 1 over it passes the range
+    [InlineData("=PMT(1E-320,0.5,1000)")] // a rate below the normal numbers
+    [InlineData("=PMT(1E-315,10.5,1000)")]
+    [InlineData("=PMT(5.1699029180828E-320,0.0907921350606893,-1000,20000)")]
+    [InlineData("=PMT(-1.64435447903749E-307,283.5,1E-05,0)")] // pv times the rate below them
+    [InlineData("=PMT(0.05,12,1E-310)")] // pv below them
+    [InlineData("=PMT(0.05,12,9E307)")] // pv times the growth past the range
+    public void ADR0047_PMT_refuses_where_a_reading_passes_a_doubles_range(string formula) =>
+        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
+
+    [Theory] // ADR-0047: PMT-045 and PMT-046 ask: a reading that takes the growth as 1 + (g-1) holds one below 2^-54 as 0 and divides by it; LibreOffice's reading of no periods at the start divides by e^(ln(1+rate)) - 1 - rate, 0 or a rounding's remainder
+    [InlineData("=PMT(-0.5,360,1000,500)")]
+    [InlineData("=PMT(0.1,-400,1000)")]
+    [InlineData("=PMT(0.42,0,1000,0,1)")]
+    [InlineData("=PMT(0.1,0,1000,0,1)")]
+    public void ADR0047_PMT_refuses_a_growth_below_2_to_the_minus_52_and_no_periods_at_the_start(string formula) =>
+        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
+
+    [Theory] // ADR-0047: no periods at the end is #NUM! (PMT-005), and at the start where every reading gives an Error Value: a rate of 0, or of -1 or below
+    [InlineData("=PMT(0.1,0,1000)")]
+    [InlineData("=PMT(0,0,1000,0,1)")]
+    [InlineData("=PMT(-1,0,1000,0,1)")]
+    [InlineData("=PMT(-2,0,1000,0,1)")]
+    public void ADR0047_PMT_with_no_periods_is_NUM_where_every_reading_gives_it(string formula) =>
+        Assert.Equal(Value.FromError(ErrorValue.Num), NewSheet().Evaluate(formula));
+
+    [Theory] // ADR-0047: within the range the readings agree in kind and PMT answers, at the range's edges too; Python's decimal at 1200 digits, rounded once
+    [InlineData("=PMT(1,1000,1000)", -1000)]
+    [InlineData("=PMT(1E-300,12,1000)", -83.33333333333333)]
+    [InlineData("=PMT(-0.5,52,1000)", -1.1102230246251568E-13)] // a growth of 2^-52, the least answered
+    [InlineData("=PMT(-0.5,52,1000,500,1)", -500.00000000000034)]
+    public void ADR0047_PMT_answers_within_the_range(string formula, double exact) =>
+        Assert.Equal(exact, Number(formula));
 
     [Fact] // ADR-0047: no periods is #NUM! (PMT-005) at a rate of -1 too, where the power's 0^0 is #NUM! as well
     public void ADR0047_PMT_with_no_periods_is_NUM_at_a_rate_of_minus_1() =>
@@ -348,6 +402,40 @@ public class FinancialEvaluationTests
         Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0,A1:A2,B1:B2)"));
         Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate("=XNPV(0,A1:A3,B1:B3)"));
         Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate("=XNPV(0,A1:A3,B1:B2)"));
+    }
+
+    [Theory] // ADR-0047: XNPV-021 to 026 ask: the order of XNPV's checks has not been observed, so where a failing cell of its ranges and another failing check give different answers, the answer would be the order's, and XNPV refuses
+    [InlineData("-0.5", "#N/A", "39448", "#VALUE!")] // the rate first gives #NUM!, the values first #N/A
+    [InlineData("-0.5", "text", "39448", "#VALUE!")]
+    [InlineData("0", "#N/A", "39448", "#VALUE!")] // a rate of 0, "0 or below" and the rate first, #NUM!
+    [InlineData("0.09", "#N/A", "40000", "#VALUE!")] // a date before the first, #NUM!
+    [InlineData("0.09", "#N/A", "#DIV/0!", "#VALUE!")] // the values first give #N/A, the dates first #DIV/0!
+    [InlineData("0.09", "#N/A", "#N/A", "#N/A")] // every check that fails gives #N/A
+    [InlineData("0.09", "#N/A", "39448", "#N/A")] // nothing else fails
+    [InlineData("-0.5", "#NUM!", "39448", "#NUM!")] // every check that fails gives #NUM!
+    [InlineData("-0.5", "-10000", "40000", "#NUM!")]
+    public void ADR0047_XNPV_refuses_where_the_order_of_its_checks_would_decide(string rate, string firstValue, string firstDate, string expected)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", firstValue);
+        sheet.Enter("A2", "2750");
+        sheet.Enter("B1", firstDate);
+        sheet.Enter("B2", "39508");
+        Assert.Equal(expected, sheet.Evaluate($"=XNPV({rate},A1:A2,B1:B2)").ToString());
+    }
+
+    [Fact] // ADR-0047: XNPV-024 asks: counts that differ give #NUM! (XNPV-003), and beside an Error Value among the values the order would decide
+    public void ADR0047_XNPV_refuses_an_Error_Value_beside_counts_that_differ()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "#N/A");
+        sheet.Enter("A2", "2750");
+        sheet.Enter("A3", "4250");
+        sheet.Enter("B1", "39448");
+        sheet.Enter("B2", "39508");
+        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0.09,A1:A3,B1:B2)"));
+        sheet.Enter("A1", "-10000");
+        Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate("=XNPV(0.09,A1:A3,B1:B2)"));
     }
 
     [Fact] // ADR-0047: XNPV-018 asks: where the last addition nearly cancels, the sum and the sum with Excel's last-addition adjustment part, and both give every observed XNPV double

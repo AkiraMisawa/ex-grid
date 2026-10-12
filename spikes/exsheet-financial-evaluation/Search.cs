@@ -7,7 +7,10 @@
 //     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --only PMT,NPV   # some functions
 //     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --json   # also rewrites search-cs.json
 //     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --predict "=PMT(0.05/12,36,250000,-5000)" ...
-//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --refusals   # the engine against the survivors
+//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --refusals   # the engine against the survivors, and PMT against its readings
+//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --only PMT --pmt-spread   # how far each PMT candidate lies from Excel
+//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --only PMT --pmt-show "=PMT(1,1020,1000)"   # PMT's readings at one input
+//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --engine IN OUT   # the engine's answers, for pmt_exact.py
 //
 // Acceptance experiment only (ADR-0047, ADR-0202): nothing here ships. search.py, the first search, tried
 // some 13,000 evaluations against the seventeenth run's doubles. This one runs under .NET, because the
@@ -36,6 +39,15 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 
 var root = FindRoot();
+// --engine IN OUT (2026-10-12, the third round): the engine's answer to each Formula of IN, one a line, entered
+// in a Sheet as --refusals enters them, written to OUT a line each; pmt_exact.py checks PMT's against Python's
+// decimal.
+for (var i = 0; i < args.Length - 2; i++)
+{
+    if (args[i] != "--engine") continue;
+    File.WriteAllLines(args[i + 2], File.ReadLines(args[i + 1]).Where(l => l.Length > 0).Select(l => Refusals.EngineAnswer(l, [])));
+    return 0;
+}
 var observations = Observations.Load(root);
 var json = args.Contains("--json");
 var predict = new List<string>();
@@ -83,6 +95,9 @@ foreach (var (name, candidates) in new (string, IEnumerable<Candidate>)[]
     rows.Sort((a, b) => b.Matches != a.Matches ? b.Matches.CompareTo(a.Matches) : a.Off.Values.Sum(v => Math.Min(Math.Abs((double)v), 1e6)).CompareTo(b.Off.Values.Sum(v => Math.Min(Math.Abs((double)v), 1e6))));
     var all = rows.Where(r => r.Matches == cases.Count).ToList();
     survivorsByFunction[name] = all.Select(r => r.Candidate).ToList();
+    // PMT's readings (2026-10-12, the third round): no candidate gives every observed payment, so the readings are
+    // those within 64 units in the last place of Excel's at every one.
+    if (name == "PMT") PmtReadings.Admit(rows.Where(r => r.Off.Values.All(v => Math.Abs(v) <= PmtReadings.Within)).Select(r => r.Candidate));
     // The Error Values Excel answered (2026-10-12, later): which each survivor gives.
     var errors = Observations.Errors.Values.Where(e => e.Function == name).OrderBy(e => e.Id, StringComparer.Ordinal).ToList();
     var errorRecord = new Dictionary<string, List<string>>();
@@ -139,6 +154,8 @@ output["legend"] = new
 };
 
 foreach (var formula in predict) Predict(formula);
+if (args.Contains("--pmt-spread")) PmtSpread();
+for (var i = 0; i < args.Length - 1; i++) if (args[i] == "--pmt-show") Refusals.ShowPmt(args[i + 1]);
 if (args.Contains("--discriminate")) Discriminate();
 if (args.Contains("--refusals") && !Refusals.Check(survivorsByFunction)) return 1;
 if (args.Contains("--discriminate-xnpv")) DiscriminateXnpv(survivorsByFunction["XNPV"]);
@@ -150,6 +167,34 @@ if (json)
     Console.WriteLine($"\nwrote {path}");
 }
 return 0;
+
+// --pmt-spread (2026-10-12, the third round): how far each of PMT's candidates lies from Excel at its farthest
+// observed payment, by family and growth, which says which evaluations the observed payments leave as readings.
+void PmtSpread()
+{
+    var cases = observations.Where(o => o.Function == "PMT" && !o.RateIsZero).ToList();
+    var rows = new List<(Candidate Candidate, long Farthest)>();
+    foreach (var candidate in Annuity.Candidates("PMT"))
+    {
+        long farthest = 0;
+        foreach (var o in cases)
+        {
+            double got;
+            try { got = candidate.Run(o.Input); }
+            catch (Exception e) when (e is DivideByZeroException or NoAnswer) { got = double.NaN; }
+            farthest = Math.Max(farthest, double.IsFinite(got) ? Math.Abs(Ulps(o.Excel, got)) : long.MaxValue);
+        }
+        rows.Add((candidate, farthest));
+    }
+    Console.WriteLine($"\nPMT: the farthest each candidate lies from Excel over the {cases.Count} observed payments at a rate other than 0, units in the last place");
+    foreach (var g in rows.GroupBy(r => r.Candidate.Family).OrderBy(g => g.Min(r => r.Farthest)))
+        Console.WriteLine($"  {g.Min(r => r.Farthest),12}  {g.Count(r => r.Farthest <= 64),6} within 64 of {g.Count(),6}  {g.Key}");
+    foreach (var bound in new long[] { 16, 32, 64, 256 })
+    {
+        var within = rows.Where(r => r.Farthest <= bound).ToList();
+        Console.WriteLine($"  within {bound}: {within.Count} candidates; growths " + string.Join(", ", within.Select(r => Regex.Match(r.Candidate.Short, @"g\d+").Value).Distinct().OrderBy(x => int.Parse(x[1..]))) + "; forms " + string.Join(", ", within.Select(r => r.Candidate.Short.Split(' ')[0]).Distinct().OrderBy(x => x.Length).ThenBy(x => x)));
+    }
+}
 
 // The doubles each function's best candidates give for a formula: the candidates that reproduce every
 // observed double, else the ten with the most matches.
@@ -405,12 +450,12 @@ static class Observations
 
     private static double Number(string raw) => double.Parse(raw, CultureInfo.InvariantCulture);
 
-    /// <summary>The few argument expressions the corpus writes (0.06/12, 8%/12, 12*20), in doubles.</summary>
+    /// <summary>The few argument expressions the corpus writes (0.06/12, 8%/12, 12*20, 1E-320), in doubles.</summary>
     private static double Arithmetic(string text)
     {
         text = text.Trim();
         if (text.Length == 0) return 0;
-        var m = Regex.Match(text, @"^(-?[\d.]+)(%?)(?:([*/])(-?[\d.]+))?$");
+        var m = Regex.Match(text, @"^(-?[\d.]+(?:E[-+]?\d+)?)(%?)(?:([*/])(-?[\d.]+(?:E[-+]?\d+)?))?$");
         if (!m.Success) throw new InvalidDataException(text);
         var a = double.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
         if (m.Groups[2].Value == "%") a /= 100;
@@ -624,6 +669,210 @@ readonly struct R(X v)
 record Candidate(string Family, string Label, string Short, Func<Input, double> Run);
 
 // ------------------------------------------------------------------------------------------------
+// PMT's readings (2026-10-12, the third round of the financial area)
+
+/// <summary>
+/// The readings of PMT: the evaluations of the identity Excel's observed payments leave, each run with a double's
+/// range, so that where a quantity passes it or falls below the normal numbers they part as they would. No
+/// candidate gives every observed payment; the readings are those within <see cref="Within"/> units in the last
+/// place of Excel's at every one (<c>--pmt-spread</c> prints how far each family lies). That rules out every
+/// evaluation that rounds 1+rate to a double (millions of units from PMT-017, at 10^-7), and the forms that
+/// form 1 - 1/g; it leaves (1+rate)^n - 1 carried accurately, through log1p and expm1 in doubles, an x87's
+/// FYL2XP1 and F2XM1, or exactly, and LibreOffice's ScGetPMT. Each admitted candidate is run here by the class of
+/// its growth, in native doubles where its rest is at 53 bits, so that a double's range applies, and in an x87's
+/// register where it is at 64: g as exp(x), as 1+e, or as the power PV and FV share, e = expm1(n log1p(rate)) by
+/// the C library's (which keep their precision to the subnormal numbers, as the correctly rounded ones the search
+/// takes do), or e = g - 1; g and e exact, or the x87's. The exact and x87 growths come from the spike's 256-bit
+/// fixed point, so they are run only where it reaches them: a rate of 2^-100 or more, and a fractional nper whose
+/// growth lies within 2^±57, or a whole one up to 5,000.
+/// </summary>
+static class PmtReadings
+{
+    public const long Within = 64;
+
+    private delegate double NativeForm(double r, double pv, double fv, double t, double g, double e);
+
+    // Annuity's PmtForms, with double for R: the same operations in the same order.
+    private static readonly (string Name, NativeForm Form)[] Forms =
+    [
+        ("M1 -(r*(pv*g+fv))/((1+r*t)*e)", (r, pv, fv, t, g, e) => -(r * (pv * g + fv)) / ((1.0 + r * t) * e)),
+        ("M2 -(pv*g+fv)/((1+r*t)*(e/r))", (r, pv, fv, t, g, e) => -(pv * g + fv) / ((1.0 + r * t) * (e / r))),
+        ("M3 -(pv*g+fv)*r/((1+r*t)*e)", (r, pv, fv, t, g, e) => -(pv * g + fv) * r / ((1.0 + r * t) * e)),
+        ("M4 -((pv*g+fv)/(e/r))/(1+r*t)", (r, pv, fv, t, g, e) => -((pv * g + fv) / (e / r)) / (1.0 + r * t)),
+        ("M5 -(pv*g+fv)/e*r/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * g + fv) / e * r / (1.0 + r * t)),
+        ("M6 -(pv+fv/g)*r/((1+r*t)*(1-1/g))", (r, pv, fv, t, g, e) => -(pv + fv / g) * r / ((1.0 + r * t) * (1.0 - 1.0 / g))),
+        ("M7 -(fv+pv*g)/((1+r*t)*((g-1)/r))", (r, pv, fv, t, g, e) => -(fv + pv * g) / ((1.0 + r * t) * (e / r))),
+        ("M8 -(pv*g+fv)/((1+r*t)*e/r)", (r, pv, fv, t, g, e) => -(pv * g + fv) / ((1.0 + r * t) * e / r)),
+        ("M9 -(pv*r*g + fv*r)/((1+r*t)*e)", (r, pv, fv, t, g, e) => -(pv * r * g + fv * r) / ((1.0 + r * t) * e)),
+        ("M10 -(pv*r/(1-1/g) + fv*r/e)/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * r / (1.0 - 1.0 / g) + fv * r / e) / (1.0 + r * t)),
+        ("M11 -(pv*g+fv)/(((1+r*t)*e)/r)", (r, pv, fv, t, g, e) => -(pv * g + fv) / (((1.0 + r * t) * e) / r)),
+        ("M12 -(pv*g+fv)/(e*(1+r*t)/r)", (r, pv, fv, t, g, e) => -(pv * g + fv) / (e * (1.0 + r * t) / r)),
+        ("M13 -(pv*g+fv)/(e/r*(1+r*t))", (r, pv, fv, t, g, e) => -(pv * g + fv) / (e / r * (1.0 + r * t))),
+        ("M15 -((pv*g+fv)*r/e)/(1+r*t)", (r, pv, fv, t, g, e) => -((pv * g + fv) * r / e) / (1.0 + r * t)),
+        ("M16 -(pv*g/e + fv/e)*r/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * g / e + fv / e) * r / (1.0 + r * t)),
+        ("M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * (r * g / e) + fv * (r / e)) / (1.0 + r * t)),
+        ("M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * (r + r / e) + fv * (r / e)) / (1.0 + r * t)),
+        ("M19 -(pv*r + (pv+fv)*r/e)/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * r + (pv + fv) * r / e) / (1.0 + r * t)),
+        ("M20 -(pv*r + (pv+fv)/(e/r))/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * r + (pv + fv) / (e / r)) / (1.0 + r * t)),
+        ("M21 -(pv+fv/g)*r/((1+r*t)*(e/g))", (r, pv, fv, t, g, e) => -(pv + fv / g) * r / ((1.0 + r * t) * (e / g))),
+        ("M22 -(pv*g+fv)*(r/e)/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * g + fv) * (r / e) / (1.0 + r * t)),
+        ("M23 -(r/e)*(pv*g+fv)/(1+r*t)", (r, pv, fv, t, g, e) => -(r / e) * (pv * g + fv) / (1.0 + r * t)),
+        ("M24 -(pv*(r/e+r) + fv*(r/e))/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * (r / e + r) + fv * (r / e)) / (1.0 + r * t)),
+        ("M25 -(pv*g+fv)/(e/r)/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * g + fv) / (e / r) / (1.0 + r * t)),
+        ("M26 -(r*fma(pv,g,fv))/((1+r*t)*e)", (r, pv, fv, t, g, e) => -(r * Math.FusedMultiplyAdd(pv, g, fv)) / ((1.0 + r * t) * e)),
+        ("M27 -fma(pv,g,fv)/((1+r*t)*(e/r))", (r, pv, fv, t, g, e) => -Math.FusedMultiplyAdd(pv, g, fv) / ((1.0 + r * t) * (e / r))),
+        ("M28 -fma(pv,g,fv)*r/((1+r*t)*e)", (r, pv, fv, t, g, e) => -Math.FusedMultiplyAdd(pv, g, fv) * r / ((1.0 + r * t) * e)),
+        ("M29 -fma(pv,g,fv)/e*r/(1+r*t)", (r, pv, fv, t, g, e) => -Math.FusedMultiplyAdd(pv, g, fv) / e * r / (1.0 + r * t)),
+        ("M30 -fma(pv+fv, r/e, pv*r)/(1+r*t)", (r, pv, fv, t, g, e) => -Math.FusedMultiplyAdd(pv + fv, r / e, pv * r) / (1.0 + r * t)),
+        ("M31 -fma(pv, r, (pv+fv)*r/e)/(1+r*t)", (r, pv, fv, t, g, e) => -Math.FusedMultiplyAdd(pv, r, (pv + fv) * r / e) / (1.0 + r * t)),
+        ("M32 -fma(pv*r, g, fv*r)/((1+r*t)*e)", (r, pv, fv, t, g, e) => -Math.FusedMultiplyAdd(pv * r, g, fv * r) / ((1.0 + r * t) * e)),
+        ("M33 -(pv+fv*v)*r/((1+r*t)*(1-v)), v=1/g", (r, pv, fv, t, g, e) => { var v = 1.0 / g; return -(pv + fv * v) * r / ((1.0 + r * t) * (1.0 - v)); }),
+        ("M34 -(pv+fv*v)/((1+r*t)*((1-v)/r)), v=1/g", (r, pv, fv, t, g, e) => { var v = 1.0 / g; return -(pv + fv * v) / ((1.0 + r * t) * ((1.0 - v) / r)); }),
+        ("M35 -(pv+fv*v)*r/((1+r*t)*(e*v)), v=1/g", (r, pv, fv, t, g, e) => { var v = 1.0 / g; return -(pv + fv * v) * r / ((1.0 + r * t) * (e * v)); }),
+        ("M36 -(fv+pv*g)*r/(e*(1+r*t))", (r, pv, fv, t, g, e) => -(fv + pv * g) * r / (e * (1.0 + r * t))),
+        ("M37 -((fv+pv*g)/e)*(r/(1+r*t))", (r, pv, fv, t, g, e) => -((fv + pv * g) / e) * (r / (1.0 + r * t))),
+        ("M38 -(fv+pv*g)/(e*((1+r*t)/r))", (r, pv, fv, t, g, e) => -(fv + pv * g) / (e * ((1.0 + r * t) / r))),
+        ("M39 -(pv + (pv+fv)/e)*r/(1+r*t)", (r, pv, fv, t, g, e) => -(pv + (pv + fv) / e) * r / (1.0 + r * t)),
+        ("M40 -(pv*g+fv)*r/e/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * g + fv) * r / e / (1.0 + r * t)),
+        ("M41 -(r*(fv+pv*g))/(e*(1+r*t))", (r, pv, fv, t, g, e) => -(r * (fv + pv * g)) / (e * (1.0 + r * t))),
+    ];
+
+    /// <summary>The admitted readings: a form, a way to the start (Annuity's d0 to d5), a growth's class and the rest's precision.</summary>
+    private static readonly HashSet<(string Form, int Due, string Growth, int Precision)> Admitted = [];
+    private static bool libreOffice;
+
+    public static int Count => Admitted.Count + (libreOffice ? 1 : 0);
+
+    public static void Admit(IEnumerable<Candidate> candidates)
+    {
+        foreach (var candidate in candidates)
+        {
+            if (candidate.Family.StartsWith("LibreOffice", StringComparison.Ordinal))
+            {
+                libreOffice = true;
+                continue;
+            }
+            var m = Regex.Match(candidate.Short, @"^(M\d+) g(\d+) @(\d+)(?: d(\d+))?$"); // d0, inline, is written without
+            if (!m.Success) throw new InvalidOperationException(candidate.Short);
+            var growth = Class(Annuity.GrowthNames[int.Parse(m.Groups[2].Value)]) ?? throw new InvalidOperationException($"no class for {Annuity.GrowthNames[int.Parse(m.Groups[2].Value)]}");
+            Admitted.Add((m.Groups[1].Value, m.Groups[4].Success ? int.Parse(m.Groups[4].Value) : 0, growth, int.Parse(m.Groups[3].Value)));
+        }
+    }
+
+    /// <summary>How a growth forms g and e, as far as a double's range goes.</summary>
+    private static string? Class(string growth) =>
+        growth.Contains("always split by FRNDINT, e=g-1") ? "x87, split, e = g-1"
+        : growth.Contains("split, e=m*2^i+(2^i-1)") ? "x87, split, e from the parts"
+        : growth.Contains("FYL2XP1") ? "x87"
+        : growth.Contains("exact (any n") ? "exact"
+        : growth.Contains("g as PV and FV raise it") ? "power"
+        : growth.Contains("e=e = g-1") ? "exp, e = g-1"
+        : growth.Contains("1+e") ? "1+e"
+        : growth.Contains("g=exp") || growth.Contains("g=Math.Exp") ? "exp"
+        : null;
+
+    /// <summary>g and e in doubles by a growth's class, or the Error Value its arithmetic gives.</summary>
+    private static (double G, double E)? InDoubles(string growth, double r, double n)
+    {
+        var x = n * Libm.Log1p(r);
+        switch (growth)
+        {
+            case "exp": return (Math.Exp(x), Libm.Expm1(x));
+            case "exp, e = g-1": return (Math.Exp(x), Math.Exp(x) - 1);
+            case "1+e": return (1 + Libm.Expm1(x), Libm.Expm1(x));
+            case "power": return (Pow.Squaring(1 + r, n), Libm.Expm1(x));
+        }
+        return Exact(growth, r, n) is { } exact ? (exact.G.ToDouble(), exact.E.ToDouble()) : null;
+    }
+
+    /// <summary>The exact growth or the x87's, where the spike's fixed point reaches them.</summary>
+    private static Growth? Exact(string growth, double r, double n)
+    {
+        if (Math.Abs(r) < Math.ScaleB(1, -100) || !double.IsFinite(n)) return null;
+        var b = X.AddExact(X.One, X.Of(r));
+        var m = Math.Abs(n);
+        var reached = m == Math.Floor(m) ? m <= 5000 : b.Sign > 0 && Math.Abs(n * Math.Log(1 + r)) <= 40;
+        if (!reached) return null;
+        if (growth.StartsWith("x87", StringComparison.Ordinal))
+        {
+            if (b.Sign <= 0) return null;
+            try { return Annuity.X87Growth(r, n, split: growth != "x87", eFromParts: growth == "x87, split, e from the parts"); }
+            catch (Exception e) when (e is DivideByZeroException or NoAnswer) { return null; }
+        }
+        X g;
+        if (m == Math.Floor(m))
+        {
+            g = X.One;
+            for (var i = 0; i < (long)m; i++) g = X.Mul(g, b, 400);
+            if (n < 0)
+            {
+                if (g.Sign == 0) return null;
+                g = X.Div(X.One, g, 400);
+            }
+        }
+        else g = Fixed.Power(b, X.Of(n), 400);
+        return new Growth(g, X.Add(g, X.Of(-1), 400));
+    }
+
+    /// <summary>Every admitted reading's answer at an input: a number's round-trip form, or an Error Value.</summary>
+    public static List<(string Reading, string Answer)> Answers(Input input)
+    {
+        double r = input.Rate, n = input.Periods, pv = input.Third, fv = input.Fourth;
+        var atStart = input.Type != 0;
+        var answers = new List<(string, string)>();
+        var forms = Forms.ToDictionary(f => f.Name.Split(' ')[0], f => f.Form);
+        var exactForms = Annuity.PmtFormList.ToDictionary(f => f.Name.Split(' ')[0], f => f.Form);
+        foreach (var (formName, due, growth, precision) in Admitted)
+        {
+            if (!atStart && due != 0) continue; // at the end every way to the start is the payment at the end
+            var name = $"{formName} | {growth} | d{due} | @{precision}";
+            string answer;
+            try
+            {
+                double atEnd, start;
+                if (precision == 53)
+                {
+                    if (InDoubles(growth, r, n) is not { } g) continue;
+                    var form = forms[formName];
+                    atEnd = form(r, pv, fv, 0, g.G, g.E);
+                    start = due == 0 ? form(r, pv, fv, atStart ? 1 : 0, g.G, g.E) : double.NaN;
+                }
+                else
+                {
+                    Growth? x = growth == "exact" || growth.StartsWith("x87", StringComparison.Ordinal) ? Exact(growth, r, n) : InDoubles(growth, r, n) is { } d ? new Growth(X.Of(d.G), X.Of(d.E)) : null;
+                    if (x is null) continue;
+                    var form = exactForms[formName];
+                    double Evaluate(double t) => R.At(64, () => form(R.Of(r), R.Of(pv), R.Of(fv), R.Of(t), R.Of(x.G), R.Of(x.E)).ToDouble());
+                    atEnd = Evaluate(0);
+                    start = due == 0 ? Evaluate(atStart ? 1 : 0) : double.NaN;
+                }
+                answer = Kind(!atStart ? atEnd : due switch
+                {
+                    0 => start,
+                    1 => atEnd / (1 + r),
+                    2 => atEnd * (1 / (1 + r)),
+                    3 => atEnd - atEnd * r / (1 + r),
+                    4 => R.At(64, () => (R.Of(atEnd) / (R.Of(1.0) + R.Of(r))).ToDouble()),
+                    _ => X.Div(X.Of(atEnd), X.AddExact(X.One, X.Of(r)), 53).ToDouble(),
+                });
+            }
+            catch (Exception e) when (e is DivideByZeroException or NoAnswer) { answer = "#NUM!"; }
+            answers.Add((name, answer));
+        }
+        if (libreOffice)
+        {
+            var l = Libm.Log1p(r);
+            var owed = (fv + pv * Math.Exp(n * l)) * r;
+            answers.Add(("LibreOffice's ScGetPMT", Kind(-(atStart ? owed / (Libm.Expm1((n + 1) * l) - r) : owed / Libm.Expm1(n * l)))));
+        }
+        return answers;
+    }
+
+    private static string Kind(double payment) =>
+        !double.IsFinite(payment) ? "#NUM!" : payment == 0 ? "0" : payment.ToString("R", CultureInfo.InvariantCulture);
+}
+
+// ------------------------------------------------------------------------------------------------
 // PMT, PV and FV
 
 /// <summary>(1+rate)^n and (1+rate)^n - 1, as exact values; the form rounds them to its precision.</summary>
@@ -774,6 +1023,12 @@ static class Annuity
         return new Growth(X.Of(exp is null ? 1 + e : exp(x)), X.Of(e));
     }
 
+    /// <summary>PMT's forms, for its readings (2026-10-12, the third round).</summary>
+    public static (string Name, Form Form)[] PmtFormList => PmtForms;
+
+    /// <summary>The x87's growth through FYL2XP1 and F2XM1 (g13 to g15), for PMT's readings.</summary>
+    public static Growth X87Growth(double r, double n, bool split, bool eFromParts) => X87(r, n, split, eFromParts);
+
     private static Growth X87(double r, double n, bool split, bool eFromParts)
     {
         var t = Fixed.MulLog2(X.Of(n), X.AddExact(X.One, X.Of(r)), 64);
@@ -812,7 +1067,7 @@ static class Annuity
 
     // Forms: each order of operations Microsoft's identity allows (search.py's, and the groupings it did
     // not try). R's operations round to the ambient precision.
-    private delegate R Form(R r, R third, R fourth, R t, R g, R e);
+    public delegate R Form(R r, R third, R fourth, R t, R g, R e);
 
     private static R One => R.Of(1.0);
 
@@ -1491,61 +1746,212 @@ static class Refusals
     }
 
     /// <summary>
-    /// PMT (2026-10-12, ADR-0047's exception for PMT alone, decided with the user): no evaluation gives every observed
-    /// payment, so PMT has no survivors to agree, and the engine gives the exact payment rounded once. Over the annuity
-    /// grid the engine must give the payment computed here exactly (the growth exact at a whole nper, else e^(n ln b) in
-    /// 256-bit fixed point; the payment at the end rounded once; at the start that double over 1+rate, rounded once),
-    /// the financial power's Error Values, and #VALUE! where it refuses until Excel is asked.
+    /// PMT (2026-10-12, ADR-0047's exception for PMT alone, decided with the user; rewritten in the third round): no
+    /// evaluation gives every observed payment, so PMT has no survivors to agree. Its readings (<see cref="PmtReadings"/>)
+    /// are run instead, with a double's range, over the annuity grid and the extreme grid: where some give a number
+    /// and others an Error Value, they part in kind and the engine must refuse (#VALUE!); where all give an Error
+    /// Value, the engine must give one; where all give a number, the engine must give the exact payment rounded
+    /// once, computed here (<see cref="ExactPmt"/>), or refuse for the reason it gives. How far the readings' numbers
+    /// lie from the exact payment, where the engine answers, is reported, not checked.
     /// </summary>
     private static bool ReportPmt()
     {
-        int inputs = 0, answered = 0;
+        int inputs = 0, parting = 0, allErrors = 0, allNumbers = 0, answered = 0, notComputed = 0;
         var refused = new Dictionary<string, int>();
-        var failures = new List<string>();
-        foreach (var c in AnnuityGrid("PMT"))
+        var failures = new List<(string Kind, string Text)>();
+        var worst = (Ulps: 0L, At: "");
+        foreach (var c in AnnuityGrid("PMT").Concat(PmtExtremeGrid()))
         {
             inputs++;
-            var (exact, refusal) = ExactPmt(c.Input);
             var engine = Engine(c);
+            var answers = PmtReadings.Answers(c.Input);
+            var numbers = answers.Where(a => !a.Answer.StartsWith('#')).ToList();
+            var errors = answers.Where(a => a.Answer.StartsWith('#')).ToList();
+            if (numbers.Count > 0 && errors.Count > 0)
+            {
+                parting++;
+                if (engine != "#VALUE!") failures.Add((Where(c.Input), $"{c.Formula}: the readings part in kind ({numbers[0].Reading} gives {numbers[0].Answer}, {errors[0].Reading} {errors[0].Answer}), the engine {engine}"));
+                continue;
+            }
+            if (numbers.Count == 0)
+            {
+                allErrors++;
+                if (!engine.StartsWith('#')) failures.Add((Where(c.Input), $"{c.Formula}: every reading gives an Error Value ({string.Join(", ", errors.Select(e => e.Answer).Distinct())}), the engine {engine}"));
+                continue;
+            }
+            allNumbers++;
+            var (exact, refusal) = ExactPmt(c.Input);
             if (refusal is not null)
             {
                 if (engine == "#VALUE!") { refused[refusal] = refused.GetValueOrDefault(refusal) + 1; continue; }
-                failures.Add($"{c.Formula}: the engine {engine}, refused there ({refusal})");
+                failures.Add((Where(c.Input), $"{c.Formula}: the engine {engine}, refused there ({refusal})"));
                 continue;
             }
-            if (engine == exact) { answered++; continue; }
-            failures.Add($"{c.Formula}: the engine {engine}, the exact payment {exact}");
+            if (exact is null)
+            {
+                notComputed++;
+                continue;
+            }
+            if (engine != exact)
+            {
+                failures.Add((Where(c.Input), $"{c.Formula}: the engine {engine}, the exact payment {exact}"));
+                continue;
+            }
+            answered++;
+            if (exact == "0" || exact.StartsWith('#')) continue;
+            var payment = double.Parse(exact, CultureInfo.InvariantCulture);
+            foreach (var (reading, answer) in numbers)
+            {
+                var off = Math.Abs(UnitsApart(payment, double.Parse(answer, CultureInfo.InvariantCulture)));
+                if (off > worst.Ulps) worst = (off, $"{c.Formula} by {reading}");
+            }
         }
-        Console.WriteLine($"\nPMT, the exact payment rounded once (ADR-0047's exception): {inputs} inputs; the engine gives it, or the financial power's Error Value, at {answered}");
+        Console.WriteLine($"\nPMT, its readings with a double's range ({PmtReadings.Count} of them) and the exact payment rounded once (ADR-0047's exception): {inputs} inputs");
+        Console.WriteLine($"  they part in kind at {parting}, where the engine must refuse; every one gives an Error Value at {allErrors}, where the engine must give one");
+        Console.WriteLine($"  every one gives a number at {allNumbers}: the engine gives the exact payment at {answered}{(notComputed > 0 ? $", and {notComputed} are left to pmt_exact.py, the spike's fixed point not reaching them" : "")}");
         foreach (var (reason, count) in refused) Console.WriteLine($"  {count} refused: {reason}");
-        Console.WriteLine(failures.Count == 0 ? "  the engine gives the exact payment at every other input" : $"  {failures.Count} inputs where the engine does not:");
-        foreach (var f in failures.Take(25)) Console.WriteLine($"    {f}");
+        Console.WriteLine($"  the farthest a reading lies from the exact payment where the engine answers: {worst.Ulps} units in the last place, {worst.At}");
+        Console.WriteLine(failures.Count == 0 ? "  the engine follows its rules at every input" : $"  {failures.Count} inputs where the engine does not:");
+        foreach (var group in failures.GroupBy(f => f.Kind))
+        {
+            Console.WriteLine($"    {group.Count()} {group.Key}:");
+            foreach (var f in group.Take(4)) Console.WriteLine($"      {f.Text}");
+        }
         return failures.Count == 0;
     }
 
-    /// <summary>PMT's exact payment over the doubles, or the financial power's Error Value, or why the engine refuses the input.</summary>
-    private static (string Answer, string? Refusal) ExactPmt(Input input)
+    /// <summary>Where an input lies, to group what the check finds.</summary>
+    private static string Where(Input input)
+    {
+        var g = Math.Pow(1 + input.Rate, input.Periods);
+        if (input.Periods == 0) return $"no periods, {(input.Type != 0 ? "at the start" : "at the end")}";
+        if (input.Rate <= -1) return "a rate of -1 or below";
+        if (!double.IsFinite(g) || g > Math.ScaleB(1, 1000)) return "a growth past 2^1000";
+        if (g < Math.ScaleB(1, -1000)) return "a growth below 2^-1000";
+        if (g < Math.ScaleB(1, -52)) return "a growth below 2^-52";
+        return $"elsewhere";
+    }
+
+    /// <summary>--pmt-show FORMULA: every distinct answer PMT's readings give at an input, with how many give it, and the engine's.</summary>
+    public static void ShowPmt(string formula)
+    {
+        var input = Observations.Parse(formula, []);
+        Console.WriteLine($"\n{formula}: the engine {EngineAnswer(formula, [])}, the exact payment {ExactPmt(input)}");
+        foreach (var group in PmtReadings.Answers(input).GroupBy(a => a.Answer).OrderByDescending(g => g.Count()))
+            Console.WriteLine($"  {group.Count(),5}  {group.Key,-26}  e.g. {group.First().Reading}");
+    }
+
+    /// <summary>
+    /// Inputs at the edges of a double's range (2026-10-12, the third round): rates from 1E10 to below the normal
+    /// numbers, near and below -1; numbers of periods whose growth passes the range or falls below it; present and
+    /// future values from 1E-5 to 9E307.
+    /// </summary>
+    private static IEnumerable<Case> PmtExtremeGrid()
+    {
+        string[] rates = ["1", "0.5", "1E10", "1E-7", "1E-20", "1E-300", "1E-307", "-1.64435447903749E-307", "1E-320", "-0.5", "-0.99", "-0.999999", "-1", "-1.5", "-2", "-9"];
+        string[] periods = ["1", "12", "30", "160", "360", "1020", "1100", "1740", "0.5", "10.5", "283.5", "-10", "-1/3", "1/3", "0.0907921350606893"];
+        string[] presents = ["1000", "1E-5", "1E300", "-1E10", "0"];
+        string[] futures = ["0", "500", "-5000", "9E307"];
+        foreach (var rate in rates)
+        foreach (var n in periods)
+        foreach (var pv in presents)
+        foreach (var fv in futures)
+        foreach (var type in new[] { "0", "1" })
+        {
+            var formula = $"=PMT({rate},{n},{pv},{fv},{type})";
+            yield return new Case(formula, Observations.Parse(formula, []), []);
+        }
+    }
+
+    /// <summary>
+    /// PMT's answer by the engine's rules (<c>Functions.Financial.cs</c>, <c>ExactPayment.cs</c>), computed here in
+    /// exact arithmetic: (the answer, null); ("#VALUE!", why) where the rules refuse; or (null, null) where the
+    /// spike's fixed point cannot reach the exact payment (a rate below 2^-100, a fractional nper whose growth lies
+    /// past 2^±57, a whole one above 5,000), which pmt_exact.py checks in decimal.
+    /// </summary>
+    private static (string? Answer, string? Refusal) ExactPmt(Input input)
     {
         double r = input.Rate, n = input.Periods, pv = input.Third, fv = input.Fourth;
+        var atStart = input.Type != 0;
+        if (r != 0 && Math.Abs(n) > 9007199254740992) return ("#VALUE!", "an nper past 2^53");
         if (n == 0) return ("#NUM!", null);
         if (r == 0) return (Format(-(pv + fv) / n), null);
-        try { Pow.Financial(1 + r, n, correctlyRounded: true); }
-        catch (NoAnswer power) { return (power.Error, null); }
+        if (r <= -1)
+        {
+            var root = 1 / Math.Abs(n);
+            if (r < -1 && n != Math.Floor(n) && !(double.IsFinite(root) && root == Math.Floor(root) && Math.Abs(root % 2) == 1)) return ("#NUM!", null);
+            return ("#VALUE!", r == -1 ? "a rate of -1 (PMT-034, PMT-037)" : "a rate below -1 with a whole nper, or a fraction whose reciprocal is odd (PMT-035, PMT-036)");
+        }
+        const int P = 700;
         var b = X.AddExact(X.One, X.Of(r));
-        if (b.Sign == 0) return ("", "a rate of -1 with nper above 0, where the forms over the growth part between -fv and an Error Value (PMT-034 asks)");
-        var m = Math.Abs(n);
         X g;
-        if (m == Math.Floor(m)) g = Pow.ExactPower(b, (long)m);
-        else if (b.Sign > 0) g = Fixed.Power(b, X.Of(m), 320);
-        else g = Fixed.Power(b.Negate(), X.Of(m), 320).Negate();
-        if (n < 0) g = X.Div(X.One, g, 400);
-        if (!double.IsFinite(g.ToDouble())) return ("", "1+rate raised past a double's range, where the payment is a number and an evaluation in doubles gives #NUM! (PMT-038 asks)");
-        var e = X.AddExact(g, X.Of(-1));
-        if (e.Sign == 0) return ("", "a growth of exactly 1 (a rate of -2, an even nper), where every form divides by 0 (PMT-035 asks)");
-        var owed = X.MulExact(X.Of(r), X.AddExact(X.MulExact(X.Of(pv), g), X.Of(fv))).Negate();
+        var m = Math.Abs(n);
+        if (Math.Abs(r) < Math.ScaleB(1, -100)) return (null, null);
+        if (!(Math.Abs(n * Math.Log2(1 + r)) <= 1100)) return ("#VALUE!", OutOfRange);
+        if (m == Math.Floor(m))
+        {
+            if (m > 5000) return (null, null);
+            g = X.One;
+            for (var i = 0; i < (long)m; i++) g = X.Mul(g, b, P);
+            if (n < 0) g = X.Div(X.One, g, P);
+        }
+        else
+        {
+            if (Math.Abs(n * Math.Log(1 + r)) > 40) return (null, null);
+            g = Fixed.Power(b, X.Of(n), P);
+        }
+        var e = X.Add(g, X.Of(-1), P);
+        if (e.Sign == 0 || X.Compare(e.Abs(), new X(1, -150)) < 0) return (null, null);
+        if (!QuantitiesFit(X.Of(r), X.Of(pv), X.Of(fv), X.AddExact(X.Of(pv), X.Of(fv)), g, e, b, atStart)) return ("#VALUE!", OutOfRange);
+        var owed = X.MulExact(X.Of(r), X.Add(X.Mul(X.Of(pv), g, P), X.Of(fv), P)).Negate();
         var end = X.Div(owed, e, 53).ToDouble();
-        if (input.Type != 0 && double.IsFinite(end)) end = X.Div(X.Of(end), b, 53).ToDouble();
-        return (double.IsFinite(end) ? Format(end) : "#NUM!", null);
+        if (end == 0) return ("0", null);
+        if (atStart) end = X.Div(X.Of(end), b, 53).ToDouble();
+        return (Format(end), null);
+    }
+
+    private static long UnitsApart(double a, double b)
+    {
+        static long Ordered(double x) => BitConverter.DoubleToInt64Bits(x) is var bits && bits < 0 ? long.MinValue - bits : BitConverter.DoubleToInt64Bits(x);
+        return Ordered(b) - Ordered(a);
+    }
+
+    private const string OutOfRange = "a quantity a reading computes outside [2^-1021, 2^1022], where the readings agree in kind here but the engine's rule refuses (ExactPayment.Quantities)";
+
+    /// <summary>ExactPayment's rule, over exact values: every listed quantity that is not 0 lies within [2^-1021, 2^1022].</summary>
+    private static bool QuantitiesFit(X r, X pv, X fv, X s, X g, X e, X b, bool atStart)
+    {
+        string[] quantities =
+        [
+            "r", "pv", "fv", "s", "g", "/ g", "e", "b", "/ b", "c", "/ c",
+            "e / r", "r / e", "e / g", "e / g r", "c e", "c e / r", "c e / g", "c e / g r", "c / r", "r / c",
+            "b g", "b e", "r g",
+            "pv g", "fv / g", "pv r", "fv r", "pv r g", "fv r / g",
+            "pv g / e", "fv / e", "r g / e", "pv r g / e", "fv r / e",
+            "s r", "s / e", "s r / e",
+            "pv r g / c e", "fv r / c e",
+        ];
+        string[] atStartOnly = ["pv r r g / e", "fv r r / e", "pv r r g / b e", "fv r r / b e"];
+        var values = new Dictionary<string, X> { ["r"] = r, ["pv"] = pv, ["fv"] = fv, ["s"] = s, ["g"] = g, ["e"] = e, ["b"] = b, ["c"] = atStart ? b : X.One };
+        var least = new X(1, -1021);
+        var most = new X(1, 1022);
+        foreach (var quantity in atStart ? quantities.Concat(atStartOnly) : quantities)
+        {
+            var numerator = X.One;
+            var denominator = X.One;
+            var below = false;
+            var zero = false;
+            foreach (var name in quantity.Split(' '))
+            {
+                if (name == "/") { below = true; continue; }
+                if (values[name].Sign == 0) { zero = true; break; }
+                if (below) denominator = X.Mul(denominator, values[name].Abs(), 200); else numerator = X.Mul(numerator, values[name].Abs(), 200);
+            }
+            if (zero) continue;
+            var magnitude = X.Div(numerator, denominator, 200);
+            if (X.Compare(magnitude, least) < 0 || X.Compare(magnitude, most) > 0) return false;
+        }
+        return true;
     }
 
     private static string Format(double d) => d == 0 ? "0" : d.ToString("R", CultureInfo.InvariantCulture);
@@ -1611,11 +2017,14 @@ static class Refusals
         catch (DivideByZeroException) { return "#NUM!"; }
     }
 
-    private static string Engine(Case c)
+    private static string Engine(Case c) => EngineAnswer(c.Formula, c.Cells);
+
+    /// <summary>The engine's answer to a Formula in a new Sheet with these cells: a number's shortest round-trip form, or an Error Value.</summary>
+    public static string EngineAnswer(string formula, (string Address, string Typed)[] cells)
     {
         var sheet = new ExSheet.Engine.Sheet(EnUs);
-        foreach (var (address, typed) in c.Cells) sheet.Enter(ExSheet.Engine.CellAddress.Parse(address), typed);
-        sheet.Enter(ExSheet.Engine.CellAddress.Parse("ZZ1000"), c.Formula);
+        foreach (var (address, typed) in cells) sheet.Enter(ExSheet.Engine.CellAddress.Parse(address), typed);
+        sheet.Enter(ExSheet.Engine.CellAddress.Parse("ZZ1000"), formula);
         var value = sheet.GetValue(ExSheet.Engine.CellAddress.Parse("ZZ1000"))!.Value;
         return value.Kind == ExSheet.Engine.ValueKind.Number && value.Number == 0 ? "0" : value.ToString();
     }

@@ -161,6 +161,54 @@
       "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "A4": "3250", "A5": "2750", "B1": "39448", "B2": "39508", "B3": "39751", "B4": "39859", "B5": "39904", "ZZ1000": "=XNPV(-0.01,A1:A5,B1:B5)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "XNPV-021",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the values at a rate below 0: an Excel that checks the rate first gives #NUM!, as at XNPV-012, and one that reads the values first gives #N/A; which Excel does has not been observed",
+      "cells": {"A1": "#N/A", "A2": "2750", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(-0.5,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-022",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: text among the values at a rate below 0: an Excel that checks the rate first gives #NUM!, and what one that reads the values first gives for text has not been observed either (the engine refuses text among them)",
+      "cells": {"A1": "text", "A2": "2750", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(-0.5,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-023",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the values at a rate of 0: a check of \"0 or below\" made first gives #NUM!, and \"below 0\", or the values read first, #N/A (XNPV-019 asks the rate of 0 itself)",
+      "cells": {"A1": "#N/A", "A2": "2750", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(0,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-024",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the values beside counts that differ: the counts checked first give #NUM!, as at XNPV-003, and the values read first #N/A",
+      "cells": {"A1": "#N/A", "A2": "2750", "A3": "4250", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(0.09,A1:A3,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-025",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the values beside a date before the first: the dates checked first give #NUM!, as at XNPV-002, and the values read first #N/A",
+      "cells": {"A1": "#N/A", "A2": "2750", "B1": "40000", "B2": "39508", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-026",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the values and another among the dates: the values read first give #N/A, and the dates read first #DIV/0!",
+      "cells": {"A1": "#N/A", "A2": "2750", "B1": "#DIV/0!", "B2": "39508", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

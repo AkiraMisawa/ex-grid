@@ -26,11 +26,21 @@ nix develop -c dotnet run -c Release spikes/exsheet-financial-evaluation/Search.
 nix develop -c dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --discriminate   # the inputs that tell PMT's and NPV's nearest apart (discriminate.txt)
 nix develop -c dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --discriminate-xnpv   # the same for XNPV (discriminate-xnpv.txt)
 nix develop -c dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --predict "=FV(0.05/12,12,-150,-1000,1)"
+nix develop -c dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --only PMT --pmt-spread   # how far each PMT candidate lies from Excel
+nix develop -c dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --only PMT --pmt-show "=PMT(1,1020,1000)"   # every answer PMT's readings give there
+nix develop -c dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --engine IN OUT   # the engine's answer to each Formula of IN
+
+# PMT against Python's decimal at 1200 digits (the third round): draw inputs, run the engine on them, compare
+python3 -B spikes/exsheet-financial-evaluation/pmt_exact.py --generate 20000 7 > pmt.txt
+nix develop -c dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --engine pmt.txt engine.txt
+python3 -B spikes/exsheet-financial-evaluation/pmt_exact.py --check pmt.txt engine.txt
 ```
 
-`Search.cs` references `src/ExSheet.Engine` (`#:project`) for `--refusals`, which enters each input as a
-Formula in a `Sheet` through the engine's public surface; everything else in it is the standard library and,
-for the C library's `log1p` and `expm1`, `libm.so.6`.
+`Search.cs` references `src/ExSheet.Engine` (`#:project`) for `--refusals` and `--engine`, which enter each
+input as a Formula in a `Sheet` through the engine's public surface; everything else in it is the standard
+library and, for the C library's `log1p` and `expm1`, `libm.so.6`. `pmt_exact.py` is the standard library's
+`decimal`, and computes nothing the engine computes: it re-implements PMT's rules from their comments over exact
+values.
 
 `search.py` reads each case's cells from the corpus; Excel's arguments are its own doubles (`0.06/12` and
 `8%/12` are divided in doubles, as Excel's operators do). Its logarithms and exponentials come from
@@ -198,10 +208,19 @@ So PMT's evaluation is not settled. Its likely cause is a library log1p or expm1
 rounded, which no portable evaluation reproduces; that is a reading of the data, not a finding. **Decided
 with the user (2026-10-12): PMT is kept, with an exception to ADR-0047 for PMT alone**: its result may differ
 from Excel's in digits no format displays, the engine giving the exact payment rounded once (PMT-001 to 003,
-008 to 010, 017, 019, 022 and 033 are its doubles), and 0.1.0 lists it under Known limitations. PMT-011 and
-012, an `nper` of 10.5 and −10, are answered by the same exact model with 1+rate raised by the financial
-power, exactly: Excel's doubles lie −1.03 and −1.23 units from the exact payment, each one unit from the
-engine's.
+008 to 010, 017, 019, 022 and 033 are its doubles), and 0.1.0 lists it under Known limitations. *(The third
+round, 2026-10-12: at PMT-013, PMT-025 and PMT-026 Excel's double and the exact payment rounded once differ in
+the 15th significant digit, which General shows, and that is put to the user.)* PMT-011 and 012, an `nper` of
+10.5 and −10, are answered by the same exact payment: Excel's doubles lie −1.03 and −1.23 units from it, each
+one unit from the engine's.
+
+`--pmt-spread` (the third round) says how far each family lies from Excel at its farthest observed payment, in
+units in the last place: the accurate-e families in doubles 8 at best, the x87's FYL2XP1 and F2XM1 10, the exact
+growth 10, LibreOffice's `ScGetPMT` 21; every evaluation that rounds 1+rate to a double some 3,000,000. PMT's
+readings are taken as the 18,144 + 1,338 + 1,338 + 432 + 432 + 216 + 216 + 2 candidates within 64 units of
+Excel's at every observed payment (the branch's choice of bound): every family but those that round 1+rate,
+those that square 1+rate in a register, and those without a fractional `nper`, and of the forms every one but
+M6, M10, M33 and M34, which form 1 - 1/g.
 
 ### NPV: no evaluation gives every observed double
 
@@ -216,25 +235,48 @@ given by 6 candidates, NPV-021 by 3, NPV-022 by none. NPV stays undeclared for 0
 
 ADR-0047 admits an answer only where it follows from Excel's observed answers, and where the evaluations
 those leave part, the engine refuses. `--refusals` runs the survivors over a grid, and the engine through its
-public `Sheet`, and requires the engine's answer where they agree and `#VALUE!` where they part. PMT has no
-survivors: under ADR-0047's exception the engine must give the exact payment rounded once, computed here in
-exact arithmetic, the financial power's Error Values, and `#VALUE!` where it refuses. FV, PV and PMT:
-12 rates (−9, −1.5, −1 and −0.5 among them), 19 numbers of periods (whole, negative, 0.5, −0.5, 10.5,
+public `Sheet`, and requires the engine's answer where they agree and `#VALUE!` where they part. FV, PV and
+PMT: 12 rates (−9, −1.5, −1 and −0.5 among them), 19 numbers of periods (whole, negative, 0.5, −0.5, 10.5,
 −10.5, 1/3 and others), four payments, four present or future values and both types, 7,296 inputs each.
 XNPV: the corpus's inputs and 4,000 drawn (up to seven values, dates whole years apart, the days at which
-/365 and *(1/365) part, and any). The last run (2026-10-12, after PMT's exception was decided):
+/365 and *(1/365) part, and any).
 
-| | Survivors | Agree | Part | Exceptions, listed |
+PMT has no survivors. Its readings, the candidates within 64 units of Excel's at every observed payment, are
+run instead (the third round, 2026-10-12, `PmtReadings`) with a double's range: in native doubles where a
+candidate's rest is at 53 bits, with g and e by the class of its growth (exp(x), 1+e, or the power PV and FV
+share, with the C library's log1p and expm1, which keep their precision to the subnormal numbers; or exact, or
+the x87's), and in an x87's register where it is at 64. Over the annuity grid and an extreme grid of 9,600
+(rates from 1E10 to 1E-320 and near and below −1; growths past 2^1000 and below 2^−1000; values from 1E−5 to
+9E307), where the readings part in kind the engine must refuse; where all give an Error Value it must give
+one; where all give a number it must give the exact payment rounded once, computed in the spike's exact
+arithmetic (where its 256-bit fixed point reaches it; `pmt_exact.py` checks the rest), or refuse for a reason
+the check names. The last run (2026-10-12, the third round):
+
+| | Survivors or readings | Agree | Part | Exceptions, listed |
 |---|---:|---:|---:|---|
 | FV, the financial power (g22) | 1 | 7,296 | 0 | none |
 | FV, g22 beside g23 (the platform's ln and exp) | 2 | 7,296 | 0 | none |
 | PV, the financial power (g22) | 1 | 7,296 | 0 | 384 refused at a rate of −1 with `nper` above 0 (PV-013) |
 | XNPV, its two evaluations | 2 | 4,004 | 0 | 506 `#NUM!` at a rate below 0, which no evaluation models |
-| PMT, the exact payment (no survivors) | — | 6,880 | — | 384 refused at a rate of −1 with `nper` above 0 (PMT-034); 32 refused where 1+rate raised passes a double's range (PMT-038) |
+| PMT, its readings, over 16,896 inputs | 2,245 (the 22,118 candidates by form, way to the start, growth's class and precision) | 8,294 numbers, 3,204 Error Values | 5,398 in kind | 170 refused where a quantity lies outside [2^−1021, 2^1022] though the readings agree in kind; 708 numbers left to `pmt_exact.py` |
 
-The engine gives the survivors' answer, and for PMT the exact payment, at every other input. (PV's 14 survivors of its own doubles part at
-614 inputs, at half a period and negative fractions, where FV's settle PV's power; FV's 9 at 96, where g20
-gives 0 to a negative fraction as `#NUM!`.)
+The engine gives the survivors' answer, and for PMT the exact payment, at every other input, and refuses PMT
+wherever its readings part in kind. (PV's 14 survivors of its own doubles part at 614 inputs, at half a period
+and negative fractions, where FV's settle PV's power; FV's 9 at 96, where g20 gives 0 to a negative fraction as
+`#NUM!`.) Where PMT answers, its readings lie up to 21,345,331,117 units in the last place from the exact
+payment, at `=PMT(-0.5,36.25,-150,0,0)`, where M39's pv + (pv+fv)/e nearly cancels: they part beyond the last
+digits by cancellation there, which the engine does not refuse, and that is put to the user. `--pmt-show` prints
+what the readings give at one input; at the third round's new cases:
+
+| Case | Formula | The readings give |
+|---|---|---|
+| PMT-036 | `=PMT(-9,1/3,-1)` | `#NUM!`, every admitted one (none takes the odd root, as the power PV and FV share does, FV-017) |
+| PMT-037 | `=PMT(-1,-10,1000)` | `#NUM!` (138) and 1000 (21) |
+| PMT-039 | `=PMT(1,1020,1000)` | −1000 (244) and `#NUM!` (131) |
+| PMT-042 | `=PMT(-0.99,160,1000,500)` | −495 (313), −494.99999999999994 (50) and `#NUM!` (12) |
+| PMT-043 | `=PMT(1E-320,0.5,1000)` | −2000 (146), `#NUM!` (11) and 0 (2) |
+| PMT-044 | `=PMT(-1.64435447903749E-307,283.5,1E-05,0)` | −3.5273368606701946E-08 (128) and −3.527336860668532E-08 (31) |
+| PMT-045 | `=PMT(-0.5,360,1000,500)` | −250 (371) and `#NUM!` (4) |
 
 ## The C# port
 
@@ -242,10 +284,14 @@ gives 0 to a negative fraction as `#NUM!`.)
 compared them all (2026-10-12, Linux). `--refusals` is the check of PV, FV, XNPV and PMT now. The engine's
 `CorrectlyRounded` computes e^x and ln x in double-double and in 256-bit fixed point near a rounding
 boundary; 40,010 of its values were compared with Python's `decimal` at 120 digits, all equal, of which
-the platform's `Math.Exp` and `Math.Log` differ at 18 (2026-10-12). PMT raises 1+rate, carried exactly, by
-the double-double functions unrounded (`ExpWide`, `LogWide`); at 3,000 drawn inputs with a fractional or
-negative `nper`, the engine's payment was the exact one of Python's `decimal` at 150 digits at all 2,710
-where both are numbers (2026-10-12, after PMT's exception was decided).
+the platform's `Math.Exp` and `Math.Log` differ at 18 (2026-10-12). PMT's payment is computed in the engine's
+`Enclosure`s (the third round): interval arithmetic over exact dyadic numbers, each operation rounding its
+bounds outward, with (1+rate)^nper − 1 raised from the rate itself, by (1+a)(1+b) − 1 = a + b + ab at a whole
+`nper` and as e^x − 1 of x = nper·ln(1+rate) otherwise, and the double given only where both bounds round to it.
+The previous round's double-double (`ExpWide`, `LogWide`, since removed) lost the rate below about 1e−15 and at
+subnormal parts: over `pmt_exact.py`'s 20,000 inputs it was 1 or 2 units in the last place from the exact
+payment at 874 of the 3,167 payments at a rate below 1e−15 and at 53 others. The engine now gives decimal's
+answer at all 20,000: 13,268 numbers, 3,323 of them at a rate below 1e−15, 618 `#NUM!` and 6,114 refused.
 
 ## Files
 
@@ -254,4 +300,5 @@ where both are numbers (2026-10-12, after PMT's exception was decided).
 - `discriminate.txt`: the second search's `--discriminate` run, the inputs PMT-020 to 033 and NPV-009 to 022
   asked.
 - `discriminate-xnpv.txt`: the second search's `--discriminate-xnpv` run, the inputs XNPV-012 to 017 asked.
+- `pmt_exact.py`: PMT against Python's decimal at 1200 digits over a dense random set (the third round).
 - `mod-search.cs`: MOD's search (another area's).

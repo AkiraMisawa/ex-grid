@@ -340,7 +340,7 @@
     {
       "id": "PMT-034",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: at a rate of -1 the growth is 0, and the forms of the identity that multiply by it give the payment -fv, -500 here, where those that divide by it give an Error Value (Search.cs, M1 and M6); PMT refuses it as PV refuses PV-013",
+      "description": "Refused until Excel is asked: at a rate of -1 the growth is 0, and the forms of the identity that multiply by it give the payment -fv, -500 here, where those that divide by it give an Error Value (Search.cs, M1 and M6); PMT's readings part in kind, and PMT refuses it as PV refuses PV-013",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-1,10,1000,500)"},
       "check": "ZZ1000",
@@ -349,7 +349,7 @@
     {
       "id": "PMT-035",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: at a rate of -2, 1+rate is -1 and its square 1, so (1+rate)^nper-1 is 0 and every form of the identity divides by it; which Error Value Excel gives has not been observed (PMT-005's #NUM! at no periods may come from a check of nper rather than the division)",
+      "description": "Refused until Excel is asked: at a rate of -2, 1+rate is -1 and its square 1, so a power gives (1+rate)^nper-1 of 0, which every form of the identity divides by, and a reading through ln(1+rate) has no logarithm of -1; which Error Value Excel gives has not been observed (PMT-005's #NUM! at no periods may come from a check of nper rather than the division)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-2,2,1000)"},
       "check": "ZZ1000",
@@ -358,27 +358,99 @@
     {
       "id": "PMT-036",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a third of a period at a rate below -1, the odd root of a negative 1+rate, as FV-017 found FV raises it; PMT raises 1+rate by the power PV and FV share, where e^(nper ln(1+rate)) would have no answer",
+      "description": "Refused until Excel is asked: a third of a period at a rate below -1. An evaluation that raises 1+rate as PV and FV do takes the odd root of a negative 1+rate (FV-017 found FV raises it so), and with it the payment is -6; one through ln(1+rate), log1p and expm1 or an x87's FYL2XP1, has no logarithm of a negative number and gives an Error Value, as every reading Search.cs --pmt-show runs here does. Which Excel's PMT does has not been observed, and PMT refuses",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-9,1/3,-1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -6}
+      "expect": {"value2": "#VALUE!"}
     },
     {
       "id": "PMT-037",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: ten periods before at a rate of -1, 0 to a negative power, #DIV/0! as FV-021 and PV-012 found it for FV and PV; PMT raises 1+rate by the power PV and FV share",
+      "description": "Refused until Excel is asked: ten periods before at a rate of -1. The power PV and FV share gives 0 to a negative power, #DIV/0! (FV-021 and PV-012 found it so for FV and PV); a reading through ln(1+rate) takes ln 0, minus infinity, and its forms give #NUM!, or a number where they divide by the growth. PMT's readings part, and PMT refuses",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-1,-10,1000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#DIV/0!"}
+      "expect": {"value2": "#VALUE!"}
     },
     {
       "id": "PMT-038",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: 1+rate raised past a double's range, where the payment itself is a number, -1000 exactly rounded; an evaluation that raises 1+rate in doubles gives #NUM!, one in an x87's wider exponent the payment",
+      "description": "Refused until Excel is asked: 1+rate raised past a double's range, where the exact payment is a number, -1000 rounded once; a reading in doubles gives #NUM! where a form multiplies by the growth and the payment where it divides by it (M6), and one in an x87's wider exponent the payment",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(1,1100,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-039",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the growth, 2^1020, is a double, but pv times it passes a double's range: the forms of the identity that form pv*g in doubles give #NUM!, and those that divide fv by the growth instead (M6) give the exact payment, -1000 rounded once, as an x87's wider exponent does",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(1,1020,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-040",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: as PMT-039, with 1.5^1740, about 2^1018: the exact payment is -500 rounded once",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.5,1740,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-041",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the growth, (1+1E10)^30, about 1E300, is a double, but the rate times pv times it passes a double's range: the forms that form r*(pv*g+fv) give #NUM!, and the others the exact payment, -1E10 rounded once",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(1E10,30,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-042",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the growth, 0.01^160, about 1E-320, falls below a double's normal numbers: the readings that divide by it pass the range and give #NUM!, and the others the payment, -495 rounded once, or a unit in the last place from it (Search.cs --pmt-show)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(-0.99,160,1000,500)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-043",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a rate below a double's normal numbers (whether Excel keeps such a number typed has not been observed either): the readings' products of the rate hold a few bits, and they give -2000, the exact payment rounded once, 0 or #NUM! (Search.cs --pmt-show)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(1E-320,0.5,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-044",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the rate is a normal double, but pv times it, about 1.6E-312, falls below the normal numbers: the readings that form it hold a few bits, and give -3.527336860668532E-08 where the others give the exact payment rounded once, -3.5273368606701946E-08, which differ in the 12th significant digit (Search.cs --pmt-show)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(-1.64435447903749E-307,283.5,1E-05,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-045",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the growth, 0.5^360, is a normal double, but a reading that takes it as 1 + (g-1), g-1 a double, holds anything below 2^-54 as 0 and divides by it in some forms (M35 at 64 bits), giving #NUM! where the others give the exact payment, -250 rounded once (Search.cs --pmt-show); PMT refuses a growth below 2^-52",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(-0.5,360,1000,500)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-046",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: no periods at the start: LibreOffice's reading divides by e^(ln(1+rate)) - 1 - rate, which is 0 or the remainder of a rounding, and gives 7.566047373982433E+18 here, where the forms of the identity divide by 0 and give #NUM! (Search.cs --pmt-show) (PMT-005's #NUM! is at the end); PMT refuses no periods at the start at any rate above -1 other than 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.42,0,1000,0,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
     }
