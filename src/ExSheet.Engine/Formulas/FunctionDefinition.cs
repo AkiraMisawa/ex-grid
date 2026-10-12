@@ -45,6 +45,9 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     /// <summary>The argument's syntax, when a function must distinguish a literal Reference from a computed one.</summary>
     public Node Argument(int index) => arguments[index];
 
+    /// <summary>For <c>RAND</c> and <c>RANDBETWEEN</c>: which of the Formula's draws this call is, counted in its text (ADR-0180).</summary>
+    public int Place { get; init; }
+
     /// <summary>Whether argument <paramref name="index"/> was given and not left empty.</summary>
     public bool Has(int index) => index < arguments.Count && arguments[index] is not MissingNode;
 }

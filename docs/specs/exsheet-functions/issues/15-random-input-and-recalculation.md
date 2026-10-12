@@ -1,8 +1,6 @@
 # 15: RAND and RANDBETWEEN, drawn from the Sheet Seed
 
-Status: ready-for-agent
-Roadmap: ExSheet — RAND and RANDBETWEEN, drawn from a seed the Sheet is given, so that the same seed
-and the same edits give the same numbers (ADR-0180).
+Status: done
 
 **What to build:** `RAND` and `RANDBETWEEN` under
 [ADR-0180](../../../adr/0180-rand-and-randbetween-draw-from-the-sheet-seed-and-draw-again-at-each-change.md).
@@ -21,26 +19,26 @@ refusals.
 - [x] Decide when random results change and how dependents recalculate deterministically (ADR-0180)
 - [x] Decide what a Sheet Document and undo/redo preserve (ADR-0180)
 - [x] Record the decision before introducing hidden random state or admitting the functions (ADR-0180)
-- [ ] The engine: the Sheet's seed as data (`#GETTING_DATA` until one is set, as `TODAY` is with no
+- [x] The engine: the Sheet's seed as data (`#GETTING_DATA` until one is set, as `TODAY` is with no
       day), the count of changes, and each draw computed from its four inputs, with no shared stream
-- [ ] Which changes count:
+- [x] Which changes count:
       - they do: an edit, an insertion or a deletion, the undo or redo of one, and a Linked Table's
         snapshot;
       - they do not: a recalculation by the clock, and a change of format
-- [ ] `RAND` and `RANDBETWEEN` in the volatile set (ADR-0124)
-- [ ] `RANDBETWEEN`'s arguments: ADR-0180's refusals, and the answers observed in Excel
-- [ ] ExSheet:
+- [x] `RAND` and `RANDBETWEEN` in the volatile set (ADR-0124)
+- [x] `RANDBETWEEN`'s arguments: ADR-0180's refusals, and the answers observed in Excel
+- [x] ExSheet:
       - a `Seed` parameter;
       - otherwise, a seed chosen when a Sheet Document is opened;
       - the count of changes set back to 0 on opening;
       - nothing recorded in the Sheet Document
-- [ ] Tests of the contract, with a fixed seed (SH-66):
+- [x] Tests of the contract, with a fixed seed (SH-66):
       - draws in range;
       - two calls, two draws;
       - the same draws for the same seed and count, whatever the order of computation;
       - a new draw at each change, and none by the clock;
       - SH-17 with the seed and count given
-- [ ] The catalogue rows Supported; the Docs Site's Formulas page says what differs from Excel, and
+- [x] The catalogue rows Supported; the Docs Site's Formulas page says what differs from Excel, and
       an Example runs `Seed` (CLAUDE.md, "The Docs Site moves with the change")
 
 ## Comments
@@ -54,3 +52,44 @@ others:
 - the test that a `LET` binding is one draw needs ticket 14 too, and whichever lands second writes
   it;
 - the next Windows run asks Excel what an undo does to a draw.
+
+2026-10-11: built. A draw is SplitMix64's finaliser over the seed, the cell's row and column, the call's
+place among the Formula's draws (counted in its text by the parser) and `Sheet.Changes`; `RAND` takes its
+top 53 bits, and `RANDBETWEEN` scales it to the count of whole numbers between the bounds, mixing again
+on the rare draw that would favour some, so each is evenly spread and every draw reproducible. The engine
+takes `Sheet.SetSeed(seed)` and `SetSeed(seed, changes)`; without a seed every Formula that draws waits,
+whichever branch it takes. An operation counts once however many steps it takes (`Sheet.Do`, an undo, a
+redo), and a change now recalculates the volatile Formulas even when nothing else needs it (a snapshot of
+a table nobody reads, an insertion that rewrote nothing). ExSheet's `Seed` parameter, a seed chosen with
+`Random.Shared` when a document is opened otherwise, the count back to 0 there, and nothing in the
+document. `RandomTests` and `SeedWiringTests` are the contract (SH-66), SH-17 included at a seed and count;
+`ExcelCases/rand.json` and `randbetween.json` hold the observations with one outcome, the refused bounds
+with Excel's outcome beside them where it had one (RANDBETWEEN-FOLLOWUP-007 agrees: a Formula's constant
+1.000000000000001 is read at 15 digits, as 1); the samples are the contract tests'. The test that a `LET`
+binding is one draw is here (`ADR0180_a_let_binding_is_one_draw`, and LET-017, LET-018 in the corpus), as
+this ticket landed second. The Formulas page has a seeded Example (`SeededDraws`), run once on the Docs Site
+with its MudBlazor twin: the same draws after a reload, new ones after an edit. Left for others: the next
+Windows run asks Excel what an undo does to a draw. Not counted, as ADR-0180's list does not name it: a
+rename, though it recalculates the volatile Formulas, since `INDIRECT`'s text can name the Sheet. ADR-0047's
+dated addition naming the functions is left to the orchestrator.
+
+2026-10-11, after review: a prerender chooses no seed. Without the Consumer's `Seed`, the instance a
+circuit or the browser runs after a prerender chose another, so every draw on the page changed when it
+became interactive, with nothing done. The prerender's draws now wait with `#GETTING_DATA`, as `TODAY`
+waits for the browser's zone, and a `Seed` given draws there as well (`SeedWiringTests`). The Formulas
+page and both READMEs say so, and no longer call an undo's new draw a difference from Excel: what
+Excel's undo does has not been observed. Still not counted as a change, and left for a decision: a
+rename, and a Linked Table's declaration.
+
+2026-10-11, with ADR-0180's note of that date (decided with the user: renaming the Sheet is not a
+change): a rename recalculates the volatile Formulas, since `INDIRECT`'s text can name the Sheet, and
+draws nothing, nor do its undo and redo (`ADR0180_a_rename_draws_nothing`); the Formulas page and both
+READMEs say so. The Status is `done`: every box is ticked. Two questions are ADR-0180's for the sign-off's
+Windows run, and are no corpus case, since the oracle cannot undo through COM: what Excel's undo does to a
+draw, and whether a rename draws again. Still left for a decision, as the comment above says: whether a
+Linked Table's declaration is a change; ADR-0180's list does not name it, and it draws nothing today.
+
+2026-10-11, decided with the user (ADR-0180's second note of that date): a Linked Table's declaration,
+and one that replaces it, is a change and draws again; the same declaration again draws nothing
+(`ADR0180_a_linked_tables_declaration_draws_again`). The Formulas page, both READMEs and the Change Note
+say so. The seventeenth Windows run asks Excel whether a refresh that brings the same data draws again.

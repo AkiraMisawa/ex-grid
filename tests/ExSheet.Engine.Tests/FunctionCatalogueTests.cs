@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
 using ExSheet.Engine;
 using Xunit;
@@ -7,7 +8,9 @@ namespace ExSheet.Engine.Tests;
 /// <summary>
 /// ADR-0047: <c>docs/specs/exsheet-functions/spec.md</c> catalogues the declared set and the queue
 /// after it. Its <b>Supported</b> rows are read here and must be exactly
-/// <see cref="DeclaredFunction.All"/>, so the catalogue cannot drift from the engine.
+/// <see cref="DeclaredFunction.All"/>, so the catalogue cannot drift from the engine. Every name it
+/// lists, its rows and its list of Excel's functions not in the queue, must be exactly the names the
+/// engine refuses as a <c>LET</c> name for being a function's (ADR-0181's note of 2026-10-11).
 /// </summary>
 public class FunctionCatalogueTests
 {
@@ -17,7 +20,15 @@ public class FunctionCatalogueTests
 
     private static readonly string[] Statuses = ["Supported", "Ready", "Observe", "Decide", "Blocked"];
 
-    private static IReadOnlyList<(string Name, string Status, string Priority)> Catalogue()
+    /// <summary>The heading of the catalogue's list of Excel's functions that no row queues.</summary>
+    private const string NotQueuedHeading = "## Excel's functions not in the queue";
+
+    /// <summary>One letter's line of that list, which may wrap onto lines indented by two spaces: <c>- **A**: `ACCRINT`, `ACCRINTM`</c>.</summary>
+    private static readonly Regex Letter = new(@"^- \*\*(?<letter>[A-Z])\*\*: (?<names>.+)$", RegexOptions.CultureInvariant);
+
+    private static readonly Regex ListedName = new(@"^`(?<name>[A-Z][A-Z0-9.]*)`$", RegexOptions.CultureInvariant);
+
+    private static string CatalogueText()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ExGrid.slnx")))
@@ -25,8 +36,63 @@ public class FunctionCatalogueTests
         Assert.True(directory is not null, $"no ExGrid.slnx above {AppContext.BaseDirectory}");
         var file = Path.Combine(directory!.FullName, "docs", "specs", "exsheet-functions", "spec.md");
         Assert.True(File.Exists(file), $"no catalogue at {file}");
-        return [.. Row.Matches(File.ReadAllText(file))
+        return File.ReadAllText(file);
+    }
+
+    internal static IReadOnlyList<(string Name, string Status, string Priority)> Catalogue() =>
+        [.. Row.Matches(CatalogueText())
             .Select(m => (m.Groups["name"].Value, m.Groups["status"].Value, m.Groups["priority"].Value))];
+
+    /// <summary>
+    /// The catalogue's list of Excel's functions not in the queue, in its order, each with the letter
+    /// of the line it stands on. Any text on the list's lines that is not a name in backticks fails.
+    /// </summary>
+    internal static IReadOnlyList<(char Letter, string Name)> NotQueued()
+    {
+        var lines = CatalogueText().ReplaceLineEndings("\n").Split('\n');
+        var start = Array.IndexOf(lines, NotQueuedHeading);
+        Assert.True(start >= 0, $"the catalogue has no '{NotQueuedHeading}' heading");
+        var listed = new List<(char, string)>();
+        var letter = '\0';
+        foreach (var line in lines.Skip(start + 1).TakeWhile(l => !l.StartsWith("## ", StringComparison.Ordinal)))
+        {
+            string names;
+            if (Letter.Match(line) is { Success: true } item)
+            {
+                letter = item.Groups["letter"].Value[0];
+                names = item.Groups["names"].Value;
+            }
+            else if (letter != '\0' && line.StartsWith("  `", StringComparison.Ordinal))
+            {
+                names = line.Trim();
+            }
+            else
+            {
+                letter = '\0';
+                continue;
+            }
+            foreach (var part in names.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            {
+                var name = ListedName.Match(part);
+                Assert.True(name.Success, $"'{part}' on the line '{line}' is not a function's name in backticks");
+                listed.Add((letter, name.Groups["name"].Value));
+            }
+        }
+        Assert.NotEmpty(listed);
+        return listed;
+    }
+
+    /// <summary>Every name the catalogue lists: its rows, then its list of Excel's functions not in the queue.</summary>
+    internal static IReadOnlyList<string> ExcelFunctions() =>
+        [.. Catalogue().Select(r => r.Name), .. NotQueued().Select(n => n.Name)];
+
+    /// <summary>The names the engine refuses as a <c>LET</c> name for being a function's, read from its internal list.</summary>
+    private static IReadOnlyList<string> RefusedAsFunctionNames()
+    {
+        var names = typeof(DeclaredFunction).Assembly.GetType("ExSheet.Engine.Formulas.ExcelFunctionNames", throwOnError: true)!
+            .GetProperty("All", BindingFlags.Public | BindingFlags.Static)!
+            .GetValue(null);
+        return [.. Assert.IsAssignableFrom<IEnumerable<string>>(names)];
     }
 
     [Fact] // ADR-0047: the catalogue's Supported rows are exactly the declared set
@@ -46,5 +112,29 @@ public class FunctionCatalogueTests
             Assert.Contains(r.Status, Statuses);
             Assert.Equal(r.Status == "Supported", r.Priority == "—");
         });
+    }
+
+    [Fact] // ADR-0181 (2026-10-11), ADR-0047: the names refused as a LET name for being a function's are exactly the catalogue's, its rows and its list of Excel's functions not in the queue
+    public void ADR0181_the_names_refused_as_a_functions_are_exactly_the_ones_the_catalogue_lists()
+    {
+        var catalogued = ExcelFunctions().Order(StringComparer.Ordinal).ToList();
+        var refused = RefusedAsFunctionNames().Order(StringComparer.Ordinal).ToList();
+
+        Assert.True(catalogued.SequenceEqual(refused),
+            $"Catalogued and not refused: {string.Join(", ", catalogued.Except(refused, StringComparer.Ordinal))}. "
+            + $"Refused and not catalogued: {string.Join(", ", refused.Except(catalogued, StringComparer.Ordinal))}. "
+            + "List the function in docs/specs/exsheet-functions/spec.md and in ExcelFunctionNames together.");
+    }
+
+    [Fact] // ADR-0047, ADR-0181: a function not in the queue is listed once, under its own letter, in order, and has no row
+    public void Excels_functions_not_in_the_queue_are_listed_once_in_order_and_have_no_row()
+    {
+        var listed = NotQueued();
+        var rows = Catalogue().Select(r => r.Name).ToHashSet(StringComparer.Ordinal);
+
+        Assert.All(listed, n => Assert.Equal(n.Letter, n.Name[0]));
+        Assert.Equal(listed.Select(n => n.Name).Order(StringComparer.Ordinal), listed.Select(n => n.Name));
+        Assert.Empty(listed.GroupBy(n => n.Name).Where(g => g.Count() > 1).Select(g => g.Key));
+        Assert.Empty(listed.Where(n => rows.Contains(n.Name)).Select(n => n.Name));
     }
 }

@@ -1,6 +1,7 @@
 import { test, expect, alterPage, circuitQuiet } from './fixtures.mjs';
 import { painted, sameColour } from './pixels.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
+import { sheet, openSheet, pressCell as pressSheetCell, editor as sheetEditor } from './sheet-helpers.mjs';
 
 // The presentation contract, measured (ADR-0027/0028/0029/0031): tokens win where the
 // contract says they win, the painted geometry equals the declared geometry, nothing
@@ -388,3 +389,269 @@ test('the Blazor error UI never appears (CON-5)', async ({ page }) => {
         .evaluate((el) => getComputedStyle(el).display);
     expect(display).toBe('none');
 });
+
+// ---------------------------------------------------------------------------------------------
+// UX-4 (ADR-0029): the classes the core paints under its root are exactly ADR-0029's — the stable
+// table, the internal list with what later ADRs entered in either there, and the internal names,
+// prefixes and families its section of 2026-10-11 lists. Transcribed from the ADR, never from the
+// stylesheet or the markup: a class the grid paints that nothing names is one a Wrapper could take
+// for a contract, or one no decision ever made, and it fails the walk by name.
+
+/** ADR-0029's stable table, with the entries added there by ADR-0043, ADR-0050/0051, ADR-0052,
+ * ADR-0068 and ADR-0125. */
+const STABLE_CLASSES = [
+    'ex-grid', 'ex-loading',
+    'ex-header', 'ex-header-cell', 'ex-header-group',
+    'ex-align-left', 'ex-align-center', 'ex-align-right',
+    'ex-row', 'ex-placeholder', 'ex-row-group', 'ex-row-total', 'ex-row-stripe',
+    'ex-cell', 'ex-cell-numeric', 'ex-pinned',
+    'ex-state-stale', 'ex-state-missing', 'ex-state-error', 'ex-state-modified',
+    'ex-tone-positive', 'ex-tone-negative',
+    'ex-formula-bar-borrowed', 'ex-changed',
+    'ex-range', 'ex-focus',
+    'ex-action', 'ex-interactive', 'ex-action-chosen',
+    'ex-mark', 'ex-mark-all',
+    'ex-editor', 'ex-editing',
+    'ex-resize-guide', 'ex-drop-indicator',
+    'ex-row-heading', 'ex-headings-corner', 'ex-formula-bar', 'ex-name-box', 'ex-fill-handle',
+    'ex-size-tip',
+];
+
+/** ADR-0029's internal list, with the entries added there by ADR-0050/0051, ADR-0057, ADR-0058,
+ * ADR-0130 and ADR-0170. */
+const INTERNAL_CLASSES = [
+    'ex-scroller', 'ex-spacer', 'ex-viewport', 'ex-gap', 'ex-selection', 'ex-selection-pinned',
+    'ex-header-groups-pinned', 'ex-focus-row', 'ex-pager', 'ex-status', 'ex-mark-count',
+    'ex-resize-grip', 'ex-menu-button', 'ex-popover', 'ex-popover-list', 'ex-popover-actions',
+    'ex-editor-pinned', 'ex-announce',
+    'ex-summary', 'ex-summary-figure', 'ex-summary-pending', 'ex-summary-declined',
+    'ex-summary-menu', 'ex-summary-menu-item', 'ex-summary-menu-shown', 'ex-summary-menu-tick',
+    'ex-formula-bar-text', 'ex-name-box-form', 'ex-fill-target',
+    'ex-completion', 'ex-completion-list', 'ex-completion-item', 'ex-completion-selected', 'ex-completion-hint',
+    'ex-point', 'ex-range-single',
+    'ex-reference-outline', ...[1, 2, 3, 4, 5, 6, 7].map((n) => `ex-reference-${n}`),
+    'ex-reference-text', 'ex-reference-text-line', 'ex-reference-text-cell', 'ex-reference-text-bar',
+    'ex-reference-text-shown', 'ex-reference-pointed',
+    'ex-pointed-at', 'ex-point-dashes',
+    'ex-copied-range',
+    // ADR-0029, "The classes UX-4's walk found unnamed" (2026-10-11): internal, every one.
+    'ex-ceiling-probe', 'ex-focus-wrap', 'ex-hashes', 'ex-hover-row', 'ex-message', 'ex-select-all',
+    'ex-value-list', 'ex-mark-result', 'ex-editor-away', 'ex-point-on-reference',
+    'ex-key-field', 'ex-key-field-layer', 'ex-key-field-held', 'ex-key-field-composing',
+];
+
+/** The same section's prefixes: every popover part not named above, and every part of Find. */
+const INTERNAL_PREFIXES = ['ex-popover-', 'ex-find-'];
+
+/** And its families, generated from a Sheet's document data: the Fill, the Font and the Border
+ * sides (a side, a style and a colour), each named by its colour as six hex digits. The tint and
+ * the pinned shade layer ADR-0206 makes internal join INTERNAL_CLASSES by name where they are
+ * painted. */
+const INTERNAL_FAMILIES = [
+    /^ex-lined$/,
+    /^ex-fill-[0-9a-f]{6}$/,
+    /^ex-font-(x|[0-9a-f]{6})b?i?u?s?$/,
+    /^ex-l[trbl]-[a-z]+-[0-9a-f]{6}$/,
+];
+
+const NAMED_CLASSES = new Set([...STABLE_CLASSES, ...INTERNAL_CLASSES]);
+
+/** Whether ADR-0029 names a class: in the stable table, by an internal name, by an internal
+ * prefix, or as one of the internal families. */
+const named = (name) => NAMED_CLASSES.has(name)
+    || INTERNAL_PREFIXES.some((prefix) => name.startsWith(prefix))
+    || INTERNAL_FAMILIES.some((family) => family.test(name));
+
+/**
+ * Notes every class worn under a grid root from now until the test ends, the root's own
+ * included, each with where it was first seen: a MutationObserver on the body, so a class that
+ * comes and goes — a Placeholder, a guide held during a drag, a popover — is caught as it is
+ * painted, without a wait. A class outside the grid's namespace counts only outside a cell: a
+ * Template Column's markup is the Consumer's (ADR-0020). Through alterPage, which takes the
+ * observer and its record off as the test ends (ADR-0056).
+ */
+async function watchClassesWorn(page) {
+    await alterPage(page, () => {
+        const worn = new Map();
+        const note = (element) => {
+            if (!(element instanceof Element) || !element.closest('.ex-grid')) {
+                return;
+            }
+            const inCell = element.closest('.ex-cell') !== null;
+            for (const name of element.classList) {
+                if ((name.startsWith('ex-') || !inCell) && !worn.has(name)) {
+                    worn.set(name, `${element.tagName.toLowerCase()} on ${location.pathname}${location.search}`);
+                }
+            }
+        };
+        const walk = (node) => {
+            if (node instanceof Element) {
+                note(node);
+                node.querySelectorAll('*').forEach(note);
+            }
+        };
+        const observer = new MutationObserver((records) => {
+            for (const record of records) {
+                if (record.type === 'attributes') {
+                    note(record.target);
+                } else {
+                    record.addedNodes.forEach(walk);
+                }
+            }
+        });
+        observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+        document.querySelectorAll('.ex-grid').forEach(walk);
+        window.__exClassesWorn = worn;
+        return () => {
+            observer.disconnect();
+            delete window.__exClassesWorn;
+        };
+    });
+}
+
+test('every class under the root is one ADR-0029 names, stable or internal (UX-4)', async ({ page, context }) => {
+    test.setTimeout(180_000);
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const at = (row, column, n = 0) => page.locator('.ex-grid').nth(n).locator(`[id$='r${row}c${column}']`);
+
+    // /features: the editable, source-bound grid with Header Groups, a Focus band and the
+    // clipboard. Watched from its first paint.
+    await open(page);
+    await watchClassesWorn(page);
+    const features = grid(page);
+    // A range, copied: its dashes stand while the clipboard holds it (ADR-0170). Only a browser
+    // with the clipboardchange event draws them — Chrome and Edge from 143 — and the grid asks the
+    // browser as below. An older build, Playwright's own Chromium among them, draws none: the walk
+    // says so in an annotation and goes on without them, and the installed Chrome and Edge reach
+    // them.
+    const clipboardWatched = await page.evaluate(() => typeof globalThis.ClipboardChangeEvent === 'function'
+        && typeof navigator.clipboard?.addEventListener === 'function');
+    await at(0, 1).click({ force: true });
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('ControlOrMeta+C');
+    if (clipboardWatched) {
+        await expect(features.locator('.ex-copied-range')).not.toHaveCount(0);
+    } else {
+        test.info().annotations.push({
+            type: 'UX-4: not reached',
+            description: `ex-copied-range: this browser (${context.browser()?.version() ?? 'unknown'}) has no clipboardchange event, so the grid draws no Copied Range (ADR-0170)`,
+        });
+    }
+    // A second range beside it, two cells wide: a range of one cell is painted as the Focus
+    // alone, with no ex-range of its own.
+    await at(3, 2).click({ force: true, modifiers: ['ControlOrMeta'] });
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect(features.locator('.ex-range')).toHaveCount(2);
+    // The Cell Editor, typed into, and left.
+    await at(0, 1).click({ force: true });
+    await page.keyboard.type('X');
+    await expect(features.locator('input.ex-editor')).toHaveValue('X');
+    await expect(features).toHaveClass(/\bex-editing\b/);
+    await page.keyboard.press('Escape');
+    await expect(features.locator('input.ex-editor')).toHaveCount(0);
+    // A flagged value and its message on the Focus (ADR-0034).
+    await at(0, 2).click({ force: true });
+    await page.keyboard.type('-5');
+    await page.keyboard.press('Enter');
+    await expect(at(0, 2)).toHaveClass(/ex-state-error/);
+    await at(0, 2).click({ force: true });
+    await expect(features.locator('.ex-message')).toHaveCount(1);
+    // The Context Menu, the column menu and the find panel, each opened and closed.
+    await at(0, 1).click({ button: 'right', force: true });
+    await expect(features.locator('[role=menu]')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(features.locator('[role=menu]')).toHaveCount(0);
+    await features.locator('.ex-menu-button').first().click();
+    await expect(features.locator('.ex-popover')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(features.locator('.ex-popover')).toHaveCount(0);
+    await at(0, 0).click({ force: true });
+    await page.keyboard.press('ControlOrMeta+f');
+    await expect(features.locator('.ex-popover-find')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(features.locator('.ex-popover-find')).toHaveCount(0);
+    // A resize held on its guide, and a header held over its drop indicator (gestures.spec.mjs).
+    const trader = await features.locator('.ex-header-cell').nth(1).boundingBox();
+    await page.mouse.move(trader.x + trader.width - 2, trader.y + trader.height - 10);
+    await page.mouse.down();
+    await page.mouse.move(trader.x + trader.width + 38, trader.y + trader.height - 10, { steps: 4 });
+    await expect(features.locator('.ex-resize-guide')).toBeVisible();
+    await page.mouse.up();
+    const header = await features.locator('.ex-header').boundingBox();
+    await page.mouse.move(header.x + 55, header.y + 42);
+    await page.mouse.down();
+    await page.mouse.move(header.x + 600, header.y + 42, { steps: 8 });
+    await expect(features.locator('.ex-drop-indicator')).toBeVisible();
+    await page.mouse.up();
+
+    // /cells: Cell States, Row Kinds, a pinned column, Templates and Actions; Space enters a cell
+    // with several actions and one is chosen (ADR-0037).
+    await page.goto('/cells');
+    const cells = grid(page);
+    await expect(cells.locator('.ex-row').first()).toBeVisible();
+    await at(0, 0).click({ force: true });
+    for (let i = 0; i < 6; i++) {
+        await page.keyboard.press('ArrowRight');
+    }
+    await expect(cells).toHaveAttribute('aria-activedescendant', /r0c6$/);
+    await page.keyboard.press(' ');
+    await expect(cells.locator('.ex-action-chosen')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+
+    // /tones: a gain and a loss; /stripes: the stripes and the hover band.
+    await page.goto('/tones');
+    await expect(grid(page).locator('.ex-tone-negative').first()).toBeAttached();
+    await page.goto('/stripes');
+    await expect(grid(page).locator('.ex-row-stripe').first()).toBeAttached();
+    await at(2, 1).hover({ force: true });
+    await expect(grid(page).locator('.ex-hover-row').first()).toBeAttached();
+    await page.mouse.move(0, 0);
+
+    // /marks: the Mark Column and its header.
+    await page.goto('/marks');
+    await expect(grid(page).locator('.ex-mark-all')).toBeAttached({ timeout: 15_000 });
+
+    // /appearance: a Consumer's Fills, Fonts and Borders, painted as the core's own classes.
+    await page.goto('/appearance');
+    await expect(page.locator("#appearance-borders .ex-grid [id$='r0c0']")).toHaveText('Hair');
+
+    // /sheet: the Headings, the Formula Bar and its Name Box, the fill handle, completion, and a
+    // Formula's Reference Outlines and coloured text (ADR-0050/0051/0057).
+    await openSheet(page);
+    const sheetGrid = sheet(page);
+    await pressSheetCell(sheetGrid, 'F2');
+    await expect(sheetGrid.locator('.ex-fill-handle')).toBeAttached();
+    await page.keyboard.type('=SU');
+    await expect(sheetGrid.locator('.ex-completion')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await expect(sheetEditor(sheetGrid)).toHaveCount(0);
+    await pressSheetCell(sheetGrid, 'F2');
+    await page.keyboard.type('=A1+B2:C3');
+    await expect(sheetGrid.locator('.ex-reference-outline')).toHaveCount(2);
+    await page.keyboard.press('Escape');
+    await expect(sheetEditor(sheetGrid)).toHaveCount(0);
+
+    const worn = new Map(await page.evaluate(() => [...window.__exClassesWorn]));
+    // The walk reached what it set out to: a list that stopped exercising a state would pass
+    // while checking nothing. What it does not put on — Placeholder rows, the pager, the Size Tip,
+    // the change mark, and a loading grid, met only in passing — is named in the README.
+    const reached = ['ex-grid', 'ex-header', 'ex-header-cell', 'ex-header-group', 'ex-row', 'ex-cell',
+        'ex-cell-numeric', 'ex-pinned', 'ex-state-error', 'ex-state-stale', 'ex-state-missing', 'ex-state-modified',
+        'ex-row-group', 'ex-row-total', 'ex-row-stripe', 'ex-tone-negative', 'ex-tone-positive', 'ex-status', 'ex-range', 'ex-focus', 'ex-editor', 'ex-editing', 'ex-action', 'ex-action-chosen',
+        'ex-mark', 'ex-mark-all', 'ex-resize-guide', 'ex-drop-indicator', 'ex-row-heading', 'ex-headings-corner',
+        'ex-formula-bar', 'ex-name-box', 'ex-fill-handle', 'ex-popover', ...(clipboardWatched ? ['ex-copied-range'] : []),
+        'ex-completion', 'ex-reference-outline'];
+    expect(reached.filter((name) => !worn.has(name)), 'states the walk set out to reach and did not').toEqual([]);
+
+    // Each kind of name the section lists was met, so none of them is a pattern that matches nothing.
+    const met = (test) => [...worn.keys()].some(test);
+    expect({
+        prefixes: INTERNAL_PREFIXES.filter((prefix) => !met((name) => name.startsWith(prefix) && !NAMED_CLASSES.has(name))),
+        families: INTERNAL_FAMILIES.filter((family) => !met((name) => family.test(name))).map(String),
+    }, 'internal prefixes and families the walk never met').toEqual({ prefixes: [], families: [] });
+
+    const unnamed = [...worn].filter(([name]) => !named(name)).map(([name, where]) => `${name} (${where})`).sort();
+    expect(unnamed, 'classes painted under the root that ADR-0029 names nowhere').toEqual([]);
+});
+

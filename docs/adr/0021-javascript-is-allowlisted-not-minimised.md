@@ -22,6 +22,13 @@ Every entry names the reason it cannot be done from Blazor.
 
 That is the entire list. **Nine entries.**
 
+*(2026-10-11, decided with the user, [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)'s
+note on ST-2: when an untyped editor's row leaves the Window, the editor's listener answers one question,
+whether its field still holds the text it opened with and is not composing, and when it does, starts the
+first entry's hold until the grid has closed the editor, with the fields read-only meanwhile so that an
+IME cannot write into them and a drop is refused. It reads the field's value, never layout, and
+runs only then, never per render. It is the same keyboard and editor listener, not a new entry.)*
+
 *(2026-10-11, decided with the user, [ADR-0123](./0123-shipped-scripts-and-stylesheets-are-minified-and-each-package-asks-for-the-files-it-was-built-with.md):
 before the grid attaches anything, the module answers one question, the SHA-256 of its own source, so
 that the grid can refuse a script that is not the one it was built with. It reads nothing from the

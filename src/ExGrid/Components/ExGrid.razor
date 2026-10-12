@@ -1656,7 +1656,9 @@
     /// Raised with <see langword="true"/> when an edit opens — a character typed onto a
     /// cell, F2, a double click, a press into the Formula Bar — and with
     /// <see langword="false"/> when it ends, however it ends: committed, cancelled or
-    /// discarded (ADR-0050 section 6). An edit a Reject holds open has not ended, and a move
+    /// discarded (ADR-0050 section 6), or closed because the Window no longer holds its row
+    /// while its text is still the committed value it opened on — F2 and nothing typed, as the
+    /// browser confirms — which is no typing to discard (ADR-0007's note of 2026-10-11, ST-2). An edit a Reject holds open has not ended, and a move
     /// between Overwrite, Caret and Point is the same edit: neither raises anything. It
     /// carries no text, which is the grid's until it is committed (ADR-0007). It is raised in
     /// C# with the change, nothing waited for in between — the browser's messages are sent
@@ -1667,8 +1669,8 @@
     /// is handled before anything the Consumer does on hearing the edit end. It is raised and
     /// not waited for: the key gate and the rest of the gesture go on while a handler awaits,
     /// and a handler's failure surfaces as any event handler's does. The one late case errs
-    /// towards "open": an edit a parameter change discards is said to have ended after that
-    /// render, as the discard itself is (<see cref="OnEditDiscarded"/>). Without a delegate
+    /// towards "open": an edit a parameter change discards or closes is said to have ended after
+    /// that render, as the discard itself is (<see cref="OnEditDiscarded"/>). Without a delegate
     /// nothing changes.
     /// </summary>
     [Parameter] public EventCallback<bool> OnEditingChanged { get; set; }
@@ -2974,6 +2976,9 @@
             // following it, and kept as it was while the Window does not hold that row (D1).
             if (_editRebaseOwed)
                 RebaseEdit();
+            // An editor holding nothing typed goes with its row, once the browser has said nothing was
+            // typed (ST-2); one with typing stays (ADR-0142).
+            AskWhetherUntypedEditCanClose();
         }
         PrepareRender();
     }
@@ -7398,7 +7403,7 @@
         _editingCell = cell;
         // What the cell shows as the editor opens over it, and the order it opens under: a commit's
         // Overwrite Notice compares with the one, and lands by position under the other (ADR-0142).
-        NoteEditOpened(cell);
+        NoteEditOpened(cell, typed: mode == EditMode.Overwrite);
         _editText = initialText;
         _editCaret = initialText.Length;
         // Placed explicitly at the end of the opening text, never assumed to be where the
@@ -7984,7 +7989,7 @@
         _editSurface = EditSurface.Bar;
         _editMode = EditMode.Caret;
         _editingCell = focus;
-        NoteEditOpened(focus);
+        NoteEditOpened(focus, typed: false);
         _editText = OpeningTextOf(focus);
         if (ReportsCaret && string.Equals(_editText, shown, StringComparison.Ordinal))
         {
