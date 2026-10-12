@@ -1,0 +1,23 @@
+2026-10-12T00:04:37Z
+27.58 38.45 46.49 56/1015 7965
+warning: Git tree '/home/user/ex-grid/.claude/worktrees/sh19-measure' is dirty
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+  Discovering: ExSheet.Engine.Tests
+  Discovered:  ExSheet.Engine.Tests
+  Starting:    ExSheet.Engine.Tests
+    ExSheet.Engine.Tests.Measurements.SH19_one_edits_propagation [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS, server GC False, load average 27.58 38.45 46.49
+    ExSheet.Engine.Tests.Measurements.SH19_one_edits_propagation [OUTPUT] SH-19's case: an edit to A1, which the whole running total reads: median 92.1 ms, best 85.5 ms, worst 111.2 ms (n=7); 10,010 recalculated, 10,011 Values changed; collections by run: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+    ExSheet.Engine.Tests.Measurements.SH19_one_edits_propagation [OUTPUT] SH-19's case: an edit to A10000, which its own row and the totals read: median 64.5 ms, best 51.4 ms, worst 75.2 ms (n=7); 11 recalculated, 12 Values changed; collections by run: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+    ExSheet.Engine.Tests.Measurements.SH19_one_edits_propagation [OUTPUT] SH-19's case: an edit to O5000, which only its column's total reads: median 20.6 ms, best 19.8 ms, worst 63.2 ms (n=7); 1 recalculated, 2 Values changed; collections by run: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS, server GC False, load average 28.51 38.30 46.35
+    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] SH-19's case: 10,000 rows by 20 columns, and 20 totals beside them; 50,020 Formulas, 20 of them reading a whole column, and 150,000 constants (seed 20261011)
+    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] SH-19's case: Sheet.Open, every Value computed: median 708.9 ms, best 508.4 ms, worst 1067.9 ms (n=7); collections by run: g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0
+    ExSheet.Engine.Tests.Measurements.SH19_a_row_inserted_near_the_top [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS, server GC False, load average 30.86 38.32 46.23
+    ExSheet.Engine.Tests.Measurements.SH19_a_row_inserted_near_the_top [OUTPUT] SH-19's case: a row inserted at row 2: median 2193.5 ms, best 1901.0 ms, worst 3140.9 ms (n=7); 50,015 recalculated, 10,000 rows changed; collections by run: g0+13/g2+1 g0+13/g2+1 g0+13/g2+1 g0+12/g2+0 g0+13/g2+1 g0+12/g2+0 g0+13/g2+1
+    ExSheet.Engine.Tests.Measurements.SH19_a_row_inserted_near_the_top [OUTPUT] SH-19's case: that insertion undone: median 3324.5 ms, best 2603.7 ms, worst 4055.3 ms (n=7); collections by run: g0+14/g2+1 g0+15/g2+2 g0+14/g2+1 g0+15/g2+2 g0+14/g2+1 g0+14/g2+1 g0+13/g2+1
+  Finished:    ExSheet.Engine.Tests
+=== TEST EXECUTION SUMMARY ===
+   ExSheet.Engine.Tests  Total: 3, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 82.078s
+2026-10-12T00:06:01Z
+24.65 35.32 44.71 9/916 9352

@@ -210,12 +210,20 @@ internal sealed record Summary(
 /// </summary>
 internal sealed class PivotContext : BunitContext
 {
-    private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
+    // The address ExGrid imports its script at under bUnit, and the stamp it asks of it before it
+    // attaches (ADR-0123): read from the assembly, as tests/ShippedScript.cs reads them.
+    private static readonly Type Shipped = typeof(ExGrid<>).Assembly.GetType("ExGrid.ShippedAssets", throwOnError: true)!;
+
+    private static string Constant(string name)
+        => (string)Shipped.GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.GetRawConstantValue()!;
+
+    private static readonly string ModulePath = $"./{Constant("ScriptPath")}?v={Constant("ScriptVersion")}";
 
     public PivotContext()
     {
         Services.AddSingleton<TimeProvider>(Clock);
         var module = JSInterop.SetupModule(ModulePath);
+        module.Setup<string>("stamp").SetResult(Constant("ScriptStamp"));
         var handle = module.SetupModule("attach", _ => true);
         handle.Setup<bool>("metaIsPrimary").SetResult(false);
         handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);

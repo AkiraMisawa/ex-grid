@@ -35,6 +35,9 @@ released, is a poor process. It is the ordinary one — a release branch, with r
 - **Release candidates** — `v0.1.0-rc.1`, `rc.2`, … — are tagged on the branch. Each publishes to
   nuget.org as a prerelease, through the same workflow and the same checks a stable tag runs, so the
   stable path is rehearsed before it is used. A fix found during the sign-off makes the next candidate.
+  *(2026-10-12, decided with the user: the rehearsal includes the stable version's release notes. A
+  release candidate's notes carry the blocks a stable version's must (ADR-0190's note of this date),
+  checked as a stable version's are, so the text the GitHub release will show is seen before the tag.)*
 - **The sign-off is made against a commit of the branch, X.** Every step of the Definition of Done's §22
   runs at X; `results.md` names X.
 - **The stable tag goes on Y, which is X plus only the records and the notes**: the

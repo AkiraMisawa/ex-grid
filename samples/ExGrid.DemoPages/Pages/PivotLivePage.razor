@@ -17,10 +17,10 @@
    Chrome, as /pivot does; absent or builtin is ExPivot's own markup. *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Dark="Dark">
     <Head>
-        <link href="_content/ExPivot/ex-pivot.min.css" rel="stylesheet" />
+        <ExPivotStylesheet />
         @if (DemoChrome.IsMud(ChromeName))
         {
-            <link href="_content/ExPivot.MudBlazor/mud-ex-pivot.min.css" rel="stylesheet" />
+            <MudExPivotStylesheet />
         }
     </Head>
 </DemoChromeAssets>

@@ -438,15 +438,15 @@ const INTERNAL_CLASSES = [
     'ex-ceiling-probe', 'ex-focus-wrap', 'ex-hashes', 'ex-hover-row', 'ex-message', 'ex-select-all',
     'ex-value-list', 'ex-mark-result', 'ex-editor-away', 'ex-point-on-reference',
     'ex-key-field', 'ex-key-field-layer', 'ex-key-field-held', 'ex-key-field-composing',
+    // The same section: the selection's tint and the pinned shade layer (ADR-0206).
+    'ex-range-tint', 'ex-shade-pinned',
 ];
 
 /** The same section's prefixes: every popover part not named above, and every part of Find. */
 const INTERNAL_PREFIXES = ['ex-popover-', 'ex-find-'];
 
 /** And its families, generated from a Sheet's document data: the Fill, the Font and the Border
- * sides (a side, a style and a colour), each named by its colour as six hex digits. The tint and
- * the pinned shade layer ADR-0206 makes internal join INTERNAL_CLASSES by name where they are
- * painted. */
+ * sides (a side, a style and a colour), each named by its colour as six hex digits. */
 const INTERNAL_FAMILIES = [
     /^ex-lined$/,
     /^ex-fill-[0-9a-f]{6}$/,

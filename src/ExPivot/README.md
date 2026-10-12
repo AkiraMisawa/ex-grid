@@ -27,11 +27,13 @@ clipboard. The application persists the **Pivot Layout**.
 dotnet add package ExPivot --prerelease
 ```
 
-Link both stylesheets in your host page:
+Place both stylesheet components in the head, each at the address of the file its package was
+built with: `<ExGridStylesheet />` and `<ExPivotStylesheet />` in `App.razor`'s `<head>` in a Blazor
+Web App, or root components in a standalone application's `Program.cs`:
 
-```html
-<link href="_content/ExGrid/ex-grid.min.css" rel="stylesheet" />
-<link href="_content/ExPivot/ex-pivot.min.css" rel="stylesheet" />
+```csharp
+builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
+builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
 ```
 
 ## A first pivot

@@ -12,11 +12,21 @@
 // ScriptDuration, RecalcStyleDuration and LayoutDuration. EXGRID_INJECT, if set, is a stylesheet
 // added to the page first — how the hole or the range's isolation is switched off on the build
 // that has them. The wait polls on animation frames, so its own script is in every figure alike.
+//
+// Extended for ADR-0206 (2026-10-11, verification/2026-10-11-linux-pinned-shade): EXGRID_PIN, if
+// set, is /sheet's ?pin= (how many leading columns are pinned; the page's own is 1), and
+// EXGRID_CHROME=mud runs the Sheet under ExSheet.MudBlazor's Chrome (?chrome=mud). The wait reads
+// the tallest range of the Sheet in either layer, so a range that is wholly pinned is waited on
+// too. EXGRID_EXECUTABLE, if set, is the Chromium to launch in place of the installed Chrome, and
+// EXGRID_HEADED=1 runs it headed (under xvfb on a machine without a display). The page is scrolled
+// to put the Sheet at the window's top first.
 const { chromium } = await import(process.env.EXGRID_PLAYWRIGHT
     ?? new URL('../../tests/ExGrid.Browser/node_modules/playwright/index.mjs', import.meta.url).href);
 
 const [base, label, drags = '5', start = 'r2c1'] = process.argv.slice(2);
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await chromium.launch(process.env.EXGRID_EXECUTABLE
+    ? { executablePath: process.env.EXGRID_EXECUTABLE, headless: process.env.EXGRID_HEADED !== '1', ignoreDefaultArgs: ['--hide-scrollbars'] }
+    : { channel: 'chrome', headless: process.env.EXGRID_HEADED !== '1' });
 const context = await browser.newContext({ deviceScaleFactor: 2, viewport: { width: 1400, height: 1000 } });
 const page = await context.newPage();
 const problems = [];
@@ -30,13 +40,21 @@ const metrics = async () => {
     return { task: m.TaskDuration, script: m.ScriptDuration, style: m.RecalcStyleDuration, layout: m.LayoutDuration };
 };
 
-await page.goto(`${base}/sheet`);
+const query = [
+    process.env.EXGRID_PIN ? `pin=${process.env.EXGRID_PIN}` : null,
+    process.env.EXGRID_CHROME === 'mud' ? 'chrome=mud' : null,
+].filter(Boolean).join('&');
+await page.goto(`${base}/sheet${query ? `?${query}` : ''}`);
 await page.locator('#demo-interactive').waitFor({ state: 'attached' });
 await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
 if (process.env.EXGRID_INJECT) {
     await page.addStyleTag({ content: process.env.EXGRID_INJECT });
 }
 const grid = page.locator('.ex-grid').first();
+// The Sheet at the top of the window, so the ten rows a drag moves down stay inside its Viewport
+// wherever the host's page puts it (the WebAssembly DemoHost's /sheet stands lower than the Server
+// host's; a move past the Viewport's edge does not extend the range, and the wait never ends).
+await grid.evaluate((root) => root.scrollIntoView({ block: 'start' }));
 const rows = [];
 for (let drag = 0; drag < Number(drags); drag++) {
     const box = await grid.locator(`[id$='-${start}']`).first().boundingBox();
@@ -49,7 +67,7 @@ for (let drag = 0; drag < Number(drags); drag++) {
     const before = await metrics();
     for (let i = 1; i <= 10; i++) {
         await page.mouse.move(x + Math.min(i, 4) * box.width, y + i * box.height);
-        await page.waitForFunction((h) => [...document.querySelector('.ex-grid').querySelectorAll('.ex-selection .ex-range')]
+        await page.waitForFunction((h) => [...document.querySelector('.ex-grid').querySelectorAll('.ex-selection .ex-range, .ex-selection-pinned .ex-range')]
             .some((r) => Math.abs(r.getBoundingClientRect().height - h) <= 2), (i + 1) * box.height, { polling: 'raf' });
     }
     const after = await metrics();
@@ -60,5 +78,5 @@ for (let drag = 0; drag < Number(drags); drag++) {
     const ms = (k) => Math.round(1000 * (after[k] - before[k]) * 100) / 100;
     rows.push({ task: ms('task'), script: ms('script'), style: ms('style'), layout: ms('layout') });
 }
-console.log(JSON.stringify({ base, label, start, inject: process.env.EXGRID_INJECT ?? '', chrome: browser.version(), rows, problems }));
+console.log(JSON.stringify({ base, label, start, query, inject: process.env.EXGRID_INJECT ?? '', chrome: browser.version(), rows, problems }));
 await browser.close();

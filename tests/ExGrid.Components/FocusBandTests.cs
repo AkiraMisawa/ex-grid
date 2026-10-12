@@ -69,4 +69,21 @@ public class FocusBandTests : GridTestContext
 
         Assert.Equal(2, cut.FindAll(".ex-focus-row").Count);
     }
+
+    [Fact] // ADR-0206 / ADR-0008: the band's pinned part lies in the pinned shade layer, first, beneath every pinned tint — never in the layer drawn on top
+    public async Task The_pinned_band_lies_first_in_the_shade_layer()
+    {
+        var cut = RenderGrid(highlight: true, pinned: 2);
+        await ClickAsync(cut, 150, 30); // row 1, column 1: pinned
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+        // Two rows, so the range's pinned part is more than the Focus's cell, which has no tint.
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+
+        // The band alone would stand the layer; with a range across the boundary, the band comes
+        // before the range's pinned tint.
+        var shade = cut.Find(".ex-shade-pinned");
+        Assert.Equal(["ex-focus-row", "ex-range-tint"], shade.Children.Select(child => child.ClassName));
+        Assert.Empty(cut.FindAll(".ex-selection-pinned > .ex-focus-row"));
+        Assert.Equal("ex-focus-row", cut.Find(".ex-selection").Children[0].ClassName);
+    }
 }

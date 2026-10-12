@@ -424,25 +424,44 @@ test('Ctrl+Enter fill across a non-editable column is refused, and says so (CP-1
     await expect(grid(page).locator('.ex-editor')).toHaveValue('7');
 });
 
-test('a refusal is announced, not only painted (A11Y-16, ADR-0035)', async ({ page }) => {
-    // The grid has an enum and no sentence, so it cannot announce this one; whatever Chrome
-    // renders a refusal into has to be a live region or the refusal is silent to a reader
-    // who cannot see it. The reference Chrome meets its own contract here.
-    await expect(page.locator('#paste-refused-status')).toHaveAttribute('role', 'status');
+test('a refusal is announced in the root\'s live region in the built-in words, and again when repeated (A11Y-16, ADR-0203, ERR-2)', async ({ page }) => {
+    // The built-in Chrome words every refusal, and the grid's one live region says it (ADR-0203). The
+    // page shows the reason by name beside it, and is no live region of its own: the refusal is said
+    // once.
+    const region = grid(page).locator('.ex-announce');
+    await expect(region).toHaveAttribute('role', 'status');
+    await expect(page.locator('#paste-refused-status')).not.toHaveAttribute('role', /.+/);
+    // Every change to the region, counted: identical text written again would be no change, and the
+    // second refusal is the one the user needs, having just tried again.
+    await alterPage(page, () => {
+        const said = document.querySelector('.ex-grid .ex-announce');
+        const seen = { changes: 0 };
+        const observer = new MutationObserver((records) => { seen.changes += records.length; });
+        observer.observe(said, { childList: true, characterData: true, subtree: true });
+        window.__exRefusalChanges = seen;
+        return () => {
+            observer.disconnect();
+            delete window.__exRefusalChanges;
+        };
+    });
+    const changes = () => page.evaluate(() => window.__exRefusalChanges.changes);
 
     await page.evaluate(() => navigator.clipboard.writeText('intruder'));
     await clickCell(page, 0, 0);                   // Book, never declared editable
     await page.keyboard.press('Shift+ArrowRight');
+    // Straight on, while the range's description is still settling: the refusal is newer, and the
+    // description stands down rather than replacing it when the settle runs out (principle 6).
     await page.keyboard.press('ControlOrMeta+V');
 
+    const words = 'Nothing was changed: the selection covers Book, which cannot be edited. Select cells only in columns that can be edited.';
+    await expect(region).toHaveText(words);
     await expect(page.locator('#paste-refused-status')).toContainText('TargetNotEditable');
+    await circuitQuiet();
+    const first = await changes();
 
-    // A live region announces on mutation, so the second refusal for the same reason
-    // would be silent if Chrome wrote the same sentence again — and that is the one the
-    // user needs, having just tried again.
-    const first = await page.locator('#paste-refused-status').textContent();
     await page.keyboard.press('ControlOrMeta+V');
-    await expect(page.locator('#paste-refused-status')).not.toHaveText(first);
+    await expect.poll(changes).toBeGreaterThan(first);
+    await expect(region).toHaveText(words);
 });
 
 test('a menu copy writes without a prompt, and with headers (CP-19/CP-17, ADR-0005/0036)', async ({ page, context }) => {
