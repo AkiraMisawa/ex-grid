@@ -907,9 +907,16 @@ nobody had asked for. What that means when writing a test:
   nothing moving, its end opening the Cell Editor holding it and Enter committing (ED-30, i1); a
   cancelled one leaving an empty edit (i2); a press on D12 mid-composition putting the text in D10;
   two compositions behind 150 ms appended in order; the sixteenth run's k6, one key ending a
-  composition and starting the next (both sent at once), with DOM focus kept in the field until
-  the second ends and D10 holding both, and a third clause started the same way while the editor's
-  request already waits; copy and paste from the field; a field per
+  composition and starting the next, told as a real IME's key is (its keydown and its keyup both
+  `Process` with keyCode 229, as that run recorded them, around the end and the start, each sent
+  once the one before has been answered, so no time between them decides anything), with DOM focus
+  kept in the field until the second ends and D10 holding both, and a third clause started the same
+  way while the editor's request already waits; a composition ended with no key being told giving
+  that waiting editor the keyboard at its end, and one composed there at once coming after the text
+  held for the edit; the sixteenth run's k15, Alt+Tab mid-composition, as a keydown 229 whose keyup
+  never comes and the end, the request waiting until the keyboard leaves the field and the editor
+  then taking it holding the text (left from script: Playwright emulates focus, so a window switch
+  tells the page nothing); copy and paste from the field; a field per
   Sheet (ADR-0018); read-only over a cell that does not edit. The field as the one tab stop, Tab in
   from before and Shift+Tab in from after, then out (A11Y-4), and a display-only grid's root
   likewise; on `/features` under both Chromes, no column's ▾ reached by Tab or Shift+Tab, on the
