@@ -891,9 +891,11 @@ Prerendered root's attributes (A11Y-20).
   `?v=` on the WebAssembly one — and the stylesheets still in the head on a page with a `HeadContent` of
   its own; another version's script, and one older than the stamp, served in place of the grid's and
   refused before anything attaches (its `attach` counted), said in place of the rows and once in the
-  live region; and ExGrid's, ExSheet's and ExPivot's stylesheet notices, hidden by their own
-  stylesheet, shown by another version's, and not shown while the stylesheet has not arrived (the
-  WebAssembly host only: a Blazor Web App's stylesheet is in the head the server sends).
+  live region; and the six packages' stylesheet notices — the three products' in their roots, and each
+  MudBlazor Wrapper's where the stylesheet its Chrome brings is rendered, on `/mud`,
+  `/sheet?chrome=mud` and `/pivot?chrome=mud` — hidden by their own stylesheet, shown by another
+  version's, and ExGrid's not shown while its stylesheet has not arrived (the WebAssembly host only: a
+  Blazor Web App's stylesheet is in the head the server sends).
 - `freshness.spec.mjs` — ERR-9's deploy (ADR-0123): `freshness-app/`, a standalone application of one
   grid, published twice from two copies of `src/ExGrid` whose shipped files are two versions', each
   copy's `ShippedAssets.g.cs` written as `tools/assets/minify.mjs` would. The first is served as GitHub

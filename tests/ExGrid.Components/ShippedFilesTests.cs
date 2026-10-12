@@ -88,6 +88,51 @@ public class ShippedFilesTests : GridTestContext
         Assert.Equal("", cut.Find(".ex-announce").TextContent);
     }
 
+    [Fact] // ADR-0123 / ERR-11 (2026-10-11): a Chrome declares the stylesheets it brings, and the grid renders a notice for each beside its own, with the same markup and words; the built-in Chrome brings none
+    public void ERR11_the_grid_renders_a_notice_for_each_stylesheet_its_chrome_brings()
+    {
+        Assert.Empty(((IGridChrome)new BringsNothing()).Stylesheets);
+        var plain = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(10))
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.Chrome, new BringsNothing()));
+        Assert.Equal(["ex-grid.css"], plain.FindAll(".ex-grid > [data-ex-notice='stylesheet']").Select(n => n.GetAttribute("data-ex-stylesheet")));
+
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(10))
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.Chrome, new BringsOne())
+            .Add(g => g.CommandLabel, id => id == ReloadNoticeLabelIds.Stylesheet ? "Rechargez la page." : null));
+
+        var notices = cut.FindAll(".ex-grid > [data-ex-notice='stylesheet']");
+        Assert.Equal(["ex-grid.css", "acme-grid.css"], notices.Select(n => n.GetAttribute("data-ex-stylesheet")));
+        Assert.Equal(BringsOne.Stamp, notices[1].GetAttribute("data-ex-stamp"));
+        Assert.Equal("display: none", notices[1].GetAttribute("style"));
+        Assert.Equal("Rechargez la page.", notices[1].TextContent);
+    }
+
+    /// <summary>A Chrome that answers every seam with the core's own, as the built-in does.</summary>
+    private class BringsNothing : IGridChrome
+    {
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+    }
+
+    /// <summary>A Wrapper's Chrome, bringing a stylesheet of its own.</summary>
+    private sealed class BringsOne : BringsNothing, IGridChrome
+    {
+        internal const string Stamp = "5e1f0c7a2b9d4e6f8a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f";
+
+        public IReadOnlyList<ChromeStylesheet> Stylesheets { get; } = [new("acme-grid.css", Stamp)];
+    }
+
     [Fact] // ADR-0123 / ERR-11 / ADR-0203: the notice's words are the Consumer's, through the label function, where it gives them
     public void ERR11_the_notice_is_worded_through_the_label_function()
     {

@@ -34,3 +34,34 @@ public class ShippedStylesheetComponentTests : BunitContext
         Assert.Equal("_content/ExGrid.MudBlazor/mud-ex-grid.min.0a1b2c3d4e.css", cut.Find("link").GetAttribute("href"));
     }
 }
+
+/// <summary>
+/// ADR-0123 / ERR-11 for ExGrid.MudBlazor: the Wrapper has no root of its own (ADR-0062), so its
+/// Chrome declares the stylesheet it brings, and the grid's root renders that stylesheet's notice
+/// beside its own, with the same markup, which only another version's <c>mud-ex-grid.css</c> shows.
+/// </summary>
+public class WrapperStylesheetNoticeTests : MudTestContext
+{
+    [Fact] // ADR-0123 / ERR-11: MudGridChrome brings mud-ex-grid.css with the stamp this build ships, and the grid renders its notice
+    public void ERR11_the_grid_renders_the_wrappers_stylesheet_notice()
+    {
+        var expected = new ExGrid.Chrome.ChromeStylesheet("mud-ex-grid.css", ShippedFiles.Stamp("ExGrid.MudBlazor", "mud-ex-grid.css"));
+        Assert.Equal([expected], MudGridChrome.Default.Stylesheets);
+        Assert.Equal([expected], new MudGridChrome { Label = _ => null }.Stylesheets);
+
+        var cut = Render<global::ExGrid.Components.ExGrid<Trade>>(ps => ps
+            .Add(g => g.Window, Rows(5))
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.Chrome, MudGridChrome.Default));
+
+        var notice = cut.Find(".ex-grid > [data-ex-stylesheet='mud-ex-grid.css']");
+        Assert.Equal("stylesheet", notice.GetAttribute("data-ex-notice"));
+        Assert.Equal(expected.Stamp, notice.GetAttribute("data-ex-stamp"));
+        Assert.Equal("display: none", notice.GetAttribute("style"));
+        Assert.Equal(ExGrid.Chrome.BuiltInCommandLabels.For(ExGrid.Chrome.ReloadNoticeLabelIds.Stylesheet), notice.TextContent);
+        // Beside the grid's own, and no other.
+        Assert.Equal(["ex-grid.css", "mud-ex-grid.css"],
+            cut.FindAll(".ex-grid > [data-ex-notice='stylesheet']").Select(n => n.GetAttribute("data-ex-stylesheet")));
+    }
+}

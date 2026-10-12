@@ -13,8 +13,9 @@ import { SERVER } from './hosting.mjs';
 //   than the stamp — is refused before anything attaches, said in place of the rows and once in the
 //   live region, and the page says nothing in its console. A missing script is layer 2's: a missing
 //   file is a console error of the browser's own.
-// - ERR-11: each product's stylesheet notice, hidden by its own stylesheet, shown by another
-//   version's, and not shown while no stylesheet has arrived.
+// - ERR-11: each of the six packages' stylesheet notice — a Wrapper's rendered for the stylesheet its
+//   Chrome brings — hidden by its own stylesheet, shown by another version's, and not shown while no
+//   stylesheet has arrived.
 //
 // Every test here serves a file the host does not have, or watches a document from its start, so
 // each has a document of its own (ADR-0056).
@@ -181,10 +182,17 @@ test.describe('ERR-10: a script that is not the one the grid was built with', ()
 });
 
 test.describe('ERR-11: each product\'s stylesheet notice', () => {
+    // The three products' own notices stand in their roots. A Wrapper has no root of its own
+    // (ADR-0062): its Chrome declares the stylesheet it brings, and the root of what it dresses renders
+    // the notice — the grid's for ExGrid.MudBlazor and for ExSheet.MudBlazor, whose Chrome is the
+    // Sheet's grid's, and ExPivot's for ExPivot.MudBlazor (ADR-0123, 2026-10-11).
     const products = [
         { product: 'ExGrid', path: '/wide', root: '.ex-grid', name: 'ex-grid' },
         { product: 'ExSheet', path: '/sheet', root: '.ex-sheet', name: 'ex-sheet' },
         { product: 'ExPivot', path: '/pivot', root: '.ex-pivot', name: 'ex-pivot' },
+        { product: 'ExGrid.MudBlazor', path: '/mud', root: '.ex-grid', name: 'mud-ex-grid' },
+        { product: 'ExSheet.MudBlazor', path: '/sheet?chrome=mud', root: '.ex-sheet .ex-grid', name: 'mud-ex-sheet' },
+        { product: 'ExPivot.MudBlazor', path: '/pivot?chrome=mud', root: '.ex-pivot', name: 'mud-ex-pivot' },
     ];
 
     for (const { product, path, root, name } of products) {

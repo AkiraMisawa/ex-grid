@@ -68,8 +68,14 @@
        ships, and the inline display keeps it out of the way until a stylesheet's rules decide.
        Each shipped stylesheet shows it for any stamp and hides it for its own, so another
        version's stylesheet shows it, ours hides it, and none yet loaded shows nothing — with no
-       script. Its words are the built-in Chrome's (ADR-0203). *@
+       script. Its words are the built-in Chrome's (ADR-0203). Beside it, one for each stylesheet
+       the Chrome brings: a Wrapper has no root of its own (ADR-0062), so its notice stands here,
+       with the same markup, which is a contract between versions (ADR-0123). *@
     <div data-ex-notice="stylesheet" data-ex-stylesheet="@ShippedAssets.StylesheetName" data-ex-stamp="@ShippedAssets.StylesheetStamp" style="display: none">@StylesheetNoticeWords</div>
+    @foreach (var brought in Chrome?.Stylesheets ?? [])
+    {
+        <div data-ex-notice="stylesheet" data-ex-stylesheet="@brought.Name" data-ex-stamp="@brought.Stamp" style="display: none">@StylesheetNoticeWords</div>
+    }
     @* One scroll container for both axes, with the header and the Pinned Columns held in
        place by `position: sticky` inside it. Two containers cannot do this: giving the
        inner one a non-visible overflow on one axis turns the other into `auto` (CSS

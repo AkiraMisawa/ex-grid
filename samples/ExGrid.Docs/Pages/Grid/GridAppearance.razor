@@ -90,14 +90,20 @@
         <p>
             The column menu, the filter panel, the find panel, the Context Menu, the Cell Editor and the loading
             indicator are the grid's <strong>Chrome</strong>, drawn through <code>IGridChrome</code>. With no
-            <code>Chrome</code> parameter you get the built-in one, which needs nothing but <code>ex-grid.css</code>.
-            ExGrid.MudBlazor adds:
+            <code>Chrome</code> parameter you get the built-in one, which needs nothing but ExGrid's own stylesheet,
+            <code>&lt;ExGridStylesheet /&gt;</code>. ExGrid.MudBlazor adds:
         </p>
         <ul>
             <li><code>MudGridChrome</code> — the same seams drawn with MudBlazor's own controls. Pass it as <code>Chrome</code>.</li>
             <li><code>MudExGridPaper</code> — a Material surface around the grid that maps <code>Dense</code>, <code>Hover</code> and <code>Striped</code> onto the grid and sets Roboto with its measured widths.</li>
-            <li><code>mud-ex-grid.css</code> — the Visual Tokens mapped onto MudBlazor's palette, dark mode included.</li>
+            <li><code>mud-ex-grid.css</code>, placed with <code>&lt;MudExGridStylesheet /&gt;</code> — the Visual Tokens mapped onto MudBlazor's palette, dark mode included.</li>
         </ul>
+        <p>
+            A Chrome declares the stylesheets it brings through <code>Stylesheets</code>, and the grid shows a notice
+            for each when the page holds another version of it, as it does for its own
+            (<a href="getting-started#when-a-page-holds-another-version-s-files">When a page holds another version's files</a>).
+            <code>MudGridChrome</code> declares <code>mud-ex-grid.css</code>; the built-in Chrome declares none.
+        </p>
         <p>
             Chrome draws and calls back; the grid decides what every choice means. The same filter chosen under
             either Chrome gives the same rows. Every Example on this site runs under both: switch with
