@@ -8,9 +8,9 @@ namespace ExSheet;
 /// container cascades a scope, and a child takes the next place in the nearest one when it is first
 /// initialised; the toolbar's keys follow the paths, which are the markup's order. A component of
 /// the Consumer's own that holds items stands inside a <see cref="ToolbarRow"/>, whose scope it then
-/// shares.
+/// shares. Internal (ADR-0201): it is the rows' bookkeeping, which no Consumer writes or reads.
 /// </summary>
-public sealed class ToolbarOrder : IComparable<ToolbarOrder>
+internal sealed class ToolbarOrder : IComparable<ToolbarOrder>
 {
     private readonly int[] _path;
     private int _next;

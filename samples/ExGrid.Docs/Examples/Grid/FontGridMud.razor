@@ -1,0 +1,38 @@
+@using System.Globalization
+
+@* A theme that sets the system font instead of Roboto: the paper takes the family and the widths
+   measured for it as one value, so the font on screen and the widths behind #### come from one
+   hand. The system font is the one ExGrid's own stylesheet paints, so its widths are the core's. *@
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true" Font="SystemFont">
+    <ExGrid TRow="Position" Source="_source" Columns="_columns" Chrome="_chrome"
+            ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static readonly MudExGridFont SystemFont = MeasuredByExGrid("system-ui, sans-serif");
+
+    // The widths ExGrid measured its own font at, read from its Standard density, the paper's
+    // density when it is not Dense.
+    private static MudExGridFont MeasuredByExGrid(string family)
+    {
+        var metrics = GridMetrics.Resolve(GridDensity.Standard);
+        var cell = metrics.CellMetrics;
+        return new MudExGridFont(family, cell.WideWidthPx, cell.DigitWidthPx, cell.NarrowWidthPx, metrics.FontSizePx,
+            cell.BoldWideWidthPx, cell.BoldDigitWidthPx, cell.BoldNarrowWidthPx, cell.OtherWidthPx, cell.BoldOtherWidthPx,
+            cell.GlyphWidths);
+    }
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+
+    private readonly GridColumn<Position>[] _columns =
+    [
+        new("Id", ColumnType.Number, p => p.Id),
+        new("Desk", ColumnType.Text, p => p.Desk),
+        new("Instrument", ColumnType.Text, p => p.Instrument),
+        new("Quantity", ColumnType.Number, p => p.Quantity, format: v => ((int)v).ToString("N0", Invariant)),
+        new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", format: v => ((decimal)v).ToString("N2", Invariant)),
+    ];
+}

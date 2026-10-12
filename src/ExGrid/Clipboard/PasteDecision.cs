@@ -47,8 +47,8 @@ public enum PasteRefusalReason
 
     /// <summary>Too much to read: a clipboard past the grid's <c>PasteByteCap</c>, raised by
     /// the component before the clipboard is read at all (ADR-0005) — or a fill key's source
-    /// past the copy cap, which <see cref="ClipboardRules.PlanFill"/> refuses as a copy of it
-    /// would be refused (ADR-0035).</summary>
+    /// past the copy cap, which the fill keys refuse as a copy of it would be refused
+    /// (ADR-0035).</summary>
     TooLarge,
 
     /// <summary>A spilled paste (ADR-0050, item 3) whose block would run past the grid's
@@ -128,7 +128,7 @@ public sealed class PastePlan
     /// ranges agree on the value and first match is safe. A cell outside every target
     /// range is a caller bug — refuse rather than answer something plausible.
     /// </summary>
-    public SourceCell SourceCellFor(CellPosition target)
+    internal SourceCell SourceCellFor(CellPosition target)
     {
         foreach (var range in Targets)
         {
@@ -147,7 +147,7 @@ public sealed class PastePlan
 /// (ADR-0014). Reading the absent half throws rather than answering something
 /// plausible.
 /// </summary>
-public sealed class PasteDecision
+internal sealed class PasteDecision
 {
     private readonly PastePlan? _plan;
     private readonly PasteRefusalReason _reason;

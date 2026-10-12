@@ -381,7 +381,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     /// degrades to a search-and-condition form, which is Excel's own shape for a large
     /// domain. Provisional the way ADR-0004's thresholds are.
     /// </summary>
-    public const int DistinctValueCap = 1000;
+    internal const int DistinctValueCap = 1000;
 
     /// <summary>
     /// The reference semantics of the value list (ADR-0009): distinct values of the

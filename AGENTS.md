@@ -100,6 +100,12 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
   a `v*` tag runs `release.yml`, which publishes a prerelease and refuses a version without a
   suffix until the Definition of Done is signed off (ADR-0042). Every public member of a shipped
   project needs an XML doc comment — a missing one fails the build
+- **Every public member of a shipped project is declared in its `PublicAPI.Unshipped.txt`**
+  (ADR-0201): one added and not declared fails the build (RS0016), and so does one declared and gone
+  (RS0017), a Razor component's `@code` members included. Let the analyzer write the line, never type
+  it: `nix develop -c dotnet format analyzers src/<Package>/<Package>.csproj --diagnostics RS0016
+  --severity info --include-generated`, then read the diff — a line you did not mean is a member made
+  public by mistake. A member that leaves the surface is a Change Note (ADR-0190)
 
 ## The spine of the design — how to decide when unsure
 

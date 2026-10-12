@@ -16,7 +16,7 @@ namespace ExGrid.Clipboard;
 /// is the spill's (ADR-0050, item 3): there it is not a guard against stale positions but
 /// the edge a spilled block may not cross.
 /// </summary>
-public static class ClipboardRules
+internal static class ClipboardRules
 {
     /// <summary>
     /// Default copy cap, in cells — the same unit as the status display's count

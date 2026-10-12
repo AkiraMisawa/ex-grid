@@ -81,7 +81,11 @@ repository does not have, and MudBlazor's fetch is a server call.
   2. writes the Highlights;
   3. deletes the Change Notes;
   4. writes `Published: pending`;
-  5. writes the previous version's date into its file, if it still says `pending`.
+  5. writes the previous version's date into its file, if it still says `pending`;
+  6. moves every line of each `src/*/PublicAPI.Unshipped.txt` but its `#nullable enable` into that
+     project's `PublicAPI.Shipped.txt` (ADR-0201, 2026-10-12). For a stable version this step is made
+     before the commit the sign-off is made against, since the tag may differ from it only in the records
+     and the notes (ADR-0205).
 
   The tag goes on the commit that merges it. A tag publishes all of `main` (ADR-0042), so its notes
   must hold all of `main`.

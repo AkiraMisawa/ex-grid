@@ -227,7 +227,7 @@ public sealed record GridColumn<TRow>
     /// </summary>
     /// <param name="row">The row the cell is on.</param>
     /// <param name="cellType">The Consumer's per-cell lookup, or null for none.</param>
-    public ColumnType TypeAt(TRow row, Func<TRow, GridColumn<TRow>, ColumnType>? cellType)
+    internal ColumnType TypeAt(TRow row, Func<TRow, GridColumn<TRow>, ColumnType>? cellType)
     {
         if (cellType is null)
             return Type;
@@ -248,7 +248,7 @@ public sealed record GridColumn<TRow>
     /// </summary>
     /// <param name="row">The row the cell is on.</param>
     /// <param name="cellAlign">The Consumer's per-cell lookup, or null for none.</param>
-    public CellAlign AlignAt(TRow row, Func<TRow, GridColumn<TRow>, CellAlign>? cellAlign)
+    internal CellAlign AlignAt(TRow row, Func<TRow, GridColumn<TRow>, CellAlign>? cellAlign)
     {
         if (cellAlign is null)
             return Align;
@@ -344,5 +344,5 @@ public sealed record GridColumn<TRow>
     /// the Auto width observation: <c>####</c> is about a value that does not fit
     /// (ADR-0016), and there is no text here to measure or to hash.
     /// </summary>
-    public bool PaintsValue => Template is null && Actions.Count == 0 && !IsMarkColumn;
+    internal bool PaintsValue => Template is null && Actions.Count == 0 && !IsMarkColumn;
 }

@@ -6,7 +6,7 @@ namespace ExPivot.Engine;
 /// leaves — one for every combination of the row and column fields' Items that has records once
 /// the Hidden Items are left out — each with one Item per row field and per column field, its
 /// record count, and the parts asked for of every field in Values. ExPivot computes every cell,
-/// subtotal and grand total from the leaves (<see cref="PivotEngine.Cube"/>), without asking again.
+/// subtotal and grand total from the leaves, without asking again (<see cref="PivotReportSource"/>).
 ///
 /// <para>The leaves are held column by column — an array per level and per part — never as an
 /// object per leaf, since an answer may hold hundreds of thousands of them. The order of the
