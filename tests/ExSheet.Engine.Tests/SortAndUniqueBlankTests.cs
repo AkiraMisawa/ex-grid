@@ -8,13 +8,17 @@ namespace ExSheet.Engine.Tests;
 /// A blank among <c>SORT</c>'s and <c>SORTBY</c>'s keys and in <c>UNIQUE</c>'s array, as the area passes of
 /// 2026-10-12 read Excel (ADR-0125): a blank key sorts after every other key whichever the order, blanks keep
 /// their order, and a blank spills as 0; in <c>UNIQUE</c> a blank is one of a kind only with another blank.
-/// Read inside the Formula, the blank <c>SORT</c> and <c>UNIQUE</c> keep is the empty value a blank cell holds:
-/// <c>COUNTA</c> counts it in the array (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c> it is blank to
-/// <c>ISBLANK</c> and equal to empty text (SORT-022, UNIQUE-018). <c>SORTBY</c>, <c>FILTER</c> and
-/// <c>TRANSPOSE</c> are taken to keep the same blank, which no run has read (SORTBY-011 to 013, FILTER-012 and
-/// 013, TRANSPOSE-005 and 006 ask). The other functions and operators that read one Value read it as a blank
-/// cell's, a generalisation of <c>ISBLANK</c>'s and <c>=</c>'s answers; <c>SUM</c>, <c>SUMPRODUCT</c> and
-/// <c>CONCAT</c> take it because every reading of it gives them the one answer, and a lookup takes an array
+/// Read inside the Formula, <c>COUNTA</c> counts the blank <c>SORT</c> and <c>UNIQUE</c> keep in the array
+/// (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c>, <c>SORT</c>'s is blank to <c>ISBLANK</c> (SORT-022), the
+/// empty value a blank cell holds, and <c>UNIQUE</c>'s equal to empty text (UNIQUE-018); the engine takes
+/// <c>UNIQUE</c>'s for a blank cell's value too, which UNIQUE-020 asks. <c>SORTBY</c>, <c>FILTER</c> and
+/// <c>TRANSPOSE</c> are taken to keep the same blank, which no run has read (SORTBY-011 to 013, FILTER-012 and 013,
+/// TRANSPOSE-005 and 006 ask). The operators, and the functions that read one Value through
+/// <c>FunctionCall.OneValue</c> (<c>LEN</c>, <c>ISTEXT</c>, <c>MATCH</c>'s lookup value), read it as a blank cell's,
+/// a generalisation of <c>ISBLANK</c>'s answer for <c>SORT</c>'s and <c>=</c>'s for <c>UNIQUE</c>'s, which no run
+/// has read beyond them; those that read it through <c>FunctionCall.Operand</c>, <c>XLOOKUP</c>'s lookup value
+/// and <c>ROUND</c> among them, refuse it. <c>SUMPRODUCT</c> and <c>CONCAT</c>, and <c>SUM</c> where both readings
+/// give the one sum, take it because every reading of it gives them the one answer, and a lookup takes an array
 /// holding it where it never reads it. Where a function's reading of it parts (<c>AVERAGE</c>, <c>MIN</c>,
 /// <c>COUNT</c>, <c>COUNTA</c> given it as one Value, a search through it, another of the five) the Formula is
 /// refused with <c>#VALUE!</c> (ADR-0125, ADR-0202). An Error Value key is answered in <c>SORT</c> only where it

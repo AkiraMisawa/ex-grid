@@ -219,20 +219,21 @@ internal static partial class FunctionLibrary
     /// What the area passes read of Excel's, for <c>SORT</c> and <c>UNIQUE</c>: it spills as 0
     /// (SORT-012, UNIQUE-010, and <c>TRANSPOSE</c>'s too, TRANSPOSE-004), <c>COUNTA</c> counts it in the
     /// array (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c>, <c>SORT</c>'s is blank to
-    /// <c>ISBLANK</c> (SORT-022) and <c>UNIQUE</c>'s equal to empty text (UNIQUE-018): the empty value a
-    /// blank cell holds, not the 0 it spills as nor empty text, which would spill as itself.
-    /// <c>SORTBY</c>, <c>FILTER</c> and <c>TRANSPOSE</c> keep a blank as <c>SORT</c> does, so theirs is
-    /// taken to be the same kept blank: a generalisation SORTBY-011 to 013, FILTER-012 and 013 and
-    /// TRANSPOSE-005 and 006 ask, not a reading. Before the mark, the engine's
+    /// <c>ISBLANK</c> (SORT-022), the empty value a blank cell holds, and <c>UNIQUE</c>'s equal to empty
+    /// text (UNIQUE-018), not the 0 it spills as. The engine takes <c>UNIQUE</c>'s for a blank cell's
+    /// value too, which UNIQUE-020 asks. <c>SORTBY</c>, <c>FILTER</c> and <c>TRANSPOSE</c> keep a blank
+    /// as <c>SORT</c> does, so theirs is taken to be the same kept blank: a generalisation SORTBY-011 to
+    /// 013, FILTER-012 and 013 and TRANSPOSE-005 and 006 ask, not a reading. Before the mark, the engine's
     /// <c>=COUNTA(FILTER(...))</c> passed over a blank that its <c>=COUNTA(SORT(FILTER(...)))</c>
     /// counted, though a reorder cannot change a count. A function reads a kept blank only where the
     /// passes read it, where every reading of it gives the same answer, or where what the passes read is
     /// carried to it by generalisation, which no run has read: <c>COUNTA</c> over <c>SORTBY</c>'s,
-    /// <c>FILTER</c>'s and <c>TRANSPOSE</c>'s array, as over <c>SORT</c>'s, and <c>LEN</c>,
-    /// <c>ISTEXT</c> and every other function that reads one Value, reading the blank <c>INDEX</c> takes
-    /// out as a blank cell's, as <c>ISBLANK</c> read <c>SORT</c>'s
-    /// (<see cref="FunctionCall.KeepingBlanks"/>, <see cref="FunctionCall.OneValue"/>); elsewhere the
-    /// Formula is refused (<see cref="FunctionCall.Operand"/>).
+    /// <c>FILTER</c>'s and <c>TRANSPOSE</c>'s array, as over <c>SORT</c>'s; <c>INDEX</c> taking it out
+    /// of those three and of <c>UNIQUE</c>'s still blank; and <c>LEN</c>, <c>ISTEXT</c>, <c>MATCH</c>'s
+    /// lookup value and every other one Value read through <see cref="FunctionCall.OneValue"/>, reading
+    /// the blank <c>INDEX</c> takes out as a blank cell's, as <c>ISBLANK</c> read <c>SORT</c>'s
+    /// (<see cref="FunctionCall.KeepingBlanks"/>); elsewhere, <c>XLOOKUP</c>'s lookup value and
+    /// <c>ROUND</c> among them, the Formula is refused (<see cref="FunctionCall.Operand"/>).
     /// </summary>
     private static Operand Made(ValueArray result) => Operand.Of(result).WithKeptBlank();
 

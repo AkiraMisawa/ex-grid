@@ -19,8 +19,8 @@ internal static partial class FunctionLibrary
     /// <c>INDEX(A1#,2)</c> over such a Spill Range, which is a Reference as <c>G1:H5</c> is. Over an
     /// array it is the whole row, as Microsoft documents. A kept blank (<see cref="Operand.KeptBlank"/>)
     /// stays marked in what <c>INDEX</c> picks of it, so its reader decides how to read it: Excel's
-    /// <c>INDEX</c> took <c>SORT</c>'s and <c>UNIQUE</c>'s out still blank (ADR-0125; SORT-022,
-    /// UNIQUE-018).
+    /// <c>INDEX</c> took <c>SORT</c>'s out blank to <c>ISBLANK</c> (SORT-022) and <c>UNIQUE</c>'s out
+    /// equal to empty text (UNIQUE-018); whether <c>UNIQUE</c>'s is blank UNIQUE-020 asks (ADR-0125).
     /// </remarks>
     private static Operand Index(FunctionCall call)
     {

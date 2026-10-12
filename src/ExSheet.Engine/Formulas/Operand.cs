@@ -68,13 +68,15 @@ internal readonly struct Operand
     /// for every reading of it (by agreement: <c>SUMPRODUCT</c>, <c>CONCAT</c>, <c>SUM</c> where both
     /// readings give the one sum, a lookup that never reads it), or where what the passes read is carried
     /// to it (by generalisation, which no run has read: <c>COUNTA</c> over <c>SORTBY</c>'s, <c>FILTER</c>'s
-    /// and <c>TRANSPOSE</c>'s array, as over <c>SORT</c>'s; <c>INDEX</c> taking it out of those three;
-    /// <c>ISBLANK</c> beyond <c>SORT</c>'s, and <c>LEN</c>, <c>ISTEXT</c> and every other function that
-    /// reads one Value through <see cref="FunctionCall.OneValue"/>, reading it as a blank cell's; every
-    /// operator reading each Value so, as <c>=</c> read <c>UNIQUE</c>'s). Such a function takes it through
-    /// <see cref="FunctionCall.KeepingBlanks"/> or <see cref="FunctionCall.OneValue"/>, and an operator
-    /// reads it as it reads a blank; anywhere else the Formula is refused
-    /// (<see cref="FunctionCall.Operand"/>).
+    /// and <c>TRANSPOSE</c>'s array, as over <c>SORT</c>'s; <c>INDEX</c> taking it out of those three, and
+    /// out of <c>UNIQUE</c>'s, still blank, as out of <c>SORT</c>'s; <c>ISBLANK</c> beyond <c>SORT</c>'s,
+    /// and <c>LEN</c>, <c>ISTEXT</c>, <c>MATCH</c>'s lookup value and every other one Value read through
+    /// <see cref="FunctionCall.OneValue"/>, reading it as a blank cell's; every operator reading each Value
+    /// so, which <c>=</c> finding <c>UNIQUE</c>'s equal to empty text fits). Such a function takes it
+    /// through <see cref="FunctionCall.KeepingBlanks"/> or <see cref="FunctionCall.OneValue"/>, and an
+    /// operator reads it as it reads a blank; anywhere else the Formula is refused
+    /// (<see cref="FunctionCall.Operand"/>), <c>XLOOKUP</c>'s and <c>XMATCH</c>'s lookup value and
+    /// <c>ROUND</c>'s arguments among them.
     /// </summary>
     public bool KeptBlank { get; }
 

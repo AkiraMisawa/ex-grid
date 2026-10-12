@@ -42,25 +42,33 @@ Three readings were open for a blank `UNIQUE` or `SORT` keeps from its array, re
 spills as, empty text, or the empty value a blank cell holds.
 
 - **The 0 it spills as** is ruled out: `INDEX(UNIQUE(Q1:Q2),2)=""` is TRUE (UNIQUE-018), and 0 is not equal to empty
-  text; `LEN` reads it as 0 (UNIQUE-019's 2 over a, blank, b is 1, 0, 1), where `LEN(0)` is 1; and `ISBLANK` of it is
-  TRUE (SORT-022).
-- **Empty text** is ruled out for `SORT` by `ISBLANK` (SORT-022), and for `UNIQUE` by its spill: an element of empty
-  text spills as empty text, and UNIQUE-010 read 0.
-- **The empty value a blank cell holds** fits all six answers. And `COUNTA` counts it in the array (SORT-021,
-  UNIQUE-017: 2 over 7 and a blank), where it passes over a blank cell of a range.
+  text; `LEN` reads it as 0 (UNIQUE-019's 2 over a, blank, b is 1, 0, 1), where `LEN(0)` is 1; and `ISBLANK` of
+  `SORT`'s is TRUE (SORT-022).
+- **Empty text** is ruled out for `SORT` by `ISBLANK` (SORT-022). For `UNIQUE` no run has told it from a blank cell's
+  value: neither `=` (UNIQUE-018) nor `LEN` (UNIQUE-019) tells the two apart, and its spilled 0 (UNIQUE-010) rules
+  empty text out only if an element of empty text spills as itself, which no run here has read. UNIQUE-020 asks
+  `ISBLANK`.
+- **The empty value a blank cell holds** fits all six answers, and the engine takes `UNIQUE`'s for it as `SORT`'s was
+  seen to be. And `COUNTA` counts it in the array (SORT-021, UNIQUE-017: 2 over 7 and a blank), where it passes over a
+  blank cell of a range.
 
 The engine marks that blank on the operand (`KeptBlank`, the code's word, not the glossary's) and reads it so:
 
-- **Observed:** `COUNTA` counts it in `SORT`'s and `UNIQUE`'s array (SORT-021, UNIQUE-017); `INDEX` takes it out still
-  blank, which `ISBLANK` (SORT-022) and `=` (UNIQUE-018) read as a blank cell's; it spills as 0 (SORT-012, UNIQUE-010,
-  016; `TRANSPOSE`'s too, TRANSPOSE-004); `ROWS` counts it in `UNIQUE`'s extent (UNIQUE-011, 012).
+- **Observed:** `COUNTA` counts it in `SORT`'s and `UNIQUE`'s array (SORT-021, UNIQUE-017); `INDEX` takes `SORT`'s
+  out blank to `ISBLANK` (SORT-022) and `UNIQUE`'s out equal to empty text (UNIQUE-018); it spills as 0 (SORT-012,
+  UNIQUE-010, 016; `TRANSPOSE`'s too, TRANSPOSE-004); `ROWS` counts it in `UNIQUE`'s extent (UNIQUE-011, 012).
 - **By generalisation:** `SORTBY`, `FILTER` and `TRANSPOSE` keep a blank as `SORT` does, so theirs is taken to be the
-  same blank and read as `SORT`'s is (SORTBY-011 to 013, FILTER-012 and 013, TRANSPOSE-005 and 006 ask). Every other
-  function that reads one Value — `LEN`, `ISTEXT`, `ISNUMBER`, `ISERROR`, `VLOOKUP`'s and `XLOOKUP`'s lookup value,
-  and the rest that read through `TryScalar` — reads the blank `INDEX` takes out as a blank cell's, as only `ISBLANK`
-  was seen to; `LEN` over the array (UNIQUE-019) is consistent with it but is refused, unlifted. Every operator reads
-  each Value so, as only `=` was seen to (UNIQUE-024 asks `&`). The engine has no `N` function, so `N` is no reader
-  here.
+  same blank and read as `SORT`'s is (SORTBY-011 to 013, FILTER-012 and 013, TRANSPOSE-005 and 006 ask). `INDEX`
+  takes `UNIQUE`'s out blank, as it took `SORT`'s (UNIQUE-020 asks). A function that reads one Value through
+  `FunctionCall.OneValue` — `ISBLANK` beyond `SORT`'s, `LEN`, `ISTEXT`, `ISNUMBER`, `ISERROR`, `VLOOKUP`'s and
+  `MATCH`'s lookup value, and the rest that read through `TryScalar`, `TryNumber` or `TryText` — reads the blank
+  `INDEX` takes out as a blank cell's, as only `ISBLANK` was seen to, of `SORT`'s; `LEN` over the array (UNIQUE-019)
+  is consistent with it but is refused, unlifted. `XLOOKUP`'s and `XMATCH`'s lookup value, `ROUND`'s arguments,
+  `ERROR.TYPE`'s argument and a criterion of the conditional aggregates are read through `FunctionCall.Operand`, so
+  given that blank they refuse the Formula: `=XLOOKUP(INDEX(SORT(A1:A3),3),A1:A3,B1:B3)` is `#VALUE!` where
+  `=MATCH(INDEX(SORT(A1:A3),3),A1:A3,0)` reads the blank (`#N/A`). Every operator reads each Value as a blank cell's,
+  which `=` finding `UNIQUE`'s equal to empty text (UNIQUE-018) fits but does not settle (UNIQUE-024 asks `&`). The
+  engine has no `N` function, so `N` is no reader here.
 - **By agreement:** `SUMPRODUCT` (anything but a number is 0 inside its arrays, as Microsoft documents) and `CONCAT`
   (nothing either way) give the one answer whether they pass over it or read it as the empty value of their kind.
   `SUM` gives the one sum either way except where the blank would be its last number: the last addition decides
@@ -123,7 +131,9 @@ that rules it out or asks it.
   `FILTER` or `TRANSPOSE` kept from its array, as one of its Values or as the one Value `INDEX` picked.
 - `FunctionDefinition.cs`: `FunctionCall.Operand` refuses the Formula when the argument holds a kept blank;
   `KeepingBlanks` gives it to the readers above; `OneValue` gives a kept blank Value to a function that reads one
-  Value, and refuses an array holding one. `Measured` evaluates the argument for its extent.
+  Value through it, and refuses an array holding one; a function that reads its one Value through `Operand`
+  (`XLOOKUP`'s and `XMATCH`'s lookup value, `ROUND`, `ERROR.TYPE`) refuses it. `Measured` evaluates the argument for
+  its extent.
 - `Evaluator.cs`: `Refuse` and the Formula's refusal, now also for unlifted functions and Error Value keys.
 - `Functions.Arrays.cs`: `Made` marks the result of all five; `TryOrderLines` takes `errorKeysOrdered` (`SORT` true,
   `SORTBY` false) and `ErrorKeysSettled`, which now also asks that no number follow an Error Value; `SORT` and `SORTBY`
@@ -194,8 +204,8 @@ The next `-Area` pass names `sort`, `sortby`, `unique`, `transpose`, `filter` an
   whether `IF` hands it on as it is (SORT-039).
   `COUNTA` given the blank alone (SORT-035, UNIQUE-023).
 - **Whether `SORTBY`, `FILTER` and `TRANSPOSE` keep the blank `SORT` keeps** (SORTBY-011 to 013, FILTER-012 and 013,
-  TRANSPOSE-005 and 006), and whether a function that reads one Value other than `ISBLANK` reads it as a blank cell's
-  (UNIQUE-020, 024 ask two).
+  TRANSPOSE-005 and 006), whether `INDEX` takes `UNIQUE`'s out blank (UNIQUE-020), and whether a function that reads
+  one Value other than `ISBLANK`, or an operator, reads it as a blank cell's (UNIQUE-024 asks `&`).
 - **`LEN` and the functions not yet applied to each Value of an array**: UNIQUE-019 and IFERROR-017 stay recorded until
   ADR-0125's lifting is built.
 
@@ -218,23 +228,28 @@ it one of a kind with 0; SORT-012 to 014 and UNIQUE-010 and 011 ask those.)*
 
 *(2026-10-12, after the two area passes, `verification/2026-10-12-windows-area/` and `verification/2026-10-12-windows-area-2/`:
 **a blank among `SORT`'s and `SORTBY`'s keys, and in `UNIQUE`'s array, is answered, and so is the blank they keep,
-read inside the Formula, where Excel's answers or the agreement of every reading settle it.** The refusal of the note
-above is withdrawn. What Excel answered: over 7 and a blank, `=SORT(Q1:Q2)` spills 7 and then 0, ascending or
-descending, and over b, a blank and a, `=SORT(A1:A3)` is a first: a blank key sorts after every other, in either
-order, neither as 0 nor as empty text, and blank keys keep their order (SORT-011 to 014, 016 to 020, 023 to 025).
-`SORTBY` sorts a blank key last so, key by key, ascending (SORTBY-007 to 009). In `UNIQUE` a blank is one of a kind
-only with another blank, never with 0 or empty text (UNIQUE-011 to 015). A blank spills as 0 (SORT-012, UNIQUE-010,
-016, and `TRANSPOSE`'s, TRANSPOSE-004). Read inside the Formula, the blank `SORT` and `UNIQUE` keep is the empty value
-a blank cell holds: `=ISBLANK(INDEX(SORT(Q1:Q2),2))` is TRUE (SORT-022), `=INDEX(UNIQUE(Q1:Q2),2)=""` TRUE
-(UNIQUE-018), and `=SUM(--(LEN(UNIQUE(A1:A3))>0))` over a, a blank and b is 2 (UNIQUE-019): not the 0 it spills as,
-which would not equal empty text, nor empty text, which would spill as itself. `COUNTA` counts it in the array:
-`=COUNTA(SORT(Q1:Q2))` and `=COUNTA(UNIQUE(Q1:Q2))` are 2 (SORT-021, UNIQUE-017). What the engine answers beyond
-those, and why, none of it Excel's answer until its case is observed: `SORTBY`, `FILTER` and `TRANSPOSE` keep a blank
-as `SORT` does, so theirs is taken to be the same blank, read as `SORT`'s is; before this, the engine's
-`=COUNTA(FILTER(...))` passed over a blank that its `=COUNTA(SORT(FILTER(...)))` counted, though a reorder cannot
-change a count (SORTBY-011 to 013, FILTER-012 and 013, TRANSPOSE-005 and 006 ask). A function that reads one Value
-reads the blank `INDEX` takes out as a blank cell's, as `ISBLANK` was seen to, and an operator reads each Value so,
-as `=` was seen to. `SUMPRODUCT` and `CONCAT` add nothing for it whichever way they read it, and `SUM` neither,
+read inside the Formula, where Excel's answers or the agreement of every reading settle it, or by generalisation
+from them, which no run has read (this note names them).** The refusal of the note above is withdrawn. What Excel
+answered: over 7 and a blank, `=SORT(Q1:Q2)` spills 7 and then 0, ascending or descending, and over b, a blank and
+a, `=SORT(A1:A3)` is a first: a blank key sorts after every other, in either order, neither as 0 nor as empty text,
+and blank keys keep their order (SORT-011 to 014, 016 to 020, 023 to 025). `SORTBY` sorts a blank key last so, key
+by key, ascending (SORTBY-007 to 009). In `UNIQUE` a blank is one of a kind only with another blank, never with 0 or
+empty text (UNIQUE-011 to 015). A blank spills as 0 (SORT-012, UNIQUE-010, 016, and `TRANSPOSE`'s, TRANSPOSE-004).
+Read inside the Formula, the blank `SORT` keeps is the empty value a blank cell holds:
+`=ISBLANK(INDEX(SORT(Q1:Q2),2))` is TRUE (SORT-022), so it is neither the 0 it spills as nor empty text. `UNIQUE`'s
+is not the 0 it spills as: `=INDEX(UNIQUE(Q1:Q2),2)=""` is TRUE (UNIQUE-018), which 0 would not be, and
+`=SUM(--(LEN(UNIQUE(A1:A3))>0))` over a, a blank and b is 2 (UNIQUE-019), where `LEN(0)` is 1; whether it is blank
+or empty text, UNIQUE-020 asks. `COUNTA` counts it in the array: `=COUNTA(SORT(Q1:Q2))` and
+`=COUNTA(UNIQUE(Q1:Q2))` are 2 (SORT-021, UNIQUE-017). What the engine answers beyond those, and why, none of it
+Excel's answer until its case is observed: `UNIQUE`'s is taken to be the empty value a blank cell holds, as `SORT`'s
+is (UNIQUE-020 asks). `SORTBY`, `FILTER` and `TRANSPOSE` keep a blank as `SORT` does, so theirs is taken to be the
+same blank, read as `SORT`'s is; before this, the engine's `=COUNTA(FILTER(...))` passed over a blank that its
+`=COUNTA(SORT(FILTER(...)))` counted, though a reorder cannot change a count (SORTBY-011 to 013, FILTER-012 and 013,
+TRANSPOSE-005 and 006 ask). Most functions that read one Value, `LEN`, `ISTEXT` and `MATCH`'s and `VLOOKUP`'s lookup
+value among them, read the blank `INDEX` takes out as a blank cell's, as `ISBLANK` was seen to read `SORT`'s; the
+rest, `XLOOKUP`'s and `XMATCH`'s lookup value, `ROUND` and `ERROR.TYPE` among them, make the Formula `#VALUE!`. An
+operator reads each Value as a blank cell's, which `=` finding `UNIQUE`'s equal to empty text fits (UNIQUE-024 asks
+`&`). `SUMPRODUCT` and `CONCAT` add nothing for it whichever way they read it, and `SUM` neither,
 except where it would be the last number, which decides whether a sum that nearly cancels is 0 (SORT-033 and 037
 ask). `VLOOKUP`, `HLOOKUP` and `XLOOKUP` take an array that holds it where it is neither a key they search nor what
 they return. Where a function's reading of it parts — `AVERAGE`, `MIN`, `MAX`, `COUNT` or `PRODUCT` passing over it
@@ -287,8 +302,9 @@ in its array, and `SORT` and `SORTBY` a blank or an Error Value among their keys
 until Excel is asked how it orders them. *(2026-10-12, after the two area passes: the blank is
 answered among `SORT`'s keys and in `UNIQUE`'s array as Excel answered it, among `SORTBY`'s as
 Excel's was ascending and as `SORT`'s descending, and, read inside the Formula, where Excel's answers
-or the agreement of every reading settle it; where a function's reading of it parts, the Formula is
-`#VALUE!` (ADR-0125's note of that day). Over 7 and then `#N/A`, Excel's
+or the agreement of every reading settle it, or by generalisation from them, which no run has read
+(ADR-0125's note of that day names them); where a function's readings of it part and no
+generalisation covers it, the Formula is `#VALUE!`. Over 7 and then `#N/A`, Excel's
 `=SORT(A1:A2)` shows 7 (SORT-015): an Error Value key is neither `SORT`'s result nor sorted before a
 number. The `#N/A` followed the 7 already, so the answer fits a key sorted after the numbers and one
 that keeps its place alike. `SORT` answers a key only where every such reading gives the one order —
@@ -342,15 +358,17 @@ around it give no answer.)*
    and in `UNIQUE` it is one of a kind only with another blank, never with 0. Read inside a Formula,
    the blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` and `TRANSPOSE` keep is read as the empty value a
    blank cell holds: `COUNTA` counts it in the array, `INDEX` takes it out as a blank, and an
-   operator or a function that reads one Value reads it as a blank cell's. Excel was seen to read it
-   so in three cases: `ISBLANK` of the blank `INDEX` took out of `SORT`'s (SORT-022), `=` of the one
-   it took out of `UNIQUE`'s (UNIQUE-018), and `COUNTA` of both arrays (SORT-021, UNIQUE-017); the
+   operator, or most functions that read one Value (`LEN`, `ISTEXT`, `MATCH`'s lookup value), read
+   it as a blank cell's; the rest, `XLOOKUP`'s lookup value and `ROUND` among them, make the Formula
+   `#VALUE!`. Excel was seen to give answers that fit this in three cases: `ISBLANK` found the blank
+   `INDEX` took out of `SORT`'s blank (SORT-022), `=` found the one it took out of `UNIQUE`'s equal
+   to empty text (UNIQUE-018), and `COUNTA` counted it in both arrays (SORT-021, UNIQUE-017); the
    rest is the engine's, carried from those until Excel is asked. `SUMPRODUCT` and `CONCAT` add
-   nothing for it, `SUM` neither except
-   where that moves its last addition, and `VLOOKUP`, `HLOOKUP` and `XLOOKUP` take an array that holds
-   it where they never read it, each because every reading gives the one answer. A function that would
-   read it some other way no run has settled makes the Formula `#VALUE!`. `SORT` answers an Error Value
-   key that already follows every number, the one shape Excel was asked (SORT-015).
+   nothing for it, `SUM` neither except where that moves its last addition, and `VLOOKUP`, `HLOOKUP`
+   and `XLOOKUP` take an array that holds it where they never read it, each because every reading
+   gives the one answer. A function that would read it some other way no run has settled makes the
+   Formula `#VALUE!`. `SORT` answers an Error Value key that already follows every number, the one
+   shape Excel was asked (SORT-015).
    ```
 
 3. "Functions are not lifted over arrays yet".

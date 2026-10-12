@@ -101,7 +101,8 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// An IS function: it answers TRUE or FALSE for any one Value, an Error Value included, and a kept
-    /// blank as a blank cell's, as Excel's <c>ISBLANK</c> read <c>SORT</c>'s (SORT-022) — but
+    /// blank as a blank cell's, as Excel's <c>ISBLANK</c> read <c>SORT</c>'s (SORT-022), carried to the
+    /// other IS functions and the other four's kept blank by generalisation, which no run has read — but
     /// <c>#GETTING_DATA</c> and <c>#CIRC!</c> are its result, as <c>ISERROR</c>'s (ADR-0047,
     /// ADR-0049): FALSE would be an answer about data that has not arrived, or about a cycle.
     /// </summary>
