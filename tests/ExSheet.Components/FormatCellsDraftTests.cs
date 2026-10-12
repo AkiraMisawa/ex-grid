@@ -267,7 +267,7 @@ public class FormatCellsDraftTests
     private static (BorderLineStyle, CellColour) PenOf(FormatCellsDraft draft) => (draft.LineStyle, draft.LineColour);
 
     [Fact] // ADR-0071 / SH-45, run 17 h10 (observed in Excel): over A2 under A1's thick bottom, the one line A2 shows, the Border tab opens on Thick and Automatic, as the line is, not on Thin
-    public void Over_one_cell_showing_one_line_the_tab_opens_on_that_line_run_17_h10()
+    public void Over_a2_under_a1s_thick_bottom_the_tab_opens_on_thick_run_17_h10()
     {
         var draft = Open(ThickBottomOnA1, "A2", "A2");
 
@@ -288,8 +288,8 @@ public class FormatCellsDraftTests
         Assert.Equal((BorderLineStyle.Thick, Black), PenOf(draft));
     }
 
-    [Fact] // ADR-0071 / SH-45, run 17 h10's second case (observed in Excel): A2's top set thin after A1's thick bottom leaves one thin line on the edge, and the tab opens on Thin
-    public void A_thin_line_shown_opens_the_tab_on_thin_run_17_h10()
+    [Fact] // ADR-0071 / SH-45, run 17 h10's second case (observed in Excel): A2's top set thin after A1's thick bottom leaves one thin line on the edge, and the tab over A2 opens on Thin and Automatic
+    public void A_thin_top_shown_opens_the_tab_on_thin_run_17_h10()
     {
         var draft = Open(sheet =>
         {
@@ -300,11 +300,11 @@ public class FormatCellsDraftTests
         Assert.Equal((BorderLineStyle.Thin, CellColour.Automatic), PenOf(draft));
     }
 
-    [Theory] // ADR-0071 / SH-45, the readings of 2026-10-12, R8 (observed in Excel; case 11-22 for a cell with no line): Thin and Automatic over one cell with a thin top and a thick right of its own, over a range, and over a cell with no line
+    [Theory] // ADR-0071 / SH-45, the readings of 2026-10-12, R8 (1) to (3) (observed in Excel): Thin and Automatic over B2 with a thin top and a thick right of its own, over A2:B3 with a different line on four of its cells' sides, and over D5 with no line, as the eleventh run's case 22 saw Thin over A1
     [InlineData(1, "B2", "B2")]
     [InlineData(2, "A2", "A2:B3")]
     [InlineData(3, "D5", "D5")]
-    public void Thin_and_automatic_elsewhere_r8(int @case, string focus, string range)
+    public void Thin_and_automatic_over_the_three_selections_r8(int @case, string focus, string range)
     {
         var draft = Open(sheet =>
         {
@@ -325,7 +325,7 @@ public class FormatCellsDraftTests
         Assert.Equal((BorderLineStyle.Thin, CellColour.Automatic), PenOf(draft));
     }
 
-    [Theory] // ADR-0071 / SH-45 (a reading, asked next Windows run): two edges of one cell showing lines, none thin, open on Thin as several lines do; so do several one-cell ranges, though each shows one line
+    [Theory] // ADR-0071 / SH-45 (a reading, asked next Windows run): B2 with a thick top and a medium right, two edges showing lines and none thin, opens on Thin, as ExSheet opens wherever more than one edge shows a line; so do several one-cell ranges, though each shows one line
     [InlineData("B2", "B2")]
     [InlineData("A2", "A2,C2")]
     public void Several_lines_shown_open_the_tab_on_thin_a_reading(string focus, string ranges)

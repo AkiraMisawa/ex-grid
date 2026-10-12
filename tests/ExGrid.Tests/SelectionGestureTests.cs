@@ -163,7 +163,7 @@ public class SelectionGestureTests
         Assert.Equal(new CellPosition(0, 1), extended.Focus);
     }
 
-    [Fact] // ADR-0052 / SL-5 (observed in Excel, the seventeenth Windows run, h4): when the take-out empties the range made last, the latest range still standing takes its place, and Enter cycles it with the Selection kept
+    [Fact] // ADR-0052 / SL-5 (observed in Excel, the seventeenth Windows run, h4): A1:B2, F6, F6 again: the take-out empties the range made last, A1:B2 takes its place with the Focus on A1, and Enter cycles it with the Selection kept. A1:B2 was the only range left; which range takes the place where several are left, the latest as ExSheet reads it, is a reading
     public void Taking_out_the_whole_range_made_last_moves_the_focus_to_the_latest_range_left()
     {
         var selection = GridSelection.Empty

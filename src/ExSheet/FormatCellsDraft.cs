@@ -15,7 +15,8 @@ namespace ExSheet;
 /// cell's. A range's outer edges show as they are drawn, a neighbour's line where the cell records
 /// none (the fourteenth run, case 13); an edge inside a range shows the cells' own sides. The Border
 /// tab's line opens as the line shown where the Selection is one cell and exactly one of its edges
-/// shows a line (the seventeenth Windows run, h10), and as Thin and Automatic everywhere else (see
+/// shows a line, and as Thin and Automatic everywhere else. Excel was seen to open on the line shown
+/// only for a top edge and a bottom edge, and the rest of that rule is a reading (see
 /// <see cref="LineStyle"/>).</para>
 ///
 /// <para><see cref="Change"/> names only the parts the user touched, so OK leaves every other part
@@ -63,14 +64,16 @@ public sealed class FormatCellsDraft
     }
 
     /// <summary>
-    /// The line the Border tab opens on (ADR-0071). Over one cell where exactly one edge shows a line,
-    /// that line, so a single press of that edge's button takes it away. Excel opened on A1's thick
-    /// bottom over A2 and over A1, in black where the line was black (the fourteenth run, case 13) and
-    /// Automatic where it was Automatic (the seventeenth Windows run, h10), and on Thin where the line
-    /// shown was thin (h10). Everywhere else Thin and Automatic: over a cell with no line (the eleventh
-    /// run, case 22), over one with a thin top and a thick right, and over a range (the readings of
-    /// 2026-10-12, R8). What opens where a cell's one line is on its left or right, where two of its
-    /// edges show lines none of them thin, and over a range whose edges show one line, is a reading.
+    /// The line the Border tab opens on (ADR-0071): over one cell where exactly one edge shows a line,
+    /// that line, so a single press of that edge's button takes it away; everywhere else Thin and
+    /// Automatic. Excel was seen to open on the line shown only for a top edge and a bottom edge, in
+    /// Automatic or black: on Thick over A2 under A1's thick Automatic bottom, and on Thin where that
+    /// line was thin (the seventeenth Windows run, h10); on Thick and black over A2 and over A1 where
+    /// A1's bottom was thick and black (the fourteenth run, case 13). It was seen to open on Thin and
+    /// Automatic over B2 with a thin top and a thick right of its own, over A2:B3 with a different line
+    /// on four of its cells' sides, and over D5 with no line (the readings of 2026-10-12, R8). The rest
+    /// is a reading: a line on a left or right edge, in a style other than Thick or Thin or a colour
+    /// other than Automatic or black, and every other Selection.
     /// </summary>
     private static BorderLine OpeningPen(bool oneCell, BorderLine?[] edges)
     {
@@ -324,9 +327,11 @@ public sealed class FormatCellsDraft
 
     /// <summary>
     /// The line style an edge or a preset sets. Format Cells opens on the line shown where the
-    /// Selection is one cell and exactly one of its edges shows a line, as Excel's did (the
-    /// seventeenth Windows run, h10), so that one press of that edge's button takes it away; and on
-    /// Thin everywhere else.
+    /// Selection is one cell and exactly one of its edges shows a line, so that one press of that
+    /// edge's button takes it away, and on Thin everywhere else. Excel was seen to open on the line
+    /// shown for a top edge (the seventeenth Windows run, h10; the fourteenth run, case 13) and a
+    /// bottom edge (case 13), and on Thin over the three Selections the readings of 2026-10-12 tried
+    /// (R8); the rest of the rule is a reading.
     /// </summary>
     public BorderLineStyle LineStyle { get; private set; }
 

@@ -441,7 +441,7 @@ public class CultureTests
     private static readonly NumberFormat[] DateAndTimeBuiltIns =
         [NumberFormat.ShortDate, NumberFormat.ShortDateTime, NumberFormat.Parse("d-mmm"), NumberFormat.Parse("d-mmm-yy"), NumberFormat.Parse("h:mm")];
 
-    [Theory] // ADR-0071, ticket 103 (observed in Excel, the seventeenth Windows run, h9): codes typed into Custom show as Excel showed them on 12 October 2026 13:30 (46307.5625) and on 13:30 alone (0.5625) — under en-GB d-mmm-yy, m/d/yyyy and h:mm, and under ja-JP mmmmm, the first character of 10月 and of 1月. d-mmm-yy and m/d/yyyy are observed as codes of their own: 0-Jan-00 and 1/0/1900, where built-ins 15 and 14, which en-GB spells dd-mmm-yy and dd/mm/yyyy, show 00-Jan-00 and 00/01/1900. h:mm's 13:30 does not settle it, since built-in 20 (hh:mm) shows the same: there h9 leaves it ExSheet's reading, and R7 below observes it
+    [Theory] // ADR-0071, ticket 103 (observed in Excel, the seventeenth Windows run, h9): codes typed into Custom show as Excel showed them on 12 October 2026 13:30 (46307.5625) and on 13:30 alone (0.5625) — under en-GB d-mmm-yy, m/d/yyyy and h:mm, and under ja-JP mmmmm, the first character of 10月 and of 1月. d-mmm-yy and m/d/yyyy are observed as codes of their own: 0-Jan-00 and 1/0/1900, where built-ins 15 and 14, spelled dd-mmm-yy and dd/mm/yyyy under en-GB, would show 00-Jan-00 and 00/01/1900 by those codes (no run showed them there). h:mm's 13:30 does not settle it, since built-in 20 (hh:mm) would show the same: there h9 leaves it ExSheet's reading, and R7 below observes it
     [InlineData("en-GB", "d-mmm-yy", 46307.5625, "12-Oct-26")]
     [InlineData("en-GB", "d-mmm-yy", 0.5625, "0-Jan-00")]
     [InlineData("en-GB", "m/d/yyyy", 46307.5625, "10/12/2026")]
