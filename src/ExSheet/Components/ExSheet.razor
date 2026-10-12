@@ -65,6 +65,9 @@
 <div class="ex-sheet-notice" role="status">@if (_noticeSaidByGrid) {<span aria-hidden="true">@_notice</span>} else {<text>@_notice</text>}</div>
 @* The browser's answer to a render, which a focusout waits for (ADR-0058). Renders nothing. *@
 @BrowserTurnMarkup
+@* ExSheet's stylesheet notice (ADR-0123, ERR-11), shown only by another version's stylesheet: last,
+   so the toolbar and the grid stand where they always have. *@
+<div data-ex-notice="stylesheet" data-ex-stylesheet="@NoticeStylesheet" data-ex-stamp="@NoticeStamp" style="display: none">@StylesheetNoticeWords</div>
 </div>
 
 @code {

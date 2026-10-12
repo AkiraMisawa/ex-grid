@@ -584,6 +584,14 @@ public interface IGridChrome
     /// own text. A fragment is rendered inside the core's <c>ex-summary</c> box.</summary>
     RenderFragment? SelectionSummary(SelectionSummaryContext context) => null;
 
+    /// <summary>The stylesheets this Chrome brings (ADR-0123): a Wrapper's own, each as its shipped
+    /// stylesheet's notice rules name it, with the stamp it was built with. The grid's root renders a
+    /// notice for each beside its own, which only another version's stylesheet shows, so a page
+    /// holding another version of the Wrapper's stylesheet says so, with no script. Empty for the
+    /// built-in Chrome, which brings none. Read on every render of the root: answer the same list
+    /// each time.</summary>
+    IReadOnlyList<ChromeStylesheet> Stylesheets => [];
+
     /// <summary>
     /// The Chrome's words for something the core says rather than shows: a refusal, by its
     /// <see cref="RefusalLabelIds"/> id (ADR-0203), which the root's live region announces once, as

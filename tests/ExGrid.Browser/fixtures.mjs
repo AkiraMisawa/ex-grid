@@ -186,8 +186,14 @@ function listen(page, sinkOf) {
 
 // The console verdict every test ends with, and its entry in console.json. Soft: every check
 // is reported, and the record is written whatever the others found.
-function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedWarnings }, testInfo) {
-    const errors = messages.filter((m) => m.type === 'error');
+function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedWarnings, expectedErrors = [] }, testInfo) {
+    // A console error the browser writes by design, provoked on purpose by the test that pins it
+    // (a script the import map's integrity refuses, ADR-0123), is named by expectedErrors: not a
+    // CON-1 failure, and asserted to appear. Any other error still fails the test.
+    const allErrors = messages.filter((m) => m.type === 'error');
+    const errors = allErrors.filter((m) => !expectedErrors.some((pattern) => pattern.test(m.text)));
+    // What a test names must appear, unless the test was skipped before it could be provoked.
+    const ran = testInfo.status !== 'skipped';
     const warnings = messages.filter((m) => m.type === 'warning');
     // CON-6. The DemoHost is Blazor WebAssembly: its host runs in the page, and the host's
     // log — the renderer's "Unhandled exception rendering component" among it — is written
@@ -202,8 +208,11 @@ function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedW
     const expected = (line) => expectedHostLog.some((pattern) => pattern.test(line));
     const unhandled = [...messages.map((m) => m.text), ...pageErrors, ...hostLog.filter((l) => !expected(l))]
         .filter((text) => /unhandled exception|^\S+ (Error|Critical) /i.test(text));
-    for (const pattern of expectedHostLog) {
+    for (const pattern of ran ? expectedHostLog : []) {
         expect.soft(hostLog.some((line) => pattern.test(line)), `the host log names ${pattern}`).toBe(true);
+    }
+    for (const pattern of ran ? expectedErrors : []) {
+        expect.soft(allErrors.some((m) => pattern.test(m.text)), `the browser wrote the error ${pattern}`).toBe(true);
     }
 
     // console.json keeps each test's errors and warnings under its title, so a rerun
@@ -214,10 +223,13 @@ function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedW
     const title = testInfo.titlePath.slice(1).join(' › ');
     update('console.json', (all) => {
         const project = (all[testInfo.project.name] ??= {});
+        // An error the test named is asserted, not a finding: it stays out of `errors`, whose
+        // emptiness across the file is CON-1's pass, and alone it writes no entry.
         if (errors.length || warnings.length || pageErrors.length) {
             project[title] = {
                 at: new Date().toISOString(),
                 errors: errors.map(({ text, url }) => ({ text, url })),
+                expectedErrors: allErrors.filter((m) => !errors.includes(m)).map(({ text, url }) => ({ text, url })),
                 warnings: warnings.map(({ text, url }) => ({ text, url, exgrid: isExGrids({ text, url }) })),
                 pageErrors,
             };
@@ -229,7 +241,7 @@ function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedW
     expect.soft(errors.map((m) => m.text), 'zero console errors (CON-1)').toEqual([]);
     expect.soft(pageErrors, 'zero uncaught page errors (CON-2)').toEqual([]);
     const named = (text) => expectedWarnings.some((pattern) => pattern.test(text));
-    for (const pattern of expectedWarnings) {
+    for (const pattern of ran ? expectedWarnings : []) {
         expect.soft([...warnings.map((m) => m.text), ...hostLog].some((line) => pattern.test(line)),
             `the grid warned ${pattern}`).toBe(true);
     }
@@ -615,6 +627,9 @@ export const test = base.extend({
     // the same way: not a CON-3 failure, and asserted to appear, in the console on
     // WebAssembly or in the host's log on the Server host.
     expectedWarnings: [[], { option: true }],
+    // A console error the browser writes by design, provoked on purpose by the test that pins it,
+    // and named here the same way: not a CON-1 failure, and asserted to appear.
+    expectedErrors: [[], { option: true }],
     // A change a test makes outside its own page without alterPage, provoked on purpose by the
     // harness's own tests (harness.spec.mjs) and named here: asserted to be reported, and not
     // a failure (ADR-0056).
@@ -644,8 +659,8 @@ export const test = base.extend({
         await use(context);
         await context.clearPermissions().catch(() => { });
     },
-    page: async ({ app, context, viewport, freshDocument, expectedHostLog, expectedWarnings, expectedLeaks }, use, testInfo) => {
-        const options = { expectedHostLog, expectedWarnings, expectedLeaks };
+    page: async ({ app, context, viewport, freshDocument, expectedHostLog, expectedWarnings, expectedErrors, expectedLeaks }, use, testInfo) => {
+        const options = { expectedHostLog, expectedWarnings, expectedErrors, expectedLeaks };
         if (viewport === null || freshDocument) {
             await ownPage(app, await context.newPage(), use, options, testInfo);
         } else {

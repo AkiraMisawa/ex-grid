@@ -48,6 +48,7 @@ public sealed class MudSheetChrome : ISheetChrome
             ArgumentNullException.ThrowIfNull(value);
             _grid = value;
             _worded = null;
+            _stylesheets = null;
         }
     }
 
@@ -99,6 +100,15 @@ public sealed class MudSheetChrome : ISheetChrome
 
     /// <summary>The Selection Summary (ADR-0130), as the Grid Chrome draws it.</summary>
     public RenderFragment? SelectionSummary(SelectionSummaryContext context) => GridSeams.SelectionSummary(context);
+
+    /// <summary>The stylesheets the Sheet's grid is dressed with (ADR-0123): ExSheet.MudBlazor's own,
+    /// <c>mud-ex-sheet.css</c>, and <see cref="Grid"/>'s, <c>mud-ex-grid.css</c>, each with the stamp
+    /// its package ships. The Sheet's grid renders a notice for each beside its own, which only
+    /// another version's stylesheet shows.</summary>
+    public IReadOnlyList<ChromeStylesheet> Stylesheets => _stylesheets ??=
+        [new ChromeStylesheet(ShippedAssets.StylesheetName, ShippedAssets.StylesheetStamp), .. GridSeams.Stylesheets];
+
+    private IReadOnlyList<ChromeStylesheet>? _stylesheets;
 
     /// <summary>The words a refusal is said in (ADR-0203): <see cref="Grid"/>'s, with ExSheet's own
     /// words beneath its <see cref="MudGridChrome.Label"/>, so a refusal on a Sheet is said once, in
