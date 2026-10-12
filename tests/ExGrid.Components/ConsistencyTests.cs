@@ -11,12 +11,15 @@ namespace ExGrid.Components.Tests;
 
 /// <summary>
 /// ST-1: after any sequence of operations the invariants hold. A scripted randomised
-/// sequence — clicks, drags, every claimed key, scrolls, sorts, filters, geometry
-/// changes — asserting after each step that every selection rectangle lies inside the
-/// extent, the Focus and the Extent lie inside the range holding the Focus (ADR-0052),
-/// the displayed cell count is the sum of rectangle areas, the painted rows are a
-/// contiguous slice, and nothing throws. The seed is in the test name's data so
-/// a failure replays exactly.
+/// sequence — clicks, drags with the button held, every claimed key, scrolls, sorts, filters,
+/// row-height changes, Viewport resizes and density steps — asserting after each step that
+/// every selection rectangle lies inside the extent, the Focus and the Extent lie inside the
+/// range holding the Focus (ADR-0052), the cell count is the sum of rectangle areas and so is
+/// the count the status line displays, every scroll offset the grid writes lies within
+/// [0, max], the painted rows are exactly <c>ViewportGeometry.SliceAt</c> of where the browser
+/// stands, and nothing throws. The browser is modelled: it takes every offset the grid writes,
+/// clamps any position the content no longer reaches, and reports each move with a scroll
+/// event. The seed is in the test name's data so a failure replays exactly.
 /// </summary>
 public class ConsistencyTests : GridTestContext
 {
@@ -54,13 +57,18 @@ public class ConsistencyTests : GridTestContext
         var random = new Random(seed);
         var source = GridSource.From(TestRows.Many(totalRows));
         GridSelection selection = GridSelection.Empty;
+        // The layout the grid is handed, which the browser model below reads as the grid does.
+        // Row and header heights are declared, so a Density preset moves neither (ADR-0028).
+        var layout = new Layout(RowHeightPx: 20, ViewportHeightPx: 140, ViewportWidthPx: 350);
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Source, source)
             .Add(g => g.Columns, Columns())
-            .Add(g => g.RowHeight, 20d)
-            .Add(g => g.ViewportHeight, 140)
-            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.RowHeight, layout.RowHeightPx)
+            .Add(g => g.HeaderHeight, HeaderHeightPx)
+            .Add(g => g.ViewportHeight, layout.ViewportHeightPx)
+            .Add(g => g.ViewportWidth, layout.ViewportWidthPx)
             .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        var browser = new Browser(this, cut);
 
         string[] keys =
         [
@@ -68,11 +76,10 @@ public class ConsistencyTests : GridTestContext
             "PageUp", "PageDown", "Enter", "Tab", " ", "a", "Escape", "F2", "5",
             ".", "Backspace",
         ];
-        var maxScrollTop = (totalRows * 20d) - (140 - 20);
 
         for (var step = 0; step < 500; step++)
         {
-            var operation = random.Next(8);
+            var operation = random.Next(10);
             switch (operation)
             {
                 case 0: // click somewhere on screen
@@ -83,11 +90,22 @@ public class ConsistencyTests : GridTestContext
                         OffsetX = random.Next(0, 400),
                         OffsetY = random.Next(0, 120),
                     });
-                    break;
-                case 1: // drag a step (only lands while a mousedown armed it)
-                    if (cut.Find(".ex-viewport").GetAttribute("onmousemove") is not null)
-                        break;
                     await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs());
+                    break;
+                case 1: // a drag: press, move with the button held, and usually release
+                    await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs
+                    {
+                        Button = 0,
+                        Buttons = 1,
+                        OffsetX = random.Next(0, 400),
+                        OffsetY = random.Next(0, 120),
+                    });
+                    // The move listener stands only while a press armed a drag.
+                    var (toX, toY) = (random.Next(0, 400), random.Next(0, 120));
+                    if (cut.Find(".ex-viewport").GetAttribute("onmousemove") is not null)
+                        await cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = toX, OffsetY = toY });
+                    if (random.Next(4) != 0)
+                        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs());
                     break;
                 case 2: // a claimed key, sometimes chorded
                     await cut.InvokeAsync(() => cut.Instance.OnKeyAsync(
@@ -96,10 +114,10 @@ public class ConsistencyTests : GridTestContext
                         shift: random.Next(3) == 0,
                         alt: false, meta: false, metaIsPrimary: false));
                     break;
-                case 3: // scroll to an arbitrary offset, then let the settle timer run
-                    await ScrollToAsync(cut.Find(".ex-scroller"),
-                        random.NextDouble() * maxScrollTop, random.Next(0, 100));
-                    await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+                case 3: // the user scrolls to an arbitrary offset, which the browser clamps
+                    await browser.ScrollAsync(
+                        random.NextDouble() * 1.1 * MaxScrollTop(layout, source),
+                        random.Next(0, 100), layout, source);
                     break;
                 case 4: // sort by a random column, sometimes back to none
                     source.OnSortChanged(random.Next(3) == 0
@@ -114,15 +132,110 @@ public class ConsistencyTests : GridTestContext
                             ["Active"] = new([new FilterClause(FilterOperator.Equals, random.Next(2) == 0)]),
                         }));
                     break;
-                case 6: // a geometry change
-                    cut.Render(ps => ps.Add(g => g.RowHeight, 18d + random.Next(4) * 4));
+                case 6: // a geometry change: the row height
+                    layout = layout with { RowHeightPx = 18d + random.Next(4) * 4 };
+                    cut.Render(ps => ps.Add(g => g.RowHeight, layout.RowHeightPx));
                     break;
                 case 7: // the edge-band clock ticks while whatever is armed runs
                     await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(50)));
                     break;
+                case 8: // a resize of the Viewport, on either axis
+                    layout = layout with
+                    {
+                        ViewportHeightPx = new[] { 100d, 140d, 200d }[random.Next(3)],
+                        ViewportWidthPx = new[] { 250d, 350d, 500d }[random.Next(3)],
+                    };
+                    cut.Render(ps => ps
+                        .Add(g => g.ViewportHeight, layout.ViewportHeightPx)
+                        .Add(g => g.ViewportWidth, layout.ViewportWidthPx));
+                    break;
+                case 9: // a density step
+                    cut.Render(ps => ps.Add(g => g.Density, (GridDensity)random.Next(3)));
+                    break;
             }
 
-            AssertInvariants(cut, selection, source);
+            // Whatever the grid wrote, the browser now is, and says so; and a position the
+            // content no longer reaches is clamped by the browser, which says so too.
+            await browser.FollowAsync(layout, source);
+            AssertInvariants(cut, selection, source, layout, browser,
+                $"seed {seed}, step {step}, operation {operation}, {layout}, {source.TotalCount} rows, browser at {browser.Top}");
+        }
+    }
+
+    private const double HeaderHeightPx = 20;
+    private const double ColumnsWidthPx = 4 * 100;
+
+    private sealed record Layout(double RowHeightPx, double ViewportHeightPx, double ViewportWidthPx);
+
+    private static ViewportGeometry GeometryOf(Layout layout, InMemoryGridSource<TestRow> source)
+        => new(layout.RowHeightPx, layout.ViewportHeightPx - HeaderHeightPx, source.TotalCount!.Value);
+
+    private static double MaxScrollTop(Layout layout, InMemoryGridSource<TestRow> source)
+        => GeometryOf(layout, source).MaxScrollTopPx;
+
+    private static double MaxScrollLeft(Layout layout) => Math.Max(0, ColumnsWidthPx - layout.ViewportWidthPx);
+
+    /// <summary>The scroller as a browser keeps it: where it is, every offset the grid wrote
+    /// (a re-anchoring write among them) taken as the new position, and every position clamped into what the
+    /// content reaches — each move reported back with a scroll event, as a browser does.</summary>
+    private sealed class Browser(GridTestContext context, IRenderedComponent<ExGrid<TestRow>> cut)
+    {
+        private int _writesSeen;
+        private int _anchorsSeen;
+
+        public double Top { get; private set; }
+
+        public double Left { get; private set; }
+
+        /// <summary>Every offset the grid has written since the last look, for the bounds check.</summary>
+        public List<(double Top, double Left)> NewWrites { get; } = [];
+
+        public async Task ScrollAsync(double top, double left, Layout layout, InMemoryGridSource<TestRow> source)
+        {
+            Top = Math.Clamp(top, 0, MaxScrollTop(layout, source));
+            Left = Math.Clamp(left, 0, MaxScrollLeft(layout));
+            await ReportAsync();
+        }
+
+        public async Task FollowAsync(Layout layout, InMemoryGridSource<TestRow> source)
+        {
+            NewWrites.Clear();
+            for (var round = 0; round < 4; round++)
+            {
+                var moved = false;
+                // A re-anchoring write (ADR-0028/0053) moves the top only; a reveal's write moves
+                // both and is made at the render that follows, so it lands after the anchor.
+                // Counted per kind: the interop's record groups its invocations by name.
+                var anchors = context.Js.Anchored;
+                if (anchors.Count > _anchorsSeen)
+                {
+                    NewWrites.AddRange(anchors.Skip(_anchorsSeen).Select(a => (a.Top, double.NaN)));
+                    _anchorsSeen = anchors.Count;
+                    Top = anchors[^1].Top;
+                    moved = true;
+                }
+                var writes = context.Js.ScrolledTo.Where(w => !double.IsNaN(w.Left)).ToList();
+                if (writes.Count > _writesSeen)
+                {
+                    NewWrites.AddRange(writes.Skip(_writesSeen));
+                    _writesSeen = writes.Count;
+                    (Top, Left) = writes[^1];
+                    moved = true;
+                }
+                var top = Math.Clamp(Top, 0, MaxScrollTop(layout, source));
+                var left = Math.Clamp(Left, 0, MaxScrollLeft(layout));
+                moved |= top != Top || left != Left;
+                (Top, Left) = (top, left);
+                if (!moved)
+                    return;
+                await ReportAsync();
+            }
+        }
+
+        private async Task ReportAsync()
+        {
+            await context.ScrollToAsync(cut.Find(".ex-scroller"), Top, Left);
+            await cut.InvokeAsync(() => context.Clock.Advance(TimeSpan.FromMilliseconds(200)));
         }
     }
 
@@ -639,6 +752,44 @@ public class ConsistencyTests : GridTestContext
             Assert.DoesNotContain("Row 0", cut.Markup, StringComparison.Ordinal);
         });
         Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
+    private static void AssertInvariants(
+        IRenderedComponent<ExGrid<TestRow>> cut, GridSelection selection, InMemoryGridSource<TestRow> source,
+        Layout layout, Browser browser, string where)
+    {
+        AssertInvariants(cut, selection, source);
+
+        // Both scroll offsets the grid wrote lie within [0, max], and so does where the browser is.
+        foreach (var (top, left) in browser.NewWrites)
+        {
+            Assert.True(top >= 0 && top <= MaxScrollTop(layout, source), $"wrote top {top}: {where}");
+            Assert.True(double.IsNaN(left) || (left >= 0 && left <= MaxScrollLeft(layout)), $"wrote left {left}: {where}");
+        }
+
+        // The painted rows are exactly ViewportGeometry.SliceAt of where the browser is.
+        var rows = cut.FindAll(".ex-row");
+        var expected = GeometryOf(layout, source).SliceAt(browser.Top);
+        if (expected is { } slice)
+        {
+            var firstRow = int.Parse(cut.Find(".ex-viewport").GetAttribute("data-ex-first-row")!);
+            Assert.True(slice.Count == rows.Count && slice.Start == firstRow
+                && slice.Start + 1 == int.Parse(rows[0].GetAttribute("aria-rowindex")!),
+                $"painted {rows.Count} rows from {firstRow}, SliceAt says {slice.Count} from {slice.Start}: {where}");
+        }
+        else
+        {
+            Assert.True(rows.Count == 0, $"painted {rows.Count} rows of none: {where}");
+        }
+
+        // The displayed count, wherever the grid shows one, is the sum of the areas.
+        if (cut.FindAll(".ex-status span").FirstOrDefault() is { } status
+            && status.TextContent.Contains("cells selected", StringComparison.Ordinal))
+        {
+            Assert.Equal(
+                selection.CellCount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                status.TextContent[..status.TextContent.IndexOf(' ', StringComparison.Ordinal)]);
+        }
     }
 
     private static void AssertInvariants(
