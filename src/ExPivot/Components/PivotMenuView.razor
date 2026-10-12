@@ -1,3 +1,23 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   Every product using is written with global::. The component lives in ExPivot.Components, where a
+   plain "ExPivot.Engine" could be looked up against the ExPivot component class first, and a plain
+   "ExGrid.X" against sibling types (the CS0426 trap in AGENTS.md). The Web namespace makes @on...
+   handlers compile as event handlers rather than as plain HTML attributes. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid
+@using global::ExGrid.Cells
+@using global::ExGrid.Chrome
+@using global::ExGrid.Columns
+@using global::ExGrid.Components
+@using global::ExGrid.Rows
+@using global::ExGrid.Selection
+@using global::ExPivot.Chrome
+@using global::ExPivot.Engine
+@* Not the contract (ADR-0201): ExPivot renders this as a field's menu or the Layout menu when the
+   Pivot Chrome draws none, and no Consumer places it. It is public only because Razor makes every
+   component public, is hidden from a Consumer's editor, and may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 @* The built-in menu (ADR-0061): a placed field's commands, or the Layout menu's choices, in
    ExPivot's order, each with its Enabled state. A choice among others is a menuitemradio, its mark
    shown, and a group of them stands under its heading. The first enabled command takes DOM focus

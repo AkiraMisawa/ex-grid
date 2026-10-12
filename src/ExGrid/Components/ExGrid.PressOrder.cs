@@ -39,7 +39,9 @@ public partial class ExGrid<TRow>
     /// </summary>
     /// <param name="barHoldsFocus">Whether the Formula Bar's field, or a Chrome's control inside
     /// its box, holds DOM focus as the press's turn comes.</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task BarPressAnsweredAsync(bool barHoldsFocus)
     {
         if (_disposed)
@@ -60,7 +62,9 @@ public partial class ExGrid<TRow>
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task PressAnsweredAsync()
         => _disposed
             ? Task.CompletedTask
@@ -138,7 +142,9 @@ public partial class ExGrid<TRow>
     /// <param name="rowSequence">The Row Sequence Version the Viewport was painted under
     /// (<c>data-ex-sequence</c>).</param>
     /// <param name="layout">The layout the Viewport was painted under (<c>data-ex-layout</c>).</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public void PressTakenAt(string kind, double offsetX, double offsetY, int firstRow,
         double scrollLeftPx, double scrollTopPx, int rowSequence, int layout)
     {

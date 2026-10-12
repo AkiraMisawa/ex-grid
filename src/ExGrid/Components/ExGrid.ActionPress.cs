@@ -85,7 +85,9 @@ public partial class ExGrid<TRow>
     /// <param name="row">The pressed cell's row, as its id names it, or −1.</param>
     /// <param name="column">The pressed cell's column, as its id names it, or −1.</param>
     /// <param name="action">Which of the cell's actions was pressed, or −1.</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task ActionPressTakenAt(int paint, int row = -1, int column = -1, int action = -1)
     {
         if (_disposed)

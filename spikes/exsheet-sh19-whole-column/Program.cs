@@ -172,12 +172,12 @@ internal sealed class WholeColumn(int rows)
             var formulas = RowFormulas(row, row == 0 ? null : row - 1);
             for (var i = 0; i < formulas.Length; i++)
             {
-                Put(row, 15 + i, Entry.FromFormula(formulas[i]));
+                Put(row, 15 + i, Entry.Parse(formulas[i], CultureInfo.InvariantCulture)!);
             }
         }
         for (var column = 0; column < 20; column++)
         {
-            Put(column, 21, Entry.FromFormula(Total(column)));
+            Put(column, 21, Entry.Parse(Total(column), CultureInfo.InvariantCulture)!);
         }
         return entries;
     }

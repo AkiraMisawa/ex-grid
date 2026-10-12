@@ -1,3 +1,15 @@
+@* Written in each file, not in an _Imports.razor, whose class Razor makes public (ADR-0201); and
+   with global::, as this project's root namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid
+@using global::ExGrid.Chrome
+@using global::ExGrid.Components
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudGridChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 @* The find panel under MudBlazor (ADR-0055/0030): a MudTextField, the two options as
    MudCheckBoxes and the two steps as MudButtons, inside the core's popover. The search, the
    Focus it moves and what closes the panel are the core's; this draws and calls back.

@@ -1,4 +1,10 @@
 @typeparam TRow where TRow : class
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   The Web namespace is required for @@onscroll and friends to compile as event handlers rather
+   than as plain HTML attributes: without it the markup builds and renders while quietly listening
+   to nothing. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
 @using System.Globalization
 @using System.Runtime.CompilerServices
 @using global::ExGrid.Cells
@@ -1152,7 +1158,7 @@
     /// application ships to macOS, where a scrollbar takes nothing, and to Windows, where
     /// it takes about 15px, so any constant written here is wrong for half its users.
     /// The browser reports what its scrollbars actually take and the grid subtracts it
-    /// (<see cref="ViewportBox"/>, ADR-0013/0021); this parameter keeps meaning the size
+    /// (ADR-0013/0021); this parameter keeps meaning the size
     /// of the element, which is also what the CSS is written from.
     /// </summary>
     [Parameter] public ViewportSize ViewportHeight { get; set; } = DefaultViewportHeightPx;
@@ -1487,8 +1493,8 @@
     /// <summary>
     /// The copy cap, in cells (ADR-0005). Past it the grid does not copy at all — it
     /// never copies the first N — and the refusal is strictly past: a selection of
-    /// exactly the cap still copies. The Consumer can set it higher; the default is a
-    /// safety valve, not a daily path.
+    /// exactly the cap still copies. The Consumer can set it higher; the default, 1,000,000
+    /// cells, is a safety valve, not a daily path.
     /// </summary>
     [Parameter] public long CopyCellCap { get; set; } = ClipboardRules.DefaultCellCap;
 
@@ -3769,7 +3775,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnPointerRowAsync(double x, double y)
     {
         if (_disposed || !double.IsFinite(x) || !double.IsFinite(y))
@@ -4909,7 +4917,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnPointerRestAsync(double x, double y)
     {
         // A pause in the middle of a drag-select is not a hover: the pointer is holding a
@@ -4945,7 +4955,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnPointerAwayAsync(bool bandOnly)
     {
         if (_disposed)
@@ -6044,7 +6056,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnViewportReportAsync(
         double gutterWidthPx, double gutterHeightPx, double widthPx, double heightPx)
     {
@@ -6129,7 +6143,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public ClipboardPayload BuildCopyPayload()
     {
         if (_disposed)
@@ -6178,7 +6194,9 @@
     /// </summary>
     /// <param name="withHeaders">Emit the declared headers as one row above the block,
     /// counted against the cap (ADR-0005).</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task<ClipboardPayload?> BuildCopyPayloadAsync(bool withHeaders = false)
     {
         if (_disposed)
@@ -6243,7 +6261,9 @@
     /// <param name="text">The <c>text/plain</c> flavour, or null for none.</param>
     /// <param name="html">The <c>text/html</c> flavour, or null for none.</param>
     /// <param name="paint">The render the paste was taken against (<c>data-ex-paint</c>).</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnPasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint = PaintNotTold)
     {
         await using var textReference = text;
@@ -6274,14 +6294,14 @@
     /// Intent carrying every cell (ADR-0007). The browser reaches it through
     /// <see cref="OnPasteStreamsAsync"/>, never directly.
     ///
-    /// <para>Not for Consumers: it is public because it was the interop entry point before
-    /// the paste crossed as streams, and the component tests drive it directly.</para>
+    /// <para>Internal (ADR-0201): it was the interop entry point before the paste crossed as
+    /// streams, and the component tests drive it directly.</para>
     /// </summary>
     /// <param name="text">The <c>text/plain</c> flavour, or null for none.</param>
     /// <param name="html">The <c>text/html</c> flavour, or null for none.</param>
     /// <param name="paint">The render the paste was taken against (ADR-0142); left out, the
     /// newest.</param>
-    public async Task OnPasteAsync(string? text, string? html, int paint = PaintNotTold)
+    internal async Task OnPasteAsync(string? text, string? html, int paint = PaintNotTold)
     {
         if (_disposed)
             return;
@@ -6509,7 +6529,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public bool Ping() => true;
 
     /// <summary>
@@ -6517,7 +6539,9 @@
     /// Called by the instance's own clipboard wiring, which knows it only once the write
     /// has failed — so it is a Refusal raised after the fact, with its own reason.
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnCopyWriteRejectedAsync()
     {
         NotifyCopyRefused(CopyRefusalReason.ClipboardUnavailable);
@@ -6545,7 +6569,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary,
         bool fromDescendant = false, string? editorText = null, int editorCaret = -1,
@@ -9649,7 +9675,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnDevicePixelAsync(double devicePixelRatio)
     {
         // It crosses the JS boundary, so nothing here is trusted: a NaN or a zero would put
@@ -9681,7 +9709,9 @@
     /// </summary>
     /// <param name="zone">The IANA name the browser reports.</param>
     /// <returns>A task that completes when the Consumer has been told.</returns>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnTimeZoneAsync(string zone)
     {
         // It crosses the JS boundary, so nothing here is trusted.
@@ -9719,7 +9749,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnLayoutCeilingAsync(double ceilingPx)
     {
         // It crosses the JS boundary, so nothing here is trusted: a NaN would travel into

@@ -119,14 +119,14 @@ public sealed class GridRuleset<TRow> where TRow : class
 
     /// <summary>The grid's <c>CellState</c> channel — a cheap enum, consulted every
     /// render for every cell (ADR-0034).</summary>
-    public CellState StateOf(TRow row, GridColumn<TRow> column)
+    internal CellState StateOf(TRow row, GridColumn<TRow> column)
         => _violations.TryGetValue(row, out var found) && found.ContainsKey(column.Name)
             ? CellState.Error
             : CellState.Normal;
 
     /// <summary>The grid's message channel — read for at most one cell at a time, at the
     /// moment a popover opens (ADR-0034).</summary>
-    public string? MessageOf(TRow row, GridColumn<TRow> column)
+    internal string? MessageOf(TRow row, GridColumn<TRow> column)
         => _violations.TryGetValue(row, out var found) && found.TryGetValue(column.Name, out var message)
             ? message
             : null;

@@ -1,7 +1,7 @@
 namespace ExGrid.Components;
 
 /// <summary>
-/// The inline styles a <see cref="ColumnGeometry"/> implies, each written once per geometry
+/// The inline styles the grid's column geometry implies, each written once per geometry
 /// instead of once per cell.
 ///
 /// A width is a property of the column, not of the cell, so composing
@@ -10,10 +10,15 @@ namespace ExGrid.Components;
 /// The geometry changes only when a width actually moves, so the strings can be cached
 /// alongside it and the render path allocates nothing at all.
 ///
-/// It lives in the component layer rather than in <see cref="ColumnGeometry"/> because
-/// these are CSS, not arithmetic: the pure layer answers where a column is, and this
-/// answers how that is written down for a browser.
+/// It lives in the component layer rather than in the column geometry because these are CSS,
+/// not arithmetic: the pure layer answers where a column is, and this answers how that is
+/// written down for a browser.
+///
+/// <para>Not the contract (ADR-0201): public only because <see cref="ExGridRow{TRow}"/>'s
+/// parameter names it, hidden from a Consumer's editor, and may change in any version. A
+/// Consumer neither makes nor reads one.</para>
 /// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class ColumnStyles
 {
     private readonly string[] _cells;
@@ -28,7 +33,7 @@ public sealed class ColumnStyles
     /// report, which rebuilds the geometry once at attach (ADR-0090), doubled it: /sheet
     /// arrived 1.2 s later. A string asked for again is the one written the first time, so a
     /// render that repaints the same columns allocates nothing (ADR-0027 P5).</remarks>
-    public ColumnStyles(ColumnGeometry geometry)
+    internal ColumnStyles(ColumnGeometry geometry)
     {
         ArgumentNullException.ThrowIfNull(geometry);
         Geometry = geometry;
@@ -41,7 +46,7 @@ public sealed class ColumnStyles
     /// <summary>The geometry these strings were written from. A new instance is built
     /// only when a width actually moved, so a row can compare it by reference
     /// (ADR-0003/0016).</summary>
-    public ColumnGeometry Geometry { get; }
+    internal ColumnGeometry Geometry { get; }
 
     /// <summary>The width of an ordinary cell or header cell.</summary>
     public string Cell(int columnIndex)

@@ -151,7 +151,7 @@ public sealed record GridPresentationDefaults
     /// from the 14px measurement (ADR-0028) — with the preset's own padding. The
     /// full-width class is the resolved font size itself (ADR-0016).
     /// </summary>
-    public CellTextMetrics CellMetricsAt(double fontSizePx, double cellHorizontalPaddingPx)
+    internal CellTextMetrics CellMetricsAt(double fontSizePx, double cellHorizontalPaddingPx)
     {
         if (!double.IsFinite(fontSizePx) || fontSizePx <= 0)
         {

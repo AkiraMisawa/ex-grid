@@ -290,8 +290,11 @@ public abstract class SheetEdit
     }
 
     /// <summary>
-    /// The Sheet renamed (<see cref="Sheet.Rename"/>): References qualified with the old name are
-    /// rewritten to the new one. Undoing it puts back the name and those Formulas exactly.
+    /// The Sheet renamed (ADR-0046): every Reference qualified with the old name is rewritten to the
+    /// new one, as Excel rewrites them, and a Formula whose qualifier now names or stops naming the
+    /// Sheet is recalculated. A rename is a change, so <c>RAND</c> and <c>RANDBETWEEN</c> draw again,
+    /// as Excel's do (ADR-0180); a rename to the name the Sheet already has changes nothing. Undoing
+    /// it puts back the name and those Formulas exactly.
     /// </summary>
     /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="Sheet.IsValidName"/>).</exception>
     public static SheetEdit Rename(string name)

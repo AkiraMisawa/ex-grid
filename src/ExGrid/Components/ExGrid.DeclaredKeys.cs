@@ -11,8 +11,10 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// A Consumer declaration (ADR-0050, item 14): keys the core claims from the browser and
     /// raises through <see cref="OnDeclaredKey"/>, whether or not an edit is open — ExSheet's
-    /// formatting keys, Ctrl+B and Ctrl+Shift+$ among them. Each is in
-    /// <see cref="GridKeys.Canonical"/>'s form and matched exactly: <c>Control+b</c> and, for
+    /// formatting keys, Ctrl+B and Ctrl+Shift+$ among them. Each is in the grid's canonical form
+    /// — the event's <c>key</c>, after <c>Control+</c>, <c>Meta+</c>, <c>Shift+</c> and
+    /// <c>Alt+</c> in that order for the modifiers held, Command folding into Control where it is
+    /// the Primary Modifier (ADR-0012) — and matched exactly: <c>Control+b</c> and, for
     /// CapsLock, <c>Control+B</c>; a character the layout may type with or without Shift —
     /// <c>#</c> needs none on a UK layout — in both forms. A key the core answers itself, in any
     /// state, is refused by name, as is a key not in the canonical form, which nothing would ever

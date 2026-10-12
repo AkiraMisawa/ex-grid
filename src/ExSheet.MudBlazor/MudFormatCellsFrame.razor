@@ -1,5 +1,21 @@
 @implements IDisposable
 @inject IDialogService Dialogs
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExSheet.MudBlazor, so a plain "MudBlazor" here is this
+   namespace, not MudBlazor's, and every product using is written with global:: (the name
+   collisions in AGENTS.md). HorizontalAlignment is both MudBlazor's and the engine's; here it is
+   the engine's, the one a Cell Format holds. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::MudBlazor
+@using global::MudBlazor.Utilities
+@using global::ExSheet
+@using global::ExSheet.Engine
+@using HorizontalAlignment = global::ExSheet.Engine.HorizontalAlignment
+@* Not the contract (ADR-0201): MudSheetChrome renders this for Format Cells, and no Consumer places
+   it. It is public only because Razor makes every component public, is hidden from a Consumer's
+   editor, and may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 
 @*
     Where ExSheet renders the MudBlazor Chrome's Format Cells (ADR-0071, ADR-0010's note of

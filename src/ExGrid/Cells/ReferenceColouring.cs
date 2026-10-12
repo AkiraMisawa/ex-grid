@@ -16,7 +16,7 @@ public sealed record ReferenceKeyColour(string Key, ReferenceColour Colour);
 /// who wears what. An answer whose spans do not lie inside the text, or overlap one another, is
 /// refused by name rather than coloured over the wrong characters.
 /// </summary>
-public sealed class ReferenceColouring
+internal sealed class ReferenceColouring
 {
     private ReferenceColouring(
         IReadOnlyList<EditorReference> references,
