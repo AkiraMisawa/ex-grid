@@ -92,17 +92,28 @@ internal static partial class FunctionLibrary
     /// EDATE-008, the seventeenth Windows run; EOMONTH-010 and EDATE-010, the area pass of
     /// 2026-10-12). EDATE from serial 0 keeps its day 0, which is the day before the 1st of the month
     /// it reaches: <c>EDATE(0,1)</c> is 31 January 1900, 31 (EDATE-016, the second area pass). A start
-    /// below 0, -0.5 included, or a result outside 1900 to 9999, is <c>#NUM!</c>, and a boolean typed
-    /// as either argument is <c>#VALUE!</c>, as in Excel (EOMONTH-004, EDATE-007, EOMONTH-016 and 017,
-    /// EDATE-017, EOMONTH-009, EDATE-009).
+    /// below 0, -0.5 included, or a result before 1900, is <c>#NUM!</c>, as Excel was observed to
+    /// answer under both (EOMONTH-004, 015 to 017; EDATE-007, 012, 017). So is a result after 9999,
+    /// observed under EOMONTH (EOMONTH-005) and EDATE's by generalisation. A boolean typed as EOMONTH's
+    /// months or as EDATE's start is <c>#VALUE!</c>, as Excel was observed to answer (EOMONTH-009,
+    /// EDATE-009, the seventeenth Windows run).
     /// </summary>
     /// <remarks>
-    /// Refused with <c>#VALUE!</c> until Excel is asked: EDATE from serial 0 to January 1900, to March
-    /// 1900 and to January 10000 (EDATE-018 to 020). The readings that give every observed answer
-    /// part there (<c>spikes/exsheet-date-readings/</c>): the day before 1 January 1900 is serial 0
-    /// by DATE's arithmetic, and 31 December 1899, <c>#NUM!</c>, on the real calendar; the day before
-    /// 1 March 1900 is the day that never existed, 60, or 28 February, 59; and January 10000 is past
-    /// the last year, where the month before's last day is 31 December 9999.
+    /// Refused with <c>#VALUE!</c> until Excel is asked:
+    /// <list type="bullet">
+    /// <item>EDATE from serial 0 to January 1900, to March 1900 and to January 10000 (EDATE-018 to
+    /// 020). The readings that give every observed answer part there
+    /// (<c>spikes/exsheet-date-readings/</c>): the day before 1 January 1900 is serial 0 by DATE's
+    /// arithmetic, and 31 December 1899, <c>#NUM!</c>, on the real calendar; the day before 1 March
+    /// 1900 is the day that never existed, 60, or 28 February, 59; and January 10000 is past the last
+    /// year, where the month before's last day is 31 December 9999.</item>
+    /// <item>A boolean typed as EOMONTH's start or as EDATE's months (EOMONTH-018, EDATE-023), which
+    /// no run has typed one into. Excel's reading of a boolean typed as a start date differs between
+    /// functions: DATEDIF reads it as 1 (DATEDIF-046) and YEARFRAC gives <c>#VALUE!</c>
+    /// (YEARFRAC-054), so the boolean each function was observed to refuse in one argument says
+    /// nothing of the other. Read as 1, <c>EOMONTH(TRUE,1)</c> would be 28 February 1900, 59, and
+    /// <c>EDATE(45000,TRUE)</c> 15 April 2023, 45031.</item>
+    /// </list>
     /// </remarks>
     private static Operand MonthsAway(FunctionCall call, bool endOfMonth)
     {

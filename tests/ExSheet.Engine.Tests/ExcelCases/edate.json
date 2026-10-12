@@ -74,7 +74,7 @@
     {
       "id": "EDATE-009",
       "source": "observed",
-      "description": "A boolean typed as an argument is #VALUE!",
+      "description": "A boolean typed as the start date is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(TRUE,1)"},
       "check": "ZZ1000",
@@ -196,6 +196,15 @@
       "cells": {"ZZ1000": "=EDATE(0.5,12)"},
       "check": "ZZ1000",
       "expect": {"value2": 366}
+    },
+    {
+      "id": "EDATE-023",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a boolean typed as the months, which no run has typed into EDATE (EDATE-009 typed one as the start); EOMONTH gives #VALUE! for a boolean as its months (EOMONTH-009), and read as 1, a month on from 15 March 2023 is 15 April, 45031",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(45000,TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

@@ -75,7 +75,7 @@
     {
       "id": "EOMONTH-009",
       "source": "observed",
-      "description": "A boolean typed as an argument is #VALUE!",
+      "description": "A boolean typed as the months is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(45000,TRUE)"},
       "check": "ZZ1000",
@@ -152,6 +152,15 @@
       "cells": {"ZZ1000": "=EOMONTH(-0.5,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "EOMONTH-018",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a boolean typed as the start, which no run has typed into EOMONTH (EOMONTH-009 typed one as the months); Excel reads a boolean typed as a start date as 1 under DATEDIF (DATEDIF-046) and gives #VALUE! under YEARFRAC (YEARFRAC-054), and read as 1, the end of the month after 1 January 1900 is 28 February, 59",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EOMONTH(TRUE,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }
