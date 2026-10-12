@@ -151,10 +151,11 @@ The parts of a pivot, as [the Docs Site](https://akiramisawa.github.io/ex-grid/e
 dotnet add package ExGrid --prerelease
 ```
 
-Link the stylesheet in your host page (`wwwroot/index.html`, or `App.razor` in a Blazor Web App):
+Place the stylesheet component in the head: `<ExGridStylesheet />` in `App.razor`'s `<head>` in a
+Blazor Web App, or, in a standalone WebAssembly application's `Program.cs`:
 
-```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
+```csharp
+builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
 ```
 
 ```razor

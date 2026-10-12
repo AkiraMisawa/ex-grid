@@ -45,7 +45,18 @@
                 <code>####</code>, never a shorter number. A copy carries the full-precision values, not the
                 painted ones. Money held as <code>decimal</code> is summed exactly. A layout whose report would
                 be too large to read is refused by name (<code>PivotCaps</code>), and the report on screen
-                stays.
+                stays. A copy, or a paste, the report's grid refuses is announced as ExGrid announces it, in
+                the words <a href="exgrid/clipboard#what-a-refusal-sounds-like">its Clipboard page</a> lists,
+                which <code>Label</code> replaces by the same ids; <code>PivotWords.Japanese</code> words
+                every one of them.
+            </li>
+            <li>
+                <strong>The page follows the report's Focus.</strong> The report is an ExGrid, so a move made
+                with the keys — the arrows, <kbd>Home</kbd> and <kbd>End</kbd>, <kbd>PageUp</kbd> and
+                <kbd>PageDown</kbd>, <kbd>Enter</kbd> and <kbd>Tab</kbd> — brings the cell into the window when
+                the report runs past the fold, as
+                <a href="exgrid/selection#the-page-follows-the-focus">ExGrid's page follows it</a>; a page with a
+                fixed bar sets <code>scroll-padding</code>.
             </li>
             <li>
                 <strong>Your application owns the layout.</strong> The <code>PivotLayout</code> is View State:
@@ -63,10 +74,10 @@
 
     <DocsSection Title="Installation">
         <p>
-            <code>dotnet add package ExPivot --prerelease</code>, then link <code>_content/ExGrid/ex-grid.min.css</code>
-            and <code>_content/ExPivot/ex-pivot.min.css</code> in your host page. For a MudBlazor application, add
-            <code>ExPivot.MudBlazor</code> as well, link its <code>mud-ex-pivot.css</code> and
-            <code>ExGrid.MudBlazor</code>'s <code>mud-ex-grid.css</code>, stand the pivot on a
+            <code>dotnet add package ExPivot --prerelease</code>, then place <code>&lt;ExGridStylesheet /&gt;</code>
+            and <code>&lt;ExPivotStylesheet /&gt;</code> in your head, as <a href="getting-started#link-the-stylesheets">Installation</a>
+            shows. For a MudBlazor application, add <code>ExPivot.MudBlazor</code> as well, place
+            <code>&lt;MudExGridStylesheet /&gt;</code> and <code>&lt;MudExPivotStylesheet /&gt;</code> after them, stand the pivot on a
             <code>MudExGridPaper</code> and pass <code>PivotChrome="MudPivotChrome.Default"</code>. The
             switch above each Example shows both: the behaviour is the same, only the drawing changes.
         </p>

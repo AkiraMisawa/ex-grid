@@ -72,6 +72,14 @@ public interface IPivotChrome
     /// Pivot Toolbar says that one (<see cref="PivotToolbarContext.Refusal"/>).
     /// </summary>
     RenderFragment? StaleReport(PivotStaleReportContext context) => null;
+
+    /// <summary>The stylesheets this Chrome brings (ADR-0123): a Wrapper's own, each as its shipped
+    /// stylesheet's notice rules name it, with the stamp it was built with. ExPivot's root renders a
+    /// notice for each beside its own, which only another version's stylesheet shows. The report
+    /// grid's Chrome (<see cref="GridChrome"/>) declares its own, which the grid renders. Empty for
+    /// the built-in markup, which brings none. Read on every render of the root: answer the same list
+    /// each time.</summary>
+    IReadOnlyList<ChromeStylesheet> Stylesheets => [];
 }
 
 /// <summary>

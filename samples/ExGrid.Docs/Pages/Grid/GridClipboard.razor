@@ -1,4 +1,5 @@
 @page "/exgrid/clipboard"
+@using ExGrid.Chrome
 @using ExGrid.Docs.Examples.Grid
 
 <DocsPage Product="ExGrid" Title="Clipboard"
@@ -53,9 +54,9 @@
             The everyday use of a blotter is to select rows, paste them into Excel and total them there. If a copy
             quietly kept only the first thousand rows, the total would be too small and nothing on screen would say
             so. So past <code>CopyCellCap</code> — a million cells by default — the grid copies <strong>nothing</strong>,
-            leaves the clipboard as it was, and raises <code>OnCopyRefused</code> with the reason:
-            <code>TooLarge</code>, <code>MisalignedShape</code>, <code>EmptySelection</code>, and a few more. The
-            wording is yours. A selection of exactly the cap still copies.
+            leaves the clipboard as it was, says so (below), and raises <code>OnCopyRefused</code> with the reason:
+            <code>TooLarge</code>, <code>MisalignedShape</code>, <code>EmptySelection</code>, and a few more. A
+            selection of exactly the cap still copies.
         </p>
     </DocsSection>
 
@@ -86,11 +87,51 @@
                      Files="@(["Examples/Grid/Position.cs"])">
             This grid's cap is set to 2,000 cells so the refusal is easy to see: press <kbd>Ctrl</kbd>+<kbd>A</kbd>,
             then <kbd>Ctrl</kbd>+<kbd>C</kbd>. Then select a few rows and copy again. Quantity and Price take a paste;
-            the other columns refuse it.
+            the other columns refuse it. The grid announces each refusal itself; this Example replaces the words for
+            two of them through the label function, and shows the reason beneath the grid.
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="What a refusal sounds like">
+        <p>
+            Every refused copy and every refused paste, fill or <kbd>Delete</kbd> is <strong>announced</strong> as it
+            happens, once, in the grid's own live region — politely, so a screen reader says it after what it is
+            saying — in English sentences that say what to do next where there is something to do. Nothing needs
+            wiring, and nothing is drawn: the region is visually hidden. A few of them:
+        </p>
+        <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
+            <thead><tr><th style="width: 30%">Reason</th><th>What is announced</th></tr></thead>
+            <tbody>
+                <tr><td><code>SingleCellTarget</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteSingleCellTarget)</td></tr>
+                <tr><td><code>ShapeMismatch</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteShapeMismatch)</td></tr>
+                <tr><td><code>ShapeMismatch</code>, with <code>PasteMaySpill</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteShapeMismatchMaySpill) — where a paste may spill, one cell takes the block from its top-left, so the words offer it.</td></tr>
+                <tr><td><code>TargetNotEditable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteTargetNotEditable).Replace(RefusalLabelIds.ColumnPlaceholder, "Desk") — naming the column that refused, by its header, or by its name where the header is blank, as a Mark Column's is.</td></tr>
+                <tr><td><code>TooLarge</code> (copy)</td><td>@BuiltInCommandLabels.For(RefusalLabelIds.CopyTooLarge)</td></tr>
+                <tr><td><code>ClipboardUnavailable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.CopyClipboardUnavailable)</td></tr>
+            </tbody>
+        </MudSimpleTable>
+        <p>
+            The words are the built-in Chrome's, keyed by the reason, and replaced the way its menu labels are:
+            through <code>CommandLabel</code>, which is asked with each reason's id in <code>RefusalLabelIds</code>
+            — a shape mismatch by <code>PasteShapeMismatchMaySpill</code> on a grid with <code>PasteMaySpill</code>.
+            Answer your own sentence to replace one, <code>null</code> to keep the English, and the empty string to
+            silence one — you then own saying it. Where the words hold <code>{column}</code>
+            (<code>RefusalLabelIds.ColumnPlaceholder</code>), the grid writes the refusing column's header. Under
+            ExGrid.MudBlazor the Chrome's <code>Label</code> answers the same ids (MudBlazor has no localised text
+            for these), and a Chrome of your own answers them through <code>IGridChrome.Words</code>. A copy past
+            the cap points at export, never at a smaller selection, for the reason above: if your page has no
+            export, replace those words with what it does offer.
+        </p>
+        <p>
+            <code>OnPasteRefused</code> and <code>OnCopyRefused</code> still receive the reason, whatever was said,
+            and binding them silences nothing. If you also show a refusal on the page, put it in an element that is
+            not a live region, or it is announced twice. A sentence your <code>CopyAnswer</code> refuses with is
+            announced in place of the words for <code>RefusedByConsumer</code>.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="API">
+        <ApiTable Type="typeof(ExGrid.Chrome.RefusalLabelIds)" />
         <ApiTable Type="typeof(ExGrid.Clipboard.GridPasteIntent)" />
         <ApiTable Type="typeof(ExGrid.Clipboard.PastePlan)" />
     </DocsSection>

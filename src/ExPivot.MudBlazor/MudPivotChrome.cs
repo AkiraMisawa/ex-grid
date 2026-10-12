@@ -82,6 +82,15 @@ public sealed class MudPivotChrome : IPivotChrome
     /// <c>MudAlert</c> with a Retry <c>MudButton</c> (ADR-0067).</summary>
     public RenderFragment? StaleReport(PivotStaleReportContext context) => View<MudPivotStaleReport, PivotStaleReportContext>(context);
 
+    /// <summary>The stylesheet this Chrome brings (ADR-0123): <c>mud-ex-pivot.css</c>, with the stamp
+    /// this build of ExPivot.MudBlazor ships. ExPivot's root renders its notice beside its own, which
+    /// only another version's <c>mud-ex-pivot.css</c> shows. The report grid's
+    /// <see cref="MudGridChrome"/> brings <c>mud-ex-grid.css</c>, whose notice the grid renders.</summary>
+    public IReadOnlyList<ChromeStylesheet> Stylesheets => Brought;
+
+    private static readonly IReadOnlyList<ChromeStylesheet> Brought =
+        [new ChromeStylesheet(ShippedAssets.StylesheetName, ShippedAssets.StylesheetStamp)];
+
     /// <summary>A command's icon: <see cref="Icon"/> first, then ExPivot's Material icons; null
     /// leaves the grid's own commands to the grid Wrapper's.</summary>
     internal string? IconFor(string id) => Icon?.Invoke(id) ?? MudPivotIcons.ForCommand(id);

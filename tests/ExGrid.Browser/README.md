@@ -26,7 +26,8 @@ shows a later row once the height is compressed, which only a run at 150% can se
 once the grid has painted the slice for the offset the browser holds, as the offset the grid
 wrote on the Viewport says: compressed, the rows move when the grid is told of the scroll, a
 round trip later on the Server host, and a reading taken before that is of rows that are leaving.
-It also reads pixels that only a real 150% lays out: the Border lines (DC-59), and SH-41's sweep of
+It also reads pixels that only a real 150% lays out: the Border lines (DC-59), the Selection's shade
+over them in a Pinned Column (DC-59, ADR-0206), and SH-41's sweep of
 the bold edge (VZ-19), where a number may use one Device Pixel of its cell's right padding
 (ADR-0090). `sheet-paper.spec.mjs` emulates its viewport everywhere else, and leaves the window to
 Chrome there, since an emulated viewport is painted at a scale of 1.
@@ -343,7 +344,8 @@ nobody had asked for. What that means when writing a test:
   DPR, with bars that occupy layout. Anywhere other than Windows it is skipped by name.
 - `features.spec.mjs` — the interaction surface on `/features`, with real keys and the
   real clipboard: the editor's two states (ED-2/3/4), both clipboard formats and the
-  refusals (CP-1/3/4/5/6/10/14, PST-1), the keys the grid must not take (KB-15), one
+  refusals (CP-1/3/4/5/6/10/14, PST-1), a refusal announced by the grid's live region in the
+  built-in words and again when repeated (A11Y-16, ADR-0203), the keys the grid must not take (KB-15), one
   tab stop, its Keyboard Field's on a grid that edits, with the ring drawn from the root's
   mark and no column's ▾ reached by Tab (A11Y-4, KB-12, ADR-0080), instance independence
   (DOM-4), header-click sorting
@@ -412,6 +414,14 @@ nobody had asked for. What that means when writing a test:
   grid's box and scrolls (UX-11, ADR-0040), and a grid that goes while the keys after
   Alt+↓ are still waiting for its popover leaves nothing running to throw from a later
   frame (ADR-0010, CON-2).
+- `page-follow.spec.mjs` — the page following a move (ADR-0204, KB-45) on `/cells` in a window
+  shorter than its grid, on a grid that edits and a display-only one: the arrows bringing the Focus
+  in at the window's bottom edge, a cell already in the window moving nothing, a range extended past
+  the fold followed by its far end, a resize moving nothing, and the editor opened on a cell above
+  the window brought in at the top edge. And SRV-5's scripted-focus cases, with 150 ms on the Server
+  host: a column menu's opening focus on `/features`, under either Chrome, and a Note's request on
+  `/cells?second=1`, each on its way while another grid is pressed, the other grid keeping the
+  keyboard; and the Note still taking it through `HandKeyboardToAsync` when nothing is pressed.
 - `stripes.spec.mjs` — Row Stripes on `/stripes` (ADR-0038), read as painted colours
   from a screenshot rather than as computed styles: a pinned and a scrollable cell of
   one striped row paint the same ground, and the stripe moves with its row (UX-15); a
@@ -503,6 +513,14 @@ nobody had asked for. What that means when writing a test:
   It skips itself unless `EXGRID_MEASURE=live`, and on the Server host. Timed in the page's own
   clock as `measure-pivot.spec.mjs` times `/pivot-live`'s 1,000 changes: the page's status line
   says how long `Apply` took, and the probe keeps the task that wrote it and the frame after.
+- `measure-sheet.spec.mjs` — SH-19's circuit half, recorded and never gated: completion's
+  keystroke-to-list time on `/sheet` on the Server host with 150 ms injected, as the list opens
+  (`=S`) and as it narrows (`=SU`), and the same keys with no round trip for comparison. It skips
+  itself unless `EXGRID_MEASURE=sheet`, and on WebAssembly. Timed in the page's own clock, from
+  the keydown's `timeStamp` to the frame after the DOM change that shows the list for what was
+  typed. Twelve runs of each key at each round trip; `EXGRID_MEASURE_RUNS=<n>` sets another count,
+  which changes what is recorded. SH-19's recalculation half is CoreCLR's:
+  `tests/ExSheet.Engine.Tests`' `Measurements`.
 - `mud.spec.mjs` — the Wrapper contract with a real Wrapper, `ExGrid.MudBlazor` on
   `/mud` (ADR-0030): painted geometry equals declared under the Wrapper's stylesheet
   and Roboto (UX-3), nothing under the Viewport animates (UX-6), the Focus outline
@@ -544,8 +562,9 @@ nobody had asked for. What that means when writing a test:
   banner; a change elsewhere raises the banner, keeps the old values shown and disables
   the actions until reloaded; a deletion says so; an approval pressed while the news of a
   change is held back is refused by the store's version check; a note records the
-  version it was written against. On the Server host a second browser context approves
-  and the first shows the banner.
+  version it was written against. The page says whom the store is shared with, each host its own
+  sentence (RI-22). On the Server host a second browser context approves and the first shows the
+  banner.
 
 - `sheet.spec.mjs` — ExSheet on `/sheet` (SH-18, ticket 18 of docs/specs/exsheet): Entries
   and Formulas typed and recalculated, F2 opening the Entry; Ctrl+arrow stopping at each
@@ -602,6 +621,18 @@ nobody had asked for. What that means when writing a test:
   left lying under the Row Headings' edge (the twelfth run's case 14); and the lines still on the
   device pixels with the Sheet moved a third of a pixel across and down. The case pages pin no
   column, as the run's workbook did not.
+- `part-c.spec.mjs` — what Part C of the eleventh Windows run left (ADR-0071, "What was decided after
+  Part C"; ADR-0090; ADR-0050 item 14; ADR-0016) on `/sheet?case=…`, read in device pixels: the
+  Selection on the Paper (SH-54), Excel's outline and shade under both Chromes; and, with `?pin=`
+  putting B2:C3 wholly in the Pinned Columns and across their boundary, the shade still multiplying
+  there (DC-59, ADR-0206) — a black line inside it black, the shade `#C7C7C7` under the built-in
+  Chrome and the primary mixed into white under `ExSheet.MudBlazor`, a Consumer's coloured
+  `--ex-selection-fill` darkening a pinned Fill and leaving a pinned thick line black, column A's
+  shade staying on it while the Sheet scrolls down and across, no tint under forced colors, the
+  same pixels in the dark scheme; and the sub-pixel gate, five of the thirteen lines' Device Pixels kept
+  with a pinned tint on screen and the page a third of a pixel across and down. Then the gridlines
+  and column edges on Device Pixels (VZ-17), the Row Headings' edge, `####` filling its cell, and
+  Ctrl+Shift+= and Ctrl+- (SH-53). The tests named DC-59 run at 150% too, in `chrome-150`.
 - `sheet-paper.spec.mjs` — the Paper and the Ink (ADR-0071, SH-39, SH-40, DC-58; ticket 48) on
   `/sheet?case=paper`, under the built-in Chrome and `ExSheet.MudBlazor`'s, with `?scheme=light` and
   `?scheme=dark`: the Paper white and the Ink black in both schemes; a Font colour, a Number
@@ -675,8 +706,8 @@ nobody had asked for. What that means when writing a test:
   with its stylesheet): a burst of typing with 150 ms on the Server host,
   sampled every animation frame in the page, never showing transparent field text over a layer
   that differs, nor a highlight over characters other than those the core named for it, nor one
-  over a hidden layer, and the colours back once it pauses; on WebAssembly the colours following
-  each keystroke, the layer's text one run and three References in three colours over it, read off
+  over a hidden layer, and the colours back once it pauses; on both hosts the colours following
+  each keystroke typed one at a time (SRV-2), the layer's text one run and three References in three colours over it, read off
   the highlights the listener registered (ADR-0057, note of 2026-10-01); only the surface the edit is in coloured, the
   other plain, as in Excel: an edit opened by F2 or by a press into the Formula Bar coloured there
   before anything is typed, and the colours following a press from the cell into the bar and back;
@@ -901,6 +932,27 @@ element carries it; and "the grid is interactive" is `expectTabStopTaken`. A gri
 asserted directly where the root is the point: a display-only grid's tab stop (A11Y-17), a
 Prerendered root's attributes (A11Y-20).
 
+- `shipped-files.spec.mjs` — each package asks for the files it was built with (ADR-0123; ERR-9 to
+  ERR-11), on the DemoHost under both hosts, each test on a document of its own: the address the grid's
+  script and the stylesheets are asked for at — fingerprinted on the Server host, the plain path with
+  `?v=` on the WebAssembly one — and the stylesheets still in the head on a page with a `HeadContent` of
+  its own; another version's script, and one older than the stamp, served in place of the grid's and
+  refused before anything attaches (its `attach` counted), said in place of the rows and once in the
+  live region; and the six packages' stylesheet notices — the three products' in their roots, and each
+  MudBlazor Wrapper's where the stylesheet its Chrome brings is rendered, on `/mud`,
+  `/sheet?chrome=mud` and `/pivot?chrome=mud` — hidden by their own stylesheet, shown by another
+  version's, and ExGrid's not shown while its stylesheet has not arrived (the WebAssembly host only: a
+  Blazor Web App's stylesheet is in the head the server sends).
+- `freshness.spec.mjs` — ERR-9's deploy (ADR-0123): `freshness-app/`, a standalone application of one
+  grid, published twice from two copies of `src/ExGrid` whose shipped files are two versions', each
+  copy's `ShippedAssets.g.cs` written as `tools/assets/minify.mjs` would. The first is served as GitHub
+  Pages serves a site (`Cache-Control: max-age=600`, an ETag), loaded, replaced in place by the second,
+  and the page reloaded: the second assembly runs the second script and paints with the second
+  stylesheet, each asked for at its new address, while the framework's unchanged script stays in the
+  cache. Nothing is built in the checkout, so a running DemoHost is never rebuilt under itself; the two
+  publishes take under a minute. It drives a host of its own, so it runs beside the WebAssembly
+  host only.
+
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
 first navigation and fails a test on a console `error` or an uncaught page error
 (CON-1/2), on a warning from ExGrid's own code (CON-3), and on an unhandled exception at
@@ -920,17 +972,20 @@ belong to no trend — do not file them.
 
 ## What Chrome owes this suite
 
-**Whatever renders a refusal has to be a live region.** The grid raises a refusal as an
-enum and holds no sentence for it, so it cannot announce this one — the announcement is
-Chrome's, and a refusal rendered into a plain element is silent to a reader who cannot
-see it while ADR-0035 promises the write is "always reported" (A11Y-16). The same goes
-for a discarded edit, which nobody even provoked (ED-21).
+**A refused copy or write is announced once, by the grid's own live region.** The grid
+raises a refusal as an enum and holds no sentence for it; the built-in Chrome words every
+reason, a substituted Chrome through `IGridChrome.Words`, and the root's live region says
+the words as the refusal happens (ADR-0203, A11Y-16). A page that also renders a refusal
+renders it into a plain element, as `/features` shows the reason in `#paste-refused-status`:
+a second live region would say it twice. A discarded edit, which nobody even provoked, is
+still the Chrome's to word, into a live region of its own (ED-21).
 
 Two traps live in that, and the DemoHost has hit both:
 
 - A live region announces on **mutation**. Writing the same sentence twice says nothing
   the second time — and the second refusal is the one the user needs, having just tried
-  again. The reference Chrome appends an occurrence count so the repeat is a change.
+  again. The grid empties its region for one render and puts the sentence back; a Chrome
+  that renders one of its own appends an occurrence count so the repeat is a change.
 - The confirmations beside it (`#edit-status`, `#paste-status`) are deliberately **not**
   live regions. They report what did happen, and announcing every successful edit would
   bury the one message that matters.

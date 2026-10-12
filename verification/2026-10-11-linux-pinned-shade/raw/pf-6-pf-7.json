@@ -1,0 +1,794 @@
+{
+ "builds": {
+  "before": "0186cc98 (main)",
+  "after": "claude/pinned-shade as committed with this record"
+ },
+ "browser": "Playwright bundled Chromium 141.0.7390.37, headed under xvfb, the chrome project",
+ "command": "observational.spec.mjs --grep \"PF-6|PF-7\", EXGRID_HOSTS naming each Release publish",
+ "runs": [
+  {
+   "host": "wasm",
+   "build": "before",
+   "round": 1,
+   "startedAt": "2026-10-12T02:54:12Z",
+   "loadAverage": [
+    2.08,
+    2.17,
+    2.61
+   ],
+   "PF-6": {
+    "on": {
+     "dom": {
+      "elements": 248,
+      "cells": 210,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 22.81,
+      "min": 17.32,
+      "p95": 34.28,
+      "max": 34.28
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.6,
+       "p95": 50,
+       "max": 133.3
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 66.5,
+       "max": 150
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.5,
+      "p95": 16.8,
+      "max": 49.9
+     }
+    },
+    "off": {
+     "dom": {
+      "elements": 2228,
+      "cells": 2100,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 76.76,
+      "min": 66.19,
+      "p95": 91.38,
+      "max": 91.38
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 33.3,
+       "min": 16.6,
+       "p95": 50.1,
+       "max": 83.3
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 33.4,
+       "max": 50
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.6,
+      "p95": 16.7,
+      "max": 16.8
+     }
+    }
+   },
+   "PF-7": {
+    "rectangle": "10 rows \u00d7 7 columns, edge moved \u00b15 rows",
+    "steps": 40,
+    "stepCostMs": {
+     "count": 40,
+     "median": 7.67,
+     "min": 4.69,
+     "p95": 21.04,
+     "max": 22.06
+    }
+   }
+  },
+  {
+   "host": "wasm",
+   "build": "after",
+   "round": 1,
+   "startedAt": "2026-10-12T03:14:40Z",
+   "loadAverage": [
+    3.42,
+    2.55,
+    3.19
+   ],
+   "PF-6": {
+    "on": {
+     "dom": {
+      "elements": 248,
+      "cells": 210,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 24.01,
+      "min": 17.32,
+      "p95": 39.02,
+      "max": 39.02
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.6,
+       "p95": 16.8,
+       "max": 33.4
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.8,
+       "max": 33.4
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.6,
+      "p95": 16.7,
+      "max": 16.8
+     }
+    },
+    "off": {
+     "dom": {
+      "elements": 2228,
+      "cells": 2100,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 77.97,
+      "min": 63.7,
+      "p95": 90.93,
+      "max": 90.93
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 33.4,
+       "max": 50
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 0,
+       "p95": 16.8,
+       "max": 33.4
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.6,
+      "p95": 16.8,
+      "max": 16.8
+     }
+    }
+   },
+   "PF-7": {
+    "rectangle": "10 rows \u00d7 7 columns, edge moved \u00b15 rows",
+    "steps": 40,
+    "stepCostMs": {
+     "count": 40,
+     "median": 7.78,
+     "min": 4.75,
+     "p95": 20.14,
+     "max": 25.7
+    }
+   }
+  },
+  {
+   "host": "wasm",
+   "build": "before",
+   "round": 2,
+   "startedAt": "2026-10-12T03:17:35Z",
+   "loadAverage": [
+    1.97,
+    2.33,
+    3.0
+   ],
+   "PF-6": {
+    "on": {
+     "dom": {
+      "elements": 248,
+      "cells": 210,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 30.6,
+      "min": 20.63,
+      "p95": 44.24,
+      "max": 44.24
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.6,
+       "p95": 16.7,
+       "max": 33.4
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.6,
+       "p95": 33.4,
+       "max": 83.3
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.5,
+      "p95": 16.8,
+      "max": 33.3
+     }
+    },
+    "off": {
+     "dom": {
+      "elements": 2228,
+      "cells": 2100,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 74.07,
+      "min": 68.68,
+      "p95": 94.24,
+      "max": 94.24
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 33.3,
+       "min": 16.59,
+       "p95": 50.1,
+       "max": 100
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.6,
+       "p95": 33.4,
+       "max": 66.6
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.6,
+      "p95": 16.7,
+      "max": 33.4
+     }
+    }
+   },
+   "PF-7": {
+    "rectangle": "10 rows \u00d7 7 columns, edge moved \u00b15 rows",
+    "steps": 40,
+    "stepCostMs": {
+     "count": 40,
+     "median": 7.87,
+     "min": 4.45,
+     "p95": 17.22,
+     "max": 21.57
+    }
+   }
+  },
+  {
+   "host": "wasm",
+   "build": "after",
+   "round": 2,
+   "startedAt": "2026-10-12T03:18:15Z",
+   "loadAverage": [
+    6.32,
+    3.3,
+    3.3
+   ],
+   "PF-6": {
+    "on": {
+     "dom": {
+      "elements": 248,
+      "cells": 210,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 24.76,
+      "min": 17.96,
+      "p95": 40.53,
+      "max": 40.53
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.7,
+       "max": 33.3
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.8,
+       "max": 33.4
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.6,
+      "p95": 16.8,
+      "max": 16.8
+     }
+    },
+    "off": {
+     "dom": {
+      "elements": 2228,
+      "cells": 2100,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 72.33,
+      "min": 65.54,
+      "p95": 99.15,
+      "max": 99.15
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.59,
+       "p95": 33.4,
+       "max": 33.4
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.7,
+       "max": 16.8
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.5,
+      "p95": 16.8,
+      "max": 16.8
+     }
+    }
+   },
+   "PF-7": {
+    "rectangle": "10 rows \u00d7 7 columns, edge moved \u00b15 rows",
+    "steps": 40,
+    "stepCostMs": {
+     "count": 40,
+     "median": 6.97,
+     "min": 4.62,
+     "p95": 22.67,
+     "max": 22.76
+    }
+   }
+  },
+  {
+   "host": "server",
+   "build": "before",
+   "round": 1,
+   "startedAt": "2026-10-12T03:23:28Z",
+   "loadAverage": [
+    12.49,
+    7.84,
+    5.12
+   ],
+   "PF-6": {
+    "on": {
+     "dom": {
+      "elements": 248,
+      "cells": 210,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 7.18,
+      "min": 6.4,
+      "p95": 9.64,
+      "max": 9.64
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 33.3,
+       "max": 50
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.8,
+       "max": 33.4
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.6,
+      "p95": 16.8,
+      "max": 33.3
+     }
+    },
+    "off": {
+     "dom": {
+      "elements": 2228,
+      "cells": 2100,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 52.79,
+      "min": 0.02,
+      "p95": 65.87,
+      "max": 65.87
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 33.3,
+       "min": 16.5,
+       "p95": 83.3,
+       "max": 200
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 50,
+       "max": 83.4
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.6,
+      "p95": 16.8,
+      "max": 16.8
+     }
+    }
+   },
+   "PF-7": {
+    "rectangle": "10 rows \u00d7 7 columns, edge moved \u00b15 rows",
+    "steps": 40,
+    "stepCostMs": {
+     "count": 40,
+     "median": 1.19,
+     "min": 0.97,
+     "p95": 2.43,
+     "max": 3.88
+    }
+   }
+  },
+  {
+   "host": "server",
+   "build": "after",
+   "round": 1,
+   "startedAt": "2026-10-12T03:24:09Z",
+   "loadAverage": [
+    19.96,
+    10.31,
+    6.07
+   ],
+   "PF-6": {
+    "on": {
+     "dom": {
+      "elements": 248,
+      "cells": 210,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 6.97,
+      "min": 0.01,
+      "p95": 8.92,
+      "max": 8.92
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 33.4,
+       "max": 83.4
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.6,
+       "p95": 33.3,
+       "max": 83.4
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.5,
+      "p95": 16.8,
+      "max": 33.3
+     }
+    },
+    "off": {
+     "dom": {
+      "elements": 2228,
+      "cells": 2100,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 58.72,
+      "min": 43.58,
+      "p95": 68.82,
+      "max": 68.82
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.6,
+       "p95": 50,
+       "max": 50.1
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 0,
+       "p95": 33.4,
+       "max": 49.9
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.6,
+      "p95": 16.7,
+      "max": 16.7
+     }
+    }
+   },
+   "PF-7": {
+    "rectangle": "10 rows \u00d7 7 columns, edge moved \u00b15 rows",
+    "steps": 40,
+    "stepCostMs": {
+     "count": 40,
+     "median": 1.27,
+     "min": 1,
+     "p95": 3.57,
+     "max": 3.94
+    }
+   }
+  },
+  {
+   "host": "server",
+   "build": "before",
+   "round": 2,
+   "startedAt": "2026-10-12T03:30:24Z",
+   "loadAverage": [
+    0.78,
+    5.27,
+    5.52
+   ],
+   "PF-6": {
+    "on": {
+     "dom": {
+      "elements": 248,
+      "cells": 210,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 8.11,
+      "min": 5.88,
+      "p95": 12.39,
+      "max": 12.39
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.8,
+       "max": 33.4
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.8,
+       "max": 16.8
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.5,
+      "p95": 16.8,
+      "max": 16.8
+     }
+    },
+    "off": {
+     "dom": {
+      "elements": 2228,
+      "cells": 2100,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 59.32,
+      "min": 42.78,
+      "p95": 68.68,
+      "max": 68.68
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 50,
+       "max": 66.8
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.8,
+       "max": 33.4
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.5,
+      "p95": 16.8,
+      "max": 16.8
+     }
+    }
+   },
+   "PF-7": {
+    "rectangle": "10 rows \u00d7 7 columns, edge moved \u00b15 rows",
+    "steps": 40,
+    "stepCostMs": {
+     "count": 40,
+     "median": 1.15,
+     "min": 0.9,
+     "p95": 1.99,
+     "max": 2.68
+    }
+   }
+  },
+  {
+   "host": "server",
+   "build": "after",
+   "round": 2,
+   "startedAt": "2026-10-12T03:31:00Z",
+   "loadAverage": [
+    5.13,
+    5.76,
+    5.66
+   ],
+   "PF-6": {
+    "on": {
+     "dom": {
+      "elements": 248,
+      "cells": 210,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 7.4,
+      "min": 5.8,
+      "p95": 11.47,
+      "max": 11.47
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.8,
+       "max": 16.8
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.6,
+       "p95": 16.8,
+       "max": 16.8
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.5,
+      "p95": 16.7,
+      "max": 16.8
+     }
+    },
+    "off": {
+     "dom": {
+      "elements": 2228,
+      "cells": 2100,
+      "rows": 21
+     },
+     "settleRepaintMs": {
+      "count": 8,
+      "median": 45.76,
+      "min": 41.48,
+      "p95": 78.46,
+      "max": 78.46
+     },
+     "ordinaryScrollFrameMs": {
+      "rows": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.8,
+       "max": 33.5
+      },
+      "columns": {
+       "count": 150,
+       "median": 16.7,
+       "min": 16.5,
+       "p95": 16.7,
+       "max": 33.4
+      }
+     },
+     "flingFrameMs": {
+      "count": 30,
+      "median": 16.7,
+      "min": 16.6,
+      "p95": 16.7,
+      "max": 16.8
+     }
+    }
+   },
+   "PF-7": {
+    "rectangle": "10 rows \u00d7 7 columns, edge moved \u00b15 rows",
+    "steps": 40,
+    "stepCostMs": {
+     "count": 40,
+     "median": 1.27,
+     "min": 1,
+     "p95": 1.96,
+     "max": 2.07
+    }
+   }
+  }
+ ]
+}

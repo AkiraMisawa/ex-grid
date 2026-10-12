@@ -7,9 +7,12 @@ namespace ExGrid.Cells;
 /// <para><see cref="FocusRequest"/> is how Space enters a Template cell. The core renders
 /// none of the fragment's markup and holds no reference to any of it — the rule ADR-0030
 /// applies to a Chrome's Cell Editor — so it asks, and a control that wants to be
-/// reachable by keyboard focuses <b>itself</b>, with Blazor's own <c>FocusAsync</c>, when it
-/// sees a non-zero request it has not acted on yet. A template with nothing to enter — a
-/// bar, a badge — ignores it, and Space then leaves the keyboard where it was.</para>
+/// reachable by keyboard takes the keyboard when it sees a non-zero request it has not acted on
+/// yet: through the grid's <c>HandKeyboardToAsync</c>, handed its own element, and not with its own
+/// <c>FocusAsync</c> (ADR-0204). On Blazor Server the request lands a round trip after the Space,
+/// and the grid grants it only while the keyboard is still its own — DOM focus inside its root or on
+/// nothing — so another grid the user has pressed in the meantime keeps it. A template with nothing
+/// to enter — a bar, a badge — ignores it, and Space then leaves the keyboard where it was.</para>
 ///
 /// <para><b>A control's write is the Consumer's to judge.</b> The grid lands an Action press on the
 /// row it was pressed on, as that row is now, and refuses one whose row is gone (ADR-0142), but it

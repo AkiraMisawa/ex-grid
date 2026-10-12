@@ -1,0 +1,18 @@
+warning: Git tree '/home/user/ex-grid/.claude/worktrees/sh19-measure' is dirty
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+  Discovering: ExSheet.Engine.Tests
+  Discovered:  ExSheet.Engine.Tests
+  Starting:    ExSheet.Engine.Tests
+    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS, server GC False, load average 7.44 6.10 5.88
+    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] totals: 10,000 rows by 20 columns and 20 totals beside them; 50,020 Formulas, 150,000 constants (seed 20261011)
+    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] totals: Sheet.Open, every Value computed: median 699.9 ms, best 690.6 ms, worst 745.6 ms (n=7); GCs: g0+2/g2+1 g0+2/g2+1 g0+2/g2+1 g0+2/g2+1 g0+2/g2+1 g0+2/g2+1 g0+2/g2+1
+    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] share of total: 10,000 rows by 20 columns and 20 totals beside them; 50,020 Formulas, 150,000 constants (seed 20261011)
+    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] share of total: Sheet.Open, every Value computed: median 74311.6 ms, best 72161.0 ms, worst 76752.5 ms (n=3); GCs: g0+65/g2+12 g0+67/g2+13 g0+62/g2+13
+  Finished:    ExSheet.Engine.Tests
+=== TEST EXECUTION SUMMARY ===
+   ExSheet.Engine.Tests  Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 465.082s
+
+real	7m46.933s
+user	7m1.815s
+sys	0m13.120s

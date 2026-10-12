@@ -30,13 +30,15 @@ This brings in ExSheet, ExGrid.MudBlazor and MudBlazor (9.0 or newer). Set MudBl
   Format Cells is a `MudDialog`; without a dialog provider it is refused by name when it first
   opens.
 
-Then add the stylesheets, ExGrid's and ExSheet's as for any Sheet, and the two MudBlazor ones:
+Then add the stylesheets, ExGrid's and ExSheet's as for any Sheet, and the two MudBlazor ones, as
+components in the head: in `App.razor`'s `<head>` in a Blazor Web App, or as root components in a
+standalone application's `Program.cs`:
 
-```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
-<link rel="stylesheet" href="_content/ExSheet/ex-sheet.min.css" />
-<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.min.css" />
-<link rel="stylesheet" href="_content/ExSheet.MudBlazor/mud-ex-sheet.min.css" />
+```csharp
+builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
+builder.RootComponents.Add<ExSheet.Components.ExSheetStylesheet>("head::after");
+builder.RootComponents.Add<ExGrid.MudBlazor.MudExGridStylesheet>("head::after");
+builder.RootComponents.Add<ExSheet.MudBlazor.MudExSheetStylesheet>("head::after");
 ```
 
 ## A Sheet on a paper
