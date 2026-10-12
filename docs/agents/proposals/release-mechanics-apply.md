@@ -66,7 +66,8 @@ back.
 9. **A layer-2 run at a 9.x published after the floor record is a run of its own.** Its record goes in its own
    `verification/<date>-<name>/` directory, and the run tags the commit it verified `verified/` followed by that
    directory's name, as decisions (4) and (6) say for every run. WR-10's entry in `verification/by-hand.json` names
-   that record (commit, tag, path, verdict, the version it covered) besides the floor record, in `laterRecords`.
+   that record (commit, tag, path, verdict, the version it covered) besides the floor record. The index names it
+   in `laterRecords`, this branch's name for the field.
    The release check reads every record WR-10's entry names: the floor record's paths hold since its commit, and
    each later record's tag names its commit. Edits 24 and 27 say it in dated notes; the check (`ByHand`) and the
    index's `about` hold it.

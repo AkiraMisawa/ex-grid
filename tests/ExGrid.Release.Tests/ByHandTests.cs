@@ -17,7 +17,7 @@ public class ByHandTests
     /// </summary>
     private static readonly (string Version, string Date)[] Published =
     [
-        ("8.15.0", "2025-12-01T10:00:00Z"), ("9.0.0-preview.1", "2025-12-20T18:02:36Z"), ("9.0.0-preview.2", "2026-01-14T18:08:31Z"),
+        ("8.15.0", "2025-11-23T03:43:31Z"), ("9.0.0-preview.1", "2025-12-20T18:02:36Z"), ("9.0.0-preview.2", "2026-01-14T18:08:31Z"),
         ("9.0.0-rc.1", "2026-02-11T00:24:17Z"), ("9.0.0", "2026-02-19T23:24:23Z"), ("9.1.0", "2026-03-03T21:45:43Z"),
         ("9.2.0", "2026-03-18T01:04:43Z"), ("9.3.0", "2026-04-08T01:26:12Z"), ("9.4.0", "2026-04-22T22:51:21Z"),
         ("9.5.0", "2026-05-26T19:35:44Z"), ("9.6.0", "2026-06-27T02:33:22Z"), ("9.7.0", "2026-07-09T18:04:10Z"),
@@ -550,6 +550,65 @@ public class ByHandTests
         Assert.Contains(report.Refusals, r => r.Message.Contains("WR-10 on Windows or Linux's later record, verification/2026-10-26-linux-mudblazor-9.12.1/mudblazor-layer2.log, does not name the commit"));
         Assert.Contains(report.Refusals, r => r.Message.Contains("MudBlazor 9.12.0, published within the range"));
         Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
+        // What is still to run names the version the failed record was to cover, and the record that failed.
+        var toRun = Assert.Single(report.Notices, n => n.Contains("To run by hand at"));
+        Assert.Contains("WR-10 on Windows or Linux's layer-2 runs at MudBlazor 9.12.0 (verification/2026-10-25-linux-mudblazor-9.12.0/mudblazor-layer2.log reads 'fail')", toRun);
+        Assert.EndsWith("reads 'fail'), WR-10 on Windows or Linux's layer-2 runs at MudBlazor 9.12.0 (ADR-0208).", toRun);
+    }
+
+    [Fact] // ADR-0208 (2026-10-12): a later record's file is at the tag
+    public void A_later_record_whose_file_is_not_at_the_tag_is_refused()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, (r, floor) =>
+        {
+            var at = r.Write("README.md", "later").Commit();
+            r.Tag("verified/2026-10-25-linux-mudblazor-9.12.0", at);
+            return [new Later(at, "verified/2026-10-25-linux-mudblazor-9.12.0", "verification/2026-10-25-linux-mudblazor-9.12.0/mudblazor-layer2.log", "pass", ["9.12.0"])];
+        }, "[9.6.0,10.0.0)");
+
+        var report = Check(repo, commit, commit, Listed.Dated(Published));
+
+        Assert.Contains("WR-10 on Windows or Linux's later record, verification/2026-10-25-linux-mudblazor-9.12.0/mudblazor-layer2.log, is not at the tag", Assert.Single(report.Refusals).Message);
+    }
+
+    [Fact] // ADR-0205 (2026-10-12): later records stand beside a floor record, never in its place
+    public void Later_records_without_a_floor_record_are_refused()
+    {
+        using var repo = new Repo();
+        var later = "{\"commit\": \"" + new string('a', 40) + "\", \"tag\": \"verified/2026-10-25-linux-mudblazor-9.12.0\", \"path\": \"verification/2026-10-25-linux-mudblazor-9.12.0/mudblazor-layer2.log\", \"verdict\": \"pass\", \"versions\": [\"9.12.0\"]}";
+        var commit = repo.Write(ByHand.IndexPath, Wr10Index("null, \"laterRecords\": [" + later + "]")).Commit();
+
+        var report = new Report();
+        var row = Assert.Single(ByHand.ReadIndex(new CommitTree(repo.Git, commit), report)!);
+
+        Assert.Null(row.Record);
+        Assert.Contains("names records in 'laterRecords' and no floor record", Assert.Single(report.Refusals).Message);
+    }
+
+    [Fact] // ADR-0205, ADR-0208 (2026-10-12): X's time is its committer time, in UTC, whatever offset the committer wrote and whenever it was authored
+    public void X_s_time_is_its_committer_time_in_UTC()
+    {
+        using var repo = new Repo();
+        var floor = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)");
+        // Committed at 21:00 in Tokyo, 12:00 UTC, on 2026-11-03; authored a month before.
+        repo.Date = DateTimeOffset.Parse("2026-11-03T21:00:00+09:00");
+        repo.AuthorDate = DateTimeOffset.Parse("2026-10-01T00:00:00Z");
+        var x = repo.Write("README.md", "X").Commit("X");
+        repo.Date = null;
+        repo.AuthorDate = null;
+        Assert.Equal(DateTimeOffset.Parse("2026-11-03T12:00:00Z"), repo.Git.CommitTime(x));
+        Assert.Equal(TimeSpan.Zero, repo.Git.CommitTime(x).Offset);
+
+        // Published after the author's date and before the committer's: asked for.
+        var asked = Check(repo, x, x, Listed.Dated([.. Published, ("9.12.0", "2026-10-20T00:00:00Z")]));
+        Assert.Contains("MudBlazor 9.12.0, published within the range", Assert.Single(asked.Refusals).Message);
+
+        // Published at X's time exactly, and after it in UTC though before it on Tokyo's clock: not asked for.
+        var after = Check(repo, x, x, Listed.Dated([.. Published, ("9.12.0", "2026-11-03T12:00:00Z"), ("9.13.0", "2026-11-03T15:00:00Z")]));
+        Assert.Empty(after.Refusals);
+        Assert.Contains(after.Notices, n => n.Contains("MudBlazor 9.12.0, 9.13.0, published within the range the Wrappers declare after X (2026-11-03 12:00:00Z, its commit time)"));
+        _ = floor;
     }
 
     [Fact] // ADR-0205 (decided with the user, 2026-10-12): the floor record is held by its paths since its commit, whatever later records the entry names
@@ -679,6 +738,8 @@ public class ByHandTests
 
     private const string AwayPage = "https://registration.test/mudblazor/page/9.6.0/9.11.0.json";
 
+    private const string Unpublished = "{\"catalogEntry\": {\"version\": \"9.6.2\", \"listed\": false}}";
+
     private static string Leaf(string version, string published, bool listed = true) =>
         "{\"catalogEntry\": {\"version\": \"" + version + "\", \"published\": \"" + published + "\", \"listed\": " + (listed ? "true" : "false") + "}}";
 
@@ -689,7 +750,7 @@ public class ByHandTests
         var data = new Dictionary<string, string>
         {
             [RegistrationIndex] = $$"""{"count": 2, "items": [{"@id": "inlined", "items": [{{Leaf("9.5.0", "2026-05-26T19:35:44+00:00")}}]}, {"@id": "{{AwayPage}}"}]}""",
-            [AwayPage] = $$"""{"items": [{{Leaf("9.6.0", "2026-06-27T02:33:22.123+00:00")}}, {{Leaf("9.6.1", "1900-01-01T00:00:00+00:00", listed: false)}}]}""",
+            [AwayPage] = $$"""{"items": [{{Leaf("9.6.0", "2026-06-27T02:33:22.123+00:00")}}, {{Leaf("9.6.1", "1900-01-01T00:00:00+00:00", listed: false)}}, {{Unpublished}}]}""",
         };
         var registration = new NuGetRegistration(RegistrationIndex, address =>
         {
@@ -700,7 +761,7 @@ public class ByHandTests
         Assert.True(registration.TryRead(out var versions, out var failure), failure);
         Assert.Equal([RegistrationIndex, AwayPage], addresses);
         Assert.Equal(
-            [new PublishedVersion("9.5.0", DateTimeOffset.Parse("2026-05-26T19:35:44Z")), new PublishedVersion("9.6.0", DateTimeOffset.Parse("2026-06-27T02:33:22.123Z")), new PublishedVersion("9.6.1", null)],
+            [new PublishedVersion("9.5.0", DateTimeOffset.Parse("2026-05-26T19:35:44Z")), new PublishedVersion("9.6.0", DateTimeOffset.Parse("2026-06-27T02:33:22.123Z")), new PublishedVersion("9.6.1", null), new PublishedVersion("9.6.2", null)],
             versions);
 
         // Read once.

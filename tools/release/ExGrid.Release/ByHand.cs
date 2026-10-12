@@ -185,10 +185,10 @@ public static partial class ByHand
     /// <summary>
     /// Refuses the tag unless every row checked by hand holds at <paramref name="target"/>: the commit
     /// being signed off for a stable version, the tagged commit for a release candidate. The index and
-    /// the table are read from <paramref name="tree"/>, the tag's. WR-10's record, once it otherwise holds,
-    /// is held besides to the MudBlazor versions <paramref name="mudBlazor"/> lists as published within the
-    /// range the Wrappers declare at <paramref name="target"/>; with no list, or one that cannot be read, it is
-    /// refused as unchecked.
+    /// the table are read from <paramref name="tree"/>, the tag's. WR-10's records, once the floor record
+    /// otherwise holds, are held besides to the MudBlazor versions <paramref name="mudBlazor"/> gives as published
+    /// within the range the Wrappers declare at <paramref name="target"/> before its commit time, or with no date;
+    /// with no list, or one that cannot be read, the row is refused as unchecked.
     /// </summary>
     public static void Check(Git git, ISourceTree tree, string target, Report report, bool fetchMissing, IPublishedVersions? mudBlazor = null)
     {
@@ -238,16 +238,18 @@ public static partial class ByHand
                 foreach (var later in row.Later ?? [])
                 {
                     if (Verified(git, tree, row, later, "later record", fetchMissing, report)) covered.AddRange(later.Versions ?? []);
-                    else laterHold = false;
+                    else
+                    {
+                        laterHold = false;
+                        if (later.Verdict != "pass") toRun.Add($"{row.Name}'s layer-2 runs at {WrapperRange.Package} {string.Join(", ", later.Versions ?? [])} ({later.Path} reads '{later.Verdict}')");
+                    }
                 }
                 // A MudBlazor version published after the floor record and before X asks for the layer-2 runs at it (2026-10-12).
                 var unrun = WrapperRange.Check(row, covered.Distinct(StringComparer.Ordinal).ToList(), targetTree, git.CommitTime(target), git.CommitTime(commit), mudBlazor, report);
-                if (unrun is null || !laterHold) continue;
-                if (unrun.Count > 0)
-                {
+                if (unrun is { Count: > 0 })
                     toRun.Add($"{row.Name}'s layer-2 runs at {WrapperRange.Package} {string.Join(", ", unrun.Select(u => u.Version))}");
-                    continue;
-                }
+                // A later record that does not hold keeps the row from holding, though no version is missing.
+                if (unrun is not { Count: 0 } || !laterHold) continue;
             }
             holding.Add(row.Name);
         }

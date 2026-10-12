@@ -441,7 +441,7 @@ public static class WrapperRange
             .Where(p => p.Published is { } when && when >= x && PackageVersion.Parse(p.Version) is { IsStable: true } v && declared.Any(d => d.Range.Contains(v)))
             .Select(p => p.Version).Distinct().ToList();
         if (after.Count > 0)
-            report.Notice($"{row.Name}: {Package} {string.Join(", ", after)}, published within the range the Wrappers declare after X ({x:yyyy-MM-dd HH:mm:ss}Z, its commit time), {(after.Count == 1 ? "is" : "are")} not asked for (ADR-0205, ADR-0208, 2026-10-12).");
+            report.Notice($"{row.Name}: {Package} {string.Join(", ", after)}, published within the range the Wrappers declare after X ({x.UtcDateTime:yyyy-MM-dd HH:mm:ss}Z, its commit time), {(after.Count == 1 ? "is" : "are")} not asked for (ADR-0205, ADR-0208, 2026-10-12).");
         var missing = Missing(declared, listed, covered, x);
         if (missing.Count > 0)
         {

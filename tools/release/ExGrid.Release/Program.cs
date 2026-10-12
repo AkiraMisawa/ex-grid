@@ -9,7 +9,7 @@ using ExGrid.Release;
 //   dotnet run --project tools/release/ExGrid.Release -- by-hand --at HEAD
 //
 // WR-10's records are held to the MudBlazor versions nuget.org gives as published within the range the
-// Wrappers declare before X's commit time (2026-10-12): read from --mudblazor-index, nuget.org's
+// Wrappers declare before X's commit time, or with no date (2026-10-12): read from --mudblazor-index, nuget.org's
 // registration index unless another address, or a saved copy of it with its pages inlined, is given. A
 // list that cannot be read refuses the tag.
 //

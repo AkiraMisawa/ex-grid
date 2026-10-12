@@ -77,9 +77,9 @@ public sealed class Git
         return result.Code == 0 ? result.Out.Trim() : null;
     }
 
-    /// <summary>When <paramref name="commit"/> was committed, as its committer date gives it.</summary>
+    /// <summary>When <paramref name="commit"/> was committed, as its committer date gives it, in UTC.</summary>
     public DateTimeOffset CommitTime(string commit) =>
-        DateTimeOffset.Parse(Out("show", "-s", "--format=%cI", commit + "^{commit}").Trim(), System.Globalization.CultureInfo.InvariantCulture);
+        DateTimeOffset.Parse(Out("show", "-s", "--format=%cI", commit + "^{commit}").Trim(), System.Globalization.CultureInfo.InvariantCulture).ToUniversalTime();
 
     /// <summary>Whether <paramref name="ancestor"/> is <paramref name="descendant"/> or one of its ancestors.</summary>
     public bool IsAncestor(string ancestor, string descendant)
