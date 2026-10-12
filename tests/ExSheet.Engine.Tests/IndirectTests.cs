@@ -16,8 +16,8 @@ namespace ExSheet.Engine.Tests;
 /// parts of two kinds joined, <c>R1C1#</c> and structured text) and those that follow from them by the
 /// rule they settle. The forms those leave open — a row or column number 0, a row or column number
 /// past the Sheet's edge (2026-10-12, decided with the user: refused until Excel is asked), an offset
-/// past the edge, and a <c>#</c> after a range, a row, a column or a join, in either style — are
-/// refused with <c>#VALUE!</c> and asked by the corpus.
+/// past the edge, and a <c>#</c> after a range, a row, a column or a join, or inside a join, in either
+/// style — are refused with <c>#VALUE!</c> and asked by the corpus.
 /// </summary>
 public class IndirectTests
 {
@@ -337,6 +337,8 @@ public class IndirectTests
     [InlineData("Sheet2!R0C2")]
     [InlineData("Sheet2!R3#")]
     [InlineData("Sheet2!R2C2:R3#")]
+    [InlineData("Sheet2!R1C1#:R2C1")]
+    [InlineData("Sheet2!R1C1#:R2C1#")]
     [InlineData(" R3C2")]
     [InlineData("R3C2 ")]
     [InlineData("R3C2:")]
@@ -356,6 +358,8 @@ public class IndirectTests
     [InlineData("R1048577C2:R3")]
     [InlineData("R3C2#")]
     [InlineData("Sheet2!R1C1#")]
+    [InlineData("R1C1##")]
+    [InlineData("R1C1#:")]
     [InlineData("#")]
     [InlineData("Positions[PV]")]
     [InlineData("Positions")]
@@ -367,7 +371,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an R1C1 range, row or column is refused with #VALUE!, whatever the parts joined, as in A1 style: the second area pass observed it after one cell only (INDIRECT-060), and the readings part, no place, the first cell's Spill Range, the cells themselves or the first cell joined to the second's Spill Range; after parts of two kinds joined, no place as R2C2:R3 is (INDIRECT-058) or the first cell's Spill Range (INDIRECT-090, 091, 094, 097 ask it)
+    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an R1C1 range, row or column, or inside a join, is refused with #VALUE!, whatever the parts joined, as in A1 style: the second area pass observed it after one cell only (INDIRECT-060), and the readings part, no place, the first cell's Spill Range, the cells themselves or the first cell joined to the second's Spill Range; after parts of two kinds joined, no place as R2C2:R3 is (INDIRECT-058) or the first cell's Spill Range; inside a join, no place, the first cell's Spill Range joined to the second part, or the cells themselves with the # passed over (INDIRECT-090, 091, 094, 097, 099 ask it)
     [InlineData("C2", "R2C2:R3C2#")]
     [InlineData("C2", "R1C1:R2C1#")]
     [InlineData("C2", "R3#")]
@@ -387,6 +391,17 @@ public class IndirectTests
     [InlineData("C2", "R3:C2#")]
     [InlineData("C2", "C2:R3#")]
     [InlineData("C2", "R0C2:R3#")]
+    [InlineData("C2", "R1C1#:R2C1")]
+    [InlineData("C2", "R1C1#:R2C1#")]
+    [InlineData("ZZ1000", "R1C1#:R2C1")]
+    [InlineData("C2", "r1c1#:r2c1")]
+    [InlineData("C2", "R2C1#:R1C1")]
+    [InlineData("C2", "Sheet1!R1C1#:R2C1")]
+    [InlineData("C2", "RC[-2]#:R[1]C[-2]")]
+    [InlineData("C2", "R1#:R2")]
+    [InlineData("C2", "C1#:C2")]
+    [InlineData("C2", "R2C2#:R3")]
+    [InlineData("C2", "R3#:C2")]
     public void ADR0124_indirect_refuses_a_hash_after_an_r1c1_range_row_or_column(string cell, string text)
     {
         var sheet = MicrosoftsExample();
@@ -396,7 +411,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Value, sheet.Error(cell));
     }
 
-    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an A1 range, whole row or whole column is refused with #VALUE!, as in R1C1 style: no run has observed it, and the readings part, no place as the intersection is (INDIRECT-021), the first cell's Spill Range, the cells themselves, or the first cell joined to the second's Spill Range, A1:(A2#) (INDIRECT-092, 096 ask it)
+    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an A1 range, whole row or whole column, or inside a join, is refused with #VALUE!, as in R1C1 style: no run has observed it, and the readings part; after a range, no place as the intersection is (INDIRECT-021), the first cell's Spill Range, the cells themselves, or the first cell joined to the second's Spill Range, A1:(A2#); inside a join, no place, the first cell's Spill Range joined to the second cell, (A1#):A2, as A1# is read (INDIRECT-026, 060), or the cells themselves with the # passed over (INDIRECT-092, 096, 098 ask it)
     [InlineData("C2", "A1:A2#")]
     [InlineData("C2", "A2:A1#")]
     [InlineData("C2", "a1:a2#")]
@@ -409,6 +424,16 @@ public class IndirectTests
     [InlineData("C2", "Sheet1!A1:A2#")]
     [InlineData("C2", "'Sheet1'!A:A#")]
     [InlineData("ZZ1000", "A1:A2#")]
+    [InlineData("C2", "A1#:A2")]
+    [InlineData("C2", "A1#:A2#")]
+    [InlineData("C2", "$A$1#:A2")]
+    [InlineData("C2", "Sheet1!A1#:A2")]
+    [InlineData("C2", "'Sheet1'!A1#:A2")]
+    [InlineData("C2", "a1#:a2")]
+    [InlineData("C2", "A2#:A1")]
+    [InlineData("C2", "A#:B")]
+    [InlineData("C2", "1#:2")]
+    [InlineData("ZZ1000", "A1#:A2")]
     public void ADR0124_indirect_refuses_a_hash_after_an_a1_range_row_or_column(string cell, string text)
     {
         var sheet = MicrosoftsExample();
@@ -436,13 +461,16 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Ref, sheet.Evaluate("=SUM(INDIRECT(\"A1#\"))").Error);
     }
 
-    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: A1 text naming another Sheet names no place, as INDIRECT-008 observed, whatever follows the name, a # after a range included, since every reading of the rest names a place on a Sheet that is not there
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: A1 text naming another Sheet names no place, as INDIRECT-008 observed, whatever follows the name, a # after a range or inside a join included, since every reading of the rest names a place on a Sheet that is not there
     [InlineData("Sheet2!B2")]
     [InlineData("Sheet2!A1#")]
     [InlineData("Sheet2!A1:A2#")]
     [InlineData("Sheet2!A:A#")]
     [InlineData("Sheet2!1:1#")]
     [InlineData("'Sheet 2'!A1:A2#")]
+    [InlineData("Sheet2!A1#:A2")]
+    [InlineData("Sheet2!A1#:A2#")]
+    [InlineData("'Sheet 2'!1#:2")]
     [InlineData("Sheet2!B2 x")]
     public void ADR0124_indirect_a1_text_naming_another_sheet_is_ref_whatever_follows(string text)
     {
@@ -522,7 +550,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Value, sheet.Error(cell));
     }
 
-    [Theory] // ADR-0124 (2026-10-12, decided with the user: A1 text past the Sheet's edge stays #REF!): a column past XFD names no place, as XFE1 was observed to (INDIRECT-017), and a row past 1048576 by the same rule, in a cell, a range, whole columns or whole rows, whatever follows, a # included
+    [Theory] // ADR-0124 (2026-10-12, decided with the user: A1 text past the Sheet's edge stays #REF!): a column past XFD names no place, as XFE1 was observed to (INDIRECT-017), and a row past 1048576 by the same rule, in a cell, a range, whole columns or whole rows, whatever follows, a # included, and whatever comes before it in a join, a # inside the join included
     [InlineData("XFE1")]
     [InlineData("B1048577")]
     [InlineData("B2:B1048577")]
@@ -533,6 +561,8 @@ public class IndirectTests
     [InlineData("XFE1#")]
     [InlineData("A1:XFE1#")]
     [InlineData("B1:B1048577#")]
+    [InlineData("A1#:XFE1")]
+    [InlineData("B1#:B1048577")]
     public void ADR0124_indirect_a1_text_past_the_sheets_edge_is_ref(string text)
     {
         var sheet = MicrosoftsExample();

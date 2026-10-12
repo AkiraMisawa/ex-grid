@@ -234,12 +234,13 @@ internal static partial class FunctionLibrary
     /// place, INDIRECT-052, though no run has told whether it wraps round to the far side or stops at the
     /// edge; INDIRECT-082 to 084 ask it). In either style: a <c>#</c> after a range, a row or a column,
     /// whatever the parts joined (<c>A1:A2#</c>, <c>A:A#</c>, <c>R2C2:R3C2#</c>, <c>R3#</c>, <c>C2#</c>,
-    /// <c>R2C2:R3#</c>; INDIRECT-090 to 092, 094, 096 and 097 ask it); and the structured forms a Formula
-    /// does not take (<c>#All</c>, <c>@</c>). <c>#VALUE!</c> by decision, in either style: a declared
-    /// Linked Table's bare name, which Excel reads as the table's data (INDIRECT-043, 053 to 057), since a
-    /// Linked Table is read by key, never by position (ADR-0049's rule 2; 2026-10-12, decided with the
-    /// user: the bare name is refused, in either style). Relative R1C1 text in a Formula evaluated in no
-    /// cell is <c>#VALUE!</c> too, as <c>ROW()</c> there is.
+    /// <c>R2C2:R3#</c>; INDIRECT-090 to 092, 094, 096 and 097 ask it); a <c>#</c> inside a join, after
+    /// its first part (<c>A1#:A2</c>, <c>R1C1#:R2C1</c>; INDIRECT-098 and 099 ask it); and the structured
+    /// forms a Formula does not take (<c>#All</c>, <c>@</c>). <c>#VALUE!</c> by decision, in either
+    /// style: a declared Linked Table's bare name, which Excel reads as the table's data (INDIRECT-043,
+    /// 053 to 057), since a Linked Table is read by key, never by position (ADR-0049's rule 2; 2026-10-12,
+    /// decided with the user: the bare name is refused, in either style). Relative R1C1 text in a Formula
+    /// evaluated in no cell is <c>#VALUE!</c> too, as <c>ROW()</c> there is.
     /// </remarks>
     private static Operand Indirect(FunctionCall call)
     {
@@ -260,11 +261,19 @@ internal static partial class FunctionLibrary
         return isA1 ? IndirectA1(call, text) : IndirectRowColumn(call, text);
     }
 
-    /// <summary>INDIRECT's A1-style text: a Reference as a Formula writes one, <c>A1#</c>, or a Linked Table's text (<see cref="IndirectTableText"/>); a <c>#</c> after a range, a row or a column refused.</summary>
+    /// <summary>INDIRECT's A1-style text: a Reference as a Formula writes one, <c>A1#</c>, or a Linked Table's text (<see cref="IndirectTableText"/>); a <c>#</c> after a range, a row or a column, or inside a join, refused.</summary>
     private static Operand IndirectA1(FunctionCall call, string text)
     {
         var cells = call.Evaluator.Cells;
         if (IndirectTableText(call, text) is { } table) return table;
+        // A # inside a join, after its first part (A1#:A2, A1#:A2#, 1#:2), which no run has observed, and
+        // the readings part: no place, as the intersection is (INDIRECT-021); the # bound to the part
+        // before it, as A1# is read (INDIRECT-026), A1's Spill Range joined to A2, (A1#):A2; or the cells
+        // themselves, the # passed over. Refused until Excel is asked, as in R1C1 style (INDIRECT-098).
+        // Another Sheet's name is judged first, #REF!, as below, since every reading of the rest names a
+        // place on a Sheet that is not there. A part past the Sheet's edge makes no join, and is #REF!
+        // below, whatever comes before it.
+        if (HashInsideJoin(text) is { } join) return Operand.Of(cells.IsLocal(join) ? ErrorValue.Value : ErrorValue.Ref);
         // A column past XFD names no place, as XFE1 was observed to (INDIRECT-017), and a row past 1048576
         // by the same rule (2026-10-12, decided with the user: A1 text past the Sheet's edge stays #REF!).
         // The reader reads no Reference there, and every reading of the text meets that place, so it is
@@ -289,6 +298,26 @@ internal static partial class FunctionLibrary
         // intersection Excel was observed to refuse (INDIRECT-021).
         if (length != text.Length) return Operand.Of(ErrorValue.Ref);
         return Operand.Of(reference.Area);
+    }
+
+    /// <summary>
+    /// The join A1 text with a <c>#</c> inside it would be with that <c>#</c> taken out — a range, whole
+    /// rows or whole columns, followed by nothing or by one more <c>#</c> — where the <c>#</c> stands
+    /// right after the join's first part (<c>A1#:A2</c>, <c>Sheet1!1#:2</c>); otherwise
+    /// <see langword="null"/>.
+    /// </summary>
+    private static Reference? HashInsideJoin(string text)
+    {
+        for (var hash = text.IndexOf("#:", StringComparison.Ordinal); hash >= 0; hash = text.IndexOf("#:", hash + 1, StringComparison.Ordinal))
+        {
+            var join = text.Remove(hash, 1);
+            if (Lexer.MatchReference(join, 0) is not { } match) continue;
+            // The : the # stood before is the join's, not one inside a quoted Sheet name.
+            if (match.Groups["sheet"] is { Success: true } qualifier && hash < qualifier.Index + qualifier.Length) continue;
+            if (match.Length != join.Length && (match.Length != join.Length - 1 || join[^1] != '#')) continue;
+            if (Lexer.ReadReference(join, 0, out _) is { Shape: not ReferenceShape.Cell } reference) return reference;
+        }
+        return null;
     }
 
     /// <summary>
@@ -340,9 +369,10 @@ internal static partial class FunctionLibrary
     /// past the edge does (2026-10-12, decided with the user: refused until Excel is asked; INDIRECT-074
     /// asks it), and INDIRECT-095 asks a column; an offset past the Sheet's edge, which Excel reads as a
     /// place (INDIRECT-052 is 0, a blank cell, not <c>#REF!</c>), though no run has told whether it wraps
-    /// round to the Sheet's far side or stops at the edge (INDIRECT-082 to 084 ask it); and a <c>#</c>
-    /// after a range, a row or a column, whatever the parts joined, as in A1 style (INDIRECT-090, 091, 094
-    /// and 097 ask it).
+    /// round to the Sheet's far side or stops at the edge (INDIRECT-082 to 084 ask it); a <c>#</c> after
+    /// a range, a row or a column, whatever the parts joined, as in A1 style (INDIRECT-090, 091, 094 and
+    /// 097 ask it); and a <c>#</c> inside a join, after its first part, whatever the parts, as in A1 style
+    /// (<c>R1C1#:R2C1</c>; INDIRECT-099 asks it).
     /// </summary>
     private static Operand IndirectRowColumn(FunctionCall call, string text)
     {
@@ -360,6 +390,7 @@ internal static partial class FunctionLibrary
         // the rest names a place on a Sheet that is not there.
         if (!call.Evaluator.Cells.IsLocal(Reference.Rectangle(sheet, 0, 0, 0, 0, true, true, true, true))) return Operand.Of(ErrorValue.Ref);
         var joined = match.Groups["second"].Success;
+        var inside = match.Groups["inside"].Success;
         var first = RowColumnPart.Read(match.Groups["first"].Value);
         var second = joined ? RowColumnPart.Read(match.Groups["second"].Value) : first;
         // A # after one cell is its Spill Range, as A1#'s is (INDIRECT-060). After a range, a row or a
@@ -367,8 +398,11 @@ internal static partial class FunctionLibrary
         // cell; the cells themselves, the # passed over; or the first cell joined to the second's Spill
         // Range, R1C1:(R2C1#), the # binding to the cell before it. So too after parts of two kinds
         // joined, before the join is judged: R2C2:R3# could be no place, as R2C2:R3 is, or B2's Spill
-        // Range where B2 spills. Refused until Excel is asked, as in A1 style (INDIRECT-090, 091, 094, 097).
-        if (spilled && (joined || !first.IsCell)) return Operand.Of(ErrorValue.Value);
+        // Range where B2 spills. And a # inside a join, after its first part, whatever the parts: no
+        // place; the first cell's Spill Range joined to the second part, (R1C1#):R2C1, the # bound to the
+        // cell before it as R1C1# is read; or the cells themselves, the # passed over. Refused until
+        // Excel is asked, as in A1 style (INDIRECT-090, 091, 094, 097, 099).
+        if (inside || spilled && (joined || !first.IsCell)) return Operand.Of(ErrorValue.Value);
         // Parts of two kinds joined are no Reference: a cell and a whole row (INDIRECT-058), a whole row
         // and a whole column (INDIRECT-062), and so a cell and a column, whichever comes first, whatever
         // their parts would read.
@@ -448,13 +482,14 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// R1C1 notation, one part or two separated by <c>:</c>, after an optional Sheet qualifier: each
     /// part an R with a row (<c>3</c>, <c>[-1]</c>) or none, and a C with a column or none, or a C
-    /// alone. Letters in either case.
+    /// alone. Letters in either case. A <c>#</c> before the <c>:</c> is matched, as <c>inside</c>, so
+    /// that it can be refused.
     /// </summary>
     [System.Text.RegularExpressions.GeneratedRegex(
         """
         ^(?:(?<sheet>'(?:[^']|'')+'|[A-Za-z_][A-Za-z0-9_.]*)!)?
         (?<first>[Rr](?:[0-9]+|\[[+-]?[0-9]+\])?(?:[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)?|[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)
-        (?::(?<second>[Rr](?:[0-9]+|\[[+-]?[0-9]+\])?(?:[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)?|[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?))?$
+        (?:(?<inside>\#)?:(?<second>[Rr](?:[0-9]+|\[[+-]?[0-9]+\])?(?:[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)?|[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?))?$
         """,
         System.Text.RegularExpressions.RegexOptions.IgnorePatternWhitespace | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex RowColumnText();
