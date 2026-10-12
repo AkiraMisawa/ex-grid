@@ -7,8 +7,9 @@ namespace ExSheet;
 /// ExSheet's answer to a Selection Summary (ADR-0130): the Values of the selected cells — a
 /// Formula's result, never its Entry, and every cell an array spills into — folded into the
 /// family's one definition of the figures (<see cref="GridSummaryCells"/>). A number is in
-/// every figure; text and a Boolean are counted; an Error Value is counted and leaves Count alone;
-/// a blank cell is in none. A date is a number here, as it is in the Sheet and in Excel: a Sheet
+/// every figure; text and a Boolean are counted and are never a number; an Error Value is counted,
+/// is never a number, and leaves only Count and Numerical Count, as Excel's status bar does; a blank
+/// cell is in none. A date is a number here, as it is in the Sheet and in Excel: a Sheet
 /// date is a serial number shown with a date format (ADR-0047), so nothing is invented by summing
 /// it. It walks only the cells that hold a Value, so a whole column of a million rows is summarised
 /// in the time its occupied cells take.
@@ -50,7 +51,9 @@ internal static class SheetSummary
                     break;
             }
         }
-        // Shown in the Focus cell's Number Format, as Excel's status bar shows its figures.
+        // Average, Min, Max and Sum are shown in the Focus cell's Number Format, whatever the other
+        // cells' formats, as Excel's status bar shows them in the active cell's; the counts are
+        // whole numbers (read in the Windows run of 2026-10-11).
         var focus = request.Focus is { } at && at.Column < request.Columns.Count
             && CellAddress.TryParseColumn(request.Columns[at.Column], out var focusColumn)
             ? new CellAddress(at.Row, focusColumn)

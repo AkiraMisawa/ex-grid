@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures.mjs';
+import { openSheet, sheet, enter, clickCell, pressCell, cell } from './sheet-helpers.mjs';
 
 // The Selection Summary with real keys (ADR-0130): select cells and the status line shows Excel's
 // Average, Count and Sum, answered by GridSource.From — the reference — over every selected cell.
@@ -79,6 +80,63 @@ for (const chrome of ['builtin', 'mud']) {
 
             expect(await scroller.boundingBox()).toEqual(before);
             expect(await grid(page).locator('.ex-status').boundingBox()).toEqual(strip);
+        });
+    });
+}
+
+// A Sheet answers from its own cells (ADR-0130). The seventeenth Windows run read Excel's status bar
+// with all six figures ticked (verification/2026-10-11-windows-17, Part B): over 1, 2, =1/0, x and a
+// blank, "Count: 4    Numerical Count: 2" and nothing else (b5, SM-7); with the error cleared, all six
+// (b6). Column F of /sheet is empty, so the run's A1:A5 is typed there.
+
+// Each figure as the status line shows it: the built-in Chrome's text, or ExGrid.MudBlazor's caption.
+async function figureTexts(grid) {
+    return grid.locator('.ex-summary .ex-summary-figure, .ex-summary .mud-ex-grid-summary-figure').allInnerTexts();
+}
+
+// Ticks a figure in the status line's menu and waits for the tick: the Sheet holds the choice, and
+// a second press read against the choice before the first landed would undo the first.
+async function tick(page, name) {
+    const item = page.locator('.ex-summary-menu-item').filter({ hasText: new RegExp(`^\\W*${name}$`) });
+    await expect(item).toHaveAttribute('aria-checked', 'false');
+    await item.click();
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+}
+
+for (const chrome of ['builtin', 'mud']) {
+    test.describe(`a Sheet under the ${chrome} Chrome`, () => {
+        test('an error among the cells leaves Count and Numerical Count, as Excel\'s status bar (SM-7, ADR-0130, run 17 b5 and b6)', async ({ page }) => {
+            await openSheet(page, chrome);
+            const book = sheet(page);
+            await enter(page, book, 'F1', '1');
+            await enter(page, book, 'F2', '2');
+            await enter(page, book, 'F3', '=1/0');
+            await enter(page, book, 'F4', 'x');
+            await expect(cell(book, 'F3')).toHaveText('#DIV/0!');
+
+            // A press on F1, Shift+press on F5, as the run selected A1:A5.
+            await pressCell(book, 'F1');
+            await clickCell(book, 'F5', { modifiers: ['Shift'] });
+            await expect.poll(() => figureTexts(book)).toEqual(['Count: 4']);
+
+            // Excel's Customise Status Bar: Numerical Count, Min and Max ticked beside the default three.
+            await book.locator('.ex-summary').click({ button: 'right' });
+            await tick(page, 'Numerical Count');
+            await tick(page, 'Min');
+            await tick(page, 'Max');
+            await page.keyboard.press('Escape');
+            await expect(page.locator('.ex-summary-menu')).toHaveCount(0);
+
+            await expect.poll(() => figureTexts(book)).toEqual(['Count: 4', 'Numerical Count: 2']);
+
+            // b6: F3 cleared, F1:F5 again: every figure is back.
+            await pressCell(book, 'F3');
+            await page.keyboard.press('Delete');
+            await expect(cell(book, 'F3')).toHaveText('');
+            await pressCell(book, 'F1');
+            await clickCell(book, 'F5', { modifiers: ['Shift'] });
+            await expect.poll(() => figureTexts(book))
+                .toEqual(['Average: 1.5', 'Count: 3', 'Numerical Count: 2', 'Min: 1', 'Max: 2', 'Sum: 3']);
         });
     });
 }

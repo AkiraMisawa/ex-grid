@@ -6,7 +6,8 @@ namespace ExGrid.Summarizing;
 /// The selected cells of an answerer that reads them itself — a Sheet's, a pivot report's — folded
 /// one at a time into the figures' one definition (ADR-0130), which <see cref="GridSummary.Of{TRow}"/>
 /// reads too: a number is in every figure; text, a Boolean and a date are counted; an error is
-/// counted and leaves Count alone; a blank is not added at all.
+/// counted, is never a number, and leaves only Count and Numerical Count, as Excel's status bar
+/// does; a blank is not added at all.
 /// </summary>
 public sealed class GridSummaryCells
 {
@@ -26,7 +27,8 @@ public sealed class GridSummaryCells
     /// <summary>Adds a cell that holds something other than a number: counted, never summed.</summary>
     public void AddOther() => _accumulator.AddOther();
 
-    /// <summary>Adds an error value: counted, and every figure but Count is shown nowhere.</summary>
+    /// <summary>Adds an error value: counted and never a number. Average, Min, Max and Sum are then
+    /// shown nowhere; Count and Numerical Count still are.</summary>
     public void AddError() => _accumulator.AddError();
 
     /// <summary>Adds the parts of cells summarised elsewhere — a server's <c>COUNT</c>, <c>SUM</c>,

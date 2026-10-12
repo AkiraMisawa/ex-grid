@@ -13,8 +13,10 @@ namespace ExGrid.Data;
 /// a non-finite one makes every numeric Aggregation <c>#NUM!</c>.</item>
 /// <item><b>Anything else</b> — text (numeric-looking text included), a Boolean, a date, a
 /// <c>char</c>, an enum — is counted and is never a number.</item>
-/// <item><b>An error value</b>, given through <see cref="AddError"/>, is counted and makes every
-/// other Aggregation that error (ADR-0130).</item>
+/// <item><b>An error value</b>, given through <see cref="AddError"/>, is counted and is never a
+/// number, and makes every Aggregation that reads numbers that error; Count and Count Numbers still
+/// answer, as Excel's status bar still shows Count and Numerical Count (ADR-0130; read in the Windows
+/// run of 2026-10-11).</item>
 /// </list>
 /// </summary>
 public sealed class AggregateAccumulator
@@ -130,8 +132,8 @@ public sealed class AggregateAccumulator
     /// <summary>Folds in a value that is neither Blank nor a number: counted, never a number.</summary>
     public void AddOther() => _counts.Values++;
 
-    /// <summary>Folds in an error value: counted, and every Aggregation but Count is then that
-    /// error (ADR-0130).</summary>
+    /// <summary>Folds in an error value: counted and never a number. Every Aggregation that reads
+    /// numbers is then that error; Count and Count Numbers still answer (ADR-0130).</summary>
     public void AddError()
     {
         _counts.Values++;
@@ -160,7 +162,7 @@ public sealed class AggregateAccumulator
     /// <summary>An Aggregation's answer over the values folded in so far.</summary>
     public AggregateResult Read(Aggregation aggregation)
     {
-        if (_error && aggregation != Aggregation.Count)
+        if (_error && aggregation is not (Aggregation.Count or Aggregation.CountNumbers))
             return AggregateResult.Of(AggregateError.ErrorAmongValues);
         if (_merged && aggregation is Aggregation.Product or Aggregation.StdDev or Aggregation.StdDevp or Aggregation.Var or Aggregation.Varp)
             throw new InvalidOperationException($"{aggregation} reads a part that merged parts do not carry (ADR-0066).");
