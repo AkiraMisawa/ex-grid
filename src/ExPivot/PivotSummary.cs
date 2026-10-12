@@ -65,7 +65,12 @@ internal static class PivotSummary
             }
         }
         // Shown in the Focus cell's Value Field format, as the report shows that cell — Excel's status
-        // bar shows its figures in the active cell's format.
+        // bar shows its figures in the active cell's format — except under General: a General Focus
+        // cell paints at most eleven characters (PivotGeneral, ADR-0060's note of 2026-10-12), while
+        // its figures are written G15, as ExSheet's status bar writes them over a General cell
+        // (ADR-0130, Sheet.FormatAs). Which of the two Excel's status bar shows over a General pivot
+        // cell was not observed; it is asked of the next Windows run, and until then the two
+        // products' status bars agree.
         Func<object, string?>? textOf = null;
         if (request.Focus is { } focus && focus.Row < rows.Count && focus.Column < columns.Length
             && columns[focus.Column] is { IsValue: true } focused)

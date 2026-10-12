@@ -10,8 +10,10 @@ namespace ExPivot.Engine.Tests;
 /// ADR-0060: a value cell with no number format of its own shows Excel's General as a PivotTable
 /// shows it, at most eleven characters besides a minus sign, at the PivotTable's width and at forty
 /// characters alike (the seventeenth Windows run, <c>verification/2026-10-11-windows-17</c>, item 16).
-/// The rule is ExSheet's General at eleven characters or more (ADR-0047, SH-20), ported because the
-/// engine references no ExSheet package (PV-1); the same cases pin both, so they cannot drift apart.
+/// The rule is ExSheet's General at twelve characters or wider, where a negative number too has its
+/// eleven besides the minus sign (ADR-0047, SH-20), ported because the engine references no ExSheet
+/// package (PV-1); the same cases pin both, so they cannot drift apart. Its minus sign is <c>-</c> in
+/// every culture, as ExSheet's General writes it.
 /// </summary>
 public class PivotGeneralTests
 {
@@ -68,8 +70,8 @@ public class PivotGeneralTests
     }
 
     /// <summary>
-    /// ExSheet's general-width corpus at a column of eleven characters or more, where General is the
-    /// same eleven characters a pivot shows (ADR-0047). Each case's cell, as a number: a typed constant
+    /// ExSheet's general-width corpus at a column of twelve characters or wider, where General is the
+    /// same eleven characters besides a minus sign a pivot shows (ADR-0047). Each case's cell, as a number: a typed constant
     /// is read as it is typed, and a Formula is named here, so a new case the corpus gains fails
     /// <see cref="ADR0060_ADR0047_Every_wide_general_width_case_is_pinned"/> until it is pinned.
     /// </summary>
@@ -88,9 +90,9 @@ public class PivotGeneralTests
         return data;
     }
 
-    [Theory] // ADR-0060/ADR-0047 (SH-20): ExSheet's General in a column eleven characters wide or wider is the pivot's General
+    [Theory] // ADR-0060/ADR-0047 (SH-20): ExSheet's General in a column twelve characters wide or wider is the pivot's General
     [MemberData(nameof(WideGeneralWidthCases))]
-    public void ADR0060_ADR0047_General_is_ExSheets_at_eleven_characters(string id, double number, string culture, string shown)
+    public void ADR0060_ADR0047_General_is_ExSheets_at_twelve_characters_or_wider(string id, double number, string culture, string shown)
         => Assert.True(shown == PivotGeneral.Text(number, CultureInfo.GetCultureInfo(culture)),
             $"{id}: ExSheet shows {shown}, ExPivot {PivotGeneral.Text(number, CultureInfo.GetCultureInfo(culture))}");
 
@@ -129,6 +131,28 @@ public class PivotGeneralTests
     [InlineData("fr-FR", "1,414213562")]
     public void ADR0060_General_writes_the_cultures_separator(string culture, string shown)
         => Assert.Equal(shown, PivotGeneral.Text(Math.Sqrt(2), CultureInfo.GetCultureInfo(culture)));
+
+    [Theory] // ADR-0060: the minus sign is '-' in every culture, as ExSheet's (Excel's) General writes it, never the culture's U+2212, which G15 wrote
+    [InlineData("sv-SE")]
+    [InlineData("fi-FI")]
+    [InlineData("nb-NO")]
+    public void ADR0060_The_minus_sign_is_a_hyphen_minus_in_every_culture(string name)
+    {
+        var culture = CultureInfo.GetCultureInfo(name);
+        // The culture's own sign is another character, so the case tells the two apart.
+        Assert.Equal("\u2212", culture.NumberFormat.NegativeSign);
+        Assert.Equal("\u22121,4142135623731", (-Math.Sqrt(2)).ToString("G15", culture));
+
+        Assert.Equal("-1,414213562", PivotGeneral.Text(-Math.Sqrt(2), culture));
+        Assert.Equal("-1,23457E+11", PivotGeneral.Text(-123456789012.345, culture));
+        Assert.Equal("-1,23457E-05", PivotGeneral.Text(-0.000012345678901234567, culture));
+        Assert.Equal("-1234,5678", PivotGeneral.Text(-1234.5678m, culture));
+
+        // And as a report shows it.
+        var report = PivotEngine.Compute([new Obs("A", -1.4142135623730951)], ObsFields,
+            new PivotLayout { Rows = [P("Group")], Values = [Sum("Amount")] }, new PivotOptions { Culture = culture });
+        Assert.Equal("-1,414213562", report.ValueAt(report.Rows[0], 0)!.Text);
+    }
 
     [Fact] // ADR-0060: zero, and a negative zero, are 0
     public void ADR0060_Zero_is_0()
@@ -191,7 +215,7 @@ public class PivotGeneralTests
     private static double NumberOf(string cell)
         => cell.StartsWith('=') ? Formulas[cell] : double.Parse(cell, NumberStyles.Float, Invariant);
 
-    /// <summary>The corpus's General cases at a column of eleven characters or more: id, the cell, the
+    /// <summary>The corpus's General cases at a column of twelve characters or wider: id, the cell, the
     /// culture, and what Excel shows.</summary>
     private static IEnumerable<(string Id, string Cell, string Culture, string Text)> WideCases()
     {

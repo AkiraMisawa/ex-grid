@@ -10,12 +10,17 @@ namespace ExPivot.Engine;
 /// digits, or where the scientific form is closer to the number than the decimal form that fits:
 /// <c>1.414213562</c>, <c>1.23456789</c>, <c>1.23457E+11</c>, <c>1.23457E-05</c>.
 ///
-/// <para>It is the rule ExSheet's General fits a cell to at a column eleven characters wide or wider
+/// <para>It is the rule ExSheet's General fits a cell to at a column twelve characters wide or wider,
+/// where a negative number too has its eleven besides the minus sign
 /// (<c>ExSheet.Engine.NumberText.General(number, characters, culture)</c>, ADR-0047, SH-20), ported
 /// because the engine references no package but <c>ExGrid.Data</c> (PV-1). Its tests pin it to the
 /// same cases, ExSheet's general-width corpus included, so the two cannot drift apart silently. A
 /// column narrower than the text is ExGrid's <c>####</c> (ADR-0016): a pivot never fits General to a
 /// column the way a cell does.</para>
+///
+/// <para>The minus sign is <c>-</c> in every culture, as ExSheet's General and Excel's write it,
+/// never the culture's own <see cref="NumberFormatInfo.NegativeSign"/> (U+2212 under sv-SE, fi-FI and
+/// nb-NO, which <c>G15</c> wrote). Only the decimal separator is the culture's.</para>
 /// </summary>
 internal static class PivotGeneral
 {

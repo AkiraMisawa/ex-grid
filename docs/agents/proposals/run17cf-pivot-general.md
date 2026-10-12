@@ -13,16 +13,24 @@ The code is on this branch; the ADR-0060 note below is the correction it follows
 
 | Finding | Excel (run 17) | Was | Now | Why |
 |---|---|---|---|---|
-| E-item-16 | General in a value cell shows at most eleven characters, at the PivotTable's width and at forty alike: `1.414213562`, `1.632993162`, `2.666666667`, `1.23456789`, `1.23457E+11`, `1.23457E-05` | `G15`: `1.4142135623731`, `123456789012.346`, `1.23456789012346E-05`, `123456789013.88` | **Excel's General fitted to eleven characters**, the rule ExSheet's `NumberText.General(number, characters, culture)` implements at a column eleven characters wide or wider | FOLLOW. ADR-0060: the pivot engine answers as Excel's PivotTable. The reading "at most 15 significant digits, as a cell does" is wrong about a cell too: a cell fits General to eleven characters (SH-20, ADR-0120's note of 2026-10-12) |
+| E-item-16 | General in a value cell shows at most eleven characters, at the PivotTable's width and at forty alike: `1.414213562`, `1.632993162`, `2.666666667`, `1.23456789`, `1.23457E+11`, `1.23457E-05` | `G15`: `1.4142135623731`, `123456789012.346`, `1.23456789012346E-05`, `123456789013.88` | **Excel's General fitted to eleven characters besides a minus sign**, the rule ExSheet's `NumberText.General(number, characters, culture)` implements at a column twelve characters wide or wider, with `-` for the minus sign in every culture | FOLLOW. ADR-0060: the pivot engine answers as Excel's PivotTable. The reading "at most 15 significant digits, as a cell does" is wrong about a cell too: a cell fits General to eleven characters (SH-20, ADR-0120's note of 2026-10-12) |
 | E-item-4-caption | Count Numbers of Value beside Count of Value is captioned `Count of Value2` (the caption Excel's own `DataField` read back) | `Count Numbers of Value` | **`Count of Value`**, numbered as any repeated caption is: `Count of Value2` | FOLLOW. ADR-0060, "Captions and words": a Value Field is captioned as Excel captions it, and a repeated caption takes a number |
 
 **The rule taken, not only the cells.** `src/ExPivot.Engine/PivotGeneral.cs` is ExSheet's General at a width of
-eleven characters or more, ported line for line (the decimal form, the scientific form, the closer of the two, half
+twelve characters or more, ported line for line (the decimal form, the scientific form, the closer of the two, half
 away from zero from fifteen significant digits), because `ExPivot.Engine` references no package but `ExGrid.Data`
-(PV-1). `PivotValue.From` uses it wherever a Value Field has no `NumberFormat` and no Show Values As; a number
-format of the field's own is applied as written, as before. An exact `decimal` is rounded from its own digits,
+(PV-1). Twelve, not eleven: ExSheet's limit is `min(width - (minus ? 1 : 0), 11)`, so at eleven a negative number
+has ten characters besides its sign, and only from twelve is every number's limit the pivot's eleven.
+`PivotValue.From` uses it wherever a Value Field has no `NumberFormat` and no Show Values As; a number format of the
+field's own is applied as written, as before. An exact `decimal` is rounded from its own digits,
 never a `double`'s, so a sum of money is shown from the sum itself. A column narrower than the text is ExGrid's
 `####` (ADR-0016), unchanged: a pivot never fits General narrower, as a cell does.
+
+**The minus sign is `-` in every culture**, as ExSheet's General writes it (`NumberText.General`, fitted) and Excel's
+General shows it. `G15` wrote the culture's own `NegativeSign`, which .NET's ICU data makes U+2212 `−` under sv-SE,
+fi-FI and nb-NO: `−1,4142135623731` there is now `-1,414213562`. Only the decimal separator is the culture's.
+`ADR0060_The_minus_sign_is_a_hyphen_minus_in_every_culture` pins it in those three cultures, and first asserts that
+each culture's own sign is U+2212, so the case cannot pass without telling the two apart.
 
 **The two cannot drift apart silently.** `PivotGeneralTests` reads ExSheet's corpus,
 `tests/ExSheet.Engine.Tests/ExcelCases/general-width.json`, and pins every General case at a column twelve
@@ -49,12 +57,19 @@ do. The TSV held the painted `G15` text before, so it is shorter now, not differ
 - **The Japanese caption of Count Numbers**, `数値の個数 / {0}`: not observed (item 27 ran without a Count Numbers
   field). It stays; `PivotWordsTests` pins it as a reading.
 - **The Selection Summary under a General Focus** (`PivotSummary.cs`, and `LocalPivotReportSource.SummaryAsync`'s
-  format, line 566): its figures are written `G15`. That is ADR-0130's rule, not item 16's, and ExSheet's status
-  bar does the same over a General cell (`Sheet.FormatAs`). Changing ExPivot's alone would make the two products'
-  status bars disagree over one number. ask_excel below.
+  format, line 566): its figures are written `G15`, so they no longer read as the Focus cell paints (`1.414213562`
+  painted, `Sum: 1.4142135623731` summarised). That is ADR-0130's rule, not item 16's, and ExSheet's status bar does
+  the same over a General cell (`Sheet.FormatAs`). Changing ExPivot's alone would make the two products' status bars
+  disagree over one number. `PivotSummary.cs`'s comment, which said the figures are shown "as the report shows that
+  cell", now says so, and names the question. ask_excel below.
+- **A number format of the field's own under sv-SE, fi-FI or nb-NO** still writes the culture's U+2212, as .NET's
+  format strings do (`#,##0.00` gives `−1 234,57`), and so do the `G15` texts above (a Number Item's label, the
+  Selection Summary, Show Details). Only General's sign follows ExSheet's here; whether Excel's number formats write
+  `-` under those cultures was not asked.
 - **Show Details' records** (`PivotDetailsSheet.cs`, `G15` where a field has no `format`) and **the sample in Value
   Field Settings' Number Format** (`ExPivot.FieldList.cs`, `G15` for an empty format; its number, `-1234.5678`,
-  reads the same under either rule): not observed, outside this area's files.
+  reads the same under either rule but for the sign under sv-SE, fi-FI and nb-NO): not observed, outside this
+  area's files.
 
 **If this branch is not in by the tag:** item 16 gates, so the tag waits for it. Count Numbers' caption is a wording
 difference, which ADR-0202 lets ship as a Known limitation; the line would read: "A Count Numbers Value Field is
@@ -65,7 +80,8 @@ captioned `Count Numbers of <field>`, where Excel captions it `Count of <field>`
 - `tests/ExPivot.Engine.Tests/PivotGeneralTests.cs` (new, layer 1): the run's cells (e05a, e05b, e08, e16) one by
   one and as a report over e16's records; ExSheet's wide general-width cases read from its corpus; rounding that
   carries into a twelfth integer digit; a minus sign not one of the eleven (a reading, as ExSheet's); the culture's
-  separator; zero; exact decimals; a decimal and its double agreeing over 20,000 values; never more than eleven
+  separator; `-` for the minus sign under sv-SE, fi-FI and nb-NO, whose own is U+2212, as text and as a report
+  shows it; zero; exact decimals; a decimal and its double agreeing over 20,000 values; never more than eleven
   characters over 20,000 doubles; a copy's raw form; a number format of the field's own left as written.
 - `tests/ExPivot.Engine.Tests/PivotWordsTests.cs` (new, layer 1): e04's Count and Count Numbers captioned `Count of
   Value` and `Count of Value2`, in either order; Count Numbers alone `Count of Value`; the Japanese caption
@@ -81,7 +97,8 @@ captioned `Count Numbers of <field>`, where Excel captions it `Count of <field>`
   `/pivot-csv` through its unknown-file path, as the run gave it, and painted under both Chromes as Excel showed it,
   each value whole in its column and never `####`. Run with `pivot.spec.mjs` on the Server and the WebAssembly
   host, `--project=chrome` (Playwright's bundled Chromium, headed under xvfb): 88 passed and 7 skipped on each; the
-  new test with `--repeat-each=3`: 6 of 6 on each.
+  new test with `--repeat-each=3`: 6 of 6 on each. Run again at the second round's tip, `pivot-csv.spec.mjs` alone
+  on each host: 14 of 14, and the new test with `--repeat-each=3` 6 of 6, on each.
 
 ## ADR-0060: what to write
 
@@ -114,13 +131,16 @@ scientific form that fits is closer to the number than the decimal form that fit
 - The run read it at the PivotTable's own width and at forty characters alike: `1.414213562`, `1.632993162`,
   `2.666666667`, `1.23456789`, `1.23457E+11`, `1.23457E-05` (items 5, 8 and 16,
   `verification/2026-10-11-windows-17/part-e/expivot-cells.md`).
-- It is ExSheet's General in a column eleven characters wide or wider (ADR-0047, SH-20), and `TEXT`'s `General`
+- It is ExSheet's General in a column twelve characters wide or wider (ADR-0047, SH-20), and `TEXT`'s `General`
   (ADR-0120's note of 2026-10-12). `ExPivot.Engine` references no ExSheet package (PV-1), so the rule is ported into
   it, and its tests pin it to ExSheet's general-width cases and to the run's cells, so the two cannot drift apart
   silently.
 - Unlike a cell's, it is never fitted narrower: a column narrower than the text is `####` (ADR-0016).
 - An exact `decimal` is rounded from its own digits, never a `double`'s.
 - Whether a minus sign is one of the eleven was not asked. ExPivot follows ExSheet, where it is not (a reading).
+- The minus sign is `-` in every culture, as ExSheet's General writes it and Excel's shows it; only the decimal
+  separator is the culture's. The 15 significant digits written before took the culture's own sign, U+2212 `−` under
+  sv-SE, fi-FI and nb-NO.
 - A copy still carries the full-precision number (PV-7): the HTML flavour Excel reads holds the raw number, and the
   text flavour what the cell paints, as Excel's own text flavour does.
 - *Corrected.* The reading was "at most 15 significant digits, as a cell does" (`excel-behaviours.md`, item 16).
@@ -165,7 +185,7 @@ New:
 
 ```
 16. **General** shows at most eleven characters besides a minus sign, whatever the column's width, as a cell's
-    General shows them in a column eleven characters wide or wider: decimals rounded to what fits, scientific where
+    General shows them in a column twelve characters wide or wider: decimals rounded to what fits, scientific where
     the integer part has twelve or more digits or where that is closer (`1.414213562`, `1.23457E+11`,
     `1.23457E-05`). *(Corrected by the seventeenth Windows run: the reading said 15 significant digits, which is
     General written in full, not General shown.)*
@@ -191,22 +211,21 @@ New:
 
 ## The Definition of Done: PV-7
 
-The criterion holds as written; its wording can name General, so a reader does not take "its number format" to
-leave General unsaid (old -> new, the Requirement cell only):
+The criterion holds as written; its Statement can name General, so a reader does not take "its number format" to
+leave General unsaid, and its Verification cell gains the layer-3 test that paints the run's e16 (old -> new, the
+whole row):
 
 Old:
 
 ```
-A value paints its engine text in its number format, and a copy carries its full-precision number.
+| **PV-7** | MUST | A value paints its engine text in its number format, and a copy carries its full-precision number. A number format the engine cannot write within its caps is refused by name, in the sample and on OK (ADR-0060) | Layer 1 + Layer 2 | as stated |
 ```
 
 New:
 
 ```
-A value paints its engine text in its number format, or in General as Excel's PivotTable shows it, at most eleven characters (ADR-0060's note of 2026-10-12), and a copy carries its full-precision number.
+| **PV-7** | MUST | A value paints its engine text in its number format, or, with none, in General as Excel's PivotTable shows it: at most eleven characters besides a minus sign, and `-` for that sign in every culture (ADR-0060's note of 2026-10-12). A copy carries its full-precision number. A number format the engine cannot write within its caps is refused by name, in the sample and on OK (ADR-0060) | Layer 1 + Layer 2 + Layer 3 (`pivot-csv.spec.mjs`, e16) | as stated |
 ```
-
-The Evidence cell can add "Layer 3 (`pivot-csv.spec.mjs`, e16)".
 
 ## The Docs Site
 
@@ -226,8 +245,9 @@ New:
             <code>#,##0</code>, <code>#,##0.00</code>, <code>0.0%</code>. Without one a value is shown in
             General as Excel's PivotTable shows it: at most eleven characters besides a minus sign, whatever the
             column's width, so √2 reads <code>1.414213562</code> and a sum with twelve or more integer digits
-            <code>1.23457E+11</code>. A field's <code>format</code> in its declaration labels its Items when it
-            stands in Rows or Columns.
+            <code>1.23457E+11</code>. Its minus sign is <code>-</code> in every culture, as Excel's General writes
+            it. A field's <code>format</code> in its declaration labels its Items when it stands in Rows or
+            Columns.
 ```
 
 The same page, "Aggregations" (old -> new):
