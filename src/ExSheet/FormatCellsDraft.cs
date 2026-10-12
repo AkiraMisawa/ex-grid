@@ -71,8 +71,8 @@ public sealed class FormatCellsDraft
     /// line was thin (the seventeenth Windows run, h10); on Thick and black over A2 and over A1 where
     /// A1's bottom was thick and black (the fourteenth run, case 13). It was seen to open on Thin and
     /// Automatic over B2 with a thin top and a thick right of its own, over A2:B3 with a different line
-    /// on four of its cells' sides, and over D5 with no line (the readings of 2026-10-12, R8). The rest
-    /// is a reading: a line on a left or right edge, in a style other than Thick or Thin or a colour
+    /// on four of its cells' sides, and over D5 with no line (the readings of 2026-10-12 (R8)). The
+    /// rest is a reading: a line on a left or right edge, in a style other than Thick or Thin or a colour
     /// other than Automatic or black, and every other Selection.
     /// </summary>
     private static BorderLine OpeningPen(bool oneCell, BorderLine?[] edges)
@@ -330,14 +330,15 @@ public sealed class FormatCellsDraft
     /// Selection is one cell and exactly one of its edges shows a line, so that one press of that
     /// edge's button takes it away, and on Thin everywhere else. Excel was seen to open on the line
     /// shown for a top edge (the seventeenth Windows run, h10; the fourteenth run, case 13) and a
-    /// bottom edge (case 13), and on Thin over the three Selections the readings of 2026-10-12 tried
-    /// (R8); the rest of the rule is a reading.
+    /// bottom edge (case 13), and on Thin over the three Selections tried in the readings of
+    /// 2026-10-12 (R8); the rest of the rule is a reading.
     /// </summary>
     public BorderLineStyle LineStyle { get; private set; }
 
     /// <summary>
-    /// The line colour an edge or a preset sets: the colour of the line <see cref="LineStyle"/> opens
-    /// on, and Automatic where it opens on Thin.
+    /// The line colour an edge or a preset sets. Format Cells opens on the colour of the line
+    /// <see cref="LineStyle"/> opens on where one cell shows a line on exactly one of its edges, and
+    /// on Automatic everywhere else, where the style opens on Thin with no single line shown.
     /// </summary>
     public CellColour LineColour { get; private set; }
 

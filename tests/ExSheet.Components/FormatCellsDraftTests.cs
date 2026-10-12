@@ -264,6 +264,8 @@ public class FormatCellsDraftTests
 
     private static readonly CellColour Black = CellColour.FromRgb(0x000000);
 
+    private static readonly CellColour Red = CellColour.FromRgb(0xFF0000);
+
     private static (BorderLineStyle, CellColour) PenOf(FormatCellsDraft draft) => (draft.LineStyle, draft.LineColour);
 
     [Fact] // ADR-0071 / SH-45, run 17 h10 (observed in Excel): over A2 under A1's thick bottom, the one line A2 shows, the Border tab opens on Thick and Automatic, as the line is, not on Thin
@@ -300,7 +302,7 @@ public class FormatCellsDraftTests
         Assert.Equal((BorderLineStyle.Thin, CellColour.Automatic), PenOf(draft));
     }
 
-    [Theory] // ADR-0071 / SH-45, the readings of 2026-10-12, R8 (1) to (3) (observed in Excel): Thin and Automatic over B2 with a thin top and a thick right of its own, over A2:B3 with a different line on four of its cells' sides, and over D5 with no line, as the eleventh run's case 22 saw Thin over A1
+    [Theory] // ADR-0071 / SH-45, the readings of 2026-10-12 (R8 (1) to (3)), observed in Excel: Thin and Automatic over B2 with a thin top and a thick right of its own, over A2:B3 with a different line on four of its cells' sides, and over D5 with no line, as the eleventh run's case 22 saw Thin over A1
     [InlineData(1, "B2", "B2")]
     [InlineData(2, "A2", "A2:B3")]
     [InlineData(3, "D5", "D5")]
@@ -338,6 +340,31 @@ public class FormatCellsDraftTests
         }, focus, ranges.Split(','));
 
         Assert.Equal((BorderLineStyle.Thin, CellColour.Automatic), PenOf(draft));
+    }
+
+    [Theory] // ADR-0071 / SH-45 (a reading, asked next Windows run): one line shown where Excel was not seen to open on it, on a left or a right edge, in a style other than Thick or Thin, or in a colour other than Automatic or black, opens the tab on that line, as the top and bottom lines Excel was seen to open on did (run 17 h10, case 14-13)
+    [InlineData("B2's left thick", "B2")]
+    [InlineData("B2's right thick", "B2")]
+    [InlineData("C2's left thick, shown as B2's right", "B2")]
+    [InlineData("A1's bottom medium dashed", "A2")]
+    [InlineData("A1's bottom thick red", "A2")]
+    public void One_line_excel_was_not_seen_to_open_on_opens_the_tab_on_it_a_reading(string line, string cell)
+    {
+        var mediumDashed = new BorderLine(BorderLineStyle.MediumDashed);
+        var thickRed = new BorderLine(BorderLineStyle.Thick, Red);
+        var (at, borders, expected) = line switch
+        {
+            "B2's left thick" => ("B2", new BorderChange { Left = Thick }, Thick),
+            "B2's right thick" => ("B2", new BorderChange { Right = Thick }, Thick),
+            "C2's left thick, shown as B2's right" => ("C2", new BorderChange { Left = Thick }, Thick),
+            "A1's bottom medium dashed" => ("A1", new BorderChange { Bottom = mediumDashed }, mediumDashed),
+            "A1's bottom thick red" => ("A1", new BorderChange { Bottom = thickRed }, thickRed),
+            _ => throw new ArgumentOutOfRangeException(nameof(line), line, "Not a case."),
+        };
+        var draft = Open(sheet => Format(sheet, at, new CellFormatChange { Borders = borders }), cell, cell);
+
+        Assert.Equal((expected.Style, expected.Colour), PenOf(draft));
+        Assert.True(draft.Change.IsEmpty);
     }
 
     // ---- A code typed under Custom (the fourteenth Windows run, case 11) ----

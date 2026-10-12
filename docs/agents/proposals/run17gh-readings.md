@@ -2,7 +2,7 @@
 
 Branch `claude/run17gh-readings`, from `origin/main` (`a533de01`). The seventeenth Windows run's Part H
 (`verification/2026-10-11-windows-17/report.md` on `claude/exsheet-windows-verify-17`, h4, h9, h10 and h12, with
-`part-h/shots/` and `records/part-h-excel.jsonl`) asked Excel what the code had built as readings. Three commits:
+`part-h/shots/` and `records/part-h-excel.jsonl`) asked Excel what the code had built as readings. Four commits:
 
 1. **The first** turned the readings Excel answered as read into observed tests (h4, h9, h10's taking-away, h12).
    Nothing in `src/` changed.
@@ -42,7 +42,8 @@ Branch `claude/run17gh-readings`, from `origin/main` (`a533de01`). The seventeen
        left, so which range takes the place where several are left stays a reading. So does the layer-1 test's
        comment.
      - h9's notes (edits 2 and 13, `CultureTests`) said what built-ins 15 and 14 "show" on 13:30 alone. No run showed
-       that. They now say what the built-ins' codes would show.
+       that. They now say what built-in 15's code would show, and that built-in 14 shows the day first (round 4,
+       below, after round 3 had called 14's en-GB code `dd/mm/yyyy`, which no run observed).
      - ADR-0071's note of h12 (edit 4) said "`@` before the last section is refused in Excel too". Only `@;0` and
        `0;@;0` were asked, so it now names those two.
      - The twelfth run's model (edits 3 and 10, the triage paragraph below) is named as the source of "setting a
@@ -51,6 +52,26 @@ Branch `claude/run17gh-readings`, from `origin/main` (`a533de01`). The seventeen
      - Question 6 below asks a style other than Thick or Thin, a reading this round names.
    - **The edits are numbered**, each an exact Old and New of whole lines. `docs/agent-runs/check-proposal.py` (in
      the worktree, git-ignored) applies them in order against the branch tip and checks that each Old occurs once.
+4. **The fourth (round 4)** answers the verifier's findings on round 3:
+   - **The readings are tests, named as readings.** No test held the parts of the rule Excel was not seen to do, so
+     a change to them passed every suite. `FormatCellsDraftTests.One_line_excel_was_not_seen_to_open_on_opens_the_tab_on_it_a_reading`
+     has five cases, each opening on its one line: B2's left thick; B2's right thick; C2's left thick, shown as B2's
+     right; A1's bottom medium dashed, over A2; and A1's bottom thick red, over A2. Opening on Thin for a lone left
+     or right line fails the first three. Opening on the line only when it is Thick or Thin and Automatic or black
+     fails the last two.
+   - **Ticket 52's correction (edit 5)** also says what R8 saw: Thin and Automatic over B2, A2:B3 and D5.
+   - **Built-in 14.** Its en-GB code was stated as `dd/mm/yyyy`, which no record observes. The second Windows run
+     (`verification/2026-09-27-windows-2/results.md`, Part C) saw it show the day first under en-GB, `26/09/2026`. The
+     typed `m/d/yyyy` put the month first, so it is still observed as a code of its own (edits 2 and 13,
+     `CultureTests`).
+   - **`LineColour`'s doc** said "Automatic where it opens on Thin". One thin red line opens on Thin and red, so it
+     now says Automatic where no single line shows.
+   - **The Docs Site paragraph (edit 14) and the Change Note** say "Excel's Border tab", where "Excel's" had no noun on
+     the page.
+   - **The count** in the h10 row below said the code before the fix fails 7 layer-2 tests. It fails 9 cases
+     without the reading cases (7 in ExSheet.Components.Tests, 2 in ExSheet.MudBlazor.Tests), and 14 with them.
+   - **The citations** take the form "the readings of 2026-10-12 (R7)" throughout (edits 2 and 11, the code and two
+     test comments).
 
 **Two readings made after the run answer part of what (a) and (b) leave.** The readings of 2026-10-12
 (`verification/2026-10-12-windows-readings/report.md` on `claude/exsheet-windows-readings-2026-10-12`, at `89e0b5ad`):
@@ -71,9 +92,9 @@ So the round-3 items "Border tab opens Thin" and "h9 one-digit" are done here, a
 | # | Excel | Test | Done |
 |---|---|---|---|
 | h4 | A1:B2, Ctrl+click F6, Ctrl+click F6 again: Selection `A1:B2`, A1 active. Enter: A2, B1, B2, the Selection kept | `tests/ExGrid.Tests/SelectionGestureTests.cs`, `Taking_out_the_whole_range_made_last_moves_the_focus_to_the_latest_range_left` | Comment: observed (h4), with one range left; where several are left, a reading. Enter three times through `GridSelection.CycleFocus(CycleOrder.ColumnMajor, …)`: the Focus A2, B1, B2, the Ranges still A1:B2. Passed as written |
-| h9 | en-GB: `d-mmm-yy` `12-Oct-26` / `0-Jan-00`; `m/d/yyyy` `10/12/2026` / `1/0/1900`; `h:mm` `13:30` / `13:30`. ja-JP: `mmmmm` `1` / `1` | `tests/ExSheet.Engine.Tests/CultureTests.cs`, `A_code_typed_into_custom_shows_as_excel_showed_it_run_17_h9` (8 cases) | Each code read through `NumberFormat.TryParseLocal` as Format Cells reads it, checked to be no date or time built-in's, spelled back as typed by `LocalCode`, and shown as Excel showed it. Round 2: its comment says which part h9 observed. `h:mm`'s 13:30 does not show it is a code of its own. Round 3: what built-ins 15, 14 and 20 would show is said to follow from their codes |
+| h9 | en-GB: `d-mmm-yy` `12-Oct-26` / `0-Jan-00`; `m/d/yyyy` `10/12/2026` / `1/0/1900`; `h:mm` `13:30` / `13:30`. ja-JP: `mmmmm` `1` / `1` | `tests/ExSheet.Engine.Tests/CultureTests.cs`, `A_code_typed_into_custom_shows_as_excel_showed_it_run_17_h9` (8 cases) | Each code read through `NumberFormat.TryParseLocal` as Format Cells reads it, checked to be no date or time built-in's, spelled back as typed by `LocalCode`, and shown as Excel showed it. Round 2: its comment says which part h9 observed. `h:mm`'s 13:30 does not show it is a code of its own. Round 3: built-ins 15's and 20's are said to follow from their codes. Round 4: built-in 14 shows the day first under en-GB (the second Windows run), where the typed `m/d/yyyy` put the month first |
 | R7 | en-GB: `h:mm` `9:05` on 0.37847222; `d-mmm-yy` `5-Jan-26` on 46027 | `CultureTests.A_code_typed_into_custom_is_no_built_in_under_en_gb_r7` (new, 2 cases) | As h9's theory. Both passed as the engine stood |
-| h10 | Over A2 under A1's thick bottom: Style on Thick, Colour Automatic, the Top button pressed. Top (Alt+T) alone, OK: A1's bottom gone too | `tests/ExSheet.Components/FormatCellsDraftTests.cs`: `Taking_a_shown_edge_away_clears_it_on_both_sides_case_14_13` (rewritten), `Over_a2_under_a1s_thick_bottom_the_tab_opens_on_thick_run_17_h10`, `The_line_opens_in_its_own_colour_case_14_13` (A2 and A1), `A_thin_top_shown_opens_the_tab_on_thin_run_17_h10`, `Thin_and_automatic_over_the_three_selections_r8` (R8's three), `Several_lines_shown_open_the_tab_on_thin_a_reading` (two cases, named a reading). `A_shown_edge_left_alone_sets_nothing_case_14_13` now expects the thick bottom the tab opened on | `FormatCellsDraft` opens `LineStyle` and `LineColour` on the line shown (`OpeningPen`). The rewritten test no longer chooses Thick: it presses Top, as the run did, and asserts the change and both cells' records. Without the fix, 7 layer-2 tests fail. Round 3 renamed three of the new tests after what Excel was seen to do, where they had named the whole rule |
+| h10 | Over A2 under A1's thick bottom: Style on Thick, Colour Automatic, the Top button pressed. Top (Alt+T) alone, OK: A1's bottom gone too | `tests/ExSheet.Components/FormatCellsDraftTests.cs`: `Taking_a_shown_edge_away_clears_it_on_both_sides_case_14_13` (rewritten), `Over_a2_under_a1s_thick_bottom_the_tab_opens_on_thick_run_17_h10`, `The_line_opens_in_its_own_colour_case_14_13` (A2 and A1), `A_thin_top_shown_opens_the_tab_on_thin_run_17_h10`, `Thin_and_automatic_over_the_three_selections_r8` (R8's three), `Several_lines_shown_open_the_tab_on_thin_a_reading` (two cases, named a reading), `One_line_excel_was_not_seen_to_open_on_opens_the_tab_on_it_a_reading` (five cases, named a reading; round 4). `A_shown_edge_left_alone_sets_nothing_case_14_13` now expects the thick bottom the tab opened on | `FormatCellsDraft` opens `LineStyle` and `LineColour` on the line shown (`OpeningPen`). The rewritten test no longer chooses Thick: it presses Top, as the run did, and asserts the change and both cells' records. Without the fix (always Thin), 14 layer-2 cases fail: 12 in ExSheet.Components.Tests and 2 in ExSheet.MudBlazor.Tests. Without round 4's five reading cases it is 9 (7 and 2). Round 3 renamed three of the new tests after what Excel was seen to do, where they had named the whole rule |
 | h10 | the same, under each Chrome | `tests/ExSheet.Components/FormatCellsTests.cs` and `tests/ExSheet.MudBlazor.Tests/MudFormatCellsTests.cs`: `A2_under_a1s_thick_bottom_opens_with_a_thick_top_case_14_13` (Thick chosen on opening), `Taking_the_shown_top_away_clears_a1s_bottom_case_14_13` (Top alone, then OK; "a reading" becomes observed) | Both Chromes bind their radio groups to the draft, so neither Chrome's code changed |
 | h10 | the same, in a browser | `tests/ExGrid.Browser/format-cells.spec.mjs` and `format-cells-mud.spec.mjs`: `SH-45, run 17 h10: …` (new in each) | A1's thick bottom set through the dialog (opening on Thin); over A2 Thick is chosen and Top pressed; Top alone, OK; reopened, A2 shows no top and opens on Thin, and A1 shows no bottom |
 | h12 | `@;0` and `0;@;0` refused: COM's "Unable to set the NumberFormat property of the Range class"; Format Cells keeps the dialog open, the code selected, and says nothing | `tests/ExSheet.Engine.Tests/NumberFormatTests.cs`, `An_unsupported_code_is_refused` | The `@;0` comment says Excel refuses both too, and how; ExSheet refuses by name (SH-45). `0;0;@;0` is marked "not asked of Excel" |
@@ -150,13 +171,15 @@ New:
     `5-Jan-26`, not built-in 15's `05-Jan-26`. No run has typed it there.
     *(2026-10-12, the seventeenth Windows run, h9, on 12 October 2026 at 13:30 and on 13:30 alone.
     Observed under en-GB: `d-mmm-yy` and `m/d/yyyy` typed into Custom are codes of their own. On
-    13:30 alone they showed `0-Jan-00` and `1/0/1900`, where built-ins 15 and 14, spelled
-    `dd-mmm-yy` and `dd/mm/yyyy` under en-GB, would show `00-Jan-00` and `00/01/1900` by those codes;
-    no run showed them there. `h:mm` showed `13:30` on both values, as built-in 20 would, so h9 did
-    not show it to be a code of its own. Observed under ja-JP: `mmmmm` shows `1`, the first character
-    of `10月` and of `1月`. Not asked: a code of its own reopened under en-US, and the month names
-    under zh-CN and ko-KR. The readings of 2026-10-12, R7, then observed under en-GB `h:mm` typed
-    into Custom as `9:05`, not `09:05`, and this bullet's `d-mmm-yy` as `5-Jan-26`.)*
+    13:30 alone `d-mmm-yy` showed `0-Jan-00`, where built-in 15, which Excel spells `dd-mmm-yy`
+    under en-GB (the twelfth run's case 19), would show `00-Jan-00` by that code. `m/d/yyyy` put the
+    month first, `10/12/2026` and `1/0/1900`, where built-in 14 shows the day first under en-GB
+    (`26/09/2026`, the second Windows run). `h:mm` showed `13:30` on both values, as built-in 20
+    would, so h9 did not show it to be a code of its own. Observed under ja-JP: `mmmmm` shows `1`,
+    the first character of `10月` and of `1月`. Not asked: a code of its own reopened under en-US,
+    and the month names under zh-CN and ko-KR. The readings of 2026-10-12 (R7) then observed under
+    en-GB `h:mm` typed into Custom as `9:05`, not `09:05`, and this bullet's `d-mmm-yy` as
+    `5-Jan-26`.)*
 ```
 
 h10, in "What the fourteenth Windows run settled", ticket 57's model:
@@ -260,7 +283,9 @@ New:
       *(Corrected 2026-10-12: Thin opens over a cell with no line, as case 22 saw. Over one cell
       that shows a line on exactly one of its edges, ExSheet now opens on that line. Excel was seen
       to do so only for a top edge and a bottom edge, in Automatic or black (the seventeenth Windows
-      run, h10; the fourteenth run, case 13); the rest is a reading. See the comment of that date.)*
+      run, h10; the fourteenth run, case 13), and to open on Thin and Automatic over B2 with a thin
+      top and a thick right, over A2:B3 and over D5 (the readings of 2026-10-12 (R8)); the rest is a
+      reading. See the comment of that date.)*
 ```
 
 ### 6. docs/specs/exsheet/issues/52-format-cells-the-seam-and-the-built-in-chrome.md
@@ -290,7 +315,9 @@ of its edges shows a line, and on Thin and Automatic everywhere else. Excel was 
 a top edge (h10; case 13 over A2) and a bottom edge (case 13 over A1), in Automatic or black, and on Thin and Automatic
 over R8's three Selections. The rest of the rule is a reading, listed in ADR-0071's note of this date. Both Chromes
 bind their line choice to the draft, so both follow. Layer 2 (`FormatCellsDraftTests`, `FormatCellsTests`,
-`MudFormatCellsTests`) and layer 3 (`format-cells.spec.mjs`, `format-cells-mud.spec.mjs`) test it.
+`MudFormatCellsTests`) and layer 3 (`format-cells.spec.mjs`, `format-cells-mud.spec.mjs`) test it. The readings are
+tests named as readings in `FormatCellsDraftTests`: a lone left or right line, a medium dashed line and a red one each
+open on that line, and two lines, or one line in each of several one-cell ranges, open on Thin.
 ```
 
 **Ticket 89** (`docs/specs/exsheet/issues/89-a-text-section-may-carry-a-colour.md`): line 53, and the last line.
@@ -400,7 +427,7 @@ New:
   - Under en-GB a typed `d-mmm-yy` is now a code of its own and shows `5-Jan-26`. A typed
     `m/d/yyyy` shows `1/5/2026`, and a typed `h:mm` shows `9:05`. *(Observed 2026-10-12: a typed
     `d-mmm-yy` and a typed `m/d/yyyy` are codes of their own, by the seventeenth Windows run's h9,
-    on other values; `d-mmm-yy`'s `5-Jan-26` and `h:mm`'s `9:05`, by the readings of that date, R7.
+    on other values; `d-mmm-yy`'s `5-Jan-26` and `h:mm`'s `9:05`, by the readings of 2026-10-12 (R7).
     `m/d/yyyy`'s `1/5/2026` follows from its code; no run showed it. Comment below.)*
 ```
 
@@ -435,9 +462,9 @@ New:
 *(2026-10-12, the seventeenth Windows run, h9; branch `claude/run17gh-readings`.)* Format Cells' Custom, the code
 typed, on 12 October 2026 at 13:30 (46307.5625) and on 13:30 alone (0.5625). Of the readings above:
 - **Observed: under en-GB, a typed `d-mmm-yy` and a typed `m/d/yyyy` are codes of their own.** They showed
-  `12-Oct-26` and `0-Jan-00`, and `10/12/2026` and `1/0/1900`. On 13:30 alone, built-ins 15 and 14, spelled
-  `dd-mmm-yy` and `dd/mm/yyyy` under en-GB, would show `00-Jan-00` and `00/01/1900` by those codes; no run showed
-  them there.
+  `12-Oct-26` and `0-Jan-00`, and `10/12/2026` and `1/0/1900`. Built-in 15, which Excel spells `dd-mmm-yy` under
+  en-GB (the twelfth run's case 19), would show `00-Jan-00` on 13:30 alone by that code. Built-in 14 shows the day
+  first under en-GB (`26/09/2026`, the second Windows run), where the typed `m/d/yyyy` put the month first.
 - **Observed: under ja-JP, `mmmmm` showed `1` on both**, the first character of `10月` and of `1月`.
 - **Not observed by h9: a typed `h:mm` as a code of its own.** It showed `13:30` on both, as built-in 20 (`hh:mm`)
   would. The readings of 2026-10-12 (R7, `verification/2026-10-12-windows-readings/report.md` on
@@ -476,11 +503,11 @@ New:
         <p>
             Over one cell that shows a line on exactly one of its edges, the Border tab's Style and Colour open on
             that line, so pressing that edge's button takes the line away. Anywhere else they open on Thin and
-            Automatic. Excel's was seen to open on the line shown for a top edge and a bottom edge, in Automatic or
-            black, and on Thin and Automatic over a cell with a thin top and a thick right, over a range whose cells
-            show different lines, and over a cell with no line. The rest is ExSheet's reading, not yet asked of
-            Excel: a line on a left or right edge, a style other than Thick or Thin, a colour other than Automatic
-            or black, and every other Selection.
+            Automatic. Excel's Border tab was seen to open on the line shown for a top edge and a bottom edge, in
+            Automatic or black, and on Thin and Automatic over a cell with a thin top and a thick right, over a range
+            whose cells show different lines, and over a cell with no line. The rest is ExSheet's reading, not yet
+            asked of Excel: a line on a left or right edge, a style other than Thick or Thin, a colour other than
+            Automatic or black, and every other Selection.
         </p>
 ```
 
