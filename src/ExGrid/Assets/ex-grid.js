@@ -1168,7 +1168,29 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // When the hold that is standing began: two seconds from it, whatever the keys held
     // since have asked for, the rest is handed on (ADR-0010).
     let holdStartedAt = 0;
-    const editorSettled = () => new Promise((resolve) => {
+    // The waits standing in editorSettled. Each is looked at every animation frame, and once more
+    // the moment this listener gives the editor the keyboard itself (focusEditor): what the hold
+    // has for the edit is then typed into it in a microtask, before the browser hands the page
+    // anything else. An IME's composition cannot be held — it reaches whatever has DOM focus — and
+    // one started in the editor before the next frame was typed ahead of the text the hold still
+    // had for it: `かな`, `感じ` held, `ｄ` composed in the editor, and D10 read `かなｄ感じです`
+    // (ED-30, the third composition, WebAssembly).
+    const settledWaits = new Set();
+    const lookAgain = () => {
+        for (const again of [...settledWaits]) {
+            again();
+        }
+    };
+    const editorSettled = () => new Promise((settle) => {
+        // Settled once: a wait looked at again leaves no second frame of its own behind, and none
+        // looks after it has settled.
+        let waiting = true;
+        let lookFrame = 0;
+        const resolve = () => {
+            waiting = false;
+            settledWaits.delete(again);
+            settle();
+        };
         const look = () => {
             // A grid disposed during the wait has nothing left to wait for, and is asked
             // first: its root is gone, and looking for DOM focus inside it would throw from
@@ -1189,9 +1211,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
                 resolve();
             } else {
-                requestAnimationFrame(look);
+                lookFrame = requestAnimationFrame(look);
             }
         };
+        const again = () => {
+            if (waiting) {
+                cancelAnimationFrame(lookFrame);
+                look();
+            }
+        };
+        settledWaits.add(again);
         look();
     });
 
@@ -3286,6 +3315,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // the fold is brought on screen, and one already in the window moves nothing.
                 field.focus({ preventScroll: true });
                 followEditor(field);
+                // What the hold has for the edit goes into it now, ahead of any composition the IME
+                // starts there next (settledWaits).
+                lookAgain();
             } else if (editing !== 'none') {
                 // The surface the core asked for is the edit's: the held keys go into it, and a
                 // press back puts the keyboard there (standingField), the bar's when it was the bar.

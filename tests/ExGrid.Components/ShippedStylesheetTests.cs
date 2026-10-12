@@ -929,6 +929,34 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), carry + ended);
     }
 
+    [Fact] // ED-30 / ADR-0080 / ADR-0010 (the third composition, 2026-10-12): as the listener gives the editor the keyboard, what the hold has for the edit goes into it at once, never a frame later, when a composition the IME started there would come ahead of it
+    public void ED30_the_text_held_for_the_edit_goes_into_it_as_the_editor_takes_the_keyboard()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var focusEditor = Regex.Match(script, @"focusEditor: \(bar, fromField\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
+        var settled = Regex.Match(script, @"const editorSettled = \(\) => new Promise\(\(settle\) => \{.*?\n    \}\);", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(focusEditor);
+        Assert.NotEmpty(settled);
+
+        // Straight after the focus it gives, the hold's waits are looked at again: the held text is
+        // typed in a microtask, before the browser tells the page anything else. An IME's composition
+        // cannot be held, and one started in the editor before the next frame came ahead of the text
+        // still held for it: D10 read `かなｄ感じです`.
+        Assert.Matches(new Regex(@"field\.focus\(\{ preventScroll: true \}\);\s*followEditor\(field\);\s*(//[^\n]*\s*)*lookAgain\(\);"), focusEditor);
+        Assert.Matches(new Regex(@"const lookAgain = \(\) => \{\s*for \(const again of \[\.\.\.settledWaits\]\) \{\s*again\(\);\s*\}\s*\};"), script);
+        // Every wait of the hold's is one lookAgain reaches, and leaves the set as it settles, by
+        // whichever path; looked at again, it leaves no second frame of its own behind, and once
+        // settled it is never looked at again.
+        Assert.Matches(new Regex(@"const resolve = \(\) => \{\s*waiting = false;\s*settledWaits\.delete\(again\);\s*settle\(\);\s*\};"), settled);
+        Assert.Matches(new Regex(@"const again = \(\) => \{\s*if \(waiting\) \{\s*cancelAnimationFrame\(lookFrame\);\s*look\(\);\s*\}\s*\};\s*settledWaits\.add\(again\);\s*look\(\);"), settled);
+        Assert.Contains("lookFrame = requestAnimationFrame(look);", settled, StringComparison.Ordinal);
+        // The look settles the wait only through resolve, so that no path leaves it in the set.
+        var look = Regex.Match(settled, @"const look = \(\) => \{.*?\n        \};", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(look);
+        Assert.DoesNotContain("settle(", look, StringComparison.Ordinal);
+        Assert.Contains("resolve();", look, StringComparison.Ordinal);
+    }
+
     [Fact] // KB-12 / ADR-0080: the root's ring is drawn from the script's mark while its field holds a keyboard that did not come of a press on the grid, as from :focus-visible on a grid without one
     public void KB12_the_roots_ring_is_drawn_from_the_scripts_mark_on_a_grid_that_edits()
     {
