@@ -8,7 +8,8 @@ namespace ExSheet.Engine.Tests;
 /// What the seventeenth Windows run and the area pass of 2026-10-12 read of <c>LARGE</c> and
 /// <c>SMALL</c>'s k and of <c>MOD</c> (ADR-0047): <c>LARGE(A1:B5,1.5)</c> is the 2nd largest, as
 /// <c>AGGREGATE(14,6,A1:A11,1.5)</c> is; <c>SMALL(A1:A9,1.5)</c> the smallest; a k below 1 is
-/// <c>#NUM!</c>; and <c>MOD(2^27,1)</c> is 0 where Excel 2007 and earlier gave <c>#NUM!</c>. The cases themselves are
+/// <c>#NUM!</c>; <c>MOD(2^27,1)</c> is 0 where Excel 2007 and earlier gave <c>#NUM!</c>; and
+/// <c>MOD(123456789012,0.7)</c> is the exact remainder rounded once. The cases themselves are
 /// in <c>ExcelCases/large.json</c>, <c>small.json</c>, <c>aggregate.json</c> and <c>mod.json</c>; the
 /// rules across the forms are here.
 /// </summary>
@@ -92,7 +93,7 @@ public class KthAndModTests
         Assert.Equal(sheet.Evaluate($"=SMALL(A1:A10,11-{k})").Number, sheet.Evaluate($"=LARGE(A1:A10,{k})").Number);
     }
 
-    [Theory] // ADR-0047 (MOD-008): MOD answers a quotient of 2^27 and on to the limit a Microsoft 365 user reported, 1125900000000, from which it is #NUM! (MOD-010 to 016 ask Excel)
+    [Theory] // ADR-0047 (MOD-008, and MOD-010 to 016 in the area pass of 2026-10-12): MOD answers a quotient of 2^27 and on to the limit a Microsoft 365 user reported, 1125900000000, from which it is #NUM!
     [InlineData("=MOD(2^27,1)", 0)]
     [InlineData("=MOD(2^27+1,2)", 1)]
     [InlineData("=MOD(2^40,3)", 1)]
@@ -115,5 +116,32 @@ public class KthAndModTests
     public void ADR0047_mod_is_num_from_its_limit(string formula)
     {
         Assert.Equal(ErrorValue.Num, NewSheet().Evaluate(formula).Error);
+    }
+
+    [Theory] // ADR-0047 (the area pass of 2026-10-12: MOD-017): the remainder is exact and rounded once, the divisor added where the exact remainder's sign is the number's
+    [InlineData("=MOD(123456789012,0.7)", 0.5000078322611261)]
+    [InlineData("=MOD(-123456789012,0.7)", 0.19999216773887385)]
+    [InlineData("=MOD(123456789012,-0.7)", -0.19999216773887385)]
+    [InlineData("=MOD(-123456789012,-0.7)", -0.5000078322611261)]
+    [InlineData("=MOD(0.3,0.1)", 0.09999999999999998)]
+    [InlineData("=MOD(1,0.1)", 0.09999999999999995)]
+    [InlineData("=MOD(-7.5,2)", 0.5)]
+    [InlineData("=MOD(-0.087626,6630)", 6629.912374)]
+    public void ADR0047_mod_is_the_exact_remainder_rounded_once(string formula, double expected)
+    {
+        Assert.Equal(expected, NewSheet().Evaluate(formula).Number);
+    }
+
+    [Theory] // ADR-0047: a remainder of 0 is 0, never -0, whatever the signs
+    [InlineData("=MOD(-4,2)")]
+    [InlineData("=MOD(4,-2)")]
+    [InlineData("=MOD(-4,-2)")]
+    [InlineData("=MOD(0,-3)")]
+    public void ADR0047_mod_of_a_multiple_is_zero(string formula)
+    {
+        var value = NewSheet().Evaluate(formula);
+
+        Assert.Equal(0, value.Number);
+        Assert.False(double.IsNegative(value.Number));
     }
 }

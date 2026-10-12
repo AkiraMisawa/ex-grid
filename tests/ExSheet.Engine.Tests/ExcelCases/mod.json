@@ -141,11 +141,107 @@
     },
     {
       "id": "MOD-017",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: number-divisor*INT(number/divisor) in doubles gives 0.5000152587890625, where an exact remainder (C's fmod) gives 0.5000078322611261",
+      "source": "observed",
+      "description": "The exact remainder, rounded once: 0.5000078322611261, where number-divisor*INT(number/divisor) in doubles gives 0.5000152587890625 (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(123456789012,0.7)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.5000152587890625}
+      "expect": {"value2": 0.5000078322611261}
+    },
+    {
+      "id": "MOD-018",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the exact remainder plus the divisor, rounded once, is 0.19999216773887385, where number-divisor*INT(number/divisor) in doubles gives 0.1999969482421875 (MOD-017's numbers, the number negative)",
+      "cells": {"ZZ1000": "=MOD(-123456789012,0.7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.19999216773887385}
+    },
+    {
+      "id": "MOD-019",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the exact remainder plus the divisor, rounded once, is -0.19999216773887385, where the identity in doubles gives -0.1999969482421875 (MOD-017's numbers, the divisor negative)",
+      "cells": {"ZZ1000": "=MOD(123456789012,-0.7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.19999216773887385}
+    },
+    {
+      "id": "MOD-020",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double quotient rounds up to a whole number the exact one is below (10), so the exact remainder is almost the divisor, 0.09999999999999995; a fused multiply-add over that quotient gives -5.551115123125783E-17, and the identity in doubles 0",
+      "cells": {"ZZ1000": "=MOD(1,0.1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.09999999999999995}
+    },
+    {
+      "id": "MOD-021",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double quotient rounds up to a whole number the exact one is below (50): the exact remainder is 0.09999999999999973; a fused multiply-add gives -2.7755575615628914E-16, and the identity in doubles 0",
+      "cells": {"ZZ1000": "=MOD(5,0.1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.09999999999999973}
+    },
+    {
+      "id": "MOD-022",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double quotient rounds up to a whole number the exact one is below (-22), the number negative: the exact remainder is 0.09999999999999995; a fused multiply-add gives -5.551115123125783E-17, and the identity in doubles 0",
+      "cells": {"ZZ1000": "=MOD(-2.2,0.1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.09999999999999995}
+    },
+    {
+      "id": "MOD-023",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double quotient rounds up to a whole number the exact one is below (10), both negative: the exact remainder is -0.09999999999999995; a fused multiply-add gives 5.551115123125783E-17, and the identity in doubles 0",
+      "cells": {"ZZ1000": "=MOD(-1,-0.1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.09999999999999995}
+    },
+    {
+      "id": "MOD-024",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double quotient rounds up to a whole number the exact one is below (330): the exact remainder is 0.009999999999999754; a fused multiply-add gives -2.463307335887066E-16, and the identity in doubles -4.440892098500626E-16",
+      "cells": {"ZZ1000": "=MOD(3.3,0.01)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.009999999999999754}
+    },
+    {
+      "id": "MOD-025",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double quotient rounds up to a whole number the exact one is below (70): the exact remainder is 0.009999999999999941; a fused multiply-add gives -5.898059818321144E-17, and the identity in doubles -1.1102230246251565E-16",
+      "cells": {"ZZ1000": "=MOD(0.7,0.01)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.009999999999999941}
+    },
+    {
+      "id": "MOD-026",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double quotient rounds up to a whole number the exact one is below (10^12, below the limit): the exact remainder is 0.09999444888487688; a fused multiply-add gives -5.551115123125783E-06, x87 registers 0.09999445080757141, and the identity in doubles 0",
+      "cells": {"ZZ1000": "=MOD(100000000000,0.1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.09999444888487688}
+    },
+    {
+      "id": "MOD-027",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double quotient rounds up to a whole number the exact one is below: the exact remainder is 0.19999314677151464; a fused multiply-add gives -6.8532284853706216E-06, x87 registers 0.19999314844608307, and the identity in doubles 0",
+      "cells": {"ZZ1000": "=MOD(123456789012,0.2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.19999314677151464}
+    },
+    {
+      "id": "MOD-028",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double quotient rounds up to a whole number the exact one is below (7400), both negative: the exact remainder is -93.69999999997897; a fused multiply-add gives 2.1032064978498966E-11, x87 registers -93.69999999997896, and the identity in doubles 0",
+      "cells": {"ZZ1000": "=MOD(-693380,-93.7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -93.69999999997897}
+    },
+    {
+      "id": "MOD-029",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the exact remainder plus the divisor, rounded once, is 6629.912374; rounded first to an x87 register's 64 bits and then to a double, it is 6629.9123739999995",
+      "cells": {"ZZ1000": "=MOD(-0.087626,6630)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6629.912374}
     }
   ]
 }

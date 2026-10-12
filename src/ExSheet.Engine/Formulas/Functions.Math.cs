@@ -8,8 +8,8 @@ internal static partial class FunctionLibrary
     /// quotient reached 2^27; Excel 365 does not (MOD-008: <c>MOD(2^27,1)</c> is 0, the seventeenth
     /// Windows run). Microsoft documents no limit. A Microsoft 365 user reported on Microsoft's Q&amp;A
     /// (2021) that <c>MOD(1125899999999,1)</c> is 0 and <c>MOD(1125900000000,1)</c> is <c>#NUM!</c>, and
-    /// dated that limit from Excel 2010; the engine answers below it and refuses from it, and the corpus
-    /// asks Excel on both sides of it (MOD-010 to MOD-017).
+    /// dated that limit from Excel 2010; the engine answers below it and refuses from it, as the area
+    /// pass of 2026-10-12 read Excel on both sides of it (MOD-010 to MOD-016).
     /// </summary>
     private const double ModQuotientLimit = 1_125_900_000_000;
 
@@ -32,19 +32,25 @@ internal static partial class FunctionLibrary
         TryNumber(call, 0, out var number, out var failure) ? Operand.Of(Value.FromNumber(Math.Floor(number))) : failure;
 
     /// <summary>
-    /// MOD: <c>number - divisor*INT(number/divisor)</c> in doubles, as Microsoft defines it, so the
-    /// result takes the divisor's sign; it gives Excel's digits on every case a Windows run has read
-    /// (MOD-009's 0.09999999999999998 among them). A divisor of 0 is <c>#DIV/0!</c>, and a quotient
-    /// of <see cref="ModQuotientLimit"/> or more <c>#NUM!</c>.
+    /// MOD: <c>number - divisor*INT(number/divisor)</c>, as Microsoft defines it, computed exactly
+    /// and rounded once, so the result takes the divisor's sign. That is Excel's double on every case
+    /// a Windows run has read: <c>MOD(123456789012,0.7)</c> is 0.5000078322611261 (MOD-017), where the
+    /// identity evaluated in doubles gives 0.5000152587890625, and <c>MOD(0.3,0.1)</c> is
+    /// 0.09999999999999998 (MOD-009). <c>%</c> on doubles is the exact remainder, with the number's
+    /// sign; where that is not the divisor's, adding the divisor is the one rounding. Other evaluations
+    /// fit the same cases (a fused multiply-add, an x87 register), and MOD-020 to MOD-029 ask Excel
+    /// where they part (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>). A divisor of 0 is
+    /// <c>#DIV/0!</c>, and a quotient of <see cref="ModQuotientLimit"/> or more <c>#NUM!</c>.
     /// </summary>
     private static Operand Mod(FunctionCall call)
     {
         if (!TryNumber(call, 0, out var number, out var failure)) return failure;
         if (!TryNumber(call, 1, out var divisor, out failure)) return failure;
         if (divisor == 0) return Operand.Of(ErrorValue.Div0);
-        var quotient = number / divisor;
-        if (Math.Abs(quotient) >= ModQuotientLimit) return Operand.Of(ErrorValue.Num);
-        return Operand.Of(Evaluator.Number(number - divisor * Math.Floor(quotient)));
+        if (Math.Abs(number / divisor) >= ModQuotientLimit) return Operand.Of(ErrorValue.Num);
+        var remainder = number % divisor;
+        if (remainder != 0 && (remainder < 0) != (divisor < 0)) remainder += divisor;
+        return Operand.Of(Evaluator.Number(remainder));
     }
 
     // ---- PRODUCT, MEDIAN, LARGE, SMALL --------------------------------------------------------
