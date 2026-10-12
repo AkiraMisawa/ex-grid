@@ -4,30 +4,30 @@
   "cases": [
     {
       "id": "PMT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a loan's monthly payment",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(8%/12,10,10000)"},
       "check": "ZZ1000",
-      "expect": {"value2": -1037.0320893591636, "digits": 12}
+      "expect": {"value2": -1037.0320893591522}
     },
     {
       "id": "PMT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: payments at the start of each period",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(8%/12,10,10000,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -1030.1643271779772, "digits": 12}
+      "expect": {"value2": -1030.1643271779658}
     },
     {
       "id": "PMT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: saving to a future value",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(6%/12,18*12,0,50000)"},
       "check": "ZZ1000",
-      "expect": {"value2": -129.0811608679954, "digits": 12}
+      "expect": {"value2": -129.08116086799092}
     },
     {
       "id": "PMT-004",
@@ -67,12 +67,84 @@
     },
     {
       "id": "PMT-008",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a type other than 0 or 1",
+      "source": "observed",
+      "description": "A type of 2 is payment at the start of each period, as 1 is",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,2)"},
       "check": "ZZ1000",
+      "expect": {"value2": -147.95035898410148}
+    },
+    {
+      "id": "PMT-009",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a type that is not a whole number",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,0.5)"},
+      "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative type is payment at the start of each period, as 2 is",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -147.95035898410148}
+    },
+    {
+      "id": "PMT-011",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a number of periods that is not a whole number, which squaring cannot raise to",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(8%/12,10.5,10000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-012",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a negative number of periods",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(8%/12,-10,10000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: with a future value, where the payment carried beyond a double and the evaluations in doubles that also give PMT-001 to 008 differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.05/12,36,250000,-5000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -7363.703123976373}
+    },
+    {
+      "id": "PMT-014",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at the start of each period, where the payment carried beyond a double and the evaluations in doubles that also give PMT-001 to 008 differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.0725/12,12,250000,0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -21530.430018725492}
+    },
+    {
+      "id": "PMT-015",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at the start of each period, where the payment carried beyond a double and the evaluations in doubles that also give PMT-001 to 008 differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.05/12,12,10000,0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -852.5226402170998}
+    },
+    {
+      "id": "PMT-016",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: with a future value, where the payment carried beyond a double and the evaluations in doubles that also give PMT-001 to 008 differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.045/12,12,250000,-5000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -20936.48778866115}
     }
   ]
 }
