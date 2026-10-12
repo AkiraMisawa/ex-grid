@@ -6,7 +6,7 @@ namespace ExGrid.Columns;
 /// or a Header Group's edge. Pure, so the clamping is pinned in layer 1 and the
 /// component only translates pixels to columns.
 /// </summary>
-public static class HeaderReorder
+internal static class HeaderReorder
 {
     /// <summary>
     /// The insertion boundaries a grabbed unit may drop at, as column indices

@@ -191,8 +191,9 @@ public class MudSheetPackageTests : MudSheetTestContext
     public void The_grid_chrome_is_carried_whole()
     {
         // A property MudGridChrome gains is one Worded must carry: this list fails until it does.
+        // Stylesheets is the package's own, the same for every instance, so it is carried by itself.
         Assert.Equal(
-            [nameof(MudGridChrome.Icon), nameof(MudGridChrome.Label), nameof(MudGridChrome.LoadingProgressColor)],
+            [nameof(MudGridChrome.Icon), nameof(MudGridChrome.Label), nameof(MudGridChrome.LoadingProgressColor), nameof(MudGridChrome.Stylesheets)],
             typeof(MudGridChrome).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name).Order());
         Func<string, string?> icon = _ => "an-icon";
         var grid = new MudGridChrome { LoadingProgressColor = Color.Error, Icon = icon, Label = _ => null };
@@ -201,6 +202,7 @@ public class MudSheetPackageTests : MudSheetTestContext
 
         Assert.Equal(Color.Error, worded.LoadingProgressColor);
         Assert.Same(icon, worded.Icon);
+        Assert.Equal(grid.Stylesheets, worded.Stylesheets);
         Assert.Equal("Format Cells…", worded.Label!(SheetCommandIds.FormatCells));
         Assert.Same(grid, new MudSheetChrome { Grid = grid }.Grid);
     }

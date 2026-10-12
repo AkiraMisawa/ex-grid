@@ -160,7 +160,9 @@ public partial class ExGrid<TRow>
     /// </summary>
     /// <param name="ticket">The hand-back the gate answers.</param>
     /// <returns>The keys, in order; none for a hand-back already answered.</returns>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public IReadOnlyList<KeyboardEventArgs> KeysTypedOnTheWay(int ticket)
         => _typedOnTheWay.Remove(ticket, out var typed) ? typed() : [];
 

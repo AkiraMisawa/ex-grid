@@ -55,7 +55,7 @@ public readonly record struct ColumnWidthSpec
     public double MaxWidthPx { get; }
 
     /// <summary>A width brought within [<see cref="MinWidthPx"/>, <see cref="MaxWidthPx"/>].</summary>
-    public double Clamp(double px) => Math.Clamp(px, MinWidthPx, MaxWidthPx);
+    internal double Clamp(double px) => Math.Clamp(px, MinWidthPx, MaxWidthPx);
 
     /// <summary>
     /// "Size to fit": fixes the width at the content of this moment, clamped — an
@@ -65,7 +65,7 @@ public readonly record struct ColumnWidthSpec
     /// Fixed width, and it MAY be narrower than the current one: this is the only way
     /// an Auto column narrows.
     /// </summary>
-    public ColumnWidth SizeToFit(double requiredWidthPx)
+    internal ColumnWidth SizeToFit(double requiredWidthPx)
     {
         if (!double.IsFinite(requiredWidthPx) || requiredWidthPx < 0)
             throw new ArgumentOutOfRangeException(nameof(requiredWidthPx), requiredWidthPx,
@@ -75,6 +75,6 @@ public readonly record struct ColumnWidthSpec
 
     /// <summary>The one place the Auto-or-Fixed branch lives, so no consumer re-derives
     /// which width applies (ADR-0016).</summary>
-    public double ResolveWidthPx(AutoWidth current)
+    internal double ResolveWidthPx(AutoWidth current)
         => Width.IsAuto ? current.CurrentPx : Width.FixedPx;
 }

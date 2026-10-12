@@ -78,7 +78,9 @@ public partial class ExGrid<TRow>
     /// JavaScript interop requires it.</para>
     /// </summary>
     /// <param name="landing">The number the copy's payload carried.</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnCopyLandedAsync(int landing)
     {
         if (_disposed || _builtCopy is not { } built || built.Number != landing)
@@ -102,7 +104,9 @@ public partial class ExGrid<TRow>
     /// <para>Called by the grid's own script module and not for Consumers: it is public only because
     /// JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnClipboardChangedAsync()
     {
         if (!_disposed && DropCopiedRange())

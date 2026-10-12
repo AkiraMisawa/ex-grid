@@ -1,3 +1,17 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   Every product using is written with global::. A component in ExSheet.Components would look a
+   plain "ExSheet.Engine" up against the ExSheet component class first, and a plain "ExGrid.X"
+   against sibling types (the CS0426 trap recorded in AGENTS.md). The Web namespace makes @on...
+   handlers compile as event handlers rather than as plain HTML attributes. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid
+@using global::ExGrid.Cells
+@using global::ExGrid.Chrome
+@using global::ExGrid.Components
+@using global::ExGrid.Keys
+@using global::ExGrid.Selection
+@using global::ExSheet.Engine
 @using System.Globalization
 @using System.Runtime.CompilerServices
 
@@ -65,6 +79,9 @@
 <div class="ex-sheet-notice" role="status">@if (_noticeSaidByGrid) {<span aria-hidden="true">@_notice</span>} else {<text>@_notice</text>}</div>
 @* The browser's answer to a render, which a focusout waits for (ADR-0058). Renders nothing. *@
 @BrowserTurnMarkup
+@* ExSheet's stylesheet notice (ADR-0123, ERR-11), shown only by another version's stylesheet: last,
+   so the toolbar and the grid stand where they always have. *@
+<div data-ex-notice="stylesheet" data-ex-stylesheet="@NoticeStylesheet" data-ex-stamp="@NoticeStamp" style="display: none">@StylesheetNoticeWords</div>
 </div>
 
 @code {
@@ -1094,10 +1111,12 @@
 
     private void RefuseUnreachableRows()
     {
-        // The header takes one row height of the scrollable area when it is shown (ADR-0013).
+        // The header takes one row height of the scrollable area when it is shown (ADR-0013), so the
+        // rows and the header are counted as bands of one height, and the grid's own answer is asked
+        // rather than its ceiling derived again (ADR-0201). One band may be the whole ceiling.
         var bands = Sheet.RowCount + (ShowColumnHeadings ? 1 : 0);
-        var ceiling = global::ExGrid.ViewportGeometry.MaxScrollHeightPx;
-        var tallest = ceiling / bands;
+        var ceiling = GridMetrics.LargestRowHeightFor(1, 0);
+        var tallest = GridMetrics.LargestRowHeightFor(bands, 0);
         if (RowHeight > tallest)
         {
             throw new ArgumentOutOfRangeException(nameof(RowHeight), RowHeight, FormattableString.Invariant(

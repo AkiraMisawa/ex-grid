@@ -205,6 +205,68 @@ public class SelectionTests : SelectionGridContext
         Assert.Equal(rows, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount));
     }
 
+    [Fact] // PF-5 / DOM-2 / ADR-0206: with Pinned Columns too, painting a selection costs a tint and a box per range in each layer it reaches, never per cell or per area
+    public async Task Selecting_the_whole_result_beside_pinned_columns_costs_what_a_small_range_across_them_costs()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(pinnedColumnCount: 2, onSelectionChanged: s => selection = s);
+        await PressAsync(cut, Cell(0, 1).X, Cell(0, 1).Y);
+        // Across the boundary and past the five painted rows: B1:C11, so both selections reach both
+        // layers and off screen, and anything painted for either reason is painted for both.
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+        for (var i = 0; i < 10; i++)
+            await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+        Assert.Equal(22, selection!.CellCount);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Backspace", true, false, false, false, false));
+        // A tint and a box in each layer, the pinned tint in the shade layer of its own.
+        Assert.Single(cut.FindAll(".ex-shade-pinned > .ex-range-tint"));
+        Assert.Single(cut.FindAll(".ex-selection-pinned > .ex-range"));
+        Assert.Single(cut.FindAll(".ex-selection > .ex-range-tint"));
+        Assert.Single(cut.FindAll(".ex-selection > .ex-range"));
+        var elements = cut.FindAll(".ex-grid *").Count;
+        var rows = cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToArray();
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("a", true, false, false, false, false));
+
+        Assert.Equal(200 * 100, selection!.CellCount);
+        Assert.Single(cut.FindAll(".ex-shade-pinned > .ex-range-tint"));
+        Assert.Single(cut.FindAll(".ex-selection-pinned > .ex-range"));
+        Assert.Single(cut.FindAll(".ex-selection > .ex-range-tint"));
+        Assert.Single(cut.FindAll(".ex-selection > .ex-range"));
+        Assert.Equal(elements, cut.FindAll(".ex-grid *").Count);
+        Assert.Equal(rows, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount));
+    }
+
+    [Fact] // P3 / PF-5 / ADR-0206: a drag that crosses the pinned boundary repaints no row, and its elements grow by a tint and a box when it reaches the other layer and never again
+    public async Task A_drag_across_the_pinned_boundary_repaints_no_row()
+    {
+        var cut = RenderGrid(pinnedColumnCount: 2);
+        await PressAsync(cut, Cell(0, 0).X, Cell(0, 0).Y);
+        var rows = cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToArray();
+
+        // Within the pinned columns: a tint in the shade layer and a box in the pinned layer.
+        await DragAsync(cut, Cell(1, 1).X, Cell(1, 1).Y);
+        Assert.Single(cut.FindAll(".ex-shade-pinned > .ex-range-tint"));
+        Assert.Empty(cut.FindAll(".ex-selection > .ex-range-tint, .ex-selection > .ex-range"));
+        var pinnedOnly = cut.FindAll(".ex-grid *").Count;
+
+        // Across the boundary: the scrollable layer gains the range's tint and box, and that is all.
+        await DragAsync(cut, Cell(2, 2).X, Cell(2, 2).Y);
+        Assert.Single(cut.FindAll(".ex-selection > .ex-range-tint"));
+        Assert.Single(cut.FindAll(".ex-selection > .ex-range"));
+        var across = cut.FindAll(".ex-grid *").Count;
+        Assert.Equal(pinnedOnly + 2, across);
+
+        // Further, and to the bottom of the painted rows: the same elements, larger.
+        await DragAsync(cut, Cell(3, 3).X, Cell(3, 3).Y);
+        await DragAsync(cut, Cell(4, 3).X, Cell(4, 3).Y);
+        Assert.Equal(across, cut.FindAll(".ex-grid *").Count);
+        Assert.Equal([Rect(0, 0, 400, 100)], Rects(cut));
+
+        // No row was told any of it (ADR-0008: how many rows change membership at once stays zero).
+        Assert.Equal(rows, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount));
+    }
+
     [Fact] // A drag that stays inside one cell arrives once a frame and changes nothing
     public async Task Dragging_within_one_cell_renders_nothing()
     {

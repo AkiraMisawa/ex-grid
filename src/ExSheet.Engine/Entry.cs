@@ -44,9 +44,10 @@ public sealed class Entry : IEquatable<Entry>
             ? throw new ArgumentException($"{constant.Error.ToText()} is not a constant a cell can hold.", nameof(constant))
             : new(constant);
 
-    /// <summary>A Formula Entry from its invariant text, which begins with <c>=</c>.</summary>
+    /// <summary>A Formula Entry from its invariant text, which begins with <c>=</c>. Internal
+    /// (ADR-0201): <see cref="Parse"/> reads the same text as the same Formula.</summary>
     /// <exception cref="FormulaSyntaxException">The Formula cannot be read.</exception>
-    public static Entry FromFormula(string formula)
+    internal static Entry FromFormula(string formula)
     {
         ArgumentNullException.ThrowIfNull(formula);
         var parsed = Parser.Parse(formula, out var tokens);

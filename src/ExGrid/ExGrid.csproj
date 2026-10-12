@@ -16,6 +16,25 @@
     <ProjectReference Include="..\ExGrid.Data\ExGrid.Data.csproj" />
   </ItemGroup>
 
+  <!-- Test projects only, never a package (ADR-0201): a sibling or a Wrapper that needed an
+       internal would be doing what a third party's Wrapper could not (ADR-0030, FL-1). -->
+  <ItemGroup>
+    <!-- Layer 1 pins the core's machinery: the key table, the clipboard, fill and overflow
+         rules, the geometry, the selection's transitions. -->
+    <InternalsVisibleTo Include="ExGrid.Tests" />
+    <!-- Layer 2 stubs the scroll offsets the script answers, and drives a paste by its text. -->
+    <InternalsVisibleTo Include="ExGrid.Components" />
+    <!-- Each product's layer 2 does the same through the grid it draws, and every bUnit project
+         compiles tests/ShippedScript.cs, which asks for the script's address as the grid does. -->
+    <InternalsVisibleTo Include="ExGrid.MudBlazor.Tests" />
+    <InternalsVisibleTo Include="ExSheet.Components.Tests" />
+    <InternalsVisibleTo Include="ExSheet.MudBlazor.Tests" />
+    <InternalsVisibleTo Include="ExPivot.Components.Tests" />
+    <InternalsVisibleTo Include="ExPivot.MudBlazor.Tests" />
+    <!-- The keyboard reference is checked against the key table the core answers by. -->
+    <InternalsVisibleTo Include="ExGrid.Docs.Generator.Tests" />
+  </ItemGroup>
+
   <!-- Exactly the ExGrid.Data this core was built with, as the engine takes it (DA-1). -->
   <Target Name="DependOnExactlyThisData" AfterTargets="_GetProjectReferenceVersions">
     <ItemGroup>

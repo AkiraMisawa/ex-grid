@@ -10,7 +10,7 @@ namespace ExGrid.Columns;
 /// <c>[TopTier − TierSpan + 1, TopTier]</c>.</param>
 /// <param name="Pinned">Whether the whole rectangle sits inside the pinned block — a
 /// straddle was refused at resolution.</param>
-public sealed record ResolvedHeaderGroup(
+internal sealed record ResolvedHeaderGroup(
     HeaderGroup Group, int FirstColumn, int MemberCount, int TopTier, int TierSpan, bool Pinned)
 {
     /// <summary>The declaration's caption.</summary>
@@ -28,7 +28,7 @@ public sealed record ResolvedHeaderGroup(
 /// the pinned boundary. A dishonest header over money is the failure this design
 /// refuses everywhere.
 /// </summary>
-public sealed class HeaderGroupLayout
+internal sealed class HeaderGroupLayout
 {
     /// <summary>No tiers: the band is the one header row it always was.</summary>
     public static HeaderGroupLayout Empty { get; } = new([], 0, []);

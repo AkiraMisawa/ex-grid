@@ -1,4 +1,10 @@
 @typeparam TRow where TRow : class
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   The Web namespace is required for @@onscroll and friends to compile as event handlers rather
+   than as plain HTML attributes: without it the markup builds and renders while quietly listening
+   to nothing. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
 @using System.Globalization
 @using System.Runtime.CompilerServices
 @using global::ExGrid.Cells
@@ -61,12 +67,24 @@
 @* data-ex-pointed-from: while the grid is pointed at, the root of the grid that points, which the
    script tells of each press handed over (ADR-0058, "On a circuit"). *@
 <div class="@RootClass" style="@RootStyle()" tabindex="@RootTabIndex" dir="ltr" @ref="_root"
-     id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
+     id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Busy ? "true" : null)"
      data-ex-reveal="@_revealToken" data-ex-follow="@_followToken" data-ex-follow-focus="@FollowFocusId()"
      data-ex-pointed-from="@PointedFrom"
      aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
      aria-activedescendant="@(keyFieldShown ? null : activeDescendant)"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
+    @* The stylesheet's notice (ADR-0123, ERR-11): it carries the stamp of the stylesheet this build
+       ships, and the inline display keeps it out of the way until a stylesheet's rules decide.
+       Each shipped stylesheet shows it for any stamp and hides it for its own, so another
+       version's stylesheet shows it, ours hides it, and none yet loaded shows nothing — with no
+       script. Its words are the built-in Chrome's (ADR-0203). Beside it, one for each stylesheet
+       the Chrome brings: a Wrapper has no root of its own (ADR-0062), so its notice stands here,
+       with the same markup, which is a contract between versions (ADR-0123). *@
+    <div data-ex-notice="stylesheet" data-ex-stylesheet="@ShippedAssets.StylesheetName" data-ex-stamp="@ShippedAssets.StylesheetStamp" style="display: none">@StylesheetNoticeWords</div>
+    @foreach (var brought in Chrome?.Stylesheets ?? [])
+    {
+        <div data-ex-notice="stylesheet" data-ex-stylesheet="@brought.Name" data-ex-stamp="@brought.Stamp" style="display: none">@StylesheetNoticeWords</div>
+    }
     @* One scroll container for both axes, with the header and the Pinned Columns held in
        place by `position: sticky` inside it. Two containers cannot do this: giving the
        inner one a non-visible overflow on one axis turns the other into `auto` (CSS
@@ -219,47 +237,77 @@
                                autocomplete="off" autocapitalize="off" spellcheck="false" />
                     </div>
                 }
-                @if (_visible is { } visible)
+                @if (_scriptRefused)
+                {
+                    @* The script is another version's, or none (ADR-0123, ERR-10): said here, in place
+                       of the rows, which nothing could select, scroll or edit, and in the live region
+                       once, which is where assistive technology hears it. A press here goes nowhere. *@
+                    <div data-ex-notice="script" aria-hidden="true" @onmousedown:stopPropagation @ondblclick:stopPropagation @oncontextmenu:stopPropagation>@ScriptRefusedWords</div>
+                }
+                else if (_visible is { } visible)
                 {
                     var pointDashes = PointDashesRange(visible);
                     var outlineCover = OutlineCoverAt(visible);
                     @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0 || pointDashes is not null)
                     {
-                        @* One element per range, so what selection costs to paint depends
-                           on how many rectangles there are and never on how many cells
-                           they cover (ADR-0008). The two layers are the horizontal axis
-                           being asymmetric again: the pinned part of a range has to
-                           travel with the Pinned Columns, and the rest has to pass
-                           underneath them. Both carry a key because their siblings do —
-                           an unkeyed element beside keyed ones degrades the diff to
-                           positional matching and would recreate the rows (ADR-0003). *@
+                        @* What selection costs to paint depends on how many rectangles there
+                           are and never on how many cells they cover (ADR-0008): a range is a
+                           tint and a box in each layer it reaches (ADR-0206). The layers are the
+                           horizontal axis being asymmetric again: the pinned part of a range has
+                           to travel with the Pinned Columns, and the rest has to pass underneath
+                           them. Each carries a key because its siblings do — an unkeyed element
+                           beside keyed ones degrades the diff to positional matching and would
+                           recreate the rows (ADR-0003). *@
                         @* Paint, not content (ADR-0008/0033): a role="grid" whose rows
                            are interleaved with unnamed divs is a malformed grid. *@
+                        @* The pinned shade (ADR-0206): the washes over the Pinned Columns — the
+                           bands first, beneath every range, then each range's tint — in a layer
+                           of their own, immediately before the pinned selection layer, so that a
+                           stylesheet can blend the layer as one with the pinned cells beneath it
+                           (ExSheet's Paper multiplies it). Emitted only while it holds something:
+                           a one-cell selection is the Focus outline alone and adds no layer. *@
+                        @if (PinnedShadeHolds(visible))
+                        {
+                            <div class="ex-shade-pinned" aria-hidden="true" @key="PinnedShadeLayerKey">
+                                @* The hover band (ADR-0029, ADR-0021's fifth entry): the row
+                                   under the pointer, painted exactly as the Focus band is —
+                                   one rectangle, beneath everything, no row told. *@
+                                @if (HoverRowRange is { } hoverRow && SelectionStyles.Pinned(hoverRow, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedHover)
+                                {
+                                    <div class="ex-hover-row" style="@pinnedHover"></div>
+                                }
+                                @if (!_selection.Selection.IsEmpty)
+                                {
+                                    @* The Focus band (ADR-0008): one more rectangle, before every
+                                       tint so every range stays readable over it. *@
+                                    @if (HighlightFocusRow && SelectionStyles.Pinned(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedBand)
+                                    {
+                                        <div class="ex-focus-row" style="@pinnedBand"></div>
+                                    }
+                                    @* Each range's tint, cut at the boundary, round a hole where the
+                                       Focus is (ADR-0008, 2026-09-29; ADR-0206). *@
+                                    @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
+                                    {
+                                        @if (SelectionStyles.Tint(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true) is { } pinnedTint)
+                                        {
+                                            <div class="ex-range-tint" style="@pinnedTint"></div>
+                                        }
+                                    }
+                                }
+                            </div>
+                        }
                         <div class="ex-selection-pinned" aria-hidden="true" @key="PinnedSelectionLayerKey">
-                            @* The hover band (ADR-0029, ADR-0021's fifth entry): the row
-                               under the pointer, painted exactly as the Focus band is —
-                               one rectangle, beneath everything, no row told. *@
-                            @if (HoverRowRange is { } hoverRow && SelectionStyles.Pinned(hoverRow, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedHover)
-                            {
-                                <div class="ex-hover-row" style="@pinnedHover"></div>
-                            }
                             @if (!_selection.Selection.IsEmpty)
                             {
-                                @* The Focus band (ADR-0008): one more rectangle, first in
-                                   the layer so every range stays readable over it. *@
-                                @if (HighlightFocusRow && SelectionStyles.Pinned(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedBand)
+                                @* Each range's box, a single range outlined; the Focus's own element
+                                   follows, so the stylesheet can tell it stands inside a single
+                                   range (ADR-0008, 2026-09-29). Its tint is in the shade layer
+                                   beneath (ADR-0206). *@
+                                @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
                                 {
-                                    <div class="ex-focus-row" style="@pinnedBand"></div>
-                                }
-                                @* Each range tinted round a hole where the Focus is, and a single
-                                   range outlined as well; the Focus's own element follows, so the
-                                   stylesheet can tell it stands inside a single range (ADR-0008,
-                                   2026-09-29). *@
-                                @foreach (var range in _selection.Selection.Ranges)
-                                {
-                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } fill)
+                                    @if (SelectionStyles.Box(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedRangeBox)
                                     {
-                                        <div class="@RangeClass" style="@fill"></div>
+                                        <div class="@RangeClass" style="@pinnedRangeBox"></div>
                                     }
                                 }
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedFocus)
@@ -335,11 +383,21 @@
                                 {
                                     <div class="ex-focus-row" style="@band"></div>
                                 }
-                                @foreach (var range in _selection.Selection.Ranges)
+                                @* The bands, then every tint, then every box: the outlines lie over
+                                   the tints by tree order alone, and nothing here isolates its own
+                                   painting (ADR-0206). *@
+                                @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
                                 {
-                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } fill)
+                                    @if (SelectionStyles.Tint(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false) is { } tint)
                                     {
-                                        <div class="@RangeClass" style="@fill"></div>
+                                        <div class="ex-range-tint" style="@tint"></div>
+                                    }
+                                }
+                                @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
+                                {
+                                    @if (SelectionStyles.Box(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } rangeBox)
+                                    {
+                                        <div class="@RangeClass" style="@rangeBox"></div>
                                     }
                                 }
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } focus)
@@ -1000,8 +1058,6 @@
     /// decision, the period is not.</summary>
     private static readonly TimeSpan EdgeScrollTick = TimeSpan.FromMilliseconds(50);
 
-    private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
-
     /// <summary>
     /// The metrics behind width observation and the overflow decision until a theme
     /// layer supplies real ones — the measured numbers of ADR-0016, not guesses: the
@@ -1101,7 +1157,7 @@
     /// application ships to macOS, where a scrollbar takes nothing, and to Windows, where
     /// it takes about 15px, so any constant written here is wrong for half its users.
     /// The browser reports what its scrollbars actually take and the grid subtracts it
-    /// (<see cref="ViewportBox"/>, ADR-0013/0021); this parameter keeps meaning the size
+    /// (ADR-0013/0021); this parameter keeps meaning the size
     /// of the element, which is also what the CSS is written from.
     /// </summary>
     [Parameter] public ViewportSize ViewportHeight { get; set; } = DefaultViewportHeightPx;
@@ -1436,8 +1492,8 @@
     /// <summary>
     /// The copy cap, in cells (ADR-0005). Past it the grid does not copy at all — it
     /// never copies the first N — and the refusal is strictly past: a selection of
-    /// exactly the cap still copies. The Consumer can set it higher; the default is a
-    /// safety valve, not a daily path.
+    /// exactly the cap still copies. The Consumer can set it higher; the default, 1,000,000
+    /// cells, is a safety valve, not a daily path.
     /// </summary>
     [Parameter] public long CopyCellCap { get; set; } = ClipboardRules.DefaultCellCap;
 
@@ -2267,6 +2323,7 @@
     // with a row's identity key or a Placeholder's boxed index.
     private static readonly object SelectionLayerKey = new();
     private static readonly object PinnedSelectionLayerKey = new();
+    private static readonly object PinnedShadeLayerKey = new();
     private static readonly object EditorLayerKey = new();
 
     // Every id this instance writes is prefixed per instance (ADR-0018/0033): two
@@ -2441,6 +2498,12 @@
     /// on an answer that has not arrived.</summary>
     private bool Prerendered => !RendererInfo.IsInteractive || !_listening;
 
+    /// <summary>Waiting on something that will come: Prerendered, unless the script was refused —
+    /// a grid that refused its script waits for nothing, and says so in place of its rows instead
+    /// of sitting dimmed and busy (ADR-0123, ERR-10). It still takes no tab stop: nothing would
+    /// hear a key.</summary>
+    private bool Busy => Prerendered && !_scriptRefused;
+
     // Whether the capture-phase listener is attached (ADR-0010/0021) — set once, by the
     // attach, whose render lifts the Prerendered state.
     private bool _listening;
@@ -2472,7 +2535,7 @@
 
     // Interned per combination, as the header cells' classes are (ADR-0027 P5). ex-pointed-at is
     // the grid pointed at from outside (ADR-0058, ADR-0029's note of 2026-09-30).
-    private string RootClass => (_loading || Prerendered, _editMode != EditMode.None, PointedAtNow) switch
+    private string RootClass => (_loading || Busy, _editMode != EditMode.None, PointedAtNow) switch
     {
         (true, true, false) => "ex-grid ex-loading ex-editing",
         (true, false, false) => "ex-grid ex-loading",
@@ -2492,6 +2555,33 @@
     /// one outline, around the whole range, and several ranges carry none. Interned, so a
     /// render composes nothing for them.</summary>
     private string RangeClass => _selection.Selection.Ranges.Count == 1 ? "ex-range ex-range-single" : "ex-range";
+
+    /// <summary>
+    /// Whether the pinned shade layer holds anything over the painted rows (ADR-0206): the hover
+    /// band's or the Focus band's pinned part, or any range's pinned tint. The layer is emitted only
+    /// then, so a one-cell selection, or a selection that reaches no Pinned Column, adds no element.
+    /// Answered from the geometry alone, without writing a style down; a loop over the ranges, never
+    /// an enumerator, so a render allocates nothing for it.
+    /// </summary>
+    private bool PinnedShadeHolds(RowRange visible)
+    {
+        var columns = _columnStyles.Geometry;
+        if (columns.PinnedCount == 0)
+            return false;
+        if (HoverRowRange is { } hover && SelectionStyles.Reaches(hover, columns, visible, pinnedLayer: true))
+            return true;
+        var selection = _selection.Selection;
+        if (selection.IsEmpty)
+            return false;
+        if (HighlightFocusRow && SelectionStyles.Reaches(FocusRowRange, columns, visible, pinnedLayer: true))
+            return true;
+        for (var r = 0; r < selection.Ranges.Count; r++)
+        {
+            if (SelectionStyles.Tinted(selection.Ranges[r], selection.Focus, columns, visible, pinnedLayer: true))
+                return true;
+        }
+        return false;
+    }
 
     /// <summary>
     /// What lies above the selection layer at its edges as the slice is painted (ADR-0008,
@@ -3439,9 +3529,13 @@
         // Nothing here may escape: a missing or misconfigured module file would
         // otherwise take the Range Request down with it, and the grid would sit on
         // Placeholders forever without ever asking the Consumer for rows.
+        IJSObjectReference? attached = null;
         try
         {
-            var module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            // At an address that changes with the file's content (ADR-0123, ERR-9).
+            var module = await JS.InvokeAsync<IJSObjectReference>("import", ModuleAddress);
+            // Only a runtime that answers nothing at all, as a test's loose stand-in does; a
+            // browser's import either gives a module or throws.
             if (module is null)
                 return;
             if (_disposed)
@@ -3452,6 +3546,15 @@
                 return;
             }
             _module = module;
+
+            // The script this build was made with, or nothing attaches (ADR-0123, ERR-10).
+            if (!await ScriptIsOwnAsync(module))
+            {
+                await RefuseScriptAsync(null);
+                return;
+            }
+            if (_disposed)
+                return;
 
             _self ??= DotNetObjectReference.Create(this);
             var claims = KeyClaims();
@@ -3470,6 +3573,7 @@
                 return;
             }
 
+            attached = handle;
             _scrollHandle = handle;
             _metaIsPrimary = await handle.InvokeAsync<bool>("metaIsPrimary");
 
@@ -3484,8 +3588,17 @@
             _listening = true;
             StateHasChanged();
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        catch (JSException)
         {
+            // The module did not load, has no stamp to answer (it is older than the stamp), or
+            // broke while it attached: shown the same way as another version's, never left busy
+            // and silent (ADR-0123, ERR-10). Whatever had attached is let go.
+            await RefuseScriptAsync(attached);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            // The circuit or the component went first: disposal racing the attach is not a fault
+            // (ERR-7), and there is nobody left to tell.
         }
     }
 
@@ -3634,7 +3747,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnPointerRowAsync(double x, double y)
     {
         if (_disposed || !double.IsFinite(x) || !double.IsFinite(y))
@@ -4768,7 +4883,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnPointerRestAsync(double x, double y)
     {
         // A pause in the middle of a drag-select is not a hover: the pointer is holding a
@@ -4804,7 +4921,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnPointerAwayAsync(bool bandOnly)
     {
         if (_disposed)
@@ -5908,7 +6027,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnViewportReportAsync(
         double gutterWidthPx, double gutterHeightPx, double widthPx, double heightPx)
     {
@@ -5993,7 +6114,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public ClipboardPayload BuildCopyPayload()
     {
         if (_disposed)
@@ -6042,7 +6165,9 @@
     /// </summary>
     /// <param name="withHeaders">Emit the declared headers as one row above the block,
     /// counted against the cap (ADR-0005).</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task<ClipboardPayload?> BuildCopyPayloadAsync(bool withHeaders = false)
     {
         if (_disposed)
@@ -6107,7 +6232,9 @@
     /// <param name="text">The <c>text/plain</c> flavour, or null for none.</param>
     /// <param name="html">The <c>text/html</c> flavour, or null for none.</param>
     /// <param name="paint">The render the paste was taken against (<c>data-ex-paint</c>).</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnPasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint = PaintNotTold)
     {
         await using var textReference = text;
@@ -6138,14 +6265,14 @@
     /// Intent carrying every cell (ADR-0007). The browser reaches it through
     /// <see cref="OnPasteStreamsAsync"/>, never directly.
     ///
-    /// <para>Not for Consumers: it is public because it was the interop entry point before
-    /// the paste crossed as streams, and the component tests drive it directly.</para>
+    /// <para>Internal (ADR-0201): it was the interop entry point before the paste crossed as
+    /// streams, and the component tests drive it directly.</para>
     /// </summary>
     /// <param name="text">The <c>text/plain</c> flavour, or null for none.</param>
     /// <param name="html">The <c>text/html</c> flavour, or null for none.</param>
     /// <param name="paint">The render the paste was taken against (ADR-0142); left out, the
     /// newest.</param>
-    public async Task OnPasteAsync(string? text, string? html, int paint = PaintNotTold)
+    internal async Task OnPasteAsync(string? text, string? html, int paint = PaintNotTold)
     {
         if (_disposed)
             return;
@@ -6378,7 +6505,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public bool Ping() => true;
 
     /// <summary>
@@ -6386,7 +6515,9 @@
     /// Called by the instance's own clipboard wiring, which knows it only once the write
     /// has failed — so it is a Refusal raised after the fact, with its own reason.
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnCopyWriteRejectedAsync()
     {
         NotifyCopyRefused(CopyRefusalReason.ClipboardUnavailable);
@@ -6414,7 +6545,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary,
         bool fromDescendant = false, string? editorText = null, int editorCaret = -1,
@@ -9518,7 +9651,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnDevicePixelAsync(double devicePixelRatio)
     {
         // It crosses the JS boundary, so nothing here is trusted: a NaN or a zero would put
@@ -9550,7 +9685,9 @@
     /// </summary>
     /// <param name="zone">The IANA name the browser reports.</param>
     /// <returns>A task that completes when the Consumer has been told.</returns>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnTimeZoneAsync(string zone)
     {
         // It crosses the JS boundary, so nothing here is trusted.
@@ -9588,7 +9725,9 @@
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task OnLayoutCeilingAsync(double ceilingPx)
     {
         // It crosses the JS boundary, so nothing here is trusted: a NaN would travel into

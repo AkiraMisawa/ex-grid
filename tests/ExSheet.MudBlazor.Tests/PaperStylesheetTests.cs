@@ -48,6 +48,46 @@ public class PaperStylesheetTests
         Assert.Matches(@"background-image\s*:\s*var\(--ex-row-rule\)\s*;", body);
     }
 
+    [Fact] // ADR-0206 / DC-59 / SH-54: on the Paper every wash multiplies — the pinned shade layer as one group, each scrollable tint and band — and nothing drawn on top does
+    public void On_the_paper_every_wash_multiplies_and_nothing_drawn_on_top_does()
+    {
+        var css = Regex.Replace(Stylesheet("src", "ExSheet", "Assets", "ex-sheet.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var forced = Regex.Match(css, @"@media \(forced-colors: active\) \{(?<body>(?:[^{}]|\{[^{}]*\})*)\}");
+        Assert.True(forced.Success);
+        var outside = css.Remove(forced.Index, forced.Length);
+        var rules = Regex.Matches(outside, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
+            .Select(rule => (Selectors: rule.Groups["selectors"].Value.Split(',').Select(selector => selector.Trim()).ToArray(), Body: rule.Groups["body"].Value))
+            .ToList();
+
+        // What multiplies: the pinned shade layer itself, whose children are plain, and in the
+        // scrollable layer each tint and each band.
+        var blended = rules.Where(rule => rule.Body.Contains("mix-blend-mode: multiply", StringComparison.Ordinal))
+            .SelectMany(rule => rule.Selectors).Order(StringComparer.Ordinal).ToArray();
+        Assert.Equal(
+            [".ex-sheet .ex-selection > .ex-focus-row", ".ex-sheet .ex-selection > .ex-hover-row", ".ex-sheet .ex-selection > .ex-range-tint", ".ex-sheet .ex-shade-pinned"],
+            blended);
+        // For a scrollable tint's blend to reach the rows, its layer is no group of its own on the
+        // Paper; the shade layer keeps its own, since the layer is what blends.
+        Assert.Contains(rules, rule => rule.Selectors.SequenceEqual([".ex-sheet .ex-selection"]) && rule.Body.Contains("z-index: auto", StringComparison.Ordinal));
+        Assert.DoesNotContain(rules, rule => rule.Selectors.Any(selector => selector.Contains(".ex-shade-pinned", StringComparison.Ordinal)) && rule.Body.Contains("z-index", StringComparison.Ordinal));
+        // The overrides that took the range's isolation and its tint's z-index away are gone with them:
+        // no rule on the selection's layers or a range isolates, and none paints a ::before. Rules on
+        // anything else are not this decision's.
+        var selection = rules.Where(rule => rule.Selectors.Any(selector =>
+            selector.Contains(".ex-range", StringComparison.Ordinal)
+            || selector.Contains(".ex-selection", StringComparison.Ordinal)
+            || selector.Contains(".ex-shade-pinned", StringComparison.Ordinal))).ToList();
+        Assert.NotEmpty(selection);
+        Assert.DoesNotContain(selection, rule => rule.Body.Contains("isolation", StringComparison.Ordinal));
+        Assert.DoesNotContain(selection, rule => rule.Selectors.Any(selector => selector.Contains("::before", StringComparison.Ordinal)));
+        // The shade is black at 22% where no token names it: #C7C7C7 over white Paper.
+        Assert.Contains(rules, rule => rule.Selectors.SequenceEqual([".ex-sheet .ex-range-tint"])
+            && rule.Body.Contains("background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22));", StringComparison.Ordinal));
+        // Under forced colors nothing blends what the browser forces.
+        Assert.Matches(@"mix-blend-mode:\s*normal", forced.Groups["body"].Value);
+        Assert.Contains(".ex-sheet .ex-shade-pinned", forced.Groups["body"].Value, StringComparison.Ordinal);
+    }
+
     [Fact] // SH-39 / ADR-0071: ExSheet's stylesheet defaults the Paper to Excel's white and the Ink to Excel's black, the same in every scheme
     public void The_paper_and_the_ink_default_to_white_and_black_in_every_scheme()
     {

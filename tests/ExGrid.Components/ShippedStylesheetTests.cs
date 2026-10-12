@@ -601,13 +601,14 @@ public class ShippedStylesheetTests
         // Nothing measured, nothing on the document or the window.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), handOn.Value + heard.Value);
         Assert.DoesNotMatch(new Regex(@"window\.addEventListener|window\.dispatchEvent|document\.dispatchEvent|document\.addEventListener\('ex-"), script.Text);
-        // And no state outside an instance: the module's one top-level statement is attach, so
-        // everything above lives in one instance's closure and no instance keeps another's.
+        // And no state outside an instance: the module's top-level statements are attach, and the
+        // stamp the grid reads before it (ADR-0123), which holds nothing; so everything above lives
+        // in one instance's closure and no instance keeps another's.
         var topLevel = script.Text.Split('\n')
             .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
                 && !line.StartsWith("/**", StringComparison.Ordinal))
             .ToList();
-        Assert.Equal(["export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone) {", "}"], topLevel);
+        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
@@ -1539,6 +1540,50 @@ public class ShippedStylesheetTests
         // A state that is restated by an outline too keeps it on a cell carrying both.
         Assert.True(IndexOf(".ex-cell.ex-changed") < IndexOf(".ex-cell.ex-state-missing"));
         Assert.True(IndexOf(".ex-cell.ex-changed") < IndexOf(".ex-cell.ex-state-modified"));
+    }
+
+    [Fact] // ADR-0206 / DC-59: the core's stylesheet blends nothing — ExGrid and ExPivot paint the bands, then the tints, then the boxes, source over — and nothing on the tint or the pinned shade layer transitions
+    public void The_core_stylesheet_blends_nothing_and_the_new_layers_do_not_transition()
+    {
+        var (css, rules) = CoreStylesheet();
+
+        Assert.DoesNotContain("mix-blend-mode", css, StringComparison.Ordinal);
+        // And no range isolates its own painting: the outlines lie over the tints by tree order.
+        Assert.DoesNotContain(rules, rule => rule.Selectors.Any(selector => selector.StartsWith(".ex-range", StringComparison.Ordinal))
+            && rule.Body.Contains("isolation", StringComparison.Ordinal));
+        var named = rules.Where(rule => rule.Selectors.Any(selector => selector.Contains(".ex-range-tint", StringComparison.Ordinal) || selector.Contains(".ex-shade-pinned", StringComparison.Ordinal))).ToList();
+        Assert.NotEmpty(named);
+        Assert.All(named, rule => Assert.DoesNotMatch(new Regex(@"(?<![\w-])(transition|animation|isolation|mix-blend-mode)(-[\w-]+)?\s*:"), rule.Body));
+        // The range's box paints no tint of its own any more: nothing draws a ::before on it.
+        Assert.DoesNotContain(rules, rule => rule.Selectors.Any(selector => selector.StartsWith(".ex-range::before", StringComparison.Ordinal)));
+    }
+
+    [Fact] // ADR-0206 / ADR-0008 / ADR-0029: the tint paints the selection's fill, clipped by the hole it carries; the pinned shade layer is a sticky, unclickable layer above the pinned cells, as the pinned selection layer is
+    public void The_tint_paints_the_fill_through_its_hole_and_the_shade_layer_stands_as_the_pinned_layer_does()
+    {
+        var rules = UnconditionalRules();
+
+        var tint = Assert.Single(rules, rule => rule.Selectors.SequenceEqual([".ex-range-tint"]));
+        Assert.Contains("background: var(--ex-selection-fill, rgba(60, 120, 216, 0.18));", tint.Body, StringComparison.Ordinal);
+        Assert.Contains("clip-path: var(--ex-range-hole);", tint.Body, StringComparison.Ordinal);
+        Assert.Contains("--ex-range-hole: none;", tint.Body, StringComparison.Ordinal);
+
+        // The shade layer is placed exactly as the pinned selection layer: one rule for both.
+        var place = Assert.Single(rules, rule => rule.Selectors.Contains(".ex-shade-pinned") && rule.Body.Contains("position", StringComparison.Ordinal));
+        Assert.Contains(".ex-selection-pinned", place.Selectors);
+        Assert.Matches(new Regex(@"position:\s*sticky;.*z-index:\s*3;"), place.Body);
+        Assert.Contains(rules, rule => rule.Selectors.Contains(".ex-shade-pinned") && rule.Body.Contains("pointer-events: none", StringComparison.Ordinal));
+    }
+
+    [Fact] // ADR-0206 / UX-7: under forced colors no tint is painted, stated rather than left to how a browser forces a translucent background; every range keeps its box's outline
+    public void Under_forced_colours_no_tint_is_painted()
+    {
+        var (_, forced) = ForcedColorsSplit();
+
+        var tint = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-range-tint"));
+        Assert.Matches(new Regex(@"display:\s*none;"), tint.Body);
+        var box = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-range"));
+        Assert.Matches(new Regex(@"outline-style:\s*solid;"), box.Body);
     }
 
     [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-66: a mark comes and goes in one step — nothing in the core's stylesheet transitions or animates

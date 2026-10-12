@@ -413,7 +413,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     /// Windows run, cases 10 and 11).</item>
     /// </list>
     /// </summary>
-    public static string[] AbbreviatedMonthNamesOf(CultureInfo culture)
+    internal static string[] AbbreviatedMonthNamesOf(CultureInfo culture)
     {
         ArgumentNullException.ThrowIfNull(culture);
         var names = (string[])culture.DateTimeFormat.AbbreviatedMonthNames.Clone();

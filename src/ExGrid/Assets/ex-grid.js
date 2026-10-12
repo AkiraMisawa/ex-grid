@@ -36,6 +36,21 @@
 // by a DOM event that is the whole message, and nothing of either instance is kept by the other.
 
 /**
+ * The SHA-256 of this file's source, which the grid compares with the one it was built with before
+ * it attaches anything (ADR-0123; ADR-0021's note of 2026-10-11). A page that kept another
+ * version's script beside a new component, or a module older than this export, is refused and said
+ * to be reloaded, instead of running code that does not match. A file cannot hold its own hash, so
+ * tools/assets/minify.mjs writes the source's in place of the identifier below; this source is
+ * never served. It reads nothing from the browser and adds no listener. Its name and its answer, a
+ * string, never change between versions: they are how two versions tell each other apart.
+ * @returns {string} the SHA-256 of Assets/ex-grid.js, as the shipped file's banner names it
+ */
+export function stamp() {
+    // eslint-disable-next-line no-undef
+    return typeof EX_SOURCE_SHA256 === 'string' ? EX_SOURCE_SHA256 : '';
+}
+
+/**
  * @param {HTMLElement} root the instance's root element — where keys are captured, so a
  *   grid without focus hears nothing (ADR-0018)
  * @param {HTMLElement} scroller the instance's scroll container

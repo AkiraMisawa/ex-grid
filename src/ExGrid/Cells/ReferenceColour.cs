@@ -15,7 +15,7 @@ public readonly record struct ReferenceColour
     /// sets the colours, never how many there are. Seven, as the eighth Windows run observed
     /// Excel's range finder cycle.
     /// </summary>
-    public const int PaletteLength = 7;
+    internal const int PaletteLength = 7;
 
     // The place less one, so that the default is the first colour rather than no colour.
     private readonly int _index;
@@ -23,14 +23,14 @@ public readonly record struct ReferenceColour
     /// <summary>The colour at <paramref name="place"/> in the palette.</summary>
     /// <param name="place">1 to <see cref="PaletteLength"/>.</param>
     /// <exception cref="ArgumentOutOfRangeException">The place is outside the palette.</exception>
-    public ReferenceColour(int place)
+    internal ReferenceColour(int place)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(place, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(place, PaletteLength);
         _index = place - 1;
     }
 
-    /// <summary>Its place in the palette, 1 to <see cref="PaletteLength"/>: the <c>n</c> of
+    /// <summary>Its place in the palette, 1 to 7: the <c>n</c> of
     /// <c>--ex-reference-n</c>.</summary>
     public int Place => _index + 1;
 
@@ -38,7 +38,7 @@ public readonly record struct ReferenceColour
     /// refers to, counted from 0 in order of first appearance: round the palette, so the eighth
     /// takes the first colour again.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The count is negative.</exception>
-    public static ReferenceColour ForAppearance(int appearance)
+    internal static ReferenceColour ForAppearance(int appearance)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(appearance);
         return new ReferenceColour((appearance % PaletteLength) + 1);

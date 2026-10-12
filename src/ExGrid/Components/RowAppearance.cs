@@ -7,9 +7,11 @@ namespace ExGrid.Components;
 /// when what the row paints changed, so its identity is the row's change signal, as a row
 /// instance's is (ADR-0003).
 ///
-/// <para>Public only because <see cref="ExGridRow{TRow}"/> is: the row is the documented seam the
-/// render-count tests watch. A Consumer neither makes nor reads one.</para>
+/// <para>Not the contract (ADR-0201): public only because <see cref="ExGridRow{TRow}"/>'s
+/// parameter names it, hidden from a Consumer's editor, and may change in any version. A
+/// Consumer neither makes nor reads one.</para>
 /// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class RowAppearance
 {
     private readonly int _pinned;

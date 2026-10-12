@@ -12,9 +12,15 @@ computes, ExGrid paints, selects, navigates and reports.
 ## Requirements
 
 - **.NET 10 or newer.** The package targets `net10.0`.
-- ExGrid's stylesheet and script, as for any ExGrid, and ExSheet's own stylesheet,
-  `_content/ExSheet/ex-sheet.min.css`, which paints the Paper and the Ink and draws the built-in Format
-  Cells.
+- ExGrid's stylesheet, as for any ExGrid, and ExSheet's own, which paints the Paper and the Ink and
+  draws the built-in Format Cells. Each is a component placed in the head, at the address of the
+  file the package was built with: `<ExGridStylesheet />` and `<ExSheetStylesheet />` in `App.razor`'s
+  `<head>` in a Blazor Web App, or root components in a standalone application's `Program.cs`:
+
+  ```csharp
+  builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
+  builder.RootComponents.Add<ExSheet.Components.ExSheetStylesheet>("head::after");
+  ```
 
 ## Showing a Sheet
 

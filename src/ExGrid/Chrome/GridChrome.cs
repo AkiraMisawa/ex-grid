@@ -115,7 +115,7 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// <para><see cref="ValueListKey"/> is where the contents hand a key pressed on their value
 /// list — its checkboxes, "(Select All)" — for Excel's letters (ADR-0044): S, O and C run
 /// the commands above and close the popover, and E moves to the search box through
-/// <see cref="SearchRequest"/>. The core decides, by <see cref="MenuKeys.Letter"/>,
+/// <see cref="SearchRequest"/>. The core decides, by <see cref="MenuKeys"/>' column-menu letters,
 /// and every other key means nothing to it; the task completes when what the key ran has.
 /// A key in a text field is never handed over: a letter there is text. The element that
 /// hands them over carries the class <c>ex-value-list</c>, by which the grid's key listener
@@ -583,6 +583,14 @@ public interface IGridChrome
     /// <summary>The Selection Summary in the status line (ADR-0130). Null falls back to the core's
     /// own text. A fragment is rendered inside the core's <c>ex-summary</c> box.</summary>
     RenderFragment? SelectionSummary(SelectionSummaryContext context) => null;
+
+    /// <summary>The stylesheets this Chrome brings (ADR-0123): a Wrapper's own, each as its shipped
+    /// stylesheet's notice rules name it, with the stamp it was built with. The grid's root renders a
+    /// notice for each beside its own, which only another version's stylesheet shows, so a page
+    /// holding another version of the Wrapper's stylesheet says so, with no script. Empty for the
+    /// built-in Chrome, which brings none. Read on every render of the root: answer the same list
+    /// each time.</summary>
+    IReadOnlyList<ChromeStylesheet> Stylesheets => [];
 
     /// <summary>
     /// The Chrome's words for something the core says rather than shows: a refusal, by its

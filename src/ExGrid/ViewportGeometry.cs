@@ -15,7 +15,7 @@ namespace ExGrid;
 /// compressed branch is not even entered. Every consumer of vertical geometry reads
 /// through this one mapping; none of them multiplies by k itself.</para>
 /// </summary>
-public readonly record struct ViewportGeometry
+internal readonly record struct ViewportGeometry
 {
     /// <summary>The arithmetic for rows of <paramref name="rowHeightPx"/>, painted in
     /// <paramref name="viewportHeightPx"/>, over <paramref name="totalRowCount"/> rows,
