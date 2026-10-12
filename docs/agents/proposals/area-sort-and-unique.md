@@ -139,12 +139,13 @@ that rules it out or asks it.
 ## 3. Tests and counts
 
 `SortAndUniqueBlankTests.cs` (each test named with ADR-0125, or ADR-0047 for the Error Value key), 131 rows to 171: the
-Error Value key answered where it follows every number (5 rows), its line going with it, refused where the readings
-part (12 rows, three with a number after it), its refusal not caught (5 rows); `COUNTA` counting a kept blank of all
-five (11 rows); one-Value readers of the blank `INDEX` takes out (20 rows); `SUM`, `SUMPRODUCT` and `CONCAT` taking it
-(9 rows); lookups answering where they never read it (5 rows) and refused where they do (7 rows); the readings that
-part refused (27 rows) and not caught (8 rows); and the rest as before. `SpillTests.cs`, 35 rows to 52: an unlifted
-function's refusal is the Formula's (13 rows), and a call never evaluated refuses nothing (4 rows).
+Error Value key answered where it follows every number (5 rows), its line going with it, refused where the readings part
+(12 rows, three with a number after it), its refusal not caught (5 rows); `COUNTA` counting a kept blank of all five (11
+rows); one-Value readers of the blank `INDEX` takes out (20 rows); `SUMPRODUCT`, `CONCAT`, and `SUM` where both readings
+give the one sum, taking it (9 rows); lookups answering where they never read it (5 rows) and refused where they do (7
+rows); the readings that part refused (27 rows) and not caught (8 rows); and the rest as before. `SpillTests.cs`, 35
+rows to 52: an unlifted function's refusal is the Formula's (13 rows), and a call never evaluated refuses nothing (4
+rows).
 
 With `Unlifted` returning a plain Error Value, 13 tests and corpus cases fail. With the new order condition of
 `ErrorKeysSettled`, the Formula's refusal of an Error Value key, and the marks on `FILTER`'s and `TRANSPOSE`'s results
@@ -229,19 +230,19 @@ a blank cell holds: `=ISBLANK(INDEX(SORT(Q1:Q2),2))` is TRUE (SORT-022), `=INDEX
 which would not equal empty text, nor empty text, which would spill as itself. `COUNTA` counts it in the array:
 `=COUNTA(SORT(Q1:Q2))` and `=COUNTA(UNIQUE(Q1:Q2))` are 2 (SORT-021, UNIQUE-017). What the engine answers beyond
 those, and why, none of it Excel's answer until its case is observed: `SORTBY`, `FILTER` and `TRANSPOSE` keep a blank
-as `SORT` does, so theirs is taken to be the same blank, read as `SORT`'s is; without that, `=COUNTA(FILTER(...))`
-would pass over a blank that `=COUNTA(SORT(FILTER(...)))` counts, though a reorder cannot change a count
-(SORTBY-011 to 013, FILTER-012 and 013, TRANSPOSE-005 and 006 ask). A function that reads one Value reads the blank
-`INDEX` takes out as a blank cell's, as `ISBLANK` was seen to, and an operator reads each Value so, as `=` was seen
-to. `SUMPRODUCT` and `CONCAT` add nothing for it whichever way they read it, and `SUM` neither, except where it would
-be the last number, which decides whether a sum that nearly cancels is 0 (SORT-033 and 037 ask). `VLOOKUP`, `HLOOKUP`
-and `XLOOKUP` take an array that holds it where it is neither a key they search nor what they return. Where a
-function's reading of it parts — `AVERAGE`, `MIN`, `MAX`, `COUNT` or `PRODUCT` passing over it or taking it as 0,
-`COUNTA` given it as one Value, a search through it, `IF`, `CHOOSE`, `IFERROR` or `IFNA` given it, another of the
-five — the Formula is `#VALUE!`. The refusal is the Formula's, not an Error Value the call returns, so `IFERROR`
-cannot catch it and `COUNTA` cannot count it, as a Formula that meets `#CIRC!` is `#CIRC!` (ADR-0047); SORT-034, 035,
-038, 039, UNIQUE-021 to 023, FILTER-014 and TRANSPOSE-007 ask. `LEN` is not yet lifted (above), so UNIQUE-019 stays
-`#VALUE!` where Excel gives 2.)*
+as `SORT` does, so theirs is taken to be the same blank, read as `SORT`'s is; before this, the engine's
+`=COUNTA(FILTER(...))` passed over a blank that its `=COUNTA(SORT(FILTER(...)))` counted, though a reorder cannot
+change a count (SORTBY-011 to 013, FILTER-012 and 013, TRANSPOSE-005 and 006 ask). A function that reads one Value
+reads the blank `INDEX` takes out as a blank cell's, as `ISBLANK` was seen to, and an operator reads each Value so,
+as `=` was seen to. `SUMPRODUCT` and `CONCAT` add nothing for it whichever way they read it, and `SUM` neither,
+except where it would be the last number, which decides whether a sum that nearly cancels is 0 (SORT-033 and 037
+ask). `VLOOKUP`, `HLOOKUP` and `XLOOKUP` take an array that holds it where it is neither a key they search nor what
+they return. Where a function's reading of it parts — `AVERAGE`, `MIN`, `MAX`, `COUNT` or `PRODUCT` passing over it
+or taking it as 0, `COUNTA` given it as one Value, a search through it, `IF`, `CHOOSE`, `IFERROR` or `IFNA` given it,
+another of the five — the Formula is `#VALUE!`. The refusal is the Formula's, not an Error Value the call returns, so
+`IFERROR` cannot catch it and `COUNTA` cannot count it, as a Formula that meets `#CIRC!` is `#CIRC!` (ADR-0047);
+SORT-034, 035, 038, 039, UNIQUE-021 to 023, FILTER-014 and TRANSPOSE-007 ask. `LEN` is not yet lifted (above), so
+UNIQUE-019 stays `#VALUE!` where Excel gives 2.)*
 ```
 
 ### 6b. A dated note on "Not yet: functions lifted over arrays"
@@ -340,10 +341,12 @@ around it give no answer.)*
    `SORTBY`'s keys a blank sorts after every other key, in either order, blanks keeping their order,
    and in `UNIQUE` it is one of a kind only with another blank, never with 0. Read inside a Formula,
    the blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` and `TRANSPOSE` keep is read as the empty value a
-   blank cell holds, as Excel's `ISBLANK`, `=` and `COUNTA` read `SORT`'s and `UNIQUE`'s, the other
-   three taken to keep the same blank until Excel is asked: `COUNTA` counts it in the array, `INDEX`
-   takes it out as a blank, and an operator or a function that reads one Value reads it as a blank
-   cell's. `SUMPRODUCT` and `CONCAT` add nothing for it, `SUM` neither except
+   blank cell holds: `COUNTA` counts it in the array, `INDEX` takes it out as a blank, and an
+   operator or a function that reads one Value reads it as a blank cell's. Excel was seen to read it
+   so in three cases: `ISBLANK` of the blank `INDEX` took out of `SORT`'s (SORT-022), `=` of the one
+   it took out of `UNIQUE`'s (UNIQUE-018), and `COUNTA` of both arrays (SORT-021, UNIQUE-017); the
+   rest is the engine's, carried from those until Excel is asked. `SUMPRODUCT` and `CONCAT` add
+   nothing for it, `SUM` neither except
    where that moves its last addition, and `VLOOKUP`, `HLOOKUP` and `XLOOKUP` take an array that holds
    it where they never read it, each because every reading gives the one answer. A function that would
    read it some other way no run has settled makes the Formula `#VALUE!`. `SORT` answers an Error Value
@@ -446,9 +449,11 @@ The bullets under "Where the engine cannot give Excel's answer, it gives an Erro
                <li>
                    <b>A blank <code>UNIQUE</code>, <code>SORT</code>, <code>SORTBY</code>, <code>FILTER</code> or
                    <code>TRANSPOSE</code> keeps, read inside a Formula.</b> <code>COUNTA</code> counts it and
-                   <code>INDEX</code> takes it out as a blank, as Excel was seen to do for <code>SORT</code> and
-                   <code>UNIQUE</code>; the other three are taken to keep the same blank until Excel has been asked. A
-                   function whose readings of it part, such as <code>AVERAGE</code>, <code>MIN</code> or
+                   <code>INDEX</code> takes it out as a blank. Excel was seen to count it with <code>COUNTA</code>
+                   in <code>SORT</code>'s and <code>UNIQUE</code>'s array, to find it blank with <code>ISBLANK</code>
+                   once <code>INDEX</code> took it out of <code>SORT</code>'s, and equal to <code>""</code> once taken
+                   out of <code>UNIQUE</code>'s; the rest, the other three included, is ExSheet's own reading until
+                   Excel has been asked. A function whose readings of it part, such as <code>AVERAGE</code>, <code>MIN</code> or
                    <code>COUNT</code>, makes the Formula <code>#VALUE!</code>, which <code>IFERROR</code> does not catch,
                    so <code>=AVERAGE(FILTER(A2:A9, B2:B9="North"))</code> over a blank is <code>#VALUE!</code>.
                </li>

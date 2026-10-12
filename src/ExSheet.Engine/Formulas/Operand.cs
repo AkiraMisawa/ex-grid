@@ -58,13 +58,22 @@ internal readonly struct Operand
 
     /// <summary>
     /// Whether this holds a kept blank: a blank that <c>UNIQUE</c>, <c>SORT</c>, <c>SORTBY</c>,
-    /// <c>FILTER</c> or <c>TRANSPOSE</c> kept from its array (ADR-0125), as one of its Values or as the
-    /// one Value <c>INDEX</c> picked from it. The area passes read <c>SORT</c>'s and <c>UNIQUE</c>'s as
-    /// the empty value a blank cell holds (SORT-022, UNIQUE-018), which <c>COUNTA</c> counts in the
-    /// array (SORT-021, UNIQUE-017); the other three are taken to keep the same blank, which no run has
-    /// read. A function reads such an operand only where every reading of it gives the same answer, or
-    /// where the passes read it (<see cref="FunctionCall.KeepingBlanks"/>,
-    /// <see cref="FunctionCall.OneValue"/>); anywhere else the Formula is refused
+    /// <c>FILTER</c> or <c>TRANSPOSE</c> kept from its array (ADR-0125), as one of its Values or as the one
+    /// Value <c>INDEX</c> picked from it. The area passes saw Excel's <c>COUNTA</c> count it in
+    /// <c>SORT</c>'s and <c>UNIQUE</c>'s array (SORT-021, UNIQUE-017), its <c>ISBLANK</c> find the one
+    /// <c>INDEX</c> took out of <c>SORT</c>'s blank (SORT-022), and its <c>=</c> find the one taken out of
+    /// <c>UNIQUE</c>'s equal to empty text (UNIQUE-018), which the engine takes for the empty value a blank
+    /// cell holds. The other three are taken to keep the same blank, which no run has read. A function
+    /// reads such an operand only where the passes read it so (observed), where it gives the same answer
+    /// for every reading of it (by agreement: <c>SUMPRODUCT</c>, <c>CONCAT</c>, <c>SUM</c> where both
+    /// readings give the one sum, a lookup that never reads it), or where what the passes read is carried
+    /// to it (by generalisation, which no run has read: <c>COUNTA</c> over <c>SORTBY</c>'s, <c>FILTER</c>'s
+    /// and <c>TRANSPOSE</c>'s array, as over <c>SORT</c>'s; <c>INDEX</c> taking it out of those three;
+    /// <c>ISBLANK</c> beyond <c>SORT</c>'s, and <c>LEN</c>, <c>ISTEXT</c> and every other function that
+    /// reads one Value through <see cref="FunctionCall.OneValue"/>, reading it as a blank cell's; every
+    /// operator reading each Value so, as <c>=</c> read <c>UNIQUE</c>'s). Such a function takes it through
+    /// <see cref="FunctionCall.KeepingBlanks"/> or <see cref="FunctionCall.OneValue"/>, and an operator
+    /// reads it as it reads a blank; anywhere else the Formula is refused
     /// (<see cref="FunctionCall.Operand"/>).
     /// </summary>
     public bool KeptBlank { get; }

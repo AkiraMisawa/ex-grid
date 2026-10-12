@@ -218,14 +218,19 @@ internal static partial class FunctionLibrary
     /// (ADR-0125), a blank it kept from its array marked as a kept blank (<see cref="Operand.KeptBlank"/>).
     /// What the area passes read of Excel's, for <c>SORT</c> and <c>UNIQUE</c>: it spills as 0
     /// (SORT-012, UNIQUE-010, and <c>TRANSPOSE</c>'s too, TRANSPOSE-004), <c>COUNTA</c> counts it in the
-    /// array (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c> it is blank to <c>ISBLANK</c>
-    /// (SORT-022) and equal to empty text (UNIQUE-018): the empty value a blank cell holds, not the 0
-    /// it spills as nor empty text, which would spill as itself. <c>SORTBY</c>, <c>FILTER</c> and
-    /// <c>TRANSPOSE</c> keep a blank as <c>SORT</c> does, so theirs is taken to be the same kept blank:
-    /// a generalisation SORTBY-011 to 013, FILTER-012 and TRANSPOSE-005 ask, not a reading. Without the
-    /// mark, <c>=COUNTA(FILTER(...))</c> would pass over a blank that <c>=COUNTA(SORT(FILTER(...)))</c>
-    /// counts, though a reorder cannot change a count. A function reads a kept blank only where every
-    /// reading of it gives the same answer, or where the passes read it
+    /// array (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c>, <c>SORT</c>'s is blank to
+    /// <c>ISBLANK</c> (SORT-022) and <c>UNIQUE</c>'s equal to empty text (UNIQUE-018): the empty value a
+    /// blank cell holds, not the 0 it spills as nor empty text, which would spill as itself.
+    /// <c>SORTBY</c>, <c>FILTER</c> and <c>TRANSPOSE</c> keep a blank as <c>SORT</c> does, so theirs is
+    /// taken to be the same kept blank: a generalisation SORTBY-011 to 013, FILTER-012 and 013 and
+    /// TRANSPOSE-005 and 006 ask, not a reading. Before the mark, the engine's
+    /// <c>=COUNTA(FILTER(...))</c> passed over a blank that its <c>=COUNTA(SORT(FILTER(...)))</c>
+    /// counted, though a reorder cannot change a count. A function reads a kept blank only where the
+    /// passes read it, where every reading of it gives the same answer, or where what the passes read is
+    /// carried to it by generalisation, which no run has read: <c>COUNTA</c> over <c>SORTBY</c>'s,
+    /// <c>FILTER</c>'s and <c>TRANSPOSE</c>'s array, as over <c>SORT</c>'s, and <c>LEN</c>,
+    /// <c>ISTEXT</c> and every other function that reads one Value, reading the blank <c>INDEX</c> takes
+    /// out as a blank cell's, as <c>ISBLANK</c> read <c>SORT</c>'s
     /// (<see cref="FunctionCall.KeepingBlanks"/>, <see cref="FunctionCall.OneValue"/>); elsewhere the
     /// Formula is refused (<see cref="FunctionCall.Operand"/>).
     /// </summary>

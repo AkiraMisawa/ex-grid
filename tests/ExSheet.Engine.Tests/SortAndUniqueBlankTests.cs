@@ -405,7 +405,7 @@ public class SortAndUniqueBlankTests
         Assert.Equal(["a", "", "b"], Spilled(sheet, 3));
     }
 
-    [Theory] // ADR-0125 (SORT-033): SUM, SUMPRODUCT and CONCAT add nothing for a kept blank, whichever way they read it, so they take it
+    [Theory] // ADR-0125 (SORT-033): SUMPRODUCT and CONCAT add nothing for a kept blank whichever way they read it, and SUM nothing where both readings give the one sum, so they take it there
     [InlineData("=SUM(UNIQUE(D1:D3))", 12d)]
     [InlineData("=SUM(SORT(D1:D3),1)", 13d)]
     [InlineData("=SUM(INDEX(SORT(D1:D3),3))", 0d)]

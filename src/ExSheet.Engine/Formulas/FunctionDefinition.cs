@@ -59,9 +59,16 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     /// <summary>
     /// Argument <paramref name="index"/>, evaluated. One that holds a kept blank
     /// (<see cref="Formulas.Operand.KeptBlank"/>) refuses the Formula (<see cref="Evaluator.Refuse"/>):
-    /// what this function reads it as is a reading no run has settled. A function that gives the same
-    /// answer for every reading of it, or whose reading the area passes read, takes it through
-    /// <see cref="KeepingBlanks"/>.
+    /// what this function reads it as is a reading no run has settled. A function takes it instead
+    /// through <see cref="KeepingBlanks"/> or <see cref="OneValue"/> where the area passes read its
+    /// reading (<c>COUNTA</c> over <c>SORT</c>'s and <c>UNIQUE</c>'s array, <c>INDEX</c> taking it out
+    /// of them, <c>ISBLANK</c> over the one taken out of <c>SORT</c>'s), where it gives the same answer
+    /// for every reading of it (<c>SUMPRODUCT</c>, <c>CONCAT</c>, <c>SUM</c> where both readings give
+    /// the one sum, a lookup that never reads it), or where what the passes read is carried to it by
+    /// generalisation, which no run has read: <c>COUNTA</c> over <c>SORTBY</c>'s, <c>FILTER</c>'s and
+    /// <c>TRANSPOSE</c>'s array, <c>INDEX</c> taking it out of those three, and <c>ISBLANK</c> beyond
+    /// <c>SORT</c>'s, <c>LEN</c>, <c>ISTEXT</c> and every other function that reads one Value through
+    /// <see cref="OneValue"/>, reading the blank <c>INDEX</c> takes out as a blank cell's.
     /// </summary>
     public Operand Operand(int index)
     {
@@ -72,9 +79,12 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     /// <summary>
     /// Argument <paramref name="index"/>, evaluated, a kept blank included (ADR-0125), for the functions
     /// that read it the one way: <c>COUNTA</c> counts it in the array, as Excel's counted
-    /// <c>SORT</c>'s and <c>UNIQUE</c>'s (SORT-021, UNIQUE-017), <c>INDEX</c> picks it and keeps it
-    /// marked, as SORT-022 and UNIQUE-018 read it, and <c>SUM</c>, <c>SUMPRODUCT</c> and <c>CONCAT</c>
-    /// add nothing for it whichever way they read it, an answer by agreement that no run read.
+    /// <c>SORT</c>'s and <c>UNIQUE</c>'s (SORT-021, UNIQUE-017), and <c>SORTBY</c>'s, <c>FILTER</c>'s
+    /// and <c>TRANSPOSE</c>'s as those, a generalisation no run has read; <c>INDEX</c> picks it and
+    /// keeps it marked, as SORT-022 and UNIQUE-018 read it; and <c>SUMPRODUCT</c> and <c>CONCAT</c> add
+    /// nothing for it whichever way they read it, <c>SUM</c> where both readings give the one sum, and
+    /// <c>VLOOKUP</c>, <c>HLOOKUP</c> and <c>XLOOKUP</c> answer where they never read it, answers by
+    /// agreement that no run read; each refuses the Formula where its readings part.
     /// </summary>
     public Operand KeepingBlanks(int index) => Evaluator.Operand(arguments[index]);
 

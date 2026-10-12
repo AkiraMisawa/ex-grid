@@ -104,7 +104,7 @@
     {
       "id": "FILTER-012",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: COUNTA counts a blank FILTER keeps, as Excel counted SORT's and UNIQUE's (SORT-021, UNIQUE-017) and as it counts the same array sorted, =COUNTA(SORT(FILTER(Q1:Q2,H1:H2>0))); 1 if it passes over it as over a blank cell",
+      "description": "Engine's answer, Excel to be asked: COUNTA counts a blank FILTER keeps, as Excel counted SORT's and UNIQUE's (SORT-021, UNIQUE-017); 1 if it passes over it as over a blank cell",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=COUNTA(FILTER(Q1:Q2,H1:H2>0))"},
       "check": "ZZ1000",
