@@ -12,4 +12,7 @@ internal sealed class MudExGridMenuItem : global::MudBlazor.MudButton
 {
     /// <summary>Focuses the button through Blazor's own <c>FocusAsync</c> on its element.</summary>
     public ValueTask FocusAsync(bool preventScroll) => _elementReference.FocusAsync(preventScroll);
+
+    /// <summary>The button's element, for the core's focus function (ADR-0204).</summary>
+    public ElementReference Element => _elementReference;
 }

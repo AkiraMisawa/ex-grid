@@ -79,6 +79,14 @@ What the run does by hand is two kinds of work, and they age differently:
   - ADR-0204's page that follows the Focus, and its scripted focus (ED-30, the screen-reader check);
   - ADR-0206's tints and pinned shade (VZ-16's lines).
 - **If none of them changes, there is no eighteenth run.**
+- *(2026-10-12, decided with the user.)* **The questions the seventeenth run's corrections raised are
+  asked in one pass before the tag.** Correcting the engine by area added `uncertain` cases to features
+  whose tickets were done (tickets 01, 02, 04, 07, 16, 18 and the arrays tickets). They are asked by one
+  `oracle.ps1 -Area` pass over every corpus file the corrections touched, together with `PMT` at small
+  rates and `NPV` (ADR-0202's note of this date), before `0.1.0-rc.1`. The tickets stay done: this rule's
+  "a ticket does not close on 'the next run asks'" is kept by that pass being part of the release, which
+  the release check enforces by refusing any `uncertain` case. Tickets 07 and 16, which the corrections
+  reopened, close when the pass has answered them.
 
 ## Considered options
 

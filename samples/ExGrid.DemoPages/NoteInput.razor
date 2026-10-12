@@ -1,16 +1,22 @@
 @*
     A Template Column's control that the keyboard can enter (ADR-0037). The grid asks
-    through the context, and the control focuses itself with Blazor's own FocusAsync —
-    the grid holds no reference to it and does not try, exactly as with a Chrome's Cell
-    Editor (ADR-0030). `ex-interactive` turns pointer events back on for this element
-    alone (ADR-0020); `tabindex="-1"` keeps the grid one tab stop, which only the
-    Consumer's own markup can do.
+    through the context, and the control takes the keyboard through the grid's
+    HandKeyboardToAsync, which the page cascades as TakeKeyboard: the grid holds no reference to
+    the control and does not try, exactly as with a Chrome's Cell Editor (ADR-0030), and it grants
+    the keyboard only while it is still the grid's — on a circuit the request lands a round trip
+    after Space, and another grid pressed meanwhile keeps it (ADR-0204). `ex-interactive` turns
+    pointer events back on for this element alone (ADR-0020); `tabindex="-1"` keeps the grid one
+    tab stop, which only the Consumer's own markup can do.
 *@
 <input class="ex-interactive demo-note" tabindex="-1" placeholder="note"
        aria-label="@($"Note for {Cell.Row.Book}")" @ref="_input" />
 
 @code {
     [Parameter, EditorRequired] public TemplateCellContext<DemoPosition> Cell { get; set; }
+
+    /// <summary>The grid's <c>HandKeyboardToAsync</c>, as the page cascades it; without it, the
+    /// control's own focus.</summary>
+    [CascadingParameter(Name = "TakeKeyboard")] public Func<ElementReference, Task>? TakeKeyboard { get; set; }
 
     private ElementReference _input;
     private int _acted;
@@ -22,6 +28,6 @@
         if (Cell.FocusRequest == 0 || Cell.FocusRequest == _acted)
             return;
         _acted = Cell.FocusRequest;
-        await _input.FocusAsync();
+        await (TakeKeyboard is { } take ? take(_input) : _input.FocusAsync().AsTask());
     }
 }

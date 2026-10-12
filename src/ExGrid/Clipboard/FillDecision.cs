@@ -33,15 +33,24 @@ public sealed class FillDecision
     private readonly FillPlan? _plan;
     private readonly PasteRefusalReason _reason;
 
-    private FillDecision(FillPlan? plan, PasteRefusalReason reason)
+    private FillDecision(FillPlan? plan, PasteRefusalReason reason, int refusedColumn = -1)
     {
         _plan = plan;
         _reason = reason;
+        RefusedColumn = refusedColumn;
     }
 
     internal static FillDecision Approve(FillPlan plan) => new(plan, default);
 
     internal static FillDecision Refuse(PasteRefusalReason reason) => new(null, reason);
+
+    /// <summary>A <see cref="PasteRefusalReason.TargetNotEditable"/> refusal, naming the first
+    /// target column that is not Editable — the column the words name (ADR-0203).</summary>
+    internal static FillDecision RefuseNotEditable(int column) => new(null, PasteRefusalReason.TargetNotEditable, column);
+
+    /// <summary>The column a <see cref="PasteRefusalReason.TargetNotEditable"/> refusal was for, by
+    /// position in the current order; -1 for every other answer.</summary>
+    internal int RefusedColumn { get; }
 
     /// <summary>Whether the fill was refused.</summary>
     public bool IsRefused => _plan is null;

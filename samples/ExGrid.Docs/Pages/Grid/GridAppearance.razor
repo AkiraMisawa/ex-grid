@@ -103,6 +103,17 @@
             either Chrome gives the same rows. Every Example on this site runs under both: switch with
             <em>Built-in / MudBlazor</em> at the top of the page.
         </p>
+        <p>
+            <strong>A Chrome of your own</strong> implements <code>IGridChrome</code>, and two of its duties are
+            easy to miss. Each popover's context — the column menu's, the Context Menu's, the filter panel's and
+            the find panel's — hands it a <code>TakeFocus</code> function: the contents take the keyboard by
+            calling it with their control, never with the control's own <code>FocusAsync</code>. Over Blazor
+            Server the request lands a round trip after the key that opened the popover, and the grid gives the
+            control the keyboard only while it is still the grid's, so a user who has pressed another grid in
+            the meantime keeps it there. And <code>IGridChrome.Words</code> answers the words a refusal is
+            announced in, by the ids in <code>RefusalLabelIds</code>; answering <code>null</code> leaves the
+            built-in English (<a href="exgrid/clipboard#what-a-refusal-sounds-like">what a refusal sounds like</a>).
+        </p>
     </DocsSection>
 
     <DocsSection Title="API">

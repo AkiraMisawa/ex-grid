@@ -52,6 +52,10 @@ repository does not have, and MudBlazor's fetch is a server call.
   promises of a beta: every layer passed in CI on this commit, the Definition of Done is not signed
   off, and what it still owes is `docs/implementation-status.md` at that commit. The release workflow
   and the Docs Site both read that file, so the two cannot say different things.
+- *(2026-10-12, decided with the user.)* **A release candidate rehearses a stable version's notes.** An
+  `-rc.N` version's notes carry the blocks a version without a suffix must carry, and the build checks
+  them as it checks a stable version's, so ADR-0205's rehearsal covers the notes too. An `-alpha` or
+  `-beta` version's notes are refused if they carry any of them.
 - **A stable version's notes carry two more blocks**, which the build requires of a version without a
   suffix (Definition of Done §1 and Step 7):
   - **Signed off** — the `verification/<date>/results.md` the sign-off was made against;

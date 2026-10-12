@@ -1,5 +1,6 @@
 using System.Globalization;
 using ExGrid.Cells;
+using ExGrid.Chrome;
 using ExGrid.Clipboard;
 using ExSheet.Engine;
 
@@ -126,6 +127,20 @@ internal static class SheetWords
         CopyRefusalReason.ClipboardUnavailable => "Nothing was copied: the browser refused the clipboard, which still holds what it held before.",
         _ => "Nothing was copied.",
     };
+
+    // The grid's refusals by the id of their words (ADR-0203): the Sheet answers them through the
+    // grid's label seam, so the grid announces a refusal on a Sheet once, in these words. A Sheet's
+    // paste may spill (ADR-0050 item 3), so the grid asks for a shape mismatch by its may-spill id; the
+    // Sheet's words for it already offer one cell, and answer both ids.
+    private static readonly Dictionary<string, string> Refusals =
+        Enum.GetValues<PasteRefusalReason>().Select(reason => (RefusalLabelIds.For(reason), PasteRefused(reason)))
+            .Concat(Enum.GetValues<PasteRefusalReason>().Select(reason => (RefusalLabelIds.For(reason, pasteMaySpill: true), PasteRefused(reason))))
+            .Concat(Enum.GetValues<CopyRefusalReason>().Select(reason => (RefusalLabelIds.For(reason), CopyRefused(reason))))
+            .DistinctBy(pair => pair.Item1, StringComparer.Ordinal)
+            .ToDictionary(pair => pair.Item1, pair => pair.Item2, StringComparer.Ordinal);
+
+    /// <summary>The Sheet's words for a refusal's id, or null for an id that is not a refusal's.</summary>
+    internal static string? RefusalWords(string id) => Refusals.GetValueOrDefault(id);
 
     internal static string FormatCellsTitle => "Format Cells";
 

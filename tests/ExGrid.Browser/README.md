@@ -343,7 +343,8 @@ nobody had asked for. What that means when writing a test:
   DPR, with bars that occupy layout. Anywhere other than Windows it is skipped by name.
 - `features.spec.mjs` — the interaction surface on `/features`, with real keys and the
   real clipboard: the editor's two states (ED-2/3/4), both clipboard formats and the
-  refusals (CP-1/3/4/5/6/10/14, PST-1), the keys the grid must not take (KB-15), one
+  refusals (CP-1/3/4/5/6/10/14, PST-1), a refusal announced by the grid's live region in the
+  built-in words and again when repeated (A11Y-16, ADR-0203), the keys the grid must not take (KB-15), one
   tab stop, its Keyboard Field's on a grid that edits, with the ring drawn from the root's
   mark and no column's ▾ reached by Tab (A11Y-4, KB-12, ADR-0080), instance independence
   (DOM-4), header-click sorting
@@ -412,6 +413,14 @@ nobody had asked for. What that means when writing a test:
   grid's box and scrolls (UX-11, ADR-0040), and a grid that goes while the keys after
   Alt+↓ are still waiting for its popover leaves nothing running to throw from a later
   frame (ADR-0010, CON-2).
+- `page-follow.spec.mjs` — the page following a move (ADR-0204, KB-45) on `/cells` in a window
+  shorter than its grid, on a grid that edits and a display-only one: the arrows bringing the Focus
+  in at the window's bottom edge, a cell already in the window moving nothing, a range extended past
+  the fold followed by its far end, a resize moving nothing, and the editor opened on a cell above
+  the window brought in at the top edge. And SRV-5's scripted-focus cases, with 150 ms on the Server
+  host: a column menu's opening focus on `/features`, under either Chrome, and a Note's request on
+  `/cells?second=1`, each on its way while another grid is pressed, the other grid keeping the
+  keyboard; and the Note still taking it through `HandKeyboardToAsync` when nothing is pressed.
 - `stripes.spec.mjs` — Row Stripes on `/stripes` (ADR-0038), read as painted colours
   from a screenshot rather than as computed styles: a pinned and a scrollable cell of
   one striped row paint the same ground, and the stripe moves with its row (UX-15); a
@@ -552,8 +561,9 @@ nobody had asked for. What that means when writing a test:
   banner; a change elsewhere raises the banner, keeps the old values shown and disables
   the actions until reloaded; a deletion says so; an approval pressed while the news of a
   change is held back is refused by the store's version check; a note records the
-  version it was written against. On the Server host a second browser context approves
-  and the first shows the banner.
+  version it was written against. The page says whom the store is shared with, each host its own
+  sentence (RI-22). On the Server host a second browser context approves and the first shows the
+  banner.
 
 - `sheet.spec.mjs` — ExSheet on `/sheet` (SH-18, ticket 18 of docs/specs/exsheet): Entries
   and Formulas typed and recalculated, F2 opening the Entry; Ctrl+arrow stopping at each
@@ -683,8 +693,8 @@ nobody had asked for. What that means when writing a test:
   with its stylesheet): a burst of typing with 150 ms on the Server host,
   sampled every animation frame in the page, never showing transparent field text over a layer
   that differs, nor a highlight over characters other than those the core named for it, nor one
-  over a hidden layer, and the colours back once it pauses; on WebAssembly the colours following
-  each keystroke, the layer's text one run and three References in three colours over it, read off
+  over a hidden layer, and the colours back once it pauses; on both hosts the colours following
+  each keystroke typed one at a time (SRV-2), the layer's text one run and three References in three colours over it, read off
   the highlights the listener registered (ADR-0057, note of 2026-10-01); only the surface the edit is in coloured, the
   other plain, as in Excel: an edit opened by F2 or by a press into the Formula Bar coloured there
   before anything is typed, and the colours following a press from the cell into the bar and back;
@@ -928,17 +938,20 @@ belong to no trend — do not file them.
 
 ## What Chrome owes this suite
 
-**Whatever renders a refusal has to be a live region.** The grid raises a refusal as an
-enum and holds no sentence for it, so it cannot announce this one — the announcement is
-Chrome's, and a refusal rendered into a plain element is silent to a reader who cannot
-see it while ADR-0035 promises the write is "always reported" (A11Y-16). The same goes
-for a discarded edit, which nobody even provoked (ED-21).
+**A refused copy or write is announced once, by the grid's own live region.** The grid
+raises a refusal as an enum and holds no sentence for it; the built-in Chrome words every
+reason, a substituted Chrome through `IGridChrome.Words`, and the root's live region says
+the words as the refusal happens (ADR-0203, A11Y-16). A page that also renders a refusal
+renders it into a plain element, as `/features` shows the reason in `#paste-refused-status`:
+a second live region would say it twice. A discarded edit, which nobody even provoked, is
+still the Chrome's to word, into a live region of its own (ED-21).
 
 Two traps live in that, and the DemoHost has hit both:
 
 - A live region announces on **mutation**. Writing the same sentence twice says nothing
   the second time — and the second refusal is the one the user needs, having just tried
-  again. The reference Chrome appends an occurrence count so the repeat is a change.
+  again. The grid empties its region for one render and puts the sentence back; a Chrome
+  that renders one of its own appends an occurrence count so the repeat is a change.
 - The confirmations beside it (`#edit-status`, `#paste-status`) are deliberately **not**
   live regions. They report what did happen, and announcing every successful edit would
   bury the one message that matters.

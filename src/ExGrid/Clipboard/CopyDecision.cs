@@ -6,8 +6,8 @@ namespace ExGrid.Clipboard;
 /// Why a copy is refused — say which one when refusing (ADR-0005 / 0011 / 0014).
 /// <see cref="MisalignedShape"/>: the selected ranges do not line up.
 /// <see cref="TooLarge"/>: past the cap — point at export instead.
-/// <see cref="EmptySelection"/>: nothing to copy; Chrome typically renders it as
-/// nothing happening, the safe side to fall on.
+/// <see cref="EmptySelection"/>: nothing to copy; the clipboard is left as it was, the safe side to
+/// fall on, and the grid says so in its live region as it says every refusal (ADR-0203).
 /// <see cref="RowsUnavailable"/>: the selection runs beyond the Window and nobody can
 /// be asked for the rows — a push Consumer that passed no provider, or one whose
 /// answer did not cover the selection. Component-level, never produced by the pure

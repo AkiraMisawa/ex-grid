@@ -9,7 +9,8 @@ namespace ExGrid.MudBlazor;
 /// translates the grid's words with the rest of the app's — and the Chrome's
 /// <see cref="MudGridChrome.Label"/> for the rest, English where that says nothing. The
 /// ids below are what <see cref="MudGridChrome.Label"/> is asked with, beside the core's
-/// command ids.
+/// command ids and its refusals' (<see cref="RefusalLabelIds"/>, ADR-0203), for which MudBlazor
+/// has no localised text.
 /// </summary>
 public static class MudExGridWords
 {

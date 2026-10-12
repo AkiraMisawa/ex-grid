@@ -6,7 +6,8 @@
    not — through a hidden default button that is never disabled, as in the filter panel; Shift
    held on that Enter makes it "previous". The field takes DOM focus for each change of the
    context's FocusRequest: each opening, and each Tab off either end, which the core's sentinels
-   around the panel turn into a request (ADR-0039). What the last step came to is worded here
+   around the panel turn into a request (ADR-0039) — through the core's focus function, which takes
+   the keyboard only while it is still the grid's (ADR-0204). What the last step came to is worded here
    and written into a live region, because the grid holds no sentence (ADR-0033). *@
 <form class="mud-ex-grid-find" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
     <button type="submit" class="mud-ex-grid-find-default" hidden tabindex="-1" aria-hidden="true"></button>
@@ -60,7 +61,14 @@
         _focusOwed = false;
         try
         {
-            await _field.FocusAsync();
+            // The core's focus function, which takes the keyboard only while it is still the grid's: on
+            // a circuit the opening focus lands a round trip after Ctrl+F, and a grid pressed in the
+            // meantime keeps it (ADR-0204). Without scrolling, as the core's own panel opens. Outside a
+            // grid's context, the field's own FocusAsync.
+            if (Context.TakeFocus is { } take && _field.InputReference is { } input)
+                await take(input.ElementReference, true);
+            else
+                await _field.FocusAsync();
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

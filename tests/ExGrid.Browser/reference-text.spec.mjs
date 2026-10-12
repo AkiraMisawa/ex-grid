@@ -1,6 +1,5 @@
 import { test, expect, alterPage, setRoundTrip } from './fixtures.mjs';
 import { pixelsApart, stillPictures } from './pixels.mjs';
-import { SERVER } from './hosting.mjs';
 import { sheet, cell, pressCell, editor, bar, clickBarEnd, boxOf, typeSteadily, stretchesOf } from './sheet-helpers.mjs';
 
 // The coloured text in the editor (ADR-0057, "The coloured text is a layer that shows only while it
@@ -158,8 +157,9 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(editor(grid)).toHaveCount(0);
     });
 
-    test(`DC-47: on WebAssembly the colours follow each keystroke, each Reference in a colour of its own (${chrome} Chrome)`, async ({ page }) => {
-        test.skip(SERVER, 'on a circuit a keystroke is a round trip from its colours: the burst above is that case');
+    // Typed a key at a time, waiting for each key's colours: on WebAssembly they follow at once, and on
+    // a circuit a round trip later (SRV-2; the burst above is the case that types past them).
+    test(`DC-47: the colours follow each keystroke, each Reference in a colour of its own (${chrome} Chrome)`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F3');

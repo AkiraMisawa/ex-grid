@@ -709,8 +709,9 @@ public class FilterChromeTests : GridTestContext
         Assert.Equal(search, LastFocusedId());
 
         await KeyOnAsync(cut.Find(".ex-popover-list"), "E");
-        Assert.Equal(2, JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus"
-            && ((ElementReference)i.Arguments[0]!).Id == search));
+        // Each through the handle's conditional focus, which grants it only while the keyboard is still
+        // this grid's (ADR-0204).
+        Assert.Equal(2, Js.FocusTaken.Invocations.Count(i => ((ElementReference)i.Arguments[0]!).Id == search));
     }
 
     [Fact] // ADR-0044 / FL-15: a substituted panel hands its value list's keys to the core, which answers the letters
