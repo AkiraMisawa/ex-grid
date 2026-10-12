@@ -57,10 +57,11 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     public int Count => arguments.Count;
 
     /// <summary>
-    /// Argument <paramref name="index"/>, evaluated. One that holds a blank <c>UNIQUE</c>, <c>SORT</c> or
-    /// <c>SORTBY</c> kept from its array (<see cref="Formulas.Operand.KeptBlank"/>) refuses the Formula
-    /// (<see cref="Evaluator.Refuse"/>): what this function reads it as is a reading no run has settled.
-    /// A function whose reading the area passes did settle takes it through <see cref="KeepingBlanks"/>.
+    /// Argument <paramref name="index"/>, evaluated. One that holds a kept blank
+    /// (<see cref="Formulas.Operand.KeptBlank"/>) refuses the Formula (<see cref="Evaluator.Refuse"/>):
+    /// what this function reads it as is a reading no run has settled. A function that gives the same
+    /// answer for every reading of it, or whose reading the area passes read, takes it through
+    /// <see cref="KeepingBlanks"/>.
     /// </summary>
     public Operand Operand(int index)
     {
@@ -69,19 +70,20 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     }
 
     /// <summary>
-    /// Argument <paramref name="index"/>, evaluated, a blank <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c>
-    /// kept from its array included (ADR-0125), for the functions whose reading of it the area passes
-    /// settled: <c>COUNTA</c> counts it in the array (SORT-021, UNIQUE-017), <c>INDEX</c> picks it, and
-    /// <c>SUM</c>, <c>SUMPRODUCT</c> and <c>CONCAT</c> add nothing for it, whichever way they read it.
+    /// Argument <paramref name="index"/>, evaluated, a kept blank included (ADR-0125), for the functions
+    /// that read it the one way: <c>COUNTA</c> counts it in the array, as Excel's counted
+    /// <c>SORT</c>'s and <c>UNIQUE</c>'s (SORT-021, UNIQUE-017), <c>INDEX</c> picks it and keeps it
+    /// marked, as SORT-022 and UNIQUE-018 read it, and <c>SUM</c>, <c>SUMPRODUCT</c> and <c>CONCAT</c>
+    /// add nothing for it whichever way they read it, an answer by agreement that no run read.
     /// </summary>
     public Operand KeepingBlanks(int index) => Evaluator.Operand(arguments[index]);
 
     /// <summary>
-    /// Argument <paramref name="index"/>, evaluated, for a function that reads one Value of it. A blank
-    /// <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept from its array, given as that one Value, is read as
-    /// a blank cell's is, as Excel's was (SORT-022, UNIQUE-018; ADR-0125). An array that holds one refuses
-    /// the Formula: Excel applies the function to each Value, which the engine does not yet (ADR-0125),
-    /// and the <c>#VALUE!</c> it gives such an array must not be caught as an answer.
+    /// Argument <paramref name="index"/>, evaluated, for a function that reads one Value of it. A kept
+    /// blank given as that one Value is read as a blank cell's (ADR-0125): what Excel's <c>ISBLANK</c>
+    /// read of <c>SORT</c>'s (SORT-022), taken for every function that reads one Value, a
+    /// generalisation no run has read beyond it. An array that holds one refuses the Formula, as any
+    /// array where one Value is wanted does (<c>FunctionLibrary.Unlifted</c>).
     /// </summary>
     public Operand OneValue(int index)
     {
@@ -97,8 +99,8 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
 
     /// <summary>
     /// The argument evaluated for its extent alone, as <c>ROWS</c> and <c>COLUMNS</c> read it: no Value of
-    /// it is read, so a blank <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept is counted as Excel's is
-    /// (UNIQUE-011), never refused.
+    /// it is read, so a kept blank is counted in the extent, as Excel's <c>ROWS</c> counted
+    /// <c>UNIQUE</c>'s (UNIQUE-011, 012), never refused.
     /// </summary>
     public Operand Measured(int index) => Evaluator.Operand(arguments[index]);
 

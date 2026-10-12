@@ -57,12 +57,15 @@ internal readonly struct Operand
     public bool IsSpillRange { get; }
 
     /// <summary>
-    /// Whether this holds a blank that <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept from its array
-    /// (ADR-0125): one of its Values, or the one Value <c>INDEX</c> picked from it. Excel's is the empty
-    /// value a blank cell holds (SORT-022), which <c>COUNTA</c> counts in the array (SORT-021,
-    /// UNIQUE-017). A function reads such an operand only where the area passes settled how
-    /// (<see cref="FunctionCall.KeepingBlanks"/>, <see cref="FunctionCall.OneValue"/>); anywhere else
-    /// the Formula is refused (<see cref="FunctionCall.Operand"/>).
+    /// Whether this holds a kept blank: a blank that <c>UNIQUE</c>, <c>SORT</c>, <c>SORTBY</c>,
+    /// <c>FILTER</c> or <c>TRANSPOSE</c> kept from its array (ADR-0125), as one of its Values or as the
+    /// one Value <c>INDEX</c> picked from it. The area passes read <c>SORT</c>'s and <c>UNIQUE</c>'s as
+    /// the empty value a blank cell holds (SORT-022, UNIQUE-018), which <c>COUNTA</c> counts in the
+    /// array (SORT-021, UNIQUE-017); the other three are taken to keep the same blank, which no run has
+    /// read. A function reads such an operand only where every reading of it gives the same answer, or
+    /// where the passes read it (<see cref="FunctionCall.KeepingBlanks"/>,
+    /// <see cref="FunctionCall.OneValue"/>); anywhere else the Formula is refused
+    /// (<see cref="FunctionCall.Operand"/>).
     /// </summary>
     public bool KeptBlank { get; }
 
@@ -107,8 +110,8 @@ internal readonly struct Operand
     };
 
     /// <summary>
-    /// This operand marked as holding a blank <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept from its
-    /// array (<see cref="KeptBlank"/>), when it holds a blank at all; as it is otherwise.
+    /// This operand marked as holding a kept blank (<see cref="KeptBlank"/>), when it holds a blank at
+    /// all; as it is otherwise.
     /// </summary>
     public Operand WithKeptBlank() => HoldsBlank ? new(Kind, Scalar, Area, Column, Array, IsSpillRange, keptBlank: true) : this;
 }

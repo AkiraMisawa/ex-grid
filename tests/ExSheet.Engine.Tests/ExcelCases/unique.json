@@ -166,13 +166,13 @@
       "cells": {"A1": "a", "A3": "b", "ZZ1000": "=SUM(--(LEN(UNIQUE(A1:A3))>0))"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0125: a function is not yet applied to each Value of an array where it wants one, and an array holding a blank kept by UNIQUE, SORT or SORTBY refuses the Formula there",
+      "engineDiffersByDecision": "ADR-0125: a function is not yet applied to each Value of an array where it wants one, and the array refuses the Formula there",
       "excelExpect": {"value2": 2}
     },
     {
       "id": "UNIQUE-020",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the blank kept in UNIQUE's array, taken out by INDEX, is blank to ISBLANK, as SORT's is (SORT-022)",
+      "description": "Engine's answer, Excel to be asked: the blank kept in UNIQUE's array, taken out by INDEX, is blank to ISBLANK, as Excel read SORT's (SORT-022)",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=ISBLANK(INDEX(UNIQUE(Q1:Q2),2))"},
       "check": "ZZ1000",

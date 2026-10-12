@@ -130,7 +130,7 @@
     {
       "id": "SORT-015",
       "source": "observed",
-      "description": "An Error Value key sorts after a number: over 7 and #N/A the Anchor shows 7, so the Error Value is neither the result nor first",
+      "description": "Over 7 and then #N/A the Anchor shows 7: an Error Value key is neither the result nor sorted before a number. The #N/A followed the 7 already, so this fits an Error Value key that sorts after the numbers and one that keeps its place alike (SORT-026 asks which)",
       "cells": {"A1": "7", "A2": "=NA()", "ZZ1000": "=SORT(A1:A2)"},
       "check": "ZZ1000",
       "expect": {"value2": 7}
@@ -220,15 +220,15 @@
     {
       "id": "SORT-026",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: an Error Value key before a number in the array still sorts after it, so the Anchor shows 7 (#N/A if an Error Value stays where it is)",
+      "description": "Refused until Excel is asked: an Error Value key with a number after it is #VALUE!; the Anchor would be 7 if an Error Value key sorts after the numbers, #N/A if it keeps its place, two readings SORT-015 does not tell apart",
       "cells": {"A1": "=NA()", "A2": "7", "ZZ1000": "=SORT(A1:A2)"},
       "check": "ZZ1000",
-      "expect": {"value2": 7}
+      "expect": {"value2": "#VALUE!"}
     },
     {
       "id": "SORT-027",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the Error Value key's own cell, after the 7 of SORT-015, shows the Error Value",
+      "description": "Engine's answer, Excel to be asked: the Error Value key's own cell, after the 7 of SORT-015, shows the Error Value, where an Error Value key that sorts after the numbers and one that keeps its place both put it",
       "cells": {"A1": "7", "A2": "=NA()", "ZZ1000": "=SORT(A1:A2)"},
       "check": "ZZ1001",
       "expect": {"value2": "#N/A"}
@@ -236,7 +236,7 @@
     {
       "id": "SORT-028",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: an Error Value key in a descending sort is #VALUE!; the Anchor would be 7 if it stays last, #N/A if it comes first",
+      "description": "Refused until Excel is asked: an Error Value key in a descending sort is #VALUE!; the Anchor would be 7 if it stays last or keeps its place, #N/A if it comes first",
       "cells": {"A1": "7", "A2": "=NA()", "ZZ1000": "=SORT(A1:A2,1,-1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
@@ -314,6 +314,24 @@
       "source": "uncertain",
       "description": "Refused until Excel is asked: SUM over -0.3, 0.1, 0.2 and a blank kept last in SORT's array is #VALUE!; 0 if SUM passes over the blank, so that its last addition, of 0.2, cancels, 2.78E-17 if it adds the blank as 0 last",
       "cells": {"A1": "0.1", "A2": "0.2", "A3": "-0.3", "ZZ1000": "=SUM(SORT(A1:A4))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-038",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: SORT given the blank FILTER keeps as a key is #VALUE!; the Anchor would be 7 if it sorts last as a blank cell's key does (SORT-011), 0 if SORT reads it as 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(FILTER(Q1:Q2,H1:H2>0))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-039",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: IF handing on SORT's array with its kept blank is #VALUE!; TRUE if IF hands the blank on as it is, which ISBLANK read blank (SORT-022), FALSE if as the 0 it spills as",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=ISBLANK(INDEX(IF(TRUE,SORT(Q1:Q2)),2))"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
     }

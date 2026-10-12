@@ -10,9 +10,9 @@ internal static partial class FunctionLibrary
 {
     /// <summary>
     /// An argument read whole as an array, or its Error Value when it is one; <see langword="false"/>
-    /// with <paramref name="failure"/> then. A blank <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept
-    /// from its array refuses the Formula (<see cref="FunctionCall.Operand"/>), unless
-    /// <paramref name="keepingBlanks"/> says this function's reading of it is settled.
+    /// with <paramref name="failure"/> then. A kept blank (<see cref="Operand.KeptBlank"/>) refuses the
+    /// Formula (<see cref="FunctionCall.Operand"/>), unless <paramref name="keepingBlanks"/> says this
+    /// function gives the same answer for every reading of it.
     /// </summary>
     private static bool TryArray(FunctionCall call, int index, out ValueArray array, out Operand failure, bool keepingBlanks = false)
     {
@@ -38,6 +38,7 @@ internal static partial class FunctionLibrary
     /// one column as tall as the array, or one row as wide; any other shape is <c>#VALUE!</c>. A
     /// number counts as TRUE when it is not 0, a blank as FALSE, text is <c>#VALUE!</c>, and an
     /// Error Value is the result. Nothing included is <c>if_empty</c>, or <c>#CALC!</c> without it.
+    /// A blank kept from the array is marked as <c>SORT</c>'s is (<see cref="Made"/>).
     /// </summary>
     private static Operand Filter(FunctionCall call)
     {
@@ -83,16 +84,16 @@ internal static partial class FunctionLibrary
                 for (var r = 0; r < array.Rows; r++) result[r, k] = array[r, kept[k]];
             }
         }
-        return Operand.Of(result);
+        return Made(result);
     }
 
     /// <summary>
     /// UNIQUE: the distinct rows of <c>array</c> (its columns when <c>by_col</c> is TRUE), in the order
     /// they first appear; with <c>exactly_once</c> TRUE, only those that appear once. Text is compared
     /// without regard to case, as Excel's comparison operators compare it; a number and text that
-    /// reads as one are different. A blank is one of a kind only with another blank, never with 0,
-    /// and spills as 0, as Excel's does (UNIQUE-010, 011); read inside the Formula, it is read where
-    /// the area passes settled how (<see cref="Made"/>). Nothing left is <c>#CALC!</c>.
+    /// reads as one are different. A blank is one of a kind only with another blank, never with 0 or
+    /// empty text, and spills as 0, as Excel's does (UNIQUE-010 to 015); read inside the Formula, it is
+    /// a kept blank (<see cref="Made"/>). Nothing left is <c>#CALC!</c>.
     /// </summary>
     private static Operand Unique(FunctionCall call)
     {
@@ -154,11 +155,12 @@ internal static partial class FunctionLibrary
     /// out), ascending for <c>sort_order</c> 1 and descending for −1; its columns, by a row, when
     /// <c>by_col</c> is TRUE. Equal keys keep their order. Keys order as the comparison operators
     /// order them: numbers, then text without regard to case, then booleans. A blank key sorts after
-    /// every other, in either order, and spills as 0, as Excel's does (SORT-012 to 014); a blank in
-    /// the result is read inside the Formula where the area passes settled how (<see cref="Made"/>).
-    /// An Error Value key sorts after the numbers, as Excel's <c>#N/A</c> after a 7 (SORT-015), where
-    /// that is all the order needs (<see cref="TryOrderLines"/>), and is refused with <c>#VALUE!</c>
-    /// elsewhere. An index outside the array, or an order other than 1 and −1, is <c>#VALUE!</c>.
+    /// every other, in either order, and spills as 0, as Excel's does (SORT-012 to 014, 016 to 020,
+    /// 023 to 025); a blank in the result is a kept blank (<see cref="Made"/>). An Error Value key is
+    /// answered only where it already follows every number, as Excel's <c>#N/A</c> followed the 7 of
+    /// SORT-015, and the Formula is refused with <c>#VALUE!</c> elsewhere (<see cref="ErrorKeysSettled"/>).
+    /// An index outside the array, or an order other than 1 and −1, is <c>#VALUE!</c>, as Excel's is
+    /// (SORT-007, 008).
     /// </summary>
     private static Operand Sort(FunctionCall call)
     {
@@ -173,7 +175,7 @@ internal static partial class FunctionLibrary
         if (index < 1 || index > across) return Operand.Of(ErrorValue.Value);
         var at = (int)index - 1;
         var keys = Enumerable.Range(0, lines).Select(i => byColumn ? array[at, i] : array[i, at]).ToList();
-        if (!TryOrderLines([(keys, descending)], lines, errorKeysOrdered: true, out var order)) return Operand.Of(ErrorValue.Value);
+        if (!TryOrderLines([(keys, descending)], lines, errorKeysOrdered: true, out var order)) return call.Evaluator.Refuse();
         return Made(Reorder(array, order, byColumn));
     }
 
@@ -182,8 +184,9 @@ internal static partial class FunctionLibrary
     /// (1 when left out), the first deciding first. Each <c>by_array</c> is one column as tall as the
     /// array, which sorts its rows, or one row as wide, which sorts its columns, and all of them run
     /// the same way; any other shape is <c>#VALUE!</c>. Keys order as in <see cref="Sort"/>, a blank
-    /// after every other in either order; a blank in the result is read inside the Formula as
-    /// <c>SORT</c>'s is (<see cref="Made"/>). An Error Value among the keys is refused with
+    /// after every other, as Excel's was in an ascending key (SORTBY-007 to 009), and in a descending
+    /// one as <c>SORT</c>'s is; a blank in the result is a kept blank, as <c>SORT</c>'s is
+    /// (<see cref="Made"/>). An Error Value among the keys refuses the Formula with
     /// <c>#VALUE!</c>: SORT-015 read <c>SORT</c>'s, and a <c>by_array</c>'s could as well be the result,
     /// as <c>FILTER</c>'s <c>include</c>'s is (SORTBY-010 asks).
     /// </summary>
@@ -206,30 +209,34 @@ internal static partial class FunctionLibrary
             keys.Add(([.. Enumerable.Range(0, length).Select(k => columns ? by[0, k] : by[k, 0])], descending));
         }
         var lines = byColumn == true ? array.Columns : array.Rows;
-        if (!TryOrderLines(keys, lines, errorKeysOrdered: false, out var order)) return Operand.Of(ErrorValue.Value);
+        if (!TryOrderLines(keys, lines, errorKeysOrdered: false, out var order)) return call.Evaluator.Refuse();
         return Made(Reorder(array, order, byColumn == true));
     }
 
     /// <summary>
-    /// The array <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> made (ADR-0125), a blank it kept from its
-    /// array marked (<see cref="Operand.KeptBlank"/>). The area passes read Excel's: it spills as 0
-    /// (SORT-012, UNIQUE-010), <c>ROWS</c> and <c>COLUMNS</c> count it (UNIQUE-011), <c>COUNTA</c>
-    /// counts it (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c> it is the empty value a blank cell
-    /// holds — blank to <c>ISBLANK</c> (SORT-022), equal to empty text (UNIQUE-018), of length 0
-    /// (UNIQUE-019), never the 0 it spills as nor empty text, which would spill as itself. So an
-    /// operator reads each of its Values, and a function one Value, as it reads a blank cell's.
-    /// Where a function would read it some other way no run has settled — <c>AVERAGE</c> passing
-    /// over it or taking it as 0, <c>COUNTA</c> given it as one Value — the Formula is refused
-    /// (<see cref="FunctionCall.Operand"/>).
+    /// The array <c>UNIQUE</c>, <c>SORT</c>, <c>SORTBY</c>, <c>FILTER</c> or <c>TRANSPOSE</c> made
+    /// (ADR-0125), a blank it kept from its array marked as a kept blank (<see cref="Operand.KeptBlank"/>).
+    /// What the area passes read of Excel's, for <c>SORT</c> and <c>UNIQUE</c>: it spills as 0
+    /// (SORT-012, UNIQUE-010, and <c>TRANSPOSE</c>'s too, TRANSPOSE-004), <c>COUNTA</c> counts it in the
+    /// array (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c> it is blank to <c>ISBLANK</c>
+    /// (SORT-022) and equal to empty text (UNIQUE-018): the empty value a blank cell holds, not the 0
+    /// it spills as nor empty text, which would spill as itself. <c>SORTBY</c>, <c>FILTER</c> and
+    /// <c>TRANSPOSE</c> keep a blank as <c>SORT</c> does, so theirs is taken to be the same kept blank:
+    /// a generalisation SORTBY-011 to 013, FILTER-012 and TRANSPOSE-005 ask, not a reading. Without the
+    /// mark, <c>=COUNTA(FILTER(...))</c> would pass over a blank that <c>=COUNTA(SORT(FILTER(...)))</c>
+    /// counts, though a reorder cannot change a count. A function reads a kept blank only where every
+    /// reading of it gives the same answer, or where the passes read it
+    /// (<see cref="FunctionCall.KeepingBlanks"/>, <see cref="FunctionCall.OneValue"/>); elsewhere the
+    /// Formula is refused (<see cref="FunctionCall.Operand"/>).
     /// </summary>
     private static Operand Made(ValueArray result) => Operand.Of(result).WithKeptBlank();
 
     /// <summary>
     /// The order of <paramref name="lines"/> lines by their keys, stable. A blank key comes after every
-    /// other key whichever the order, as Excel's does: neither 0 nor empty text, which would come first
-    /// (SORT-012 to 014). An Error Value key comes after the numbers, as Excel's <c>#N/A</c> after a 7
-    /// (SORT-015), where <paramref name="errorKeysOrdered"/> allows it and that is all the order needs
-    /// (<see cref="ErrorKeysSettled"/>); <see langword="false"/> anywhere else a key is an Error Value.
+    /// other key whichever the order, as Excel's <c>SORT</c> put it: neither 0 nor empty text, which
+    /// would come first (SORT-012 to 014). An Error Value key is ordered only where <paramref name="errorKeysOrdered"/>
+    /// allows it and every reading SORT-015 leaves gives the one order (<see cref="ErrorKeysSettled"/>);
+    /// <see langword="false"/> anywhere else a key is an Error Value.
     /// </summary>
     private static bool TryOrderLines(List<(List<Value?> Keys, bool Descending)> keys, int lines, bool errorKeysOrdered, out int[] order)
     {
@@ -260,18 +267,22 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// Whether a key of Error Values is ordered as every reading SORT-015 leaves orders it. Excel put
-    /// <c>#N/A</c> after a 7 in an ascending sort, so an Error Value neither sorts before the numbers nor
-    /// is the result. Whether it sorts before or after text, booleans and blanks, whether a descending
-    /// sort puts it first or still last, and how two different Error Values order, no run has read
-    /// (SORT-028 to 032 ask). So a key is answered where none of that is needed: its Error Values are
-    /// all one, and beside them it holds nothing, or, sorted ascending, numbers alone.
+    /// Whether a key of Error Values is ordered as every reading SORT-015 leaves orders it. Over 7 and
+    /// then <c>#N/A</c>, Excel's ascending sort showed 7 first: the Error Value is not the result, and
+    /// does not sort before the numbers. It had followed the 7 already, so that answer fits an Error
+    /// Value that sorts after the numbers and one that keeps its place alike (SORT-026 asks the two
+    /// apart). Whether it sorts before or after text, booleans and blanks, whether a descending sort
+    /// puts it first or still last, and how two different Error Values order, no run has read either
+    /// (SORT-028 to 032 ask). So a key is answered where every one of those readings gives the same
+    /// order: its Error Values are all one, and beside them it holds nothing, or, sorted ascending,
+    /// numbers alone, none of them after an Error Value.
     /// </summary>
     private static bool ErrorKeysSettled(List<Value?> values, bool descending)
     {
         if (values.Where(v => v is { IsError: true }).Select(v => v!.Value.Error).Distinct().Count() > 1) return false;
         if (values.All(v => v is { IsError: true })) return true;
-        return !descending && values.All(v => v is { IsError: true } or { Kind: ValueKind.Number });
+        if (descending || !values.All(v => v is { IsError: true } or { Kind: ValueKind.Number })) return false;
+        return values.FindLastIndex(v => v is { Kind: ValueKind.Number }) < values.FindIndex(v => v is { IsError: true });
     }
 
     private static ValueArray Reorder(ValueArray array, int[] order, bool byColumn)
@@ -358,7 +369,10 @@ internal static partial class FunctionLibrary
         return Operand.Of(result);
     }
 
-    /// <summary>TRANSPOSE: the array's rows as columns. A blank stays blank, and spills as the 0 every spilled blank shows.</summary>
+    /// <summary>
+    /// TRANSPOSE: the array's rows as columns. A blank stays blank, and spills as 0, as Excel's does
+    /// (TRANSPOSE-004); read inside the Formula it is marked as <c>SORT</c>'s is (<see cref="Made"/>).
+    /// </summary>
     private static Operand Transpose(FunctionCall call)
     {
         if (!TryArray(call, 0, out var array, out var failure)) return failure;
@@ -367,15 +381,16 @@ internal static partial class FunctionLibrary
         {
             for (var c = 0; c < array.Columns; c++) result[c, r] = array[r, c];
         }
-        return Operand.Of(result);
+        return Made(result);
     }
 
     /// <summary>
     /// SUMPRODUCT: the sum of the products of its arrays' corresponding Values, the arrays all of
     /// one size, or <c>#VALUE!</c>. Inside an array anything but a number counts as 0, as Microsoft
-    /// documents, so a blank <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept is 0 whichever way it
-    /// is read (<see cref="Made"/>); an Error Value is the result. An operator on ranges is evaluated
-    /// as an array first (ADR-0125), so <c>SUMPRODUCT((A1:A3="x")*B1:B3)</c> counts what it is meant to.
+    /// documents, so a kept blank is 0 whichever way it is read (<see cref="Made"/>), an answer that
+    /// agrees with every reading rather than one a run read; an Error Value is the result. An operator
+    /// on ranges is evaluated as an array first (ADR-0125), so <c>SUMPRODUCT((A1:A3="x")*B1:B3)</c>
+    /// counts what it is meant to.
     /// </summary>
     private static Operand SumProduct(FunctionCall call)
     {

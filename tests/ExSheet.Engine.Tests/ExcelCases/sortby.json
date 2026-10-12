@@ -86,7 +86,7 @@
     {
       "id": "SORTBY-010",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: an Error Value in a by_array is #VALUE!; the Anchor would be 10 if SORTBY sorts it after the 7 as SORT does (SORT-015), #N/A if the by_array's Error Value is the result, as FILTER's include's is",
+      "description": "Refused until Excel is asked: an Error Value in a by_array is #VALUE!; the Anchor would be 10 if SORTBY leaves the Error Value key after the 7, as SORT did (SORT-015), #N/A if the by_array's Error Value is the result, as FILTER's include's is",
       "fixture": "lookupData",
       "cells": {"Z1": "7", "Z2": "=NA()", "ZZ1000": "=SORTBY(H1:H2,Z1:Z2)"},
       "check": "ZZ1000",
@@ -95,7 +95,7 @@
     {
       "id": "SORTBY-011",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: COUNTA counts a blank kept in SORTBY's array, as in SORT's (SORT-021)",
+      "description": "Engine's answer, Excel to be asked: COUNTA counts a blank kept in SORTBY's array, as Excel counted SORT's (SORT-021); 1 if it passes over it",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=COUNTA(SORTBY(Q1:Q2,H1:H2))"},
       "check": "ZZ1000",
@@ -104,7 +104,7 @@
     {
       "id": "SORTBY-012",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the blank sorted first by the larger key, taken out by INDEX, is still blank, as SORT's is (SORT-022)",
+      "description": "Engine's answer, Excel to be asked: the blank sorted first by the larger key, taken out by INDEX, is still blank, as Excel read SORT's (SORT-022)",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=ISBLANK(INDEX(SORTBY(Q1:Q2,H1:H2,-1),1))"},
       "check": "ZZ1000",

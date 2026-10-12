@@ -68,10 +68,10 @@ internal static partial class FunctionLibrary
             : failure;
 
     /// <summary>
-    /// CONCAT joins its arguments in order, and a range's cells row by row; blanks add nothing, a blank
-    /// <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept from its array among them, whether passed over
-    /// or read as empty text (ADR-0125). An Error Value anywhere is the result, the first one found. A
-    /// result longer than a cell holds is <c>#VALUE!</c>.
+    /// CONCAT joins its arguments in order, and a range's cells row by row; blanks add nothing, a kept
+    /// blank (<see cref="Operand.KeptBlank"/>) among them, which adds nothing whether passed over or read
+    /// as empty text: an answer by agreement, not one a run read (ADR-0125). An Error Value anywhere is
+    /// the result, the first one found. A result longer than a cell holds is <c>#VALUE!</c>.
     /// </summary>
     private static Operand Concat(FunctionCall call)
     {

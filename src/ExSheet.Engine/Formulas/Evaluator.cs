@@ -102,9 +102,12 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     /// Refuses the Formula being evaluated: its result is <c>#VALUE!</c> whatever the functions and
     /// operators around the refusal make of the Error Value returned here, so <c>IFERROR</c> cannot
     /// catch it, <c>ISBLANK</c> cannot read it as not blank and <c>COUNTA</c> cannot count it as one
-    /// Value. A function refuses so where it would read a blank <c>UNIQUE</c>, <c>SORT</c> or
-    /// <c>SORTBY</c> kept from its array, and no run has settled how (ADR-0125,
-    /// <see cref="FunctionCall.Operand"/>).
+    /// Value, as a Formula that meets <c>#CIRC!</c> is <c>#CIRC!</c> (ADR-0047). A function refuses so
+    /// where it is given an array and wants one Value, which it is not yet applied to each Value of
+    /// (ADR-0125, "Not yet: functions lifted over arrays"; IFERROR-009); where it would read a kept
+    /// blank, and no run has settled how (ADR-0125, <see cref="FunctionCall.Operand"/>); and where
+    /// <c>SORT</c> or <c>SORTBY</c> would order an Error Value key whose place no run has read
+    /// (ADR-0047).
     /// </summary>
     public Operand Refuse()
     {

@@ -2,16 +2,17 @@ namespace ExSheet.Engine.Formulas;
 
 /// <summary>
 /// How the functions admitted after ADR-0047's first list read an argument that takes one Value.
-/// A range of more than one cell is <c>#VALUE!</c>, as everywhere ExSheet has no spilled arrays
-/// (ADR-0047); an Error Value is the function's result.
+/// A range of more than one cell, or an array, refuses the Formula with <c>#VALUE!</c>, as long as the
+/// function is not applied to each Value of one (ADR-0125; <see cref="Unlifted"/>); an Error Value is
+/// the function's result.
 /// </summary>
 internal static partial class FunctionLibrary
 {
     /// <summary>
     /// Argument <paramref name="index"/> as one Value, blank as <see langword="null"/>; <paramref name="failure"/>
-    /// when it is a range of several cells or an Error Value. A blank <c>UNIQUE</c>, <c>SORT</c> or
-    /// <c>SORTBY</c> kept from its array is read as a blank cell's is, as Excel's was (SORT-022, UNIQUE-018;
-    /// ADR-0125), and an array that holds one refuses the Formula (<see cref="FunctionCall.OneValue"/>).
+    /// when it is an Error Value, or the Formula's refusal when it is a range of several cells or an array
+    /// (<see cref="Unlifted"/>). A kept blank given as one Value is read as a blank cell's
+    /// (<see cref="FunctionCall.OneValue"/>; ADR-0125).
     /// </summary>
     private static bool TryScalar(FunctionCall call, int index, out Value? value, out Operand failure)
     {
@@ -20,7 +21,7 @@ internal static partial class FunctionLibrary
         var operand = call.OneValue(index);
         if (IsArray(operand))
         {
-            failure = Operand.Of(ErrorValue.Value);
+            failure = Unlifted(call);
             return false;
         }
         value = call.Evaluator.ScalarOf(operand);

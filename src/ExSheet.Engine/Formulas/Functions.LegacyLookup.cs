@@ -8,12 +8,16 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// VLOOKUP and HLOOKUP: first exact match, or the last smaller/equal key in an ascending
-    /// table. Unlike INDEX, their result is a Value, and a blank target becomes numeric zero.
+    /// table. Unlike INDEX, their result is a Value, and a blank target becomes numeric zero. A
+    /// table that holds a kept blank (<see cref="Operand.KeptBlank"/>, ADR-0125) is answered where
+    /// the blank is never read: the Formula is refused where it is among the keys searched, or is the
+    /// target, since no run has read how a search or a target reads it.
     /// </summary>
     private static Operand LegacyLookup(FunctionCall call, bool vertical)
     {
         if (!TryScalar(call, 0, out var lookup, out var failure)) return failure;
-        var table = ArrayOrValue(call.Operand(1));
+        var table = ArrayOrValue(call.KeepingBlanks(1));
+        if (table.KeptBlank && table.Kind != OperandKind.Array) return call.Evaluator.Refuse();
         if (!table.IsRange) return table.IsError ? table : Operand.Of(ErrorValue.Value);
         if (!TryNumber(call, 2, out var index, out failure)) return failure;
         index = Math.Truncate(index);
@@ -29,10 +33,12 @@ internal static partial class FunctionLibrary
         if (call.Count > 3 && !TryNumber(call, 3, out mode, out failure)) return failure;
 
         var keys = LegacyTableLine(table, vertical, 0);
+        if (table.KeptBlank && keys.FirstBlank(call.Evaluator, fromEnd: false) is not null) return call.Evaluator.Refuse();
         var outcome = LegacySearch(call.Evaluator, keys, lookup, mode == 0 ? 0 : 1);
         if (outcome.Failure is { } error) return error;
         if (outcome.Found is not { } found) return Operand.Of(ErrorValue.NA);
         var result = LegacyTableLine(table, vertical, (int)index - 1).ItemAt(found);
+        if (table.KeptBlank && result is { Kind: OperandKind.Scalar, Scalar: null }) return call.Evaluator.Refuse();
         return Operand.Of(call.Evaluator.ScalarOf(result) ?? Value.FromNumber(0));
     }
 

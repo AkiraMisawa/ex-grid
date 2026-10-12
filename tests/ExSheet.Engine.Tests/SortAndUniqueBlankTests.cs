@@ -8,16 +8,20 @@ namespace ExSheet.Engine.Tests;
 /// A blank among <c>SORT</c>'s and <c>SORTBY</c>'s keys and in <c>UNIQUE</c>'s array, as the area passes of
 /// 2026-10-12 read Excel (ADR-0125): a blank key sorts after every other key whichever the order, blanks keep
 /// their order, and a blank spills as 0; in <c>UNIQUE</c> a blank is one of a kind only with another blank.
-/// Read inside the Formula, the blank they keep is the empty value a blank cell holds: <c>COUNTA</c> counts it
-/// in the array (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c> it is blank to <c>ISBLANK</c> and equal
-/// to empty text (SORT-022, UNIQUE-018). So operators and functions that read one Value read it as a blank
-/// cell's, and <c>SUM</c>, <c>SUMPRODUCT</c> and <c>CONCAT</c>, which add nothing for it whichever way they
-/// read it, take it; where a function's reading of it parts (<c>AVERAGE</c>, <c>MIN</c>, <c>COUNT</c>,
-/// <c>COUNTA</c> given it as one Value, another of the three) the Formula is refused with <c>#VALUE!</c>
-/// (ADR-0125, ADR-0202). An Error Value key sorts after the numbers in <c>SORT</c>, as Excel's <c>#N/A</c>
-/// after a 7 (SORT-015), where that is all the order needs, and is refused with <c>#VALUE!</c> elsewhere
-/// (ADR-0047). The cases themselves are in <c>ExcelCases/sort.json</c>, <c>sortby.json</c> and
-/// <c>unique.json</c>; the rule across the forms is here.
+/// Read inside the Formula, the blank <c>SORT</c> and <c>UNIQUE</c> keep is the empty value a blank cell holds:
+/// <c>COUNTA</c> counts it in the array (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c> it is blank to
+/// <c>ISBLANK</c> and equal to empty text (SORT-022, UNIQUE-018). <c>SORTBY</c>, <c>FILTER</c> and
+/// <c>TRANSPOSE</c> are taken to keep the same blank, which no run has read (SORTBY-011 to 013, FILTER-012 and
+/// 013, TRANSPOSE-005 and 006 ask). The other functions and operators that read one Value read it as a blank
+/// cell's, a generalisation of <c>ISBLANK</c>'s and <c>=</c>'s answers; <c>SUM</c>, <c>SUMPRODUCT</c> and
+/// <c>CONCAT</c> take it because every reading of it gives them the one answer, and a lookup takes an array
+/// holding it where it never reads it. Where a function's reading of it parts (<c>AVERAGE</c>, <c>MIN</c>,
+/// <c>COUNT</c>, <c>COUNTA</c> given it as one Value, a search through it, another of the five) the Formula is
+/// refused with <c>#VALUE!</c> (ADR-0125, ADR-0202). An Error Value key is answered in <c>SORT</c> only where it
+/// already follows every number, the shape of SORT-015, where sorting it after the numbers and keeping its
+/// place give the one order; it is refused with <c>#VALUE!</c> elsewhere (ADR-0047). The cases themselves are
+/// in <c>ExcelCases/sort.json</c>, <c>sortby.json</c>, <c>unique.json</c>, <c>filter.json</c> and
+/// <c>transpose.json</c>; the rule across the forms is here.
 /// </summary>
 public class SortAndUniqueBlankTests
 {
@@ -155,13 +159,13 @@ public class SortAndUniqueBlankTests
         Assert.Equal(expected, Spilled(sheet, 3));
     }
 
-    [Theory] // ADR-0047 (SORT-015, 026, 027): SORT puts an Error Value key after the numbers, its line with it, where every reading SORT-015 leaves agrees
-    [InlineData("=SORT(A1:A3)", "7", "=NA()", "3", new object[] { 3d, 7d, ErrorValue.NA })]
-    [InlineData("=SORT(A1:A3)", "=NA()", "7", "3", new object[] { 3d, 7d, ErrorValue.NA })]
-    [InlineData("=SORT(A1:A3)", "=NA()", "7", "=NA()", new object[] { 7d, ErrorValue.NA, ErrorValue.NA })]
+    [Theory] // ADR-0047 (SORT-015, 027): SORT answers an Error Value key that already follows every number, where sorting it after the numbers and keeping its place give the one order
+    [InlineData("=SORT(A1:A3)", "7", "3", "=NA()", new object[] { 3d, 7d, ErrorValue.NA })]
+    [InlineData("=SORT(A1:A3)", "7", "=NA()", "=NA()", new object[] { 7d, ErrorValue.NA, ErrorValue.NA })]
+    [InlineData("=SORT(A1:A3)", "=NA()", "=NA()", "=NA()", new object[] { ErrorValue.NA, ErrorValue.NA, ErrorValue.NA })]
     [InlineData("=SORT(A1:A3,1,-1)", "=1/0", "=1/0", "=1/0", new object[] { ErrorValue.Div0, ErrorValue.Div0, ErrorValue.Div0 })]
-    [InlineData("=SORT(A1:B3)", "=NA()", "7", "3", new object[] { 3d, 7d, ErrorValue.NA })]
-    public void ADR0047_sort_puts_an_error_key_after_the_numbers(string formula, string a1, string a2, string a3, object[] expected)
+    [InlineData("=SORT(A1:B3)", "7", "3", "=NA()", new object[] { 3d, 7d, ErrorValue.NA })]
+    public void ADR0047_sort_answers_an_error_key_that_follows_every_number(string formula, string a1, string a2, string a3, object[] expected)
     {
         var sheet = NewSheet();
         sheet.Enter("A1", a1);
@@ -173,39 +177,62 @@ public class SortAndUniqueBlankTests
         Assert.Equal(expected, Spilled(sheet, 3));
     }
 
-    [Fact] // ADR-0047 (SORT-015): the rest of an Error Value key's line moves with it
-    public void ADR0047_an_error_keys_line_moves_with_it()
+    [Fact] // ADR-0047 (SORT-015): the rest of an Error Value key's line goes with it, and the lines of the numbers before it are sorted
+    public void ADR0047_an_error_keys_line_goes_with_it()
     {
         var sheet = NewSheet();
-        sheet.Enter("A1", "=NA()");
+        sheet.Enter("A1", "9");
         sheet.Enter("B1", "x");
-        sheet.Enter("A2", "7");
+        sheet.Enter("A2", "3");
         sheet.Enter("B2", "y");
+        sheet.Enter("A3", "=NA()");
+        sheet.Enter("B3", "z");
 
-        sheet.Enter("ZZ1000", "=SORT(A1:B2)");
+        sheet.Enter("ZZ1000", "=SORT(A1:B3)");
 
-        Assert.Equal(["y", "x"], new[] { "AAA1000", "AAA1001" }.Select(a => sheet.Value(a)!.Value.Text));
+        Assert.Equal(["y", "x", "z"], new[] { "AAA1000", "AAA1001", "AAA1002" }.Select(a => sheet.Value(a)!.Value.Text));
     }
 
-    [Theory] // ADR-0047 (SORT-028 to 032, SORTBY-010): an Error Value key stays refused with #VALUE! where the readings SORT-015 leaves part
-    [InlineData("=SORT(A1:A2,1,-1)", "7", "=NA()")]
-    [InlineData("=SORT(A1:A2)", "a", "=NA()")]
-    [InlineData("=SORT(A1:A2)", "TRUE", "=NA()")]
-    [InlineData("=SORT(A1:A2)", "=NA()", "")]
-    [InlineData("=SORT(A1:A2)", "=NA()", "=1/0")]
-    [InlineData("=SORT(A1:A2,1,-1)", "=NA()", "=1/0")]
-    [InlineData("=SORTBY(B1:B2,A1:A2)", "7", "=NA()")]
-    [InlineData("=SORTBY(B1:B2,A1:A2,-1)", "=NA()", "=NA()")]
-    [InlineData("=SORTBY(B1:B2,C1:C2,1,A1:A2,1)", "7", "=NA()")]
-    public void ADR0047_an_error_key_is_refused_where_the_readings_part(string formula, string a1, string a2)
+    [Theory] // ADR-0047 (SORT-026, 028 to 032, SORTBY-010): an Error Value key stays refused with #VALUE! where the readings SORT-015 leaves part: a number after it, which sorting it after the numbers moves and keeping its place does not, another kind beside it, a descending sort, two Error Values, and SORTBY
+    [InlineData("=SORT(A1:A2)", "=NA()", "7", "")]
+    [InlineData("=SORT(A1:A3)", "7", "=NA()", "3")]
+    [InlineData("=SORT(A1:A3)", "=NA()", "7", "=NA()")]
+    [InlineData("=SORT(A1:A2,1,-1)", "7", "=NA()", "")]
+    [InlineData("=SORT(A1:A2)", "a", "=NA()", "")]
+    [InlineData("=SORT(A1:A2)", "TRUE", "=NA()", "")]
+    [InlineData("=SORT(A1:A2)", "=NA()", "", "")]
+    [InlineData("=SORT(A1:A2)", "=NA()", "=1/0", "")]
+    [InlineData("=SORT(A1:A2,1,-1)", "=NA()", "=1/0", "")]
+    [InlineData("=SORTBY(B1:B2,A1:A2)", "7", "=NA()", "")]
+    [InlineData("=SORTBY(B1:B2,A1:A2,-1)", "=NA()", "=NA()", "")]
+    [InlineData("=SORTBY(B1:B2,C1:C2,1,A1:A2,1)", "7", "=NA()", "")]
+    public void ADR0047_an_error_key_is_refused_where_the_readings_part(string formula, string a1, string a2, string a3)
     {
         var sheet = NewSheet();
         sheet.Enter("A1", a1);
         if (a2 != "") sheet.Enter("A2", a2);
+        if (a3 != "") sheet.Enter("A3", a3);
         sheet.Enter("B1", "1");
         sheet.Enter("B2", "2");
         sheet.Enter("C1", "x");
         sheet.Enter("C2", "x");
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
+    }
+
+    [Theory] // ADR-0047, ADR-0202: the refusal of an Error Value key is the Formula's, so nothing around it reads it as an answer: IFERROR would show one 0 where SORT spills two Values, and COUNTA would count one of SORT's two
+    [InlineData("=IFERROR(SORT(A1:A2),0)")]
+    [InlineData("=IFERROR(INDEX(SORT(A1:A2),1),0)")]
+    [InlineData("=ISERROR(SORT(A1:A2))")]
+    [InlineData("=COUNTA(SORT(A1:A2))")]
+    [InlineData("=IFERROR(SORTBY(B1:B2,A1:A2),0)")]
+    public void ADR0047_an_error_keys_refusal_cannot_be_caught(string formula)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "=NA()");
+        sheet.Enter("A2", "7");
+        sheet.Enter("B1", "1");
+        sheet.Enter("B2", "2");
 
         Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
     }
@@ -310,10 +337,14 @@ public class SortAndUniqueBlankTests
         return sheet;
     }
 
-    [Theory] // ADR-0125 (SORT-021, UNIQUE-017, SORTBY-011): COUNTA counts a blank kept in the array, as Excel's does
+    [Theory] // ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's
     [InlineData("=COUNTA(UNIQUE(A1:A3))", 3d)]
     [InlineData("=COUNTA(SORT(A1:A3))", 3d)]
     [InlineData("=COUNTA(SORTBY(A1:A3,B1:B3))", 3d)]
+    [InlineData("=COUNTA(FILTER(A1:A3,B1:B3>0))", 3d)]
+    [InlineData("=COUNTA(FILTER(A1:C3,B1:B3<3))", 6d)]
+    [InlineData("=COUNTA(TRANSPOSE(A1:A3))", 3d)]
+    [InlineData("=COUNTA(TRANSPOSE(B1:C3))", 6d)]
     [InlineData("=COUNTA(UNIQUE(B1:C3))", 6d)]
     [InlineData("=COUNTA(SORT(A1:A3),A1:A3)", 5d)]
     [InlineData("=LET(x,UNIQUE(A1:A3),COUNTA(x))", 3d)]
@@ -325,10 +356,14 @@ public class SortAndUniqueBlankTests
         Assert.Equal(expected, sheet.Evaluate(formula).Number);
     }
 
-    [Theory] // ADR-0125 (SORT-022, UNIQUE-018 to 020, SORTBY-012): taken out by INDEX, the kept blank is the empty value a blank cell holds, and one-Value readers read it so
+    [Theory] // ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and one-Value readers read it so
     [InlineData("=ISBLANK(INDEX(SORT(A1:A3),3))", true)]
     [InlineData("=ISBLANK(INDEX(UNIQUE(A1:A3),2))", true)]
     [InlineData("=ISBLANK(INDEX(SORTBY(A1:A3,B1:B3),2))", true)]
+    [InlineData("=ISBLANK(INDEX(FILTER(A1:A3,B1:B3>0),2))", true)]
+    [InlineData("=ISBLANK(INDEX(TRANSPOSE(A1:A3),1,2))", true)]
+    [InlineData("=INDEX(FILTER(C1:C3,B1:B3>0),2)&\"x\"", "x")]
+    [InlineData("=LEN(INDEX(TRANSPOSE(A1:A3),1,2))", 0d)]
     [InlineData("=INDEX(UNIQUE(A1:A3),2)=\"\"", true)]
     [InlineData("=INDEX(UNIQUE(A1:A3),2)=0", true)]
     [InlineData("=ISTEXT(INDEX(SORT(A1:A3),3))", false)]
@@ -377,6 +412,9 @@ public class SortAndUniqueBlankTests
     [InlineData("=SUM(UNIQUE(D2))", 0d)]
     [InlineData("=SUMPRODUCT(SORT(D1:D3),SORT(D1:D3))", 74d)]
     [InlineData("=CONCAT(SORTBY(D1:D3,D1:D3,-1))", "75")]
+    [InlineData("=SUM(FILTER(D1:D3,D1:D3<>1))", 12d)]
+    [InlineData("=SUMPRODUCT(TRANSPOSE(D1:D3),TRANSPOSE(D1:D3))", 74d)]
+    [InlineData("=CONCAT(FILTER(D1:D3,D1:D3<>1))", "57")]
     public void ADR0125_sum_sumproduct_and_concat_take_a_kept_blank(string formula, object expected)
     {
         var sheet = WithNumbersAndABlank();
@@ -426,6 +464,13 @@ public class SortAndUniqueBlankTests
     [InlineData("=UNIQUE(SORT(D1:D3))")]
     [InlineData("=TRANSPOSE(UNIQUE(D1:D3))")]
     [InlineData("=FILTER(SORT(D1:D3),D1:D3>0)")]
+    [InlineData("=AVERAGE(FILTER(D1:D3,D1:D3<>1))")]
+    [InlineData("=MIN(TRANSPOSE(D1:D3))")]
+    [InlineData("=COUNT(FILTER(D1:D3,D1:D3<>1))")]
+    [InlineData("=COUNTA(SORT(FILTER(D1:D3,D1:D3<>1)))")]
+    [InlineData("=SORT(TRANSPOSE(D1:D3),1,1,TRUE)")]
+    [InlineData("=MATCH(7,TRANSPOSE(D1:D3),0)")]
+    [InlineData("=XLOOKUP(7,FILTER(D1:D3,D1:D3<>1),D1:D3)")]
     [InlineData("=IF(TRUE,SORT(D1:D3))")]
     [InlineData("=CHOOSE(1,UNIQUE(D1:D3))")]
     [InlineData("=LEN(UNIQUE(D1:D3))")]
@@ -444,9 +489,51 @@ public class SortAndUniqueBlankTests
     [InlineData("=IFNA(COUNT(SORTBY(D1:D3,D1:D3)),\"x\")")]
     [InlineData("=IF(ISERROR(COUNTA(INDEX(SORT(D1:D3),3))),1,2)")]
     [InlineData("=IFERROR(INDEX(SORT(D1:D3),3),0)")]
+    [InlineData("=IFERROR(AVERAGE(FILTER(D1:D3,D1:D3<>1)),0)")]
+    [InlineData("=ISERROR(MIN(TRANSPOSE(D1:D3)))")]
     public void ADR0125_the_refusal_cannot_be_caught(string formula)
     {
         var sheet = WithNumbersAndABlank();
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
+    }
+
+    /// <summary>A1 to A3 the keys 1, 2, 3; B1 10, B2 blank, B3 30.</summary>
+    private static Sheet WithKeysAndABlankValue()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("A2", "2");
+        sheet.Enter("A3", "3");
+        sheet.Enter("B1", "10");
+        sheet.Enter("B3", "30");
+        return sheet;
+    }
+
+    [Theory] // ADR-0125: a lookup over an array that holds a kept blank answers where it never reads the blank, every reading of it giving the one answer
+    [InlineData("=VLOOKUP(1,SORT(A1:B3),2,FALSE)", 10d)]
+    [InlineData("=VLOOKUP(3,SORT(A1:B3),2,TRUE)", 30d)]
+    [InlineData("=HLOOKUP(3,TRANSPOSE(A1:B3),2,FALSE)", 30d)]
+    [InlineData("=XLOOKUP(3,A1:A3,FILTER(B1:B3,A1:A3>0))", 30d)]
+    [InlineData("=SUM(XLOOKUP(1,A1:A3,FILTER(A1:B3,A1:A3>0)))", 11d)]
+    public void ADR0125_a_lookup_answers_where_it_never_reads_a_kept_blank(string formula, double expected)
+    {
+        var sheet = WithKeysAndABlankValue();
+
+        Assert.Equal(expected, sheet.Evaluate(formula).Number);
+    }
+
+    [Theory] // ADR-0125, ADR-0202: a lookup is refused where the kept blank is what it returns, or among the keys it searches: how either reads it no run has read
+    [InlineData("=VLOOKUP(2,SORT(A1:B3),2,FALSE)")]
+    [InlineData("=HLOOKUP(2,TRANSPOSE(A1:B3),2,FALSE)")]
+    [InlineData("=VLOOKUP(30,SORT(B1:B3),1,FALSE)")]
+    [InlineData("=XLOOKUP(2,A1:A3,FILTER(B1:B3,A1:A3>0))")]
+    [InlineData("=SUM(XLOOKUP(2,A1:A3,FILTER(A1:B3,A1:A3>0)))")]
+    [InlineData("=XLOOKUP(30,FILTER(B1:B3,A1:A3>0),A1:A3)")]
+    [InlineData("=VLOOKUP(1,UNIQUE(B2),1,FALSE)")]
+    public void ADR0125_a_lookup_that_reads_a_kept_blank_is_refused(string formula)
+    {
+        var sheet = WithKeysAndABlankValue();
 
         Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
     }
