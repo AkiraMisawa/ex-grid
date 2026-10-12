@@ -80,6 +80,11 @@ const rowHolding = (page, grid, address) => {
 /** The indices from `from`, `count` of them, as aria-rowindex writes them. */
 const numbers = (from, count) => Array.from({ length: count }, (_, i) => String(from + i));
 
+// /features' rows, as Features.razor makes them: 400 trades in the first grid, the first 20 of them
+// in the second. The counts below are read against these, not against the grid's own count.
+const FEATURES_ROWS = 400;
+const SECOND_ROWS = 20;
+
 test.describe('ADR-0033: /features', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/features');
@@ -90,7 +95,10 @@ test.describe('ADR-0033: /features', () => {
     test('A11Y-3 / ADR-0033: a Header Group band is row 1, the header row 2, and the data rows count from 3, near the top and far down', async ({ page }) => {
         const grid = page.locator('.ex-grid').first();
         expect(await headerRowsOf(grid)).toBe(2);
-        expect(await grid.getAttribute('aria-rowcount')).toBe(String(await dataRowCount(grid) + 2));
+        // The page's 400 trades, and the band's row and the header row; the fixture the other specs
+        // read a row total through takes the two off.
+        await expect(grid).toHaveAttribute('aria-rowcount', String(FEATURES_ROWS + 2));
+        expect(await dataRowCount(grid)).toBe(FEATURES_ROWS);
 
         const top = await accessibleRows(page, '.ex-grid', 0);
         expect(top.filter((row) => row.ignored), 'no row is ignored by the tree').toEqual([]);
@@ -113,8 +121,12 @@ test.describe('ADR-0033: /features', () => {
 
         await expect(grid.locator('.ex-viewport .ex-row', { has: page.locator("[id$='-r300c0']") })).toHaveAttribute('aria-rowindex', '303');
         const far = await accessibleRows(page, '.ex-grid', 0);
-        expect(far.slice(0, 2).map((row) => row.index)).toEqual(['1', '2']);
+        expect(far.filter((row) => row.ignored), 'no row is ignored by the tree, far down').toEqual([]);
+        // Each header row still owns its column headers, as at the top: the band's row the groups'
+        // labels, the header row the leaf headers, neither a cell.
+        expect(far.slice(0, 2), 'the header rows far down are the header rows at the top').toEqual(top.slice(0, 2));
         const farData = far.slice(2);
+        expect(farData.every((row) => row.cells > 0 && row.headers.length === 0)).toBe(true);
         expect(farData.map((row) => row.index)).toEqual(numbers(Number(farData[0].index), farData.length));
         expect(farData.map((row) => row.index)).toContain('303');
     });
@@ -122,7 +134,9 @@ test.describe('ADR-0033: /features', () => {
     test('A11Y-2 / A11Y-3 / ADR-0033: an untiered header is row 1, the first data row 2, and the count is the data rows and the header row', async ({ page }) => {
         const grid = page.locator('.ex-grid').nth(1);
         expect(await headerRowsOf(grid)).toBe(1);
-        expect(await grid.getAttribute('aria-rowcount')).toBe(String(await dataRowCount(grid) + 1));
+        // The first 20 trades, and the header row.
+        await expect(grid).toHaveAttribute('aria-rowcount', String(SECOND_ROWS + 1));
+        expect(await dataRowCount(grid)).toBe(SECOND_ROWS);
 
         const rows = await accessibleRows(page, '.ex-grid', 1);
         expect(rows.filter((row) => row.ignored)).toEqual([]);
@@ -142,7 +156,7 @@ test.describe('ADR-0033: /sheet', () => {
     test('A11Y-2 / A11Y-3 / ADR-0033: the Column Headings are row 1, so a Sheet row is its number plus one, near the top and far down', async ({ page }) => {
         await openSheet(page);
         const grid = sheet(page);
-        // Excel's rows, and the Column Headings' row.
+        // The Sheet's 1,048,576 rows, and the Column Headings' row.
         await expect(grid).toHaveAttribute('aria-rowcount', '1048577');
         expect(await dataRowCount(grid)).toBe(1048576);
 
@@ -159,8 +173,11 @@ test.describe('ADR-0033: /sheet', () => {
 
         await expect(rowHolding(page, grid, 'A500000')).toHaveAttribute('aria-rowindex', '500001');
         const far = await accessibleRows(page, SHEET, 0);
-        expect(far[0].index).toBe('1');
+        expect(far.filter((row) => row.ignored), 'no row is ignored by the tree, far down').toEqual([]);
+        // The Column Headings' row still owns its column headers, as at the top, and no cell.
+        expect(far[0], 'the header row far down is the header row at the top').toEqual(rows[0]);
         const farData = far.slice(1);
+        expect(farData.every((row) => row.cells > 0 && row.headers.length === 0)).toBe(true);
         expect(farData.map((row) => row.index)).toEqual(numbers(Number(farData[0].index), farData.length));
         expect(farData.map((row) => row.index)).toContain('500001');
     });
