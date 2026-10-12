@@ -179,7 +179,15 @@ near the top and far down (layer 3, over the DevTools protocol). What a reader s
 
 ## For the merge
 
-- `claude/public-surface` (ADR-0201) also edits `ExGrid.razor` and `ExGridRow.razor`; this branch adds the public
-  parameter `ExGridRow.HeaderRowCount`, which that branch's baseline lists if it is merged after this one.
+- `origin/main` at `2265cda6` (ADR-0201, #89) is merged in (`5eca9502`), with no conflict; the new public parameter
+  `ExGridRow<TRow>.HeaderRowCount` is declared in `src/ExGrid/PublicAPI.Unshipped.txt`. After the merge the solution
+  builds with no warning, and layers 1 and 2 pass as above (ExGrid.Tests 1,702; ExGrid.Docs.Generator.Tests 319).
+  Layer 3 ran on `3060902c`, before the merge.
+- Seen once and not this change's: on the WebAssembly host, `pivot.spec.mjs` run with `--grep` failed its first
+  test's ADR-0056 check, "the stylesheets are not the ones the file booted with" (`ex-grid.min.css` and
+  `ex-sheet.min.css` present after the test, only `app.css` at boot). The test itself passed, and the same grep passed
+  on a rerun and on the Server host. The boot reads the document once `ready()` holds, and the package stylesheets are
+  root components (ADR-0123, #82), so whether they are in it may depend on when that read lands: a candidate for the
+  spine's sixth principle, left to whoever owns the fixture.
 - `verification/2026-10-11-windows-17/part-e/pivot-probe.mjs` (on `claude/exsheet-windows-verify-17`) reads the
   report's rows by `aria-rowindex`; a later run of it subtracts the header's rows.
