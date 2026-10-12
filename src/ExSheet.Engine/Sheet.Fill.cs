@@ -32,16 +32,24 @@ public sealed partial class Sheet
     /// 15 significant digits as Excel holds them.</item>
     /// <item>A single date (a number shown in a date format with no time of day) goes on by one day
     /// per cell.</item>
-    /// <item>A single number, and text, booleans, Error Values and blanks, are copied, repeating
-    /// the source.</item>
+    /// <item>A single number in a line of a fill from whole columns or whole rows goes on by one per
+    /// cell, held at 15 significant digits as a trend is: column C filled right from its Heading
+    /// gave D1 2 and E1 3 from C1's 1 (observed, the readings of 2026-10-12 (R5)).</item>
+    /// <item>A single number in any other source, and text, booleans, Error Values and blanks, are
+    /// copied, repeating the source: one cell's handle copied C5's 1 down as 1, 1 (observed, R5's
+    /// control).</item>
     /// </list>
     /// Anything else is refused, never filled with copies: text Excel would continue (holding a
     /// digit, like <c>Item 1</c>, or a day or month name), two or more dates (Excel may step them
     /// by month or year), a time of day, and numbers mixed with anything else.
-    /// Cell Formats are repeated from the source. With <paramref name="copyOnly"/>, Excel's
-    /// fill keys (Ctrl+D, Ctrl+R): every line is a copy, and no pattern is continued or refused.
+    /// Cell Formats are repeated from the source. A fill from whole columns (whole rows) writes each
+    /// target column's (row's) format as that column's (row's) own, the level its source column
+    /// (row) records, and then the cells that hold something (<see cref="FillPlan.Levels"/>): what
+    /// every cell shows is what writing each cell would give it, and a fill a million rows long
+    /// costs the rows that hold something. With <paramref name="copyOnly"/>, Excel's fill keys
+    /// (Ctrl+D, Ctrl+R): every line is a copy, and no pattern is continued or refused.
     /// </summary>
-    internal (SheetRefusal? Refusal, List<(CellAddress Address, CellState State)> States) PlanFill(CellRange source, CellRange target, FillDirection direction, bool copyOnly = false)
+    internal FillPlan PlanFill(CellRange source, CellRange target, FillDirection direction, bool copyOnly = false)
     {
         var vertical = direction is FillDirection.Down or FillDirection.Up;
         var forward = direction is FillDirection.Down or FillDirection.Right;
@@ -61,13 +69,15 @@ public sealed partial class Sheet
               && (forward ? target.First.Column == source.Last.Column + 1 : target.Last.Column == source.First.Column - 1);
         if (!adjacent)
         {
-            return (new SheetRefusal(SheetRefusalReason.FillShapeNotSupported,
-                $"A fill {direction.ToString().ToLowerInvariant()} from {source} extends it along one axis; {target} does not."), states);
+            return new FillPlan(new SheetRefusal(SheetRefusalReason.FillShapeNotSupported,
+                $"A fill {direction.ToString().ToLowerInvariant()} from {source} extends it along one axis; {target} does not."), states, null);
         }
 
         var length = vertical ? source.RowCount : source.ColumnCount;
         var count = vertical ? target.RowCount : target.ColumnCount;
-        foreach (var line in LinesToFill(source, target, vertical))
+        // Lines that run the whole axis: a fill down from whole rows, or across from whole columns.
+        var wholeAxis = vertical ? source.IsWholeRows : source.IsWholeColumns;
+        foreach (var line in LinesToFill(source, target, vertical, wholeAxis))
         {
             CellAddress SourceAt(int i) => vertical
                 ? new CellAddress(source.First.Row + i, source.First.Column + line)
@@ -76,8 +86,8 @@ public sealed partial class Sheet
             // Position along the axis relative to the source's first cell: 0..length-1 is the
             // source; the target is length.. going forward and ..-1 going back.
             var cells = Enumerable.Range(0, length).Select(i => CarriedState(SourceAt(i))).ToArray();
-            var rule = FillRule(cells, SourceAt, copyOnly, out var refusal);
-            if (refusal is not null) return (refusal, []);
+            var rule = FillRule(cells, SourceAt, copyOnly, wholeAxis, out var refusal);
+            if (refusal is not null) return new FillPlan(refusal, [], null);
             for (var k = 0; k < count; k++)
             {
                 var x = forward ? length + k : -1 - k;
@@ -89,7 +99,85 @@ public sealed partial class Sheet
                 states.Add((at, state with { Entry = rule(x, i, at) }));
             }
         }
-        return (null, states);
+        return new FillPlan(null, states, wholeAxis ? LevelsOf(source, vertical, forward, length, count) : null);
+    }
+
+    /// <summary>
+    /// What a fill writes: each cell's state, and, for a fill from whole columns or whole rows, the
+    /// level each target column (row) records; or why it is refused, and then nothing.
+    /// </summary>
+    /// <param name="Refusal">Why the fill is refused, or <see langword="null"/>.</param>
+    /// <param name="States">Each cell written, its state as the source carries it, not yet settled.</param>
+    /// <param name="Levels">For a fill from whole columns (whole rows), the format each target column
+    /// (row) records, written before the cells are settled against it; <see langword="null"/> for any
+    /// other fill.</param>
+    internal sealed record FillPlan(SheetRefusal? Refusal, List<(CellAddress Address, CellState State)> States, FillLevels? Levels);
+
+    /// <summary>The formats a fill from whole columns (<paramref name="Columns"/>) or whole rows writes on its target's columns (rows), by index.</summary>
+    internal sealed record FillLevels(bool Columns, IReadOnlyList<(int Index, AxisFormat Level)> Levels);
+
+    /// <summary>
+    /// The level each column (row) of a fill from whole columns (whole rows) takes: the one recorded
+    /// on the source column (row) it repeats, empty where that records none. Every cell of the column
+    /// is filled, and each holding nothing in the source carries its row's format over that column's,
+    /// so the column's format written as the target column's own shows in every such cell what writing
+    /// the cell would. The source's formats are the levels', not the cells', so nothing a cell records
+    /// is lost: the lines holding a cell are written cell by cell after it.
+    /// </summary>
+    private FillLevels LevelsOf(CellRange source, bool vertical, bool forward, int length, int count)
+    {
+        var along = vertical ? _rowFormats : _columnFormats;
+        var first = vertical ? source.First.Row : source.First.Column;
+        var levels = new List<(int, AxisFormat)>(count);
+        for (var k = 0; k < count; k++)
+        {
+            var x = forward ? length + k : -1 - k;
+            var i = ((x % length) + length) % length;
+            levels.Add((first + x, along.GetValueOrDefault(first + i)));
+        }
+        return new FillLevels(Columns: !vertical, levels);
+    }
+
+    /// <summary>
+    /// Does a fill planned with levels (<see cref="FillPlan.Levels"/>): the target columns' (rows')
+    /// formats first, then each cell's state settled against them, as one step that undoes both.
+    /// </summary>
+    internal SheetStep DoFillWithLevels(FillPlan plan)
+    {
+        var levels = plan.Levels!;
+        var addresses = plan.States.Select(p => p.Address).Distinct().ToList();
+        var before = Record(addresses);
+        var rowsBefore = new Dictionary<int, AxisFormat>(_rowFormats);
+        var columnsBefore = new Dictionary<int, AxisFormat>(_columnFormats);
+        var rowsAfter = new Dictionary<int, AxisFormat>(_rowFormats);
+        var columnsAfter = new Dictionary<int, AxisFormat>(_columnFormats);
+        foreach (var (index, level) in levels.Levels) SetAxis(levels.Columns ? columnsAfter : rowsAfter, index, level);
+        var change = PutLevelsAndCells(rowsAfter, columnsAfter, plan.States, settle: true);
+        var after = Record(addresses);
+        return new SheetStep(this, change,
+            s => s.PutLevelsAndCells(rowsBefore, columnsBefore, before, settle: false),
+            s => s.PutLevelsAndCells(rowsAfter, columnsAfter, after, settle: false));
+    }
+
+    /// <summary>
+    /// Puts the row and column levels as given, then the cells, each settled against those levels
+    /// when <paramref name="settle"/>, as one change: a level shows in the cells that hold nothing
+    /// too, which the change says.
+    /// </summary>
+    private SheetChange PutLevelsAndCells(
+        Dictionary<int, AxisFormat> rows, Dictionary<int, AxisFormat> columns,
+        IEnumerable<(CellAddress Address, CellState State)> cells, bool settle)
+    {
+        var rowsNow = _rowFormats;
+        var columnsNow = _columnFormats;
+        _rowFormats = new Dictionary<int, AxisFormat>(rows);
+        _columnFormats = new Dictionary<int, AxisFormat>(columns);
+        var affected = new SortedSet<int>(RowsAffectedByAxes(rowsNow, columnsNow));
+        var levels = LevelsDiffer(rowsNow, columnsNow);
+        var change = Restore(settle ? Settle(cells) : cells);
+        if (affected.Count == 0 && !levels) return change;
+        affected.UnionWith(change.Rows);
+        return new SheetChange(change.ValueChanges, change.Recalculated, [.. affected], reformatsUnnamedRows: levels);
     }
 
     /// <summary>
@@ -101,8 +189,14 @@ public sealed partial class Sheet
     /// and is left out. What is written is therefore what filling every line would write, and a fill
     /// from whole columns, a million lines, costs the lines that hold something (ADR-0050, item 5: a
     /// whole column's handle stands beside its Heading).
+    ///
+    /// <para>A fill whose lines run the whole axis (<paramref name="wholeAxis"/>) writes the formats
+    /// along it on the target columns (rows) themselves (<see cref="LevelsOf"/>), so a line holding no
+    /// cell carries its row's format over the source column's, and shows the same over the target
+    /// column once that holds the source's: it is left out whatever formats lie along or across it,
+    /// and the lines are those holding a cell.</para>
     /// </summary>
-    private List<int> LinesToFill(CellRange source, CellRange target, bool vertical)
+    private List<int> LinesToFill(CellRange source, CellRange target, bool vertical, bool wholeAxis)
     {
         var lines = vertical ? source.ColumnCount : source.RowCount;
         // The span across the lines, and the span along them that the source and the target cover.
@@ -111,10 +205,11 @@ public sealed partial class Sheet
         var alongLast = Math.Max(vertical ? source.Last.Row : source.Last.Column, vertical ? target.Last.Row : target.Last.Column);
         var along = vertical ? _rowFormats : _columnFormats;
         var across = vertical ? _columnFormats : _rowFormats;
-        // A format on a row (a column) the fill runs along reaches every line: each is filled.
-        if (along.Keys.Any(i => i >= alongFirst && i <= alongLast)) return [.. Enumerable.Range(0, lines)];
+        // A format on a row (a column) the fill runs along reaches every line: each is filled, unless
+        // the fill writes it on the target's own rows (columns).
+        if (!wholeAxis && along.Keys.Any(i => i >= alongFirst && i <= alongLast)) return [.. Enumerable.Range(0, lines)];
         var filled = new SortedSet<int>();
-        foreach (var i in across.Keys)
+        foreach (var i in wholeAxis ? Enumerable.Empty<int>() : across.Keys)
         {
             if (i >= firstLine && i < firstLine + lines) filled.Add(i - firstLine);
         }
@@ -126,8 +221,12 @@ public sealed partial class Sheet
         return [.. filled];
     }
 
-    /// <summary>The rule for one line: given a position along the axis, the source cell it repeats and its address, the Entry written there.</summary>
-    private Func<int, int, CellAddress, Entry?> FillRule(CellState[] cells, Func<int, CellAddress> sourceAt, bool copyOnly, out SheetRefusal? refusal)
+    /// <summary>
+    /// The rule for one line: given a position along the axis, the source cell it repeats and its
+    /// address, the Entry written there. <paramref name="wholeAxis"/>: the line is one of a fill from
+    /// whole columns or whole rows, where a single number goes on by one per cell.
+    /// </summary>
+    private Func<int, int, CellAddress, Entry?> FillRule(CellState[] cells, Func<int, CellAddress> sourceAt, bool copyOnly, bool wholeAxis, out SheetRefusal? refusal)
     {
         refusal = null;
         Entry? Copy(int x, int i, CellAddress at)
@@ -169,9 +268,13 @@ public sealed partial class Sheet
         if (numbers == 0) return Copy;
         if (cells.Length == 1)
         {
-            if (dates == 0) return Copy;
-            var serial = cells[0].Entry!.Constant!.Value.Number;
-            return (x, _, _) => Series(serial + x);
+            var single = cells[0].Entry!.Constant!.Value.Number;
+            // A single number is copied from one cell's handle and goes on by one from a whole column's
+            // (observed, the readings of 2026-10-12 (R5): C5's 1 down gave 1, 1; column C's 1 right gave
+            // 2, 3). Held at 15 significant digits as a trend is held, and counted back by one going up
+            // or left: those two are by generalisation.
+            if (dates == 0) return wholeAxis ? (x, _, _) => Series(TrendDigits.Step(single, 1, x)) : Copy;
+            return (x, _, _) => Series(single + x);
         }
         if (numbers != cells.Length)
         {

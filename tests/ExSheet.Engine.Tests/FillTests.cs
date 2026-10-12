@@ -82,46 +82,158 @@ public class FillTests
     private static SheetStep SetFormat(Sheet sheet, CellFormatChange change, string range) =>
         sheet.Do(SheetEdit.SetCellFormat([CellRange.Parse(range)], change));
 
-    [Fact] // ADR-0050 item 5: a whole column filled right writes what each of its rows holds, and a blank over what the target held
-    public void A_whole_column_filled_right_copies_every_row_it_holds()
+    [Fact] // ADR-0050 item 5: column C filled right two columns, as the readings of 2026-10-12 (R5) observed Excel fill it
+    public void A_whole_column_filled_right_fills_every_row_and_steps_a_lone_number()
     {
         var sheet = NewSheet();
         sheet.Enter("C1", "1");
-        sheet.Enter("C2", "2");
-        sheet.Enter("C3", "=C1+C2");
-        sheet.Enter("C1048576", "last");
+        sheet.Enter("C3", "a");
+        sheet.Enter("C20", "=ROW()");
+        sheet.Enter("C1048576", "z");
         sheet.Enter("D9", "old");
         var before = sheet.ToDocument().ToJson();
 
-        var step = Fill(sheet, "C1:C1048576", "D1:D1048576", FillDirection.Right);
+        var step = Fill(sheet, "C1:C1048576", "D1:E1048576", FillDirection.Right);
 
-        Assert.Equal("1", sheet.GetDisplay(At("D1")).Text);
-        Assert.Equal("2", sheet.GetDisplay(At("D2")).Text);
-        Assert.Equal("=D1+D2", sheet.GetEntry(At("D3"))!.Formula);
-        Assert.Equal("3", sheet.GetDisplay(At("D3")).Text);
-        Assert.Equal("last", sheet.GetDisplay(At("D1048576")).Text);
-        // C9 is blank, and a blank is copied as every fill copies one: D9's text is gone.
+        // Observed (R5, (3)): the lone number goes on as a series, text is copied, =ROW() is
+        // filled as a Formula, and the last row is filled too; D2 stays empty.
+        Assert.Equal("2", sheet.GetDisplay(At("D1")).Text);
+        Assert.Equal("3", sheet.GetDisplay(At("E1")).Text);
+        Assert.Null(sheet.GetEntry(At("D2")));
+        Assert.Equal("a", sheet.GetDisplay(At("D3")).Text);
+        Assert.Equal("a", sheet.GetDisplay(At("E3")).Text);
+        Assert.Equal("=ROW()", sheet.GetEntry(At("D20"))!.Formula);
+        Assert.Equal("20", sheet.GetDisplay(At("E20")).Text);
+        Assert.Equal("z", sheet.GetDisplay(At("D1048576")).Text);
+        Assert.Equal("z", sheet.GetDisplay(At("E1048576")).Text);
+        // C9 is blank, and a blank is copied as every fill copies one: D9's text is gone (by
+        // generalisation from every other fill; R5's target held nothing).
         Assert.Null(sheet.GetEntry(At("D9")));
-        Assert.Null(sheet.GetEntry(At("E1")));
+        Assert.Null(sheet.GetEntry(At("F1")));
 
         step.Undo();
         Assert.Equal(before, sheet.ToDocument().ToJson());
     }
 
-    [Fact] // ADR-0050 item 5: a whole row filled down writes what each of its columns holds
-    public void A_whole_row_filled_down_copies_every_column_it_holds()
+    [Fact] // ADR-0050 item 5: one cell's handle copies a lone number, as R5's control observed Excel copy C5's
+    public void One_cells_lone_number_is_copied_not_stepped()
     {
         var sheet = NewSheet();
-        sheet.Enter("B2", "5");
-        sheet.Enter("C2", "=B2*2");
-        sheet.Enter("XFD2", "edge");
+        sheet.Enter("C5", "1");
 
-        Fill(sheet, "A2:XFD2", "A3:XFD4", FillDirection.Down);
+        Fill(sheet, "C5", "C6:C7", FillDirection.Down);
 
-        Assert.Equal("5", sheet.GetDisplay(At("B4")).Text);
-        Assert.Equal("=B4*2", sheet.GetEntry(At("C4"))!.Formula);
-        Assert.Equal("edge", sheet.GetDisplay(At("XFD3")).Text);
-        Assert.Null(sheet.GetEntry(At("A3")));
+        Assert.Equal("1", sheet.GetDisplay(At("C6")).Text);
+        Assert.Equal("1", sheet.GetDisplay(At("C7")).Text);
+    }
+
+    [Fact] // ADR-0050 item 5: row 3 filled down two rows, as the readings of 2026-10-12 (R5, (4)) observed Excel fill it
+    public void A_whole_row_filled_down_fills_every_column_and_steps_a_lone_number()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A3", "1");
+        sheet.Enter("C3", "a");
+        sheet.Enter("H3", "=COLUMN()");
+        sheet.Enter("XFD3", "z");
+
+        Fill(sheet, "A3:XFD3", "A4:XFD5", FillDirection.Down);
+
+        Assert.Equal("2", sheet.GetDisplay(At("A4")).Text);
+        Assert.Equal("3", sheet.GetDisplay(At("A5")).Text);
+        Assert.Equal("a", sheet.GetDisplay(At("C5")).Text);
+        Assert.Equal("=COLUMN()", sheet.GetEntry(At("H4"))!.Formula);
+        Assert.Equal("8", sheet.GetDisplay(At("H5")).Text);
+        Assert.Equal("z", sheet.GetDisplay(At("XFD5")).Text);
+        Assert.Null(sheet.GetEntry(At("B4")));
+    }
+
+    [Fact] // ADR-0050 item 5: filled left or up, a whole axis's lone number counts back by one (by generalisation from R5's right and down)
+    public void A_whole_columns_lone_number_counts_back_filled_left()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("C1", "5");
+
+        Fill(sheet, "C1:C1048576", "A1:B1048576", FillDirection.Left);
+
+        Assert.Equal("4", sheet.GetDisplay(At("B1")).Text);
+        Assert.Equal("3", sheet.GetDisplay(At("A1")).Text);
+    }
+
+    [Fact] // ADR-0050 item 5 / ADR-0035: Ctrl+R over whole columns copies, never a series, as the keys do over any range (by generalisation: R5 dragged the handle)
+    public void Ctrl_r_over_whole_columns_copies_the_lone_number()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("C1", "1");
+
+        FillCopy(sheet, "C1:C1048576", "D1:D1048576", FillDirection.Right);
+
+        Assert.Equal("1", sheet.GetDisplay(At("D1")).Text);
+    }
+
+    [Fact] // ADR-0050 item 5 / ADR-0047: a whole column's format is written as each target column's own, never into its million cells
+    public void A_whole_columns_format_is_written_as_the_target_columns_own()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("C1", "1");
+        sheet.Enter("C1048576", "z");
+        SetFormat(sheet, new CellFormatChange { Bold = true }, "C:C");
+        SetFormat(sheet, new CellFormatChange { Fill = CellFill.Solid(CellColour.FromRgb(255, 255, 0)) }, "D:D");
+        var before = sheet.ToDocument().ToJson();
+
+        var step = Fill(sheet, "C1:C1048576", "D1:E1048576", FillDirection.Right);
+
+        var document = sheet.ToDocument();
+        // One run, C to E, bold, and D's yellow written over with C's none: what writing each of
+        // their cells would show, recorded on the columns.
+        var run = Assert.Single(document.Columns);
+        Assert.Equal((2, 4), (run.First, run.Last));
+        Assert.Equal(new CellFont(Bold: true), run.Font);
+        Assert.Null(run.Fill);
+        Assert.True(sheet.GetFont(At("E500")).Bold);
+        Assert.Equal(CellFill.None, sheet.GetFill(At("D500")));
+        // The cells that hold something are written, and record no format their column gives them.
+        Assert.Equal(["C1", "C1048576", "D1", "D1048576", "E1", "E1048576"], document.Cells.Select(c => c.Address.ToString()).Order(StringComparer.Ordinal));
+        Assert.All(document.Cells, c => Assert.Null(c.Font));
+
+        step.Undo();
+        Assert.Equal(before, sheet.ToDocument().ToJson());
+        step.Redo();
+        Assert.Equal(document.ToJson(), sheet.ToDocument().ToJson());
+    }
+
+    [Fact] // ADR-0050 item 5 / ADR-0047: a whole row's format is written as each target row's own
+    public void A_whole_rows_format_is_written_as_the_target_rows_own()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A3", "1");
+        SetFormat(sheet, new CellFormatChange { Italic = true }, "3:3");
+
+        Fill(sheet, "A3:XFD3", "A4:XFD5", FillDirection.Down);
+
+        var run = Assert.Single(sheet.ToDocument().Rows);
+        Assert.Equal((2, 4), (run.First, run.Last));
+        Assert.True(sheet.GetFont(At("XFD5")).Italic);
+        Assert.Equal(3, sheet.ToDocument().Cells.Count);
+    }
+
+    [Fact] // ADR-0050 item 5 / ADR-0047: under the target column's new format, a row's format and a cell's own still show as writing each cell would show them
+    public void A_whole_column_fill_keeps_row_formats_and_cell_formats_over_the_column()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("C1", "1");
+        SetFormat(sheet, new CellFormatChange { Bold = true }, "C:C");
+        SetFormat(sheet, new CellFormatChange { Italic = true }, "7:7");
+        SetFormat(sheet, new CellFormatChange { NumberFormat = NumberFormat.Parse("0.00") }, "C1");
+        SetFormat(sheet, new CellFormatChange { Underline = true }, "D2");
+
+        Fill(sheet, "C1:C1048576", "D1:D1048576", FillDirection.Right);
+
+        // Row 7's font over column D's, as over column C's: italic, not bold.
+        Assert.Equal(sheet.GetFont(At("C7")), sheet.GetFont(At("D7")));
+        // C1's own Number Format is carried to D1.
+        Assert.Equal("2.00", sheet.GetDisplay(At("D1")).Text);
+        // D2 held a format of its own, and C2 holds nothing: D2 takes C2's, as every blank is copied.
+        Assert.Equal(sheet.GetFont(At("C2")), sheet.GetFont(At("D2")));
     }
 
     [Fact] // ADR-0050 item 5: the source column's format reaches the rows that hold nothing, as it reaches every row it shows on
