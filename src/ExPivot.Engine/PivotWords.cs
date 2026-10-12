@@ -152,7 +152,9 @@ public static class PivotWords
         ["caption-max"] = "Max of {0}",
         ["caption-min"] = "Min of {0}",
         ["caption-product"] = "Product of {0}",
-        ["caption-count-numbers"] = "Count Numbers of {0}",
+        // Excel captions Count Numbers as it captions Count, so a Count and a Count Numbers of one
+        // field are "Count of Value" and "Count of Value2" (ADR-0060, the seventeenth Windows run).
+        ["caption-count-numbers"] = "Count of {0}",
         ["caption-stddev"] = "StdDev of {0}",
         ["caption-stddevp"] = "StdDevp of {0}",
         ["caption-var"] = "Var of {0}",
