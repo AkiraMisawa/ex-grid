@@ -82,3 +82,76 @@ Three edits for files a background agent does not edit, and one collision to put
 
 Nothing for `CONTEXT.md`. `AGENTS.md` gained one Toolchain bullet (how a new public member is declared), which a
 background agent may edit.
+
+## After the verifiers' read: members the lists settled, and where the branch departs
+
+Two verifiers found members the lists settled as internal still public, with nothing said. This section says, member
+by member, what the branch now does. The departures are each held by a clause of ADR-0201's 2026-10-12 section, but
+the lists did not read them that way, so they are for the orchestrator to put to the user. Nothing here edits an ADR
+yet.
+
+**Made internal as the lists settled**, each listed in `surface-exgrid-members.md`:
+
+- `InMemoryGridSource.DistinctValueCap` and `FetchingGridSource.DefaultPageRows`. They are caps and defaults of the
+  same kind as `ExPivot.ItemListCap`, which the decision names. A Consumer learns that a value list is past the cap
+  from `DistinctValues.IsTooMany`.
+- `GridMetrics`' eleven layout numbers: `NameBoxWidthPx`, `FillHandleSizePx`, `CellPaddingXPx`, `ActionPaddingXPx`,
+  `ActionBorderPx`, `ActionGapPx`, `ActionButtonChromePx`, `MenuButtonWidthPx`, `MenuButtonInsetPx`,
+  `MenuButtonBandPx` and `SortMarkWidthPx`. Only `HeaderHeightPx` and `FontSizePx` were put to the user as data, and
+  those two stay public. ADR-0028's table still holds, because `GridMetrics` still carries every one of them.
+- `GlyphWidthTable.TryGetWidthPx` and `ReferenceColour.PaletteLength`. The public docs that cited `PaletteLength`
+  (`ExGrid.ReferenceOutlines`, `ReferenceColour.Place`) now say "seven".
+
+**Kept public where the list said internal (departures, for the user):**
+
+- **`CellTextMetrics.WithGlyphWidths` and `CellTextMetrics.For(ColumnType)`.**
+  - ADR-0016's ticket-83 bullet names both as the "Public shape" (lines 452-453). The decision's "a member an ADR
+    gives the Consumer stays public" therefore applies to both.
+  - `WithGlyphWidths` is also the only public way to put a glyph table on explicit Cell Metrics.
+    `GridMetrics.Resolve` applies a cascaded table only when no `CellMetrics` is given, and the ten-argument
+    constructor's doc sends the Consumer to `WithGlyphWidths`.
+  - `For` had been made internal in b327d262 without a note to ADR-0016. It is public again, so the code agrees with
+    the ADR, and its break has left the members' Change Note.
+  - If the user wants `For` internal, ADR-0016's bullet gains a note: *"`For(ColumnType)` is internal since ADR-0201.
+    A Consumer estimates with `TextWidthPx` and `EstimatePx`."* `For` then goes back into `surface-exgrid-members.md`.
+- **`RowMarkState.IsMarked`. This is the case of `RowMarkRules.LineUp`.**
+  - `RowMarkAdapter`'s `count` is "answered by the server from the marks' steps". `IsMarked` is the core's meaning
+    of those steps: "the one evaluation the Source, a server counting and an action resolving the marks all share,
+    so the three cannot disagree".
+  - ADR-0043 keeps that meaning in the core, as it keeps a gesture's meaning. The LineUp bullet rests on the same
+    ground.
+  - If the user wants it internal: a Change Note, and `RowMarkState`'s summary states the rule in words. The rule is
+    that the latest step covering a key decides, and a row no step covers is unmarked.
+- **`ReferenceColour.Place`. It is data on a value a Consumer receives.**
+  - The Consumer receives the value as `ReferenceKeyColour.Colour` and as ExSheet's `LinkedColumnColour.Colour`.
+  - `ReferenceKeyColour`'s doc has the Consumer outline what a key names "wherever it shows it, in that colour".
+    Outside an ExGrid, that colour can be reached only as `--ex-reference-{Place}`.
+  - ADR-0057 forbids picking a colour, and the internal constructor enforces that. Reading the colour that was handed
+    out is not picking one.
+  - If the user wants it internal, `Place` joins the members' Change Note, and `ReferenceColour` keeps no public
+    member but its equality.
+- **The Selection's read members.** These are `GridSelection.Extent`, `FocusRange`, `Contains`, `CoversColumn` and
+  `CoversRow`, and `SelectionRange.RowSpan` and `ColumnSpan`.
+  - The exgrid-components list had them as test-only. They are read members of the Selection a Consumer receives
+    (`SelectionChanged`), the decision's "read members of ... and the like", and have been kept since b327d262.
+  - So `ExGrid.Selection.ColumnRange` is named by a contract member (`ColumnSpan`), and by rule 4 it is contract,
+    carrying no `[EditorBrowsable(Never)]`.
+  - The list marked it `[EditorBrowsable(Never)]` only because `ColumnSpan` was to go.
+- **`MenuKeys.LetterOf`, `SplitAtLetter` and `Last`, and `MenuKey.Nothing`.** The list flagged them as Chrome helpers
+  without a verdict. They are kept by rule 2, the helpers that let a substituted Chrome decide as the core does.
+- **The flagged Consumer API is kept, as the list recommended.** That is `InMemoryGridSource.ReplaceAll`, both
+  sources' `ChangeTimesKeptFor`, `FetchingGridSource.NotifyChanged()` (ADR-0141), and the constructors of
+  `GridViewState` and `ColumnViewState`, which are data a Consumer passes.
+
+**One wording for ADR-0201, "What is public and not the contract", first bullet.** The `PublicAPI` files list these
+members like any other, because the analyzer's format cannot mark them, and only the Docs Site marks them.
+- Old: *They are listed in the baseline and on the Docs Site's API reference as "not the contract: may change in any
+  version", so that hiding them is stated, not silent.*
+- New: *The baseline lists them like any public member, since its format cannot mark them. The Docs Site's API
+  reference lists them apart, as "not the contract: may change in any version", so that hiding them is stated, not
+  silent.*
+
+**The three contract components whose reference row was empty** now carry a type summary, written in a partial
+`.cs` beside the markup as `ExGrid<TRow>` does: `MudExGridPaper`, `ToolbarRow` and `DefaultToolbarRow`. Every public
+type of the ten packages that is not marked `[EditorBrowsable(Never)]` now has one in the shipped XML. The parts that
+are so marked have none, and the reference's notice explains them.

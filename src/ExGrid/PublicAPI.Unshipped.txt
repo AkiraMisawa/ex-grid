@@ -4,7 +4,6 @@ abstract ExGrid.Components.PackageStylesheet.Version.get -> string!
 abstract ExGrid.Rows.RowMarkIntent<TRow>.<Clone>$() -> ExGrid.Rows.RowMarkIntent<TRow>!
 abstract ExGrid.Rows.RowMarkStep.<Clone>$() -> ExGrid.Rows.RowMarkStep!
 abstract ExGrid.Rows.RowMarkStep.Marked.get -> bool
-const ExGrid.Cells.ReferenceColour.PaletteLength = 7 -> int
 const ExGrid.Chrome.FindPanelLabelIds.Field = "find-field" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.MatchCase = "find-match-case" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.Next = "find-next" -> string!
@@ -61,9 +60,7 @@ const ExGrid.Columns.CellTextMetrics.OtherWidthAllowance = 2 -> double
 const ExGrid.Columns.ColumnWidthSpec.DefaultMaxWidthPx = 400 -> double
 const ExGrid.Columns.ColumnWidthSpec.DefaultMinWidthPx = 40 -> double
 const ExGrid.Components.ExGrid<TRow>.DefaultPasteByteCap = 16777216 -> long
-const ExGrid.FetchingGridSource<TRow>.DefaultPageRows = 100 -> int
 const ExGrid.GridViewStateJson.Version = 1 -> int
-const ExGrid.InMemoryGridSource<TRow>.DistinctValueCap = 1000 -> int
 ExGrid.Cells.ActionRefusalReason
 ExGrid.Cells.ActionRefusalReason.OrderMoved = 1 -> ExGrid.Cells.ActionRefusalReason
 ExGrid.Cells.ActionRefusalReason.RowLeftTheWindow = 0 -> ExGrid.Cells.ActionRefusalReason
@@ -834,6 +831,7 @@ ExGrid.Columns.CellTextMetrics.Equals(ExGrid.Columns.CellTextMetrics other) -> b
 ExGrid.Columns.CellTextMetrics.EstimatePx(int characterCount) -> double
 ExGrid.Columns.CellTextMetrics.EstimatePx(string! text) -> double
 ExGrid.Columns.CellTextMetrics.ExportGlyphWidths() -> System.Collections.Generic.IReadOnlyDictionary<int, double>!
+ExGrid.Columns.CellTextMetrics.For(ExGrid.ColumnType type) -> ExGrid.Columns.CellTextMetrics
 ExGrid.Columns.CellTextMetrics.FullWidthPx.get -> double
 ExGrid.Columns.CellTextMetrics.GlyphWidths.get -> ExGrid.Columns.GlyphWidthTable?
 ExGrid.Columns.CellTextMetrics.NarrowWidthPx.get -> double
@@ -857,7 +855,6 @@ ExGrid.Columns.GlyphWidthTable
 ExGrid.Columns.GlyphWidthTable.Count.get -> int
 ExGrid.Columns.GlyphWidthTable.GlyphWidthTable(double measuredAtPx, System.Collections.Generic.IEnumerable<(string! Glyph, double RegularPx, double BoldPx)>! glyphs) -> void
 ExGrid.Columns.GlyphWidthTable.MeasuredAtPx.get -> double
-ExGrid.Columns.GlyphWidthTable.TryGetWidthPx(int codePoint, bool bold, out double widthPx) -> bool
 ExGrid.Columns.GridAction
 ExGrid.Columns.GridAction.<Clone>$() -> ExGrid.Columns.GridAction!
 ExGrid.Columns.GridAction.CssClass.get -> string?
@@ -1391,25 +1388,14 @@ ExGrid.GridFilter.Opaque.get -> object?
 ExGrid.GridFilter.Opaque.init -> void
 ExGrid.GridMetrics
 ExGrid.GridMetrics.<Clone>$() -> ExGrid.GridMetrics!
-ExGrid.GridMetrics.ActionBorderPx.get -> double
-ExGrid.GridMetrics.ActionButtonChromePx.get -> double
-ExGrid.GridMetrics.ActionGapPx.get -> double
-ExGrid.GridMetrics.ActionPaddingXPx.get -> double
 ExGrid.GridMetrics.CellMetrics.get -> ExGrid.Columns.CellTextMetrics
-ExGrid.GridMetrics.CellPaddingXPx.get -> double
 ExGrid.GridMetrics.DigitWidthPx.get -> double
 ExGrid.GridMetrics.Equals(ExGrid.GridMetrics? other) -> bool
-ExGrid.GridMetrics.FillHandleSizePx.get -> double
 ExGrid.GridMetrics.FontSizePx.get -> double
 ExGrid.GridMetrics.FormulaBarHeightPx.get -> double
 ExGrid.GridMetrics.HeaderHeightPx.get -> double
 ExGrid.GridMetrics.HeaderRequiredPx(string! label, bool menuButton, bool sortable) -> double
-ExGrid.GridMetrics.MenuButtonBandPx.get -> double
-ExGrid.GridMetrics.MenuButtonInsetPx.get -> double
-ExGrid.GridMetrics.MenuButtonWidthPx.get -> double
-ExGrid.GridMetrics.NameBoxWidthPx.get -> double
 ExGrid.GridMetrics.RowHeightPx.get -> double
-ExGrid.GridMetrics.SortMarkWidthPx.get -> double
 ExGrid.GridPage<TRow>
 ExGrid.GridPage<TRow>.<Clone>$() -> ExGrid.GridPage<TRow>!
 ExGrid.GridPage<TRow>.Equals(ExGrid.GridPage<TRow>? other) -> bool

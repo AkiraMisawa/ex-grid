@@ -50,15 +50,15 @@ public sealed record GridMetrics
 
     /// <summary>The Name Box's width (ADR-0051): <c>XFD1048576</c>, the longest address a
     /// Sheet has, as the Cell Metrics estimate it with a cell's padding — as text, which
-    /// never becomes <c>####</c>, so its letters at the digit. Emitted inline, never a
+    /// never becomes <c>####</c> (<see cref="CellTextMetrics.For"/>). Emitted inline, never a
     /// stylesheet value.</summary>
-    public double NameBoxWidthPx => CellMetrics.For(ColumnType.Text).EstimatePx("XFD1048576");
+    internal double NameBoxWidthPx => CellMetrics.For(ColumnType.Text).EstimatePx("XFD1048576");
 
     /// <summary>The fill handle's side (ADR-0050, item 5; ADR-0028): a square centred on
     /// the bottom-right corner of the Selection, a little under a third of a row. The
     /// press that grabs it is read against the same number, so the paint and the hit
     /// cannot disagree. Declared, not measured.</summary>
-    public double FillHandleSizePx => Math.Max(5, Math.Round(RowHeightPx * 0.3));
+    internal double FillHandleSizePx => Math.Max(5, Math.Round(RowHeightPx * 0.3));
 
     /// <summary>States the size <see cref="CellMetrics"/>' digit width is true at.</summary>
     public double FontSizePx { get; }
@@ -68,17 +68,17 @@ public sealed record GridMetrics
     public CellTextMetrics CellMetrics { get; }
 
     /// <summary>One action button's own horizontal padding, per side (ADR-0020).</summary>
-    public double ActionPaddingXPx { get; }
+    internal double ActionPaddingXPx { get; }
 
     /// <summary>One action button's border, per side.</summary>
-    public double ActionBorderPx { get; }
+    internal double ActionBorderPx { get; }
 
     /// <summary>The gap between neighbouring action buttons.</summary>
-    public double ActionGapPx { get; }
+    internal double ActionGapPx { get; }
 
     /// <summary>A cell's horizontal padding on one side, read from
     /// <see cref="CellMetrics"/>; a cell pays it twice.</summary>
-    public double CellPaddingXPx => CellMetrics.CellHorizontalPaddingPx;
+    internal double CellPaddingXPx => CellMetrics.CellHorizontalPaddingPx;
 
     /// <summary>The width of one digit, read from <see cref="CellMetrics"/> — the unit
     /// <c>####</c> is counted in (ADR-0016).</summary>
@@ -87,24 +87,24 @@ public sealed record GridMetrics
     /// <summary>One action button's box beside its text: padding both sides, border
     /// both sides, and the gap to the next button — what an Auto Action Column's width
     /// is measured from (ADR-0016/0020).</summary>
-    public double ActionButtonChromePx => (ActionPaddingXPx * 2) + (ActionBorderPx * 2) + ActionGapPx;
+    internal double ActionButtonChromePx => (ActionPaddingXPx * 2) + (ActionBorderPx * 2) + ActionGapPx;
 
     /// <summary>The column-menu button's own width in the header cell (ADR-0010).</summary>
-    public double MenuButtonWidthPx { get; }
+    internal double MenuButtonWidthPx { get; }
 
     /// <summary>The gap between the menu button and the header cell's right edge.</summary>
-    public double MenuButtonInsetPx { get; }
+    internal double MenuButtonInsetPx { get; }
 
     /// <summary>What the menu button takes off the header text's room — width plus the
     /// inset — which an Auto column's header estimate must include, or a short header
     /// stands with its label under the ▾ (ADR-0016/0028).</summary>
-    public double MenuButtonBandPx => MenuButtonWidthPx + MenuButtonInsetPx;
+    internal double MenuButtonBandPx => MenuButtonWidthPx + MenuButtonInsetPx;
 
     /// <summary>The box the sort mark (▲ / ▼) stands in at the end of a sorted header —
     /// an em for the glyph and a gap before it. Emitted as a Geometry Token the stylesheet
     /// sizes the mark with, so the header estimate and the paint read one number, as the
     /// menu button's do (ADR-0016/0029).</summary>
-    public double SortMarkWidthPx { get; }
+    internal double SortMarkWidthPx { get; }
 
     /// <summary>
     /// The full cell width a header needs (ADR-0016, 2026-09-25): its label, one
@@ -113,7 +113,7 @@ public sealed record GridMetrics
     /// so a header click never chops its label nor moves the columns to its right. The
     /// slack is there because a label is proportional letters no per-class charge can
     /// bound (<c>W</c> is 15.44px where <c>i</c> is 4), so the label is charged as text,
-    /// its letters at the digit, as a Text value is. Auto and Size to fit
+    /// its letters at the digit (<see cref="CellTextMetrics.For"/>). Auto and Size to fit
     /// both read this, so they agree on what a header needs.
     /// </summary>
     public double HeaderRequiredPx(string label, bool menuButton, bool sortable)

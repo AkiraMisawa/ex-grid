@@ -22,7 +22,7 @@ namespace ExGrid.Columns;
 /// <see cref="GlyphWidthTable"/>; everything else is charged the widest glyph measured, so a glyph
 /// nobody listed errs toward <c>####</c>, never toward a cut number. Only a value that can become
 /// <c>####</c> is charged either: a Text value or a label is estimated with them at the digit, as
-/// before, because what never hashes is cut visibly.</para>
+/// before (<see cref="For"/>), because what never hashes is cut visibly.</para>
 ///
 /// <para><b>Bold widths</b> (ADR-0050, item 15; ADR-0071) are the wide, digit, narrow and other
 /// classes measured at the bold weight a Consumer's per-cell Font paints, and a bold cell is
@@ -286,7 +286,7 @@ public readonly record struct CellTextMetrics
     /// sized for text does not move. The bold widths follow, so <see cref="Bold"/> composes with
     /// this either way round.
     /// </summary>
-    internal CellTextMetrics For(ColumnType type) => OverflowRules.HashesWhenOverflowing(type)
+    public CellTextMetrics For(ColumnType type) => OverflowRules.HashesWhenOverflowing(type)
         ? this
         : new(WideWidthPx, DigitWidthPx, NarrowWidthPx, FullWidthPx, CellHorizontalPaddingPx,
             BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx, DigitWidthPx, BoldDigitWidthPx,

@@ -1,8 +1,8 @@
 Package validation of the ten packages against 0.1.0-beta.2 (ADR-0201)
 
 Date: 2026-10-12, on Linux (a cloud container), .NET SDK 10.0.203 through nix.
-Branch claude/public-surface at 03e5a938, the baseline commit; nothing under src/ changed after it.
-Each package was packed once, in the order tests/ExGrid.PackageSmoke/check.sh packs them, with:
+Branch claude/public-surface at 03e5a938, the baseline commit. Each package was packed once, in the
+order tests/ExGrid.PackageSmoke/check.sh packs them, with:
 
   dotnet pack src/<Package> -c Release -o <feed> -p:Version=0.1.0-pv \
     -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
@@ -11,12 +11,19 @@ The baseline packages came from nuget.org through the container's proxy. The two
 passed on the command line and are not committed: ADR-0201 runs this once, for 0.1.0's Release Notes,
 and the PublicAPI files beside each project are the baseline from now on.
 
+ExGrid was packed again the same way after the verifiers' read, the only package whose surface that
+change moved. Its findings and its output below are that second run's. Fourteen more members of ExGrid
+are internal, as the lists settled: GridMetrics' eleven layout numbers, GlyphWidthTable.TryGetWidthPx,
+ReferenceColour.PaletteLength, InMemoryGridSource.DistinctValueCap and FetchingGridSource.DefaultPageRows.
+CellTextMetrics.For is public again, as ADR-0016 names it. The other nine packages' runs are the
+first ones, at 03e5a938; nothing in their surface has moved since.
+
 == Findings
 
-154 breaks, every one an error, none suppressed. CP0001 is a type gone from the surface, CP0002 a member
+168 breaks, every one an error, none suppressed. CP0001 is a type gone from the surface, CP0002 a member
 gone or its signature changed, CP0011 an enum value changed.
 
-  ExGrid             116
+  ExGrid             130
   ExGrid.MudBlazor     1
   ExSheet.Engine       6
   ExSheet              9
@@ -55,7 +62,7 @@ Every break has a Change Note under docs/releases/unreleased/. By note, the name
   surface-exgrid-headerreorder.md: HeaderReorder
   surface-exgrid-imports.md: _Imports
   surface-exgrid-interop.md: OnKeyAsync, OnKeyFieldTextAsync, OnPasteStreamsAsync
-  surface-exgrid-members.md: AlignAt, CellMetricsAt, Changed, Clamp, Click, CollapseToFocus, Empty, EndOf, Extend, ExtendByViewport, ExtendTo, ExtendToColumn, ExtendToEdge, ExtendToRow, FocusOn, For, ForAppearance, FromCondition, FromCorners, Letter, Matches, MessageOf, Move, MoveByViewport, MoveFocusToNextCorner, MoveToEdge, OnPasteAsync, PaintsValue, ParseOperand, PasteShape, Place, ReferenceColour, ResolveInColumnMenu, SelectAll, SelectColumn, SelectRow, SelectWholeColumns, SelectWholeRows, ShowingUntil, SizeToFit, StateOf, Subtract, SubtractArea, TextFor, ToggleColumn, ToggleRange, ToggleRow, TypeAt, WidthOf, With, WithBoldWidths
+  surface-exgrid-members.md: ActionBorderPx, ActionButtonChromePx, ActionGapPx, ActionPaddingXPx, AlignAt, CellMetricsAt, CellPaddingXPx, Changed, Clamp, Click, CollapseToFocus, DefaultPageRows, DistinctValueCap, Empty, EndOf, Extend, ExtendByViewport, ExtendTo, ExtendToColumn, ExtendToEdge, ExtendToRow, FillHandleSizePx, FocusOn, ForAppearance, FromCondition, FromCorners, Letter, Matches, MenuButtonBandPx, MenuButtonInsetPx, MenuButtonWidthPx, MessageOf, Move, MoveByViewport, MoveFocusToNextCorner, MoveToEdge, NameBoxWidthPx, OnPasteAsync, PaintsValue, PaletteLength, ParseOperand, PasteShape, Place, ReferenceColour, ResolveInColumnMenu, SelectAll, SelectColumn, SelectRow, SelectWholeColumns, SelectWholeRows, ShowingUntil, SizeToFit, SortMarkWidthPx, StateOf, Subtract, SubtractArea, TextFor, ToggleColumn, ToggleRange, ToggleRow, TryGetWidthPx, TypeAt, WidthOf, With, WithBoldWidths
   surface-exgrid-mudblazor-imports.md: _Imports
   surface-exgrid-overflowdecision.md: OverflowDecision
   surface-exgrid-overflowrules.md: OverflowRules
@@ -103,8 +110,8 @@ ExGrid.Data and ExGrid.Data.Arrow break nothing: every member beta.2 exported is
 == dotnet pack src/ExGrid -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
 dotnet 10.0.203 (nix-managed)
   Determining projects to restore...
-  Restored <repo>/src/ExGrid/ExGrid.csproj (in 2.15 sec).
-  1 of 2 projects are up-to-date for restore.
+  Restored <repo>/src/ExGrid/ExGrid.csproj (in 372 ms).
+  Restored <repo>/src/ExGrid.Data/ExGrid.Data.csproj (in 370 ms).
   ExGrid.Data -> <repo>/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
   ExGrid -> <repo>/src/ExGrid/bin/Release/net10.0/ExGrid.dll
   Successfully created package '<feed>/ExGrid.0.1.0-pv.nupkg'.
@@ -112,13 +119,26 @@ dotnet 10.0.203 (nix-managed)
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API compatibility errors between 'lib/net10.0/ExGrid.dll' (~/.nuget/packages/exgrid/0.1.0-beta.2/exgrid.0.1.0-beta.2.nupkg) and 'lib/net10.0/ExGrid.dll' (<feed>/ExGrid.0.1.0-pv.nupkg): [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.ColumnGeometry' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'string ExGrid.ColumnInfo<TRow>.TextFor(object?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'int ExGrid.FetchingGridSource<TRow>.DefaultPageRows' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.FilterOperators' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.ColumnType ExGrid.GridColumn<TRow>.TypeAt(TRow, System.Func<TRow, ExGrid.GridColumn<TRow>, ExGrid.ColumnType>?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Columns.CellAlign ExGrid.GridColumn<TRow>.AlignAt(TRow, System.Func<TRow, ExGrid.GridColumn<TRow>, ExGrid.Columns.CellAlign>?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'bool ExGrid.GridColumn<TRow>.PaintsValue.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.NameBoxWidthPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.FillHandleSizePx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.ActionPaddingXPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.ActionBorderPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.ActionGapPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.CellPaddingXPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.ActionButtonChromePx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.MenuButtonWidthPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.MenuButtonInsetPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.MenuButtonBandPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.SortMarkWidthPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Columns.CellTextMetrics ExGrid.GridPresentationDefaults.CellMetricsAt(double, double)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'bool ExGrid.GridQueryEngine.Matches<TRow>(TRow, System.Collections.Generic.IReadOnlyList<ExGrid.ColumnInfo<TRow>>, ExGrid.GridFilter)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.FetchingGridSource<TRow> ExGrid.GridSource.Fetch<TRow>(System.Func<ExGrid.GridQuery, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.GridPage<TRow>>>, int, System.Func<string, ExGrid.GridFilter?, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Chrome.DistinctValues>>?, ExGrid.Rows.RowMarkAdapter<TRow>?, System.Func<ExGrid.Finding.GridFindRequest, ExGrid.GridFilter?, System.Collections.Generic.IReadOnlyList<ExGrid.SortSpec>, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Finding.GridFindResult>>?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'int ExGrid.InMemoryGridSource<TRow>.DistinctValueCap' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.SortCycle' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.ViewportBox' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.ViewportGeometry' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
@@ -132,6 +152,7 @@ dotnet 10.0.203 (nix-managed)
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Cells.EditorTextRules' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExGrid.Cells.GridPointedAt<TRow>.Changed.add' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExGrid.Cells.GridPointedAt<TRow>.Changed.remove' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'int ExGrid.Cells.ReferenceColour.PaletteLength' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Cells.ReferenceColour.ReferenceColour(int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Cells.ReferenceColour ExGrid.Cells.ReferenceColour.ForAppearance(int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Cells.ReferenceColouring' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
@@ -161,11 +182,11 @@ dotnet 10.0.203 (nix-managed)
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Clipboard.SourceCell' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Columns.AutoWidth' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Columns.CellTextMetrics ExGrid.Columns.CellTextMetrics.WithBoldWidths(double, double, double)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
-<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Columns.CellTextMetrics ExGrid.Columns.CellTextMetrics.For(ExGrid.ColumnType)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.Columns.CellTextMetrics.WidthOf(char)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.Columns.ColumnWidthSpec.Clamp(double)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Columns.ColumnWidth ExGrid.Columns.ColumnWidthSpec.SizeToFit(double)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.Columns.ColumnWidthSpec.ResolveWidthPx(ExGrid.Columns.AutoWidth)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'bool ExGrid.Columns.GlyphWidthTable.TryGetWidthPx(int, bool, out double)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Columns.ResolvedHeaderGroup' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Columns.HeaderGroupLayout' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
 <sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Columns.HeaderReorder' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
