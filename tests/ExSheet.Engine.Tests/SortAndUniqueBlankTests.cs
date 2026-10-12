@@ -8,21 +8,26 @@ namespace ExSheet.Engine.Tests;
 /// A blank among <c>SORT</c>'s and <c>SORTBY</c>'s keys and in <c>UNIQUE</c>'s array, as the area pass of
 /// 2026-10-12 read Excel (ADR-0125): a blank key sorts after every other key whichever the order, blanks keep
 /// their order, and a blank spills as 0; in <c>UNIQUE</c> a blank is one of a kind only with another blank.
-/// An Error Value among the keys stays refused with <c>#VALUE!</c> (ADR-0047). The cases themselves are in
-/// <c>ExcelCases/sort.json</c>, <c>sortby.json</c> and <c>unique.json</c>; the rule across the forms is here.
+/// An Error Value among the keys stays refused with <c>#VALUE!</c> (ADR-0047). A blank in their array read
+/// inside the Formula — by another function, an operator or a <c>LET</c>, anything but the spill and the
+/// extent <c>ROWS</c> and <c>COLUMNS</c> read — has answers no run has observed, so the Formula is refused
+/// with <c>#VALUE!</c> there (ADR-0125, ADR-0202). The cases themselves are in <c>ExcelCases/sort.json</c>,
+/// <c>sortby.json</c> and <c>unique.json</c>; the rule across the forms is here.
 /// </summary>
 public class SortAndUniqueBlankTests
 {
     /// <summary>The Values the Formula in ZZ1000 spills down its first column, a blank read as null.</summary>
     private static object?[] Spilled(Sheet sheet, int count) =>
-        [.. Enumerable.Range(1000, count).Select(row => sheet.Value($"ZZ{row}") switch
-        {
-            null => null,
-            { Kind: ValueKind.Number } v => v.Number,
-            { Kind: ValueKind.Text } v => v.Text,
-            { Kind: ValueKind.Boolean } v => v.Boolean,
-            { } v => (object)v.Error,
-        })];
+        [.. Enumerable.Range(1000, count).Select(row => Plain(sheet.Value($"ZZ{row}")))];
+
+    private static object? Plain(Value? value) => value switch
+    {
+        null => null,
+        { Kind: ValueKind.Number } v => v.Number,
+        { Kind: ValueKind.Text } v => v.Text,
+        { Kind: ValueKind.Boolean } v => v.Boolean,
+        { } v => v.Error,
+    };
 
     [Theory] // ADR-0125 (SORT-011 to 014): a blank key sorts after every other key, in either order, and spills as 0
     [InlineData("=SORT(A1:A3)", "7", "", "3", new object[] { 3d, 7d, 0d })]
@@ -220,5 +225,153 @@ public class SortAndUniqueBlankTests
 
         Assert.Equal(0, sheet.Evaluate("=UNIQUE(A1)").Number);
         Assert.Equal(0, sheet.Evaluate("=SORT(A1)").Number);
+    }
+
+    /// <summary>A1 a, A2 blank, A3 b; B1 to B3 the keys 3, 2, 1; C1 to C3 x, blank, y.</summary>
+    private static Sheet WithABlank()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "a");
+        sheet.Enter("A3", "b");
+        sheet.Enter("B1", "3");
+        sheet.Enter("B2", "2");
+        sheet.Enter("B3", "1");
+        sheet.Enter("C1", "x");
+        sheet.Enter("C3", "y");
+        return sheet;
+    }
+
+    [Theory] // ADR-0125, ADR-0202: a blank in UNIQUE's, SORT's or SORTBY's array read inside the Formula is refused with #VALUE!, by a function, an operator or a LET
+    [InlineData("=COUNTA(UNIQUE(A1:A3))")]
+    [InlineData("=COUNTA(SORT(A1:A3))")]
+    [InlineData("=COUNTA(SORTBY(A1:A3,B1:B3))")]
+    [InlineData("=INDEX(UNIQUE(A1:A3),2)=\"\"")]
+    [InlineData("=ISBLANK(INDEX(SORT(A1:A3),3))")]
+    [InlineData("=SUM(--(LEN(UNIQUE(A1:A3))>0))")]
+    [InlineData("=UNIQUE(A1:A3)&\"\"")]
+    [InlineData("=SORT(A1:A3)+0")]
+    [InlineData("=-SORTBY(A1:A3,B1:B3)")]
+    [InlineData("=SORT(UNIQUE(A1:A3))")]
+    [InlineData("=UNIQUE(SORT(A1:A3))")]
+    [InlineData("=TRANSPOSE(UNIQUE(A1:A3))")]
+    [InlineData("=LET(x,UNIQUE(A1:A3),x)")]
+    [InlineData("=LET(x,SORT(A1:A3),ROWS(x))")]
+    [InlineData("=INDEX(SORT(A1:A3),1)")]
+    public void ADR0125_a_blank_read_inside_the_formula_is_refused(string formula)
+    {
+        var sheet = WithABlank();
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
+    }
+
+    [Theory] // ADR-0125, ADR-0202: a blank in a column SORT or SORTBY does not sort by is in the result too, and is refused there as a blank key is
+    [InlineData("=INDEX(SORT(B1:C3),1,2)")]
+    [InlineData("=INDEX(SORTBY(C1:C3,B1:B3),1)")]
+    [InlineData("=COUNTA(UNIQUE(B1:C3))")]
+    public void ADR0125_a_blank_anywhere_in_the_result_is_refused_inside_the_formula(string formula)
+    {
+        var sheet = WithABlank();
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
+    }
+
+    [Theory] // ADR-0125, ADR-0202: the refusal is the Formula's, so IFERROR cannot catch it, nor ISERROR, ISBLANK or COUNTA read it as an answer
+    [InlineData("=IFERROR(COUNTA(UNIQUE(A1:A3)),0)")]
+    [InlineData("=IFERROR(SORT(A1:A3)+0,0)")]
+    [InlineData("=ISERROR(INDEX(UNIQUE(A1:A3),2))")]
+    [InlineData("=IFNA(SORTBY(A1:A3,B1:B3)&\"\",\"x\")")]
+    [InlineData("=IF(ISERROR(COUNTA(SORT(A1:A3))),1,2)")]
+    public void ADR0125_the_refusal_cannot_be_caught(string formula)
+    {
+        var sheet = WithABlank();
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
+    }
+
+    [Fact] // ADR-0125: what the verifier found contradicting itself now answers once: COUNTA reads the spilled 0, and is refused where it would read the blank inside the Formula
+    public void ADR0125_counta_reads_the_spill_and_refuses_the_blank_inside_the_formula()
+    {
+        var sheet = WithABlank();
+        sheet.Enter("D1", "=UNIQUE(A1:A3)");
+        sheet.Enter("E1", "=COUNTA(D1#)");
+        sheet.Enter("E2", "=COUNTA(UNIQUE(A1:A3))");
+
+        Assert.Equal(0, sheet.Number("D2"));
+        Assert.Equal(3, sheet.Number("E1"));
+        Assert.Equal(ErrorValue.Value, sheet.Error("E2"));
+    }
+
+    [Theory] // ADR-0125 (SORT-012, UNIQUE-010, 011): the spill, and the extent ROWS and COLUMNS read, are answered as the area pass read them
+    [InlineData("=ROWS(UNIQUE(A1:A3))", 3)]
+    [InlineData("=ROWS(SORT(A1:A3))", 3)]
+    [InlineData("=COLUMNS(SORTBY(A1:A3,B1:B3))", 1)]
+    [InlineData("=ROWS(UNIQUE(A1:A3))+1", 4)]
+    [InlineData("=ROWS((UNIQUE(A1:A3)))", 3)]
+    [InlineData("=IF(TRUE,ROWS(SORT(A1:A3)))", 3)]
+    public void ADR0125_rows_and_columns_count_a_blank_without_reading_it(string formula, double expected)
+    {
+        var sheet = WithABlank();
+
+        Assert.Equal(expected, sheet.Evaluate(formula).Number);
+    }
+
+    [Theory] // ADR-0125 (SORT-012, UNIQUE-010): the Formula's whole expression spills its blank as 0, parentheses around it or not
+    [InlineData("=UNIQUE(A1:A3)", new object[] { "a", 0d, "b" })]
+    [InlineData("=(UNIQUE(A1:A3))", new object[] { "a", 0d, "b" })]
+    [InlineData("=((SORT(A1:A3)))", new object[] { "a", "b", 0d })]
+    [InlineData("=SORTBY(A1:A3,B1:B3)", new object[] { "b", 0d, "a" })]
+    public void ADR0125_the_formulas_whole_expression_spills_its_blank(string formula, object[] expected)
+    {
+        var sheet = WithABlank();
+
+        sheet.Enter("ZZ1000", formula);
+
+        Assert.Equal(expected, Spilled(sheet, 3));
+    }
+
+    [Theory] // ADR-0125: a result without a blank has nothing to refuse, a blank key among SORTBY's included, which orders the lines and is not in what SORTBY gives
+    [InlineData("=INDEX(SORTBY(B1:B3,C1:C3),3)", 2d)]
+    [InlineData("=INDEX(UNIQUE(B1:B3),2)", 2d)]
+    [InlineData("=INDEX(SORT(A1:A2&\"\"),1)", "")]
+    [InlineData("=COUNTA(UNIQUE(A1:A3&\"\"))", 3d)]
+    public void ADR0125_a_result_without_a_blank_is_read_inside_the_formula(string formula, object expected)
+    {
+        var sheet = WithABlank();
+
+        Assert.Equal(expected, Plain(sheet.Evaluate(formula)));
+    }
+
+    [Theory] // ADR-0125, ADR-0181: a call never evaluated reads nothing, so it refuses nothing
+    [InlineData("=IF(FALSE,COUNTA(UNIQUE(A1:A3)),1)")]
+    [InlineData("=LET(x,SORT(A1:A3),1)")]
+    [InlineData("=IFERROR(1,COUNTA(SORT(A1:A3)))")]
+    public void ADR0125_a_call_never_evaluated_refuses_nothing(string formula)
+    {
+        var sheet = WithABlank();
+
+        Assert.Equal(1, sheet.Evaluate(formula).Number);
+    }
+
+    [Fact] // ADR-0125, ADR-0124: a Formula computed on demand inside another keeps its own refusal and its own whole expression
+    public void ADR0125_a_formula_computed_on_demand_keeps_its_own_refusal()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("D1", "a");
+        sheet.Enter("D3", "b");
+        sheet.Enter("A6", "=COUNTA(UNIQUE(D1:D3))");
+        sheet.Enter("A7", "=ROWS(UNIQUE(D1:D3))");
+        sheet.Enter("A8", "=UNIQUE(D1:D3)");
+        sheet.Enter("B1", "=ROWS(UNIQUE(D1:D3))+ISERROR(INDIRECT(\"A6\"))");
+        sheet.Enter("B2", "=COUNTA(UNIQUE(D1:D3))+INDIRECT(\"A7\")");
+        sheet.Enter("B3", "=INDIRECT(\"A7\")+ROWS(INDIRECT(\"A8#\"))");
+
+        sheet.Enter("D1", "c");
+
+        Assert.Equal(ErrorValue.Value, sheet.Error("A6"));
+        Assert.Equal(3, sheet.Number("A7"));
+        Assert.Equal(0, sheet.Number("A9"));
+        Assert.Equal(4, sheet.Number("B1"));
+        Assert.Equal(ErrorValue.Value, sheet.Error("B2"));
+        Assert.Equal(6, sheet.Number("B3"));
     }
 }

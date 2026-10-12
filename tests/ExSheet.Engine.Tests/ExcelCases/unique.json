@@ -140,6 +140,32 @@
       "cells": {"ZZ1000": "=UNIQUE(Q2)"},
       "check": "ZZ1000",
       "expect": {"value2": 0}
+    },
+    {
+      "id": "UNIQUE-017",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a blank in UNIQUE's array read inside the Formula is #VALUE!; COUNTA would be 2 if it counts as the 0 it spills as, 1 if as a blank",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(UNIQUE(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "UNIQUE-018",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a blank in UNIQUE's array read inside the Formula is #VALUE!; compared with empty text it would be TRUE if it is still a blank, FALSE if it is the 0 it spills as",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(UNIQUE(Q1:Q2),2)=\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "UNIQUE-019",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a blank in UNIQUE's array read inside the Formula is #VALUE!; over a, a blank and b the count would be 2 if LEN reads the blank as empty, 3 if as the 0 it spills as",
+      "cells": {"A1": "a", "A3": "b", "ZZ1000": "=SUM(--(LEN(UNIQUE(A1:A3))>0))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

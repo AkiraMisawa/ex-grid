@@ -174,6 +174,48 @@
       "cells": {"A1": "2", "C1": "1", "ZZ1000": "=SORT(A1:C1,1,1,TRUE)"},
       "check": "AAB1000",
       "expect": {"value2": 0}
+    },
+    {
+      "id": "SORT-021",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a blank in SORT's array read inside the Formula is #VALUE!; COUNTA would be 2 if it counts as the 0 it spills as, 1 if as a blank",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(SORT(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-022",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a blank in SORT's array read inside the Formula is #VALUE!; ISBLANK of the sorted blank would be TRUE if it is still a blank, FALSE if it is the 0 it spills as",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=ISBLANK(INDEX(SORT(Q1:Q2),2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-023",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: in a descending sort two blank keys keep their order, so x is second, after the 1's z",
+      "cells": {"B1": "x", "B2": "y", "A3": "1", "B3": "z", "ZZ1000": "=SORT(A1:B3,1,-1)"},
+      "check": "AAA1001",
+      "expect": {"value2": "x", "kind": "text"}
+    },
+    {
+      "id": "SORT-024",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: over b, a blank and a, b is second, after the a of SORT-014",
+      "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3)"},
+      "check": "ZZ1001",
+      "expect": {"value2": "b", "kind": "text"}
+    },
+    {
+      "id": "SORT-025",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: over b, a blank and a, the blank key is last and its cell shows 0",
+      "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3)"},
+      "check": "ZZ1002",
+      "expect": {"value2": 0}
     }
   ]
 }
