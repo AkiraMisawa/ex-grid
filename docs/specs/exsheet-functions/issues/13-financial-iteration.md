@@ -41,7 +41,7 @@ joins this ticket, undeclared (`#NAME?`) for 0.1.0. The pass read NPV-005 to 008
 seventeenth run's NPV-001 and 002 left open. Excel answers the same values alike whether they are typed
 or read from a range, and with the rate typed or in a cell, so a split by the kind of argument is ruled
 out. That leaves three distinct observed doubles (NPV-001, NPV-002/005/006 and NPV-003), and no
-evaluation searched gives all three: 301 in `search.py` and 3,876 in `Search.cs` (every way of
+evaluation searched gives all three: 757 in `search.py` and 3,876 in `Search.cs` (every way of
 discounting a value, every order of summing, Horner's rule from either end, 53 and 64 bits, fused
 multiply-adds, an x87 register stored to a double, Excel's last-addition adjustment). The running
 product summed forward gives NPV-001 and NPV-003 and is one unit in the last place from NPV-005;

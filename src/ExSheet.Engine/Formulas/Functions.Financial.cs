@@ -148,9 +148,10 @@ internal static partial class FunctionLibrary
     /// <c>=PMT(0.0365/365,365,10000)</c> they give four doubles across 7 units, and at
     /// <c>=PMT(1/10000000,12,1000)</c> nine across 3390, from the 13th significant digit.
     /// The area pass of 2026-10-12 asked Excel. Its PMT-017, at 10^-7, is this one's double, but its
-    /// PMT-013 to 016 and 018 are one to three units in the last place from this one's, and none of the evaluations searched
-    /// since (<c>search.py</c> and <c>Search.cs</c>, some 18,000) gives every payment Excel gave. This
-    /// one stays until the user decides whether PMT is corrected or refused (ADR-0202).
+    /// PMT-013 to 016 and 018 are one to three units in the last place from this one's, and none of
+    /// the evaluations searched since (<c>search.py</c> and <c>Search.cs</c>, some 18,000) gives every
+    /// payment Excel gave. This one stays until the user decides whether PMT is corrected or refused
+    /// (ADR-0202).
     /// </remarks>
     private readonly record struct Wide(double High, double Low)
     {
