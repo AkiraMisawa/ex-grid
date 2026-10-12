@@ -244,7 +244,7 @@ public class FormatCellsDraftTests
         Assert.Equal(new BorderChange { Bottom = Thin }, draft.Change.Borders);
     }
 
-    [Fact] // ADR-0071 / SH-45, case 14-13 (a reading: no run pressed it): taking the shown top away clears that edge on both sides, as clearing an edge does
+    [Fact] // ADR-0071 / SH-45, case 14-13 (observed in Excel, the seventeenth Windows run, h10): taking the shown top away clears that edge on both sides, as clearing an edge does
     public void Taking_a_shown_edge_away_clears_it_on_both_sides_case_14_13()
     {
         var sheet = new Sheet(EnUs);

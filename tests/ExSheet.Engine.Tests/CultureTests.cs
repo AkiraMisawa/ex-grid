@@ -434,4 +434,34 @@ public class CultureTests
         Assert.False(NumberFormat.TryParseLocal("[<0]0", japanese, out _, out var reason));
         Assert.NotNull(reason);
     }
+
+    // ---- Codes typed into Custom, asked of Excel (the seventeenth Windows run, h9) ----
+
+    /// <summary>The date and time built-ins ExSheet shows in the culture's own form (14, 22, 16, 15 and 20), by their invariant codes.</summary>
+    private static readonly NumberFormat[] DateAndTimeBuiltIns =
+        [NumberFormat.ShortDate, NumberFormat.ShortDateTime, NumberFormat.Parse("d-mmm"), NumberFormat.Parse("d-mmm-yy"), NumberFormat.Parse("h:mm")];
+
+    [Theory] // ADR-0071, ticket 103 (observed in Excel, the seventeenth Windows run, h9): a code typed into Custom that spells no built-in under the culture is a code of its own and shows as spelled — under en-GB d-mmm-yy, m/d/yyyy and h:mm on 12 October 2026 13:30 (46307.5625) and on 13:30 alone (0.5625), and under ja-JP mmmmm, the first character of 10月 and of 1月. h:mm's one-digit hour is still a reading: 13:30 does not settle it
+    [InlineData("en-GB", "d-mmm-yy", 46307.5625, "12-Oct-26")]
+    [InlineData("en-GB", "d-mmm-yy", 0.5625, "0-Jan-00")]
+    [InlineData("en-GB", "m/d/yyyy", 46307.5625, "10/12/2026")]
+    [InlineData("en-GB", "m/d/yyyy", 0.5625, "1/0/1900")]
+    [InlineData("en-GB", "h:mm", 46307.5625, "13:30")]
+    [InlineData("en-GB", "h:mm", 0.5625, "13:30")]
+    [InlineData("ja-JP", "mmmmm", 46307.5625, "1")]
+    [InlineData("ja-JP", "mmmmm", 0.5625, "1")]
+    public void A_code_typed_into_custom_shows_as_excel_showed_it_run_17_h9(string culture, string typed, double value, string shown)
+    {
+        var info = CultureInfo.GetCultureInfo(culture);
+        var sheet = In(culture);
+        sheet.Enter(CellAddress.Parse("A1"), "=" + value.ToString(CultureInfo.InvariantCulture));
+
+        // Read as Format Cells' Custom box reads it.
+        Assert.True(NumberFormat.TryParseLocal(typed, info, out var format, out _));
+
+        // A code of its own, no built-in's, which Format Cells spells back as it was typed.
+        Assert.DoesNotContain(format, DateAndTimeBuiltIns);
+        Assert.Equal(typed, format.LocalCode(info));
+        Assert.Equal(shown, Shown(sheet, format));
+    }
 }
