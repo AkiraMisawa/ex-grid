@@ -84,12 +84,12 @@ try {
     }
     else {
         # The display language list's items read "Display Language 3.     Japanese [日本語]" (and so on in the Japanese edition).
-        $want = if ($Target -eq 'english-up') { '^(Display Language|表示言語)\s*\d+\.\s+(English$|英語 \[English\]$)' } elseif ($Target -eq 'ja-jp') { '^(Display Language|表示言語)\s*\d+\.\s+(Japanese|日本語)' } else { '^(Display Language|表示言語)\s*\d+\.\s+(Match Microsoft Windows|Microsoft Windows)' }
+        $want = if ($Target -eq 'english-up') { '^(Display Language|表示言語)\s*\d+\.\s+(English$|英語 \[English\]$)' } elseif ($Target -eq 'en-us') { '^(Display Language|表示言語)\s*\d+\.\s+English \(United States\)' } elseif ($Target -eq 'en-gb-up') { '^(Display Language|表示言語)\s*\d+\.\s+English \(United Kingdom\)$' } elseif ($Target -eq 'ja-up') { '^(Display Language|表示言語)\s*\d+\.\s+Japanese \[' } elseif ($Target -eq 'ja-jp') { '^(Display Language|表示言語)\s*\d+\.\s+(Japanese|日本語)' } else { '^(Display Language|表示言語)\s*\d+\.\s+(Match Microsoft Windows|Microsoft Windows)' }
         $item = Find-Named $dlg $want 'ListItem|DataItem'
         if (-not $item) { Dump $dlg 'no item'; throw "no display language item for $Target" }
         Say "item: $($item.Current.Name)"
         Act $item "the $Target item"; Start-Sleep -Milliseconds 500
-        $btn = if ($Target -eq 'english-up') { Find-Named $dlg '^(Move Up|上へ移動)' 'Button' } else { Find-Named $dlg '^(Set as Preferred|優先.*設定)' 'Button' }
+        $btn = if ($Target -eq 'english-up' -or $Target -eq 'en-gb-up' -or $Target -eq 'ja-up') { Find-Named $dlg '^(Move Up|上へ移動)' 'Button' } else { Find-Named $dlg '^(Set as Preferred|優先.*設定)' 'Button' }
         if (-not $btn) { Dump $dlg 'no button'; throw 'no Set as Preferred button' }
         Say "button: $($btn.Current.Name), enabled $($btn.Current.IsEnabled)"
         if ($btn.Current.IsEnabled) { Act $btn 'Set as Preferred'; Start-Sleep -Milliseconds 1200 } else { Say 'Set as Preferred is disabled: the item is already preferred' }

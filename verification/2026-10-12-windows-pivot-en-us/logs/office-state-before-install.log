@@ -1,0 +1,12 @@
+VersionToReport=16.0.20430.20146 ClientCulture=en-gb ProductReleaseIds=O365HomePremRetail Platform=x64
+Configuration ScenarioCulture=
+Configuration ClientCulture=en-gb
+XLINTL32 1033 none
+XLINTL32 2057 16.0.20430.20032 2026-09-29 23:21
+XLINTL32 1041 16.0.20430.20032 2026-10-12 10:42
+culture key: en-gb.16
+culture key: ja-jp.16
+culture key: x-none.16
+LanguageResources UILanguageTag=en-GB FollowSystemUI= UISnapshotLanguages=en-gb;ja-jp PreviousUILanguage=en-gb
+LanguageResources export (before-install): C01F0FE77D5DC8CFB319089733D3099D49BD622F72A7B1FF5B4025DBCD600B02
+excel running: 0

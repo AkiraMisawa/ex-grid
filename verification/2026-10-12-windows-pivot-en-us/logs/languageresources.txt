@@ -1,7 +1,12 @@
-# HKCU\Software\Microsoft\Office\16.0\Common\LanguageResources, exported before Excel started and after it quit
-before:       828124b6d95c29e4cf1ec3c49dd2508295cbd2ea75292180f5502a2cda5f5a45
-after (dump): c01f0fe77d5dc8cfb319089733d3099d49bd622f72a7b1ff5b4025dbcd600b02
+# HKCU\Software\Microsoft\Office\16.0\Common\LanguageResources
+before: 828124b6d95c29e4cf1ec3c49dd2508295cbd2ea75292180f5502a2cda5f5a45
+before-install: c01f0fe77d5dc8cfb319089733d3099d49bd622f72a7b1ff5b4025dbcd600b02
+after-install: 52ba82dd6205491164244900866e30b7993627f352f0fc718de63f259bfe605c
+after-restore: 8c3b91d24f11c981d5a704d0646a20aeefa60b3adab309575d76996eaf004e24
+final: f2365e1f20a286cf5e3797e069e87b5a5923b31f41d87b248be9f6853311787a
+after-check: f2365e1f20a286cf5e3797e069e87b5a5923b31f41d87b248be9f6853311787a
 
+## R3's end state (before) -> before the install: Office's own time stamp
 38c38
 < "RegionalAndLanguageSettingsTimestamp"=hex(b):b5,5e,2e,ca,c1,59,dd,01
 ---
@@ -10,3 +15,43 @@ after (dump): c01f0fe77d5dc8cfb319089733d3099d49bd622f72a7b1ff5b4025dbcd600b02
 < "RegionalAndLanguageSettingsTimestamp"=hex(b):b5,5e,2e,ca,c1,59,dd,01
 ---
 > "RegionalAndLanguageSettingsTimestamp"=hex(b):62,e8,47,bf,8d,5a,dd,01
+
+## before the install -> after the install
+4c4
+< "UIFallbackLanguages"="x-none;en-gb;ja-jp"
+---
+> "UIFallbackLanguages"="x-none;en-gb;ja-jp;en-us"
+18,19c18,19
+< "UISnapshotLanguages"="en-gb;ja-jp"
+< "HelpFallbackLanguages"="x-none;en-gb;ja-jp"
+---
+> "UISnapshotLanguages"=""
+> "HelpFallbackLanguages"="x-none;en-gb;ja-jp;en-us"
+
+## before the install -> after the display language was put back (PreviousUILanguage not yet)
+4c4
+< "UIFallbackLanguages"="x-none;en-gb;ja-jp"
+---
+> "UIFallbackLanguages"="x-none;en-gb;ja-jp;en-us"
+18,19c18,19
+< "UISnapshotLanguages"="en-gb;ja-jp"
+< "HelpFallbackLanguages"="x-none;en-gb;ja-jp"
+---
+> "UISnapshotLanguages"="en-gb;en-us;ja-jp"
+> "HelpFallbackLanguages"="x-none;en-gb;ja-jp;en-us"
+25c25
+< "PreviousUILanguage"="en-gb"
+---
+> "PreviousUILanguage"="en-GB"
+
+## before the install -> final (and after the last Excel start, identical)
+4c4
+< "UIFallbackLanguages"="x-none;en-gb;ja-jp"
+---
+> "UIFallbackLanguages"="x-none;en-gb;ja-jp;en-us"
+18,19c18,19
+< "UISnapshotLanguages"="en-gb;ja-jp"
+< "HelpFallbackLanguages"="x-none;en-gb;ja-jp"
+---
+> "UISnapshotLanguages"="en-gb;en-us;ja-jp"
+> "HelpFallbackLanguages"="x-none;en-gb;ja-jp;en-us"
