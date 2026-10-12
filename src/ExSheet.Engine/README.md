@@ -306,19 +306,26 @@ answer:
   by `:` the rectangle they span (`R2:R3`, `RC[-1]:R[1]C[-1]`); one cell followed by `#` its Spill
   Range (`R1C1#`); `A1#`, read as typed `A1#` is; a structured reference's text, read as
   `Table[Column]` typed is, waiting while the table waits, whatever `a1` says; and `#REF!` for text
-  that names no place: another Sheet's name, a column past `XFD`, a table never declared, a column it
-  lacks, and R1C1 parts of two kinds joined (`R2C2:R3`, `R3:C2`). Forms no run has asked — the other
-  combinations of a number, an offset and none, the other orders of parts of two kinds joined, `#`
-  after a relative cell — are read by the rule those answers settle, and put to the next run. Two
-  `#REF!`s are the engine's answer, which no run has observed: an R1C1 row or column number past the
-  Sheet's edge, as `XFE1` is in A1 style, and A1 text with `#` after a range (`A1:A2#`). `#VALUE!` until
-  a run observes them, where the observed answers leave the readings apart: R1C1 text with a row or
-  column number 0 (`R0C2`); an offset past the Sheet's edge, which Excel reads as a place but which no
-  run has shown wrapped round to the far side or stopped at the edge; and `#` after an R1C1 range, row
-  or column (`R2C2:R3C2#`, `R3#`, `C2#`). `#VALUE!` by decision, in either style: a declared Linked
+  that names no place: another Sheet's name in A1 style, a column past `XFD`, A1 text read as R1C1 and
+  R1C1 text read as A1, an intersection, a table never declared, a column it lacks, and R1C1 parts of
+  two kinds joined (`R2C2:R3`, `R3:C2`). Forms no run has asked — the other combinations of a number,
+  an offset and none, the other orders of parts of two kinds joined, `#` after a relative cell,
+  another Sheet's name in R1C1 style — are read by the rule those answers settle, and put to the next
+  run. The engine's rule, generalised from the intersection, is that A1 text going on past its
+  Reference names no place, so A1 text with `#` after a range (`A1:A2#`) is the engine's `#REF!`,
+  which no run has observed; a row past 1048576 in A1 style is `#REF!`, as `XFE1`'s column is.
+  `#VALUE!` until a run observes them, where the observed answers leave the readings apart: R1C1 text
+  with a row or column number 0 (`R0C2`); a row or column number past the Sheet's edge (`R1048577C2`,
+  `R2C16385`), which could name no place, as `XFE1` does in A1 style, or a place, as an offset past
+  the edge does *(2026-10-12, decided with the user: refused until Excel is asked, while A1 text past
+  the edge stays `#REF!`, as `XFE1` was observed to be)*; an offset past the Sheet's edge, which Excel
+  reads as a place but which no run has shown wrapped round to the far side or stopped at the edge;
+  and `#` after an R1C1 range, row or column, whatever the parts joined (`R2C2:R3C2#`, `R3#`, `C2#`,
+  `R2C2:R3#`). `#VALUE!` by decision, in either style: a declared Linked
   Table's bare name (`INDIRECT("Positions")`), which Excel reads as the table's data, every column and
   every row without the header. A Formula could then read the table by position, and a Linked Table is
-  read by key, never by position (ADR-0049's rule 2). Typed, the bare name is `#NAME?`, as an unknown
+  read by key, never by position (ADR-0049's rule 2) *(2026-10-12, decided with the user: the bare
+  name stays `#VALUE!`, in either style)*. Typed, the bare name is `#NAME?`, as an unknown
   name is. What a computed Reference (`INDIRECT`'s or `OFFSET`'s) reads taints the Formula as a
   Reference its text names does: one that reaches a cycle, or its own cell, is `#CIRC!`, and one that
   reaches a waiting cell waits, whatever the function reading it does with an Error Value — `COUNT`,

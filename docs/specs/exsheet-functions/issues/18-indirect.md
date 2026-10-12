@@ -42,11 +42,12 @@ Status: done
       they settle: R and C each take a number or an offset in brackets from the Formula's own cell; a
       row part alone is a whole row and a column part alone a whole column; two parts of the same kind
       joined by `:` name the rectangle they span; a number past the Sheet's edge is `#REF!`, as `XFE1`
-      is. `#VALUE!` for the forms the observed ones leave open: an R or a C with no number, a zero
-      offset in brackets, a number written with a leading 0, an offset written with a `+`, an offset
-      past the Sheet's edge (which Excel might call no place or wrap round), a cell joined to a whole
-      row or column or a row to a column, and structured or `#` text in R1C1 style; and for a declared
-      Linked Table's bare name
+      is *(2026-10-12, decided with the user: `#VALUE!` in R1C1 style until Excel is asked, below)*.
+      `#VALUE!` for the forms the observed ones
+      leave open: an R or a C with no number, a zero offset in brackets, a number written with a
+      leading 0, an offset written with a `+`, an offset past the Sheet's edge (which Excel might call
+      no place or wrap round), a cell joined to a whole row or column or a row to a column, and
+      structured or `#` text in R1C1 style; and for a declared Linked Table's bare name
 - [x] For the next Windows run: INDIRECT-044 to INDIRECT-066, the R1C1 forms read by generalising
       what the area pass observed (INDIRECT-045 to 050: an offset on either axis, an absolute row with
       a relative column, a whole row or column by offset, rows and columns joined), what a declared
@@ -66,22 +67,35 @@ Status: done
       0, a blank cell) without telling whether it wraps round or stops at the edge; a row or column
       number 0; and a `#` after a range, a row or a column, which no run has observed in either style.
       A row or column number past the Sheet's edge stays the engine's `#REF!`, as `XFE1` is in A1
-      style, which no run has observed in R1C1 style
-- [x] A declared Linked Table's bare name stays `#VALUE!`, in either style, by decision (decided with
-      the user, 2026-10-12; ADR-0049's rule 2 and ADR-0124): Excel reads it as the table's data
+      style, which no run has observed in R1C1 style *(2026-10-12, decided with the user: `#VALUE!`
+      until Excel is asked, below)*
+- [x] A declared Linked Table's bare name stays `#VALUE!`, in either style, by decision *(2026-10-12,
+      decided with the user: the bare name stays `#VALUE!`, in either style; ADR-0049's rule 2 and
+      ADR-0124)*: Excel reads it as the table's data
       (INDIRECT-043, 053 to 057, `observed`, with Excel's answers as `excelExpect`), which a Formula
       could then read by position, and a Linked Table is read by key, never by position. It is a Known
       limitation of `0.1.0`. Typed, `Positions` stays `#NAME?`, and `Table[Column]` is unchanged
-- [ ] For the next Windows run: INDIRECT-067 to INDIRECT-084 and INDIRECT-090 to INDIRECT-092. The
+- [x] In R1C1 style, a row or column number past the Sheet's edge (`R1048577C2`, `R2C16385`) is
+      `#VALUE!` until Excel is asked, whatever an offset beside it reads: it could name no place, as
+      `XFE1` does in A1 style, or a place, as an offset past the edge does (INDIRECT-052). A1 text past
+      the edge stays `#REF!` *(2026-10-12, decided with the user: in R1C1 style, a row or column number
+      past the Sheet's edge is refused with `#VALUE!` until Excel is asked, and INDIRECT-074 asks it,
+      holding the engine's `#VALUE!`; A1 text past the edge stays `#REF!`, as `XFE1` was observed to
+      be)*. A `#` after parts joined is `#VALUE!` whatever the parts, judged before the join:
+      `R2C2:R3#` could be no place, as `R2C2:R3` is, or B2's Spill Range. Another Sheet's name in R1C1
+      style is `#REF!` whatever follows it, by the rule INDIRECT-008 observed in A1 style
+- [ ] For the next Windows run: INDIRECT-067 to INDIRECT-084 and INDIRECT-090 to INDIRECT-095. The
       forms read by generalising what the second area pass observed (INDIRECT-067 to 072: an R or a C
       with no number beside a number or second in a rectangle, a zero offset on the column, a leading
       0 in an offset or a column number; 075 to 077: parts of two kinds joined in the other orders;
-      078, 079: `RC[-1]#` and `R1C1#` over no spill; 080, 081: structured text in R1C1 style); the
-      engine's answers no run has observed (074: a row number past the edge in R1C1 style, `#REF!`;
-      092: `A1:A2#` in A1 style, `#REF!`); and the forms still refused (073: a row number 0; 082 to
-      084: an offset past the top, left and bottom edges, with values in the cells that wrapping round
-      and stopping at the edge would each read; 090, 091: `#` after an R1C1 range and a whole column,
-      with values that tell no place, a Spill Range and the cells themselves apart)
+      078, 079: `RC[-1]#` and `R1C1#` over no spill; 080, 081: structured text in R1C1 style; 093:
+      another Sheet's name in R1C1 style); the engine's answer no run has observed (092: `A1:A2#` in
+      A1 style, `#REF!`, by the engine's rule that A1 text going on past its Reference names no place,
+      generalised from the intersection, INDIRECT-021); and the forms still refused (073: a row number
+      0; 074, 095: a row and a column number past the edge, with values in the cells that wrapping
+      round and stopping at the edge would each read; 082 to 084: an offset past the top, left and
+      bottom edges, likewise; 090, 091, 094: `#` after an R1C1 range, a whole column and a cell joined
+      to a whole row, with values that tell no place, a Spill Range and the cells themselves apart)
 
 ## Comments
 
@@ -182,7 +196,8 @@ and that the readings part (no place, the Spill Range of a cell the text names, 
 themselves). In R1C1 style it is `#VALUE!`, as before, and INDIRECT-090 and 091 ask it; `A1:A2#` stays
 the engine's `#REF!`, text that goes on past a Reference (INDIRECT-021's rule), and INDIRECT-092 asks
 it. A row or column number past the Sheet's edge in R1C1 style is the engine's `#REF!` too, as `XFE1` is
-in A1 style (INDIRECT-017); no run has observed it, and INDIRECT-074 asks it.
+in A1 style (INDIRECT-017); no run has observed it, and INDIRECT-074 asks it. *(2026-10-12, decided with
+the user: `#VALUE!` until Excel is asked, below.)*
 Over table Positions of two rows, `COLUMNS(INDIRECT("Positions"))` is 2, `ROWS` 2, `INDEX(…,1,1)` R-1,
 `COUNTA` 4, and the name as the result spills the data (INDIRECT-053 to 057): Excel reads the bare name
 as the table's data, every column in its order and every row without the header, which also gives
@@ -205,3 +220,25 @@ Excel's answers as `excelExpect`, a difference by decision citing ADR-0049's rul
 refusal is listed under `0.1.0`'s Known limitations. The reading (56b86a97) is reverted, and the cases
 that asked what followed from it (085 to 089) are withdrawn; their numbers are not reused. Typed,
 `Positions` stays `#NAME?`; `Table[Column]`, typed or as text, is unchanged.
+
+2026-10-12, decided with the user: in R1C1 style, a row or column number past the Sheet's edge
+(`R1048577C2`, `R2C16385` and the like) is refused with `#VALUE!` until Excel is asked; A1 text past the
+edge stays `#REF!`, as `XFE1` was observed to be (INDIRECT-017). Excel reads an offset past the edge as a
+place (INDIRECT-052), so a number past it could be a place too, wrapped round or stopped at the edge, or
+no place, as `XFE1` is. `RowColumnAxis.Place` now gives a number past the edge as no place, as it gives a
+number 0 and an offset past the edge, and the three are refused together; the engine's `#REF!` for it is
+gone. INDIRECT-074 holds the engine's `#VALUE!`, with 7 in B1 and 9 in B1048576 so that `#REF!`, a wrap
+round and a stop at the edge each read differently, and INDIRECT-095 asks a column, `R2C16385`, the same
+way. In A1 style `XFE1` and, by the same rule, a row past 1048576 stay `#REF!`
+(`ADR0124_indirect_a1_text_past_the_sheets_edge_is_ref`).
+
+2026-10-12, after the verifier's review of this round: `R2C2:R3#`, a `#` after a whole row joined to a
+cell, was `#REF!`, because the reader judged the join before the `#`; but the readings part (no place, as
+`R2C2:R3` is, or B2's Spill Range where B2 spills). The `#` is judged first, so a `#` after any join, of
+whatever parts, is `#VALUE!`, and INDIRECT-094 asks it with `=SEQUENCE(3)` in B2 (`#REF!` or 6). Another
+Sheet's name is judged before anything else, since every reading of what follows names a place on a
+Sheet that is not there: `#REF!`, by the rule INDIRECT-008 observed in A1 style, which no case had asked
+in R1C1 style, so `Sheet2!R3#` is `#REF!` where it was `#VALUE!`; INDIRECT-093 asks `Sheet2!R3C2`. The
+corpus's `about` and the reader's documentation name the instances observed: text that goes on past a
+Reference was observed only as an intersection (INDIRECT-021), and A1 text read in R1C1 style as `B3`
+(INDIRECT-035); the rest of each class is the engine's rule, generalised from them.
