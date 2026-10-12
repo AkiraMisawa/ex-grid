@@ -326,7 +326,7 @@
                                 {
                                     <div class="ex-fill-target" style="@pinnedFillOutline"></div>
                                 }
-                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: true) is { } pinnedHandle)
+                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, FillHandleCornerOf(pinnedHandleRange), _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: true) is { } pinnedHandle)
                                 {
                                     <div class="ex-fill-handle" style="@pinnedHandle"></div>
                                 }
@@ -409,7 +409,7 @@
                                 {
                                     <div class="ex-fill-target" style="@fillOutline"></div>
                                 }
-                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: false) is { } handle)
+                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, FillHandleCornerOf(handleRange), _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: false) is { } handle)
                                 {
                                     <div class="ex-fill-handle" style="@handle"></div>
                                 }
@@ -1532,7 +1532,9 @@
     /// <summary>
     /// A Consumer declaration (ADR-0050, item 5): fill is enabled. The fill handle is painted
     /// at the bottom-right corner of the Selection's last range, in the selection overlay —
-    /// none for a disjoint Selection, and none while an edit is open. Dragging it extends
+    /// at the first row's top-right for whole columns and the first column's bottom-left for
+    /// whole rows, beside their Headings, as Excel puts it; none for a disjoint Selection, and
+    /// none while an edit is open. Dragging it extends
     /// along one axis, the one the pointer went further along, with the target outlined; on
     /// release the grid raises one <see cref="OnFill"/> intent and writes nothing. A target
     /// covering a column that is not Editable is refused whole first, through
@@ -2600,6 +2602,11 @@
     /// declared, with no edit open, and a Selection of one range.</summary>
     private SelectionRange? FillHandleRange
         => ShowFillHandle && _editMode == EditMode.None ? FillRules.HandleRange(_selection.Selection) : null;
+
+    /// <summary>The corner of <paramref name="range"/> the fill handle stands at (ADR-0050, item 5):
+    /// the top-right of whole columns, the bottom-left of whole rows, the bottom-right of the
+    /// rest. Painted and grabbed from the same answer.</summary>
+    private FillHandleCorner FillHandleCornerOf(SelectionRange range) => FillRules.HandleCorner(range, Extent);
 
     /// <summary>The outline a running fill drag paints: the source and what it has reached,
     /// as one rectangle — one axis, so the union is a rectangle.</summary>
@@ -4007,23 +4014,27 @@
 
     /// <summary>
     /// Whether the press lands on the fill handle (ADR-0050, item 5) — arithmetic, as every
-    /// other press in the body is (ADR-0008): the same corner the handle was painted at,
-    /// with a grab box twice its side. A corner that has scrolled under the Pinned Columns
-    /// cannot be grabbed, as it cannot be seen.
+    /// other press in the body is (ADR-0008): the same place the handle was painted at, at the
+    /// same corner, with a grab box twice its side about its centre. A handle that has scrolled
+    /// under the Pinned Columns or the Row Headings cannot be grabbed, as it cannot be seen; and a
+    /// press on a Row Heading is the Heading's, though a whole row's handle stands beside it.
     /// </summary>
     private bool IsOnFillHandle(MouseEventArgs e)
     {
         if (FillHandleRange is not { } range || _visible is not { } visible || FirstRowOf(e, visible) is not { } first)
             return false;
         var geometry = ColumnsOf(e);
-        var (cornerX, cornerY) = SelectionStyles.HandleCornerPx(range, geometry, RowHeightOf(e), first);
-        var scrollLeft = Math.Clamp(ScrollLeftOf(e), 0, geometry.MaxScrollLeftPx);
-        if (range.RightColumn < geometry.PinnedCount)
-            cornerX += scrollLeft;
-        else if (cornerX - scrollLeft < geometry.PinnedWidthPx)
+        if (geometry.IsInLead(e.OffsetX, ScrollLeftOf(e)))
             return false;
+        var corner = FillHandleCornerOf(range);
         var size = _metrics.FillHandleSizePx;
-        return Math.Abs(e.OffsetX - cornerX) <= size && Math.Abs(e.OffsetY - cornerY) <= size;
+        var (centreX, centreY) = SelectionStyles.HandleCentrePx(range, corner, geometry, RowHeightOf(e), first, size);
+        var scrollLeft = Math.Clamp(ScrollLeftOf(e), 0, geometry.MaxScrollLeftPx);
+        if (SelectionStyles.HandleCell(range, corner).Column < geometry.PinnedCount)
+            centreX += scrollLeft;
+        else if (centreX - scrollLeft < geometry.PinnedWidthPx)
+            return false;
+        return Math.Abs(e.OffsetX - centreX) <= size && Math.Abs(e.OffsetY - centreY) <= size;
     }
 
     /// <summary>The fill drag's pointer moved onto <paramref name="cell"/>. Whether what is

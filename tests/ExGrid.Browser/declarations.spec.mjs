@@ -1665,6 +1665,84 @@ test('DC-13: a Formula filled right shifts its References; a refused pattern lea
     await expect(page.locator('.ex-sheet-notice')).not.toBeEmpty();
 });
 
+/** A Column Heading by its letters, and a Row Heading by its number, as headings.spec.mjs finds them. */
+const columnHeading = (grid, letters) => grid.locator('.ex-header-cell', { hasText: new RegExp(`^${letters}$`) });
+const rowHeading = (grid, number) => grid.locator('.ex-row .ex-row-heading', { hasText: new RegExp(`^${number}$`) });
+
+/**
+ * Drags the handle of a whole axis (ADR-0050 item 5, decided with the user 2026-10-12) to the cell
+ * at `to`, once it stands where `where` says: given the box of the cell whose corner it is at and
+ * the handle's side, `{ x, y }`, the handle's centre. As dragHandle, a few steps and the target
+ * outline waited for.
+ */
+async function dragAxisHandle(page, grid, cornerCell, where, to) {
+    const corner = await boxOf(cell(grid, cornerCell));
+    await expect.poll(async () => {
+        const box = await grid.locator('.ex-fill-handle').boundingBox();
+        if (box === null) {
+            return 'not painted';
+        }
+        const want = where(corner, box.width);
+        return JSON.stringify({
+            x: Math.round(box.x + box.width / 2 - want.x),
+            y: Math.round(box.y + box.height / 2 - want.y),
+        });
+    }).toBe(JSON.stringify({ x: 0, y: 0 }));
+    const handle = await boxOf(grid.locator('.ex-fill-handle'));
+    const target = await boxOf(cell(grid, to));
+    await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    await page.mouse.down();
+    const toX = target.x + target.width / 2;
+    const toY = target.y + target.height / 2;
+    await page.mouse.move(toX, toY + 3, { steps: 8 });
+    await fillDragHeard(page, grid, toX, toY + 3);
+    await page.mouse.up();
+    await circuitQuiet();
+}
+
+test('DC-12/DC-13: a whole column\'s handle stands beside its Heading, and dragged right it fills the column beside it (the seventeenth Windows run, h3)', async ({ page }) => {
+    const grid = sheet(page);
+    await enter(page, grid, 'F2', '1');
+    await enter(page, grid, 'F3', '2');
+    await enter(page, grid, 'F4', '=F2+F3');
+    await columnHeading(grid, 'F').click({ force: true });
+    await expectFocusAt(grid, 'F1');
+
+    // At F1's top-right corner: centred on F's right edge, its top on F1's top, beside the Heading.
+    await dragAxisHandle(page, grid, 'F1', (f1, side) => ({ x: f1.x + f1.width, y: f1.y + side / 2 }), 'G3');
+    await expect(cell(grid, 'G2')).toHaveText('1');
+    await expect(cell(grid, 'G3')).toHaveText('2');
+    await expect(cell(grid, 'G4')).toHaveText('3');
+    await pressCell(grid, 'G4');
+    await expect(bar(grid)).toHaveValue('=G2+G3');
+    // Along one axis only: nothing below or beside what F held.
+    await expect(cell(grid, 'H2')).toHaveText('');
+    await expect(cell(grid, 'G5')).toHaveText('');
+
+    // One step on the undo stack, as a fill always is.
+    await page.keyboard.press('ControlOrMeta+Z');
+    await expect(cell(grid, 'G2')).toHaveText('');
+    await expect(cell(grid, 'G4')).toHaveText('');
+    await expect(cell(grid, 'F4')).toHaveText('3');
+});
+
+test('DC-12/DC-13: a whole row\'s handle stands at the row\'s left, beside its Heading, and dragged down it fills the rows below (the seventeenth Windows run, h3)', async ({ page }) => {
+    const grid = sheet(page);
+    await enter(page, grid, 'B16', '5');
+    await enter(page, grid, 'C16', '=B16*2');
+    await pressAt(rowHeading(grid, 16));
+    await expectFocusAt(grid, 'A16');
+
+    // At A16's bottom-left corner: its left on A's left, beside the Heading, centred on the row's bottom.
+    await dragAxisHandle(page, grid, 'A16', (a16, side) => ({ x: a16.x + side / 2, y: a16.y + a16.height }), 'C18');
+    await expect(cell(grid, 'B17')).toHaveText('5');
+    await expect(cell(grid, 'B18')).toHaveText('5');
+    await expect(cell(grid, 'C18')).toHaveText('10');
+    await pressCell(grid, 'C18');
+    await expect(bar(grid)).toHaveValue('=B18*2');
+    await expect(cell(grid, 'B19')).toHaveText('');
+});
+
 // ---------------------------------------------------------------------------------------------
 // The clipboard (DC-8, DC-33, SH-14)
 

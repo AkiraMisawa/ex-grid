@@ -1,5 +1,5 @@
 import { test, expect, alterPage } from './fixtures.mjs';
-import { sheet, cell, clickCell, expectFocusAt, expectCovers } from './sheet-helpers.mjs';
+import { sheet, cell, clickCell, expectFocusAt, expectCovers, pressAt } from './sheet-helpers.mjs';
 import { painted, runsOf, sameColour, resolvedColour } from './pixels.mjs';
 
 // Excel's look for the Focus and a single range, and a whole header rule (ADR-0008 and ADR-0030
@@ -366,3 +366,66 @@ test('UX-19: under forced colors every range is outlined and the Focus inside a 
     expect(forced.range, JSON.stringify(forced)).toEqual({ style: 'solid', width: forced.range.width, offset: `-${forced.range.width}`, box: 'none' });
     expect(forced.focus, JSON.stringify(forced)).toEqual({ style: 'solid', width: forced.focus.width, offset: `-${forced.focus.width}`, box: 'none' });
 });
+
+// ---- DC-12: the fill handle on a whole axis, beside its Heading -----------------------------------
+
+/** A Column Heading by its letters, and a Row Heading by its number, as headings.spec.mjs finds them. */
+const columnHeading = (grid, letters) => grid.locator('.ex-header-cell', { hasText: new RegExp(`^${letters}$`) });
+const rowHeading = (grid, number) => grid.locator('.ex-row .ex-row-heading', { hasText: new RegExp(`^${number}$`) });
+
+/**
+ * Whether the fill handle is painted where it stands, read in device pixels: its middle shows the
+ * handle's own colour, and no layer above the selection — the header, the Headings — covers it.
+ */
+async function handleShows(page, grid) {
+    const handle = await grid.locator('.ex-fill-handle').boundingBox();
+    const colour = await resolvedColour(page, await grid.locator('.ex-fill-handle')
+        .evaluate((el) => getComputedStyle(el).backgroundColor));
+    const region = await painted(page, { x: handle.x, y: handle.y, width: handle.width, height: handle.height });
+    const middle = region.at(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    return { shows: sameColour(middle, colour), middle, colour };
+}
+
+for (const [chrome, query] of CHROMES) {
+    test(`DC-12 (${chrome} Chrome): a whole column's handle stands at its first row's top-right, beside its Heading and wholly below it (ADR-0050; the seventeenth Windows run, h3)`, async ({ page }) => {
+        await openSheet(page, query);
+        const grid = sheet(page);
+        await columnHeading(grid, 'C').click({ force: true });
+        await expectFocusAt(grid, 'C1');
+        await parkPointer(page, grid);
+
+        const c1 = await cell(grid, 'C1').boundingBox();
+        const header = await columnHeading(grid, 'C').boundingBox();
+        await expect.poll(async () => {
+            const box = await grid.locator('.ex-fill-handle').boundingBox();
+            return box === null ? 'not painted' : JSON.stringify({
+                centredOnTheRightEdge: Math.abs(box.x + box.width / 2 - (c1.x + c1.width)) <= 1,
+                topOnTheFirstRowsTop: Math.abs(box.y - c1.y) <= 1,
+                belowTheHeading: box.y >= header.y + header.height - 1,
+            });
+        }).toBe(JSON.stringify({ centredOnTheRightEdge: true, topOnTheFirstRowsTop: true, belowTheHeading: true }));
+        const seen = await handleShows(page, grid);
+        expect(seen.shows, JSON.stringify(seen)).toBe(true);
+    });
+
+    test(`DC-12 (${chrome} Chrome): a whole row's handle stands at its first column's bottom-left, beside its Heading and wholly right of it (ADR-0050; the seventeenth Windows run, h3)`, async ({ page }) => {
+        await openSheet(page, query);
+        const grid = sheet(page);
+        await pressAt(rowHeading(grid, 3));
+        await expectFocusAt(grid, 'A3');
+        await parkPointer(page, grid);
+
+        const a3 = await cell(grid, 'A3').boundingBox();
+        const heading = await rowHeading(grid, 3).boundingBox();
+        await expect.poll(async () => {
+            const box = await grid.locator('.ex-fill-handle').boundingBox();
+            return box === null ? 'not painted' : JSON.stringify({
+                leftOnTheFirstColumnsLeft: Math.abs(box.x - a3.x) <= 1,
+                centredOnTheBottomEdge: Math.abs(box.y + box.height / 2 - (a3.y + a3.height)) <= 1,
+                rightOfTheHeading: box.x >= heading.x + heading.width - 1,
+            });
+        }).toBe(JSON.stringify({ leftOnTheFirstColumnsLeft: true, centredOnTheBottomEdge: true, rightOfTheHeading: true }));
+        const seen = await handleShows(page, grid);
+        expect(seen.shows, JSON.stringify(seen)).toBe(true);
+    });
+}

@@ -26,6 +26,25 @@ public static class FillRules
     }
 
     /// <summary>
+    /// Which corner of <paramref name="range"/> the handle stands at (ADR-0050, item 5; decided
+    /// with the user 2026-10-12, as Excel draws it in the seventeenth Windows run's h3): a range
+    /// spanning every row of <paramref name="extent"/> (whole columns) at its first row's top-right
+    /// corner, beside the column's Heading; one spanning every column (whole rows) at its first
+    /// column's bottom-left, beside the row's Heading — a bottom-right corner a million rows down,
+    /// or sixteen thousand columns across, is one nobody can reach. A range spanning both, every
+    /// cell (Ctrl+A), keeps the bottom-right corner, as every other range does, until Excel is
+    /// asked where it puts that one.
+    /// </summary>
+    internal static FillHandleCorner HandleCorner(SelectionRange range, GridExtent extent)
+    {
+        var everyRow = range.SpansEveryRow(extent);
+        var everyColumn = range.SpansEveryColumn(extent);
+        return everyRow == everyColumn ? FillHandleCorner.BottomRight
+            : everyRow ? FillHandleCorner.TopRight
+            : FillHandleCorner.BottomLeft;
+    }
+
+    /// <summary>
     /// What a drag from <paramref name="source"/>'s handle has reached with the pointer over
     /// <paramref name="pointer"/>: the cells a release would fill — never the source itself
     /// — and the direction. Null while the pointer is inside the source.
@@ -86,6 +105,22 @@ public static class FillRules
         position > last ? position - last
         : position < first ? position - first
         : 0;
+}
+
+/// <summary>
+/// The corner of its range the fill handle stands at (ADR-0050, item 5): the bottom-right, but
+/// for a range of whole columns or whole rows, whose bottom-right lies where nobody can reach it.
+/// </summary>
+internal enum FillHandleCorner
+{
+    /// <summary>The range's last row and last column: every range but the two below.</summary>
+    BottomRight,
+
+    /// <summary>The first row's top-right corner, beside the column's Heading: whole columns.</summary>
+    TopRight,
+
+    /// <summary>The first column's bottom-left corner, beside the row's Heading: whole rows.</summary>
+    BottomLeft,
 }
 
 /// <summary>
