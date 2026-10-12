@@ -18,6 +18,14 @@ function toolbar(page) {
     return page.locator('.ex-sheet-toolbar').first();
 }
 
+/**
+ * The toolbar's lists that stand open, under either Chrome: the built-in one in the grid's popover,
+ * MudBlazor's in an open MudPopover.
+ */
+function openLists(page) {
+    return page.locator('.ex-sheet-choices, .mud-popover-open .mud-ex-sheet-toolbar-choices');
+}
+
 /** Format Cells: the grid's popover under the built-in Chrome, a MudDialog under the other. */
 function formatCellsOf(page, grid, chrome) {
     return chrome === 'mud' ? page.locator('.mud-dialog.mud-ex-sheet-format-cells') : grid.locator('.ex-popover-consumer');
@@ -181,10 +189,43 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-// What the seventeenth Windows run found in Part D. Excel reaches Format Cells… by O, E, through its
-// Format menu. And the element the keyboard leaves the toolbar through was aria-hidden while it held
-// focus, which Chromium says in the console.
+// What the seventeenth Windows run found in Part D. Under the MudBlazor Chrome each list a KeyTip
+// opened left the keyboard on the toolbar, so Escape gave it back to the Sheet and left the list
+// standing, and the next letter's list opened beside it, four at once: under either Chrome the list
+// takes the keyboard into its choices, and Escape closes it with the keyboard back on the Sheet.
+// Excel reaches Format Cells… by O, E, through its Format menu. And the element the keyboard leaves
+// the toolbar through was aria-hidden while it held focus, which Chromium says in the console.
 for (const chrome of ['builtin', 'mud']) {
+    test(`SH-52/ADR-0100/ADR-0039: Alt, H, F, C puts the keyboard in the Font Colour list; Escape closes it with the keyboard on the Sheet, and the next list is the only one (${chrome})`, async ({ page }) => {
+        await openSheet(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'B3');
+        const fill = await cell(grid, 'B3').evaluate((element) => getComputedStyle(element).backgroundColor);
+
+        await keyTips(page, 'h', 'f', 'c');
+
+        await expect(openLists(page)).toHaveCount(1);
+        // On the choice the Focus cell has: no colour of its own.
+        await expect(page.locator(':focus')).toContainText('Automatic');
+        await page.keyboard.press('Escape');
+        await expect(openLists(page)).toHaveCount(0);
+        await expectKeyboardOn(grid);
+
+        await keyTips(page, 'h', 'h');
+        await expect(openLists(page)).toHaveCount(1);
+        await expect(page.locator(':focus')).toContainText('No Fill');
+        await page.keyboard.press('ArrowDown');
+        await expect(page.locator(':focus')).toHaveAttribute('aria-label', 'White, Background 1');
+        await page.keyboard.press('Escape');
+
+        await expect(openLists(page)).toHaveCount(0);
+        await expectKeyboardOn(grid);
+        // Escape chose nothing, and the next arrow moves the Focus.
+        await expect(cell(grid, 'B3')).toHaveCSS('background-color', fill);
+        await page.keyboard.press('ArrowDown');
+        await expectFocusAt(grid, 'B4');
+    });
+
     test(`SH-52/ADR-0100 (2026-10-12): Format Cells is Alt, H, O, E, as Excel's Format menu reaches it — O narrows the KeyTips, E opens it (${chrome})`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);
