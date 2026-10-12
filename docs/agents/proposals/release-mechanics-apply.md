@@ -96,12 +96,13 @@ Besides: `CONTEXT.md` gains **Release Candidate** (edit 30), and FN-12e's rows n
   old texts, and none of its old texts is changed here, so the two apply in either order, to the same result.
   **Edit 27's WR-10 row presumes that list's edit 6**, which adds WR-10 to §23; apply both.
   - **ADR-0208 is divided between the two.** That list's edit 8, under "Every automated layer still runs in full",
-    keeps only the pointer to ADR-0205's exception: the floor run's record, with its layer-2 runs, is carried
-    forward while its paths are unchanged. It does not state the release workflow's check. The check is this
+    keeps only the pointer to ADR-0205's exception, under which the floor run, with the layer-2 runs recorded
+    beside it, is carried forward by its record. It does not state the release workflow's check. The check is this
     list's edit 24 alone, under "The release workflow checks it": WR-10 indexed beside the rows, its paths
     compared, and by decision (7) the MudBlazor versions its record names held to nuget.org's list.
   - **The Definition of Done likewise.** That list's Step 4 floor paragraph (its edit 5) says how the floor run
-    and the layer-2 runs are made, and how a person reads with `git diff --quiet` whether their record holds; its
+    and the layer-2 runs are made, recorded, indexed and tagged, and how a person reads with `git diff --quiet`
+    whether their record holds; its
     §23 row (its edit 6) is the criterion. This list's edit 27 says what the release workflow refuses: the row's
     paths changed since the record, and a published version the record does not name.
 - **ADR-0208.** A list from the run-17 or area branches that edits "Questions are asked when the feature is built"
@@ -130,10 +131,12 @@ Besides: `CONTEXT.md` gains **Release Candidate** (edit 30), and FN-12e's rows n
   the floor run is made and indexed, the release check refuses a candidate on WR-10, as it does on every row never
   recorded. When it is indexed, its record names besides the MudBlazor versions its layer-2 runs covered,
   `"versions": ["9.6.0", …]`, which the release check holds to nuget.org's list (decision (7)).
-- **Not settled by decision (7), and not written here:** where a later layer-2 run at a newly published version is
-  recorded. The index holds one record per row, the floor run's commit, tag and file, and its `versions` grow; the
-  later run, made at another commit, would by decision (6) be a directory and a tag of its own that the index does
-  not point to. The check trusts `versions` as the index gives them.
+- **A later layer-2 run's record.** `claude/mudblazor-range-floor`'s edit 5 writes a layer-2 run at a version
+  published after the floor record into the floor record's own directory, one log per version naming the commit
+  it ran at, made where the record holds, and WR-10's index entry adds the version to its `versions`; that branch
+  names this reading as its own, not the user's. The index keeps one record per row, the floor run's commit, tag
+  and file, and by decision (6) the directory keeps its one tag. This list's check reads only the versions the
+  entry names: it does not ask for the later run's commit, and trusts `versions` as the index gives them.
 - **Noticed, not changed:** ADR-0042's "What a package must prove" names `_content/ExGrid/ex-grid.css`, `ex-grid.js`
   and `mud-ex-grid.css`, and packs "both packages", while `check.sh` packs ten and checks their minified builds
   (ADR-0123). That is stale on `main` and not this list's.
