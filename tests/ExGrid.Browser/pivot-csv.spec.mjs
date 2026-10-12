@@ -10,7 +10,8 @@ import fs from 'node:fs';
 // file with the library's sentence naming the row and the column, and nothing is pivoted; that a
 // large file paints its progress while it is read and Cancel stops it with nothing read; that an
 // unknown file's suggested Schema is shown with what is not clear, applied only once confirmed,
-// and read under to exact totals; and that the code the page shows is the code it runs.
+// and read under to exact totals; that a value in General paints Excel's eleven characters whole in
+// its column; and that the code the page shows is the code it runs.
 
 // Tall and wide enough for the report and the pane beside it, under the page's controls.
 test.use({ viewport: { width: 1400, height: 1100 } });
@@ -212,6 +213,38 @@ for (const chrome of ['builtin', 'mud']) {
             // The account numbers were read as text, so they keep their zeros.
             await pane(page).getByRole('checkbox', { name: 'Account', exact: true }).check();
             await expect(rows(page).filter({ hasText: '00123' })).toHaveCount(1);
+        });
+
+        test(`ADR-0060: a value in General paints at most eleven characters, as Excel's PivotTable showed the same file (${chrome})`, async ({ page }, testInfo) => {
+            // The seventeenth Windows run's e16.csv (verification/2026-10-11-windows-17, item 16),
+            // given to this page there and opened in Excel beside it.
+            const file = testInfo.outputPath('e16.csv');
+            fs.writeFileSync(file, `${[
+                'Group,Amount',
+                'A,0.1',
+                'A,0.2',
+                'B,123456789012.345678',
+                'C,1.23456789012345678',
+                'D,0.000012345678901234567',
+            ].join('\r\n')}\r\n`);
+            await open(page, chrome);
+
+            await page.locator('#csv-unknown-file').setInputFiles(file);
+            await expect(page.locator('#csv-suggestion').getByRole('heading')).toHaveText('The Schema suggested for e16.csv');
+            await page.locator('#csv-confirm').click();
+            await expect(status(page)).toHaveText(/^e16\.csv: 5 rows read in [\d.]+ s\.$/);
+            await pane(page).getByRole('checkbox', { name: 'Group', exact: true }).check();
+            await pane(page).getByRole('checkbox', { name: 'Amount', exact: true }).check();
+
+            // Excel's cells, the same at the PivotTable's width and at forty characters: each painted
+            // whole in its column, never ####.
+            await expect.poll(() => paintedRows(page)).toEqual([
+                ['A', '0.3'],
+                ['B', '1.23457E+11'],
+                ['C', '1.23456789'],
+                ['D', '1.23457E-05'],
+                ['Grand Total', '1.23457E+11'],
+            ]);
         });
 
         test(`ADR-0064: the page's two samples, one under the declared Schema and one under a suggested one, read the same trades to the same total (${chrome})`, async ({ page }) => {

@@ -27,7 +27,7 @@ public class AggregationTests
 
     private static string? Text(PivotAggregation aggregation, params object?[] values) => Aggregate(aggregation, values)?.Text;
 
-    [Theory] // ADR-0060: the table, over numbers
+    [Theory] // ADR-0060: the table, over numbers, in General at most eleven characters as Excel shows it
     [InlineData(PivotAggregation.Sum, "20")]
     [InlineData(PivotAggregation.Count, "4")]
     [InlineData(PivotAggregation.Average, "5")]
@@ -35,10 +35,10 @@ public class AggregationTests
     [InlineData(PivotAggregation.Min, "2")]
     [InlineData(PivotAggregation.Product, "384")]
     [InlineData(PivotAggregation.CountNumbers, "4")]
-    [InlineData(PivotAggregation.Var, "6.66666666666667")]
+    [InlineData(PivotAggregation.Var, "6.666666667")]
     [InlineData(PivotAggregation.Varp, "5")]
-    [InlineData(PivotAggregation.StdDev, "2.58198889747161")]
-    [InlineData(PivotAggregation.StdDevp, "2.23606797749979")]
+    [InlineData(PivotAggregation.StdDev, "2.581988897")]
+    [InlineData(PivotAggregation.StdDevp, "2.236067977")]
     public void Each_aggregation_over_numbers(PivotAggregation aggregation, string expected)
         => Assert.Equal(expected, Text(aggregation, 2, 4, 6, 8));
 
@@ -102,7 +102,7 @@ public class AggregationTests
         var sum = Aggregate(PivotAggregation.Sum, 0.1, 0.2)!;
 
         Assert.Null(sum.Exact);
-        Assert.Equal("0.3", sum.Text); // at most 15 significant digits, as Excel shows it
+        Assert.Equal("0.3", sum.Text); // General, at most eleven characters, as Excel shows it
         Assert.Equal("0.30000000000000004", sum.ToString(null, CultureInfo.InvariantCulture));
         Assert.Null(Aggregate(PivotAggregation.Sum, 1m, 2.5)!.Exact);
     }
@@ -111,7 +111,7 @@ public class AggregationTests
     public void Integral_values_are_exact()
     {
         Assert.Equal(6m, Aggregate(PivotAggregation.Sum, 1, 2L, (short)3)!.Exact);
-        Assert.Equal("3.33333333333333", Text(PivotAggregation.Average, 3, 3, 4));
+        Assert.Equal("3.333333333", Text(PivotAggregation.Average, 3, 3, 4));
         Assert.Equal(3m, Aggregate(PivotAggregation.Max, 1, 3m, 2)!.Exact);
     }
 
@@ -215,6 +215,6 @@ public class AggregationTests
         var report = Report(layout);
 
         Assert.Equal(["Sum of Amount", "Average of Amount", "Max of Amount"], Headers(report));
-        Assert.Equal(["t  || 285 | 40.7142857142857 | 100"], Lines(report));
+        Assert.Equal(["t  || 285 | 40.71428571 | 100"], Lines(report));
     }
 }

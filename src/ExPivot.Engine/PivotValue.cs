@@ -4,8 +4,9 @@ namespace ExPivot.Engine;
 
 /// <summary>
 /// One value cell of a Pivot Report (ADR-0060): a number or an error value, with the text it is
-/// shown as under its Value Field's number format and the report's culture. An empty cell is
-/// null, never a value.
+/// shown as under its Value Field's number format and the report's culture — General, where the
+/// Value Field has none, at most eleven characters as Excel's PivotTable shows it. An empty cell
+/// is null, never a value.
 ///
 /// <para>It is <see cref="IFormattable"/> so that a grid's raw, locale-free form of it is the
 /// number itself: <c>ToString(null, CultureInfo.InvariantCulture)</c> is the exact
@@ -53,10 +54,21 @@ public sealed class PivotValue : IFormattable
     {
         if (value.Error is { } error)
             return new PivotValue(0, null, error, error);
-        var format = numberFormat ?? (percent ? "0.00%" : "G15");
-        var text = value.Exact is { } exact
-            ? exact.ToString(format, culture)
-            : value.Number.ToString(format, culture);
+        string text;
+        if (numberFormat is null && !percent)
+        {
+            // General, as Excel's PivotTable shows it: at most eleven characters (ADR-0060).
+            text = value.Exact is { } exactGeneral
+                ? PivotGeneral.Text(exactGeneral, culture)
+                : PivotGeneral.Text(value.Number, culture);
+        }
+        else
+        {
+            var format = numberFormat ?? "0.00%";
+            text = value.Exact is { } exact
+                ? exact.ToString(format, culture)
+                : value.Number.ToString(format, culture);
+        }
         return new PivotValue(value.Number, value.Exact, null, text);
     }
 }
