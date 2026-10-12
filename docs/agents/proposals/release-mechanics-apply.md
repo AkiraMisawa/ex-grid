@@ -71,6 +71,14 @@ back.
    The release check reads every record WR-10's entry names: the floor record's paths hold since its commit, and
    each later record's tag names its commit. Edits 24 and 27 say it in dated notes; the check (`ByHand`) and the
    index's `about` hold it.
+10. **An unlisted version is not asked for.** The release check reports it as out of the check because it is
+    unlisted; a version that is listed but given no date still refuses the tag. Edits 24 and 27 say it in a dated
+    note beside decision (7)'s; the check (`WrapperRange`) and the index's `about` hold it.
+
+Besides, as the rule every record checked by hand already lives under (ADR-0208, and decision (3) for the floor
+record), not a new decision: **a later record holds only while the Wrappers' and the demo pages' paths are
+unchanged between its commit and X**, exactly as the floor record is held. Edits 4, 24 and 27 say it in notes of
+the check's own, not credited to the user.
 
 Besides: `CONTEXT.md` gains **Release Candidate** (edit 30), and FN-12e's rows name
 `src/ExGrid.MudBlazor/MudExGridPresentation.cs` and `src/ExGrid.MudBlazor/RobotoGlyphTable.cs` (edit 27).
@@ -147,10 +155,9 @@ Besides: `CONTEXT.md` gains **Release Candidate** (edit 30), and FN-12e's rows n
   `{"commit": …, "tag": "verified/<its directory>", "path": …, "verdict": "pass", "versions": ["9.12.0"]}`. The
   check reads each as it reads the floor record but for the paths, and refuses two records the entry names in one
   directory. `claude/mudblazor-range-floor`'s edit 5 says how the run is made.
-- **Noticed, not decided: a later record's commit is not held to the Wrappers at X.** The check asks only that a
-  later record's tag names its commit (decision (9)). A later run made at a commit whose Wrappers differ from the
-  floor record's, as on a branch never merged, would still count. Asking that the later commit's Wrappers and demo
-  pages equal the floor commit's would close it; that is a decision, not taken here.
+- **A later record's commit is held to the Wrappers at X** by ADR-0208's rule, as the floor record is: its paths
+  unchanged between its commit and X. A later run made at a commit whose Wrappers differ, as on a branch never
+  merged, is refused naming the files, and its versions are not counted.
 - **Live, against nuget.org, 2026-10-12.** In a scratch repository whose Wrappers declare `[9.6.0,10.0.0)` and
   whose floor record, made 2026-07-01 and naming 9.6.0 alone, is indexed: at an X committed 2026-09-01 the check
   named 9.7.0 (2026-07-09), 9.8.0 (2026-08-05) and 9.9.0 (2026-08-24) as published after the floor record and before
@@ -185,10 +192,10 @@ Besides: `CONTEXT.md` gains **Release Candidate** (edit 30), and FN-12e's rows n
 21. **ADR-0205, "After 0.1.0": no site from a stable version a stable tag is above.** Decision (3)'s reading that a stable version a stable tag is above publishes no site.
 22. **ADR-0205, Consequences: the rewrite went in on `main`.** Decision (2), with which the conditional edit C1 of the workflow branch's list applies.
 23. **ADR-0208, "Questions are asked when the feature is built": which `oracleSkip` excuses a case.** Decision (3)'s reading that only an `oracleSkip` saying why `oracle.ps1` cannot ask a case excuses it. ADR-0208 says an `oracleSkip` excuses a case; without this note it and the check would quietly differ.
-24. **ADR-0208, "Checks by hand are repeated only when the code they cover changes": how the check reads the records.** Decisions (3) to (7) and (9): the index, a record's commit fetched through its `verified/*` tag, named for the record's directory, or the tag refused, a candidate judged at its tagged commit, WR-10's floor record indexed beside the rows, a MudBlazor 9.x published after it and before X asking for the layer-2 runs at that version only, and that run a run of its own whose record WR-10's entry names besides the floor record. How the check holds the versions, by nuget.org's published dates and X's commit time, is a note of the check's own.
+24. **ADR-0208, "Checks by hand are repeated only when the code they cover changes": how the check reads the records.** Decisions (3) to (7), (9) and (10): the index, a record's commit fetched through its `verified/*` tag, named for the record's directory, or the tag refused, a candidate judged at its tagged commit, WR-10's floor record indexed beside the rows, a MudBlazor 9.x published after it and before X asking for the layer-2 runs at that version only, that run a run of its own whose record WR-10's entry names besides the floor record, and an unlisted version not asked for. How the check holds the versions, by nuget.org's published dates and X's commit time, is a note of the check's own.
 25. **Definition of Done, §1: a release candidate is no release either.** The notes branch's edit 4, with decision (1)'s pending form and the candidate's note.
 26. **Definition of Done, §1 Evidence: one `.trx` per test project, not twelve.** Not a decision, a count that went stale: the solution holds fourteen test projects with `tests/ExGrid.Release.Tests`. Step 1's loop copies every project's `results.trx` without naming them, so it needs no change.
-27. **Definition of Done, §22 Step 4: the table of rows checked by hand, and the code each covers.** The table ADR-0208 asks for, word for word as `docs/agents/proposals/by-hand-rows-table.md` holds it: decisions (3) to (7) — FN-12e as a Windows row and a macOS row, both with the MudBlazor Chrome's Roboto metrics (`MudExGridPresentation.cs`, `RobotoGlyphTable.cs`), a record's commit kept fetchable by its `verified/*` tag, named for the record's directory, and WR-10's row, whose dated notes say that a MudBlazor 9.x published after its record and before X asks for the layer-2 runs at that version only, and that such a run is a run of its own whose record WR-10's entry names besides the floor record (decision (9)). The whole section is a dated addition of 2026-10-12; what the release workflow reads for WR-10 is a note of the check's own. Delete the proposal file in the same change.
+27. **Definition of Done, §22 Step 4: the table of rows checked by hand, and the code each covers.** The table ADR-0208 asks for, word for word as `docs/agents/proposals/by-hand-rows-table.md` holds it: decisions (3) to (7) — FN-12e as a Windows row and a macOS row, both with the MudBlazor Chrome's Roboto metrics (`MudExGridPresentation.cs`, `RobotoGlyphTable.cs`), a record's commit kept fetchable by its `verified/*` tag, named for the record's directory, and WR-10's row, whose dated notes say that a MudBlazor 9.x published after its record and before X asks for the layer-2 runs at that version only, and that such a run is a run of its own whose record WR-10's entry names besides the floor record (decision (9)), and that an unlisted version is not asked for (decision (10)). The whole section is a dated addition of 2026-10-12; what the release workflow reads for WR-10 is a note of the check's own. Delete the proposal file in the same change.
 28. **Definition of Done, §22 Step 7: the sign-off is made against a candidate, and the rewrite went in on `main`.** The notes branch's edit 5 and the workflow branch's conditional edit C2 replaced the same lines; they are one edit here, two dated notes, with decision (1) (the candidate's pending form; X the candidate's commit) and decision (2).
 29. **CONTEXT.md, Release Notes: what a stable version's and a candidate's notes say.** The notes branch's edit 6, with decision (1)'s pending form and the candidate's note.
 30. **CONTEXT.md, Release Candidate: the new term.** AGENTS.md: a new term goes into the glossary. "Release candidate" is the one kind of version whose name holds "release" and that is a prerelease, which Release Notes' _Avoid_ line warns about.
@@ -335,9 +342,10 @@ New:
          paths changed cannot be checked;
        - a path it names no longer exists;
        - for WR-10, a record its entry names besides the floor record is refused as the floor record would
-         be, but for its paths; or a stable MudBlazor version within the range the Wrappers declare, published
-         before X's commit time by nuget.org's registration index or given no date there, is not among the
-         versions its records' layer-2 runs covered; or that index cannot be read *(2026-10-12, how the release
+         be, its paths compared from its own commit; or a stable MudBlazor version within the range the
+         Wrappers declare, listed on nuget.org and published before X's commit time by its registration index
+         or given no date there, is not among the versions its records' layer-2 runs covered; or that index
+         cannot be read *(2026-10-12, how the release
          workflow checks ADR-0208's notes of that date on WR-10's layer-2 runs)*.
 
        The rows and their paths are Step 4's table, "Rows checked by hand, and the code each covers",
@@ -905,6 +913,8 @@ New:
     date).
   - **A MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that
     version only.** The floor run, layer 3 at 9.6.0, holds while its paths are unchanged.)*
+  *(2026-10-12, decided with the user: **an unlisted version is not asked for.** The release check reports it
+  as out of the check because it is unlisted.)*
   *(2026-10-12, decided with the user: **a layer-2 run at a 9.x published after the floor record is a run of
   its own.** Its record goes in its own `verification/<date>-<name>/` directory, and the run tags the commit
   it verified `verified/` followed by that directory's name, as every run does. WR-10's entry in
@@ -912,15 +922,16 @@ New:
   the floor record. The release check reads every record WR-10's entry names: the floor record's paths hold
   since its commit, and each later record's tag names its commit.)*
   *(2026-10-12, how the release workflow checks the two notes above: each record WR-10's entry names is a
-  pass, names its commit, and is fetched through its tag, which names that commit; the floor record's paths
-  are compared as a row's are, a later record's are not, and two records in one directory are refused. Each
+  pass, names its commit, and is fetched through its tag, which names that commit; each holds while the
+  row's paths are unchanged between its own commit and X, as every record checked by hand is held; and two
+  records in one directory are refused. Each
   record names the MudBlazor versions its layer-2 runs covered, and the check holds the union of them to
   what nuget.org has published: it reads the range each Wrapper's project declares on its reference to
   MudBlazor, reads each version's `published` date from nuget.org's registration index, takes X's time to be
   X's commit time (for a release candidate, the commit it is tagged on), and refuses the tag naming each
   stable version inside the range, published before X's time, that no record names. A version published
-  after X's time is not asked for. One nuget.org gives no date, as an unlisted one, is asked for, since
-  whether it came before X cannot be said. One published before the floor record is asked of the floor
+  after X's time is not asked for, nor is an unlisted one, which a notice names. One listed and given no
+  date is asked for, since whether it came before X cannot be said. One published before the floor record is asked of the floor
   run's layer-2 runs, which cover every published version of the range. An index it cannot read refuses
   the tag as unchecked.)*
 ````
@@ -1006,9 +1017,9 @@ change could change its result.
     its paths changed cannot be checked;
   - a path names nothing;
   - for WR-10, a record its entry names besides the floor record is refused as the floor record would be,
-    but for its paths; or a stable MudBlazor version within the range the Wrappers declare, published before
-    X's commit time by nuget.org's registration index or given no date there, is not among the versions its
-    records' layer-2 runs covered; or that index cannot be read *(2026-10-12, how the release workflow checks
+    its paths compared from its own commit; or a stable MudBlazor version within the range the Wrappers
+    declare, listed on nuget.org and published before X's commit time by its registration index or given no
+    date there, is not among the versions its records' layer-2 runs covered; or that index cannot be read *(2026-10-12, how the release workflow checks
     the WR-10 row's notes below)*.
 - **The records are indexed in `verification/by-hand.json`.** For each row it names the same paths as
   this table, the row's latest record, the commit that record was made at, and the record's tag. *(2026-10-12,
@@ -1069,7 +1080,7 @@ row's and refuses a tag whose Wrappers or demo pages changed since the run.
 | **KB-3** | macOS | Layer 3 on a Mac, where `ControlOrMeta` presses Command: Cmd+Enter fills, on every key path, the editor's included | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Cells/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid.MudBlazor/`, `src/ExSheet/Components/`, `src/ExSheet/SheetFormatKeys.cs`, `src/ExSheet/SheetStructureKeys.cs`, `src/ExSheet/Toolbar/`, `src/ExSheet.MudBlazor/`, `tests/ExGrid.Browser/` |
 | **VZ-18** | the Citrix PC | Ctrl+↓, Ctrl+↑ and PageDown on the Docs Site's blotter paint the rows they reveal, without a further scroll | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExGrid/GridMetrics.cs`, `src/ExGrid/ViewportBox.cs`, `src/ExGrid/ViewportGeometry.cs`, `src/ExGrid/ViewportSize.cs`, `src/ExGrid.MudBlazor/`, `samples/ExGrid.Docs/Examples/Grid/Blotter/`, `samples/ExGrid.Docs/Showcases/Blotter.razor` |
 | **§21.11** | Windows | Where DOM focus is after ↓, → and ↓ ↓ on `/sheet`, with and without a Focus. Read under NVDA, under Narrator, and with neither, on Chrome and Edge | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
-| **WR-10** | Windows or Linux | Step 4's floor run: the layer-3 tests that run under a Wrapper, against a DemoHost built with the MudBlazor every Wrapper declares as its floor, on both hosts, in Chrome and in Edge; and beside it each Wrapper's layer-2 suite at every published version of its declared range. *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only; the floor run, layer 3 at 9.6.0, holds while its paths are unchanged.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own; its record goes in its own `verification/<date>-<name>/` directory, the run tags the commit it verified `verified/` followed by that directory's name, and WR-10's entry in `verification/by-hand.json` names that record besides the floor record. The release check reads every record the entry names: the floor record's paths hold since its commit, and each later record's tag names its commit.)* | `:(glob)src/*.MudBlazor/**`, `samples/ExGrid.DemoPages/` |
+| **WR-10** | Windows or Linux | Step 4's floor run: the layer-3 tests that run under a Wrapper, against a DemoHost built with the MudBlazor every Wrapper declares as its floor, on both hosts, in Chrome and in Edge; and beside it each Wrapper's layer-2 suite at every published version of its declared range. *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only; the floor run, layer 3 at 9.6.0, holds while its paths are unchanged.)* *(2026-10-12, decided with the user: an unlisted version is not asked for; the release check reports it as out of the check because it is unlisted.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own; its record goes in its own `verification/<date>-<name>/` directory, the run tags the commit it verified `verified/` followed by that directory's name, and WR-10's entry in `verification/by-hand.json` names that record besides the floor record. The release check reads every record the entry names: the floor record's paths hold since its commit, and each later record's tag names its commit.)* | `:(glob)src/*.MudBlazor/**`, `samples/ExGrid.DemoPages/` |
 ````
 
 ### 28. docs/definition-of-done.md

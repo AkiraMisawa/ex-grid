@@ -44,7 +44,8 @@ public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> P
 /// run of its own, with a record in a directory of its own, tagged by that directory, which WR-10's entry names
 /// besides the floor record (decided with the user, 2026-10-12); the index names it in <c>laterRecords</c>. Every record the entry
 /// names is checked: each is a pass, names its commit, and is fetched through its tag, which names that commit;
-/// the floor record's paths hold since its commit, a later record's are not compared. The versions the records
+/// and each holds while the row's paths are unchanged between its own commit and the target, as every record
+/// checked by hand is held. The versions the records
 /// cover between them are held to those published within the Wrappers' declared range before X
 /// (<see cref="WrapperRange"/>, 2026-10-12).</para>
 /// </summary>
@@ -188,7 +189,7 @@ public static partial class ByHand
     /// being signed off for a stable version, the tagged commit for a release candidate. The index and
     /// the table are read from <paramref name="tree"/>, the tag's. WR-10's records, once the floor record
     /// otherwise holds, are held besides to the MudBlazor versions <paramref name="mudBlazor"/> gives as published
-    /// within the range the Wrappers declare at <paramref name="target"/> before its commit time, or with no date;
+    /// within the range the Wrappers declare at <paramref name="target"/> before its commit time, or with no date, and listed;
     /// with no list, or one that cannot be read, the row is refused as unchecked.
     /// </summary>
     public static void Check(Git git, ISourceTree tree, string target, Report report, bool fetchMissing, IPublishedVersions? mudBlazor = null)
@@ -231,14 +232,16 @@ public static partial class ByHand
             }
             if (row.Row == WrapperRange.Row)
             {
-                // Every later record the entry names is read as the floor record is, but for its paths: a pass, naming
-                // its commit, fetched through its tag, which names that commit (2026-10-12). The versions are the union
-                // of those the records that hold cover.
+                // Every later record the entry names is read as the floor record is: a pass, naming its commit, fetched
+                // through its tag, which names that commit, and its paths unchanged between its commit and the target, as
+                // every record checked by hand is held (ADR-0208; 2026-10-12). The versions are the union of those the
+                // records that hold cover.
                 var covered = new List<string>(record.Versions ?? []);
                 var laterHold = true;
                 foreach (var later in row.Later ?? [])
                 {
-                    if (Verified(git, tree, row, later, "later record", fetchMissing, report)) covered.AddRange(later.Versions ?? []);
+                    if (Verified(git, tree, row, later, "later record", fetchMissing, report) && LaterHolds(git, row, later, target, report))
+                        covered.AddRange(later.Versions ?? []);
                     else
                     {
                         laterHold = false;
@@ -317,6 +320,17 @@ public static partial class ByHand
             return false;
         }
         return true;
+    }
+
+    // Whether a later record's paths, the row's, are unchanged between its commit and the target, as a record checked by
+    // hand is held (ADR-0208); refused, naming the files, when they are not.
+    private static bool LaterHolds(Git git, ByHandRow row, ByHandRecord later, string target, Report report)
+    {
+        var changed = git.ChangedPaths(later.Commit, target, row.Paths);
+        if (changed.Count == 0) return true;
+        var shown = string.Join(", ", changed.Take(12)) + (changed.Count > 12 ? $", and {changed.Count - 12} more" : "");
+        report.Refuse($"{row.Name}: the code it covers changed between its later record ({later.Path}, made at {later.Commit[..12]}) and {target[..12]}: {shown}. A later record is held as every record checked by hand is, while its paths are unchanged (ADR-0208, 2026-10-12).", IndexPath);
+        return false;
     }
 
     /// <summary>The key of WR-10's entry that names the records of its later layer-2 runs.</summary>

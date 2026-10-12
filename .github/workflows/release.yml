@@ -25,7 +25,7 @@
 #   every row checked by hand holding on a record its code has not changed since, judged at the
 #   tagged commit, the record's commit fetched through its verified/* tag, named for the record's
 #   directory; WR-10's records naming every stable MudBlazor version nuget.org gives as published
-#   within the range the Wrappers declare before X's commit time, or gives no date for — and CI's long run, the soak and ST-1 at 10⁶ rows. Its notes carry a stable version's blocks, its Signed off block in a
+#   and listed within the range the Wrappers declare before X's commit time, or gives no date for — and CI's long run, the soak and ST-1 at 10⁶ rows. Its notes carry a stable version's blocks, its Signed off block in a
 #   pending form of its own that says the sign-off is being made against this candidate; ci.yml's
 #   build of the Docs Site reads them by form, and refuses the stable form there (ADR-0190,
 #   2026-10-12). The release check does not read its Signed off block. Its GitHub release is a
@@ -132,7 +132,8 @@ jobs:
       # unchecked (ADR-0208, 2026-10-12). WR-10's records, the floor record and any later layer-2 run's,
       # name the MudBlazor versions their layer-2 runs covered; nuget.org's registration index gives each
       # version's published date, and each stable one within the range the Wrappers' projects declare,
-      # published before X's commit time or given no date, that no record names refuses the tag, as does an index that
+      # listed and published before X's commit time or given no date, that no record names refuses the tag (an
+      # unlisted one is out of the check), as does an index that
       # cannot be read (ADR-0205, ADR-0208, 2026-10-12). The runner reaches nuget.org.
       - name: The stable path's checks
         if: ${{ !cancelled() && steps.admit.outcome == 'success' && steps.admit.outputs.kind != 'prerelease' }}

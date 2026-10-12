@@ -120,10 +120,10 @@ public sealed record VersionRange(string Text, PackageVersion? Minimum, bool Min
 }
 
 /// <summary>
-/// A version nuget.org has published, and when: <see cref="Published"/> is null where nuget.org gives no date,
-/// as for an unlisted version, whose registration reads 1900-01-01.
+/// A version nuget.org has published, when, and whether it is listed: <see cref="Published"/> is null where
+/// nuget.org gives no date, as for an unlisted version, whose registration reads 1900-01-01.
 /// </summary>
-public sealed record PublishedVersion(string Version, DateTimeOffset? Published);
+public sealed record PublishedVersion(string Version, DateTimeOffset? Published, bool Listed = true);
 
 /// <summary>The versions of MudBlazor nuget.org has published, with their dates, as the release check asks for them.</summary>
 public interface IPublishedVersions
@@ -262,7 +262,7 @@ public sealed class NuGetRegistration(string index, Func<string, string>? read =
 
     // A page's leaves: each catalog entry's version and when it was published. A listed version whose date is
     // missing or unreadable refuses the whole list, rather than letting the version go unasked; an unlisted one,
-    // which nuget.org dates 1900-01-01, has no date.
+    // which nuget.org dates 1900-01-01, has no date, and is read as unlisted.
     private static IReadOnlyList<PublishedVersion>? Leaves(JsonElement page, string where, out string failure)
     {
         failure = "";
@@ -293,7 +293,7 @@ public sealed class NuGetRegistration(string index, Func<string, string>? read =
                 failure = $"{version.GetString()} in {where} is listed and gives no date it was published ('published')";
                 return null;
             }
-            read.Add(new PublishedVersion(version.GetString()!, published));
+            read.Add(new PublishedVersion(version.GetString()!, published, listed));
         }
         return read;
     }
@@ -307,15 +307,16 @@ public sealed class NuGetRegistration(string index, Func<string, string>? read =
 /// asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are
 /// unchanged." And: a layer-2 run at a 9.x published after the floor record is a run of its own, recorded in a
 /// directory of its own and tagged by it, and WR-10's entry in the index names its record besides the floor
-/// record.</para>
+/// record. And: an unlisted version is not asked for; the release check reports it as out of the check because it
+/// is unlisted.</para>
 /// <para>How the check reads it: each version's date is the <c>published</c> date nuget.org's registration
 /// index gives, and X's time is X's commit time, as git gives it (the tagged commit for a release candidate).
 /// Every stable version inside the range the Wrappers declare at X, published before X's time, must be named by
 /// one of WR-10's records that holds: one published before the floor record by the floor run's layer-2 runs,
 /// which cover every published version of the range; one published after it by them or by a later record. A
-/// version published after X's time is not asked for. A version nuget.org gives no date for, as an unlisted one,
-/// is asked for, since whether it came before X cannot be said. A list it cannot read refuses the tag: it never
-/// passes unread.</para>
+/// version published after X's time is not asked for, nor is an unlisted one, which a notice names. A listed
+/// version nuget.org gives no date for is asked for, since whether it came before X cannot be said. A list it
+/// cannot read refuses the tag: it never passes unread.</para>
 /// </summary>
 public static class WrapperRange
 {
@@ -395,7 +396,7 @@ public static class WrapperRange
 
     /// <summary>
     /// The stable versions of <paramref name="published"/> inside any range in <paramref name="declared"/>, published
-    /// before <paramref name="before"/> or with no date, that <paramref name="covered"/> does not name, in order.
+    /// before <paramref name="before"/> or with no date, and listed, that <paramref name="covered"/> does not name, in order.
     /// </summary>
     public static IReadOnlyList<PublishedVersion> Missing(IReadOnlyList<Declared> declared, IEnumerable<PublishedVersion> published, IEnumerable<string> covered, DateTimeOffset before)
     {
@@ -405,11 +406,11 @@ public static class WrapperRange
             .ToList();
     }
 
-    // The stable versions inside the range published before X's time, or with no date, one each, in order.
+    // The listed stable versions inside the range published before X's time, or with no date, one each, in order.
     private static IReadOnlyList<PublishedVersion> Asked(IReadOnlyList<Declared> declared, IEnumerable<PublishedVersion> published, DateTimeOffset before) =>
         published
             .Select(p => (Item: p, Version: PackageVersion.Parse(p.Version)))
-            .Where(p => p.Version is { IsStable: true } v && declared.Any(d => d.Range.Contains(v)) && (p.Item.Published is null || p.Item.Published < before))
+            .Where(p => p.Item.Listed && p.Version is { IsStable: true } v && declared.Any(d => d.Range.Contains(v)) && (p.Item.Published is null || p.Item.Published < before))
             .DistinctBy(p => p.Version!.ToString())
             .OrderBy(p => p.Version)
             .Select(p => p.Item)
@@ -437,8 +438,12 @@ public static class WrapperRange
             report.Refuse($"{row.Name}: {Package}'s published versions could not be read from {published.Source} ({failure}), so whether its records' layer-2 runs cover every version published before X in the range the Wrappers declare ({ranges}) cannot be checked. The tag is refused as unchecked (ADR-0205, ADR-0208, 2026-10-12).", ByHand.IndexPath);
             return null;
         }
+        bool InRange(PublishedVersion p) => PackageVersion.Parse(p.Version) is { IsStable: true } v && declared.Any(d => d.Range.Contains(v));
+        var unlisted = listed.Where(p => !p.Listed && InRange(p)).Select(p => p.Version).Distinct().ToList();
+        if (unlisted.Count > 0)
+            report.Notice($"{row.Name}: {Package} {string.Join(", ", unlisted)}, within the range the Wrappers declare, {(unlisted.Count == 1 ? "is" : "are")} out of the check because {(unlisted.Count == 1 ? "it is" : "they are")} unlisted on nuget.org (ADR-0205, ADR-0208, 2026-10-12).");
         var after = listed
-            .Where(p => p.Published is { } when && when >= x && PackageVersion.Parse(p.Version) is { IsStable: true } v && declared.Any(d => d.Range.Contains(v)))
+            .Where(p => p.Listed && p.Published is { } when && when >= x && InRange(p))
             .Select(p => p.Version).Distinct().ToList();
         if (after.Count > 0)
             report.Notice($"{row.Name}: {Package} {string.Join(", ", after)}, published within the range the Wrappers declare after X ({x.UtcDateTime:yyyy-MM-dd HH:mm:ss}Z, its commit time), {(after.Count == 1 ? "is" : "are")} not asked for (ADR-0205, ADR-0208, 2026-10-12).");
@@ -456,7 +461,7 @@ public static class WrapperRange
             if (later.Count > 0)
                 parts.Add($"{string.Join(", ", later.Select(When))}, published after the floor record and before X, which {(later.Count == 1 ? "asks" : "ask")} for each Wrapper's layer-2 suite at that version only, a run of its own whose record goes in a directory of its own, tagged by it and named in WR-10's entry in {ByHand.IndexPath} besides the floor record");
             if (undated.Count > 0)
-                parts.Add($"{string.Join(", ", undated.Select(When))}, for which nuget.org gives no date, so whether it came before X cannot be said");
+                parts.Add($"{string.Join(", ", undated.Select(When))}, listed, though nuget.org gives no date for it, so whether it came before X cannot be said");
             report.Refuse($"{row.Name}: {Package} {string.Join(", ", missing.Select(m => m.Version))}, published within the range the Wrappers declare ({ranges}), "
                 + $"{(missing.Count == 1 ? "is" : "are")} not among the versions its records' layer-2 runs covered ({named}): {string.Join("; ", parts)}. "
                 + "The floor run holds while its paths are unchanged (ADR-0205, ADR-0208, 2026-10-12).", ByHand.IndexPath);
