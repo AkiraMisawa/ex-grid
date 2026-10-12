@@ -504,8 +504,11 @@ The record is **`expivot.md`**, one row per item; the cells side by side in `par
   characters, ExPivot's fifteen digits; Excel truncates a CSV's numbers to fifteen digits on opening it).
 - **Observed besides**: items 1 (for text), 9, 12 (with Excel's `Column Labels` corner row, which ExPivot does not draw)
   and 14. **Item 13** differs in wording: Excel's `Total Sum of Amount` grand total columns.
+- **Item 27**, Excel's Japanese edition: **observed**. Excel was put in Japanese through its own Options, after the
+  Japanese language accessory pack was installed with the user's approval, then put back. Every word of the reading
+  that ExPivot paints is Excel's. ExPivot does not paint `列ラベル`, having no corner row.
 - **Not run in this pass**: items 10, 11, 18 to 26 and 28 (layout and wording only; Excel's Field List gestures need its
-  pane driven by hand), and 27 (Excel's display language is English (UK); the user is to be asked at the end).
+  pane driven by hand).
 
 ## Parts F to H
 
