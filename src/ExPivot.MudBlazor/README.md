@@ -38,9 +38,10 @@ dotnet add package ExPivot.MudBlazor
 
 Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
 
-This brings in ExPivot, ExGrid.MudBlazor and MudBlazor 9: the package takes `[9.0.0,10.0.0)`, any
-9.x from 9.0.0, and an application on MudBlazor 10 is told so at restore (NU1608). Set MudBlazor up
-as usual:
+This brings in ExPivot, ExGrid.MudBlazor and MudBlazor 9: the package takes `[9.6.0,10.0.0)`, any
+9.x from 9.6.0. An application that references an earlier 9.x is stopped at restore (NU1605, an
+error by default) and moves MudBlazor up within 9; one on MudBlazor 10 is warned (NU1608, a warning
+unless the application treats it as an error). Set MudBlazor up as usual:
 
 - `builder.Services.AddMudServices()`
 - MudBlazor's stylesheet and script

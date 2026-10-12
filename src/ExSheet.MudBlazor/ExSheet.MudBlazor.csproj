@@ -9,9 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The range ExGrid.MudBlazor takes: 9.x from its floor, resolved upward by the
-         application (ADR-0022), and MudBlazor 10 told at restore (ADR-0205). -->
-    <PackageReference Include="MudBlazor" Version="[9.0.0,10.0.0)" />
+    <!-- The range ExGrid.MudBlazor takes: 9.x from its floor, 9.6.0, resolved upward by the
+         application (ADR-0022), and MudBlazor 10 warned at restore (ADR-0205). Below 9.4.0
+         Format Cells' dropdowns have no role and no name where the keyboard is. -->
+    <PackageReference Include="MudBlazor" Version="[9.6.0,10.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

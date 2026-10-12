@@ -55,13 +55,14 @@ done
 coredeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid)" | sort)
 [ "$coredeps" = "$(printf '%s\n' '<dependency id="Microsoft.AspNetCore.Components.Web" version="10.0.0"' "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" | sort)" ] \
   || fail "ExGrid's dependencies are not exactly Microsoft.AspNetCore.Components.Web 10.0.0 and ExGrid.Data $version: $coredeps"
-# The Wrapper takes exactly this core (ADR-0042) and MudBlazor 9, from its floor and not 10: a
-# Consumer on MudBlazor 10 is told at restore (ADR-0205). Each Wrapper declares that one range.
-mudblazor='<dependency id="MudBlazor" version="[9.0.0, 10.0.0)"'
+# The Wrapper takes exactly this core (ADR-0042) and MudBlazor 9, from its floor, 9.6.0, and not
+# 10: a Consumer on an earlier 9.x or on MudBlazor 10 is told at restore (ADR-0205). Each Wrapper
+# declares that one range.
+mudblazor='<dependency id="MudBlazor" version="[9.6.0, 10.0.0)"'
 # Nothing else: what PRE-3 names for it, read as the other packages' lists are.
 gridmuddeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid.MudBlazor)" | sort)
 [ "$gridmuddeps" = "$(printf '%s\n' "<dependency id=\"ExGrid\" version=\"[$version]\"" "$mudblazor" | sort)" ] \
-  || fail "ExGrid.MudBlazor's dependencies are not exactly ExGrid $version and MudBlazor [9.0.0, 10.0.0): $gridmuddeps"
+  || fail "ExGrid.MudBlazor's dependencies are not exactly ExGrid $version and MudBlazor [9.6.0, 10.0.0): $gridmuddeps"
 # The engine depends on nothing at all: a server computes a Sheet with it alone (ADR-0047, SH-1).
 if grep -q '<dependency ' <<<"$(nuspec ExSheet.Engine)"; then fail "ExSheet.Engine declares a dependency"; fi
 # ExSheet depends on exactly the core and the engine it was built with, and on nothing else: the
@@ -75,7 +76,7 @@ sheetdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExShee
 # one static asset is its stylesheet (ADR-0021).
 mudsheetdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExSheet.MudBlazor)" | sort)
 [ "$mudsheetdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.MudBlazor\" version=\"[$version]\"" "<dependency id=\"ExSheet\" version=\"[$version]\"" "$mudblazor" | sort)" ] \
-  || fail "ExSheet.MudBlazor's dependencies are not exactly ExGrid.MudBlazor $version, ExSheet $version and MudBlazor [9.0.0, 10.0.0): $mudsheetdeps"
+  || fail "ExSheet.MudBlazor's dependencies are not exactly ExGrid.MudBlazor $version, ExSheet $version and MudBlazor [9.6.0, 10.0.0): $mudsheetdeps"
 if grep -qiE '\.(js|mjs|cjs)$' <<<"$(entries ExSheet.MudBlazor)"; then fail "ExSheet.MudBlazor ships a script"; fi
 grep -qxF 'staticwebassets/mud-ex-sheet.min.css' <<<"$(entries ExSheet.MudBlazor)" || fail "ExSheet.MudBlazor is missing staticwebassets/mud-ex-sheet.min.css"
 # What ships is minified, with its source map, and the sources stay home (ADR-0123): every script
@@ -117,7 +118,7 @@ pivotdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivo
 # in the range the grid's Wrapper takes (ADR-0062, ADR-0205).
 muddeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.MudBlazor)" | sort)
 [ "$muddeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.MudBlazor\" version=\"[$version]\"" "<dependency id=\"ExPivot\" version=\"[$version]\"" "$mudblazor" | sort)" ] \
-  || fail "ExPivot.MudBlazor's dependencies are not exactly ExPivot and ExGrid.MudBlazor $version and MudBlazor [9.0.0, 10.0.0): $muddeps"
+  || fail "ExPivot.MudBlazor's dependencies are not exactly ExPivot and ExGrid.MudBlazor $version and MudBlazor [9.6.0, 10.0.0): $muddeps"
 
 # The release publishes .feed as it is, so it holds the ten packages and their symbol packages, and
 # nothing else (ADR-0042).

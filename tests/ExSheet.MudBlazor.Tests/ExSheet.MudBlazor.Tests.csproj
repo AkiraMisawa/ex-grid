@@ -3,7 +3,8 @@
   <PropertyGroup>
     <!-- The same shape as tests/ExGrid.MudBlazor.Tests: net10.0 on xunit.v3 and
          Microsoft.Testing.Platform, no apphost (tests/Directory.Build.targets says why). It runs
-         ExSheet.MudBlazor on MudBlazor's floor, 9.0.0, as the Wrapper's tests do (ADR-0022). -->
+         ExSheet.MudBlazor on MudBlazor's floor, 9.6.0, as the Wrapper's tests do (ADR-0022,
+         ADR-0205): NuGet resolves the lowest version the Wrapper's range allows. -->
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
