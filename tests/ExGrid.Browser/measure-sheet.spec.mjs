@@ -24,6 +24,10 @@ import { candidates, clickCell, editor, openSheet, sheet } from './sheet-helpers
 //
 // The same keystrokes are measured with no round trip too, on the same host: the host's own share
 // of the time, for comparison. Only the 150 ms case is SH-19's.
+//
+// Each key is measured twelve times at each round trip; EXGRID_MEASURE_RUNS=<n> sets another
+// count, which changes what is recorded, so a record names it when it is not twelve. The median of
+// an even count is the mean of the two middle runs.
 
 const MEASURE = process.env.EXGRID_MEASURE;
 const RUNS = Number(process.env.EXGRID_MEASURE_RUNS ?? 12);
@@ -33,7 +37,8 @@ test.skip(MEASURE === 'sheet' && !SERVER, 'SH-19\'s completion is measured on a 
 
 const median = (values) => {
     const sorted = [...values].sort((a, b) => a - b);
-    return sorted.length === 0 ? null : sorted[Math.floor(sorted.length / 2)];
+    const n = sorted.length;
+    return n === 0 ? null : (sorted[Math.floor((n - 1) / 2)] + sorted[Math.floor(n / 2)]) / 2;
 };
 
 /** The median, the best and the worst of a number over the runs, to a tenth of a millisecond. */

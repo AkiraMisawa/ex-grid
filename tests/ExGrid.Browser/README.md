@@ -494,7 +494,9 @@ nobody had asked for. What that means when writing a test:
   (`=S`) and as it narrows (`=SU`), and the same keys with no round trip for comparison. It skips
   itself unless `EXGRID_MEASURE=sheet`, and on WebAssembly. Timed in the page's own clock, from
   the keydown's `timeStamp` to the frame after the DOM change that shows the list for what was
-  typed. SH-19's recalculation half is CoreCLR's: `tests/ExSheet.Engine.Tests`' `Measurements`.
+  typed. Twelve runs of each key at each round trip; `EXGRID_MEASURE_RUNS=<n>` sets another count,
+  which changes what is recorded. SH-19's recalculation half is CoreCLR's:
+  `tests/ExSheet.Engine.Tests`' `Measurements`.
 - `mud.spec.mjs` — the Wrapper contract with a real Wrapper, `ExGrid.MudBlazor` on
   `/mud` (ADR-0030): painted geometry equals declared under the Wrapper's stylesheet
   and Roboto (UX-3), nothing under the Viewport animates (UX-6), the Focus outline

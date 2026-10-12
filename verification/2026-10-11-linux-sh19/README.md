@@ -1,7 +1,9 @@
 # SH-19 measured: ExSheet's recalculation at a large Sheet, and completion on a circuit
 
-Date: 2026-10-11, from 21:40 to 22:45 UTC. Branch `claude/sh19-measure`, on `e3ad9a50`; the
-measurements are the commit that adds this record.
+Date: 2026-10-11, from 21:40 to 22:45 UTC, and after review on 2026-10-12, from 00:04 UTC. Branch
+`claude/sh19-measure`, on `e3ad9a50`. The passes of 2026-10-11 measured the commit that first added
+this record (`b9383e3e`); those of 2026-10-12 the commit after review, which changed only what is
+checked outside the clock and how the browser spec takes a median.
 
 SH-19 is OBSERVATIONAL in the Definition of Done (§27): recorded, never gated. Its case was decided
 with the user on 2026-10-11: a synthetic Sheet from a fixed seed, 10,000 rows by 20 columns with about
@@ -61,8 +63,17 @@ nix develop -c dotnet tests/ExSheet.Engine.Tests/bin/Release/net10.0/ExSheet.Eng
 - **A row inserted near the top** is `Sheet.Do(SheetEdit.InsertRows(1))`, a row inserted at row 2, as
   Ctrl with + inserts one. Its undo puts the Sheet back for the next run, and is timed too.
 - Each time is taken seven times, after two runs to warm up, each from a collected heap; the median,
-  best and worst are given. Every run's Values are checked against the same arithmetic done in the
-  test, so no time is of a wrong answer.
+  best and worst are given.
+- **Each timed run is checked after it, outside the clock**, against the same arithmetic done in the
+  test, so that no time is of a wrong answer: every Formula's text in P to T and in V, every Value of
+  P to T, all twenty totals, and for an edit and an insertion how many Formulas it recalculated. A
+  row inserted is checked before its undo: row 2 holds nothing, every number of the block and of its
+  totals is one row further down and unchanged, and every Formula reads where its cells went (S3 is
+  `=S1+R3`). The undone Sheet is checked as it was before the insertion.
+
+  *(Changed after review, 2026-10-12. The passes before the fourth checked less: R, S and T and the
+  one total V18, once after each series, and the inserted Sheet only after it was undone. The timed
+  work is the same. The fourth and fifth passes ran the checks as committed, and every check held.)*
 
 **Completion, on the Server host** — `tests/ExGrid.Browser/measure-sheet.spec.mjs`, which skips
 itself unless `EXGRID_MEASURE=sheet`, and on WebAssembly:
@@ -106,6 +117,11 @@ The second pass, at a load average of 3.6 to 5.9 (22:18 to 22:19 UTC):
 The first pass, at a load average of 9 to 22 while other agents' suites ran, gave 649 ms, 140 ms,
 79 ms, 30 ms, 1,781 ms and 2,618 ms: the same order, wider spread (`raw/coreclr-pass1-all.log`).
 
+The fourth pass, with every run checked as committed, ran on 2026-10-12 from 00:04 to 00:06 UTC at a
+load average of 25 to 31, the busiest of any pass here: 709 ms, 92 ms, 65 ms, 21 ms, 2,194 ms and
+3,325 ms, the same order again, and every check held (`raw/coreclr-pass4-sh19-checked.log`). The
+second pass's table stays this record's numbers, being the one taken on the quietest machine.
+
 ### A variant: every row reading a whole column
 
 The decided case puts its whole-column `SUM`s beside the block, twenty of them. A Sheet also often
@@ -130,25 +146,52 @@ The third pass, from 22:30 to 22:44 UTC at a load average of 4 to 6:
 The first pass, at a load average of 9 to 22, gave 84.1 s, 46.7 s, 46.2 s, 51 ms, 44.9 s and 49.8 s,
 and a trial of the full recalculation alone, at about 6, gave 74.3 s.
 
+The fifth pass, with every run checked as committed, ran on 2026-10-12 from 00:07 to 00:23 UTC at a
+load average of 13 to 17: built in 100.1 s, then 76.5 s, 42.5 s, 39.0 s, 22 ms, 47.6 s and
+52.5 s, with 20,009, 10,010, 1 and 50,016 Formulas recalculated as before, and every check held
+(`raw/coreclr-pass5-variant-checked.log`).
+
 ## Completion on a circuit
 
-The third pass, with the spec as committed, from 22:26 to 22:29 UTC at a load average of 13 falling
+The third pass, with the spec as first committed, from 22:26 to 22:29 UTC at a load average of 13 falling
 to 3: three repetitions of twelve runs, 36 keystrokes of each kind. The time is from the keydown to
 the animation frame after the list shows what was typed; the time to the DOM change itself is under
 a millisecond less at 150 ms (`metrics.json` has both, for each repetition).
 
 | The key | Round trip | Median of the three repetitions | All 36 runs: median | Best | Worst |
 |---|---:|---|---:|---:|---:|
-| **S**, the list opens | **150 ms** | 158.9, 164.9, 159.9 ms | **160.1 ms** | 157.7 ms | 190.3 ms |
-| **U**, the list narrows | **150 ms** | 198.9, 198.8, 200.4 ms | **199.1 ms** | 156.9 ms | 206.6 ms |
-| S, the list opens | 0 ms | 23.5, 26.3, 20.5 ms | 22.8 ms | 8.0 ms | 49.8 ms |
-| U, the list narrows | 0 ms | 24.2, 19.4, 19.8 ms | 20.0 ms | 11.0 ms | 44.7 ms |
+| **S**, the list opens | **150 ms** | 158.9, 163.0, 159.9 ms | **160.0 ms** | 157.7 ms | 190.3 ms |
+| **U**, the list narrows | **150 ms** | 198.5, 198.2, 200.3 ms | **199.0 ms** | 156.9 ms | 206.6 ms |
+| S, the list opens | 0 ms | 23.5, 25.2, 20.5 ms | 22.4 ms | 8.0 ms | 49.8 ms |
+| U, the list narrows | 0 ms | 23.8, 19.4, 19.3 ms | 19.9 ms | 11.0 ms | 44.7 ms |
+
+*(The medians corrected after review, 2026-10-12. The spec as it ran took the upper of the two
+middle runs of twelve for its median, and so did this table. Each is now the mean of the two middle
+runs, from the time of each run, which the spec kept; the spec takes its median that way since.
+`metrics.json` keeps the `median` fields as `record()` wrote them, and says so.)*
 
 The narrowing times fall in two clusters: 29 of the 36 between 190 and 207 ms, the other 7 between
 157 and 166 ms. The two earlier passes, with earlier versions of the spec that read the same times,
-agree: the list opened at medians of 159 to 172 ms and narrowed at 169 to 200 ms.
+agree: the list opened at medians of 159 to 170 ms and narrowed at 168 to 200 ms (the first pass's
+are the upper of the two middle runs, since that spec kept no time of each run).
 
-**Forty milliseconds of the narrowing are the latency proxy's, not the product's.** The proxy's
+The fourth pass, with the spec as committed after review, ran on 2026-10-12 from 02:03 to 02:06 UTC
+at a load average of 7 to 17, three repetitions of twelve runs again; then without `EXGRID_MEASURE`
+on the Server host, and with it on WebAssembly, the spec skipped three times each
+(`raw/browser-pass4-median.log`):
+
+| The key | Round trip | Median of the three repetitions | All 36 runs: median | Best | Worst |
+|---|---:|---|---:|---:|---:|
+| **S**, the list opens | **150 ms** | 163.9, 162.3, 165.8 ms | **163.9 ms** | 158.4 ms | 184.8 ms |
+| **U**, the list narrows | **150 ms** | 192.4, 159.8, 164.7 ms | **168.0 ms** | 156.9 ms | 206.0 ms |
+| S, the list opens | 0 ms | 26.8, 24.7, 23.9 ms | 25.3 ms | 15.6 ms | 92.8 ms |
+| U, the list narrows | 0 ms | 24.5, 23.5, 29.9 ms | 24.9 ms | 10.7 ms | 80.9 ms |
+
+Here only 9 of the 36 narrowing times fell in the upper cluster, between 197 and 206 ms; the other
+27 lay between 157 and 187 ms. How often the wait below falls changes from pass to pass, and the
+narrowing's median moves with it, by 31 ms between the third pass and this one.
+
+**Up to forty milliseconds of the narrowing are the latency proxy's, not the product's.** The proxy's
 sockets are Node's defaults, which keep Nagle's algorithm on (`latency-proxy.mjs` never calls
 `setNoDelay`). When the host writes two small messages back to back, the proxy writes them to the
 browser's socket back to back after the delay, and the second can be held until the browser
@@ -161,7 +204,7 @@ to the proxy (22:24 to 22:26 UTC, a load average of 12):
 | The key | Round trip | Median | Best | Worst |
 |---|---:|---:|---:|---:|
 | S, the list opens | 150 ms | 163.3 ms | 159.6 ms | 251.2 ms |
-| U, the list narrows | 150 ms | **159.0 ms** | 157.3 ms | 186.7 ms |
+| U, the list narrows | 150 ms | **158.9 ms** | 157.3 ms | 186.7 ms |
 
 The proxy was put back as it is in the repository afterwards; every number above that table was
 taken through it unchanged.
@@ -170,8 +213,14 @@ taken through it unchanged.
 
 Observations, not decisions: what to do about any of them is the user's.
 
-- **SH-19's case recalculates in well under a second, and an edit in under a tenth.** The full
-  recalculation is 0.6 s; an edit that runs down the whole 10,000-cell running total is 87 ms.
+- **Read as this record reads it, SH-19's case recalculates in well under a second, and an edit in
+  under a tenth.** The full recalculation is 0.6 s; an edit that runs down the whole 10,000-cell
+  running total is 87 ms. That is one reading's result, not a decided one. The case says "10,000 rows
+  by 20 columns … and `SUM` over whole columns", and this record puts the twenty whole-column `SUM`s
+  beside the block. A whole-column `SUM` can as well sit inside it, in any column but the one it
+  reads — the variant below, each row's share of a total — and read that way an edit takes about
+  45 s and holds the circuit as long, where the spec asks that "a large Sheet stays responsive"
+  (`docs/specs/exsheet/spec.md`, story 19). Which reading SH-19 means is the user's to say.
 - **An edit's time follows the whole-column `SUM`s it reaches more than the cells it recalculates.**
   One Formula, `=SUM(O:O)`: 17 ms. Eleven, six of them whole-column `SUM`s: 41 ms. 10,010, the same
   six and the 10,000-cell running total: 87 ms. Not profiled. Read as a sum, each whole-column `SUM`
@@ -196,10 +245,12 @@ Observations, not decisions: what to do about any of them is the user's.
 
   The edit to O5000, which reaches no `R`, stays at 26 ms. The engine is synchronous (`Sheet`'s
   remarks), so on the Server host the circuit that holds the Sheet is held as long.
-- **On a circuit of 150 ms, the list is on screen one round trip and about 10 ms after the key.**
-  It opens at a median of 160 ms. It narrows at 199 ms through the suite's latency proxy, and at
-  159 ms with the proxy's Nagle wait taken out; on the host with no round trip, both take about
-  20 ms. So nearly all of SH-19's keystroke-to-list time is the round trip itself.
+- **On a circuit of 150 ms, the list is on screen one round trip and about 10 to 15 ms after the
+  key.** It opens at a median of 160 ms (164 ms in the fourth pass). It narrows at 199 ms through
+  the suite's latency proxy in the third pass and at 168 ms in the fourth, as the proxy's wait fell
+  on 29 and on 9 of the 36 runs, and at 159 ms with that wait taken out; on the host with no round
+  trip, both take about 20 to 25 ms. So nearly all of SH-19's keystroke-to-list time is the round
+  trip itself.
 - **The suite's latency proxy adds up to 40 ms to an answer that arrives as two messages.** It is
   the harness's, and it can be in any number taken through it at a round trip above 0, here and in
   earlier records. Whether to turn Nagle off in the proxy is not this record's to
@@ -214,6 +265,13 @@ Observations, not decisions: what to do about any of them is the user's.
 - **The completion measurement on the decided Sheet.** SH-19's case names no Sheet for completion,
   and the candidates are the declared functions and the Linked Tables, not the Sheet's cells, so it
   ran on `/sheet`, the demo's Sheet.
+- **Two costs that ADRs say SH-19 measures.** ADR-0050 says a paste over whole columns "is executed
+  and measured (SH-19)", and ADR-0124 that what volatile Formulas cost at a large Sheet "is measured,
+  not asserted (SH-19)". The case decided on 2026-10-11 names neither, and this record measures
+  neither: it pastes nothing, and its Sheet holds no volatile function. Whether SH-19's case grows to
+  cover them is the user's to decide.
+- **A decided reading of the case.** Where its whole-column `SUM`s stand changes an edit's time a
+  hundredfold (What the numbers say, the first point); this record took one reading.
 
 ## Raw
 
@@ -224,14 +282,18 @@ lines.
 |---|---|
 | `coreclr-trial-full-recalculation.log` | 21:40 UTC: the full recalculation of both layouts, from an earlier version of `Measurements.cs` whose layouts were the same |
 | `coreclr-pass1-all.log` | 21:51 to 22:08 UTC: all four measurements, at a load average of 9 to 22; that version reported an insertion's and its undo's collections together |
-| `coreclr-pass2-sh19.log` | 22:18 to 22:19 UTC: SH-19's three, as committed; the numbers above |
-| `coreclr-pass3-variant.log` | 22:30 to 22:44 UTC: the variant, as committed; the numbers above |
+| `coreclr-pass2-sh19.log` | 22:18 to 22:19 UTC: SH-19's three, as first committed (`b9383e3e`); the numbers above |
+| `coreclr-pass3-variant.log` | 22:30 to 22:44 UTC: the variant, as first committed; the numbers above |
 | `browser-pass1.log` | 22:15 to 22:18 UTC: the spec with each run's time not yet kept |
 | `browser-pass2.log` | 22:20 to 22:24 UTC: the spec reading also the first DOM change after the key, which came from the grid's own handling of the key about 2 ms after it and told nothing, so it was taken out; with the skip runs on both hosts after it |
 | `browser-experiment-nagle-off.log` | 22:24 to 22:26 UTC: the experiment, with the proxy changed locally |
-| `browser-pass3-final.log` | 22:26 to 22:30 UTC: the spec as committed, `--repeat-each=3` on the Server host; then without `EXGRID_MEASURE` on the Server host, and with it on WebAssembly, each skipping three times |
+| `browser-pass3-final.log` | 22:26 to 22:30 UTC: the spec as first committed, `--repeat-each=3` on the Server host; then without `EXGRID_MEASURE` on the Server host, and with it on WebAssembly, each skipping three times |
+| `coreclr-pass4-sh19-checked.log` | 2026-10-12, 00:04 to 00:06 UTC: SH-19's three with every run checked, as committed after review |
+| `coreclr-pass5-variant-checked.log` | 2026-10-12, 00:07 to 00:23 UTC: the variant with every run checked, as committed after review |
+| `browser-pass4-median.log` | 2026-10-12, 02:03 to 02:08 UTC: the spec as committed after review, `--repeat-each=3` on the Server host; then without `EXGRID_MEASURE` on the Server host, and with it on WebAssembly, each skipping three times |
 
-The fixtures' own run record, `verification/2026-10-11-linux/`, was deleted after each run: a run
-of the bundled Chromium is not a Step 4 record. Its `console.json` was empty each time, so no test
+The fixtures' own run record, `verification/2026-10-11-linux/` (and `verification/2026-10-12-linux/`
+for the fourth pass), was deleted after each run: a run of the bundled Chromium is not a Step 4
+record. Its `console.json` was empty each time, so no test
 saw a console error or warning (CON-1 to CON-3). Its `metrics.json` is `chromium-local.chrome` in
 this record's `metrics.json`: the last repetition, as `record()` writes it.
