@@ -264,14 +264,18 @@ def g_expm1_log1p(rate, n, p):
 
 
 def g_pv_fv(rate, n, p):
-    """The PV/FV model (2026-10-12): squaring for a whole n, 1 over it for a negative one, the C library's
-    exp(n log(1+rate)) otherwise, all in doubles. Python's math.exp and math.log are glibc's, as .NET's on Linux."""
+    """The PV/FV model (2026-10-12): squaring for a whole n, 1 over it for a negative one, and otherwise the
+    ^ operator's evaluation (the engine's Arithmetic.Power): the C library's exp(n log(1+rate)), but the
+    square root correctly rounded at an n of exactly 0.5 (ARITH-133), all in doubles. Python's math.exp,
+    math.log and math.sqrt are glibc's, as .NET's on Linux."""
     b = 1 + float(rate.v)
     if n == int(n):
         k = abs(int(n))
         g = float(g_square_rtl(N(rate.v), k, 53).v) if k else 1.0
         return N(Q(g if n >= 0 else 1 / g))
-    return N(Q(math.exp(float(n) * math.log(b))))
+    if float(n) == 0.5:
+        return N(Q(math.sqrt(b)))
+    return N(Q(math.exp(math.log(b) * float(n))))
 
 
 GROWTH = {

@@ -140,11 +140,20 @@
     {
       "id": "FV-016",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: half a period, where the square root of 1+rate, which the ^ operator takes for an exponent of 0.5 (ARITH-133), and e^(0.5 ln(1+rate)) differ in the last place (the square root gives 45.627983043166275)",
+      "description": "Engine's answer, Excel to be asked: half a period, where the square root of 1+rate, which the ^ operator takes for an exponent of 0.5 (ARITH-133) and FV therefore takes, and e^(0.5 ln(1+rate)) differ by one unit in the last place (e^(0.5 ln(1+rate)) gives 45.62798304316633, 8 units from this)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.42,0.5,-100)"},
       "check": "ZZ1000",
-      "expect": {"value2": 45.62798304316633}
+      "expect": {"value2": 45.627983043166275}
+    },
+    {
+      "id": "FV-017",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a third of a period at a rate below -1, refused, where the ^ operator gives a negative base an odd root (as =(-8)^(1/3) is -1.9999999999999998, which gives 0.3333333333333333 here) and e^(nper ln(1+rate)) has no answer (#NUM!)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(-9,1/3,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

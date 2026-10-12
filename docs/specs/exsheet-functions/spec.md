@@ -245,10 +245,10 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | Function | Status | Priority | Notes |
 |---|---|---|---|
 | `PMT` | Supported | — | At a rate other than 0, an `nper` that is not a whole number from 0 is #VALUE! (ADR-0047, note of 2026-10-12). Excel gives a General cell its currency format on entry (the area pass of 2026-10-12 read `$#,##0.00_);[Red]($#,##0.00)` for PMT, PV, FV and NPV); ExSheet gives none |
-| `PV` | Supported | — | `type` is read as a truth value; any `nper` is answered |
-| `FV` | Supported | — | `type` is read as a truth value; any `nper` is answered |
+| `PV` | Supported | — | `type` is read as a truth value; any `nper` is answered, but one that is not a whole number at a rate below -1 is #VALUE! until Excel is asked (PV-011) |
+| `FV` | Supported | — | `type` is read as a truth value; any `nper` is answered, but one that is not a whole number at a rate below -1 is #VALUE! until Excel is asked (FV-017) |
 | `NPV` | Blocked | P3 | Observed: no evaluation searched gives every double Excel gave, to the last bit (NPV-001 to 008, `spikes/exsheet-financial-evaluation/`). Refused for 0.1.0 as IRR is (ADR-0202, note of 2026-10-12). Ticket 13 |
-| `XNPV` | Supported | — | |
+| `XNPV` | Supported | — | A rate of -1 or below is #VALUE! until Excel is asked (XNPV-007 to 010) |
 | `IRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
 | `XIRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
 | `RATE` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
@@ -379,7 +379,9 @@ function Excel adds is listed here.
     list is no longer what the engine refuses; see the list's paragraph.)*
 14. **The area pass of 2026-10-12 asked the financial functions' open cases** (ADR-0202's note of
     that date, `verification/2026-10-12-windows-area/`). `PV` and `FV` answer any `nper` and any `type`
-    as Excel does, to the last bit. `PMT` reads `type` as they do; a non-whole or negative `nper` is
+    as Excel does, to the last bit, but for an `nper` that is not a whole number at a rate below -1;
+    that, and `XNPV` at a rate of -1 or below, are refused until Excel is asked, since the evaluations
+    Excel's doubles leave part there. `PMT` reads `type` as they do; a non-whole or negative `nper` is
     refused, and five of its payments differ from Excel's by one to three units in the last place,
     which no evaluation searched explains, so whether it is corrected or refused is the user's
     question. `NPV` is Blocked: no evaluation searched gives every double Excel gave for it. Ticket 13

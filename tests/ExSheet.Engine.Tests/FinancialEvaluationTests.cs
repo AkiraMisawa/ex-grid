@@ -1,3 +1,4 @@
+using System.Numerics;
 using Xunit;
 using static ExSheet.Engine.Tests.SheetTestExtensions;
 
@@ -10,7 +11,7 @@ namespace ExSheet.Engine.Tests;
 /// every case's double; <c>spikes/exsheet-financial-evaluation/</c> searched the evaluations that give
 /// them. PV and FV are the doubles' evaluation of Microsoft's identity, the payment times
 /// (1+rate*type)*((g-1)/rate), with 1+rate raised by squaring to a whole number, 1 over that to a
-/// negative one, and e^(nper ln(1+rate)) otherwise; PMT is the payment at the end carried beyond a
+/// negative one, and as the ^ operator raises it otherwise; PMT is the payment at the end carried beyond a
 /// double and rounded once, and at the start that double divided by 1+rate, rounded once. NPV is
 /// refused for 0.1.0 (ADR-0202, note of 2026-10-12): no evaluation searched gives every double Excel
 /// gave for it.
@@ -32,12 +33,17 @@ public class FinancialEvaluationTests
         Assert.Equal(excel, Number(formula));
 
     [Theory] // ADR-0047: FV-009 and PV-007, the area pass; multiplying the payment by 1+rate first is one unit in the last place below each
-    [InlineData("=FV(0.05/12,12,-150,0,1)", 1849.5026084246633, 1849.502608424663)]
-    [InlineData("=PV(0.05/12,12,-150,0,1)", 1759.484064397425, 1759.4840643974248)]
-    public void ADR0047_PV_and_FV_multiply_the_payment_by_the_product_of_one_plus_rate_and_the_annuity_factor(string formula, double excel, double paymentTimesDueFirst)
+    [InlineData("FV", 1849.5026084246633, 1849.502608424663)]
+    [InlineData("PV", 1759.484064397425, 1759.4840643974248)]
+    public void ADR0047_PV_and_FV_multiply_the_payment_by_the_product_of_one_plus_rate_and_the_annuity_factor(string function, double excel, double paymentTimesDueFirst)
     {
-        Assert.Equal(excel, Number(formula));
-        Assert.NotEqual(paymentTimesDueFirst, excel);
+        var rate = 0.05 / 12;
+        var growth = RaisedBySquaring(1 + rate, 12);
+        var annuity = -150 * (1 + rate) * ((growth - 1) / rate); // the payment times 1+rate first, then the annuity factor
+        var dueFirst = function == "FV" ? -annuity : -annuity / growth;
+        Assert.Equal(excel, Number($"={function}(0.05/12,12,-150,0,1)"));
+        Assert.Equal(paymentTimesDueFirst, dueFirst);
+        Assert.NotEqual(excel, dueFirst);
     }
 
     [Theory] // ADR-0047: FV-006, FV-007 and PV-005, the area pass: Excel answers any nper at a rate other than 0
@@ -61,13 +67,51 @@ public class FinancialEvaluationTests
         Assert.Equal(-1946.0823721572006, 200 * ((reciprocalGrowth - 1) / rate));
     }
 
-    [Theory] // ADR-0047: a fractional nper is e^(nper ln(1+rate)); a correctly rounded power is two units in the last place from Excel's PV-005
-    [InlineData("=PV(0.05,10.5,-100)", 801.7640221710038, 801.7640221710036)]
-    public void ADR0047_A_fractional_number_of_periods_is_e_to_nper_ln_one_plus_rate(string formula, double excel, double correctlyRoundedPower)
+    [Fact] // ADR-0047: PV-005, a fractional nper is e^(nper ln(1+rate)); a correctly rounded power is two units in the last place from Excel's double
+    public void ADR0047_A_fractional_number_of_periods_is_e_to_nper_ln_one_plus_rate()
     {
-        Assert.Equal(excel, Number(formula));
-        Assert.NotEqual(correctlyRoundedPower, excel);
+        var growth = NearestSquareRootOfPower(1.05, 21); // 1.05^10.5, correctly rounded
+        var correctlyRounded = -(-100 * (1 * ((growth - 1) / 0.05))) / growth;
+        Assert.Equal(801.7640221710038, Number("=PV(0.05,10.5,-100)"));
+        Assert.Equal(801.7640221710036, correctlyRounded);
+        Assert.NotEqual(801.7640221710038, correctlyRounded);
     }
+
+    [Theory] // ADR-0047: a fractional nper in PV and FV is the ^ operator's evaluation, one evaluation for both (Arithmetic.Power)
+    [InlineData("0.42", "0.5")]
+    [InlineData("0.05", "0.5")]
+    [InlineData("0.06/12", "10.5")]
+    [InlineData("0.06/12", "-10.5")]
+    [InlineData("0.06/12", "10.25")]
+    [InlineData("0.05", "10.5")]
+    [InlineData("-0.5", "1/3")]
+    public void ADR0047_PV_and_FV_raise_to_a_fractional_number_of_periods_as_the_power_operator_does(string rate, string periods)
+    {
+        Assert.Equal(Number($"=((1+{rate})^({periods})-1)/({rate})"), Number($"=FV({rate},{periods},-1)"));
+        Assert.Equal(Number($"=(((1+{rate})^({periods})-1)/({rate}))/(1+{rate})^({periods})"), Number($"=PV({rate},{periods},-1)"));
+    }
+
+    [Fact] // ADR-0047: FV-016, half a period is the square root, as =2^0.5 is (ARITH-133); e^(0.5 ln(1+rate)) is one unit in the last place from it, 8 in FV's, and FV-016 asks Excel which
+    public void ADR0047_Half_a_period_is_the_square_root_as_the_power_operator_takes_it()
+    {
+        var bySquareRoot = -(-100 * (1 * ((Math.Sqrt(1.42) - 1) / 0.42)));
+        var byLogarithm = -(-100 * (1 * ((Math.Exp(0.5 * Math.Log(1.42)) - 1) / 0.42)));
+        Assert.Equal(45.627983043166275, Number("=FV(0.42,0.5,-100)"));
+        Assert.Equal(45.627983043166275, bySquareRoot);
+        Assert.Equal(45.62798304316633, byLogarithm);
+    }
+
+    [Theory] // ADR-0047: at a rate below -1 a fractional nper is refused: ^ gives a negative base an odd root, e^(nper ln(1+rate)) none (FV-017, PV-011 ask)
+    [InlineData("=FV(-9,1/3,-1)")]
+    [InlineData("=PV(-1.5,0.5,-100)")]
+    [InlineData("=FV(-2,10.5,-100)")]
+    [InlineData("=PMT(-2,10.5,100)")]
+    public void ADR0047_At_a_rate_below_minus_1_a_fractional_number_of_periods_is_refused(string formula) =>
+        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
+
+    [Fact] // ADR-0047: a whole nper at a rate below -1 is still raised by squaring, which does not depend on the base's sign
+    public void ADR0047_At_a_rate_below_minus_1_a_whole_number_of_periods_is_answered() =>
+        Assert.Equal(1, Number("=FV(-2,3,-1)"));
 
     [Theory] // ADR-0047/ADR-0202: the doubles' evaluation is 36 to 225 units in the last place from these
     [InlineData("=PMT(8%/12,10,10000)", -1037.0320893591522)]
@@ -157,6 +201,22 @@ public class FinancialEvaluationTests
         Assert.Equal(342.04308747657205, byPow);
     }
 
+    [Theory] // ADR-0047: XNPV refuses a rate of -1 or below, where e^(x ln(1+rate)) has no answer and Math.Pow, the engine's before, has some (XNPV-007 to 010 ask)
+    [InlineData("-1", "39448", "39508")]
+    [InlineData("-1", "39448", "39448")]
+    [InlineData("-1.5", "39448", "39813")]
+    [InlineData("-2", "39448", "39508")]
+    public void ADR0047_XNPV_refuses_a_rate_of_minus_1_or_below(string rate, string first, string second)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "-1000");
+        sheet.Enter("A2", "300");
+        sheet.Enter("B1", first);
+        sheet.Enter("B2", second);
+        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate($"=XNPV({rate},A1:A2,B1:B2)"));
+        Assert.Equal(ValueKind.Number, sheet.Evaluate("=XNPV(-0.5,A1:A2,B1:B2)").Kind);
+    }
+
     [Theory] // ADR-0202, note of 2026-10-12: NPV is undeclared for 0.1.0, #NAME? as IRR is; XNPV stays
     [InlineData("=NPV(10%,-10000,3000,4200,6800)")]
     [InlineData("=NPV(-1,1,2)")]
@@ -179,4 +239,52 @@ public class FinancialEvaluationTests
     [Fact] // ADR-0047: a growth past a double's range is #NUM!, never a number
     public void ADR0047_A_growth_past_a_doubles_range_is_NUM() =>
         Assert.Equal(Value.FromError(ErrorValue.Num), NewSheet().Evaluate("=FV(1,2000,-1)"));
+
+    /// <summary><paramref name="value"/> to a whole power by squaring from the lowest bit, each product a double, as PV and FV raise it.</summary>
+    private static double RaisedBySquaring(double value, int exponent)
+    {
+        var result = 1.0;
+        var square = value;
+        while (exponent > 0)
+        {
+            if ((exponent & 1) != 0) result *= square;
+            exponent >>= 1;
+            if (exponent > 0) square *= square;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// The double nearest the square root of <paramref name="value"/> to the power
+    /// <paramref name="exponent"/>, computed exactly: the value's significand raised in whole numbers,
+    /// its square root taken to the floor, and that rounded once to 53 bits, half to even. For a normal
+    /// positive value.
+    /// </summary>
+    private static double NearestSquareRootOfPower(double value, int exponent)
+    {
+        var bits = BitConverter.DoubleToInt64Bits(value);
+        var significand = new BigInteger((bits & 0xFFFFFFFFFFFFFL) | (1L << 52));
+        var twos = ((int)((bits >> 52) & 0x7FF) - 1075) * exponent; // value^exponent = significand^exponent * 2^twos
+        var shift = 128 + (Math.Abs(twos) % 2);                       // twos - shift is even
+        var radicand = BigInteger.Pow(significand, exponent) << shift;
+        var root = FloorSquareRoot(radicand);
+        var dropped = (int)root.GetBitLength() - 53;
+        var kept = root >> dropped;
+        var rest = root - (kept << dropped);
+        var half = BigInteger.One << (dropped - 1);
+        var exact = root * root == radicand;
+        if (rest > half || (rest == half && (!exact || !kept.IsEven))) kept += 1;
+        return Math.ScaleB((double)kept, dropped + ((twos - shift) / 2));
+    }
+
+    private static BigInteger FloorSquareRoot(BigInteger n)
+    {
+        var x = BigInteger.One << (int)((n.GetBitLength() + 1) / 2);
+        while (true)
+        {
+            var y = (x + (n / x)) >> 1;
+            if (y >= x) return x;
+            x = y;
+        }
+    }
 }

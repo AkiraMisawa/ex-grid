@@ -89,6 +89,11 @@ One evaluation gives all 8 FV and all 6 PV doubles, in both searches:
   1 over that when it is a negative whole number, and e^(nper ln(1+rate)) by the platform's `exp` and
   `log` otherwise, each step a double. Squaring 1/(1+rate) for FV-007's −10 is 19 units in the last place
   away; a correctly rounded power is two units from PV-005's 10.5; `Math.Pow` for both misses both.
+  *(2026-10-12, later: the engine takes the `^` operator's own evaluation for a fractional `nper`,
+  `Arithmetic.Power`, which is e^(nper ln(1+rate)) but the correctly rounded square root at exactly 0.5
+  (ARITH-133), so that `=(1+r)^n` and FV's power cannot differ. No observed double has an `nper` of
+  0.5, so every one is given as before; `g_pv_fv` in `search.py` models it. At a rate below −1 the
+  engine refuses a fractional `nper`: `^` gives a negative base an odd root, e^(nper ln(1+rate)) none.)*
 - **FV = −(pv·g + pmt·((1+rate·type)·((g−1)/rate)))** and **PV = −(fv + pmt·((1+rate·type)·((g−1)/rate)))/g**:
   the payment multiplies the product of 1+rate·type and the annuity factor. Multiplying the payment by
   1+rate·type first, as the engine did, is one unit in the last place below Excel's FV-009 and PV-007,
@@ -100,7 +105,7 @@ One evaluation gives all 8 FV and all 6 PV doubles, in both searches:
 which are the same products, and also F9 and F10, which take pv·g into a fused multiply-add. PV's V5 and
 V9 are one evaluation. No observed double tells F4 from F9 and F10; FV-014 and FV-015 ask (a fused
 multiply-add gives 2900.6645063063966 and 123950.02507801352 for them), and FV-016 asks whether half a
-period is the square root, as `^` takes it, or e^(0.5 ln(1+rate)).
+period is the square root, as `^` takes it and the engine now does, or e^(0.5 ln(1+rate)).
 
 ### PMT: no evaluation gives every observed payment
 
@@ -158,6 +163,9 @@ or multiplied by 1/365). A correctly rounded power, and `Math.Pow`, are 8 units 
 XNPV-004, which was asked to tell them apart; the corpus compared XNPV at 6 decimals, so the oracle
 counted it as agreeing. The engine now takes e^(x ln(1+rate)), and XNPV-001 and 004 compare every bit.
 XNPV-005 and 006 ask whole years, where squaring, a correctly rounded power and e^(x ln(1+rate)) part.
+At a rate of −1 or below 1+rate has no logarithm, and `Math.Pow`, which the engine took before, answers
+some arguments there (the first value, and whole years below −1): the engine refuses that rate with
+`#VALUE!`, and XNPV-007 to 010 ask.
 
 ## The C# port
 

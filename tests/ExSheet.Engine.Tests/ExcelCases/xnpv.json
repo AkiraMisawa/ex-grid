@@ -49,6 +49,38 @@
       "cells": {"A1": "-10000", "A2": "3000", "A3": "4200", "A4": "6800", "B1": "39448", "B2": "39813", "B3": "40178", "B4": "40543", "ZZ1000": "=XNPV(0.06,A1:A4,B1:B4)"},
       "check": "ZZ1000",
       "expect": {"value2": 2277.5848519247415}
+    },
+    {
+      "id": "XNPV-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a rate of -1, refused; Math.Pow, which the engine took before, and e^(x ln(1+rate)) both give #NUM! here, dividing by a discount of 0 or by no discount",
+      "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "B1": "39448", "B2": "39508", "B3": "39751", "ZZ1000": "=XNPV(-1,A1:A3,B1:B3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a rate of -1 with every date the first, refused; Math.Pow, which the engine took before, gives -7250 (0 to the power 0 is 1), and e^(x ln(1+rate)) #NUM! (0 times ln 0 has no value)",
+      "cells": {"A1": "-10000", "A2": "2750", "B1": "39448", "B2": "39448", "ZZ1000": "=XNPV(-1,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a rate below -1 with the dates whole years apart, refused; Math.Pow, which the engine took before, gives 400 (-0.5 to the powers 1 and 2), and e^(x ln(1+rate)) #NUM! (a negative number has no logarithm)",
+      "cells": {"A1": "-1000", "A2": "300", "A3": "500", "B1": "39448", "B2": "39813", "B3": "40178", "ZZ1000": "=XNPV(-1.5,A1:A3,B1:B3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a rate below -1 with the dates not whole years apart, refused; Math.Pow, which the engine took before, and e^(x ln(1+rate)) both give #NUM! here",
+      "cells": {"A1": "-1000", "A2": "300", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(-2,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

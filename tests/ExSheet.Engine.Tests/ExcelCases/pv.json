@@ -86,11 +86,20 @@
     {
       "id": "PV-010",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: half a period, e^(0.5 ln(1+rate)) as PV-005's 10.5 (the square root gives the same double here; FV-016 is where they differ)",
+      "description": "Engine's answer, Excel to be asked: half a period, the square root of 1+rate as the ^ operator takes it (ARITH-133); e^(0.5 ln(1+rate)), PV-005's evaluation at 10.5, gives the same double here, and FV-016 is where they differ",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,0.5,-100)"},
       "check": "ZZ1000",
       "expect": {"value2": 48.19985410293382}
+    },
+    {
+      "id": "PV-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: half a period at a rate below -1, refused as FV-017 is; the ^ operator and e^(nper ln(1+rate)) both have no answer for a negative base to the power 0.5 (#NUM!)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(-1.5,0.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }
