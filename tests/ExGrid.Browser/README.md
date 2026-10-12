@@ -687,6 +687,15 @@ nobody had asked for. What that means when writing a test:
   keyboard back to. Over numbers showing `####`, OK widens as under the built-in Chrome: not for a
   Fill, and for Bold the column at the standard width, never the one sized by its grip, in OK's one
   step. Two Sheets each keep their own last tab and get the keyboard back.
+- `sheet-toolbar.spec.mjs` — the Sheet Toolbar (ADR-0100, SH-48 to SH-50; ticket 54) on `/sheet`
+  under both Chromes: above the Formula Bar and outside the grid's root, Bold shown pressed over a
+  bold Focus, a press that leaves the keyboard on the Sheet, every item greyed out while a cell is
+  edited, a colour chosen from the list kept on the face, the page's own action, the toolbar as one
+  tab stop, Excel's KeyTips (SH-52) and Ctrl+F1 (SH-51). Over numbers showing `####` (ADR-0071,
+  decided 2026-10-12): Bold and Italic widen no column; Underline and Strikethrough widen the one at
+  the standard width, never the one sized by its grip, each taken back by one Ctrl+Z; and the Font
+  Colour face, a colour from its list and the Fill Colour face widen nothing, since they set through
+  `SetCellFormatAsync`, which widens as the keys do.
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed

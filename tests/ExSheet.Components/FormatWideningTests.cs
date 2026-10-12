@@ -23,8 +23,9 @@ namespace ExSheet.Components.Tests;
 /// Ctrl+U, which widens as Ctrl+5 does, where Ctrl+I does not (its Part H, h7;
 /// <c>verification/2026-10-11-windows-17/report.md</c>), and Format Cells' Font tab, which widened
 /// for Bold. From that, the user decided on 2026-10-12: Format Cells' OK widens for any part of the
-/// Font it sets, <c>SetCellFormatAsync</c> as OK does, and each Sheet Toolbar toggle as the key it
-/// names.
+/// Font it sets, and each Sheet Toolbar toggle as the key it names. The readings of 2026-10-12 (R6)
+/// then found Excel's <c>Range.Font</c> set through COM acting as the keys, and the user decided the
+/// same day that <c>SetCellFormatAsync</c> widens as the keys do, not as OK does.
 /// </summary>
 public class FormatWideningTests : SheetTestContext
 {
@@ -215,7 +216,7 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal("1,234,567.50", CellText(cut, "B5"));
     }
 
-    [Fact] // ADR-0071 case 17, the fourteenth run's case 7 and the seventeenth's h7: Ctrl+B, Ctrl+I, a Fill and a Border leave the width though a number already shows ####; a Number Format widens it
+    [Fact] // ADR-0071 case 17, the fourteenth run's case 7 and the seventeenth's h7: Ctrl+B, Ctrl+I and a Fill leave the width though a number already shows ####, and so do the Border keys, a reading since no run pressed them over ####; a Number Format widens it
     public async Task Bold_italic_a_fill_and_a_border_never_widen()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-GB", ("A1", "1234567890"))));
@@ -501,7 +502,7 @@ public class FormatWideningTests : SheetTestContext
         _ => cut.FindAll(".ex-format-cells-swatch").First(s => s.GetAttribute("aria-label") == choice).ChangeAsync(new ChangeEventArgs { Value = "on" }),
     };
 
-    [Theory] // ADR-0071, decided 2026-10-12: Format Cells' OK widens a column at the default width whose number shows #### for any part of the Font it sets, as Excel's Font tab did for Bold (the seventeenth run's h7) and for Italic, a single underline and a colour (the readings of 2026-10-12, R6); strikethrough and the Normal font box are readings. The width is part of OK's one undo step
+    [Theory] // ADR-0071, decided 2026-10-12: Format Cells' OK widens a column at the default width whose number shows #### for any part of the Font it sets, as Excel's Font tab did for Bold (the seventeenth run's h7) and for Italic, a single underline and a colour (the readings of 2026-10-12 (R6), case (1)); strikethrough and the Normal font box are readings. The width is part of OK's one undo step
     [InlineData("Bold")]
     [InlineData("Italic")]
     [InlineData("Underline")]
@@ -531,7 +532,7 @@ public class FormatWideningTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Theory] // ADR-0071, decided 2026-10-12: Format Cells' OK with a Fill, an alignment or a Border widens nothing, as Excel's Fill and Alignment tabs did not (R6) and its Border tab did not (the fourteenth run, case 9)
+    [Theory] // ADR-0071, decided 2026-10-12: Format Cells' OK with a Fill, an alignment or a Border widens nothing over ####, as Excel's Fill tab and its Alignment tab's vertical alignment did not (the readings of 2026-10-12 (R6), case (2)); its Border tab did not over a General number shown rounded (the fourteenth run, case 9), so a Border over #### and the horizontal alignment set here are readings
     [InlineData("Fill", "Yellow")]
     [InlineData("Alignment", "Center")]
     [InlineData("Border", "Outline")]
@@ -573,16 +574,18 @@ public class FormatWideningTests : SheetTestContext
         Assert.All(cut.Instance.ToDocument().ColumnWidths, w => Assert.Equal(SheetColumnWidthKind.SetByUser, w.Kind));
     }
 
-    [Theory] // ADR-0071, decided 2026-10-12: SetCellFormatAsync widens as Format Cells' OK does, for any part of the Font, bold and italic among them, in its one undo step; a Fill, an alignment or Borders widen nothing
-    [InlineData("Bold", true)]
-    [InlineData("Italic", true)]
+    [Theory] // ADR-0071, decided 2026-10-12 from the readings of 2026-10-12 (R6), case (5): SetCellFormatAsync widens as the formatting keys do, not as Format Cells' OK does — for underline and strikethrough, as Ctrl+U and Ctrl+5 do and as Excel's Range.Font.Underline set through COM did, in its one undo step, and bold where the change sets it too; bold, italic and a Font colour widen nothing, as Ctrl+B and Ctrl+I do not and as Range.Font.Bold did not; nor do a Fill, an alignment or Borders
+    [InlineData("Bold", false)]
+    [InlineData("Italic", false)]
+    [InlineData("Colour", false)]
+    [InlineData("Bold and italic", false)]
     [InlineData("Underline", true)]
     [InlineData("Strikethrough", true)]
-    [InlineData("Colour", true)]
+    [InlineData("Bold and underline", true)]
     [InlineData("Fill", false)]
     [InlineData("Alignment", false)]
     [InlineData("Borders", false)]
-    public async Task Set_cell_format_widens_as_format_cells_ok_does(string part, bool widens)
+    public async Task Set_cell_format_widens_as_the_keys_do_r6(string part, bool widens)
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed(held: "123456789.12")));
         await GoToAsync(cut, "A1");
@@ -590,9 +593,11 @@ public class FormatWideningTests : SheetTestContext
         {
             "Bold" => new CellFormatChange { Bold = true },
             "Italic" => new CellFormatChange { Italic = true },
+            "Colour" => new CellFormatChange { FontColour = Red },
+            "Bold and italic" => new CellFormatChange { Bold = true, Italic = true },
             "Underline" => new CellFormatChange { Underline = true },
             "Strikethrough" => new CellFormatChange { Strikethrough = true },
-            "Colour" => new CellFormatChange { FontColour = Red },
+            "Bold and underline" => new CellFormatChange { Bold = true, Underline = true },
             "Fill" => new CellFormatChange { Fill = Yellow },
             "Alignment" => new CellFormatChange { Alignment = HorizontalAlignment.Center },
             _ => new CellFormatChange { Borders = BorderChange.Outline(new BorderLine(BorderLineStyle.Thin)) },
@@ -600,9 +605,11 @@ public class FormatWideningTests : SheetTestContext
 
         Assert.True(await cut.Instance.SetCellFormatAsync(change));
 
+        Assert.True(cut.Instance.CanUndo);
         if (widens)
         {
             Assert.Equal(H7Shown, CellText(cut, "A1"));
+            // Bold where the change sets it: the column holds the number as A1 paints it.
             Assert.Equal(WidenedForA1(cut), WidthOf(cut, 0), 6);
             Assert.Equal(SheetColumnWidthKind.WidenedByEntry, Assert.Single(cut.Instance.ToDocument().ColumnWidths).Kind);
             Assert.True(await cut.Instance.UndoAsync());
@@ -611,6 +618,31 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
         Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
         Assert.Matches("^#+$", CellText(cut, "A1"));
+    }
+
+    [Fact] // ADR-0071, decided 2026-10-12: one change, bold, widens through Format Cells' OK, as Excel's Font tab did (the seventeenth run, h7), and not through SetCellFormatAsync, which widens as Ctrl+B does not
+    public async Task Bold_widens_through_format_cells_ok_and_not_through_set_cell_format_h7_r6()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-GB"));
+        sheet.Enter(CellAddress.Parse("A1"), "123456789.12");
+        sheet.Enter(CellAddress.Parse("B1"), "123456789.12");
+        sheet.SetCellFormat([CellRange.Parse("A1:B1")], new CellFormatChange { NumberFormat = NumberFormat.Parse("0.00") });
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+
+        await GoToAsync(cut, "B1");
+        Assert.True(await cut.Instance.SetCellFormatAsync(new CellFormatChange { Bold = true }));
+        Assert.True(FormatAt(cut, "B1").Font.Bold);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 1));
+        Assert.Matches("^#+$", CellText(cut, "B1"));
+
+        await OpenFormatCellsOnAsync(cut, "A1", "Font");
+        await ChooseInFormatCellsAsync(cut, "Bold");
+        await OkFormatCellsAsync(cut);
+        Assert.True(FormatAt(cut, "A1").Font.Bold);
+        Assert.Equal(H7Shown, CellText(cut, "A1"));
+        Assert.Equal(WidenedForA1(cut), WidthOf(cut, 0), 6);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 1));
+        Assert.Matches("^#+$", CellText(cut, "B1"));
     }
 
     [Fact] // ADR-0071, decided 2026-10-12, with the twelfth run's case 18: SetCellFormatAsync never widens a column the user sized
@@ -627,7 +659,7 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal(SheetColumnWidthKind.SetByUser, Assert.Single(cut.Instance.ToDocument().ColumnWidths).Kind);
     }
 
-    [Fact] // ADR-0100, ADR-0071, decided 2026-10-12: SetCellFormatFromFocusAsync, the toggles' command, widens as the keys do: bold and italic widen nothing, as Ctrl+B and Ctrl+I do not; underline widens, as Ctrl+U does
+    [Fact] // ADR-0100, ADR-0071, decided 2026-10-12: SetCellFormatFromFocusAsync, the toggles' command, widens as the keys do, as SetCellFormatAsync does: bold and italic widen nothing, as Ctrl+B and Ctrl+I do not; underline widens, as Ctrl+U does
     public async Task Set_cell_format_from_focus_widens_as_the_keys_do()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed(held: "123456789.12")));
@@ -698,20 +730,31 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal(SheetColumnWidthKind.SetByUser, Assert.Single(cut.Instance.ToDocument().ColumnWidths).Kind);
     }
 
-    [Fact] // ADR-0100, ADR-0071, decided 2026-10-12: the Font Colour face sets through SetCellFormatAsync, so it widens as Format Cells' OK does (Excel's Font Color button is a reading); the Fill Colour face widens nothing, as the fourteenth run's Fill did not (case 7)
-    public async Task The_font_colour_face_widens_and_the_fill_colour_face_does_not()
+    [Fact] // ADR-0100, ADR-0071, decided 2026-10-12: the Font Colour face, and a colour from its list, set through SetCellFormatAsync, which widens as the keys do, so neither widens; Excel's Font Color button was not read over #### (the readings of 2026-10-12 (R6) pressed only the Home tab's Bold, Italic and Underline, case (3)), so that it widens nothing is a reading. The Fill Colour face widens nothing, as the fourteenth run's Fill Colour button did not (case 7); Underline then widens, as Ctrl+U does
+    public async Task Neither_colour_face_nor_a_colour_from_its_list_widens()
     {
         var cut = RenderToolbarSheet(Hashed(held: "123456789.12"));
         await GoToAsync(cut, "A1");
 
         await PressItemAsync(cut, "Fill Colour");
         cut.WaitForAssertion(() => Assert.Equal(Yellow, FormatAt(cut, "A1").Fill));
+        await PressItemAsync(cut, "Font Colour");
+        cut.WaitForAssertion(() => Assert.Equal(Red, FormatAt(cut, "A1").Font.Colour));
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
         Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
         Assert.Matches("^#+$", CellText(cut, "A1"));
 
-        await PressItemAsync(cut, "Font Colour");
-        cut.WaitForAssertion(() => Assert.Equal(Red, FormatAt(cut, "A1").Font.Colour));
+        var fontColour = cut.FindAll(".ex-sheet-toolbar [aria-label]").Single(e => e.GetAttribute("aria-label") == "Font Colour"
+            && e.ClassList.Contains("ex-sheet-toolbar-split"));
+        await fontColour.QuerySelector(".ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
+        await cut.FindAll(".ex-popover .ex-sheet-swatch-choice").First(b => b.GetAttribute("aria-label") == "Blue").ClickAsync(new MouseEventArgs());
+        cut.WaitForAssertion(() => Assert.Equal(CellColour.FromRgb(0x0070C0), FormatAt(cut, "A1").Font.Colour));
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
+        Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+
+        await PressItemAsync(cut, "Underline");
+        cut.WaitForAssertion(() => Assert.True(FormatAt(cut, "A1").Font.Underline));
         Assert.Equal(H7Shown, CellText(cut, "A1"));
         Assert.Equal(WidenedForA1(cut), WidthOf(cut, 0), 6);
     }

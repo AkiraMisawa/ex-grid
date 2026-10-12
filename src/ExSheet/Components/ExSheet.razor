@@ -646,14 +646,17 @@
     /// <exception cref="ArgumentOutOfRangeException">The change's alignment is not one.</exception>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     /// <remarks>
-    /// A Number Format or any part of the Font widens each column whose numbers it no longer fits,
-    /// in the same operation, as Format Cells' OK does (ADR-0071, case 17; decided 2026-10-12): a
-    /// column the user has not sized, to hold the widest of them, recorded as a width an entry
-    /// widened (SH-26). A column the user sized never widens (case 18). Excel's Format Cells
-    /// widened for Bold on its Font tab (the seventeenth Windows run, h7), where Ctrl+B does not,
-    /// so bold and italic set here widen as that tab's do, not as the keys'. A Fill, Borders or an
-    /// alignment widens nothing. <see cref="SetCellFormatFromFocusAsync"/> widens as the keys do,
-    /// and <see cref="DoAsync"/> does an edit exactly as it is written, and widens nothing.
+    /// It widens as the formatting keys do, not as Format Cells' OK does (ADR-0071; decided
+    /// 2026-10-12): a Number Format, underline or strikethrough widens each column whose numbers it
+    /// no longer fits, in the same operation, as a Number Format key, Ctrl+U and Ctrl+5 do (case 17;
+    /// the seventeenth Windows run's h7 and h8). It widens a column the user has not sized, to hold
+    /// the widest of them, recorded as a width an entry widened (SH-26). A column the user sized
+    /// never widens (case 18). Bold, italic and a Font colour widen nothing, as Ctrl+B and Ctrl+I do
+    /// not, and as Excel's <c>Range.Font</c> set through COM did not for bold where it did for
+    /// underline (the readings of 2026-10-12 (R6), case (5)). Neither do a Fill, Borders or an
+    /// alignment. Format Cells' OK widens for any part of the Font instead, as Excel's Font tab did
+    /// for bold, italic, underline and a colour (h7; R6, case (1)), and <see cref="DoAsync"/> does
+    /// an edit exactly as it is written, and widens nothing.
     /// </remarks>
     public Task<bool> SetCellFormatAsync(CellFormatChange change)
     {
@@ -667,7 +670,7 @@
         {
             RefuseWhileEditing();
             AdoptGridSelection();
-            return FormatSelectionAsync(change, widen: SheetWidening.WidensAsFormatCellsOkDoes(change));
+            return FormatSelectionAsync(change, widen: SheetWidening.WidensAsAKeyDoes(change));
         });
     }
 
@@ -676,10 +679,10 @@
     /// command runs, as a toggle key reads it (ADR-0071, ADR-0100): Bold on over a Focus cell that is
     /// not bold and off over one that is, read from the Selection as the grid holds it then, not as
     /// it was last heard. It widens the columns whose numbers no longer fit as the formatting keys
-    /// do, not as <see cref="SetCellFormatAsync"/> does (decided 2026-10-12): for a Number Format,
-    /// underline or strikethrough, as Ctrl+U and Ctrl+5 do, and never for bold or italic alone, as
-    /// Ctrl+B and Ctrl+I do not. The Sheet Toolbar's toggles set through it, and widen as the key
-    /// each names. Otherwise it acts, refuses and answers as <see cref="SetCellFormatAsync"/>.
+    /// do, as <see cref="SetCellFormatAsync"/> does (ADR-0071; decided 2026-10-12): for a Number
+    /// Format, underline or strikethrough, as Ctrl+U and Ctrl+5 do, and never for bold or italic
+    /// alone, as Ctrl+B and Ctrl+I do not. The Sheet Toolbar's toggles set through it, and widen as
+    /// the key each names. Otherwise it acts, refuses and answers as <see cref="SetCellFormatAsync"/>.
     /// Answers false when nothing is selected.
     /// </summary>
     /// <param name="change">The change, made from the Focus cell's Cell Format.</param>

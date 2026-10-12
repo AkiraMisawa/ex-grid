@@ -141,3 +141,37 @@ Alignment tabs not widen, and the Home tab's Bold, Italic and Underline buttons 
     - The five new or rewritten tests with `--repeat-each=3`: 15 passed on each host.
   - Layers 1 and 2: ExSheet.Components.Tests 784 passed, ExSheet.MudBlazor.Tests 63, and
     ExSheet.Engine.Tests 4762, with 3 skipped.
+
+*(2026-10-12, agent run17gh-widening, third part.)* The readings of 2026-10-12 (R6), case (5), set
+`Range.Font` through COM over 123456789.12 in `0.00` showing `########` at the standard width:
+`Font.Bold = True` left column A at 8.09, and `Font.Underline = 2` widened it to 11.73, as the keys
+do. *(2026-10-12, decided with the user: `SetCellFormatAsync` widens as the formatting keys do, not
+as Format Cells' OK does.)* This replaces the second part's `SetCellFormatAsync` rule.
+
+- **`SetCellFormatAsync` takes `WidensAsAKeyDoes`**: a Number Format, underline or strikethrough
+  widens, and bold, italic and a Font colour widen nothing. Only Format Cells' OK keeps
+  `WidensAsFormatCellsOkDoes`.
+- **The Sheet Toolbar's Font Colour widens nothing**, its face or a colour from its list, since both
+  set through `SetCellFormatAsync`. R6, case (3), pressed the Home tab's Bold, Italic and Underline
+  over `########`, and not Font Color, so that Excel's Font Color widens nothing is a reading.
+- **An italic number is widened to the width the upright number takes**, as before. R6, case (1),
+  saw Excel's Font tab widen column A to 12.45 for Italic alone, against 11.73 for a single underline
+  or a colour alone. ADR-0071 judges italic by the regular widths, so this is a difference that
+  follows it, recorded as a known limitation of `0.1.0` (proposed for ADR-0202), and not a change.
+- **The Border keys, Ctrl+Shift+& and Ctrl+Shift+_, widen nothing**, as before: a reading, since no
+  run has pressed them over `####`. The fourteenth run's Border tab (case 9) was over a General number
+  shown rounded, `1234568`, not over `####`.
+- **Tests.**
+  - Layer 2 (`FormatWideningTests`):
+    - `Set_cell_format_widens_as_the_keys_do_r6` replaces `Set_cell_format_widens_as_format_cells_ok_does`:
+      underline, strikethrough, and bold with underline widen, the last to the bold widths; bold,
+      italic, a colour, bold with italic, a Fill, an alignment and Borders do not.
+    - `Bold_widens_through_format_cells_ok_and_not_through_set_cell_format_h7_r6`: one change, two
+      commands, side by side.
+    - `Neither_colour_face_nor_a_colour_from_its_list_widens` replaces
+      `The_font_colour_face_widens_and_the_fill_colour_face_does_not`; Underline then widens the same
+      cell.
+    - With `SetCellFormatAsync` given the OK rule back, 6 tests fail.
+  - Layer 3 (`sheet-toolbar.spec.mjs`, under both Chromes): the Font Colour face, a colour from its
+    list and the Fill Colour face widen no column over `####`; Underline then widens the one at the
+    standard width and leaves the one sized by its grip.

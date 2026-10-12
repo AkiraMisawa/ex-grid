@@ -356,14 +356,17 @@ column, and a number typed into a column that it widens, are steps on the undo s
 other, and raise `DocumentChanged`; an opened document brings its widths with it. A Number Format
 set on the Selection — a formatting key, Format Cells' OK, `SetCellFormatAsync` — widens a column
 whose numbers it no longer fits in the same way, in its own undo step, and so do Ctrl+5 and Ctrl+U,
-which set no Number Format, as Excel's do; Ctrl+B and Ctrl+I do not. Format Cells' OK widens for any
-part of the Font it sets, bold and italic among them, as Excel's Font tab does, and so does
-`SetCellFormatAsync`. The Sheet Toolbar's toggles, and `SetCellFormatFromFocusAsync` they set
-through, widen as the keys do. A Fill, Borders or an alignment widens nothing. A width an entry, a
-Number Format or a Font change widened the column to stays automatic, and a longer number widens the
-column again; a width the user set — a drag or a size to fit — is custom, and nothing widens that
-column. A column inserted to the right of either takes its width as one the user set, as Excel's
-does.
+which set no Number Format, as Excel's do; Ctrl+B and Ctrl+I do not. `SetCellFormatAsync`, the Sheet
+Toolbar's toggles and `SetCellFormatFromFocusAsync` they set through widen as the keys do: for a
+Number Format, underline or strikethrough, and not for bold, italic or a Font colour, so the
+toolbar's Font Colour widens nothing. Format Cells' OK widens for any part of the Font it sets. Excel's
+Font tab was seen to widen for bold, italic, a single underline and a colour; that strikethrough set
+there, or the Normal font box, widens too is a reading. A Fill, Borders or an alignment widens
+nothing. An italic number widens its column to the width the same number takes upright, where
+Excel's widened it further. A width an entry, a Number Format or a Font change widened the column to
+stays automatic, and a longer number widens the column again; a width the user set — a drag or a
+size to fit — is custom, and nothing widens that column. A column inserted to the right of either
+takes its width as one the user set, as Excel's does.
 
 ## The Sheet Toolbar
 

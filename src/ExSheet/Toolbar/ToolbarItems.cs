@@ -154,9 +154,11 @@ public abstract class ColourItem : ToolbarItemBase
 
 /// <summary>
 /// The Font colour (ADR-0100): Excel's Font Color, red on its face until another is chosen. It sets
-/// the colour through <c>SetCellFormatAsync</c>, so it widens a column whose numbers no longer fit as
-/// Format Cells' OK does (decided 2026-10-12). That Excel's Font Color button widens is a reading: no
-/// run has pressed it over ####.
+/// the colour through <c>SetCellFormatAsync</c>, which widens as the formatting keys do (ADR-0071;
+/// decided 2026-10-12), so over numbers showing #### neither its face nor a colour from its list
+/// widens a column. That Excel's Font Color button widens nothing is a reading: the readings of
+/// 2026-10-12 (R6) observed the Home tab's Bold and Italic buttons not widen, and its Underline
+/// button widen (case (3)), and did not press Font Color.
 /// </summary>
 public sealed class FontColourItem : ColourItem
 {
