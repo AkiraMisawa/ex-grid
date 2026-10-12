@@ -91,6 +91,34 @@ public, marked `[EditorBrowsable(EditorBrowsableState.Never)]`, and are not the 
   `@code`), the first build of the change that adds it shows it. A layer-1 snapshot test of each shipped
   assembly's surface then replaces it, for the same files' purpose.
 
+### What the lists raised *(2026-10-12, decided with the user)*
+
+The per-package lists, made by this rule and each read again by a second reader, raised three questions
+the rule did not settle:
+
+- **"A member only tests call becomes internal" reaches test hooks, machinery, and entry points a
+  contract member already answers**: `OnPasteAsync`; `Entry.FromFormula`, which `Entry.Parse` answers;
+  `Sheet.SetEntry` (`SetEntries`); `Sheet.Rename` (`Do(SheetEdit.Rename)`); `ClipboardParse.ParseBlock`
+  (`Parse`); ExPivot's `ItemListCap`.
+  - **A member that is data on a contract type stays public**, even where only tests read it today: data
+    a Consumer passes or receives (`CsvEncoding.ShiftJis`, `Snapshot.IsBlank`, `GridFindResult.Row`),
+    ExPivot's `IsLoading` and `RefreshAsync`, and the MudBlazor Wrapper's font seam.
+  - **So does a member an ADR or a criterion gives the Consumer**: `ExGrid.CanSummarize` (ADR-0130),
+    `GetFocusedValue` (FN-20), `GridRuleset.Row` (ADR-0034).
+  - Read literally, the clause would have hidden about sixty such members, some of which the Docs Site
+    tells a Consumer to write.
+- **ExPivot.Engine's whole-report path becomes internal.** That is `PivotCube`, `PivotReport`,
+  `PivotReportRow`, `PivotReportColumn` and `PivotValue`, with the `PivotEngine` members that name them.
+  - Nothing outside tests uses it.
+  - Since ADR-0151 a server computes through `PivotReportSource` and the display types, which are
+    contract. ADR-0060's "a server computes the same report the screen shows" now holds through that
+    contract, and the Engine's README shows it that way.
+- **`RowMarkRules.LineUp` is contract.** `RowMarkIntent.Positions` sends a Consumer answering
+  `OnMarkIntentAsync` to it, and ADR-0043 keeps a gesture's meaning in the core.
+  - Its `HeaderState` and `HeaderPress`, which only the core uses, become internal.
+  - The Context's list of machinery named `RowMarkRules` whole, counted by what used it. That is
+    corrected here.
+
 ## Considered options
 
 - **Review every type and member, and reshape the poor ones, before `0.1.0`.** The strongest reading, but
