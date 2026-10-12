@@ -40,12 +40,19 @@ def zoom(name, keys):
     record({'step': name, 'keys': keys, 'read': p.eval(READ)})
 
 
-def run_across(at, along, axis, name):
+def run_across(at, along, axis, name, zoom=1.0, scroll=(0, 0)):
     """Device pixels across an edge at `at` CSS px, along `along`: the clip's origin on a multiple of 4 CSS
-    px (9 Device Pixels at 2.25), as device-pixel-225.spec.mjs reads it."""
+    px (9 Device Pixels at 2.25), as device-pixel-225.spec.mjs reads it.
+
+    The compositor's clip is in the window's own units, before the browser's zoom: a CSS px is `zoom` of
+    them (devicePixelRatio over the display's 1.5). The first pass gave the clip in CSS px and read a place
+    1/1.5 as far from the origin (records/part-g-first-try/)."""
     start = (int(at) // 4) * 4 - 8
     line = (int(along) // 4) * 4
-    clip = {'x': start, 'y': line, 'width': 16, 'height': 4} if axis == 'x' else {'x': line, 'y': start, 'width': 4, 'height': 16}
+    css = {'x': start, 'y': line, 'width': 16, 'height': 4} if axis == 'x' else {'x': line, 'y': start, 'width': 4, 'height': 16}
+    # The compositor's clip is also the document's, not the viewport's: the page's scroll is added (the
+    # third pass left it out and read white, records/part-g-first-try/).
+    clip = {'x': (css['x'] + scroll[0]) * zoom, 'y': (css['y'] + scroll[1]) * zoom, 'width': css['width'] * zoom, 'height': css['height'] * zoom}
     px = p.cmd(op='pixels', clip=clip, file=f'{SHOTS}\\{name}-{CHANNEL}.png')
     rows = px['rows']
     if axis == 'x':
@@ -54,7 +61,7 @@ def run_across(at, along, axis, name):
     else:
         seq = [r[len(r) // 2] for r in rows]
     nonwhite = [(i, c) for i, c in enumerate(seq) if max(abs(v - 255) for v in c) > 2]
-    return {'clip': clip, 'image': [px['width'], px['height']], 'across': seq, 'notWhite': nonwhite, 'count': len(nonwhite)}
+    return {'cssClip': css, 'clip': clip, 'image': [px['width'], px['height']], 'across': seq, 'notWhite': nonwhite, 'count': len(nonwhite)}
 
 
 def cell_box(a):
@@ -86,16 +93,24 @@ def run():
         zoom(f'to-150-{i}', '^{OEMPLUS}')
     p.cmd(op='goto', url=f'{BASE}/sheet?case=11', ready="() => !!document.querySelector('.ex-grid:has(> .ex-formula-bar) .ex-row') && /--ex-dp/.test(document.querySelector('.ex-grid:has(> .ex-formula-bar)')?.getAttribute('style') ?? '')")
     time.sleep(1.5)
+    # E8 lies below the fold at 2.25 (its top at 703 CSS px, the viewport 637 high), and the compositor's
+    # picture is white there (the second pass, records/part-g-first-try/). The page is scrolled by a whole
+    # multiple of 4 CSS px, 9 Device Pixels, so every edge keeps its place within a Device Pixel.
+    scrolled = p.eval("""() => { const c = [...document.querySelectorAll('.ex-grid:has(> .ex-formula-bar) [id$="-r7c4"]')].find(e => e.closest('.ex-viewport'));
+        const y = Math.max(0, Math.floor((c.getBoundingClientRect().top + scrollY - 300) / 4) * 4); scrollTo(0, y); return { asked: y, scrollY }; }""")
+    time.sleep(1.0)
     p.input('move 3700 300')
     time.sleep(0.5)
     read = p.eval("""() => { const g = document.querySelector('.ex-grid:has(> .ex-formula-bar)'); const s = g.getAttribute('style') ?? '';
         const m = /--ex-dp:\\s*([0-9.]+)/.exec(s); return { dpr: devicePixelRatio, exDp: m ? Number(m[1]) : null }; }""")
     b2, e8 = cell_box('B2'), cell_box('E8')
-    record({'step': '2.25 on /sheet?case=11', 'read': read, 'B2': b2, 'E8': e8,
-            'thin B2 right (B2|C2)': run_across(b2['x'] + b2['width'], b2['y'] + b2['height'] / 2, 'x', 'thin-b2-right'),
-            'thin B2 bottom (B2/B3)': run_across(b2['y'] + b2['height'], b2['x'] + b2['width'] / 2, 'y', 'thin-b2-bottom'),
-            'gridline E8 right': run_across(e8['x'] + e8['width'], e8['y'] + e8['height'] / 2, 'x', 'grid-e8-right'),
-            'gridline E8 bottom': run_across(e8['y'] + e8['height'], e8['x'] + e8['width'] / 2, 'y', 'grid-e8-bottom')})
+    z = read['dpr'] / 1.5
+    sc = tuple(p.eval('() => [scrollX, scrollY]'))
+    record({'step': '2.25 on /sheet?case=11', 'read': read, 'scrolled': scrolled, 'B2': b2, 'E8': e8,
+            'thin B2 right (B2|C2)': run_across(b2['x'] + b2['width'], b2['y'] + b2['height'] / 2, 'x', 'thin-b2-right', z, sc),
+            'thin B2 bottom (B2/B3)': run_across(b2['y'] + b2['height'], b2['x'] + b2['width'] / 2, 'y', 'thin-b2-bottom', z, sc),
+            'gridline E8 right': run_across(e8['x'] + e8['width'], e8['y'] + e8['height'] / 2, 'x', 'grid-e8-right', z, sc),
+            'gridline E8 bottom': run_across(e8['y'] + e8['height'], e8['x'] + e8['width'] / 2, 'y', 'grid-e8-bottom', z, sc)})
     p.cmd(op='cdpshot', file=f'{SHOTS}\\case-11-at-225-{CHANNEL}.png')
     # Back to 100% for the origin, whatever the profile keeps.
     p.cmd(op='goto', url=f'{BASE}/wide', ready="() => !!document.querySelector('.ex-grid .ex-row')")

@@ -588,6 +588,194 @@ was added to `%APPDATA%\nvda\nvda.ini` for the run, and the file was put back by
 
 **Narrator: not yet run.** Asked first, as the procedure says, the user chose to leave it to the end of the run.
 
-## Parts G and H
+## Part G — ExGrid's by-hand rows, the record (ADR-0208)
 
-*(Below, as each Part is finished.)*
+This Part is the record of these rows at the verified commit **`8436e45e`**. Each verdict is read against the row as
+the Definition of Done words it at that commit. The display stayed at Windows' **150%** throughout (3840 × 2160, 144
+DPI). The display scale was not changed: that needs a sign-out, which ends WSL and this session. The display
+language is **English (United Kingdom)**, and the regional format en-GB.
+
+### VZ-14 — the Focus inside the readable area at a fractional display scale
+
+| Row | Commit | Browser | Host | Scale | Verdict |
+|---|---|---|---|---|---|
+| VZ-14 | `8436e45e` | Chrome 154.0.8037.98 | WebAssembly | 150% (DPR 1.5) | **pass** |
+| VZ-14 | `8436e45e` | Edge 155.0.4283.45 | WebAssembly | 150% (DPR 1.5) | **pass** |
+| VZ-14 | `8436e45e` | Chrome 154.0.8037.98 | Server | 150% (DPR 1.5) | **pass** |
+| VZ-14 | `8436e45e` | Edge 155.0.4283.45 | Server | 150% (DPR 1.5) | **pass** |
+
+- **What ran.** `scrollbar.spec.mjs`'s block "on a Windows desktop at fractional display scaling (VZ-14)", headed, from
+  a copy of `tests/ExGrid.Browser` on Windows (`part-g/vz14.cmd`; `part-g/vz14/`), 11:03 local time.
+- **The row's pass column**, "passes with the OS doing the scaling": the test's own guards held.
+  - The browser reported `Windows`.
+  - The bars took layout: the gutter was 12 × 12 CSS px, the grid's own bar.
+  - `devicePixelRatio` was 1.5, not a whole number.
+  - The Focus lay inside the client box at End and at Home.
+- **Against the fifteenth run** (2026-10-01, 150%, Chrome and Edge, WebAssembly): the same. This run adds the Server
+  host.
+
+### VZ-16 — the Device Pixel told as the zoom changes, and the lines at a real 2.25
+
+| Row | Commit | Browser | Host | Scale | Verdict |
+|---|---|---|---|---|---|
+| VZ-16, a real browser zoom told as it changes | `8436e45e` | Chrome 154 | WebAssembly | display 150%, zoom 90% to 200% | **pass** |
+| VZ-16, a real browser zoom told as it changes | `8436e45e` | Edge 155 | WebAssembly | display 150%, zoom 90% to 200% | **pass** |
+| VZ-16, a thin line and a gridline at a real 225% | `8436e45e` | Chrome 154 | WebAssembly | display 150%, zoom 150% (DPR 2.25) | **pass** |
+| VZ-16, a thin line and a gridline at a real 225% | `8436e45e` | Edge 155 | WebAssembly | display 150%, zoom 150% (DPR 2.25) | **pass** |
+
+**The zoom.** `/wide`, a display-only page, never `/sheet`. The browser's zoom was changed by real keys outside any
+Sheet: Ctrl+= five times, Ctrl+0, Ctrl+- four times, Ctrl+0 (`part_g_vz16.py`; `records/part-g-vz16-<browser>.jsonl`).
+After each change the grid's root carried `--ex-dp` equal to 1 / `devicePixelRatio`. Chrome and Edge read the same:
+
+| Zoom | `devicePixelRatio` | `--ex-dp` |
+|---|---|---|
+| 100% | 1.5 | 0.6666666666666666 |
+| 110% | 1.6500000953674316 | 0.6060605710312484 |
+| 125% | 1.875 | 0.5333333333333333 |
+| 150% | 2.25 | 0.4444444444444444 |
+| 175% | 2.625 | 0.38095238095238093 |
+| 200% | 3 | 0.3333333333333333 |
+| 90% | 1.3499999046325684 | 0.7407407930685533 |
+| 80% | 1.2000000476837158 | 0.8333333002196431 |
+| 75% | 1.125 | 0.8888888888888888 |
+| 67% | 1 | 1 |
+
+**The real 2.25.** The display's 150% and the browser's 150%, reached by Ctrl+= three times on `/wide`. Then
+`/sheet?case=11` on the same origin, which keeps the zoom: `devicePixelRatio` 2.25, `--ex-dp` 0.4444444444444444.
+
+- **How it was read.** The page was scrolled down 400 CSS px, a multiple of 4 CSS px (9 Device Pixels), so that E8 lay
+  inside the viewport. The compositor's picture (CDP `Page.captureScreenshot`, `fromSurface`) was taken of a 16 × 4 CSS px
+  clip across each edge, whose origin lay on a multiple of 4 CSS px. That is how `device-pixel-225.spec.mjs` reads it.
+- **The clip's units.** The clip is given in the document's units before the browser's zoom: a CSS px is 1.5 of them
+  here, and the page's scroll is part of the clip. Each picture was 36 × 9 Device Pixels.
+- **Three probe errors first.** The first passes gave the clip in CSS px, then read E8 below the fold, then left the
+  scroll out. Each read the wrong place, and is kept in `records/part-g-first-try/`. The figures below are the fourth
+  pass's, the same in Chrome and Edge:
+
+| Line | Device pixels across it, not the white Paper | Reading |
+|---|---|---|
+| B2's thin Border, right edge (B2 \| C2) | `#E1E1E1`, `#000000` | the Border **one Device Pixel**, black, unblended. Beside it a pixel of the gridline's colour |
+| B2's thin Border, bottom edge (B2 / B3) | `#E0E0E0`, `#000000` | the same |
+| E8's gridline, right edge | `#E0E0E0`, `#E0E0E0` | the gridline **two Device Pixels**, both its colour, no third blended pixel |
+| E8's gridline, bottom edge | `#E0E0E0`, `#E0E0E0` | the same |
+
+- The console held `info` messages only.
+- **Against the eleventh run's Part C** (2026-10-02), which first read 2.25 by the browser's zoom at this display: this
+  run reads the row's own figures, one Device Pixel and two.
+- **Not read here**, from the row's pass column: "nothing per render reaches JavaScript". It is P1–P9's to run.
+
+### FN-12e — each class's widest glyph on Windows, and the two paintings
+
+| Row | Commit | Browser | Host | Scale | Verdict |
+|---|---|---|---|---|---|
+| FN-12e, the measurements on Windows | `8436e45e` | Chrome 154 and Edge 155 | (the measuring page) | 150% | **not met as written**: seven glyphs measure wider than they are charged (below) |
+| FN-12e, the bold amount and `####` (the pass column) | `8436e45e` | Chrome 154 | WebAssembly and Server | 150% | **pass** |
+| FN-12e, the bold amount and `####` (the pass column) | `8436e45e` | Edge 155 | WebAssembly and Server | 150% | **pass** |
+
+**The measurements.** `tests/GlyphWidths/measure.mjs` ran in Chrome and Edge on this desktop, over `system-ui` (Segoe
+UI under this English display language) and the grid's face, Roboto. The records are
+`part-g/glyphs/<face>.windows.<browser>.json`.
+
+- **`measure.mjs` fails on Windows as written**: `new URL(…).pathname` gives `/C:/…`, which Node reads as `C:\C:\…`.
+  The Windows copy was patched to use `fileURLToPath`, and the repository was left unchanged.
+- **Per class** (`part-g/glyph-classes.txt`, `glyph-classes.py`): at 14 px and 12 px, regular and bold, each class's
+  widest glyph is within its `CellTextMetrics` default in both faces and both browsers.
+  - Segoe UI at 14 px bold, as an example: wide 12.141 (`%`) against 14.36, digit 9.078 (`₫`) against 9.75, narrow
+    6.219 (`/`) against 6.41.
+  - Segoe UI painted 483 of the corpus's glyphs, Tahoma 28, and Microsoft YaHei (Chrome) or Noto Sans JP (Edge) 11.
+- **Per glyph, as layer 1 reads it.** `GlyphWidthCorpusTests` ran in a scratch copy with the Windows records added
+  (`part-g/glyph-corpus-tests.txt`): 1313 passed and 32 failed.
+  - Every failure is in `Every_glyph_is_charged_at_least_its_width`, under `system-ui` (Segoe UI and Segoe UI Semibold),
+    in Chrome and Edge alike. Seven glyphs are charged under their width:
+    - `ƒ` (U+0192) at every density and weight: 7.547 against 6.1 at 14 px, weight 400;
+    - `ť` (U+0165) at weight 700;
+    - the Hebrew `ג` `ט` `י` `ס` `פ` at some weights, by 0.03 to 0.76 px. `ס` at 12 px bold is 8.641 against 8.64.
+  - `No_text_a_built_in_format_paints_is_wider_than_its_estimate` passes for every Windows record: no string the
+    built-in formats paint is wider than its estimate.
+  - Layer 1 reads `system-ui` and DejaVu Sans. The Windows Roboto records are not among its faces, and were compared by
+    class only.
+  - The row's first clause, "each `CellTextMetrics` default is at least the widest glyph measured for its class on
+    Windows", is therefore met by class and not met by these seven glyphs.
+- **ADR-0016's table** is not changed by this run. The Windows measurements are recorded here, beside it.
+
+**The two paintings** (the row's pass column). Run on Windows, headed (`part-g/fn12e.cmd`; `part-g/fn12e/`):
+
+- `sizing.spec.mjs`'s "a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016)", on
+  `/sizing`;
+- `part-c.spec.mjs`'s "FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no
+  more fit (ADR-0016)", on `/sheet?case=3c`.
+
+Both passed on Chrome and Edge, on WebAssembly and on Server: 8 of 8. A bold amount estimated to fit painted without an
+ellipsis, and `####` filled its cell with no room for one more `#`.
+
+- **Against the earlier runs**: ADR-0016 records macOS and Linux; Windows was missing (`tests/GlyphWidths/README.md`).
+  This is Windows' first record.
+
+### ED-30 — a real IME on a selected cell
+
+The sixteenth run's Part A, cases k1 to k16 with its additions, on `8436e45e`, with the same keys and readings, and
+one case added for DC-47 (`part-g/ed30/`).
+
+- **The probe** is the sixteenth run's `ime-probe.mjs` with its own window title, the case `dc47` added, and two
+  readings added to the coloured layer: its `data-ex-colours` and the CSS highlights over its text. This build paints
+  the Reference colours with highlights, not spans, and the sixteenth run's span reading reads none.
+- **The IME** is the Microsoft IME (10.0.26100.9278), Japanese, typed by real keys through `SendInput`, one virtual key
+  and scan code per key. The window's keyboard was set to Japanese for each run and put back to English (UK) after it.
+- **The configurations**: `/sheet` and `/sheet?chrome=mud`, each on WebAssembly, on Server, and on Server behind 150 ms,
+  in Chrome 154 and in Edge 155: 12 records per case. k7 ran behind 150 ms only (4 records), k11 on `/features` and
+  `/features?chrome=mud`, and k14 on `/sheets` and `/sheets?chrome=mud` (12 each).
+- **The run** was 36 records, 11:15 to 11:58, with no error. Every console message was `info`.
+- **The readings**:
+  - `part-g/ed30/summary.txt` groups each state across the configurations: 159 of 168 states read the same in every
+    configuration. The other nine are dc47's, which differ only in the highlight's generated name.
+  - `part-g/ed30/against-16.txt` compares every state with the sixteenth run's record of the same case, state and
+    configuration: 136 of 1884 states read differently, all of them in k6, k6x, k6y, k16 and dc47 (below).
+  - Pictures of the WebAssembly and Chrome records are in `part-g/ed30/shots/`.
+
+**The row** (the Definition of Done's pass column):
+
+| Row | Commit | Browser | Host | Scale | Verdict |
+|---|---|---|---|---|---|
+| ED-30, "D10 shows the composition while no edit is open" | `8436e45e` | Chrome 154, Edge 155 | WebAssembly, Server, Server behind 150 ms | 150% | **pass** (k2, every configuration) |
+| ED-30, "after its end the Cell Editor holds the text and has DOM focus" | `8436e45e` | as above | as above | 150% | **pass** (k2) |
+| ED-30, "Enter commits it and moves to D11" | `8436e45e` | as above | as above | 150% | **pass** (k2) |
+| ED-30, "after a press on D12 mid-composition, D10 holds the text and D12 is selected" | `8436e45e` | as above | as above | 150% | **not run as written**: the press on D12 lands on the IME's own prediction list, which stands under the composition, and never reaches the page (k8, as in the sixteenth run and in Excel). The same press on D8, clear of that list (k8x): D10 `かな`, the Focus D8, no edit open, in every configuration |
+
+**Every case** (each the same in all its configurations unless the row says otherwise):
+
+| # | Read at `8436e45e` | Expected of the build (the sixteenth run's column) | Verdict | Beside the sixteenth run |
+|---|---|---|---|---|
+| k1 | The IME's open status on after VK_IME_ON, Hiragana; the keyboard in the Keyboard Field | On | **pass** | the same |
+| k2 | `ｋ`, `か`, `かｎ`, `かな` composing in the field over D10, no edit open, the Focus D10. The first Enter: the Cell Editor open holding `かな`, with the keyboard. The second: D10 `かな`, the Focus D11 | as described | **pass** | the same |
+| k3 | The first Escape: the Cell Editor open and empty, with the keyboard. The second: D10 empty | as described | **pass** | the same |
+| k4 | ↓, ↓ while composing: nothing moves, nothing written. Then D10 `かな`, D11 | as described | **pass** | the same |
+| k5 | After F2, the IME on, Escape, and a press on D10: `kana` composes from the first key. D10 `かな` | D10 `かな`, not `k穴` | **pass** | the same |
+| k6 | `kana`, Space, then `k` ends the first composition: the Cell Editor opens holding `かな`, and **the keyboard stays in the Keyboard Field**, where the second composition goes on (`かなｋ` … `かなかんじ`, Space `かな感じ`). The first Enter types it into the edit: `かな感じ`. The second: D10 `かな感じ`, D11. **Every configuration, WebAssembly included** | One composition of two clauses, converted together; D10 holds both | **not met as written**: two compositions, not one. D10 holds both, `かな感じ`, as Excel's does | **differs**: on WebAssembly the sixteenth run moved the keyboard to the Cell Editor 22 to 45 ms after the first composition ended. A key of the second was lost there (D10 `かなあんじ` → `かな暗示`). Now every configuration reads as the Server host did |
+| k6x | `kanji` at 150 ms between keys: D10 `かな感じ` in every configuration | — (an addition) | the same as k6 | **differs**: WebAssembly gave `かな暗示` |
+| k6y | `kanji` at 30 ms: D10 `かな感じ` in every configuration | — (an addition) | the same as k6 | **differs**: WebAssembly gave `かな暗示` (`/sheet`) and `かなん時` (`/sheet?chrome=mud`) |
+| k7 | Behind 150 ms, typed at 150 ms with no pause: D10 `かなです`, D11 | D10 `かなです`, D11; nothing lost, doubled or reordered | **pass** | the same |
+| k8 | The press on D12 never reached the page: the composition became `悲しんで` and ended; the Cell Editor open holding `悲しんで`, the Focus D10 | D10 `かな`, the Focus D12, no edit open | **not met as written**: the IME took the press, as Excel's did | the same |
+| k8x | The press on D8: D10 `かな`, the Focus D8, no edit open, the keyboard in the field | as k8's | **pass** | the same |
+| k9 | The press on the Formula Bar's text: the edit open holding `かな`, the keyboard in the bar, the Focus D10 | record | recorded: as Excel | the same |
+| k10 | The press on column D's Heading: column D selected, the Focus D1; D10 `かな`; nothing sorted, no edit | `かな` goes to D10 | **pass** | the same |
+| k11 | `/features`: the Book cell's field read-only, the IME left off, `kana` typed nothing and opened nothing. The Trader cell: composed as k2; B1 `かな`, the Focus B2 | Book: off, nothing typed or opened. Trader: as k2 | **pass** | the same |
+| k12 | Space with the IME on and nothing composed: keydown `Process`; the Cell Editor open holding the IME's full-width space `　` | record | recorded: as Excel | the same |
+| k13 | With the IME on and nothing composed, each key the grid's: ↓ → Tab Enter Delete, Ctrl+C, a press on D12, Ctrl+V; nothing typed into the field | each the grid's | **pass** | the same |
+| k13x | With something to copy: D12 `150` after Ctrl+V; Delete cleared it | — (an addition) | as expected | the same |
+| k14 | `/sheets`: the left edit stands holding `かな` while the right Sheet's field has the keyboard, and nothing reaches the left | as described | **pass** | the same |
+| k15 | Alt+Tab away: the composition ended there; the Cell Editor open holding `かな`. Back: the same. Enter: D10 `かな`, D11; Enter: D12 | record whether it survives | recorded: it does not survive, and its text stays in the open edit, as in Excel | the same |
+| k16 | The press on the composition's own text never reached the page; the field still `かな`, composing; no edit | record | recorded: the press did not end it, as in Excel | **differs** in one reading: the root carries its focus ring mark (`data-ex-focus-visible`) in every state of k16, where the sixteenth run read it absent. The case runs after k15's Alt+Tab |
+| dc47 | In D10, `=A1+` with the IME off: the Cell Editor's text transparent over the layer `=A1+`, `A1` under the highlight `ex…-reference-1`, A1 outlined. With the IME on, `kana`: **the layer hidden and the field's own uncoloured text showing** (`=A1+かな`). Space: the same. **Enter, and no further key: the composition ends, the field's text transparent again, and the layer shown as `=A1+かな`, `A1` under its highlight again**, read again 1.5 s later. The Formula Bar's text stays plain. A1's outline stays throughout | DC-47: the coloured text only while it is the field's text; whenever the field's own text is transparent, the layer's text equals the field's value; while composing, the field's own text shows | **pass** | new (the fifteenth run's i5 ended its composition with Escape) |
+
+**Against the sixteenth run, in short**: k6's lost key on WebAssembly is gone (k6, k6x, k6y). The keyboard now stays in
+the Keyboard Field through a second composition on every host, and D10 holds `かな感じ`, as Excel's does. The
+composition is still two, not one. k16's root now carries its focus ring mark. Nothing else reads differently.
+
+### The scale
+
+The display scale stayed at **150%** throughout, as the user had it, and was never changed (`HKCU\Control Panel\Desktop`
+`LogPixels` 144). Every browser zoom changed here was put back to 100% with Ctrl+0 before its browser closed.
+
+## Part H
+
+*(Below, when it is finished.)*

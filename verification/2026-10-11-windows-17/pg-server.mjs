@@ -144,6 +144,16 @@ for await (const line of rl) {
             await input(`${verb} ${x} ${y}`);
             say({ ok: 'press', screen: [x, y], client: [r.x, r.y], box: r.box });
         }
+        else if (c.op === 'where') {
+            // Added for Part H: the screen point of an element, as 'press' finds it, without pressing (for a drag).
+            const r = await page.evaluate(([sel, nth, dx, dy]) => {
+                const e = document.querySelectorAll(sel)[nth ?? 0]; if (!e) return null;
+                const b = e.getBoundingClientRect();
+                return { x: (b.left + b.right) / 2 + (dx ?? 0), y: (b.top + b.bottom) / 2 + (dy ?? 0), box: [b.left, b.top, b.width, b.height] };
+            }, [c.sel, c.nth, c.dx, c.dy]);
+            if (!r) throw new Error(`${c.sel} is not on the page`);
+            say({ ok: 'where', screen: at(r.x, r.y), client: [r.x, r.y], box: r.box });
+        }
         else if (c.op === 'eval') { say({ ok: 'eval', value: await page.evaluate(new Function('arg', `return (${c.fn})(arg);`), c.arg ?? null) }); }
         else if (c.op === 'events') { say({ ok: 'events', value: await page.evaluate(() => (window.__events ?? []).splice(0)) }); }
         else if (c.op === 'console') { say({ ok: 'console', value: messages.splice(0) }); }

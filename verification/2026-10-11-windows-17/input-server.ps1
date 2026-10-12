@@ -415,6 +415,18 @@ while ($true) {
                 [InputServer.Native]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero)
                 Answer 'ok drag'
             }
+            # Added for Part H: drag with Ctrl held, from x1 y1 to x2 y2 in n steps (h2).
+            'ctrldrag' {
+                $a = $rest.Split(' ') | ForEach-Object { [int]$_ }; $n = [Math]::Max($a[4], 1)
+                $e = New-Object 'Collections.Generic.List[InputServer.Keys+INPUT]'; $e.Add([InputServer.Keys+INPUT]::Key(0x11, $false, $false)); [InputServer.Keys]::Send($e); Start-Sleep -Milliseconds 40
+                [void][InputServer.Native]::SetCursorPos($a[0], $a[1]); Start-Sleep -Milliseconds 20
+                [InputServer.Native]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 60
+                for ($i = 1; $i -le $n; $i++) { [void][InputServer.Native]::SetCursorPos([int]($a[0] + ($a[2] - $a[0]) * $i / $n), [int]($a[1] + ($a[3] - $a[1]) * $i / $n)); Start-Sleep -Milliseconds 15 }
+                Start-Sleep -Milliseconds 100
+                [InputServer.Native]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 40
+                $e = New-Object 'Collections.Generic.List[InputServer.Keys+INPUT]'; $e.Add([InputServer.Keys+INPUT]::Key(0x11, $true, $false)); [InputServer.Keys]::Send($e)
+                Answer 'ok ctrldrag'
+            }
             'burstclick' {
                 $p = $rest.Split(' ', 3); $x = [int]$p[0]; $y = [int]$p[1]; $halves = $p[2].Split('|', 2)
                 [void][InputServer.Native]::SetCursorPos($x, $y); Start-Sleep -Milliseconds 30

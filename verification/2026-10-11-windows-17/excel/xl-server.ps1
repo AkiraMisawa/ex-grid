@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     docs/specs/exsheet/verify-on-windows-17.md, Parts B, C and D in Excel: a visible Excel of this
     script's own, driven with real keys and the real mouse, kept running and fed one command per line on
@@ -285,6 +285,46 @@ while ($true) {
                 Answer 'ok ctrlclick'
             }
             'move' { $a = $rest.Split(' ') | % { [int]$_ }; Hand $a[0] $a[1]; Answer 'ok move' }
+            # Added for Part H: a press dragged from one point to another, alone or with Ctrl held (h1, h2, h4).
+            'drag' { $a = $rest.Split(' ') | % { [int]$_ }; Show-Excel; Hand $a[0] $a[1]; [Xl.Native]::mouse_event(0x2, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 80; Hand $a[2] $a[3]; Start-Sleep -Milliseconds 120; [Xl.Native]::mouse_event(0x4, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 60; Answer 'ok drag' }
+            'ctrldrag' {
+                $a = $rest.Split(' ') | % { [int]$_ }; Show-Excel; Hand $a[0] $a[1]
+                $e = New-Events; $e.Add([Xl.Keys+INPUT]::Key(0x11, $false, $false)); [Xl.Keys]::Send($e); Start-Sleep -Milliseconds 40
+                [Xl.Native]::mouse_event(0x2, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 80; Hand $a[2] $a[3]; Start-Sleep -Milliseconds 120; [Xl.Native]::mouse_event(0x4, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 60
+                $e = New-Events; $e.Add([Xl.Keys+INPUT]::Key(0x11, $true, $false)); [Xl.Keys]::Send($e)
+                Answer 'ok ctrldrag'
+            }
+            # Setup only (h7, h8): a column's width in characters, set through COM, which Excel then keeps as a custom width.
+            'setwidth' { $p = $rest.Split(' '); $c = $script:Xl.ActiveSheet.Range($p[0]); $c.ColumnWidth = [double]::Parse($p[1], [Globalization.CultureInfo]::InvariantCulture); Answer ("ok setwidth $($p[0]) " + $c.ColumnWidth) }
+            # Setup only (h10): one edge of a cell, through COM: LineStyle and Weight (xlContinuous 1; xlThin 2, xlMedium -4138, xlThick 4).
+            'setedge' { $p = $rest.Split(' '); $b = $script:Xl.ActiveSheet.Range($p[0]).Borders.Item([int]$p[1]); $b.LineStyle = [int]$p[2]; $b.Weight = [int]$p[3]; Answer "ok setedge $rest" }
+            # Setup only (h11): a solid fill of RRGGBB (Interior.Color takes BGR).
+            'fill' { $p = $rest.Split(' '); $rgb = [Convert]::ToInt32($p[1], 16); $bgr = (($rgb -band 0xFF) -shl 16) -bor ($rgb -band 0xFF00) -bor (($rgb -shr 16) -band 0xFF); $script:Xl.ActiveSheet.Range($p[0]).Interior.Color = $bgr; Answer "ok fill $rest" }
+            # The window's zoom, in per cent (h11).
+            'zoom' { $script:Book.Windows.Item(1).Zoom = [int]$rest; Answer ("ok zoom " + $script:Book.Windows.Item(1).Zoom) }
+            # Each cell's font and borders as Excel holds them (h7, h8, h10): bold, italic, underline, strikethrough,
+            # and each edge's LineStyle and Weight (xlEdgeTop 8, xlEdgeBottom 9, xlEdgeLeft 7, xlEdgeRight 10).
+            'look' {
+                $ws = $script:Xl.ActiveSheet; $o = @()
+                foreach ($a in $rest.Split(' ')) {
+                    $r = $ws.Range($a); $fo = $r.Font
+                    $edges = @(8, 9, 7, 10) | ForEach-Object { $b = $r.Borders.Item($_); '{0}={1}/{2}' -f @{8='top';9='bottom';7='left';10='right'}[$_], $b.LineStyle, $b.Weight }
+                    $o += ('{0}: bold {1} italic {2} underline {3} strike {4} size {5} | {6} | width {7} | text {8}' -f $a, $fo.Bold, $fo.Italic, $fo.Underline, $fo.Strikethrough, $fo.Size, ($edges -join ' '), $r.ColumnWidth, (ConvertTo-Json -InputObject ([string]$r.Text) -Compress))
+                }
+                Answer ('ok look ' + ($o -join ' ;; '))
+            }
+            # Every named element UI Automation sees under Excel's own windows whose name matches a pattern (h5's list,
+            # h10's dialog), with its control type, in tree order; at most 80.
+            'uianames' {
+                $re = $rest; $o = New-Object Collections.Generic.List[string]
+                foreach ($w in ([Xl.Win]::Of($script:XlPid))) {
+                    $root = [Windows.Automation.AutomationElement]::FromHandle([IntPtr][long]$w[0])
+                    foreach ($e in $root.FindAll([Windows.Automation.TreeScope]::Subtree, [Windows.Automation.Condition]::TrueCondition)) {
+                        $n = $e.Current.Name; if ($n -and $n -match $re -and $o.Count -lt 80) { $o.Add(('{0} | {1} | {2}' -f $n, $e.Current.ControlType.ProgrammaticName, $e.Current.ClassName)) }
+                    }
+                }
+                Answer ('ok uianames ' + (ConvertTo-Json -InputObject @($o) -Compress))
+            }
             'shot' { Answer ('ok shot ' + (Grab $rest)) }
             'screen' {
                 $p = $rest.Split(' '); $x = [int]$p[1]; $y = [int]$p[2]; $w = [int]$p[3]; $h = [int]$p[4]
