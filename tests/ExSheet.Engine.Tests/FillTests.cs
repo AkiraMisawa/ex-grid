@@ -77,6 +77,96 @@ public class FillTests
     private static SheetStep FillCopy(Sheet sheet, string source, string target, FillDirection direction) =>
         sheet.Do(SheetEdit.FillCopy(CellRange.Parse(source), CellRange.Parse(target), direction));
 
+    // ---- A fill from whole columns or whole rows (ADR-0050 item 5: the handle stands beside the Heading, 2026-10-12) ----
+
+    private static SheetStep SetFormat(Sheet sheet, CellFormatChange change, string range) =>
+        sheet.Do(SheetEdit.SetCellFormat([CellRange.Parse(range)], change));
+
+    [Fact] // ADR-0050 item 5: a whole column filled right writes what each of its rows holds, and a blank over what the target held
+    public void A_whole_column_filled_right_copies_every_row_it_holds()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("C1", "1");
+        sheet.Enter("C2", "2");
+        sheet.Enter("C3", "=C1+C2");
+        sheet.Enter("C1048576", "last");
+        sheet.Enter("D9", "old");
+        var before = sheet.ToDocument().ToJson();
+
+        var step = Fill(sheet, "C1:C1048576", "D1:D1048576", FillDirection.Right);
+
+        Assert.Equal("1", sheet.GetDisplay(At("D1")).Text);
+        Assert.Equal("2", sheet.GetDisplay(At("D2")).Text);
+        Assert.Equal("=D1+D2", sheet.GetEntry(At("D3"))!.Formula);
+        Assert.Equal("3", sheet.GetDisplay(At("D3")).Text);
+        Assert.Equal("last", sheet.GetDisplay(At("D1048576")).Text);
+        // C9 is blank, and a blank is copied as every fill copies one: D9's text is gone.
+        Assert.Null(sheet.GetEntry(At("D9")));
+        Assert.Null(sheet.GetEntry(At("E1")));
+
+        step.Undo();
+        Assert.Equal(before, sheet.ToDocument().ToJson());
+    }
+
+    [Fact] // ADR-0050 item 5: a whole row filled down writes what each of its columns holds
+    public void A_whole_row_filled_down_copies_every_column_it_holds()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("B2", "5");
+        sheet.Enter("C2", "=B2*2");
+        sheet.Enter("XFD2", "edge");
+
+        Fill(sheet, "A2:XFD2", "A3:XFD4", FillDirection.Down);
+
+        Assert.Equal("5", sheet.GetDisplay(At("B4")).Text);
+        Assert.Equal("=B4*2", sheet.GetEntry(At("C4"))!.Formula);
+        Assert.Equal("edge", sheet.GetDisplay(At("XFD3")).Text);
+        Assert.Null(sheet.GetEntry(At("A3")));
+    }
+
+    [Fact] // ADR-0050 item 5: the source column's format reaches the rows that hold nothing, as it reaches every row it shows on
+    public void A_source_columns_format_is_carried_into_its_blank_rows()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("A3", "3");
+        SetFormat(sheet, new CellFormatChange { Bold = true }, "A:A");
+
+        Fill(sheet, "A1:A3", "B1:B3", FillDirection.Right);
+
+        Assert.True(sheet.GetFont(At("B2")).Bold);
+        Assert.False(sheet.GetFont(At("B4")).Bold);
+    }
+
+    [Fact] // ADR-0050 item 5: a blank row filled over a target column's format writes the source's format over it, as the rows that hold something do
+    public void A_target_columns_format_is_written_over_in_blank_rows_too()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("A3", "3");
+        SetFormat(sheet, new CellFormatChange { Bold = true }, "B:B");
+
+        Fill(sheet, "A1:A3", "B1:B3", FillDirection.Right);
+
+        Assert.False(sheet.GetFont(At("B1")).Bold);
+        Assert.False(sheet.GetFont(At("B2")).Bold);
+        Assert.True(sheet.GetFont(At("B4")).Bold);
+    }
+
+    [Fact] // ADR-0050 item 5: down, a target row's format is written over in the blank columns too
+    public void A_target_rows_format_is_written_over_in_blank_columns_too()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("C1", "3");
+        SetFormat(sheet, new CellFormatChange { Bold = true }, "2:2");
+
+        Fill(sheet, "A1:C1", "A2:C2", FillDirection.Down);
+
+        Assert.False(sheet.GetFont(At("B2")).Bold);
+        Assert.True(sheet.GetFont(At("D2")).Bold);
+    }
+
     [Fact] // ADR-0050 item 5 / ADR-0035, SH-23: Ctrl+D copies a Formula down with its relative References shifted
     public void Fill_copy_shifts_a_formulas_relative_references()
     {

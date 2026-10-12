@@ -65,10 +65,9 @@ public sealed partial class Sheet
                 $"A fill {direction.ToString().ToLowerInvariant()} from {source} extends it along one axis; {target} does not."), states);
         }
 
-        var lines = vertical ? source.ColumnCount : source.RowCount;
         var length = vertical ? source.RowCount : source.ColumnCount;
         var count = vertical ? target.RowCount : target.ColumnCount;
-        for (var line = 0; line < lines; line++)
+        foreach (var line in LinesToFill(source, target, vertical))
         {
             CellAddress SourceAt(int i) => vertical
                 ? new CellAddress(source.First.Row + i, source.First.Column + line)
@@ -91,6 +90,40 @@ public sealed partial class Sheet
             }
         }
         return (null, states);
+    }
+
+    /// <summary>
+    /// The lines of a fill that can write anything, ascending: a column for a vertical fill, a row
+    /// for a horizontal one, counted from the source's first. Every other line is blank in the source
+    /// and the target alike, with no cell recorded and no row or column format over any of its cells,
+    /// so its source carries the default format and no Entry, and the state written over each target
+    /// cell settles to nothing over a cell that records nothing: it changes nothing, refuses nothing
+    /// and is left out. What is written is therefore what filling every line would write, and a fill
+    /// from whole columns, a million lines, costs the lines that hold something (ADR-0050, item 5: a
+    /// whole column's handle stands beside its Heading).
+    /// </summary>
+    private List<int> LinesToFill(CellRange source, CellRange target, bool vertical)
+    {
+        var lines = vertical ? source.ColumnCount : source.RowCount;
+        // The span across the lines, and the span along them that the source and the target cover.
+        var firstLine = vertical ? source.First.Column : source.First.Row;
+        var alongFirst = Math.Min(vertical ? source.First.Row : source.First.Column, vertical ? target.First.Row : target.First.Column);
+        var alongLast = Math.Max(vertical ? source.Last.Row : source.Last.Column, vertical ? target.Last.Row : target.Last.Column);
+        var along = vertical ? _rowFormats : _columnFormats;
+        var across = vertical ? _columnFormats : _rowFormats;
+        // A format on a row (a column) the fill runs along reaches every line: each is filled.
+        if (along.Keys.Any(i => i >= alongFirst && i <= alongLast)) return [.. Enumerable.Range(0, lines)];
+        var filled = new SortedSet<int>();
+        foreach (var i in across.Keys)
+        {
+            if (i >= firstLine && i < firstLine + lines) filled.Add(i - firstLine);
+        }
+        foreach (var address in _cells.Keys)
+        {
+            var (lineAt, alongAt) = vertical ? (address.Column, address.Row) : (address.Row, address.Column);
+            if (lineAt >= firstLine && lineAt < firstLine + lines && alongAt >= alongFirst && alongAt <= alongLast) filled.Add(lineAt - firstLine);
+        }
+        return [.. filled];
     }
 
     /// <summary>The rule for one line: given a position along the axis, the source cell it repeats and its address, the Entry written there.</summary>
