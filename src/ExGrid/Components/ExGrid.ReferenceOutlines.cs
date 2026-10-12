@@ -21,10 +21,9 @@ public partial class ExGrid<TRow>
     /// unfinished for as long as it is typed, and with nothing for text that is not a Formula.
     ///
     /// <para>References naming the same cells, or carrying the same key, share a colour, handed
-    /// out in order of first appearance round a palette of
-    /// <see cref="ReferenceColour.PaletteLength"/>; a Consumer never picks one. Each range answered
-    /// is outlined once in the selection overlay, cut to the painted rows, and the grid never
-    /// scrolls to show one. Point's outline takes the colour of the range it points at. A commit
+    /// out in order of first appearance round a palette of seven; a Consumer never picks one. Each
+    /// range answered is outlined once in the selection overlay, cut to the painted rows, and the
+    /// grid never scrolls to show one. Point's outline takes the colour of the range it points at. A commit
     /// or a cancel takes every outline away. A span that does not lie inside the text, or
     /// overlaps another, is refused by name. Null — the default — outlines nothing, and Point's
     /// outline keeps its own look (DC-1).</para>

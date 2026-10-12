@@ -10,7 +10,7 @@ public readonly record struct PasteShape
 {
     /// <summary>A block of <paramref name="rows"/> × <paramref name="columns"/>, each at
     /// least one.</summary>
-    public PasteShape(int rows, int columns)
+    internal PasteShape(int rows, int columns)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(rows, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(columns, 1);

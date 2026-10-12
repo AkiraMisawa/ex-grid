@@ -26,7 +26,8 @@ internal static class PivotSmoke
     internal sealed record Deal(string Id, string Region, string Desk, string Tenor, DateOnly TradeDate, decimal Pnl, double Price);
 
     // "Declaring the fields: the standard way", "A Snapshot of your own", "Computing a report" and
-    // "Live data", as the README writes them.
+    // "Live data", as the README writes them: a report is computed through the report source
+    // (ADR-0151, ADR-0201).
     public static async Task<string> Standard(IReadOnlyList<Deal> trades, ExGrid.Data.Snapshot snapshot, CancellationToken ct)
     {
         var fields = PivotFields.Of<Deal>()
@@ -55,17 +56,24 @@ internal static class PivotSmoke
             Values = [new PivotValueField("Pnl", PivotAggregation.Sum)],
         };
 
-        var query = PivotQuery.For(layout);
-        var answer = await source.AggregateAsync(query, ct);
-        var cube = PivotEngine.Cube(query, answer, source.Fields);
-        var report = PivotEngine.Report(cube, layout,
-            new PivotOptions { Culture = CultureInfo.GetCultureInfo("en-US") });
+        await using var reports = PivotReportSource.From(source);
+        var update = await reports.WindowAsync(new PivotReportRequest(
+            "first",
+            layout,
+            new PivotReportSettings { CultureName = "en-US" },
+            new PivotReportWindow(0, int.MaxValue)), ct);
 
+        if (update.Refusal is { } refusal)
+            return refusal.Message;
+        var report = update.Metadata!;
+        var rows = update.Rows!;
+
+        var query = PivotQuery.For(layout);
         source.Changed += change => _ = change.SourceVersion;
         source.Apply(fields.Batch(added: trades, changed: trades, removedKeys: ["T-1042"]));
         var updated = await source.AggregateAsync(query, ct);
 
-        return report.Rows[0].Labels[0].Text + report.ValueAt(report.Rows[^1], 0)!.Text
+        return rows[0].Labels[0].Text + rows[^1].ValueAt(0)!.Text + report.RowCount
             + whole.Fields.Count + named.Fields.Count + updated.SourceVersion;
     }
 
@@ -96,7 +104,8 @@ internal static class PivotSmoke
 
     private sealed record Line(string Region, string Product, decimal Amount);
 
-    public static string Compute()
+    // "Over records in memory": the same request over PivotSource.From(records, fields).
+    public static async Task<string> Compute(CancellationToken ct)
     {
         var sales = new[]
         {
@@ -117,13 +126,16 @@ internal static class PivotSmoke
             Values = [new PivotValueField("Amount", PivotAggregation.Sum)],
         };
 
-        var report = PivotEngine.Compute(sales, fields, layout,
-            new PivotOptions { Culture = CultureInfo.GetCultureInfo("en-US") });
+        await using var reports = PivotReportSource.From(PivotSource.From(sales, fields));
+        var update = await reports.WindowAsync(new PivotReportRequest(
+            "first", layout, PivotReportSettings.From(new PivotOptions { Culture = CultureInfo.GetCultureInfo("en-US") }),
+            new PivotReportWindow(0, int.MaxValue)), ct);
+        var rows = update.Rows!;
 
-        return string.Join(",", report.ValueColumns.Select(c => c.Header))
-            + report.Rows[0].Labels[0].Text
-            + report.ValueAt(report.Rows[0], 0)!.Text
-            + report.ValueAt(report.Rows[^1], 2)!.Text
+        return string.Join(",", update.Metadata!.ValueColumns.Select(c => c.Header))
+            + rows[0].Labels[0].Text
+            + rows[0].ValueAt(0)!.Text
+            + rows[^1].ValueAt(2)!.Text
             + PivotLayoutJson.Write(layout);
     }
 }

@@ -34,4 +34,21 @@
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
+
+  <!-- The public surface's baseline (ADR-0201): every public member is declared in
+       PublicAPI.Shipped.txt or PublicAPI.Unshipped.txt beside the project, and the build fails on
+       one that is not (RS0016) or one declared and gone (RS0017), as it does on an undocumented
+       one. The analyzer is a private asset, so no package depends on it. The cut before a tag
+       moves Unshipped into Shipped (ADR-0190). -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.3.0" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+  </ItemGroup>
+  <PropertyGroup>
+    <WarningsAsErrors>$(WarningsAsErrors);RS0016;RS0017</WarningsAsErrors>
+    <!-- The analyzer's other rules are not this baseline's. RS0026 and RS0027 ask that a member
+         with optional parameters be reshaped, and 0.1.0 reviews types, not members (ADR-0201): the
+         review before 1.0 reads them. RS0041 reports the BuildRenderTree that Razor generates
+         with nullable annotations off, which no source here writes. -->
+    <NoWarn>$(NoWarn);RS0026;RS0027;RS0041</NoWarn>
+  </PropertyGroup>
 </Project>

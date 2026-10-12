@@ -152,12 +152,12 @@ public class ActiveCellTests
     }
 
     [Theory] // ADR-0052: the three keys new to ExGrid are the core's, outside editing
-    [InlineData(".", true, false, GridKeyKind.MoveFocusToNextCorner)]
-    [InlineData("Backspace", true, false, GridKeyKind.RevealFocus)]
-    [InlineData("Backspace", false, true, GridKeyKind.CollapseToFocus)]
-    public void The_new_keys_resolve(string key, bool ctrl, bool shift, GridKeyKind kind)
+    [InlineData(".", true, false, nameof(GridKeyKind.MoveFocusToNextCorner))]
+    [InlineData("Backspace", true, false, nameof(GridKeyKind.RevealFocus))]
+    [InlineData("Backspace", false, true, nameof(GridKeyKind.CollapseToFocus))]
+    public void The_new_keys_resolve(string key, bool ctrl, bool shift, string kind)
     {
-        Assert.Equal(kind, GridKeys.Resolve(key, ctrl, shift, alt: false, meta: false, metaIsPrimary: false).Kind);
+        Assert.Equal(Enum.Parse<GridKeyKind>(kind), GridKeys.Resolve(key, ctrl, shift, alt: false, meta: false, metaIsPrimary: false).Kind);
         Assert.Contains(GridKeys.Canonical(key, ctrl, shift, alt: false, meta: false, metaIsPrimary: false), GridKeys.Taken);
     }
 

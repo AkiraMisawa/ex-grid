@@ -4,20 +4,20 @@ namespace ExPivot.Engine;
 
 /// <summary>
 /// The pivot engine (ADR-0060/0066). A Pivot Source answers a question with the Leaf Aggregates;
-/// <see cref="Cube"/> builds from them the row and column trees and every total; and
-/// <see cref="Report"/> lays a cube out into a <see cref="PivotReport"/>. Pure, with no UI: a
-/// server computes the same report the screen shows, and a server-side answer is held to the
-/// bundled source's.
+/// the engine builds from them the row and column trees and every total, and lays them out into a
+/// Pivot Report. Pure, with no UI: a server computes the same report the screen shows, through
+/// <see cref="PivotReportSource.From"/>, and a server-side answer is held to the bundled source's.
 ///
-/// <para><see cref="Aggregate{TRecord}"/> and <see cref="Compute{TRecord}"/> run the whole path over
-/// records in memory on the calling thread, through the bundled source
-/// (<see cref="PivotSource.From{TRecord}(IReadOnlyList{TRecord}, IReadOnlyList{PivotField{TRecord}}, PivotSlicing?)"/>).</para>
+/// <para>What a Consumer calls here is <see cref="ItemsOf(PivotItemPage, PivotLayout, PivotField, PivotOptions?)"/>,
+/// which orders and labels a page of a field's Items as Filter… lists them. A report is computed
+/// through <see cref="PivotReportSource"/>, whose Windows carry its rows as
+/// <see cref="PivotDisplayRow"/>s (ADR-0151, ADR-0201).</para>
 /// </summary>
 public static class PivotEngine
 {
     /// <summary>Aggregates and lays out in one step — <see cref="Aggregate"/> then
     /// <see cref="Report"/>.</summary>
-    public static PivotReport Compute<TRecord>(
+    internal static PivotReport Compute<TRecord>(
         IReadOnlyList<TRecord> records,
         IReadOnlyList<PivotField<TRecord>> fields,
         PivotLayout layout,
@@ -32,7 +32,7 @@ public static class PivotEngine
     /// Columns, or orders by a Value Field it does not have; and a field list that declares a name
     /// twice.
     /// </summary>
-    public static PivotCube Aggregate<TRecord>(
+    internal static PivotCube Aggregate<TRecord>(
         IReadOnlyList<TRecord> records,
         IReadOnlyList<PivotField<TRecord>> fields,
         PivotLayout layout)
@@ -60,7 +60,7 @@ public static class PivotEngine
     /// <param name="query">The question the answer was given to.</param>
     /// <param name="answer">The source's answer.</param>
     /// <param name="fields">The source's fields: how Items are labelled and ordered.</param>
-    public static PivotCube Cube(PivotQuery query, PivotAnswer answer, IReadOnlyList<PivotField> fields)
+    internal static PivotCube Cube(PivotQuery query, PivotAnswer answer, IReadOnlyList<PivotField> fields)
     {
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(answer);
@@ -80,7 +80,7 @@ public static class PivotEngine
     /// <param name="fields">The source's fields: how Items are labelled and ordered.</param>
     /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
     /// <param name="cancellationToken">Stops the work at the next yield.</param>
-    public static ValueTask<PivotCube> CubeAsync(
+    internal static ValueTask<PivotCube> CubeAsync(
         PivotQuery query,
         PivotAnswer answer,
         IReadOnlyList<PivotField> fields,
@@ -100,7 +100,7 @@ public static class PivotEngine
     /// and what a collapse, a sort, a form or a Value Field's Aggregation changing costs. Refuses a
     /// layout the cube does not hold (<see cref="PivotCube.Holds"/>).
     /// </summary>
-    public static PivotReport Report(PivotCube cube, PivotLayout layout, PivotOptions? options = null)
+    internal static PivotReport Report(PivotCube cube, PivotLayout layout, PivotOptions? options = null)
         => Builder(cube, layout, options).Build();
 
     /// <summary>The builder that lays <paramref name="cube"/> out under <paramref name="layout"/>,
@@ -133,7 +133,7 @@ public static class PivotEngine
     /// <param name="options">The culture and the words; <see cref="PivotOptions.Default"/> when left out.</param>
     /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
     /// <param name="cancellationToken">Stops the work at the next yield.</param>
-    public static ValueTask<PivotReport> ReportAsync(
+    internal static ValueTask<PivotReport> ReportAsync(
         PivotCube cube,
         PivotLayout layout,
         PivotOptions? options = null,
@@ -148,7 +148,7 @@ public static class PivotEngine
     /// field declarations and holds <paramref name="layout"/>, so that a new report needs no pass
     /// over the records. The records and the fields are compared by instance: a new list is a
     /// refresh (ADR-0059).</summary>
-    public static bool CanReuse<TRecord>(
+    internal static bool CanReuse<TRecord>(
         PivotCube? cube, IReadOnlyList<TRecord> records, IReadOnlyList<PivotField<TRecord>> fields, PivotLayout layout)
         => cube is not null && ReferenceEquals(cube.RecordsIdentity, records)
             && ReferenceEquals(cube.FieldsIdentity, fields) && cube.Holds(layout);
@@ -160,7 +160,7 @@ public static class PivotEngine
     /// (<see cref="PivotSource.ItemsAsync"/>) and lays the page out with
     /// <see cref="ItemsOf(PivotItemPage, PivotLayout, PivotField, PivotOptions?)"/>.
     /// </summary>
-    public static IReadOnlyList<PivotItemInfo> ItemsOf(
+    internal static IReadOnlyList<PivotItemInfo> ItemsOf(
         PivotCube cube, PivotLayout layout, string field, PivotOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(cube);
@@ -219,7 +219,7 @@ public static class PivotEngine
     /// <see cref="PivotReport.DetailsQuery"/>'s, answered by the bundled source over
     /// <paramref name="records"/>.
     /// </summary>
-    public static IReadOnlyList<TRecord> RecordsBehind<TRecord>(
+    internal static IReadOnlyList<TRecord> RecordsBehind<TRecord>(
         IReadOnlyList<TRecord> records,
         IReadOnlyList<PivotField<TRecord>> fields,
         PivotReport report,

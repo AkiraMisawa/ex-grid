@@ -11,7 +11,7 @@ namespace ExGrid.Selection;
 /// three numbers — the 20px band, one row, eight rows — are provisional and
 /// OBSERVATIONAL (ADR-0008); the shape is not.</para>
 /// </summary>
-public static class EdgeBand
+internal static class EdgeBand
 {
     /// <summary>How far the band reaches into the Viewport from each edge.</summary>
     public const double DepthPx = 20;

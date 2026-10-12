@@ -1,0 +1,803 @@
+#nullable enable
+const ExSheet.Engine.Sheet.ColumnCount = 16384 -> int
+const ExSheet.Engine.Sheet.DefaultColumnWidth = 8.43 -> double
+const ExSheet.Engine.Sheet.DefaultName = "Sheet1" -> string!
+const ExSheet.Engine.Sheet.MaxColumnWidth = 255 -> double
+const ExSheet.Engine.Sheet.MaximumNameLength = 31 -> int
+const ExSheet.Engine.Sheet.RowCount = 1048576 -> int
+const ExSheet.Engine.SheetDocument.CurrentVersion = 9 -> int
+const ExSheet.Engine.SheetDocument.OldestReadableVersion = 1 -> int
+ExSheet.Engine.ArgumentHint
+ExSheet.Engine.ArgumentHint.<Clone>$() -> ExSheet.Engine.ArgumentHint!
+ExSheet.Engine.ArgumentHint.ArgumentHint(ExSheet.Engine.DeclaredFunction! Function, int ArgumentIndex, string? CurrentArgument) -> void
+ExSheet.Engine.ArgumentHint.ArgumentIndex.get -> int
+ExSheet.Engine.ArgumentHint.ArgumentIndex.init -> void
+ExSheet.Engine.ArgumentHint.CurrentArgument.get -> string?
+ExSheet.Engine.ArgumentHint.CurrentArgument.init -> void
+ExSheet.Engine.ArgumentHint.Deconstruct(out ExSheet.Engine.DeclaredFunction! Function, out int ArgumentIndex, out string? CurrentArgument) -> void
+ExSheet.Engine.ArgumentHint.Equals(ExSheet.Engine.ArgumentHint? other) -> bool
+ExSheet.Engine.ArgumentHint.Function.get -> ExSheet.Engine.DeclaredFunction!
+ExSheet.Engine.ArgumentHint.Function.init -> void
+ExSheet.Engine.ArgumentValue
+ExSheet.Engine.ArgumentValue.<Clone>$() -> ExSheet.Engine.ArgumentValue!
+ExSheet.Engine.ArgumentValue.ArgumentValue(string! Value, string! Text) -> void
+ExSheet.Engine.ArgumentValue.Deconstruct(out string! Value, out string! Text) -> void
+ExSheet.Engine.ArgumentValue.Equals(ExSheet.Engine.ArgumentValue? other) -> bool
+ExSheet.Engine.ArgumentValue.Text.get -> string!
+ExSheet.Engine.ArgumentValue.Text.init -> void
+ExSheet.Engine.ArgumentValue.Value.get -> string!
+ExSheet.Engine.ArgumentValue.Value.init -> void
+ExSheet.Engine.BorderChange
+ExSheet.Engine.BorderChange.<Clone>$() -> ExSheet.Engine.BorderChange!
+ExSheet.Engine.BorderChange.BorderChange() -> void
+ExSheet.Engine.BorderChange.Bottom.get -> ExSheet.Engine.BorderLine?
+ExSheet.Engine.BorderChange.Bottom.init -> void
+ExSheet.Engine.BorderChange.Equals(ExSheet.Engine.BorderChange? other) -> bool
+ExSheet.Engine.BorderChange.InsideHorizontal.get -> ExSheet.Engine.BorderLine?
+ExSheet.Engine.BorderChange.InsideHorizontal.init -> void
+ExSheet.Engine.BorderChange.InsideVertical.get -> ExSheet.Engine.BorderLine?
+ExSheet.Engine.BorderChange.InsideVertical.init -> void
+ExSheet.Engine.BorderChange.Left.get -> ExSheet.Engine.BorderLine?
+ExSheet.Engine.BorderChange.Left.init -> void
+ExSheet.Engine.BorderChange.Right.get -> ExSheet.Engine.BorderLine?
+ExSheet.Engine.BorderChange.Right.init -> void
+ExSheet.Engine.BorderChange.Top.get -> ExSheet.Engine.BorderLine?
+ExSheet.Engine.BorderChange.Top.init -> void
+ExSheet.Engine.BorderLine
+ExSheet.Engine.BorderLine.BorderLine() -> void
+ExSheet.Engine.BorderLine.BorderLine(ExSheet.Engine.BorderLineStyle style, ExSheet.Engine.CellColour colour = default(ExSheet.Engine.CellColour)) -> void
+ExSheet.Engine.BorderLine.Colour.get -> ExSheet.Engine.CellColour
+ExSheet.Engine.BorderLine.Equals(ExSheet.Engine.BorderLine other) -> bool
+ExSheet.Engine.BorderLine.IsNone.get -> bool
+ExSheet.Engine.BorderLine.Style.get -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.DashDot = 8 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.DashDotDot = 9 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.Dashed = 7 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.Dotted = 6 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.Double = 5 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.Hair = 1 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.Medium = 3 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.MediumDashDot = 11 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.MediumDashDotDot = 12 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.MediumDashed = 10 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.None = 0 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.SlantedDashDot = 13 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.Thick = 4 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.BorderLineStyle.Thin = 2 -> ExSheet.Engine.BorderLineStyle
+ExSheet.Engine.CellAddress
+ExSheet.Engine.CellAddress.CellAddress() -> void
+ExSheet.Engine.CellAddress.CellAddress(int Row, int Column) -> void
+ExSheet.Engine.CellAddress.Column.get -> int
+ExSheet.Engine.CellAddress.CompareTo(ExSheet.Engine.CellAddress other) -> int
+ExSheet.Engine.CellAddress.Deconstruct(out int Row, out int Column) -> void
+ExSheet.Engine.CellAddress.Equals(ExSheet.Engine.CellAddress other) -> bool
+ExSheet.Engine.CellAddress.Row.get -> int
+ExSheet.Engine.CellBorders
+ExSheet.Engine.CellBorders.Bottom.get -> ExSheet.Engine.BorderLine
+ExSheet.Engine.CellBorders.Bottom.init -> void
+ExSheet.Engine.CellBorders.CellBorders() -> void
+ExSheet.Engine.CellBorders.CellBorders(ExSheet.Engine.BorderLine Top = default(ExSheet.Engine.BorderLine), ExSheet.Engine.BorderLine Bottom = default(ExSheet.Engine.BorderLine), ExSheet.Engine.BorderLine Left = default(ExSheet.Engine.BorderLine), ExSheet.Engine.BorderLine Right = default(ExSheet.Engine.BorderLine)) -> void
+ExSheet.Engine.CellBorders.Deconstruct(out ExSheet.Engine.BorderLine Top, out ExSheet.Engine.BorderLine Bottom, out ExSheet.Engine.BorderLine Left, out ExSheet.Engine.BorderLine Right) -> void
+ExSheet.Engine.CellBorders.Equals(ExSheet.Engine.CellBorders other) -> bool
+ExSheet.Engine.CellBorders.Left.get -> ExSheet.Engine.BorderLine
+ExSheet.Engine.CellBorders.Left.init -> void
+ExSheet.Engine.CellBorders.Right.get -> ExSheet.Engine.BorderLine
+ExSheet.Engine.CellBorders.Right.init -> void
+ExSheet.Engine.CellBorders.Top.get -> ExSheet.Engine.BorderLine
+ExSheet.Engine.CellBorders.Top.init -> void
+ExSheet.Engine.CellColour
+ExSheet.Engine.CellColour.CellColour() -> void
+ExSheet.Engine.CellColour.Equals(ExSheet.Engine.CellColour other) -> bool
+ExSheet.Engine.CellColour.IsAutomatic.get -> bool
+ExSheet.Engine.CellColour.Rgb.get -> int
+ExSheet.Engine.CellDisplay
+ExSheet.Engine.CellDisplay.Alignment.get -> ExSheet.Engine.HorizontalAlignment
+ExSheet.Engine.CellDisplay.Alignment.init -> void
+ExSheet.Engine.CellDisplay.CannotShow.get -> bool
+ExSheet.Engine.CellDisplay.CannotShow.init -> void
+ExSheet.Engine.CellDisplay.CellDisplay() -> void
+ExSheet.Engine.CellDisplay.CellDisplay(string! Text, ExSheet.Engine.HorizontalAlignment Alignment, bool IsNumber, bool CannotShow, ExSheet.Engine.NumberFormatColour? Colour = null) -> void
+ExSheet.Engine.CellDisplay.Colour.get -> ExSheet.Engine.NumberFormatColour?
+ExSheet.Engine.CellDisplay.Colour.init -> void
+ExSheet.Engine.CellDisplay.Deconstruct(out string! Text, out ExSheet.Engine.HorizontalAlignment Alignment, out bool IsNumber, out bool CannotShow, out ExSheet.Engine.NumberFormatColour? Colour) -> void
+ExSheet.Engine.CellDisplay.Equals(ExSheet.Engine.CellDisplay other) -> bool
+ExSheet.Engine.CellDisplay.IsNumber.get -> bool
+ExSheet.Engine.CellDisplay.IsNumber.init -> void
+ExSheet.Engine.CellDisplay.Text.get -> string!
+ExSheet.Engine.CellDisplay.Text.init -> void
+ExSheet.Engine.CellFill
+ExSheet.Engine.CellFill.CellFill() -> void
+ExSheet.Engine.CellFill.Colour.get -> ExSheet.Engine.CellColour?
+ExSheet.Engine.CellFill.Equals(ExSheet.Engine.CellFill other) -> bool
+ExSheet.Engine.CellFill.IsNone.get -> bool
+ExSheet.Engine.CellFont
+ExSheet.Engine.CellFont.Bold.get -> bool
+ExSheet.Engine.CellFont.Bold.init -> void
+ExSheet.Engine.CellFont.CellFont() -> void
+ExSheet.Engine.CellFont.CellFont(ExSheet.Engine.CellColour Colour = default(ExSheet.Engine.CellColour), bool Bold = false, bool Italic = false, bool Underline = false, bool Strikethrough = false) -> void
+ExSheet.Engine.CellFont.Colour.get -> ExSheet.Engine.CellColour
+ExSheet.Engine.CellFont.Colour.init -> void
+ExSheet.Engine.CellFont.Deconstruct(out ExSheet.Engine.CellColour Colour, out bool Bold, out bool Italic, out bool Underline, out bool Strikethrough) -> void
+ExSheet.Engine.CellFont.Equals(ExSheet.Engine.CellFont other) -> bool
+ExSheet.Engine.CellFont.Italic.get -> bool
+ExSheet.Engine.CellFont.Italic.init -> void
+ExSheet.Engine.CellFont.Strikethrough.get -> bool
+ExSheet.Engine.CellFont.Strikethrough.init -> void
+ExSheet.Engine.CellFont.Underline.get -> bool
+ExSheet.Engine.CellFont.Underline.init -> void
+ExSheet.Engine.CellFormat
+ExSheet.Engine.CellFormat.<Clone>$() -> ExSheet.Engine.CellFormat!
+ExSheet.Engine.CellFormat.Alignment.get -> ExSheet.Engine.HorizontalAlignment
+ExSheet.Engine.CellFormat.Alignment.init -> void
+ExSheet.Engine.CellFormat.Borders.get -> ExSheet.Engine.CellBorders
+ExSheet.Engine.CellFormat.Borders.init -> void
+ExSheet.Engine.CellFormat.CellFormat(ExSheet.Engine.NumberFormat! NumberFormat, ExSheet.Engine.HorizontalAlignment Alignment, ExSheet.Engine.CellFont Font, ExSheet.Engine.CellFill Fill, ExSheet.Engine.CellBorders Borders) -> void
+ExSheet.Engine.CellFormat.Deconstruct(out ExSheet.Engine.NumberFormat! NumberFormat, out ExSheet.Engine.HorizontalAlignment Alignment, out ExSheet.Engine.CellFont Font, out ExSheet.Engine.CellFill Fill, out ExSheet.Engine.CellBorders Borders) -> void
+ExSheet.Engine.CellFormat.Equals(ExSheet.Engine.CellFormat? other) -> bool
+ExSheet.Engine.CellFormat.Fill.get -> ExSheet.Engine.CellFill
+ExSheet.Engine.CellFormat.Fill.init -> void
+ExSheet.Engine.CellFormat.Font.get -> ExSheet.Engine.CellFont
+ExSheet.Engine.CellFormat.Font.init -> void
+ExSheet.Engine.CellFormat.NumberFormat.get -> ExSheet.Engine.NumberFormat!
+ExSheet.Engine.CellFormat.NumberFormat.init -> void
+ExSheet.Engine.CellFormatChange
+ExSheet.Engine.CellFormatChange.<Clone>$() -> ExSheet.Engine.CellFormatChange!
+ExSheet.Engine.CellFormatChange.Alignment.get -> ExSheet.Engine.HorizontalAlignment?
+ExSheet.Engine.CellFormatChange.Alignment.init -> void
+ExSheet.Engine.CellFormatChange.Bold.get -> bool?
+ExSheet.Engine.CellFormatChange.Bold.init -> void
+ExSheet.Engine.CellFormatChange.Borders.get -> ExSheet.Engine.BorderChange?
+ExSheet.Engine.CellFormatChange.Borders.init -> void
+ExSheet.Engine.CellFormatChange.CellFormatChange() -> void
+ExSheet.Engine.CellFormatChange.Equals(ExSheet.Engine.CellFormatChange? other) -> bool
+ExSheet.Engine.CellFormatChange.Fill.get -> ExSheet.Engine.CellFill?
+ExSheet.Engine.CellFormatChange.Fill.init -> void
+ExSheet.Engine.CellFormatChange.FontColour.get -> ExSheet.Engine.CellColour?
+ExSheet.Engine.CellFormatChange.FontColour.init -> void
+ExSheet.Engine.CellFormatChange.IsEmpty.get -> bool
+ExSheet.Engine.CellFormatChange.Italic.get -> bool?
+ExSheet.Engine.CellFormatChange.Italic.init -> void
+ExSheet.Engine.CellFormatChange.NumberFormat.get -> ExSheet.Engine.NumberFormat?
+ExSheet.Engine.CellFormatChange.NumberFormat.init -> void
+ExSheet.Engine.CellFormatChange.Strikethrough.get -> bool?
+ExSheet.Engine.CellFormatChange.Strikethrough.init -> void
+ExSheet.Engine.CellFormatChange.Underline.get -> bool?
+ExSheet.Engine.CellFormatChange.Underline.init -> void
+ExSheet.Engine.CellRange
+ExSheet.Engine.CellRange.CellCount.get -> long
+ExSheet.Engine.CellRange.CellRange() -> void
+ExSheet.Engine.CellRange.CellRange(ExSheet.Engine.CellAddress cell) -> void
+ExSheet.Engine.CellRange.CellRange(ExSheet.Engine.CellAddress corner1, ExSheet.Engine.CellAddress corner2) -> void
+ExSheet.Engine.CellRange.Cells() -> System.Collections.Generic.IEnumerable<ExSheet.Engine.CellAddress>!
+ExSheet.Engine.CellRange.ColumnCount.get -> int
+ExSheet.Engine.CellRange.Contains(ExSheet.Engine.CellAddress address) -> bool
+ExSheet.Engine.CellRange.Equals(ExSheet.Engine.CellRange other) -> bool
+ExSheet.Engine.CellRange.First.get -> ExSheet.Engine.CellAddress
+ExSheet.Engine.CellRange.IsWholeColumns.get -> bool
+ExSheet.Engine.CellRange.IsWholeRows.get -> bool
+ExSheet.Engine.CellRange.Last.get -> ExSheet.Engine.CellAddress
+ExSheet.Engine.CellRange.RowCount.get -> int
+ExSheet.Engine.CompletionCandidate
+ExSheet.Engine.CompletionCandidate.<Clone>$() -> ExSheet.Engine.CompletionCandidate!
+ExSheet.Engine.CompletionCandidate.CompletionCandidate(string! Name, ExSheet.Engine.CompletionKind Kind, string! InsertText, string? Description) -> void
+ExSheet.Engine.CompletionCandidate.Deconstruct(out string! Name, out ExSheet.Engine.CompletionKind Kind, out string! InsertText, out string? Description) -> void
+ExSheet.Engine.CompletionCandidate.Description.get -> string?
+ExSheet.Engine.CompletionCandidate.Description.init -> void
+ExSheet.Engine.CompletionCandidate.Equals(ExSheet.Engine.CompletionCandidate? other) -> bool
+ExSheet.Engine.CompletionCandidate.InsertText.get -> string!
+ExSheet.Engine.CompletionCandidate.InsertText.init -> void
+ExSheet.Engine.CompletionCandidate.Kind.get -> ExSheet.Engine.CompletionKind
+ExSheet.Engine.CompletionCandidate.Kind.init -> void
+ExSheet.Engine.CompletionCandidate.Name.get -> string!
+ExSheet.Engine.CompletionCandidate.Name.init -> void
+ExSheet.Engine.CompletionKind
+ExSheet.Engine.CompletionKind.ArgumentValue = 3 -> ExSheet.Engine.CompletionKind
+ExSheet.Engine.CompletionKind.Function = 0 -> ExSheet.Engine.CompletionKind
+ExSheet.Engine.CompletionKind.LinkedTable = 1 -> ExSheet.Engine.CompletionKind
+ExSheet.Engine.CompletionKind.LinkedTableColumn = 2 -> ExSheet.Engine.CompletionKind
+ExSheet.Engine.DeclaredFunction
+ExSheet.Engine.DeclaredFunction.<Clone>$() -> ExSheet.Engine.DeclaredFunction!
+ExSheet.Engine.DeclaredFunction.Arguments.get -> string!
+ExSheet.Engine.DeclaredFunction.Arguments.init -> void
+ExSheet.Engine.DeclaredFunction.DeclaredFunction(string! Name, string! Arguments, string! Description) -> void
+ExSheet.Engine.DeclaredFunction.Deconstruct(out string! Name, out string! Arguments, out string! Description) -> void
+ExSheet.Engine.DeclaredFunction.Description.get -> string!
+ExSheet.Engine.DeclaredFunction.Description.init -> void
+ExSheet.Engine.DeclaredFunction.Equals(ExSheet.Engine.DeclaredFunction? other) -> bool
+ExSheet.Engine.DeclaredFunction.Name.get -> string!
+ExSheet.Engine.DeclaredFunction.Name.init -> void
+ExSheet.Engine.DeclaredFunction.Signature.get -> string!
+ExSheet.Engine.DeclaredFunction.ValuesOf(int index) -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.ArgumentValue!>!
+ExSheet.Engine.Entry
+ExSheet.Engine.Entry.Constant.get -> ExSheet.Engine.Value?
+ExSheet.Engine.Entry.Equals(ExSheet.Engine.Entry? other) -> bool
+ExSheet.Engine.Entry.Formula.get -> string?
+ExSheet.Engine.Entry.IsFormula.get -> bool
+ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Blocked = 12 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Calc = 10 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Circ = 8 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Connect = 13 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Div0 = 1 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Field = 11 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.GettingData = 7 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.NA = 6 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Name = 4 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Null = 0 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Num = 5 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Ref = 3 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Spill = 9 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Unknown = 14 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.ErrorValue.Value = 2 -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.FillDirection
+ExSheet.Engine.FillDirection.Down = 0 -> ExSheet.Engine.FillDirection
+ExSheet.Engine.FillDirection.Left = 3 -> ExSheet.Engine.FillDirection
+ExSheet.Engine.FillDirection.Right = 1 -> ExSheet.Engine.FillDirection
+ExSheet.Engine.FillDirection.Up = 2 -> ExSheet.Engine.FillDirection
+ExSheet.Engine.FormulaCompletion
+ExSheet.Engine.FormulaCompletion.<Clone>$() -> ExSheet.Engine.FormulaCompletion!
+ExSheet.Engine.FormulaCompletion.Candidates.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.CompletionCandidate!>!
+ExSheet.Engine.FormulaCompletion.Candidates.init -> void
+ExSheet.Engine.FormulaCompletion.Deconstruct(out int Start, out int Length, out System.Collections.Generic.IReadOnlyList<ExSheet.Engine.CompletionCandidate!>! Candidates) -> void
+ExSheet.Engine.FormulaCompletion.Equals(ExSheet.Engine.FormulaCompletion? other) -> bool
+ExSheet.Engine.FormulaCompletion.FormulaCompletion(int Start, int Length, System.Collections.Generic.IReadOnlyList<ExSheet.Engine.CompletionCandidate!>! Candidates) -> void
+ExSheet.Engine.FormulaCompletion.Length.get -> int
+ExSheet.Engine.FormulaCompletion.Length.init -> void
+ExSheet.Engine.FormulaCompletion.Start.get -> int
+ExSheet.Engine.FormulaCompletion.Start.init -> void
+ExSheet.Engine.FormulaEntry
+ExSheet.Engine.FormulaReference
+ExSheet.Engine.FormulaReference.Cells.get -> ExSheet.Engine.CellRange?
+ExSheet.Engine.FormulaReference.Cells.init -> void
+ExSheet.Engine.FormulaReference.Deconstruct(out int Start, out int Length, out ExSheet.Engine.CellRange? Cells, out ExSheet.Engine.LinkedTableColumn? LinkedColumn) -> void
+ExSheet.Engine.FormulaReference.Equals(ExSheet.Engine.FormulaReference other) -> bool
+ExSheet.Engine.FormulaReference.FormulaReference() -> void
+ExSheet.Engine.FormulaReference.FormulaReference(int Start, int Length, ExSheet.Engine.CellRange? Cells, ExSheet.Engine.LinkedTableColumn? LinkedColumn) -> void
+ExSheet.Engine.FormulaReference.Length.get -> int
+ExSheet.Engine.FormulaReference.Length.init -> void
+ExSheet.Engine.FormulaReference.LinkedColumn.get -> ExSheet.Engine.LinkedTableColumn?
+ExSheet.Engine.FormulaReference.LinkedColumn.init -> void
+ExSheet.Engine.FormulaReference.Start.get -> int
+ExSheet.Engine.FormulaReference.Start.init -> void
+ExSheet.Engine.FormulaSyntaxException
+ExSheet.Engine.FormulaSyntaxException.Formula.get -> string!
+ExSheet.Engine.FormulaSyntaxException.FormulaSyntaxException(string! formula, int position, string! reason) -> void
+ExSheet.Engine.FormulaSyntaxException.Position.get -> int
+ExSheet.Engine.FormulaSyntaxException.Reason.get -> string!
+ExSheet.Engine.HorizontalAlignment
+ExSheet.Engine.HorizontalAlignment.Center = 2 -> ExSheet.Engine.HorizontalAlignment
+ExSheet.Engine.HorizontalAlignment.General = 0 -> ExSheet.Engine.HorizontalAlignment
+ExSheet.Engine.HorizontalAlignment.Left = 1 -> ExSheet.Engine.HorizontalAlignment
+ExSheet.Engine.HorizontalAlignment.Right = 3 -> ExSheet.Engine.HorizontalAlignment
+ExSheet.Engine.LinkedTable
+ExSheet.Engine.LinkedTable.<Clone>$() -> ExSheet.Engine.LinkedTable!
+ExSheet.Engine.LinkedTable.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExSheet.Engine.LinkedTable.Columns.init -> void
+ExSheet.Engine.LinkedTable.Deconstruct(out string! Name, out System.Collections.Generic.IReadOnlyList<string!>! Columns, out bool IsWaiting, out int RowCount, out string? Key) -> void
+ExSheet.Engine.LinkedTable.Equals(ExSheet.Engine.LinkedTable? other) -> bool
+ExSheet.Engine.LinkedTable.IsWaiting.get -> bool
+ExSheet.Engine.LinkedTable.IsWaiting.init -> void
+ExSheet.Engine.LinkedTable.Key.get -> string?
+ExSheet.Engine.LinkedTable.Key.init -> void
+ExSheet.Engine.LinkedTable.KeyColumns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExSheet.Engine.LinkedTable.KeyColumns.init -> void
+ExSheet.Engine.LinkedTable.LinkedTable(string! Name, System.Collections.Generic.IReadOnlyList<string!>! Columns, bool IsWaiting, int RowCount, string? Key = null) -> void
+ExSheet.Engine.LinkedTable.Name.get -> string!
+ExSheet.Engine.LinkedTable.Name.init -> void
+ExSheet.Engine.LinkedTable.RowCount.get -> int
+ExSheet.Engine.LinkedTable.RowCount.init -> void
+ExSheet.Engine.LinkedTableColumn
+ExSheet.Engine.LinkedTableColumn.<Clone>$() -> ExSheet.Engine.LinkedTableColumn!
+ExSheet.Engine.LinkedTableColumn.Column.get -> string!
+ExSheet.Engine.LinkedTableColumn.Column.init -> void
+ExSheet.Engine.LinkedTableColumn.Deconstruct(out string! Table, out string! Column) -> void
+ExSheet.Engine.LinkedTableColumn.Equals(ExSheet.Engine.LinkedTableColumn? other) -> bool
+ExSheet.Engine.LinkedTableColumn.LinkedTableColumn(string! Table, string! Column) -> void
+ExSheet.Engine.LinkedTableColumn.Table.get -> string!
+ExSheet.Engine.LinkedTableColumn.Table.init -> void
+ExSheet.Engine.NumberFormat
+ExSheet.Engine.NumberFormat.Code.get -> string!
+ExSheet.Engine.NumberFormat.Equals(ExSheet.Engine.NumberFormat? other) -> bool
+ExSheet.Engine.NumberFormat.IsDate.get -> bool
+ExSheet.Engine.NumberFormat.IsGeneral.get -> bool
+ExSheet.Engine.NumberFormat.IsPercent.get -> bool
+ExSheet.Engine.NumberFormat.LocalCode(System.Globalization.CultureInfo! culture) -> string!
+ExSheet.Engine.NumberFormatColour
+ExSheet.Engine.NumberFormatColour.Black = 0 -> ExSheet.Engine.NumberFormatColour
+ExSheet.Engine.NumberFormatColour.Blue = 1 -> ExSheet.Engine.NumberFormatColour
+ExSheet.Engine.NumberFormatColour.Cyan = 2 -> ExSheet.Engine.NumberFormatColour
+ExSheet.Engine.NumberFormatColour.Green = 3 -> ExSheet.Engine.NumberFormatColour
+ExSheet.Engine.NumberFormatColour.Magenta = 4 -> ExSheet.Engine.NumberFormatColour
+ExSheet.Engine.NumberFormatColour.Red = 5 -> ExSheet.Engine.NumberFormatColour
+ExSheet.Engine.NumberFormatColour.White = 6 -> ExSheet.Engine.NumberFormatColour
+ExSheet.Engine.NumberFormatColour.Yellow = 7 -> ExSheet.Engine.NumberFormatColour
+ExSheet.Engine.NumberFormatColours
+ExSheet.Engine.PointSite
+ExSheet.Engine.PointSite.Deconstruct(out int Start, out int Length) -> void
+ExSheet.Engine.PointSite.Equals(ExSheet.Engine.PointSite other) -> bool
+ExSheet.Engine.PointSite.Length.get -> int
+ExSheet.Engine.PointSite.Length.init -> void
+ExSheet.Engine.PointSite.PointSite() -> void
+ExSheet.Engine.PointSite.PointSite(int Start, int Length) -> void
+ExSheet.Engine.PointSite.Start.get -> int
+ExSheet.Engine.PointSite.Start.init -> void
+ExSheet.Engine.RangeEdgeLines
+ExSheet.Engine.RangeEdgeLines.<Clone>$() -> ExSheet.Engine.RangeEdgeLines!
+ExSheet.Engine.RangeEdgeLines.Bottom.get -> System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>!
+ExSheet.Engine.RangeEdgeLines.Bottom.init -> void
+ExSheet.Engine.RangeEdgeLines.Deconstruct(out System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>! Top, out System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>! Bottom, out System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>! Left, out System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>! Right) -> void
+ExSheet.Engine.RangeEdgeLines.Equals(ExSheet.Engine.RangeEdgeLines? other) -> bool
+ExSheet.Engine.RangeEdgeLines.Left.get -> System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>!
+ExSheet.Engine.RangeEdgeLines.Left.init -> void
+ExSheet.Engine.RangeEdgeLines.RangeEdgeLines(System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>! Top, System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>! Bottom, System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>! Left, System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>! Right) -> void
+ExSheet.Engine.RangeEdgeLines.Right.get -> System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>!
+ExSheet.Engine.RangeEdgeLines.Right.init -> void
+ExSheet.Engine.RangeEdgeLines.Top.get -> System.Collections.Generic.IReadOnlySet<ExSheet.Engine.BorderLine>!
+ExSheet.Engine.RangeEdgeLines.Top.init -> void
+ExSheet.Engine.ReferenceCycle
+ExSheet.Engine.ReferenceCycle.<Clone>$() -> ExSheet.Engine.ReferenceCycle!
+ExSheet.Engine.ReferenceCycle.Deconstruct(out string! Text, out int SelectionStart, out int SelectionEnd) -> void
+ExSheet.Engine.ReferenceCycle.Equals(ExSheet.Engine.ReferenceCycle? other) -> bool
+ExSheet.Engine.ReferenceCycle.ReferenceCycle(string! Text, int SelectionStart, int SelectionEnd) -> void
+ExSheet.Engine.ReferenceCycle.SelectionEnd.get -> int
+ExSheet.Engine.ReferenceCycle.SelectionEnd.init -> void
+ExSheet.Engine.ReferenceCycle.SelectionStart.get -> int
+ExSheet.Engine.ReferenceCycle.SelectionStart.init -> void
+ExSheet.Engine.ReferenceCycle.Text.get -> string!
+ExSheet.Engine.ReferenceCycle.Text.init -> void
+ExSheet.Engine.RepeatedKeyException
+ExSheet.Engine.RepeatedKeyException.Change.get -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.RepeatedKeyException.FirstRow.get -> int
+ExSheet.Engine.RepeatedKeyException.Key.get -> ExSheet.Engine.Value
+ExSheet.Engine.RepeatedKeyException.KeyColumn.get -> string!
+ExSheet.Engine.RepeatedKeyException.KeyColumns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExSheet.Engine.RepeatedKeyException.Keys.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value>!
+ExSheet.Engine.RepeatedKeyException.SecondRow.get -> int
+ExSheet.Engine.RepeatedKeyException.Table.get -> string!
+ExSheet.Engine.Sheet
+ExSheet.Engine.Sheet.Changes.get -> long
+ExSheet.Engine.Sheet.Check(ExSheet.Engine.SheetEdit! edit) -> ExSheet.Engine.SheetRefusal?
+ExSheet.Engine.Sheet.Complete(string! text, int caret) -> ExSheet.Engine.FormulaCompletion?
+ExSheet.Engine.Sheet.Copy(ExSheet.Engine.CellRange range) -> ExSheet.Engine.SheetCopy!
+ExSheet.Engine.Sheet.Culture.get -> System.Globalization.CultureInfo!
+ExSheet.Engine.Sheet.DeclareLinkedTable(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, string? key = null) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.DeclareLinkedTable(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, System.Collections.Generic.IReadOnlyList<string!>! key) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.DeleteColumns(int column, int count = 1) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.DeleteRows(int row, int count = 1) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.Do(ExSheet.Engine.SheetEdit! edit) -> ExSheet.Engine.SheetStep!
+ExSheet.Engine.Sheet.Enter(ExSheet.Engine.CellAddress address, string! typed) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.Enter(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<ExSheet.Engine.CellAddress, string!>>! typed) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.EntryAddresses.get -> System.Collections.Generic.IEnumerable<ExSheet.Engine.CellAddress>!
+ExSheet.Engine.Sheet.EntryAddressesIn(ExSheet.Engine.CellRange range) -> System.Collections.Generic.IEnumerable<ExSheet.Engine.CellAddress>!
+ExSheet.Engine.Sheet.FormatAs(ExSheet.Engine.CellAddress address, double number) -> string?
+ExSheet.Engine.Sheet.GetAlignment(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.HorizontalAlignment
+ExSheet.Engine.Sheet.GetBorders(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.CellBorders
+ExSheet.Engine.Sheet.GetCellFormat(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.CellFormat!
+ExSheet.Engine.Sheet.GetCellFormats(ExSheet.Engine.CellRange range) -> System.Collections.Generic.IReadOnlySet<ExSheet.Engine.CellFormat!>!
+ExSheet.Engine.Sheet.GetColumnAlignment(int column) -> ExSheet.Engine.HorizontalAlignment?
+ExSheet.Engine.Sheet.GetColumnNumberFormat(int column) -> ExSheet.Engine.NumberFormat?
+ExSheet.Engine.Sheet.GetColumnWidth(int column) -> ExSheet.Engine.SheetColumnWidth?
+ExSheet.Engine.Sheet.GetDisplay(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.CellDisplay
+ExSheet.Engine.Sheet.GetDisplay(ExSheet.Engine.CellAddress address, double width) -> ExSheet.Engine.CellDisplay
+ExSheet.Engine.Sheet.GetEdgeLines(ExSheet.Engine.CellRange range) -> ExSheet.Engine.RangeEdgeLines!
+ExSheet.Engine.Sheet.GetEntry(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.Entry?
+ExSheet.Engine.Sheet.GetEntryText(ExSheet.Engine.CellAddress address) -> string!
+ExSheet.Engine.Sheet.GetFill(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.CellFill
+ExSheet.Engine.Sheet.GetFont(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.CellFont
+ExSheet.Engine.Sheet.GetNumberFormat(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.NumberFormat!
+ExSheet.Engine.Sheet.GetRowAlignment(int row) -> ExSheet.Engine.HorizontalAlignment?
+ExSheet.Engine.Sheet.GetRowNumberFormat(int row) -> ExSheet.Engine.NumberFormat?
+ExSheet.Engine.Sheet.GetValue(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.Value?
+ExSheet.Engine.Sheet.GetWidthOnEntry(ExSheet.Engine.CellAddress address) -> int?
+ExSheet.Engine.Sheet.HasVolatileFormulas.get -> bool
+ExSheet.Engine.Sheet.InsertColumns(int column, int count = 1) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.InsertRows(int row, int count = 1) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.LinkedTables.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.LinkedTable!>!
+ExSheet.Engine.Sheet.Name.get -> string!
+ExSheet.Engine.Sheet.NowSource.get -> System.Func<System.DateTime?>?
+ExSheet.Engine.Sheet.NowSource.set -> void
+ExSheet.Engine.Sheet.PushLinkedTable(string! name, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>! rows) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.RecalculateVolatile() -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.References(string! text) -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.FormulaReference>!
+ExSheet.Engine.Sheet.Seed.get -> ulong?
+ExSheet.Engine.Sheet.SetAlignment(ExSheet.Engine.CellAddress address, ExSheet.Engine.HorizontalAlignment alignment) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetAlignment(ExSheet.Engine.CellRange range, ExSheet.Engine.HorizontalAlignment alignment) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetAlignment(System.Collections.Generic.IEnumerable<ExSheet.Engine.CellAddress>! addresses, ExSheet.Engine.HorizontalAlignment alignment) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetAutomaticColumnWidth(ExSheet.Engine.CellRange columns, double width) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetCellFormat(System.Collections.Generic.IEnumerable<ExSheet.Engine.CellRange>! ranges, ExSheet.Engine.CellFormatChange! change) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetColumnWidth(ExSheet.Engine.CellRange columns, double? width) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetEntries(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<ExSheet.Engine.CellAddress, ExSheet.Engine.Entry?>>! entries) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetNumberFormat(ExSheet.Engine.CellAddress address, ExSheet.Engine.NumberFormat? format) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetNumberFormat(ExSheet.Engine.CellRange range, ExSheet.Engine.NumberFormat? format) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetNumberFormat(System.Collections.Generic.IEnumerable<ExSheet.Engine.CellAddress>! addresses, ExSheet.Engine.NumberFormat? format) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetSeed(ulong? seed) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetSeed(ulong? seed, long changes) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.SetToday(System.DateOnly? today) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Sheet.Sheet(System.Globalization.CultureInfo! culture) -> void
+ExSheet.Engine.Sheet.Sheet(System.Globalization.CultureInfo! culture, string! name) -> void
+ExSheet.Engine.Sheet.SpilledFrom(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.CellAddress?
+ExSheet.Engine.Sheet.Today.get -> System.DateOnly?
+ExSheet.Engine.Sheet.ToDocument() -> ExSheet.Engine.SheetDocument!
+ExSheet.Engine.Sheet.ValueAddresses.get -> System.Collections.Generic.IEnumerable<ExSheet.Engine.CellAddress>!
+ExSheet.Engine.SheetBlock
+ExSheet.Engine.SheetBlock.CellFormatAt(int row, int column) -> ExSheet.Engine.CellFormat!
+ExSheet.Engine.SheetBlock.ColumnCount.get -> int
+ExSheet.Engine.SheetBlock.EntryAt(int row, int column) -> ExSheet.Engine.Entry?
+ExSheet.Engine.SheetBlock.RowCount.get -> int
+ExSheet.Engine.SheetBlock.Source.get -> ExSheet.Engine.CellRange
+ExSheet.Engine.SheetChange
+ExSheet.Engine.SheetChange.Columns.get -> System.Collections.Generic.IReadOnlyList<int>!
+ExSheet.Engine.SheetChange.Recalculated.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.CellAddress>!
+ExSheet.Engine.SheetChange.ReformatsUnnamedRows.get -> bool
+ExSheet.Engine.SheetChange.Rows.get -> System.Collections.Generic.IReadOnlyList<int>!
+ExSheet.Engine.SheetChange.ValueChanges.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.CellAddress>!
+ExSheet.Engine.SheetColumnWidth
+ExSheet.Engine.SheetColumnWidth.Deconstruct(out double Width, out ExSheet.Engine.SheetColumnWidthKind Kind) -> void
+ExSheet.Engine.SheetColumnWidth.Equals(ExSheet.Engine.SheetColumnWidth other) -> bool
+ExSheet.Engine.SheetColumnWidth.IsCustom.get -> bool
+ExSheet.Engine.SheetColumnWidth.IsSetByUser.get -> bool
+ExSheet.Engine.SheetColumnWidth.Kind.get -> ExSheet.Engine.SheetColumnWidthKind
+ExSheet.Engine.SheetColumnWidth.Kind.init -> void
+ExSheet.Engine.SheetColumnWidth.SheetColumnWidth() -> void
+ExSheet.Engine.SheetColumnWidth.SheetColumnWidth(double Width, ExSheet.Engine.SheetColumnWidthKind Kind) -> void
+ExSheet.Engine.SheetColumnWidth.Width.get -> double
+ExSheet.Engine.SheetColumnWidth.Width.init -> void
+ExSheet.Engine.SheetColumnWidthKind
+ExSheet.Engine.SheetColumnWidthKind.SetByUser = 1 -> ExSheet.Engine.SheetColumnWidthKind
+ExSheet.Engine.SheetColumnWidthKind.WidenedByEntry = 0 -> ExSheet.Engine.SheetColumnWidthKind
+ExSheet.Engine.SheetCopy
+ExSheet.Engine.SheetCopy.Block.get -> ExSheet.Engine.SheetBlock?
+ExSheet.Engine.SheetCopy.Html.get -> string?
+ExSheet.Engine.SheetCopy.IsRefused.get -> bool
+ExSheet.Engine.SheetCopy.Refusal.get -> ExSheet.Engine.SheetRefusal?
+ExSheet.Engine.SheetCopy.Text.get -> string?
+ExSheet.Engine.SheetDocument
+ExSheet.Engine.SheetDocument.Cells.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.SheetDocumentCell!>!
+ExSheet.Engine.SheetDocument.Columns.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.SheetDocumentAxisFormat!>!
+ExSheet.Engine.SheetDocument.Columns.init -> void
+ExSheet.Engine.SheetDocument.ColumnWidths.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.SheetDocumentColumnWidth!>!
+ExSheet.Engine.SheetDocument.ColumnWidths.init -> void
+ExSheet.Engine.SheetDocument.Culture.get -> string!
+ExSheet.Engine.SheetDocument.LinkedTables.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.SheetDocumentTable!>!
+ExSheet.Engine.SheetDocument.Name.get -> string!
+ExSheet.Engine.SheetDocument.Rows.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.SheetDocumentAxisFormat!>!
+ExSheet.Engine.SheetDocument.Rows.init -> void
+ExSheet.Engine.SheetDocument.ToJson() -> string!
+ExSheet.Engine.SheetDocument.Version.get -> int
+ExSheet.Engine.SheetDocumentAxisFormat
+ExSheet.Engine.SheetDocumentAxisFormat.<Clone>$() -> ExSheet.Engine.SheetDocumentAxisFormat!
+ExSheet.Engine.SheetDocumentAxisFormat.Alignment.get -> ExSheet.Engine.HorizontalAlignment?
+ExSheet.Engine.SheetDocumentAxisFormat.Alignment.init -> void
+ExSheet.Engine.SheetDocumentAxisFormat.Borders.get -> ExSheet.Engine.CellBorders?
+ExSheet.Engine.SheetDocumentAxisFormat.Borders.init -> void
+ExSheet.Engine.SheetDocumentAxisFormat.Deconstruct(out int First, out int Last, out ExSheet.Engine.NumberFormat? NumberFormat, out ExSheet.Engine.HorizontalAlignment? Alignment, out ExSheet.Engine.CellFont? Font, out ExSheet.Engine.CellFill? Fill, out ExSheet.Engine.CellBorders? Borders) -> void
+ExSheet.Engine.SheetDocumentAxisFormat.Equals(ExSheet.Engine.SheetDocumentAxisFormat? other) -> bool
+ExSheet.Engine.SheetDocumentAxisFormat.Fill.get -> ExSheet.Engine.CellFill?
+ExSheet.Engine.SheetDocumentAxisFormat.Fill.init -> void
+ExSheet.Engine.SheetDocumentAxisFormat.First.get -> int
+ExSheet.Engine.SheetDocumentAxisFormat.First.init -> void
+ExSheet.Engine.SheetDocumentAxisFormat.Font.get -> ExSheet.Engine.CellFont?
+ExSheet.Engine.SheetDocumentAxisFormat.Font.init -> void
+ExSheet.Engine.SheetDocumentAxisFormat.Last.get -> int
+ExSheet.Engine.SheetDocumentAxisFormat.Last.init -> void
+ExSheet.Engine.SheetDocumentAxisFormat.NumberFormat.get -> ExSheet.Engine.NumberFormat?
+ExSheet.Engine.SheetDocumentAxisFormat.NumberFormat.init -> void
+ExSheet.Engine.SheetDocumentAxisFormat.SheetDocumentAxisFormat(int First, int Last, ExSheet.Engine.NumberFormat? NumberFormat, ExSheet.Engine.HorizontalAlignment? Alignment, ExSheet.Engine.CellFont? Font, ExSheet.Engine.CellFill? Fill, ExSheet.Engine.CellBorders? Borders) -> void
+ExSheet.Engine.SheetDocumentCell
+ExSheet.Engine.SheetDocumentCell.<Clone>$() -> ExSheet.Engine.SheetDocumentCell!
+ExSheet.Engine.SheetDocumentCell.Address.get -> ExSheet.Engine.CellAddress
+ExSheet.Engine.SheetDocumentCell.Address.init -> void
+ExSheet.Engine.SheetDocumentCell.Alignment.get -> ExSheet.Engine.HorizontalAlignment?
+ExSheet.Engine.SheetDocumentCell.Alignment.init -> void
+ExSheet.Engine.SheetDocumentCell.Borders.get -> ExSheet.Engine.CellBorders?
+ExSheet.Engine.SheetDocumentCell.Borders.init -> void
+ExSheet.Engine.SheetDocumentCell.Deconstruct(out ExSheet.Engine.CellAddress Address, out ExSheet.Engine.Entry? Entry, out ExSheet.Engine.NumberFormat? NumberFormat, out ExSheet.Engine.HorizontalAlignment? Alignment, out ExSheet.Engine.CellFont? Font, out ExSheet.Engine.CellFill? Fill, out ExSheet.Engine.CellBorders? Borders) -> void
+ExSheet.Engine.SheetDocumentCell.Entry.get -> ExSheet.Engine.Entry?
+ExSheet.Engine.SheetDocumentCell.Entry.init -> void
+ExSheet.Engine.SheetDocumentCell.Equals(ExSheet.Engine.SheetDocumentCell? other) -> bool
+ExSheet.Engine.SheetDocumentCell.Fill.get -> ExSheet.Engine.CellFill?
+ExSheet.Engine.SheetDocumentCell.Fill.init -> void
+ExSheet.Engine.SheetDocumentCell.Font.get -> ExSheet.Engine.CellFont?
+ExSheet.Engine.SheetDocumentCell.Font.init -> void
+ExSheet.Engine.SheetDocumentCell.NumberFormat.get -> ExSheet.Engine.NumberFormat?
+ExSheet.Engine.SheetDocumentCell.NumberFormat.init -> void
+ExSheet.Engine.SheetDocumentCell.SheetDocumentCell(ExSheet.Engine.CellAddress Address, ExSheet.Engine.Entry? Entry, ExSheet.Engine.NumberFormat? NumberFormat, ExSheet.Engine.HorizontalAlignment? Alignment, ExSheet.Engine.CellFont? Font, ExSheet.Engine.CellFill? Fill, ExSheet.Engine.CellBorders? Borders) -> void
+ExSheet.Engine.SheetDocumentColumnWidth
+ExSheet.Engine.SheetDocumentColumnWidth.<Clone>$() -> ExSheet.Engine.SheetDocumentColumnWidth!
+ExSheet.Engine.SheetDocumentColumnWidth.Deconstruct(out int First, out int Last, out double Width, out ExSheet.Engine.SheetColumnWidthKind Kind) -> void
+ExSheet.Engine.SheetDocumentColumnWidth.Equals(ExSheet.Engine.SheetDocumentColumnWidth? other) -> bool
+ExSheet.Engine.SheetDocumentColumnWidth.First.get -> int
+ExSheet.Engine.SheetDocumentColumnWidth.First.init -> void
+ExSheet.Engine.SheetDocumentColumnWidth.IsCustom.get -> bool
+ExSheet.Engine.SheetDocumentColumnWidth.Kind.get -> ExSheet.Engine.SheetColumnWidthKind
+ExSheet.Engine.SheetDocumentColumnWidth.Kind.init -> void
+ExSheet.Engine.SheetDocumentColumnWidth.Last.get -> int
+ExSheet.Engine.SheetDocumentColumnWidth.Last.init -> void
+ExSheet.Engine.SheetDocumentColumnWidth.SheetDocumentColumnWidth(int First, int Last, double Width, ExSheet.Engine.SheetColumnWidthKind Kind = ExSheet.Engine.SheetColumnWidthKind.SetByUser) -> void
+ExSheet.Engine.SheetDocumentColumnWidth.Width.get -> double
+ExSheet.Engine.SheetDocumentColumnWidth.Width.init -> void
+ExSheet.Engine.SheetDocumentException
+ExSheet.Engine.SheetDocumentException.DocumentVersion.get -> int?
+ExSheet.Engine.SheetDocumentException.DocumentVersion.init -> void
+ExSheet.Engine.SheetDocumentException.SheetDocumentException(string! message) -> void
+ExSheet.Engine.SheetDocumentException.SheetDocumentException(string! message, System.Exception! inner) -> void
+ExSheet.Engine.SheetDocumentTable
+ExSheet.Engine.SheetDocumentTable.<Clone>$() -> ExSheet.Engine.SheetDocumentTable!
+ExSheet.Engine.SheetDocumentTable.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExSheet.Engine.SheetDocumentTable.Columns.init -> void
+ExSheet.Engine.SheetDocumentTable.Deconstruct(out string! Name, out System.Collections.Generic.IReadOnlyList<string!>! Columns, out string? Key) -> void
+ExSheet.Engine.SheetDocumentTable.Equals(ExSheet.Engine.SheetDocumentTable? other) -> bool
+ExSheet.Engine.SheetDocumentTable.Key.get -> string?
+ExSheet.Engine.SheetDocumentTable.Key.init -> void
+ExSheet.Engine.SheetDocumentTable.KeyColumns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExSheet.Engine.SheetDocumentTable.KeyColumns.init -> void
+ExSheet.Engine.SheetDocumentTable.Name.get -> string!
+ExSheet.Engine.SheetDocumentTable.Name.init -> void
+ExSheet.Engine.SheetDocumentTable.SheetDocumentTable(string! Name, System.Collections.Generic.IReadOnlyList<string!>! Columns, string? Key = null) -> void
+ExSheet.Engine.SheetEdit
+ExSheet.Engine.SheetRefusal
+ExSheet.Engine.SheetRefusal.<Clone>$() -> ExSheet.Engine.SheetRefusal!
+ExSheet.Engine.SheetRefusal.Deconstruct(out ExSheet.Engine.SheetRefusalReason Reason, out string! Message) -> void
+ExSheet.Engine.SheetRefusal.Equals(ExSheet.Engine.SheetRefusal? other) -> bool
+ExSheet.Engine.SheetRefusal.Message.get -> string!
+ExSheet.Engine.SheetRefusal.Message.init -> void
+ExSheet.Engine.SheetRefusal.Reason.get -> ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetRefusal.Reason.init -> void
+ExSheet.Engine.SheetRefusal.SheetRefusal(ExSheet.Engine.SheetRefusalReason Reason, string! Message) -> void
+ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetRefusalReason.BlockWouldLeaveSheet = 1 -> ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetRefusalReason.EditIsOpen = 5 -> ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetRefusalReason.EntriesWouldLeaveSheet = 0 -> ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetRefusalReason.FillPatternNotSupported = 3 -> ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetRefusalReason.FillShapeNotSupported = 4 -> ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetRefusalReason.WaitingForData = 2 -> ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetRefusedException
+ExSheet.Engine.SheetRefusedException.Refusal.get -> ExSheet.Engine.SheetRefusal!
+ExSheet.Engine.SheetRefusedException.SheetRefusedException(ExSheet.Engine.SheetRefusal! refusal) -> void
+ExSheet.Engine.SheetStep
+ExSheet.Engine.SheetStep.Change.get -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.SheetStep.IsUndone.get -> bool
+ExSheet.Engine.SheetStep.Redo() -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.SheetStep.Sheet.get -> ExSheet.Engine.Sheet!
+ExSheet.Engine.SheetStep.Undo() -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.Value
+ExSheet.Engine.Value.Boolean.get -> bool
+ExSheet.Engine.Value.Equals(ExSheet.Engine.Value other) -> bool
+ExSheet.Engine.Value.Error.get -> ExSheet.Engine.ErrorValue
+ExSheet.Engine.Value.IsError.get -> bool
+ExSheet.Engine.Value.Kind.get -> ExSheet.Engine.ValueKind
+ExSheet.Engine.Value.Number.get -> double
+ExSheet.Engine.Value.Text.get -> string!
+ExSheet.Engine.Value.Value() -> void
+ExSheet.Engine.ValueKind
+ExSheet.Engine.ValueKind.Boolean = 2 -> ExSheet.Engine.ValueKind
+ExSheet.Engine.ValueKind.Error = 3 -> ExSheet.Engine.ValueKind
+ExSheet.Engine.ValueKind.Number = 0 -> ExSheet.Engine.ValueKind
+ExSheet.Engine.ValueKind.Text = 1 -> ExSheet.Engine.ValueKind
+override ExSheet.Engine.ArgumentHint.Equals(object? obj) -> bool
+override ExSheet.Engine.ArgumentHint.GetHashCode() -> int
+override ExSheet.Engine.ArgumentHint.ToString() -> string!
+override ExSheet.Engine.ArgumentValue.Equals(object? obj) -> bool
+override ExSheet.Engine.ArgumentValue.GetHashCode() -> int
+override ExSheet.Engine.ArgumentValue.ToString() -> string!
+override ExSheet.Engine.BorderChange.Equals(object? obj) -> bool
+override ExSheet.Engine.BorderChange.GetHashCode() -> int
+override ExSheet.Engine.BorderChange.ToString() -> string!
+override ExSheet.Engine.BorderLine.GetHashCode() -> int
+override ExSheet.Engine.CellAddress.GetHashCode() -> int
+override ExSheet.Engine.CellAddress.ToString() -> string!
+override ExSheet.Engine.CellBorders.GetHashCode() -> int
+override ExSheet.Engine.CellColour.GetHashCode() -> int
+override ExSheet.Engine.CellColour.ToString() -> string!
+override ExSheet.Engine.CellDisplay.GetHashCode() -> int
+override ExSheet.Engine.CellFill.GetHashCode() -> int
+override ExSheet.Engine.CellFont.GetHashCode() -> int
+override ExSheet.Engine.CellFormat.Equals(object? obj) -> bool
+override ExSheet.Engine.CellFormat.GetHashCode() -> int
+override ExSheet.Engine.CellFormat.ToString() -> string!
+override ExSheet.Engine.CellFormatChange.Equals(object? obj) -> bool
+override ExSheet.Engine.CellFormatChange.GetHashCode() -> int
+override ExSheet.Engine.CellFormatChange.ToString() -> string!
+override ExSheet.Engine.CellRange.GetHashCode() -> int
+override ExSheet.Engine.CellRange.ToString() -> string!
+override ExSheet.Engine.CompletionCandidate.Equals(object? obj) -> bool
+override ExSheet.Engine.CompletionCandidate.GetHashCode() -> int
+override ExSheet.Engine.CompletionCandidate.ToString() -> string!
+override ExSheet.Engine.DeclaredFunction.Equals(object? obj) -> bool
+override ExSheet.Engine.DeclaredFunction.GetHashCode() -> int
+override ExSheet.Engine.DeclaredFunction.ToString() -> string!
+override ExSheet.Engine.Entry.Equals(object? obj) -> bool
+override ExSheet.Engine.Entry.GetHashCode() -> int
+override ExSheet.Engine.Entry.ToString() -> string!
+override ExSheet.Engine.FormulaCompletion.Equals(object? obj) -> bool
+override ExSheet.Engine.FormulaCompletion.GetHashCode() -> int
+override ExSheet.Engine.FormulaCompletion.ToString() -> string!
+override ExSheet.Engine.FormulaReference.GetHashCode() -> int
+override ExSheet.Engine.LinkedTable.Equals(object? obj) -> bool
+override ExSheet.Engine.LinkedTable.GetHashCode() -> int
+override ExSheet.Engine.LinkedTable.ToString() -> string!
+override ExSheet.Engine.LinkedTableColumn.Equals(object? obj) -> bool
+override ExSheet.Engine.LinkedTableColumn.GetHashCode() -> int
+override ExSheet.Engine.LinkedTableColumn.ToString() -> string!
+override ExSheet.Engine.NumberFormat.Equals(object? obj) -> bool
+override ExSheet.Engine.NumberFormat.GetHashCode() -> int
+override ExSheet.Engine.NumberFormat.ToString() -> string!
+override ExSheet.Engine.PointSite.GetHashCode() -> int
+override ExSheet.Engine.RangeEdgeLines.Equals(object? obj) -> bool
+override ExSheet.Engine.RangeEdgeLines.GetHashCode() -> int
+override ExSheet.Engine.RangeEdgeLines.ToString() -> string!
+override ExSheet.Engine.ReferenceCycle.Equals(object? obj) -> bool
+override ExSheet.Engine.ReferenceCycle.GetHashCode() -> int
+override ExSheet.Engine.ReferenceCycle.ToString() -> string!
+override ExSheet.Engine.SheetColumnWidth.GetHashCode() -> int
+override ExSheet.Engine.SheetDocumentAxisFormat.Equals(object? obj) -> bool
+override ExSheet.Engine.SheetDocumentAxisFormat.GetHashCode() -> int
+override ExSheet.Engine.SheetDocumentAxisFormat.ToString() -> string!
+override ExSheet.Engine.SheetDocumentCell.Equals(object? obj) -> bool
+override ExSheet.Engine.SheetDocumentCell.GetHashCode() -> int
+override ExSheet.Engine.SheetDocumentCell.ToString() -> string!
+override ExSheet.Engine.SheetDocumentColumnWidth.Equals(object? obj) -> bool
+override ExSheet.Engine.SheetDocumentColumnWidth.GetHashCode() -> int
+override ExSheet.Engine.SheetDocumentColumnWidth.ToString() -> string!
+override ExSheet.Engine.SheetDocumentTable.Equals(object? obj) -> bool
+override ExSheet.Engine.SheetDocumentTable.GetHashCode() -> int
+override ExSheet.Engine.SheetDocumentTable.ToString() -> string!
+override ExSheet.Engine.SheetRefusal.Equals(object? obj) -> bool
+override ExSheet.Engine.SheetRefusal.GetHashCode() -> int
+override ExSheet.Engine.SheetRefusal.ToString() -> string!
+override ExSheet.Engine.Value.Equals(object? obj) -> bool
+override ExSheet.Engine.Value.GetHashCode() -> int
+override ExSheet.Engine.Value.ToString() -> string!
+static ExSheet.Engine.ArgumentHint.operator !=(ExSheet.Engine.ArgumentHint? left, ExSheet.Engine.ArgumentHint? right) -> bool
+static ExSheet.Engine.ArgumentHint.operator ==(ExSheet.Engine.ArgumentHint? left, ExSheet.Engine.ArgumentHint? right) -> bool
+static ExSheet.Engine.ArgumentValue.operator !=(ExSheet.Engine.ArgumentValue? left, ExSheet.Engine.ArgumentValue? right) -> bool
+static ExSheet.Engine.ArgumentValue.operator ==(ExSheet.Engine.ArgumentValue? left, ExSheet.Engine.ArgumentValue? right) -> bool
+static ExSheet.Engine.BorderChange.Inside(ExSheet.Engine.BorderLine line) -> ExSheet.Engine.BorderChange!
+static ExSheet.Engine.BorderChange.None.get -> ExSheet.Engine.BorderChange!
+static ExSheet.Engine.BorderChange.operator !=(ExSheet.Engine.BorderChange? left, ExSheet.Engine.BorderChange? right) -> bool
+static ExSheet.Engine.BorderChange.operator ==(ExSheet.Engine.BorderChange? left, ExSheet.Engine.BorderChange? right) -> bool
+static ExSheet.Engine.BorderChange.Outline(ExSheet.Engine.BorderLine line) -> ExSheet.Engine.BorderChange!
+static ExSheet.Engine.BorderLine.None.get -> ExSheet.Engine.BorderLine
+static ExSheet.Engine.BorderLine.operator !=(ExSheet.Engine.BorderLine left, ExSheet.Engine.BorderLine right) -> bool
+static ExSheet.Engine.BorderLine.operator ==(ExSheet.Engine.BorderLine left, ExSheet.Engine.BorderLine right) -> bool
+static ExSheet.Engine.CellAddress.ColumnName(int column) -> string!
+static ExSheet.Engine.CellAddress.operator !=(ExSheet.Engine.CellAddress left, ExSheet.Engine.CellAddress right) -> bool
+static ExSheet.Engine.CellAddress.operator ==(ExSheet.Engine.CellAddress left, ExSheet.Engine.CellAddress right) -> bool
+static ExSheet.Engine.CellAddress.Parse(string! text) -> ExSheet.Engine.CellAddress
+static ExSheet.Engine.CellAddress.TryParse(string? text, out ExSheet.Engine.CellAddress address) -> bool
+static ExSheet.Engine.CellAddress.TryParseColumn(string? letters, out int column) -> bool
+static ExSheet.Engine.CellBorders.None.get -> ExSheet.Engine.CellBorders
+static ExSheet.Engine.CellBorders.operator !=(ExSheet.Engine.CellBorders left, ExSheet.Engine.CellBorders right) -> bool
+static ExSheet.Engine.CellBorders.operator ==(ExSheet.Engine.CellBorders left, ExSheet.Engine.CellBorders right) -> bool
+static ExSheet.Engine.CellColour.Automatic.get -> ExSheet.Engine.CellColour
+static ExSheet.Engine.CellColour.FromRgb(byte red, byte green, byte blue) -> ExSheet.Engine.CellColour
+static ExSheet.Engine.CellColour.FromRgb(int rgb) -> ExSheet.Engine.CellColour
+static ExSheet.Engine.CellColour.operator !=(ExSheet.Engine.CellColour left, ExSheet.Engine.CellColour right) -> bool
+static ExSheet.Engine.CellColour.operator ==(ExSheet.Engine.CellColour left, ExSheet.Engine.CellColour right) -> bool
+static ExSheet.Engine.CellDisplay.operator !=(ExSheet.Engine.CellDisplay left, ExSheet.Engine.CellDisplay right) -> bool
+static ExSheet.Engine.CellDisplay.operator ==(ExSheet.Engine.CellDisplay left, ExSheet.Engine.CellDisplay right) -> bool
+static ExSheet.Engine.CellFill.None.get -> ExSheet.Engine.CellFill
+static ExSheet.Engine.CellFill.operator !=(ExSheet.Engine.CellFill left, ExSheet.Engine.CellFill right) -> bool
+static ExSheet.Engine.CellFill.operator ==(ExSheet.Engine.CellFill left, ExSheet.Engine.CellFill right) -> bool
+static ExSheet.Engine.CellFill.Solid(ExSheet.Engine.CellColour colour) -> ExSheet.Engine.CellFill
+static ExSheet.Engine.CellFont.Default.get -> ExSheet.Engine.CellFont
+static ExSheet.Engine.CellFont.operator !=(ExSheet.Engine.CellFont left, ExSheet.Engine.CellFont right) -> bool
+static ExSheet.Engine.CellFont.operator ==(ExSheet.Engine.CellFont left, ExSheet.Engine.CellFont right) -> bool
+static ExSheet.Engine.CellFormat.Default.get -> ExSheet.Engine.CellFormat!
+static ExSheet.Engine.CellFormat.operator !=(ExSheet.Engine.CellFormat? left, ExSheet.Engine.CellFormat? right) -> bool
+static ExSheet.Engine.CellFormat.operator ==(ExSheet.Engine.CellFormat? left, ExSheet.Engine.CellFormat? right) -> bool
+static ExSheet.Engine.CellFormatChange.operator !=(ExSheet.Engine.CellFormatChange? left, ExSheet.Engine.CellFormatChange? right) -> bool
+static ExSheet.Engine.CellFormatChange.operator ==(ExSheet.Engine.CellFormatChange? left, ExSheet.Engine.CellFormatChange? right) -> bool
+static ExSheet.Engine.CellRange.operator !=(ExSheet.Engine.CellRange left, ExSheet.Engine.CellRange right) -> bool
+static ExSheet.Engine.CellRange.operator ==(ExSheet.Engine.CellRange left, ExSheet.Engine.CellRange right) -> bool
+static ExSheet.Engine.CellRange.Parse(string! text) -> ExSheet.Engine.CellRange
+static ExSheet.Engine.CellRange.TryParse(string? text, out ExSheet.Engine.CellRange range) -> bool
+static ExSheet.Engine.CellRange.WholeColumns(int first, int last) -> ExSheet.Engine.CellRange
+static ExSheet.Engine.CellRange.WholeRows(int first, int last) -> ExSheet.Engine.CellRange
+static ExSheet.Engine.CompletionCandidate.operator !=(ExSheet.Engine.CompletionCandidate? left, ExSheet.Engine.CompletionCandidate? right) -> bool
+static ExSheet.Engine.CompletionCandidate.operator ==(ExSheet.Engine.CompletionCandidate? left, ExSheet.Engine.CompletionCandidate? right) -> bool
+static ExSheet.Engine.DeclaredFunction.All.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.DeclaredFunction!>!
+static ExSheet.Engine.DeclaredFunction.Find(string! name) -> ExSheet.Engine.DeclaredFunction?
+static ExSheet.Engine.DeclaredFunction.operator !=(ExSheet.Engine.DeclaredFunction? left, ExSheet.Engine.DeclaredFunction? right) -> bool
+static ExSheet.Engine.DeclaredFunction.operator ==(ExSheet.Engine.DeclaredFunction? left, ExSheet.Engine.DeclaredFunction? right) -> bool
+static ExSheet.Engine.Entry.FromValue(ExSheet.Engine.Value constant) -> ExSheet.Engine.Entry!
+static ExSheet.Engine.Entry.Parse(string! typed, System.Globalization.CultureInfo! culture) -> ExSheet.Engine.Entry?
+static ExSheet.Engine.FormulaCompletion.operator !=(ExSheet.Engine.FormulaCompletion? left, ExSheet.Engine.FormulaCompletion? right) -> bool
+static ExSheet.Engine.FormulaCompletion.operator ==(ExSheet.Engine.FormulaCompletion? left, ExSheet.Engine.FormulaCompletion? right) -> bool
+static ExSheet.Engine.FormulaEntry.Complete(string! text, int caret, System.Collections.Generic.IEnumerable<string!>! linkedTables) -> ExSheet.Engine.FormulaCompletion?
+static ExSheet.Engine.FormulaEntry.Complete(string! text, int caret, System.Collections.Generic.IEnumerable<string!>! linkedTables, System.Func<string!, System.Collections.Generic.IReadOnlyList<string!>?>! columnsOf) -> ExSheet.Engine.FormulaCompletion?
+static ExSheet.Engine.FormulaEntry.ConstantText(ExSheet.Engine.Value value) -> string?
+static ExSheet.Engine.FormulaEntry.CycleReference(string! text, int selectionStart, int selectionEnd) -> ExSheet.Engine.ReferenceCycle?
+static ExSheet.Engine.FormulaEntry.HintAt(string! text, int caret) -> ExSheet.Engine.ArgumentHint?
+static ExSheet.Engine.FormulaEntry.LookupFinds(ExSheet.Engine.Value key, ExSheet.Engine.Value? candidate) -> bool
+static ExSheet.Engine.FormulaEntry.LookupFinds(System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value>! keys, System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>! candidates) -> bool
+static ExSheet.Engine.FormulaEntry.LookupText(string! table, string! keyColumn, ExSheet.Engine.Value key, string! column) -> string!
+static ExSheet.Engine.FormulaEntry.LookupText(string! table, System.Collections.Generic.IReadOnlyList<string!>! keyColumns, System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value>! keys, string! column) -> string!
+static ExSheet.Engine.FormulaEntry.PointAt(string! text, int caret) -> ExSheet.Engine.PointSite?
+static ExSheet.Engine.FormulaEntry.References(string! text, string! sheetName) -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.FormulaReference>!
+static ExSheet.Engine.FormulaEntry.ReferenceText(ExSheet.Engine.CellRange range) -> string!
+static ExSheet.Engine.FormulaEntry.StructuredReferenceText(string! table, string! column) -> string!
+static ExSheet.Engine.FormulaReference.operator !=(ExSheet.Engine.FormulaReference left, ExSheet.Engine.FormulaReference right) -> bool
+static ExSheet.Engine.FormulaReference.operator ==(ExSheet.Engine.FormulaReference left, ExSheet.Engine.FormulaReference right) -> bool
+static ExSheet.Engine.LinkedTable.operator !=(ExSheet.Engine.LinkedTable? left, ExSheet.Engine.LinkedTable? right) -> bool
+static ExSheet.Engine.LinkedTable.operator ==(ExSheet.Engine.LinkedTable? left, ExSheet.Engine.LinkedTable? right) -> bool
+static ExSheet.Engine.LinkedTableColumn.operator !=(ExSheet.Engine.LinkedTableColumn? left, ExSheet.Engine.LinkedTableColumn? right) -> bool
+static ExSheet.Engine.LinkedTableColumn.operator ==(ExSheet.Engine.LinkedTableColumn? left, ExSheet.Engine.LinkedTableColumn? right) -> bool
+static ExSheet.Engine.NumberFormat.BuiltInCurrency(System.Globalization.CultureInfo! culture) -> ExSheet.Engine.NumberFormat!
+static ExSheet.Engine.NumberFormat.CurrencySymbolOf(System.Globalization.CultureInfo! culture) -> string!
+static ExSheet.Engine.NumberFormat.General.get -> ExSheet.Engine.NumberFormat!
+static ExSheet.Engine.NumberFormat.Parse(string! code) -> ExSheet.Engine.NumberFormat!
+static ExSheet.Engine.NumberFormat.TryParse(string! code, out ExSheet.Engine.NumberFormat? format, out string? reason) -> bool
+static ExSheet.Engine.NumberFormat.TryParseLocal(string! code, System.Globalization.CultureInfo! culture, out ExSheet.Engine.NumberFormat? format, out string? reason) -> bool
+static ExSheet.Engine.NumberFormatColours.Rgb(this ExSheet.Engine.NumberFormatColour colour) -> int
+static ExSheet.Engine.PointSite.operator !=(ExSheet.Engine.PointSite left, ExSheet.Engine.PointSite right) -> bool
+static ExSheet.Engine.PointSite.operator ==(ExSheet.Engine.PointSite left, ExSheet.Engine.PointSite right) -> bool
+static ExSheet.Engine.RangeEdgeLines.operator !=(ExSheet.Engine.RangeEdgeLines? left, ExSheet.Engine.RangeEdgeLines? right) -> bool
+static ExSheet.Engine.RangeEdgeLines.operator ==(ExSheet.Engine.RangeEdgeLines? left, ExSheet.Engine.RangeEdgeLines? right) -> bool
+static ExSheet.Engine.ReferenceCycle.operator !=(ExSheet.Engine.ReferenceCycle? left, ExSheet.Engine.ReferenceCycle? right) -> bool
+static ExSheet.Engine.ReferenceCycle.operator ==(ExSheet.Engine.ReferenceCycle? left, ExSheet.Engine.ReferenceCycle? right) -> bool
+static ExSheet.Engine.Sheet.IsValidName(string? name, out string? reason) -> bool
+static ExSheet.Engine.Sheet.Open(ExSheet.Engine.SheetDocument! document) -> ExSheet.Engine.Sheet!
+static ExSheet.Engine.SheetColumnWidth.operator !=(ExSheet.Engine.SheetColumnWidth left, ExSheet.Engine.SheetColumnWidth right) -> bool
+static ExSheet.Engine.SheetColumnWidth.operator ==(ExSheet.Engine.SheetColumnWidth left, ExSheet.Engine.SheetColumnWidth right) -> bool
+static ExSheet.Engine.SheetDocument.FromJson(string! json) -> ExSheet.Engine.SheetDocument!
+static ExSheet.Engine.SheetDocumentAxisFormat.operator !=(ExSheet.Engine.SheetDocumentAxisFormat? left, ExSheet.Engine.SheetDocumentAxisFormat? right) -> bool
+static ExSheet.Engine.SheetDocumentAxisFormat.operator ==(ExSheet.Engine.SheetDocumentAxisFormat? left, ExSheet.Engine.SheetDocumentAxisFormat? right) -> bool
+static ExSheet.Engine.SheetDocumentCell.operator !=(ExSheet.Engine.SheetDocumentCell? left, ExSheet.Engine.SheetDocumentCell? right) -> bool
+static ExSheet.Engine.SheetDocumentCell.operator ==(ExSheet.Engine.SheetDocumentCell? left, ExSheet.Engine.SheetDocumentCell? right) -> bool
+static ExSheet.Engine.SheetDocumentColumnWidth.operator !=(ExSheet.Engine.SheetDocumentColumnWidth? left, ExSheet.Engine.SheetDocumentColumnWidth? right) -> bool
+static ExSheet.Engine.SheetDocumentColumnWidth.operator ==(ExSheet.Engine.SheetDocumentColumnWidth? left, ExSheet.Engine.SheetDocumentColumnWidth? right) -> bool
+static ExSheet.Engine.SheetDocumentTable.operator !=(ExSheet.Engine.SheetDocumentTable? left, ExSheet.Engine.SheetDocumentTable? right) -> bool
+static ExSheet.Engine.SheetDocumentTable.operator ==(ExSheet.Engine.SheetDocumentTable? left, ExSheet.Engine.SheetDocumentTable? right) -> bool
+static ExSheet.Engine.SheetEdit.DeleteColumns(int column, int count = 1) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.DeleteRows(int row, int count = 1) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.Enter(ExSheet.Engine.CellAddress address, string! typed) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.Enter(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<ExSheet.Engine.CellAddress, string!>>! typed) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.EnterInto(System.Collections.Generic.IEnumerable<ExSheet.Engine.CellRange>! targets, ExSheet.Engine.CellAddress enteredAt, string! typed) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.Fill(ExSheet.Engine.CellRange source, ExSheet.Engine.CellRange target, ExSheet.Engine.FillDirection direction) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.FillCopy(ExSheet.Engine.CellRange source, ExSheet.Engine.CellRange target, ExSheet.Engine.FillDirection direction) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.InsertColumns(int column, int count = 1) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.InsertRows(int row, int count = 1) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.Paste(ExSheet.Engine.SheetBlock! block, ExSheet.Engine.CellAddress origin) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.Paste(ExSheet.Engine.SheetBlock! block, ExSheet.Engine.CellRange target) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.Paste(ExSheet.Engine.SheetBlock! block, System.Collections.Generic.IEnumerable<ExSheet.Engine.CellRange>! targets) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.PasteText(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<ExSheet.Engine.CellAddress, string!>>! fields) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.PasteText(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<ExSheet.Engine.CellAddress, string!>>! fields, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<ExSheet.Engine.CellAddress, ExSheet.Engine.Entry?>>! entries) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.PasteText(System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string!>!>! fields, ExSheet.Engine.CellAddress origin) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.Rename(string! name) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.SetAlignment(ExSheet.Engine.CellRange range, ExSheet.Engine.HorizontalAlignment alignment) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.SetAlignment(System.Collections.Generic.IEnumerable<ExSheet.Engine.CellAddress>! addresses, ExSheet.Engine.HorizontalAlignment alignment) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.SetAutomaticColumnWidth(ExSheet.Engine.CellRange columns, double width) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.SetCellFormat(System.Collections.Generic.IEnumerable<ExSheet.Engine.CellRange>! ranges, ExSheet.Engine.CellFormatChange! change) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.SetColumnWidth(ExSheet.Engine.CellRange columns, double? width) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.SetEntries(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<ExSheet.Engine.CellAddress, ExSheet.Engine.Entry?>>! entries) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.SetNumberFormat(ExSheet.Engine.CellRange range, ExSheet.Engine.NumberFormat? format) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.SetNumberFormat(System.Collections.Generic.IEnumerable<ExSheet.Engine.CellAddress>! addresses, ExSheet.Engine.NumberFormat? format) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetRefusal.operator !=(ExSheet.Engine.SheetRefusal? left, ExSheet.Engine.SheetRefusal? right) -> bool
+static ExSheet.Engine.SheetRefusal.operator ==(ExSheet.Engine.SheetRefusal? left, ExSheet.Engine.SheetRefusal? right) -> bool
+static ExSheet.Engine.Value.FromBoolean(bool value) -> ExSheet.Engine.Value
+static ExSheet.Engine.Value.FromError(ExSheet.Engine.ErrorValue error) -> ExSheet.Engine.Value
+static ExSheet.Engine.Value.FromNumber(double number) -> ExSheet.Engine.Value
+static ExSheet.Engine.Value.FromText(string! text) -> ExSheet.Engine.Value
+static ExSheet.Engine.Value.operator !=(ExSheet.Engine.Value left, ExSheet.Engine.Value right) -> bool
+static ExSheet.Engine.Value.operator ==(ExSheet.Engine.Value left, ExSheet.Engine.Value right) -> bool
+~override ExSheet.Engine.BorderLine.Equals(object obj) -> bool
+~override ExSheet.Engine.BorderLine.ToString() -> string
+~override ExSheet.Engine.CellAddress.Equals(object obj) -> bool
+~override ExSheet.Engine.CellBorders.Equals(object obj) -> bool
+~override ExSheet.Engine.CellBorders.ToString() -> string
+~override ExSheet.Engine.CellColour.Equals(object obj) -> bool
+~override ExSheet.Engine.CellDisplay.Equals(object obj) -> bool
+~override ExSheet.Engine.CellDisplay.ToString() -> string
+~override ExSheet.Engine.CellFill.Equals(object obj) -> bool
+~override ExSheet.Engine.CellFill.ToString() -> string
+~override ExSheet.Engine.CellFont.Equals(object obj) -> bool
+~override ExSheet.Engine.CellFont.ToString() -> string
+~override ExSheet.Engine.CellRange.Equals(object obj) -> bool
+~override ExSheet.Engine.FormulaReference.Equals(object obj) -> bool
+~override ExSheet.Engine.FormulaReference.ToString() -> string
+~override ExSheet.Engine.PointSite.Equals(object obj) -> bool
+~override ExSheet.Engine.PointSite.ToString() -> string
+~override ExSheet.Engine.SheetColumnWidth.Equals(object obj) -> bool
+~override ExSheet.Engine.SheetColumnWidth.ToString() -> string

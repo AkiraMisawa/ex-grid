@@ -226,7 +226,9 @@ internal sealed class PivotContext : BunitContext
         module.Setup<string>("stamp").SetResult(Constant("ScriptStamp"));
         var handle = module.SetupModule("attach", _ => true);
         handle.Setup<bool>("metaIsPrimary").SetResult(false);
-        handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
+        // ExGrid's scroll offsets are its own type (ADR-0201), which a spike cannot name: the handle
+        // answers what it was not told with the type's default, which is where a redraw starts.
+        handle.Mode = JSRuntimeMode.Loose;
         handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
         foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handKeyboardTo", "dispose" })
             handle.SetupVoid(name, _ => true).SetVoidResult();

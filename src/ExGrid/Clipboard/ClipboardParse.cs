@@ -30,7 +30,7 @@ public static class ClipboardParse
     /// <see cref="PasteFieldOrigin.ShownText"/>, written in the source's culture. Null when
     /// neither flavour holds anything, as <see cref="Parse"/>.
     /// </summary>
-    public static ClipboardBlock? ParseBlock(string? html, string? text)
+    internal static ClipboardBlock? ParseBlock(string? html, string? text)
     {
         if (!string.IsNullOrEmpty(html) && ParseHtmlTable(html) is { Count: > 0 } table)
             return Rectangular(table, fromTable: true);
@@ -311,7 +311,7 @@ public enum PasteFieldOrigin
 /// A parsed clipboard block (ADR-0005/0050): the values, rectangular by construction, and
 /// beside each one where it came from.
 /// </summary>
-public sealed class ClipboardBlock
+internal sealed class ClipboardBlock
 {
     internal ClipboardBlock(
         IReadOnlyList<IReadOnlyList<string>> values, IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> origins,

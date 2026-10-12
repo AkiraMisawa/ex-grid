@@ -12,7 +12,7 @@ namespace ExGrid.Selection;
 /// the source, counted in cells; a tie goes down or up, Excel's usual fill. A pointer back
 /// inside the source reaches nothing, and a release there raises nothing.</para>
 /// </summary>
-public static class FillRules
+internal static class FillRules
 {
     /// <summary>
     /// The range the handle stands on, or null when there is none: the Selection's last
@@ -95,14 +95,14 @@ public static class FillRules
 /// <param name="Target">The cells to fill, adjacent to the source along one axis and as
 /// wide (or as tall) as it.</param>
 /// <param name="Direction">Which way from the source the target lies.</param>
-public readonly record struct FillExtension(SelectionRange Target, GridDirection Direction);
+internal readonly record struct FillExtension(SelectionRange Target, GridDirection Direction);
 
 /// <summary>
 /// A fill-handle release approved with its extension, or refused with a reason — never
 /// both, never neither. Reading the absent half throws rather than answering something
 /// plausible (ADR-0014's shape, for a fill).
 /// </summary>
-public sealed class FillDecision
+internal sealed class FillDecision
 {
     private readonly FillExtension? _extension;
     private readonly PasteRefusalReason _reason;
