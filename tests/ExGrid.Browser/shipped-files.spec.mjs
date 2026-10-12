@@ -41,8 +41,39 @@ async function serveChanged(page, pattern, change) {
     });
 }
 
-/** Serves the grid's script changed by `change`, as a page holding another build of it would. */
-const serveScript = (page, change) => serveChanged(page, SCRIPT, change);
+/** Serves the grid's script changed by `change`, as a page holding another build of it would.
+ *
+ * A Blazor Web App's import map can carry the script's integrity: a Release build on MapStaticAssets
+ * writes it, and the browser then blocks a changed body before the grid sees it, with a console
+ * error of its own. That block reaches the grid as a script that did not load, which layer 2 holds,
+ * as it holds a missing file. ERR-10 is the grid's own refusal, the check behind that one, so the
+ * page is served without the script's integrity entry, and the changed script itself reaches the
+ * grid. A host whose import map names no integrity, as `dotnet run`'s does not, is served as it is. */
+async function serveScript(page, change) {
+    await page.route('**/*', async (route) => {
+        if (route.request().resourceType() !== 'document') {
+            await route.fallback();
+            return;
+        }
+        const response = await route.fetch();
+        const headers = { ...response.headers() };
+        delete headers['content-encoding'];
+        delete headers['content-length'];
+        const body = (await response.text()).replace(
+            /(<script type="importmap"[^>]*>)([\s\S]*?)(<\/script>)/,
+            (all, open, json, close) => {
+                const map = JSON.parse(json);
+                for (const address of Object.keys(map.integrity ?? {})) {
+                    if (SCRIPT.test(new URL(address, route.request().url()).pathname)) {
+                        delete map.integrity[address];
+                    }
+                }
+                return open + JSON.stringify(map) + close;
+            });
+        await route.fulfill({ status: response.status(), headers, body });
+    });
+    await serveChanged(page, SCRIPT, change);
+}
 
 /** Serves a stylesheet changed by `change`. */
 const serveStylesheet = serveChanged;
