@@ -376,6 +376,32 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'B4');
         });
 
+        test(`SH-52/ADR-0100/ADR-0050: Escape in a list, then Alt, H, H typed at once opens the next list, the only one (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'B3');
+            await keyTips(page, 'h', 'f', 'c');
+            await expect(openLists(page)).toHaveCount(1);
+            await expect(page.locator(':focus')).toContainText('Automatic');
+            await setRoundTrip(80);
+
+            await page.keyboard.press('Escape');
+            // A key typed in a list while it closes is still the list's under either Chrome, and an Alt
+            // typed on the way back is not heard as alone (stop 4 in
+            // docs/agents/proposals/run17cf-toolbar-mud.md): the Alt goes down once the keyboard is back
+            // on the Sheet, while the toolbar's hand-back may still be standing, and the letters at once.
+            await expectKeyboardOn(grid);
+            await keyTips(page, 'h', 'h');
+
+            await expect(openLists(page)).toHaveCount(1);
+            await expect(page.locator(':focus')).toContainText('No Fill');
+            await circuitQuiet();
+            await expect(openLists(page)).toHaveCount(1);
+            await expect(editor(grid)).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(openLists(page)).toHaveCount(0);
+            await expectKeyboardOn(grid);
+        });
+
         test(`ADR-0100/ADR-0050: Enter typed at once after a KeyTip's command reaches the Sheet, not the toolbar (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');

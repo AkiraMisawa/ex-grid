@@ -1102,6 +1102,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         altDownAlone = alone;
         return true;
     };
+    const altGoesFirst = (k) => answering && k.key === 'Alt' && k.repeat !== true && canonicalOf(k) === 'Alt+Alt'
+        && declared.has('Alt+Alt') && (k.onRoot || k.inEditor)
+        && held.every((h) => h.typedOnTheWay !== undefined || h.altReleased === true || h.altDown === true);
     // The hand-off the drain is delivering: 'frame' once DOM focus has left the root for the
     // frame, and whether the keyboard never arrived, so the held keys are dropped.
     let deliveringOutside = false;
@@ -1213,7 +1216,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // (altReleased): the hold goes on to ask it, and the frame takes the keyboard after the
             // answer, with the keys behind it, rather than take the keys typed meanwhile ahead of them.
             if (!disposed && handOff === 'frame' && frameInTurn !== null && editorReady && popoverReady && moved()) {
-                if (held.some((h) => h.altReleased === true)) {
+                if (held.some((h) => h.altReleased === true || h.altDown === true)) {
                     resolve();
                     return;
                 }
@@ -1490,6 +1493,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 await editorSettled();
                 continue;
             }
+            // Where a declared Alt went down alone, forwarded ahead of the keys before it (altGoesFirst):
+            // the keys before it have gone where they were going, and a frame may take the keyboard.
+            if (k.altDown) {
+                continue;
+            }
             // Keys a frame of the Consumer's own heard on the way back to this root (takeKeyboardBack):
             // in their place, ahead of every key typed on the root since, and the grid's from here.
             if (k.typedOnTheWay !== undefined) {
@@ -1608,6 +1616,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 typeIntoEditor(rebased);
             }
         }
+        // A hand-off told while the hold drained — to a frame of the Consumer's own, or its popover —
+        // and not yet reached: the hold stands until the keyboard arrives, so that the keys typed
+        // meanwhile go there too, and none is gated against the root (ADR-0050 item 16's note of
+        // 2026-10-12).
+        if (core && handOff !== null) {
+            await editorSettled();
+            if (held.length > 0 && core) {
+                return drain();
+            }
+        }
         answering = false;
         handOffMissed = false;
         deliveringOutside = false;
@@ -1679,6 +1697,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             event.stopPropagation();
             if (afterAlt) {
                 held.push({ altReleased: true });
+            }
+            // A declared Alt going down alone behind keys the core is still answering changes nothing
+            // the core holds, and the Consumer hears its release straight from the browser: held, it
+            // would reach the Consumer after its own release, which then started nothing (Alt pressed
+            // within a round trip of the toolbar giving the keyboard back). Behind nothing but the
+            // keys a frame heard on the way back and the marks of Alt's releases, it is forwarded now,
+            // and leaves a mark in its place, which a frame waits behind (frameInTurn).
+            if (altGoesFirst(k)) {
+                event.preventDefault();
+                held.push({ altDown: true });
+                forward(k);
+                return;
             }
             // A clipboard key is not held as a key: a copy or a paste dispatched from script does
             // nothing, so held it was lost — the clipboard kept what it held before, and a paste

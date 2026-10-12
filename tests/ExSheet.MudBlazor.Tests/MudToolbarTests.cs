@@ -98,7 +98,8 @@ public class MudToolbarTests : MudSheetTestContext
 
         await items.Single(i => i.TextContent.StartsWith("Percentage")).ClickAsync(new MouseEventArgs());
 
-        Assert.Equal("0.00%", FormatAt(page, "B2").NumberFormat.Code);
+        // The choice is made once the list has closed, after the click's own render.
+        page.WaitForAssertion(() => Assert.Equal("0.00%", FormatAt(page, "B2").NumberFormat.Code));
     }
 
     [Fact] // ADR-0100: the Fill's list is Excel's palette, and a swatch sets that Fill
@@ -111,7 +112,7 @@ public class MudToolbarTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("button.mud-ex-sheet-swatch")));
         await page.FindAll("button.mud-ex-sheet-swatch").Single(b => b.GetAttribute("aria-label") == "Green").ClickAsync(new MouseEventArgs());
 
-        Assert.Equal(CellFill.Solid(CellColour.FromRgb(0x00B050)), FormatAt(page, "B2").Fill);
+        page.WaitForAssertion(() => Assert.Equal(CellFill.Solid(CellColour.FromRgb(0x00B050)), FormatAt(page, "B2").Fill));
     }
 
     [Fact] // ADR-0100, ADR-0039, SH-52 (the seventeenth Windows run, D-mud-lists): Alt, H, F, C opens the Font Colour list with the keyboard in it, on the choice the Focus cell has
@@ -176,7 +177,7 @@ public class MudToolbarTests : MudSheetTestContext
         await TypeInListAsync(page, "Enter");
 
         page.WaitForAssertion(() => Assert.Empty(Lists(page)));
-        Assert.Equal(new BorderLine(BorderLineStyle.Thick), FormatAt(page, "B2").Borders.Top);
+        page.WaitForAssertion(() => Assert.Equal(new BorderLine(BorderLineStyle.Thick), FormatAt(page, "B2").Borders.Top));
         page.WaitForAssertion(() => Assert.True(TakeBackCount > taken));
     }
 
@@ -197,7 +198,7 @@ public class MudToolbarTests : MudSheetTestContext
         await TypeInListAsync(page, "Enter");
 
         page.WaitForAssertion(() => Assert.Empty(Lists(page)));
-        Assert.Equal(CellFill.Solid(below.Colour), FormatAt(page, "B2").Fill);
+        page.WaitForAssertion(() => Assert.Equal(CellFill.Solid(below.Colour), FormatAt(page, "B2").Fill));
     }
 
     [Fact] // ADR-0100, SH-50: a choice pressed with the pointer closes the list and gives the keyboard back to the Sheet
@@ -212,7 +213,7 @@ public class MudToolbarTests : MudSheetTestContext
         await page.FindAll(".mud-ex-sheet-toolbar-choices .mud-menu-item").Single(i => i.TextContent.Trim() == "Top Border").ClickAsync(new MouseEventArgs());
 
         page.WaitForAssertion(() => Assert.Empty(Lists(page)));
-        Assert.Equal(new BorderLine(BorderLineStyle.Thin), FormatAt(page, "B2").Borders.Top);
+        page.WaitForAssertion(() => Assert.Equal(new BorderLine(BorderLineStyle.Thin), FormatAt(page, "B2").Borders.Top));
         page.WaitForAssertion(() => Assert.True(TakeBackCount > taken));
     }
 

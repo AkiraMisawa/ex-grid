@@ -29,7 +29,7 @@
 *@
 <div class="ex-sheet-toolbar" role="toolbar" aria-label="@SheetWords.ToolbarName" aria-orientation="horizontal"
      tabindex="0" style="@Style" aria-activedescendant="@ActiveId" @ref="_band"
-     @onkeydown="OnKeyAsync" @onkeydown:preventDefault="@(_keysAreKeyTips || _typedOnTheWay is not null)" @onfocus="OnFocus" @onfocusout="OnFocusOut">
+     @onkeydown="OnKeyAsync" @onkeydown:preventDefault="@(_keysAreKeyTips || _typedOnTheWay is not null || _defaultsHeld)" @onfocus="OnFocus" @onfocusout="OnFocusOut">
     @if (Context.KeyTips == KeyTipStage.Rows && Context.Rows.Count == 0)
     {
         <span class="ex-sheet-keytip ex-sheet-row-keytip" aria-hidden="true">@SheetToolbarContext.ImplicitRowKeyTip</span>
@@ -204,9 +204,24 @@
     {
         var keys = _typedOnTheWay ?? [];
         _typedOnTheWay = null;
-        _keysAreKeyTips = false;
-        StateHasChanged();
+        _defaultsHeld = true;
+        _ = LetDefaultsGoAsync();
         return keys;
+    }
+
+    // The key whose press gave the keyboard back may still be being dispatched: on WebAssembly the grid
+    // takes the keyboard, and asks for the keys, inside that key's own handler, and Blazor reads the
+    // band's preventDefault after the handler has run, so a default let through then would type that
+    // key into the Sheet, which now has the keyboard. The band's defaults, and the KeyTips' hold on
+    // them, go once the key has been dispatched.
+    private bool _defaultsHeld;
+
+    private async Task LetDefaultsGoAsync()
+    {
+        await Task.Yield();
+        _defaultsHeld = false;
+        if (_typedOnTheWay is null) _keysAreKeyTips = false;
+        StateHasChanged();
     }
 
     // Noted as the render is drawn, not after it: see ToolbarRow.
