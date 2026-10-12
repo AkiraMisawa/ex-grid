@@ -238,8 +238,11 @@ other full run. Repeated alone on WebAssembly, under the mud Chrome:
 | 9.7.0 | 20 | 0 |
 | 9.8.0 | 20 | 4 |
 | 9.9.0 | 20 | 0 |
+| 9.8.0, after the merge of `main` (`4f66422c`) | 30 | 1 |
 
-Every failure has the same reading, at line 360. Under the built-in Chrome the test passed 8 of 8 at
+Every failure has the same reading, at line 360. The last row is the branch after it merged `main`,
+which had changed the grid's script and ExSheet since `0c0ab368` (#81; #86, "a scripted focus asks
+first"): the test still fails now and then there. Under the built-in Chrome the test passed 8 of 8 at
 9.6.0 (`ed30-9.6.0-both-chromes-x8-wasm.log`, where the mud Chrome also passed 8 of 8). It fails at
 9.5.0, 9.6.0 and 9.8.0 and was not seen to fail in 15 or 20 runs at 9.0.0, 9.7.0 and 9.9.0, so it follows
 no MudBlazor version: a floor of 9.6.0 neither brings it nor removes it, and it is not one of the floor's
@@ -275,9 +278,9 @@ The cost — a copy of MudBlazor's ARIA wiring kept in step by hand, and every l
 | `selection.txt` | The `--grep` and Playwright's `--list` of the selection at `0c0ab368` |
 | `layer3-<version>-<host>.log` | The full selection at 9.0.0, 9.5.0 and 9.6.0, trimmed to the header, the failures with their errors, and the summary |
 | `targeted-<version>-<host>.log` | The diagnostic's output and the targeted tests at 9.0.0 to 9.4.0 and 9.9.0, trimmed |
-| `ed30-<version>-x<n>-wasm.log` | ED-30 under the mud Chrome repeated on WebAssembly (`both-chromes`: under each Chrome) |
+| `ed30-<version>-x<n>-wasm.log` | ED-30 under the mud Chrome repeated on WebAssembly (`both-chromes`: under each Chrome; `merged`: after the merge of `main`) |
 | `builds.log` | Each pin's build, with the MudBlazor version each host loads |
 | `zz-floor-focus.spec.mjs` | The diagnostic, as run (copied into `tests/ExGrid.Browser`, removed after each run) |
 
-The full logs, with every passing test's line, and the failing tests' traces stay with the machine; a
-trimmed log keeps every failure's error and every count.
+The full logs, with every passing test's line, and the failing tests' traces were not kept; a trimmed
+log keeps every failure's error and every count.

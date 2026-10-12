@@ -77,3 +77,10 @@ samples/ExGrid.DemoHost.Server:     0 Error(s)
 samples/ExGrid.DemoApi:     0 Error(s)
 wasm loads MudBlazor 9.8.0.0
 server loads MudBlazor 9.8.0.0
+== merged-9.8.0 (the branch after its merge of main, 4f66422c)
+19:    <PackageReference Include="MudBlazor" Version="9.8.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.8.0.0
+server loads MudBlazor 9.8.0.0

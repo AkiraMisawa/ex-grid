@@ -263,8 +263,8 @@ step; under the second it is a dry run.
   reading (the editor's waiting request granted between one composition's end and the next one's start).
   A ticket for whoever owns ADR-0080's Keyboard Field: whether the race is the product's or the test's
   (its two DevTools commands sent at once), and the fix that makes the outcome deterministic. `main` has
-  changed the grid's script and ExSheet since `0c0ab368` (#81, #86's "a scripted focus asks first"); the
-  repeat after this branch's merge of `main` is in the record.
+  changed the grid's script and ExSheet since `0c0ab368` (#81, #86's "a scripted focus asks first"),
+  and after this branch merged it the test still failed once in 30 runs at 9.8.0.
 - **The root `README.md` still says "Beta"** and `0.1.0-beta.N` with `--prerelease` in its Install and
   Status sections. ADR-0205 asks the package readmes to be worded for any version, and this branch
   did that; the root readme is not packed, and describes the repository as it is today. It will be
