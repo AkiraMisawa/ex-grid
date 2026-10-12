@@ -54,27 +54,34 @@ Status: done
       spill), and the R1C1 forms refused (INDIRECT-044, 051, 052 and 058 to 066: an R or a C with no
       number, a zero offset in brackets, an offset past the Sheet's edge, a cell joined to a whole row,
       a row joined to a column, a leading 0, a `+`, `#` and structured text in R1C1 style) *(The second
-      area pass, 2026-10-12: INDIRECT-045 to 050 agreed; Excel read every refused form, and each but
-      the offset past the edge is read now, below.)*
-- [x] What the second area pass read is followed by the rule it shows (INDIRECT-043, 044, 051, 053 to
+      area pass, 2026-10-12: INDIRECT-045 to 050 agreed; Excel read every refused form. Each R1C1 form
+      but the offset past the edge is read now, below; a declared Linked Table's bare name stays
+      refused, by decision.)*
+- [x] What the second area pass read is followed by the rule it shows (INDIRECT-044, 051, 058 to
       066): an R or a C with no number is the Formula's own row or column; an offset in brackets may be
       0, `-0` or signed with a `+`; a number or an offset is read with its leading 0s; parts of two
-      kinds joined by `:` name no place, `#REF!`; a cell followed by `#` is its Spill Range, as `A1#`
-      is; a structured reference's text, and a declared Linked Table's bare name, are read alike
-      whatever `a1` says; and the bare name is the table's data, every column in its order and every
-      row without the header, a Reference that spills and waits while the table does. `#VALUE!` for
-      what the answers leave open: an offset past the Sheet's edge, which Excel reads as a place
-      (INDIRECT-052 is 0, a blank cell) without telling whether it wraps round or stops at the edge, and
-      a row or column number 0
-- [ ] For the next Windows run: INDIRECT-067 to INDIRECT-089, the forms read by generalising what the
-      second area pass observed (INDIRECT-067 to 072: an R or a C with no number beside a number or
-      second in a rectangle, a zero offset on the column, a leading 0 in an offset or a column number;
-      074: a row number past the edge in R1C1 style; 075 to 077: parts of two kinds joined in the
-      other orders; 078, 079: `RC[-1]#` and `R1C1#` over no spill; 080, 081: structured text in R1C1
-      style; 085 to 089: the bare name in R1C1 style, by position, over a blank, with `column_num`
-      left out, in lower case over three columns), and the forms still refused (INDIRECT-073: a row
-      number 0; 082 to 084: an offset past the top, left and bottom edges, with values in the cells
-      that wrapping round and stopping at the edge would each read)
+      kinds joined by `:` name no place, `#REF!`; one cell followed by `#` is its Spill Range, as `A1#`
+      is; a structured reference's text is read alike whatever `a1` says. `#VALUE!` for what the
+      answers leave open: an offset past the Sheet's edge, which Excel reads as a place (INDIRECT-052 is
+      0, a blank cell) without telling whether it wraps round or stops at the edge; a row or column
+      number 0; and a `#` after a range, a row or a column, which no run has observed in either style.
+      A row or column number past the Sheet's edge stays the engine's `#REF!`, as `XFE1` is in A1
+      style, which no run has observed in R1C1 style
+- [x] A declared Linked Table's bare name stays `#VALUE!`, in either style, by decision (decided with
+      the user, 2026-10-12; ADR-0049's rule 2 and ADR-0124): Excel reads it as the table's data
+      (INDIRECT-043, 053 to 057, `observed`, with Excel's answers as `excelExpect`), which a Formula
+      could then read by position, and a Linked Table is read by key, never by position. It is a Known
+      limitation of `0.1.0`. Typed, `Positions` stays `#NAME?`, and `Table[Column]` is unchanged
+- [ ] For the next Windows run: INDIRECT-067 to INDIRECT-084 and INDIRECT-090 to INDIRECT-092. The
+      forms read by generalising what the second area pass observed (INDIRECT-067 to 072: an R or a C
+      with no number beside a number or second in a rectangle, a zero offset on the column, a leading
+      0 in an offset or a column number; 075 to 077: parts of two kinds joined in the other orders;
+      078, 079: `RC[-1]#` and `R1C1#` over no spill; 080, 081: structured text in R1C1 style); the
+      engine's answers no run has observed (074: a row number past the edge in R1C1 style, `#REF!`;
+      092: `A1:A2#` in A1 style, `#REF!`); and the forms still refused (073: a row number 0; 082 to
+      084: an offset past the top, left and bottom edges, with values in the cells that wrapping round
+      and stopping at the edge would each read; 090, 091: `#` after an R1C1 range and a whole column,
+      with values that tell no place, a Spill Range and the cells themselves apart)
 
 ## Comments
 
@@ -159,29 +166,42 @@ it as one Value, as it counts any Error Value (INDIRECT-056 records 1).
 
 2026-10-12, after the second area pass (`verification/2026-10-12-windows-area-2/report.md`, "Recorded
 (31)"; `results-2026-10-12-area-2-com-en-US.json`): INDIRECT-045 to 050 agreed and are `observed`, and
-Excel answered every form the first pass's corrections refused. Each answer is R1C1 notation's ordinary
-meaning, and each is followed by the rule it shows. In C2, `RC[-1]` is 1.333 and `RC[-1]:R[1]C[-1]`
-sums to 46.333, and in B1, `R[2]C` is 45: an R or a C with no number is the Formula's own row or column,
-an offset of 0, not every row or column (INDIRECT-044, 051, 066). `R[0]C[-1]` and `R[-0]C[-1]` are 1.333
-and `R[+1]C[-1]` is 45: an offset is a signed number, 0 included (INDIRECT-063 to 065). `R03C2` is 45: a
-number is read with its leading 0s (INDIRECT-059), and so is an offset. `R2C2:R3` and `R3:C2` are
-`#REF!`: parts of two kinds joined name no place, whichever comes first (INDIRECT-058, 062). `R1C1#` is
-the Spill Range, as `A1#` is (INDIRECT-060), and a `#` after a range, a row or a column names no place,
-as in A1 style. `Positions[PV]` in R1C1 style is the column, as in A1 style (INDIRECT-061), and a
-declared table's bare name is read alike. So `R` alone is the Formula's whole row, `C` its whole column
-and `RC` its cell: each reaches the Formula, `#CIRC!`.
+Excel answered every form the first pass's corrections refused. Each R1C1 answer is the notation's
+ordinary meaning, and each is followed by the rule it shows. In C2, `RC[-1]` is 1.333 and
+`RC[-1]:R[1]C[-1]` sums to 46.333, and in B1, `R[2]C` is 45: an R or a C with no number is the Formula's
+own row or column, an offset of 0, not every row or column (INDIRECT-044, 051, 066). `R[0]C[-1]` and
+`R[-0]C[-1]` are 1.333 and `R[+1]C[-1]` is 45: an offset is a signed number, 0 included (INDIRECT-063 to
+065). `R03C2` is 45: a number is read with its leading 0s (INDIRECT-059), and so is an offset. `R2C2:R3`
+and `R3:C2` are `#REF!`: parts of two kinds joined name no place, whichever comes first (INDIRECT-058,
+062). `R1C1#` is the Spill Range, as `A1#` is (INDIRECT-060). `Positions[PV]` in R1C1 style is the column,
+as in A1 style (INDIRECT-061). So `R` alone is the Formula's whole row, `C` its whole column and `RC` its
+cell: each reaches the Formula, `#CIRC!`.
+A `#` after a range, a row or a column was observed in neither style. The first version of this round
+read it as `#REF!`, "as after a range in A1 style"; review found that no run has asked `A1:A2#` either,
+and that the readings part (no place, the Spill Range of a cell the text names, or the cells
+themselves). In R1C1 style it is `#VALUE!`, as before, and INDIRECT-090 and 091 ask it; `A1:A2#` stays
+the engine's `#REF!`, text that goes on past a Reference (INDIRECT-021's rule), and INDIRECT-092 asks
+it. A row or column number past the Sheet's edge in R1C1 style is the engine's `#REF!` too, as `XFE1` is
+in A1 style (INDIRECT-017); no run has observed it, and INDIRECT-074 asks it.
 Over table Positions of two rows, `COLUMNS(INDIRECT("Positions"))` is 2, `ROWS` 2, `INDEX(…,1,1)` R-1,
-`COUNTA` 4, and the name as the result spills the data (INDIRECT-053 to 057): the bare name is the
-table's data, every column in its order and every row without the header, which also gives
-INDIRECT-043's 250.5. It is read as an array that is a Reference, as `A1#` is (`Operand.IsReferenceArray`,
-which was `IsSpillRange`), so `INDEX` with `column_num` left out over it is `#REF!` (INDEX-012's rule);
-it waits while the table does, even under `IFERROR`; over a snapshot of no rows it is `#VALUE!`, as a
-column of none read whole is. `SUBTOTAL`'s and `AGGREGATE`'s reference forms refuse it with `#VALUE!`,
-as they refuse `A1#`. Typed, the bare name is still `#NAME?` (ADR-0049); the proposals put that to the
-user.
+`COUNTA` 4, and the name as the result spills the data (INDIRECT-053 to 057): Excel reads the bare name
+as the table's data, every column in its order and every row without the header, which also gives
+INDIRECT-043's 250.5. The first version of this round read it so; it stays refused, decided with the
+user (below).
 `R[-5]C[-1]` from C2 is 0 in Excel, a blank cell, so an offset past the edge names a place, not `#REF!`;
 but B1 and B1048573 are both blank there, and wrapping round and stopping at the edge both give 0. It
 stays `#VALUE!` (INDIRECT-052 records Excel's 0 as `excelExpect`), and INDIRECT-082 to 084 put 7 and 9
 in the two cells each reading would name, on the top, left and bottom edges. A row or column number 0
-is refused too: no run has asked one (INDIRECT-073). INDIRECT-067 to 081 and 085 to 089 ask the forms
-that follow. Every observed INDIRECT answer in the results files (164) agrees with the corpus.
+is refused too: no run has asked one (INDIRECT-073). INDIRECT-067 to 084 and 090 to 092 put the forms
+that follow, the engine's answers and the forms still refused to the next run. Every observed
+`INDIRECT` reading in the results files (168, of INDIRECT-001 to 066) agrees with the corpus's `expect`,
+or its `excelExpect` where the engine refuses by decision.
+
+2026-10-12, decided with the user: a declared Linked Table's bare name through `INDIRECT` stays
+`#VALUE!`, in either style. Excel's reading gives a Formula the table by position —
+`INDEX(INDIRECT("Positions"),1,1)` is the first row's first Value, R-1 (INDIRECT-055) — and ADR-0049's
+rule 2 reads a Linked Table by key, never by position. INDIRECT-043 and 053 to 057 are `observed`, keep the refusal as `expect` and hold
+Excel's answers as `excelExpect`, a difference by decision citing ADR-0049's rule 2 and ADR-0124; the
+refusal is listed under `0.1.0`'s Known limitations. The reading (56b86a97) is reverted, and the cases
+that asked what followed from it (085 to 089) are withdrawn; their numbers are not reused. Typed,
+`Positions` stays `#NAME?`; `Table[Column]`, typed or as text, is unchanged.

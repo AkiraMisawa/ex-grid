@@ -216,7 +216,7 @@ public class IndirectTests
         sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
         foreach (var cell in new[] { "A1", "A2", "A3", "A4" }) Assert.Equal(ErrorValue.Value, sheet.Error(cell));
 
-        // A table with its data, a row of which Excel's INDEX would read by position, is refused alike.
+        // A table with its data, which Excel's INDEX reads by position (INDIRECT-055), is refused alike.
         sheet.PushLinkedTable("Positions", [[Value.FromText("R-1"), Value.FromNumber(250.5)], [Value.FromText("R-2"), Value.FromNumber(50)]]);
         foreach (var cell in new[] { "A1", "A2", "A3", "A4" }) Assert.Equal(ErrorValue.Value, sheet.Error(cell));
     }
