@@ -1,0 +1,31 @@
+{
+    "taken":  "2026-10-12T21:13:36+01:00",
+    "uiLanguageOverride":  "ja",
+    "userLanguageList":  [
+                             "en-GB",
+                             "en-US",
+                             "ja"
+                         ],
+    "culture":  "ja-JP",
+    "uiCulture":  "en-GB",
+    "systemLocale":  "ja-JP",
+    "desktop":  {
+                    "PreferredUILanguages":  "en-GB",
+                    "PreferredUILanguagesPending":  "ja-JP",
+                    "PreviousPreferredUILanguages":  [
+                                                         "en-US",
+                                                         "en-GB"
+                                                     ],
+                    "MuiCached":  "{\"MachinePreferredUILanguages\":[\"en-GB\"]}",
+                    "LogPixels":  144,
+                    "Win8DpiScaling":  1
+                },
+    "userProfile":  "{\"Languages\":[\"en-GB\",\"en-US\",\"ja\"],\"ShowAutoCorrection\":1,\"ShowTextPrediction\":1,\"ShowCasing\":1,\"ShowShiftLock\":1,\"WindowsOverride\":\"ja\"}",
+    "userProfileSubkeys":  [
+                               "en-GB={\"CachedLanguageName\":\"@Winlangdb.dll,-1110\",\"0809:00000809\":1}",
+                               "en-US={\"CachedLanguageName\":\"@Winlangdb.dll,-1121\",\"0409:00000409\":1,\"FeaturesToInstall\":1791}",
+                               "ja={\"CachedLanguageName\":\"@Winlangdb.dll,-1230\",\"FeaturesToInstall\":512,\"0411:{03B5835F-F03C-411B-9CE2-AA23E1171E36}{A76C93D9-5523-4E90-AAFA-4DB112F9AC76}\":1}"
+                           ],
+    "messageFont":  "Segoe UI / Segoe UI",
+    "screen":  "{Width=2560, Height=1440}"
+}
