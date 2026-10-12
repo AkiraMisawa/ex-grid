@@ -528,7 +528,11 @@ public sealed partial class Sheet
             else
             {
                 // A result of more than one Value spills (ADR-0125): the anchor holds the array, and
-                // shows its first Value until the layout after the pass says whether it spills.
+                // shows its first Value until the layout after the pass says whether it spills. An
+                // array of the shape the last layout blocked shows #SPILL! still: only an obstacle
+                // moving changes that, and the layout after the pass is what sees one move. Computed
+                // again unchanged — a volatile Formula read again after a layout — the Anchor then
+                // changes nothing, and the recalculation settles (Recalculate).
                 var result = evaluator.EvaluateResult(node);
                 var array = Evaluator.IsMulti(result) ? evaluator.ToArray(result) : null;
                 var scalar = array is null ? evaluator.ScalarOf(result) : null;
@@ -541,7 +545,9 @@ public sealed partial class Sheet
                 else
                 {
                     arrays[address] = array;
-                    value = array is not null ? array[0, 0] ?? Value.FromNumber(0) : scalar ?? Value.FromNumber(0);
+                    value = array is null ? scalar ?? Value.FromNumber(0)
+                        : StillBlocked(_cells[address], array) ? Value.FromError(ErrorValue.Spill)
+                        : array[0, 0] ?? Value.FromNumber(0);
                 }
             }
             reader.Met = outerMet;
@@ -551,6 +557,9 @@ public sealed partial class Sheet
             recalculated.Add(address);
             return value;
         }
+
+        static bool StillBlocked(Cell anchor, ValueArray array) =>
+            anchor.SpillBlocked && anchor.Array is { } laidOut && laidOut.Rows == array.Rows && laidOut.Columns == array.Columns;
     }
 
     /// <summary>
@@ -626,7 +635,16 @@ public sealed partial class Sheet
         public IEnumerable<CellAddress> NonBlankIn(Area area) =>
             sheet.CellsIn(area).Where(a => Read(a) is not null).Order();
 
-        public Operand TableColumn(string table, string column) => sheet.TableColumn(table, column);
+        /// <summary>
+        /// A Linked Table's column. One a Formula names waits before it is evaluated (<c>Taint</c>);
+        /// one <c>INDIRECT</c>'s text names is met here, and waits the same way (ADR-0049, ADR-0124).
+        /// </summary>
+        public Operand TableColumn(string table, string column)
+        {
+            var read = sheet.TableColumn(table, column);
+            if (read.IsError && read.Scalar!.Value.Error == ErrorValue.GettingData && Met != ErrorValue.Circ) Met = ErrorValue.GettingData;
+            return read;
+        }
 
         public Node? FormulaAt(CellAddress address)
         {
@@ -661,7 +679,7 @@ public sealed partial class Sheet
             {
                 for (var c = 0; c < array.Columns; c++) shown[r, c] = array[r, c] ?? Value.FromNumber(0);
             }
-            return Operand.Of(shown);
+            return Operand.OfSpillRange(shown);
         }
     }
 

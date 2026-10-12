@@ -96,9 +96,9 @@ as data: `sheet.SetToday(new DateOnly(2026, 10, 3))`.
 `RAND()` and `RANDBETWEEN` draw from the **Sheet Seed** (ADR-0180). Each draw is made from the seed,
 the cell, which call in its Formula it is, and how many changes the Sheet has had since it was
 opened — never from a clock or a stream another draw moved on. So everything that reads a draw sees
-the same Value, every edit, insertion, deletion, undo, redo, Linked Table snapshot and Linked Table
-declaration draws again,
-and the clock, a format, a width or a rename of the Sheet draws nothing.
+the same Value, every edit, insertion, deletion, rename of the Sheet, undo, redo, Linked Table
+snapshot (the same rows again included) and Linked Table declaration draws again, as Excel's undo,
+rename and refresh were seen to, and the clock, a format or a width draws nothing.
 
 ```razor
 @* A new seed whenever the document is opened, as Excel's reopened workbook draws again. *@
@@ -351,7 +351,8 @@ other, and raise `DocumentChanged`; an opened document brings its widths with it
 set on the Selection — a formatting key, Format Cells' OK, `SetCellFormatAsync` — widens a column
 whose numbers it no longer fits in the same way, in its own undo step. A width an entry or a Number
 Format widened the column to stays automatic, and a longer number widens the column again; a width
-the user set — a drag or a size to fit — is custom, and nothing widens that column.
+the user set — a drag or a size to fit — is custom, and nothing widens that column. A column inserted
+to the right of either takes its width as one the user set, as Excel's does.
 
 ## The Sheet Toolbar
 

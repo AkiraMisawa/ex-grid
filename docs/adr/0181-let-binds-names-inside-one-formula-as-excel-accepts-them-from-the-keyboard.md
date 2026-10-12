@@ -20,20 +20,27 @@ LET-ADDITIONAL-* and the FOLLOWUP cases):
   - A name read before its binding, or inside its own value, is `#NAME?`, not a cycle.
 - **Names.**
   - They are compared without regard to case.
-  - Accepted from the keyboard: `_x`, `c`, `r`, `名前` and `é`.
-  - Refused: `A1`, `a.b`, `1`, a name bound twice, a name of 250 characters, and a 127th pair.
+  - Accepted from the keyboard: `_x`, `c`, `r`, `名前` and `é`, and, in the seventeenth run, `SUM`,
+    `IRR`, `N`, `R1C1` and `RC`.
+  - Refused: `A1`, `a.b`, `1`, a name bound twice, a name of 250 characters, and a 127th pair;
+    `TRUE`, `R2` and `C3` (the seventeenth run).
   - The sources disagree. COM accepted `A1`, which typed entry refuses. Microsoft's page calls `c`
     invalid, which typed entry accepts.
 - **Values.**
   - A binding is one Value however often it is read: `LET(x,RAND(),x-x)` was 0 in every sample.
   - An unused binding that holds an Error Value does not reach the result: `LET(x,NA(),1)` is 1.
+  - A value may be left empty: `LET(x,,x)` is 0 (the seventeenth run).
 - **Arrays and change.** A binding may hold a range or an array, which spills as any other array does.
   A change to a cell a binding reads recalculates the `LET`.
 
 ## The decision
 
-**ExSheet admits `LET` as Excel's keyboard accepts it, and refuses on entry what Excel was not seen to
-accept.** Where the keyboard disagrees with COM or with Microsoft's page, the keyboard wins, because
+**ExSheet admits `LET` as Excel's keyboard accepts it, and refuses on entry what that keyboard refuses.**
+*(Until the seventeenth run the lead ended "and refuses on entry what Excel was not seen to accept". The
+run saw the keyboard take a function's name, an R1C1 shape and a value left empty, and the rule now goes
+past the shapes it observed: the name of any function, any R1C1 shape that reads as no A1 Reference, and
+any value left empty, read as the empty argument would be read where the name stands. The note of
+2026-10-11, run 17, says which were observed.)* Where the keyboard disagrees with COM or with Microsoft's page, the keyboard wins, because
 ExSheet's Formulas are typed (ADR-0047, "Observed in Excel").
 
 - **Scope.**
@@ -46,13 +53,13 @@ ExSheet's Formulas are typed (ADR-0047, "Observed in Excel").
   - It starts with a letter or `_`, and goes on with letters, digits and `_`. A letter is any
     script's, as `名前` and `é` were.
   - It is at most 249 characters, and a `LET` holds at most 126 pairs.
-- **A name that could mean something else is refused**, until a Windows run shows that Excel accepts
-  it:
-  - a name that reads as a Reference: `A1`, `XFD1048576`, and the R1C1 shapes `R1C1`, `R2`, `C3`;
-  - the name of a function;
-  - `TRUE` and `FALSE`.
-
-  `c` and `r` alone are names, as observed.
+- **A name that reads as something else is refused**, as Excel's keyboard refuses it: one that reads
+  as an A1 Reference (`A1`, `XFD1048576`, `R2`, `C3`), and `TRUE` and `FALSE`.
+  - The name of a function, declared or not, is a name, and so is an R1C1 shape that reads as no A1
+    Reference (`R1C1`, `RC`); a name followed by `(` is the function's call (the note of 2026-10-11, run
+    17). `c` and `r` alone are names, as observed.
+- **A value left empty is bound.** The name reads as that empty argument would read where it stands,
+  so `LET(x,,x)` shows 0, as `IF(TRUE,)` does. A missing calculation is still refused.
 - **A name never hides a Linked Table.** A binding names bare names only, so `Table[Column]` inside a
   `LET` always reads the Linked Table, whatever the `LET` binds
   ([ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md)).
@@ -77,8 +84,9 @@ ExSheet's Formulas are typed (ADR-0047, "Observed in Excel").
 
 ## What differs from Excel, by decision
 
-- **Unobserved names are refused.** Excel may accept a name it was not seen to accept: a function's
-  name, `TRUE`, an R1C1-shaped name. Each is refused until it is observed.
+- *(Until 2026-10-11: unobserved names were refused — a function's name, `TRUE`, an R1C1-shaped name.
+  The seventeenth run observed each; see the note.)* No name of letters, digits and `_` is refused for
+  being unobserved any more.
 - **An unused binding can still make the `LET` an Error Value.** If it reads a cycle, the `LET` is
   `#CIRC!`; if it reads a waiting Linked Table, the `LET` is `#GETTING_DATA`. Excel shows neither as a
   Value, and was not asked.
@@ -87,6 +95,19 @@ ExSheet's Formulas are typed (ADR-0047, "Observed in Excel").
 not only of one ExSheet declares, as the catalogue in `docs/specs/exsheet-functions/spec.md` lists them.
 Refusing only the declared ones would let a Sheet saved today with `LET(IRR, …)` stop opening on the
 day `IRR` is declared.)*
+
+*(2026-10-11, the seventeenth Windows run, typed with real keys under en-US: Excel's keyboard entered a
+function's name as a `LET` name, whether ExSheet declares it or not — `LET(SUM,2,SUM+1)` is 3,
+`LET(IRR,1,IRR)` 1 and `LET(N,1,N)` 1 (LET-101, 111, 112) — the R1C1 shapes `R1C1` and `RC` (LET-103,
+106), and a value left empty: `LET(x,,x)` is 0 (LET-107). It refused `TRUE`, `R2` and `C3` (LET-102, 104,
+105). Under this ADR's own rule, each shape it entered is now a name: the name of any function, and an
+R1C1 shape that does not read as an A1 Reference. A name followed by `(` is still the function's call,
+so `LET(SUM,2,SUM(SUM,1))` is 3, which the run did not type. `R2` and `C3` stay refused because they read as A1 References, and
+`TRUE` and `FALSE` because they read as booleans. A value left empty binds the name to that empty
+argument, and where the name stands it reads as the empty argument would read there; only
+`LET(x,,x)` has been observed. **The note above is superseded**: its reason, that a Sheet saved with
+`LET(IRR, …)` would stop opening on the day `IRR` is declared, disappears once no function's name is
+refused.)*
 
 ## Considered options
 

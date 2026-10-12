@@ -37,6 +37,18 @@ internal sealed class ErrorNode(ErrorValue error) : Node
 internal sealed class MissingNode : Node
 {
     public static MissingNode Instance { get; } = new();
+
+    /// <summary>
+    /// Whether an argument is left empty: written empty, or a <c>LET</c> name bound to a value left
+    /// empty, as in <c>LET(x,,IF(A1,x,1))</c>. Such a name reads as the empty argument it is bound
+    /// to would read in its place (ADR-0181; Excel's keyboard took <c>LET(x,,x)</c>, LET-107, run 17).
+    /// </summary>
+    public static bool IsEmpty(Node argument) => argument switch
+    {
+        MissingNode => true,
+        NameNode { Binding: { } binding } => IsEmpty(binding.Value),
+        _ => false,
+    };
 }
 
 internal sealed class ReferenceNode(Reference reference) : Node

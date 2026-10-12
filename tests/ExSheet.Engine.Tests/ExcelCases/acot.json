@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ACOT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ACOT(2)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ACOT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Documented: the angle lies from 0 to pi",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ACOT(-2)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ACOT-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: pi/2",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ACOT(0)"},

@@ -1,0 +1,388 @@
+{"t": "23:15:12", "cmd": "stop", "answer": "ok stop 43204 ended by Stop-Process (its own) t=22060"}
+{"t": "23:15:14", "cmd": "start", "answer": "ok start pid=20580 book=Book1 sheet=Sheet1 openedByItself= before=43204 layout=0x08090809 version=16.0 t=23781"}
+{"t": "23:15:16", "cmd": "keys 40 =RAND{(}{)}{ENTER}", "answer": "ok keys 8 t=25734"}
+{"t": "23:15:17", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=26412"}
+{"t": "23:15:17", "cmd": "cell A1 B1", "answer": "ok cell A1: number 0.728584010700264 | formula \"=RAND()\" | text \"0.728584\" ;; B1: empty | formula \"\" | text \"\" t=26488"}
+{"t": "23:15:17", "cmd": "shot b1-1-rand-entered", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b1-1-rand-entered.png windows: XLMAIN@-11,-11,3851,2099 t=26658"}
+{"t": "23:15:17", "cmd": "keys 40 {UP}{RIGHT}", "answer": "ok keys 2 t=26763"}
+{"t": "23:15:18", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B1 selection=B1 t=27391"}
+{"t": "23:15:18", "cmd": "cell A1 B1", "answer": "ok cell A1: number 0.728584010700264 | formula \"=RAND()\" | text \"0.728584\" ;; B1: empty | formula \"\" | text \"\" t=27446"}
+{"t": "23:15:18", "cmd": "shot b1-2-b1-selected", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b1-2-b1-selected.png windows: XLMAIN@-11,-11,3851,2099 t=27618"}
+{"t": "23:15:18", "cmd": "keys 40 1{ENTER}", "answer": "ok keys 2 t=27745"}
+{"t": "23:15:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B2 selection=B2 t=28380"}
+{"t": "23:15:19", "cmd": "cell A1 B1", "answer": "ok cell A1: number 0.035222293413679884 | formula \"=RAND()\" | text \"0.035222\" ;; B1: number 1 | formula \"1\" | text \"1\" t=28436"}
+{"t": "23:15:19", "cmd": "shot b1-3-b1-typed", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b1-3-b1-typed.png windows: XLMAIN@-11,-11,3851,2099 t=28629"}
+{"t": "23:15:19", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=28703"}
+{"t": "23:15:20", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B1 selection=B1 t=29370"}
+{"t": "23:15:20", "cmd": "cell A1 B1", "answer": "ok cell A1: number 0.63343631701647329 | formula \"=RAND()\" | text \"0.633436\" ;; B1: empty | formula \"\" | text \"\" t=29425"}
+{"t": "23:15:20", "cmd": "shot b1-4-ctrl-z", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b1-4-ctrl-z.png windows: XLMAIN@-11,-11,3851,2099 t=29607"}
+{"t": "23:15:20", "cmd": "keys 40 ^y", "answer": "ok keys 1 t=29685"}
+{"t": "23:15:21", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B1 selection=B1 t=30311"}
+{"t": "23:15:21", "cmd": "cell A1 B1", "answer": "ok cell A1: number 0.94031907607955856 | formula \"=RAND()\" | text \"0.940319\" ;; B1: number 1 | formula \"1\" | text \"1\" t=30366"}
+{"t": "23:15:21", "cmd": "shot b1-5-ctrl-y", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b1-5-ctrl-y.png windows: XLMAIN@-11,-11,3851,2099 t=30550"}
+{"t": "23:15:21", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=30624"}
+{"t": "23:15:21", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B1 selection=B1 t=31253"}
+{"t": "23:15:22", "cmd": "cell A1 B1", "answer": "ok cell A1: number 0.96869660901116994 | formula \"=RAND()\" | text \"0.968697\" ;; B1: empty | formula \"\" | text \"\" t=31306"}
+{"t": "23:15:22", "cmd": "shot b1-6-ctrl-z-again", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b1-6-ctrl-z-again.png windows: XLMAIN@-11,-11,3851,2099 t=31488"}
+{"t": "23:15:22", "cmd": "keys 40 ^y", "answer": "ok keys 1 t=31565"}
+{"t": "23:15:22", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B1 selection=B1 t=32189"}
+{"t": "23:15:22", "cmd": "cell A1 B1", "answer": "ok cell A1: number 0.39002255258321294 | formula \"=RAND()\" | text \"0.390023\" ;; B1: number 1 | formula \"1\" | text \"1\" t=32247"}
+{"t": "23:15:23", "cmd": "shot b1-7-ctrl-y-again", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b1-7-ctrl-y-again.png windows: XLMAIN@-11,-11,3851,2099 t=32429"}
+{"t": "23:15:43", "cmd": "stop", "answer": "ok stop 20580 ended by Stop-Process (its own) t=52802"}
+{"t": "23:15:45", "cmd": "start", "answer": "ok start pid=42656 book=Book1 sheet=Sheet1 openedByItself= before=20580 layout=0x08090809 version=16.0 t=54503"}
+{"t": "23:15:47", "cmd": "keys 40 =RAND{(}{)}{ENTER}", "answer": "ok keys 8 t=56422"}
+{"t": "23:15:47", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=57084"}
+{"t": "23:15:47", "cmd": "cell A1", "answer": "ok cell A1: number 0.21946455506413098 | formula \"=RAND()\" | text \"0.219465\" t=57133"}
+{"t": "23:15:48", "cmd": "shot b2-1-rand-entered", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b2-1-rand-entered.png windows: XLMAIN@-11,-11,3851,2099 t=57316"}
+{"t": "23:15:49", "cmd": "uia", "answer": "ok uia Formula Bar:328,267,3840,324 Name Box:not found Status Bar:0,2055,3840,2088 Sheet Tab:not found Sheet1:160,2007,259,2055 t=58393"}
+{"t": "23:15:49", "cmd": "dblclick 209 2031", "answer": "ok dblclick t=59093"}
+{"t": "23:15:50", "cmd": "shot b2-2-tab-double-clicked", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b2-2-tab-double-clicked.png windows: XLMAIN@-11,-11,3851,2099 t=59835"}
+{"t": "23:15:50", "cmd": "keys 40 Data{ENTER}", "answer": "ok keys 5 t=60108"}
+{"t": "23:15:51", "cmd": "ready", "answer": "ok ready ready=True active=Data!A2 selection=A2 t=60748"}
+{"t": "23:15:51", "cmd": "cell A1", "answer": "ok cell A1: number 0.50683781294117847 | formula \"=RAND()\" | text \"0.506838\" t=60798"}
+{"t": "23:15:51", "cmd": "shot b2-3-renamed", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b2-3-renamed.png windows: XLMAIN@-11,-11,3851,2099 t=60981"}
+{"t": "23:15:51", "cmd": "ready", "answer": "ok ready ready=True active=Data!A2 selection=A2 t=61027"}
+{"t": "23:15:51", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=61125"}
+{"t": "23:15:52", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=61798"}
+{"t": "23:15:52", "cmd": "cell A1", "answer": "ok cell A1: number 0.3434572829235909 | formula \"=RAND()\" | text \"0.343457\" t=61846"}
+{"t": "23:15:52", "cmd": "shot b2-4-ctrl-z", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b2-4-ctrl-z.png windows: XLMAIN@-11,-11,3851,2099 t=62034"}
+{"t": "23:15:52", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=62076"}
+{"t": "23:16:58", "cmd": "stop", "answer": "ok stop 42656 ended by Stop-Process (its own) t=127731"}
+{"t": "23:17:00", "cmd": "start", "answer": "ok start pid=5164 book=Book1 sheet=Sheet1 openedByItself= before=42656 layout=0x08090809 version=16.0 t=129422"}
+{"t": "23:17:02", "cmd": "keys 40 =RAND{(}{)}{ENTER}", "answer": "ok keys 8 t=131326"}
+{"t": "23:17:02", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=131981"}
+{"t": "23:17:02", "cmd": "cell A1", "answer": "ok cell A1: number 0.66587690107406272 | formula \"=RAND()\" | text \"0.665877\" t=132030"}
+{"t": "23:17:02", "cmd": "shot b3-1-rand-entered", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-1-rand-entered.png windows: XLMAIN@-11,-11,3851,2099 t=132215"}
+{"t": "23:17:03", "cmd": "keys 300 {ALT}", "answer": "ok keys 1 t=132557"}
+{"t": "23:17:03", "cmd": "keys 300 a", "answer": "ok keys 1 t=132920"}
+{"t": "23:17:05", "cmd": "shot b3-2-alt-a", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-2-alt-a.png windows: XLMAIN@-11,-11,3851,2099 ; MSO_KEYTIP_WINDOW_CLASS@45,227,77,255 ; MSO_KEYTIP_WINDOW_CLASS@119,227,146,255 ; MSO_KEYTIP_WINDOW_CLASS@188,227,223,255 ; MSO_KEYTIP_WINDOW_CLASS@277,227,305,255 ; MSO_KEYTIP_WINDOW_CLASS@370,227,398,255 ; MSO_KEYTIP_WINDOW_CLASS@446,227,476,255 ; MSO_KEYTIP_WINDOW_CLASS@556,227,579,255 ; MSO_KEYTIP_WINDOW_CLASS@666,227,689,255 ; MSO_KEYTIP_WINDOW_CLASS@732,108,755,136 ; MSO_KEYTIP_WINDOW_CLASS@732,166,761,194 ; MSO_KEYTIP_WINDOW_CLASS@732,227,755,255 ; MSO_KEYTIP_WINDOW_CLASS@1343,227,1375,255 ; MSO_KEYTIP_WINDOW_CLASS@1407,108,1438,136 ; MSO_KEYTIP_WINDOW_CLASS@1407,227,1439,255 ; MSO_KEYTIP_WINDOW_CLASS@1444,227,1473,255 ; MSO_KEYTIP_WINDOW_CLASS@1528,227,1551,255 ; MSO_KEYTIP_WINDOW_CLASS@1592,108,1615,136 ; MSO_KEYTIP_WINDOW_CLASS@1592,166,1615,194 ; MSO_KEYTIP_WINDOW_CLASS@1592,227,1615,255 ; MSO_KEYTIP_WINDOW_CLASS@1754,227,1777,255 ; MSO_KEYTIP_WINDOW_CLASS@1825,227,1852,255 ; MSO_KEYTIP_WINDOW_CLASS@1905,227,1930,255 ; MSO_KEYTIP_WINDOW_CLASS@2005,227,2028,255 ; MSO_KEYTIP_WINDOW_CLASS@2111,227,2134,255 ; MSO_KEYTIP_WINDOW_CLASS@2196,227,2234,255 ; MSO_KEYTIP_WINDOW_CLASS@2276,227,2303,255 ; MSO_KEYTIP_WINDOW_CLASS@2380,227,2406,255 ; MSO_KEYTIP_WINDOW_CLASS@2463,227,2492,255 ; MSO_KEYTIP_WINDOW_CLASS@2558,227,2581,255 ; MSO_KEYTIP_WINDOW_CLASS@2631,227,2654,255 ; MSO_KEYTIP_WINDOW_CLASS@2711,227,2734,255 ; MSO_KEYTIP_WINDOW_CLASS@2782,108,2805,136 ; MSO_KEYTIP_WINDOW_CLASS@2782,166,2805,194 ; MSO_KEYTIP_WINDOW_CLASS@2896,264,2919,292 t=134387"}
+{"t": "23:17:17", "cmd": "keys 400 ft", "answer": "ok keys 2 t=146542"}
+{"t": "23:17:19", "cmd": "allwindows", "answer": "ok allwindows 134884|ThumbnailDeviceHelperWnd|explorer|0,0,1,1 ;; 65880|Shell_TrayWnd|explorer|0,2088,3840,2160 ;; 17108488|#32770|EXCEL|0,0,1800,1080 ;; 2887170|XLMAIN|EXCEL|-11,-11,3851,2099 ;; 328690|org.wezfurlong.wezterm|wezterm-gui|1911,1044,3849,2097 ;; 5505916|TaskManagerWindow|Taskmgr|0,894,1938,2088 ;; 394588|HwndWrapper[SelfService.exe;main;eab7961d-321a-4c3d-a956-41a16d723eac]|SelfService|-32768,-32768,-31140,-31575 ;; 330344|Windows.UI.Core.CoreWindow|SystemSettings|0,1,1194,930 ;; 724318|ApplicationFrameWindow|ApplicationFrameHost|2155,1053,3371,1994 ;; 132052|CORETEMP|Core Temp|0,0,501,891 ;; 262528|Windows.UI.Core.CoreWindow|TextInputHost|0,0,3840,2160 ;; 66048|EdgeUiInputTopWndClass|explorer|23,0,3840,4 ;; 65928|Progman|explorer|0,0,3840,2160 t=149089"}
+{"t": "23:17:20", "cmd": "keys 15 C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\b3.csv", "answer": "ok keys 67 t=150242"}
+{"t": "23:17:21", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=150706"}
+{"t": "23:17:26", "cmd": "allwindows", "answer": "ok allwindows 134884|ThumbnailDeviceHelperWnd|explorer|0,0,1,1 ;; 65880|Shell_TrayWnd|explorer|0,2088,3840,2160 ;; 37424968|WindowsForms10.Window.20008.app.0.165f26b_r120_ad1|EXCEL|1260,549,2580,1539 ;; 2887170|XLMAIN|EXCEL|-11,-11,3851,2099 ;; 328690|org.wezfurlong.wezterm|wezterm-gui|1911,1044,3849,2097 ;; 5505916|TaskManagerWindow|Taskmgr|0,894,1938,2088 ;; 394588|HwndWrapper[SelfService.exe;main;eab7961d-321a-4c3d-a956-41a16d723eac]|SelfService|-32768,-32768,-31140,-31575 ;; 330344|Windows.UI.Core.CoreWindow|SystemSettings|0,1,1194,930 ;; 724318|ApplicationFrameWindow|ApplicationFrameHost|2155,1053,3371,1994 ;; 132052|CORETEMP|Core Temp|0,0,501,891 ;; 262528|Windows.UI.Core.CoreWindow|TextInputHost|0,0,3840,2160 ;; 66048|EdgeUiInputTopWndClass|explorer|23,0,3840,4 ;; 65928|Progman|explorer|0,0,3840,2160 t=155733"}
+{"t": "23:17:26", "cmd": "shot b3-4-preview", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-4-preview.png windows: XLMAIN@-11,-11,3851,2099 ; WindowsForms10.Window.20008.app.0.165f26b_r120_ad1@1260,549,2580,1539 t=155915"}
+{"t": "23:17:44", "cmd": "click 2203 1478", "answer": "ok click t=174046"}
+{"t": "23:17:50", "cmd": "ready", "answer": "ok ready ready=True active=b3!A1 selection=A1 t=180115"}
+{"t": "23:17:51", "cmd": "shot b3-5-loaded", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-5-loaded.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@389,117,831,426 t=180334"}
+{"t": "23:17:51", "cmd": "cell b3!A1 b3!B1 b3!A4 b3!B4", "answer": "ok cell b3!A1: String \"Key\" | formula \"Key\" | text \"Key\" ;; b3!B1: String \"Val\" | formula \"Val\" | text \"Val\" ;; b3!A4: String \"c\" | formula \"c\" | text \"c\" ;; b3!B4: number 3 | formula \"3\" | text \"3\" t=180397"}
+{"t": "23:17:51", "cmd": "cell Sheet1!A1", "answer": "ok cell Sheet1!A1: number 0.39872817435436025 | formula \"=RAND()\" | text \"0.398728\" t=180440"}
+{"t": "23:17:51", "cmd": "keys 40 ^{PGUP}", "answer": "ok keys 1 t=180548"}
+{"t": "23:17:51", "cmd": "ready", "answer": "ok ready ready=True active=b3!A1 selection=A1 t=181218"}
+{"t": "23:17:52", "cmd": "cell A1", "answer": "ok cell A1: String \"Key\" | formula \"Key\" | text \"Key\" t=181269"}
+{"t": "23:17:52", "cmd": "shot b3-6-back-on-sheet1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-6-back-on-sheet1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@389,117,831,426 t=181466"}
+{"t": "23:17:52", "cmd": "keys 40 ^%{F5}", "answer": "ok keys 1 t=181530"}
+{"t": "23:17:58", "cmd": "ready", "answer": "ok ready ready=True active=b3!A1 selection=A1 t=187755"}
+{"t": "23:17:58", "cmd": "cell A1", "answer": "ok cell A1: String \"Key\" | formula \"Key\" | text \"Key\" t=187810"}
+{"t": "23:17:58", "cmd": "shot b3-7-refresh-all-unchanged", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-7-refresh-all-unchanged.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@389,117,831,426 t=188018"}
+{"t": "23:17:58", "cmd": "cell b3!B2 b3!B3 b3!B4", "answer": "ok cell b3!B2: number 1 | formula \"1\" | text \"1\" ;; b3!B3: number 2 | formula \"2\" | text \"2\" ;; b3!B4: number 3 | formula \"3\" | text \"3\" t=188041"}
+{"t": "23:17:58", "cmd": "keys 40 ^%{F5}", "answer": "ok keys 1 t=188137"}
+{"t": "23:18:05", "cmd": "ready", "answer": "ok ready ready=True active=b3!A1 selection=A1 t=194354"}
+{"t": "23:18:05", "cmd": "cell A1", "answer": "ok cell A1: String \"Key\" | formula \"Key\" | text \"Key\" t=194406"}
+{"t": "23:18:05", "cmd": "shot b3-7b-refresh-all-unchanged-again", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-7b-refresh-all-unchanged-again.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@389,117,831,426 t=194610"}
+{"t": "23:18:21", "cmd": "keys 40 ^{PGDN}", "answer": "ok keys 1 t=210858"}
+{"t": "23:18:22", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=211485"}
+{"t": "23:18:22", "cmd": "cell Sheet1!A1 b3!B4", "answer": "ok cell Sheet1!A1: number 0.41572896601076748 | formula \"=RAND()\" | text \"0.415729\" ;; b3!B4: number 3 | formula \"3\" | text \"3\" t=211544"}
+{"t": "23:18:22", "cmd": "shot b3-8-on-sheet1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-8-on-sheet1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@389,117,831,426 t=211729"}
+{"t": "23:18:22", "cmd": "keys 40 ^%{F5}", "answer": "ok keys 1 t=211800"}
+{"t": "23:18:28", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=218038"}
+{"t": "23:18:28", "cmd": "cell Sheet1!A1 b3!B4", "answer": "ok cell Sheet1!A1: number 0.21801555519652582 | formula \"=RAND()\" | text \"0.218016\" ;; b3!B4: number 3 | formula \"3\" | text \"3\" t=218099"}
+{"t": "23:18:29", "cmd": "shot b3-9-refresh-all-unchanged", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-9-refresh-all-unchanged.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@389,117,831,426 t=218318"}
+{"t": "23:18:29", "cmd": "keys 40 ^%{F5}", "answer": "ok keys 1 t=218409"}
+{"t": "23:18:35", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=224645"}
+{"t": "23:18:35", "cmd": "cell Sheet1!A1 b3!B4", "answer": "ok cell Sheet1!A1: number 0.082116763526578929 | formula \"=RAND()\" | text \"0.082117\" ;; b3!B4: number 3 | formula \"3\" | text \"3\" t=224705"}
+{"t": "23:18:35", "cmd": "shot b3-10-refresh-all-unchanged-again", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-10-refresh-all-unchanged-again.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@389,117,831,426 t=224912"}
+{"t": "23:18:35", "cmd": "keys 40 ^%{F5}", "answer": "ok keys 1 t=225050"}
+{"t": "23:18:41", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=231255"}
+{"t": "23:18:42", "cmd": "cell Sheet1!A1 b3!B4", "answer": "ok cell Sheet1!A1: number 0.81199667908518791 | formula \"=RAND()\" | text \"0.811997\" ;; b3!B4: number 30 | formula \"30\" | text \"30\" t=231311"}
+{"t": "23:18:42", "cmd": "shot b3-12-refresh-all-after-the-file-changed", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-12-refresh-all-after-the-file-changed.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@389,117,831,426 t=231510"}
+{"t": "23:18:42", "cmd": "keys 40 ^%{F5}", "answer": "ok keys 1 t=231576"}
+{"t": "23:18:48", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=237835"}
+{"t": "23:18:48", "cmd": "cell Sheet1!A1 b3!B4", "answer": "ok cell Sheet1!A1: number 0.23499631821526956 | formula \"=RAND()\" | text \"0.234996\" ;; b3!B4: number 30 | formula \"30\" | text \"30\" t=237895"}
+{"t": "23:18:48", "cmd": "shot b3-13-refresh-all-unchanged-after-that", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b3-13-refresh-all-unchanged-after-that.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@389,117,831,426 t=238095"}
+{"t": "23:19:07", "cmd": "stop", "answer": "ok stop 5164 ended by Stop-Process (its own) t=256400"}
+{"t": "23:19:08", "cmd": "start", "answer": "ok start pid=25220 book=Book1 sheet=Sheet1 openedByItself= before=5164 layout=0x08090809 version=16.0 t=258114"}
+{"t": "23:19:10", "cmd": "keys 40 =SUBTOTAL{(}", "answer": "ok keys 10 t=260127"}
+{"t": "23:19:12", "cmd": "shot b4-SUBTOTAL-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-SUBTOTAL-0.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,348,415 ; __XLACOOUTER@155,417,374,803 t=261325"}
+{"t": "23:19:12", "cmd": "keys 60 {DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}", "answer": "ok keys 6 t=261723"}
+{"t": "23:19:13", "cmd": "shot b4-SUBTOTAL-down6", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-SUBTOTAL-down6.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,348,415 ; __XLACOOUTER@155,417,374,803 t=262394"}
+{"t": "23:19:13", "cmd": "keys 60 {DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}", "answer": "ok keys 6 t=262801"}
+{"t": "23:19:14", "cmd": "shot b4-SUBTOTAL-down12", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-SUBTOTAL-down12.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,348,415 ; __XLACOOUTER@155,417,374,803 t=263479"}
+{"t": "23:19:14", "cmd": "keys 60 {DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}", "answer": "ok keys 6 t=263870"}
+{"t": "23:19:15", "cmd": "shot b4-SUBTOTAL-down18", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-SUBTOTAL-down18.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,348,415 ; __XLACOOUTER@155,417,374,803 t=264573"}
+{"t": "23:19:15", "cmd": "keys 60 {DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}", "answer": "ok keys 6 t=265002"}
+{"t": "23:19:16", "cmd": "shot b4-SUBTOTAL-down24", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-SUBTOTAL-down24.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,348,415 ; __XLACOOUTER@155,417,374,803 t=265700"}
+{"t": "23:19:16", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=265753"}
+{"t": "23:19:16", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=266113"}
+{"t": "23:19:17", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=266538"}
+{"t": "23:19:17", "cmd": "keys 40 =AGGREGATE{(}", "answer": "ok keys 11 t=267111"}
+{"t": "23:19:19", "cmd": "shot b4-AGGREGATE-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-AGGREGATE-0.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,447,440 ; __XLACOOUTER@171,442,440,828 t=268310"}
+{"t": "23:19:19", "cmd": "keys 60 {DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}", "answer": "ok keys 6 t=268710"}
+{"t": "23:19:20", "cmd": "shot b4-AGGREGATE-down6", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-AGGREGATE-down6.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,447,440 ; __XLACOOUTER@171,442,440,828 t=269394"}
+{"t": "23:19:20", "cmd": "keys 60 {DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}", "answer": "ok keys 6 t=269779"}
+{"t": "23:19:21", "cmd": "shot b4-AGGREGATE-down12", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-AGGREGATE-down12.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,447,440 ; __XLACOOUTER@171,442,440,828 t=270475"}
+{"t": "23:19:21", "cmd": "keys 60 {DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}", "answer": "ok keys 6 t=270862"}
+{"t": "23:19:22", "cmd": "shot b4-AGGREGATE-down18", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-AGGREGATE-down18.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,447,440 ; __XLACOOUTER@171,442,440,828 t=271560"}
+{"t": "23:19:22", "cmd": "keys 60 {DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}", "answer": "ok keys 6 t=271938"}
+{"t": "23:19:23", "cmd": "shot b4-AGGREGATE-down24", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-AGGREGATE-down24.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,447,440 ; __XLACOOUTER@171,442,440,828 t=272634"}
+{"t": "23:19:23", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=272699"}
+{"t": "23:19:23", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=273061"}
+{"t": "23:19:24", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=273474"}
+{"t": "23:19:24", "cmd": "keys 40 =AGGREGATE{(}1,", "answer": "ok keys 13 t=274136"}
+{"t": "23:19:26", "cmd": "shot b4-AGGREGATE_1-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-AGGREGATE_1-0.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,466,440 ; __XLACOOUTER@188,442,954,700 t=275308"}
+{"t": "23:19:26", "cmd": "keys 60 {DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}", "answer": "ok keys 6 t=275734"}
+{"t": "23:19:27", "cmd": "shot b4-AGGREGATE_1-down6", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-AGGREGATE_1-down6.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,466,440 ; __XLACOOUTER@188,442,954,700 t=276427"}
+{"t": "23:19:27", "cmd": "keys 60 {DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}", "answer": "ok keys 6 t=276814"}
+{"t": "23:19:28", "cmd": "shot b4-AGGREGATE_1-down12", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b4-AGGREGATE_1-down12.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,466,440 ; __XLACOOUTER@188,442,954,700 t=277511"}
+{"t": "23:19:28", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=277565"}
+{"t": "23:19:28", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=277926"}
+{"t": "23:19:29", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=278351"}
+{"t": "23:20:25", "cmd": "stop", "answer": "ok stop 25220 ended by Stop-Process (its own) t=334597"}
+{"t": "23:20:27", "cmd": "start", "answer": "ok start pid=10816 book=Book1 sheet=Sheet1 openedByItself= before=25220 layout=0x08090809 version=16.0 t=336344"}
+{"t": "23:20:29", "cmd": "rclick 2600 2071", "answer": "ok rclick t=338326"}
+{"t": "23:20:30", "cmd": "windows", "answer": "ok windows 1576858|Net UI Tool Window||2600,726,3186,2071 ;; 4525616|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=339592"}
+{"t": "23:20:30", "cmd": "shot b5-1-status-bar-menu", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b5-1-status-bar-menu.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@2600,726,3186,2071 t=339775"}
+{"t": "23:20:51", "cmd": "click 2700 1733", "answer": "ok click t=361076"}
+{"t": "23:20:52", "cmd": "click 2700 1777", "answer": "ok click t=362292"}
+{"t": "23:20:54", "cmd": "click 2700 1821", "answer": "ok click t=363469"}
+{"t": "23:20:54", "cmd": "windows", "answer": "ok windows 1576858|Net UI Tool Window||2600,726,3186,2071 ;; 4525616|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=364233"}
+{"t": "23:20:55", "cmd": "shot b5-2-ticked", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b5-2-ticked.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@2600,726,3186,2071 t=364435"}
+{"t": "23:20:55", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=364500"}
+{"t": "23:20:55", "cmd": "windows", "answer": "ok windows 4525616|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=365106"}
+{"t": "23:20:55", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=365179"}
+{"t": "23:20:55", "cmd": "select A1", "answer": "ok select A1 t=365227"}
+{"t": "23:20:56", "cmd": "keys 40 1{ENTER}", "answer": "ok keys 2 t=365375"}
+{"t": "23:20:56", "cmd": "keys 40 2{ENTER}", "answer": "ok keys 2 t=365777"}
+{"t": "23:20:57", "cmd": "keys 40 =1/0{ENTER}", "answer": "ok keys 5 t=366343"}
+{"t": "23:20:57", "cmd": "keys 40 x{ENTER}", "answer": "ok keys 2 t=366766"}
+{"t": "23:20:57", "cmd": "cell A1 A2 A3 A4 A5", "answer": "ok cell A1: number 1 | formula \"1\" | text \"1\" ;; A2: number 2 | formula \"2\" | text \"2\" ;; A3: error #DIV/0! | formula \"=1/0\" | text \"#DIV/0!\" ;; A4: String \"x\" | formula \"x\" | text \"x\" ;; A5: empty | formula \"\" | text \"\" t=367106"}
+{"t": "23:20:57", "cmd": "geo A1 A5 A3", "answer": "ok geo A1:41,353,137,381 A5:41,470,137,497 A3:41,411,137,441 t=367198"}
+{"t": "23:20:58", "cmd": "click 89 367", "answer": "ok click t=367719"}
+{"t": "23:20:59", "cmd": "shiftclick 89 483", "answer": "ok shiftclick t=368687"}
+{"t": "23:21:00", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A5 t=369714"}
+{"t": "23:21:00", "cmd": "shot b5-5-a1-a5-selected", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b5-5-a1-a5-selected.png windows: XLMAIN@-11,-11,3851,2099 ; NUIDialog@139,501,172,534 t=369887"}
+{"t": "23:21:00", "cmd": "geo A1 A5 A3", "answer": "ok geo A1:41,353,137,381 A5:41,470,137,497 A3:41,411,137,441 t=369941"}
+{"t": "23:21:01", "cmd": "click 89 426", "answer": "ok click t=370451"}
+{"t": "23:21:01", "cmd": "keys 40 {DEL}", "answer": "ok keys 1 t=370954"}
+{"t": "23:21:02", "cmd": "cell A1 A2 A3 A4 A5", "answer": "ok cell A1: number 1 | formula \"1\" | text \"1\" ;; A2: number 2 | formula \"2\" | text \"2\" ;; A3: empty | formula \"\" | text \"\" ;; A4: String \"x\" | formula \"x\" | text \"x\" ;; A5: empty | formula \"\" | text \"\" t=371435"}
+{"t": "23:21:02", "cmd": "click 89 367", "answer": "ok click t=371936"}
+{"t": "23:21:03", "cmd": "shiftclick 89 483", "answer": "ok shiftclick t=372861"}
+{"t": "23:21:04", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A5 t=373935"}
+{"t": "23:21:04", "cmd": "shot b6-2-a1-a5-selected", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b6-2-a1-a5-selected.png windows: XLMAIN@-11,-11,3851,2099 ; NUIDialog@139,501,172,534 t=374127"}
+{"t": "23:21:29", "cmd": "geo A1 A5", "answer": "ok geo A1:41,353,137,381 A5:41,470,137,497 t=399157"}
+{"t": "23:21:30", "cmd": "click 89 367", "answer": "ok click t=399670"}
+{"t": "23:21:31", "cmd": "shiftclick 89 483", "answer": "ok shiftclick t=400545"}
+{"t": "23:21:31", "cmd": "keys 40 {DEL}", "answer": "ok keys 1 t=400953"}
+{"t": "23:21:32", "cmd": "select A1", "answer": "ok select A1 t=401415"}
+{"t": "23:21:32", "cmd": "keys 40 1{ENTER}", "answer": "ok keys 2 t=401559"}
+{"t": "23:21:32", "cmd": "keys 40 TRUE{ENTER}", "answer": "ok keys 5 t=402109"}
+{"t": "23:21:33", "cmd": "keys 40 2026-10-11{ENTER}", "answer": "ok keys 11 t=402956"}
+{"t": "23:21:34", "cmd": "keys 40 x{ENTER}", "answer": "ok keys 2 t=403358"}
+{"t": "23:21:34", "cmd": "cell A1 A2 A3 A4 A5", "answer": "ok cell A1: number 1 | formula \"1\" | text \"1\" ;; A2: Boolean \"True\" | formula \"TRUE\" | text \"TRUE\" ;; A3: number 46306 | formula \"46306\" | text \"11/10/2026\" ;; A4: String \"x\" | formula \"x\" | text \"x\" ;; A5: empty | formula \"\" | text \"\" t=403690"}
+{"t": "23:21:34", "cmd": "geo A1 A4", "answer": "ok geo A1:41,353,152,381 A4:41,441,152,470 t=403746"}
+{"t": "23:21:35", "cmd": "click 96 367", "answer": "ok click t=404260"}
+{"t": "23:21:35", "cmd": "shiftclick 96 455", "answer": "ok shiftclick t=405233"}
+{"t": "23:21:37", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A4 t=406301"}
+{"t": "23:21:37", "cmd": "shot b7-2-a1-a4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b7-2-a1-a4.png windows: XLMAIN@-11,-11,3851,2099 ; NUIDialog@154,472,187,505 t=406489"}
+{"t": "23:21:37", "cmd": "geo A1 A2", "answer": "ok geo A1:41,353,152,381 A2:41,381,152,411 t=406525"}
+{"t": "23:21:37", "cmd": "click 96 367", "answer": "ok click t=407031"}
+{"t": "23:21:38", "cmd": "shiftclick 96 396", "answer": "ok shiftclick t=407953"}
+{"t": "23:21:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A2 t=408974"}
+{"t": "23:21:39", "cmd": "shot b7-3-a1-a2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b7-3-a1-a2.png windows: XLMAIN@-11,-11,3851,2099 ; NUIDialog@154,414,187,447 t=409164"}
+{"t": "23:21:39", "cmd": "geo A3 A3", "answer": "ok geo A3:41,411,152,441 A3:41,411,152,441 t=409198"}
+{"t": "23:21:40", "cmd": "click 96 426", "answer": "ok click t=409738"}
+{"t": "23:21:41", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A3 selection=A3 t=411176"}
+{"t": "23:21:42", "cmd": "shot b7-4-a3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b7-4-a3.png windows: XLMAIN@-11,-11,3851,2099 t=411366"}
+{"t": "23:21:42", "cmd": "geo A1 A5", "answer": "ok geo A1:41,353,152,381 A5:41,470,152,497 t=411398"}
+{"t": "23:21:42", "cmd": "click 96 367", "answer": "ok click t=411906"}
+{"t": "23:21:43", "cmd": "shiftclick 96 483", "answer": "ok shiftclick t=412735"}
+{"t": "23:21:43", "cmd": "keys 40 {DEL}", "answer": "ok keys 1 t=413141"}
+{"t": "23:21:44", "cmd": "setfmt A1:A2 General", "answer": "ok setfmt A1:A2 t=413780"}
+{"t": "23:21:44", "cmd": "setfmt A1 #,##0.00", "answer": "ok setfmt A1 t=413921"}
+{"t": "23:21:44", "cmd": "setfmt A2 0%", "answer": "ok setfmt A2 t=414084"}
+{"t": "23:21:44", "cmd": "select A1", "answer": "ok select A1 t=414143"}
+{"t": "23:21:45", "cmd": "keys 40 1000{ENTER}", "answer": "ok keys 5 t=414423"}
+{"t": "23:21:45", "cmd": "keys 40 2000{ENTER}", "answer": "ok keys 5 t=415003"}
+{"t": "23:21:46", "cmd": "cell A1 A2", "answer": "ok cell A1: number 1000 | formula \"1000\" | text \"1,000.00\" ;; A2: number 20 | formula \"20\" | text \"2000%\" t=415330"}
+{"t": "23:21:46", "cmd": "geo A1 A2", "answer": "ok geo A1:41,353,152,381 A2:41,381,152,411 t=415393"}
+{"t": "23:21:46", "cmd": "click 96 367", "answer": "ok click t=415906"}
+{"t": "23:21:47", "cmd": "shiftclick 96 396", "answer": "ok shiftclick t=416873"}
+{"t": "23:21:48", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A2 t=417895"}
+{"t": "23:21:48", "cmd": "shot b8-2-a1-a2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b8-2-a1-a2.png windows: XLMAIN@-11,-11,3851,2099 ; NUIDialog@154,414,187,447 t=418090"}
+{"t": "23:21:48", "cmd": "geo A2 A1", "answer": "ok geo A2:41,381,152,411 A1:41,353,152,381 t=418119"}
+{"t": "23:21:49", "cmd": "click 96 396", "answer": "ok click t=418657"}
+{"t": "23:21:50", "cmd": "shiftclick 96 367", "answer": "ok shiftclick t=419612"}
+{"t": "23:21:51", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A1:A2 t=420674"}
+{"t": "23:21:51", "cmd": "shot b8-3-a2-a1-from-a2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b8-3-a2-a1-from-a2.png windows: XLMAIN@-11,-11,3851,2099 ; NUIDialog@154,414,187,447 t=420864"}
+{"t": "23:22:23", "cmd": "rclick 2600 2071", "answer": "ok rclick t=452374"}
+{"t": "23:22:24", "cmd": "click 2700 1733", "answer": "ok click t=454105"}
+{"t": "23:22:26", "cmd": "click 2700 1777", "answer": "ok click t=455331"}
+{"t": "23:22:27", "cmd": "click 2700 1821", "answer": "ok click t=456514"}
+{"t": "23:22:28", "cmd": "shot b5-9-unticked-again", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b5-9-unticked-again.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@2600,726,3186,2071 t=457421"}
+{"t": "23:22:28", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=457487"}
+{"t": "23:22:28", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A1:A2 t=458104"}
+{"t": "23:23:53", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=10206"}
+{"t": "23:23:56", "cmd": "start", "answer": "ok start pid=33152 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=12700"}
+{"t": "23:23:57", "cmd": "select B1", "answer": "ok select B1 t=14260"}
+{"t": "23:23:58", "cmd": "keys 600 {ALT}", "answer": "ok keys 1 t=14929"}
+{"t": "23:23:59", "cmd": "keys 700 h", "answer": "ok keys 1 t=15677"}
+{"t": "23:23:59", "cmd": "keys 700 o", "answer": "ok keys 1 t=16398"}
+{"t": "23:24:00", "cmd": "keys 700 w", "answer": "ok keys 1 t=17123"}
+{"t": "23:24:01", "cmd": "keys 40 20{ENTER}", "answer": "ok keys 3 t=18083"}
+{"t": "23:24:02", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 20 | useStandardWidth False t=18926"}
+{"t": "23:24:02", "cmd": "shot b9-CW-013-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b9-CW-013-1.png windows: XLMAIN@-11,-11,3851,2099 t=19141"}
+{"t": "23:24:02", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=19223"}
+{"t": "23:24:03", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 8.09 | useStandardWidth True t=20042"}
+{"t": "23:24:03", "cmd": "shot b9-CW-013-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b9-CW-013-2.png windows: XLMAIN@-11,-11,3851,2099 t=20216"}
+{"t": "23:24:13", "cmd": "stop", "answer": "ok stop 33152 ended by Stop-Process (its own) t=30446"}
+{"t": "23:24:15", "cmd": "start", "answer": "ok start pid=32092 book=Book1 sheet=Sheet1 openedByItself= before=33152 layout=0x08090809 version=16.0 t=32145"}
+{"t": "23:24:17", "cmd": "select B1", "answer": "ok select B1 t=33682"}
+{"t": "23:24:17", "cmd": "keys 600 {ALT}", "answer": "ok keys 1 t=34330"}
+{"t": "23:24:18", "cmd": "keys 700 h", "answer": "ok keys 1 t=35059"}
+{"t": "23:24:19", "cmd": "keys 700 o", "answer": "ok keys 1 t=35794"}
+{"t": "23:24:19", "cmd": "keys 700 w", "answer": "ok keys 1 t=36507"}
+{"t": "23:24:20", "cmd": "keys 40 20{ENTER}", "answer": "ok keys 3 t=37475"}
+{"t": "23:24:21", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 20 | useStandardWidth False t=38300"}
+{"t": "23:24:21", "cmd": "select B1", "answer": "ok select B1 t=38358"}
+{"t": "23:24:22", "cmd": "keys 600 {ALT}", "answer": "ok keys 1 t=39024"}
+{"t": "23:24:23", "cmd": "keys 700 h", "answer": "ok keys 1 t=39739"}
+{"t": "23:24:23", "cmd": "keys 700 d", "answer": "ok keys 1 t=40464"}
+{"t": "23:24:24", "cmd": "keys 700 c", "answer": "ok keys 1 t=41189"}
+{"t": "23:24:25", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 8.09 | useStandardWidth True t=42017"}
+{"t": "23:24:25", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=42117"}
+{"t": "23:24:26", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 20 | useStandardWidth False t=42935"}
+{"t": "23:24:26", "cmd": "shot b9-CW-014-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b9-CW-014-3.png windows: XLMAIN@-11,-11,3851,2099 t=43117"}
+{"t": "23:24:36", "cmd": "stop", "answer": "ok stop 32092 ended by Stop-Process (its own) t=53341"}
+{"t": "23:24:38", "cmd": "start", "answer": "ok start pid=7148 book=Book1 sheet=Sheet1 openedByItself= before=32092 layout=0x08090809 version=16.0 t=55072"}
+{"t": "23:24:39", "cmd": "select B2", "answer": "ok select B2 t=56622"}
+{"t": "23:24:40", "cmd": "keys 40 0.5{ENTER}", "answer": "ok keys 4 t=56867"}
+{"t": "23:24:40", "cmd": "select B2", "answer": "ok select B2 t=56897"}
+{"t": "23:24:40", "cmd": "keys 40 ^+5", "answer": "ok keys 1 t=56993"}
+{"t": "23:24:41", "cmd": "cell B2", "answer": "ok cell B2: number 0.5 | formula \"0.5\" | text \"50%\" | numberFormat \"0%\" t=57942"}
+{"t": "23:24:41", "cmd": "geo B1 A2", "answer": "ok geo B1:137,353,233,381 A2:41,381,137,411 t=58028"}
+{"t": "23:24:41", "cmd": "click 185 339", "answer": "ok click t=58522"}
+{"t": "23:24:42", "cmd": "keys 600 {ALT}", "answer": "ok keys 1 t=59674"}
+{"t": "23:24:43", "cmd": "keys 700 h", "answer": "ok keys 1 t=60393"}
+{"t": "23:24:44", "cmd": "keys 700 n", "answer": "ok keys 1 t=61122"}
+{"t": "23:24:45", "cmd": "keys 40 Number{ENTER}", "answer": "ok keys 7 t=61987"}
+{"t": "23:24:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B1 selection=B:B t=62950"}
+{"t": "23:24:46", "cmd": "cell B2 B5", "answer": "ok cell B2: number 0.5 | formula \"0.5\" | text \"0.50\" | numberFormat \"0.00\" ;; B5: empty | formula \"\" | text \"\" | numberFormat \"0.00\" t=63291"}
+{"t": "23:24:46", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=63354"}
+{"t": "23:24:47", "cmd": "cell B2 B5", "answer": "ok cell B2: number 0.5 | formula \"0.5\" | text \"50%\" | numberFormat \"0%\" ;; B5: empty | formula \"\" | text \"\" | numberFormat \"General\" t=64544"}
+{"t": "23:24:48", "cmd": "shot b9-LVL-023-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b9-LVL-023-3.png windows: XLMAIN@-11,-11,3851,2099 t=64709"}
+{"t": "23:24:58", "cmd": "stop", "answer": "ok stop 7148 ended by Stop-Process (its own) t=74926"}
+{"t": "23:25:00", "cmd": "start", "answer": "ok start pid=26852 book=Book1 sheet=Sheet1 openedByItself= before=7148 layout=0x08090809 version=16.0 t=76681"}
+{"t": "23:25:01", "cmd": "select B2", "answer": "ok select B2 t=78238"}
+{"t": "23:25:01", "cmd": "keys 40 0.5{ENTER}", "answer": "ok keys 4 t=78472"}
+{"t": "23:25:01", "cmd": "geo B1 A2", "answer": "ok geo B1:137,353,233,381 A2:41,381,137,411 t=78522"}
+{"t": "23:25:02", "cmd": "click 23 396", "answer": "ok click t=79023"}
+{"t": "23:25:03", "cmd": "keys 40 ^+5", "answer": "ok keys 1 t=79627"}
+{"t": "23:25:03", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=2:2 t=80260"}
+{"t": "23:25:04", "cmd": "cell B2 E2", "answer": "ok cell B2: number 0.5 | formula \"0.5\" | text \"50%\" | numberFormat \"0%\" ;; E2: empty | formula \"\" | text \"\" | numberFormat \"0%\" t=80604"}
+{"t": "23:25:04", "cmd": "select B2", "answer": "ok select B2 t=80624"}
+{"t": "23:25:04", "cmd": "keys 600 {ALT}", "answer": "ok keys 1 t=81289"}
+{"t": "23:25:05", "cmd": "keys 700 h", "answer": "ok keys 1 t=82044"}
+{"t": "23:25:06", "cmd": "keys 700 d", "answer": "ok keys 1 t=82765"}
+{"t": "23:25:06", "cmd": "keys 700 r", "answer": "ok keys 1 t=83489"}
+{"t": "23:25:07", "cmd": "cell B2", "answer": "ok cell B2: empty | formula \"\" | text \"\" | numberFormat \"General\" t=84466"}
+{"t": "23:25:07", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=84521"}
+{"t": "23:25:09", "cmd": "cell B2 E2", "answer": "ok cell B2: number 0.5 | formula \"0.5\" | text \"50%\" | numberFormat \"0%\" ;; E2: empty | formula \"\" | text \"\" | numberFormat \"0%\" t=85654"}
+{"t": "23:25:09", "cmd": "shot b9-LVL-024-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b9-LVL-024-3.png windows: XLMAIN@-11,-11,3851,2099 t=85818"}
+{"t": "23:25:19", "cmd": "stop", "answer": "ok stop 26852 ended by Stop-Process (its own) t=96046"}
+{"t": "23:25:21", "cmd": "start", "answer": "ok start pid=36544 book=Book1 sheet=Sheet1 openedByItself= before=26852 layout=0x08090809 version=16.0 t=97759"}
+{"t": "23:25:22", "cmd": "select B2", "answer": "ok select B2 t=99297"}
+{"t": "23:25:22", "cmd": "keys 40 0.5{ENTER}", "answer": "ok keys 4 t=99534"}
+{"t": "23:25:23", "cmd": "select B2", "answer": "ok select B2 t=99570"}
+{"t": "23:25:23", "cmd": "keys 40 ^+5", "answer": "ok keys 1 t=99666"}
+{"t": "23:25:23", "cmd": "cell B2", "answer": "ok cell B2: number 0.5 | formula \"0.5\" | text \"50%\" | numberFormat \"0%\" t=100425"}
+{"t": "23:25:23", "cmd": "geo B1 A2", "answer": "ok geo B1:137,353,233,381 A2:41,381,137,411 t=100458"}
+{"t": "23:25:24", "cmd": "click 185 339", "answer": "ok click t=100956"}
+{"t": "23:25:25", "cmd": "ctrlclick 23 396", "answer": "ok ctrlclick t=101991"}
+{"t": "23:25:26", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=B:B,2:2 t=102559"}
+{"t": "23:25:26", "cmd": "keys 600 {ALT}", "answer": "ok keys 1 t=103206"}
+{"t": "23:25:27", "cmd": "keys 700 h", "answer": "ok keys 1 t=103928"}
+{"t": "23:25:28", "cmd": "keys 700 n", "answer": "ok keys 1 t=104653"}
+{"t": "23:25:28", "cmd": "keys 40 Number{ENTER}", "answer": "ok keys 7 t=105508"}
+{"t": "23:25:30", "cmd": "cell B2 B5 E2", "answer": "ok cell B2: number 0.5 | formula \"0.5\" | text \"0.50\" | numberFormat \"0.00\" ;; B5: empty | formula \"\" | text \"\" | numberFormat \"0.00\" ;; E2: empty | formula \"\" | text \"\" | numberFormat \"0.00\" t=106898"}
+{"t": "23:25:30", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=106959"}
+{"t": "23:25:31", "cmd": "cell B2 B5 E2", "answer": "ok cell B2: number 0.5 | formula \"0.5\" | text \"50%\" | numberFormat \"0%\" ;; B5: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E2: empty | formula \"\" | text \"\" | numberFormat \"General\" t=108211"}
+{"t": "23:25:31", "cmd": "shot b9-LVL-030-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b9-LVL-030-4.png windows: XLMAIN@-11,-11,3851,2099 t=108380"}
+{"t": "23:26:02", "cmd": "stop", "answer": "ok stop 36544 ended by Stop-Process (its own) t=139082"}
+{"t": "23:26:04", "cmd": "start", "answer": "ok start pid=36128 book=Book1 sheet=Sheet1 openedByItself= before=36544 layout=0x08090809 version=16.0 t=140804"}
+{"t": "23:26:05", "cmd": "select B1", "answer": "ok select B1 t=142328"}
+{"t": "23:26:06", "cmd": "keys 40 12345678901{ENTER}", "answer": "ok keys 12 t=142941"}
+{"t": "23:26:07", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 11.18 | useStandardWidth False t=143767"}
+{"t": "23:26:07", "cmd": "savecols", "answer": "ok savecols <cols><col min=\"2\" max=\"2\" width=\"11.81640625\" bestFit=\"1\" customWidth=\"1\"/></cols> <sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/> t=143881"}
+{"t": "23:26:07", "cmd": "cell B1", "answer": "ok cell B1: number 12345678901 | formula \"12345678901\" | text \"12345678901\" | numberFormat \"General\" t=144076"}
+{"t": "23:26:07", "cmd": "shot b10-CW-021-1-widened-by-the-entry", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b10-CW-021-1-widened-by-the-entry.png windows: XLMAIN@-11,-11,3851,2099 t=144211"}
+{"t": "23:26:17", "cmd": "stop", "answer": "ok stop 36128 ended by Stop-Process (its own) t=154441"}
+{"t": "23:26:19", "cmd": "start", "answer": "ok start pid=24612 book=Book1 sheet=Sheet1 openedByItself= before=36128 layout=0x08090809 version=16.0 t=156194"}
+{"t": "23:26:21", "cmd": "select B1", "answer": "ok select B1 t=157745"}
+{"t": "23:26:21", "cmd": "keys 40 12345678901{ENTER}", "answer": "ok keys 12 t=158368"}
+{"t": "23:26:22", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 11.18 | useStandardWidth False t=159226"}
+{"t": "23:26:22", "cmd": "savecols", "answer": "ok savecols <cols><col min=\"2\" max=\"2\" width=\"11.81640625\" bestFit=\"1\" customWidth=\"1\"/></cols> <sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/> t=159312"}
+{"t": "23:26:22", "cmd": "cell B1", "answer": "ok cell B1: number 12345678901 | formula \"12345678901\" | text \"12345678901\" | numberFormat \"General\" t=159506"}
+{"t": "23:26:22", "cmd": "select B1", "answer": "ok select B1 t=159563"}
+{"t": "23:26:23", "cmd": "keys 600 {ALT}", "answer": "ok keys 1 t=160224"}
+{"t": "23:26:24", "cmd": "keys 700 h", "answer": "ok keys 1 t=160939"}
+{"t": "23:26:25", "cmd": "keys 700 o", "answer": "ok keys 1 t=161664"}
+{"t": "23:26:25", "cmd": "keys 700 w", "answer": "ok keys 1 t=162386"}
+{"t": "23:26:26", "cmd": "keys 40 11{ENTER}", "answer": "ok keys 3 t=163335"}
+{"t": "23:26:27", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 11 | useStandardWidth False t=164166"}
+{"t": "23:26:27", "cmd": "savecols", "answer": "ok savecols <cols><col min=\"2\" max=\"2\" width=\"11.6328125\" customWidth=\"1\"/></cols> <sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/> t=164238"}
+{"t": "23:26:27", "cmd": "cell B1", "answer": "ok cell B1: number 12345678901 | formula \"12345678901\" | text \"12345678901\" | numberFormat \"General\" t=164428"}
+{"t": "23:26:27", "cmd": "select D5", "answer": "ok select D5 t=164450"}
+{"t": "23:26:28", "cmd": "keys 40 123456789012345{ENTER}", "answer": "ok keys 16 t=165257"}
+{"t": "23:26:39", "cmd": "stop", "answer": "ok stop 24612 ended by Stop-Process (its own) t=176070"}
+{"t": "23:26:41", "cmd": "start", "answer": "ok start pid=43336 book=Book1 sheet=Sheet1 openedByItself= before=24612 layout=0x08090809 version=16.0 t=177804"}
+{"t": "23:26:42", "cmd": "select B1", "answer": "ok select B1 t=179357"}
+{"t": "23:26:43", "cmd": "keys 40 12345678901{ENTER}", "answer": "ok keys 12 t=179978"}
+{"t": "23:26:44", "cmd": "colwidth B1 C1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 11.18 | useStandardWidth False ;; C1: width 8.09 | useStandardWidth True t=180850"}
+{"t": "23:26:44", "cmd": "savecols", "answer": "ok savecols <cols><col min=\"2\" max=\"2\" width=\"11.81640625\" bestFit=\"1\" customWidth=\"1\"/></cols> <sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/> t=180930"}
+{"t": "23:26:44", "cmd": "cell B1 C1", "answer": "ok cell B1: number 12345678901 | formula \"12345678901\" | text \"12345678901\" | numberFormat \"General\" ;; C1: empty | formula \"\" | text \"\" | numberFormat \"General\" t=181283"}
+{"t": "23:26:44", "cmd": "select C1", "answer": "ok select C1 t=181342"}
+{"t": "23:26:45", "cmd": "keys 600 {ALT}", "answer": "ok keys 1 t=182003"}
+{"t": "23:26:46", "cmd": "keys 700 h", "answer": "ok keys 1 t=182721"}
+{"t": "23:26:46", "cmd": "keys 700 i", "answer": "ok keys 1 t=183464"}
+{"t": "23:26:47", "cmd": "keys 700 c", "answer": "ok keys 1 t=184184"}
+{"t": "23:26:48", "cmd": "colwidth B1 C1 D1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 11.18 | useStandardWidth False ;; C1: width 11.18 | useStandardWidth False ;; D1: width 8.09 | useStandardWidth True t=185021"}
+{"t": "23:26:48", "cmd": "savecols", "answer": "ok savecols <cols><col min=\"2\" max=\"2\" width=\"11.81640625\" bestFit=\"1\" customWidth=\"1\"/><col min=\"3\" max=\"3\" width=\"11.81640625\" customWidth=\"1\"/></cols> <sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/> t=185084"}
+{"t": "23:26:48", "cmd": "cell B1 C1 D1", "answer": "ok cell B1: number 12345678901 | formula \"12345678901\" | text \"12345678901\" | numberFormat \"General\" ;; C1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D1: empty | formula \"\" | text \"\" | numberFormat \"General\" t=185629"}
+{"t": "23:26:49", "cmd": "shot b10-CW-023-2-column-inserted-at-C through Home > Insert > Insert Sheet Columns", "answer": "err Exception calling \"Save\" with \"2\" argument(s): \"Illegal characters in path.\" t=185726"}
+{"t": "23:27:18", "cmd": "stop", "answer": "ok stop 43336 ended by Stop-Process (its own) t=214703"}
+{"t": "23:27:19", "cmd": "start", "answer": "ok start pid=37924 book=Book1 sheet=Sheet1 openedByItself= before=43336 layout=0x08090809 version=16.0 t=216397"}
+{"t": "23:27:21", "cmd": "select C1", "answer": "ok select C1 t=217933"}
+{"t": "23:27:21", "cmd": "keys 40 12345678901{ENTER}", "answer": "ok keys 12 t=218556"}
+{"t": "23:27:22", "cmd": "colwidth B1 C1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 8.09 | useStandardWidth True ;; C1: width 11.18 | useStandardWidth False t=219410"}
+{"t": "23:27:22", "cmd": "savecols", "answer": "ok savecols <cols><col min=\"3\" max=\"3\" width=\"11.81640625\" bestFit=\"1\" customWidth=\"1\"/></cols> <sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/> t=219492"}
+{"t": "23:27:23", "cmd": "cell B1 C1", "answer": "ok cell B1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C1: number 12345678901 | formula \"12345678901\" | text \"12345678901\" | numberFormat \"General\" t=219822"}
+{"t": "23:27:23", "cmd": "select B1", "answer": "ok select B1 t=219844"}
+{"t": "23:27:23", "cmd": "keys 600 {ALT}", "answer": "ok keys 1 t=220503"}
+{"t": "23:27:24", "cmd": "keys 700 h", "answer": "ok keys 1 t=221221"}
+{"t": "23:27:25", "cmd": "keys 700 d", "answer": "ok keys 1 t=221950"}
+{"t": "23:27:26", "cmd": "keys 700 c", "answer": "ok keys 1 t=222679"}
+{"t": "23:27:26", "cmd": "colwidth B1 C1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 11.18 | useStandardWidth False ;; C1: width 8.09 | useStandardWidth True t=223515"}
+{"t": "23:27:26", "cmd": "savecols", "answer": "ok savecols <cols><col min=\"2\" max=\"2\" width=\"11.81640625\" bestFit=\"1\" customWidth=\"1\"/></cols> <sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/> t=223585"}
+{"t": "23:27:27", "cmd": "cell B1 C1", "answer": "ok cell B1: number 12345678901 | formula \"12345678901\" | text \"12345678901\" | numberFormat \"General\" ;; C1: empty | formula \"\" | text \"\" | numberFormat \"General\" t=223909"}
+{"t": "23:27:27", "cmd": "shot b10-CW-025-2-column-B-deleted", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b10-CW-025-2-column-B-deleted.png windows: XLMAIN@-11,-11,3851,2099 t=224069"}
+{"t": "23:27:37", "cmd": "stop", "answer": "ok stop 37924 ended by Stop-Process (its own) t=234279"}
+{"t": "23:27:39", "cmd": "start", "answer": "ok start pid=17476 book=Book1 sheet=Sheet1 openedByItself= before=37924 layout=0x08090809 version=16.0 t=235995"}
+{"t": "23:27:41", "cmd": "select B1", "answer": "ok select B1 t=237556"}
+{"t": "23:27:41", "cmd": "keys 40 12345678901{ENTER}", "answer": "ok keys 12 t=238180"}
+{"t": "23:27:42", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 11.18 | useStandardWidth False t=239046"}
+{"t": "23:27:42", "cmd": "savecols", "answer": "ok savecols <cols><col min=\"2\" max=\"2\" width=\"11.81640625\" bestFit=\"1\" customWidth=\"1\"/></cols> <sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/> t=239130"}
+{"t": "23:27:42", "cmd": "cell B1", "answer": "ok cell B1: number 12345678901 | formula \"12345678901\" | text \"12345678901\" | numberFormat \"General\" t=239333"}
+{"t": "23:27:42", "cmd": "select B1", "answer": "ok select B1 t=239394"}
+{"t": "23:27:43", "cmd": "keys 600 {ALT}", "answer": "ok keys 1 t=240049"}
+{"t": "23:27:44", "cmd": "keys 700 h", "answer": "ok keys 1 t=240786"}
+{"t": "23:27:44", "cmd": "keys 700 o", "answer": "ok keys 1 t=241524"}
+{"t": "23:27:45", "cmd": "keys 700 w", "answer": "ok keys 1 t=242253"}
+{"t": "23:27:46", "cmd": "keys 40 20{ENTER}", "answer": "ok keys 3 t=243223"}
+{"t": "23:27:47", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 20 | useStandardWidth False t=244048"}
+{"t": "23:27:47", "cmd": "savecols", "answer": "ok savecols <cols><col min=\"2\" max=\"2\" width=\"20.6328125\" customWidth=\"1\"/></cols> <sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/> t=244116"}
+{"t": "23:27:47", "cmd": "cell B1", "answer": "ok cell B1: number 12345678901 | formula \"12345678901\" | text \"12345678901\" | numberFormat \"General\" t=244318"}
+{"t": "23:27:47", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=244427"}
+{"t": "23:27:48", "cmd": "colwidth B1", "answer": "ok colwidth standardWidth 8.09 ;; B1: width 11.18 | useStandardWidth False t=245289"}
+{"t": "23:27:48", "cmd": "savecols", "answer": "ok savecols <cols><col min=\"2\" max=\"2\" width=\"11.81640625\" bestFit=\"1\" customWidth=\"1\"/></cols> <sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/> t=245360"}
+{"t": "23:27:48", "cmd": "cell B1", "answer": "ok cell B1: number 12345678901 | formula \"12345678901\" | text \"12345678901\" | numberFormat \"General\" t=245581"}
+{"t": "23:27:49", "cmd": "shot b10-CW-026-3-ctrl-z", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\b10-CW-026-3-ctrl-z.png windows: XLMAIN@-11,-11,3851,2099 t=245742"}

@@ -1,10 +1,10 @@
 {
   "area": "error-type",
-  "about": "ERROR.TYPE (docs/specs/exsheet-functions ticket 17; ADR-0047, 2026-10-10). Microsoft's table numbers #NULL! to #N/A from 1 to 7, and anything that is not an error is #N/A. #GETTING_DATA and #CIRC! are given back, never numbered; an Error Value outside the table is #VALUE! until a Windows run asks Excel.",
+  "about": "ERROR.TYPE (docs/specs/exsheet-functions ticket 17; ADR-0047, 2026-10-10). Microsoft's table numbers #NULL! to #N/A from 1 to 7, and anything that is not an error is #N/A. Excel's newer Error Values take the numbers the seventeenth Windows run read from Excel: #SPILL! 9, #CONNECT! 10, #BLOCKED! 11, #UNKNOWN! 12, #FIELD! 13, #CALC! 14. #GETTING_DATA and #CIRC! are given back, never numbered.",
   "cases": [
     {
       "id": "ERRORTYPE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #NULL! is 1 (its example, A2 holding #NULL!)",
       "cells": {"A2": "#NULL!", "ZZ1000": "=ERROR.TYPE(A2)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "ERRORTYPE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #DIV/0! is 2",
       "cells": {"ZZ1000": "=ERROR.TYPE(1/0)"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "ERRORTYPE-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #VALUE! is 3",
       "cells": {"ZZ1000": "=ERROR.TYPE(\"a\"+1)"},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "ERRORTYPE-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #REF! is 4",
       "cells": {"ZZ1000": "=ERROR.TYPE(#REF!)"},
       "check": "ZZ1000",
@@ -36,7 +36,7 @@
     },
     {
       "id": "ERRORTYPE-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #NAME? is 5 (a function nobody declared)",
       "cells": {"ZZ1000": "=ERROR.TYPE(NOSUCHFUNCTION())"},
       "check": "ZZ1000",
@@ -44,7 +44,7 @@
     },
     {
       "id": "ERRORTYPE-006",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #NUM! is 6",
       "cells": {"ZZ1000": "=ERROR.TYPE(SQRT(-1))"},
       "check": "ZZ1000",
@@ -52,7 +52,7 @@
     },
     {
       "id": "ERRORTYPE-007",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: #N/A is 7",
       "cells": {"ZZ1000": "=ERROR.TYPE(NA())"},
       "check": "ZZ1000",
@@ -60,7 +60,7 @@
     },
     {
       "id": "ERRORTYPE-008",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: a number, which is no error, is #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ERROR.TYPE(A1)"},
@@ -69,7 +69,7 @@
     },
     {
       "id": "ERRORTYPE-009",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's table: text, which is no error, is #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ERROR.TYPE(A6)"},
@@ -78,7 +78,7 @@
     },
     {
       "id": "ERRORTYPE-010",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: ERROR.TYPE of #DIV/0! chooses its message with CHOOSE",
       "cells": {"A3": "=1/0", "ZZ1000": "=IF(ERROR.TYPE(A3)<3,CHOOSE(ERROR.TYPE(A3),\"Ranges do not intersect\",\"The divisor is zero\"))"},
       "check": "ZZ1000",
@@ -86,7 +86,7 @@
     },
     {
       "id": "ERRORTYPE-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a blank cell, which is no error, is #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ERROR.TYPE(A5)"},
@@ -95,7 +95,7 @@
     },
     {
       "id": "ERRORTYPE-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a boolean, which is no error, is #N/A",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ERROR.TYPE(A4)"},
@@ -104,80 +104,86 @@
     },
     {
       "id": "ERRORTYPE-013",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: #SPILL! typed into a cell is outside Microsoft's table, so #VALUE!",
+      "source": "observed",
+      "description": "Excel's number for #SPILL! typed into a cell is 9 (typed with real keys in the seventeenth Windows run)",
       "cells": {"A1": "#SPILL!", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 9},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by keys"
     },
     {
       "id": "ERRORTYPE-014",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: #SPILL! from a spill with an Entry in its way is outside Microsoft's table, so #VALUE!",
+      "source": "observed",
+      "description": "#SPILL! from a spill with an Entry in its way is 9, as Excel numbers it",
       "cells": {"A2": "x", "A1": "=SEQUENCE(2)", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 9}
     },
     {
       "id": "ERRORTYPE-015",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: #CALC! from a FILTER that keeps nothing is outside Microsoft's table, so #VALUE!",
+      "source": "observed",
+      "description": "#CALC! from a FILTER that keeps nothing is 14, as Excel numbers it",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ERROR.TYPE(FILTER(E1:E2,E1:E2>100))"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 14}
     },
     {
       "id": "ERRORTYPE-016",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: #FIELD! typed into a cell is outside Microsoft's table, so #VALUE!",
+      "source": "observed",
+      "description": "Excel's number for #FIELD! typed into a cell is 13 (typed with real keys in the seventeenth Windows run)",
       "cells": {"A1": "#FIELD!", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 13},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by keys"
     },
     {
       "id": "ERRORTYPE-017",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: #BLOCKED! typed into a cell is outside Microsoft's table, so #VALUE!",
+      "source": "observed",
+      "description": "Excel's number for #BLOCKED! typed into a cell is 11 (typed with real keys in the seventeenth Windows run)",
       "cells": {"A1": "#BLOCKED!", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 11},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by keys"
     },
     {
       "id": "ERRORTYPE-018",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: #CONNECT! typed into a cell is outside Microsoft's table, so #VALUE!",
+      "source": "observed",
+      "description": "Excel's number for #CONNECT! typed into a cell is 10 (typed with real keys in the seventeenth Windows run)",
       "cells": {"A1": "#CONNECT!", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 10},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by keys"
     },
     {
       "id": "ERRORTYPE-019",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: #UNKNOWN! typed into a cell is outside Microsoft's table, so #VALUE!",
+      "source": "observed",
+      "description": "Excel's number for #UNKNOWN! typed into a cell is 12 (typed with real keys in the seventeenth Windows run)",
       "cells": {"A1": "#UNKNOWN!", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 12},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by keys"
     },
     {
       "id": "ERRORTYPE-020",
-      "source": "uncertain",
+      "source": "observed",
       "description": "ERROR.TYPE over a cycle is #CIRC!, given back rather than numbered",
       "cells": {"A1": "=B1", "B1": "=A1", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a Formula that reads a cycle member is #CIRC!, where Excel shows 0, which is no error",
-      "excelExpect": {"value2": "#N/A"}
+      "engineDiffersByDecision": "ADR-0047: a Formula that reads a cycle member is #CIRC!, where Excel shows 0 in it, as in the cycle's own cells, whatever the Formula would compute from the 0 it reads (the seventeenth Windows run)",
+      "excelExpect": {"value2": 0}
     },
     {
       "id": "ERRORTYPE-021",
-      "source": "uncertain",
+      "source": "observed",
       "description": "ERROR.TYPE over a range of several cells, where one Value is wanted, is refused",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ERROR.TYPE(C1:C2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0125: functions are not lifted over arrays yet; an array where the function wants one Value is #VALUE!, where Excel 365 lifts it and spills"
+      "engineDiffersByDecision": "ADR-0125: functions are not lifted over arrays yet; an array where the function wants one Value is #VALUE!, where Excel 365 lifts it and spills",
+      "excelExpect": {"value2": "#N/A"}
     }
   ]
 }

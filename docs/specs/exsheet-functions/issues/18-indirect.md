@@ -19,11 +19,21 @@ Status: done
       `#REF!` for text that names no place, another Sheet's name included
 - [x] The corpus cases. The catalogue row Supported, and the Docs Site's Formulas page says what is
       refused
-- [ ] For the next Windows run: Excel's answer for each refused form, and what an insertion does to
+- [x] For the next Windows run: Excel's answer for each refused form, and what an insertion does to
       the text (INDIRECT-023 to INDIRECT-029); and the other `uncertain` cases of
       `ExcelCases/indirect.json`: the Sheet's own qualifier, lower case and `$`, whole columns, a range
       that spills, empty text, a space before the reference, a leading `=`, and two ranges with a space
-      between them
+      between them. *(The seventeenth run, 2026-10-11: every case agreed but the refused forms, which
+      Excel reads; they are read now, below.)*
+- [x] The forms the seventeenth run observed are read as Excel reads them: R1C1 text naming an
+      absolute cell (`a1` FALSE, 0, a blank or left empty) and a range of two such cells; a structured
+      reference's text as the typed `Table[Column]` is read, waiting with it; `A1#` as the typed `A1#`
+      is read. Relative R1C1 text and R1C1 text naming whole rows or columns stay `#VALUE!`
+- [ ] For the next Windows run: INDIRECT-030 to INDIRECT-042, the forms read or refused by
+      generalising what the seventeenth run observed (an R1C1 range, lower case, the qualifier, `a1`
+      left empty or blank, A1 text read as R1C1, relative and whole-row and whole-column R1C1 text, a
+      structured reference in double brackets or naming no table or column, `A1#` text naming a cell
+      that does not spill)
 
 ## Comments
 
@@ -49,3 +59,26 @@ found.
 2026-10-11: the Status is `done`. The one open box is the sign-off's Windows run, and each of its
 questions is a corpus case: INDIRECT-023 (`documented`, Excel's 45 beside the engine's refusal) and the
 `uncertain` cases of `indirect.json`, INDIRECT-009 to INDIRECT-022 and INDIRECT-024 to INDIRECT-029.
+
+2026-10-12: the seventeenth Windows run (`verification/2026-10-11-windows-17/report.md`, Part A) answered
+the open box. INDIRECT-009 to INDIRECT-022 and INDIRECT-027 to INDIRECT-029 agreed and are `observed`.
+The four refused forms disagreed or were recorded with Excel's answer: `INDIRECT("R3C2",FALSE)` and
+`INDIRECT("R3C2",0)` are 45, `INDIRECT("Positions[PV]")` is 250.5 and `SUM(INDIRECT("A1#"))` is 6. Under
+ADR-0124's note (refused until a run observes the form) they are read now, each through what a typed
+Formula already does: R1C1 text naming an absolute cell or a range of two such cells is the Reference it
+names; structured text goes through the Linked Table's column as `Table[Column]` does, so a table still
+waiting for its data waits, even under `IFERROR`, and one never declared, or a column it lacks, names no
+place (`#REF!`); `A1#` text reads the Anchor's Spill Range as `A1#` does, `#REF!` where it does not spill.
+Two gaps came with it. The recalculation now marks a table met through text as waiting, as it marks a
+waiting cell met through a computed Reference; and after each layout of the spills that changes
+something it computes the volatile Formulas once more, since what `INDIRECT` or `OFFSET` computes a
+Reference to is no Dependent of the cells the layout changed — before, `INDIRECT("A3")` kept a spilled
+cell's old Value when the spill was blocked (`IndirectTests`). A change that blocks or frees one spill
+therefore computes each volatile Formula twice, and one that moves no spill once. An Anchor computed again
+with an array of the shape its layout blocked stays `#SPILL!`, so a volatile Anchor's second computation
+changes nothing and the recalculation ends on a layout that changes nothing; review found the first
+version of this branch recomputing such an Anchor up to 64 times and ending on its first Value, and it is
+fixed with `SpillTests`' blocked `INDIRECT`, `OFFSET` and `RAND` Anchors. `INDEX` with `column_num` left
+out is `#REF!` over a Spill Range of several rows and columns as over a typed range (INDEX-012; INDEX-017
+and 018 ask it of `A1#` and `INDIRECT("A1#")`). The forms read or refused by generalising the observed
+ones are INDIRECT-030 to INDIRECT-042, `uncertain` for the next run.

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "TRIM-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: spaces at both ends removed",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TRIM(\" First Quarter Earnings \")"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "TRIM-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Runs of spaces between words become one",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TRIM(\"  a   b  \")"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "TRIM-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: only spaces leaves empty text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TRIM(\"   \")&\"x\""},

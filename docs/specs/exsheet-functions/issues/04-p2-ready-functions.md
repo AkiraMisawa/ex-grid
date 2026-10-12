@@ -36,3 +36,12 @@ cells, a `TEXTJOIN` delimiter of several cells.
 The new functions moved completion's lists: `=SU` now offers `SUBSTITUTE` before `SUM`, and `=S`
 offers `SMALL` first. The layer-2 and layer-3 tests that named the first candidate were updated,
 and the layer-3 ones run on both hosts.
+
+2026-10-12: the seventeenth Windows run answered NETWORKDAYS-005 (51) and SUBSTITUTE-005 (`aba`). Dates
+before 1 March 1900 count on `WEEKDAY`'s days, for `WORKDAY` too, and `SUBSTITUTE` counts overlapping
+instances (ADR-0047's note). It also answered the refusals above: a `type` of 2 is payment at the start
+(PMT-008), and `LARGE`'s k of 1.5 is the 2nd largest (LARGE-007). `PV` and `FV` now give every double
+Excel returned, raising 1+rate by squaring, and `PMT` computes the payment exactly and rounds it once,
+one of several evaluations that fit the four payments read (`spikes/exsheet-financial-evaluation/`).
+`NPV` still differs from Excel in the last digits (NPV-001, 002); whether it is refused before the tag is
+the user's question (`docs/agents/proposals/run17-financial.md`).

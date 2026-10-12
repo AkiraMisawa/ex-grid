@@ -4,48 +4,66 @@
   "cases": [
     {
       "id": "TAN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(0.785)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.9992, "digits": 5}
+      "expect": {"value2": 0.9992039901050427}
     },
     {
       "id": "TAN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: 45 degrees",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(45*PI()/180)"},
       "check": "ZZ1000",
-      "expect": {"value2": 1, "digits": 12}
+      "expect": {"value2": 0.9999999999999999}
     },
     {
       "id": "TAN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: RADIANS",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(RADIANS(45))"},
       "check": "ZZ1000",
-      "expect": {"value2": 1, "digits": 12}
+      "expect": {"value2": 0.9999999999999999}
     },
     {
       "id": "TAN-004",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: pi/2 as a double has a finite tangent",
+      "source": "observed",
+      "description": "Excel reduces the angle by pi to the x87's 64 bits, so pi/2 as a double has a finite tangent, 1 over the remainder",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(PI()/2)"},
       "check": "ZZ1000",
-      "expect": {"value2": 1.633123935319537e+16}
+      "expect": {"value2": 16324552277619072}
     },
     {
       "id": "TAN-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 2^27 is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(2^27)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "TAN-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the reduced angle's tangent rounded once; SIN over COS as doubles, or -1/tan of the remainder as a double, give 1.557407724654902",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TAN(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.5574077246549023}
+    },
+    {
+      "id": "TAN-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the reduced angle's tangent rounded once; SIN over COS as doubles gives -0.4523156594418099",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TAN(9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.45231565944180985}
     }
   ]
 }

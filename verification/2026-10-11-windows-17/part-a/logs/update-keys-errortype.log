@@ -1,0 +1,14 @@
+a new PowerShell reads en-US
+22:47:10 ERRORTYPE-013 disagree    2.0 s
+22:47:12 ERRORTYPE-016 disagree    1.4 s
+22:47:13 ERRORTYPE-017 disagree    1.4 s
+22:47:14 ERRORTYPE-018 disagree    1.4 s
+22:47:16 ERRORTYPE-019 disagree    1.4 s
+
+agree 0, disagree 5, blocked 0, recorded 0 -> %LOCALAPPDATA%\exgrid-layer3\run-2026-10-11-17\update-keys-errortype-en-US.json
+DISAGREE ERRORTYPE-013: value2: expected "#VALUE!", Excel 9 (number)
+DISAGREE ERRORTYPE-016: value2: expected "#VALUE!", Excel 13 (number)
+DISAGREE ERRORTYPE-017: value2: expected "#VALUE!", Excel 11 (number)
+DISAGREE ERRORTYPE-018: value2: expected "#VALUE!", Excel 10 (number)
+DISAGREE ERRORTYPE-019: value2: expected "#VALUE!", Excel 12 (number)
+-Update: 0 agreeing cases now say source "observed"; disagreeing ones are untouched.

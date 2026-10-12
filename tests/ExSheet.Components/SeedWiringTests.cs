@@ -86,6 +86,29 @@ public class SeedWiringTests : SheetTestContext
         Assert.Equal(Alone(Draws(), Seed, 2), Shown(cut));
     }
 
+    [Fact] // ADR-0180, the seventeenth Windows run's b1 and b2: a rename is a change, and its undo and redo are too, so each draws anew, as Excel drew again on the rename and its undo (b2) and on a redo (b1); the engine alone follows at the count of changes
+    public async Task ADR0180_a_rename_its_undo_and_its_redo_draw_again()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Draws()).Add(s => s.Seed, Seed));
+        List<string[]> seen = [Shown(cut)];
+
+        void DrawsAnew()
+        {
+            var shown = Shown(cut);
+            Assert.DoesNotContain(seen, earlier => earlier.SequenceEqual(shown));
+            seen.Add(shown);
+        }
+
+        await cut.InvokeAsync(() => cut.Instance.DoAsync(SheetEdit.Rename("Prices")));
+        DrawsAnew();
+        await cut.InvokeAsync(() => cut.Instance.UndoAsync());
+        DrawsAnew();
+        await cut.InvokeAsync(() => cut.Instance.RedoAsync());
+        DrawsAnew();
+
+        Assert.Equal(Alone(cut.Instance.ToDocument(), Seed, 3), Shown(cut));
+    }
+
     [Fact] // ADR-0180: a Sheet Document handed over again is opened again, its count of changes from 0, so a fixed seed shows its opening draws
     public async Task ADR0180_a_document_opened_again_counts_its_changes_from_zero()
     {
