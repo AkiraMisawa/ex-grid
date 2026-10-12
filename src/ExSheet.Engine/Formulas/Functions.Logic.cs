@@ -100,13 +100,14 @@ internal static partial class FunctionLibrary
     private static Operand IsNumber(FunctionCall call) => Inspect(call, value => value is { Kind: ValueKind.Number });
 
     /// <summary>
-    /// An IS function: it answers TRUE or FALSE for any one Value, an Error Value included — but
+    /// An IS function: it answers TRUE or FALSE for any one Value, an Error Value included, and a blank
+    /// <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept from its array as a blank cell's (SORT-022) — but
     /// <c>#GETTING_DATA</c> and <c>#CIRC!</c> are its result, as <c>ISERROR</c>'s (ADR-0047,
     /// ADR-0049): FALSE would be an answer about data that has not arrived, or about a cycle.
     /// </summary>
     private static Operand Inspect(FunctionCall call, Func<Value?, bool> test)
     {
-        var operand = call.Operand(0);
+        var operand = call.OneValue(0);
         if (IsArray(operand)) return Operand.Of(ErrorValue.Value);
         var value = call.Evaluator.ScalarOf(operand);
         if (value is { IsError: true, Error: ErrorValue.GettingData or ErrorValue.Circ } waiting) return Operand.Of(waiting);

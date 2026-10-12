@@ -37,6 +37,15 @@
       "cells": {"ZZ1000": "=TRANSPOSE(Q1:Q2)"},
       "check": "AAA1000",
       "expect": {"value2": 0}
+    },
+    {
+      "id": "TRANSPOSE-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: COUNTA passes over a blank in TRANSPOSE's array; 2 if TRANSPOSE keeps the blank as SORT and UNIQUE do, which COUNTA counts (SORT-021, UNIQUE-017)",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(TRANSPOSE(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
     }
   ]
 }

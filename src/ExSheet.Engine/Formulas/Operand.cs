@@ -25,7 +25,7 @@ internal enum OperandKind
 /// </summary>
 internal readonly struct Operand
 {
-    private Operand(OperandKind kind, Value? scalar, Area area, IReadOnlyList<Value?>? column = null, ValueArray? array = null, bool isSpillRange = false)
+    private Operand(OperandKind kind, Value? scalar, Area area, IReadOnlyList<Value?>? column = null, ValueArray? array = null, bool isSpillRange = false, bool keptBlank = false)
     {
         Kind = kind;
         Scalar = scalar;
@@ -33,6 +33,7 @@ internal readonly struct Operand
         Column = column;
         Array = array;
         IsSpillRange = isSpillRange;
+        KeptBlank = keptBlank;
     }
 
     public OperandKind Kind { get; }
@@ -54,6 +55,16 @@ internal readonly struct Operand
     /// differs between a Reference and an array reads it as a Reference (<c>INDEX</c>).
     /// </summary>
     public bool IsSpillRange { get; }
+
+    /// <summary>
+    /// Whether this holds a blank that <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept from its array
+    /// (ADR-0125): one of its Values, or the one Value <c>INDEX</c> picked from it. Excel's is the empty
+    /// value a blank cell holds (SORT-022), which <c>COUNTA</c> counts in the array (SORT-021,
+    /// UNIQUE-017). A function reads such an operand only where the area passes settled how
+    /// (<see cref="FunctionCall.KeepingBlanks"/>, <see cref="FunctionCall.OneValue"/>); anywhere else
+    /// the Formula is refused (<see cref="FunctionCall.Operand"/>).
+    /// </summary>
+    public bool KeptBlank { get; }
 
     /// <summary>Whether this is a Reference of cells: a rectangle, or a Spill Range read through <c>A1#</c>.</summary>
     public bool IsReference => Kind == OperandKind.Area || IsSpillRange;
@@ -86,4 +97,18 @@ internal readonly struct Operand
     public static Operand AsArray(Value? value) => new(OperandKind.Array, null, default, null, ValueArray.Single(value));
 
     public bool IsError => Kind == OperandKind.Scalar && Scalar is { IsError: true };
+
+    /// <summary>Whether this is a blank, or an array that holds one.</summary>
+    public bool HoldsBlank => Kind switch
+    {
+        OperandKind.Scalar => Scalar is null,
+        OperandKind.Array => Array!.All().Any(v => v is null),
+        _ => false,
+    };
+
+    /// <summary>
+    /// This operand marked as holding a blank <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept from its
+    /// array (<see cref="KeptBlank"/>), when it holds a blank at all; as it is otherwise.
+    /// </summary>
+    public Operand WithKeptBlank() => HoldsBlank ? new(Kind, Scalar, Area, Column, Array, IsSpillRange, keptBlank: true) : this;
 }

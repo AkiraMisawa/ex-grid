@@ -100,6 +100,15 @@
       "cells": {"ZZ1000": "=FILTER(G1:G5,H1:H5-20)"},
       "check": "ZZ1000",
       "expect": {"value2": "Apple", "kind": "text"}
+    },
+    {
+      "id": "FILTER-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: COUNTA passes over a blank in FILTER's array; 2 if FILTER keeps the blank as SORT and UNIQUE do, which COUNTA counts (SORT-021, UNIQUE-017)",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(FILTER(Q1:Q2,H1:H2>0))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
     }
   ]
 }

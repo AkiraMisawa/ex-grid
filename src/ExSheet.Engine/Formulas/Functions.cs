@@ -272,42 +272,76 @@ internal static partial class FunctionLibrary
     /// </summary>
     private static ErrorValue? CollectNumbers(FunctionCall call, List<double> numbers, int from = 0)
     {
-        var evaluator = call.Evaluator;
         for (var i = from; i < call.Count; i++)
         {
-            var operand = call.Operand(i);
-            switch (operand.Kind)
-            {
-                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
-                    foreach (var value in evaluator.RangeValues(operand))
-                    {
-                        if (value.Kind == ValueKind.Number) numbers.Add(value.Number);
-                        else if (value.IsError) return value.Error;
-                    }
-                    break;
-                case OperandKind.Missing:
-                    numbers.Add(0);
-                    break;
-                default:
-                    if (operand.Scalar is not { } scalar)
-                    {
-                        numbers.Add(0);
-                        break;
-                    }
-                    var number = evaluator.ToNumber(scalar, out var error);
-                    if (error is { } e) return e;
-                    numbers.Add(number);
-                    break;
-            }
+            if (AddNumbers(call.Evaluator, call.Operand(i), numbers, keptBlankAsZero: false) is { } error) return error;
         }
         return null;
     }
 
+    /// <summary>
+    /// The numbers one argument gives (<see cref="CollectNumbers"/>), or its first Error Value. A blank
+    /// <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept in an array is passed over as a blank cell is,
+    /// or, with <paramref name="keptBlankAsZero"/>, read as 0 where it stands (ADR-0125).
+    /// </summary>
+    private static ErrorValue? AddNumbers(Evaluator evaluator, Operand operand, List<double> numbers, bool keptBlankAsZero)
+    {
+        switch (operand.Kind)
+        {
+            case OperandKind.Array when operand.KeptBlank && keptBlankAsZero:
+                foreach (var item in operand.Array!.All())
+                {
+                    if (item is not { } value) numbers.Add(0);
+                    else if (value.Kind == ValueKind.Number) numbers.Add(value.Number);
+                    else if (value.IsError) return value.Error;
+                }
+                break;
+            case OperandKind.Area or OperandKind.Column or OperandKind.Array:
+                foreach (var value in evaluator.RangeValues(operand))
+                {
+                    if (value.Kind == ValueKind.Number) numbers.Add(value.Number);
+                    else if (value.IsError) return value.Error;
+                }
+                break;
+            case OperandKind.Missing:
+                numbers.Add(0);
+                break;
+            default:
+                if (operand.Scalar is not { } scalar)
+                {
+                    if (!operand.KeptBlank || keptBlankAsZero) numbers.Add(0);
+                    break;
+                }
+                var number = evaluator.ToNumber(scalar, out var error);
+                if (error is { } e) return e;
+                numbers.Add(number);
+                break;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// SUM of the numbers taken (<see cref="CollectNumbers"/>). A blank <c>UNIQUE</c>, <c>SORT</c> or
+    /// <c>SORTBY</c> kept from its array adds nothing whether SUM passes over it, as over a blank cell,
+    /// or reads it as the 0 an operator reads it as (ADR-0125); but where it would be the last number,
+    /// the two readings make a different last addition, which decides whether a sum that nearly
+    /// cancels is 0 (<see cref="SumOf"/>). So SUM takes it, and refuses the Formula where the two
+    /// readings give different sums (SORT-033 and 037 ask).
+    /// </summary>
     private static Operand Sum(FunctionCall call)
     {
-        var numbers = new List<double>();
-        if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
-        return SumOf(numbers);
+        var passedOver = new List<double>();
+        var asZero = new List<double>();
+        var kept = false;
+        for (var i = 0; i < call.Count; i++)
+        {
+            var operand = call.KeepingBlanks(i);
+            kept |= operand.KeptBlank;
+            if (AddNumbers(call.Evaluator, operand, passedOver, keptBlankAsZero: false) is { } error) return Operand.Of(error);
+            AddNumbers(call.Evaluator, operand, asZero, keptBlankAsZero: true);
+        }
+        var sum = SumOf(passedOver);
+        return kept && !sum.Scalar!.Value.Equals(SumOf(asZero).Scalar!.Value) ? call.Evaluator.Refuse() : sum;
     }
 
     /// <summary>
@@ -388,16 +422,25 @@ internal static partial class FunctionLibrary
         return Operand.Of(Value.FromNumber(count));
     }
 
-    /// <summary>Counts every value that is not blank: Error Values and empty text included.</summary>
+    /// <summary>
+    /// Counts every value that is not blank: Error Values and empty text included. A blank
+    /// <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept in its array is counted, as Excel counts it
+    /// (SORT-021, UNIQUE-017; ADR-0125); given as one Value, whether it is counted no run has read,
+    /// so the Formula is refused.
+    /// </summary>
     private static Operand CountA(FunctionCall call)
     {
         var evaluator = call.Evaluator;
         var count = 0;
         for (var i = 0; i < call.Count; i++)
         {
-            var operand = call.Operand(i);
+            var operand = call.KeepingBlanks(i);
+            if (operand.KeptBlank && operand.Kind != OperandKind.Array) return evaluator.Refuse();
             switch (operand.Kind)
             {
+                case OperandKind.Array when operand.KeptBlank:
+                    count += operand.Array!.Rows * operand.Array.Columns;
+                    break;
                 case OperandKind.Area or OperandKind.Column or OperandKind.Array:
                     count += evaluator.RangeValues(operand).Count();
                     break;
@@ -487,7 +530,7 @@ internal static partial class FunctionLibrary
 
     private static Operand IsError(FunctionCall call)
     {
-        var operand = call.Operand(0);
+        var operand = call.OneValue(0);
         if (IsArray(operand)) return Operand.Of(ErrorValue.Value);
         var value = call.Evaluator.ScalarOf(operand);
         if (value is { IsError: true } e && e.Error is ErrorValue.GettingData or ErrorValue.Circ) return Operand.Of(e);

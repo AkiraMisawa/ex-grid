@@ -68,9 +68,10 @@ internal static partial class FunctionLibrary
             : failure;
 
     /// <summary>
-    /// CONCAT joins its arguments in order, and a range's cells row by row; blanks add nothing. An
-    /// Error Value anywhere is the result, the first one found. A result longer than a cell holds is
-    /// <c>#VALUE!</c>.
+    /// CONCAT joins its arguments in order, and a range's cells row by row; blanks add nothing, a blank
+    /// <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept from its array among them, whether passed over
+    /// or read as empty text (ADR-0125). An Error Value anywhere is the result, the first one found. A
+    /// result longer than a cell holds is <c>#VALUE!</c>.
     /// </summary>
     private static Operand Concat(FunctionCall call)
     {
@@ -78,7 +79,7 @@ internal static partial class FunctionLibrary
         var joined = new StringBuilder();
         for (var i = 0; i < call.Count; i++)
         {
-            var operand = call.Operand(i);
+            var operand = call.KeepingBlanks(i);
             switch (operand.Kind)
             {
                 case OperandKind.Area or OperandKind.Column or OperandKind.Array:

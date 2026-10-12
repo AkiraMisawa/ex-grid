@@ -7,12 +7,17 @@ namespace ExSheet.Engine.Formulas;
 /// </summary>
 internal static partial class FunctionLibrary
 {
-    /// <summary>Argument <paramref name="index"/> as one Value, blank as <see langword="null"/>; <paramref name="failure"/> when it is a range of several cells or an Error Value.</summary>
+    /// <summary>
+    /// Argument <paramref name="index"/> as one Value, blank as <see langword="null"/>; <paramref name="failure"/>
+    /// when it is a range of several cells or an Error Value. A blank <c>UNIQUE</c>, <c>SORT</c> or
+    /// <c>SORTBY</c> kept from its array is read as a blank cell's is, as Excel's was (SORT-022, UNIQUE-018;
+    /// ADR-0125), and an array that holds one refuses the Formula (<see cref="FunctionCall.OneValue"/>).
+    /// </summary>
     private static bool TryScalar(FunctionCall call, int index, out Value? value, out Operand failure)
     {
         value = null;
         failure = default;
-        var operand = call.Operand(index);
+        var operand = call.OneValue(index);
         if (IsArray(operand))
         {
             failure = Operand.Of(ErrorValue.Value);

@@ -17,11 +17,19 @@ internal static partial class FunctionLibrary
     /// several rows and several columns, <c>column_num</c> cannot be left out: <c>INDEX(G1:H5,2)</c>
     /// is <c>#REF!</c>, as Excel's is (INDEX-012, the seventeenth Windows run), and so is
     /// <c>INDEX(A1#,2)</c> over such a Spill Range, which is a Reference as <c>G1:H5</c> is. Over an
-    /// array it is the whole row, as Microsoft documents.
+    /// array it is the whole row, as Microsoft documents. A blank <c>UNIQUE</c>, <c>SORT</c> or
+    /// <c>SORTBY</c> kept from its array stays marked in what <c>INDEX</c> picks of it, so its reader
+    /// decides how to read it (ADR-0125; SORT-022, UNIQUE-018).
     /// </remarks>
     private static Operand Index(FunctionCall call)
     {
-        var source = call.Operand(0);
+        var source = call.KeepingBlanks(0);
+        var picked = Pick(call, source);
+        return source.KeptBlank ? picked.WithKeptBlank() : picked;
+    }
+
+    private static Operand Pick(FunctionCall call, Operand source)
+    {
         if (source.IsError) return source;
         var (rows, columns) = source.Kind switch
         {

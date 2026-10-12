@@ -50,7 +50,7 @@
     {
       "id": "SORTBY-006",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a row as by_array for a column is #VALUE!",
+      "description": "A row as by_array for a column is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORTBY(G1:G5,M2:O2)"},
       "check": "ZZ1000",
@@ -59,7 +59,7 @@
     {
       "id": "SORTBY-007",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a blank key sorts last in SORTBY as in SORT, so 20, whose key is 7, comes first",
+      "description": "A blank key sorts last in SORTBY as in SORT, so 20, whose key is 7, comes first",
       "fixture": "lookupData",
       "cells": {"Z2": "7", "ZZ1000": "=SORTBY(H1:H2,Z1:Z2)"},
       "check": "ZZ1000",
@@ -68,7 +68,7 @@
     {
       "id": "SORTBY-008",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: among equal first keys, a blank second key sorts last, so 20, whose second key is 5, comes first",
+      "description": "Among equal first keys, a blank second key sorts last, so 20, whose second key is 5, comes first",
       "fixture": "lookupData",
       "cells": {"Z1": "x", "Z2": "x", "AA2": "5", "ZZ1000": "=SORTBY(H1:H2,Z1:Z2,1,AA1:AA2,1)"},
       "check": "ZZ1000",
@@ -77,11 +77,47 @@
     {
       "id": "SORTBY-009",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: two blank first keys are equal, so the second key orders them (descending: 20 before 10, after 30)",
+      "description": "Two blank first keys are equal, so the second key orders them (descending: 20 before 10, after 30)",
       "fixture": "lookupData",
       "cells": {"Z3": "1", "AA1": "1", "AA2": "2", "ZZ1000": "=SORTBY(H1:H3,Z1:Z3,1,AA1:AA3,-1)"},
       "check": "ZZ1001",
       "expect": {"value2": 20}
+    },
+    {
+      "id": "SORTBY-010",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value in a by_array is #VALUE!; the Anchor would be 10 if SORTBY sorts it after the 7 as SORT does (SORT-015), #N/A if the by_array's Error Value is the result, as FILTER's include's is",
+      "fixture": "lookupData",
+      "cells": {"Z1": "7", "Z2": "=NA()", "ZZ1000": "=SORTBY(H1:H2,Z1:Z2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORTBY-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: COUNTA counts a blank kept in SORTBY's array, as in SORT's (SORT-021)",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(SORTBY(Q1:Q2,H1:H2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "SORTBY-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the blank sorted first by the larger key, taken out by INDEX, is still blank, as SORT's is (SORT-022)",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=ISBLANK(INDEX(SORTBY(Q1:Q2,H1:H2,-1),1))"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "SORTBY-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a blank in SORTBY's array, sorted first by the larger key, spills as 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORTBY(Q1:Q2,H1:H2,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
     }
   ]
 }

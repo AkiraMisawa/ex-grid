@@ -56,7 +56,38 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
 
     public int Count => arguments.Count;
 
-    public Operand Operand(int index) => Evaluator.Operand(arguments[index]);
+    /// <summary>
+    /// Argument <paramref name="index"/>, evaluated. One that holds a blank <c>UNIQUE</c>, <c>SORT</c> or
+    /// <c>SORTBY</c> kept from its array (<see cref="Formulas.Operand.KeptBlank"/>) refuses the Formula
+    /// (<see cref="Evaluator.Refuse"/>): what this function reads it as is a reading no run has settled.
+    /// A function whose reading the area passes did settle takes it through <see cref="KeepingBlanks"/>.
+    /// </summary>
+    public Operand Operand(int index)
+    {
+        var operand = Evaluator.Operand(arguments[index]);
+        return operand.KeptBlank ? Evaluator.Refuse() : operand;
+    }
+
+    /// <summary>
+    /// Argument <paramref name="index"/>, evaluated, a blank <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c>
+    /// kept from its array included (ADR-0125), for the functions whose reading of it the area passes
+    /// settled: <c>COUNTA</c> counts it in the array (SORT-021, UNIQUE-017), <c>INDEX</c> picks it, and
+    /// <c>SUM</c>, <c>SUMPRODUCT</c> and <c>CONCAT</c> add nothing for it, whichever way they read it.
+    /// </summary>
+    public Operand KeepingBlanks(int index) => Evaluator.Operand(arguments[index]);
+
+    /// <summary>
+    /// Argument <paramref name="index"/>, evaluated, for a function that reads one Value of it. A blank
+    /// <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept from its array, given as that one Value, is read as
+    /// a blank cell's is, as Excel's was (SORT-022, UNIQUE-018; ADR-0125). An array that holds one refuses
+    /// the Formula: Excel applies the function to each Value, which the engine does not yet (ADR-0125),
+    /// and the <c>#VALUE!</c> it gives such an array must not be caught as an answer.
+    /// </summary>
+    public Operand OneValue(int index)
+    {
+        var operand = Evaluator.Operand(arguments[index]);
+        return operand is { KeptBlank: true, Kind: OperandKind.Array } ? Evaluator.Refuse() : operand;
+    }
 
     /// <summary>The argument's syntax, when a function must distinguish a literal Reference from a computed one.</summary>
     public Node Argument(int index) => arguments[index];
@@ -65,15 +96,11 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     public int Place { get; init; }
 
     /// <summary>
-    /// Whether a Value of the call's array is read inside the Formula (ADR-0125): <see langword="false"/>
-    /// where the call is the Formula's whole expression, whose array only spills, or what <c>ROWS</c> or
-    /// <c>COLUMNS</c> measures; <see langword="true"/> wherever another function, an operator or a
-    /// <c>LET</c> takes it.
+    /// The argument evaluated for its extent alone, as <c>ROWS</c> and <c>COLUMNS</c> read it: no Value of
+    /// it is read, so a blank <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> kept is counted as Excel's is
+    /// (UNIQUE-011), never refused.
     /// </summary>
-    public bool ValuesRead { get; init; } = true;
-
-    /// <summary>The argument evaluated for its extent alone, as <c>ROWS</c> and <c>COLUMNS</c> read it (<see cref="Evaluator.Measured"/>).</summary>
-    public Operand Measured(int index) => Evaluator.Measured(arguments[index]);
+    public Operand Measured(int index) => Evaluator.Operand(arguments[index]);
 
     /// <summary>Whether argument <paramref name="index"/> was given and not left empty (<see cref="MissingNode.IsEmpty"/>).</summary>
     public bool Has(int index) => index < arguments.Count && !MissingNode.IsEmpty(arguments[index]);

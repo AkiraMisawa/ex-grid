@@ -80,10 +80,9 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     /// </summary>
     public Operand EvaluateResult(Node node)
     {
-        // A Formula computed on demand while another is evaluated has its own whole expression and
-        // its own refusal; the outer Formula's are put back after it.
-        var (outerUnread, outerRefused) = (_unread, _refused);
-        _unread = Unparenthesised(node);
+        // A Formula computed on demand while another is evaluated has its own refusal; the outer
+        // Formula's is put back after it.
+        var outerRefused = _refused;
         _refused = false;
         try
         {
@@ -92,57 +91,25 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         }
         finally
         {
-            (_unread, _refused) = (outerUnread, outerRefused);
+            _refused = outerRefused;
         }
     }
 
-    /// <summary>
-    /// The call whose array no Value of is read (ADR-0125): the Formula's whole expression, whose
-    /// array spills, or the argument <c>ROWS</c> or <c>COLUMNS</c> measures (<see cref="Measured"/>),
-    /// parentheses around either set aside. A call written there is made with
-    /// <see cref="FunctionCall.ValuesRead"/> false.
-    /// </summary>
-    private Node? _unread;
-
-    /// <summary>Whether a call has refused the Formula being evaluated (<see cref="Refuse"/>).</summary>
+    /// <summary>Whether a function has refused the Formula being evaluated (<see cref="Refuse"/>).</summary>
     private bool _refused;
-
-    private static Node Unparenthesised(Node node)
-    {
-        while (node is ParenthesesNode p) node = p.Inner;
-        return node;
-    }
 
     /// <summary>
     /// Refuses the Formula being evaluated: its result is <c>#VALUE!</c> whatever the functions and
-    /// operators around the refusing call make of the Error Value returned here, so <c>IFERROR</c>
-    /// cannot catch the refusal, <c>ISBLANK</c> cannot read it as not blank and <c>COUNTA</c> cannot
-    /// count it as one Value. <c>UNIQUE</c>, <c>SORT</c> and <c>SORTBY</c> refuse so where a blank in
-    /// their array would be read inside the Formula (ADR-0125).
+    /// operators around the refusal make of the Error Value returned here, so <c>IFERROR</c> cannot
+    /// catch it, <c>ISBLANK</c> cannot read it as not blank and <c>COUNTA</c> cannot count it as one
+    /// Value. A function refuses so where it would read a blank <c>UNIQUE</c>, <c>SORT</c> or
+    /// <c>SORTBY</c> kept from its array, and no run has settled how (ADR-0125,
+    /// <see cref="FunctionCall.Operand"/>).
     /// </summary>
     public Operand Refuse()
     {
         _refused = true;
         return Formulas.Operand.Of(ErrorValue.Value);
-    }
-
-    /// <summary>
-    /// An operand whose extent alone is read, as <c>ROWS</c> and <c>COLUMNS</c> read theirs: no Value of
-    /// it is read, so a call written as it is made with <see cref="FunctionCall.ValuesRead"/> false
-    /// (ADR-0125).
-    /// </summary>
-    public Operand Measured(Node node)
-    {
-        var outer = _unread;
-        _unread = Unparenthesised(node);
-        try
-        {
-            return Operand(node);
-        }
-        finally
-        {
-            _unread = outer;
-        }
     }
 
     private Operand Result(Node node)
@@ -241,7 +208,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         PercentNode p => Map(Operand(p.Operand), Percent),
         BinaryNode b => Binary(b),
         FunctionNode f => f.Function is null ? Formulas.Operand.Of(ErrorValue.Name)
-            : f.Function.Invoke(new FunctionCall(this, f.Arguments) { Place = f.Place, ValuesRead = !ReferenceEquals(f, _unread) }),
+            : f.Function.Invoke(new FunctionCall(this, f.Arguments) { Place = f.Place }),
         _ => throw new InvalidOperationException($"No evaluation for {node.GetType().Name}."),
     };
 
