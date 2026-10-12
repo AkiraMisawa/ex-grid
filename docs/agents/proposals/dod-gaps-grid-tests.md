@@ -73,5 +73,5 @@ new ->
 ```
                 any delegates you pass in fields. A new array or lambda on every render looks like a change and renders
                 every row again; handed nothing new, the grid does not render at all, so restyling the element around it
-                costs no render.
+                costs no render — and a list you already handed it, changed in place, repaints nothing: hand a new one.
 ```

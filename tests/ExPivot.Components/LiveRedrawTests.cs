@@ -285,9 +285,11 @@ public class LiveRedrawTests : PivotTestContext
         Assert.Empty(AliveBeyond(shown, newest, newest, newest - 1));
 
         // The Consumer renders the page again: ExPivot's host lets the Window before go, and the
-        // grid, handed nothing new, does not render — so its own buffer may still name the rows it
-        // painted from that Window, and nothing beyond them.
+        // grid, handed nothing new, does not render (UX-5) — so its own buffer may still name the
+        // rows it painted from that Window, and nothing beyond them.
+        var gridRenders = cut.FindComponent<ExGrid<PivotDisplayRow>>().RenderCount;
         cut.Render();
+        Assert.Equal(gridRenders, cut.FindComponent<ExGrid<PivotDisplayRow>>().RenderCount);
         Collect();
 
         AssertWithinTheGridsBound(shown, newest);
@@ -301,8 +303,8 @@ public class LiveRedrawTests : PivotTestContext
     {
         var painted = shown[newest - 1].Painted.Select(row => row.Target).Where(row => row is not null)
             .ToHashSet(ReferenceEqualityComparer.Instance);
-        Assert.NotEmpty(painted);
-        Assert.True(painted.Count < shown[newest - 1].Rows.Length, "the grid paints only part of the Window");
+        Assert.NotEmpty(shown[newest - 1].Painted);
+        Assert.True(shown[newest - 1].Painted.Length < shown[newest - 1].Rows.Length, "the grid paints only part of the Window");
         var onScreen = shown[newest].Rows.Select(row => row.Target).Where(row => row is not null)
             .ToHashSet(ReferenceEqualityComparer.Instance);
         var beyond = Enumerable.Range(0, newest)

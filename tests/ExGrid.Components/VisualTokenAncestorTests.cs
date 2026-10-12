@@ -46,6 +46,7 @@ public class VisualTokenAncestorTests : GridTestContext
         var host = Render<TokenWrapper>(ps => ps.Add(w => w.Style, ""));
         var grid = host.FindComponent<ExGrid<TestRow>>();
         var rows = host.FindComponents<ExGridRow<TestRow>>();
+        Assert.NotEmpty(rows);
         var gridRenders = grid.RenderCount;
         var rowRenders = rows.Select(r => r.RenderCount).ToArray();
 
