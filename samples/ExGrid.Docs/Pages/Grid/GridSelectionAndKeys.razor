@@ -35,25 +35,14 @@
 
     <DocsSection Title="The keyboard">
         <p>Click into the grid, or tab to it: the grid is one tab stop, and its keys are Excel's.</p>
+        @* The rows the Keyboard reference lists for this section, so the two are one list (ADR-0110). *@
         <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
             <thead><tr><th style="width: 34%">Keys</th><th>What they do</th></tr></thead>
             <tbody>
-                <tr><td><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Move the Focus one cell; the selection collapses to it.</td></tr>
-                <tr><td><kbd>Shift</kbd> + arrow</td><td>Extend the range holding the Focus by one cell. The Focus stays.</td></tr>
-                <tr><td><kbd>Ctrl</kbd> + arrow</td><td>Jump to the first or last row or column of the result.</td></tr>
-                <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + arrow</td><td>Extend to that edge — a whole column in two keys, however many rows it has.</td></tr>
-                <tr><td><kbd>Home</kbd> / <kbd>End</kbd></td><td>The row's first or last cell. With <kbd>Shift</kbd>, extend to it.</td></tr>
-                <tr><td><kbd>Ctrl</kbd> + <kbd>Home</kbd> / <kbd>End</kbd></td><td>The first or last cell of the whole result.</td></tr>
-                <tr><td><kbd>PageUp</kbd> / <kbd>PageDown</kbd></td><td>Move a Viewport's height. With <kbd>Shift</kbd>, extend.</td></tr>
-                <tr><td><kbd>Enter</kbd> / <kbd>Shift</kbd> + <kbd>Enter</kbd></td><td>With a range selected, move the Focus down each column in turn, wrapping back to the start. With one cell, move down.</td></tr>
-                <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></td><td>The same, along each row. Neither ever leaves the selection.</td></tr>
-                <tr><td><kbd>Ctrl</kbd> + <kbd>A</kbd></td><td>Select everything.</td></tr>
-                <tr><td><kbd>Ctrl</kbd> + <kbd>Space</kbd> / <kbd>Shift</kbd> + <kbd>Space</kbd></td><td>Make the range whole columns / whole rows.</td></tr>
-                <tr><td><kbd>Ctrl</kbd> + <kbd>.</kbd></td><td>Move the Focus to the next corner of its range.</td></tr>
-                <tr><td><kbd>Shift</kbd> + <kbd>Backspace</kbd></td><td>Collapse the selection to the Focus.</td></tr>
-                <tr><td><kbd>Alt</kbd> + <kbd>↓</kbd></td><td>Open the Focus column's menu: sorting and the filter.</td></tr>
-                <tr><td><kbd>Shift</kbd> + <kbd>F10</kbd> or the menu key</td><td>Open the Context Menu over the selection.</td></tr>
-                <tr><td><kbd>Escape</kbd></td><td>Close what is open. With nothing open, the next <kbd>Tab</kbd> leaves the grid.</td></tr>
+                @foreach (var row in Keyboard.ExplainedAt("exgrid/selection#the-keyboard"))
+                {
+                    <tr><td><KeyText Text="@row.Keys" /></td><td><KeyText Text="@row.What" /></td></tr>
+                }
             </tbody>
         </MudSimpleTable>
         <p>
@@ -61,6 +50,10 @@
             Enter after each. The fifth Enter returns to the first cell instead of carrying on into a sixth row you
             did not mean to touch. Excel's "edge of the data block" for Ctrl+arrow is not used: query results have
             no blank rows, and finding a block's edge would need every row.
+        </p>
+        <p>
+            Every key of the three products, each with the page that explains it, is in the
+            <a href="reference/keyboard">Keyboard reference</a>.
         </p>
     </DocsSection>
 
@@ -82,7 +75,10 @@
             <li>
                 <strong>What counts.</strong> A number is in every figure, summed exactly when it is an integer or a
                 <code>decimal</code>. Text, a Boolean and a date are counted and never summed. A blank is in none.
-                A cell under two ranges counts once.
+                A cell under two ranges counts once. An answerer that holds error values — a Sheet, a pivot report,
+                your own through <code>GridSummaryCells</code> — counts an error in Count and never in Numerical
+                Count, and Average, Min, Max and Sum are then shown nowhere, as in Excel. Those four wear the format of
+                the Focus's column, as Excel's wear the active cell's.
             </li>
             <li>
                 <strong>Never the wrong total.</strong> Change the selection and the figures go at once; they come

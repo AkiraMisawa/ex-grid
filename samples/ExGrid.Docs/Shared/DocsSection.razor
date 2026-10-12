@@ -1,8 +1,23 @@
-@* A section of a page, with a heading a reader can link to. *@
+@* A section of a page, with a heading a reader can link to. Beside the heading, the chips the Release
+   Notes give it: "New in" or "Changed in" the newest version when its notes link the section, and
+   "Not on nuget.org yet" when a Change Note does (ADR-0190). *@
 <section class="docs-section" id="@Id">
-    <MudText Typo="Typo.h5" HtmlTag="h2" Class="docs-section-title">
-        <a href="@($"{Navigation.ToBaseRelativePath(Navigation.Uri).Split('#')[0]}#{Id}")" class="docs-anchor">@Title</a>
-    </MudText>
+    @if (_chips.Count == 0)
+    {
+        <MudText Typo="Typo.h5" HtmlTag="h2" Class="docs-section-title">
+            <a href="@($"{_here}#{Id}")" class="docs-anchor">@Title</a>
+        </MudText>
+    }
+    else
+    {
+        @* Beside the heading, not in it: the heading's name stays its title, for the rail and a reader. *@
+        <div class="docs-section-head">
+            <MudText Typo="Typo.h5" HtmlTag="h2" Class="docs-section-title">
+                <a href="@($"{_here}#{Id}")" class="docs-anchor">@Title</a>
+            </MudText>
+            <ReleaseChips Chips="_chips" />
+        </div>
+    }
     @ChildContent
 </section>
 
@@ -15,5 +30,14 @@
     /// <summary>The section's body.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private string Id => new(Title.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray());
+    private string _here = "";
+    private IReadOnlyList<DocsChip> _chips = [];
+
+    private string Id => DocsAnchor.Of(Title);
+
+    protected override void OnParametersSet()
+    {
+        _here = Navigation.ToBaseRelativePath(Navigation.Uri).Split('#')[0];
+        _chips = ReleaseNotes.ChipsFor(_here.Split('?')[0], Id);
+    }
 }

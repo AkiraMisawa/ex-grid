@@ -4,16 +4,16 @@
   "cases": [
     {
       "id": "PV-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: an annuity's present value",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.08/12,12*20,500,,0)"},
       "check": "ZZ1000",
-      "expect": {"value2": -59777.14585118777, "digits": 12}
+      "expect": {"value2": -59777.14585118782}
     },
     {
       "id": "PV-002",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a rate of 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0,10,-100)"},
@@ -22,12 +22,48 @@
     },
     {
       "id": "PV-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: with a future value, at the start of each period",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,10,-100,1000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 196.86891402364662, "digits": 12}
+      "expect": {"value2": 196.8689140236461}
+    },
+    {
+      "id": "PV-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a type of 2 is payment at the start of each period, as PMT-008 found it is for PMT",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.05,10,-100,1000,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 196.8689140236461}
+    },
+    {
+      "id": "PV-005",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a number of periods that is not a whole number, which squaring cannot raise to",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.05,10.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PV-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: where dividing by the growth and multiplying by its reciprocal, and the order of the payment's factors, differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.05/12,37,2500,1000,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -86415.16626124813}
+    },
+    {
+      "id": "PV-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at the start of each period, where the order of the payment's factors differs in the last place (spikes/exsheet-financial-evaluation/)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.05/12,12,-150,0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1759.4840643974248}
     }
   ]
 }

@@ -8,8 +8,9 @@
         <p>
             Declare <code>editable: true</code> on a column and wire <code>OnEdit</code>. On a selected cell, the
             user types to replace the value, or presses <kbd>F2</kbd> (or double-clicks) to edit it with a caret.
-            <kbd>Enter</kbd> and <kbd>Tab</kbd> commit and move on, cycling inside the selection, so a block can
-            be filled by typing; <kbd>Escape</kbd> cancels.
+            <kbd>Backspace</kbd> empties the cell and starts typing in it, as in Excel; nothing is written until the
+            edit commits. <kbd>Enter</kbd> and <kbd>Tab</kbd> commit and move on, cycling inside the selection, so a
+            block can be filled by typing; <kbd>Escape</kbd> cancels.
         </p>
         <p>
             A commit arrives as a <code>GridEditIntent&lt;TRow&gt;</code>: the row instance, the column's name and
@@ -24,7 +25,9 @@
             with it, and <kbd>Enter</kbd> writes to that row wherever it stands now; the grid does not scroll to
             follow it. Without a Row Key the editor stays where it is, and <kbd>Enter</kbd> is refused through
             <code>OnCommitRefused</code> as <code>OrderMoved</code>, the text kept, because the position now names
-            another row; <kbd>Escape</kbd> leaves without writing. See
+            another row; <kbd>Escape</kbd> leaves without writing. An editor opened with <kbd>F2</kbd> and not typed
+            into closes instead when its row leaves the Window, and, without a Row Key, when the order moves, since
+            its position then names another row — once the browser has confirmed that nothing was typed into it. See
             <a href="exgrid/editing#editing-while-values-change">Editing while values change</a>.
         </p>
     </DocsSection>
@@ -75,8 +78,8 @@
                 <code>OnPasteRefused</code>, before anything is raised, never half-applied.
             </li>
             <li>
-                <strong><kbd>Ctrl</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>+<kbd>Y</kbd></strong> are forwarded as
-                <code>OnUndo</code> and <code>OnRedo</code>. The history is yours, because only your application sees
+                <strong><kbd>Ctrl</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>+<kbd>Y</kbd></strong> (or
+                <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>) are forwarded as <code>OnUndo</code> and <code>OnRedo</code>. The history is yours, because only your application sees
                 every change, including those made outside the grid. Each gesture arrives as one intent, so keeping
                 one step per intent makes a paste of a thousand cells one <kbd>Ctrl</kbd>+<kbd>Z</kbd>. While the
                 editor is open, <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes the typing instead.
@@ -148,7 +151,17 @@
                 in the Window answers the key of the edited or pressed row. It may have left the data or only been
                 scrolled out of a pushed or fetched Window; bring it back into view and commit or press again, or
                 press <kbd>Escape</kbd>. Without a Row Key, an open edit whose row left the Window goes, and
-                <code>OnEditDiscarded</code> says <code>RowLeftTheWindow</code>.
+                <code>OnEditDiscarded</code> says <code>RowLeftTheWindow</code>. An editor that holds nothing typed —
+                opened with <kbd>F2</kbd>, a double-click or a press into the Formula Bar, its text still the cell's
+                value — is not kept waiting for its row: it holds a copy of your data, which the grid does not keep,
+                so when a Window without its row comes in, it closes as <kbd>Escape</kbd> would close it. Without a Row
+                Key its row is the one at its position under the order it opened under, so a Window under another order
+                closes it too. It closes only once the browser has confirmed that its field still holds the cell's value
+                and nothing is being composed there: on Blazor Server the grid's own copy of the text is a round trip
+                behind the typing, so a character typed as the Window moves keeps the edit open with it, as any typing
+                does. The keys and presses that follow the browser's answer wait until the editor has closed, and are
+                then the grid's. Nothing is written or discarded, and <code>OnEditingChanged</code> says the edit
+                ended.
             </li>
             <li>
                 <code>SourceChanged</code> — the <code>Source</code> was replaced by another instance. That is a new

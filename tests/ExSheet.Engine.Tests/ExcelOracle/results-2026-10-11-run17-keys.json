@@ -1,0 +1,2668 @@
+{
+    "ran":  "2026-10-11T21:55:25",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20146",
+    "windowsRegionalFormat":  "en-US",
+    "formulasEnteredThrough":  "typed (keyboard input), as every other cell of a case",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  68,
+                    "disagree":  6,
+                    "blocked":  15,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "ARITH-006",
+                      "area":  "arithmetic",
+                      "source":  "observed",
+                      "description":  "Excel\u0027s precedence: negation, %, ^, * /, + -, \u0026, comparison (negation binds before ^; ^ is left-associative)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  10.5,
+                                       "text":  "1050.0%",
+                                       "numberFormat":  "0.0%"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  10.5,
+                                           "text":  "1050.0%",
+                                           "numberFormat":  "0.0%"
+                                       },
+                      "excel":  {
+                                    "value2":  10.5,
+                                    "kind":  "number",
+                                    "number":  "10.5",
+                                    "text":  "1050.0%",
+                                    "formula":  "=10+50%",
+                                    "numberFormat":  "0.0%",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-064",
+                      "area":  "arithmetic",
+                      "source":  "observed",
+                      "description":  "A result that is not a finite double is #NUM!",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#NUM!",
+                                       "numberFormat":  "0.00E+00"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#NUM!",
+                                           "numberFormat":  "0.00E+00"
+                                       },
+                      "excel":  {
+                                    "value2":  "#NUM!",
+                                    "kind":  "error",
+                                    "text":  "#NUM!",
+                                    "formula":  "=A1*A1",
+                                    "numberFormat":  "0.00E+00",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-018",
+                      "area":  "column-widths",
+                      "source":  "observed",
+                      "description":  "A typed number that widens its column makes the width custom, as Excel\u0027s file marks it (verification/2026-09-27-windows-excel-2: widened to 10.18, customWidth set; ADR-0047, \"What the second observation settled\"). The engine leaves the widening to the component; the harness widens as the component does",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  1234567890,
+                                    "kind":  "number",
+                                    "number":  "1234567890",
+                                    "text":  "1234567890",
+                                    "formula":  "1234567890",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-027",
+                      "area":  "column-widths",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a typed date that widens its column makes the width custom, as a typed number does (CW-018 observed the flag for a number only)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "9/26/2026",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-028",
+                      "area":  "column-widths",
+                      "source":  "observed",
+                      "description":  "After a typed number widened B (to 10.18), a longer typed number widens it again (to 11.18), and Excel\u0027s file still marks it custom: a width widened by entry widens again (ADR-0046, 2026-09-28) (verification/2026-09-28-windows-excel-3)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "custom":  true,
+                                       "widthAtLeast":  10.5
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "custom":  true,
+                                           "widthAtLeast":  10.5
+                                       },
+                      "excel":  {
+                                    "value2":  12345678901,
+                                    "kind":  "number",
+                                    "number":  "12345678901",
+                                    "text":  "12345678901",
+                                    "formula":  "12345678901",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  11.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-029",
+                      "area":  "column-widths",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a typed Formula whose number widens its column (WD-007\u0027s shape) makes the width custom, as a typed number does",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  1234567890,
+                                    "kind":  "number",
+                                    "number":  "1234567890",
+                                    "text":  "1234567890",
+                                    "formula":  "=123456789*10",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "DATE-013",
+                      "area":  "dates",
+                      "source":  "observed",
+                      "description":  "A two-digit year 30 typed is 2030: 00-49 are 20xx, as Windows\u0027 default reads them (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  47484
+                                   },
+                      "engineExpect":  {
+                                           "value2":  47484
+                                       },
+                      "excel":  {
+                                    "value2":  47484,
+                                    "kind":  "number",
+                                    "number":  "47484",
+                                    "text":  "1/1/2030",
+                                    "formula":  "47484",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "DATE-027",
+                      "area":  "dates",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a two-digit year 49 typed is 2049, the last of Windows\u0027 default window",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  54424
+                                   },
+                      "engineExpect":  {
+                                           "value2":  54424
+                                       },
+                      "excel":  {
+                                    "value2":  54424,
+                                    "kind":  "number",
+                                    "number":  "54424",
+                                    "text":  "1/1/2049",
+                                    "formula":  "54424",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "DATE-029",
+                      "area":  "dates",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a two-digit year after a month name reads as a numeric one: 31-Dec-49 is 2049",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  54788
+                                   },
+                      "engineExpect":  {
+                                           "value2":  54788
+                                       },
+                      "excel":  {
+                                    "value2":  54788,
+                                    "kind":  "number",
+                                    "number":  "54788",
+                                    "text":  "31-Dec-49",
+                                    "formula":  "54788",
+                                    "numberFormat":  "d-mmm-yy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.73,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-096",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "#SPILL!, one of Excel\u0027s newer Error Values, typed is that Error Value (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#SPILL!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#SPILL!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#SPILL!",
+                                    "kind":  "error",
+                                    "text":  "#SPILL!",
+                                    "formula":  "#SPILL!",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-097",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "#CALC! typed is that Error Value (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#CALC!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#CALC!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#CALC!",
+                                    "kind":  "error",
+                                    "text":  "#CALC!",
+                                    "formula":  "#CALC!",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-098",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "#SPILL!, one of Excel\u0027s newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#SPILL!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#SPILL!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#SPILL!",
+                                    "kind":  "error",
+                                    "text":  "#SPILL!",
+                                    "formula":  "#SPILL!",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-099",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "#CALC!, one of Excel\u0027s newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#CALC!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#CALC!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#CALC!",
+                                    "kind":  "error",
+                                    "text":  "#CALC!",
+                                    "formula":  "#CALC!",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-100",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "#FIELD!, one of Excel\u0027s newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#FIELD!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#FIELD!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#FIELD!",
+                                    "kind":  "error",
+                                    "text":  "#FIELD!",
+                                    "formula":  "#FIELD!",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-101",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "#BLOCKED!, one of Excel\u0027s newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#BLOCKED!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#BLOCKED!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#BLOCKED!",
+                                    "kind":  "error",
+                                    "text":  "#BLOCKED!",
+                                    "formula":  "#BLOCKED!",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  9.73,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-102",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "#CONNECT!, one of Excel\u0027s newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#CONNECT!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#CONNECT!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#CONNECT!",
+                                    "kind":  "error",
+                                    "text":  "#CONNECT!",
+                                    "formula":  "#CONNECT!",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-104",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "#UNKNOWN!, one of Excel\u0027s newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#UNKNOWN!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#UNKNOWN!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#UNKNOWN!",
+                                    "kind":  "error",
+                                    "text":  "#UNKNOWN!",
+                                    "formula":  "#UNKNOWN!",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.91,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-105",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "A newer Error Value typed in lower case (#spill!) is that Error Value, #SPILL! (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#SPILL!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#SPILL!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#SPILL!",
+                                    "kind":  "error",
+                                    "text":  "#SPILL!",
+                                    "formula":  "#SPILL!",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-106",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "A typed #CALC! is an Error Value to a Formula that reads it: ISERROR is TRUE (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  true
+                                   },
+                      "engineExpect":  {
+                                           "value2":  true
+                                       },
+                      "excel":  {
+                                    "value2":  true,
+                                    "kind":  "boolean",
+                                    "text":  "TRUE",
+                                    "formula":  "=ISERROR(A1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-107",
+                      "area":  "errors",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: IFERROR catches a typed #SPILL! as it catches any other Error Value",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "caught"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "caught"
+                                       },
+                      "excel":  {
+                                    "value2":  "caught",
+                                    "kind":  "text",
+                                    "text":  "caught",
+                                    "formula":  "=IFERROR(A1,\"caught\")",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ERR-108",
+                      "area":  "errors",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a typed #CALC! propagates through arithmetic",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#CALC!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#CALC!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#CALC!",
+                                    "kind":  "error",
+                                    "text":  "#CALC!",
+                                    "formula":  "=A1+1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LVL-015",
+                      "area":  "format-levels",
+                      "source":  "observed",
+                      "description":  "A row inserted below a formatted row takes its format (Format Same As Above), and a number typed into it is read as a percentage, Excel\u0027s automatic percent entry: 0.5 is 0.005 (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  0.005,
+                                       "text":  "1%",
+                                       "numberFormat":  "0%"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  0.005,
+                                           "text":  "1%",
+                                           "numberFormat":  "0%"
+                                       },
+                      "excel":  {
+                                    "value2":  0.005,
+                                    "kind":  "number",
+                                    "number":  "0.005",
+                                    "text":  "1%",
+                                    "formula":  "0.005",
+                                    "numberFormat":  "0%",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LVL-031",
+                      "area":  "format-levels",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a whole number typed into a percent cell is divided by 100 too: 10 is 10%",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  0.1,
+                                       "text":  "10%"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  0.1,
+                                           "text":  "10%"
+                                       },
+                      "excel":  {
+                                    "value2":  0.1,
+                                    "kind":  "number",
+                                    "number":  "0.1",
+                                    "text":  "10%",
+                                    "formula":  "0.1",
+                                    "numberFormat":  "0%",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LVL-032",
+                      "area":  "format-levels",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a percentage typed into a percent cell is not divided again",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  0.5,
+                                       "text":  "50%"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  0.5,
+                                           "text":  "50%"
+                                       },
+                      "excel":  {
+                                    "value2":  0.5,
+                                    "kind":  "number",
+                                    "number":  "0.5",
+                                    "text":  "50%",
+                                    "formula":  "0.5",
+                                    "numberFormat":  "0%",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LVL-033",
+                      "area":  "format-levels",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a number typed into a column formatted 0.00% is divided by 100",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  0.005,
+                                       "text":  "0.50%"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  0.005,
+                                           "text":  "0.50%"
+                                       },
+                      "excel":  {
+                                    "value2":  0.005,
+                                    "kind":  "number",
+                                    "number":  "0.005",
+                                    "text":  "0.50%",
+                                    "formula":  "0.005",
+                                    "numberFormat":  "0.00%",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LVL-035",
+                      "area":  "format-levels",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a negative number typed into a percent cell is divided by 100",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  -0.05,
+                                       "text":  "-5%"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  -0.05,
+                                           "text":  "-5%"
+                                       },
+                      "excel":  {
+                                    "value2":  -0.05,
+                                    "kind":  "number",
+                                    "number":  "-0.05",
+                                    "text":  "-5%",
+                                    "formula":  "-0.05",
+                                    "numberFormat":  "0%",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-011",
+                      "area":  "formula-formats",
+                      "source":  "observed",
+                      "description":  "Multiplication over a date takes the date format (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "9/26/2026",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "9/26/2026",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "9/26/2026",
+                                    "formula":  "=A1*1",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-013",
+                      "area":  "formula-formats",
+                      "source":  "observed",
+                      "description":  "A date plus a product takes the date format (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "10/2/2026",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "10/2/2026",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46297,
+                                    "kind":  "number",
+                                    "number":  "46297",
+                                    "text":  "10/2/2026",
+                                    "formula":  "=A1+2*3",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-023",
+                      "area":  "formula-formats",
+                      "source":  "observed",
+                      "description":  "A date divided by a number takes the date format, as a date plus a number does (verification/2026-09-28-windows-excel-3)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "5/14/1963",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "5/14/1963",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  23145.5,
+                                    "kind":  "number",
+                                    "number":  "23145.5",
+                                    "text":  "5/14/1963",
+                                    "formula":  "=A1/2",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-024",
+                      "area":  "formula-formats",
+                      "source":  "observed",
+                      "description":  "A percentage constant alone gives no format (verification/2026-09-28-windows-excel-3)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "0.5",
+                                       "numberFormat":  "General"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "0.5",
+                                           "numberFormat":  "General"
+                                       },
+                      "excel":  {
+                                    "value2":  0.5,
+                                    "kind":  "number",
+                                    "number":  "0.5",
+                                    "text":  "0.5",
+                                    "formula":  "=50%",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-025",
+                      "area":  "formula-formats",
+                      "source":  "observed",
+                      "description":  "A product over a cell in 0% gives no format: a percentage is not carried through * (verification/2026-09-28-windows-excel-3)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "0.2",
+                                       "numberFormat":  "General"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "0.2",
+                                           "numberFormat":  "General"
+                                       },
+                      "excel":  {
+                                    "value2":  0.2,
+                                    "kind":  "number",
+                                    "number":  "0.2",
+                                    "text":  "0.2",
+                                    "formula":  "=A1*2",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-026",
+                      "area":  "formula-formats",
+                      "source":  "observed",
+                      "description":  "SUM with a constant among its arguments takes the date format of the date it reads (verification/2026-09-28-windows-excel-3)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "10/1/2026",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "10/1/2026",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46296,
+                                    "kind":  "number",
+                                    "number":  "46296",
+                                    "text":  "10/1/2026",
+                                    "formula":  "=SUM(A1,5)",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-027",
+                      "area":  "formula-formats",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: % on a Reference is not inferred",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "numberFormat":  "General"
+                                   },
+                      "engineExpect":  {
+                                           "numberFormat":  "General"
+                                       },
+                      "excel":  {
+                                    "value2":  0.05,
+                                    "kind":  "number",
+                                    "number":  "0.05",
+                                    "text":  "0.05",
+                                    "formula":  "=A1%",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-028",
+                      "area":  "formula-formats",
+                      "source":  "observed",
+                      "description":  "A product with a percentage constant gives no format (verification/2026-09-28-windows-excel-3)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "1",
+                                       "numberFormat":  "General"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "1",
+                                           "numberFormat":  "General"
+                                       },
+                      "excel":  {
+                                    "value2":  1,
+                                    "kind":  "number",
+                                    "number":  "1",
+                                    "text":  "1",
+                                    "formula":  "=2*50%",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-029",
+                      "area":  "formula-formats",
+                      "source":  "observed",
+                      "description":  "A date plus a percentage constant gives no format: a percentage constant gives 0.0% only beside an operand with none (ARITH-006) (verification/2026-09-28-windows-excel-3)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "46291.5",
+                                       "numberFormat":  "General"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "46291.5",
+                                           "numberFormat":  "General"
+                                       },
+                      "excel":  {
+                                    "value2":  46291.5,
+                                    "kind":  "number",
+                                    "number":  "46291.5",
+                                    "text":  "46291.5",
+                                    "formula":  "=A1+50%",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-030",
+                      "area":  "formula-formats",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): a cell in 0% plus a number takes 0%, as FF-006\u0027s number plus a percentage does",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "110%",
+                                       "numberFormat":  "0%"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "110%",
+                                           "numberFormat":  "0%"
+                                       },
+                      "excel":  {
+                                    "value2":  1.1,
+                                    "kind":  "number",
+                                    "number":  "1.1",
+                                    "text":  "110%",
+                                    "formula":  "=A1+1",
+                                    "numberFormat":  "0%",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-031",
+                      "area":  "formula-formats",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): a cell in 0% subtracted from a number takes 0%",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "90%",
+                                       "numberFormat":  "0%"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "90%",
+                                           "numberFormat":  "0%"
+                                       },
+                      "excel":  {
+                                    "value2":  0.9,
+                                    "kind":  "number",
+                                    "number":  "0.9",
+                                    "text":  "90%",
+                                    "formula":  "=1-A1",
+                                    "numberFormat":  "0%",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-032",
+                      "area":  "formula-formats",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): a cell in 0% divided gives no format, as a product does (FF-025)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "0.05",
+                                       "numberFormat":  "General"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "0.05",
+                                           "numberFormat":  "General"
+                                       },
+                      "excel":  {
+                                    "value2":  0.05,
+                                    "kind":  "number",
+                                    "number":  "0.05",
+                                    "text":  "0.05",
+                                    "formula":  "=A1/2",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-033",
+                      "area":  "formula-formats",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): a date multiplied by 2 takes the date format, as a date multiplied by 1 does (FF-011)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "6/23/2153",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "6/23/2153",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  92582,
+                                    "kind":  "number",
+                                    "number":  "92582",
+                                    "text":  "6/23/2153",
+                                    "formula":  "=A1*2",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-034",
+                      "area":  "formula-formats",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): a percentage constant subtracted from a number gives 0.0%, as one added does (ARITH-006)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "950.0%",
+                                       "numberFormat":  "0.0%"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "950.0%",
+                                           "numberFormat":  "0.0%"
+                                       },
+                      "excel":  {
+                                    "value2":  9.5,
+                                    "kind":  "number",
+                                    "number":  "9.5",
+                                    "text":  "950.0%",
+                                    "formula":  "=10-50%",
+                                    "numberFormat":  "0.0%",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FF-035",
+                      "area":  "formula-formats",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): a percentage constant subtracted from a date gives no format, as one added does (FF-029)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "46290.5",
+                                       "numberFormat":  "General"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "46290.5",
+                                           "numberFormat":  "General"
+                                       },
+                      "excel":  {
+                                    "value2":  46290.5,
+                                    "kind":  "number",
+                                    "number":  "46290.5",
+                                    "text":  "46290.5",
+                                    "formula":  "=A1-50%",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TEXT-077",
+                      "area":  "formula-text",
+                      "source":  "observed",
+                      "description":  "A carriage return with its line feed between tokens is kept as the line feed alone (verification/2026-09-27-windows-excel-2, typed with Alt+Enter)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=A1\n+1"
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=A1\n+1"
+                                       },
+                      "excel":  {
+                                    "value2":  1,
+                                    "kind":  "number",
+                                    "number":  "1",
+                                    "text":  "1",
+                                    "formula":  "=A1\n+1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-001",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "Nine typed digits widen a default-width column to hold them",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "widthOnEntry":  9
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "widthOnEntry":  9
+                                       },
+                      "excel":  {
+                                    "value2":  123456789,
+                                    "kind":  "number",
+                                    "number":  "123456789",
+                                    "text":  "123456789",
+                                    "formula":  "123456789",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  9.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-002",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "Eight typed digits fit a default-width column and do not widen it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  false,
+                                       "widthOnEntry":  8
+                                   },
+                      "engineExpect":  {
+                                           "widens":  false,
+                                           "widthOnEntry":  8
+                                       },
+                      "excel":  {
+                                    "value2":  12345678,
+                                    "kind":  "number",
+                                    "number":  "12345678",
+                                    "text":  "12345678",
+                                    "formula":  "12345678",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-003",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "Typed decimals do not widen a column: General rounds them to the width instead, which is what Microsoft documents it does when the cell is not wide enough",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  false,
+                                       "widthOnEntry":  1,
+                                       "text":  "1.23456789"
+                                   },
+                      "engineExpect":  {
+                                           "widens":  false,
+                                           "widthOnEntry":  1,
+                                           "text":  "1.23456789"
+                                       },
+                      "excel":  {
+                                    "value2":  1.23456789,
+                                    "kind":  "number",
+                                    "number":  "1.23456789",
+                                    "text":  "1.23456789",
+                                    "formula":  "1.23456789",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-004",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "Twelve typed digits are scientific at any width, and widen the column to that form",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "widthOnEntry":  11
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "widthOnEntry":  11
+                                       },
+                      "excel":  {
+                                    "value2":  123456789012,
+                                    "kind":  "number",
+                                    "number":  "123456789012",
+                                    "text":  "1.23457E+11",
+                                    "formula":  "123456789012",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  11.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-005",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "A typed date widens a default-width column to its whole text",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "widthOnEntry":  9,
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "widthOnEntry":  9,
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "9/26/2026",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-006",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "Typed text never widens a column",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  false,
+                                       "widthOnEntry":  null
+                                   },
+                      "engineExpect":  {
+                                           "widens":  false,
+                                           "widthOnEntry":  null
+                                       },
+                      "excel":  {
+                                    "value2":  "A heading far wider than its column",
+                                    "kind":  "text",
+                                    "text":  "A heading far wider than its column",
+                                    "formula":  "A heading far wider than its column",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-007",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "A Formula\u0027s numeric result widens a column as a typed number does",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "widthOnEntry":  10
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "widthOnEntry":  10
+                                       },
+                      "excel":  {
+                                    "value2":  1234567890,
+                                    "kind":  "number",
+                                    "number":  "1234567890",
+                                    "text":  "1234567890",
+                                    "formula":  "=123456789*10",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-008",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "A typed percentage that fits does not widen a column",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  false,
+                                       "widthOnEntry":  6,
+                                       "numberFormat":  "0.00%"
+                                   },
+                      "engineExpect":  {
+                                           "widens":  false,
+                                           "widthOnEntry":  6,
+                                           "numberFormat":  "0.00%"
+                                       },
+                      "excel":  {
+                                    "value2":  0.125,
+                                    "kind":  "number",
+                                    "number":  "0.125",
+                                    "text":  "12.50%",
+                                    "formula":  "0.125",
+                                    "numberFormat":  "0.00%",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-009",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "A typed number whose integer part fits once its decimals round away does not widen a column",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  false,
+                                       "widthOnEntry":  7
+                                   },
+                      "engineExpect":  {
+                                           "widens":  false,
+                                           "widthOnEntry":  7
+                                       },
+                      "excel":  {
+                                    "value2":  1234567.891,
+                                    "kind":  "number",
+                                    "number":  "1234567.891",
+                                    "text":  "1234567.891",
+                                    "formula":  "1234567.891",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-010",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "A typed negative number counts its minus sign",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "widthOnEntry":  9
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "widthOnEntry":  9
+                                       },
+                      "excel":  {
+                                    "value2":  -12345678,
+                                    "kind":  "number",
+                                    "number":  "-12345678",
+                                    "text":  "-12345678",
+                                    "formula":  "-12345678",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.82,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-011",
+                      "area":  "general-width",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a Formula whose result is text never widens a column",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  false,
+                                       "widthOnEntry":  null
+                                   },
+                      "engineExpect":  {
+                                           "widens":  false,
+                                           "widthOnEntry":  null
+                                       },
+                      "excel":  {
+                                    "value2":  "A heading far wider than its column",
+                                    "kind":  "text",
+                                    "text":  "A heading far wider than its column",
+                                    "formula":  "=\"A heading far wider than its column\"",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-012",
+                      "area":  "general-width",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a Formula whose result fits does not widen a column",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  false,
+                                       "widthOnEntry":  5
+                                   },
+                      "engineExpect":  {
+                                           "widens":  false,
+                                           "widthOnEntry":  5
+                                       },
+                      "excel":  {
+                                    "value2":  12340,
+                                    "kind":  "number",
+                                    "number":  "12340",
+                                    "text":  "12340",
+                                    "formula":  "=1234*10",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "WD-013",
+                      "area":  "general-width",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a Formula that takes a date format on entry widens a default-width column to its whole text",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "widthOnEntry":  9,
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "widthOnEntry":  9,
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46292,
+                                    "kind":  "number",
+                                    "number":  "46292",
+                                    "text":  "9/27/2026",
+                                    "formula":  "=B1+1",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-023",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "A1 reference cannot be name",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-001",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  3
+                                   },
+                      "engineExpect":  {
+                                           "value2":  3
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-002",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  2
+                                   },
+                      "engineExpect":  {
+                                           "value2":  2
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-003",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  2
+                                   },
+                      "engineExpect":  {
+                                           "value2":  2
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-004",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-005",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-006",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  2
+                                   },
+                      "engineExpect":  {
+                                           "value2":  2
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-007",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-008",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#NAME?"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#NAME?"
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-009",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  1
+                                   },
+                      "engineExpect":  {
+                                           "value2":  1
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-010",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  3
+                                   },
+                      "engineExpect":  {
+                                           "value2":  3
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-011",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-012",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-013",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-KEYS-014",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Typed with real keys (SendInput), as a user types it",
+                      "status":  "blocked",
+                      "reason":  "needs en-GB; this machine\u0027s regional format is en-US",
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  null,
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-101",
+                      "area":  "let",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: a declared function\u0027s name as a LET name (ADR-0181)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "value2":  3,
+                                    "kind":  "number",
+                                    "number":  "3",
+                                    "text":  "3",
+                                    "formula":  "=LET(SUM,2,SUM+1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "expected the entry refused; Excel entered it"
+                                      ]
+                  },
+                  {
+                      "id":  "LET-102",
+                      "area":  "let",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: TRUE as a LET name (ADR-0181)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "Excel did not commit the keyboard entry of =LET(TRUE,2,1); it stayed in Edit mode after the dialog it raised (keyDialogs)"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "21:54:55.991 LET-102: typing =LET(TRUE,2,1): [its text was not read within 2000 ms] -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "LET-103",
+                      "area":  "let",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: an R1C1 Reference\u0027s shape as a LET name (ADR-0181)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "value2":  3,
+                                    "kind":  "number",
+                                    "number":  "3",
+                                    "text":  "3",
+                                    "formula":  "=LET(R1C1,2,R1C1+1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "expected the entry refused; Excel entered it"
+                                      ]
+                  },
+                  {
+                      "id":  "LET-104",
+                      "area":  "let",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R and a row number as a LET name (ADR-0181)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "Excel did not commit the keyboard entry of =LET(R2,2,R2+1); it stayed in Edit mode after the dialog it raised (keyDialogs)"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "21:55:00.964 LET-104: typing =LET(R2,2,R2+1): [its text was not read within 2000 ms] -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "LET-105",
+                      "area":  "let",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: C and a column number as a LET name (ADR-0181)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "Excel did not commit the keyboard entry of =LET(C3,2,C3+1); it stayed in Edit mode after the dialog it raised (keyDialogs)"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "21:55:05.132 LET-105: typing =LET(C3,2,C3+1): [its text was not read within 2000 ms] -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "LET-106",
+                      "area":  "let",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: RC as a LET name (ADR-0181)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "value2":  3,
+                                    "kind":  "number",
+                                    "number":  "3",
+                                    "text":  "3",
+                                    "formula":  "=LET(RC,2,RC+1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "expected the entry refused; Excel entered it"
+                                      ]
+                  },
+                  {
+                      "id":  "LET-107",
+                      "area":  "let",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: a value left empty",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=LET(x,,x)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "expected the entry refused; Excel entered it"
+                                      ]
+                  },
+                  {
+                      "id":  "LET-110",
+                      "area":  "let",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a name of letters and digits that names no cell is a name",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  3
+                                   },
+                      "engineExpect":  {
+                                           "value2":  3
+                                       },
+                      "excel":  {
+                                    "value2":  3,
+                                    "kind":  "number",
+                                    "number":  "3",
+                                    "text":  "3",
+                                    "formula":  "=LET(abc1234567,2,abc1234567+1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "LET-111",
+                      "area":  "let",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: the name of one of Excel\u0027s functions that the engine does not declare, as a LET name (ADR-0181)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "value2":  1,
+                                    "kind":  "number",
+                                    "number":  "1",
+                                    "text":  "1",
+                                    "formula":  "=LET(IRR,1,IRR)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "expected the entry refused; Excel entered it"
+                                      ]
+                  },
+                  {
+                      "id":  "LET-112",
+                      "area":  "let",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: a one-letter name that is one of Excel\u0027s functions, as a LET name, where c and r alone are names (ADR-0181)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "value2":  1,
+                                    "kind":  "number",
+                                    "number":  "1",
+                                    "text":  "1",
+                                    "formula":  "=LET(N,1,N)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "expected the entry refused; Excel entered it"
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-019",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Ticket 19 row 26: a leading + before a Reference makes a Formula (here reading its own cell)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=+A1"
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=+A1"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=+A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "21:55:13.937 TYPED-019: typing +A1: [its text was not read within 2000 ms] -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "TYPED-020",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Ticket 19 row 26: a leading - before a Reference makes a Formula (here reading its own cell)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=-A1"
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=-A1"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=-A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "21:55:17.199 TYPED-020: typing -A1: [its text was not read within 2000 ms] -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "TYPED-028",
+                      "area":  "typed-constants",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a leading + before a Reference to another cell makes a Formula that reads it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=+A1",
+                                       "value2":  5
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=+A1",
+                                           "value2":  5
+                                       },
+                      "excel":  {
+                                    "value2":  5,
+                                    "kind":  "number",
+                                    "number":  "5",
+                                    "text":  "5",
+                                    "formula":  "=+A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-029",
+                      "area":  "typed-constants",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a leading - before a Reference to another cell makes a Formula that negates it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=-A1",
+                                       "value2":  -5
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=-A1",
+                                           "value2":  -5
+                                       },
+                      "excel":  {
+                                    "value2":  -5,
+                                    "kind":  "number",
+                                    "number":  "-5",
+                                    "text":  "-5",
+                                    "formula":  "=-A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-030",
+                      "area":  "typed-constants",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a leading - before arithmetic makes a Formula",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=-1-2",
+                                       "value2":  -3
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=-1-2",
+                                           "value2":  -3
+                                       },
+                      "excel":  {
+                                    "value2":  -3,
+                                    "kind":  "number",
+                                    "number":  "-3",
+                                    "text":  "-3",
+                                    "formula":  "=-1-2",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-031",
+                      "area":  "typed-constants",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a leading - before a name makes a Formula, which is #NAME?",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=-abc",
+                                       "value2":  "#NAME?"
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=-abc",
+                                           "value2":  "#NAME?"
+                                       },
+                      "excel":  {
+                                    "value2":  "#NAME?",
+                                    "kind":  "error",
+                                    "text":  "#NAME?",
+                                    "formula":  "=-abc",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-032",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "A leading - before text is read as a Formula, =- item one, with no dialog; the space between item and one is Excel\u0027s intersection of two names, so it is #NAME? (verification/2026-09-27-windows-excel-2, with real keys)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#NAME?",
+                                       "formula":  "=- item one"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#NAME?",
+                                           "formula":  "=- item one"
+                                       },
+                      "excel":  {
+                                    "value2":  "#NAME?",
+                                    "kind":  "error",
+                                    "text":  "#NAME?",
+                                    "formula":  "=- item one",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-053",
+                      "area":  "typed-constants",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a leading - before a name and a Reference is the Formula of their intersection, #NAME?",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#NAME?",
+                                       "formula":  "=-total B2"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#NAME?",
+                                           "formula":  "=-total B2"
+                                       },
+                      "excel":  {
+                                    "value2":  "#NAME?",
+                                    "kind":  "error",
+                                    "text":  "#NAME?",
+                                    "formula":  "=-total B2",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-054",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "A leading - before two References with a space between them is a Formula using the intersection operator, which the engine does not implement: refused by name. Excel makes it the Formula =-B2 C2, #NULL! (verification/2026-09-28-windows-excel-3)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "excelExpect",
+                      "expected":  {
+                                       "value2":  "#NULL!",
+                                       "formula":  "=-B2 C2"
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "value2":  "#NULL!",
+                                    "kind":  "error",
+                                    "text":  "#NULL!",
+                                    "formula":  "=-B2 C2",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047, third run: the intersection of References is refused by name, not taken as text"
+                  }
+              ]
+}

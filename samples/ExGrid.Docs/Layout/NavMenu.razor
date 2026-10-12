@@ -1,11 +1,59 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
+@* The drawer (ADR-0110): DocsNav's groups, each collapsible, and only the current page's open. A
+   reader may open another; the next page they reach closes it again. Below the large breakpoint
+   the app bar's text links are hidden, and this drawer lists every page they lead to. *@
 <MudNavMenu Class="docs-nav" Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
     @foreach (var group in DocsNav.Groups)
     {
-        <MudText Typo="Typo.overline" Class="docs-nav-heading">@group.Title</MudText>
-        @foreach (var link in group.Links)
-        {
-            <MudNavLink Href="@link.Href" Match="NavLinkMatch.All"
-                        Target="@(link.Href.StartsWith("showcase/") ? "_blank" : null)">@link.Title</MudNavLink>
-        }
+        <MudNavGroup Title="@group.Title" Expanded="@_open.Contains(group)"
+                     ExpandedChanged="@(open => Toggle(group, open))" HeaderClass="docs-nav-group">
+            @foreach (var link in group.Links)
+            {
+                <MudNavLink Href="@link.Url" Match="NavLinkMatch.All" Target="@link.Target">
+                    @link.Title
+                    @if (link.Target is not null)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Class="docs-nav-new-tab" aria-label="opens in a new tab" />
+                    }
+                </MudNavLink>
+            }
+        </MudNavGroup>
     }
 </MudNavMenu>
+
+@code {
+    private readonly HashSet<DocsGroup> _open = [];
+
+    protected override void OnInitialized()
+    {
+        OpenCurrent();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        OpenCurrent();
+        InvokeAsync(StateHasChanged);
+    }
+
+    // Only the group that lists the page now shown is open; a page no group lists leaves all closed.
+    private void OpenCurrent()
+    {
+        _open.Clear();
+        var route = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
+        if (DocsNav.GroupOf(route) is { } group)
+            _open.Add(group);
+    }
+
+    private void Toggle(DocsGroup group, bool open)
+    {
+        if (open)
+            _open.Add(group);
+        else
+            _open.Remove(group);
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

@@ -1,0 +1,37 @@
+@* Text with keys in it, as the Keyboard reference writes it: each key in brackets, [Ctrl], drawn as a key;
+   the rest as it is. *@
+@foreach (var (text, isKey) in Parts(Text))
+{
+    @if (isKey)
+    {
+        <kbd>@text</kbd>
+    }
+    else
+    {
+        @text
+    }
+}
+
+@code {
+    /// <summary>The text, with each key in brackets: <c>[Ctrl] + [Shift] + arrow</c>.</summary>
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+
+    private static IEnumerable<(string Text, bool IsKey)> Parts(string text)
+    {
+        var at = 0;
+        while (at < text.Length)
+        {
+            var open = text.IndexOf('[', at);
+            var close = open < 0 ? -1 : text.IndexOf(']', open + 1);
+            if (open < 0 || close < 0)
+            {
+                yield return (text[at..], false);
+                yield break;
+            }
+            if (open > at)
+                yield return (text[at..open], false);
+            yield return (text[(open + 1)..close], true);
+            at = close + 1;
+        }
+    }
+}

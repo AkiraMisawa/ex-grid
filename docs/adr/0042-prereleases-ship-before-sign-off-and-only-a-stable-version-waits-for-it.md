@@ -41,6 +41,13 @@ release in the Definition of Done's sense, and waits for Step 7.**
 
 ### How a version is published
 
+*(2026-10-11, decided with the user:
+[ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)
+rewrites this for stable versions. `0.1.0` is grown on `release/0.1` and rehearsed by release
+candidates; a tag may be on `main` or a release branch; the refusal of an unsuffixed version is
+replaced by a check that the notes name a sign-off made at a commit the tag differs from only by its
+records and notes. This section is rewritten on the release branch, with what it said kept.)*
+
 - **A tag is the only place a version is written.** `v0.1.0-beta.1` names `0.1.0-beta.1`. The
   projects carry `0.0.0-dev`, so a package packed by hand says plainly that it is not one.
 - **Pushing the tag runs `.github/workflows/release.yml`:**
@@ -56,6 +63,22 @@ release in the Definition of Done's sense, and waits for Step 7.**
      the release already says. *(Added 2026-09-25: the first tag was made that way. The
      workflow refused the second release after the packages were already on nuget.org, and
      the release it left behind carried neither the packages nor the note.)*
+- *(Rewritten 2026-10-11, decided with the user with
+  [ADR-0190](./0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md).)*
+  **The release's text and the Docs Site.** Steps 1 and 4 above change, and a step follows them:
+  - **Step 1 refuses more, before CI's twenty minutes**: a tagged commit with no
+    `docs/releases/<version>.md`, or whose first line is not the version; one that still holds a Change
+    Note under `docs/releases/unreleased/`; and one where an older version's file still reads
+    `Published: pending`.
+  - **Step 2 builds the Docs Site with the version it is about to publish**, so the site's own checks of
+    the Release Notes run on the tag before anything is pushed.
+  - **Step 4's text is the Release Notes**, passed with `--notes-file`, after the prerelease note for a
+    prerelease. The prerelease note is held once, in `docs/releases/prerelease-note.md`. GitHub's
+    generated list is no longer asked for. A release GitHub's page already made is given that text,
+    replacing what it said, rather than having the note put above it.
+  - **Then the release publishes the Docs Site** ([ADR-0110](./0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)),
+    with the version, the tag and the UTC day the packages were pushed. The site states a version only
+    once nuget.org has it.
 - **Trusted Publishing, not a stored key.** The publish job exchanges GitHub's OIDC token for a
   nuget.org key that lives an hour (`NuGet/login`). The only standing configuration:
   - a policy on nuget.org naming this repository and `release.yml`;
@@ -119,12 +142,23 @@ proves only what packaging changes.
 
 ## What a stable version needs besides Step 7
 
+*(2026-10-11, decided with the user: the first stable version is `0.1.0`, it carries all ten packages,
+and it claims Blazor Server —
+[ADR-0200](./0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md). What it needs of
+the public surface below is decided in an ADR of its own.)*
+
 - **A reviewed public surface.** Nothing has decided which C# types are the Consumer's contract.
   The core has 98 public types, and some of them, such as `ViewportGeometry` and `EdgeBand`, are
   public only so the test projects can reach them. A `0.x` beta may ship that. `1.0` may not.
   First an ADR states what is public. Then the rest becomes internal, reachable by the test
   projects and never by the Wrapper (ADR-0030: a Wrapper has only the seams every Consumer has).
   From then on a baseline file makes every change to the surface show up in review.
+  *(Settled 2026-10-11 by
+  [ADR-0201](./0201-the-public-surface-is-what-consumers-chromes-and-the-sibling-products-use.md),
+  decided with the user. The count was stale: the core exports 193 public types and the ten packages
+  524. "A `0.x` beta may ship that. `1.0` may not." was written when a stable version meant `1.0`; the
+  first stable is `0.1.0` (ADR-0200), and it ships a surface reviewed type by type, with members
+  reviewed before `1.0`.)*
 - **Removing the prerelease-only refusal from `release.yml`**, in the same change that rewrites
   this ADR.
 

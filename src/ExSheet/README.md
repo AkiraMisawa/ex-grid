@@ -91,6 +91,30 @@ and moved on as each minute turns (ADR-0124). A fixed `Today` does not fix it. I
 clock. The Sheet Day is not part of a Sheet Document. Without the component, the engine is given it
 as data: `sheet.SetToday(new DateOnly(2026, 10, 3))`.
 
+## Random draws
+
+`RAND()` and `RANDBETWEEN` draw from the **Sheet Seed** (ADR-0180). Each draw is made from the seed,
+the cell, which call in its Formula it is, and how many changes the Sheet has had since it was
+opened — never from a clock or a stream another draw moved on. So everything that reads a draw sees
+the same Value, every edit, insertion, deletion, rename of the Sheet, undo, redo, Linked Table
+snapshot (the same rows again included) and Linked Table declaration draws again, as Excel's undo,
+rename and refresh were seen to, and the clock, a format or a width draws nothing.
+
+```razor
+@* A new seed whenever the document is opened, as Excel's reopened workbook draws again. *@
+<ExSheet @bind-Document="_document" />
+
+@* A simulation someone else reviews: the same draws whenever it is opened. *@
+<ExSheet @bind-Document="_document" Seed="20261011" />
+```
+
+The count of changes starts from 0 when a Sheet Document is opened, and neither the seed nor a draw
+is part of the document. A prerendered page chooses no seed: without `Seed`, its drawing cells show
+`#GETTING_DATA` until the page is interactive, as `TODAY()` waits for the browser's time zone, so
+the draws a reader sees never change with nothing done. Without the component, the engine is given
+both as data: `sheet.SetSeed(20261011, changes: 3)` shows what the Sheet showed after its third
+change.
+
 ## Linked Tables
 
 A Formula can read the application's own data as a **Linked Table**, by key or by column, in
@@ -327,7 +351,8 @@ other, and raise `DocumentChanged`; an opened document brings its widths with it
 set on the Selection — a formatting key, Format Cells' OK, `SetCellFormatAsync` — widens a column
 whose numbers it no longer fits in the same way, in its own undo step. A width an entry or a Number
 Format widened the column to stays automatic, and a longer number widens the column again; a width
-the user set — a drag or a size to fit — is custom, and nothing widens that column.
+the user set — a drag or a size to fit — is custom, and nothing widens that column. A column inserted
+to the right of either takes its width as one the user set, as Excel's does.
 
 ## The Sheet Toolbar
 

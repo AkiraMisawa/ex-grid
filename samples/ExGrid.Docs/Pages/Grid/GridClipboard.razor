@@ -6,7 +6,7 @@
 
     <DocsSection Title="Copy">
         <p>
-            Select cells and press <kbd>Ctrl</kbd>+<kbd>C</kbd>; the Context Menu (right-click, or
+            Select cells and press <kbd>Ctrl</kbd>+<kbd>C</kbd> (or <kbd>Ctrl</kbd>+<kbd>Insert</kbd>); the Context Menu (right-click, or
             <kbd>Shift</kbd>+<kbd>F10</kbd>) also offers <em>Copy with headers</em>. Nothing needs wiring.
         </p>
         <ul>
@@ -41,7 +41,7 @@
             <li>
                 <strong>What you copied stays outlined with dashes</strong> while the clipboard still holds it, as
                 Excel's moving border does, but standing still. It goes when anything else is copied — in another
-                application, another grid or a text field — when you press <kbd>Esc</kbd> or start an edit, and
+                application, another grid or a text field — when you press <kbd>Escape</kbd> or start an edit, and
                 when a copied cell comes to show another value. A paste leaves it. A browser that cannot tell the
                 page the clipboard changed (Chrome and Edge before 143) shows no outline at all.
             </li>
@@ -61,7 +61,7 @@
 
     <DocsSection Title="Paste">
         <p>
-            Paste into editable columns raises one <code>OnPaste</code> for the whole block: the target ranges and a
+            Paste — <kbd>Ctrl</kbd>+<kbd>V</kbd>, or <kbd>Shift</kbd>+<kbd>Insert</kbd> — into editable columns raises one <code>OnPaste</code> for the whole block: the target ranges and a
             value for every target cell. As with an edit, the grid writes nothing — your application applies it by
             replacing rows. Call <code>Refuse()</code> on the intent to decline it, and the selection stays put.
             Only two of Excel's four shape rules are kept:

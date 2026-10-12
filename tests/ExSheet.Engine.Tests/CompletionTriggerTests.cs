@@ -84,8 +84,70 @@ public class CompletionTriggerTests
     {
         var xlookup = DeclaredFunction.Find("XLOOKUP")!;
         Assert.All([0, 1, 2, 3, 6, -1], index => Assert.Empty(xlookup.ValuesOf(index)));
-        Assert.All(DeclaredFunction.All.Where(f => f.Name is not ("XLOOKUP" or "VLOOKUP" or "HLOOKUP" or "MATCH" or "YEARFRAC")),
+        Assert.All(DeclaredFunction.All.Where(f => f.Name is not ("XLOOKUP" or "VLOOKUP" or "HLOOKUP" or "MATCH" or "YEARFRAC" or "SUBTOTAL" or "AGGREGATE")),
             f => Assert.All(Enumerable.Range(0, 8), index => Assert.Empty(f.ValuesOf(index))));
+    }
+
+    [Fact] // ADR-0058, ticket 16: SUBTOTAL's list is Excel's, character for character, as the seventeenth Windows run read it (Part B's b4)
+    public void Subtotal_lists_excels_texts()
+    {
+        Assert.Equal(
+        [
+            "1 - AVERAGE", "2 - COUNT", "3 - COUNTA", "4 - MAX", "5 - MIN", "6 - PRODUCT", "7 - STDEV.S", "8 - STDEV.P",
+            "9 - SUM", "10 - VAR.S", "11 - VAR.P",
+            "101 - AVERAGE", "102 - COUNT", "103 - COUNTA", "104 - MAX", "105 - MIN", "106 - PRODUCT", "107 - STDEV.S",
+            "108 - STDEV.P", "109 - SUM", "110 - VAR.S", "111 - VAR.P",
+        ], DeclaredFunction.Find("SUBTOTAL")!.ValuesOf(0).Select(v => v.Text));
+        Assert.All(DeclaredFunction.Find("SUBTOTAL")!.ValuesOf(0), v => Assert.StartsWith(v.Value + " - ", v.Text, StringComparison.Ordinal));
+    }
+
+    [Fact] // ADR-0058, ticket 16: AGGREGATE's lists are Excel's texts, as the seventeenth Windows run read them (Part B's b4), for the function numbers the engine evaluates
+    public void Aggregate_lists_excels_texts()
+    {
+        var aggregate = DeclaredFunction.Find("AGGREGATE")!;
+
+        Assert.Equal(
+        [
+            "1 - AVERAGE", "2 - COUNT", "3 - COUNTA", "4 - MAX", "5 - MIN", "6 - PRODUCT", "7 - STDEV.S", "8 - STDEV.P",
+            "9 - SUM", "10 - VAR.S", "11 - VAR.P", "12 - MEDIAN", "14 - LARGE", "15 - SMALL",
+        ], aggregate.ValuesOf(0).Select(v => v.Text));
+        Assert.Equal(
+        [
+            "0 - Ignore nested SUBTOTAL and AGGREGATE functions",
+            "1 - Ignore hidden rows, nested SUBTOTAL and AGGREGATE functions",
+            "2 - Ignore error values, nested SUBTOTAL and AGGREGATE functions",
+            "3 - Ignore hidden rows, error values, nested SUBTOTAL and AGGREGATE functions",
+            "4 - Ignore nothing",
+            "5 - Ignore hidden rows",
+            "6 - Ignore error values",
+            "7 - Ignore hidden rows and error values",
+        ], aggregate.ValuesOf(1).Select(v => v.Text));
+    }
+
+    [Fact] // ADR-0058 / ADR-0047 (2026-10-10): SUBTOTAL's and AGGREGATE's lists write only a number the engine evaluates, never one it refuses
+    public void Subtotal_and_aggregate_list_only_what_the_engine_evaluates()
+    {
+        var sheet = NewSheet();
+        foreach (var (address, typed) in new[] { ("A1", "1"), ("A2", "2"), ("A3", "4") })
+            sheet.Enter(CellAddress.Parse(address), typed);
+        var subtotal = DeclaredFunction.Find("SUBTOTAL")!;
+        var aggregate = DeclaredFunction.Find("AGGREGATE")!;
+        var answer = CellAddress.Parse("F1");
+
+        Assert.Equal(22, subtotal.ValuesOf(0).Count);
+        Assert.All(subtotal.ValuesOf(0), v =>
+        {
+            sheet.Enter(answer, $"=SUBTOTAL({v.Value},A1:A3)");
+            Assert.NotEqual(ValueKind.Error, sheet.GetValue(answer)!.Value.Kind);
+        });
+        Assert.Equal(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "14", "15"], aggregate.ValuesOf(0).Select(v => v.Value));
+        Assert.Equal(["0", "1", "2", "3", "4", "5", "6", "7"], aggregate.ValuesOf(1).Select(v => v.Value));
+        Assert.All(aggregate.ValuesOf(0), function => Assert.All(aggregate.ValuesOf(1), option =>
+        {
+            sheet.Enter(answer, $"=AGGREGATE({function.Value},{option.Value},A1:A3{(function.Value is "14" or "15" ? ",1" : "")})");
+            Assert.NotEqual(ValueKind.Error, sheet.GetValue(answer)!.Value.Kind);
+        }));
+        Assert.Empty(aggregate.ValuesOf(2));
     }
 
     [Fact] // ADR-0058 / ADR-0047, SH-36: each value the lists write is a mode the engine evaluates, not the #VALUE! of a mode it does not know

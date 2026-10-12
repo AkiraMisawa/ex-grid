@@ -122,14 +122,17 @@ them:
 | `LARGE`, `SMALL` | `array, k` |
 | `RANK.EQ` | `number, ref, [order]` |
 | `STDEV.S`, `STDEV.P`, `VAR.S`, `VAR.P` | `number1, [number2], ...` |
+| `SUBTOTAL` | `function_num, ref1, [ref2], ...` — 1 to 11, and 101 to 111 |
+| `AGGREGATE` | `function_num, options, ref1, [ref2], ...`, or `function_num, options, array, k` for `LARGE` and `SMALL` |
 | `IF` | `logical_test, value_if_true, [value_if_false]` |
 | `IFS` | `logical_test1, value_if_true1, ...` |
 | `SWITCH` | `expression, value1, result1, [default_or_value2], [result2], ...` |
-| `AND`, `OR`, `XOR` | `logical1, [logical2], ...` |
+| `AND`, `OR`, `XOR` | `logical1, [logical2], ...` — typed text that spells neither TRUE nor FALSE is passed over, as text in a range is |
 | `NOT` | `logical` |
 | `IFERROR` | `value, value_if_error` |
 | `IFNA` | `value, value_if_na` |
 | `ISERROR`, `ISBLANK`, `ISNUMBER`, `ISTEXT`, `ISNA` | `value` |
+| `ERROR.TYPE` | `error_val` — Microsoft's number, 1 to 7, and Excel's, 9 to 14, for its newer Error Values; `#GETTING_DATA` and `#CIRC!` given back |
 | `NA`, `PI` | (none) |
 | `ROUND`, `ROUNDUP`, `ROUNDDOWN` | `number, num_digits` |
 | `TRUNC` | `number, [num_digits]` |
@@ -143,6 +146,8 @@ them:
 | `DATE` | `year, month, day` |
 | `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Sheet.SetToday`, ADR-0121) |
 | `NOW` | (none) — the moment `Sheet.NowSource` gives, read once per recalculation; volatile (ADR-0124) |
+| `RAND` | (none) — drawn from the Sheet Seed (`Sheet.SetSeed`), `#GETTING_DATA` until it is set; volatile (ADR-0180) |
+| `RANDBETWEEN` | `bottom, top` — as `RAND`, a whole number with both bounds drawn |
 | `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND` | `serial_number` |
 | `TIME` | `hour, minute, second` |
 | `WEEKDAY` | `serial_number, [return_type]` |
@@ -166,6 +171,7 @@ them:
 | `INDEX` | `array, row_num, [column_num]` |
 | `CHOOSE` | `index_num, value1, [value2], ...` |
 | `OFFSET` | `reference, rows, cols, [height], [width]` — volatile (ADR-0124) |
+| `INDIRECT` | `ref_text, [a1]` — text naming a place on the same Sheet, A1 or absolute R1C1, a Linked Table's column or `A1#`; volatile (ADR-0124) |
 | `ROW`, `COLUMN` | `[reference]` |
 | `ROWS`, `COLUMNS` | `array` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
@@ -180,6 +186,7 @@ them:
 | `SORTBY` | `array, by_array1, [sort_order1], ...` |
 | `SEQUENCE` | `rows, [columns], [start], [step]` |
 | `TRANSPOSE` | `array` |
+| `LET` | `name1, name_value1, calculation_or_name2, [name_value2, calculation_or_name3...]` |
 | `SUMPRODUCT` | `array1, [array2], ...` |
 
 A Formula whose result is an array of more than one Value **spills** (ADR-0125): its cell, the
@@ -209,7 +216,7 @@ answer:
   each Value and spills. `IFERROR` and `ISERROR` do not turn that refusal into a fallback. The `@`
   operator is refused on entry.
 - **An array larger than the engine holds**, more than 2^24 Values, is `#NUM!` (ADR-0125).
-- **`XLOOKUP`'s binary search** (`search_mode` 2 and −2) answers only over a lookup array sorted
+- **`XLOOKUP`'s and `XMATCH`'s binary search** (`search_mode` 2 and −2) answers only over a lookup array sorted
   as the mode says — one kind of value, no blanks, text of ASCII letters, digits and spaces; it is
   `#VALUE!` otherwise. Over duplicate keys it returns the one Excel was observed to: an equal key
   is the first of its run ascending and the last descending.
@@ -217,21 +224,102 @@ answer:
   where Excel shows 0. `IFERROR` and `IFNA` do not catch it.
 - **`#GETTING_DATA`**, a Linked Table's data on its way, is not an error to `IFERROR` and
   `ISERROR`, where Excel's are: a fallback never stands in for data that has not arrived.
-  `ISBLANK` and `ISNUMBER` give it back too, rather than FALSE.
+  `ISBLANK` and `ISNUMBER` give it back too, rather than FALSE, and `ERROR.TYPE` gives it and
+  `#CIRC!` back rather than a number (Microsoft's table numbers `#GETTING_DATA` 8).
 - **`TEXT` reads its code in the invariant spelling** under every culture (`"yyyy"`, never German
   Excel's `"JJJJ"`), as a cell's number format records it, and shows the Value as a cell in that
-  format would under the Sheet's culture (ADR-0120). A code outside the cell formats' subset, an
-  empty code, and `General` past 11 characters are `#VALUE!`.
+  format would under the Sheet's culture (ADR-0120). `General` is fitted to 11 characters, as a
+  cell's General is fitted to its column, and an empty code shows a number as empty text, as Excel's
+  do. A code outside the cell formats' subset is `#VALUE!`, a fraction or a condition among them,
+  though Excel answers both. Until Excel is asked, so are a negative number whose minus sign would
+  cost its General a digit, and a number under a lone `@` whose fitted General is not its General in
+  full.
 - **Asked of Excel before they are answered**, each refused until the next Windows run says what
-  Excel gives: `MOD` whose quotient is 2^27 or more (`#NUM!`, as older versions of Excel gave);
-  `EOMONTH` and `EDATE` from or to a day before 1 March 1900, where Excel's calendar holds the day
-  that never existed, and with a boolean typed as an argument (`#VALUE!`); `NETWORKDAYS` and
-  `WORKDAY` the same way, and with text among the holidays; `LARGE` and `SMALL` with a `k` that is
-  not a whole number; `PMT`, `PV` and `FV` with a `type` other than 0 or 1 (`#VALUE!`); `UNIQUE`
-  with a blank in its array, and `SORT` and `SORTBY` with a blank or an Error Value among their keys
-  (`#VALUE!`); `SIN`, `COS` and `TAN` of 2^27 or more (`#NUM!`, the limit Microsoft documents for
-  `COT` and its kin); `ACOTH` of an absolute value not above 1 (`#NUM!`; the page names `#VALUE!`
-  too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`).
+  Excel gives: `EOMONTH` and `EDATE` from serial 0 or from serial 60, the day that never existed
+  (`#VALUE!`); `NETWORKDAYS` and `WORKDAY` with a boolean typed as a date (`#VALUE!`); `SMALL` with a
+  `k` that is not a whole number, and `LARGE` with one between 0 and 1; `PMT`, `PV` and `FV` with a
+  fractional `type`, and, at a rate other than 0, with an `nper` that is not a whole number from 0 to
+  2^53 (`#VALUE!`); `UNIQUE` with a blank in its array, and `SORT` and `SORTBY` with a blank or an
+  Error Value among their keys (`#VALUE!`; the seventeenth run read only the Anchor of a blank's
+  sort).
+- **Answered as the seventeenth Windows run read Excel.** `MOD` answers a quotient of 2^27 or more, and
+  is `#NUM!` from 1,125,900,000,000, the limit a Microsoft 365 user reported (MOD-010 to 017 ask
+  Excel). `LARGE`, and `AGGREGATE`'s 14, round a `k` that is not whole up: `LARGE(A1:B5,1.5)` is the
+  2nd largest. `k` is read at 15 significant digits. `RANK.EQ`'s `ref`, `SUBTOTAL`'s references and
+  `AGGREGATE`'s fifth and later arguments refuse on entry what can never be a Reference — a constant,
+  an operator's result, a call such as `SEQUENCE(3)` — as Excel does.
+- **`PMT`, `PV` and `FV` give every double Excel was observed to give, to the bit** (ADR-0047, the
+  seventeenth run). `PV` and `FV` evaluate Microsoft's identity in doubles, raising 1+rate by squaring.
+  `PMT` computes the payment at the end exactly and rounds it once, and the payment at the start
+  divides that double by 1+rate, rounded once. For `PMT` that is one of several evaluations that fit
+  the four payments observed, at rates of 0.5% to 10% a period. At smaller rates they part, from the
+  13th significant digit at a rate of 10^-7, and PMT-016 to 018 ask Excel. A `type` that is a whole
+  number other than 0 is payment at the start, as 1 is.
+- **`SIN`, `COS` and `TAN` reduce an angle by Excel's pi** (ADR-0047, 2026-10-12): pi rounded to the
+  x87's 64 bits, so `SIN(PI())` is 1.22514845490862E-16, as Excel's is, and not the sine of the double
+  `PI()` gives. Each is the double nearest the exact value; `COT`, `CSC` and `SEC` are 1 over them.
+  From 2^27 the six are `#NUM!`, as Excel's; `COTH`, `CSCH` and `SECH` answer past it, as Excel's do.
+- **`RAND` and `RANDBETWEEN` draw from the Sheet Seed** (ADR-0180). Excel names no generator and no
+  seed, so its numbers cannot be matched; what is Excel's is its contract — a draw of `RAND` in
+  [0,1), evenly spread; `RANDBETWEEN`'s whole numbers, both bounds drawn; two calls two draws; a
+  `LET` binding one draw. Each draw is a function of `Sheet.Seed`, the cell, the call's place in its
+  Formula and `Sheet.Changes`, the count of changes since the Sheet was made or opened, so the same
+  Entries, seed and count give the same draws whatever order cells are computed in. An edit, an
+  insertion or a deletion, a rename of the Sheet, the undo or redo of one, a Linked Table's snapshot
+  whatever its rows, and a Linked Table's declaration that declares it or replaces it each count once
+  and draw again; a recalculation by the clock, a format, a rename to the Sheet's own name and a new
+  seed draw nothing. Without a seed,
+  every Formula that draws is `#GETTING_DATA`. The engine never chooses a seed of its own:
+  `Sheet.SetSeed(seed)` gives one, and `SetSeed(seed, changes)` the count as well, so a Sheet opened
+  from a document shows another Sheet's draws (SH-17). Neither is part of a Sheet Document. Unlike
+  Excel, nothing draws without a change, and there is no manual recalculation. An undo, a redo and a
+  rename draw again, as Excel's were seen to (ADR-0180, 2026-10-12).
+  `RANDBETWEEN` refuses a fractional bound and a bound past 2^53 in magnitude with `#VALUE!`, and
+  otherwise answers as Excel was observed to: a bottom above the top is `#NUM!`, a boolean and text
+  that is not a number are `#VALUE!`, a numeric string is its number and a blank is 0.
+- **`LET` takes the names Excel's keyboard accepts** (ADR-0181). A name is bound for the values
+  after it and its own calculation, sequentially and lexically, and compared without regard to
+  case; a name read before its binding, or inside its own value, is `#NAME?`. A name starts with a
+  letter of any script or `_` and goes on with letters, digits and `_`, at most 249 characters, and
+  a `LET` binds at most 126. The name of a function is a name, whether the engine declares it or not
+  (`SUM`, `IRR`, `N`), and so is an R1C1 shape that does not read as an A1 Reference (`R1C1`, `RC`),
+  as Excel's keyboard took them in the seventeenth Windows run; a name followed by `(` is still the
+  function's call, so `LET(SUM,2,SUM(SUM,1))` is 3. A value may be left empty: `LET(x,,x)` shows 0,
+  as `IF(TRUE,)` does, and elsewhere the name reads as that empty argument would read in its place
+  (only `LET(x,,x)` has been observed). Refused on entry, as a Formula that cannot be read is, and as
+  Excel's keyboard refuses each: an even number of arguments, a missing calculation, a name bound
+  twice, a name that reads as an A1 Reference (`A1`, `R2`, `C3`; `c` and `r` alone are names), `TRUE`
+  and `FALSE`. Each binding is computed at most once, when first read, so an
+  unused binding's Error Value never reaches the result; but a `LET` depends on everything its text
+  names, so an unused binding over a cycle is `#CIRC!`, and one over a waiting Linked Table waits.
+  `Table[Column]` always reads the Linked Table, whatever is bound. Two bound names with a space
+  between them, Excel's intersection, are refused by name.
+- **`INDIRECT` reads A1-style text naming a cell or a range of this Sheet** (ADR-0124, 2026-10-10),
+  with or without the Sheet's own qualifier, as it stands after the recalculation; it is volatile,
+  as `OFFSET` is. Its text is text: an insertion or a deletion rewrites the References beside it and
+  never it, so `INDIRECT("B5")` names B5 whatever moved. It also reads the forms the seventeenth
+  Windows run observed: R1C1 text (`a1` FALSE, 0, a blank or left empty) naming an absolute cell or a
+  range of two, a structured reference's text as `Table[Column]` typed is read, waiting while the
+  table waits, and `A1#` as typed `A1#` is read. R1C1 text that is relative or names whole rows or
+  columns, and a declared Linked Table's bare name (`Positions`, which Excel reads as the table's
+  data), are `#VALUE!` until a run observes them, and text that names no place is `#REF!`, as in Excel:
+  another Sheet's name, a table never declared or a column it lacks. What a computed Reference
+  (`INDIRECT`'s or `OFFSET`'s) reads taints the Formula as a Reference its text names does: one that
+  reaches a cycle, or its own cell, is `#CIRC!`, and one that reaches a waiting cell waits, whatever
+  the function reading it does with an Error Value — `COUNT`, `COUNTA`, `SUBTOTAL` and `AGGREGATE`'s
+  options that pass over errors included — and a Reference it computes into a Spill Range follows the
+  spill's layout.
+- **`SUBTOTAL` and `AGGREGATE` while no row can be hidden** (ADR-0047, 2026-10-10). A Sheet cannot hide
+  a row yet, so `SUBTOTAL`'s 101 to 111 give what 1 to 11 give, and `AGGREGATE`'s options 1, 3, 5
+  and 7 what 0, 2, 4 and 6 give, as Excel's do over such a sheet; a test fails on the day a row can
+  be hidden. A cell is nested when its Formula, or its Spill Range's Anchor's, calls `SUBTOTAL` or
+  `AGGREGATE` anywhere, as the seventeenth Windows run read Excel's answers: `SUBTOTAL` and
+  `AGGREGATE`'s options 0 to 3 pass over it, and options 4 to 7 count its Value. A function number or
+  option that is not whole is truncated (`SUBTOTAL(9.5,…)` is `SUBTOTAL(9,…)`), and `AGGREGATE`'s
+  array form takes a number given directly. `#VALUE!`: an argument that is no reference when it is
+  computed, and `AGGREGATE`'s function numbers for functions the engine does not support: 13
+  (`MODE.SNGL`) and 16 to 19 (`PERCENTILE` and `QUARTILE`), where Excel answers (AGGREGATE-027 to 031
+  record its answers).
 - **More of the refusal of unlifted functions.** `CONCATENATE` over a range of several cells, and a
   `TEXTJOIN` delimiter of several cells, are `#VALUE!`; `CONCAT` and `TEXTJOIN`'s texts take ranges.
 
@@ -269,6 +357,11 @@ An argument outside these domains gives `#VALUE!` unless another Error Value is 
 - `YEARFRAC` admits bases 0–4, including the observed February and 1900 boundaries. `DATEDIF`
   admits `Y`, `M`, `D` and `YM`; `YD` only before the first completed anniversary. `MD` and longer
   `YD` intervals are refused. Both discard the time portion of their dates.
+- **Before 1 March 1900**, `EDATE` and `EOMONTH` count months on the real calendar, where
+  February 1900 has 28 days (`EOMONTH(31,1)` is 59), and `NETWORKDAYS` and `WORKDAY` give each
+  serial the day of the week `WEEKDAY` gives it, serial 1 a Sunday and serial 60 a Wednesday
+  (`NETWORKDAYS(30,100)` is 51), as Excel was observed to. A `WORKDAY` that falls before serial 0
+  is `#NUM!`.
 - `UPPER`, `LOWER` and `PROPER` admit ASCII plus `éÉßẞıİǱǲǳﬃ`, nonbreaking space and `σςΣ`.
   `LOWER` also admits `ΑΟ`; a word containing `Σ` must contain only `ΑΟΣ`, with words separated
   by ASCII spaces. `PROPER` admits sigma only as a single-letter word separated by ASCII spaces.
@@ -278,9 +371,8 @@ An argument outside these domains gives `#VALUE!` unless another Error Value is 
 
 `IRR`, `XIRR` and `RATE` remain undeclared (`#NAME?`). The solver experiment in
 `spikes/exsheet-financial-solvers/` does not yet reproduce Excel's chosen roots, stopping results
-and failures. `LET`, `RAND` and `RANDBETWEEN` still need the decisions recorded in catalogue
-tickets 14 and 15. The October 3 observation run did not resolve existing Supported functions'
-other `uncertain` corpus cases.
+and failures. The October 3 observation run did not resolve existing Supported functions' other
+`uncertain` corpus cases.
 
 ## Operations, and undoing them
 
@@ -358,8 +450,10 @@ step.Undo();                                         // Entries, formats and Ref
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each
   pasted field as if typed under the Sheet's culture, except that a field that cannot be read as
-  a Formula (`=1+`) is taken as text, as Excel takes it. A copy that reaches a `#GETTING_DATA`
-  Value is refused.
+  a Formula (`=1+`) is taken as text, as Excel takes it. A paste that writes in parts is one
+  edit, one step and one change (ADR-0180): `SheetEdit.Paste(block, targets)` over several ranges,
+  and `SheetEdit.PasteText(fields, entries)` for typed fields beside Entries kept exactly. A copy
+  that reaches a `#GETTING_DATA` Value is refused.
 - **Fill.** `SheetEdit.Fill(source, target, direction)` fills as Excel does for copies (with
   References shifted), a linear trend from two or more numbers (held at 15 significant digits,
   as Excel holds it), and a single date by day, and

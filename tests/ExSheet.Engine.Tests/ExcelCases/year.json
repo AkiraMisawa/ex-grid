@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "YEAR-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the year of 5 July 2008",
       "cells": {"A1": "7/5/2008", "ZZ1000": "=YEAR(A1)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "YEAR-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the year of 5 July 2010",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=YEAR(DATE(2010,7,5))"},
@@ -21,7 +21,7 @@
     },
     {
       "id": "YEAR-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: serial 0 is in 1900",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=YEAR(0)"},
@@ -30,7 +30,7 @@
     },
     {
       "id": "YEAR-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the time of day is ignored",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=YEAR(45000.75)"},
@@ -39,7 +39,7 @@
     },
     {
       "id": "YEAR-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative serial is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=YEAR(-1)"},
@@ -48,7 +48,7 @@
     },
     {
       "id": "YEAR-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a serial past 31 December 9999 is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=YEAR(2958466)"},
@@ -57,7 +57,7 @@
     },
     {
       "id": "YEAR-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text that is not a number is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=YEAR(A6)"},

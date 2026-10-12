@@ -1,0 +1,55 @@
+@* The head of the Roadmap (ADR-0191): what it is as of — the version a tag published, or the branch and
+   commit the site was built from — with the tickets on main, which may be newer; and the chips that choose
+   a product. *@
+<div class="docs-roadmap-head">
+    <p class="docs-roadmap-asof">
+        @switch (DocsBuild.Kind)
+        {
+            case DocsBuildKind.Tag:
+                <text>
+                    As of <a href="@DocsBuild.ReleaseNotesHref">@DocsBuild.Version</a>, read from the repository at its tag.
+                </text>
+                break;
+            case DocsBuildKind.Branch:
+                <text>
+                    As of <b>@DocsBuild.Branch</b> at <a href="@DocsBuild.CommitUrl" target="_blank" rel="noopener"><code>@DocsBuild.ShortCommit</code></a>,
+                    read from the repository at that commit.
+                </text>
+                break;
+            case DocsBuildKind.Experiment:
+                <text>
+                    As of <b>@DocsBuild.Branch</b> at <a href="@DocsBuild.CommitUrl" target="_blank" rel="noopener"><code>@DocsBuild.ShortCommit</code></a>,
+                    an experiment, read from the repository at that commit.
+                </text>
+                break;
+            default:
+                <text>As of the working tree this site was built in.</text>
+                break;
+        }
+        @(" ")<a href="@Roadmap.TicketsOnMain" target="_blank" rel="noopener">The tickets on main</a> may be newer.
+    </p>
+
+    <div class="docs-notes-filters" role="group" aria-label="Show the Roadmap of">
+        <MudChipSet T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="@(Product ?? Every)"
+                    SelectedValueChanged="Choose" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                    CheckMark="true">
+            <MudChip T="string" Value="@Every">Every product</MudChip>
+            @foreach (var product in ReleaseNotes.Products)
+            {
+                <MudChip T="string" Value="@product">@product</MudChip>
+            }
+        </MudChipSet>
+    </div>
+</div>
+
+@code {
+    private const string Every = "every";
+
+    /// <summary>The product chosen, or <see langword="null"/> for every product.</summary>
+    [Parameter] public string? Product { get; set; }
+
+    /// <summary>Raised when the reader chooses a product, or every product.</summary>
+    [Parameter] public EventCallback<string?> ProductChanged { get; set; }
+
+    private Task Choose(string? value) => ProductChanged.InvokeAsync(value is null or Every ? null : value);
+}

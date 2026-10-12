@@ -25,13 +25,14 @@ internal enum OperandKind
 /// </summary>
 internal readonly struct Operand
 {
-    private Operand(OperandKind kind, Value? scalar, Area area, IReadOnlyList<Value?>? column = null, ValueArray? array = null)
+    private Operand(OperandKind kind, Value? scalar, Area area, IReadOnlyList<Value?>? column = null, ValueArray? array = null, bool isSpillRange = false)
     {
         Kind = kind;
         Scalar = scalar;
         Area = area;
         Column = column;
         Array = array;
+        IsSpillRange = isSpillRange;
     }
 
     public OperandKind Kind { get; }
@@ -46,6 +47,16 @@ internal readonly struct Operand
 
     /// <summary>For <see cref="OperandKind.Array"/>: the computed Values.</summary>
     public ValueArray? Array { get; }
+
+    /// <summary>
+    /// For <see cref="OperandKind.Array"/>: whether the Values are a Spill Range's, read through
+    /// <c>A1#</c> (ADR-0125). It is a Reference to cells in Excel, and a function whose answer
+    /// differs between a Reference and an array reads it as a Reference (<c>INDEX</c>).
+    /// </summary>
+    public bool IsSpillRange { get; }
+
+    /// <summary>Whether this is a Reference of cells: a rectangle, or a Spill Range read through <c>A1#</c>.</summary>
+    public bool IsReference => Kind == OperandKind.Area || IsSpillRange;
 
     /// <summary>Whether this is a range a function reads cell by cell: a rectangle of cells, or a Linked Table's column.</summary>
     public bool IsRange => Kind is OperandKind.Area or OperandKind.Column or OperandKind.Array;
@@ -64,6 +75,9 @@ internal readonly struct Operand
 
     /// <summary>A computed array; one of a single Value is that Value.</summary>
     public static Operand Of(ValueArray array) => array.IsSingle ? new(OperandKind.Scalar, array[0, 0], default) : new(OperandKind.Array, null, default, null, array);
+
+    /// <summary>A Spill Range's Values, read through <c>A1#</c>: an array that is a Reference (<see cref="IsSpillRange"/>).</summary>
+    public static Operand OfSpillRange(ValueArray array) => new(OperandKind.Array, null, default, null, array, isSpillRange: true);
 
     /// <summary>
     /// One Value as an array of one, for a function that takes an array and is given what a

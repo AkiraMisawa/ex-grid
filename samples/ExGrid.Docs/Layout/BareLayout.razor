@@ -3,7 +3,9 @@
 @inject DocsState State
 
 @* A Showcase's frame (ADR-0110): the providers and the scheme, and nothing else, so the page
-   fills the window. ?scheme=dark asks for the dark scheme, as a recording does. *@
+   fills the window. ?scheme=dark asks for the dark scheme, as a recording does. A site published
+   from a branch says so in a strip above the page, whose height the page leaves free; a local
+   build, which tools/readme-media records, shows the page alone. *@
 @if (State.Dark)
 {
     <HeadContent><style>:root { color-scheme: dark; }</style></HeadContent>
@@ -14,11 +16,17 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<div class="docs-bare">
+<div class="@(_strip ? "docs-bare docs-bare-banner" : "docs-bare")">
+    @if (_strip)
+    {
+        <UnreleasedBanner Strip="true" />
+    }
     @Body
 </div>
 
 @code {
+    private static readonly bool _strip = DocsBuild.Kind is DocsBuildKind.Branch or DocsBuildKind.Experiment;
+
     protected override void OnInitialized() => State.Changed += OnChanged;
 
     private void OnChanged() => InvokeAsync(StateHasChanged);

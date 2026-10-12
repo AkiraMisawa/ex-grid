@@ -10,4 +10,10 @@
   <!-- No package and no project references, deliberately (ADR-0047, SH-1): the engine runs
        wherever a saved Sheet Document's Values are needed, a server included. -->
 
+  <ItemGroup>
+    <!-- Layer 1 counts the passes of a recalculation, which has no public surface: how often a
+         volatile Formula is computed is bounded, and the bound is tested (ADR-0124, ADR-0125). -->
+    <InternalsVisibleTo Include="ExSheet.Engine.Tests" />
+  </ItemGroup>
+
 </Project>

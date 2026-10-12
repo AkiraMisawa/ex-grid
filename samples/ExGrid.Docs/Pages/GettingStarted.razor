@@ -16,7 +16,9 @@
             The whole family is published to nuget.org as prereleases, at one shared
             <code>0.1.0-beta.N</code> version. Each package depends on exactly the versions of the others
             it was built with, so upgrade them together. Add the products you use, and each one's
-            MudBlazor Wrapper in a MudBlazor application.
+            MudBlazor Wrapper in a MudBlazor application. <a href="getting-started/packages">Packages</a> says what
+            each one is and which to install. What each version holds, and what it breaks, is in the
+            <a href="release-notes">Release notes</a>.
         </p>
         <CodeBlock Path="Examples/Setup/install.sh" />
     </DocsSection>
@@ -27,6 +29,20 @@
             script to add.
         </p>
         <CodeBlock Path="Examples/Setup/host-page.html" />
+    </DocsSection>
+
+    <DocsSection Title="A new version's files">
+        <p>
+            The scripts and stylesheets are minified, with source maps. Whether a browser fetches the new ones after an
+            upgrade, or keeps an old script beside a new component, is decided by how your application serves static
+            files. In a Blazor Web App, .NET's static assets fingerprint each file, so a new version is a new address.
+            To get that, reference each stylesheet through <code>@@Assets</code>, and keep <code>&lt;ImportMap /&gt;</code>,
+            through which the grid resolves its own script to the fingerprinted file:
+        </p>
+        <CodeBlock Path="Examples/Setup/fingerprinted-links.html" />
+        <p>
+            Each product's stylesheet, and each Wrapper's, is referenced the same way.
+        </p>
     </DocsSection>
 
     <DocsSection Title="A first grid">

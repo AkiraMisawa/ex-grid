@@ -30,6 +30,12 @@
                 caption). A field in Filters shows above the report, where its drop-down picks the Items.
             </li>
             <li>
+                <strong>Every drag has a keyboard route.</strong> Space on a field's checkbox places it, and Enter
+                on an entry's ▾ opens the menu that moves it. A menu or a panel takes the keyboard as it opens;
+                Escape closes it, a panel's changes are discarded unless OK applied them, and the keyboard goes
+                back to what opened it.
+            </li>
+            <li>
                 <strong>Defer Layout Update</strong>, at the pane's foot, holds the pane's changes until you
                 press Update, as Excel does for a slow source. The report is not asked meanwhile.
             </li>
@@ -64,7 +70,9 @@
         <p>
             Select cells of the report and the line under it shows Excel's Average, Count and Sum of what you
             selected. As in Excel, a subtotal or a grand total you select is summed with the rest — select a whole
-            column and the total counts its parts twice. <code>ShowSelectionSummary="false"</code> turns the line off.
+            column and the total counts its parts twice. An error value among them leaves Count and Numerical
+            Count, as in Excel, and the figures wear the format of the Focus cell's Value Field.
+            <code>ShowSelectionSummary="false"</code> turns the line off.
         </p>
         <DocsExample Builtin="typeof(ReportForms)" Mud="typeof(ReportFormsMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
     </DocsSection>

@@ -43,17 +43,19 @@ as ADR-0124 already holds for a computed Reference.
   documented, and are not asked for.
 - **The draws change with a change, and only then.** A change is anything that changes what the
   Sheet's Formulas read, and each counts once:
-  - an edit of an Entry, and an insertion or a deletion;
+  - an edit of an Entry, an insertion or a deletion, and a rename of the Sheet (2026-10-12, below);
   - the undo or the redo of one of those;
-  - a Linked Table's snapshot.
+  - a Linked Table's snapshot, whatever its rows (2026-10-12, below);
+  - a Linked Table's declaration, and a declaration that replaces it (2026-10-11, below).
 
   A change of format, width or font changes no Value, recalculates nothing and draws nothing. The
   clock is not a change: the minute that moves `NOW` and the day that moves `TODAY` (ADR-0121,
   ADR-0124) recalculate without drawing again. This is Excel's automatic mode, less the clock, which
   Excel does not have.
 - **Undo draws again.** An undo is a change like any other, so the Values it brings back are its
-  Entries' with new draws, not the draws seen before. Excel's answer was not observed; the next
-  Windows run asks it.
+  Entries' with new draws, not the draws seen before. Excel's undo does the same: on the seventeenth
+  Windows run every Ctrl+Z and Ctrl+Y, two rounds of each, drew a number not shown before, never the
+  draw before the edit nor the one after it (Part B, b1).
 - **The engine takes the seed as data, as it takes the Sheet Day.** `ExSheet.Engine` never chooses a
   random number of its own: whoever runs it gives the Sheet its seed. A Sheet whose seed was never set
   answers `#GETTING_DATA` from `RAND` and `RANDBETWEEN`, as one whose day was never set answers it
@@ -97,6 +99,30 @@ number it returns there is not something a guess may supply.
   Seed.
 - **`RANDBETWEEN`'s bounds.** Fractional bounds, and bounds past 2^53, are refused.
 
+*(2026-10-11, decided with the user: renaming the Sheet is not a change that draws again; it is not in
+the list above. It still recalculates volatile Formulas, since `INDIRECT`'s text can name the Sheet, and
+those draws come out the same. Whether Excel draws again on a rename is asked on the sign-off's Windows
+run, and this follows Excel's answer.)*
+
+*(2026-10-12, from the seventeenth Windows run, Part B b2: Excel drew again on the rename, offered its
+undo, and drew again when Ctrl+Z put the name back. As the note above said, this follows Excel's
+answer. A rename is a change, and so are its undo and redo, each counted once; it is in the list
+above. A rename to the name the Sheet already has changes nothing and draws nothing, nor do its undo
+and redo. The decision of 2026-10-11 is replaced; `INDIRECT`'s text still reads the Sheet by the name
+it has.)*
+
+*(2026-10-11, decided with the user: declaring a Linked Table, and declaring it again with other columns
+or another key, is a change, and draws again. The list above named only the snapshot, and a declaration
+drew nothing. It changes what the Sheet's Formulas read as a snapshot does: their readers stop being
+`#NAME?`, or wait again. Excel recalculates when a query's data is refreshed. The same declaration again
+changes nothing and draws nothing. Whether Excel draws again on a refresh that brings the same data is
+asked on the seventeenth Windows run, and this follows Excel's answer.)*
+
+*(2026-10-12, from the seventeenth Windows run, Part B b3: each Refresh All drew again, twice with the
+file unchanged, once after it changed and once more unchanged. A refresh brings data, and ExSheet's
+counterpart is a Linked Table's snapshot, which already counted whatever its rows; nothing changes.
+The same declaration again still draws nothing: a refresh does not declare its query again.)*
+
 ## Considered options
 
 - **An unseeded generator inside the engine.** Rejected. The Values would depend on the order cells
@@ -107,7 +133,7 @@ number it returns there is not something a guess may supply.
 - **Drawing in the component when a cell is painted.** Rejected. A Value comes from one completed
   recalculation (ADR-0047), and the grid neither holds nor executes.
 - **Undo brings back the draws it undoes.** Possible without storing a Value, if each step kept its
-  count of changes. Not taken while Excel's answer is unknown.
+  count of changes. Not taken: Excel's undo draws again (the seventeenth Windows run).
 - **The document stores the seed or the draws.** Rejected. The draws are Values, which ADR-0048 keeps
   out of the document. A seed in the document would need a new Sheet Document version, and a fixed
   seed is already the Consumer's to give.
@@ -120,4 +146,5 @@ number it returns there is not something a guess may supply.
 - SH-17 holds for a Sheet that draws, when the engine is given the same Sheet Seed and count of
   changes.
 - Glossary: **Sheet Seed**.
-- The next Windows run asks Excel what an undo does to a draw.
+- The seventeenth Windows run asked Excel what an undo, a rename and a refresh do to a draw: each
+  draws again. A rename now counts as a change (2026-10-12).

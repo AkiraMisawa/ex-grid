@@ -58,15 +58,42 @@ public class AggregateAccumulatorTests
         Assert.Equal(1.5d, sum.Number);
     }
 
-    [Fact] // ADR-0130: an error among the values leaves Count alone
-    public void ADR0130_an_error_among_the_values_leaves_count_alone()
+    [Fact] // ADR-0130 / SM-7: an error among the values leaves Count and Count Numbers, as Excel's status bar (run 17, b5)
+    public void ADR0130_an_error_among_the_values_leaves_only_the_two_counts()
     {
-        var cell = Of(1, 2);
+        // Excel's b5: 1, 2, #DIV/0!, x and a blank show "Count: 4    Numerical Count: 2" and nothing else.
+        var cell = Of(1, 2, "x", null);
         cell.AddError();
 
-        Assert.Equal(AggregateResult.Of(3m), cell.Read(Aggregation.Count));
+        Assert.Equal(AggregateResult.Of(4m), cell.Read(Aggregation.Count));
+        Assert.Equal(AggregateResult.Of(2m), cell.Read(Aggregation.CountNumbers));
+        foreach (var numeric in new[] { Aggregation.Sum, Aggregation.Average, Aggregation.Min, Aggregation.Max, Aggregation.Product,
+                     Aggregation.StdDev, Aggregation.StdDevp, Aggregation.Var, Aggregation.Varp })
+        {
+            Assert.Equal(AggregateError.ErrorAmongValues, cell.Read(numeric).Error);
+        }
+    }
+
+    [Fact] // ADR-0130 / SM-7: an error among merged parts leaves the merged counts, as among values added one by one
+    public void ADR0130_an_error_beside_merged_parts_leaves_only_the_two_counts()
+    {
+        // ExPivot's remote report answers with parts and a flag; the flag is one already-counted cell.
+        var cell = new AggregateAccumulator();
+        cell.AddError();
+        var sum = new AggregateSum();
+        var extremes = new AggregateExtremes();
+        AggregateArithmetic.Add(ref sum, 1m, true);
+        AggregateArithmetic.Add(ref sum, 2m, false);
+        AggregateArithmetic.Add(ref extremes, 1m, true);
+        AggregateArithmetic.Add(ref extremes, 2m, false);
+        AggregateArithmetic.Finish(ref sum);
+        AggregateArithmetic.Finish(ref extremes);
+        cell.Merge(new AggregateCounts { Values = 3, Numbers = 2 }, sum, extremes);
+
+        Assert.Equal(AggregateResult.Of(4m), cell.Read(Aggregation.Count));
+        Assert.Equal(AggregateResult.Of(2m), cell.Read(Aggregation.CountNumbers));
         Assert.Equal(AggregateError.ErrorAmongValues, cell.Read(Aggregation.Sum).Error);
-        Assert.Equal(AggregateError.ErrorAmongValues, cell.Read(Aggregation.CountNumbers).Error);
+        Assert.Equal(AggregateError.ErrorAmongValues, cell.Read(Aggregation.Max).Error);
     }
 
     [Fact] // ADR-0060: a non-finite double is #NUM! in every numeric Aggregation

@@ -109,7 +109,8 @@ The non-data settings a user has applied to a screen — column widths, column o
 columns, sort order, filter conditions. **Being serialisable for external persistence is a
 requirement** (the Consumer stores it as a personal setting). **Anything decided automatically
 is excluded** — an Auto width is not persisted; only the intent "this column is Auto" is
-([ADR-0016](./docs/adr/0016-column-width-and-overflow.md)).
+([ADR-0016](./docs/adr/0016-column-width-and-overflow.md)). It is written and read as JSON through ExGrid's own entry point, each filter operand with its type
+([ADR-0207](./docs/adr/0207-the-view-state-travels-as-json-through-an-entry-point-of-exgrids-own-each-operand-with-its-type.md)).
 _Avoid_: layout, settings, preferences
 
 **Saved View**:
@@ -1117,6 +1118,28 @@ A Docs Site page for one use case — a trade blotter, a budget sheet, a sales a
 the window and carries no prose. The README's recordings are made from it
 ([ADR-0110](./docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)).
 _Avoid_: demo, hero
+
+**Release Notes**:
+What a published version says it holds, one file per version under `docs/releases/`: its highlights,
+its breaking and behaviour changes, and what each product gained. The same text is the GitHub
+release and the Docs Site's Release notes page. A prerelease's notes say what the Definition of Done
+still owes; a stable version's name its sign-off and every SHOULD accepted failing
+([ADR-0190](./docs/adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md)).
+_Avoid_: changelog; "release" for a prerelease (a release is a version without a suffix)
+
+**Change Note**:
+One change's entry in the next Release Notes: a file under `docs/releases/unreleased/`, written in the
+branch that makes the change, naming its product and whether it adds, fixes, changes behaviour or
+breaks. The cut before a tag gathers them into the version's Release Notes
+([ADR-0190](./docs/adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md)).
+_Avoid_: changeset, fragment
+
+**Roadmap**:
+The Docs Site's page of what is decided next, what is left for later and what the family will not do,
+by the state of each decision and never by date, read at build time from the tickets and the ADRs,
+and stamped with the version or commit it is as of
+([ADR-0191](./docs/adr/0191-the-roadmap-is-read-from-the-tickets-and-the-adrs-and-carries-no-dates.md)).
+_Avoid_: plan, pipeline, timeline; backlog (the tickets are the backlog)
 
 ## Flagged ambiguities
 

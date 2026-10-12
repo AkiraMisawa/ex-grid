@@ -487,3 +487,193 @@ test('a scroll frame makes at most one interop call, whatever is painted (PF-1)'
         expect(total, detail).toBeLessThanOrEqual(frames);
     }
 });
+
+// ---------------------------------------------------------------------------------------------
+// DOM-3 and FN-6 (ADR-0004), at the Definition of Done's scenario. /wide's columns
+// (DemoData.WideColumns): Key 140px and Book 110px, pinned, then 98 metrics of 91px each.
+
+const WIDE_WIDTHS = [140, 110, ...Array(98).fill(91)];
+const WIDE_PINNED = 2;
+
+/**
+ * The columns a row paints at a horizontal offset, recomputed here from the declared widths:
+ * the pinned ones, then every scrollable column the readable width reaches past the pinned block
+ * — one partly on screen included, one wholly under the pinned block not. ColumnGeometry's
+ * ScrollableSliceAt, with the offset clamped as the browser clamps it (ADR-0004).
+ */
+function columnsOnScreen(scrollLeft, readableWidth) {
+    const offsets = [0];
+    for (const width of WIDE_WIDTHS) {
+        offsets.push(offsets.at(-1) + width);
+    }
+    const left = Math.min(Math.max(scrollLeft, 0), Math.max(0, offsets.at(-1) - readableWidth));
+    const from = left + offsets[WIDE_PINNED];
+    const to = left + readableWidth;
+    let first = WIDE_PINNED;
+    while (first < WIDE_WIDTHS.length && offsets[first + 1] <= from) {
+        first++;
+    }
+    let end = first;
+    while (end < WIDE_WIDTHS.length && offsets[end] < to) {
+        end++;
+    }
+    return [...Array(WIDE_PINNED).keys(), ...Array.from({ length: end - first }, (_, i) => first + i)];
+}
+
+/** What the grid holds in the DOM: each painted row's cells by column, the header's columns,
+ * every cell counted, and the offset and readable width the browser holds. */
+function cellsInDom(grid) {
+    return grid.evaluate((root) => {
+        const scroller = root.querySelector(':scope > .ex-scroller');
+        const rows = [...root.querySelectorAll('.ex-viewport .ex-row')];
+        return {
+            scrollLeft: scroller.scrollLeft,
+            readable: scroller.clientWidth,
+            placeholders: rows.filter((row) => row.classList.contains('ex-placeholder')).length,
+            rows: rows.map((row) => [...row.querySelectorAll('.ex-cell')].map((cell) => Number(/c(\d+)$/.exec(cell.id)?.[1]))),
+            header: [...root.querySelectorAll('.ex-header .ex-header-cell')].map((cell) => Number(cell.getAttribute('aria-colindex')) - 1),
+            cells: root.querySelectorAll('.ex-viewport .ex-row .ex-cell').length,
+        };
+    });
+}
+
+test('the cells in the DOM are the painted rows × (pinned + scrollable columns on screen), exactly (DOM-3, ADR-0004)', async ({ page }) => {
+    const grid = await openWide(page);
+
+    // The top left; panned right; deep down and panned to an offset that straddles columns; and
+    // past both ends, where the browser clamps.
+    for (const [top, left] of [[0, 0], [0, 1000], [28 * 5000, 4321], [28 * 777_777, 1e9]]) {
+        await grid.evaluate((root, [top, left]) => {
+            const scroller = root.querySelector(':scope > .ex-scroller');
+            scroller.scrollTop = top;
+            scroller.scrollLeft = left;
+        }, [top, left]);
+        // Settled where the browser stands: no Placeholder is left, and the header is painted for
+        // the offset the browser holds.
+        await expect.poll(async () => {
+            const dom = await cellsInDom(grid);
+            return dom.placeholders === 0
+                && JSON.stringify(dom.header) === JSON.stringify(columnsOnScreen(dom.scrollLeft, dom.readable));
+        }, { timeout: 15_000, message: `the grid never settled at ${top}, ${left}` }).toBe(true);
+        await circuitQuiet();
+
+        const dom = await cellsInDom(grid);
+        const expected = columnsOnScreen(dom.scrollLeft, dom.readable);
+        const where = `at scrollTop ${top}, scrollLeft ${dom.scrollLeft}, ${dom.readable}px readable`;
+        expect(dom.header, `the header's columns ${where}`).toEqual(expected);
+        expect(dom.rows.length, `rows painted ${where}`).toBeGreaterThan(0);
+        for (const [i, columns] of dom.rows.entries()) {
+            expect(columns, `the ${i}th painted row's columns ${where}`).toEqual(expected);
+        }
+        // DOM-3's arithmetic: painted rows × (pinned + painted scrollable columns), exactly.
+        expect(dom.cells, `cells ${where}`).toBe(dom.rows.length * expected.length);
+    }
+});
+
+/**
+ * Looks at where each painted row of the Window has its pinned cells: present, wearing ex-pinned,
+ * and at their place from the scrollport's left edge (Key at 0, Book at 140) however far the rest
+ * has panned. That is `position: sticky`, which only a browser lays out. With no `stops` it looks
+ * once, at what is there, and answers what it saw.
+ *
+ * With `stops` it flings between them, a stop each animation frame, and looks after every change
+ * the grid makes to its own DOM, so a state that lasts one render is seen without a wait. It keeps
+ * flinging until it has seen what it is there to see: `looks` looks, and at least one of them at a
+ * row painted as a Placeholder — a render in the middle of the fling. No count of frames is long
+ * enough everywhere: on the Server host each of those renders is a round trip behind the scroll.
+ * Then it stops by itself and marks what it saw `done`; the test waits for that under the suite's
+ * bound (`flingSeen`). It also stops if its grid leaves the document, as a failed test's does when
+ * the next test mounts its page, so nothing outlives the test it ran in. Runs in the page.
+ */
+function flingAndLook(root, { first, last, stops = [], looks = 0 }) {
+    const scroller = root.querySelector(':scope > .ex-scroller');
+    const seen = { looks: 0, midFling: 0, wrong: [], done: false };
+    const look = () => {
+        const edge = scroller.getBoundingClientRect().left + scroller.clientLeft;
+        let flung = false;
+        for (const row of root.querySelectorAll('.ex-viewport .ex-row')) {
+            const index = Number(row.getAttribute('aria-rowindex')) - 1;
+            const placeholder = row.classList.contains('ex-placeholder');
+            flung = flung || placeholder;
+            if (index < first || index > last || seen.wrong.length >= 20) {
+                continue;
+            }
+            const state = placeholder ? 'mid-fling' : 'settled';
+            for (const [column, at] of [[0, 0], [1, 140]]) {
+                const cell = row.querySelector(`[id$='r${index}c${column}']`);
+                if (!cell || !cell.classList.contains('ex-pinned')) {
+                    seen.wrong.push(`row ${index} (${state}): pinned column ${column} is not painted`);
+                    continue;
+                }
+                const x = cell.getBoundingClientRect().left - edge;
+                if (Math.abs(x - at) > 1) {
+                    seen.wrong.push(`row ${index} (${state}): pinned column ${column} stands ${x}px from the left edge, not ${at}px`);
+                }
+            }
+        }
+        seen.looks++;
+        seen.midFling += flung ? 1 : 0;
+    };
+    if (stops.length === 0) {
+        look();
+        seen.done = true;
+        return seen;
+    }
+    // Kept on the grid's own root, which the next test's page replaces, so the test can read it.
+    root.pinnedFling = seen;
+    const observer = new MutationObserver(look);
+    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style'] });
+    let frame = 0;
+    const step = () => {
+        if (!root.isConnected || (seen.midFling > 0 && seen.looks >= looks)) {
+            observer.disconnect();
+            seen.done = root.isConnected;
+            return;
+        }
+        const stop = stops[frame % stops.length];
+        scroller.scrollTop = stop.top;
+        scroller.scrollLeft = stop.left;
+        frame++;
+        requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+    return null;
+}
+
+/** What the fling `flingAndLook` started has seen so far. */
+function flingSeen(grid) {
+    return grid.evaluate((root) => {
+        const seen = root.pinnedFling;
+        return seen && { looks: seen.looks, midFling: seen.midFling, wrong: [...seen.wrong], done: seen.done };
+    });
+}
+
+test('the Pinned Columns are painted at the left edge at every offset, mid-fling included (FN-6, ADR-0004)', async ({ page }) => {
+    const grid = await openWide(page);
+    // The Window /wide answered for the first Viewport, read ahead 60 rows either side (Wide.razor).
+    const status = await page.locator('.demo-status').textContent();
+    const [, first, last] = (/Window: rows (\d+)–(\d+)/.exec(status) ?? []).map(Number);
+    expect(last, `the Window holds both stops: ${status}`).toBeGreaterThanOrEqual(40 + 22);
+
+    // Two stops a fling apart on both axes — 40 rows down, more than the 600px Viewport, and
+    // 4,000px across, more than its width — both inside the Window, so every row painted in
+    // between is a row in hand: a fling paints its pinned cells alone, and these must be there.
+    // It flings until it has looked 60 times and seen a render in the middle of the fling.
+    const stops = [{ top: 0, left: 2000 }, { top: 40 * 28, left: 6000 }];
+    await grid.evaluate(flingAndLook, { first, last, stops, looks: 60 });
+    // What it has seen so far is what a failure prints: how many looks, how many mid-fling.
+    await expect.poll(() => flingSeen(grid), {
+        message: 'the fling looked 60 times and saw a render in its middle',
+    }).toMatchObject({ done: true });
+    const flinging = await flingSeen(grid);
+
+    expect(flinging.wrong, `pinned cells while flinging (${flinging.looks} looks, ${flinging.midFling} mid-fling)`).toEqual([]);
+    expect(flinging.midFling, 'a render in the middle of the fling was seen').toBeGreaterThan(0);
+
+    // And once it has settled where it stopped.
+    await expect(grid.locator('.ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
+    await circuitQuiet();
+    const settled = await grid.evaluate(flingAndLook, { first, last });
+    expect(settled.wrong, 'pinned cells once settled').toEqual([]);
+    expect(settled.midFling).toBe(0);
+});

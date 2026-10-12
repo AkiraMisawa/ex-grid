@@ -34,7 +34,8 @@ public sealed class SheetStep
     public SheetChange Undo()
     {
         if (IsUndone) throw new InvalidOperationException("The step is already undone.");
-        var change = _undo(Sheet);
+        // An undo is one change, however many steps it takes (ADR-0180).
+        var change = Sheet.AsOneChange(() => _undo(Sheet));
         IsUndone = true;
         return change;
     }
@@ -44,7 +45,7 @@ public sealed class SheetStep
     public SheetChange Redo()
     {
         if (!IsUndone) throw new InvalidOperationException("Only an undone step can be redone.");
-        var change = _redo(Sheet);
+        var change = Sheet.AsOneChange(() => _redo(Sheet));
         IsUndone = false;
         return change;
     }

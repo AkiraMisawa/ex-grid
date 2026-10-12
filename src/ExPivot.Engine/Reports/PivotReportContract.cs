@@ -294,7 +294,9 @@ public sealed record PivotReportRowChange(int Offset, PivotDisplayRow Row);
 /// </para>
 /// </summary>
 /// <param name="RequestId">The echoed request identity.</param>
-/// <param name="Window">The echoed Window identity.</param>
+/// <param name="Window">The Window answered: the one asked for — or, for a complete Window, one within
+/// it that still holds the rows the grid needs, from a server that caps its answers below the rows
+/// read ahead (ADR-0182, ADR-0025). Window Changes and a refusal echo the Window asked for.</param>
 /// <param name="Metadata">The resulting whole-report metadata, absent on refusal.</param>
 /// <param name="Baseline">The Report Version of the Baseline Window the changes apply to; null for a
 /// complete Window.</param>
@@ -348,6 +350,8 @@ public sealed record PivotReportUpdate(string RequestId, PivotReportWindow Windo
 
 /// <summary>A completely validated, immutable current Window.</summary>
 /// <param name="Metadata">The whole report metadata.</param>
-/// <param name="Window">The request's Window.</param>
+/// <param name="Window">The Window answered: the request's, or a shorter one a complete answer gave
+/// within it (ADR-0182). A later request for these rows asks for it, and Window Changes are made
+/// against it.</param>
 /// <param name="Rows">Its detached displayed rows.</param>
 public sealed record PivotReportState(PivotReportMetadata Metadata, PivotReportWindow Window, IReadOnlyList<PivotDisplayRow> Rows);

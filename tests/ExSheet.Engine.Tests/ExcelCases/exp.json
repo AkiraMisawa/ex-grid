@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "EXP-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EXP(1)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "EXP-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EXP(2)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "EXP-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: past what a number holds is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EXP(710)"},

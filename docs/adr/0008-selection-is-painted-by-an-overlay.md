@@ -261,6 +261,9 @@ whole, since the Focus is Excel's active cell everywhere
 *(Settled while building, the same day.)*
 
 - **A range across the pinned boundary is drawn whole in both layers, each clipped to its own side.**
+  *(2026-10-11, [ADR-0206](./0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md): that is now the range's box. Its tint is an element of its own, cut at the
+  boundary, and the pinned tints and bands lie in a shade layer of their own; a range costs a tint and a
+  box per layer it reaches.)*
   The earlier "two rectangles" bullet cut the range at the boundary. Cut that way, an outline drawn
   inside each half would draw a line down the boundary. Drawn whole and clipped, each half shows
   only its own side of one outline, so no seam shows, and C# never needs the outline's width.

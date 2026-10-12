@@ -4,11 +4,14 @@ namespace ExSheet.Engine.Formulas;
 internal static partial class FunctionLibrary
 {
     /// <summary>
-    /// The quotient at and above which MOD is <c>#NUM!</c>. Older versions of Excel were known to
-    /// fail once the quotient reached 2^27; whether a current Excel still does is asked of the next
-    /// Windows run (MOD-008). Until it answers, a quotient this large is refused rather than computed.
+    /// The quotient at and above which MOD is <c>#NUM!</c>. Excel 2007 and earlier failed once the
+    /// quotient reached 2^27; Excel 365 does not (MOD-008: <c>MOD(2^27,1)</c> is 0, the seventeenth
+    /// Windows run). Microsoft documents no limit. A Microsoft 365 user reported on Microsoft's Q&amp;A
+    /// (2021) that <c>MOD(1125899999999,1)</c> is 0 and <c>MOD(1125900000000,1)</c> is <c>#NUM!</c>, and
+    /// dated that limit from Excel 2010; the engine answers below it and refuses from it, and the corpus
+    /// asks Excel on both sides of it (MOD-010 to MOD-017).
     /// </summary>
-    private const double ModQuotientLimit = 134_217_728;
+    private const double ModQuotientLimit = 1_125_900_000_000;
 
     private static Operand RoundUp(FunctionCall call) => RoundBy(call, Rounding.AwayFromZero);
 
@@ -29,8 +32,10 @@ internal static partial class FunctionLibrary
         TryNumber(call, 0, out var number, out var failure) ? Operand.Of(Value.FromNumber(Math.Floor(number))) : failure;
 
     /// <summary>
-    /// MOD: <c>number - divisor*INT(number/divisor)</c>, so the result takes the divisor's sign.
-    /// A divisor of 0 is <c>#DIV/0!</c>.
+    /// MOD: <c>number - divisor*INT(number/divisor)</c> in doubles, as Microsoft defines it, so the
+    /// result takes the divisor's sign; it gives Excel's digits on every case a Windows run has read
+    /// (MOD-009's 0.09999999999999998 among them). A divisor of 0 is <c>#DIV/0!</c>, and a quotient
+    /// of <see cref="ModQuotientLimit"/> or more <c>#NUM!</c>.
     /// </summary>
     private static Operand Mod(FunctionCall call)
     {
@@ -49,6 +54,12 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
+        return ProductOf(numbers);
+    }
+
+    /// <summary>PRODUCT of the numbers taken; with none, 0.</summary>
+    private static Operand ProductOf(List<double> numbers)
+    {
         if (numbers.Count == 0) return Operand.Of(Value.FromNumber(0));
         var product = 1.0;
         foreach (var n in numbers) product *= n;
@@ -60,6 +71,12 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
+        return MedianOf(numbers);
+    }
+
+    /// <summary>MEDIAN of the numbers taken, which it sorts; with none, <c>#NUM!</c>.</summary>
+    private static Operand MedianOf(List<double> numbers)
+    {
         if (numbers.Count == 0) return Operand.Of(ErrorValue.Num);
         numbers.Sort();
         var middle = numbers.Count / 2;
@@ -72,8 +89,8 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// LARGE and SMALL: the numbers of the array (a range's numbers only; a typed value coerced),
-    /// and the k-th of them. A k below 1 or past their count is <c>#NUM!</c>. A k that is not a
-    /// whole number is refused with <c>#VALUE!</c> until Excel is asked how it reads one (LARGE-007).
+    /// and the k-th of them (<see cref="KthOf"/>: LARGE rounds a k that is not whole up, and SMALL
+    /// refuses one with <c>#VALUE!</c> until Excel is asked). A k below 1 or past their count is <c>#NUM!</c>.
     /// </summary>
     private static Operand Ranked(FunctionCall call, bool largest)
     {
@@ -93,7 +110,26 @@ internal static partial class FunctionLibrary
             numbers.Add(single);
         }
         if (!TryNumber(call, 1, out var k, out var failure)) return failure;
-        if (k != Math.Floor(k)) return Operand.Of(ErrorValue.Value);
+        return KthOf(numbers, k, largest);
+    }
+
+    /// <summary>
+    /// The k-th largest or smallest of the numbers taken, which it sorts. k is read at Excel's 15
+    /// significant digits, so a k a hair from a whole number is that number. A k that is still not
+    /// whole is rounded up for the k-th largest, as Excel does (LARGE-007 and AGGREGATE-038: 1.5 is
+    /// the 2nd largest; ODF 1.3's LARGE, LibreOffice and Gnumeric round it up too), and refused with
+    /// <c>#VALUE!</c> for the k-th smallest, where those sources disagree (LibreOffice rounds down,
+    /// Gnumeric up) and Excel has not been asked, and below 1, where they disagree too. A k below 1 or
+    /// past the count of the numbers is <c>#NUM!</c>.
+    /// </summary>
+    private static Operand KthOf(List<double> numbers, double k, bool largest)
+    {
+        k = Arithmetic.AtFifteenDigits(k);
+        if (k != Math.Floor(k))
+        {
+            if (!largest || k < 1) return Operand.Of(ErrorValue.Value);
+            k = Math.Ceiling(k);
+        }
         if (k < 1 || k > numbers.Count) return Operand.Of(ErrorValue.Num);
         numbers.Sort();
         var at = (int)k - 1;
@@ -171,6 +207,12 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
+        return SpreadOf(numbers, sample, root);
+    }
+
+    /// <summary>VAR.S, VAR.P, STDEV.S or STDEV.P of the numbers taken (<see cref="Spread"/>).</summary>
+    private static Operand SpreadOf(List<double> numbers, bool sample, bool root)
+    {
         var divisor = sample ? numbers.Count - 1 : numbers.Count;
         if (divisor < 1) return Operand.Of(ErrorValue.Div0);
         var mean = numbers.Sum() / numbers.Count;

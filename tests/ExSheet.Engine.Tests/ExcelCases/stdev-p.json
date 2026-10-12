@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "STDEVP-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the same ten as a population",
       "cells": {"A1": "1345", "A2": "1301", "A3": "1368", "A4": "1322", "A5": "1310", "A6": "1370", "A7": "1318", "A8": "1350", "A9": "1303", "A10": "1299", "ZZ1000": "=STDEV.P(A1:A10)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "STDEVP-002",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: no number is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=STDEV.P(A6)"},

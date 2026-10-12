@@ -223,13 +223,15 @@
     },
     {
       "id": "COPY-025",
-      "source": "documented",
+      "source": "observed",
       "description": "A pasted Formula is in the invariant syntax in every culture",
       "culture": "de-DE",
       "cells": {},
       "action": {"do": "pasteText", "at": "A1", "rows": [["1.234,5", "=SUM(1.5,2)"]]},
       "check": "B1",
-      "expect": {"value2": 3.5}
+      "expect": {"value2": 3.5},
+      "engineDiffersByDecision": "ADR-0047 (first run, \"What the observation settled\"): a pasted or typed Formula is read in the invariant syntax under every culture, where Excel under de-DE reads =SUM(1.5,2) as text; localised syntax is out of the first version",
+      "excelExpect": {"value2": "=SUM(1.5,2)", "kind": "text"}
     },
     {
       "id": "COPY-026",

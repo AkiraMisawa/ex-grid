@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace ExGrid;
 
 /// <summary>
@@ -11,6 +13,12 @@ public readonly record struct RowRange
 {
     /// <summary>A run of <paramref name="count"/> rows from position
     /// <paramref name="start"/>. A negative start or a count below one is refused.</summary>
+    /// <remarks>Also the constructor <c>System.Text.Json</c> reads a range back through, so a
+    /// Query that crossed to a server names the rows it named here, and a range no grid can ask
+    /// for is refused on the way in as it is here (ADR-0002, FN-13). Without it the reader took
+    /// the struct's default and wrote nothing into its get-only properties: every range came
+    /// back as no rows at position 0.</remarks>
+    [JsonConstructor]
     public RowRange(int start, int count)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(start);

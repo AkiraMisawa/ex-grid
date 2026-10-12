@@ -66,6 +66,24 @@ internal static partial class Lexer
     [GeneratedRegex(@"\G[A-Za-z_\\][A-Za-z0-9_.]*", RegexOptions.CultureInvariant)]
     private static partial Regex NamePattern();
 
+    /// <summary>
+    /// A name that may hold a letter of any script, as a <c>LET</c> name may (<c>名前</c>, <c>é</c>;
+    /// ADR-0181). The parser takes one only where a <c>LET</c> binds it, and refuses it elsewhere as
+    /// it refused it before <c>LET</c> was admitted.
+    /// </summary>
+    [GeneratedRegex(@"\G[\p{L}_\\][\p{L}0-9_.]*", RegexOptions.CultureInvariant)]
+    private static partial Regex WideNamePattern();
+
+    /// <summary>Where the first character outside ASCII stands in <paramref name="text"/>, or −1.</summary>
+    public static int FirstWide(string text)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (!char.IsAscii(text[i])) return i;
+        }
+        return -1;
+    }
+
     private static readonly string[] Operators = ["<>", "<=", ">=", "=", "<", ">", "+", "-", "*", "/", "^", "&", "%"];
 
     /// <summary>The largest number constant a Formula may hold: 9.99999999999999E+307, as Microsoft documents Excel's.</summary>
@@ -82,6 +100,39 @@ internal static partial class Lexer
     public static List<Token> Tokenize(string formula, int start)
     {
         var tokens = new List<Token>();
+        try
+        {
+            Read(formula, start, tokens);
+            return tokens;
+        }
+        catch (FormulaSyntaxException) when (WideNameOutsideLet(tokens) is { } wide)
+        {
+            // Before LET was admitted (ADR-0181) the lexer refused a name of another script where it
+            // stood, before anything after it; outside a LET it still does.
+            var at = wide.Position + FirstWide(wide.Text);
+            throw new FormulaSyntaxException(formula, at, $"'{formula[at]}' is not part of the formula syntax ExSheet reads.");
+        }
+    }
+
+    /// <summary>
+    /// The first name of another script than ASCII among <paramref name="tokens"/>, when none of them
+    /// is <c>LET</c>: such a name is a <c>LET</c> name or nothing (ADR-0181). <see langword="null"/>
+    /// otherwise.
+    /// </summary>
+    public static Token? WideNameOutsideLet(IReadOnlyList<Token> tokens)
+    {
+        Token? wide = null;
+        foreach (var token in tokens)
+        {
+            if (token.Kind != TokenKind.Name) continue;
+            if (token.Text.Equals("LET", StringComparison.OrdinalIgnoreCase)) return null;
+            if (wide is null && FirstWide(token.Text) >= 0) wide = token;
+        }
+        return wide;
+    }
+
+    private static void Read(string formula, int start, List<Token> tokens)
+    {
         var i = start;
         while (true)
         {
@@ -98,7 +149,7 @@ internal static partial class Lexer
             if (i >= formula.Length)
             {
                 tokens.Add(new Token(TokenKind.End, i, "", afterSpace));
-                return tokens;
+                return;
             }
 
             var c = formula[i];
@@ -191,12 +242,14 @@ internal static partial class Lexer
                 continue;
             }
 
-            var name = NamePattern().Match(formula, i);
+            var name = WideNamePattern().Match(formula, i);
             if (name.Success)
             {
                 var end = i + name.Length;
                 if (end < formula.Length && formula[end] == '[')
                 {
+                    // A Linked Table's name is ASCII (ADR-0049): a wider one is no structured reference.
+                    if (FirstWide(name.Value) is var wide and >= 0) throw new FormulaSyntaxException(formula, i + wide, $"'{formula[i + wide]}' is not part of the formula syntax ExSheet reads.");
                     var column = ReadStructuredColumn(formula, end, out var after);
                     tokens.Add(new Token(TokenKind.StructuredReference, i, column, afterSpace) { TableName = name.Value, Length = after - i });
                     i = after;

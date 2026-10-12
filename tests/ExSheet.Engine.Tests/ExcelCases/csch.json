@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "CSCH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=CSCH(1.5)"},
@@ -13,16 +13,16 @@
     },
     {
       "id": "CSCH-002",
-      "source": "documented",
-      "description": "Documented: the absolute value must be less than 2^27",
+      "source": "observed",
+      "description": "Microsoft documents a limit of 2^27, but Excel answers past it: 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=CSCH(2^27)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": 0}
     },
     {
       "id": "CSCH-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: at 0 is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=CSCH(0)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "CSCH-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: below the smallest number is 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=CSCH(1000)"},

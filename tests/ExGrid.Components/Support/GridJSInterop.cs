@@ -176,10 +176,32 @@ internal sealed class GridJSInterop
         // 2026-10-01): to a Consumer's popover, or to a frame of the Consumer's own.
         var handOff = handle.SetupVoid("handOff", _ => true);
         handOff.SetVoidResult();
+        // ST-2's question (ADR-0007's note of 2026-10-11, refined the same day; ADR-0021's note of
+        // that day): whether the open edit's fields still hold the text it opened with. A browser
+        // here holds no typing but the input a test sends, which reaches the core ahead of the
+        // answer, as a real browser's does: answered "untouched". A test that answers it itself
+        // takes the question over (UnansweredUntouched).
+        handle.Setup<bool>("askUntouched", _ => true).SetResult(true);
+        var closeAnswered = handle.SetupVoid("closeAnswered");
+        closeAnswered.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
         dispose.SetVoidResult();
+        // What the key gate and the editor's listener were told, in the order told: bUnit keeps its
+        // invocations by identifier, which orders nothing across them. Logged by a handler that
+        // matches nothing, registered last, so it hears each call before the one that answers it.
+        var gateLog = new List<string>();
+        handle.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier is "setEditing")
+                gateLog.Add($"setEditing {invocation.Arguments[0]}");
+            else if (invocation.Identifier is "reclaimFocus" or "closeAnswered" or "askUntouched")
+                gateLog.Add(invocation.Identifier);
+            return false;
+        });
         return new GridJSInterop(offset, releaseTab, dispose)
         {
+            CloseAnswered = closeAnswered,
+            _gateLog = gateLog,
             HandedOff = handOff,
             _context = context,
             _module = module,
@@ -195,6 +217,23 @@ internal sealed class GridJSInterop
             _focusLog = focusLog,
         };
     }
+
+    private List<string> _gateLog = [];
+
+    /// <summary>The key gate's modes (<c>setEditing &lt;mode&gt;</c>), the keyboard asked back to the
+    /// root (<c>reclaimFocus</c>), and ST-2's question and its end (<c>askUntouched</c>,
+    /// <c>closeAnswered</c>), in the order the core asked them.</summary>
+    internal IReadOnlyList<string> GateTold => _gateLog;
+
+    /// <summary>Every time the core told the editor's listener that it had answered an
+    /// "untouched" (ST-2): what the listener held goes on.</summary>
+    internal JSRuntimeInvocationHandler CloseAnswered { get; private init; } = default!;
+
+    /// <summary>From here on, ST-2's question waits for the test to answer it, as a browser's answer
+    /// waits a round trip on a circuit: <c>SetResult(true)</c> is "untouched", <c>false</c> "typed".
+    /// Its argument is the text the edit opened with.</summary>
+    internal JSRuntimeInvocationHandler<bool> UnansweredUntouched()
+        => _handle!.Setup<bool>("askUntouched", _ => true);
 
     /// <summary>Every time the core told the key gate where the keyboard is going (ADR-0039 and
     /// ADR-0050 item 16, 2026-10-01): <c>popover</c> or <c>frame</c>.</summary>

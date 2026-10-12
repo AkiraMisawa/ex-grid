@@ -1,0 +1,1262 @@
+{
+  "area": "let",
+  "about": "LET (docs/specs/exsheet-functions ticket 14; ADR-0181): Windows Excel 16.0.20430.20092, en-GB; October 3 observations through COM (Formula2) and typed with real keys (LET-KEYS-*). Where the two differ the keyboard is Excel's answer (LET-023). LET-101 to LET-112 were typed with real keys under en-US by the seventeenth Windows run (Excel 16.0.20430.20146, 2026-10-11; results-2026-10-11-run17-update-keys-en-US.json, and LET-102, 104 and 105 alone). LET-031's sample is a random draw, so its lifecycle is RandomTests'.",
+  "cases": [
+    {
+      "id": "LET-001",
+      "source": "observed",
+      "description": "Basic binding",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-001",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,2,x+1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "LET-002",
+      "source": "observed",
+      "description": "Sequential names",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-002",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,2,y,x+3,x*y)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "LET-003",
+      "source": "observed",
+      "description": "Case-insensitive lookup",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-003",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,2,X+1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "LET-004",
+      "source": "observed",
+      "description": "Nested shadowing",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-004",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,2,LET(x,3,x)+x)"
+      },
+      "check": "Z1",
+      "excelBits": "4014000000000000",
+      "expect": {
+        "value2": 5.0
+      }
+    },
+    {
+      "id": "LET-005",
+      "source": "observed",
+      "description": "Outer binding",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-005",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,2,LET(y,x+1,y)+x)"
+      },
+      "check": "Z1",
+      "excelBits": "4014000000000000",
+      "expect": {
+        "value2": 5.0
+      }
+    },
+    {
+      "id": "LET-006",
+      "source": "observed",
+      "description": "Duplicate name",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-006",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,1,x,2,x)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-007",
+      "source": "observed",
+      "description": "Forward name",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-007",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,y,y,2,x)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NAME?"
+      }
+    },
+    {
+      "id": "LET-008",
+      "source": "observed",
+      "description": "Self reference",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-008",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,x+1,x)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NAME?"
+      }
+    },
+    {
+      "id": "LET-009",
+      "source": "observed",
+      "description": "Unused error binding",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-009",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,NA(),1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "LET-010",
+      "source": "observed",
+      "description": "Unselected error branch",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-010",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,1/0,IF(FALSE,x,7))"
+      },
+      "check": "Z1",
+      "excelBits": "401C000000000000",
+      "expect": {
+        "value2": 7.0
+      }
+    },
+    {
+      "id": "LET-011",
+      "source": "observed",
+      "description": "Range binding",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-011",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,A1:A3,SUM(x))"
+      },
+      "check": "Z1",
+      "excelBits": "4014000000000000",
+      "expect": {
+        "value2": 5.0
+      }
+    },
+    {
+      "id": "LET-012",
+      "source": "observed",
+      "description": "Array binding",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-012",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,A1:A3,x*2)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "LET-013",
+      "source": "observed",
+      "description": "Blank reference binding",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-013",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,A1,x)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "LET-014",
+      "source": "observed",
+      "description": "Empty text binding",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-014",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,\"\",x)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LET-015",
+      "source": "observed",
+      "description": "Boolean binding",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-015",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,TRUE,x)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": true
+      }
+    },
+    {
+      "id": "LET-016",
+      "source": "observed",
+      "description": "Computed array",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-016",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,SEQUENCE(3),x+10)"
+      },
+      "check": "Z1",
+      "excelBits": "4026000000000000",
+      "expect": {
+        "value2": 11.0
+      }
+    },
+    {
+      "id": "LET-017",
+      "source": "observed",
+      "description": "One random binding reused",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-017",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,RAND(),x=x)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": true
+      }
+    },
+    {
+      "id": "LET-018",
+      "source": "observed",
+      "description": "Same random value in subtraction",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-018",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,RAND(),x-x)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "LET-019",
+      "source": "observed",
+      "description": "Lazy IF branch",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-019",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,1,IF(TRUE,2,NA()))"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "LET-020",
+      "source": "observed",
+      "description": "Unbound name",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-020",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,1,x+z)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NAME?"
+      }
+    },
+    {
+      "id": "LET-021",
+      "source": "observed",
+      "description": "R1C1 name c",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-021",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(c,2,c)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "LET-022",
+      "source": "observed",
+      "description": "R1C1 name r",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-022",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(r,2,r)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "LET-023",
+      "source": "observed",
+      "description": "A1 reference cannot be name",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-023",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(A1,2,A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Through COM (Formula2) Excel accepts A1 as a LET name and answers 2; typed with real keys it refuses the entry with a dialog (LET-KEYS-004, verification/2026-10-03-windows-functions/keyboard-results.json), and the keyboard is Excel's answer for ExSheet (ADR-0047, ADR-0181); ask by keys"
+    },
+    {
+      "id": "LET-024",
+      "source": "observed",
+      "description": "Dot in name",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-024",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(a.b,2,a.b)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-025",
+      "source": "observed",
+      "description": "Underscore in name",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-025",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(_x,2,_x)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "LET-026",
+      "source": "observed",
+      "description": "Missing final calculation",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-026",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-027",
+      "source": "observed",
+      "description": "Numeric name",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-027",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(1,2,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-028",
+      "source": "observed",
+      "description": "Even argument count",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-028",
+      "values": {
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,1,y,2,x+y,3)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-029",
+      "source": "observed",
+      "description": "126 name/value pairs",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-029",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(name_0,0,name_1,1,name_2,2,name_3,3,name_4,4,name_5,5,name_6,6,name_7,7,name_8,8,name_9,9,name_10,10,name_11,11,name_12,12,name_13,13,name_14,14,name_15,15,name_16,16,name_17,17,name_18,18,name_19,19,name_20,20,name_21,21,name_22,22,name_23,23,name_24,24,name_25,25,name_26,26,name_27,27,name_28,28,name_29,29,name_30,30,name_31,31,name_32,32,name_33,33,name_34,34,name_35,35,name_36,36,name_37,37,name_38,38,name_39,39,name_40,40,name_41,41,name_42,42,name_43,43,name_44,44,name_45,45,name_46,46,name_47,47,name_48,48,name_49,49,name_50,50,name_51,51,name_52,52,name_53,53,name_54,54,name_55,55,name_56,56,name_57,57,name_58,58,name_59,59,name_60,60,name_61,61,name_62,62,name_63,63,name_64,64,name_65,65,name_66,66,name_67,67,name_68,68,name_69,69,name_70,70,name_71,71,name_72,72,name_73,73,name_74,74,name_75,75,name_76,76,name_77,77,name_78,78,name_79,79,name_80,80,name_81,81,name_82,82,name_83,83,name_84,84,name_85,85,name_86,86,name_87,87,name_88,88,name_89,89,name_90,90,name_91,91,name_92,92,name_93,93,name_94,94,name_95,95,name_96,96,name_97,97,name_98,98,name_99,99,name_100,100,name_101,101,name_102,102,name_103,103,name_104,104,name_105,105,name_106,106,name_107,107,name_108,108,name_109,109,name_110,110,name_111,111,name_112,112,name_113,113,name_114,114,name_115,115,name_116,116,name_117,117,name_118,118,name_119,119,name_120,120,name_121,121,name_122,122,name_123,123,name_124,124,name_125,125,name_125)"
+      },
+      "check": "Z1",
+      "excelBits": "405F400000000000",
+      "expect": {
+        "value2": 125.0
+      }
+    },
+    {
+      "id": "LET-030",
+      "source": "observed",
+      "description": "127 name/value pairs",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-030",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(name_0,0,name_1,1,name_2,2,name_3,3,name_4,4,name_5,5,name_6,6,name_7,7,name_8,8,name_9,9,name_10,10,name_11,11,name_12,12,name_13,13,name_14,14,name_15,15,name_16,16,name_17,17,name_18,18,name_19,19,name_20,20,name_21,21,name_22,22,name_23,23,name_24,24,name_25,25,name_26,26,name_27,27,name_28,28,name_29,29,name_30,30,name_31,31,name_32,32,name_33,33,name_34,34,name_35,35,name_36,36,name_37,37,name_38,38,name_39,39,name_40,40,name_41,41,name_42,42,name_43,43,name_44,44,name_45,45,name_46,46,name_47,47,name_48,48,name_49,49,name_50,50,name_51,51,name_52,52,name_53,53,name_54,54,name_55,55,name_56,56,name_57,57,name_58,58,name_59,59,name_60,60,name_61,61,name_62,62,name_63,63,name_64,64,name_65,65,name_66,66,name_67,67,name_68,68,name_69,69,name_70,70,name_71,71,name_72,72,name_73,73,name_74,74,name_75,75,name_76,76,name_77,77,name_78,78,name_79,79,name_80,80,name_81,81,name_82,82,name_83,83,name_84,84,name_85,85,name_86,86,name_87,87,name_88,88,name_89,89,name_90,90,name_91,91,name_92,92,name_93,93,name_94,94,name_95,95,name_96,96,name_97,97,name_98,98,name_99,99,name_100,100,name_101,101,name_102,102,name_103,103,name_104,104,name_105,105,name_106,106,name_107,107,name_108,108,name_109,109,name_110,110,name_111,111,name_112,112,name_113,113,name_114,114,name_115,115,name_116,116,name_117,117,name_118,118,name_119,119,name_120,120,name_121,121,name_122,122,name_123,123,name_124,124,name_125,125,name_126,126,name_126)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-001",
+      "source": "observed",
+      "description": "Dependency after input changes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-001",
+      "values": {
+        "A1": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,A1,x*2)"
+      },
+      "check": "Z1",
+      "excelBits": "4018000000000000",
+      "expect": {
+        "value2": 6.0
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-002",
+      "source": "observed",
+      "description": "Sequential binding",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-002",
+      "values": {
+        "A1": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,1,y,x+2,y)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-003",
+      "source": "observed",
+      "description": "Unused error binding through IF",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-003",
+      "values": {
+        "A1": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,NA(),IF(FALSE,x,7))"
+      },
+      "check": "Z1",
+      "excelBits": "401C000000000000",
+      "expect": {
+        "value2": 7.0
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-004",
+      "source": "observed",
+      "description": "Outer lexical scope",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-004",
+      "values": {
+        "A1": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,1,LET(y,2,x+y))"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-005",
+      "source": "observed",
+      "description": "Binding does not escape its LET",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-005",
+      "values": {
+        "A1": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,1,1)+x"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NAME?"
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-006",
+      "source": "observed",
+      "description": "Unicode, underscore, dot and name length",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-006",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(名前,2,名前+1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-007",
+      "source": "observed",
+      "description": "Unicode, underscore, dot and name length",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-007",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(é,2,é+1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-008",
+      "source": "observed",
+      "description": "Unicode, underscore, dot and name length",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-008",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-009",
+      "source": "observed",
+      "description": "Unicode, underscore, dot and name length",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-009",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-010",
+      "source": "observed",
+      "description": "Unicode, underscore, dot and name length",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-010",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(_x,2,_x+1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-011",
+      "source": "observed",
+      "description": "Unicode, underscore, dot and name length",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-011",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(a.b,2,a.b+1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-012",
+      "source": "observed",
+      "description": "Range binding dependency after change",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-012",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 3
+      },
+      "cells": {
+        "Z1": "=LET(x,A1:A3,SUM(x))"
+      },
+      "check": "Z1",
+      "excelBits": "4018000000000000",
+      "expect": {
+        "value2": 6.0
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-013",
+      "source": "observed",
+      "description": "Computed array binding reduced to one Value",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-FOLLOWUP-013",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(x,SEQUENCE(3),SUM(x))"
+      },
+      "check": "Z1",
+      "excelBits": "4018000000000000",
+      "expect": {
+        "value2": 6.0
+      }
+    },
+    {
+      "id": "LET-ADDITIONAL-001",
+      "source": "observed",
+      "description": "LET name length 248; locate actual boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-ADDITIONAL-001",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "LET-ADDITIONAL-002",
+      "source": "observed",
+      "description": "LET name length 249; locate actual boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-ADDITIONAL-002",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "LET-ADDITIONAL-003",
+      "source": "observed",
+      "description": "LET name length 250; locate actual boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-ADDITIONAL-003",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-ADDITIONAL-004",
+      "source": "observed",
+      "description": "LET name length 251; locate actual boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-ADDITIONAL-004",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-ADDITIONAL-005",
+      "source": "observed",
+      "description": "LET name length 252; locate actual boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-ADDITIONAL-005",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-ADDITIONAL-006",
+      "source": "observed",
+      "description": "LET name length 253; locate actual boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-ADDITIONAL-006",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-ADDITIONAL-007",
+      "source": "observed",
+      "description": "LET name length 254; locate actual boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-ADDITIONAL-007",
+      "values": {},
+      "cells": {
+        "Z1": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    },
+    {
+      "id": "LET-KEYS-001",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-001",
+      "values": {},
+      "cells": {
+        "A10": "=LET(x,2,x+1)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 3
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-002",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-002",
+      "values": {},
+      "cells": {
+        "A10": "=LET(c,2,c)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 2
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-003",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-003",
+      "values": {},
+      "cells": {
+        "A10": "=LET(r,2,r)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 2
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-004",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-004",
+      "values": {},
+      "cells": {
+        "A10": "=LET(A1,2,A1)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-005",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-005",
+      "values": {},
+      "cells": {
+        "A10": "=LET(a.b,2,a.b)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-006",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-006",
+      "values": {},
+      "cells": {
+        "A10": "=LET(_x,2,_x)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 2
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-007",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-007",
+      "values": {},
+      "cells": {
+        "A10": "=LET(x,1,x,2,x)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-008",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-008",
+      "values": {},
+      "cells": {
+        "A10": "=LET(x,y,y,2,x)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": "#NAME?"
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-009",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-009",
+      "values": {},
+      "cells": {
+        "A10": "=LET(x,NA(),1)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 1
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-010",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-010",
+      "values": {},
+      "cells": {
+        "A10": "=LET(名前,2,名前+1)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 3
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-011",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-011",
+      "values": {},
+      "cells": {
+        "A10": "=LET(x,1)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-012",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-012",
+      "values": {},
+      "cells": {
+        "A10": "=LET(x,1,y,2,x+y,3)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-013",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-013",
+      "values": {},
+      "cells": {
+        "A10": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-KEYS-014",
+      "source": "observed",
+      "description": "Typed with real keys (SendInput), as a user types it",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LET-KEYS-014",
+      "values": {},
+      "cells": {
+        "A10": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-101",
+      "source": "observed",
+      "description": "A declared function's name is a LET name: Excel's keyboard entered it (run 17). That a name followed by ( is still the call is the engine's rule (ADR-0181, LetTests), not observed here",
+      "cells": {
+        "A10": "=LET(SUM,2,SUM+1)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 3
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-102",
+      "source": "observed",
+      "description": "Refused, as Excel's keyboard refuses it (run 17): TRUE as a LET name (ADR-0181)",
+      "cells": {
+        "A10": "=LET(TRUE,2,1)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-103",
+      "source": "observed",
+      "description": "An R1C1 Reference's shape is a LET name: Excel's keyboard entered it (run 17) (ADR-0181)",
+      "cells": {
+        "A10": "=LET(R1C1,2,R1C1+1)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 3
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-104",
+      "source": "observed",
+      "description": "Refused, as Excel's keyboard refuses it (run 17): R and a row number, an A1 Reference, as a LET name (ADR-0181)",
+      "cells": {
+        "A10": "=LET(R2,2,R2+1)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-105",
+      "source": "observed",
+      "description": "Refused, as Excel's keyboard refuses it (run 17): C and a column number, an A1 Reference, as a LET name (ADR-0181)",
+      "cells": {
+        "A10": "=LET(C3,2,C3+1)"
+      },
+      "check": "A10",
+      "expect": {
+        "refusedEntry": true
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-106",
+      "source": "observed",
+      "description": "RC is a LET name: Excel's keyboard entered it (run 17) (ADR-0181)",
+      "cells": {
+        "A10": "=LET(RC,2,RC+1)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 3
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-107",
+      "source": "observed",
+      "description": "A value left empty is bound, and the name alone shows 0: Excel's keyboard entered it (run 17) (ADR-0181)",
+      "cells": {
+        "A10": "=LET(x,,x)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 0
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-108",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: an inner LET's value reads the outer name before it binds its own",
+      "cells": {
+        "A10": "=LET(x,1,y,LET(x,x+1,x),x+y)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 3
+      }
+    },
+    {
+      "id": "LET-109",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a final subtraction inside LET's calculation is not the Formula's last operation, so it does not cancel (ADR-0047)",
+      "cells": {
+        "A10": "=LET(x,0.1,x+0.2-0.3)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 5.551115123125783e-17
+      }
+    },
+    {
+      "id": "LET-110",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a name of letters and digits that names no cell is a name",
+      "cells": {
+        "A10": "=LET(abc1234567,2,abc1234567+1)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 3
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-111",
+      "source": "observed",
+      "description": "The name of one of Excel's functions that the engine does not declare is a LET name: Excel's keyboard entered it (run 17) (ADR-0181)",
+      "cells": {
+        "A10": "=LET(IRR,1,IRR)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 1
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-112",
+      "source": "observed",
+      "description": "A one-letter name that is one of Excel's functions is a LET name, as c and r alone are: Excel's keyboard entered it (run 17) (ADR-0181)",
+      "cells": {
+        "A10": "=LET(N,1,N)"
+      },
+      "check": "A10",
+      "expect": {
+        "value2": 1
+      },
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    }
+  ]
+}

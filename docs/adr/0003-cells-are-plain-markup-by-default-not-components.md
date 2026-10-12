@@ -53,6 +53,10 @@ is only +7% against plain markup.
   `ShouldRender()` compares by reference, a Consumer that rewrites a row object in place gets no
   repaint. When data changes, the Consumer must **return a different instance** or carry a version
   on the row and bump it. This has to be stated in the API contract.
+  *(2026-10-11, decided with the user: the same holds for `Columns`. A new array re-renders every
+  surviving row and the same instance re-renders none; the Definition of Done's RR-5, which asked
+  that a fresh-but-equal array re-render nothing, was restated to match, since "equal" columns would
+  call two `Format` delegates equal that paint differently.)*
   The first Consumer's baseline is a content-addressed immutable snapshot, so a new feed version
   naturally produces new instances and the constraint does not bite
   ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) relies on the same

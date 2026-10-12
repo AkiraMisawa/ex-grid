@@ -25,7 +25,7 @@ meaning, without an ADR. It marks a **meaning**, never a mechanism.
 | `ex-tone-positive / -negative` | the Column's tone rule's answer about the value — a gain, a loss ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)); a meaning, never a colour, and `None` adds nothing |
 | `ex-formula-bar-borrowed` | on the Formula Bar's text field while it shows text that is not the Focus cell's own, such as a spilled cell's Anchor's Formula; the field is then read-only *(added later, by [ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md))* |
 | `ex-changed` | a Change Highlight: the Consumer said the cell's shown value changed less than `ChangeHighlightDuration` ago; added and removed in one step, never transitioned *(added later, by [ADR-0068](./0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md))* |
-| `ex-range`, `ex-focus` | a selection rectangle and the Focus outline ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)) |
+| `ex-range`, `ex-focus` | a selection rectangle and the Focus outline ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). *(2026-10-11, [ADR-0206](./0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md): `ex-range` is the range's box and outline; its tint is an internal element, which `--ex-range-hole` is written on.)* |
 | `ex-action`, `ex-interactive` | the grid's own action button; a Consumer's control that takes its own pointer events ([ADR-0020](./0020-action-and-template-columns.md)) |
 | `ex-action-chosen` | the one action Space will fire, while a cell with several actions is Interactive — on that button alone, and only then ([ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)) |
 | `ex-mark` | a Row Mark's checkbox — on each Detail row of the Mark Column, and in its header, where `ex-mark-all` joins it; whether it is ticked is `aria-checked` (`true` / `false` / `mixed`), never a class *(added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md))* |
@@ -382,6 +382,30 @@ restated the state with.
 The considered alternative was to keep the band as the design, and have the Wrapper pass a whole
 shadow. It was set aside: the band was never what was meant, and a token that is a colour
 everywhere but one place is the defect that made the Wrapper's mark vanish.
+
+## The classes UX-4's walk found unnamed *(2026-10-11, decided with the user)*
+
+A walk of every class the grid paints, written for UX-4, found classes that neither the stable
+table nor an internal list named. **All of them are internal**, and may change without notice; none
+is added to the stable table, so what a Consumer may style does not grow:
+
+- `ex-ceiling-probe`, `ex-focus-wrap`, `ex-hashes`, `ex-hover-row`, `ex-message`, `ex-select-all`,
+  `ex-value-list`, `ex-mark-result`, `ex-editor-away`, `ex-point-on-reference`;
+- the Keyboard Field's `ex-key-field`, `ex-key-field-layer`, `ex-key-field-held`,
+  `ex-key-field-composing`;
+- the popovers' parts: every class that begins `ex-popover-` and is not named above (`-body`,
+  `-commands`, `-filter`, `-form`, `-find`, `-find-body`, `-consumer`, `-join`, `-refusal`, `-second`,
+  `-add`, …);
+- Find's parts: every class that begins `ex-find-` (`-field`, `-match-case`, `-next`, `-previous`,
+  `-outcome`, `-whole-cell`, …);
+- the Sheet's appearance families, generated from document data: `ex-lined`, `ex-fill-<rgb>`,
+  `ex-font-xb`, `ex-font-xi`, and the Border sides `ex-lt-…`, `ex-lr-…`, `ex-lb-…`, `ex-ll-…` (a side,
+  a style and a colour);
+- the selection's tint and the pinned shade layer
+  ([ADR-0206](./0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md)).
+
+UX-4's walk checks each class against the stable table, the internal names, and these prefixes and
+families; a class that matches none fails it, so the next unnamed class is caught by name.
 
 ## Added by ADR-0170 *(2026-10-07, decided with the user)*
 

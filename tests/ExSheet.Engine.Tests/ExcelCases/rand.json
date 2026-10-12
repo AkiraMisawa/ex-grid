@@ -1,0 +1,36 @@
+{
+  "area": "rand",
+  "about": "RAND (docs/specs/exsheet-functions ticket 15; ADR-0180): Windows Excel 16.0.20430.20092, en-GB; October 3 observations. A draw has no Value Excel's could be compared with, so only the cases with one outcome are here: the samples (RAND-001, 002, 005) are the contract tests' (RandomTests), with a fixed Sheet Seed. The harness gives every case's Sheet a seed, as ExSheet does.",
+  "cases": [
+    {
+      "id": "RAND-003",
+      "source": "observed",
+      "description": "Two calls do not share one value",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RAND-003",
+      "values": {},
+      "cells": {
+        "Z1": "=RAND()=RAND()"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": false
+      }
+    },
+    {
+      "id": "RAND-004",
+      "source": "observed",
+      "description": "Wrong arity",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/RAND-004",
+      "values": {},
+      "cells": {
+        "Z1": "=RAND(1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "refusedEntry": true
+      }
+    }
+  ]
+}

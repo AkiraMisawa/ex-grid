@@ -175,6 +175,68 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(CopyRefusalReason.RowsUnavailable, refused);
     }
 
+    // ---- CP-8: copy follows the View State's column order and leaves hidden columns out ----------
+    // The order and what is shown are the Consumer's View State: it passes the Columns in the order
+    // a reorder left them, without the ones it hid (ADR-0001), and the grid holds no order of its own.
+
+    private static GridColumn<TestRow>[] Reordered() =>
+    [
+        new("Active", ColumnType.Boolean, r => r.Active, width: Fixed100),
+        new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100),
+        new("Book", ColumnType.Text, r => r.Book, width: Fixed100),
+    ];
+
+    [Fact] // ADR-0005 / CP-8: the synchronous copy follows the current column order and leaves the hidden column out
+    public async Task CP8_copy_follows_the_column_order_and_leaves_hidden_columns_out()
+    {
+        var cut = RenderGrid();
+        // A header drag and a Hide answered as a Consumer answers them: a new list, Locked left out.
+        cut.Render(ps => ps.Add(g => g.Columns, Reordered()));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "a", ctrl: true);
+
+        var payload = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+
+        Assert.Equal("data", payload.Kind);
+        Assert.Equal(
+            ["True\t100.5\tAlpha", "False\t-7\tBeta", "True\t0\tGamma"],
+            payload.Text!.Split("\r\n", StringSplitOptions.RemoveEmptyEntries));
+        Assert.Equal(
+            "<table data-ex-grid=\"invariant\">"
+            + "<tr><td>TRUE</td><td>100.5</td><td>Alpha</td></tr>"
+            + "<tr><td>FALSE</td><td>-7</td><td>Beta</td></tr>"
+            + "<tr><td>TRUE</td><td>0</td><td>Gamma</td></tr></table>",
+            payload.Html);
+    }
+
+    [Fact] // ADR-0005 / CP-8 / CP-17: the asynchronous route, with headers, follows the same order and names only the columns shown
+    public async Task CP8_copy_beyond_the_window_with_headers_follows_the_column_order()
+    {
+        var rows = TestRows.Many(100);
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, rows[..5])
+            .Add(g => g.TotalCount, 100)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20)
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.OnCopyRowsNeeded, (RowRange range, CancellationToken _) =>
+                Task.FromResult<IReadOnlyList<TestRow>>(rows[range.Start..(range.Start + range.Count)])));
+        cut.Render(ps => ps.Add(g => g.Columns, Reordered()));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "a", ctrl: true);
+
+        var assembled = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync(withHeaders: true));
+
+        Assert.NotNull(assembled);
+        var lines = assembled!.Text!.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal(101, lines.Length);
+        Assert.Equal("Active\tAmount\tBook", lines[0]);
+        Assert.Equal("True\t0\tRow 000000", lines[1]);
+        Assert.Equal("False\t99\tRow 000099", lines[100]);
+        Assert.DoesNotContain("Locked", assembled.Html);
+    }
+
     [Fact] // ADR-0014 / PST-1: a paste is one Edit Intent carrying every cell
     public async Task A_paste_raises_one_intent()
     {

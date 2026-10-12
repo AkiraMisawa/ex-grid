@@ -12,7 +12,8 @@ public sealed partial class Sheet
     {
         ArgumentNullException.ThrowIfNull(edit);
         if (edit.Check(this) is { } refusal) throw new SheetRefusedException(refusal);
-        return edit.Apply(this);
+        // However many steps the edit takes, it is one change (ADR-0180).
+        return AsOneChange(() => edit.Apply(this));
     }
 
     /// <summary>Whether <see cref="Do"/> would refuse <paramref name="edit"/> as the Sheet stands, and why; <see langword="null"/> when it would not.</summary>

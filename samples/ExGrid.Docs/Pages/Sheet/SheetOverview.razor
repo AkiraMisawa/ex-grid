@@ -51,7 +51,8 @@
             their References shifted, a series from two or more numbers, dates by day — any other pattern is
             refused, with the reason), Ctrl+D and Ctrl+R, Delete to clear contents and keep formats, Ctrl+F to
             find text as it is shown, and a Context Menu that inserts and deletes the rows or columns the
-            Selection spans. References keep naming the same cells, and a deleted target becomes
+            Selection spans — as Ctrl++ and Ctrl+- do from the keyboard, on a Selection of whole rows or whole
+            columns. References keep naming the same cells, and a deleted target becomes
             <code>#REF!</code>.
         </p>
         <ul>
@@ -131,7 +132,9 @@
             Select cells and the line under the Sheet shows Excel's Average, Count and Sum; right-click it to
             choose among all six. The Sheet answers from its own cells: a Formula's value, never its text, and
             every cell an array spills into. A date is a number here, as in Excel. An error among the cells
-            leaves Count alone. <code>ShowSelectionSummary="false"</code> turns the line off.
+            leaves Count and Numerical Count, and no other figure, as in Excel. Average, Min, Max and Sum wear the
+            active cell's Number Format, whatever the other cells' formats. <code>ShowSelectionSummary="false"</code>
+            turns the line off.
         </p>
     </DocsSection>
 

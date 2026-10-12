@@ -425,103 +425,113 @@
     },
     {
       "id": "XLOOKUP-048",
-      "source": "documented",
+      "source": "observed",
       "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: descending data, ascending mode",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=XLOOKUP(25,C1:C5,B1:B5,,0,2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!",
+      "excelExpect": {"value2": "c"}
     },
     {
       "id": "XLOOKUP-049",
-      "source": "documented",
+      "source": "observed",
       "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: ascending data, descending mode",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=XLOOKUP(25,A1:A5,B1:B5,,0,-2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!",
+      "excelExpect": {"value2": "c"}
     },
     {
       "id": "XLOOKUP-050",
-      "source": "documented",
+      "source": "observed",
       "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: unsorted",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=XLOOKUP(25,G1:G5,B1:B5,,0,2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!",
+      "excelExpect": {"value2": "#N/A"}
     },
     {
       "id": "XLOOKUP-051",
-      "source": "documented",
+      "source": "observed",
       "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: unsorted, even where the key is present",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=XLOOKUP(35,G1:G5,B1:B5,,0,2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!",
+      "excelExpect": {"value2": "d"}
     },
     {
       "id": "XLOOKUP-052",
-      "source": "documented",
+      "source": "observed",
       "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: mixed kinds: Excel's ordering across kinds is not pinned",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=XLOOKUP(25,H1:H5,B1:B5,,0,2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!",
+      "excelExpect": {"value2": "c"}
     },
     {
       "id": "XLOOKUP-053",
-      "source": "documented",
+      "source": "observed",
       "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: a blank in the lookup array",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=XLOOKUP(25,I1:I5,B1:B5,,0,2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!",
+      "excelExpect": {"value2": "#N/A"}
     },
     {
       "id": "XLOOKUP-054",
-      "source": "documented",
+      "source": "observed",
       "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: a lookup value of another kind",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=XLOOKUP(\"x\",A1:A5,B1:B5,,0,2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!",
+      "excelExpect": {"value2": "#N/A"}
     },
     {
       "id": "XLOOKUP-055",
-      "source": "documented",
+      "source": "observed",
       "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: a blank lookup value",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=XLOOKUP(A99,A1:A5,B1:B5,,0,2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!",
+      "excelExpect": {"value2": "#N/A"}
     },
     {
       "id": "XLOOKUP-056",
-      "source": "documented",
+      "source": "observed",
       "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: text whose collation in Excel is not pinned",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=XLOOKUP(\"a-c\",K1:K3,B1:B3,,0,2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!",
+      "excelExpect": {"value2": "b"}
     },
     {
       "id": "XLOOKUP-057",
-      "source": "documented",
+      "source": "observed",
       "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: wildcard match",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=XLOOKUP(\"b*\",D1:D5,B1:B5,,2,2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!",
+      "excelExpect": {"value2": "#VALUE!"}
     },
     {
       "id": "XLOOKUP-058",

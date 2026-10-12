@@ -41,7 +41,8 @@ public sealed partial class Sheet
     /// <summary>
     /// Renames the Sheet (ADR-0046). Every Reference qualified with the old name is rewritten to the
     /// new one, as Excel rewrites them, and a Formula whose qualifier now names or stops naming
-    /// this Sheet is recalculated.
+    /// this Sheet is recalculated. A rename is a change, so <c>RAND</c> and <c>RANDBETWEEN</c> draw
+    /// again, as Excel's do (ADR-0180); a rename to the name the Sheet already has changes nothing.
     /// </summary>
     /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="IsValidName"/>).</exception>
     public SheetChange Rename(string name) => ApplyRename(name).Change;
@@ -83,6 +84,8 @@ public sealed partial class Sheet
         CheckName(name, nameof(name));
         var oldName = Name;
         if (string.Equals(oldName, name, StringComparison.Ordinal)) return new RenameOutcome(SheetChange.None, oldName, []);
+        // A rename is a change, and draws again, as Excel's did (ADR-0180, the seventeenth Windows run).
+        CountChange();
 
         var before = Snapshot();
         var rewritten = new List<(CellAddress, Entry)>();
@@ -106,13 +109,20 @@ public sealed partial class Sheet
         }
         Name = name;
         RebuildDependencies();
-        var recalculated = dirty.Count == 0 ? [] : Recalculate(dirty, []).Recalculated;
+        // INDIRECT's text may name the Sheet by the name it has had or now has (ADR-0124).
+        var recalculated = dirty.Count == 0 && !HasVolatileFormulas ? [] : Recalculate(dirty, []).Recalculated;
         return new RenameOutcome(Diff(before, recalculated), oldName, rewritten);
     }
 
-    /// <summary>Undoes a rename: the old name back, and the Formulas it rewrote exactly as they were.</summary>
+    /// <summary>
+    /// Undoes a rename: the old name back, and the Formulas it rewrote exactly as they were. The undo
+    /// is a change and draws again, as Excel's did (ADR-0180); the undo of a rename that changed
+    /// nothing changes nothing.
+    /// </summary>
     internal SheetChange UndoRename(RenameOutcome outcome)
     {
+        if (string.Equals(Name, outcome.OldName, StringComparison.Ordinal)) return SheetChange.None;
+        CountChange();
         var before = Snapshot();
         var dirty = new HashSet<CellAddress>();
         foreach (var cell in _cells.Values)
@@ -126,7 +136,8 @@ public sealed partial class Sheet
         }
         Name = outcome.OldName;
         RebuildDependencies();
-        var recalculated = dirty.Count == 0 ? [] : Recalculate(dirty, []).Recalculated;
+        // INDIRECT's text may name the Sheet by the name it has had or now has (ADR-0124).
+        var recalculated = dirty.Count == 0 && !HasVolatileFormulas ? [] : Recalculate(dirty, []).Recalculated;
         return Diff(before, recalculated);
     }
 }
