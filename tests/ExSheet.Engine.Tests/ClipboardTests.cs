@@ -89,6 +89,61 @@ public class ClipboardTests
         Assert.Equal("keep me", sheet.Value("C2")!.Value.Text);
     }
 
+    [Fact] // ADR-0048, ADR-0014: a block pasted over several ranges is one step, shifted for each place, a shared cell written once; its undo restores every cell
+    public void A_paste_over_several_ranges_is_one_step()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A2", "2");
+        sheet.Enter("C2", "3");
+        sheet.Enter("C3", "4");
+        sheet.Enter("B1", "=A1*10");
+        sheet.Enter("D3", "keep me?");
+        var before = sheet.ToDocument().ToJson();
+
+        var step = sheet.Do(SheetEdit.Paste(CopyBlock(sheet, "B1"), [CellRange.Parse("B2"), CellRange.Parse("D2:D3"), CellRange.Parse("D3")]));
+
+        Assert.Equal("=A2*10", Formula(sheet, "B2"));
+        Assert.Equal("=C2*10", Formula(sheet, "D2"));
+        Assert.Equal("=C3*10", Formula(sheet, "D3"));
+        Assert.Equal(40, sheet.Number("D3"));
+        step.Undo();
+        Assert.Equal(before, sheet.ToDocument().ToJson());
+        step.Redo();
+        Assert.Equal(30, sheet.Number("D2"));
+    }
+
+    [Fact] // ADR-0048, ADR-0014: a paste over several ranges needs one, and each a whole multiple of the block
+    public void A_paste_over_several_ranges_takes_whole_multiples_only()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("A2", "2");
+        var block = CopyBlock(sheet, "A1:A2");
+
+        Assert.Throws<ArgumentException>(() => SheetEdit.Paste(block, Array.Empty<CellRange>()));
+        Assert.Throws<ArgumentException>(() => SheetEdit.Paste(block, [CellRange.Parse("C1:C4"), CellRange.Parse("E1:E3")]));
+    }
+
+    [Fact] // ADR-0048, ADR-0050 item 10: typed fields and exact Entries pasted together are one step; the typed are read as typed, the Entries kept exactly
+    public void Typed_fields_and_exact_entries_are_one_step()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "old");
+        sheet.Enter("B1", "old");
+        var before = sheet.ToDocument().ToJson();
+        var exact = 1.0000000000000002;
+
+        var step = sheet.Do(SheetEdit.PasteText(
+            [new(At("A1"), "50%"), new(At("C1"), "=B1*2")],
+            [new KeyValuePair<CellAddress, Entry?>(At("B1"), Entry.FromValue(Value.FromNumber(exact)))]));
+
+        Assert.Equal("50%", sheet.GetDisplay(At("A1")).Text);
+        Assert.Equal(exact, sheet.Number("B1"));
+        Assert.Equal(exact * 2, sheet.Number("C1"));
+        step.Undo();
+        Assert.Equal(before, sheet.ToDocument().ToJson());
+    }
+
     [Fact] // ADR-0048/0005 (SH-14): outward, a copy carries Values: as shown in the text flavour, unformatted in the HTML one
     public void A_copy_carries_values_outward()
     {

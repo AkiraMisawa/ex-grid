@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>INDEX (its array form), XMATCH, CHOOSE, ROW, COLUMN, OFFSET and INDIRECT, each to Microsoft's documentation of it.</summary>
@@ -246,6 +248,9 @@ internal static partial class FunctionLibrary
         }
         // Any other text a structured reference begins as: a form a Formula does not take (#All, @).
         if (StructuredText().IsMatch(text)) return Operand.Of(ErrorValue.Value);
+        // A declared Linked Table's bare name, which Excel reads as a structured reference to the
+        // table's data: refused until a run observes it (ADR-0124's note of 2026-10-10; INDIRECT-043).
+        if (cells.IsLinkedTable(text)) return Operand.Of(ErrorValue.Value);
         if (Lexer.ReadReference(text, 0, out var length) is not { } reference) return Operand.Of(ErrorValue.Ref);
         // A1#: the Spill Range of the Formula in A1, read as the typed one is (ADR-0125).
         if (reference.Shape == ReferenceShape.Cell && length == text.Length - 1 && text[length] == '#')

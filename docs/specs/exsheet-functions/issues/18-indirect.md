@@ -15,8 +15,9 @@ Status: done
 - [x] Volatile (SH-59): in the volatile set; the place it names is read as it stands after the
       recalculation; a Formula that reaches itself through it is `#CIRC!`
 - [x] Its text is not rewritten by an insertion or a deletion, while a Reference beside it is
-- [x] Refusals (SH-68): `#VALUE!` for R1C1 text (`a1` FALSE), a structured reference and `A1#`;
-      `#REF!` for text that names no place, another Sheet's name included
+- [x] Refusals (SH-68): `#VALUE!` for R1C1 text (`a1` FALSE), a structured reference (a declared
+      Linked Table's bare name included) and `A1#`; `#REF!` for text that names no place, another
+      Sheet's name included
 - [x] The corpus cases. The catalogue row Supported, and the Docs Site's Formulas page says what is
       refused
 - [x] For the next Windows run: Excel's answer for each refused form, and what an insertion does to
@@ -29,7 +30,7 @@ Status: done
       absolute cell (`a1` FALSE, 0, a blank or left empty) and a range of two such cells; a structured
       reference's text as the typed `Table[Column]` is read, waiting with it; `A1#` as the typed `A1#`
       is read. Relative R1C1 text and R1C1 text naming whole rows or columns stay `#VALUE!`
-- [ ] For the next Windows run: INDIRECT-030 to INDIRECT-042, the forms read or refused by
+- [ ] For the next Windows run: INDIRECT-030 to INDIRECT-043, the forms read or refused by
       generalising what the seventeenth run observed (an R1C1 range, lower case, the qualifier, `a1`
       left empty or blank, A1 text read as R1C1, relative and whole-row and whole-column R1C1 text, a
       structured reference in double brackets or naming no table or column, `A1#` text naming a cell
@@ -82,3 +83,9 @@ fixed with `SpillTests`' blocked `INDIRECT`, `OFFSET` and `RAND` Anchors. `INDEX
 out is `#REF!` over a Spill Range of several rows and columns as over a typed range (INDEX-012; INDEX-017
 and 018 ask it of `A1#` and `INDIRECT("A1#")`). The forms read or refused by generalising the observed
 ones are INDIRECT-030 to INDIRECT-042, `uncertain` for the next run.
+
+2026-10-12, the second review's refusal carried over the seventeenth run's corrections: a declared Linked
+Table's bare name (`INDIRECT("Positions")`) is `#VALUE!`, not `#REF!`, since Excel reads it as a
+structured reference to the table's data and no run has observed it (ADR-0124's note;
+`ADR0124_a_linked_tables_bare_name_is_value_and_any_other_name_ref`). INDIRECT-043 asks it; it was
+INDIRECT-030 on the review's branch, a number the run's corrections took meanwhile.

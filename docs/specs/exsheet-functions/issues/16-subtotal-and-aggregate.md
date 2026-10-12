@@ -83,10 +83,17 @@ disagreement, which is corrected before the tag. AGGREGATE-042 to AGGREGATE-051 
 the test pins: options 5 to 7 over a whole-Formula `SUBTOTAL`, options 4 to 7 over a whole-Formula
 `AGGREGATE`, and the array form.)* The Formulas page now says which options
 pass over what. The Status is `done`: the one open box is the sign-off's Windows run, and each of its
-questions is a corpus case — the `uncertain` cases of `subtotal.json` (SUBTOTAL-020 to SUBTOTAL-034) and
-`aggregate.json` (AGGREGATE-007, 008, 011 and 022 to 041), what counts as nested among them. Excel's popup
+questions is a corpus case — the `uncertain` cases of `subtotal.json` (SUBTOTAL-020 to SUBTOTAL-038) and
+`aggregate.json` (AGGREGATE-007, 008, 011 and 022 to 054), what counts as nested among them. Excel's popup
 texts for the function numbers and options, which the comment above asks the run to confirm, are
 Microsoft's documented ones (ADR-0058); like tickets 09 and 11's captions, nothing here waits on them.
+
+2026-10-11, after the second review: the layer-3 spec this ticket rewrote (`declarations.spec.mjs`,
+where `=SU` now lists `SUBTOTAL` second and the keyboard takes one more ↓ to reach `SUM`) had not been
+run locally. Its three DC-17 tests ran under both Chromes with `--project=chrome --repeat-each=3`, on
+Playwright's bundled Chromium (a container without Chrome or Edge, so no Step 4 record), headed under
+xvfb: 18 passed on the WebAssembly host (port 5441) and 18 on the Server host (port 5440). The full run,
+and the installed Chrome and Edge, are CI's.
 
 2026-10-12, with the seventeenth Windows run's answers (`verification/2026-10-11-windows-17/report.md`,
 Part A and Part B's b4): the engine follows Excel, as SH-68's note and ADR-0047's of 2026-10-10 said it

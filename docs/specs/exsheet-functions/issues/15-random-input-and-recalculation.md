@@ -21,10 +21,12 @@ refusals.
 - [x] Record the decision before introducing hidden random state or admitting the functions (ADR-0180)
 - [x] The engine: the Sheet's seed as data (`#GETTING_DATA` until one is set, as `TODAY` is with no
       day), the count of changes, and each draw computed from its four inputs, with no shared stream
-- [x] Which changes count:
-      - they do: an edit, an insertion or a deletion, the undo or redo of one, and a Linked Table's
-        snapshot;
-      - they do not: a recalculation by the clock, and a change of format
+- [x] Which changes count, each once however many steps it takes:
+      - they do: an edit, an insertion or a deletion, the undo or redo of one, a Linked Table's
+        snapshot, and a Linked Table's declaration, or one that replaces it (ADR-0180's second note
+        of 2026-10-11);
+      - they do not: a recalculation by the clock, a change of format, and a rename (ADR-0180's
+        first note of 2026-10-11)
 - [x] `RAND` and `RANDBETWEEN` in the volatile set (ADR-0124)
 - [x] `RANDBETWEEN`'s arguments: ADR-0180's refusals, and the answers observed in Excel
 - [x] ExSheet:
@@ -93,6 +95,15 @@ Linked Table's declaration is a change; ADR-0180's list does not name it, and it
 and one that replaces it, is a change and draws again; the same declaration again draws nothing
 (`ADR0180_a_linked_tables_declaration_draws_again`). The Formulas page, both READMEs and the Change Note
 say so. The seventeenth Windows run asks Excel whether a refresh that brings the same data draws again.
+
+2026-10-11, after the second review: a paste ExSheet wrote in several engine steps — typed fields with
+exact numbers, and its own copy over a Selection of several ranges — counted a change for each step, and
+so did its undo and redo, though `Changes` says an operation counts once. Each is now one engine edit
+(`SheetEdit.PasteText(fields, entries)` and `SheetEdit.Paste(block, targets)`): one step on the undo
+stack and one change (`ADR0180_a_paste_in_several_parts_counts_once`, and in `SeedWiringTests` the
+pastes, their undo and redo, and a refused paste, which draws nothing). Three questions, not two, are
+left for the sign-off's Windows run by hand: what an undo does to a draw, whether a rename draws again,
+and whether a refresh that brings the same data draws again.
 
 2026-10-12, from the seventeenth Windows run (`verification/2026-10-11-windows-17/report.md`, Part B b1
 to b3; `records/part-b.jsonl`), which asked Excel the three questions left above:

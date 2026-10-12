@@ -17,6 +17,9 @@ internal interface ICellReader
     /// </summary>
     Operand TableColumn(string table, string column);
 
+    /// <summary>Whether a Linked Table of this name is declared, the name read without regard to case (ADR-0049).</summary>
+    bool IsLinkedTable(string name);
+
     /// <summary>The Sheet Day <c>TODAY</c> answers (ADR-0121), or <see langword="null"/> while it is not known.</summary>
     DateOnly? Today { get; }
 

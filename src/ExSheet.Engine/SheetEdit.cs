@@ -130,18 +130,48 @@ public abstract class SheetEdit
     public static SheetEdit Paste(SheetBlock block, CellRange target)
     {
         ArgumentNullException.ThrowIfNull(block);
+        CheckWholeMultiple(block, target, nameof(target));
+        return new PlacedEdit(null, () => Tiles(block, target).SelectMany(origin => Sheet.Place(block, origin)));
+    }
+
+    /// <summary>
+    /// A block copied inside ExSheet, pasted over every range of <paramref name="targets"/> as one
+    /// operation (ADR-0048, ADR-0014): a range the block's size takes it at its top-left, and a range
+    /// that is a whole multiple of it takes it repeated, as <see cref="Paste(SheetBlock, CellRange)"/>
+    /// repeats it. A paste onto a Selection of several ranges is one step on the undo stack, and one
+    /// change, however many ranges it writes (ADR-0180). A cell two ranges share is written once, with
+    /// what the later range gives it.
+    /// </summary>
+    /// <exception cref="ArgumentException">There is no range, or one is not a whole multiple of the block in both directions.</exception>
+    public static SheetEdit Paste(SheetBlock block, IEnumerable<CellRange> targets)
+    {
+        ArgumentNullException.ThrowIfNull(block);
+        ArgumentNullException.ThrowIfNull(targets);
+        var ranges = targets.ToList();
+        if (ranges.Count == 0) throw new ArgumentException("There is no range to paste over.", nameof(targets));
+        foreach (var target in ranges) CheckWholeMultiple(block, target, nameof(targets));
+        return new PlacedEdit(null, () =>
+        {
+            var states = new Dictionary<CellAddress, CellState>();
+            foreach (var (address, state) in ranges.SelectMany(target => Tiles(block, target)).SelectMany(origin => Sheet.Place(block, origin))) states[address] = state;
+            return states.Select(p => (p.Key, p.Value));
+        });
+    }
+
+    private static void CheckWholeMultiple(SheetBlock block, CellRange target, string parameter)
+    {
         if (target.RowCount % block.RowCount != 0 || target.ColumnCount % block.ColumnCount != 0)
         {
-            throw new ArgumentException($"A {target.RowCount} × {target.ColumnCount} target is not a whole multiple of a {block.RowCount} × {block.ColumnCount} block.", nameof(target));
+            throw new ArgumentException($"A {target.RowCount} × {target.ColumnCount} target is not a whole multiple of a {block.RowCount} × {block.ColumnCount} block.", parameter);
         }
-        return new PlacedEdit(null, () => Tiles(block, target).SelectMany(origin => Sheet.Place(block, origin)));
+    }
 
-        static IEnumerable<CellAddress> Tiles(SheetBlock block, CellRange target)
+    /// <summary>The top-left cell of each copy of <paramref name="block"/> that fills <paramref name="target"/>.</summary>
+    private static IEnumerable<CellAddress> Tiles(SheetBlock block, CellRange target)
+    {
+        for (var row = target.First.Row; row <= target.Last.Row; row += block.RowCount)
         {
-            for (var row = target.First.Row; row <= target.Last.Row; row += block.RowCount)
-            {
-                for (var column = target.First.Column; column <= target.Last.Column; column += block.ColumnCount) yield return new CellAddress(row, column);
-            }
+            for (var column = target.First.Column; column <= target.Last.Column; column += block.ColumnCount) yield return new CellAddress(row, column);
         }
     }
 
@@ -181,6 +211,24 @@ public abstract class SheetEdit
         ArgumentNullException.ThrowIfNull(fields);
         var list = fields.ToList();
         return new CellsEdit(list.Select(p => p.Key), sheet => sheet.Enter(list, pasted: true));
+    }
+
+    /// <summary>
+    /// Text pasted from another program, some of whose fields carry their exact Value: the typed
+    /// <paramref name="fields"/> are taken as <see cref="PasteText(IEnumerable{KeyValuePair{CellAddress, string}})"/>
+    /// takes them, and <paramref name="entries"/> are set as they are, such as an invariant number
+    /// with every digit its double holds (ADR-0048, ADR-0050 item 10). The fields are read first,
+    /// so a format typing gives a cell is given before the Entries are set; a cell named in both
+    /// takes its Entry. One operation: one step on the undo stack, and one change (ADR-0180).
+    /// </summary>
+    public static SheetEdit PasteText(IEnumerable<KeyValuePair<CellAddress, string>> fields, IEnumerable<KeyValuePair<CellAddress, Entry?>> entries)
+    {
+        ArgumentNullException.ThrowIfNull(fields);
+        ArgumentNullException.ThrowIfNull(entries);
+        var typed = fields.ToList();
+        var exact = entries.ToList();
+        return new CellsEdit(typed.Select(p => p.Key).Concat(exact.Select(p => p.Key)),
+            sheet => SheetChange.Merge([sheet.Enter(typed, pasted: true), sheet.SetEntries(exact)]));
     }
 
     /// <summary>

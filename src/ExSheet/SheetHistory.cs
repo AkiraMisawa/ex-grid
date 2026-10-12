@@ -9,9 +9,13 @@ namespace ExSheet;
 /// per ExSheet instance (ADR-0018).
 /// </summary>
 /// <remarks>
-/// An operation is usually one engine step. One the engine does as several — a copied block
-/// pasted over a Selection of several ranges — is still one operation, and is undone and redone
-/// whole: its engine steps undone in the reverse of their order, redone in their order.
+/// An operation is usually one engine step. One done as several — an edit with the widths it
+/// widens its columns to, a resize of several whole columns the grid reports one column at a
+/// time — is still one operation, and is undone and redone whole: its engine steps undone in the
+/// reverse of their order, redone in their order. Each step's undo and redo is a change of its own
+/// when it changes an Entry (ADR-0180), so at most one step of an operation may: an operation that
+/// writes Entries in several parts, such as a paste over several ranges, is one engine edit
+/// (<see cref="SheetEdit.Paste(SheetBlock, IEnumerable{CellRange})"/>), and draws once.
 /// </remarks>
 internal sealed class SheetHistory
 {

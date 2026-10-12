@@ -301,7 +301,8 @@ answer:
   Windows run observed: R1C1 text (`a1` FALSE, 0, a blank or left empty) naming an absolute cell or a
   range of two, a structured reference's text as `Table[Column]` typed is read, waiting while the
   table waits, and `A1#` as typed `A1#` is read. R1C1 text that is relative or names whole rows or
-  columns is `#VALUE!` until a run observes it, and text that names no place is `#REF!`, as in Excel:
+  columns, and a declared Linked Table's bare name (`Positions`, which Excel reads as the table's
+  data), are `#VALUE!` until a run observes them, and text that names no place is `#REF!`, as in Excel:
   another Sheet's name, a table never declared or a column it lacks. What a computed Reference
   (`INDIRECT`'s or `OFFSET`'s) reads taints the Formula as a Reference its text names does: one that
   reaches a cycle, or its own cell, is `#CIRC!`, and one that reaches a waiting cell waits, whatever
@@ -449,8 +450,10 @@ step.Undo();                                         // Entries, formats and Ref
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each
   pasted field as if typed under the Sheet's culture, except that a field that cannot be read as
-  a Formula (`=1+`) is taken as text, as Excel takes it. A copy that reaches a `#GETTING_DATA`
-  Value is refused.
+  a Formula (`=1+`) is taken as text, as Excel takes it. A paste that writes in parts is one
+  edit, one step and one change (ADR-0180): `SheetEdit.Paste(block, targets)` over several ranges,
+  and `SheetEdit.PasteText(fields, entries)` for typed fields beside Entries kept exactly. A copy
+  that reaches a `#GETTING_DATA` Value is refused.
 - **Fill.** `SheetEdit.Fill(source, target, direction)` fills as Excel does for copies (with
   References shifted), a linear trend from two or more numbers (held at 15 significant digits,
   as Excel holds it), and a single date by day, and

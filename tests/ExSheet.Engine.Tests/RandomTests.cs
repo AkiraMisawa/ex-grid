@@ -234,6 +234,33 @@ public class RandomTests
         Counts(0, () => sheet.SetSeed(Seed + 1));
     }
 
+    [Fact] // ADR-0180, ADR-0048: a paste over several ranges, and one of typed fields with exact Entries, is one change, and so is its undo and its redo
+    public void ADR0180_a_paste_in_several_parts_counts_once()
+    {
+        var sheet = Seeded();
+        sheet.Enter("A1", "=RAND()");
+        sheet.Enter("B1", "=ROW()");
+        var block = sheet.Copy(CellRange.Parse("B1")).Block!;
+        var changes = sheet.Changes;
+
+        SheetStep Counts(Func<SheetStep> change)
+        {
+            var step = change();
+            Assert.Equal(changes + 1, sheet.Changes);
+            changes = sheet.Changes;
+            return step;
+        }
+
+        var several = Counts(() => sheet.Do(SheetEdit.Paste(block, [CellRange.Parse("B2"), CellRange.Parse("D2:D5"), CellRange.Parse("F1")])));
+        Counts(() => { several.Undo(); return several; });
+        Counts(() => { several.Redo(); return several; });
+        var mixed = Counts(() => sheet.Do(SheetEdit.PasteText(
+            [new(CellAddress.Parse("C1"), "50%"), new(CellAddress.Parse("C2"), "=C1*2")],
+            [new KeyValuePair<CellAddress, Entry?>(CellAddress.Parse("C3"), Entry.FromValue(Value.FromNumber(0.1 + 0.2)))])));
+        Counts(() => { mixed.Undo(); return mixed; });
+        Counts(() => { mixed.Redo(); return mixed; });
+    }
+
     [Fact] // ADR-0180 (2026-10-11): declaring a Linked Table, or replacing its declaration, is a change and draws again, whether or not a Formula reads the table
     public void ADR0180_a_linked_tables_declaration_draws_again()
     {

@@ -347,6 +347,16 @@
       "cells": {"A1": "7", "ZZ1000": "=SUM(INDIRECT(\"A1#\"))"},
       "check": "ZZ1000",
       "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "INDIRECT-043",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a declared table's bare name, which Excel reads as a structured reference to the table's data",
+      "cells": {"ZZ1000": "=SUM(INDIRECT(\"Positions\"))"},
+      "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5]]}},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0124 (2026-10-10): structured reference text, a table's bare name included, is #VALUE! until a Windows run observes it"
     }
   ]
 }
