@@ -65,8 +65,8 @@ public class MudFilterPanelTests : MudTestContext
         var marked = cut.FindAll(".ex-popover-closes");
 
         Assert.Equal(2, marked.Count);
-        Assert.Same(Button(cut, "mud-ex-grid-filter-apply"), marked[0]);
-        Assert.Same(Button(cut, "mud-ex-grid-filter-cancel"), marked[1]);
+        Assert.True(marked[0].ClassList.Contains("mud-ex-grid-filter-apply"));
+        Assert.True(marked[1].ClassList.Contains("mud-ex-grid-filter-cancel"));
         Assert.All(marked, b => Assert.Equal("BUTTON", b.TagName));
     }
 

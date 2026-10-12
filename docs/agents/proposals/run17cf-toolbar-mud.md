@@ -97,7 +97,11 @@ been sent, the list holds the keyboard when the toolbar's hand-back lands, and t
 I read (B) as covering the list that never took the keyboard, and build the other case as a close of the list's
 own: it leaves through its element inside the band, calls `ChoicesClosing` (with no key) and `ChoicesClosed`, and
 the toolbar takes the keyboard on as it stands — to the Sheet when it was handing the keyboard back, to the band when
-the close came from Escape typed on the band (R2 (b)). The `CloseRequest` XML doc says so. Layer 2 pins it
+the close came from Escape typed on the band (R2 (b)). The `CloseRequest` XML doc says so. Round 2's stop 1 put
+it as "closes as if Escape were pressed in it, and calls `ChoicesClosed`"; that stands, read as: it closes through
+the path Escape in the list takes, and calls `ChoicesClosed`. It passes no key to `ChoicesClosing`, because since
+R2 (b) Escape in a list a KeyTip opened means going back one level, and here the toolbar, which asked for the close,
+already knows where the keyboard goes. Layer 2 pins it
 (`A_close_request_closes_a_list_that_holds_the_keyboard_back_to_the_keytips`); layer 3 does not reach the window,
 which is a round trip wide.
 
