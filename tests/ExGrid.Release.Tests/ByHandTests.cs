@@ -552,8 +552,7 @@ public class ByHandTests
         Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
         // What is still to run names the version the failed record was to cover, and the record that failed.
         var toRun = Assert.Single(report.Notices, n => n.Contains("To run by hand at"));
-        Assert.Contains("WR-10 on Windows or Linux's layer-2 runs at MudBlazor 9.12.0 (verification/2026-10-25-linux-mudblazor-9.12.0/mudblazor-layer2.log reads 'fail')", toRun);
-        Assert.EndsWith("reads 'fail'), WR-10 on Windows or Linux's layer-2 runs at MudBlazor 9.12.0 (ADR-0208).", toRun);
+        Assert.EndsWith(": WR-10 on Windows or Linux's later record verification/2026-10-25-linux-mudblazor-9.12.0/mudblazor-layer2.log, which reads 'fail', WR-10 on Windows or Linux's layer-2 runs at MudBlazor 9.12.0 (ADR-0208).", toRun);
     }
 
     [Fact] // ADR-0208 (2026-10-12): a later record's file is at the tag
@@ -584,6 +583,13 @@ public class ByHandTests
 
         Assert.Null(row.Record);
         Assert.Contains("names records in 'laterRecords' and no floor record", Assert.Single(report.Refusals).Message);
+
+        // A floor record that is there but malformed is refused for what is wrong with it, not as absent.
+        var floor = "{\"commit\": \"" + new string('b', 40) + "\", \"tag\": \"" + FloorTag + "\", \"path\": \"" + FloorRecord + "\", \"verdict\": \"pass\"}";
+        var malformed = repo.Write(ByHand.IndexPath, Wr10Index(floor + ", \"laterRecords\": [" + later + "]")).Commit();
+        report = new Report();
+        ByHand.ReadIndex(new CommitTree(repo.Git, malformed), report);
+        Assert.Contains("record in verification/by-hand.json names no 'versions'", Assert.Single(report.Refusals).Message);
     }
 
     [Fact] // ADR-0205, ADR-0208 (2026-10-12): X's time is its committer time, in UTC, whatever offset the committer wrote and whenever it was authored

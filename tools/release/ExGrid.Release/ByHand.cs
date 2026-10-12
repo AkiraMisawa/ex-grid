@@ -42,7 +42,7 @@ public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> P
 /// pattern where a directory name varies (ADR-0205's note of 2026-10-12); its record names the MudBlazor
 /// versions its layer-2 runs covered. A layer-2 run at a MudBlazor 9.x published after the floor record is a
 /// run of its own, with a record in a directory of its own, tagged by that directory, which WR-10's entry names
-/// besides the floor record in <c>laterRecords</c> (decided with the user, 2026-10-12). Every record the entry
+/// besides the floor record (decided with the user, 2026-10-12); the index names it in <c>laterRecords</c>. Every record the entry
 /// names is checked: each is a pass, names its commit, and is fetched through its tag, which names that commit;
 /// the floor record's paths hold since its commit, a later record's are not compared. The versions the records
 /// cover between them are held to those published within the Wrappers' declared range before X
@@ -154,7 +154,8 @@ public static partial class ByHand
                     }
                     else
                     {
-                        if (record is null && laterList.GetArrayLength() > 0)
+                        // A floor record that is there but malformed has been refused already.
+                        if ((!item.TryGetProperty("record", out var floor) || floor.ValueKind == JsonValueKind.Null) && laterList.GetArrayLength() > 0)
                             report.Refuse($"{name} in {IndexPath} names records in '{LaterRecords}' and no floor record. A later layer-2 run stands beside the floor run, never in its place (ADR-0205, 2026-10-12).", IndexPath);
                         var number2 = 0;
                         foreach (var entry in laterList.EnumerateArray())
@@ -241,7 +242,7 @@ public static partial class ByHand
                     else
                     {
                         laterHold = false;
-                        if (later.Verdict != "pass") toRun.Add($"{row.Name}'s layer-2 runs at {WrapperRange.Package} {string.Join(", ", later.Versions ?? [])} ({later.Path} reads '{later.Verdict}')");
+                        if (later.Verdict != "pass") toRun.Add($"{row.Name}'s later record {later.Path}, which reads '{later.Verdict}'");
                     }
                 }
                 // A MudBlazor version published after the floor record and before X asks for the layer-2 runs at it (2026-10-12).

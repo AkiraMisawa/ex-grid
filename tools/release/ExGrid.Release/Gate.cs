@@ -16,8 +16,9 @@ public static class Gate
     /// <summary>
     /// Runs the checks <paramref name="version"/>'s kind needs against <paramref name="tagCommit"/>,
     /// saying every refusal. The rows checked by hand are judged against the signed-off commit X for a
-    /// stable version, and against the tagged commit for a candidate, which has no sign-off; WR-10's record
-    /// is held besides to the MudBlazor versions <paramref name="mudBlazor"/> lists as published (2026-10-12).
+    /// stable version, and against the tagged commit for a candidate, which has no sign-off; WR-10's records
+    /// are held besides to the MudBlazor versions <paramref name="mudBlazor"/> gives as published before X's
+    /// commit time, or with no date (2026-10-12).
     /// </summary>
     public static void Run(Git git, TagVersion version, string tagCommit, Report report, bool fetchMissing = false, IPublishedVersions? mudBlazor = null)
     {
