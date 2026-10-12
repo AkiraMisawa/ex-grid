@@ -260,9 +260,9 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 | Function | Status | Priority | Notes |
 |---|---|---|---|
 | `FILTER` | Supported | — | Spills (ADR-0125); nothing kept is `#CALC!` without `if_empty` |
-| `SORT` | Supported | — | Spills (ADR-0125); a blank or Error Value among the keys is refused until Excel is asked; Excel's Anchor recorded (SORT-011), the refusal kept until a run reads the rest |
-| `SORTBY` | Supported | — | Spills (ADR-0125); keys refused as `SORT`'s; Excel's Anchor recorded (SORT-011), the refusal kept until a run reads the rest |
-| `UNIQUE` | Supported | — | Spills (ADR-0125); a blank in the array is refused until Excel is asked; Excel's Anchor recorded (UNIQUE-009), the refusal kept until a run reads the rest |
+| `SORT` | Supported | — | Spills (ADR-0125); a blank key sorts after every other, in either order, and spills as 0 (SORT-011 to 025). An Error Value key sorts after the numbers (SORT-015), and is #VALUE! beside text, a boolean, a blank or another Error Value, or in a descending sort, until Excel is asked (SORT-028 to 032). A blank it keeps is read inside a Formula as Excel reads it — `COUNTA` counts it, `INDEX` takes it out as a blank (SORT-021, 022) — and #VALUE! where a function's reading of it parts (SORT-033 to 037) |
+| `SORTBY` | Supported | — | Spills (ADR-0125); a blank key sorts as `SORT`'s, key by key (SORTBY-007 to 009), and a blank it keeps is read as `SORT`'s (SORTBY-011 to 013 ask). An Error Value key is #VALUE! until Excel is asked whether it sorts as `SORT`'s or is the result (SORTBY-010) |
+| `UNIQUE` | Supported | — | Spills (ADR-0125); a blank is one of a kind only with another blank, never with 0 or empty text, and spills as 0 (UNIQUE-009 to 016); read inside a Formula as `SORT`'s is (UNIQUE-017 to 024) |
 | `SEQUENCE` | Supported | — | Spills (ADR-0125) |
 | `TRANSPOSE` | Supported | — | Spills (ADR-0125) |
 | `LET` | Supported | — | Names bound inside one Formula, as Excel's keyboard accepts them; a function's name, declared or not, and an R1C1 shape that is no A1 Reference are names, a value may be left empty, and `TRUE`, `FALSE` and a name that reads as an A1 Reference are refused on entry (ADR-0181, the seventeenth run). Ticket 14 |
