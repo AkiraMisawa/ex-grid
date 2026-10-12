@@ -81,11 +81,20 @@
     {
       "id": "WORKDAY-010",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a start between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; truncated, it would be serial 0, a Saturday, and a workday on is Monday, serial 2",
+      "description": "A start between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; it is not truncated to serial 0, a Saturday",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=WORKDAY(-0.5,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "WORKDAY-011",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a boolean typed as a date, which EOMONTH and EDATE answer with #VALUE! (EOMONTH-009, EDATE-009); read as 1, serial 1 is a Sunday and a workday on is Monday, serial 2",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=WORKDAY(TRUE,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

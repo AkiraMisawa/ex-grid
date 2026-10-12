@@ -64,7 +64,7 @@
     {
       "id": "WEEKDAY-008",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a serial between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; truncated, it would be serial 0, a Saturday, 7 (WEEKDAY-006)",
+      "description": "A serial between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; it is not truncated to serial 0, a Saturday (WEEKDAY-006)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=WEEKDAY(-0.5)"},
       "check": "ZZ1000",

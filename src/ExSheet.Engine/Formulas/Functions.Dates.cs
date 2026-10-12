@@ -64,8 +64,9 @@ internal static partial class FunctionLibrary
     private static Operand Day(FunctionCall call) => DatePart(call, date => date.Day);
 
     /// <summary>
-    /// YEAR, MONTH and DAY: the serial truncated to its day; serial 0 is 0 January 1900, and serial
-    /// 60 is 29 February 1900. A serial below 0 or after 31 December 9999 is <c>#NUM!</c>.
+    /// YEAR, MONTH and DAY: the serial cut down to its day; serial 0 is 0 January 1900, and serial
+    /// 60 is 29 February 1900. A serial below 0 or after 31 December 9999 is <c>#NUM!</c>, -0.5
+    /// included, which is cut down to -1, as Excel was observed to answer (YEAR-008, MONTH-005, DAY-005).
     /// </summary>
     private static Operand DatePart(FunctionCall call, Func<(int Year, int Month, int Day), int> part)
     {
@@ -80,28 +81,28 @@ internal static partial class FunctionLibrary
     private static Operand EDate(FunctionCall call) => MonthsAway(call, endOfMonth: false);
 
     /// <summary>
-    /// EOMONTH and EDATE: the start date and the months are truncated to whole numbers. The start is
-    /// read as YEAR, MONTH and DAY read it, so serial 0 is 0 January 1900 and serial 60 is 29
-    /// February 1900. EDATE keeps the start's day, or the month's last day where the month is
-    /// shorter; EOMONTH gives the month's last day. The months are counted on the real calendar,
-    /// where February 1900 has 28 days, and a day before 1 March 1900 is its own serial, 1 to 59:
-    /// <c>EOMONTH(31,1)</c> is 28 February 1900, 59, <c>EOMONTH(0,1)</c> is 59 too,
-    /// <c>EDATE(DATE(1900,3,15),-1)</c> is 15 February, 46, and <c>EDATE(60,1)</c> is 29 March,
-    /// 89, as Excel was observed to answer (ADR-0047; EOMONTH-008 and EDATE-008, the seventeenth
-    /// Windows run; EOMONTH-010 and EDATE-010, the area pass of 2026-10-12). A start of -1 or
-    /// below, or a result outside 1900 to 9999, is <c>#NUM!</c>, and a boolean typed as either
-    /// argument is <c>#VALUE!</c>, as in Excel (EOMONTH-004, EDATE-007, EOMONTH-009, EDATE-009).
+    /// EOMONTH and EDATE: the start date is cut down to its day, as YEAR, MONTH and DAY cut a serial,
+    /// and the months are truncated to a whole number. The start is read as YEAR, MONTH and DAY read
+    /// it, so serial 0 is 0 January 1900 and serial 60 is 29 February 1900. EDATE keeps the start's
+    /// day, or the month's last day where the month is shorter; EOMONTH gives the month's last day.
+    /// The months are counted on the real calendar, where February 1900 has 28 days, and a day before
+    /// 1 March 1900 is its own serial, 1 to 59: <c>EOMONTH(31,1)</c> is 28 February 1900, 59,
+    /// <c>EOMONTH(0,1)</c> is 59 too, <c>EDATE(DATE(1900,3,15),-1)</c> is 15 February, 46, and
+    /// <c>EDATE(60,1)</c> is 29 March, 89, as Excel was observed to answer (ADR-0047; EOMONTH-008 and
+    /// EDATE-008, the seventeenth Windows run; EOMONTH-010 and EDATE-010, the area pass of
+    /// 2026-10-12). EDATE from serial 0 keeps its day 0, which is the day before the 1st of the month
+    /// it reaches: <c>EDATE(0,1)</c> is 31 January 1900, 31 (EDATE-016, the second area pass). A start
+    /// below 0, -0.5 included, or a result outside 1900 to 9999, is <c>#NUM!</c>, and a boolean typed
+    /// as either argument is <c>#VALUE!</c>, as in Excel (EOMONTH-004, EDATE-007, EOMONTH-016 and 017,
+    /// EDATE-017, EOMONTH-009, EDATE-009).
     /// </summary>
     /// <remarks>
-    /// Refused with <c>#VALUE!</c> until Excel is asked:
-    /// <list type="bullet">
-    /// <item>EDATE from serial 0 (EDATE-016): its day is 0, and no run has observed what day 0 of a
-    /// month becomes.</item>
-    /// <item>A start between -1 and 0 (EOMONTH-016 and 017, EDATE-017). Truncated, it is serial 0,
-    /// and <c>EOMONTH(-0.5,0)</c> would be 31; cut down to its day, as the engine's YEAR, MONTH and
-    /// DAY cut a serial, it is -1 and <c>#NUM!</c>. No run has observed either reading, and outside
-    /// that range the two agree.</item>
-    /// </list>
+    /// Refused with <c>#VALUE!</c> until Excel is asked: EDATE from serial 0 to January 1900, to March
+    /// 1900 and to January 10000 (EDATE-018 to 020). The readings that give every observed answer
+    /// part there (<c>spikes/exsheet-date-readings/</c>): the day before 1 January 1900 is serial 0
+    /// by DATE's arithmetic, and 31 December 1899, <c>#NUM!</c>, on the real calendar; the day before
+    /// 1 March 1900 is the day that never existed, 60, or 28 February, 59; and January 10000 is past
+    /// the last year, where the month before's last day is 31 December 9999.
     /// </remarks>
     private static Operand MonthsAway(FunctionCall call, bool endOfMonth)
     {
@@ -112,17 +113,19 @@ internal static partial class FunctionLibrary
         }
         if (!TryNumber(call, 0, out var start, out var error)) return error;
         if (!TryNumber(call, 1, out var months, out error)) return error;
-        if (start is > -1 and < 0) return Operand.Of(ErrorValue.Value);
-        start = Math.Truncate(start);
+        start = Math.Floor(start);
         months = Math.Truncate(months);
         if (start < 0 || start > DateSerial.Maximum) return Operand.Of(ErrorValue.Num);
 
         var (year, month, day) = DateSerial.ToDate((int)start);
-        if (!endOfMonth && day == 0) return Operand.Of(ErrorValue.Value);
         var total = year * 12.0 + (month - 1) + months;
         var toYear = Math.Floor(total / 12);
-        if (toYear < 1900 || toYear > 9999) return Operand.Of(ErrorValue.Num);
+        if (toYear < 1900 || toYear > 10000) return Operand.Of(ErrorValue.Num);
         var toMonth = (int)(total - toYear * 12) + 1;
+        var fromDayZero = !endOfMonth && day == 0;
+        if (fromDayZero && ((int)toYear, toMonth) is (1900, 1) or (1900, 3) or (10000, 1)) return Operand.Of(ErrorValue.Value);
+        if (toYear > 9999) return Operand.Of(ErrorValue.Num);
+        if (fromDayZero) return Operand.Of(Value.FromNumber(DateSerial.FromDate((int)toYear, toMonth, 1)!.Value - 1));
         var length = DateTime.DaysInMonth((int)toYear, toMonth);
         var serial = DateSerial.FromDate((int)toYear, toMonth, endOfMonth ? length : Math.Min(day, length))!.Value;
         return Operand.Of(Value.FromNumber(serial));
@@ -133,8 +136,8 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// WEEKDAY: the day of the week of the serial, on Excel's calendar (serial 1 is a Sunday), as
     /// <c>return_type</c> numbers it — 1 or 17 from Sunday, 2 or 11 from Monday, 3 from Monday at 0,
-    /// and 12 to 16 from Tuesday to Saturday. Another type, or a serial outside 0 to 31 December
-    /// 9999, is <c>#NUM!</c>.
+    /// and 12 to 16 from Tuesday to Saturday. The serial is cut down to its day. Another type, or a
+    /// serial outside 0 to 31 December 9999, is <c>#NUM!</c>, -0.5 included (WEEKDAY-008).
     /// </summary>
     private static Operand Weekday(FunctionCall call)
     {
@@ -159,7 +162,7 @@ internal static partial class FunctionLibrary
         return number is { } n ? Operand.Of(Value.FromNumber(n)) : Operand.Of(ErrorValue.Num);
     }
 
-    /// <summary>DAYS: <c>end_date - start_date</c>, each truncated to its day; a serial outside 0 to 31 December 9999 is <c>#NUM!</c>.</summary>
+    /// <summary>DAYS: <c>end_date - start_date</c>, each cut down to its day; a serial outside 0 to 31 December 9999 is <c>#NUM!</c>, -0.5 included (DAYS-005).</summary>
     private static Operand Days(FunctionCall call)
     {
         if (!TryNumber(call, 0, out var end, out var failure)) return failure;
@@ -171,8 +174,9 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// A date argument of NETWORKDAYS and WORKDAY, truncated to its day: a boolean typed is refused
-    /// with <c>#VALUE!</c> until Excel is asked; below 0 or past 31 December 9999 is <c>#NUM!</c>.
+    /// A date argument of NETWORKDAYS and WORKDAY, cut down to its day: a boolean typed is refused
+    /// with <c>#VALUE!</c> until Excel is asked (NETWORKDAYS-010, WORKDAY-011); below 0 or past 31
+    /// December 9999 is <c>#NUM!</c>, -0.5 included (NETWORKDAYS-009, WORKDAY-010).
     /// Every serial from 0 is a day, the ones before 1 March 1900 included, and takes the day of
     /// the week WEEKDAY gives it (<see cref="DateSerial.DayOfWeek"/>): serial 0 a Saturday, 1 a
     /// Sunday, 60 a Wednesday. <c>NETWORKDAYS(30,100)</c> is 51, as Excel was observed to answer

@@ -39,7 +39,7 @@
     {
       "id": "DAYS-005",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a start between -1 and 0 is cut down to its day, -1, below 0, and #NUM! as DAYS-004's -1 is; truncated, it would be serial 0, one day before the end, 1",
+      "description": "A start between -1 and 0 is cut down to its day, -1, below 0, and #NUM! as DAYS-004's -1 is; it is not truncated to serial 0, a day before the end",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=DAYS(1,-0.5)"},
       "check": "ZZ1000",
