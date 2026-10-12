@@ -1,0 +1,2462 @@
+{
+ "hosts": {
+  "beforeServer": "http://localhost:7470",
+  "afterServer": "http://localhost:6470",
+  "beforeWasm": "http://localhost:8471",
+  "afterWasm": "http://localhost:5471"
+ },
+ "rounds": 4,
+ "dragsPerBatch": 5,
+ "startedAt": "2026-10-11T20:19:08.135Z",
+ "comparisons": [
+  {
+   "name": "server, A2, pin=1: before against after",
+   "host": "server",
+   "start": "r1c0",
+   "pin": "1",
+   "chrome": "",
+   "sides": {
+    "before": {
+     "rows": [
+      {
+       "task": 67.54,
+       "script": 11.39,
+       "style": 18.8,
+       "layout": 3.8
+      },
+      {
+       "task": 69.16,
+       "script": 10.05,
+       "style": 19.43,
+       "layout": 4.64
+      },
+      {
+       "task": 65.76,
+       "script": 9.44,
+       "style": 17.82,
+       "layout": 4.18
+      },
+      {
+       "task": 68.76,
+       "script": 9.08,
+       "style": 19.85,
+       "layout": 4.36
+      },
+      {
+       "task": 77.7,
+       "script": 10.15,
+       "style": 22.9,
+       "layout": 5.68
+      },
+      {
+       "task": 73.16,
+       "script": 11.14,
+       "style": 20.73,
+       "layout": 4.5
+      },
+      {
+       "task": 67.95,
+       "script": 10.14,
+       "style": 18.79,
+       "layout": 4.73
+      },
+      {
+       "task": 87.23,
+       "script": 11.78,
+       "style": 25.1,
+       "layout": 6.16
+      },
+      {
+       "task": 66.23,
+       "script": 8.96,
+       "style": 18.13,
+       "layout": 4.46
+      },
+      {
+       "task": 66.68,
+       "script": 9.48,
+       "style": 18.49,
+       "layout": 4.37
+      },
+      {
+       "task": 69.3,
+       "script": 10.79,
+       "style": 18.88,
+       "layout": 4.53
+      },
+      {
+       "task": 72.43,
+       "script": 10.16,
+       "style": 20.81,
+       "layout": 5.15
+      },
+      {
+       "task": 66.36,
+       "script": 9.9,
+       "style": 18.43,
+       "layout": 4.8
+      },
+      {
+       "task": 80.96,
+       "script": 10.97,
+       "style": 22.85,
+       "layout": 5.23
+      },
+      {
+       "task": 67.53,
+       "script": 9.5,
+       "style": 19.42,
+       "layout": 4.68
+      },
+      {
+       "task": 72.76,
+       "script": 11.6,
+       "style": 20.06,
+       "layout": 4.74
+      },
+      {
+       "task": 72.84,
+       "script": 10.88,
+       "style": 22.05,
+       "layout": 4.69
+      },
+      {
+       "task": 84.48,
+       "script": 10.62,
+       "style": 26.48,
+       "layout": 5.39
+      },
+      {
+       "task": 61.66,
+       "script": 8.15,
+       "style": 19,
+       "layout": 4.47
+      },
+      {
+       "task": 72.8,
+       "script": 9.5,
+       "style": 22.53,
+       "layout": 4.64
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 69.2,
+       "q1": 67.3,
+       "q3": 72.9
+      },
+      "script": {
+       "median": 10.1,
+       "q1": 9.5,
+       "q3": 10.9
+      },
+      "style": {
+       "median": 19.6,
+       "q1": 18.8,
+       "q3": 22.2
+      },
+      "layout": {
+       "median": 4.7,
+       "q1": 4.5,
+       "q3": 4.9
+      }
+     }
+    },
+    "after": {
+     "rows": [
+      {
+       "task": 76.2,
+       "script": 12.33,
+       "style": 19.88,
+       "layout": 4.81
+      },
+      {
+       "task": 71.13,
+       "script": 9.75,
+       "style": 18.56,
+       "layout": 4.86
+      },
+      {
+       "task": 73.36,
+       "script": 10.44,
+       "style": 21.05,
+       "layout": 5.31
+      },
+      {
+       "task": 68.6,
+       "script": 10.02,
+       "style": 17.27,
+       "layout": 4.43
+      },
+      {
+       "task": 69.97,
+       "script": 9.87,
+       "style": 18.86,
+       "layout": 4.79
+      },
+      {
+       "task": 63.24,
+       "script": 9.74,
+       "style": 16.04,
+       "layout": 4.52
+      },
+      {
+       "task": 63.5,
+       "script": 9.57,
+       "style": 15.64,
+       "layout": 4.69
+      },
+      {
+       "task": 63.05,
+       "script": 9.58,
+       "style": 16.38,
+       "layout": 4.41
+      },
+      {
+       "task": 70.8,
+       "script": 10.24,
+       "style": 17.98,
+       "layout": 5.25
+      },
+      {
+       "task": 74.33,
+       "script": 10.21,
+       "style": 19.9,
+       "layout": 5.04
+      },
+      {
+       "task": 74.89,
+       "script": 11.51,
+       "style": 18.28,
+       "layout": 4.78
+      },
+      {
+       "task": 58.68,
+       "script": 8.34,
+       "style": 16.46,
+       "layout": 3.7
+      },
+      {
+       "task": 69.58,
+       "script": 9.22,
+       "style": 20.13,
+       "layout": 4.7
+      },
+      {
+       "task": 60.97,
+       "script": 9.16,
+       "style": 15.95,
+       "layout": 4.48
+      },
+      {
+       "task": 83.68,
+       "script": 10.89,
+       "style": 23.57,
+       "layout": 6.25
+      },
+      {
+       "task": 76.04,
+       "script": 10.92,
+       "style": 22.4,
+       "layout": 4.94
+      },
+      {
+       "task": 57.91,
+       "script": 8.59,
+       "style": 15.5,
+       "layout": 4.13
+      },
+      {
+       "task": 59.24,
+       "script": 8.42,
+       "style": 14.92,
+       "layout": 3.7
+      },
+      {
+       "task": 61.17,
+       "script": 8.44,
+       "style": 15.58,
+       "layout": 4.2
+      },
+      {
+       "task": 55.45,
+       "script": 7.75,
+       "style": 14.89,
+       "layout": 3.55
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 69.1,
+       "q1": 61.1,
+       "q3": 73.6
+      },
+      "script": {
+       "median": 9.7,
+       "q1": 9,
+       "q3": 10.3
+      },
+      "style": {
+       "median": 17.6,
+       "q1": 15.9,
+       "q3": 19.9
+      },
+      "layout": {
+       "median": 4.7,
+       "q1": 4.4,
+       "q3": 4.9
+      }
+     }
+    }
+   },
+   "browser": "141.0.7390.37"
+  },
+  {
+   "name": "server, A2, pin=3: before against after",
+   "host": "server",
+   "start": "r1c0",
+   "pin": "3",
+   "chrome": "",
+   "sides": {
+    "before": {
+     "rows": [
+      {
+       "task": 64.19,
+       "script": 9.12,
+       "style": 18.11,
+       "layout": 4.28
+      },
+      {
+       "task": 70.43,
+       "script": 9.5,
+       "style": 19.8,
+       "layout": 5.12
+      },
+      {
+       "task": 59.29,
+       "script": 8.34,
+       "style": 16.2,
+       "layout": 4.21
+      },
+      {
+       "task": 61.09,
+       "script": 8.64,
+       "style": 16.5,
+       "layout": 4.02
+      },
+      {
+       "task": 57.63,
+       "script": 7.65,
+       "style": 16.63,
+       "layout": 3.44
+      },
+      {
+       "task": 68.06,
+       "script": 10.58,
+       "style": 19.42,
+       "layout": 4.46
+      },
+      {
+       "task": 67.47,
+       "script": 10.02,
+       "style": 18.3,
+       "layout": 4.48
+      },
+      {
+       "task": 63.5,
+       "script": 8.87,
+       "style": 16.24,
+       "layout": 4.21
+      },
+      {
+       "task": 65.83,
+       "script": 8.48,
+       "style": 19.33,
+       "layout": 4.43
+      },
+      {
+       "task": 61.92,
+       "script": 8.03,
+       "style": 17,
+       "layout": 4.73
+      },
+      {
+       "task": 88.47,
+       "script": 12.15,
+       "style": 25.16,
+       "layout": 5.95
+      },
+      {
+       "task": 78.48,
+       "script": 10.53,
+       "style": 23.33,
+       "layout": 5.48
+      },
+      {
+       "task": 68.87,
+       "script": 9.71,
+       "style": 18.03,
+       "layout": 4.42
+      },
+      {
+       "task": 81.55,
+       "script": 10.4,
+       "style": 23.58,
+       "layout": 5.22
+      },
+      {
+       "task": 82.08,
+       "script": 10.14,
+       "style": 24,
+       "layout": 5.88
+      },
+      {
+       "task": 71.43,
+       "script": 10.74,
+       "style": 17.69,
+       "layout": 5.16
+      },
+      {
+       "task": 63.3,
+       "script": 9.29,
+       "style": 17.17,
+       "layout": 4.62
+      },
+      {
+       "task": 76.56,
+       "script": 9.89,
+       "style": 22.9,
+       "layout": 5.53
+      },
+      {
+       "task": 68.57,
+       "script": 8.77,
+       "style": 19.8,
+       "layout": 5.21
+      },
+      {
+       "task": 63.76,
+       "script": 8.3,
+       "style": 18.16,
+       "layout": 4.18
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 67.8,
+       "q1": 63.5,
+       "q3": 72.7
+      },
+      "script": {
+       "median": 9.4,
+       "q1": 8.6,
+       "q3": 10.2
+      },
+      "style": {
+       "median": 18.2,
+       "q1": 17.1,
+       "q3": 20.6
+      },
+      "layout": {
+       "median": 4.6,
+       "q1": 4.3,
+       "q3": 5.2
+      }
+     }
+    },
+    "after": {
+     "rows": [
+      {
+       "task": 66.61,
+       "script": 10.37,
+       "style": 17.29,
+       "layout": 4.51
+      },
+      {
+       "task": 62.33,
+       "script": 9.29,
+       "style": 15.89,
+       "layout": 4.66
+      },
+      {
+       "task": 78.29,
+       "script": 10.85,
+       "style": 20.62,
+       "layout": 5.02
+      },
+      {
+       "task": 61.36,
+       "script": 8.54,
+       "style": 14.5,
+       "layout": 4.11
+      },
+      {
+       "task": 64.05,
+       "script": 8.82,
+       "style": 14.73,
+       "layout": 4.47
+      },
+      {
+       "task": 80.52,
+       "script": 11.48,
+       "style": 20.3,
+       "layout": 5.14
+      },
+      {
+       "task": 66.03,
+       "script": 10.07,
+       "style": 15.65,
+       "layout": 4.42
+      },
+      {
+       "task": 66.51,
+       "script": 10.03,
+       "style": 14.13,
+       "layout": 4.42
+      },
+      {
+       "task": 62.87,
+       "script": 8.76,
+       "style": 15.69,
+       "layout": 4.6
+      },
+      {
+       "task": 76.01,
+       "script": 10.23,
+       "style": 19.49,
+       "layout": 4.9
+      },
+      {
+       "task": 74.21,
+       "script": 11.22,
+       "style": 19.11,
+       "layout": 4.67
+      },
+      {
+       "task": 69.01,
+       "script": 9.87,
+       "style": 16.27,
+       "layout": 4.9
+      },
+      {
+       "task": 74.93,
+       "script": 10.46,
+       "style": 17.61,
+       "layout": 5.61
+      },
+      {
+       "task": 79.67,
+       "script": 10.99,
+       "style": 23.45,
+       "layout": 5.23
+      },
+      {
+       "task": 68.75,
+       "script": 9.3,
+       "style": 16.41,
+       "layout": 5.23
+      },
+      {
+       "task": 90.2,
+       "script": 13.33,
+       "style": 21.34,
+       "layout": 6.01
+      },
+      {
+       "task": 69.56,
+       "script": 10.81,
+       "style": 15.68,
+       "layout": 4.82
+      },
+      {
+       "task": 70.87,
+       "script": 10.11,
+       "style": 17.54,
+       "layout": 4.64
+      },
+      {
+       "task": 57.63,
+       "script": 8.47,
+       "style": 13.72,
+       "layout": 4.23
+      },
+      {
+       "task": 58.53,
+       "script": 8.18,
+       "style": 14.76,
+       "layout": 3.92
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 68.9,
+       "q1": 63.8,
+       "q3": 75.2
+      },
+      "script": {
+       "median": 10.1,
+       "q1": 9.2,
+       "q3": 10.8
+      },
+      "style": {
+       "median": 16.3,
+       "q1": 15.4,
+       "q3": 19.2
+      },
+      "layout": {
+       "median": 4.7,
+       "q1": 4.5,
+       "q3": 5.1
+      }
+     }
+    }
+   },
+   "browser": "141.0.7390.37"
+  },
+  {
+   "name": "server, A2, pin=1, chrome=mud: before against after",
+   "host": "server",
+   "start": "r1c0",
+   "pin": "1",
+   "chrome": "mud",
+   "sides": {
+    "before": {
+     "rows": [
+      {
+       "task": 301.23,
+       "script": 14.71,
+       "style": 227.1,
+       "layout": 5.82
+      },
+      {
+       "task": 305.96,
+       "script": 12.09,
+       "style": 240.68,
+       "layout": 5.64
+      },
+      {
+       "task": 324.58,
+       "script": 13.2,
+       "style": 252.8,
+       "layout": 6.45
+      },
+      {
+       "task": 336.25,
+       "script": 13.2,
+       "style": 220.19,
+       "layout": 6.01
+      },
+      {
+       "task": 260.39,
+       "script": 10.9,
+       "style": 190.58,
+       "layout": 5.07
+      },
+      {
+       "task": 355.34,
+       "script": 13.5,
+       "style": 280.29,
+       "layout": 6.84
+      },
+      {
+       "task": 343.48,
+       "script": 12.76,
+       "style": 270.1,
+       "layout": 6.9
+      },
+      {
+       "task": 236.86,
+       "script": 11.5,
+       "style": 178.41,
+       "layout": 4.74
+      },
+      {
+       "task": 392.19,
+       "script": 12.72,
+       "style": 250.77,
+       "layout": 6.87
+      },
+      {
+       "task": 316.45,
+       "script": 12.53,
+       "style": 236.13,
+       "layout": 5.86
+      },
+      {
+       "task": 303.61,
+       "script": 14.17,
+       "style": 230.64,
+       "layout": 6.11
+      },
+      {
+       "task": 322.78,
+       "script": 14.31,
+       "style": 248.65,
+       "layout": 6.64
+      },
+      {
+       "task": 284.71,
+       "script": 11.26,
+       "style": 221.25,
+       "layout": 5.82
+      },
+      {
+       "task": 361.73,
+       "script": 12.64,
+       "style": 227.29,
+       "layout": 6.58
+      },
+      {
+       "task": 298.39,
+       "script": 12.44,
+       "style": 218.41,
+       "layout": 5.64
+      },
+      {
+       "task": 295.78,
+       "script": 12.61,
+       "style": 229.2,
+       "layout": 5.97
+      },
+      {
+       "task": 340.51,
+       "script": 13.76,
+       "style": 260.52,
+       "layout": 6.28
+      },
+      {
+       "task": 319.53,
+       "script": 13.52,
+       "style": 248.15,
+       "layout": 6.37
+      },
+      {
+       "task": 379.92,
+       "script": 12.95,
+       "style": 233.21,
+       "layout": 5.88
+      },
+      {
+       "task": 299.31,
+       "script": 11.43,
+       "style": 220.48,
+       "layout": 6.19
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 318,
+       "q1": 299.1,
+       "q3": 341.3
+      },
+      "script": {
+       "median": 12.7,
+       "q1": 12.4,
+       "q3": 13.5
+      },
+      "style": {
+       "median": 231.9,
+       "q1": 221.1,
+       "q3": 249.2
+      },
+      "layout": {
+       "median": 6.1,
+       "q1": 5.8,
+       "q3": 6.5
+      }
+     }
+    },
+    "after": {
+     "rows": [
+      {
+       "task": 288.86,
+       "script": 13.45,
+       "style": 218.17,
+       "layout": 5.72
+      },
+      {
+       "task": 326.79,
+       "script": 12.96,
+       "style": 256.12,
+       "layout": 6.36
+      },
+      {
+       "task": 351.26,
+       "script": 13.86,
+       "style": 274.68,
+       "layout": 6.02
+      },
+      {
+       "task": 356.72,
+       "script": 12.25,
+       "style": 230.85,
+       "layout": 5.93
+      },
+      {
+       "task": 342.35,
+       "script": 13.95,
+       "style": 252.15,
+       "layout": 6.35
+      },
+      {
+       "task": 288.64,
+       "script": 13.34,
+       "style": 219.95,
+       "layout": 5.81
+      },
+      {
+       "task": 229.43,
+       "script": 11.55,
+       "style": 166.89,
+       "layout": 4.84
+      },
+      {
+       "task": 294.45,
+       "script": 11.95,
+       "style": 231.11,
+       "layout": 5.29
+      },
+      {
+       "task": 279.6,
+       "script": 14.29,
+       "style": 208.92,
+       "layout": 5.69
+      },
+      {
+       "task": 372.57,
+       "script": 13.18,
+       "style": 240.02,
+       "layout": 6.11
+      },
+      {
+       "task": 360.15,
+       "script": 13.2,
+       "style": 285.22,
+       "layout": 7.08
+      },
+      {
+       "task": 298.65,
+       "script": 13.34,
+       "style": 229.45,
+       "layout": 5.45
+      },
+      {
+       "task": 333.1,
+       "script": 13.53,
+       "style": 257.95,
+       "layout": 6.67
+      },
+      {
+       "task": 376.86,
+       "script": 14.41,
+       "style": 240.3,
+       "layout": 6.09
+      },
+      {
+       "task": 287.8,
+       "script": 12.27,
+       "style": 206.82,
+       "layout": 6.06
+      },
+      {
+       "task": 251.97,
+       "script": 13.97,
+       "style": 185.45,
+       "layout": 5.18
+      },
+      {
+       "task": 317.22,
+       "script": 13.27,
+       "style": 242.88,
+       "layout": 6.29
+      },
+      {
+       "task": 296.14,
+       "script": 13.96,
+       "style": 219.28,
+       "layout": 6.29
+      },
+      {
+       "task": 323.16,
+       "script": 12.21,
+       "style": 252.77,
+       "layout": 6.87
+      },
+      {
+       "task": 367.54,
+       "script": 12.72,
+       "style": 208.47,
+       "layout": 5.59
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 320.2,
+       "q1": 288.8,
+       "q3": 352.6
+      },
+      "script": {
+       "median": 13.3,
+       "q1": 12.6,
+       "q3": 13.9
+      },
+      "style": {
+       "median": 231,
+       "q1": 215.9,
+       "q3": 252.3
+      },
+      "layout": {
+       "median": 6,
+       "q1": 5.7,
+       "q3": 6.3
+      }
+     }
+    }
+   },
+   "browser": "141.0.7390.37"
+  },
+  {
+   "name": "server, B2, pin=0: before against after",
+   "host": "server",
+   "start": "r1c1",
+   "pin": "0",
+   "chrome": "",
+   "sides": {
+    "before": {
+     "rows": [
+      {
+       "task": 63.48,
+       "script": 11.23,
+       "style": 12.36,
+       "layout": 4.37
+      },
+      {
+       "task": 57.94,
+       "script": 8.79,
+       "style": 12.55,
+       "layout": 4.39
+      },
+      {
+       "task": 60.83,
+       "script": 9.81,
+       "style": 12.3,
+       "layout": 5.14
+      },
+      {
+       "task": 50.73,
+       "script": 7.95,
+       "style": 10.95,
+       "layout": 4.14
+      },
+      {
+       "task": 51.45,
+       "script": 7.47,
+       "style": 11.19,
+       "layout": 4.28
+      },
+      {
+       "task": 62.13,
+       "script": 10.62,
+       "style": 12.51,
+       "layout": 4.68
+      },
+      {
+       "task": 66.63,
+       "script": 9.56,
+       "style": 14.68,
+       "layout": 4.66
+      },
+      {
+       "task": 52.4,
+       "script": 7.85,
+       "style": 11.05,
+       "layout": 3.78
+      },
+      {
+       "task": 66.06,
+       "script": 11.13,
+       "style": 13.24,
+       "layout": 4.45
+      },
+      {
+       "task": 54.47,
+       "script": 8.62,
+       "style": 11.38,
+       "layout": 3.93
+      },
+      {
+       "task": 62.5,
+       "script": 10.96,
+       "style": 12.1,
+       "layout": 4.12
+      },
+      {
+       "task": 67.63,
+       "script": 10.88,
+       "style": 14.69,
+       "layout": 5.35
+      },
+      {
+       "task": 57.05,
+       "script": 9.2,
+       "style": 10.78,
+       "layout": 4.12
+      },
+      {
+       "task": 60.88,
+       "script": 9.29,
+       "style": 12.92,
+       "layout": 4.94
+      },
+      {
+       "task": 62.32,
+       "script": 9.01,
+       "style": 13.6,
+       "layout": 5.14
+      },
+      {
+       "task": 53.79,
+       "script": 9.44,
+       "style": 11.09,
+       "layout": 3.84
+      },
+      {
+       "task": 52.72,
+       "script": 8.81,
+       "style": 10.5,
+       "layout": 3.64
+      },
+      {
+       "task": 51.64,
+       "script": 7.93,
+       "style": 10.73,
+       "layout": 4.12
+      },
+      {
+       "task": 59.3,
+       "script": 9.51,
+       "style": 12.3,
+       "layout": 4.63
+      },
+      {
+       "task": 60.24,
+       "script": 8.91,
+       "style": 12.34,
+       "layout": 4.27
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 59.8,
+       "q1": 53.5,
+       "q3": 62.4
+      },
+      "script": {
+       "median": 9.2,
+       "q1": 8.7,
+       "q3": 10
+      },
+      "style": {
+       "median": 12.3,
+       "q1": 11.1,
+       "q3": 12.6
+      },
+      "layout": {
+       "median": 4.3,
+       "q1": 4.1,
+       "q3": 4.7
+      }
+     }
+    },
+    "after": {
+     "rows": [
+      {
+       "task": 48.62,
+       "script": 9.71,
+       "style": 4.08,
+       "layout": 3.95
+      },
+      {
+       "task": 61.27,
+       "script": 11.69,
+       "style": 4.81,
+       "layout": 5.59
+      },
+      {
+       "task": 53.76,
+       "script": 9.56,
+       "style": 3.08,
+       "layout": 4.35
+      },
+      {
+       "task": 44.44,
+       "script": 8.07,
+       "style": 2.75,
+       "layout": 3.74
+      },
+      {
+       "task": 47.59,
+       "script": 8.53,
+       "style": 3.31,
+       "layout": 4.72
+      },
+      {
+       "task": 57.38,
+       "script": 12.47,
+       "style": 4.42,
+       "layout": 4.59
+      },
+      {
+       "task": 46.65,
+       "script": 9.3,
+       "style": 3.63,
+       "layout": 4.16
+      },
+      {
+       "task": 44.76,
+       "script": 8.22,
+       "style": 2.8,
+       "layout": 4.08
+      },
+      {
+       "task": 45.6,
+       "script": 8.51,
+       "style": 3.1,
+       "layout": 3.95
+      },
+      {
+       "task": 62.54,
+       "script": 10.94,
+       "style": 3.56,
+       "layout": 5.21
+      },
+      {
+       "task": 51.82,
+       "script": 10.46,
+       "style": 4.04,
+       "layout": 4.18
+      },
+      {
+       "task": 49.6,
+       "script": 9.17,
+       "style": 2.84,
+       "layout": 4.25
+      },
+      {
+       "task": 39.9,
+       "script": 7.36,
+       "style": 2.73,
+       "layout": 3.78
+      },
+      {
+       "task": 44.02,
+       "script": 8.14,
+       "style": 2.88,
+       "layout": 3.87
+      },
+      {
+       "task": 47.92,
+       "script": 8.48,
+       "style": 3.2,
+       "layout": 4.59
+      },
+      {
+       "task": 50.82,
+       "script": 9.78,
+       "style": 4.08,
+       "layout": 4.03
+      },
+      {
+       "task": 45.82,
+       "script": 9.1,
+       "style": 2.98,
+       "layout": 4.15
+      },
+      {
+       "task": 51.54,
+       "script": 10.05,
+       "style": 3.22,
+       "layout": 4.47
+      },
+      {
+       "task": 52.2,
+       "script": 9.57,
+       "style": 3.37,
+       "layout": 4.32
+      },
+      {
+       "task": 48.68,
+       "script": 8.8,
+       "style": 3.18,
+       "layout": 4.45
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 48.7,
+       "q1": 45.8,
+       "q3": 51.9
+      },
+      "script": {
+       "median": 9.2,
+       "q1": 8.5,
+       "q3": 9.8
+      },
+      "style": {
+       "median": 3.2,
+       "q1": 3,
+       "q3": 3.7
+      },
+      "layout": {
+       "median": 4.2,
+       "q1": 4,
+       "q3": 4.5
+      }
+     }
+    }
+   },
+   "browser": "141.0.7390.37"
+  },
+  {
+   "name": "wasm, A2, pin=1: before against after",
+   "host": "wasm",
+   "start": "r1c0",
+   "pin": "1",
+   "chrome": "",
+   "sides": {
+    "before": {
+     "rows": [
+      {
+       "task": 784.77,
+       "script": 706.94,
+       "style": 21.42,
+       "layout": 5.05
+      },
+      {
+       "task": 575.43,
+       "script": 513.54,
+       "style": 19.54,
+       "layout": 4.35
+      },
+      {
+       "task": 506.05,
+       "script": 448.78,
+       "style": 19.28,
+       "layout": 4.2
+      },
+      {
+       "task": 539.46,
+       "script": 472.08,
+       "style": 17.99,
+       "layout": 4.31
+      },
+      {
+       "task": 497.76,
+       "script": 440.01,
+       "style": 18.18,
+       "layout": 4.27
+      },
+      {
+       "task": 831.92,
+       "script": 745.86,
+       "style": 27.05,
+       "layout": 6.18
+      },
+      {
+       "task": 627.13,
+       "script": 563.45,
+       "style": 21.32,
+       "layout": 4.84
+      },
+      {
+       "task": 551.28,
+       "script": 490.81,
+       "style": 19.54,
+       "layout": 4.71
+      },
+      {
+       "task": 591.44,
+       "script": 515.51,
+       "style": 20.92,
+       "layout": 4.86
+      },
+      {
+       "task": 520.79,
+       "script": 465.25,
+       "style": 17.69,
+       "layout": 4.17
+      },
+      {
+       "task": 866.64,
+       "script": 787.05,
+       "style": 24.04,
+       "layout": 5.44
+      },
+      {
+       "task": 579.37,
+       "script": 520.08,
+       "style": 19.13,
+       "layout": 4.19
+      },
+      {
+       "task": 536.18,
+       "script": 479.18,
+       "style": 18.62,
+       "layout": 4.37
+      },
+      {
+       "task": 528.41,
+       "script": 462.05,
+       "style": 17.91,
+       "layout": 4.36
+      },
+      {
+       "task": 566.47,
+       "script": 505.16,
+       "style": 20.34,
+       "layout": 4.24
+      },
+      {
+       "task": 876.13,
+       "script": 796.99,
+       "style": 20.57,
+       "layout": 5.13
+      },
+      {
+       "task": 793.88,
+       "script": 720.02,
+       "style": 26.48,
+       "layout": 5.2
+      },
+      {
+       "task": 759.72,
+       "script": 681.3,
+       "style": 30.08,
+       "layout": 5.44
+      },
+      {
+       "task": 604.89,
+       "script": 536.84,
+       "style": 18.43,
+       "layout": 4.45
+      },
+      {
+       "task": 575.18,
+       "script": 516.78,
+       "style": 19.5,
+       "layout": 4.39
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 577.4,
+       "q1": 538.6,
+       "q3": 766
+      },
+      "script": {
+       "median": 516.1,
+       "q1": 477.4,
+       "q3": 687.7
+      },
+      "style": {
+       "median": 19.5,
+       "q1": 18.6,
+       "q3": 21.3
+      },
+      "layout": {
+       "median": 4.4,
+       "q1": 4.3,
+       "q3": 5.1
+      }
+     }
+    },
+    "after": {
+     "rows": [
+      {
+       "task": 761.75,
+       "script": 693.33,
+       "style": 17.65,
+       "layout": 4.88
+      },
+      {
+       "task": 637.67,
+       "script": 574.79,
+       "style": 19.93,
+       "layout": 4.68
+      },
+      {
+       "task": 532.52,
+       "script": 474.78,
+       "style": 18.19,
+       "layout": 4.61
+      },
+      {
+       "task": 569.56,
+       "script": 503.25,
+       "style": 16.65,
+       "layout": 4.47
+      },
+      {
+       "task": 565.09,
+       "script": 506.3,
+       "style": 17.81,
+       "layout": 4.27
+      },
+      {
+       "task": 858.32,
+       "script": 786.95,
+       "style": 21.42,
+       "layout": 4.88
+      },
+      {
+       "task": 614.21,
+       "script": 557.82,
+       "style": 17.88,
+       "layout": 4.2
+      },
+      {
+       "task": 583.1,
+       "script": 524.05,
+       "style": 18.33,
+       "layout": 4.75
+      },
+      {
+       "task": 569.41,
+       "script": 501.04,
+       "style": 16.85,
+       "layout": 4.5
+      },
+      {
+       "task": 586.48,
+       "script": 531.77,
+       "style": 15.65,
+       "layout": 4.18
+      },
+      {
+       "task": 789.99,
+       "script": 715.81,
+       "style": 17.76,
+       "layout": 4.87
+      },
+      {
+       "task": 570,
+       "script": 512.79,
+       "style": 17.13,
+       "layout": 4.17
+      },
+      {
+       "task": 658.07,
+       "script": 593.27,
+       "style": 19.78,
+       "layout": 5.02
+      },
+      {
+       "task": 518.24,
+       "script": 444.61,
+       "style": 14.95,
+       "layout": 4.09
+      },
+      {
+       "task": 533.6,
+       "script": 476.86,
+       "style": 16.38,
+       "layout": 4.5
+      },
+      {
+       "task": 875.17,
+       "script": 792.08,
+       "style": 22.07,
+       "layout": 5.6
+      },
+      {
+       "task": 579.59,
+       "script": 523.18,
+       "style": 17.4,
+       "layout": 4.33
+      },
+      {
+       "task": 576.79,
+       "script": 519.78,
+       "style": 16.38,
+       "layout": 4.57
+      },
+      {
+       "task": 543.02,
+       "script": 468.71,
+       "style": 16.92,
+       "layout": 4.22
+      },
+      {
+       "task": 508.6,
+       "script": 455.9,
+       "style": 14.58,
+       "layout": 4.22
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 578.2,
+       "q1": 559.6,
+       "q3": 642.8
+      },
+      "script": {
+       "median": 521.5,
+       "q1": 495,
+       "q3": 579.4
+      },
+      "style": {
+       "median": 17.5,
+       "q1": 16.6,
+       "q3": 18.2
+      },
+      "layout": {
+       "median": 4.5,
+       "q1": 4.2,
+       "q3": 4.8
+      }
+     }
+    }
+   },
+   "browser": "141.0.7390.37"
+  },
+  {
+   "name": "wasm, A2, pin=3: before against after",
+   "host": "wasm",
+   "start": "r1c0",
+   "pin": "3",
+   "chrome": "",
+   "sides": {
+    "before": {
+     "rows": [
+      {
+       "task": 945.76,
+       "script": 860.98,
+       "style": 23.47,
+       "layout": 5.41
+      },
+      {
+       "task": 631.83,
+       "script": 569.5,
+       "style": 16.92,
+       "layout": 4.41
+      },
+      {
+       "task": 640.64,
+       "script": 573.53,
+       "style": 21.2,
+       "layout": 4.87
+      },
+      {
+       "task": 567.84,
+       "script": 498.62,
+       "style": 16.35,
+       "layout": 4
+      },
+      {
+       "task": 559.54,
+       "script": 500.03,
+       "style": 17.83,
+       "layout": 4.26
+      },
+      {
+       "task": 801.43,
+       "script": 721.61,
+       "style": 19.9,
+       "layout": 5.08
+      },
+      {
+       "task": 606.38,
+       "script": 542.28,
+       "style": 18.86,
+       "layout": 4.53
+      },
+      {
+       "task": 521.63,
+       "script": 463.9,
+       "style": 17,
+       "layout": 4.01
+      },
+      {
+       "task": 523.49,
+       "script": 455.93,
+       "style": 17.15,
+       "layout": 4.4
+      },
+      {
+       "task": 586.26,
+       "script": 520.31,
+       "style": 21.21,
+       "layout": 4.89
+      },
+      {
+       "task": 853.06,
+       "script": 771.12,
+       "style": 20.94,
+       "layout": 5.6
+      },
+      {
+       "task": 588.31,
+       "script": 525.88,
+       "style": 18.78,
+       "layout": 4.61
+      },
+      {
+       "task": 610.96,
+       "script": 544.74,
+       "style": 19.24,
+       "layout": 4.63
+      },
+      {
+       "task": 544.27,
+       "script": 475.1,
+       "style": 16.06,
+       "layout": 4.26
+      },
+      {
+       "task": 560.97,
+       "script": 497.55,
+       "style": 21.19,
+       "layout": 5.15
+      },
+      {
+       "task": 793.08,
+       "script": 716.3,
+       "style": 19.68,
+       "layout": 5.17
+      },
+      {
+       "task": 579.68,
+       "script": 518.05,
+       "style": 18.41,
+       "layout": 4.48
+      },
+      {
+       "task": 661.34,
+       "script": 591.81,
+       "style": 21.91,
+       "layout": 4.98
+      },
+      {
+       "task": 629.06,
+       "script": 556.11,
+       "style": 17.28,
+       "layout": 4.28
+      },
+      {
+       "task": 582.65,
+       "script": 518.21,
+       "style": 19.9,
+       "layout": 4.67
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 597.3,
+       "q1": 566.1,
+       "q3": 645.8
+      },
+      "script": {
+       "median": 534.1,
+       "q1": 499.7,
+       "q3": 578.1
+      },
+      "style": {
+       "median": 19,
+       "q1": 17.2,
+       "q3": 21
+      },
+      "layout": {
+       "median": 4.6,
+       "q1": 4.4,
+       "q3": 5
+      }
+     }
+    },
+    "after": {
+     "rows": [
+      {
+       "task": 796.3,
+       "script": 721.34,
+       "style": 16.11,
+       "layout": 5.06
+      },
+      {
+       "task": 575.97,
+       "script": 520.79,
+       "style": 14.19,
+       "layout": 3.86
+      },
+      {
+       "task": 535.95,
+       "script": 479.48,
+       "style": 15.94,
+       "layout": 4.48
+      },
+      {
+       "task": 534.6,
+       "script": 469.17,
+       "style": 14.62,
+       "layout": 4.26
+      },
+      {
+       "task": 522.86,
+       "script": 464.36,
+       "style": 15.43,
+       "layout": 4.37
+      },
+      {
+       "task": 814.8,
+       "script": 736.71,
+       "style": 16.78,
+       "layout": 5.04
+      },
+      {
+       "task": 583.08,
+       "script": 522.81,
+       "style": 14.65,
+       "layout": 4.26
+      },
+      {
+       "task": 536.45,
+       "script": 481,
+       "style": 14.12,
+       "layout": 4.3
+      },
+      {
+       "task": 538.1,
+       "script": 467.26,
+       "style": 16.16,
+       "layout": 4.43
+      },
+      {
+       "task": 498.14,
+       "script": 443.78,
+       "style": 13.88,
+       "layout": 4.2
+      },
+      {
+       "task": 1077.59,
+       "script": 975.04,
+       "style": 22.6,
+       "layout": 6.33
+      },
+      {
+       "task": 573.4,
+       "script": 519.41,
+       "style": 14.96,
+       "layout": 4.07
+      },
+      {
+       "task": 629.8,
+       "script": 568.95,
+       "style": 17.83,
+       "layout": 4.6
+      },
+      {
+       "task": 713.04,
+       "script": 629.4,
+       "style": 18.43,
+       "layout": 5.03
+      },
+      {
+       "task": 680.42,
+       "script": 611.98,
+       "style": 19.88,
+       "layout": 5.14
+      },
+      {
+       "task": 845.24,
+       "script": 767.87,
+       "style": 16.46,
+       "layout": 4.9
+      },
+      {
+       "task": 607.87,
+       "script": 549.98,
+       "style": 15.23,
+       "layout": 4.27
+      },
+      {
+       "task": 546.53,
+       "script": 492.28,
+       "style": 14.87,
+       "layout": 4.17
+      },
+      {
+       "task": 534.16,
+       "script": 477.19,
+       "style": 15.81,
+       "layout": 4.33
+      },
+      {
+       "task": 534.08,
+       "script": 478.34,
+       "style": 15,
+       "layout": 4.16
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 574.7,
+       "q1": 535.6,
+       "q3": 688.6
+      },
+      "script": {
+       "median": 520.1,
+       "q1": 478.1,
+       "q3": 616.3
+      },
+      "style": {
+       "median": 15.6,
+       "q1": 14.8,
+       "q3": 16.5
+      },
+      "layout": {
+       "median": 4.4,
+       "q1": 4.2,
+       "q3": 4.9
+      }
+     }
+    }
+   },
+   "browser": "141.0.7390.37"
+  },
+  {
+   "name": "wasm, A2, pin=1, chrome=mud: before against after",
+   "host": "wasm",
+   "start": "r1c0",
+   "pin": "1",
+   "chrome": "mud",
+   "sides": {
+    "before": {
+     "rows": [
+      {
+       "task": 1227.75,
+       "script": 991.95,
+       "style": 179.62,
+       "layout": 6.93
+      },
+      {
+       "task": 945.79,
+       "script": 731.17,
+       "style": 145.84,
+       "layout": 4.64
+      },
+      {
+       "task": 821.71,
+       "script": 649.56,
+       "style": 130.19,
+       "layout": 4.29
+      },
+      {
+       "task": 879.87,
+       "script": 687.34,
+       "style": 143.07,
+       "layout": 4.45
+      },
+      {
+       "task": 909.2,
+       "script": 721.96,
+       "style": 142.57,
+       "layout": 4.27
+      },
+      {
+       "task": 1269.2,
+       "script": 1028.95,
+       "style": 169.2,
+       "layout": 6.05
+      },
+      {
+       "task": 927.45,
+       "script": 735.63,
+       "style": 146.79,
+       "layout": 4.83
+      },
+      {
+       "task": 991.22,
+       "script": 779.14,
+       "style": 148.69,
+       "layout": 5.61
+      },
+      {
+       "task": 890.82,
+       "script": 708.43,
+       "style": 136.84,
+       "layout": 4.5
+      },
+      {
+       "task": 929.42,
+       "script": 731.22,
+       "style": 138.61,
+       "layout": 4.61
+      },
+      {
+       "task": 1229.48,
+       "script": 994.76,
+       "style": 171.55,
+       "layout": 6.2
+      },
+      {
+       "task": 930.31,
+       "script": 720.49,
+       "style": 145.2,
+       "layout": 5.05
+      },
+      {
+       "task": 1028.07,
+       "script": 808.6,
+       "style": 168.83,
+       "layout": 5.58
+      },
+      {
+       "task": 906.19,
+       "script": 714.72,
+       "style": 142.9,
+       "layout": 4.6
+      },
+      {
+       "task": 873.73,
+       "script": 692.54,
+       "style": 136.63,
+       "layout": 4.78
+      },
+      {
+       "task": 1321.43,
+       "script": 1046.96,
+       "style": 184.77,
+       "layout": 7.55
+      },
+      {
+       "task": 1019.97,
+       "script": 758.77,
+       "style": 141.23,
+       "layout": 5.19
+      },
+      {
+       "task": 1023.16,
+       "script": 791.53,
+       "style": 139.1,
+       "layout": 4.77
+      },
+      {
+       "task": 950.96,
+       "script": 752.02,
+       "style": 147.99,
+       "layout": 4.81
+      },
+      {
+       "task": 1171.85,
+       "script": 914,
+       "style": 161.3,
+       "layout": 6.04
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 948.4,
+       "q1": 908.4,
+       "q3": 1064
+      },
+      "script": {
+       "median": 743.8,
+       "q1": 719,
+       "q3": 835
+      },
+      "style": {
+       "median": 145.5,
+       "q1": 140.7,
+       "q3": 163.2
+      },
+      "layout": {
+       "median": 4.8,
+       "q1": 4.6,
+       "q3": 5.7
+      }
+     }
+    },
+    "after": {
+     "rows": [
+      {
+       "task": 1346.67,
+       "script": 1099.94,
+       "style": 164.02,
+       "layout": 6.1
+      },
+      {
+       "task": 925.56,
+       "script": 708.77,
+       "style": 143.46,
+       "layout": 4.81
+      },
+      {
+       "task": 836.83,
+       "script": 656.7,
+       "style": 134.66,
+       "layout": 4.41
+      },
+      {
+       "task": 869.9,
+       "script": 662.51,
+       "style": 133.79,
+       "layout": 5.63
+      },
+      {
+       "task": 895.86,
+       "script": 716.93,
+       "style": 134.3,
+       "layout": 4.53
+      },
+      {
+       "task": 1292.15,
+       "script": 1030.99,
+       "style": 203.21,
+       "layout": 6.62
+      },
+      {
+       "task": 1055.2,
+       "script": 818.52,
+       "style": 154.1,
+       "layout": 5.74
+      },
+      {
+       "task": 1136.62,
+       "script": 906.78,
+       "style": 177.99,
+       "layout": 5.77
+      },
+      {
+       "task": 960.54,
+       "script": 736.07,
+       "style": 150.81,
+       "layout": 5.29
+      },
+      {
+       "task": 977.4,
+       "script": 772.21,
+       "style": 154.29,
+       "layout": 5.1
+      },
+      {
+       "task": 1023.48,
+       "script": 803.93,
+       "style": 168.67,
+       "layout": 5.49
+      },
+      {
+       "task": 1069.32,
+       "script": 806.52,
+       "style": 146.46,
+       "layout": 6.37
+      },
+      {
+       "task": 1046.04,
+       "script": 807.61,
+       "style": 151.67,
+       "layout": 6.58
+      },
+      {
+       "task": 1099.03,
+       "script": 826.95,
+       "style": 191.66,
+       "layout": 5.69
+      },
+      {
+       "task": 944.13,
+       "script": 744.09,
+       "style": 151.24,
+       "layout": 4.72
+      },
+      {
+       "task": 1340.67,
+       "script": 1065.27,
+       "style": 190.12,
+       "layout": 7.64
+      },
+      {
+       "task": 1037.31,
+       "script": 802.6,
+       "style": 150.12,
+       "layout": 6.75
+      },
+      {
+       "task": 884.67,
+       "script": 679.59,
+       "style": 140.01,
+       "layout": 4.65
+      },
+      {
+       "task": 936.19,
+       "script": 743.41,
+       "style": 141.8,
+       "layout": 4.61
+      },
+      {
+       "task": 870.04,
+       "script": 694.07,
+       "style": 131.87,
+       "layout": 4.68
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 1000.4,
+       "q1": 918.1,
+       "q3": 1076.7
+      },
+      "script": {
+       "median": 787.4,
+       "q1": 714.9,
+       "q3": 820.6
+      },
+      "style": {
+       "median": 151,
+       "q1": 141.4,
+       "q3": 165.2
+      },
+      "layout": {
+       "median": 5.6,
+       "q1": 4.7,
+       "q3": 6.2
+      }
+     }
+    }
+   },
+   "browser": "141.0.7390.37"
+  },
+  {
+   "name": "wasm, B2, pin=0: before against after",
+   "host": "wasm",
+   "start": "r1c1",
+   "pin": "0",
+   "chrome": "",
+   "sides": {
+    "before": {
+     "rows": [
+      {
+       "task": 832.28,
+       "script": 773.97,
+       "style": 13.52,
+       "layout": 5.04
+      },
+      {
+       "task": 649.53,
+       "script": 591.73,
+       "style": 13.49,
+       "layout": 4.88
+      },
+      {
+       "task": 539.78,
+       "script": 489.57,
+       "style": 11.41,
+       "layout": 4.11
+      },
+      {
+       "task": 531.57,
+       "script": 482.32,
+       "style": 11,
+       "layout": 4.28
+      },
+      {
+       "task": 564.46,
+       "script": 498.41,
+       "style": 12.87,
+       "layout": 4.47
+      },
+      {
+       "task": 880.98,
+       "script": 805.49,
+       "style": 13.6,
+       "layout": 5.94
+      },
+      {
+       "task": 537.3,
+       "script": 490.18,
+       "style": 10.88,
+       "layout": 3.98
+      },
+      {
+       "task": 548.15,
+       "script": 498.22,
+       "style": 12.08,
+       "layout": 4.11
+      },
+      {
+       "task": 542.64,
+       "script": 492.82,
+       "style": 11.88,
+       "layout": 4.17
+      },
+      {
+       "task": 511.07,
+       "script": 445.7,
+       "style": 10.78,
+       "layout": 4.02
+      },
+      {
+       "task": 922.73,
+       "script": 840.68,
+       "style": 14.89,
+       "layout": 5.36
+      },
+      {
+       "task": 697.83,
+       "script": 640.23,
+       "style": 14.62,
+       "layout": 4.74
+      },
+      {
+       "task": 655.82,
+       "script": 597.4,
+       "style": 13.24,
+       "layout": 5.12
+      },
+      {
+       "task": 547.85,
+       "script": 498.34,
+       "style": 11.23,
+       "layout": 4.12
+      },
+      {
+       "task": 707.87,
+       "script": 629.68,
+       "style": 14.66,
+       "layout": 4.74
+      },
+      {
+       "task": 748.84,
+       "script": 690.93,
+       "style": 13.57,
+       "layout": 5.2
+      },
+      {
+       "task": 650.07,
+       "script": 589.88,
+       "style": 14.65,
+       "layout": 4.86
+      },
+      {
+       "task": 571.17,
+       "script": 520.48,
+       "style": 11.39,
+       "layout": 4.32
+      },
+      {
+       "task": 633.62,
+       "script": 575.45,
+       "style": 14.37,
+       "layout": 4.79
+      },
+      {
+       "task": 525.38,
+       "script": 464.01,
+       "style": 11.48,
+       "layout": 4.28
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 602.4,
+       "q1": 541.9,
+       "q3": 700.3
+      },
+      "script": {
+       "median": 548,
+       "q1": 492.2,
+       "q3": 632.3
+      },
+      "style": {
+       "median": 13.1,
+       "q1": 11.4,
+       "q3": 13.8
+      },
+      "layout": {
+       "median": 4.6,
+       "q1": 4.2,
+       "q3": 4.9
+      }
+     }
+    },
+    "after": {
+     "rows": [
+      {
+       "task": 777.38,
+       "script": 725.7,
+       "style": 6.06,
+       "layout": 5.28
+      },
+      {
+       "task": 613.33,
+       "script": 566.61,
+       "style": 4.52,
+       "layout": 4.67
+      },
+      {
+       "task": 629.01,
+       "script": 585.69,
+       "style": 3.33,
+       "layout": 4.58
+      },
+      {
+       "task": 575.96,
+       "script": 531.47,
+       "style": 3.57,
+       "layout": 4.81
+      },
+      {
+       "task": 618.94,
+       "script": 570.95,
+       "style": 3.63,
+       "layout": 4.81
+      },
+      {
+       "task": 755.47,
+       "script": 704.83,
+       "style": 6.06,
+       "layout": 4.58
+      },
+      {
+       "task": 583.42,
+       "script": 540.51,
+       "style": 3.68,
+       "layout": 4.36
+      },
+      {
+       "task": 551.78,
+       "script": 509.11,
+       "style": 3.36,
+       "layout": 4.24
+      },
+      {
+       "task": 558.37,
+       "script": 515.49,
+       "style": 3.26,
+       "layout": 4.61
+      },
+      {
+       "task": 523.78,
+       "script": 482.28,
+       "style": 3,
+       "layout": 4.4
+      },
+      {
+       "task": 785.5,
+       "script": 735.93,
+       "style": 5.65,
+       "layout": 4.74
+      },
+      {
+       "task": 681.55,
+       "script": 630.41,
+       "style": 4.29,
+       "layout": 5.21
+      },
+      {
+       "task": 580.4,
+       "script": 534.92,
+       "style": 3.31,
+       "layout": 4.82
+      },
+      {
+       "task": 634,
+       "script": 585.35,
+       "style": 3.75,
+       "layout": 5.01
+      },
+      {
+       "task": 585.11,
+       "script": 539.53,
+       "style": 3.62,
+       "layout": 4.57
+      },
+      {
+       "task": 729.23,
+       "script": 679.96,
+       "style": 5.73,
+       "layout": 4.82
+      },
+      {
+       "task": 566.42,
+       "script": 524.5,
+       "style": 3.77,
+       "layout": 4.31
+      },
+      {
+       "task": 571.23,
+       "script": 527.82,
+       "style": 3.09,
+       "layout": 4.55
+      },
+      {
+       "task": 564.5,
+       "script": 521.3,
+       "style": 3.4,
+       "layout": 4.15
+      },
+      {
+       "task": 530.48,
+       "script": 487.33,
+       "style": 3.27,
+       "layout": 4.29
+      }
+     ],
+     "timedOut": 0,
+     "problems": [],
+     "summary": {
+      "task": {
+       "median": 584.3,
+       "q1": 565.9,
+       "q3": 645.9
+      },
+      "script": {
+       "median": 540,
+       "q1": 523.7,
+       "q3": 596.9
+      },
+      "style": {
+       "median": 3.6,
+       "q1": 3.3,
+       "q3": 4.3
+      },
+      "layout": {
+       "median": 4.6,
+       "q1": 4.4,
+       "q3": 4.8
+      }
+     }
+    }
+   },
+   "browser": "141.0.7390.37"
+  }
+ ],
+ "finishedAt": "2026-10-11T20:29:14.845Z"
+}

@@ -546,44 +546,46 @@
 .ex-row-heading { z-index: 4; }
 .ex-headings-corner { z-index: 7; }
 /* Selection is painted as overlay rectangles, never as a class on the selected cells
-   (ADR-0008): one element per range, so what it costs depends on how many rectangles
-   there are and not on how many cells they cover — and no row parameter carries
-   selection, which keeps "the row changed" meaning the data changed (ADR-0003).
+   (ADR-0008): a tint and a box per range in each layer it reaches (ADR-0206), so what it costs
+   depends on how many rectangles there are and not on how many cells they cover — and no row
+   parameter carries selection, which keeps "the row changed" meaning the data changed (ADR-0003).
 
-   Both layers sit inside .ex-viewport deliberately. Its transform makes it a stacking
+   The layers sit inside .ex-viewport deliberately. Its transform makes it a stacking
    context, so the Pinned Columns' z-index counts only in there: a rectangle outside would
    paint over the pinned block rather than sliding beneath it. The price is that the
    coordinates are relative to the painted slice rather than to the content.
-   Order in here: cells, selection (1), Pinned Columns (2), their selection (3); the
-   header (4, 5) is outside and covers the lot. */
+   Order in here: cells, selection (1), Pinned Columns (2), the pinned shade and then the pinned
+   selection (both 3, in that order by tree order); the header (4, 5) is outside and covers the lot. */
 .ex-selection { position: absolute; top: 0; left: 0; z-index: 1; }
-/* The pinned part of a range travels with the Pinned Columns. Zero-sized and first in the
-   flow, so it displaces no row; `left` with no `top` sticks it to the Viewport's left
-   edge and to nothing else. */
-.ex-selection-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
-/* Neither layer may take a click — .ex-viewport underneath is where the mouse handlers
-   read their offsets from. */
-.ex-selection, .ex-selection-pinned { pointer-events: none; }
-/* Translucent, so the value reads through it: geometry is the only kind of effect an
-   overlay can paint, and this is also what Excel looks like (ADR-0008). The tint is the
-   range's ::before, clipped by the hole the Focus makes in it: the selection's tint never
-   covers the Focus cell, as Excel's never covers the active cell (ADR-0008, 2026-09-29; the
-   Focus band and the hover band are other overlays and keep theirs). The hole is geometry
-   and arrives inline on the range, as the polygon it names, only on a range that holds the
-   Focus; declared here so an ancestor's value can never reach a range that has none. The
-   range's own box stays unclipped by the hole, so an outline drawn inside it passes the
-   Focus's cell without a gap. The range isolates its own painting so the tint, at the bottom
-   of it, lies beneath that outline rather than tinting it, and nothing else in the layer
-   moves. */
-.ex-range { position: absolute; isolation: isolate; --ex-range-hole: none; }
-.ex-range::before {
-    content: "";
+/* The pinned part of a range travels with the Pinned Columns. Zero-sized and ahead of the rows
+   in the flow — after the Keyboard Field, and after the pinned shade while that stands — so it
+   displaces no row; `left` with no `top` sticks it to the Viewport's left edge and to nothing
+   else. The pinned shade (ADR-0206) is the same kind of layer, placed
+   immediately before it: the pinned bands and tints, the washes, in a layer of their own, so a
+   stylesheet can blend that layer as one group with the pinned cells it lies over (ExSheet's Paper
+   does; the core blends nothing). Everything drawn on top — boxes and outlines, the Focus, the
+   Copied Range, the fill handle, the Reference Outlines — stays in the pinned selection layer. */
+.ex-selection-pinned, .ex-shade-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
+/* No layer may take a click — .ex-viewport underneath is where the mouse handlers read their
+   offsets from. */
+.ex-selection, .ex-selection-pinned, .ex-shade-pinned { pointer-events: none; }
+/* A range is a tint and a box (ADR-0206). The tint is translucent, so the value reads through it:
+   geometry is the only kind of effect an overlay can paint, and this is also what Excel looks like
+   (ADR-0008). It is clipped by the hole the Focus makes in it: the selection's tint never covers
+   the Focus cell, as Excel's never covers the active cell (ADR-0008, 2026-09-29; the Focus band and
+   the hover band are other overlays and keep theirs). The hole is geometry and arrives inline on
+   the tint, as the polygon it names, only on a tint that holds the Focus; declared here so an
+   ancestor's value can never reach a tint that has none. The box, `ex-range`, draws the outline,
+   unclipped by the hole, so an outline drawn inside it passes the Focus's cell without a gap. In
+   each layer every tint comes before every box, so the outlines lie over the tints by tree order
+   alone, and nothing isolates its own painting. */
+.ex-range-tint {
     position: absolute;
-    z-index: -1;
-    inset: 0;
+    --ex-range-hole: none;
     background: var(--ex-selection-fill, rgba(60, 120, 216, 0.18));
     clip-path: var(--ex-range-hole);
 }
+.ex-range { position: absolute; }
 /* The Focus band (ADR-0008): one more overlay rectangle, first in its layer so every
    range stays readable over it. Enabling it is a parameter; this is only its colour. */
 .ex-focus-row { position: absolute; background: var(--ex-focus-row-fill, rgba(128, 128, 128, 0.10)); }
@@ -630,7 +632,7 @@
    one colours both. */
 .ex-range-single::after { border-color: var(--ex-selection-outline, var(--ex-focus-outline, CanvasText)); }
 /* The Focus inside a single range has no outline of its own; the range's tint leaves its
-   cell out. Its element stays, because forced colors discard the tint that marks it, and the
+   cell out. Its element stays, because under forced colors no tint is painted to mark it, and the
    forced-colors block below outlines it again. */
 .ex-range-single ~ .ex-focus::after { content: none; }
 /* The Copied Range (ADR-0170): dashes round a rectangle the clipboard holds as the grid copied it,
@@ -1138,10 +1140,13 @@
        kept for the things that do (ADR-0038). The discarded gradient is the whole of it. */
     /* The selection and the Focus stay visible: outlines, which forced colors keeps, drawn
        inside the range on every side, so none is covered (UX-18). The Focus inside a single
-       range is marked only by its missing tint, which is discarded here, so it takes its
+       range is marked only by its missing tint, and no tint is painted here, so it takes its
        outline back. */
     .ex-range { outline-style: solid; outline-color: Highlight; }
     .ex-focus { outline-style: solid; }
+    /* The tints are not painted at all (ADR-0206): stated here rather than left to how a browser
+       forces a translucent background. Each range keeps its box, whose outline is above. */
+    .ex-range-tint { display: none; }
     .ex-focus::after, .ex-range-single::after { content: none; }
     /* The Copied Range keeps its dashes, in system colours, over a band of the system ground
        (ADR-0170): dashed, where the Selection's restated outlines are solid. */

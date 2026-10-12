@@ -2,6 +2,7 @@ using Bunit;
 using ExGrid.Cells;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
+using ExGrid.Selection;
 using Xunit;
 
 namespace ExGrid.Components.Tests;
@@ -84,7 +85,8 @@ public class RenderAllocationTests : GridTestContext
     /// </summary>
     private (long Bytes, int Cells) LeastAllocatedByReRenders(
         GridColumn<TestRow>[] columns, IReadOnlyList<SortSpec>? sorts, IReadOnlyList<HeaderGroup>? groups,
-        bool stripes = false, int renders = 10, int runs = 10, CellChangeOf<TestRow>? changedAt = null)
+        bool stripes = false, int renders = 10, int runs = 10, CellChangeOf<TestRow>? changedAt = null,
+        bool selectedAcrossPinned = false)
     {
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Many(50))
@@ -94,10 +96,20 @@ public class RenderAllocationTests : GridTestContext
             .Add(g => g.HeaderGroups, groups)
             .Add(g => g.StripeRows, stripes)
             .Add(g => g.CellChangedAt, changedAt)
+            .Add(g => g.PinnedColumnCount, selectedAcrossPinned ? 2 : 0)
             .Add(g => g.RowHeight, 20d)
             .Add(g => g.ViewportHeight, 120)
             // Every column painted, so the cell count is rows × columns exactly.
             .Add(g => g.ViewportWidth, columns.Length * ColumnWidthPx + 100));
+        if (selectedAcrossPinned)
+        {
+            // Every painted cell selected, from a pinned Focus to the last column: a tint and a box
+            // in each layer, the pinned tint in the shade layer (ADR-0206), painted on every render.
+            cut.InvokeAsync(() => cut.Instance.PlaceSelectionAsync(
+                new SelectionRange(0, 0, 50, columns.Length), new CellPosition(1, 1), 0)).GetAwaiter().GetResult();
+            Assert.Single(cut.FindAll(".ex-shade-pinned > .ex-range-tint"));
+            Assert.Single(cut.FindAll(".ex-selection > .ex-range-tint"));
+        }
 
         // Warm both of every row's render buffers, so growing them is off the measurement.
         cut.Render(ps => ps.Add(g => g.CellState, NormalA));
@@ -119,24 +131,26 @@ public class RenderAllocationTests : GridTestContext
     /// between a grid of 4 columns and one of 16.</summary>
     private double PerCellPerRender(
         Func<int, GridColumn<TestRow>[]> columns, IReadOnlyList<SortSpec>? sorts = null,
-        Func<int, HeaderGroup[]>? groups = null, bool stripes = false, CellChangeOf<TestRow>? changedAt = null)
+        Func<int, HeaderGroup[]>? groups = null, bool stripes = false, CellChangeOf<TestRow>? changedAt = null,
+        bool selectedAcrossPinned = false)
     {
         const int renders = 10;
         // One throwaway pass at each size: the JIT's first compilations land on whoever
         // goes first.
-        LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), stripes, renders, changedAt: changedAt);
-        LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), stripes, renders, changedAt: changedAt);
+        LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), stripes, renders, changedAt: changedAt, selectedAcrossPinned: selectedAcrossPinned);
+        LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), stripes, renders, changedAt: changedAt, selectedAcrossPinned: selectedAcrossPinned);
 
-        var few = LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), stripes, renders, changedAt: changedAt);
-        var many = LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), stripes, renders, changedAt: changedAt);
+        var few = LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), stripes, renders, changedAt: changedAt, selectedAcrossPinned: selectedAcrossPinned);
+        var many = LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), stripes, renders, changedAt: changedAt, selectedAcrossPinned: selectedAcrossPinned);
         return (double)(many.Bytes - few.Bytes) / ((many.Cells - few.Cells) * renders);
     }
 
     private void AssertNothingPerCell(
         Func<int, GridColumn<TestRow>[]> columns, IReadOnlyList<SortSpec>? sorts = null,
-        Func<int, HeaderGroup[]>? groups = null, bool stripes = false, CellChangeOf<TestRow>? changedAt = null)
+        Func<int, HeaderGroup[]>? groups = null, bool stripes = false, CellChangeOf<TestRow>? changedAt = null,
+        bool selectedAcrossPinned = false)
     {
-        var perCellPerRender = PerCellPerRender(columns, sorts, groups, stripes, changedAt);
+        var perCellPerRender = PerCellPerRender(columns, sorts, groups, stripes, changedAt, selectedAcrossPinned);
         Assert.True(
             perCellPerRender < 1,
             $"a re-render allocated {perCellPerRender:N1} bytes per painted cell (PF-3).");
@@ -158,6 +172,10 @@ public class RenderAllocationTests : GridTestContext
     [Fact] // PF-3 / ADR-0032: tiered headers — a leaf's height, a rectangle's box and span — are cached, not composed
     public void Re_rendering_under_header_groups_allocates_nothing_per_cell()
         => AssertNothingPerCell(TextColumns, groups: Pairs);
+
+    [Fact] // PF-3 / PF-5 / ADR-0206: a selection across the pinned boundary — a tint and a box in each layer, and the shade layer — costs nothing per painted cell
+    public void Re_rendering_under_a_selection_across_the_pinned_boundary_allocates_nothing_per_cell()
+        => AssertNothingPerCell(TextColumns, selectedAcrossPinned: true);
 
     [Fact] // PF-3 / RR-13 / ADR-0038: a Row Stripe is one interned class on the row, never composed per render
     public void Re_rendering_striped_rows_allocates_nothing_per_cell()

@@ -225,41 +225,64 @@
                     var outlineCover = OutlineCoverAt(visible);
                     @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0 || pointDashes is not null)
                     {
-                        @* One element per range, so what selection costs to paint depends
-                           on how many rectangles there are and never on how many cells
-                           they cover (ADR-0008). The two layers are the horizontal axis
-                           being asymmetric again: the pinned part of a range has to
-                           travel with the Pinned Columns, and the rest has to pass
-                           underneath them. Both carry a key because their siblings do —
-                           an unkeyed element beside keyed ones degrades the diff to
-                           positional matching and would recreate the rows (ADR-0003). *@
+                        @* What selection costs to paint depends on how many rectangles there
+                           are and never on how many cells they cover (ADR-0008): a range is a
+                           tint and a box in each layer it reaches (ADR-0206). The layers are the
+                           horizontal axis being asymmetric again: the pinned part of a range has
+                           to travel with the Pinned Columns, and the rest has to pass underneath
+                           them. Each carries a key because its siblings do — an unkeyed element
+                           beside keyed ones degrades the diff to positional matching and would
+                           recreate the rows (ADR-0003). *@
                         @* Paint, not content (ADR-0008/0033): a role="grid" whose rows
                            are interleaved with unnamed divs is a malformed grid. *@
+                        @* The pinned shade (ADR-0206): the washes over the Pinned Columns — the
+                           bands first, beneath every range, then each range's tint — in a layer
+                           of their own, immediately before the pinned selection layer, so that a
+                           stylesheet can blend the layer as one with the pinned cells beneath it
+                           (ExSheet's Paper multiplies it). Emitted only while it holds something:
+                           a one-cell selection is the Focus outline alone and adds no layer. *@
+                        @if (PinnedShadeHolds(visible))
+                        {
+                            <div class="ex-shade-pinned" aria-hidden="true" @key="PinnedShadeLayerKey">
+                                @* The hover band (ADR-0029, ADR-0021's fifth entry): the row
+                                   under the pointer, painted exactly as the Focus band is —
+                                   one rectangle, beneath everything, no row told. *@
+                                @if (HoverRowRange is { } hoverRow && SelectionStyles.Pinned(hoverRow, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedHover)
+                                {
+                                    <div class="ex-hover-row" style="@pinnedHover"></div>
+                                }
+                                @if (!_selection.Selection.IsEmpty)
+                                {
+                                    @* The Focus band (ADR-0008): one more rectangle, before every
+                                       tint so every range stays readable over it. *@
+                                    @if (HighlightFocusRow && SelectionStyles.Pinned(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedBand)
+                                    {
+                                        <div class="ex-focus-row" style="@pinnedBand"></div>
+                                    }
+                                    @* Each range's tint, cut at the boundary, round a hole where the
+                                       Focus is (ADR-0008, 2026-09-29; ADR-0206). *@
+                                    @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
+                                    {
+                                        @if (SelectionStyles.Tint(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true) is { } pinnedTint)
+                                        {
+                                            <div class="ex-range-tint" style="@pinnedTint"></div>
+                                        }
+                                    }
+                                }
+                            </div>
+                        }
                         <div class="ex-selection-pinned" aria-hidden="true" @key="PinnedSelectionLayerKey">
-                            @* The hover band (ADR-0029, ADR-0021's fifth entry): the row
-                               under the pointer, painted exactly as the Focus band is —
-                               one rectangle, beneath everything, no row told. *@
-                            @if (HoverRowRange is { } hoverRow && SelectionStyles.Pinned(hoverRow, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedHover)
-                            {
-                                <div class="ex-hover-row" style="@pinnedHover"></div>
-                            }
                             @if (!_selection.Selection.IsEmpty)
                             {
-                                @* The Focus band (ADR-0008): one more rectangle, first in
-                                   the layer so every range stays readable over it. *@
-                                @if (HighlightFocusRow && SelectionStyles.Pinned(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedBand)
+                                @* Each range's box, a single range outlined; the Focus's own element
+                                   follows, so the stylesheet can tell it stands inside a single
+                                   range (ADR-0008, 2026-09-29). Its tint is in the shade layer
+                                   beneath (ADR-0206). *@
+                                @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
                                 {
-                                    <div class="ex-focus-row" style="@pinnedBand"></div>
-                                }
-                                @* Each range tinted round a hole where the Focus is, and a single
-                                   range outlined as well; the Focus's own element follows, so the
-                                   stylesheet can tell it stands inside a single range (ADR-0008,
-                                   2026-09-29). *@
-                                @foreach (var range in _selection.Selection.Ranges)
-                                {
-                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } fill)
+                                    @if (SelectionStyles.Box(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedRangeBox)
                                     {
-                                        <div class="@RangeClass" style="@fill"></div>
+                                        <div class="@RangeClass" style="@pinnedRangeBox"></div>
                                     }
                                 }
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedFocus)
@@ -335,11 +358,21 @@
                                 {
                                     <div class="ex-focus-row" style="@band"></div>
                                 }
-                                @foreach (var range in _selection.Selection.Ranges)
+                                @* The bands, then every tint, then every box: the outlines lie over
+                                   the tints by tree order alone, and nothing here isolates its own
+                                   painting (ADR-0206). *@
+                                @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
                                 {
-                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } fill)
+                                    @if (SelectionStyles.Tint(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false) is { } tint)
                                     {
-                                        <div class="@RangeClass" style="@fill"></div>
+                                        <div class="ex-range-tint" style="@tint"></div>
+                                    }
+                                }
+                                @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
+                                {
+                                    @if (SelectionStyles.Box(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } rangeBox)
+                                    {
+                                        <div class="@RangeClass" style="@rangeBox"></div>
                                     }
                                 }
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } focus)
@@ -2267,6 +2300,7 @@
     // with a row's identity key or a Placeholder's boxed index.
     private static readonly object SelectionLayerKey = new();
     private static readonly object PinnedSelectionLayerKey = new();
+    private static readonly object PinnedShadeLayerKey = new();
     private static readonly object EditorLayerKey = new();
 
     // Every id this instance writes is prefixed per instance (ADR-0018/0033): two
@@ -2492,6 +2526,33 @@
     /// one outline, around the whole range, and several ranges carry none. Interned, so a
     /// render composes nothing for them.</summary>
     private string RangeClass => _selection.Selection.Ranges.Count == 1 ? "ex-range ex-range-single" : "ex-range";
+
+    /// <summary>
+    /// Whether the pinned shade layer holds anything over the painted rows (ADR-0206): the hover
+    /// band's or the Focus band's pinned part, or any range's pinned tint. The layer is emitted only
+    /// then, so a one-cell selection, or a selection that reaches no Pinned Column, adds no element.
+    /// Answered from the geometry alone, without writing a style down; a loop over the ranges, never
+    /// an enumerator, so a render allocates nothing for it.
+    /// </summary>
+    private bool PinnedShadeHolds(RowRange visible)
+    {
+        var columns = _columnStyles.Geometry;
+        if (columns.PinnedCount == 0)
+            return false;
+        if (HoverRowRange is { } hover && SelectionStyles.Reaches(hover, columns, visible, pinnedLayer: true))
+            return true;
+        var selection = _selection.Selection;
+        if (selection.IsEmpty)
+            return false;
+        if (HighlightFocusRow && SelectionStyles.Reaches(FocusRowRange, columns, visible, pinnedLayer: true))
+            return true;
+        for (var r = 0; r < selection.Ranges.Count; r++)
+        {
+            if (SelectionStyles.Tinted(selection.Ranges[r], selection.Focus, columns, visible, pinnedLayer: true))
+                return true;
+        }
+        return false;
+    }
 
     /// <summary>
     /// What lies above the selection layer at its edges as the slice is painted (ADR-0008,

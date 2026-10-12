@@ -26,7 +26,8 @@ shows a later row once the height is compressed, which only a run at 150% can se
 once the grid has painted the slice for the offset the browser holds, as the offset the grid
 wrote on the Viewport says: compressed, the rows move when the grid is told of the scroll, a
 round trip later on the Server host, and a reading taken before that is of rows that are leaving.
-It also reads pixels that only a real 150% lays out: the Border lines (DC-59), and SH-41's sweep of
+It also reads pixels that only a real 150% lays out: the Border lines (DC-59), the Selection's shade
+over them in a Pinned Column (DC-59, ADR-0206), and SH-41's sweep of
 the bold edge (VZ-19), where a number may use one Device Pixel of its cell's right padding
 (ADR-0090). `sheet-paper.spec.mjs` emulates its viewport everywhere else, and leaves the window to
 Chrome there, since an emulated viewport is painted at a scale of 1.
@@ -620,6 +621,18 @@ nobody had asked for. What that means when writing a test:
   left lying under the Row Headings' edge (the twelfth run's case 14); and the lines still on the
   device pixels with the Sheet moved a third of a pixel across and down. The case pages pin no
   column, as the run's workbook did not.
+- `part-c.spec.mjs` — what Part C of the eleventh Windows run left (ADR-0071, "What was decided after
+  Part C"; ADR-0090; ADR-0050 item 14; ADR-0016) on `/sheet?case=…`, read in device pixels: the
+  Selection on the Paper (SH-54), Excel's outline and shade under both Chromes; and, with `?pin=`
+  putting B2:C3 wholly in the Pinned Columns and across their boundary, the shade still multiplying
+  there (DC-59, ADR-0206) — a black line inside it black, the shade `#C7C7C7` under the built-in
+  Chrome and the primary mixed into white under `ExSheet.MudBlazor`, a Consumer's coloured
+  `--ex-selection-fill` darkening a pinned Fill and leaving a pinned thick line black, column A's
+  shade staying on it while the Sheet scrolls down and across, no tint under forced colors, the
+  same pixels in the dark scheme; and the sub-pixel gate, five of the thirteen lines' Device Pixels kept
+  with a pinned tint on screen and the page a third of a pixel across and down. Then the gridlines
+  and column edges on Device Pixels (VZ-17), the Row Headings' edge, `####` filling its cell, and
+  Ctrl+Shift+= and Ctrl+- (SH-53). The tests named DC-59 run at 150% too, in `chrome-150`.
 - `sheet-paper.spec.mjs` — the Paper and the Ink (ADR-0071, SH-39, SH-40, DC-58; ticket 48) on
   `/sheet?case=paper`, under the built-in Chrome and `ExSheet.MudBlazor`'s, with `?scheme=light` and
   `?scheme=dark`: the Paper white and the Ink black in both schemes; a Font colour, a Number
