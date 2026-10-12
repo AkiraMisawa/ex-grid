@@ -48,9 +48,11 @@ async function serveChanged(page, pattern, change) {
  * error of its own. That block reaches the grid as a script that did not load, which layer 2 holds,
  * as it holds a missing file. ERR-10 is the grid's own refusal, the check behind that one, so the
  * page is served without the script's integrity entry, and the changed script itself reaches the
- * grid. A host whose import map names no integrity, as `dotnet run`'s does not, is served as it is. */
-async function serveScript(page, change) {
-    await page.route('**/*', async (route) => {
+ * grid. A host whose import map names no integrity, as `dotnet run`'s does not, is served as it is.
+ * Only the page's own document is routed: a route over every request also takes the circuit's
+ * WebSocket, whose handshake an installed Chrome then never completes (CI, 2026-10-12). */
+async function serveScript(page, change, path = '/wide') {
+    await page.route((url) => url.pathname === path, async (route) => {
         if (route.request().resourceType() !== 'document') {
             await route.fallback();
             return;
