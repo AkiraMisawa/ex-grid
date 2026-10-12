@@ -437,6 +437,29 @@ public class SheetToolbarTests : SheetTestContext
         Assert.True(ReclaimCount > reclaimed);
     }
 
+    [Fact] // ADR-0100's note of 2026-10-12 (the seventeenth Windows run, Part D): the element the keyboard leaves the toolbar through holds focus, so it is never aria-hidden
+    public async Task The_element_the_keyboard_leaves_through_is_not_hidden_from_assistive_technology()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        // The browser has not yet put the keyboard on the element: it stands, focused, a round trip.
+        var focus = JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true);
+        var reclaimed = ReclaimCount;
+
+        var escape = cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+
+        var leaving = cut.WaitForElement(".ex-sheet-toolbar-leaving");
+        Assert.Equal("-1", leaving.GetAttribute("tabindex"));
+        Assert.False(leaving.HasAttribute("aria-hidden"));
+        Assert.Equal(reclaimed, ReclaimCount);
+
+        focus.SetVoidResult();
+        await escape;
+        Assert.Empty(cut.FindAll(".ex-sheet-toolbar-leaving"));
+        Assert.True(ReclaimCount > reclaimed);
+    }
+
     // ---- The Chrome draws, the meaning stays (SH-50) ----
 
     [Fact] // ADR-0100, ADR-0010, SH-50: a substituted Chrome draws every item, and a press means the same

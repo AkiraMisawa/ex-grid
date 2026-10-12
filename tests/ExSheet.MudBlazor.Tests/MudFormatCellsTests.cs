@@ -553,7 +553,7 @@ public class MudFormatCellsTests : MudSheetTestContext
 
     // ---- The keyboard ----
 
-    [Fact] // ADR-0071 / ADR-0021's note of 2026-09-30: the dialog takes the keyboard from an element of the frame's own, which goes once the dialog has it
+    [Fact] // ADR-0071 / ADR-0021's note of 2026-09-30 / ADR-0100's note of 2026-10-12: the dialog takes the keyboard from an element of the frame's own, never aria-hidden, which goes once the dialog has it
     public async Task The_keyboard_leaves_from_the_frames_own_element()
     {
         var page = RenderPage();
@@ -563,6 +563,9 @@ public class MudFormatCellsTests : MudSheetTestContext
 
         var leaving = page.Find(".mud-ex-sheet-format-cells-leaving");
         Assert.Null(leaving.Closest(".ex-grid"));
+        // It holds focus, so it is never aria-hidden: Chromium refuses to hide a focused element and
+        // says so in the console (the seventeenth Windows run, Part D, the Server host).
+        Assert.False(leaving.HasAttribute("aria-hidden"));
         Assert.Contains(JSInterop.Invocations, i => i.Identifier.EndsWith("focus", StringComparison.Ordinal));
 
         await page.Find("form.mud-ex-sheet-format-cells-form").FocusInAsync(new Microsoft.AspNetCore.Components.Web.FocusEventArgs());

@@ -33,7 +33,9 @@
     </CascadingValue>
     @if (_leaving)
     {
-        <span class="ex-sheet-toolbar-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1" aria-hidden="true" @ref="_leavingFrom"></span>
+        @* Never aria-hidden: it holds focus, and Chromium refuses to hide a focused element, saying so
+           in the console while its accessibility tree is on (the seventeenth Windows run, Part D). *@
+        <span class="ex-sheet-toolbar-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1" @ref="_leavingFrom"></span>
     }
 </div>
 

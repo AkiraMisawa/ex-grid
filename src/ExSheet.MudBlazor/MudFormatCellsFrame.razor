@@ -31,10 +31,12 @@
     the dialog is drawn, and its tabs take the keyboard, round trips after the gesture, and an End
     typed as the dialog appeared was lost (layer 3, CI). They reach the tab shown once the tabs hold
     the keyboard. Their defaults are the element's, prevented: an End there would scroll the page.
+    It is never aria-hidden: it holds focus, and Chromium refuses to hide a focused element, saying
+    so in the console while its accessibility tree is on (the seventeenth Windows run, Part D).
 *@
 @if (_leaving)
 {
-    <span class="mud-ex-sheet-format-cells-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1" aria-hidden="true"
+    <span class="mud-ex-sheet-format-cells-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1"
           @onkeydown="_keyOnTheWay" @onkeydown:preventDefault @ref="_leavingFrom"></span>
 }
 

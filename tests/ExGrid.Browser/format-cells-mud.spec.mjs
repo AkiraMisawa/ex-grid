@@ -1,6 +1,7 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
+import { watchHiddenFocus } from './hidden-focus.mjs';
 
 // Format Cells under ExSheet.MudBlazor's Chrome (ADR-0071, ticket 53; SH-45, SH-47): a MudDialog at
 // page level, outside the Sheet's root and its box, which MudBlazor draws. What it offers and what
@@ -95,6 +96,35 @@ test.describe('on /sheet?chrome=mud', () => {
         await page.keyboard.press('Escape');
         await expect(formatCells(page)).toHaveCount(0);
         await expectKeyboardOn(grid);
+    });
+
+    test('SH-45/ADR-0071 (the seventeenth Windows run, Part D): opened from the toolbar\'s keys, Alt, H, O, E, the frame hands the keyboard to the dialog with no console warning while the accessibility tree is on', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        const hidden = await watchHiddenFocus(page);
+        try {
+            // On a circuit the frame's own element holds focus a round trip or more, while the dialog is drawn.
+            await setRoundTrip(80);
+
+            await page.keyboard.press('Alt');
+            // The letters once the KeyTips have taken the keyboard: on a circuit, one typed before reaches the cell.
+            await expect(page.locator('.ex-sheet-toolbar .ex-sheet-keytip')).toHaveText(['H', 'Y']);
+            await expect(page.locator('.ex-sheet-toolbar').first()).toBeFocused();
+            await page.keyboard.press('h');
+            await page.keyboard.press('o');
+            await page.keyboard.press('e');
+
+            await expect(formatCells(page)).toBeVisible();
+            await expect(tab(page, 'Number')).toBeFocused();
+            await page.keyboard.press('Escape');
+            await expect(formatCells(page)).toHaveCount(0);
+            await expectKeyboardOn(grid);
+
+            expect(await hidden.read(), 'no element holding focus is aria-hidden').toEqual([]);
+        } finally {
+            await hidden.stop();
+            await setRoundTrip(0);
+        }
     });
 
     test('SH-45 (Part C): opened again on Border, every tab is in view and the strip does not scroll (ticket 147)', async ({ page }) => {

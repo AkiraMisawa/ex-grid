@@ -1,6 +1,7 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
+import { watchHiddenFocus } from './hidden-focus.mjs';
 
 // The Sheet Toolbar (ADR-0100, ticket 54; SH-48 to SH-50), on /sheet under both Chromes: above the
 // Formula Bar, inside the Sheet's box and outside the grid's root, the grid keeping the rows the page
@@ -180,8 +181,9 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-// What the seventeenth Windows run found in Part D: Excel reaches Format Cells… by O, E, through its
-// Format menu.
+// What the seventeenth Windows run found in Part D. Excel reaches Format Cells… by O, E, through its
+// Format menu. And the element the keyboard leaves the toolbar through was aria-hidden while it held
+// focus, which Chromium says in the console.
 for (const chrome of ['builtin', 'mud']) {
     test(`SH-52/ADR-0100 (2026-10-12): Format Cells is Alt, H, O, E, as Excel's Format menu reaches it — O narrows the KeyTips, E opens it (${chrome})`, async ({ page }) => {
         await openSheet(page, chrome);
@@ -202,7 +204,31 @@ for (const chrome of ['builtin', 'mud']) {
         await expectKeyboardOn(grid);
     });
 
+    test(`ADR-0100 (the seventeenth Windows run, Part D): the keyboard handed back from the toolbar leaves no console warning while the accessibility tree is on (${chrome})`, async ({ page }) => {
+        await openSheet(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'A4');
+        const hidden = await watchHiddenFocus(page);
+        try {
+            // On a circuit the element the keyboard leaves through holds focus a round trip.
+            await setRoundTrip(80);
 
+            await keyTips(page, 'h', '1');
+            await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
+            await expectKeyboardOn(grid);
+            await page.keyboard.press('F10');
+            await expect(toolbar(page).locator('.ex-sheet-keytip')).toHaveText(['H', 'Y']);
+            await page.keyboard.press('Escape');
+            await expectKeyboardOn(grid);
+
+            expect(await hidden.read(), 'no element holding focus is aria-hidden').toEqual([]);
+        } finally {
+            await hidden.stop();
+            await setRoundTrip(0);
+        }
+        await page.keyboard.press('Control+z');
+        await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+    });
 }
 
 test('SH-52/ADR-0100: F10, H, A, C centres the Focus cell; Escape backs out a level; Alt with an arrow is a chord', async ({ page }) => {
