@@ -6,8 +6,9 @@ pinned tints and bands lie in a sticky shade layer of their own, and on ExSheet'
 multiplies as one group, as each scrollable tint and band does. The ADR records the compositing cost as
 a prediction and asks for three observations before it counts as done: the drag cost before and after,
 the frame intervals while scrolling with column A selected at 100% and 150%, and the composited layer
-count read through the Chrome DevTools Protocol. They are here, with every raw figure in [`raw/`](raw/)
-(`scroll-layers.json` gzipped, read with `zcat`); [`tables.py`](tables.py) prints every table below from them.
+count read through the Chrome DevTools Protocol. Its Verification lists PF-6 and PF-7 besides. They are
+all here, with every raw figure in [`raw/`](raw/) (`scroll-layers.json` gzipped, read with `zcat`);
+[`tables.py`](tables.py) prints every table below from them.
 
 **Everything here is observational** (AGENTS.md: performance never gates). The sub-pixel gate, the one
 check the ADR makes a condition, is a layer-3 test, not a measurement: `part-c.spec.mjs`, "DC-59: with a
@@ -59,6 +60,24 @@ xvfb-run -a -s "-screen 0 2560x1600x24" node verification/2026-10-11-linux-pinne
 
 The hosts can be moved with `EXGRID_BEFORE_SERVER`, `EXGRID_AFTER_SERVER`, `EXGRID_BEFORE_WASM` and
 `EXGRID_AFTER_WASM`. Stop each host by its own PID, or by its port (`fuser -k 7470/tcp`).
+
+PF-6 and PF-7 are the browser suite's own measurements (`tests/ExGrid.Browser/observational.spec.mjs`),
+run against each build's Release publish as CI runs the suite (`EXGRID_HOSTS` naming a directory that
+holds `server`, `wasm` and `api`, the last `samples/ExGrid.DemoApi` published the same way), on each host,
+the two builds interleaved, two rounds, with the hosts above stopped first. From `tests/ExGrid.Browser`,
+for each of `before` and `after`:
+
+```sh
+EXGRID_HOSTS=$S/before EXGRID_BASE_URL=http://localhost:5471 \
+  xvfb-run -a npx playwright test --project=chrome --grep "PF-6|PF-7" observational.spec.mjs
+EXGRID_HOSTS=$S/before EXGRID_HOSTING=server EXGRID_BASE_URL=http://localhost:5470 \
+  xvfb-run -a npx playwright test --project=chrome --grep "PF-6|PF-7" observational.spec.mjs
+```
+
+with a configuration that names the Chromium (`launchOptions.executablePath`) where Chrome is absent.
+Each run writes `metrics.json` under `verification/<day>-linux/`; its `PF-6` and `PF-7` were copied into
+[`raw/pf-6-pf-7.json`](raw/pf-6-pf-7.json) and the run's own directory removed, since a run on this
+Chromium is not a Step 4 record.
 
 ## The drag cost
 
@@ -178,6 +197,73 @@ offset does not blur the lines under that compositing, passed (above). A GPU's c
 were not measured, and would be the next reading if a run on one shows a pinned range scrolling worse
 than an unpinned one.
 
+## PF-6 and PF-7, before and after
+
+The Definition of Done's observational measurements on `/wide` (10⁶ rows × 100 columns, 28 px rows, a
+900×600 Viewport, A and B pinned), taken on 2026-10-12 from 02:54 to 03:31 UTC, after the branch was
+rebased: **before** is `0186cc98` (main), **after** is `f7022450`, this branch with the review applied.
+Bundled Chromium 141, headed under xvfb, the `chrome` project; each build's Release publish; the load
+average (one minute) at each run's start is in the tables. All sixteen tests passed, and no console
+message was recorded.
+
+**PF-6**, in ms: the settle repaint (script, style and layout after a fling, median of 8, with its range)
+and the frame intervals (median and p95 of 150 frames of ordinary scrolling, 30 of fling), with
+horizontal virtualisation on and off. Both builds painted the same DOM in every run: 248 elements and
+210 cells with it on, 2,228 and 2,100 with it off.
+
+| Host | Build | Round | Load | Settle, on | Settle, off | Rows, on | Columns, on | Fling, on | Rows, off | Columns, off | Fling, off |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| wasm | before | 1 | 2.08 | 22.81 (17.32-34.28) | 76.76 (66.19-91.38) | 16.7, 50 | 16.7, 66.5 | 16.7, 16.8 | 33.3, 50.1 | 16.7, 33.4 | 16.7, 16.7 |
+| wasm | after | 1 | 3.42 | 24.01 (17.32-39.02) | 77.97 (63.7-90.93) | 16.7, 16.8 | 16.7, 16.8 | 16.7, 16.7 | 16.7, 33.4 | 16.7, 16.8 | 16.7, 16.8 |
+| wasm | before | 2 | 1.97 | 30.6 (20.63-44.24) | 74.07 (68.68-94.24) | 16.7, 16.7 | 16.7, 33.4 | 16.7, 16.8 | 33.3, 50.1 | 16.7, 33.4 | 16.7, 16.7 |
+| wasm | after | 2 | 6.32 | 24.76 (17.96-40.53) | 72.33 (65.54-99.15) | 16.7, 16.7 | 16.7, 16.8 | 16.7, 16.8 | 16.7, 33.4 | 16.7, 16.7 | 16.7, 16.8 |
+| server | before | 1 | 12.49 | 7.18 (6.4-9.64) | 52.79 (0.02-65.87) | 16.7, 33.3 | 16.7, 16.8 | 16.7, 16.8 | 33.3, 83.3 | 16.7, 50 | 16.7, 16.8 |
+| server | after | 1 | 19.96 | 6.97 (0.01-8.92) | 58.72 (43.58-68.82) | 16.7, 33.4 | 16.7, 33.3 | 16.7, 16.8 | 16.7, 50 | 16.7, 33.4 | 16.7, 16.7 |
+| server | before | 2 | 0.78 | 8.11 (5.88-12.39) | 59.32 (42.78-68.68) | 16.7, 16.8 | 16.7, 16.8 | 16.7, 16.8 | 16.7, 50 | 16.7, 16.8 | 16.7, 16.8 |
+| server | after | 2 | 5.13 | 7.4 (5.8-11.47) | 45.76 (41.48-78.46) | 16.7, 16.8 | 16.7, 16.8 | 16.7, 16.7 | 16.7, 16.8 | 16.7, 16.7 | 16.7, 16.7 |
+
+Against [ADR-0004](../../docs/adr/0004-cap-the-cells-touched-per-frame.md)'s table (WebAssembly,
+headless Chromium on an M-series Mac, a Debug build): its 220 / 2,200 cells and 279 / 2,326 elements were
+read at 100,000 rows on the markup of that day, against 210 / 2,100 and 248 / 2,228 here; the shape holds —
+the settle repaint is where the setting shows, about three times dearer with it off on WebAssembly (22.8 to
+30.6 ms against 72.3 to 78.0; ADR-0004's 16.3 against 49.8), and ordinary scrolling keeps the display's
+frame either way. That frame is 16.7 ms on this 60 Hz display, where ADR-0004's 8.3 ms was a 120 Hz
+display's. On the Server host the settle repaint is the browser's work alone, the render being the
+host's: 7.0 to 8.1 ms on, 45.8 to 59.3 off. One settle each side read next to nothing (0.02 and 0.01 ms),
+a fling whose last frame landed on a slice already painted.
+
+Before against after: PF-6 selects nothing, so nothing this change paints differently is on screen, and
+its counts are equal. The settle repaints and the fling and column frames moved both ways within their
+ranges. One pattern is recorded rather than explained: with virtualisation off, the row-scrolling median
+was 33.3 ms in three of the four `before` runs and 16.7 ms in all four `after` runs, with p95s that
+overlap (50 to 83.3 before, 16.8 to 50 after). Nothing in the change applies with no selection, and the
+load varied from 0.8 to 20 across the runs; a run on a quiet machine, or on real hardware, would say
+whether it is more than that.
+
+**PF-7**, in ms per step: a 10 × 7 rectangle in the scrollable columns, its bottom edge dragged one row a
+step, forty steps, the main thread's script, style and layout time per step. Before, the range is one
+element (its tint a `::before`); after, a tint and a box.
+
+| Host | Build | Round | Load | Step: median | p95 | max |
+|---|---|---|---|---|---|---|
+| wasm | before | 1 | 2.08 | 7.67 | 21.04 | 22.06 |
+| wasm | after | 1 | 3.42 | 7.78 | 20.14 | 25.7 |
+| wasm | before | 2 | 1.97 | 7.87 | 17.22 | 21.57 |
+| wasm | after | 2 | 6.32 | 6.97 | 22.67 | 22.76 |
+| server | before | 1 | 12.49 | 1.19 | 2.43 | 3.88 |
+| server | after | 1 | 19.96 | 1.27 | 3.57 | 3.94 |
+| server | before | 2 | 0.78 | 1.15 | 1.99 | 2.68 |
+| server | after | 2 | 5.13 | 1.27 | 1.96 | 2.07 |
+
+Against [ADR-0008](../../docs/adr/0008-selection-is-painted-by-an-overlay.md)'s pair (real hardware,
+Windows, a render's maximum: 2.10 ms for the overlay, 19.70 ms for a class on every cell): on the Server
+host, where a step's main-thread work is the browser's alone, the maxima are 2.07 to 3.94 ms after, 2.68
+to 3.88 before, the overlay's order and far from the per-cell classes'. On WebAssembly a step's script
+time holds the .NET render too, on the same thread, so its 7 to 8 ms medians and 22 to 26 ms maxima are
+not the overlay's paint alone, and they sit within each other's spread before and after. The medians
+moved by +0.08 to +0.12 ms on the Server host, the second element per range, and by −0.9 to +0.1 ms on
+WebAssembly.
+
 ## The sub-pixel gate, and the rest of layer 3, as run here
 
 The layer-3 runs that verified ADR-0206 in this container (Playwright's bundled Chromium, headed under
@@ -188,6 +274,13 @@ on the WebAssembly host and on the Server host, three times each (`--repeat-each
 `/sheet?case=lines&pin=2` selected beside the lines (a pinned tint on screen, no outline on the lines),
 the page shifted 0.33 px across and down, and Thin, Thick, Double, Dotted and MediumDashDotDot read on
 B's bottoms (a Pinned Column) and D's rights (a scrollable one) at their exact Device Pixels.
+
+Run again on 2026-10-12 with the review applied (`f7022450`), with the whole of `part-c.spec.mjs`, both
+projects, three times each, on each host's Release publish: passed. On the way, the Server host failed
+the gate 3 runs of 6, and not on a line: its Ctrl+press on F3 took F4. The press read F3's place while
+the last Shift+↓ answers were still scrolling the Sheet to keep A14 in view. The test now waits for
+A2:A14 to be painted, reading the range and its cells in one evaluation, and for the circuit to fall
+quiet, before it reads F3's place (principle 6).
 
 **Where the gate has not run.** Only under software compositing: SwiftShader here, and CI's Linux
 Chrome and Edge, which have no GPU either. The risk the ADR names is an offscreen backdrop at a

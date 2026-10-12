@@ -1,5 +1,5 @@
-# Prints the tables of README.md from raw/drag-cost.json and raw/scroll-layers.json.gz (run-scroll.mjs
-# writes it uncompressed; it is kept gzipped, read with zcat).
+# Prints the tables of README.md from raw/drag-cost.json, raw/scroll-layers.json.gz (run-scroll.mjs
+# writes it uncompressed; it is kept gzipped, read with zcat) and raw/pf-6-pf-7.json.
 #     python3 tables.py
 import gzip
 import json
@@ -43,3 +43,21 @@ for host in ['server', 'wasm']:
                 pooled = lambda which, axis: [v for r in group for v in r[which]['frames'][axis]['raw']]
                 stat = lambda values: f"{quantile(values, 0.5)}, {quantile(values, 0.95)}, {max(values)}"
                 print(f"| {host} | {int(scale * 100)}% | {'MudBlazor' if chrome == 'mud' else 'built-in'} | {label} | {', '.join(f'{a} / {b}' for a, b in layers)} | {stat(pooled('columnA', 'down'))} | {stat(pooled('columnA', 'across'))} | {quantile(pooled('oneCell', 'down'), 0.5)}, {quantile(pooled('oneCell', 'down'), 0.95)} |")
+
+print()
+pf = json.loads((here / 'raw' / 'pf-6-pf-7.json').read_text())
+span = lambda s: f"{s['median']} ({s['min']}-{s['max']})"
+mp = lambda s: f"{s['median']}, {s['p95']}"
+print('| Host | Build | Round | Load | Settle, on | Settle, off | Rows, on | Columns, on | Fling, on | Rows, off | Columns, off | Fling, off |')
+print('|---|---|---|---|---|---|---|---|---|---|---|---|')
+for r in pf['runs']:
+    on, off = r['PF-6']['on'], r['PF-6']['off']
+    print(f"| {r['host']} | {r['build']} | {r['round']} | {r['loadAverage'][0]} | {span(on['settleRepaintMs'])} | {span(off['settleRepaintMs'])} | "
+          f"{mp(on['ordinaryScrollFrameMs']['rows'])} | {mp(on['ordinaryScrollFrameMs']['columns'])} | {mp(on['flingFrameMs'])} | "
+          f"{mp(off['ordinaryScrollFrameMs']['rows'])} | {mp(off['ordinaryScrollFrameMs']['columns'])} | {mp(off['flingFrameMs'])} |")
+print()
+print('| Host | Build | Round | Load | Step: median | p95 | max |')
+print('|---|---|---|---|---|---|---|')
+for r in pf['runs']:
+    c = r['PF-7']['stepCostMs']
+    print(f"| {r['host']} | {r['build']} | {r['round']} | {r['loadAverage'][0]} | {c['median']} | {c['p95']} | {c['max']} |")
