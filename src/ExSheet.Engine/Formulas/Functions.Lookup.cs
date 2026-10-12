@@ -210,25 +210,22 @@ internal static partial class FunctionLibrary
     /// (ADR-0125). The text is text: an insertion or a deletion does not rewrite it.
     /// </summary>
     /// <remarks>
-    /// The seventeenth Windows run observed the forms it had refused (INDIRECT-023 to INDIRECT-026),
-    /// and they are read as Excel reads them: R1C1 text (<c>a1</c> FALSE, 0, a blank or left empty);
-    /// a structured reference, <c>Positions[PV]</c>, as the typed one is read; and a Spill Range,
-    /// <c>A1#</c>, as the typed one is read. The area pass of 2026-10-12 observed an offset in
-    /// brackets, a row part alone and a column part alone (<c>R[1]C[-1]</c>, <c>R3</c> and <c>C2</c>,
-    /// INDIRECT-036 to INDIRECT-038), and R1C1 text is read in the forms that follow from those by the
-    /// rule they settle (<see cref="IndirectRowColumn"/>). Still <c>#VALUE!</c>, forms no run has
-    /// observed and the observed ones leave open: in R1C1 style, an R or a C with no number
-    /// (<c>RC[-1]</c>, <c>R</c>), a zero offset in brackets (<c>R[0]</c>, <c>C[-0]</c>), a number
-    /// written with a leading 0 or 0 itself (<c>R03C2</c>, <c>R[01]C2</c>, <c>R0C2</c>), an offset
-    /// written with a <c>+</c> (<c>R[+1]C2</c>), an offset past the Sheet's edge (<c>R[-5]C[-1]</c>
-    /// from C2), a cell joined to a whole row or column (<c>R2C2:R3</c>), a row joined to a column
-    /// (<c>R3:C2</c>), and structured or <c>#</c> text (<c>Positions[PV]</c>, <c>R1C1#</c>); in A1
-    /// style, a declared Linked Table's bare name and the structured forms a Formula does not take
-    /// (<c>#All</c>, <c>@</c>). Relative R1C1 text in a Formula evaluated in no cell is
-    /// <c>#VALUE!</c> too, as <c>ROW()</c> there is. Text that names no place is <c>#REF!</c>, as in
-    /// Excel: another Sheet's name, a table never declared, a column the table does not have, and a
-    /// number past the Sheet's edge, as <c>XFE1</c> is (INDIRECT-017), whatever an offset beside it
-    /// reads (ADR-0046, ADR-0049).
+    /// The forms Excel was observed to read are read as it reads them, and so are those that follow
+    /// from them by the rule its answers settle: R1C1 text (<c>a1</c> FALSE, 0, a blank or left empty;
+    /// the seventeenth Windows run and the two area passes of 2026-10-12, INDIRECT-023, 036 to 038, 044
+    /// and 051 to 066; <see cref="IndirectRowColumn"/>); a structured reference's text,
+    /// <c>Positions[PV]</c>, read as the typed one is, in either style (INDIRECT-025, 061); and a Spill
+    /// Range, <c>A1#</c> or <c>R1C1#</c>, read as the typed <c>A1#</c> is (INDIRECT-026, 060). Still
+    /// <c>#VALUE!</c>, forms no run has observed and the observed ones leave open: in R1C1 style, a row
+    /// or column number 0 (<c>R0C2</c>) and an offset past the Sheet's edge (<c>R[-5]C[-1]</c> from C2,
+    /// which Excel reads as a place, INDIRECT-052, though no run has told whether it wraps round to the
+    /// far side or stops at the edge); in either style, a declared Linked Table's bare name and the
+    /// structured forms a Formula does not take (<c>#All</c>, <c>@</c>). Relative R1C1 text in a Formula
+    /// evaluated in no cell is <c>#VALUE!</c> too, as <c>ROW()</c> there is. Text that names no place is
+    /// <c>#REF!</c>, as in Excel: another Sheet's name, a table never declared, a column the table does
+    /// not have, R1C1 parts of two kinds joined by <c>:</c> (INDIRECT-058, 062), and a number past the
+    /// Sheet's edge, as <c>XFE1</c> is (INDIRECT-017), whatever an offset beside it reads (ADR-0046,
+    /// ADR-0049).
     /// </remarks>
     private static Operand Indirect(FunctionCall call)
     {
@@ -249,22 +246,11 @@ internal static partial class FunctionLibrary
         return isA1 ? IndirectA1(call, text) : IndirectRowColumn(call, text);
     }
 
-    /// <summary>INDIRECT's A1-style text: a Reference as a Formula writes one, <c>A1#</c>, or <c>Table[Column]</c>.</summary>
+    /// <summary>INDIRECT's A1-style text: a Reference as a Formula writes one, <c>A1#</c>, or a Linked Table's text (<see cref="IndirectTableText"/>).</summary>
     private static Operand IndirectA1(FunctionCall call, string text)
     {
         var cells = call.Evaluator.Cells;
-        // Table[Column] or Table[[Column]], read as the typed one is (ADR-0049): a table still waiting
-        // for its data waits, and one never declared names no place, as a column it lacks does.
-        if (Lexer.ReadStructuredReference(text, 0) is { } structured && structured.Length == text.Length)
-        {
-            var column = cells.TableColumn(structured.Table, structured.Column);
-            return column.IsError && column.Scalar!.Value.Error == ErrorValue.Name ? Operand.Of(ErrorValue.Ref) : column;
-        }
-        // Any other text a structured reference begins as: a form a Formula does not take (#All, @).
-        if (StructuredText().IsMatch(text)) return Operand.Of(ErrorValue.Value);
-        // A declared Linked Table's bare name, which Excel reads as a structured reference to the
-        // table's data: refused until a run observes it (ADR-0124's note of 2026-10-10; INDIRECT-043).
-        if (cells.IsLinkedTable(text)) return Operand.Of(ErrorValue.Value);
+        if (IndirectTableText(call, text) is { } table) return table;
         if (Lexer.ReadReference(text, 0, out var length) is not { } reference) return Operand.Of(ErrorValue.Ref);
         // A1#: the Spill Range of the Formula in A1, read as the typed one is (ADR-0125).
         if (reference.Shape == ReferenceShape.Cell && length == text.Length - 1 && text[length] == '#')
@@ -277,51 +263,83 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// INDIRECT's R1C1-style text (ADR-0124's note of 2026-10-12), with or without the Sheet's own
-    /// qualifier, in the forms the observed ones settle: R and C each take a number, the row or column
-    /// counted from 1 (<c>R3C2</c>), or an offset in brackets from the Formula's own cell
-    /// (<c>R[1]C[-1]</c>); a row part alone is a whole row (<c>R3</c>, <c>R[1]</c>), a column part
-    /// alone a whole column (<c>C2</c>), and two parts of the same kind joined by <c>:</c> name the
-    /// rectangle they span (<c>R2:R3</c>, <c>R[1]C[-1]:R[2]C[-1]</c>). A number past the Sheet's edge,
-    /// another Sheet's name and text that is not R1C1 notation name no place: <c>#REF!</c>, whatever
-    /// an offset beside them would read. <c>#VALUE!</c> for the forms no run has observed, where Excel
-    /// might answer either way: an R or a C with no number, which could be the Formula's own row or
-    /// column or every one; a zero offset in brackets; a number written with a leading 0 or 0 itself;
-    /// an offset written with a <c>+</c>; an offset past the Sheet's edge, which Excel might call no
-    /// place or wrap round to the Sheet's far side (INDIRECT-052); a cell joined to a whole row or
-    /// column, or a row to a column; and a structured reference and <c>#</c> after the text.
+    /// A Linked Table's text, read alike whatever <c>a1</c> says (INDIRECT-025, INDIRECT-061), or
+    /// <see langword="null"/> for text that is none: <c>Table[Column]</c> or <c>Table[[Column]]</c>, read
+    /// as the typed one is (ADR-0049), so that a table still waiting for its data waits, and one never
+    /// declared names no place, as a column it lacks does; any other text a structured reference begins
+    /// as, a form a Formula does not take (<c>#All</c>, <c>@</c>), refused; and a declared table's bare
+    /// name, which Excel reads as a structured reference to the table's data, refused until a run
+    /// observes what it reads (ADR-0124's note of 2026-10-10; INDIRECT-043, 053 to 057).
+    /// </summary>
+    private static Operand? IndirectTableText(FunctionCall call, string text)
+    {
+        var cells = call.Evaluator.Cells;
+        if (Lexer.ReadStructuredReference(text, 0) is { } structured && structured.Length == text.Length)
+        {
+            var column = cells.TableColumn(structured.Table, structured.Column);
+            return column.IsError && column.Scalar!.Value.Error == ErrorValue.Name ? Operand.Of(ErrorValue.Ref) : column;
+        }
+        if (StructuredText().IsMatch(text)) return Operand.Of(ErrorValue.Value);
+        if (cells.IsLinkedTable(text)) return Operand.Of(ErrorValue.Value);
+        return null;
+    }
+
+    /// <summary>
+    /// INDIRECT's R1C1-style text (ADR-0124's notes of 2026-10-12), with or without the Sheet's own
+    /// qualifier, read as the two area passes observed Excel read it and by the rule its answers
+    /// settle. R and C each take a number, the row or column counted from 1, leading 0s and all
+    /// (<c>R3C2</c>, <c>R03C2</c>); an offset in brackets from the Formula's own cell, signed or not and
+    /// 0 included (<c>R[1]C[-1]</c>, <c>R[+1]</c>, <c>R[0]</c>, <c>R[-0]</c>); or nothing, the Formula's
+    /// own row or column, as an offset of 0 (<c>RC[-1]</c>, <c>R[2]C</c>). A row part alone is a whole
+    /// row (<c>R3</c>, <c>R[1]</c>), a column part alone a whole column (<c>C2</c>), two parts of the
+    /// same kind joined by <c>:</c> name the rectangle they span (<c>R2:R3</c>,
+    /// <c>RC[-1]:R[1]C[-1]</c>), and a cell followed by <c>#</c> names its Spill Range, as <c>A1#</c>
+    /// does (<c>R1C1#</c>). A Linked Table's text is read as in A1 style
+    /// (<see cref="IndirectTableText"/>). <c>#REF!</c>, text that names no place: parts of two kinds
+    /// joined (<c>R2C2:R3</c>, <c>R3:C2</c>), a <c>#</c> after anything but one cell, as after a range
+    /// in A1 style, a number past the Sheet's edge, another Sheet's name, and text that is not R1C1
+    /// notation. <c>#VALUE!</c> where Excel's answer is still open: a row or column number 0, and an
+    /// offset past the Sheet's edge, which Excel reads as a place (INDIRECT-052 is 0, a blank cell, not
+    /// <c>#REF!</c>), though no run has told whether it wraps round to the Sheet's far side or stops at
+    /// the edge (INDIRECT-082 to 084 ask it).
     /// </summary>
     private static Operand IndirectRowColumn(FunctionCall call, string text)
     {
         var spilled = text.EndsWith('#');
         var match = RowColumnText().Match(spilled ? text[..^1] : text);
-        if (!match.Success) return Operand.Of(StructuredText().IsMatch(text) ? ErrorValue.Value : ErrorValue.Ref);
-        if (spilled) return Operand.Of(ErrorValue.Value);
+        if (!match.Success) return IndirectTableText(call, text) ?? Operand.Of(ErrorValue.Ref);
         string? sheet = null;
         if (match.Groups["sheet"].Success)
         {
             var raw = match.Groups["sheet"].Value;
             sheet = raw[0] == '\'' ? raw[1..^1].Replace("''", "'", StringComparison.Ordinal) : raw;
         }
+        var joined = match.Groups["second"].Success;
         var first = RowColumnPart.Read(match.Groups["first"].Value);
-        var second = match.Groups["second"].Success ? RowColumnPart.Read(match.Groups["second"].Value) : first;
-        if (first is not { } one || second is not { } two || !one.IsShapedAs(two)) return Operand.Of(ErrorValue.Value);
+        var second = joined ? RowColumnPart.Read(match.Groups["second"].Value) : first;
+        // Parts of two kinds joined are no Reference: a cell and a whole row (INDIRECT-058), a whole row
+        // and a whole column (INDIRECT-062), and so a cell and a column, whichever comes first.
+        if (!first.IsShapedAs(second)) return Operand.Of(ErrorValue.Ref);
+        // A # follows one cell, as in A1# (INDIRECT-060); after a range, a row or a column it names no
+        // place, as it does after one in A1 style.
+        if (spilled && (joined || !first.IsCell)) return Operand.Of(ErrorValue.Ref);
         // A number past the Sheet's edge names no place, as XFE1 does (INDIRECT-017), and so does another
-        // Sheet's name: #REF! whether an offset beside them is read as no place or wrapped round.
-        if (one.HasNumberPastEdge || two.HasNumberPastEdge) return Operand.Of(ErrorValue.Ref);
+        // Sheet's name: #REF!, whatever an offset past the edge beside them reads.
+        if (first.HasNumberPastEdge || second.HasNumberPastEdge) return Operand.Of(ErrorValue.Ref);
         if (!call.Evaluator.Cells.IsLocal(Reference.Rectangle(sheet, 0, 0, 0, 0, true, true, true, true))) return Operand.Of(ErrorValue.Ref);
         // An offset counts from the Formula's own cell; a Formula evaluated in no cell has none, as ROW() has none.
         CellAddress own = default;
-        if (one.IsRelative || two.IsRelative)
+        if (first.IsRelative || second.IsRelative)
         {
             if (call.Evaluator.Self is not { } self) return Operand.Of(ErrorValue.Value);
             own = self;
         }
-        var (row1, row2) = one.Row is { } r1 && two.Row is { } r2 ? (r1.Place(own.Row, Sheet.RowCount), r2.Place(own.Row, Sheet.RowCount)) : (0, Sheet.RowCount - 1);
-        var (column1, column2) = one.Column is { } c1 && two.Column is { } c2 ? (c1.Place(own.Column, Sheet.ColumnCount), c2.Place(own.Column, Sheet.ColumnCount)) : (0, Sheet.ColumnCount - 1);
-        // Only an offset is left to fall past the edge, and no run has observed one: Excel might name no
-        // place or wrap it round to the Sheet's far side (INDIRECT-052), so it is refused.
+        var (row1, row2) = first.Row is { } r1 && second.Row is { } r2 ? (r1.Place(own.Row, Sheet.RowCount), r2.Place(own.Row, Sheet.RowCount)) : (0, Sheet.RowCount - 1);
+        var (column1, column2) = first.Column is { } c1 && second.Column is { } c2 ? (c1.Place(own.Column, Sheet.ColumnCount), c2.Place(own.Column, Sheet.ColumnCount)) : (0, Sheet.ColumnCount - 1);
+        // What is left to fall off the Sheet is a number 0, which no run has asked, or an offset past its
+        // edge, which Excel reads as a place no run has yet told (INDIRECT-052): refused.
         if (row1 < 0 || row2 < 0 || column1 < 0 || column2 < 0) return Operand.Of(ErrorValue.Value);
+        if (spilled) return call.Evaluator.Cells.Spill(new CellAddress(row1, column1));
         var reference = Reference.Rectangle(sheet, Math.Min(row1, row2), Math.Min(column1, column2), Math.Max(row1, row2), Math.Max(column1, column2), true, true, true, true);
         return Operand.Of(reference.Area);
     }
@@ -334,21 +352,20 @@ internal static partial class FunctionLibrary
     {
         public bool IsRelative => Row is { Relative: true } || Column is { Relative: true };
 
-        /// <summary>Whether a number, not an offset, names a row or a column past the Sheet's edge.</summary>
+        /// <summary>Whether the part names one cell: it has both an R and a C.</summary>
+        public bool IsCell => Row.HasValue && Column.HasValue;
+
+        /// <summary>Whether a number, not an offset, names a row or a column past the Sheet's far edge.</summary>
         public bool HasNumberPastEdge =>
             Row is { Relative: false, Number: > Sheet.RowCount } || Column is { Relative: false, Number: > Sheet.ColumnCount };
 
-        /// <summary>Whether both are cells, both whole rows or both whole columns: a cell joined to a whole row is a form no run has observed.</summary>
+        /// <summary>Whether both are cells, both whole rows or both whole columns: parts of two kinds joined name no place (INDIRECT-058, 062).</summary>
         public bool IsShapedAs(RowColumnPart other) => Row.HasValue == other.Row.HasValue && Column.HasValue == other.Column.HasValue;
 
-        /// <summary>
-        /// The part, or <see langword="null"/> for a form no run has observed: an R or a C with no number,
-        /// a zero offset in brackets, a number with a leading 0 or 0 itself, or an offset with a <c>+</c>.
-        /// </summary>
-        public static RowColumnPart? Read(string part)
+        /// <summary>A part <see cref="RowColumnText"/> has matched.</summary>
+        public static RowColumnPart Read(string part)
         {
             var match = RowColumnPartText().Match(part);
-            if (!match.Success || part.Length == 0) return null;
             return new RowColumnPart(
                 match.Groups["r"].Success ? RowColumnAxis.Read(match.Groups["row"].Value) : null,
                 match.Groups["c"].Success ? RowColumnAxis.Read(match.Groups["column"].Value) : null);
@@ -358,18 +375,24 @@ internal static partial class FunctionLibrary
     /// <summary>One axis of an R1C1 part: a row or a column counted from 1, or an offset from the Formula's own.</summary>
     private readonly record struct RowColumnAxis(bool Relative, long Number)
     {
-        /// <summary><c>3</c> is absolute and <c>[-1]</c> an offset; a number too long for any Sheet is past its edge.</summary>
+        /// <summary>
+        /// <c>3</c> and <c>03</c> are absolute (INDIRECT-059); <c>[-1]</c>, <c>[+1]</c>, <c>[0]</c> and
+        /// <c>[-0]</c> are offsets (INDIRECT-063 to 065); nothing written is an offset of 0, the Formula's
+        /// own row or column (INDIRECT-044, 066). A number too long for any Sheet is past its edge.
+        /// </summary>
         public static RowColumnAxis Read(string written)
         {
+            if (written.Length == 0) return new RowColumnAxis(true, 0);
             var relative = written[0] == '[';
             var digits = relative ? written[1..^1] : written;
             var negative = digits.StartsWith('-');
-            if (negative) digits = digits[1..];
-            var number = digits.Length > 9 ? 1_000_000_000L : long.Parse(digits, System.Globalization.CultureInfo.InvariantCulture);
+            if (negative || digits.StartsWith('+')) digits = digits[1..];
+            digits = digits.TrimStart('0');
+            var number = digits.Length == 0 ? 0 : digits.Length > 9 ? 1_000_000_000L : long.Parse(digits, System.Globalization.CultureInfo.InvariantCulture);
             return new RowColumnAxis(relative, negative ? -number : number);
         }
 
-        /// <summary>The row or column from 0, or −1 where the Sheet has none there.</summary>
+        /// <summary>The row or column from 0, or −1 where the Sheet has none there: a number 0, or an offset past its edge.</summary>
         public int Place(int own, int count)
         {
             var place = Relative ? own + Number : Number - 1;
@@ -391,12 +414,9 @@ internal static partial class FunctionLibrary
         System.Text.RegularExpressions.RegexOptions.IgnorePatternWhitespace | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex RowColumnText();
 
-    /// <summary>
-    /// One R1C1 part in a form read: an R with a row, a C with a column, or both; each a number from 1
-    /// without a leading 0, or an offset in brackets other than 0, with an optional <c>-</c>.
-    /// </summary>
+    /// <summary>One R1C1 part: an R with a row or none, a C with a column or none, or both; each a number or an offset in brackets.</summary>
     [System.Text.RegularExpressions.GeneratedRegex(
-        @"^(?:(?<r>[Rr])(?<row>[1-9][0-9]*|\[-?[1-9][0-9]*\]))?(?:(?<c>[Cc])(?<column>[1-9][0-9]*|\[-?[1-9][0-9]*\]))?$",
+        @"^(?:(?<r>[Rr])(?<row>[0-9]+|\[[+-]?[0-9]+\])?)?(?:(?<c>[Cc])(?<column>[0-9]+|\[[+-]?[0-9]+\])?)?$",
         System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex RowColumnPartText();
 
