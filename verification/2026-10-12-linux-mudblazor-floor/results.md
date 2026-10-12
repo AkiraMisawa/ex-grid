@@ -33,6 +33,11 @@ to hold at 9.0.0, is the user's question: `docs/agents/proposals/mudblazor-range
 published 9.x, find a third MudBlazor behaviour that this layer-3 selection could not: from 9.3.0 to
 9.5.0 a refused filter operand loses its words (§6).)*
 
+*(Added after the decision, the same day: the user raised the floor to 9.6.0, and each Wrapper now takes
+`[9.6.0,10.0.0)`. The layer-2 tests written for it, named for WR-10, fail below the floor and pass at every
+published 9.x from it (§7). This record still does not discharge the floor run of the Definition of
+Done's Step 4.)*
+
 ## The machine
 
 | | |
@@ -327,6 +332,44 @@ Not seen in a browser: no layer-3 test types a refused operand under the mud Chr
 selection above nor its bisection could see it. It lies inside `[9.0.0,10.0.0)` and above its floor: a floor
 run at 9.0.0 would not see it either.
 
+## 7. After the decision: the floor at 9.6.0, held in layer 2 *(added the same day, at `6a868089`)*
+
+The user decided the proposal's option (B): each Wrapper declares `[9.6.0,10.0.0)`, so the Wrappers' layer-2
+suites, which resolve the lowest version a range allows, now run at 9.6.0 on every push. Two kinds of test
+were added for it, named for WR-10 and ADR-0205:
+
+- **Every MudSelect a Wrapper draws names the element that takes its keyboard**: `role="combobox"` and the
+  field's own label as `aria-label` on the one element of the field that Tab and `FocusAsync` reach. The
+  filter panel's Operator (a text and a number column), its second condition and its Boolean value
+  (`ExGrid.MudBlazor.Tests`); Field Settings' sort and Value Field Settings' two selects
+  (`ExPivot.MudBlazor.Tests`); Format Cells' Horizontal and Underline (`ExSheet.MudBlazor.Tests`).
+- **A refused operand keeps its words** (`ExGrid.MudBlazor.Tests`): typed in de-DE, `1.234`, then `1234`,
+  then `1234.5`, a submit and a render; while refused the field carries `mud-input-error`,
+  `aria-invalid="true"` and the refusal in its helper text, and Apply stays unavailable.
+
+**Below the floor** (`layer2-guards-below-floor.log`). The three Wrappers were put back to `[9.0.0,10.0.0)`
+for the run, so that each compiled against the pinned version, and MudBlazor was pinned in each test
+project; only the new tests ran. Every touched project file was restored after.
+
+| MudBlazor | Filter panel: the two operators | Filter panel: Boolean value | ExPivot's three selects | Format Cells' two | The refused operand |
+|---|---|---|---|---|---|
+| 9.0.0, 9.1.0, 9.2.0 | fail | fail | fail | fail | pass |
+| 9.3.0 | fail | fail | fail | fail | **fail** |
+| 9.4.0, 9.5.0 | fail | pass | pass | pass | **fail** |
+
+The selects that give their text through `ToStringFunc`, or show no value yet, keep MudSelect's text
+`<input>`, which MudBlazor names from 9.4.0 (#13077); the operators, whose items give their text as
+child content, focus the hidden-input presenter's `<div>`, named from 9.6.0 (#13080). The operand test
+fails where §6's seven tests did. The failing tests' markup is in the log, cut; the operand test's
+assertion message was not kept.
+
+**From the floor** (`layer2-range.log`). Step 4's layer-2 commands, as the apply list
+(`docs/agents/proposals/mudblazor-range-floor-apply.md`, edit 5) writes them, run as written but for
+`nix develop` given the worktree's flake. nuget.org listed 9.6.0, 9.7.0, 9.8.0, 9.9.0, 9.10.0 and 9.11.0.
+All three suites passed at each, whole — `ExGrid.MudBlazor.Tests` 240, `ExSheet.MudBlazor.Tests` 64,
+`ExPivot.MudBlazor.Tests` 79 — and each run read back the version it was pinned to. This is a check of
+the commands and of the new tests, at a commit that is not X: it is not the record Step 4 asks for.
+
 ## Files
 
 | File | What it holds |
@@ -339,6 +382,8 @@ run at 9.0.0 would not see it either.
 | `zz-floor-focus.spec.mjs` | The diagnostic, as run (copied into `tests/ExGrid.Browser`, removed after each run) |
 | `layer2-sweep.log` | §6: the three Wrappers' layer-2 suites at every published 9.x, and the probes' readings |
 | `zz-layer2-probes.cs` | §6's probes, as run (appended to two test classes of `tests/ExGrid.MudBlazor.Tests`, removed after) |
+| `layer2-guards-below-floor.log` | §7: the WR-10 layer-2 tests at 9.0.0 to 9.5.0, with the Wrappers put back to `[9.0.0,10.0.0)` |
+| `layer2-range.log` | §7: the three Wrappers' layer-2 suites at 9.6.0 to 9.11.0, by Step 4's commands |
 
 The full logs, with every passing test's line, and the failing tests' traces were not kept; a trimmed
 log keeps every failure's error and every count.

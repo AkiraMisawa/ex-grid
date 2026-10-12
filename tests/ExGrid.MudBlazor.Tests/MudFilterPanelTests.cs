@@ -318,7 +318,7 @@ public class MudFilterPanelTests : MudTestContext
 
     /// <summary>The elements of a field that take the keyboard, as Tab and <c>FocusAsync</c> reach
     /// them: not a hidden input, nor one taken out of the tab order or disabled.</summary>
-    internal static IReadOnlyList<IElement> TakingTheKeyboard(IElement field)
+    private static IReadOnlyList<IElement> TakingTheKeyboard(IElement field)
         => [.. field.QuerySelectorAll("input, textarea, select, button, [tabindex]").Prepend(field).Where(e =>
             e.Matches("input, textarea, select, button, [tabindex]")
             && e.GetAttribute("type") != "hidden" && e.GetAttribute("tabindex") != "-1" && !e.HasAttribute("disabled"))];

@@ -5,6 +5,15 @@ Wrappers' MudBlazor range" and ran its floor. A background agent does not edit a
 `docs/definition-of-done.md`, so this is a question for the user and text for the orchestrator. The
 declared range is unchanged on the branch: each Wrapper still takes `[9.0.0,10.0.0)`.
 
+> **Decided with the user, 2026-10-12: (B), in full.** Each Wrapper now takes `[9.6.0,10.0.0)`, and the
+> branch carries what (B) lists. ADR-0022's rule covers the Wrappers' floor, with a note that a `0.x`
+> prerelease line may raise it (§3, the first reading). The floor run goes into the Definition of Done
+> as §6(a) and §6(b) with F = 9.6.0, a record holding while `src/*.MudBlazor/` and
+> `samples/ExGrid.DemoPages/` are unchanged up to X (§6, the second reading), and §6(c)'s layer 2
+> across the range joins it. §7's layer-2 guard is added, with a test for §2.4. The ADR and Definition
+> of Done edits are in `docs/agents/proposals/mudblazor-range-floor-apply.md`. What follows is the
+> proposal as the user read it.
+
 The evidence is the record `verification/2026-10-12-linux-mudblazor-floor/results.md`.
 
 ## 1. The question
