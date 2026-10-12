@@ -108,6 +108,25 @@ public class SignOffTests
         Assert.Contains(Check(repo, y, out _).Refusals, r => r.Message.Contains(why));
     }
 
+    [Fact] // ADR-0190, ADR-0205: the block as the Docs Site's notes parser requires it, labelled lines and the record linked at the tag, is read as one record and one commit
+    public void The_labelled_block_the_notes_parser_requires_is_read()
+    {
+        using var repo = new Repo();
+        var x = Fixture.ReadyToSignOff(repo);
+        var block = string.Join("\n",
+            $"- **Record:** [{Fixture.Results}](https://github.com/owner/ex-grid/blob/v0.1.0/{Fixture.Results})",
+            $"- **Commit:** `{x}`",
+            "- **Toolchain:** .NET SDK 10.0.203, Node 22.11.0, Playwright 1.56.0",
+            "- **OS:** Ubuntu 24.04 (CI), Windows 11 24H2 and macOS 15.1 (by hand)",
+            "- **Browsers:** Chrome 141 and Edge 141");
+        var y = Fixture.SignedOff(repo, x, block: block);
+
+        var report = Check(repo, y, out var signedOff);
+
+        Assert.Empty(report.Refusals);
+        Assert.Equal(x, signedOff);
+    }
+
     [Fact] // ADR-0205: the record exists at the tag
     public void A_record_that_is_not_at_the_tag_is_refused()
     {

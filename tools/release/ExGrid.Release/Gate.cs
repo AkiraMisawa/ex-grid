@@ -5,6 +5,9 @@ namespace ExGrid.Release;
 /// ADR-0208). A stable version runs all of them. A release candidate runs all but the two that read
 /// a sign-off — the "Signed off" block and the structural check — so that the stable path is
 /// rehearsed before it is used. A plain prerelease runs none.
+/// <para>A release candidate's notes carry a stable version's blocks, its Signed off block among
+/// them, and the Docs Site's build checks them as it checks a stable version's (ADR-0190 and
+/// ADR-0205, 2026-10-12). This check does not read a candidate's Signed off block.</para>
 /// </summary>
 public static class Gate
 {
@@ -29,7 +32,7 @@ public static class Gate
         }
         else
         {
-            report.Notice($"{version.Tag} is a release candidate: it runs a stable version's checks but the sign-off's, the Signed off block and the structural check (ADR-0205).");
+            report.Notice($"{version.Tag} is a release candidate: it runs a stable version's checks but the sign-off's, the Signed off block and the structural check. Its notes' blocks, the Signed off block among them, are the Docs Site build's to check, as a stable version's are (ADR-0190, ADR-0205).");
         }
 
         Corpus.Check(tag, report);

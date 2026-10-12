@@ -8,7 +8,7 @@ public enum ReleaseKind
     /// <summary>A suffix such as <c>-beta.3</c>: published on every layer passing in CI, before any sign-off.</summary>
     Prerelease,
 
-    /// <summary><c>-rc.N</c>: a prerelease that runs every check a stable tag runs but the sign-off's own, so the stable path is rehearsed.</summary>
+    /// <summary><c>-rc.N</c>: a prerelease that runs every check a stable tag runs but the sign-off's own, so the stable path is rehearsed; its notes carry a stable version's blocks, which the Docs Site's build checks (ADR-0190).</summary>
     Candidate,
 
     /// <summary>No suffix: a release in the Definition of Done's sense, published only once it is signed off.</summary>

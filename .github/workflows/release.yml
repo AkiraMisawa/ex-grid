@@ -23,7 +23,9 @@
 #   documented without a written reason it cannot be asked (an oracleSkip that does not say "ask by
 #   keys", since oracle.ps1 -Keys asks those), and every row checked by hand holding
 #   on a record its code has not changed since, judged at the tagged commit — and CI's long run,
-#   the soak and ST-1 at 10⁶ rows. Its GitHub release is a prerelease.
+#   the soak and ST-1 at 10⁶ rows. Its notes carry a stable version's blocks, Signed off among
+#   them, which ci.yml's build of the Docs Site checks as a stable version's (ADR-0190); the
+#   release check does not read its Signed off block. Its GitHub release is a prerelease.
 # - A version without a suffix, a release in the Definition of Done's sense: besides, its notes'
 #   "Signed off" block names a verification/<date>/results.md that is at the tag and the commit X
 #   the sign-off was made against, in full; the tag differs from X only under verification/ and
