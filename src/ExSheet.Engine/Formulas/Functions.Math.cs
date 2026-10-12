@@ -33,61 +33,74 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// MOD: <c>number - divisor*INT(number/divisor)</c>, as Microsoft defines it, so the result takes
-    /// the divisor's sign, where every evaluation that gives each answer Excel was seen to give gives
-    /// the same double, and <c>#VALUE!</c> where they part (ADR-0047, ADR-0202). Excel's
-    /// <c>MOD(123456789012,0.7)</c> is 0.5000078322611261 (MOD-017), the identity computed exactly and
-    /// rounded once, where in doubles it is 0.5000152587890625; no evaluation in doubles gives it.
-    /// Seven classes of evaluation give all seventeen observed answers
-    /// (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>), and they part in four places:
-    /// <list type="bullet">
-    /// <item>where the double quotient rounds up onto a whole number the exact quotient is below, as in
-    /// <c>MOD(1,0.1)</c>: the exact remainder is about the divisor, a fused multiply-add over that
-    /// quotient a hair of the wrong sign, and that taken as 0 is 0. The multiply-add differs from the
-    /// exact remainder there and only there.</item>
-    /// <item>where the remainder is not 0 but within 2^-49 of the number, as in <c>MOD(1.1,0.1)</c>:
-    /// Excel's cancellation of a final addition (<see cref="Arithmetic"/>) would make it 0.</item>
-    /// <item>where the remainder plus the divisor rounds to the divisor itself, as in
-    /// <c>MOD(-1E-20,1)</c>: the divisor, or 0.</item>
-    /// <item>where that addition, made first in an x87 register's 64 bits, would round twice to another
-    /// double, as in <c>MOD(-0.087626,6630)</c>, at the last bit.</item>
-    /// </list>
-    /// Elsewhere it answers the exact remainder rounded once: <c>%</c> on doubles is exact, with the
-    /// number's sign, and adding the divisor where that is not the divisor's is the one rounding.
-    /// MOD-020 to MOD-032 ask Excel where the classes part. A divisor of 0 is <c>#DIV/0!</c>, and a
-    /// quotient of <see cref="ModQuotientLimit"/> or more <c>#NUM!</c>.
+    /// the divisor's sign, computed as every evaluation that gives each answer Excel was seen to give
+    /// computes it, and <c>#VALUE!</c> where they part (ADR-0047, ADR-0202). The remainder is exact:
+    /// Excel's <c>MOD(123456789012,0.7)</c> is 0.5000078322611261 (MOD-017), where the identity in doubles
+    /// is 0.5000152587890625, and its <c>MOD(1,0.1)</c> 0.09999999999999995 (MOD-020), where the double
+    /// quotient, 10, gives 0. Where the remainder has the number's sign, the divisor is added in a
+    /// register wider than a double and the sum then stored as one: <c>MOD(-0.087626,6630)</c> is
+    /// 6629.9123739999995 (MOD-029), the sum rounded first to an x87 register's 64 bits and then to a
+    /// double, where rounded once it is 6629.912374; and a sum stored as the divisor itself is 0:
+    /// <c>MOD(-1E-20,1)</c> is 0 (MOD-032), not 1. A remainder a hair from 0 is itself: <c>MOD(1.1,0.1)</c>
+    /// is 2.7755575615628914E-17 (MOD-030). Three evaluations give all 32 observed answers
+    /// (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>): the sum rounded to 64 bits, taken as 0
+    /// where the double stored is the divisor (<c>B9</c>), or where the register holds it (<c>B10</c>); and
+    /// the sum truncated to 64 bits, taken as 0 where the double is the divisor (<c>B12</c>). They part
+    /// where the sum is the divisor as a double but not in the register, as at <c>MOD(-1E-17,1)</c>, and
+    /// where truncating at 64 bits stores another double than rounding there, as at
+    /// <c>MOD(-0.084474,2270)</c>; <see cref="TurnedRemainder"/> refuses those, and MOD-033 to MOD-036 ask
+    /// them. A divisor of 0 is <c>#DIV/0!</c>, and a quotient of <see cref="ModQuotientLimit"/> or more
+    /// <c>#NUM!</c>.
     /// </summary>
     private static Operand Mod(FunctionCall call)
     {
         if (!TryNumber(call, 0, out var number, out var failure)) return failure;
         if (!TryNumber(call, 1, out var divisor, out failure)) return failure;
         if (divisor == 0) return Operand.Of(ErrorValue.Div0);
-        var quotient = number / divisor;
-        if (Math.Abs(quotient) >= ModQuotientLimit) return Operand.Of(ErrorValue.Num);
+        if (Math.Abs(number / divisor) >= ModQuotientLimit) return Operand.Of(ErrorValue.Num);
+        // % on doubles is exact, and carries the number's sign.
         var remainder = number % divisor;
-        var turned = remainder != 0 && (remainder < 0) != (divisor < 0);
-        var exact = turned ? remainder + divisor : remainder;
-        if (Math.FusedMultiplyAdd(-divisor, Math.Floor(quotient), number) != exact
-            || (exact != 0 && Math.Abs(exact) <= Math.Abs(number) * Arithmetic.CancelTolerance)
-            || (turned && (exact == divisor || RoundsTwice(remainder, divisor))))
-            return Operand.Of(ErrorValue.Value);
-        return Operand.Of(Evaluator.Number(exact));
+        if (remainder == 0 || (remainder < 0) == (divisor < 0)) return Operand.Of(Evaluator.Number(remainder));
+        return TurnedRemainder(remainder, divisor) is { } turned
+            ? Operand.Of(Evaluator.Number(turned))
+            : Operand.Of(ErrorValue.Value);
     }
 
     /// <summary>
-    /// Whether <paramref name="a"/> + <paramref name="b"/>, where |a| &lt; |b|, rounded first to an x87
-    /// register's 64-bit significand and then to a double, is another double than the sum rounded once.
-    /// That happens where the exact sum lies within half a 64-bit unit of the midpoint between two
-    /// doubles and the sum rounded once is the odd one, which a tie then leaves. The error of the sum
-    /// is exact (Fast2Sum), and so is each comparison.
+    /// <paramref name="remainder"/> + <paramref name="divisor"/>, where the remainder, exact, has the
+    /// sign opposite the divisor's, as each of the three evaluations of <see cref="Mod"/> adds it: held at
+    /// 64 bits, rounded to nearest or truncated, then stored as a double, rounded to nearest; and a sum
+    /// that is the divisor itself taken as 0, in the double stored or, for the second, in the register.
+    /// Null where they give different doubles. The exact sum is the sum rounded once and its error
+    /// (Fast2Sum, since |remainder| &lt; |divisor|); the register's last place is 2^-11 of the double's
+    /// between the sum and its neighbour on the error's side, so a 64-bit sum is the sum plus a whole
+    /// number of those steps, and a sum 1024 steps away is a tie, which the double stored breaks to the
+    /// even neighbour. Each comparison is exact.
     /// </summary>
-    private static bool RoundsTwice(double a, double b)
+    private static double? TurnedRemainder(double remainder, double divisor)
     {
-        var sum = a + b;
-        var error = a - (sum - b);
-        if (error == 0 || (BitConverter.DoubleToInt64Bits(sum) & 1) == 0) return false;
-        var gap = Math.BitIncrement(Math.Abs(sum)) - Math.Abs(sum);
-        return Math.Abs(error) >= gap * (2047.0 / 4096);
+        // Each evaluation gives MOD(-n,-d) as -MOD(n,d): work with a positive divisor.
+        var sign = divisor < 0 ? -1.0 : 1.0;
+        var d = sign * divisor;
+        var r = sign * remainder;
+        var sum = r + d;
+        var error = r - (sum - d);
+        var gap = error < 0 ? sum - Math.BitDecrement(sum) : Math.BitIncrement(sum) - sum;
+        var steps = error / gap * 2048;
+        var nearest = Math.Round(steps, MidpointRounding.ToEven);
+        var rounded = StoredAsDouble(sum, nearest);
+        var truncated = StoredAsDouble(sum, Math.Floor(steps));
+        var zeroInDouble = rounded == d ? 0 : rounded;
+        var zeroInRegister = sum == d && nearest == 0 ? 0 : rounded;
+        var zeroTruncated = truncated == d ? 0 : truncated;
+        if (zeroInDouble != zeroInRegister || zeroInDouble != zeroTruncated) return null;
+        return sign * zeroInDouble;
     }
+
+    /// <summary>The double a 64-bit sum <paramref name="steps"/> of its last place from <paramref name="sum"/> is stored as.</summary>
+    private static double StoredAsDouble(double sum, double steps) =>
+        Math.Abs(steps) < 1024 || (BitConverter.DoubleToInt64Bits(sum) & 1) == 0 ? sum
+        : steps > 0 ? Math.BitIncrement(sum) : Math.BitDecrement(sum);
 
     // ---- PRODUCT, MEDIAN, LARGE, SMALL --------------------------------------------------------
 
@@ -132,7 +145,7 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// LARGE and SMALL: the numbers of the array (a range's numbers only; a typed value coerced),
     /// and the k-th of them (<see cref="KthOf"/>: LARGE rounds a k that is not whole up, and SMALL
-    /// truncates it). A k below 1, or past their count once rounded, is <c>#NUM!</c>.
+    /// truncates it). A k below 1, or above their count, is <c>#NUM!</c>.
     /// </summary>
     private static Operand Ranked(FunctionCall call, bool largest)
     {
@@ -157,20 +170,21 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// The k-th largest or smallest of the numbers taken, which it sorts, as Excel reads k. k is read
-    /// at Excel's 15 significant digits, so a k a hair from a whole number is that number. A k below 1
-    /// is <c>#NUM!</c>, whether whole or not (LARGE-004, LARGE-011: 0.5 is not rounded up to 1). A k
-    /// that is not whole is rounded up for the k-th largest (LARGE-007 to 010, AGGREGATE-038 and 059:
-    /// 1.2 and 1.5 are the 2nd largest) and truncated for the k-th smallest (SMALL-004, 005,
-    /// AGGREGATE-060: 1.2 and 1.5 are the smallest). The two are one rule: the k-th largest with k
-    /// rounded up is the (n+1-k)-th smallest with that index truncated. A k past the count of the
-    /// numbers once so rounded is <c>#NUM!</c>.
+    /// at Excel's 15 significant digits, so a k a hair from a whole number is that number. A k outside
+    /// 1 to the count of the numbers is <c>#NUM!</c>, whole or not, before it is rounded: 0.5 and 0.99
+    /// are not rounded up to 1 (LARGE-011, LARGE-013, SMALL-007), and <c>SMALL</c>'s 9.5 over nine
+    /// numbers is not truncated to 9 (SMALL-008, the second area pass of 2026-10-12). A k within it that
+    /// is not whole is rounded up for the k-th largest (LARGE-007 to 009, AGGREGATE-038 and 059: 1.2 and
+    /// 1.5 are the 2nd largest) and truncated for the k-th smallest (SMALL-004, 005, 009, AGGREGATE-060
+    /// and 066: 1.2 and 1.5 are the smallest). The two are one rule: the k-th largest with k rounded up
+    /// is the (n+1-k)-th smallest with that index truncated, and k lies within 1 to n exactly where
+    /// n+1-k does.
     /// </summary>
     private static Operand KthOf(List<double> numbers, double k, bool largest)
     {
         k = Arithmetic.AtFifteenDigits(k);
-        if (k < 1) return Operand.Of(ErrorValue.Num);
+        if (k < 1 || k > numbers.Count) return Operand.Of(ErrorValue.Num);
         k = largest ? Math.Ceiling(k) : Math.Floor(k);
-        if (k > numbers.Count) return Operand.Of(ErrorValue.Num);
         numbers.Sort();
         var at = (int)k - 1;
         return Operand.Of(Value.FromNumber(largest ? numbers[^(at + 1)] : numbers[at]));

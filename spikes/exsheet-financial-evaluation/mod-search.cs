@@ -7,6 +7,9 @@
 //   ... -- --discriminate    also searches for inputs where the candidates that fit every observed
 //                            value part, groups them into classes, and checks the engine's refusal
 //
+// mod-search.txt holds the last --discriminate run: every candidate with its match count and the cases
+// it misses, the predictions for the cases asked next, and the search.
+//
 // The area pass of 2026-10-12 read MOD(123456789012,0.7) as 0.5000078322611261 (MOD-017), where the
 // engine's doubles evaluation, number - divisor*FLOOR(number/divisor), gives 0.5000152587890625.
 // Exact arithmetic is BigInteger rationals, rounded to nearest-even at a chosen significand width:
@@ -16,7 +19,8 @@
 // operands are closer than 2^-49): taken against the number, |r| <= |n|*2^-49, or against the number
 // and the product, each, as FinalAdd takes its two operands.
 //
-// What it found (2026-10-12, second round; the first missed the multiply-add with a wrong sign as 0):
+// What it found after the first area pass (2026-10-12, its second round; the first missed the
+// multiply-add with a wrong sign as 0):
 // 17 cases observed in 35 reads, 12 of them numbers, the same at each read. 33 candidates; 15
 // reproduce all 17. Every form of the identity in doubles (A to A9), with or without a 0 for a wrong
 // sign or cancellation, misses MOD-017; so do the x87 registers (D to D5, from its 9th digit), decimal
@@ -37,11 +41,40 @@
 //      and 0 where 5 does;
 //   7. the exact remainder, 0 where it rounds to the divisor itself (B8): MOD(-1E-20,1) is 0, where
 //      every other class gives 1, the divisor.
-// The engine answers where all seven give the same double and refuses with #VALUE! where they part,
-// which --discriminate checks over every input searched. Of the 1,915,648 random inputs it refuses
-// 19,633: 10,768 for cancellation, 8,857 where the double quotient rounds up onto a whole number, 8 for
-// x87 double rounding. MOD-018 and MOD-019 part the exact remainder from the doubles' identity, where
-// every class agrees; MOD-020 to MOD-032 part the classes, each pair of them at one case at least.
+// The engine answered where all seven gave the same double and refused with #VALUE! where they parted.
+// MOD-018 and MOD-019 parted the exact remainder from the doubles' identity, where every class agreed;
+// MOD-020 to MOD-032 parted the classes, each pair of them at one case at least.
+//
+// The second area pass (2026-10-12, Excel 16.0.20430.20146, results-2026-10-12-area-2-com-en-US.json)
+// answered MOD-018 to MOD-032, and NO class of the seven gives all 32 cases now (67 reads, 27 numbers):
+// MOD-020 to 028 rule out 3 to 5 (Excel keeps the exact remainder, about the divisor), MOD-030 and 031
+// rule out 5 and 6 (no cancellation), MOD-029 rules out every class but 2 (6629.9123739999995, the sum
+// rounded at 64 bits and then to a double), and MOD-032 rules out every class but 7 (0, the sum stored as
+// the divisor taken as 0). So the search was extended (B9 to B16): the divisor added at 64 bits, rounded
+// to nearest as an x87 register adds or truncated as a sum of 64-bit significands would be, or truncated
+// to a double, and a sum that is the divisor itself taken as 0 in the double stored or in the register.
+// 41 candidates; 3 reproduce all 32:
+//   B9   the exact remainder, the divisor added in an x87 register (64 bits, to nearest), stored as a
+//        double, and 0 where that double is the divisor;
+//   B10  the same, 0 where the register holds the divisor (((n%d)+d)%d with every step in the register);
+//   B12  the divisor added truncated at 64 bits, stored as a double to nearest, 0 where it is the divisor.
+// A register of 54 to 63 bits, rounded to nearest, would give MOD-029 too (its exact sum lies 15/65536 of
+// a unit in the last place past the midpoint), and so would truncation at 54 to 65; no hardware or
+// natural software holds those widths, and they are not modelled. The three part in two places (3,616,066 inputs searched: the four searches above, and
+// 500,000 whose sum with the divisor lies near the midpoint between two doubles):
+//   - the sum is the divisor as a double but not in the register, as at MOD(-1E-17,1): B9 and B12 give 0,
+//     B10 1. 43,880 inputs, none of up to five digits; MOD-033;
+//   - truncating at 64 bits stores another double than rounding there, the sum within one 64-bit unit of
+//     the midpoint between two doubles: MOD(-0.084474,2270) is 2269.915526 by B9 and B10, as rounded once,
+//     and 2269.9155259999998 by B12; MOD(-0.008511,81200) is 81199.99148900001 by B9 and B10, which round
+//     twice, and 81199.991489 by B12, as rounded once. 86,444 inputs, 13 of the 1,915,648 of up to five
+//     digits; MOD-034 to MOD-036.
+// The engine answers where the three agree, which is the exact remainder wherever no divisor is added
+// and the sum rounded once nearly everywhere else, and refuses with #VALUE! where they part:
+// --discriminate checks that it refuses exactly there over every input searched (130,316 of 3,616,066,
+// 13 of the 1,915,648 of up to five digits, where the seven classes' refusal took 19,633). MOD-037 and
+// MOD-038 ask two answers all three share that an evaluation outside them might not: a sum one unit
+// below the divisor, and a number of the divisor's sign far smaller than it.
 
 using System.Globalization;
 using System.Numerics;
@@ -58,6 +91,12 @@ var inputs = new Dictionary<string, (double N, double D)>
     ["MOD-009"] = (0.3, 0.1), ["MOD-010"] = (Math.Pow(2, 40), 3), ["MOD-011"] = (1125899999999, 1),
     ["MOD-012"] = (1125900000000, 1), ["MOD-013"] = (3377699999997, 3), ["MOD-014"] = (3377700000000, 3),
     ["MOD-015"] = (Math.Pow(2, 53), 3), ["MOD-016"] = (1E+16, 7), ["MOD-017"] = (123456789012, 0.7),
+    // The first pass's corrections asked these; the second area pass answered them (2026-10-12).
+    ["MOD-018"] = (-123456789012, 0.7), ["MOD-019"] = (123456789012, -0.7), ["MOD-020"] = (1, 0.1),
+    ["MOD-021"] = (5, 0.1), ["MOD-022"] = (-2.2, 0.1), ["MOD-023"] = (-1, -0.1), ["MOD-024"] = (3.3, 0.01),
+    ["MOD-025"] = (0.7, 0.01), ["MOD-026"] = (100000000000, 0.1), ["MOD-027"] = (123456789012, 0.2),
+    ["MOD-028"] = (-693380, -93.7), ["MOD-029"] = (-0.087626, 6630), ["MOD-030"] = (1.1, 0.1),
+    ["MOD-031"] = (-0.9, 0.1), ["MOD-032"] = (-1E-20, 1),
 };
 
 // Every value Excel gave, from every results file; the same case read twice must read the same.
@@ -73,7 +112,11 @@ foreach (var file in Directory.GetFiles(Path.Combine(root, "tests/ExSheet.Engine
         if (!id.StartsWith("MOD-", StringComparison.Ordinal)) continue;
         if (!c.TryGetProperty("excel", out var excel) || excel.ValueKind != JsonValueKind.Object) continue;
         var v = excel.GetProperty("value2");
-        var text = v.ValueKind == JsonValueKind.Number ? R(v.GetDouble()) : v.GetString()!;
+        // Excel's double is its "number" where the oracle wrote one (G17, from the second area pass on);
+        // before that, value2 (R). The second pass found the two name the same double in every case.
+        var text = excel.TryGetProperty("number", out var number) && number.ValueKind == JsonValueKind.String
+            ? R(double.Parse(number.GetString()!, CultureInfo.InvariantCulture))
+            : v.ValueKind == JsonValueKind.Number ? R(v.GetDouble()) : v.GetString()!;
         reads++;
         if (observed.TryGetValue(id, out var before) && before != text) throw new InvalidDataException($"{id} read {before} and {text}");
         observed[id] = text;
@@ -113,6 +156,18 @@ var candidates = new List<(string Code, string Name, Func<double, double, string
     ("B6", "B, then cancellation against the number (|r| <= |n|*2^-49 is 0)", Guarded((n, d) => Cancel(SignFix(n % d, d), n))),
     ("B7", "n - d*FLOOR(n/d) exactly, 0 where n and d*FLOOR(n/d) are closer than 2^-49 of each (FinalAdd's form)", Guarded((n, d) => ExactFinalAdd(n, d))),
     ("B8", "B, then 0 where it rounds to the divisor itself", Guarded((n, d) => SignFix(n % d, d) == d ? 0 : SignFix(n % d, d))),
+    // Added after the second area pass (2026-10-12): MOD-029 is B4's double rounding and MOD-032 B8's 0, which no
+    // candidate before gave both. The divisor added at 64 bits (an x87 register's, or truncated, as a
+    // software sum of 64-bit significands would), or truncated to a double, each with a remainder that
+    // reaches the divisor taken as 0: in the register, before it is stored, or in the double stored.
+    ("B9", "B4, then 0 where the double is the divisor", Guarded((n, d) => { var r = SignFixX87(n % d, d); return r == d ? 0 : r; })),
+    ("B10", "B4, 0 where the x87 register holds the divisor (((n%d)+d)%d, every step in the register)", Guarded((n, d) => SignFixWide(n % d, d, 64, truncate: false, zeroInRegister: true))),
+    ("B11", "exact remainder, +d truncated to 64 bits, then rounded to a double", Guarded((n, d) => SignFixWide(n % d, d, 64, truncate: true, zeroInRegister: false))),
+    ("B12", "B11, then 0 where the double is the divisor", Guarded((n, d) => { var r = SignFixWide(n % d, d, 64, truncate: true, zeroInRegister: false); return r == d ? 0 : r; })),
+    ("B13", "B11, 0 where the 64-bit sum is the divisor", Guarded((n, d) => SignFixWide(n % d, d, 64, truncate: true, zeroInRegister: true))),
+    ("B14", "exact remainder, +d truncated to a double (rounded toward zero)", Guarded((n, d) => SignFixWide(n % d, d, 53, truncate: true, zeroInRegister: false))),
+    ("B15", "B14, then 0 where the double is the divisor", Guarded((n, d) => { var r = SignFixWide(n % d, d, 53, truncate: true, zeroInRegister: false); return r == d ? 0 : r; })),
+    ("B16", "exact remainder, +d at 64 bits toward zero in the register and stored toward zero (an x87 set to chop)", Guarded((n, d) => SignFixWide(n % d, d, 64, truncate: true, zeroInRegister: true, storeTruncated: true))),
     // The quotient in doubles, the multiply-add exact.
     ("C", "FMA(-d, FLOOR(n/d), n)", Guarded((n, d) => Math.FusedMultiplyAdd(-d, Math.Floor(n / d), n))),
     ("C2", "FMA(-d, FLOOR(n/d), n), then +d where the sign is not the divisor's", Guarded((n, d) => SignFix(Math.FusedMultiplyAdd(-d, Math.Floor(n / d), n), d))),
@@ -195,25 +250,17 @@ foreach (var (code, name, mod) in candidates)
 Console.WriteLine();
 Console.WriteLine($"Fit every observed value: {fits.Count} of {candidates.Count}: {string.Join(", ", fits.Select(f => f.Code))}.");
 
-// The cases added for the next pass: two the triage named, where the doubles' evaluation and the
-// exact remainder part (every class agrees there), and those that part the classes that fit.
+// The cases added for the next pass (after the second area pass): those that part the three that fit,
+// each pair at one case at least, and two where all three agree, which an evaluation outside them
+// (a remainder near the divisor taken as 0, a number far smaller than the divisor taken as 0) would not.
 var asked = new (string Id, string Formula, double N, double D)[]
 {
-    ("MOD-018", "=MOD(-123456789012,0.7)", -123456789012, 0.7),
-    ("MOD-019", "=MOD(123456789012,-0.7)", 123456789012, -0.7),
-    ("MOD-020", "=MOD(1,0.1)", 1, 0.1),
-    ("MOD-021", "=MOD(5,0.1)", 5, 0.1),
-    ("MOD-022", "=MOD(-2.2,0.1)", -2.2, 0.1),
-    ("MOD-023", "=MOD(-1,-0.1)", -1, -0.1),
-    ("MOD-024", "=MOD(3.3,0.01)", 3.3, 0.01),
-    ("MOD-025", "=MOD(0.7,0.01)", 0.7, 0.01),
-    ("MOD-026", "=MOD(100000000000,0.1)", 100000000000, 0.1),
-    ("MOD-027", "=MOD(123456789012,0.2)", 123456789012, 0.2),
-    ("MOD-028", "=MOD(-693380,-93.7)", -693380, -93.7),
-    ("MOD-029", "=MOD(-0.087626,6630)", -0.087626, 6630),
-    ("MOD-030", "=MOD(1.1,0.1)", 1.1, 0.1),
-    ("MOD-031", "=MOD(-0.9,0.1)", -0.9, 0.1),
-    ("MOD-032", "=MOD(-1E-20,1)", -1E-20, 1),
+    ("MOD-033", "=MOD(-1E-17,1)", -1E-17, 1),
+    ("MOD-034", "=MOD(-0.084474,2270)", -0.084474, 2270),
+    ("MOD-035", "=MOD(-0.008511,81200)", -0.008511, 81200),
+    ("MOD-036", "=MOD(0.071472,-276)", 0.071472, -276),
+    ("MOD-037", "=MOD(-1E-16,1)", -1E-16, 1),
+    ("MOD-038", "=MOD(1E-20,1)", 1E-20, 1),
 };
 Console.WriteLine();
 Console.WriteLine("Predictions for the new cases, the candidates grouped by the double they give (* fits every observed value), and the engine's answer:");
@@ -232,6 +279,9 @@ if (discriminate)
     // Inputs that part the candidates that fit: a grid of everyday numbers, then random searches
     // (seeded, so the run repeats), counted by which candidates part.
     var parted = new SortedDictionary<string, (int Count, string First)>();
+    // Everyday inputs (the grid's, and those of up to five digits) where each pair parts, a few of each.
+    var everyday = new SortedDictionary<string, List<string>>();
+    var collecting = true;
     var engineWrong = new List<string>();
     var engineWrongCount = 0;
     var searched = 0;
@@ -252,6 +302,9 @@ if (discriminate)
             parted[key] = parted.TryGetValue(key, out var seen)
                 ? (seen.Count + 1, seen.First)
                 : (1, $"=MOD({R(n)},{R(d)}): {answers[a]} / {answers[b]}");
+            if (!collecting) continue;
+            if (!everyday.TryGetValue(key, out var list)) everyday[key] = list = [];
+            if (list.Count < 12) list.Add($"=MOD({R(n)},{R(d)}): {string.Join(" | ", fits.Select((f, i) => $"{f.Code} {answers[i]}"))}");
         }
         var agreed = answers.Distinct().Count() == 1 ? answers[0] : "#VALUE!";
         var engine = EngineMod(n, d);
@@ -288,6 +341,7 @@ if (discriminate)
         Try((random.Next(2) == 0 ? 1 : -1) * random.Next(1, 100000) * Math.Pow(10, random.Next(-6, 9)), Divisor());
     }
     Report("2,000,000 numbers of up to five digits");
+    collecting = false;
     for (var i = 0; i < 1_000_000; i++)
     {
         // A number a few units in the last place from a multiple of the divisor: the double quotient
@@ -305,6 +359,21 @@ if (discriminate)
         Try(-Math.Sign(d) * random.Next(1, 100000) * Math.Pow(10, random.Next(-25, -10)), d);
     }
     Report("200,000 far smaller than the divisor");
+    for (var i = 0; i < 500_000; i++)
+    {
+        // The divisor plus a number of the other sign lying a hair from the midpoint between two doubles,
+        // where rounding at 64 bits first, or truncating there, moves the double the sum is stored as: a
+        // target t below the divisor, and a number that puts the sum within about half a 64-bit unit of
+        // the midpoint above t, nudged a few units in its last place either way.
+        var d = Divisor();
+        var ad = Math.Abs(d);
+        var t = ad * (1 - random.Next(1, 1 << 20) * Math.Pow(2, -random.Next(32, 60)));
+        if (!(t < ad)) continue;
+        var n = Math.Sign(d) * ((t - ad) + (Math.BitIncrement(t) - t) / 2);
+        for (var steps = random.Next(-3, 4); steps != 0; steps -= Math.Sign(steps)) n = steps > 0 ? Math.BitIncrement(n) : Math.BitDecrement(n);
+        Try(n, d);
+    }
+    Report("500,000 whose sum with the divisor lies near a midpoint");
 
     void Report(string search)
     {
@@ -318,6 +387,13 @@ if (discriminate)
     Console.WriteLine();
     Console.WriteLine($"Every input searched ({totalSearched}): the pairs of fitting candidates that part, how often, and the first input.");
     foreach (var (key, (count, first)) in parted) Console.WriteLine($"  {key,-8} {count,8}  {first}");
+    Console.WriteLine();
+    Console.WriteLine("Everyday inputs where each pair parts (the grid, and numbers of up to five digits), the first few:");
+    foreach (var (key, list) in everyday)
+    {
+        Console.WriteLine($"  {key}");
+        foreach (var line in list) Console.WriteLine($"    {line}");
+    }
 
     // The classes: candidates that never part.
     var classOf = fits.Select((_, i) => i).ToArray();
@@ -359,44 +435,49 @@ string? Parts(double n, double d)
     return $"=MOD({R(n)},{R(d)})  {distinct} answers: {string.Join(" | ", groups)} (A gives {candidates[0].Mod(n, d)})";
 }
 
-// The engine's MOD, as src/ExSheet.Engine/Formulas/Functions.Math.cs writes it.
+// The engine's MOD, as src/ExSheet.Engine/Formulas/Functions.Math.cs writes it (after the second area
+// pass): the exact remainder where it has the divisor's sign; where it has the number's, the divisor
+// added as B9, B10 and B12 add it, and #VALUE! where they part.
 static string EngineMod(double number, double divisor)
 {
     if (divisor == 0) return "#DIV/0!";
-    var quotient = number / divisor;
-    if (Math.Abs(quotient) >= Limit) return "#NUM!";
+    if (Math.Abs(number / divisor) >= Limit) return "#NUM!";
     var remainder = number % divisor;
-    var turned = remainder != 0 && (remainder < 0) != (divisor < 0);
-    var exact = turned ? remainder + divisor : remainder;
-    if (Math.FusedMultiplyAdd(-divisor, Math.Floor(quotient), number) != exact
-        || (exact != 0 && Math.Abs(exact) <= Math.Abs(number) * Tolerance)
-        || (turned && (exact == divisor || RoundsTwice(remainder, divisor))))
-        return "#VALUE!";
-    return R(exact == 0 ? 0 : exact);
+    if (remainder == 0 || (remainder < 0) == (divisor < 0)) return R(remainder == 0 ? 0 : remainder);
+    var (afterStore, inRegister, truncated) = EngineTurned(remainder, divisor);
+    return afterStore == inRegister && afterStore == truncated ? R(afterStore == 0 ? 0 : afterStore) : "#VALUE!";
 }
 
-// Why the engine refuses, the first of its four tests that holds; null where it answers.
+// Why the engine refuses: which of the three readings part; null where it answers.
 static string? EngineWhy(double number, double divisor)
 {
-    var quotient = number / divisor;
     var remainder = number % divisor;
-    var turned = remainder != 0 && (remainder < 0) != (divisor < 0);
-    var exact = turned ? remainder + divisor : remainder;
-    if (Math.FusedMultiplyAdd(-divisor, Math.Floor(quotient), number) != exact) return "the double quotient rounds up onto a whole number";
-    if (exact != 0 && Math.Abs(exact) <= Math.Abs(number) * Tolerance) return "cancellation";
-    if (turned && exact == divisor) return "the divisor itself";
-    if (turned && RoundsTwice(remainder, divisor)) return "x87 double rounding";
+    if (remainder == 0 || (remainder < 0) == (divisor < 0)) return null;
+    var (afterStore, inRegister, truncated) = EngineTurned(remainder, divisor);
+    if (afterStore != inRegister) return "the divisor itself, as a double but not in the register";
+    if (afterStore != truncated) return "truncated at 64 bits, another double";
     return null;
 }
 
-static bool RoundsTwice(double a, double b)
+// remainder + divisor as the three readings take it, with a positive divisor and then the sign put back.
+static (double AfterStore, double InRegister, double Truncated) EngineTurned(double remainder, double divisor)
 {
-    var sum = a + b;
-    var error = a - (sum - b);
-    if (error == 0 || (BitConverter.DoubleToInt64Bits(sum) & 1) == 0) return false;
-    var gap = Math.BitIncrement(Math.Abs(sum)) - Math.Abs(sum);
-    return Math.Abs(error) >= gap * (2047.0 / 4096);
+    var sign = divisor < 0 ? -1.0 : 1.0;
+    var d = sign * divisor;
+    var r = sign * remainder;
+    var sum = r + d;
+    var error = r - (sum - d);
+    var gap = error < 0 ? sum - Math.BitDecrement(sum) : Math.BitIncrement(sum) - sum;
+    var steps = error / gap * 2048;
+    var nearest = Math.Round(steps, MidpointRounding.ToEven);
+    var x87 = Stored(sum, nearest);
+    var chopped = Stored(sum, Math.Floor(steps));
+    return (sign * (x87 == d ? 0 : x87), sign * (sum == d && nearest == 0 ? 0 : x87), sign * (chopped == d ? 0 : chopped));
 }
+
+static double Stored(double sum, double steps) =>
+    Math.Abs(steps) < 1024 || (BitConverter.DoubleToInt64Bits(sum) & 1) == 0 ? sum
+    : steps > 0 ? Math.BitIncrement(sum) : Math.BitDecrement(sum);
 
 static string R(double x) => x.ToString("R", CultureInfo.InvariantCulture);
 
@@ -428,6 +509,17 @@ static double ExactFinalAdd(double n, double d)
     var r = qn - product;
     var t = Q.Of(Tolerance);
     return !r.Num.IsZero && Q.Abs(r) < Q.Abs(qn) * t && Q.Abs(r) < Q.Abs(product) * t ? 0 : ToDouble(r);
+}
+
+// +d where the remainder's sign is the number's, the sum held at `bits` (rounded to nearest, or
+// truncated) and then stored to a double (rounded to nearest, or truncated); a held sum that is the
+// divisor itself taken as 0 first where zeroInRegister.
+static double SignFixWide(double r, double d, int bits, bool truncate, bool zeroInRegister, bool storeTruncated = false)
+{
+    if (r == 0 || (r < 0) == (d < 0)) return r;
+    var held = truncate ? Truncate(Q.Of(r) + Q.Of(d), bits) : Round(Q.Of(r) + Q.Of(d), bits);
+    if (zeroInRegister && (held - Q.Of(d)).Num.IsZero) return 0;
+    return storeTruncated ? ToDouble(Truncate(held, 53)) : ToDouble(held);
 }
 
 static double SignFixX87(double r, double d)
@@ -495,6 +587,25 @@ static Q Round(Q x, int bits)
         var twice = rem * 2;
         if (twice > sd || (twice == sd && !m.IsEven)) m += 1;
         var scaled = e >= 0 ? new Q(m << e, 1) : new Q(m, BigInteger.One << -e);
+        return negative ? new Q(-scaled.Num, scaled.Den) : scaled;
+    }
+}
+
+// Rounded toward zero at a significand of `bits`.
+static Q Truncate(Q x, int bits)
+{
+    if (x.Num.IsZero) return x;
+    var negative = x.Num.Sign < 0;
+    var num = BigInteger.Abs(x.Num);
+    var den = x.Den;
+    var e = (int)(num.GetBitLength() - den.GetBitLength()) - bits;
+    while (true)
+    {
+        var (sn, sd) = e >= 0 ? (num, den << e) : (num << -e, den);
+        if (sn < (sd << (bits - 1))) { e--; continue; }
+        if (sn >= (sd << bits)) { e++; continue; }
+        var m = BigInteger.Divide(sn, sd);
+        var scaled = e >= 0 ? new Q(m << e, 1) : Q.Make(m, BigInteger.One << -e);
         return negative ? new Q(-scaled.Num, scaled.Den) : scaled;
     }
 }

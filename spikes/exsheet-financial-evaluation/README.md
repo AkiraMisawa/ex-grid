@@ -238,3 +238,5 @@ except very near a rounding boundary.
   short labels with their legend, each function's 40 best that do not reproduce all).
 - `discriminate.txt`: the last `--discriminate` run, the inputs PMT-020 to 033 and NPV-009 to 022 ask.
 - `discriminate-xnpv.txt`: the last `--discriminate-xnpv` run, the inputs XNPV-012 to 017 ask.
+- `mod-search.cs`, `mod-search.txt`: the same search for `MOD` (its header says what it found after
+  each area pass), and its last `--discriminate` run, every candidate with its match count.
