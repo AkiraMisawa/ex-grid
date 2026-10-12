@@ -55,7 +55,10 @@ async function expectPointedAtFor(sheetGrid, grid, text) {
 /**
  * Resolves as soon as the grid wears ex-pointed-at: heard from the class itself, in the task that
  * applies the render, rather than polled, so that a press can follow while keys typed before it
- * are still held by the Sheet's listener (DC-54). The observer is gone once it has answered.
+ * are still held by the Sheet's listener (DC-54). The paint holds until the press lands only where
+ * every text those keys pass through points: one that does not (`=1` on the way to `=1+`) paints
+ * the grid otherwise on the way, and a press made then is SH-35's ordinary press. The observer is
+ * gone once it has answered.
  */
 async function pointedAtNow(grid) {
     await grid.evaluate((root) => new Promise((resolve, reject) => {
@@ -349,22 +352,28 @@ test.describe('/sheet', () => {
 
     // Found while building ticket 37: typed at once with the press, `1+` was still held behind the `=`
     // by the Sheet's listener, and the press, which the positions grid sends to its own core, reached
-    // the Sheet first (`=XLOOKUP(...)` in 2 runs of 4 at 0 ms). The press is made the moment the
-    // positions grid is painted pointed at, which is before the Cell Editor has taken the keyboard
-    // and the held keys have gone into it. Four rounds each, since at 0 ms the gap is a race.
+    // the Sheet first (`=XLOOKUP(...)` in 2 runs of 4 at 0 ms). Typed here: `=-(`, whose every prefix
+    // is a place for a Reference, so the positions grid stays painted pointed at from the `=` on,
+    // and the press is handed over whether it lands while the Sheet still holds `-(` or after they
+    // have gone into the Cell Editor: either way it is written after them. Not `=1+`, as this test
+    // first typed: `=1` is no place for a Reference, the held keys go into the Cell Editor one input
+    // each, and on a circuit the grid could be painted otherwise for `=1` between them; a press made
+    // then is SH-35's ordinary press, as ADR-0058 decides (found on CI, PR #78, the Server host at
+    // 0 ms, 2026-10-11; DC-54 corrected the same day). Four rounds each, since at 0 ms whether the
+    // press lands while the keys are held is a race, and every round has the one answer.
     for (const ms of [0, 150]) {
-        test(`ADR-0058/DC-54: with a ${ms} ms round trip, =1+ typed and a press at once give =1+ and the lookup, never the lookup alone`, async ({ page }) => {
+        test(`ADR-0058/DC-54: with a ${ms} ms round trip, =-( typed and a press at once give =-( and the lookup, never the lookup ahead of -( nor =-( alone`, async ({ page }) => {
             const grid = sheet(page);
             const table = positions(page);
             await pressCell(grid, 'F3');
             const target = await boxOf(cell(table, 'C3'));
             await setRoundTrip(ms);
             for (let round = 0; round < 4; round++) {
-                await page.keyboard.type('=1+');
+                await page.keyboard.type('=-(');
                 await pointedAtNow(table);
                 await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
 
-                await expect(editor(grid), `round ${round + 1}`).toHaveValue(`=1+${LOOKUP_4471.slice(1)}`);
+                await expect(editor(grid), `round ${round + 1}`).toHaveValue(`=-(${LOOKUP_4471.slice(1)}`);
                 await expect(editor(grid)).toBeFocused();
                 await page.keyboard.press('Escape');
                 await expect(editor(grid)).toHaveCount(0);

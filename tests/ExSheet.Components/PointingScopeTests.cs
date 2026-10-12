@@ -560,6 +560,35 @@ public partial class PointingScopeTests : SheetTestContext
         Assert.Empty(page.Cut.Instance.LeftRefusals);
     }
 
+    // The ordering CI found (PR #78, the Server host at 0 ms, 2026-10-11): `=1+` typed at once, and
+    // the press made once the registered grid was painted pointed at for `=`. The Sheet's listener
+    // handed the `1` and the `+` it held into the Cell Editor, one input each, and on a circuit each
+    // is a render of its own: `=1` is no place for a Reference, so the grid was painted otherwise for
+    // it, and pointed at again for `=1+`. The press landed between the two paints. Made on a grid
+    // painted otherwise, it reached the grid's own handler and kept its default, which takes DOM
+    // focus: the first gap of ADR-0058, "On a circuit", which SH-35's layer 3 makes on purpose. On the
+    // circuit the core heard `=1+` before the press, since Blazor keeps a replaced handler until the
+    // browser has answered the paint that replaced it; bUnit lets it go at once, so here the press
+    // is heard first. The grid's own handler reads nothing of pointing, so the press means the same
+    // either way: what decides it is the paint it was made on.
+    [Fact] // ADR-0058 ("On a circuit", the first gap) / SH-35 / DC-54: a press made on the paint for =1, a text the keys typed before it pass through, is the registered grid's own, and =1+ after it writes nothing
+    public async Task A_press_made_on_the_paint_for_a_text_that_does_not_point_is_the_grids_own()
+    {
+        var page = await RenderAsync();
+        await StartTypingAsync(page.Left, "D2", "=");
+        Assert.True(PointedAt(page.Positions));
+        await TypeAsync(page.Left, "=1");
+        Assert.False(PointedAt(page.Positions));
+
+        await PressCellAsync(page.Positions, ValueX, Row(1));
+        await TypeAsync(page.Left, "=1+");
+
+        // The grid took the cell; nothing was written, and nothing was refused.
+        Assert.Single(page.Positions.FindAll(".ex-focus"));
+        Assert.Equal("=1+", EditorText(page.Left));
+        Assert.Empty(page.Cut.Instance.LeftRefusals);
+    }
+
     [Fact] // ADR-0058 / SH-32: registering refuses a correspondence that names no column
     public void Registering_refuses_an_unnamed_column()
     {

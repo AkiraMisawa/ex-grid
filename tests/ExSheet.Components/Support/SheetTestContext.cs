@@ -38,6 +38,10 @@ public abstract class SheetTestContext : BunitContext
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
+        // ST-2's question (ADR-0007's note of 2026-10-11, refined): the test's input reaches the
+        // core ahead of the answer, as a browser's does, so the browser here answers "untouched".
+        _handle.Setup<bool>("askUntouched", _ => true).SetResult(true);
+        _handle.SetupVoid("closeAnswered", _ => true).SetVoidResult();
     }
 
     internal FakeTimeProvider Clock { get; } = new();
