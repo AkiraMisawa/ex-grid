@@ -82,7 +82,7 @@
     {
       "id": "NETWORKDAYS-010",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: a boolean typed as a date, which EOMONTH and EDATE answer with #VALUE! (EOMONTH-009, EDATE-009); read as 1, serial 1 is a Sunday and serials 1 to 6 hold five workdays, 5",
+      "description": "Refused until Excel is asked: a boolean typed as a date, which EDATE answers with #VALUE! (EDATE-009); read as 1, serial 1 is a Sunday and serials 1 to 6 hold five workdays, 5",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NETWORKDAYS(TRUE,6)"},
       "check": "ZZ1000",

@@ -83,7 +83,7 @@ asked" of observed cases say "observed".
 | EDATE-020 | `=EDATE(0,97200)` | `#VALUE!` (refused) | day 0 of January 10000: `#NUM!` by `DATE`'s arithmetic, 31 December 9999 (2958465) as the month before's last day |
 | EDATE-021 | `=EDATE(0,3)` | 91 | the six agree: day 0 of April 1900 is 31 March |
 | EDATE-022 | `=EDATE(0.5,12)` | 366 | the six agree: a start between 0 and 1 is serial 0, and a year on is 31 December 1900 |
-| NETWORKDAYS-010 | `=NETWORKDAYS(TRUE,6)` | `#VALUE!` (refused) | a boolean typed as a date: `#VALUE!` as under `EOMONTH` and `EDATE`, or read as 1 (5) |
+| NETWORKDAYS-010 | `=NETWORKDAYS(TRUE,6)` | `#VALUE!` (refused) | a boolean typed as a date: `#VALUE!` as under `EDATE` (EDATE-009), or read as 1 (5) |
 | WORKDAY-011 | `=WORKDAY(TRUE,1)` | `#VALUE!` (refused) | the same under `WORKDAY` (`#VALUE!`, or 2) |
 
 NETWORKDAYS-010 and WORKDAY-011 are new to the corpus but not to the engine: `NETWORKDAYS` and `WORKDAY` have refused a

@@ -90,7 +90,7 @@
     {
       "id": "WORKDAY-011",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: a boolean typed as a date, which EOMONTH and EDATE answer with #VALUE! (EOMONTH-009, EDATE-009); read as 1, serial 1 is a Sunday and a workday on is Monday, serial 2",
+      "description": "Refused until Excel is asked: a boolean typed as a date, which EDATE answers with #VALUE! (EDATE-009); read as 1, serial 1 is a Sunday and a workday on is Monday, serial 2",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=WORKDAY(TRUE,1)"},
       "check": "ZZ1000",
