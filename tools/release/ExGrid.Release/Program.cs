@@ -6,7 +6,8 @@ using ExGrid.Release;
 //
 //   dotnet run --project tools/release/ExGrid.Release -- admit --tag v0.1.0-rc.1 --commit HEAD
 //   dotnet run --project tools/release/ExGrid.Release -- gate --tag v0.1.0-rc.1 --commit HEAD
-//   dotnet run --project tools/release/ExGrid.Release -- by-hand --at HEAD
+//   dotnet run --project tools/release/ExGrid.Release -- by-hand --at HEAD --version 0.1.0
+//   dotnet run --project tools/release/ExGrid.Release -- skips --trx verification/<date>
 //
 // WR-10's records are held to the MudBlazor versions nuget.org gives as published within the range the
 // Wrappers declare before X's commit time, or with no date, an unlisted version left out (2026-10-12): read from --mudblazor-index, nuget.org's
@@ -28,10 +29,16 @@ const string Usage = """
               --fetch-missing asks the remote for a record's verified/* tag this clone lacks.
               --mudblazor-index is where MudBlazor's published versions and their dates are
               listed, for WR-10's records (default: nuget.org's registration index).
-      by-hand --at <rev> [--repo <dir>] [--remote <name>] [--fetch-missing]
+      by-hand --at <rev> [--version <x.y.z>] [--repo <dir>] [--remote <name>] [--fetch-missing]
               [--mudblazor-index <url or file>]
               Which rows checked by hand would hold if <rev> were signed off, and which need a run,
-              reading the record index and the table from the working tree (ADR-0208).
+              reading the record index and the table from the working tree (ADR-0208). --version is
+              the version to be released; a row the index marks a Known limitation of that version
+              by decision is reported, not refused. Without it, no such mark applies.
+      skips   --trx <dir> [--repo <dir>]
+              Step 2 of the Definition of Done's §22, read from Step 1's run: one <project>.trx for
+              each test project of ExGrid.slnx in <dir>, every test passed or one Step 2 allows not
+              to run, each named. A .trx that is missing or cannot be read refuses the run.
     """;
 
 if (args.Length == 0 || args[0] is "help" or "--help" or "-h")
@@ -104,7 +111,22 @@ try
                 Console.Error.WriteLine($"{at} is not a commit of this repository.");
                 return 2;
             }
-            ByHand.Check(git, new DirectoryTree(git.Repository), full, report, flags.Contains("--fetch-missing"), mudBlazor);
+            var released = Option("--version");
+            if (released is not null && !ByHand.IsStableVersion(released))
+            {
+                Console.Error.WriteLine($"--version takes a version without a suffix, as 0.1.0, not '{released}'.");
+                return 2;
+            }
+            ByHand.Check(git, new DirectoryTree(git.Repository), full, report, flags.Contains("--fetch-missing"), mudBlazor, released);
+            report.WriteTo(Console.Out);
+            return report.Admitted ? 0 : 1;
+        }
+        case "skips":
+        {
+            if (Option("--trx") is not { } directory) break;
+            var projects = Skips.TestProjects(new DirectoryTree(git.Repository).ReadText(Skips.Solution), report);
+            var files = Skips.Read(directory, report);
+            if (projects is not null) Skips.Check(files, projects, report);
             report.WriteTo(Console.Out);
             return report.Admitted ? 0 : 1;
         }

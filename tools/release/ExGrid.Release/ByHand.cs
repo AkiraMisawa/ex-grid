@@ -12,12 +12,21 @@ namespace ExGrid.Release;
 public sealed record ByHandRecord(string Commit, string Tag, string Path, string Verdict, IReadOnlyList<string>? Versions = null);
 
 /// <summary>
+/// A row put out of a version by decision, as a Known limitation of it, rather than left unrecorded: the version
+/// without a suffix it is a Known limitation of, the day it was decided, and the decision's words. The index writes it
+/// as <c>knownLimitation</c> on a row with no record; it reaches that version's release candidates and the version,
+/// and no other (2026-10-12, the release tool's choice).
+/// </summary>
+public sealed record KnownLimitation(string Version, string Decided, string Decision);
+
+/// <summary>
 /// A row the Definition of Done checks by hand, where it is checked, the paths whose change could
 /// change its result, and its latest record, or none when it has never been recorded. WR-10 alone may name
 /// besides, in <see cref="Later"/>, the records of layer-2 runs at a MudBlazor version published after its
-/// floor record, each a run of its own.
+/// floor record, each a run of its own. A row with no record may be marked, in <see cref="Limitation"/>, a Known
+/// limitation of a version by decision.
 /// </summary>
-public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> Paths, ByHandRecord? Record, IReadOnlyList<ByHandRecord>? Later = null)
+public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> Paths, ByHandRecord? Record, IReadOnlyList<ByHandRecord>? Later = null, KnownLimitation? Limitation = null)
 {
     /// <summary>How a message names the row: <c>FN-12e on macOS</c>.</summary>
     public string Name => $"{Row} on {Where}";
@@ -48,6 +57,13 @@ public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> P
 /// checked by hand is held. The versions the records
 /// cover between them are held to those published within the Wrappers' declared range before X
 /// (<see cref="WrapperRange"/>, 2026-10-12).</para>
+/// <para>A row put out of a version by decision is marked in the index with <c>knownLimitation</c>: the version, the
+/// day it was decided and the decision's words. For that version's release candidates and the version itself the row
+/// is reported in a notice, not refused, and it never holds; for any other version, or when no version is given, it is
+/// refused as a row never recorded. The mark is refused when the row also names a record, which would leave two
+/// answers to whether it holds, when its decision or its date is missing, and when the Definition of Done's table does
+/// not say the row is a Known limitation of that version, so the index alone cannot put a row out (2026-10-12, the
+/// release tool's choice).</para>
 /// </summary>
 public static partial class ByHand
 {
@@ -142,6 +158,14 @@ public static partial class ByHand
                     report.Refuse($"{name}'s 'record' in {IndexPath} is neither a record nor null.", IndexPath);
                 }
 
+                KnownLimitation? limitation = null;
+                if (item.TryGetProperty(KnownLimitationKey, out var limited))
+                {
+                    limitation = Limitation(limited, name, report);
+                    if (held.ValueKind != JsonValueKind.Null && held.ValueKind != JsonValueKind.Undefined)
+                        report.Refuse($"{name} in {IndexPath} names a record and '{KnownLimitationKey}'. A row put out of a version by decision has no record, and a row with a record is held by it; the two together would leave whether it holds to whichever is read (2026-10-12).", IndexPath);
+                }
+
                 var later = new List<ByHandRecord>();
                 if (item.TryGetProperty(LaterRecords, out var laterList))
                 {
@@ -178,7 +202,7 @@ public static partial class ByHand
 
                 if (read.Any(r => r.Name == name))
                     report.Refuse($"{name} is written twice in {IndexPath}.", IndexPath);
-                read.Add(new ByHandRow(row, where, paths, record, later));
+                read.Add(new ByHandRow(row, where, paths, record, later, limitation));
             }
             return read;
         }
@@ -190,9 +214,11 @@ public static partial class ByHand
     /// the table are read from <paramref name="tree"/>, the tag's. WR-10's records, once the floor record
     /// otherwise holds, are held besides to the MudBlazor versions <paramref name="mudBlazor"/> gives as published
     /// within the range the Wrappers declare at <paramref name="target"/> before its commit time, or with no date, and listed;
-    /// with no list, or one that cannot be read, the row is refused as unchecked.
+    /// with no list, or one that cannot be read, the row is refused as unchecked. <paramref name="version"/> is the
+    /// version being released, with or without its suffix: a row the index marks a Known limitation of its three
+    /// numbers is reported, not refused; with no version, no such mark applies.
     /// </summary>
-    public static void Check(Git git, ISourceTree tree, string target, Report report, bool fetchMissing, IPublishedVersions? mudBlazor = null)
+    public static void Check(Git git, ISourceTree tree, string target, Report report, bool fetchMissing, IPublishedVersions? mudBlazor = null, string? version = null)
     {
         var refusedBefore = report.Refusals.Count;
         var index = ReadIndex(tree, report);
@@ -203,15 +229,25 @@ public static partial class ByHand
         var targetTree = new CommitTree(git, target);
         var holding = new List<string>();
         var toRun = new List<string>();
+        var limitations = new List<string>();
+        var released = version?.Split('-', 2)[0];
         foreach (var row in index)
         {
             var missing = row.Paths.Where(p => !Names(targetTree, p)).ToList();
             if (missing.Count > 0)
                 report.Refuse($"{row.Name} names {string.Join(", ", missing)}, which {targetTree.Name} does not have. A row's paths are reviewed in any change that moves the code they name (ADR-0208).", IndexPath);
 
+            if (row.Record is null && row.Limitation is { } limitation && limitation.Version == released)
+            {
+                limitations.Add($"{row.Name}, a Known limitation of {limitation.Version} by the decision of {limitation.Decided}: \"{limitation.Decision}\"");
+                continue;
+            }
             if (row.Record is null)
             {
-                report.Refuse($"{row.Name} has never been recorded. Run it at the commit to be signed off and record it in {IndexPath} (ADR-0208).", IndexPath);
+                var known = row.Limitation is { } other
+                    ? $" It is a Known limitation of {other.Version} by the decision of {other.Decided}, which does not reach {(released is null ? "a check given no version" : released)}."
+                    : "";
+                report.Refuse($"{row.Name} has never been recorded. Run it at the commit to be signed off and record it in {IndexPath} (ADR-0208).{known}", IndexPath);
                 toRun.Add(row.Name);
                 continue;
             }
@@ -262,10 +298,15 @@ public static partial class ByHand
 
         if (holding.Count > 0)
             report.Notice($"Holding on their records, their code unchanged since: {string.Join(", ", holding)} (ADR-0208).");
+        // Not run, and not holding: the version's notes say it among their Known limitations.
+        if (limitations.Count > 0)
+            report.Notice($"Not run, and not holding, as a Known limitation of {released} by decision: {string.Join("; ", limitations)}.");
         if (toRun.Count > 0)
             report.Notice($"To run by hand at {target[..12]}: {string.Join(", ", toRun)} (ADR-0208).");
         else if (report.Refusals.Count == refusedBefore)
-            report.Notice($"Every row checked by hand holds at {target[..12]} (ADR-0208).");
+            report.Notice(limitations.Count > 0
+                ? $"Every row checked by hand holds at {target[..12]} but the Known limitations of {released} named above (ADR-0208)."
+                : $"Every row checked by hand holds at {target[..12]} (ADR-0208).");
     }
 
     /// <summary>Refuses every difference between the index's rows and paths and the table's.</summary>
@@ -279,6 +320,10 @@ public static partial class ByHand
                 report.Refuse($"{row.Name} is in {IndexPath} and not in {table.Source}'s table. The two list the same rows (ADR-0208).", IndexPath);
                 continue;
             }
+            if (row.Limitation?.Version != listed.KnownLimitation)
+                report.Refuse(row.Limitation is null
+                    ? $"{row.Name}: {table.Source}'s table says it is a Known limitation of {listed.KnownLimitation}, and {IndexPath} does not mark it '{KnownLimitationKey}'. The two say the same (2026-10-12)."
+                    : $"{row.Name}: {IndexPath} marks it a Known limitation of {row.Limitation.Version}, and {table.Source}'s table {(listed.KnownLimitation is null ? "does not say so" : $"says {listed.KnownLimitation}")}. A row is put out of a version where the Definition of Done says it, never by the index alone (2026-10-12).", table.Source, listed.Line);
             var onlyIndex = row.Paths.Except(listed.Paths, StringComparer.Ordinal).ToList();
             var onlyTable = listed.Paths.Except(row.Paths, StringComparer.Ordinal).ToList();
             if (onlyIndex.Count > 0 || onlyTable.Count > 0)
@@ -333,6 +378,44 @@ public static partial class ByHand
         var shown = string.Join(", ", changed.Take(12)) + (changed.Count > 12 ? $", and {changed.Count - 12} more" : "");
         report.Refuse($"{row.Name}: the code it covers changed between its later record ({later.Path}, made at {later.Commit[..12]}) and {target[..12]}: {shown}. A later record is held as every record checked by hand is, while its paths are unchanged (ADR-0208, 2026-10-12).", IndexPath);
         return false;
+    }
+
+    /// <summary>The key of a row that marks it a Known limitation of a version by decision.</summary>
+    public const string KnownLimitationKey = "knownLimitation";
+
+    /// <summary>Whether <paramref name="version"/> is a version without a suffix, as <c>0.1.0</c>.</summary>
+    public static bool IsStableVersion(string version) => StableVersion().IsMatch(version);
+
+    // A row's knownLimitation: a version without a suffix, the day it was decided, and the decision's words. Null,
+    // refused, when any of it is missing or malformed.
+    private static KnownLimitation? Limitation(JsonElement item, string name, Report report)
+    {
+        var what = $"{name}'s '{KnownLimitationKey}' in {IndexPath}";
+        if (item.ValueKind != JsonValueKind.Object)
+        {
+            report.Refuse($"{what} is not an object naming the version, the day it was decided and the decision ('version', 'decided', 'decision').", IndexPath);
+            return null;
+        }
+        var version = Text(item, "version") ?? "";
+        var decided = Text(item, "decided") ?? "";
+        var decision = Text(item, "decision") ?? "";
+        var good = true;
+        if (!IsStableVersion(version))
+        {
+            report.Refuse($"{what} names the version '{version}', and a Known limitation is of a version without a suffix, as 0.1.0; its release candidates are reached through it.", IndexPath);
+            good = false;
+        }
+        if (!DateOnly.TryParseExact(decided, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
+        {
+            report.Refuse($"{what} gives '{decided}' as the day it was decided. Write the day, as 2026-10-12: a row is put out of a version by a decision, and the decision has a date.", IndexPath);
+            good = false;
+        }
+        if (string.IsNullOrWhiteSpace(decision))
+        {
+            report.Refuse($"{what} gives no 'decision'. A row is put out of a version by a decision, and its words are written here, so that a row never stops being asked for without saying why.", IndexPath);
+            good = false;
+        }
+        return good ? new KnownLimitation(version, decided, decision.Trim()) : null;
     }
 
     /// <summary>The key of WR-10's entry that names the records of its later layer-2 runs.</summary>
@@ -440,12 +523,16 @@ public static partial class ByHand
 
     [GeneratedRegex(@"^[0-9a-f]{40}$", RegexOptions.CultureInvariant)]
     private static partial Regex FullCommit();
+
+    [GeneratedRegex(@"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$", RegexOptions.CultureInvariant)]
+    private static partial Regex StableVersion();
 }
 
 /// <summary>
 /// The Definition of Done's Step 4 table, "Rows checked by hand, and the code each covers": a
 /// Markdown table under a heading of that name, whose columns are Row, Where, Checked by hand and
-/// The code it covers; each path in the last column is a code span. Until the table is in
+/// The code it covers; each path in the last column is a code span. A row whose "Checked by hand" cell says
+/// <c>Known limitation of `x.y.z`</c> is put out of that version by decision, as the index marks it. Until the table is in
 /// <c>docs/definition-of-done.md</c>, it is read from its proposal.
 /// </summary>
 public static partial class ByHandTable
@@ -463,7 +550,7 @@ public static partial class ByHandTable
     public static readonly IReadOnlyList<string> Columns = ["Row", "Where", "Checked by hand", "The code it covers"];
 
     /// <summary>One row of the table, and the line it is on.</summary>
-    public sealed record Listed(string Row, string Where, IReadOnlyList<string> Paths, int Line)
+    public sealed record Listed(string Row, string Where, IReadOnlyList<string> Paths, int Line, string? KnownLimitation = null)
     {
         /// <summary>How a message names the row.</summary>
         public string Name => $"{Row} on {Where}";
@@ -535,7 +622,10 @@ public static partial class ByHandTable
             }
             if (rows.Any(r => r.Row == row && r.Where == where))
                 report.Refuse($"{row} on {where} is written twice in the table '{Heading}' in {source}.", source, i + 1);
-            rows.Add(new Listed(row, where, paths, i + 1));
+            var limited = KnownLimitationOf().Matches(cells[2]).Select(m => m.Groups[1].Value).Distinct(StringComparer.Ordinal).ToList();
+            if (limited.Count > 1)
+                report.Refuse($"Line {i + 1} of {source} says {row} on {where} is a Known limitation of {string.Join(" and ", limited)}; a row names one version it is put out of.", source, i + 1);
+            rows.Add(new Listed(row, where, paths, i + 1, limited.Count == 1 ? limited[0] : null));
         }
         return new Table(source, rows);
     }
@@ -562,4 +652,7 @@ public static partial class ByHandTable
 
     [GeneratedRegex(@"`([^`]+)`", RegexOptions.CultureInvariant)]
     private static partial Regex CodeSpan();
+
+    [GeneratedRegex(@"Known limitation of `([0-9]+\.[0-9]+\.[0-9]+)`", RegexOptions.CultureInvariant)]
+    private static partial Regex KnownLimitationOf();
 }

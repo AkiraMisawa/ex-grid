@@ -7,7 +7,13 @@ namespace ExGrid.Release.Tests;
 /// A row of a fixture's record index and table, the <c>verified/*</c> tag its record names, and, for WR-10, the
 /// MudBlazor versions its record's layer-2 runs covered.
 /// </summary>
-public sealed record Row(string Name, string Where, string[] Paths, (string Commit, string Path, string Verdict)? Record = null, string Tag = Fixture.RunTag, string[]? Versions = null, Later[]? Later = null);
+public sealed record Row(string Name, string Where, string[] Paths, (string Commit, string Path, string Verdict)? Record = null, string Tag = Fixture.RunTag, string[]? Versions = null, Later[]? Later = null, Limited? Limited = null);
+
+/// <summary>
+/// A row put out of a version by decision: the index's <c>knownLimitation</c>, and whether the table's row says so
+/// (2026-10-12).
+/// </summary>
+public sealed record Limited(string Version = "0.1.0", string Decided = "2026-10-12", string Decision = "VZ-18 is a Known limitation of 0.1.0.", bool InTable = true);
 
 /// <summary>A later layer-2 run's record WR-10's entry names besides its floor record (2026-10-12).</summary>
 public sealed record Later(string Commit, string Tag, string Path, string Verdict, string[] Versions);
@@ -45,6 +51,8 @@ public static class Fixture
                 };
                 if (r.Later is not null)
                     row["laterRecords"] = r.Later.Select(l => Record((l.Commit, l.Path, l.Verdict), l.Tag, l.Versions)).ToList();
+                if (r.Limited is { } limited)
+                    row["knownLimitation"] = new Dictionary<string, string> { ["version"] = limited.Version, ["decided"] = limited.Decided, ["decision"] = limited.Decision };
                 return row;
             }),
         };
@@ -79,7 +87,7 @@ public static class Fixture
         text.AppendLine("| Row | Where | Checked by hand | The code it covers |");
         text.AppendLine("|---|---|---|---|");
         foreach (var row in rows)
-            text.AppendLine($"| **{row.Name}** | {row.Where} | A check. | {string.Join(", ", row.Paths.Select(p => $"`{p}`"))} |");
+            text.AppendLine($"| **{row.Name}** | {row.Where} | A check.{(row.Limited is { InTable: true } l ? $" *(Decided: a Known limitation of `{l.Version}`.)*" : "")} | {string.Join(", ", row.Paths.Select(p => $"`{p}`"))} |");
         text.AppendLine().AppendLine("### Step 5 — The randomised consistency run");
         return text.ToString();
     }

@@ -18,7 +18,8 @@ public static class Gate
     /// saying every refusal. The rows checked by hand are judged against the signed-off commit X for a
     /// stable version, and against the tagged commit for a candidate, which has no sign-off; WR-10's records
     /// are held besides to the MudBlazor versions <paramref name="mudBlazor"/> gives as published before X's
-    /// commit time, or with no date, and listed (2026-10-12).
+    /// commit time, or with no date, and listed (2026-10-12). A row the record index marks a Known limitation of
+    /// <paramref name="version"/>'s three numbers by decision is reported, not refused (2026-10-12).
     /// </summary>
     public static void Run(Git git, TagVersion version, string tagCommit, Report report, bool fetchMissing = false, IPublishedVersions? mudBlazor = null)
     {
@@ -44,6 +45,6 @@ public static class Gate
         var target = signedOff ?? tagCommit;
         if (version.Kind == ReleaseKind.Stable && signedOff is null)
             report.Notice($"The notes name no signed-off commit this repository holds, so the rows checked by hand are judged against the tagged commit {tagCommit[..12]} instead.");
-        ByHand.Check(git, tag, target, report, fetchMissing, mudBlazor);
+        ByHand.Check(git, tag, target, report, fetchMissing, mudBlazor, version.Version);
     }
 }

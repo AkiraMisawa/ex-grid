@@ -75,6 +75,15 @@ back.
     unlisted; a version that is listed but given no date still refuses the tag. Edits 24 and 27 say it in a dated
     note beside decision (7)'s; the check (`WrapperRange`) and the index's `about` hold it.
 
+11. **VZ-18, the check on the remote-isolation (Citrix) PC, is a Known limitation of `0.1.0`.** It is not run,
+    and the 2026-10-08 observation, which names no commit, is not taken as its record. Edit 27's VZ-18 row says
+    it in a dated note. How the index marks such a row and how the release check reads it are this branch's,
+    said in notes of the check's own, not credited to the user (edit 27; the index's `about`; `ByHand`): the
+    row's `knownLimitation` names the version, the day and the decision, the row keeps no record, the table's
+    row says "Known limitation of" that version, and for that version's candidates and the version the check
+    names the row in a notice instead of refusing it. The Definition of Done's own VZ-18 row, ADR-0202 and the
+    release notes are another branch's, and this list does not edit them.
+
 Besides, as the rule every record checked by hand already lives under (ADR-0208, and decision (3) for the floor
 record), not a new decision: **a later record holds only while the Wrappers' and the demo pages' paths are
 unchanged between its commit and X**, exactly as the floor record is held. Edits 4, 24 and 27 say it in notes of
@@ -195,11 +204,12 @@ Besides: `CONTEXT.md` gains **Release Candidate** (edit 30), and FN-12e's rows n
 24. **ADR-0208, "Checks by hand are repeated only when the code they cover changes": how the check reads the records.** Decisions (3) to (7), (9) and (10): the index, a record's commit fetched through its `verified/*` tag, named for the record's directory, or the tag refused, a candidate judged at its tagged commit, WR-10's floor record indexed beside the rows, a MudBlazor 9.x published after it and before X asking for the layer-2 runs at that version only, that run a run of its own whose record WR-10's entry names besides the floor record, and an unlisted version not asked for. How the check holds the versions, by nuget.org's published dates and X's commit time, is a note of the check's own.
 25. **Definition of Done, §1: a release candidate is no release either.** The notes branch's edit 4, with decision (1)'s pending form and the candidate's note.
 26. **Definition of Done, §1 Evidence: one `.trx` per test project, not twelve.** Not a decision, a count that went stale: the solution holds fourteen test projects with `tests/ExGrid.Release.Tests`. Step 1's loop copies every project's `results.trx` without naming them, so it needs no change.
-27. **Definition of Done, §22 Step 4: the table of rows checked by hand, and the code each covers.** The table ADR-0208 asks for, word for word as `docs/agents/proposals/by-hand-rows-table.md` holds it: decisions (3) to (7) — FN-12e as a Windows row and a macOS row, both with the MudBlazor Chrome's Roboto metrics (`MudExGridPresentation.cs`, `RobotoGlyphTable.cs`), a record's commit kept fetchable by its `verified/*` tag, named for the record's directory, and WR-10's row, whose dated notes say that a MudBlazor 9.x published after its record and before X asks for the layer-2 runs at that version only, and that such a run is a run of its own whose record WR-10's entry names besides the floor record (decision (9)), and that an unlisted version is not asked for (decision (10)). The whole section is a dated addition of 2026-10-12; what the release workflow reads for WR-10 is a note of the check's own. Delete the proposal file in the same change.
+27. **Definition of Done, §22 Step 4: the table of rows checked by hand, and the code each covers.** The table ADR-0208 asks for, word for word as `docs/agents/proposals/by-hand-rows-table.md` holds it: decisions (3) to (7) — FN-12e as a Windows row and a macOS row, both with the MudBlazor Chrome's Roboto metrics (`MudExGridPresentation.cs`, `RobotoGlyphTable.cs`), a record's commit kept fetchable by its `verified/*` tag, named for the record's directory, and WR-10's row, whose dated notes say that a MudBlazor 9.x published after its record and before X asks for the layer-2 runs at that version only, and that such a run is a run of its own whose record WR-10's entry names besides the floor record (decision (9)), and that an unlisted version is not asked for (decision (10)); and VZ-18's row, whose dated note says it is a Known limitation of `0.1.0` (decision (11)). The whole section is a dated addition of 2026-10-12; what the release workflow reads for WR-10, and how it reads a row marked a Known limitation, are notes of the check's own. Delete the proposal file in the same change.
 28. **Definition of Done, §22 Step 7: the sign-off is made against a candidate, and the rewrite went in on `main`.** The notes branch's edit 5 and the workflow branch's conditional edit C2 replaced the same lines; they are one edit here, two dated notes, with decision (1) (the candidate's pending form; X the candidate's commit) and decision (2).
 29. **CONTEXT.md, Release Notes: what a stable version's and a candidate's notes say.** The notes branch's edit 6, with decision (1)'s pending form and the candidate's note.
 30. **CONTEXT.md, Release Candidate: the new term.** AGENTS.md: a new term goes into the glossary. "Release candidate" is the one kind of version whose name holds "release" and that is a prerelease, which Release Notes' _Avoid_ line warns about.
 31. **AGENTS.md (CLAUDE.md is a link to it), Toolchain: what a tag does.** Not an ADR or the Definition of Done, but a background agent does not edit the project instructions either. Once the rewrite lands, the sentence it replaces is false.
+32. **Definition of Done, §22 Step 2: the release tool reads the run.** Not a decision and no rule changed: the DoD audit of 2026-10-12 found that Step 2 had no mechanical reader of the skips. The release tool's `skips` subcommand reads Step 1's `.trx` files against the tests Step 2 names; the note says how, and that the release workflow, which does not run Step 1, does not call it. A note of the tool's own, not credited to the user.
 
 ### 1. docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md
 
@@ -1009,7 +1019,9 @@ change could change its result.
 - **The release workflow compares them** (`git diff --quiet`). It refuses a version without a suffix,
   and a release candidate, when:
   - a path changed;
-  - the row has no record;
+  - the row has no record, and is not marked a Known limitation of the version being released *(2026-10-12,
+    how the release workflow reads a row put out of a version by decision: such a row is named in a notice and
+    never holds; see the index below)*;
   - its latest record is not a pass;
   - its record does not name the commit the index gives it;
   - the record's tag is not `verified/` followed by the name of the record's directory;
@@ -1025,9 +1037,13 @@ change could change its result.
   this table, the row's latest record, the commit that record was made at, and the record's tag. *(2026-10-12,
   how the release workflow checks the WR-10 row: for WR-10 each record names besides the MudBlazor versions
   its layer-2 runs covered, and the entry names the records of later layer-2 runs, by the row's notes,
-  besides the floor record.)* A layer-1 test
-  (`tests/ExGrid.Release.Tests`) fails when the index and the table differ, and the release workflow
-  refuses a tag where they do.
+  besides the floor record.)* *(2026-10-12, how the release workflow reads a row put out of a version by
+  decision: the index marks it `knownLimitation`, naming the version without a suffix, the day of the decision
+  and its words, and gives it no record, and this table's row says "Known limitation of" that version. The
+  mark reaches that version's release candidates and the version, and no other; the workflow refuses it on a
+  row that also has a record, without its date or its words, or where this table does not say the same.)* A
+  layer-1 test (`tests/ExGrid.Release.Tests`) fails when the index and the table differ, and the release
+  workflow refuses a tag where they do.
 
 **The paths are drawn wide** (ADR-0208). A row names whole files, and a directory where its behaviour
 crosses several:
@@ -1078,7 +1094,7 @@ row's and refuses a tag whose Wrappers or demo pages changed since the run.
 | **SH-51** | Windows | Ctrl+F1 reaches `/sheet`, and the toolbar hides and shows | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExSheet/Components/`, `src/ExSheet/Toolbar/`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
 | **SH-52** | Windows | Alt released alone, and F10, show the KeyTips on `/sheet` under both Chromes, and the browser's menu does not open. Each letter is read beside Excel's Home tab. Nothing starts while an edit is open | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid.MudBlazor/`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `src/ExSheet/Toolbar/`, `src/ExSheet.MudBlazor/`, `samples/ExGrid.DemoPages/DemoChrome.cs`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
 | **KB-3** | macOS | Layer 3 on a Mac, where `ControlOrMeta` presses Command: Cmd+Enter fills, on every key path, the editor's included | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Cells/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid.MudBlazor/`, `src/ExSheet/Components/`, `src/ExSheet/SheetFormatKeys.cs`, `src/ExSheet/SheetStructureKeys.cs`, `src/ExSheet/Toolbar/`, `src/ExSheet.MudBlazor/`, `tests/ExGrid.Browser/` |
-| **VZ-18** | the Citrix PC | Ctrl+↓, Ctrl+↑ and PageDown on the Docs Site's blotter paint the rows they reveal, without a further scroll | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExGrid/GridMetrics.cs`, `src/ExGrid/ViewportBox.cs`, `src/ExGrid/ViewportGeometry.cs`, `src/ExGrid/ViewportSize.cs`, `src/ExGrid.MudBlazor/`, `samples/ExGrid.Docs/Examples/Grid/Blotter/`, `samples/ExGrid.Docs/Showcases/Blotter.razor` |
+| **VZ-18** | the Citrix PC | Ctrl+↓, Ctrl+↑ and PageDown on the Docs Site's blotter paint the rows they reveal, without a further scroll. *(2026-10-12, decided with the user: VZ-18, the check on the remote-isolation (Citrix) PC, is a Known limitation of `0.1.0`. It is not run, and the 2026-10-08 observation, which names no commit, is not taken as its record.)* | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExGrid/GridMetrics.cs`, `src/ExGrid/ViewportBox.cs`, `src/ExGrid/ViewportGeometry.cs`, `src/ExGrid/ViewportSize.cs`, `src/ExGrid.MudBlazor/`, `samples/ExGrid.Docs/Examples/Grid/Blotter/`, `samples/ExGrid.Docs/Showcases/Blotter.razor` |
 | **§21.11** | Windows | Where DOM focus is after ↓, → and ↓ ↓ on `/sheet`, with and without a Focus. Read under NVDA, under Narrator, and with neither, on Chrome and Edge | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
 | **WR-10** | Windows or Linux | Step 4's floor run: the layer-3 tests that run under a Wrapper, against a DemoHost built with the MudBlazor every Wrapper declares as its floor, on both hosts, in Chrome and in Edge; and beside it each Wrapper's layer-2 suite at every published version of its declared range. *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only; the floor run, layer 3 at 9.6.0, holds while its paths are unchanged.)* *(2026-10-12, decided with the user: an unlisted version is not asked for; the release check reports it as out of the check because it is unlisted.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own; its record goes in its own `verification/<date>-<name>/` directory, the run tags the commit it verified `verified/` followed by that directory's name, and WR-10's entry in `verification/by-hand.json` names that record besides the floor record. The release check reads every record the entry names: the floor record's paths hold since its commit, and each later record's tag names its commit.)* | `:(glob)src/*.MudBlazor/**`, `samples/ExGrid.DemoPages/` |
 ````
@@ -1175,4 +1191,36 @@ New:
   (`-rc.N`), while a question to Excel is open or a row checked by hand does not hold on its record
   (ADR-0208). Every public member of a shipped project needs an XML doc comment — a missing one
   fails the build
+````
+
+### 32. docs/definition-of-done.md
+
+Old:
+
+````text
+that date); its measurements are explicit tests as PV-21's are, and the variant with a whole-column
+`SUM` on every row runs as `spikes/exsheet-sh19-whole-column`, outside the suite.)*
+````
+
+New:
+
+````text
+that date); its measurements are explicit tests as PV-21's are, and the variant with a whole-column
+`SUM` on every row runs as `spikes/exsheet-sh19-whole-column`, outside the suite.)*
+
+*(2026-10-12, the release tool's reader of this step; the rule above is unchanged.)* The run is read from
+the `.trx` files Step 1 copied into `verification/<date>/`:
+
+```sh
+nix develop -c dotnet run --project tools/release/ExGrid.Release -- skips --trx verification/<date>
+```
+
+It refuses each test that failed, and each that did not run and is not one of those above, by its project
+and its name. It refuses an allowed test left out otherwise than this step says: an explicit measurement
+is written `NotRunnable` in its `.trx`, and a skip `NotExecuted` with the reason its test gives, which must
+be that reason. It refuses a test project of `ExGrid.slnx` with no `.trx`, a `.trx` named for no test
+project, and a `.trx` it cannot read whole. The list it holds the run to is written in its code as this
+step names the tests, and a layer-1 test holds the two together and to the tests in the source. It names
+`CsvClockTests`' skip with its reason; whether the machine was one where `TZ` cannot move the zone is read
+from the run. The release workflow does not run Step 1, so it does not read the run: the sign-off does.
 ````
