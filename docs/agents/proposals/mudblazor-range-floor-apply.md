@@ -86,7 +86,6 @@ Two things the edits rely on, found while writing them:
   list's check refuses a later record whose paths changed.
 - **"Carried forward" names the later records too** (decision (9)): edits 2, 5 and 8 gain a dated note credited
   to it, beside the notes of decisions (3) and (4), which stand as written.
-
 - **The release workflow's path check reads the floor record** (that day's decision (5) on the release
   workflow): WR-10's floor record is indexed in `verification/by-hand.json` with its paths,
   `':(glob)src/*.MudBlazor/**'` and `samples/ExGrid.DemoPages/`, and the workflow refuses a tag whose
@@ -212,9 +211,9 @@ New:
   full on every candidate and every stable tag". The release workflow refuses a tag whose Wrappers or
   demo pages changed since their record, as it refuses one for a row checked by hand. Every other
   automated step still runs on every candidate and every version without a suffix.)*
-  *(2026-10-12, decided with the user, decision (9): a layer-2 run at a 9.x published after the floor
-  record is a run of its own, and its record, which WR-10's entry names besides the floor record, is
-  carried forward as the floor run's is.)*
+  *(2026-10-12, decided with the user: a layer-2 run at a 9.x published after the floor record is a run
+  of its own, and its record, which WR-10's entry names besides the floor record, is carried forward
+  too.)*
   *(2026-10-12, decided with the user: beside the floor run, each Wrapper's layer-2 suite runs with
   MudBlazor pinned in its test project to every published version of the declared range, and is
   recorded with the floor run. A run at the floor alone cannot see what breaks between the ends of the
@@ -232,7 +231,7 @@ New:
   `verification/by-hand.json` names that record (commit, tag, path, verdict, the version it covered)
   besides the floor record. The release check reads every record WR-10's entry names: the floor record's
   paths hold since its commit, and each later record's tag names its commit.)*
-  *(2026-10-12, how the release workflow holds the two notes above: it refuses a tag when no record WR-10's
+  *(2026-10-12, how the release workflow holds the notes above: it refuses a tag when no record WR-10's
   entry names covers such a version, by
   [ADR-0208](./0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md)'s
   check of WR-10's records.)*
@@ -368,7 +367,7 @@ git push origin "verified/${R#verification/}"
 `samples/ExGrid.DemoPages/` are unchanged from the commit it was made at up to X** (ADR-0205's note of
 2026-10-12, the shape of ADR-0208's rows checked by hand). It is the one automated run of this step that
 a record carries forward, an exception to the note of 2026-10-11 above. *(2026-10-12, decided with the
-user, decision (9): a later layer-2 run's record, a run of its own, is carried forward too.)* Whether a record still holds is
+user: a later layer-2 run's record, a run of its own, is carried forward too.)* Whether a record still holds is
 read with git, from the commit its tag names, the glob spelled out so that it reaches every file below
 each Wrapper:
 
@@ -463,6 +462,6 @@ New:
   floor run, with the layer-2 runs recorded beside it, is carried forward by its record, as
   [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)'s
   notes of that date under "The Wrappers' MudBlazor range" say.)*
-  *(2026-10-12, decided with the user, decision (9): a layer-2 run at a 9.x published after the floor
-  record is a run of its own, and its record is carried forward too.)*
+  *(2026-10-12, decided with the user: a layer-2 run at a 9.x published after the floor record is a run
+  of its own, and its record is carried forward too.)*
 `````
