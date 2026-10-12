@@ -57,10 +57,10 @@ public sealed record ArgumentHint(DeclaredFunction Function, int ArgumentIndex, 
 /// <param name="Length">How many characters it replaces.</param>
 public readonly record struct PointSite(int Start, int Length);
 
-/// <summary>What F4 makes of the text being edited (ADR-0051): the new text, and the selection in it — collapsed to a caret, or over what was rewritten.</summary>
+/// <summary>What F4 makes of the text being edited (ADR-0051): the new text, and the span in it of what was rewritten, which a grid selects in Excel's Edit mode and collapses to a caret at its end elsewhere.</summary>
 /// <param name="Text">The text with the Reference or References cycled.</param>
-/// <param name="SelectionStart">Where the selection starts in <paramref name="Text"/>.</param>
-/// <param name="SelectionEnd">Where it ends; equal to <paramref name="SelectionStart"/> for a caret.</param>
+/// <param name="SelectionStart">Where what was rewritten starts in <paramref name="Text"/>, a Sheet qualifier before it included.</param>
+/// <param name="SelectionEnd">Where it ends.</param>
 public sealed record ReferenceCycle(string Text, int SelectionStart, int SelectionEnd);
 
 /// <summary>
