@@ -127,6 +127,13 @@ at `f5b9f093` as at `8436e45e`. The class members are the script's, as run 17 us
 - Left until the next sign-in: `PreferredUILanguages` ja-JP, which the pending en-GB replaces, and the UI culture and
   the message font, which follow it.
 
+## After the second sign-in (21:40 BST)
+
+`logs/lang-signed-in-again.json` **matches `logs/lang-before.json` in every value**: no override, `PreferredUILanguages`
+en-GB, no `PreferredUILanguagesPending`, the UI culture and the regional format en-GB, the message font Segoe UI, 150%.
+`HKCU\Control Panel\International` is still byte for byte the export of 16:13
+(`logs/international-signed-in-again.log`). Windows is back in English (United Kingdom).
+
 ## Nothing for the Docs Site
 
 This branch adds a verification record only.
