@@ -16,8 +16,8 @@ namespace ExSheet.Engine.Tests;
 /// parts of two kinds joined, <c>R1C1#</c> and structured text) and those that follow from them by the
 /// rule they settle. The forms those leave open — a row or column number 0, a row or column number
 /// past the Sheet's edge (2026-10-12, decided with the user: refused until Excel is asked), an offset
-/// past the edge, and a <c>#</c> after a range, a row, a column or a join — are refused with
-/// <c>#VALUE!</c> and asked by the corpus.
+/// past the edge, and a <c>#</c> after a range, a row, a column or a join, in either style — are
+/// refused with <c>#VALUE!</c> and asked by the corpus.
 /// </summary>
 public class IndirectTests
 {
@@ -326,7 +326,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Value, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: R1C1 text that names no place is #REF!: A1 text read as R1C1 (INDIRECT-035, observed) and, by that rule, other text that is not R1C1 notation; parts of two kinds joined (INDIRECT-058, 062, observed; 075 to 077 ask the other orders), whatever their parts would read; a # after one cell that does not spill (as A1#'s INDIRECT-042; 079 asks it); a table never declared; and another Sheet's name, by the rule INDIRECT-008 observed in A1 style (093 asks it), whatever follows it, since every reading of the rest names a place on a Sheet that is not there
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: R1C1 text that names no place is #REF!: A1 text read as R1C1 (INDIRECT-035, observed) and, by that rule, other text that is not R1C1 notation, which no case asks; parts of two kinds joined (INDIRECT-058, 062, observed; 075 to 077 ask the other orders), whatever their parts would read; a # after one cell that does not spill (as A1#'s INDIRECT-042; 079 asks it); a table never declared; and another Sheet's name, by the rule INDIRECT-008 observed in A1 style (093 asks it), whatever follows it, since every reading of the rest names a place on a Sheet that is not there
     [InlineData("B3")]
     [InlineData("Sheet2!R3")]
     [InlineData("Sheet2!C2")]
@@ -367,7 +367,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an R1C1 range, row or column is refused with #VALUE!, whatever the parts joined: the second area pass observed it after one cell only (INDIRECT-060), and the readings part, no place or the Spill Range of a cell it names or the cells themselves; after parts of two kinds joined, no place as R2C2:R3 is (INDIRECT-058) or the first cell's Spill Range (INDIRECT-090, 091, 094 ask it)
+    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an R1C1 range, row or column is refused with #VALUE!, whatever the parts joined, as in A1 style: the second area pass observed it after one cell only (INDIRECT-060), and the readings part, no place, the first cell's Spill Range, the cells themselves or the first cell joined to the second's Spill Range; after parts of two kinds joined, no place as R2C2:R3 is (INDIRECT-058) or the first cell's Spill Range (INDIRECT-090, 091, 094, 097 ask it)
     [InlineData("C2", "R2C2:R3C2#")]
     [InlineData("C2", "R1C1:R2C1#")]
     [InlineData("C2", "R3#")]
@@ -394,8 +394,63 @@ public class IndirectTests
         sheet.Enter(cell, $"=SUM(INDIRECT(\"{text}\",FALSE))");
 
         Assert.Equal(ErrorValue.Value, sheet.Error(cell));
-        // In A1 style a # after a range is the engine's #REF!, which no run has observed (INDIRECT-092 asks it).
-        Assert.Equal(ErrorValue.Ref, sheet.Evaluate("=SUM(INDIRECT(\"A1:A2#\"))").Error);
+    }
+
+    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an A1 range, whole row or whole column is refused with #VALUE!, as in R1C1 style: no run has observed it, and the readings part, no place as the intersection is (INDIRECT-021), the first cell's Spill Range, the cells themselves, or the first cell joined to the second's Spill Range, A1:(A2#) (INDIRECT-092, 096 ask it)
+    [InlineData("C2", "A1:A2#")]
+    [InlineData("C2", "A2:A1#")]
+    [InlineData("C2", "a1:a2#")]
+    [InlineData("C2", "$A$1:A2#")]
+    [InlineData("C2", "A1:A1#")]
+    [InlineData("C2", "A:A#")]
+    [InlineData("C2", "A:B#")]
+    [InlineData("C2", "1:1#")]
+    [InlineData("C2", "1:3#")]
+    [InlineData("C2", "Sheet1!A1:A2#")]
+    [InlineData("C2", "'Sheet1'!A:A#")]
+    [InlineData("ZZ1000", "A1:A2#")]
+    public void ADR0124_indirect_refuses_a_hash_after_an_a1_range_row_or_column(string cell, string text)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("A1", "=SEQUENCE(3)");
+        sheet.Enter(cell, $"=SUM(INDIRECT(\"{text}\"))");
+
+        Assert.Equal(ErrorValue.Value, sheet.Error(cell));
+    }
+
+    [Fact] // ADR-0124 (2026-10-12), ADR-0047: where the second cell spills, a # after a range gives each reading a different answer, 4 for A1:(A2#), 2 for the range with the # passed over, #REF! for no place or A1's Spill Range, and is refused in either style (INDIRECT-096, 097 ask it)
+    public void ADR0124_indirect_refuses_a_hash_after_a_range_whose_second_cell_spills()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("A2", "=SEQUENCE(2)");
+        sheet.Enter("C1", "=SUM(INDIRECT(\"A1:A2#\"))");
+        sheet.Enter("C2", "=SUM(INDIRECT(\"R1C1:R2C1#\",FALSE))");
+
+        Assert.Equal(ErrorValue.Value, sheet.Error("C1"));
+        Assert.Equal(ErrorValue.Value, sheet.Error("C2"));
+        // The readings the refusal keeps apart, each answered differently over this fixture.
+        Assert.Equal(4, sheet.Evaluate("=SUM(A1:A3)").Number);
+        Assert.Equal(2, sheet.Evaluate("=SUM(INDIRECT(\"A1:A2\"))").Number);
+        Assert.Equal(3, sheet.Evaluate("=SUM(INDIRECT(\"A2#\"))").Number);
+        Assert.Equal(ErrorValue.Ref, sheet.Evaluate("=SUM(INDIRECT(\"A1#\"))").Error);
+    }
+
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: A1 text naming another Sheet names no place, as INDIRECT-008 observed, whatever follows the name, a # after a range included, since every reading of the rest names a place on a Sheet that is not there
+    [InlineData("Sheet2!B2")]
+    [InlineData("Sheet2!A1#")]
+    [InlineData("Sheet2!A1:A2#")]
+    [InlineData("Sheet2!A:A#")]
+    [InlineData("Sheet2!1:1#")]
+    [InlineData("'Sheet 2'!A1:A2#")]
+    [InlineData("Sheet2!B2 x")]
+    public void ADR0124_indirect_a1_text_naming_another_sheet_is_ref_whatever_follows(string text)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("A1", "=SEQUENCE(3)");
+        sheet.Enter("C2", $"=SUM(INDIRECT(\"{text}\"))");
+
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
     }
 
     [Theory] // ADR-0124 (2026-10-12), the area passes (INDIRECT-036, 045, 050): relative R1C1 text counts from the Formula's own cell, R and C each with a number or an offset in brackets
@@ -441,7 +496,7 @@ public class IndirectTests
         Assert.Equal(expected, sheet.Number(cell), 9);
     }
 
-    [Theory] // ADR-0124, ADR-0047 (2026-10-12, decided with the user: in R1C1 style, a row or column number past the Sheet's edge is refused with #VALUE! until Excel is asked; INDIRECT-074 and 095 ask it): it could name no place, as XFE1 does in A1 style, or a place, as an offset past the edge does (INDIRECT-052), and is refused whatever an offset beside it, a join or a # after it would read
+    [Theory] // ADR-0124, ADR-0047 (2026-10-12, decided with the user: in R1C1 style, a row or column number past the Sheet's edge is refused with #VALUE! until Excel is asked; INDIRECT-074 asks it), INDIRECT-095 asking a column: it could name no place, as XFE1 does in A1 style, or a place, as an offset past the edge does (INDIRECT-052), and is refused whatever an offset beside it, a join or a # after it would read
     [InlineData("C2", "R1048577C2")]
     [InlineData("C2", "R2C16385")]
     [InlineData("C2", "R3C16385")]
@@ -467,7 +522,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Value, sheet.Error(cell));
     }
 
-    [Theory] // ADR-0124 (2026-10-12, decided with the user: A1 text past the Sheet's edge stays #REF!): a column past XFD names no place, as XFE1 was observed to (INDIRECT-017), and a row past 1048576 by the same rule, in a cell, a range, whole columns or whole rows
+    [Theory] // ADR-0124 (2026-10-12, decided with the user: A1 text past the Sheet's edge stays #REF!): a column past XFD names no place, as XFE1 was observed to (INDIRECT-017), and a row past 1048576 by the same rule, in a cell, a range, whole columns or whole rows, whatever follows, a # included
     [InlineData("XFE1")]
     [InlineData("B1048577")]
     [InlineData("B2:B1048577")]
@@ -475,6 +530,9 @@ public class IndirectTests
     [InlineData("XFE:XFE")]
     [InlineData("1048577:1048577")]
     [InlineData("Sheet1!XFE1")]
+    [InlineData("XFE1#")]
+    [InlineData("A1:XFE1#")]
+    [InlineData("B1:B1048577#")]
     public void ADR0124_indirect_a1_text_past_the_sheets_edge_is_ref(string text)
     {
         var sheet = MicrosoftsExample();

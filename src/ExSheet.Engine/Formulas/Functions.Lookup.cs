@@ -221,24 +221,25 @@ internal static partial class FunctionLibrary
     /// leading <c>=</c>, an intersection, a column past <c>XFD</c>, A1 text read as R1C1 and R1C1 text
     /// read as A1, another Sheet's name in A1 style, a table never declared, a column the table does not
     /// have, and R1C1 parts of two kinds joined by <c>:</c> (INDIRECT-003, 007, 008, 016 to 022, 035, 040,
-    /// 041, 058, 062; ADR-0046, ADR-0049). The engine's rule, generalised from the intersection
-    /// (INDIRECT-021), is that A1 text going on past its Reference names no place; so <c>A1:A2#</c> is
-    /// the engine's <c>#REF!</c>, which no run has observed (INDIRECT-092 asks it). <c>#VALUE!</c> until a
-    /// run observes them, where the observed answers leave the readings apart, in R1C1 style: a row or
-    /// column number 0 (<c>R0C2</c>, INDIRECT-073); a row or column number past the Sheet's edge
-    /// (<c>R1048577C2</c>, <c>R2C16385</c>), whatever an offset beside it reads, while A1 text past the
-    /// edge stays <c>#REF!</c> as <c>XFE1</c> was observed to be (2026-10-12, decided with the user: an
-    /// R1C1 number past the edge is refused with <c>#VALUE!</c> until Excel is asked; INDIRECT-074 and
-    /// 095 ask it); an offset past the Sheet's edge (<c>R[-5]C[-1]</c> from C2, which Excel reads as a
+    /// 041, 058, 062; ADR-0046, ADR-0049). <c>#REF!</c> too, by the rule those settle, which no case asks:
+    /// other A1 text that goes on past its Reference, the engine's rule generalised from the intersection
+    /// (INDIRECT-021); a row past 1048576, as <c>XFE1</c>'s column is (2026-10-12, decided with the user:
+    /// A1 text past the Sheet's edge stays <c>#REF!</c>); and other text that is not R1C1 notation read in
+    /// R1C1 style, as <c>B3</c> is (INDIRECT-035). <c>#VALUE!</c> until a run observes them, where the
+    /// observed answers leave the readings apart. In R1C1 style: a row or column number 0 (<c>R0C2</c>,
+    /// INDIRECT-073); a row or column number past the Sheet's edge (<c>R1048577C2</c>, <c>R2C16385</c>),
+    /// whatever an offset beside it reads (2026-10-12, decided with the user: an R1C1 number past the edge
+    /// is refused with <c>#VALUE!</c> until Excel is asked; INDIRECT-074 asks it), and INDIRECT-095 asks a
+    /// column; and an offset past the Sheet's edge (<c>R[-5]C[-1]</c> from C2, which Excel reads as a
     /// place, INDIRECT-052, though no run has told whether it wraps round to the far side or stops at the
-    /// edge; INDIRECT-082 to 084 ask it); and a <c>#</c> after a range, a row or a column, whatever the
-    /// parts joined (<c>R2C2:R3C2#</c>, <c>R3#</c>, <c>C2#</c>, <c>R2C2:R3#</c>; INDIRECT-090, 091 and
-    /// 094 ask it); in either style, the structured forms a Formula does not take (<c>#All</c>,
-    /// <c>@</c>). <c>#VALUE!</c> by decision, in either style: a declared Linked Table's bare name, which
-    /// Excel reads as the table's data (INDIRECT-043, 053 to 057), since a Linked Table is read by key,
-    /// never by position (ADR-0049's rule 2; 2026-10-12, decided with the user: the bare name is refused,
-    /// in either style). Relative R1C1 text in a Formula evaluated in no cell is <c>#VALUE!</c> too, as
-    /// <c>ROW()</c> there is.
+    /// edge; INDIRECT-082 to 084 ask it). In either style: a <c>#</c> after a range, a row or a column,
+    /// whatever the parts joined (<c>A1:A2#</c>, <c>A:A#</c>, <c>R2C2:R3C2#</c>, <c>R3#</c>, <c>C2#</c>,
+    /// <c>R2C2:R3#</c>; INDIRECT-090 to 092, 094, 096 and 097 ask it); and the structured forms a Formula
+    /// does not take (<c>#All</c>, <c>@</c>). <c>#VALUE!</c> by decision, in either style: a declared
+    /// Linked Table's bare name, which Excel reads as the table's data (INDIRECT-043, 053 to 057), since a
+    /// Linked Table is read by key, never by position (ADR-0049's rule 2; 2026-10-12, decided with the
+    /// user: the bare name is refused, in either style). Relative R1C1 text in a Formula evaluated in no
+    /// cell is <c>#VALUE!</c> too, as <c>ROW()</c> there is.
     /// </remarks>
     private static Operand Indirect(FunctionCall call)
     {
@@ -259,23 +260,34 @@ internal static partial class FunctionLibrary
         return isA1 ? IndirectA1(call, text) : IndirectRowColumn(call, text);
     }
 
-    /// <summary>INDIRECT's A1-style text: a Reference as a Formula writes one, <c>A1#</c>, or a Linked Table's text (<see cref="IndirectTableText"/>).</summary>
+    /// <summary>INDIRECT's A1-style text: a Reference as a Formula writes one, <c>A1#</c>, or a Linked Table's text (<see cref="IndirectTableText"/>); a <c>#</c> after a range, a row or a column refused.</summary>
     private static Operand IndirectA1(FunctionCall call, string text)
     {
         var cells = call.Evaluator.Cells;
         if (IndirectTableText(call, text) is { } table) return table;
+        // A column past XFD names no place, as XFE1 was observed to (INDIRECT-017), and a row past 1048576
+        // by the same rule (2026-10-12, decided with the user: A1 text past the Sheet's edge stays #REF!).
+        // The reader reads no Reference there, and every reading of the text meets that place, so it is
+        // #REF! whatever follows it.
         if (Lexer.ReadReference(text, 0, out var length) is not { } reference) return Operand.Of(ErrorValue.Ref);
-        // A1#: the Spill Range of the Formula in A1, read as the typed one is (ADR-0125).
-        if (reference.Shape == ReferenceShape.Cell && length == text.Length - 1 && text[length] == '#')
+        // Another Sheet's name names no place, as Sheet2!B2 was observed to (INDIRECT-008); so too whatever
+        // follows the name, a # included, since every reading of the rest names a place on a Sheet that is
+        // not there.
+        if (!cells.IsLocal(reference)) return Operand.Of(ErrorValue.Ref);
+        if (length == text.Length - 1 && text[length] == '#')
         {
-            if (!cells.IsLocal(reference)) return Operand.Of(ErrorValue.Ref);
-            return cells.Spill(new CellAddress(reference.Row1, reference.Column1));
+            // A1#: the Spill Range of the Formula in A1, read as the typed one is (INDIRECT-026, 042; ADR-0125).
+            if (reference.Shape == ReferenceShape.Cell) return cells.Spill(new CellAddress(reference.Row1, reference.Column1));
+            // A # after a range, a whole row or a whole column, which no run has observed, and the readings
+            // part: no place, as the intersection is (INDIRECT-021); the Spill Range of the first cell; the
+            // cells themselves, the # passed over; or the first cell joined to the second's Spill Range,
+            // A1:(A2#), the # binding to the cell before it. Refused until Excel is asked, as in R1C1 style
+            // (INDIRECT-092, 096).
+            return Operand.Of(ErrorValue.Value);
         }
         // Text that goes on past the Reference is no Reference: the engine's rule, generalised from the
-        // intersection Excel was observed to refuse (INDIRECT-021). A # after a range, A1:A2#, is the
-        // engine's #REF! by that rule, which no run has observed (INDIRECT-092 asks it). A column past XFD
-        // names no place, as XFE1 was observed to (INDIRECT-017), and a row past 1048576 by the same rule.
-        if (length != text.Length || !cells.IsLocal(reference)) return Operand.Of(ErrorValue.Ref);
+        // intersection Excel was observed to refuse (INDIRECT-021).
+        if (length != text.Length) return Operand.Of(ErrorValue.Ref);
         return Operand.Of(reference.Area);
     }
 
@@ -319,17 +331,18 @@ internal static partial class FunctionLibrary
     /// combination, with leading 0s anywhere (INDIRECT-067 to 072); parts of two kinds joined
     /// <c>#REF!</c> in any order (INDIRECT-075 to 077); a <c>#</c> after any one cell, relative ones
     /// included, its Spill Range, and <c>#REF!</c> where the cell does not spill, as <c>A1#</c> is
-    /// (INDIRECT-078, 079); any other text that is not R1C1 notation <c>#REF!</c>, as INDIRECT-035's is;
-    /// and another Sheet's name <c>#REF!</c>, whatever follows it, by the rule INDIRECT-008 observed in A1
-    /// style (INDIRECT-093 asks it). A Linked Table's text is read as in A1 style
-    /// (<see cref="IndirectTableText"/>). <c>#VALUE!</c> where the observed answers leave the readings
-    /// apart: a row or column number 0 (INDIRECT-073); a row or column number past the Sheet's edge, which
-    /// could name no place, as <c>XFE1</c> does in A1 style, or a place as an offset past the edge does
-    /// (2026-10-12, decided with the user: refused until Excel is asked; INDIRECT-074 and 095 ask it); an
-    /// offset past the Sheet's edge, which Excel reads as a place (INDIRECT-052 is 0, a blank cell, not
-    /// <c>#REF!</c>), though no run has told whether it wraps round to the Sheet's far side or stops at
-    /// the edge (INDIRECT-082 to 084 ask it); and a <c>#</c> after a range, a row or a column, whatever
-    /// the parts joined (INDIRECT-090, 091 and 094 ask it).
+    /// (INDIRECT-078, 079); and another Sheet's name <c>#REF!</c>, whatever follows it, by the rule
+    /// INDIRECT-008 observed in A1 style (INDIRECT-093 asks it). Any other text that is not R1C1 notation
+    /// is <c>#REF!</c>, read by the rule INDIRECT-035 settles, and no case asks it. A Linked Table's text
+    /// is read as in A1 style (<see cref="IndirectTableText"/>). <c>#VALUE!</c> where the observed answers
+    /// leave the readings apart: a row or column number 0 (INDIRECT-073); a row or column number past the
+    /// Sheet's edge, which could name no place, as <c>XFE1</c> does in A1 style, or a place as an offset
+    /// past the edge does (2026-10-12, decided with the user: refused until Excel is asked; INDIRECT-074
+    /// asks it), and INDIRECT-095 asks a column; an offset past the Sheet's edge, which Excel reads as a
+    /// place (INDIRECT-052 is 0, a blank cell, not <c>#REF!</c>), though no run has told whether it wraps
+    /// round to the Sheet's far side or stops at the edge (INDIRECT-082 to 084 ask it); and a <c>#</c>
+    /// after a range, a row or a column, whatever the parts joined, as in A1 style (INDIRECT-090, 091, 094
+    /// and 097 ask it).
     /// </summary>
     private static Operand IndirectRowColumn(FunctionCall call, string text)
     {
@@ -350,10 +363,11 @@ internal static partial class FunctionLibrary
         var first = RowColumnPart.Read(match.Groups["first"].Value);
         var second = joined ? RowColumnPart.Read(match.Groups["second"].Value) : first;
         // A # after one cell is its Spill Range, as A1#'s is (INDIRECT-060). After a range, a row or a
-        // column no run has observed it, and the readings part: no place, or the Spill Range of a cell
-        // the text names, or the cells themselves. So too after parts of two kinds joined, before the
-        // join is judged: R2C2:R3# could be no place, as R2C2:R3 is, or B2's Spill Range where B2
-        // spills. Refused until Excel is asked (INDIRECT-090, 091, 094).
+        // column no run has observed it, and the readings part: no place; the Spill Range of the first
+        // cell; the cells themselves, the # passed over; or the first cell joined to the second's Spill
+        // Range, R1C1:(R2C1#), the # binding to the cell before it. So too after parts of two kinds
+        // joined, before the join is judged: R2C2:R3# could be no place, as R2C2:R3 is, or B2's Spill
+        // Range where B2 spills. Refused until Excel is asked, as in A1 style (INDIRECT-090, 091, 094, 097).
         if (spilled && (joined || !first.IsCell)) return Operand.Of(ErrorValue.Value);
         // Parts of two kinds joined are no Reference: a cell and a whole row (INDIRECT-058), a whole row
         // and a whole column (INDIRECT-062), and so a cell and a column, whichever comes first, whatever
@@ -371,8 +385,8 @@ internal static partial class FunctionLibrary
         // What is left to fall off the Sheet is refused: a number 0, which no run has asked (INDIRECT-073);
         // a number past its edge, which could name no place, as XFE1 does in A1 style, or a place, as an
         // offset past the edge does (2026-10-12, decided with the user: refused until Excel is asked;
-        // INDIRECT-074, 095); and an offset past its edge, which Excel reads as a place no run has yet
-        // told (INDIRECT-052; 082 to 084 ask it).
+        // INDIRECT-074 asks it), INDIRECT-095 asking a column; and an offset past its edge, which Excel
+        // reads as a place no run has yet told (INDIRECT-052; 082 to 084 ask it).
         if (row1 < 0 || row2 < 0 || column1 < 0 || column2 < 0) return Operand.Of(ErrorValue.Value);
         if (spilled) return call.Evaluator.Cells.Spill(new CellAddress(row1, column1));
         var reference = Reference.Rectangle(sheet, Math.Min(row1, row2), Math.Min(column1, column2), Math.Max(row1, row2), Math.Max(column1, column2), true, true, true, true);

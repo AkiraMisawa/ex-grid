@@ -1,6 +1,6 @@
 {
   "area": "indirect",
-  "about": "INDIRECT (docs/specs/exsheet-functions ticket 18; ADR-0124's notes of 2026-10-10 and 2026-10-12; ADR-0049): A1-style text naming a cell or a range of the same Sheet, with or without its own qualifier, read as it stands after the recalculation (volatile). Its text is not rewritten by an insertion or a deletion. Observed by the seventeenth Windows run and the two area passes of 2026-10-12, and read as Excel reads them: R1C1 text (a1 FALSE, 0, a blank or left empty) with R and C each a number counted from 1, a leading 0 included (R3C2, R03C2), an offset in brackets from the Formula's own cell, +, 0 and -0 included (R[1]C[-1], R[+1]C[-1], R[0]C[-1], R[-0]C[-1]), or no number, the Formula's own row or column (RC[-1], R[2]C); a row part alone a whole row (R3, R[1]), a column part alone a whole column (C2, C[-1]); two parts of the same kind joined by ':' the rectangle they span (R2C2:R5C2, R2:R3, C1:C2, RC[-1]:R[1]C[-1]); parts of two kinds joined, which name no place, #REF! (R2C2:R3, R3:C2); one cell followed by #, its Spill Range (R1C1#); A1#, read as the typed A1# is, #REF! where A1 does not spill; a structured reference's text, read as the typed Table[Column] is, in either style; and text that names no place, #REF!: another Sheet's name in A1 style (Sheet2!B2), a column past XFD (XFE1), A1 text read as R1C1 (B3) and R1C1 text read as A1 (R3C2), empty text, a number, a space before the Reference, a leading =, two ranges with a space between them, an intersection (B2:B5 B3:C3), and a table or column that does not exist. Read by the rule those settle, and asked by INDIRECT-067 to INDIRECT-072, INDIRECT-075 to INDIRECT-081 and INDIRECT-093: the other combinations of a number, an offset and none, with leading 0s anywhere; the other orders of parts of two kinds joined; # after a relative cell, or after one that does not spill, in R1C1 style; structured text in R1C1 style; and another Sheet's name in R1C1 style, #REF! as in A1 style, whatever follows it. The engine's rule, generalised from the intersection (INDIRECT-021): A1 text that goes on past its Reference names no place, #REF!; and a row past 1048576 in A1 style is #REF!, as XFE1's column is. By that rule, and the engine's answer, which no run has observed: A1 text with # after a range (A1:A2#) is #REF! (INDIRECT-092 asks it). #VALUE! until a run observes them, where the observed answers leave the readings apart, in R1C1 style: a row or column number 0 (INDIRECT-073); a row or column number past the Sheet's edge (R1048577C2, R2C16385), whatever an offset beside it reads, which could name no place, as XFE1 does in A1 style, or a place, as an offset past the edge does (2026-10-12, decided with the user: refused with #VALUE! until Excel is asked, while A1 text past the edge stays #REF!, as XFE1 was observed to be; INDIRECT-074 and INDIRECT-095 ask it); an offset past the Sheet's edge, which Excel reads as a place (INDIRECT-052 is 0, a blank cell) though no run has told whether it wraps round to the far side or stops at the edge (INDIRECT-082 to INDIRECT-084 ask it); and # after a range, a row or a column, whatever the parts joined (R2C2:R3C2#, R3#, C2#, R2C2:R3#; INDIRECT-090, INDIRECT-091 and INDIRECT-094 ask it). #VALUE! by decision (ADR-0049's rule 2, a Linked Table is read by key, never by position; 2026-10-12, decided with the user: the bare name stays #VALUE!, in either style): a declared Linked Table's bare name, in either style, which Excel reads as the table's data (INDIRECT-043 and INDIRECT-053 to INDIRECT-057 record Excel's answers).",
+  "about": "INDIRECT (docs/specs/exsheet-functions ticket 18; ADR-0124's notes of 2026-10-10 and 2026-10-12; ADR-0049): A1-style text naming a cell or a range of the same Sheet, with or without its own qualifier, read as it stands after the recalculation (volatile). Its text is not rewritten by an insertion or a deletion. Observed by the seventeenth Windows run and the two area passes of 2026-10-12, and read as Excel reads them: R1C1 text (a1 FALSE, 0, a blank or left empty) with R and C each a number counted from 1, a leading 0 included (R3C2, R03C2), an offset in brackets from the Formula's own cell, +, 0 and -0 included (R[1]C[-1], R[+1]C[-1], R[0]C[-1], R[-0]C[-1]), or no number, the Formula's own row or column (RC[-1], R[2]C); a row part alone a whole row (R3, R[1]), a column part alone a whole column (C2, C[-1]); two parts of the same kind joined by ':' the rectangle they span (R2C2:R5C2, R2:R3, C1:C2, RC[-1]:R[1]C[-1]); parts of two kinds joined, which name no place, #REF! (R2C2:R3, R3:C2); one cell followed by #, its Spill Range (R1C1#); A1#, read as the typed A1# is, #REF! where A1 does not spill; a structured reference's text, read as the typed Table[Column] is, in either style; and text that names no place, #REF!: another Sheet's name in A1 style (Sheet2!B2), a column past XFD (XFE1), A1 text read as R1C1 (B3) and R1C1 text read as A1 (R3C2), empty text, a number, a space before the Reference, a leading =, two ranges with a space between them, an intersection (B2:B5 B3:C3), and a table or column that does not exist. Read by the rule those settle, and asked by INDIRECT-067 to INDIRECT-072, INDIRECT-075 to INDIRECT-081 and INDIRECT-093: the other combinations of a number, an offset and none, with leading 0s anywhere; the other orders of parts of two kinds joined; # after a relative cell, or after one that does not spill, in R1C1 style; structured text in R1C1 style; and another Sheet's name in R1C1 style, #REF! as in A1 style, whatever follows it. #REF! too, read by the rule those settle and asked by no case: other A1 text that goes on past its Reference, the engine's rule generalised from the intersection (INDIRECT-021); a row past 1048576 in A1 style, as XFE1's column is (2026-10-12, decided with the user: A1 text past the Sheet's edge stays #REF!); and other text that is not R1C1 notation, read in R1C1 style, as B3 is (INDIRECT-035). #VALUE! until a run observes them, where the observed answers leave the readings apart. In R1C1 style: a row or column number 0 (INDIRECT-073); a row or column number past the Sheet's edge (R1048577C2, R2C16385), whatever an offset beside it reads, which could name no place, as XFE1 does in A1 style, or a place, as an offset past the edge does (2026-10-12, decided with the user: refused with #VALUE! until Excel is asked, while A1 text past the edge stays #REF!, as XFE1 was observed to be; INDIRECT-074 asks it), and INDIRECT-095 asks a column; and an offset past the Sheet's edge, which Excel reads as a place (INDIRECT-052 is 0, a blank cell) though no run has told whether it wraps round to the far side or stops at the edge (INDIRECT-082 to INDIRECT-084 ask it). In either style: # after a range, a row or a column, whatever the parts joined (A1:A2#, A:A#, R2C2:R3C2#, R3#, C2#, R2C2:R3#), which no run has observed and whose readings part: no place, the Spill Range of the first cell, the cells themselves with the # passed over, or the first cell joined to the second's Spill Range, A1:(A2#) (INDIRECT-090 to INDIRECT-092, INDIRECT-094, INDIRECT-096 and INDIRECT-097 ask it). #VALUE! by decision (ADR-0049's rule 2, a Linked Table is read by key, never by position; 2026-10-12, decided with the user: the bare name stays #VALUE!, in either style): a declared Linked Table's bare name, in either style, which Excel reads as the table's data (INDIRECT-043 and INDIRECT-053 to INDIRECT-057 record Excel's answers).",
 
   "cases": [
     {
@@ -428,7 +428,7 @@
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "C2": "=INDIRECT(\"R[-5]C[-1]\",FALSE)"},
       "check": "C2",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0124 (2026-10-12): an offset past the Sheet's edge is #VALUE! until a run tells where it lands; the second area pass of 2026-10-12 read 0 here, a blank cell, which wrapping round (B1048573) and stopping at the edge (B1) both give; a row or column number past the edge is #VALUE! too (2026-10-12, decided with the user: refused until Excel is asked; INDIRECT-074 and INDIRECT-095 ask it)",
+      "engineDiffersByDecision": "ADR-0124 (2026-10-12): an offset past the Sheet's edge is #VALUE! until a run tells where it lands; the second area pass of 2026-10-12 read 0 here, a blank cell, which wrapping round (B1048573) and stopping at the edge (B1) both give; a row or column number past the edge is #VALUE! too (2026-10-12, decided with the user: refused until Excel is asked; INDIRECT-074 asks it), and INDIRECT-095 asks a column",
       "excelExpect": {"value2": 0}
     },
     {
@@ -713,11 +713,11 @@
     {
       "id": "INDIRECT-090",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: R1C1 text with # after a range, R1C1:R2C1#, over =SEQUENCE(3) in A1 (#REF! if it names no place, 6 if it is the Spill Range of the range's first cell, 3 if the # is passed over and the range read)",
+      "description": "Refused until Excel is asked: R1C1 text with # after a range, R1C1:R2C1#, over =SEQUENCE(3) in A1 (#REF! if it names no place, or if it is R1C1 joined to R2C1's Spill Range, R1C1:(R2C1#), since A2 lies in A1's spill and spills nothing; 6 if it is the Spill Range of the range's first cell; 3 if the # is passed over and the range read). #REF! here does not tell no place from the join; INDIRECT-097 does",
       "cells": {"A1": "=SEQUENCE(3)", "ZZ1000": "=SUM(INDIRECT(\"R1C1:R2C1#\",FALSE))"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0124 (2026-10-12): a # after an R1C1 range, row or column is #VALUE! until a run observes it, since the observed answers read # after one cell only (INDIRECT-060) and the readings part; recorded, so that a run reads Excel's answer"
+      "engineDiffersByDecision": "ADR-0124 (2026-10-12): a # after an R1C1 range, row or column is #VALUE! until a run observes it, as in A1 style, since the observed answers read # after one cell only (INDIRECT-060) and the readings part; recorded, so that a run reads Excel's answer"
     },
     {
       "id": "INDIRECT-091",
@@ -731,10 +731,11 @@
     {
       "id": "INDIRECT-092",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: A1 text with # after a range, A1:A2#, over =SEQUENCE(3) in A1, is #REF!, text that goes on past the Reference, as an intersection's does (INDIRECT-021); 6 would be the Spill Range of the range's first cell, 3 the range with the # passed over",
+      "description": "Refused until Excel is asked: A1 text with # after a range, A1:A2#, over =SEQUENCE(3) in A1 (#REF! if it names no place, as the intersection does, INDIRECT-021, or if it is A1 joined to A2's Spill Range, A1:(A2#), since A2 lies in A1's spill and spills nothing; 6 if it is the Spill Range of the range's first cell; 3 if the # is passed over and the range read). #REF! here does not tell no place from the join; INDIRECT-096 does",
       "cells": {"A1": "=SEQUENCE(3)", "ZZ1000": "=SUM(INDIRECT(\"A1:A2#\"))"},
       "check": "ZZ1000",
-      "expect": {"value2": "#REF!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0124 (2026-10-12): a # after an A1 range, row or column is #VALUE! until a run observes it, as in R1C1 style, since the observed answers read # after one cell only (INDIRECT-026, 042) and the readings part; the engine answered #REF! before, as text that goes on past its Reference; recorded, so that a run reads Excel's answer"
     },
     {
       "id": "INDIRECT-093",
@@ -747,7 +748,7 @@
     {
       "id": "INDIRECT-094",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: R1C1 text with # after a cell joined to a whole row, R2C2:R3#, over =SEQUENCE(3) in B2 (#REF! if it names no place, as R2C2:R3 does, INDIRECT-058; 6 if it is the Spill Range of B2, the first cell)",
+      "description": "Refused until Excel is asked: R1C1 text with # after a cell joined to a whole row, R2C2:R3#, over =SEQUENCE(3) in B2 (#REF! if it names no place, as R2C2:R3 does, INDIRECT-058, whether the # is passed over or read after the row, which spills nothing; 6 if it is the Spill Range of B2, the first cell)",
       "cells": {"B2": "=SEQUENCE(3)", "ZZ1000": "=SUM(INDIRECT(\"R2C2:R3#\",FALSE))"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
@@ -760,7 +761,25 @@
       "cells": {"A2": "7", "XFD2": "9", "ZZ1000": "=INDIRECT(\"R2C16385\",FALSE)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0124 (2026-10-12, decided with the user: in R1C1 style, a row or column number past the Sheet's edge is refused with #VALUE! until Excel is asked; A1 text past the edge stays #REF!, as XFE1 was observed to be, INDIRECT-017): it could name no place, as XFE1 does, or a place, as an offset past the edge does (INDIRECT-052); recorded, so that a run reads Excel's answer"
+      "engineDiffersByDecision": "ADR-0124 (2026-10-12, decided with the user: in R1C1 style, a row or column number past the Sheet's edge is refused with #VALUE! until Excel is asked, INDIRECT-074 asking it; A1 text past the edge stays #REF!, as XFE1 was observed to be, INDIRECT-017): it could name no place, as XFE1 does, or a place, as an offset past the edge does (INDIRECT-052); this case asks a column, beside INDIRECT-074's row; recorded, so that a run reads Excel's answer"
+    },
+    {
+      "id": "INDIRECT-096",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: A1 text with # after a range whose second cell spills, A1:A2#, with A1 holding 1 and =SEQUENCE(2) in A2 (4 if it is A1 joined to A2's Spill Range, A1:(A2#), which is A1:A3; 2 if the # is passed over and the range read; #REF! if it names no place, as the intersection does, INDIRECT-021, or if it is the Spill Range of A1, which spills nothing). With INDIRECT-092, it tells each of the four readings apart",
+      "cells": {"A1": "1", "A2": "=SEQUENCE(2)", "ZZ1000": "=SUM(INDIRECT(\"A1:A2#\"))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0124 (2026-10-12): a # after an A1 range, row or column is #VALUE! until a run observes it, as in R1C1 style, since the observed answers read # after one cell only (INDIRECT-026, 042) and the readings part; recorded, so that a run reads Excel's answer"
+    },
+    {
+      "id": "INDIRECT-097",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: R1C1 text with # after a range whose second cell spills, R1C1:R2C1#, with A1 holding 1 and =SEQUENCE(2) in A2 (4 if it is R1C1 joined to R2C1's Spill Range, R1C1:(R2C1#), which is A1:A3; 2 if the # is passed over and the range read; #REF! if it names no place, or if it is the Spill Range of A1, which spills nothing). With INDIRECT-090, it tells each of the four readings apart",
+      "cells": {"A1": "1", "A2": "=SEQUENCE(2)", "ZZ1000": "=SUM(INDIRECT(\"R1C1:R2C1#\",FALSE))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0124 (2026-10-12): a # after an R1C1 range, row or column is #VALUE! until a run observes it, as in A1 style, since the observed answers read # after one cell only (INDIRECT-060) and the readings part; recorded, so that a run reads Excel's answer"
     }
   ]
 }
