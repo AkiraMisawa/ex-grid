@@ -28,19 +28,19 @@
     },
     {
       "id": "SMALL-004",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a k that is not whole is #VALUE! (2 rounded down, 3 rounded up or to nearest)",
+      "source": "observed",
+      "description": "A k that is not whole is truncated: 1.5 is the smallest, 2, not the 2nd, 3 (the area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,1.5)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 2}
     },
     {
       "id": "SMALL-005",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a k that is not whole is #VALUE! (2 rounded down or to nearest, 3 rounded up)",
+      "source": "observed",
+      "description": "A k that is not whole is truncated, not rounded up: 1.2 is the smallest, 2, not the 2nd, 3 (the area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,1.2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 2}
     },
     {
       "id": "SMALL-006",
@@ -49,6 +49,38 @@
       "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,1+2^-52)"},
       "check": "ZZ1000",
       "expect": {"value2": 2}
+    },
+    {
+      "id": "SMALL-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a k below 1 is #NUM!, as LARGE's 0.5 is (LARGE-011)",
+      "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "SMALL-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a k of 9.5 over nine numbers is truncated to 9, the largest, 7, and not rounded up past their count (#NUM!)",
+      "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,9.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "SMALL-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a k of 3.9 is truncated to the 3rd smallest, 3, and not rounded to the 4th, 4",
+      "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,3.9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "SMALL-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a boolean given directly as the array is coerced, as a typed value is; AGGREGATE's array form takes one as no number (AGGREGATE-064)",
+      "cells": {"ZZ1000": "=SMALL(TRUE,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
     }
   ]
 }

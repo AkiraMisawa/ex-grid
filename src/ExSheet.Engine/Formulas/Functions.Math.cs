@@ -90,7 +90,7 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// LARGE and SMALL: the numbers of the array (a range's numbers only; a typed value coerced),
     /// and the k-th of them (<see cref="KthOf"/>: LARGE rounds a k that is not whole up, and SMALL
-    /// refuses one with <c>#VALUE!</c> until Excel is asked). A k below 1 or past their count is <c>#NUM!</c>.
+    /// truncates it). A k below 1, or past their count once rounded, is <c>#NUM!</c>.
     /// </summary>
     private static Operand Ranked(FunctionCall call, bool largest)
     {
@@ -114,23 +114,21 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// The k-th largest or smallest of the numbers taken, which it sorts. k is read at Excel's 15
-    /// significant digits, so a k a hair from a whole number is that number. A k that is still not
-    /// whole is rounded up for the k-th largest, as Excel does (LARGE-007 and AGGREGATE-038: 1.5 is
-    /// the 2nd largest; ODF 1.3's LARGE, LibreOffice and Gnumeric round it up too), and refused with
-    /// <c>#VALUE!</c> for the k-th smallest, where those sources disagree (LibreOffice rounds down,
-    /// Gnumeric up) and Excel has not been asked, and below 1, where they disagree too. A k below 1 or
-    /// past the count of the numbers is <c>#NUM!</c>.
+    /// The k-th largest or smallest of the numbers taken, which it sorts, as Excel reads k. k is read
+    /// at Excel's 15 significant digits, so a k a hair from a whole number is that number. A k below 1
+    /// is <c>#NUM!</c>, whether whole or not (LARGE-004, LARGE-011: 0.5 is not rounded up to 1). A k
+    /// that is not whole is rounded up for the k-th largest (LARGE-007 to 010, AGGREGATE-038 and 059:
+    /// 1.2 and 1.5 are the 2nd largest) and truncated for the k-th smallest (SMALL-004, 005,
+    /// AGGREGATE-060: 1.2 and 1.5 are the smallest). The two are one rule: the k-th largest with k
+    /// rounded up is the (n+1-k)-th smallest with that index truncated. A k past the count of the
+    /// numbers once so rounded is <c>#NUM!</c>.
     /// </summary>
     private static Operand KthOf(List<double> numbers, double k, bool largest)
     {
         k = Arithmetic.AtFifteenDigits(k);
-        if (k != Math.Floor(k))
-        {
-            if (!largest || k < 1) return Operand.Of(ErrorValue.Value);
-            k = Math.Ceiling(k);
-        }
-        if (k < 1 || k > numbers.Count) return Operand.Of(ErrorValue.Num);
+        if (k < 1) return Operand.Of(ErrorValue.Num);
+        k = largest ? Math.Ceiling(k) : Math.Floor(k);
+        if (k > numbers.Count) return Operand.Of(ErrorValue.Num);
         numbers.Sort();
         var at = (int)k - 1;
         return Operand.Of(Value.FromNumber(largest ? numbers[^(at + 1)] : numbers[at]));

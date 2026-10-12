@@ -5,9 +5,10 @@ using static ExSheet.Engine.Tests.SheetTestExtensions;
 namespace ExSheet.Engine.Tests;
 
 /// <summary>
-/// What the seventeenth Windows run read of <c>LARGE</c>'s k and <c>MOD</c>'s limit (ADR-0047):
-/// <c>LARGE(A1:B5,1.5)</c> is the 2nd largest, as <c>AGGREGATE(14,6,A1:A11,1.5)</c> is, and
-/// <c>MOD(2^27,1)</c> is 0 where Excel 2007 and earlier gave <c>#NUM!</c>. The cases themselves are
+/// What the seventeenth Windows run and the area pass of 2026-10-12 read of <c>LARGE</c> and
+/// <c>SMALL</c>'s k and of <c>MOD</c> (ADR-0047): <c>LARGE(A1:B5,1.5)</c> is the 2nd largest, as
+/// <c>AGGREGATE(14,6,A1:A11,1.5)</c> is; <c>SMALL(A1:A9,1.5)</c> the smallest; a k below 1 is
+/// <c>#NUM!</c>; and <c>MOD(2^27,1)</c> is 0 where Excel 2007 and earlier gave <c>#NUM!</c>. The cases themselves are
 /// in <c>ExcelCases/large.json</c>, <c>small.json</c>, <c>aggregate.json</c> and <c>mod.json</c>; the
 /// rules across the forms are here.
 /// </summary>
@@ -35,29 +36,60 @@ public class KthAndModTests
         Assert.Equal(expected, sheet.Evaluate($"=AGGREGATE(14,6,A1:A10,{k})").Number);
     }
 
-    [Theory] // ADR-0047: rounded up past the count, LARGE's k is #NUM!; a k between 0 and 1, where the sources disagree, is refused with #VALUE! until Excel is asked (LARGE-011)
-    [InlineData("10.5", ErrorValue.Num)]
-    [InlineData("0.5", ErrorValue.Value)]
-    [InlineData("-0.5", ErrorValue.Value)]
-    public void ADR0047_large_outside_its_count(string k, ErrorValue expected)
+    [Theory] // ADR-0047 (the area pass of 2026-10-12: LARGE-011): a k below 1 is #NUM!, whole or not, and not rounded up to 1; rounded up past the count, LARGE's k is #NUM! too
+    [InlineData("10.5")]
+    [InlineData("0.5")]
+    [InlineData("0.99")]
+    [InlineData("-0.5")]
+    [InlineData("0")]
+    public void ADR0047_large_outside_its_count_is_num(string k)
     {
         var sheet = Ten();
 
-        Assert.Equal(expected, sheet.Evaluate($"=LARGE(A1:A10,{k})").Error);
-        Assert.Equal(expected, sheet.Evaluate($"=AGGREGATE(14,6,A1:A10,{k})").Error);
+        Assert.Equal(ErrorValue.Num, sheet.Evaluate($"=LARGE(A1:A10,{k})").Error);
+        Assert.Equal(ErrorValue.Num, sheet.Evaluate($"=AGGREGATE(14,6,A1:A10,{k})").Error);
     }
 
-    [Theory] // ADR-0047: SMALL's k that is not whole is refused with #VALUE! until Excel is asked (SMALL-004, 005, AGGREGATE-060), and one a hair from a whole number is that number
-    [InlineData("1.5")]
-    [InlineData("1.2")]
-    [InlineData("9.5")]
-    public void ADR0047_small_refuses_a_k_that_is_not_whole(string k)
+    [Theory] // ADR-0047 (the area pass of 2026-10-12: SMALL-004, 005, AGGREGATE-060): SMALL's k that is not whole is truncated, in SMALL and in AGGREGATE's 15 alike, and one a hair from a whole number is that number
+    [InlineData("1.5", 1)]
+    [InlineData("1.2", 1)]
+    [InlineData("2.9", 2)]
+    [InlineData("9.5", 9)]
+    [InlineData("10.5", 10)]
+    [InlineData("1+2^-52", 1)]
+    [InlineData("2-2^-50", 2)]
+    public void ADR0047_small_truncates_a_k_that_is_not_whole(string k, double expected)
     {
         var sheet = Ten();
 
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate($"=SMALL(A1:A10,{k})").Error);
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate($"=AGGREGATE(15,6,A1:A10,{k})").Error);
-        Assert.Equal(1, sheet.Evaluate("=SMALL(A1:A10,1+2^-52)").Number);
+        Assert.Equal(expected, sheet.Evaluate($"=SMALL(A1:A10,{k})").Number);
+        Assert.Equal(expected, sheet.Evaluate($"=AGGREGATE(15,6,A1:A10,{k})").Number);
+    }
+
+    [Theory] // ADR-0047 (the area pass of 2026-10-12: LARGE-011, SMALL-004): SMALL's k below 1 is #NUM! as LARGE's is, though truncated it would be 0, and past the count once truncated it is #NUM!
+    [InlineData("0.5")]
+    [InlineData("0.99")]
+    [InlineData("-0.5")]
+    [InlineData("11")]
+    [InlineData("11.5")]
+    public void ADR0047_small_outside_its_count_is_num(string k)
+    {
+        var sheet = Ten();
+
+        Assert.Equal(ErrorValue.Num, sheet.Evaluate($"=SMALL(A1:A10,{k})").Error);
+        Assert.Equal(ErrorValue.Num, sheet.Evaluate($"=AGGREGATE(15,6,A1:A10,{k})").Error);
+    }
+
+    [Theory] // ADR-0047: LARGE's k rounded up and SMALL's truncated are one rule, the k-th largest being the (n+1-k)-th smallest with that index truncated
+    [InlineData("1.2")]
+    [InlineData("1.5")]
+    [InlineData("4.7")]
+    [InlineData("9.5")]
+    public void ADR0047_large_and_small_read_k_as_one_rule(string k)
+    {
+        var sheet = Ten();
+
+        Assert.Equal(sheet.Evaluate($"=SMALL(A1:A10,11-{k})").Number, sheet.Evaluate($"=LARGE(A1:A10,{k})").Number);
     }
 
     [Theory] // ADR-0047 (MOD-008): MOD answers a quotient of 2^27 and on to the limit a Microsoft 365 user reported, 1125900000000, from which it is #NUM! (MOD-010 to 016 ask Excel)
