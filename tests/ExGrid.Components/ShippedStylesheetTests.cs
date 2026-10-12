@@ -1576,7 +1576,7 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"outline-style:\s*solid;"), box.Body);
     }
 
-    [Fact] // ADR-0008 (2026-10-12) / UX-19 / ADR-0090: among several ranges the Focus's border is one Device Pixel inside its cell, in a token of its own that defaults to CanvasText
+    [Fact] // ADR-0008 (2026-10-12) / UX-19 / ADR-0090: among several ranges the Focus's border is one Device Pixel inside its cell, in a token of its own that defaults to the Focus outline's colour
     public void Among_several_ranges_the_focus_border_is_one_device_pixel_in_its_own_token()
     {
         var (css, _) = CoreStylesheet();
@@ -1584,8 +1584,11 @@ public class ShippedStylesheetTests
 
         var rule = Assert.Single(outside, rule => rule.Selectors.Contains(".ex-focus.ex-focus-among-ranges::after"));
         var declared = Declarations(rule.Body).ToDictionary(d => d.Property, d => d.Value);
-        // One Device Pixel, the token's colour, CanvasText where no Theme or Wrapper names it.
-        Assert.Equal("var(--ex-dp, 1px) solid var(--ex-focus-among-ranges-outline, CanvasText)", declared["border"]);
+        // One Device Pixel, in the token's colour (2026-10-12, decided with the user: where nothing
+        // names the token it is the Focus outline's colour), so a Theme or a Wrapper that colours the
+        // Focus colours this border too, with no mapping of its own; CanvasText where nothing names
+        // either, as the Focus outline's own default.
+        Assert.Equal("var(--ex-dp, 1px) solid var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, CanvasText))", declared["border"]);
         // Inside the cell: a Device Pixel in from its top and left edges and from the gridline it holds
         // on its right and bottom, so every side is whole Device Pixels from an edge that lies on one.
         Assert.Equal("var(--ex-dp, 1px)", declared["top"]);

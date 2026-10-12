@@ -88,18 +88,23 @@ public class PaperStylesheetTests
         Assert.Contains(".ex-sheet .ex-shade-pinned", forced.Groups["body"].Value, StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0008 (2026-10-12) / UX-19 / ADR-0071: on the Paper the Focus among several ranges is the core's thin border, black where no token names it, with no white line of its own
-    public void On_the_paper_the_focus_among_ranges_is_black_with_no_white_line()
+    [Fact] // ADR-0008 (2026-10-12) / UX-19 / ADR-0071: on the Paper the Focus among several ranges is the core's thin border in the outline's colour, #217346 where no token names it, with no white line of its own
+    public void On_the_paper_the_focus_among_ranges_is_the_outlines_green_with_no_white_line()
     {
         var css = Regex.Replace(Stylesheet("src", "ExSheet", "Assets", "ex-sheet.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
         var rules = Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
             .Select(rule => (Selectors: rule.Groups["selectors"].Value.Split(',').Select(selector => selector.Trim()).ToArray(), Body: rule.Groups["body"].Value))
             .ToList();
 
-        // Three classes, so it outranks the Focus outline's green and white line (two classes) in any
-        // order the stylesheets load in; and the token, where a Theme or Wrapper names it, wins.
+        // Three classes, so it outranks the Focus outline's rule and its white line (two classes) in
+        // any order the stylesheets load in. Its own token wins where a Theme or a Wrapper names it;
+        // else the Focus outline's colour, which ExSheet.MudBlazor gives the primary; else Excel's
+        // #217346, as the readings of 2026-10-12 (R4) measured the active cell's border among
+        // several areas, and as the Focus outline's own fallback on the Paper is.
         var among = Assert.Single(rules, rule => rule.Selectors.Contains(".ex-sheet .ex-focus.ex-focus-among-ranges::after"));
-        Assert.Contains("border-color: var(--ex-focus-among-ranges-outline, #000);", among.Body, StringComparison.Ordinal);
+        Assert.Contains("border-color: var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, #217346));", among.Body, StringComparison.Ordinal);
+        Assert.Contains(rules, rule => rule.Selectors.Contains(".ex-sheet .ex-focus::after")
+            && rule.Body.Contains("border-color: var(--ex-focus-outline, #217346);", StringComparison.Ordinal));
         Assert.Contains("box-shadow: none;", among.Body, StringComparison.Ordinal);
         Assert.Contains(rules, rule => rule.Selectors.Contains(".ex-sheet .ex-focus::after")
             && rule.Body.Contains("box-shadow: inset", StringComparison.Ordinal));

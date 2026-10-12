@@ -1,104 +1,102 @@
 # Run 17 G-H, the Focus among several ranges: what the orchestrator writes
 
-Branch `claude/run17gh-focus-among-ranges`, from `main` at `a533de01`. Decision (1) of 2026-10-12, decided with the
-user: in a Selection of several ranges ExGrid as a whole follows Excel, with no range outline and no fill handle, and
-the Focus cell takes a thin border of one Device Pixel in a new token (`--ex-focus-among-ranges-outline`, default
-`CanvasText`; ExSheet's Paper sets it black); a single range keeps today's look. It follows the seventeenth Windows
-run's h2 (`verification/2026-10-11-windows-17/report.md` on `claude/exsheet-windows-verify-17`, Part H;
-`part-h/shots/h-h2-2-ctrl-d4-e6-cells.png` for Excel, `h-h2-2-ctrl-d4-e6-chrome-sheet.png` for ExSheet).
+Branch `claude/run17gh-focus-among-ranges`, rebased on `main` at `2265cda6` (round 3). The edits below are for
+the files a background agent does not edit: ADR-0008, ADR-0029 and ADR-0071, two Definition of Done rows, and
+three Docs Site pages. Each is an exact old -> new block of whole lines, numbered in the order they apply, checked
+against this branch's tip. Nothing here touches `CONTEXT.md`.
 
-Nothing here changes an ADR, `CONTEXT.md`, the Definition of Done or the Docs Site: the text for each is below, as
-exact old -> new edits.
+The two decisions this branch builds, as the edits write them:
 
-## Stop: the run's own picture reads the border green, not black
+- *(2026-10-12, decided with the user: in a Selection of several ranges ExGrid as a whole follows Excel, with no
+  range outline and no fill handle, and the Focus cell takes a thin border of one Device Pixel in a Visual Token
+  of its own, `--ex-focus-among-ranges-outline`; a single range keeps today's look.)* Taken from the seventeenth
+  Windows run's h2, with a default of `CanvasText` and black on the Paper.
+- *(2026-10-12, decided with the user: on the Paper the border is `#217346`, as the readings of 2026-10-12
+  measured (R4); outside the Paper, `--ex-focus-among-ranges-outline`'s default follows the Focus's own outline
+  colour, `--ex-focus-outline`, ExGrid's accent, so under the MudBlazor Wrappers it follows their primary with no
+  mapping of its own, and not `CanvasText`.)*
 
-**For the user.** h2's report says "a thin **black** border". Its picture says otherwise. Read in device pixels
-(the display at 150%, Excel at 100% zoom: a standard column is 96 pixels wide), across D4 at y = 160 and down it at
-x = 370:
+Everything else in the edits is this branch's, and none of it is credited to the user: the border's place inside
+the cell, the cell's own ground between it and the gridline, the class the core marks the Focus with, and forced
+colours drawing the Focus outline in its place.
 
-| Side | Pixels, from outside the cell inward |
-|---|---|
-| left | `#AFAFAF` (the gridline, shaded), `#FFFFFF`, **`#217346`**, then `#FFFFFF` |
-| top | `#AFAFAF`, `#FFFFFF`, **`#217346`**, then `#FFFFFF` |
-| right | `#AFAFAF` (D4's own gridline), `#FFFFFF`, **`#217346`**, then `#FFFFFF` |
-| bottom | `#AFAFAF`, `#FFFFFF`, **`#217346`**, then `#FFFFFF` |
+## Stop: two parts of R4 that the Paper does not paint, for the user
 
-So at that scale the border is:
+R4 read four short lines across Excel's active cell (`records/r4.jsonl` on
+`claude/exsheet-windows-readings-2026-10-12`). Of the parts it measured, the Paper now agrees with the border
+(`#217346`, one device pixel, one in from the cell's edges), the white line between the border and the gridline,
+and the `#C7C7C7` shade beyond it; layer 3 holds those (`UX-19/SH-54` in `sheet-paper.spec.mjs`, at 100% and
+at a real 150%). Two parts differ, and making either agree changes a decided rule, so neither is built.
 
-- **one device pixel wide**, as decided;
-- **`#217346`**, Excel's green: the colour of the single range's outline in h1 and in h2's first picture
-  (`h-h2-1-a1-b2-cells.png`, two device pixels of `#217346`). A one-pixel dark green line reads as black by eye;
-- **inside the cell**, one device pixel in from each gridline, with the cell's own ground between.
+**How it was compared.** An untracked probe (`zz-probe-r4.spec.mjs`, not committed) made R4's three selections on
+`/sheet?case=13` (a blank Sheet, nothing pinned, as R4's workbook) under both Chromes, at 100% and at a real 150%
+(`--force-device-scale-factor=1.5`), WebAssembly host, Playwright's Chromium 141, and read the same four lines
+across the active cell, from 6 device pixels outside to 10 inside, plus whole rows and columns through the areas.
+R4's own picture `shots/r4-z100-1-a1-b2-then-ctrl-d4-e6-cells.png` (a crop at 2×, nearest neighbour) was read the
+same way, at row 1, row 4 and columns A, D and E.
 
-What this branch did with it:
+| Line, case (1), the active cell D4 | Excel (R4, 150% zoom) | ExSheet, the Paper (150%) |
+|---|---|---|
+| left, outside in | `#FFFFFF` `#AFAFAF` `#FFFFFF` `#217346` `#FFFFFF` | `#FFFFFF` `#E0E0E0` `#FFFFFF` `#217346` `#FFFFFF` |
+| right, inside out | `#FFFFFF` `#217346` `#FFFFFF` `#AFAFAF` `#C7C7C7` | `#FFFFFF` `#217346` `#FFFFFF` `#E0E0E0` `#C7C7C7` |
+| top, outside in | `#FFFFFF` `#AFAFAF` `#FFFFFF` `#217346` `#FFFFFF` | `#FFFFFF` `#E0E0E0` `#FFFFFF` `#217346` `#FFFFFF` |
+| bottom, inside out | `#FFFFFF` `#217346` `#FFFFFF` `#AFAFAF` `#C7C7C7` | `#FFFFFF` `#217346` `#FFFFFF` `#E0E0E0` `#C7C7C7` |
 
-- **The colour is the decision's: black on the Paper.** `ex-sheet.css` falls back to `#000`, and nothing written
-  calls it Excel's. If the user takes the picture's colour, these are the changes:
-  - `src/ExSheet/Assets/ex-sheet.css`: `var(--ex-focus-among-ranges-outline, #000)` becomes
-    `var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, #217346))`, then the minify;
-  - `tests/ExSheet.MudBlazor.Tests/PaperStylesheetTests.cs` and the Paper's layer-3 test (`BLACK`) follow;
-  - the ExSheet Change Note says green instead of black.
+Cases (2) and (3), and 100%, read the same way: border, white line and shade agree, and the gridline's pixel is
+`#AFAFAF` in Excel and `#E0E0E0` on the Paper on all four sides, except at A1 in case (2).
 
-  ExGrid's own default, `CanvasText`, is unaffected: it is the decision's, and the Focus outline's default too.
-- **The place is the picture's**, which the decision did not state. The border lies inside the cell, one Device
-  Pixel in from its top and left edges and from the gridline the cell holds on its right and bottom.
-  - Inside, nothing above the selection layer covers a side, so it needs none of the sides UX-18 marks.
-  - Every side is whole Device Pixels from an edge that lies on one (ADR-0090).
-  - The other reading, on the gridline as the Focus outline lies, is not what the picture shows.
-  - The 100% zoom is the next run's (question 1).
+**(a) The gridline round the active cell, and each area's frame.** R4 read the gridline's pixel round the active
+cell as `#AFAFAF` on every side in all three cases, at both zooms (`#E0E0E0`, Excel's gridline, under its 22%
+shade: 224 × 0.78 = 175), where no Heading stands. Its pictures show more than its lines, as R4's picture read at
+row 1 and row 4 says: every edge of every area is a line of `#AFAFAF` on the gridline (outside the area on its top
+and left, on its own last gridline on its right and bottom) with a white device pixel just inside it, then the
+shade. Across A1:B2 at row 1: `#217346` ×2 (the Heading), `#FFFFFF`, `#C7C7C7` ×94, `#AFAFAF`, `#C7C7C7` ×94,
+`#FFFFFF`, `#AFAFAF`, `#FFFFFF` ×95. Past E4's right at row 4: `#C7C7C7` ×94, `#FFFFFF`, `#AFAFAF`. The Paper
+paints its own gridline there: unshaded on the active cell's four sides (the hole takes the Focus cell's own right
+and bottom gridline out of the shade, and the top and left ones are the neighbours', outside the range), unshaded
+on each area's top and left (the neighbours'), shaded `#AFAFAF` on its right and bottom (its own), and no white
+line inside the area anywhere. Across A1:B2 at row 1 on the Paper: `#ABABAB` (the Heading's edge), `#C7C7C7` ×98,
+`#AFAFAF`, `#C7C7C7` ×98, `#AFAFAF`, `#FFFFFF`.
 
-**Seen in the same picture, not acted on.** A range among several is drawn differently from ExSheet's:
+Options:
 
-- In Excel, the gridline outside the range's top and left edges is shaded too: `#AFAFAF`, which is `#E1E1E1` under
-  the 22% shade.
-- In Excel, a white device pixel runs just inside every edge of the range. At D6's left: `#AFAFAF`, `#FFFFFF`,
-  `#C7C7C7`; past E5's right: `#FFFFFF`, `#AFAFAF`.
-- ExSheet shades only inside the range and draws no white line. At D6's left in its picture: `#E0E0E0`, `#C7C7C7`.
+1. **Leave it**, and record the difference in ADR-0008's several-ranges bullet as observed and not followed.
+2. **Draw Excel's frame round each area among several ranges**: one Device Pixel on the gridline round it in the
+   shaded gridline's colour, a white Device Pixel inside it, and the active cell's own gridlines shaded. That
+   changes the first decision of 2026-10-12 ("no range outline", on the Paper at least, or for ExGrid as a whole),
+   ADR-0008's hole (the tint would cover the gridline the Focus cell holds, against UX-19's "the selection's tint
+   never covers the Focus cell"), and ADR-0071 and ADR-0206 on what lies over a Border line (whether the frame is a
+   multiplied shade or a line drawn over the lines is unobserved: R4 read only plain cells).
+3. **Only the ring round the active cell**: the Focus among several ranges draws its four gridlines in `#AFAFAF` on
+   the Paper. That makes R4's four lines agree in all three cases, but R4's pictures show the same line along every
+   area edge, so the Paper would then show it round the Focus and nowhere else, which no picture of Excel shows.
+   This branch would not choose it.
 
-That is not decision (1), and it is a reading of one picture. It is question 3 below.
+**(b) The Headings beside A1.** R4 read, at A1's left and top in case (2), the Headings' 2 device pixels of
+`#217346` where the gridline would be, then the white line and the border: `#E1E1E1` ×3, `#217346` ×2, `#FFFFFF`,
+`#217346`. R4's pictures show every selected row's and column's Heading that way, a shaded ground with that line on
+its edge toward the cells and its label in the green, for each area. The Paper draws nothing of the Selection on
+the Headings, for any selection: at A1 it reads `#ABABAB` (the Row Headings' edge, ADR-0071's Part C), `#FFFFFF`,
+`#217346`, and on top the header's rule. Options:
 
-**Also for the user: the Wrappers.** `ExGrid.MudBlazor` sets `--ex-focus-outline` to the palette's primary and leaves
-the new token alone, as the decision gives it no Wrapper value. So under ExGrid.MudBlazor the Focus among several
-ranges is `CanvasText`, beside a Focus outline in the primary everywhere else. Under ExSheet.MudBlazor it is black on
-the Paper. Excel draws both in one colour (h1, h2). Whether a Wrapper maps the new token to its primary, as it maps
-the Focus outline, is not decided here, and this branch maps nothing.
+1. **Leave it**: the Headings frame the Paper and follow the scheme (ADR-0071), and no ADR asks them to show the
+   Selection.
+2. **Excel's Heading mark for every selection**, not only several ranges: the selected rows' and columns' Headings
+   shaded, with a line of 2 Device Pixels in the outline's colour on the edge toward the cells (and, by R4's
+   pictures, the label in it). A new decision: new classes or tokens (ADR-0029), drawn as an overlay in the
+   Heading bands so that no row learns the Selection (ADR-0008, "Selection state never has to enter the row's
+   parameters"; the Row Headings are painted in each row, ADR-0050), and on which products (ExSheet's Paper, or
+   every grid with Headings).
 
-## What was built
+Neither part changes what this branch built; either option 2 is a later change on top of it.
 
-- **The core marks the Focus among several ranges.** `ExGrid.razor` gives the Focus's element the class
-  `ex-focus ex-focus-among-ranges` while the Selection has more than one range, in whichever layer holds it
-  (`FocusClass`, interned beside `RangeClass`). It is decided from the Selection, not from the layer's siblings: a
-  layer may hold the Focus and no range's box (a range in the Pinned Columns, the Focus added beyond them).
-- **The stylesheet draws the thin border** (`src/ExGrid/Assets/ex-grid.css`, `.ex-focus.ex-focus-among-ranges::after`):
-  - one `var(--ex-dp)` wide;
-  - in `var(--ex-focus-among-ranges-outline, CanvasText)`;
-  - `top` and `left` one `--ex-dp`, `right` and `bottom` `--ex-rule-dp` plus one `--ex-dp`.
+## Edits
 
-  Paint only: nothing in C# reads its width.
-- **No range outline, no fill handle.** Both already held among several ranges, by `RangeClass` (`ex-range-single`
-  for one range only) and `FillRules.HandleRange` (one range only); both are now asserted beside the border.
-- **Forced colours.** The core's forced-colors block already sets `content: none` on `.ex-focus::after`, and outlines
-  `.ex-focus` and every `.ex-range`. So the thin border is not drawn there, and the Focus among several ranges is
-  outlined as the Focus is everywhere there, beside ranges that are each outlined. The block's comment says so.
-- **The Paper** (`src/ExSheet/Assets/ex-sheet.css`). `.ex-sheet .ex-focus.ex-focus-among-ranges::after` sets the
-  border black where no token names it, with no white line. Three classes, so it outranks the Focus outline's green
-  and white line (two classes) in either load order.
-- **CI's chrome-150 project** runs the two layer-3 tests that read the border at the display's scale, ExGrid's own on
-  `/wide` and the Paper's, at a real 150% (`playwright.config.mjs`'s grep gains `UX-19\/SH-39` and
-  `UX-19 at the display's scale`). An emulated scale is not read, for the reason `device-pixel-225.spec.mjs` gives
-  for a Border line:
-  - through the DevTools protocol, the screenshot is not taken at the scale (a device pixel read twice at 1.5);
-  - through Playwright's own `deviceScaleFactor` at 2.25, the border read one device pixel off on two sides and
-    blended on a third.
+### 1. docs/adr/0008-selection-is-painted-by-an-overlay.md
 
-  A real scale reads it exact. Besides the committed 100% and 150%, an untracked probe ran the bundled Chromium with
-  `--force-device-scale-factor` 2 and 2.25, on both hosts, on `/wide` and on the Paper. Each read the border one
-  device pixel wide on all four sides, a device pixel in from the top and left edges and from the two-pixel gridline
-  (`left [1], top [1], right [3], bottom [3]`). CI has no project at those scales, so the probe is not committed.
-
-## ADR-0008: the several-ranges bullet replaced
-
-In "Excel's look for the Focus and a single range *(decided with the user, 2026-09-29)*".
+The several-ranges bullet of "Excel's look for the Focus and a single range". This answers the verifier's finding
+on round 2: h2 and R4 were at Excel's 100% and 150% zoom on the 150% display, so what is still unobserved is a
+display at 100%, a cell with a Fill, and the active cell while it is edited.
 
 Old:
 
@@ -112,41 +110,43 @@ Old:
 New:
 
 ```
-- **Several ranges look as Excel's did in the seventeenth Windows run** *(decided with the user,
-  2026-10-12; `verification/2026-10-11-windows-17/report.md`, Part H, h2)*. This bullet first left
-  them as they were, each range tinted and the Focus outlined, until Excel had been observed.
+- **Several ranges look as Excel's do** *(2026-10-12, decided with the user: in a Selection of
+  several ranges ExGrid as a whole follows Excel, with no range outline and no fill handle, and the
+  Focus cell takes a thin border of one Device Pixel in a Visual Token of its own,
+  `--ex-focus-among-ranges-outline`; a single range keeps the look above)*. The decision followed
+  the seventeenth Windows run's h2 (`verification/2026-10-11-windows-17/report.md`, Part H). This
+  bullet first left several ranges as they were, each tinted and the Focus outlined, until Excel
+  had been observed.
   - No range carries an outline, and no fill handle is shown
     ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), item 5). Each range is tinted, with
     the hole where the Focus is, as before.
-  - The Focus cell takes a thin border of one Device Pixel, in a token of its own,
-    `--ex-focus-among-ranges-outline`
-    ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)). Its
-    default is `CanvasText`, the Focus outline's default, and it does not follow
-    `--ex-focus-outline`. ExSheet's Paper sets it black.
+  - The border's colour *(2026-10-12, decided with the user: where nothing names
+    `--ex-focus-among-ranges-outline`, the border is the Focus outline's colour,
+    `--ex-focus-outline`, so a Theme or a Wrapper that colours the Focus colours it too, with no
+    mapping of its own, and under the MudBlazor Wrappers it is their primary; on a Sheet's Paper it
+    is `#217346`)*. Earlier the same day it had been decided as `CanvasText`, and black on the
+    Paper, from h2's report. The readings of 2026-10-12 then measured Excel's border as `#217346`
+    (R4): h2's black was its picture read at 1×.
   - It lies inside the cell, one Device Pixel in from its top and left edges and from the gridline
-    the cell holds on its right and bottom, where the run's picture at 150% shows Excel's. Nothing
-    above the selection layer covers a side of it (UX-18), and every side lies on Device Pixels
-    wherever the cell's edges do
+    the cell holds on its right and bottom, with the cell's own ground between it and the
+    gridline. That is where the readings of 2026-10-12 measured Excel's active cell among several
+    areas (R4), at Excel's 100% and 150% zoom on a 150% display, in each of three selections: one
+    device pixel of `#217346` on every edge, one device pixel inside the cell, and white between it
+    and the gridline. Nothing above the selection layer covers a side of it (UX-18), and every side
+    lies on Device Pixels wherever the cell's edges do
     ([ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)).
-  - The core marks the Focus among several ranges with a class. A layer may hold the Focus and no
-    range's box, so the stylesheet cannot tell from the Focus's siblings.
-  - Under forced colors the border is not drawn, and the Focus is outlined there as it is everywhere
-    else under forced colors, beside ranges that are each outlined.
-  - A single range and a single cell keep the look above.
-  - *Read, not observed:* the border at Excel's 100% zoom, and its colour. The run's picture reads
-    `#217346`, Excel's green, where its report says black. Both are on the next Windows run's list.
+  - The core marks the Focus among several ranges with a class, decided from the Selection: a
+    layer may hold the Focus and no range's box, so the stylesheet cannot tell from the Focus's
+    siblings.
+  - Under forced colors the border is not drawn, and the Focus is outlined there as it is
+    everywhere else under forced colors, beside ranges that are each outlined.
+  - *Not observed:* a display at 100% (R4 read the 150% display at both zooms, so one device pixel
+    at a 100% display is by generalisation); a cell with a Fill (whether the line between the
+    border and the gridline is the Fill, as built, or white); and the active cell while it is
+    edited (ExGrid's Cell Editor covers the cell, and the border inside it).
 ```
 
-If the user takes the picture's colour, the sixth line of the second sub-bullet reads instead:
-
-```
-    `--ex-focus-outline`. ExSheet's Paper sets it to the Focus outline's colour, Excel's green.
-```
-
-and the last sub-bullet drops "and its colour. The run's picture reads `#217346`, Excel's green, where its report
-says black. Both are" for "It is".
-
-## ADR-0029: the token, and the class UX-4's walk names
+### 2. docs/adr/0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md
 
 The Selection row of the token table.
 
@@ -159,12 +159,14 @@ Old:
 New:
 
 ```
-| Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(the border Excel draws around the range's perimeter, reserved here and taken up by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-09-29; it defaults to `--ex-focus-outline`)*, `--ex-focus-outline` *(exists)*, `--ex-focus-among-ranges-outline` *(the thin border of the Focus among several ranges, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) of 2026-10-12; it defaults to `CanvasText` and does not follow `--ex-focus-outline`)*, `--ex-grid-focus-outline` *(exists)* |
+| Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(the border Excel draws around the range's perimeter, reserved here and taken up by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-09-29; it defaults to `--ex-focus-outline`)*, `--ex-focus-outline` *(exists)*, `--ex-focus-among-ranges-outline` *(the thin border of the Focus among several ranges, added by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-10-12; (2026-10-12, decided with the user: it defaults to `--ex-focus-outline`))*, `--ex-grid-focus-outline` *(exists)* |
 ```
 
-A section at the end of the ADR.
+### 3. docs/adr/0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md
 
-Old (its last lines):
+A section at the end of the ADR, after "Added by ADR-0170".
+
+Old:
 
 ```
 - **No new token.** The dashes take `--ex-focus-outline`, as ADR-0058's do, over a band of
@@ -179,21 +181,51 @@ New:
   `--ex-background`, so they read on the Selection's own outline; `--ex-selection-outline` stays
   the range outline's alone. Forced colours restate them in `Highlight` over `Canvas`.
 
-## Added by ADR-0008's decision of 2026-10-12 *(decided with the user)*
+## Added by ADR-0008's note of 2026-10-12
 
 - **Internal class**, which may change without notice: `ex-focus-among-ranges`. It joins `ex-focus`
   on the Focus's element while the Selection has several ranges. The core decides it from the
   Selection, because a layer may hold the Focus and no range's box. UX-4's walk names it.
-- **Visual Token**: `--ex-focus-among-ranges-outline`, the colour of that Focus's thin border.
-  - It defaults to `CanvasText`, as `--ex-focus-outline` does, and does not read it: a Theme that
-    colours the Focus outline sets this one too.
-  - ExSheet's Paper falls back to black.
-  - Its width is one Device Pixel, `--ex-dp`, and is not a token.
+- **Visual Token**: `--ex-focus-among-ranges-outline`, the colour of that Focus's border of one
+  Device Pixel *(2026-10-12, decided with the user: where nothing names it, it is the Focus
+  outline's colour, `--ex-focus-outline`, so a Theme or a Wrapper that colours the Focus colours it
+  too and no Wrapper maps it; on a Sheet's Paper it is `#217346`, as `--ex-focus-outline` is there)*.
+  Its width is one Device Pixel, `--ex-dp`, and is not a token.
 - **Forced colours** do not draw the border, and restate the Focus by its outline, as everywhere
   there.
 ```
 
-## The Definition of Done: UX-19 restated
+### 4. docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md
+
+"The Selection on the Paper (case 11)", its first bullet: the verifier's finding on round 2 that it is false for
+several ranges.
+
+Old:
+
+```
+- **The outline is 2 Device Pixels of `#217346`, on the gridline and one Device Pixel outside it,
+  with a white line of one Device Pixel inside it.** Today it is 2 CSS px in the Ink. The single range's
+  outline and the Focus's outline are drawn alike.
+```
+
+New:
+
+```
+- **The outline is 2 Device Pixels of `#217346`, on the gridline and one Device Pixel outside it,
+  with a white line of one Device Pixel inside it.** Today it is 2 CSS px in the Ink. The single range's
+  outline and the Focus's outline are drawn alike.
+  - *Several ranges* *(2026-10-12, decided with the user: among several ranges no range carries
+    this outline and no fill handle is shown, and the Focus takes, in place of its outline, a border
+    of one Device Pixel inside its cell, in the Focus outline's colour, `#217346` on the Paper;
+    [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*. It has no white line of its own:
+    the cell's ground lies between it and the gridline, the Paper's white on a cell with no Fill,
+    which is the white the readings of 2026-10-12 measured there (R4). Under `ExSheet.MudBlazor` it
+    is the palette's primary, as the Focus outline is.
+```
+
+### 5. docs/definition-of-done.md
+
+UX-19.
 
 Old:
 
@@ -204,12 +236,28 @@ Old:
 New:
 
 ```
-| **UX-19** | MUST | Excel's look for the Focus, a single range and several ranges: the selection's tint never covers the Focus cell (the Focus band and the hover band are other overlays and keep theirs); a one-cell selection shows the Focus outline and no tint; a single range shows one outline around the whole range and no outline around the Focus inside it; several ranges are each tinted with no outline and no fill handle, and the Focus cell among them is untinted and takes a thin border of one Device Pixel inside the cell, in `--ex-focus-among-ranges-outline`, lying on Device Pixels at every scale (ADR-0008, 2026-09-29 and 2026-10-12) | Layer 2 for which rectangles are painted, the hole's geometry and the Focus's mark among several ranges; Layer 3 by pixel under both Chromes, the thin border read in device pixels at 100% and at a real 150%, ExGrid's own and the Paper's | as stated, in each of the four cases |
+| **UX-19** | MUST | Excel's look for the Focus, a single range and several ranges: the selection's tint never covers the Focus cell (the Focus band and the hover band are other overlays and keep theirs); a one-cell selection shows the Focus outline and no tint; a single range shows one outline around the whole range and no outline around the Focus inside it; several ranges are each tinted and the Focus cell among them is untinted *(2026-10-12, decided with the user: among several ranges no range is outlined and no fill handle is shown, and the Focus takes a border of one Device Pixel in `--ex-focus-among-ranges-outline`, which is the Focus outline's colour unless set)*, lying inside the cell a Device Pixel in from its edges and its gridline, as the readings of 2026-10-12 measured Excel's (R4), and on Device Pixels at every scale (ADR-0008, 2026-09-29 and 2026-10-12) | Layer 2 for which rectangles are painted, the hole's geometry, the Focus's class among several ranges and the border's token; Layer 3 by pixel under both Chromes, the border among several ranges read in device pixels at 100% and at a real 150% on `/wide`, on the Paper and under `ExGrid.MudBlazor` | as stated, in each of the four cases |
 ```
 
-## The Docs Site
+### 6. docs/definition-of-done.md
 
-`samples/ExGrid.Docs/Pages/Grid/GridAppearance.razor`, the token table's Selection row.
+SH-54: the verifier's finding on round 2 that it is false for several ranges.
+
+Old:
+
+```
+| **SH-54** | MUST | On a Sheet's Paper, the Selection's outline and the Focus's are 2 Device Pixels on the gridline and one outside it, with a white line of one Device Pixel inside that is not drawn while an edit is open; under the built-in Chrome the outline is `#217346` and the shade `#C7C7C7` over white; a black line inside the shade stays `#000000`; the Focus cell is unshaded; under `ExSheet.MudBlazor` the outline is the palette's primary and the shade the primary mixed into white (ADR-0071, 2026-10-02) *(2026-10-11, [ADR-0206](adr/0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md): also in a Pinned Column and across the pinned boundary, under both Chromes; it had been checked only where nothing is pinned.)* | Layer 3 pixels at 100% and 150% under both Chromes | as stated |
+```
+
+New:
+
+```
+| **SH-54** | MUST | On a Sheet's Paper, a single range's outline and the Focus's when one cell is selected are 2 Device Pixels on the gridline and one outside it, with a white line of one Device Pixel inside that is not drawn while an edit is open; under the built-in Chrome the outline is `#217346` and the shade `#C7C7C7` over white; a black line inside the shade stays `#000000`; the Focus cell is unshaded; under `ExSheet.MudBlazor` the outline is the palette's primary and the shade the primary mixed into white (ADR-0071, 2026-10-02) *(2026-10-11, [ADR-0206](adr/0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md): also in a Pinned Column and across the pinned boundary, under both Chromes; it had been checked only where nothing is pinned.)* *(2026-10-12, decided with the user: among several ranges no range is outlined, and the Focus takes a border of one Device Pixel inside its cell in the outline's colour, `#217346` under the built-in Chrome and the palette's primary under `ExSheet.MudBlazor`; ADR-0008.)* It has no white line of its own: between it and the gridline lies the cell's ground, white on white Paper, as the readings of 2026-10-12 measured (R4) | Layer 3 pixels at 100% and 150% under both Chromes | as stated |
+```
+
+### 7. samples/ExGrid.Docs/Pages/Grid/GridAppearance.razor
+
+The token table's Selection row.
 
 Old:
 
@@ -220,10 +268,12 @@ Old:
 New:
 
 ```
-                <tr><td><code>--ex-selection-fill</code>, <code>--ex-selection-outline</code>, <code>--ex-focus-outline</code>, <code>--ex-focus-among-ranges-outline</code></td><td>The selection and the Focus cell; the last is the Focus's thin border among several ranges.</td></tr>
+                <tr><td><code>--ex-selection-fill</code>, <code>--ex-selection-outline</code>, <code>--ex-focus-outline</code>, <code>--ex-focus-among-ranges-outline</code></td><td>The selection and the Focus cell. The last is the Focus's thin border among several ranges, and is the Focus outline's colour unless you set it.</td></tr>
 ```
 
-The same page, after the shade's paragraph.
+### 8. samples/ExGrid.Docs/Pages/Grid/GridAppearance.razor
+
+After the shade's paragraph.
 
 Old:
 
@@ -247,32 +297,16 @@ New:
             A single range is outlined in <code>--ex-selection-outline</code>, and the Focus inside it is only left
             unshaded. Among several ranges, made with Ctrl+click, no range is outlined and no fill handle is shown, as
             in Excel, and the Focus cell takes a thin border of one device pixel inside it, in
-            <code>--ex-focus-among-ranges-outline</code>: <code>CanvasText</code> unless you set it. It does not follow
-            <code>--ex-focus-outline</code>, so a theme that colours the Focus outline sets this one too.
+            <code>--ex-focus-among-ranges-outline</code>. Unset, that is the Focus outline's colour, so a theme that
+            colours <code>--ex-focus-outline</code> colours this border too, and under ExGrid.MudBlazor it is the
+            palette's primary. The theme below sets only <code>--ex-focus-outline</code>: Ctrl+click in it.
         </p>
 ```
 
-`samples/ExGrid.Docs/Examples/Grid/ThemedGrid.razor`, the Example the page runs its tokens in. **A defect found while
-reading it, by reading and not run.** It sets `--ex-focus-outline: 2px solid #2f81f7;`, which is not a colour. The
-Focus outline is `border: … solid var(--ex-focus-outline, CanvasText)`, so the declaration is invalid at
-computed-value time and draws no border. The Example's Focus, and its single range, are therefore drawn with no
-outline at all. With the fix, the Example shows the new token too: Ctrl+click in it.
+### 9. samples/ExGrid.Docs/Pages/Grid/GridSelectionAndKeys.razor
 
-Old:
-
-```
-    --ex-focus-outline: 2px solid #2f81f7;
-```
-
-New:
-
-```
-    --ex-focus-outline: #2f81f7;
-    --ex-focus-among-ranges-outline: #2f81f7;
-```
-
-`samples/ExGrid.Docs/Pages/Grid/GridSelectionAndKeys.razor`: the Focus is no longer "outlined inside the selection"
-in a single range (since 2026-09-29), and among several ranges it now has a thin border.
+The Focus is not "outlined inside the selection" in a single range (since 2026-09-29), and among several ranges it
+has a thin border.
 
 Old:
 
@@ -285,12 +319,13 @@ New:
 
 ```
             A selection is one or more rectangles of cells. The <strong>Focus</strong> is Excel's active cell: the
-            cell typing goes into, left unshaded inside the selection, with a thin border of its own when the
-            selection has several ranges. The <strong>Extent</strong> is the corner that
+            cell typing goes into, outlined when it is selected alone, left unshaded inside a selected range, and
+            given a thin border of its own among several ranges. The <strong>Extent</strong> is the corner that
 ```
 
-`samples/ExGrid.Docs/Pages/Sheet/SheetFormatting.razor`, ExSheet's page that describes the Selection's look on the
-Paper (ExSheet shows the change too).
+### 10. samples/ExGrid.Docs/Pages/Sheet/SheetFormatting.razor
+
+The Selection's look on the Paper, which ExSheet's page describes (ExSheet shows the change too).
 
 Old:
 
@@ -306,57 +341,37 @@ New:
             in the same way.
         </p>
         <p>
-            Among several ranges, made with Ctrl+click, no range is outlined and there is no fill handle, and the
-            active cell takes a thin black border inside it. <code>--ex-focus-among-ranges-outline</code> colours it.
+            Among several ranges, made with Ctrl+click, no range is outlined and there is no fill handle, as in Excel,
+            and the active cell takes a thin border of one screen pixel inside it, in the outline's green, as Excel's
+            is. Under ExSheet.MudBlazor it is the palette's primary, as the outline is.
+            <code>--ex-focus-among-ranges-outline</code> colours it.
         </p>
         <DocsExample Builtin="typeof(BordersUnderSelection)" Mud="typeof(BordersUnderSelectionMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
 ```
 
-(If the user takes the picture's colour: "a thin border inside it, in the outline's green".)
+## Not a page: the Themed grid Example
 
-## Change Notes written
+`samples/ExGrid.Docs/Examples/Grid/ThemedGrid.razor` is an Example component, not a page (it has no `@page`), so
+this branch fixed it in code: `--ex-focus-outline: 2px solid #2f81f7;` became `--ex-focus-outline: #2f81f7;`. The
+old value is not a colour, so the Focus outline's `border: … solid var(--ex-focus-outline, CanvasText)` was invalid
+at computed-value time and the Example drew no Focus outline and no range outline. With the decided default, the
+Focus among several ranges in that Example is the same blue with no token of its own, which edit 8's last sentence
+invites the reader to try.
+
+## Change Notes
 
 - `docs/releases/unreleased/run17gh-focus-among-ranges-exgrid.md`: ExGrid, Behaviour, ADR 0008 and 0029.
-- `docs/releases/unreleased/run17gh-focus-among-ranges-exsheet.md`: ExSheet, Behaviour, ADR 0008.
+- `docs/releases/unreleased/run17gh-focus-among-ranges-exsheet.md`: ExSheet, Behaviour, ADR 0008 and 0071.
 
 ## Questions for the next Windows run
 
 Each is a reading until a run has observed it; none is written as Excel's.
 
-1. **The border's width, colour and place at Excel's 100% and 150% zoom, in device pixels** (asked by the user with
-   the decision).
-   - *Procedure.* A new workbook. A1:B2 dragged, then Ctrl+drag D4:E6, as h2 did; the active cell D4. Do it at
-     Excel's zoom 100%, then 150% (View, Zoom). Use the run's display at 150%, and a display at 100% if the desk has
-     one. Cut a picture to the cells at each. Then fill D4 yellow through COM before the selection, and take the
-     same pictures again.
-   - *What to read.* Across D4's left and right edges at its middle row, and down its top and bottom edges at its
-     middle column, in device pixels. Start at the gridline and go inward to the cell's ground, and give each
-     pixel's colour in hex.
-   - *What decides.*
-     - The width: one device pixel, or two at 150% zoom. Two makes it scale with the zoom, and ADR-0008's bullet
-       says so.
-     - The colour: `#217346`, as h2's picture reads, or black, as its report says. Anything but black puts the
-       Paper's default to the user again.
-     - The gap: one device pixel of the cell's ground between the gridline and the border, as h2's picture shows,
-       or none. None moves the border onto the gridline.
-     - The gap over the yellow Fill: yellow (the cell's ground, as built) or white (a white line of its own, which
-       the Paper would then draw).
-2. **What marks the active cell among several ranges while it is edited.**
-   - *Procedure.* The same selection, then F2 on D4, at 100% zoom.
-   - *What to read.* The pixels across D4's edges, as in question 1, with the edit open.
-   - *What decides.* ExGrid's Cell Editor covers the cell, and with it the thin border inside the cell. If Excel
-     keeps a border round the edited cell, the border has to stand over the editor, or the editor inside it.
-3. **A range among several: a white line inside its edges, and the gridline outside its top and left shaded?**
-   - *Procedure.* As question 1, at 100% and 150% zoom.
-   - *What to read.* Across E5's right edge and D6's left edge, and down E4's top edge and E6's bottom edge (cells of
-     D4:E6 away from the active cell), from two pixels outside the range to three inside.
-   - *What decides.* h2's picture at 150% shows both: a `#FFFFFF` device pixel between the shaded gridline and the
-     shade, on every side, and the gridline outside the top and left edges at `#AFAFAF` (`#E1E1E1` under the 22%
-     shade). ExSheet draws neither. Either one, confirmed, is a new decision about the Paper's look, which this
-     branch did not take.
-
-## Seen while reading, for another area
-
-ADR-0008's single-range bullet still says "*(Read, not observed: that Excel draws no separate outline around the
-active cell inside a single range. It is on the next Windows run's list.)*". Run 17's h1 observed it: A1 untinted,
-with no outline of its own (`h-h1-1-a1-zoom.png`). That is the readings area's to record, so it is not proposed here.
+1. **A display at 100%.** R4's three selections at Excel's 100% zoom on a display at 100%, if the desk has one:
+   the border's width and place in device pixels, as R4 read them.
+2. **A cell with a Fill.** D4 filled yellow through COM before R4's first selection; the four lines again. What
+   decides: whether the device pixel between the border and the gridline is the Fill (as built) or white (a line of
+   its own, which the Paper would then draw).
+3. **The active cell while it is edited.** R4's first selection, then F2 on D4, the four lines again. What decides:
+   ExGrid's Cell Editor covers the cell and the border inside it; if Excel keeps a border round the edited cell, the
+   border has to stand over the editor, or the editor inside it.

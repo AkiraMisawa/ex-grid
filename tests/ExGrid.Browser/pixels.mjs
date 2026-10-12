@@ -1,5 +1,5 @@
 import zlib from 'node:zlib';
-import { circuitQuiet, test, twoFrames } from './fixtures.mjs';
+import { alterPage, circuitQuiet, expect, test, twoFrames } from './fixtures.mjs';
 
 // What the browser put on the screen, read in device pixels: a screenshot at the device's own
 // scale, decoded here. A computed style says what the cascade resolved; it cannot say that a
@@ -210,20 +210,56 @@ export function onDeviceGrid({ x, y, width, height }, scale, margin = 0) {
 }
 
 /**
- * Which device pixels paint `colour` exactly (`paints`), counted from each edge of a CSS box: 0 is
- * the box's own device pixel at that edge, 1 the next one in, and -1 the first outside it. Each edge
- * is read across on one line, `inset` CSS px in from the box's top left corner, which is clear of a
- * cell's text, padded further in; from `outside` device pixels out to `inside` in. What a line drawn
- * inside a box at whole Device Pixels from its edges is read with: where each side lies, and how
- * wide it is. A box the page lays at a fraction of a device pixel (/wide's rows start at 471.875 CSS
- * px, and Chrome lays out in 64ths, so a third of a pixel at 150% is never exact) is painted from
- * the device pixel nearest its edge, and so are the boxes laid over it: each reading is a device
- * pixel's centre counted from that edge, which holds while the edge is under half a device pixel
- * from the grid. `off` names the edges that are off it, for a message. A line blended over two
- * device pixels paints neither exactly, and is read as none.
+ * `locator`'s box, with the page moved, if it must be, so that each of its edges lies on a device
+ * pixel: what `edgePixels` reads. A grid lies wherever the page's own content puts it, and that is a
+ * fraction of a device pixel more often than not (/wide's rows start at 471.875 CSS px). So the body
+ * is offset by the fraction its top left corner is off, through alterPage, which takes the offset
+ * away when the test ends. A relative offset moves what is painted and lays nothing out again, so
+ * the box's width and height, the grid's own and on Device Pixels (ADR-0090), are what they were.
+ * Chrome holds an offset in 64ths of a device pixel and takes a CSS length down to one, so each
+ * offset asks for a quarter of a 64th more than the fraction, and the box is read again until it
+ * lies on the grid. Fails, naming the edges, if one is still off.
  */
-export async function edgePixels(page, box, colour, { inset = 4, outside = 2, inside = 4 } = {}) {
+export async function onDevicePixels(page, locator) {
     const scale = await page.evaluate(() => devicePixelRatio);
+    let box = await locator.boundingBox();
+    for (let attempt = 0; attempt < 4 && offDevicePixels(box, scale).length > 0; attempt++) {
+        const short = (at) => {
+            const off = Math.ceil(at * scale - 1e-3) - at * scale;
+            return off < 1e-3 ? 0 : (off + 0.25 / 64) / scale;
+        };
+        await alterPage(page, ([dx, dy]) => {
+            const style = document.body.style;
+            const was = { position: style.position, left: style.left, top: style.top };
+            const now = getComputedStyle(document.body);
+            const by = (offset) => (now.position === 'relative' ? parseFloat(offset) || 0 : 0);
+            style.left = `${by(now.left) + dx}px`;
+            style.top = `${by(now.top) + dy}px`;
+            style.position = 'relative';
+            return () => Object.assign(style, was);
+        }, [short(box.x), short(box.y)]);
+        await twoFrames(page);
+        box = await locator.boundingBox();
+    }
+    expect(offDevicePixels(box, scale), `${JSON.stringify(box)} at a scale of ${scale}: each edge on a device pixel`).toEqual([]);
+    return box;
+}
+
+/**
+ * The device pixels across each edge of a CSS box, counted from that edge: 0 is the box's own device
+ * pixel at that edge, 1 the next one in, and -1 the first outside it. Each edge is read across on
+ * one line, `inset` CSS px in from the box's top left corner, which is clear of a cell's text, padded
+ * further in; from `outside` device pixels out to `inside` in. `at(side, index)` is the pixel there.
+ * The box's edges must lie on device pixels (`onDevicePixels` puts them there): a device pixel an
+ * edge cuts through is a blend of both sides, so a box off the grid is refused, naming the edges,
+ * before anything is read.
+ */
+export async function acrossEdges(page, box, { inset = 4, outside = 2, inside = 4 } = {}) {
+    const scale = await page.evaluate(() => devicePixelRatio);
+    const off = offDevicePixels(box, scale);
+    if (off.length > 0) {
+        throw new Error(`a box read at its edges lies on device pixels, and this one has ${off.join('; ')} at a scale of ${scale}`);
+    }
     // The region's corners on whole CSS pixels that are whole device pixels too: a clip whose
     // corner is a fraction of a CSS pixel is moved by the screenshot, and at 150% a device pixel's
     // edge is a whole CSS pixel only every second one (device-pixel-225.spec.mjs reads at 2.25 on
@@ -236,19 +272,28 @@ export async function edgePixels(page, box, colour, { inset = 4, outside = 2, in
     const right = Math.ceil((box.x + box.width + margin) / step) * step;
     const bottom = Math.ceil((box.y + box.height + margin) / step) * step;
     const region = await painted(page, { x: left, y: top, width: right - left, height: bottom - top });
+    const centre = (index) => (index + 0.5) / scale;
+    const read = {
+        left: (index) => region.at(box.x + centre(index), box.y + inset),
+        right: (index) => region.at(box.x + box.width - centre(index), box.y + inset),
+        top: (index) => region.at(box.x + inset, box.y + centre(index)),
+        bottom: (index) => region.at(box.x + inset, box.y + box.height - centre(index)),
+    };
     const reach = [];
     for (let i = -outside; i <= inside; i++) reach.push(i);
-    const boxRight = box.x + box.width;
-    const boxBottom = box.y + box.height;
-    const on = (x, y) => paints(region.at(x, y), colour);
-    return {
-        scale,
-        off: offDevicePixels(box, scale),
-        left: reach.filter((i) => on(box.x + (i + 0.5) / scale, box.y + inset)),
-        right: reach.filter((i) => on(boxRight - (i + 0.5) / scale, box.y + inset)),
-        top: reach.filter((i) => on(box.x + inset, box.y + (i + 0.5) / scale)),
-        bottom: reach.filter((i) => on(box.x + inset, boxBottom - (i + 0.5) / scale)),
-    };
+    return { scale, reach, at: (side, index) => read[side](index) };
+}
+
+/**
+ * Which device pixels across each edge of a CSS box paint `colour` exactly (`paints`), counted as
+ * `acrossEdges` counts them. What a line drawn inside a box at whole Device Pixels from its edges is
+ * read with: where each side lies, and how wide it is. A line blended over two device pixels paints
+ * neither exactly, and is read as none.
+ */
+export async function edgePixels(page, box, colour, options = {}) {
+    const { scale, reach, at } = await acrossEdges(page, box, options);
+    const on = (side) => reach.filter((i) => paints(at(side, i), colour));
+    return { scale, left: on('left'), right: on('right'), top: on('top'), bottom: on('bottom') };
 }
 
 // ---------------------------------------------------------------------------------------------
