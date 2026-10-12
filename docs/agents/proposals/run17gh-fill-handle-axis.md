@@ -50,9 +50,9 @@ blank line does write (a format along the fill), and each fails with the fallbac
 - **Layer 3**: `selection-look.spec.mjs`, `DC-12 (built-in|MudBlazor Chrome)`: column C from its Heading, the handle
   centred on C1's right edge with its top on C1's top, not above the Heading's bottom, and its middle pixel the handle's
   own colour; row 3 from its Heading, the handle's left on A3's left, centred on A3's bottom, right of the Heading,
-  uncovered. `declarations.spec.mjs` (where the fill cases are; `sheet.spec.mjs` defers them there): column F's handle
-  dragged to G3 fills G2:G4 (`1`, `2`, `=G2+G3`) and nothing in H or G5, one Ctrl+Z takes it back; row 16's handle
-  dragged to C18 fills B17:C18 (`5`, `=B18*2`).
+  uncovered. `declarations.spec.mjs` (where the fill cases are; `sheet.spec.mjs` defers them there): column E's handle
+  dragged to F3 fills F2:F4 (`1`, `2`, `=F2+F3`) and nothing in G2 or F5, and one Ctrl+Z takes it back; row 6's handle
+  dragged to D8 fills C7:D8 (`5`, `=C8*2`), and one Ctrl+Z takes it back.
 
 ## ADR-0050, section 5: the first bullet's opening
 

@@ -1695,52 +1695,64 @@ async function dragAxisHandle(page, grid, cornerCell, where, to) {
     const toX = target.x + target.width / 2;
     const toY = target.y + target.height / 2;
     await page.mouse.move(toX, toY + 3, { steps: 8 });
-    await fillDragHeard(page, grid, toX, toY + 3);
+    // As fillDragHeard, but a whole row's target crosses the pinned boundary and is outlined in
+    // both layers, so one outline or two.
+    let nudge = 0;
+    await expect.poll(async () => {
+        await page.mouse.move(toX + (nudge++ % 2), toY + 3);
+        return grid.locator('.ex-fill-target').count();
+    }).toBeGreaterThan(0);
     await page.mouse.up();
     await circuitQuiet();
 }
 
 test('DC-12/DC-13: a whole column\'s handle stands beside its Heading, and dragged right it fills the column beside it (the seventeenth Windows run, h3)', async ({ page }) => {
     const grid = sheet(page);
-    await enter(page, grid, 'F2', '1');
-    await enter(page, grid, 'F3', '2');
-    await enter(page, grid, 'F4', '=F2+F3');
-    await columnHeading(grid, 'F').click({ force: true });
-    await expectFocusAt(grid, 'F1');
+    // Column E is free on the page's Sheet, and F lies clear of the Viewport's right edge band.
+    await enter(page, grid, 'E2', '1');
+    await enter(page, grid, 'E3', '2');
+    await enter(page, grid, 'E4', '=E2+E3');
+    await columnHeading(grid, 'E').click({ force: true });
+    await expectFocusAt(grid, 'E1');
 
-    // At F1's top-right corner: centred on F's right edge, its top on F1's top, beside the Heading.
-    await dragAxisHandle(page, grid, 'F1', (f1, side) => ({ x: f1.x + f1.width, y: f1.y + side / 2 }), 'G3');
-    await expect(cell(grid, 'G2')).toHaveText('1');
-    await expect(cell(grid, 'G3')).toHaveText('2');
-    await expect(cell(grid, 'G4')).toHaveText('3');
-    await pressCell(grid, 'G4');
-    await expect(bar(grid)).toHaveValue('=G2+G3');
-    // Along one axis only: nothing below or beside what F held.
-    await expect(cell(grid, 'H2')).toHaveText('');
-    await expect(cell(grid, 'G5')).toHaveText('');
+    // At E1's top-right corner: centred on E's right edge, its top on E1's top, beside the Heading.
+    await dragAxisHandle(page, grid, 'E1', (e1, side) => ({ x: e1.x + e1.width, y: e1.y + side / 2 }), 'F3');
+    await expect(cell(grid, 'F2')).toHaveText('1');
+    await expect(cell(grid, 'F3')).toHaveText('2');
+    await expect(cell(grid, 'F4')).toHaveText('3');
+    // Along one axis only: nothing beside what E held, nor below it.
+    await expect(cell(grid, 'G2')).toHaveText('');
+    await expect(cell(grid, 'F5')).toHaveText('');
+    await pressCell(grid, 'F4');
+    await expect(bar(grid)).toHaveValue('=F2+F3');
 
     // One step on the undo stack, as a fill always is.
     await page.keyboard.press('ControlOrMeta+Z');
-    await expect(cell(grid, 'G2')).toHaveText('');
-    await expect(cell(grid, 'G4')).toHaveText('');
-    await expect(cell(grid, 'F4')).toHaveText('3');
+    await expect(cell(grid, 'F2')).toHaveText('');
+    await expect(cell(grid, 'F4')).toHaveText('');
+    await expect(cell(grid, 'E4')).toHaveText('3');
 });
 
 test('DC-12/DC-13: a whole row\'s handle stands at the row\'s left, beside its Heading, and dragged down it fills the rows below (the seventeenth Windows run, h3)', async ({ page }) => {
     const grid = sheet(page);
-    await enter(page, grid, 'B16', '5');
-    await enter(page, grid, 'C16', '=B16*2');
-    await pressAt(rowHeading(grid, 16));
-    await expectFocusAt(grid, 'A16');
+    // Row 6 is free on the page's Sheet, between the table and the date below it.
+    await enter(page, grid, 'C6', '5');
+    await enter(page, grid, 'D6', '=C6*2');
+    await pressAt(rowHeading(grid, 6));
+    await expectFocusAt(grid, 'A6');
 
-    // At A16's bottom-left corner: its left on A's left, beside the Heading, centred on the row's bottom.
-    await dragAxisHandle(page, grid, 'A16', (a16, side) => ({ x: a16.x + side / 2, y: a16.y + a16.height }), 'C18');
-    await expect(cell(grid, 'B17')).toHaveText('5');
-    await expect(cell(grid, 'B18')).toHaveText('5');
-    await expect(cell(grid, 'C18')).toHaveText('10');
-    await pressCell(grid, 'C18');
-    await expect(bar(grid)).toHaveValue('=B18*2');
-    await expect(cell(grid, 'B19')).toHaveText('');
+    // At A6's bottom-left corner: its left on A's left, beside the Heading, centred on the row's bottom.
+    await dragAxisHandle(page, grid, 'A6', (a6, side) => ({ x: a6.x + side / 2, y: a6.y + a6.height }), 'D8');
+    await expect(cell(grid, 'C7')).toHaveText('5');
+    await expect(cell(grid, 'C8')).toHaveText('5');
+    await expect(cell(grid, 'D8')).toHaveText('10');
+    await pressCell(grid, 'D8');
+    await expect(bar(grid)).toHaveValue('=C8*2');
+
+    await page.keyboard.press('ControlOrMeta+Z');
+    await expect(cell(grid, 'C7')).toHaveText('');
+    await expect(cell(grid, 'D8')).toHaveText('');
+    await expect(cell(grid, 'D6')).toHaveText('10');
 });
 
 // ---------------------------------------------------------------------------------------------
