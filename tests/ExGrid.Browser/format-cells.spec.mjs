@@ -195,6 +195,40 @@ test.describe('on /sheet', () => {
         await expect(formatCells(grid).getByRole('button', { name: 'Bottom', exact: true })).toHaveAttribute('aria-pressed', 'false');
     });
 
+    test('SH-45, run 17 h10: over A2 under A1\'s thick bottom the Border tab opens on Thick, and the Top button alone takes the line away on both sides', async ({ page }) => {
+        const grid = sheet(page);
+        const edge = (name) => formatCells(grid).getByRole('button', { name, exact: true });
+        // A1's bottom thick, set through Format Cells itself. Over A1, with no line, it opens on Thin.
+        await openFromMenu(grid, 'A1');
+        await tab(grid, 'Border').click();
+        await expect(choice(grid, 'Thin')).toBeChecked();
+        await choice(grid, 'Thick').check();
+        await edge('Bottom').click();
+        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+
+        // Over A2 it opens on the one line A2 shows, as Excel's did.
+        await openFromMenu(grid, 'A2');
+        await expect(tab(grid, 'Border')).toHaveAttribute('aria-selected', 'true');
+        await expect(choice(grid, 'Thick')).toBeChecked();
+        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'true');
+
+        // What the run pressed: the Top button, then OK.
+        await edge('Top').click();
+        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'false');
+        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+
+        // Neither cell keeps a line there: A2 shows no top, and A1 no bottom.
+        await openFromMenu(grid, 'A2');
+        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'false');
+        await expect(choice(grid, 'Thin')).toBeChecked();
+        await formatCells(grid).getByRole('button', { name: 'Cancel' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+        await openFromMenu(grid, 'A1');
+        await expect(edge('Bottom')).toHaveAttribute('aria-pressed', 'false');
+    });
+
     // On the Server host the grid raises a move a round trip after it, from after the render that
     // shows it (ADR-0050 item 14's note of 2026-10-01). Format Cells opens over the Selection the
     // grid holds when it is asked, and the move's notification, landing after, names that same

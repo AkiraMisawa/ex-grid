@@ -505,7 +505,7 @@ public class MudFormatCellsTests : MudSheetTestContext
     private static IReadOnlySet<CellFormat> RecordedAt(IRenderedComponent<Bunit.Rendering.ContainerFragment> page, string range) =>
         global::ExSheet.Engine.Sheet.Open(Sheet(page).ToDocument()).GetCellFormats(CellRange.Parse(range));
 
-    [Fact] // ADR-0071 / SH-45, case 14-13: under this Chrome too, A2 under A1's thick bottom opens with a thick top, its button pressed
+    [Fact] // ADR-0071 / SH-45, case 14-13: under this Chrome too, A2 under A1's thick bottom opens with a thick top, its button pressed; and with Thick chosen in Style, the one line A2 shows (the seventeenth Windows run, h10)
     public async Task A2_under_a1s_thick_bottom_opens_with_a_thick_top_case_14_13()
     {
         var page = RenderPage(ThickBottomOnA1());
@@ -516,6 +516,8 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal("true", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
         Assert.Equal("3", page.Find(".mud-ex-sheet-format-cells-preview line[data-edge=Top]").GetAttribute("stroke-width"));
         Assert.Equal("false", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Bottom]").GetAttribute("aria-pressed"));
+        Assert.True(Radio(page, "Thick").HasAttribute("checked"));
+        Assert.False(Radio(page, "Thin").HasAttribute("checked"));
     }
 
     [Fact] // ADR-0071 / SH-45, case 14-13: OK with the shown top left alone sets nothing: A2 still records no top, and no undo step is added
@@ -533,14 +535,14 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(Thick, FormatAt(page, "A1").Borders.Bottom);
     }
 
-    [Fact] // ADR-0071 / SH-45, case 14-13 (a reading: no run pressed it): taking the shown top away clears A1's bottom too, so no line is drawn there
+    [Fact] // ADR-0071 / SH-45, case 14-13 (observed in Excel, the seventeenth Windows run, h10): the Top button alone takes the shown top away, and OK clears A1's bottom too, so no line is drawn there
     public async Task Taking_the_shown_top_away_clears_a1s_bottom_case_14_13()
     {
         var page = RenderPage(ThickBottomOnA1());
         await OpenAsync(page, "A2");
         await ShowTabAsync(page, "Border");
 
-        await ChooseAsync(page, "Thick");
+        // What the run pressed: the Top button, then OK. The tab opened on the thick line.
         await page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").ClickAsync(new MouseEventArgs());
         Assert.Equal("false", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
         await OkAsync(page);

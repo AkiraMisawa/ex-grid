@@ -441,7 +441,7 @@ public class CultureTests
     private static readonly NumberFormat[] DateAndTimeBuiltIns =
         [NumberFormat.ShortDate, NumberFormat.ShortDateTime, NumberFormat.Parse("d-mmm"), NumberFormat.Parse("d-mmm-yy"), NumberFormat.Parse("h:mm")];
 
-    [Theory] // ADR-0071, ticket 103 (observed in Excel, the seventeenth Windows run, h9): a code typed into Custom that spells no built-in under the culture is a code of its own and shows as spelled — under en-GB d-mmm-yy, m/d/yyyy and h:mm on 12 October 2026 13:30 (46307.5625) and on 13:30 alone (0.5625), and under ja-JP mmmmm, the first character of 10月 and of 1月. h:mm's one-digit hour is still a reading: 13:30 does not settle it
+    [Theory] // ADR-0071, ticket 103 (observed in Excel, the seventeenth Windows run, h9): codes typed into Custom show as Excel showed them on 12 October 2026 13:30 (46307.5625) and on 13:30 alone (0.5625) — under en-GB d-mmm-yy, m/d/yyyy and h:mm, and under ja-JP mmmmm, the first character of 10月 and of 1月. d-mmm-yy and m/d/yyyy are observed as codes of their own: 0-Jan-00 and 1/0/1900, where built-ins 15 and 14, which en-GB spells dd-mmm-yy and dd/mm/yyyy, show 00-Jan-00 and 00/01/1900. h:mm's 13:30 does not settle it, since built-in 20 (hh:mm) shows the same: there h9 leaves it ExSheet's reading, and R7 below observes it
     [InlineData("en-GB", "d-mmm-yy", 46307.5625, "12-Oct-26")]
     [InlineData("en-GB", "d-mmm-yy", 0.5625, "0-Jan-00")]
     [InlineData("en-GB", "m/d/yyyy", 46307.5625, "10/12/2026")]
@@ -460,6 +460,22 @@ public class CultureTests
         Assert.True(NumberFormat.TryParseLocal(typed, info, out var format, out _));
 
         // A code of its own, no built-in's, which Format Cells spells back as it was typed.
+        Assert.DoesNotContain(format, DateAndTimeBuiltIns);
+        Assert.Equal(typed, format.LocalCode(info));
+        Assert.Equal(shown, Shown(sheet, format));
+    }
+
+    [Theory] // ADR-0071, ticket 103 (observed in Excel, the readings of 2026-10-12, R7): under en-GB, h:mm typed into Custom shows 9:05 on 0.37847222, not built-in 20's 09:05, and d-mmm-yy shows 5-Jan-26 on 46027, not built-in 15's 05-Jan-26: each is a code of its own
+    [InlineData("h:mm", 0.37847222, "9:05")]
+    [InlineData("d-mmm-yy", 46027, "5-Jan-26")]
+    public void A_code_typed_into_custom_is_no_built_in_under_en_gb_r7(string typed, double value, string shown)
+    {
+        var info = CultureInfo.GetCultureInfo("en-GB");
+        var sheet = In("en-GB");
+        sheet.Enter(CellAddress.Parse("A1"), "=" + value.ToString(CultureInfo.InvariantCulture));
+
+        Assert.True(NumberFormat.TryParseLocal(typed, info, out var format, out _));
+
         Assert.DoesNotContain(format, DateAndTimeBuiltIns);
         Assert.Equal(typed, format.LocalCode(info));
         Assert.Equal(shown, Shown(sheet, format));

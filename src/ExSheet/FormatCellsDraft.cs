@@ -14,12 +14,14 @@ namespace ExSheet;
 /// dotted line (<see cref="EdgeLine"/> is <see langword="null"/>). Every other part shows the Focus
 /// cell's. A range's outer edges show as they are drawn, a neighbour's line where the cell records
 /// none (the fourteenth run, case 13); an edge inside a range shows the cells' own sides. The Border
-/// tab's line opens as Thin and Automatic.</para>
+/// tab's line opens as the line shown where the Selection is one cell and exactly one of its edges
+/// shows a line (the seventeenth Windows run, h10), and as Thin and Automatic everywhere else (see
+/// <see cref="LineStyle"/>).</para>
 ///
 /// <para><see cref="Change"/> names only the parts the user touched, so OK leaves every other part
 /// as each cell has it; with nothing touched it is empty, and OK sets nothing. An edge shown from a
 /// neighbour and left alone writes nothing; taken away, it is cleared on both sides, as clearing an
-/// edge is (SH-45; a reading, since no run pressed it). A choice that
+/// edge is (SH-45; observed in the seventeenth Windows run, h10). A choice that
 /// cannot be set — a Custom code ExSheet does not read, More Colours text that is not a colour — is
 /// held as <see cref="Refusal"/>, by name, and OK sets nothing until it is put right.</para>
 /// </summary>
@@ -55,6 +57,31 @@ public sealed class FormatCellsDraft
         FontColour = opening.Font.Colour;
         Fill = spread.FillDiffers ? CellFill.None : opening.Fill;
         _edges = [.. FormatCellsOffer.Edges.Select(edge => spread.Edges[(int)edge])];
+        var pen = OpeningPen(spread.OneCell, _edges);
+        LineStyle = pen.Style;
+        LineColour = pen.Colour;
+    }
+
+    /// <summary>
+    /// The line the Border tab opens on (ADR-0071). Over one cell where exactly one edge shows a line,
+    /// that line, so a single press of that edge's button takes it away. Excel opened on A1's thick
+    /// bottom over A2 and over A1, in black where the line was black (the fourteenth run, case 13) and
+    /// Automatic where it was Automatic (the seventeenth Windows run, h10), and on Thin where the line
+    /// shown was thin (h10). Everywhere else Thin and Automatic: over a cell with no line (the eleventh
+    /// run, case 22), over one with a thin top and a thick right, and over a range (the readings of
+    /// 2026-10-12, R8). What opens where a cell's one line is on its left or right, where two of its
+    /// edges show lines none of them thin, and over a range whose edges show one line, is a reading.
+    /// </summary>
+    private static BorderLine OpeningPen(bool oneCell, BorderLine?[] edges)
+    {
+        if (oneCell)
+        {
+            BorderLine[] shown = [.. new[] { BorderEdge.Top, BorderEdge.Bottom, BorderEdge.Left, BorderEdge.Right }
+                .Select(edge => edges[(int)edge] ?? BorderLine.None)
+                .Where(line => !line.IsNone)];
+            if (shown.Length == 1) return shown[0];
+        }
+        return new BorderLine(BorderLineStyle.Thin);
     }
 
     /// <summary>The Focus cell's Cell Format, which Format Cells opens on.</summary>
@@ -295,10 +322,18 @@ public sealed class FormatCellsDraft
 
     // ---- Border ----
 
-    /// <summary>The line style an edge or a preset sets; Thin when Format Cells opens.</summary>
-    public BorderLineStyle LineStyle { get; private set; } = BorderLineStyle.Thin;
+    /// <summary>
+    /// The line style an edge or a preset sets. Format Cells opens on the line shown where the
+    /// Selection is one cell and exactly one of its edges shows a line, as Excel's did (the
+    /// seventeenth Windows run, h10), so that one press of that edge's button takes it away; and on
+    /// Thin everywhere else.
+    /// </summary>
+    public BorderLineStyle LineStyle { get; private set; }
 
-    /// <summary>The line colour an edge or a preset sets; Automatic when Format Cells opens.</summary>
+    /// <summary>
+    /// The line colour an edge or a preset sets: the colour of the line <see cref="LineStyle"/> opens
+    /// on, and Automatic where it opens on Thin.
+    /// </summary>
     public CellColour LineColour { get; private set; }
 
     /// <summary>Chooses the line style.</summary>
@@ -527,12 +562,13 @@ public sealed class FormatCellsDraft
 
 /// <summary>
 /// What differs across a Selection, as Format Cells shows it (ADR-0071): whether bold or italic
-/// differs, whether the Fill does, and each edge's one line, or <see langword="null"/> where it
-/// differs. An outer edge is read as it is drawn, so a neighbour's line shows where the cell records
-/// none (the fourteenth Windows run, case 13); an edge inside a range is read from its cells' own
-/// sides, so a thick bottom over a plain cell differs (the eleventh run, case 24).
+/// differs, whether the Fill does, each edge's one line, or <see langword="null"/> where it
+/// differs, and whether the Selection is one cell. An outer edge is read as it is drawn, so a
+/// neighbour's line shows where the cell records none (the fourteenth Windows run, case 13); an edge
+/// inside a range is read from its cells' own sides, so a thick bottom over a plain cell differs (the
+/// eleventh run, case 24).
 /// </summary>
-internal sealed record FormatCellsSpread(bool FontStyleDiffers, bool FillDiffers, BorderLine?[] Edges, bool InsideHorizontal, bool InsideVertical)
+internal sealed record FormatCellsSpread(bool FontStyleDiffers, bool FillDiffers, BorderLine?[] Edges, bool InsideHorizontal, bool InsideVertical, bool OneCell)
 {
     public static FormatCellsSpread Of(Sheet sheet, IReadOnlyList<CellRange> ranges)
     {
@@ -569,7 +605,8 @@ internal sealed record FormatCellsSpread(bool FontStyleDiffers, bool FillDiffers
             shown.Select(f => f.Fill).Distinct().Count() > 1,
             [.. FormatCellsOffer.Edges.Select(edge => sides[(int)edge].Count == 1 ? sides[(int)edge].Single() : (sides[(int)edge].Count == 0 ? BorderLine.None : (BorderLine?)null))],
             ranges.Any(range => range.RowCount > 1),
-            ranges.Any(range => range.ColumnCount > 1));
+            ranges.Any(range => range.ColumnCount > 1),
+            ranges.Count == 1 && ranges[0].First == ranges[0].Last);
 
         void Add(BorderEdge edge, CellRange part, Func<CellBorders, BorderLine> side)
         {
