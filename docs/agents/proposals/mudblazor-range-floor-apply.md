@@ -28,8 +28,8 @@ Two things the edits rely on, found while writing them:
 - **The path check needs the glob spelled out.** `git diff --quiet A B -- 'src/*.MudBlazor/'` and
   `-- 'src/*.MudBlazor'` exit 0 at this branch over `origin/main`, though the branch changed six files
   there: a pathspec with a wildcard is matched against each file's whole path, never as a directory
-  whose files it holds. `':(glob)src/*.MudBlazor/**'` matches all 58 tracked files below the three
-  Wrappers, and is what Step 4's command uses (edit 5).
+  whose files it holds. `':(glob)src/*.MudBlazor/**'` matches all 62 tracked files below the three
+  Wrappers at the branch tip, and is what Step 4's command uses (edit 5).
 - **Step 4's layer-2 commands were run as written** (edit 5), but for `nix develop` given the worktree's
   flake, at `6a868089`: nuget.org listed 9.6.0 to 9.11.0, and the three Wrappers' suites passed whole at
   each, every run reading back the version it was pinned to. The new WR-10 tests fail below the floor.
@@ -42,28 +42,36 @@ Two things the edits rely on, found while writing them:
   both hosts, at the floor; this container has neither browser. ED-30's intermittent third composition
   (the proposal's §2.3 and §7) still stands between any floor run and a pass under WR-10, unless it is
   fixed or shown to fail at the demo pages' version.
-- **Which paths hold the layer-2 runs' record.** The edits give the layer-2 runs the floor run's paths,
-  `src/*.MudBlazor/` and `samples/ExGrid.DemoPages/`, as decision (4) records them beside it. The suites
-  themselves are `tests/*.MudBlazor.Tests/`; ADR-0208 draws paths wide. Whether they join is the user's.
 - **A 9.x published after the record and before X.** The record names the versions it ran. Whether a
   later 9.x asks for the layer-2 runs again, while the paths are unchanged, is not said.
-- **ADR-0208's "every automated layer still runs in full".** The floor run is now an automated run a
-  record carries forward. Step 4's paragraph and ADR-0205's note say so; ADR-0208 itself is not edited
-  here, and may want a pointer.
-- **The release workflow's path check** (ADR-0208) reads the rows checked by hand. Whether it also reads
-  the floor record's paths is the release-workflow branch's.
 - **After the first version without a suffix**, what raising a floor needs: ADR-0022's note scopes itself
   to a `0.x` prerelease line and says it does not decide that.
+
+## Settled since, by the user's decisions of 2026-10-12 on the release workflow
+
+- **The release workflow's path check reads the floor record** (that day's decision (5) on the release
+  workflow): WR-10's floor record is indexed in `verification/by-hand.json` with its paths,
+  `':(glob)src/*.MudBlazor/**'` and `samples/ExGrid.DemoPages/`, and the workflow refuses a tag whose
+  Wrappers or demo pages changed since the floor run. The index and the check are the release-workflow branch's to build; edit 8 says it in
+  ADR-0208. If that branch's apply list also says it in ADR-0208, one of the two is dropped.
+- **Which paths hold the layer-2 runs' record.** That decision (5) indexes the floor record with those
+  two paths alone. The layer-2 runs are recorded in it (this file's decision (4)), so the edits give them
+  the same paths; `tests/*.MudBlazor.Tests/` does not join.
+- **ADR-0208's "every automated layer still runs in full".** The floor run and its layer-2 runs are
+  automated runs a record carries forward. ADR-0205's "once" note now says that this is an exception to
+  ADR-0205's own note of 2026-10-11 under "After `0.1.0`" and to ADR-0208's rule (edit 2), and ADR-0208
+  gains a pointer to it (edit 8).
 
 ## The edits, in the order they apply
 
 1. **ADR-0022: a note on "Raising the floor is a breaking change".** Decision (2): ADR-0022's rule covers the Wrappers' MudBlazor floor, and a `0.x` prerelease line may raise it.
-2. **ADR-0205, "The Wrappers' MudBlazor range": the floor raised to 9.6.0, and what "once" means.** Decisions (1), (3) and (4): the floor is 9.6.0; a floor record holds while the Wrappers and the demo pages are unchanged up to X; layer 2 runs across the declared range beside the floor run.
+2. **ADR-0205, "The Wrappers' MudBlazor range": the floor raised to 9.6.0, and what "once" means.** Decisions (1), (3) and (4): the floor is 9.6.0; a floor record holds while the Wrappers and the demo pages are unchanged up to X, an exception to the note of 2026-10-11 under "After `0.1.0`" and to ADR-0208's "every automated layer still runs in full"; layer 2 runs across the declared range beside the floor run.
 3. **ADR-0205, Consequences: the range the package check, PV-1 and the readmes state.** Decision (1), and where the floor run and layer 2 across the range are judged.
 4. **PRE-3: the range named, and `ExPivot.MudBlazor`'s entry.** Decision (1); the proposal's §5 wording with F = 9.6.0. The row is one line, so the block is the whole row.
 5. **Step 4: the Wrappers' MudBlazor floor, and layer 2 across the range.** Decisions (3) and (4): the proposal's §6(a) paragraph with F = 9.6.0, the layer-2 runs of §6(c), and the rule that a record holds while its code is unchanged. Inserted after the Server-host commands' Discharges paragraph, which now leaves WR-10 to it.
 6. **§23: WR-10, the floor every Wrapper declares.** Decision (3): the proposal's §6(b) row with F = 9.6.0, the layer-2 runs of decision (4), and the record's holding rule.
 7. **PV-1: MudBlazor's range.** Decision (1); the proposal's §5 wording with F = 9.6.0. The row is one line, so the block is the whole row.
+8. **ADR-0208: a pointer to the one automated run a record carries forward.** Decision (3) and the release-workflow decision (5) of 2026-10-12: the floor run and its layer-2 runs are judged by their code, as the rows checked by hand are, and the release workflow checks their paths.
 
 ### 1. docs/adr/0022-packages-target-net10-and-run-on-everything-newer.md
 
@@ -90,9 +98,9 @@ New:
   [ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)
   already tells that a beta may break between numbers; SemVer promises nothing across `0.x`; and
   this ADR's own correction of 2026-09-25 raised the runtime floor under a published prerelease.
-  The first such raise is the Wrappers' MudBlazor floor, from 9.0.0 to 9.6.0, because below 9.6.0
-  they are wrong in ways the screen does not show (ADR-0205). This note does not decide what a raise
-  needs once a version without a suffix has been published.)*
+  The first raise made under this note is the Wrappers' MudBlazor floor, from 9.0.0 to 9.6.0,
+  because below 9.6.0 they are wrong in ways the screen does not show (ADR-0205). This note does not
+  decide what a raise needs once a version without a suffix has been published.)*
 `````
 
 ### 2. docs/adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md
@@ -113,24 +121,25 @@ New:
 - **Each Wrapper declares MudBlazor `[9.6.0,10.0.0)`.** A Consumer on MudBlazor 10 is told at restore
   (NU1608, a warning), as `Apache.Arrow`'s `[23,24)` already tells (ADR-0065), and one that references
   an earlier 9.x is stopped there (NU1605, an error by default).
-  *(2026-10-12, decided with the user: the floor was 9.0.0, and is raised to 9.6.0. The floor run of
-  that day failed at 9.0.0 on both hosts; bisected over the published 9.x, the lowest version at which
-  it passed was 9.6.0. Below 9.6.0 the filter panel's two operators have no role and no name on the
-  element that takes the keyboard (MudBlazor #13080 put them there), and below 9.2.0 ExPivot's Field
-  Settings… opens with the keyboard on `<body>` whenever its focus request comes before MudSelect's
-  second render (#12837 ended it). The Wrappers' layer-2 suites, run at every published 9.x, found a
-  third inside the old range and above its floor: from 9.3.0 to 9.5.0 a refused filter operand keeps
-  Apply unavailable and loses its words (#12892, undone by #13312). ExPivot's and ExSheet's own selects,
-  which show their text through `ToStringFunc`, are named from 9.4.0. Each is a Wrapper wrong in a way
-  the screen does not show. Holding the Wrappers at 9.0.0 instead would have copied MudBlazor's ARIA
-  wiring into them, still partial below 9.4.0, and bound every later Wrapper change to 9.0.0 as well as
-  to the latest 9.x. The raise costs a Consumer on 9.0 to 9.5 one minor upgrade within 9, and the three
-  Change Notes say so as Breaking. The Wrappers take their floor by ADR-0022's rule; ADR-0022's note of
-  this date says why a `0.x` prerelease line may raise it. A layer-2 test in each Wrapper, named for
-  WR-10, pins the role and name on the focusable element of every MudSelect it draws, and another pins a
-  refused operand's words, so CI holds the floor on every push. The record is
-  `verification/2026-10-12-linux-mudblazor-floor/`; the options weighed are in
-  `docs/agents/proposals/mudblazor-range.md`.)*
+  *(2026-10-12, decided with the user: the floor was 9.0.0, and is raised to 9.6.0. The Wrappers'
+  layer-3 tests, run that day on Playwright's Chromium against a DemoHost at 9.0.0, failed on both
+  hosts; bisected over 9.0.0 to 9.9.0, the lowest version at which they passed, but for two failures
+  that are not MudBlazor's, was 9.6.0. Below 9.6.0 the filter panel's two operators have no role and
+  no name on the element that takes the keyboard (MudBlazor #13080 put them there), and below 9.2.0
+  ExPivot's Field Settings… opens with the keyboard on `<body>` whenever its focus request comes before
+  MudSelect's second render (#12837 ended it). The Wrappers' layer-2 suites, run at every published
+  9.x, found a third inside the old range and above its floor: from 9.3.0 to 9.5.0 a refused filter
+  operand keeps Apply unavailable and loses its words (#12892, undone by #13312). ExPivot's and
+  ExSheet's own selects, which show their text through `ToStringFunc`, are named from 9.4.0. Each is a
+  Wrapper wrong in a way the screen does not show. Holding the Wrappers at 9.0.0 instead would have
+  copied MudBlazor's ARIA wiring into them, still partial below 9.4.0, and bound every later Wrapper
+  change to 9.0.0 as well as to the latest 9.x. The raise costs a Consumer on 9.0 to 9.5 one minor
+  upgrade within 9, and the three Change Notes say so as Breaking. The Wrappers take their floor by
+  ADR-0022's rule; ADR-0022's note of this date says why a `0.x` prerelease line may raise it. A
+  layer-2 test in each Wrapper, named for WR-10, pins the role and name on the focusable element of
+  every MudSelect it draws, and another pins a refused operand's words, so CI holds the floor on every
+  push. The record is `verification/2026-10-12-linux-mudblazor-floor/`; it is not the floor run below.
+  The options weighed are in `docs/agents/proposals/mudblazor-range.md`.)*
 - **The floor is run once before the sign-off**: the Wrappers' layer-3 specs against a DemoHost pinned to
   the floor every Wrapper declares, recorded under `verification/`. Every other run stays on the version
   the DemoPages pin.
@@ -139,7 +148,14 @@ New:
   made at up to X, as a row checked by hand holds while its code is unchanged (ADR-0208); a change to
   either asks for the run again, at the floor then declared. The run is the Definition of Done's Step 4
   floor paragraph, on both hosts in installed Chrome and Edge, and WR-10 judges it. The record of
-  2026-10-12 is a bisection on Playwright's bundled Chromium and does not discharge it.)*
+  2026-10-12 is a bisection on Playwright's bundled Chromium and does not discharge it. **The floor run,
+  and the layer-2 runs recorded with it (the next note), are the one automated run a record carries
+  forward**: an exception to this ADR's note of 2026-10-11 under "After `0.1.0`", that every automated
+  step of §22 still runs on every such version, and to ADR-0208's "every automated layer still runs in
+  full on every candidate and every stable tag". They are run again only when their paths change, and
+  the release workflow refuses a tag whose Wrappers or demo pages changed since their record, as it
+  refuses one for a row checked by hand. Every other automated step still runs on every candidate and
+  every version without a suffix.)*
   *(2026-10-12, decided with the user: beside the floor run, each Wrapper's layer-2 suite runs with
   MudBlazor pinned in its test project to every published version of the declared range, and is
   recorded with the floor run. A run at the floor alone cannot see what breaks between the ends of the
@@ -277,7 +293,7 @@ New:
 
 `````text
 | **WR-9** | MUST | The Wrapper's own suites hold the core's console rules: zero errors, zero page errors, zero warnings from ExGrid's or the Wrapper's code, no unhandled exception (CON-1/2/3/6) | the shared layer-3 fixture; layer 2's unobserved-exception handler | as the core's |
-| **WR-10** | MUST | Each MudBlazor Wrapper works at the floor it declares, 9.6.0, and across its declared range: the layer-3 tests run under `ExGrid.MudBlazor`, `ExSheet.MudBlazor` and `ExPivot.MudBlazor` pass against a DemoHost built with the floor's MudBlazor, on both hosts, in Chrome and in Edge; and each Wrapper's layer-2 suite passes with MudBlazor pinned to every published version of its declared range ([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)). *(Added 2026-10-12, decided with the user, when the floor run of that day failed at 9.0.0 and the floor was raised to 9.6.0.)* | Step 4's floor run and its layer-2 runs, recorded under `verification/`. The record holds while `src/*.MudBlazor/` and `samples/ExGrid.DemoPages/` are unchanged from the commit it was made at up to X (ADR-0205's note of 2026-10-12, the shape of ADR-0208). Between floor runs, Step 1 holds the floor on every run: the Wrappers' suites resolve 9.6.0, and their WR-10 tests pin the role and name on the focusable element of every MudSelect a Wrapper draws, and a refused operand's words | zero failures; a layer-3 failure that also fails at the demo pages' version is that test's, and is judged by the run at that version |
+| **WR-10** | MUST | Each MudBlazor Wrapper works at the floor it declares, 9.6.0, and across its declared range: the layer-3 tests run under `ExGrid.MudBlazor`, `ExSheet.MudBlazor` and `ExPivot.MudBlazor` pass against a DemoHost built with the floor's MudBlazor, on both hosts, in Chrome and in Edge; and each Wrapper's layer-2 suite passes with MudBlazor pinned to every published version of its declared range ([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)). *(Added 2026-10-12, decided with the user, when the floor was raised to 9.6.0: the Wrappers' layer-3 tests, run that day on Playwright's Chromium against a DemoHost at 9.0.0, failed on both hosts, and bisected over 9.0.0 to 9.9.0, the lowest version at which they passed, but for two failures that are not MudBlazor's, was 9.6.0. That record is not this row's floor run.)* | Step 4's floor run and its layer-2 runs, recorded under `verification/`. The record holds while `src/*.MudBlazor/` and `samples/ExGrid.DemoPages/` are unchanged from the commit it was made at up to X (ADR-0205's note of 2026-10-12, the shape of ADR-0208). Between floor runs, Step 1 holds the floor on every run: the Wrappers' suites resolve 9.6.0, and their WR-10 tests pin the role and name on the focusable element of every MudSelect a Wrapper draws, and a refused operand's words | zero failures; a layer-3 failure that also fails at the demo pages' version is that test's, and is judged by the run at that version |
 `````
 
 ### 7. docs/definition-of-done.md
@@ -292,4 +308,32 @@ New:
 
 `````text
 | **PV-1** | MUST | `ExPivot.Engine` references `ExGrid.Data` exactly and no package. `ExPivot` references it and `ExGrid`, both exactly. `ExPivot.MudBlazor` references `ExPivot` and `ExGrid.MudBlazor` exactly, and MudBlazor `[9.6.0,10.0.0)` (ADR-0205). Nothing references ExPivot but its Wrapper, the demo pages and the tests (ADR-0059/0062/0064/0205) *(restated 2026-10-12, decided with the user: it said "MudBlazor from 9.0.0", a floor with no ceiling, which ADR-0205 replaced with a range whose floor is now 9.6.0)* | the package check (`tests/ExGrid.PackageSmoke/check.sh`) | as stated |
+`````
+
+### 8. docs/adr/0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md
+
+Old:
+
+`````text
+- **Every automated layer still runs in full on every candidate and every stable tag**: layers 1 to 3 on
+  both hosts and both browsers, the soak, the package check. Only the rows a person runs are judged by
+  their code. "A criterion that could not be verified is not passed" holds: a row whose code is
+  unchanged since its record was verified on that code.
+`````
+
+New:
+
+`````text
+- **Every automated layer still runs in full on every candidate and every stable tag**: layers 1 to 3 on
+  both hosts and both browsers, the soak, the package check. Only the rows a person runs are judged by
+  their code. "A criterion that could not be verified is not passed" holds: a row whose code is
+  unchanged since its record was verified on that code.
+  *(2026-10-12, decided with the user, with
+  [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)'s
+  notes of that date on the Wrappers' MudBlazor range: **one automated run is judged by its code as
+  these rows are.** The record of the Wrappers' floor run, the Definition of Done's Step 4, with the
+  layer-2 runs at every published version of the declared range recorded beside it, holds while
+  `src/*.MudBlazor/` and `samples/ExGrid.DemoPages/` are unchanged from the commit it was made at up to
+  X, and the release workflow checks those paths as it checks a row's (WR-10). Every other automated
+  layer runs in full, as above.)*
 `````
