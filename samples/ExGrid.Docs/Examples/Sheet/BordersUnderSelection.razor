@@ -1,0 +1,9 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<ExSheet @bind-Document="_document" PinnedColumnCount="1" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    // Column A stays in place as the rest scrolls, as a frozen pane does in Excel.
+    private SheetDocument _document = QuarterlyPnl.Document();
+}

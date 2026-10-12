@@ -105,8 +105,8 @@ public static class ClipboardRules
         // be reported first. Refused whole, never column by column: a partial write
         // would disagree with the displayed cell count, and PastePlan holds ranges and
         // modulo arithmetic, never a per-cell list (ADR-0014).
-        if (!EveryColumnIsEditable(target.Ranges, columnIsEditable))
-            return PasteDecision.Refuse(PasteRefusalReason.TargetNotEditable);
+        if (FirstNotEditable(target.Ranges, columnIsEditable) is { } notEditable)
+            return PasteDecision.RefuseNotEditable(notEditable);
 
         // A single value fills every selected cell — the bulk-entry shape, and the only
         // paste a disjoint target accepts (ADR-0011 / 0014). One value of plain text is the
@@ -158,7 +158,7 @@ public static class ClipboardRules
         for (var column = leftColumn; column <= lastColumn; column++)
         {
             if (!columnIsEditable(column))
-                return PasteDecision.Refuse(PasteRefusalReason.TargetNotEditable);
+                return PasteDecision.RefuseNotEditable(column);
         }
         if ((long)topRow + source.Rows > extent.RowCount || (long)leftColumn + source.Columns > extent.ColumnCount)
             return PasteDecision.Refuse(PasteRefusalReason.SpillPastExtent);
@@ -200,8 +200,8 @@ public static class ClipboardRules
         // for it before it is refused for being several ranges.
         foreach (var candidate in selection.Ranges)
         {
-            if (!EveryColumnIsEditable([TargetOf(candidate, direction)], columnIsEditable))
-                return FillDecision.Refuse(PasteRefusalReason.TargetNotEditable);
+            if (FirstNotEditable([TargetOf(candidate, direction)], columnIsEditable) is { } notEditable)
+                return FillDecision.RefuseNotEditable(notEditable);
         }
         // With several ranges there is no one source for one intent.
         if (selection.Ranges.Count > 1)
@@ -247,7 +247,9 @@ public static class ClipboardRules
     /// <summary>Every column the target covers, across every range. Columns, not cells:
     /// the row half of editability is the Window's, and a paste target legitimately
     /// covers rows that are off screen or not yet fetched (ADR-0014 / 0035).</summary>
-    private static bool EveryColumnIsEditable(
+    /// <summary>The first column the ranges cover, range by range, that is not Editable — the one
+    /// a refusal names (ADR-0035, ADR-0203) — or null when every column is.</summary>
+    private static int? FirstNotEditable(
         IReadOnlyList<SelectionRange> ranges, Func<int, bool> columnIsEditable)
     {
         foreach (var range in ranges)
@@ -255,10 +257,10 @@ public static class ClipboardRules
             for (var column = range.LeftColumn; column <= range.RightColumn; column++)
             {
                 if (!columnIsEditable(column))
-                    return false;
+                    return column;
             }
         }
-        return true;
+        return null;
     }
 
     private static CopyPlan? TryAlign(IReadOnlyList<SelectionRange> ranges)

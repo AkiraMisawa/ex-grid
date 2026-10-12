@@ -64,6 +64,11 @@
     /// menu is rendered outside a grid, where the item last focused is all there is.</summary>
     [Parameter] public MenuKeyResolver? ResolveKey { get; set; }
 
+    /// <summary>The core's focus function (ADR-0204): an item takes DOM focus through it, which the
+    /// core grants only while the keyboard is still the grid's. Absent only when this menu is
+    /// rendered outside a grid, where the item's own focus is all there is.</summary>
+    [Parameter] public Func<ElementReference, bool, Task>? TakeFocus { get; set; }
+
     /// <summary>Where the wording and the icons come from.</summary>
     [Parameter, EditorRequired] public MudGridChrome Chrome { get; set; } = default!;
 
@@ -113,9 +118,15 @@
             return;
         try
         {
-            // Blazor's own FocusAsync on the button's element — focus stays out of
-            // JavaScript this package would own (ADR-0021/0039).
-            await button.FocusAsync(preventScroll);
+            // The core's focus function, which takes the keyboard only while it is still the grid's:
+            // on a circuit the opening focus and an arrow's land a round trip after the key, and a
+            // grid pressed in the meantime keeps it (ADR-0204). Outside a grid, Blazor's own FocusAsync
+            // on the button's element — focus stays out of JavaScript this package would own
+            // (ADR-0021/0039).
+            if (TakeFocus is { } take)
+                await take(button.Element, preventScroll);
+            else
+                await button.FocusAsync(preventScroll);
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

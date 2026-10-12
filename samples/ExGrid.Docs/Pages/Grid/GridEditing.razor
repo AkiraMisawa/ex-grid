@@ -75,7 +75,9 @@
             </li>
             <li>
                 <strong>A gesture that touches a column that is not editable is refused whole</strong> through
-                <code>OnPasteRefused</code>, before anything is raised, never half-applied.
+                <code>OnPasteRefused</code>, before anything is raised, never half-applied. The grid says so in its
+                live region, naming the column — see
+                <a href="exgrid/clipboard#what-a-refusal-sounds-like">what a refusal sounds like</a>.
             </li>
             <li>
                 <strong><kbd>Ctrl</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>+<kbd>Y</kbd></strong> (or
@@ -131,8 +133,12 @@
         </p>
         <p>
             <strong>Target identity still matters</strong>, so a write is refused when the grid can no longer find
-            what it was aimed at, and the callback names which of these happened. The grid holds no string for any
-            of them.
+            what it was aimed at, and the callback names which of these happened. A paste, a fill or
+            <kbd>Delete</kbd> refused as <code>OrderMoved</code> or <code>SourceChanged</code> is also said by the
+            grid, in its live region and in the built-in Chrome's words, as every refused write is
+            (<a href="exgrid/clipboard#what-a-refusal-sounds-like">what a refusal sounds like</a>). For the rest —
+            <code>OnCommitRefused</code>, <code>OnActionRefused</code> and <code>OnEditDiscarded</code> — the grid
+            holds no string: the words are yours.
         </p>
         <ul>
             <li>

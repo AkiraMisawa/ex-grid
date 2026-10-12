@@ -168,10 +168,13 @@ test('RI-21: the inspector follows its trade by key when an approval moves it un
     await expect(panel).toHaveAttribute('data-inspector-key', id);
 });
 
-test('RI-22: on WebAssembly the page says there is nobody to share the store with', async ({ page }) => {
-    test.skip(SERVER, 'the Server host shares the store; the next test covers it');
+test('RI-22: the page says whom the store is shared with — only this tab on WebAssembly, every tab on the Server host', async ({ page }) => {
+    // Each host's own sentence (SRV-2): a WebAssembly host has one user per process, and the Server
+    // host one store per process, which the next test shares between two tabs.
     await open(page);
-    await expect(page.locator('#store-scope')).toContainText('only this tab');
+    await expect(page.locator('#store-scope')).toContainText(SERVER
+        ? 'another tab on this page changes the same trades'
+        : 'only this tab');
 });
 
 test('RI-23: on the Server host, an approval in another tab raises the banner in this one (ADR-0018)', async ({ page, browser }) => {

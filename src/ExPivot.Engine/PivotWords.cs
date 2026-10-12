@@ -78,8 +78,9 @@ public static class PivotWords
     /// <summary>
     /// The words of Excel's Japanese edition (ADR-0060): <c>行ラベル</c>, <c>総計</c>,
     /// <c>合計 / 金額</c>, <c>(空白)</c>, <c>ピボットテーブルのフィールド</c> and every other word
-    /// ExPivot paints, with the ExGrid commands of the report's Context Menu, which ExGrid words
-    /// only in English, and a date part's Items (<see cref="PivotDateWords"/>): <c>2026年</c>,
+    /// ExPivot paints, with the ExGrid commands of the report's Context Menu and every refusal the
+    /// report's grid says (ExGrid's <c>RefusalLabelIds</c>, ADR-0203), which ExGrid words only in
+    /// English, and a date part's Items (<see cref="PivotDateWords"/>): <c>2026年</c>,
     /// <c>第3四半期</c>, <c>9月</c>. A function from id to word, to hand to ExPivot's <c>Label</c> — or to
     /// <see cref="PivotOptions.Label"/> on a server — in one line. It answers null for an id it
     /// does not know, which keeps the English.
@@ -293,8 +294,9 @@ public static class PivotWords
         ["retry"] = "Retry",
     };
 
-    // The words of Excel's Japanese edition (ADR-0060), for every id above, and for the ExGrid
-    // commands in the report's Context Menu (copy, copy-with-headers), which ExGrid words only
+    // The words of Excel's Japanese edition (ADR-0060), for every id above, for the ExGrid
+    // commands in the report's Context Menu (copy, copy-with-headers), and for what the report's
+    // grid says when it refuses a copy or a paste (refused-*, ADR-0203), which ExGrid words only
     // in English. Where Excel shows the words, they are Excel's; where ExPivot paints something
     // Excel has no counterpart for (a refusal, a tab's close button), they are written in the
     // same register.
@@ -461,6 +463,43 @@ public static class PivotWords
         // ExGrid's commands in the report's Context Menu (ExGrid.Chrome.GridCommandIds).
         ["copy"] = "コピー",
         ["copy-with-headers"] = "見出し付きでコピー",
+
+        // The notices of a page that holds another version's files (ExGrid.Chrome.ReloadNoticeLabelIds,
+        // ADR-0123): the report's grid refusing its script, and either product's stylesheet notice.
+        ["reload-notice-script"] = "このページには別のバージョンのグリッドのスクリプトがあります。ページを再読み込みしてください。",
+        ["reload-notice-stylesheet"] = "このページには別のバージョンのスタイルシートがあります。ページを再読み込みしてください。",
+        // What ExGrid says in the report grid's live region when it refuses a copy, or a paste, fill
+        // or Delete, by the id of its words (ExGrid.Chrome.RefusalLabelIds, ADR-0203): ExGrid words
+        // them only in English. The grid writes the refusing column's header for {column}.
+        ["refused-paste-empty-selection"] = "何も変更されませんでした: セルが選択されていません。先にセルを選択してください。",
+        ["refused-paste-single-cell-target"] =
+            "貼り付けられませんでした: コピーした範囲が、選択した 1 つのセルからはみ出します。コピーした範囲と同じ形の範囲を選択してください。",
+        ["refused-paste-shape-mismatch"] =
+            "貼り付けられませんでした: 選択範囲がコピーした範囲の整数倍になっていません。コピーした範囲と同じ形の範囲か、その形がちょうど繰り返される範囲を選択してください。",
+        ["refused-paste-shape-mismatch-may-spill"] =
+            "貼り付けられませんでした: 選択範囲がコピーした範囲の整数倍になっていません。コピーした範囲と同じ形の範囲、その形がちょうど繰り返される範囲、または 1 つのセルを選択してください。",
+        ["refused-paste-disjoint-target"] =
+            "貼り付けられませんでした: 複数のセルからなる範囲は、複数の選択範囲には貼り付けられません。範囲を 1 つだけ選択してください。",
+        ["refused-paste-target-not-editable"] =
+            "何も変更されませんでした: 選択範囲に、編集できない {column} が含まれています。編集できる列のセルだけを選択してください。",
+        ["refused-paste-too-large"] = "何も変更されませんでした: 一度に読み込める量を超えています。より小さな範囲を使ってください。",
+        ["refused-paste-spill-past-extent"] =
+            "貼り付けられませんでした: コピーした範囲が最後の行または列を越えます。端から離れたセルを選択してください。",
+        ["refused-paste-nothing-to-fill-from"] =
+            "フィルできませんでした: 選択範囲の上に行がないか、左に列がないため、元になるセルがありません。元になるセルとフィルするセルを一緒に選択してください。",
+        ["refused-paste-multiple-ranges"] = "フィルできませんでした: フィルは 1 つの範囲にだけ行えます。範囲を 1 つだけ選択してください。",
+        ["refused-paste-source-unavailable"] = "フィルできませんでした: 元になるセルをすべて読み取ることができませんでした。",
+        ["refused-paste-order-moved"] = "何も変更されませんでした: セルを選択した後に行が移動しました。もう一度セルを選択してください。",
+        ["refused-paste-source-changed"] = "何も変更されませんでした: セルを選択した後にデータが置き換えられました。もう一度セルを選択してください。",
+        ["refused-copy-empty-selection"] = "コピーされませんでした: セルが選択されていません。コピーするセルを選択してください。",
+        ["refused-copy-misaligned-shape"] =
+            "コピーされませんでした: 選択した範囲が 1 つの範囲にまとまりません。行または列が共通する範囲を選択してください。",
+        ["refused-copy-too-large"] =
+            "コピーされませんでした: 選択範囲のセルが、1 回のコピーで扱える数を超えています。代わりにデータをエクスポートしてください。",
+        ["refused-copy-rows-unavailable"] = "コピーされませんでした: 選択範囲の行をすべて読み取ることができませんでした。",
+        ["refused-copy-clipboard-unavailable"] =
+            "コピーされませんでした: ブラウザーがクリップボードへの書き込みを拒否しました。クリップボードの内容は変わっていません。",
+        ["refused-copy-by-consumer"] = "コピーされませんでした。",
 
         // A date part's Items (PivotDateWords), as the Japanese edition's date grouping labels them.
         [PivotDateWords.Year] = "{0}年",

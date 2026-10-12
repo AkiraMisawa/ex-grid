@@ -9,6 +9,8 @@
    page in dark mode does: the core's defaults on system colours follow it (ADR-0027), and MudBlazor
    paints its dark palette. One HeadContent, because a page shows only the last one rendered. *@
 @using global::MudBlazor
+@using global::ExGrid.MudBlazor
+@using global::ExSheet.MudBlazor
 
 @if (DemoChrome.IsMud(Name) || Dark || Head is not null)
 {
@@ -26,11 +28,11 @@
             <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
             @if (Paper)
             {
-                <link href="_content/ExGrid.MudBlazor/mud-ex-grid.min.css" rel="stylesheet" />
+                <MudExGridStylesheet />
             }
             @if (Sheet)
             {
-                <link href="_content/ExSheet.MudBlazor/mud-ex-sheet.min.css" rel="stylesheet" />
+                <MudExSheetStylesheet />
             }
         }
         @Head

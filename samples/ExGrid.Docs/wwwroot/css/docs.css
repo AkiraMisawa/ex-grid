@@ -32,6 +32,10 @@ body { font-family: Roboto, Helvetica, Arial, sans-serif; }
     color: #5f6670;
 }
 
+/* A grid's moves bring the cell they reach into the window at the nearest edge (ADR-0204): the dense
+   app bar stands over the top of the window, so the browser is told how much it covers, its border
+   included, and a cell is never brought in under it. */
+html { scroll-padding-top: calc(var(--mud-appbar-height) - var(--mud-appbar-height) / 4 + 1px); }
 .docs-appbar { border-bottom: 1px solid var(--mud-palette-lines-default); }
 .docs-brand {
     display: inline-flex;

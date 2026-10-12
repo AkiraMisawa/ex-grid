@@ -7,9 +7,10 @@ using MudBlazor.Services;
 namespace ExGrid.MudBlazor.Tests;
 
 /// <summary>
-/// MudBlazor's services, and a loose JavaScript seam: the grid's module import
-/// answers null in loose mode, which the core treats as "no browser yet" and paints
-/// without — enough for what these tests read, which is markup and render counts.
+/// MudBlazor's services, and a loose JavaScript seam: the grid's module answers nothing
+/// but the stamp this build was made with (ADR-0123), so the grid attaches to a handle
+/// that answers nothing — enough for what these tests read, which is markup and render
+/// counts. A module answering no stamp would be refused, and the rows not painted.
 /// </summary>
 public abstract class MudTestContext : BunitContext
 {
@@ -17,6 +18,8 @@ public abstract class MudTestContext : BunitContext
     {
         Services.AddMudServices();
         JSInterop.Mode = JSRuntimeMode.Loose;
+        JSInterop.SetupModule(global::ExGrid.Testing.ShippedScript.Address)
+            .Setup<string>("stamp").SetResult(global::ExGrid.Testing.ShippedScript.Stamp);
     }
 
     // An interactive renderer, as a Consumer's page has once connected; the grid reads it

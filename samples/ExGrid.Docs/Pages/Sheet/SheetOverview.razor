@@ -63,6 +63,17 @@
                 <code>text/html</code>. A paste may spill from one cell, as in Excel, and each pasted field is
                 read as if typed under the Sheet's culture.
             </li>
+            <li>
+                A Sheet taller than the window scrolls the page with the Focus: an arrow, Enter or Tab, Ctrl+arrow,
+                and an edit opening bring the cell into the window at the nearest edge, as
+                <a href="exgrid/selection#the-page-follows-the-focus">ExGrid's moves do</a>.
+            </li>
+            <li>
+                A copy or a paste the grid refuses — a block that would run past XFD1048576, say — is announced once,
+                by the grid's live region, in the Sheet's own words, and the Sheet's notice under the grid shows the
+                same sentence. <code>CommandLabel</code> replaces those words as it replaces the menu's, by the ids in
+                ExGrid's <a href="exgrid/clipboard#what-a-refusal-sounds-like"><code>RefusalLabelIds</code></a>.
+            </li>
         </ul>
     </DocsSection>
 

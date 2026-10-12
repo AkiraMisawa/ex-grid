@@ -1,4 +1,6 @@
+using ExGrid.Components;
 using ExGrid.DemoHost;
+using ExSheet.Components;
 using ExGrid.DemoPages;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -7,6 +9,11 @@ using MudBlazor.Services;
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
+// The packages' stylesheets, each at the address of the file it was built with (ADR-0123): root
+// components in the head, as a standalone application places them, so that no page's HeadContent
+// displaces them — only the last HeadContent rendered reaches the head, and the pages have theirs.
+builder.RootComponents.Add<ExGridStylesheet>("head::after");
+builder.RootComponents.Add<ExSheetStylesheet>("head::after");
 
 // MudBlazor's services, for the /mud page: the Wrapper's paper and Chrome are plain
 // components, but MudThemeProvider — which emits the palette variables the Wrapper's

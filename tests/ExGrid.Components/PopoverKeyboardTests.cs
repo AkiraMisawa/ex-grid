@@ -170,9 +170,21 @@ public class PopoverKeyboardTests : GridTestContext
 
         await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
 
-        var opening = JSInterop.Invocations.Last(i => i.Identifier == Focus);
+        var opening = Js.FocusTaken.Invocations.Last();
         Assert.Equal(RefOf(Item(cut, "Sort ascending")), ((ElementReference)opening.Arguments[0]!).Id);
         Assert.Equal(true, opening.Arguments[1]);
+    }
+
+    [Fact] // ADR-0204 / KB-45, SRV-5: a popover's opening focus asks the editor's question first — it is asked of the handle, which grants it only while the keyboard is still this grid's — and never taken with Blazor's own FocusAsync
+    public async Task The_opening_focus_asks_whether_the_keyboard_is_still_here()
+    {
+        var cut = RenderGrid();
+
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+        await PressAsync(Item(cut, "Sort ascending"), "ArrowDown");
+
+        Assert.Equal(2, Js.FocusTaken.Invocations.Count);
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == Focus);
     }
 
     [Fact] // ADR-0044 / KB-29: the built-in filter takes the keyboard only when asked, at its first control once its contents have settled
@@ -191,12 +203,8 @@ public class PopoverKeyboardTests : GridTestContext
         // renders once more when its handler completes, and bUnit writes a reference only
         // into the render that created the element.
         var searchAtFocus = new List<string?>();
-        JSInterop.SetupVoid(invocation =>
-        {
-            if (invocation.Identifier == Focus)
-                searchAtFocus.Add(cut.FindAll(".ex-popover input[type=search]").SingleOrDefault()?.GetAttribute("blazor:elementreference"));
-            return false;
-        });
+        Js.OnFocusTaken(() =>
+            searchAtFocus.Add(cut.FindAll(".ex-popover input[type=search]").SingleOrDefault()?.GetAttribute("blazor:elementreference")));
         await cut.InvokeAsync(() => source.DistinctPending.SetResult(DistinctValues.Of(["Alpha"])));
         Assert.Equal(searchAtFocus.Single(), LastFocused());
 

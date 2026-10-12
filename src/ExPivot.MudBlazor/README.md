@@ -42,13 +42,14 @@ usual:
 - `<MudThemeProvider />` and `<MudPopoverProvider />` in your layout. The panels' selects open
   their lists through the popover provider.
 
-Then add the four stylesheets:
+Then add the four stylesheets, as components in the head: in `App.razor`'s `<head>` in a Blazor
+Web App, or as root components in a standalone application's `Program.cs`:
 
-```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
-<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.min.css" />
-<link rel="stylesheet" href="_content/ExPivot/ex-pivot.min.css" />
-<link rel="stylesheet" href="_content/ExPivot.MudBlazor/mud-ex-pivot.min.css" />
+```csharp
+builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
+builder.RootComponents.Add<ExGrid.MudBlazor.MudExGridStylesheet>("head::after");
+builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
+builder.RootComponents.Add<ExPivot.MudBlazor.MudExPivotStylesheet>("head::after");
 ```
 
 ## A pivot on a paper
