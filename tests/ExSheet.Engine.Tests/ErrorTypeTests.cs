@@ -7,8 +7,9 @@ namespace ExSheet.Engine.Tests;
 /// <summary>
 /// <c>ERROR.TYPE</c> (ADR-0047's note of 2026-10-10, docs/specs/exsheet-functions ticket 17): what
 /// the Excel case corpus cannot state. <c>#GETTING_DATA</c> and <c>#CIRC!</c> are states of a
-/// computation, given back and never numbered, and an Error Value outside Microsoft's table is
-/// refused (SH-68). Microsoft's table itself is in <c>ExcelCases/error-type.json</c>.
+/// computation, given back and never numbered, and Excel's newer Error Values take the numbers the
+/// seventeenth Windows run read from Excel (SH-68). Microsoft's table itself, and those numbers as
+/// Excel gave them, are in <c>ExcelCases/error-type.json</c>.
 /// </summary>
 public class ErrorTypeTests
 {
@@ -52,19 +53,43 @@ public class ErrorTypeTests
         Assert.Equal(ErrorValue.Circ, sheet.Error("D1"));
     }
 
-    [Theory] // ADR-0047 (2026-10-10), SH-68: an Error Value outside Microsoft's table is #VALUE! until Excel is asked
-    [InlineData("#SPILL!")]
-    [InlineData("#CALC!")]
-    [InlineData("#FIELD!")]
-    [InlineData("#BLOCKED!")]
-    [InlineData("#CONNECT!")]
-    [InlineData("#UNKNOWN!")]
-    public void ADR0047_error_type_refuses_an_error_value_outside_microsofts_table(string typed)
+    [Theory] // ADR-0047, SH-68: Excel's newer Error Values take the numbers Excel gave them in the seventeenth Windows run (ERRORTYPE-013 to 019)
+    [InlineData("#SPILL!", 9)]
+    [InlineData("#CONNECT!", 10)]
+    [InlineData("#BLOCKED!", 11)]
+    [InlineData("#UNKNOWN!", 12)]
+    [InlineData("#FIELD!", 13)]
+    [InlineData("#CALC!", 14)]
+    public void ADR0047_SH68_error_type_numbers_excels_newer_error_values_as_excel_does(string typed, double number)
     {
         var sheet = NewSheet();
         sheet.Enter("A1", typed);
 
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=ERROR.TYPE(A1)").Error);
+        Assert.Equal(number, sheet.Evaluate("=ERROR.TYPE(A1)").Number);
+    }
+
+    [Fact] // ADR-0047, SH-68: a #SPILL! or #CALC! the engine computes is numbered as one typed in is (ERRORTYPE-014, 015)
+    public void ADR0047_SH68_error_type_numbers_a_computed_spill_and_calc()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "=SEQUENCE(2)");
+        sheet.Enter("A2", "x");
+        sheet.Enter("B1", "=ERROR.TYPE(A1)");
+        sheet.Enter("C1", "=ERROR.TYPE(FILTER(D1:D2,D1:D2>100))");
+
+        Assert.Equal(ErrorValue.Spill, sheet.Error("A1"));
+        Assert.Equal(9, sheet.Number("B1"));
+        Assert.Equal(14, sheet.Number("C1"));
+    }
+
+    [Fact] // ADR-0047 (second run), SH-68: #BUSY! typed is text, as Excel keeps it, so ERROR.TYPE answers #N/A as for any Value that is no error
+    public void ADR0047_SH68_error_type_reads_a_typed_busy_as_text()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "#BUSY!");
+
+        Assert.Equal(ValueKind.Text, sheet.Value("A1")!.Value.Kind);
+        Assert.Equal(ErrorValue.NA, sheet.Evaluate("=ERROR.TYPE(A1)").Error);
     }
 
     [Theory] // ADR-0047 (2026-10-10): Microsoft's table, #NULL! 1 to #N/A 7

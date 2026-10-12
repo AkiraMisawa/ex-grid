@@ -271,6 +271,27 @@ public class ColumnWidthTests : SheetTestContext
         Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
     }
 
+    [Fact] // ADR-0046 (seventeenth Windows run, b10; CW-023, CW-030, CW-031): a column inserted beside one an entry widened takes its width as the user's, so a longer number no longer widens it, while the column to its left still widens
+    public async Task A_column_inserted_beside_a_widened_one_takes_its_width_as_the_users()
+    {
+        var cut = RenderSheet();
+        await EnterAsync(cut, "B1", "1234567890");
+        var widened = WidthOf(cut, 1);
+        Assert.True(widened > SheetColumns.DefaultWidthPx);
+
+        await cut.Instance.DoAsync(SheetEdit.InsertColumns(2));
+        Assert.Equal(widened, WidthOf(cut, 2), 6);
+        Assert.Equal(
+            [(1, SheetColumnWidthKind.WidenedByEntry), (2, SheetColumnWidthKind.SetByUser)],
+            cut.Instance.ToDocument().ColumnWidths.Select(w => (w.First, w.Kind)));
+
+        await EnterAsync(cut, "C1", "12345678901");
+        Assert.Equal(widened, WidthOf(cut, 2), 6);
+
+        await EnterAsync(cut, "B2", "12345678901");
+        Assert.True(WidthOf(cut, 1) > widened);
+    }
+
     // ADR-0046 (2026-09-28), SH-26, CW-018: a width widened by entry is marked custom in the Sheet
     // Document, as Excel's file marks it, while it stays the entry's kind (the test above it).
     [Fact]

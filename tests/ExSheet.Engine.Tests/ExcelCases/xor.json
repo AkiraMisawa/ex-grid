@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "XOR-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: both TRUE is FALSE",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=XOR(3>0,2<9)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "XOR-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: both FALSE is FALSE",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=XOR(3>12,4>6)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "XOR-003",
-      "source": "documented",
+      "source": "observed",
       "description": "One TRUE is TRUE",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=XOR(3>0,2>9)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "XOR-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: three TRUEs are TRUE",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=XOR(TRUE,TRUE,TRUE)"},
@@ -40,12 +40,21 @@
     },
     {
       "id": "XOR-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: no logical value is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=XOR(A6)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XOR-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: typed text that spells neither TRUE nor FALSE is passed over, as AND passes it over (AND-011)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=XOR(\"abc\",TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
     }
   ]
 }

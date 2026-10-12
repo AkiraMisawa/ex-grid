@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ISTEXT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Text is text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISTEXT(A6)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ISTEXT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "A number is not text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISTEXT(A1)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ISTEXT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "A number stored as text is text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISTEXT(A3)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "ISTEXT-004",
-      "source": "documented",
+      "source": "observed",
       "description": "A blank cell is not text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISTEXT(A5)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "ISTEXT-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a Formula's empty text is text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISTEXT(D1)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "ISTEXT-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "ISTEXT over a range where one Value is wanted is refused",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISTEXT(A5:A6)"},

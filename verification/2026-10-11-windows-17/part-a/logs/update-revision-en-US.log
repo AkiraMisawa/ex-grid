@@ -1,0 +1,46 @@
+set en-US at 22:46:48
+a new PowerShell reads en-GB
+22:46:50 AGGREGATE-025 disagree    0.3 s
+22:46:51 AGGREGATE-042 disagree    0.1 s
+22:46:51 AGGREGATE-043 disagree    0.1 s
+22:46:51 AGGREGATE-044 disagree    0.1 s
+22:46:51 AGGREGATE-045 disagree    0.1 s
+22:46:51 AGGREGATE-046 disagree    0.1 s
+22:46:51 AGGREGATE-047 disagree    0.1 s
+22:46:51 AGGREGATE-048 disagree    0.1 s
+22:46:51 AGGREGATE-049 disagree    0.1 s
+22:46:52 AGGREGATE-050 disagree    0.1 s
+22:46:52 AGGREGATE-051 disagree    0.1 s
+22:46:52 AGGREGATE-052 disagree    0.1 s
+22:46:52 AGGREGATE-053 disagree    0.1 s
+22:46:52 AGGREGATE-054 disagree    0.1 s
+22:46:52 LVL-027      agree       0.2 s
+22:46:53 LVL-028      agree       0.2 s
+22:46:53 LVL-029      agree       0.2 s
+22:46:53 INDIRECT-023 disagree    0.1 s
+22:46:53 SUBTOTAL-035 disagree    0.1 s
+22:46:53 SUBTOTAL-036 disagree    0.2 s
+22:46:53 SUBTOTAL-037 disagree    0.1 s
+22:46:53 SUBTOTAL-038 disagree    0.1 s
+
+agree 3, disagree 19, blocked 0, recorded 0 -> %LOCALAPPDATA%\exgrid-layer3\run-2026-10-11-17\update-revision-en-US.json
+DISAGREE AGGREGATE-025: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE AGGREGATE-042: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE AGGREGATE-043: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE AGGREGATE-044: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE AGGREGATE-045: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE AGGREGATE-046: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE AGGREGATE-047: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE AGGREGATE-048: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE AGGREGATE-049: value2: expected "#VALUE!", Excel 3 (number)
+DISAGREE AGGREGATE-050: value2: expected "#VALUE!", Excel 3 (number)
+DISAGREE AGGREGATE-051: value2: expected "#VALUE!", Excel 3 (number)
+DISAGREE AGGREGATE-052: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE AGGREGATE-053: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE AGGREGATE-054: value2: expected "#VALUE!", Excel 6 (number)
+DISAGREE INDIRECT-023: value2: expected "#VALUE!", Excel 45 (number)
+DISAGREE SUBTOTAL-035: value2: expected "#VALUE!", Excel 3 (number)
+DISAGREE SUBTOTAL-036: value2: expected "#VALUE!", Excel 3 (number)
+DISAGREE SUBTOTAL-037: value2: expected "#VALUE!", Excel 3 (number)
+DISAGREE SUBTOTAL-038: value2: expected "#VALUE!", Excel 0 (number)
+-Update: 3 agreeing cases now say source "observed"; disagreeing ones are untouched.

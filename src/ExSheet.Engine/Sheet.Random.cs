@@ -28,11 +28,12 @@ public sealed partial class Sheet
 
     /// <summary>
     /// How many changes the Sheet has had since it was made or opened (ADR-0180): each draws again.
-    /// An edit of an Entry, an insertion or a deletion, the undo or redo of one of those, a Linked
-    /// Table's snapshot, and a Linked Table's declaration that declares it or replaces it, each count
-    /// once. A change of format or width, a recalculation by the clock,
-    /// a rename, a new Sheet Day and a new seed do not. A Sheet opened from a Sheet Document starts
-    /// from 0.
+    /// An edit of an Entry, an insertion or a deletion, a rename of the Sheet, the undo or redo of
+    /// one of those, a Linked Table's snapshot whatever its rows, and a Linked Table's declaration
+    /// that declares it or replaces it, each count once. An edit that leaves every Entry as it was, a
+    /// rename to the name the Sheet has, the same declaration again, a change of format or width, a
+    /// recalculation by the clock, a new Sheet Day and a new seed do not. A Sheet opened from a Sheet
+    /// Document starts from 0.
     /// </summary>
     public long Changes { get; private set; }
 

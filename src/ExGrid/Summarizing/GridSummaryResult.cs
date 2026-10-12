@@ -5,7 +5,7 @@ namespace ExGrid.Summarizing;
 /// <summary>
 /// A Selection Summary's answer (ADR-0130): each figure asked for, or a decline with its reason —
 /// never a partial figure. A figure that is not a number (no number among the cells, or an error
-/// among them) is shown nowhere; Count still is.
+/// among them) is shown nowhere; Count and Numerical Count still are, as in Excel's status bar.
 /// </summary>
 public sealed class GridSummaryResult
 {

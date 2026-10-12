@@ -45,12 +45,39 @@ another answer:
   observed. Below 11 characters every reading agrees.
 - **An empty `format_text`** is `#VALUE!`.
 
+*(2026-10-12)* **The seventeenth Windows run answered two of these, and they follow Excel's answer.**
+
+- **`General` is General fitted to 11 characters**, as a cell's General is fitted to its column:
+  `TEXT(1/3,"General")` is `0.333333333` (TEXTFN-017). So `TEXT(0.00001,"General")` is `0.00001`, as a cell
+  shows it, and not General in full, `1E-05`.
+  - The run asked a positive number only. Two readings it did not settle stay `#VALUE!` until Excel is asked.
+  - A negative number whose General differs as its minus sign takes one of the 11 characters or not
+    (`-1/3`: `-0.33333333` or `-0.333333333`; TEXTFN-025).
+  - A number under a lone `@`, which shows numbers in General, whose fitted General is not its General in full
+    (`1/3`; TEXTFN-028).
+- **An empty `format_text` shows a number as empty text** (TEXTFN-018). Text and booleans are coerced as for any
+  code without a text section: text stays as it is, and a boolean stays `TRUE` or `FALSE` (TEXTFN-023 and 024,
+  `uncertain`).
+- **Fractions and conditions stay refused.** Excel answers `TEXT(4.34,"# ?/?")` with `4 1/3` and
+  `TEXT(5,"[<=9]0;0.0")` with `5` (TEXTFN-019, 020). ADR-0202 lets a function refuse the arguments where it
+  disagrees, and the reason is this ADR's "One renderer serves both".
+  - `TEXT` shows what a cell format shows. Admitting a fraction or a condition is a cell-format feature (Format
+    Cells, a document's codes, painting), not a correction to `TEXT`.
+  - One fraction does not pin Excel's approximation: which denominators it searches, and how it breaks a tie.
+  - Both cases record Excel's answer beside the refusal.
+
 ## What differs from Excel, by decision
 
 - **Under a culture whose Excel spells codes in its own language** (de-DE, fr-FR, …), a Formula
   written there for Excel uses the local codes. ExSheet reads them as invariant codes. `"JJJJ"` is
   not a code ExSheet reads, so it is refused with `#VALUE!` rather than shown some other way. Under
   en-US, en-GB and ja-JP, Excel's codes are the invariant ones, and the answers are the same.
+
+*(2026-10-12)* The seventeenth run read it under de-DE. German Excel answers `TEXT(1234.5,"#,##0.00")` with
+`1234,5000`, because it reads `,` as its decimal separator and `.` as its grouping, so the invariant code is
+another code to it. ExSheet shows `1.234,50`. The case records Excel's answer beside ExSheet's (TEXTFN-009). Fractions and conditions are refused by decision too, with Excel's
+answers recorded beside the refusals (TEXTFN-019, 020; the note under "Refused until a Windows run
+answers").
 
 ## Considered options
 

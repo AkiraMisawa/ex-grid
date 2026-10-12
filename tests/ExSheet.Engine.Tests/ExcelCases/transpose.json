@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "TRANSPOSE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "The first row becomes the first column",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=TRANSPOSE(G1:H2)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "TRANSPOSE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "The first column becomes the first row",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=TRANSPOSE(G1:H2)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "TRANSPOSE-003",
-      "source": "documented",
+      "source": "observed",
       "description": "A row becomes a column",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=TRANSPOSE(M1:O1)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "TRANSPOSE-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a blank spills as 0",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=TRANSPOSE(Q1:Q2)"},
