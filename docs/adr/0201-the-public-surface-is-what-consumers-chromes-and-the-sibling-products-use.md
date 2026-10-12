@@ -19,9 +19,10 @@ contract, the rest made internal, and a baseline file from then on. Nothing has 
   surface, because a public signature names them (`IRowMarks<TRow>` is the type of `Marks`).
 - **ExGrid, ExGrid.MudBlazor, ExSheet.Engine and ExPivot.MudBlazor declare no `InternalsVisibleTo`**, so
   every type their tests reach is public. The other six declare it for their own test projects only.
+  *(As built, 2026-10-12: each now grants the test projects that reach its internals, and no package.)*
 - **Some of the surface cannot be made internal.** Razor generates every component public, so
   `ExGridRow`, `SummaryFiguresMenu`, ExPivot's views and frames and ExPivot.MudBlazor's parts are public,
-  and so are the types of their parameters. The grid's 26 `[JSInvokable]` methods are public because
+  and so are the types of their parameters. The grid's 25 `[JSInvokable]` methods are public because
   JavaScript calls them, and so are their types (`ClipboardPayload`).
 
 ## The decision
@@ -60,10 +61,12 @@ becomes internal with it (`ColumnWidthSpec.ResolveWidthPx(AutoWidth)`).
 public, marked `[EditorBrowsable(EditorBrowsableState.Never)]`, and are not the contract.**
 
 - They are listed in the baseline and on the Docs Site's API reference as "not the contract: may change
-  in any version", so that hiding them is stated, not silent.
+  in any version", so that hiding them is stated, not silent. *(As built, 2026-10-12: the baseline lists
+  them like any public member, since its format cannot mark them; the Docs Site's API reference lists
+  them apart under that heading, and so does every API table.)*
 - A member only tests call (`OnPasteAsync`) is not one of these: it becomes internal.
 - Rejected for `0.1.0`:
-  - moving the 26 interop methods to an internal receiver object, which would take every key,
+  - moving the 25 interop methods to an internal receiver object, which would take every key,
     clipboard, pointer, IME and scroll path through layer 3 again on both hosts;
   - rewriting the part components as internal C# classes.
 
@@ -86,10 +89,18 @@ public, marked `[EditorBrowsable(EditorBrowsableState.Never)]`, and are not the 
   - A public member not declared in them (RS0016) or declared and gone (RS0017) fails the build, as an
     undocumented public member already does (CS1591 under warnings as errors).
   - The analyzer is a private asset, so no package depends on it.
-- **The cut before a tag moves `Unshipped` into `Shipped`** (ADR-0190).
+- **The cut before a tag moves `Unshipped` into `Shipped`** (ADR-0190). *(2026-10-12, as built beside
+  ADR-0205: a stable version's move is made on the release branch before the commit the sign-off is made
+  against, since its tag may differ from that commit only under `verification/` and `docs/releases/`; a
+  release candidate's, before its tag, as its cut is.)*
 - **If the analyzer cannot see the members Razor generates** (a component's `[Parameter]`s written in
   `@code`), the first build of the change that adds it shows it. A layer-1 snapshot test of each shipped
-  assembly's surface then replaces it, for the same files' purpose.
+  assembly's surface then replaces it, for the same files' purpose. *(2026-10-12: the first build showed
+  it does. A parameter written in `@code` is reported at its line in the `.razor` file, so the analyzer
+  is the baseline for every shipped project, and no snapshot test was written. It is
+  `Microsoft.CodeAnalysis.PublicApiAnalyzers` 5.3.0, added once in `src/Directory.Build.props`; its rules
+  RS0026 and RS0027, which would reshape members with optional parameters, and RS0041, which reports what
+  Razor generates, are off, since members are not reshaped for `0.1.0`.)*
 
 ### What the lists raised *(2026-10-12, decided with the user)*
 
@@ -118,6 +129,21 @@ the rule did not settle:
   - Its `HeaderState` and `HeaderPress`, which only the core uses, become internal.
   - The Context's list of machinery named `RowMarkRules` whole, counted by what used it. That is
     corrected here.
+- *As built, the lists read by these decisions (2026-10-12).* Where a list said internal and the branch
+  kept a member public, it is because one of the clauses above holds it, and the list had not read it so:
+  - `CellTextMetrics.WithGlyphWidths` and `For(ColumnType)`, which ADR-0016 names as public shape, and the
+    first is the only public way to put a glyph table on explicit Cell Metrics;
+  - `RowMarkState.IsMarked`, the one evaluation a Source, a server and an action share, the case of
+    `RowMarkRules.LineUp` (ADR-0043);
+  - `ReferenceColour.Place`, data on a colour a Consumer receives (choosing one stays impossible, ADR-0057);
+  - the Selection's read members (`GridSelection.Extent`, `FocusRange`, `Contains`, `CoversColumn`,
+    `CoversRow`; `SelectionRange.RowSpan`, `ColumnSpan`), so `ColumnRange` is contract;
+  - `MenuKeys.LetterOf`, `SplitAtLetter`, `Last` and `MenuKey.Nothing`, helpers that let a substituted
+    Chrome decide as the core does (rule 2);
+  - `ReplaceAll`, `ChangeTimesKeptFor`, `NotifyChanged()` and the View State's constructors, which a
+    Consumer calls or passes.
+  - `MudPivotButton` is public and marked, not internal: the Wrapper's Razor parts place it in markup, which
+    Razor binds only to a public component, and placing it from code is the rewrite this ADR rejected.
 
 ## Considered options
 
