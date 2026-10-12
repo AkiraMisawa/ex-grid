@@ -106,7 +106,9 @@ the reciprocal or times e^(-x ln b) × terms and sum at 53 or 64 bits × the ord
 Of FV's 480 candidates, 9 give all 17 doubles: g20, g22 and g23, each with F4, F7 or F8, which are the same
 products in another order. Of those, g20 misses FV-020 (`#NUM!` for `#DIV/0!`: it raises 0 to −0.5 as 1 over
 0^0.5); g22 and g23 give every observed FV Error Value too. They are one evaluation but for the exponential
-and the logarithm, and XNPV-013, below, tells those: the correctly rounded pair. So **FV is
+and the logarithm, and XNPV-013, below, tells the exponentials apart: Excel's is the correctly rounded one. No
+observed double tells the logarithms apart (FV-023 and PV-016 ask), and the engine takes the correctly rounded
+one with it. So **FV is
 −(pv·g + pmt·((1+rate·type)·((g−1)/rate)))** in doubles with g *the financial power* (`Pow.Financial`,
 g22):
 
@@ -157,8 +159,10 @@ refuses there (XNPV-018 asks). The nine settle each step:
 
 No candidate models Excel's Error Value at a negative rate: Excel gave `#NUM!` at −0.5 (XNPV-012, 017), −1
 (XNPV-007, 008), −1.5 and −2 (XNPV-009, 010), where the survivors give numbers at −0.5, at every date the
-first (−7250) and at whole years below −1 (400). The engine gives `#NUM!` below 0 and refuses a rate of 0,
-where "below 0" and "0 or below" part (XNPV-019 asks; XNPV-020 asks −0.01).
+first (−7250) and at whole years below −1 (400). The engine checks the rate before it evaluates: `#NUM!` below
+0, which is Excel's answer at the four rates asked and the engine's at any other (XNPV-020 asks −0.01), and a
+rate of 0 refused where "below 0" and "0 or below" part, after the counts and the dates, which give `#NUM!`
+under both (XNPV-019 asks).
 
 ### PMT: no evaluation gives every observed payment
 
@@ -191,9 +195,13 @@ PMT-015 −1.3, PMT-020 +1.1, PMT-023 −1.4, PMT-024 +2.3, PMT-025 −2.2, PMT-
   at PMT-026, read the same way, Excel's growth is about one unit off. No single precision for g fits both.
 
 So PMT's evaluation is not settled. Its likely cause is a library log1p or expm1 that is not correctly
-rounded, which no portable evaluation reproduces; that is a reading of the data, not a finding. The engine
-keeps the exact model (PMT-001 to 003, 008 to 010, 017, 019, 022 and 033 are its doubles), and whether PMT
-is corrected or refused before the tag is the user's question (ADR-0202).
+rounded, which no portable evaluation reproduces; that is a reading of the data, not a finding. **Decided
+with the user (2026-10-12): PMT is kept, with an exception to ADR-0047 for PMT alone**: its result may differ
+from Excel's in digits no format displays, the engine giving the exact payment rounded once (PMT-001 to 003,
+008 to 010, 017, 019, 022 and 033 are its doubles), and 0.1.0 lists it under Known limitations. PMT-011 and
+012, an `nper` of 10.5 and −10, are answered by the same exact model with 1+rate raised by the financial
+power, exactly: Excel's doubles lie −1.03 and −1.23 units from the exact payment, each one unit from the
+engine's.
 
 ### NPV: no evaluation gives every observed double
 
@@ -208,11 +216,13 @@ given by 6 candidates, NPV-021 by 3, NPV-022 by none. NPV stays undeclared for 0
 
 ADR-0047 admits an answer only where it follows from Excel's observed answers, and where the evaluations
 those leave part, the engine refuses. `--refusals` runs the survivors over a grid, and the engine through its
-public `Sheet`, and requires the engine's answer where they agree and `#VALUE!` where they part. FV and PV:
+public `Sheet`, and requires the engine's answer where they agree and `#VALUE!` where they part. PMT has no
+survivors: under ADR-0047's exception the engine must give the exact payment rounded once, computed here in
+exact arithmetic, the financial power's Error Values, and `#VALUE!` where it refuses. FV, PV and PMT:
 12 rates (−9, −1.5, −1 and −0.5 among them), 19 numbers of periods (whole, negative, 0.5, −0.5, 10.5,
 −10.5, 1/3 and others), four payments, four present or future values and both types, 7,296 inputs each.
 XNPV: the corpus's inputs and 4,000 drawn (up to seven values, dates whole years apart, the days at which
-/365 and *(1/365) part, and any). The last run (2026-10-12, after the second area pass):
+/365 and *(1/365) part, and any). The last run (2026-10-12, after PMT's exception was decided):
 
 | | Survivors | Agree | Part | Exceptions, listed |
 |---|---:|---:|---:|---|
@@ -220,18 +230,22 @@ XNPV: the corpus's inputs and 4,000 drawn (up to seven values, dates whole years
 | FV, g22 beside g23 (the platform's ln and exp) | 2 | 7,296 | 0 | none |
 | PV, the financial power (g22) | 1 | 7,296 | 0 | 384 refused at a rate of −1 with `nper` above 0 (PV-013) |
 | XNPV, its two evaluations | 2 | 4,004 | 0 | 506 `#NUM!` at a rate below 0, which no evaluation models |
+| PMT, the exact payment (no survivors) | — | 6,880 | — | 384 refused at a rate of −1 with `nper` above 0 (PMT-034); 32 refused where 1+rate raised passes a double's range (PMT-038) |
 
-The engine gives the survivors' answer at every other input. (PV's 14 survivors of its own doubles part at
+The engine gives the survivors' answer, and for PMT the exact payment, at every other input. (PV's 14 survivors of its own doubles part at
 614 inputs, at half a period and negative fractions, where FV's settle PV's power; FV's 9 at 96, where g20
 gives 0 to a negative fraction as `#NUM!`.)
 
 ## The C# port
 
 `--vectors` (`search.py`) writes the engine's evaluation at 400 generated inputs; a throwaway layer-1 test
-compared them all (2026-10-12, Linux). `--refusals` is the check of PV, FV and XNPV now. The engine's
+compared them all (2026-10-12, Linux). `--refusals` is the check of PV, FV, XNPV and PMT now. The engine's
 `CorrectlyRounded` computes e^x and ln x in double-double and in 256-bit fixed point near a rounding
 boundary; 40,010 of its values were compared with Python's `decimal` at 120 digits, all equal, of which
-the platform's `Math.Exp` and `Math.Log` differ at 18 (2026-10-12).
+the platform's `Math.Exp` and `Math.Log` differ at 18 (2026-10-12). PMT raises 1+rate, carried exactly, by
+the double-double functions unrounded (`ExpWide`, `LogWide`); at 3,000 drawn inputs with a fractional or
+negative `nper`, the engine's payment was the exact one of Python's `decimal` at 150 digits at all 2,710
+where both are numbers (2026-10-12, after PMT's exception was decided).
 
 ## Files
 

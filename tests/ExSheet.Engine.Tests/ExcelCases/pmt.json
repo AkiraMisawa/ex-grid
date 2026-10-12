@@ -32,7 +32,7 @@
     {
       "id": "PMT-004",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a rate of 0 divides evenly",
+      "description": "A rate of 0 divides evenly",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0,10,1000)"},
       "check": "ZZ1000",
@@ -41,7 +41,7 @@
     {
       "id": "PMT-005",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: no periods is #NUM!",
+      "description": "No periods is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,0,1000)"},
       "check": "ZZ1000",
@@ -50,7 +50,7 @@
     {
       "id": "PMT-006",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: an Error Value is the result",
+      "description": "An Error Value is the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(C2,10,1000)"},
       "check": "ZZ1000",
@@ -59,7 +59,7 @@
     {
       "id": "PMT-007",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: text that is not a number is #VALUE!",
+      "description": "Text that is not a number is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(A6,10,1000)"},
       "check": "ZZ1000",
@@ -86,7 +86,7 @@
     {
       "id": "PMT-010",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a negative type is payment at the start of each period, as 2 is",
+      "description": "A negative type is payment at the start of each period, as 2 (PMT-008) and 0.5 (PMT-009) are",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,-1)"},
       "check": "ZZ1000",
@@ -95,65 +95,73 @@
     {
       "id": "PMT-011",
       "source": "observed",
-      "description": "Refused: a number of periods that is not a whole number, where Excel answers",
+      "description": "A number of periods that is not a whole number, 1+rate raised to it as e^(nper ln(1+rate)), exactly: Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(8%/12,10.5,10000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047 (note of 2026-10-12, PV and FV give Excel's double; 'admitted with some argument values refused'): at a rate other than 0, PMT refuses an nper that is not a whole number from 0 with #VALUE!, because no evaluation searched gives Excel's payment there together with every other payment Excel gave (spikes/exsheet-financial-evaluation/)",
+      "expect": {"value2": -989.2729401451878},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -989.2729401451879}
     },
     {
       "id": "PMT-012",
       "source": "observed",
-      "description": "Refused: a negative number of periods, where Excel answers",
+      "description": "A negative number of periods, 1 over 1+rate raised to its absolute value, exactly: Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(8%/12,-10,10000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047 (note of 2026-10-12, PV and FV give Excel's double; 'admitted with some argument values refused'): at a rate other than 0, PMT refuses an nper that is not a whole number from 0 with #VALUE!, because no evaluation searched gives Excel's payment there together with every other payment Excel gave (spikes/exsheet-financial-evaluation/)",
+      "expect": {"value2": 970.3654226924855},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": 970.3654226924854}
     },
     {
       "id": "PMT-013",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: with a future value. The area pass of 2026-10-12 read -7363.7031239763755, 3 units in the last place away, and no evaluation searched gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, search.py and Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "With a future value: Excel's double is 3 units in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.05/12,36,250000,-5000)"},
       "check": "ZZ1000",
-      "expect": {"value2": -7363.703123976373}
+      "expect": {"value2": -7363.703123976373},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -7363.7031239763755}
     },
     {
       "id": "PMT-014",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: at the start of each period. The area pass of 2026-10-12 read -21530.430018725485, 2 units in the last place away, and no evaluation searched gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, search.py and Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "At the start of each period: Excel's double is 2 units in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.0725/12,12,250000,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -21530.430018725492}
+      "expect": {"value2": -21530.430018725492},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -21530.430018725485}
     },
     {
       "id": "PMT-015",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: at the start of each period. The area pass of 2026-10-12 read -852.5226402171, 2 units in the last place away, and no evaluation searched gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, search.py and Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "At the start of each period: Excel's double is 2 units in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.05/12,12,10000,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -852.5226402170998}
+      "expect": {"value2": -852.5226402170998},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -852.5226402171}
     },
     {
       "id": "PMT-016",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: with a future value. The area pass of 2026-10-12 read -20936.487788661154, 1 unit in the last place away, and no evaluation searched gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, search.py and Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "With a future value: Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.045/12,12,250000,-5000)"},
       "check": "ZZ1000",
-      "expect": {"value2": -20936.48778866115}
+      "expect": {"value2": -20936.48778866115},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -20936.487788661154}
     },
     {
       "id": "PMT-017",
       "source": "observed",
-      "description": "At a small rate, 1e-7: Excel gives the exact payment rounded once, as the engine does; the evaluations that form 1+rate in a double or an x87 register, and subtract 1 from its power, part from it from the 13th significant digit (spikes/exsheet-financial-evaluation/, --spread)",
+      "description": "At a small rate, 1e-7: Excel's double is the exact payment rounded once, the engine's; the evaluations that form 1+rate in a double or an x87 register, and subtract 1 from its power, part from it from the 13th significant digit (spikes/exsheet-financial-evaluation/, --spread)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(1/10000000,12,1000)"},
       "check": "ZZ1000",
@@ -161,12 +169,14 @@
     },
     {
       "id": "PMT-018",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: a daily rate over a year. The area pass of 2026-10-12 read -27.901671561224465, 1 unit in the last place away, and no evaluation searched gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, search.py and Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "A daily rate over a year: Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.0365/365,365,10000)"},
       "check": "ZZ1000",
-      "expect": {"value2": -27.90167156122446}
+      "expect": {"value2": -27.90167156122446},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -27.901671561224465}
     },
     {
       "id": "PMT-019",
@@ -179,21 +189,25 @@
     },
     {
       "id": "PMT-020",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read -10.501648240558216, 1 unit in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.15,12,1000,-5000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -10.501648240558218}
+      "expect": {"value2": -10.501648240558218},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -10.501648240558216}
     },
     {
       "id": "PMT-021",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read -32615.986669943602, 1 unit in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.15,60,250000,-5000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -32615.986669943606}
+      "expect": {"value2": -32615.986669943606},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -32615.986669943602}
     },
     {
       "id": "PMT-022",
@@ -206,93 +220,113 @@
     },
     {
       "id": "PMT-023",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read -11260.941796175353, 1 unit in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.0365/365,24,250000,20000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -11260.941796175352}
+      "expect": {"value2": -11260.941796175352},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -11260.941796175353}
     },
     {
       "id": "PMT-024",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read -10750.7823801456, 2 units in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 2 units in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.0525/12,24,250000,-5000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -10750.782380145603}
+      "expect": {"value2": -10750.782380145603},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -10750.7823801456}
     },
     {
       "id": "PMT-025",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read 50.905521301199329, 3 units in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 3 units in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.065/12,60,1000,-5000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 50.90552130119935}
+      "expect": {"value2": 50.90552130119935},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": 50.90552130119933}
     },
     {
       "id": "PMT-026",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read 1.8452907580883169, 11 units in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 11 units in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.07/12,240,1000,-5000)"},
       "check": "ZZ1000",
-      "expect": {"value2": 1.8452907580883144}
+      "expect": {"value2": 1.8452907580883144},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": 1.8452907580883169}
     },
     {
       "id": "PMT-027",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read -13.963833694802407, 1 unit in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.00001,360,10000,-5000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -13.963833694802405}
+      "expect": {"value2": -13.963833694802405},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -13.963833694802407}
     },
     {
       "id": "PMT-028",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read 0.97372774207228763, 7 units in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 7 units in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.025/4,240,1000,-5000)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.9737277420722884}
+      "expect": {"value2": 0.9737277420722884},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": 0.9737277420722876}
     },
     {
       "id": "PMT-029",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read 63.197272167756296, 3 units in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 3 units in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.06/52,60,1000,-5000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 63.197272167756275}
+      "expect": {"value2": 63.197272167756275},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": 63.197272167756296}
     },
     {
       "id": "PMT-030",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read -445.64260793186031, 1 unit in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.045/12,12,10000,-5000)"},
       "check": "ZZ1000",
-      "expect": {"value2": -445.64260793186025}
+      "expect": {"value2": -445.64260793186025},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -445.6426079318603}
     },
     {
       "id": "PMT-031",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read -22603.914076303507, 1 unit in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.001,12,250000,20000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -22603.91407630351}
+      "expect": {"value2": -22603.91407630351},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -22603.914076303507}
     },
     {
       "id": "PMT-032",
-      "source": "uncertain",
-      "description": "Engine's answer, which Excel does not give: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read -22817.298664792012, 1 unit in the last place away, and none of the 39,602 evaluations of the third search gives it together with every other payment Excel gave (spikes/exsheet-financial-evaluation/, Search.cs); whether PMT is corrected or refused is the user's question (ADR-0202)",
+      "source": "observed",
+      "description": "An input chosen so that the evaluations nearest Excel's payments give different doubles for it (Search.cs --discriminate): Excel's double is 1 unit in the last place from the exact payment rounded once, the engine's, a difference no format displays (ADR-0047's exception for PMT)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.03/12,12,250000,20000)"},
       "check": "ZZ1000",
-      "expect": {"value2": -22817.298664792015}
+      "expect": {"value2": -22817.298664792015},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12): PMT gives the exact payment over Excel's doubles, rounded once, and may differ from Excel's in digits no format displays; none of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -22817.29866479201}
     },
     {
       "id": "PMT-033",
@@ -302,6 +336,51 @@
       "cells": {"ZZ1000": "=PMT(0.12/12,120,10000,-5000,1)"},
       "check": "ZZ1000",
       "expect": {"value2": -120.5301724765284}
+    },
+    {
+      "id": "PMT-034",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: at a rate of -1 the growth is 0, and the forms of the identity that multiply by it give the payment -fv, -500 here, where those that divide by it give an Error Value (Search.cs, M1 and M6); PMT refuses it as PV refuses PV-013",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(-1,10,1000,500)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-035",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: at a rate of -2, 1+rate is -1 and its square 1, so (1+rate)^nper-1 is 0 and every form of the identity divides by it; which Error Value Excel gives has not been observed (PMT-005's #NUM! at no periods may come from a check of nper rather than the division)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(-2,2,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-036",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a third of a period at a rate below -1, the odd root of a negative 1+rate, as FV-017 found FV raises it; PMT raises 1+rate by the power PV and FV share, where e^(nper ln(1+rate)) would have no answer",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(-9,1/3,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -6}
+    },
+    {
+      "id": "PMT-037",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: ten periods before at a rate of -1, 0 to a negative power, #DIV/0! as FV-021 and PV-012 found it for FV and PV; PMT raises 1+rate by the power PV and FV share",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(-1,-10,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "PMT-038",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: 1+rate raised past a double's range, where the payment itself is a number, -1000 exactly rounded; an evaluation that raises 1+rate in doubles gives #NUM!, one in an x87's wider exponent the payment",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(1,1100,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

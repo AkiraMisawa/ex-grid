@@ -14,7 +14,7 @@
     {
       "id": "PV-002",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a rate of 0",
+      "description": "A rate of 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0,10,-100)"},
       "check": "ZZ1000",
@@ -23,7 +23,7 @@
     {
       "id": "PV-003",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: with a future value, at the start of each period",
+      "description": "With a future value, at the start of each period",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,10,-100,1000,1)"},
       "check": "ZZ1000",
@@ -32,7 +32,7 @@
     {
       "id": "PV-004",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a type of 2 is payment at the start of each period, as PMT-008 found it is for PMT",
+      "description": "A type of 2 is payment at the start of each period, as PMT-008 found it is for PMT",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,10,-100,1000,2)"},
       "check": "ZZ1000",
@@ -50,7 +50,7 @@
     {
       "id": "PV-006",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: where dividing by the growth and multiplying by its reciprocal, and the order of the payment's factors, differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "description": "Where dividing by the growth and multiplying by its reciprocal, and the order of the payment's factors, differ in the last place (spikes/exsheet-financial-evaluation/): Excel's double is the engine's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05/12,37,2500,1000,0)"},
       "check": "ZZ1000",
@@ -140,7 +140,7 @@
     {
       "id": "PV-016",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: e^(nper ln(1+rate)) with the exponential and the logarithm correctly rounded, as XNPV-013 found them, gives 1091.2943662943903; glibc's exp and log, which .NET takes on Linux, give 1091.2943662943944",
+      "description": "Engine's answer, Excel to be asked: e^(nper ln(1+rate)) with the exponential and the logarithm correctly rounded, the engine's, gives 1091.2943662943903; glibc's exp and log, which .NET takes on Linux, give 1091.2943662943944. XNPV-013 found Excel's exponential correctly rounded where glibc's is not; no observed double tells the logarithms apart",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.06/12,11.25,-100)"},
       "check": "ZZ1000",

@@ -32,7 +32,7 @@
     {
       "id": "FV-004",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a rate of 0",
+      "description": "A rate of 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0,10,-100)"},
       "check": "ZZ1000",
@@ -41,7 +41,7 @@
     {
       "id": "FV-005",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a type of 2 is payment at the start of each period, as PMT-008 found it is for PMT",
+      "description": "A type of 2 is payment at the start of each period, as PMT-008 found it is for PMT",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.06/12,10,-200,-500,2)"},
       "check": "ZZ1000",
@@ -68,7 +68,7 @@
     {
       "id": "FV-008",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: at a rate of 0 a number of periods that is not a whole number is answered, no power being raised",
+      "description": "At a rate of 0 a number of periods that is not a whole number is answered, no power being raised",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0,10.5,-100)"},
       "check": "ZZ1000",
@@ -86,7 +86,7 @@
     {
       "id": "FV-010",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: thirty years of months, nine squarings",
+      "description": "Thirty years of months, nine squarings",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.05/12,360,-150)"},
       "check": "ZZ1000",
@@ -203,7 +203,7 @@
     {
       "id": "FV-023",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: e^(nper ln(1+rate)) with the exponential and the logarithm correctly rounded, as XNPV-013 found them, gives 1154.2771752172287; glibc's exp and log, which .NET takes on Linux, give 1154.2771752172332",
+      "description": "Engine's answer, Excel to be asked: e^(nper ln(1+rate)) with the exponential and the logarithm correctly rounded, the engine's, gives 1154.2771752172287; glibc's exp and log, which .NET takes on Linux, give 1154.2771752172332. XNPV-013 found Excel's exponential correctly rounded where glibc's is not; no observed double tells the logarithms apart",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.06/12,11.25,-100)"},
       "check": "ZZ1000",

@@ -9,7 +9,10 @@ namespace ExSheet.Engine.Formulas;
 /// to a number that is not whole by these (<c>Functions.Financial.cs</c>): Excel's XNPV-013 (the second
 /// area pass of 2026-10-12) is a correctly rounded exponential's double at an argument where glibc's
 /// <c>exp</c> is one unit in the last place below it, and every other power Excel was observed to raise in
-/// PV, FV and XNPV is these functions' double too (<c>spikes/exsheet-financial-evaluation/</c>).
+/// PV, FV and XNPV is these functions' double too (<c>spikes/exsheet-financial-evaluation/</c>). That is the
+/// one argument observed where an exponential tells Excel's from glibc's; no observed double tells
+/// logarithms apart (FV-023 and PV-016 ask), so a correctly rounded logarithm is the engine's choice, not a
+/// reading of Excel's.
 /// </summary>
 /// <remarks>
 /// Each is computed in double-double arithmetic (<see cref="Wide"/>), about 100 bits, and that is rounded when no rounding
@@ -64,6 +67,45 @@ internal static class CorrectlyRounded
         for (var j = AtanhCoefficients.Length - 2; j >= 0; j--) series = AtanhCoefficients[j] + (t * series);
         var logarithm = (s * series) + new Wide(e * Ln2High, 0) + Wide.Product(e, Ln2Low) + new Wide(e * Ln2Lowest, 0);
         return TryRound(logarithm, out var rounded) ? rounded : LogExact(x);
+    }
+
+    /// <summary>
+    /// ln <paramref name="x"/> for a positive double-double, not rounded: the series <see cref="Log"/> sums
+    /// before it rounds, about 100 bits. PMT raises 1+rate, carried exactly, to an <c>nper</c> that is not a
+    /// whole number by it and <see cref="ExpWide"/> (<c>Functions.Financial.cs</c>).
+    /// </summary>
+    internal static Wide LogWide(Wide x)
+    {
+        // x = m * 2^e with m in [sqrt(1/2), sqrt(2)]; scaling both parts by a power of 2 is exact.
+        var e = Math.ILogB(x.High);
+        var m = new Wide(Math.ScaleB(x.High, -e), Math.ScaleB(x.Low, -e));
+        if (m.High > Sqrt2)
+        {
+            m = new Wide(m.High / 2, m.Low / 2);
+            e++;
+        }
+        var s = (m - 1) / (m + 1);
+        var t = s * s;
+        var series = AtanhCoefficients[^1];
+        for (var j = AtanhCoefficients.Length - 2; j >= 0; j--) series = AtanhCoefficients[j] + (t * series);
+        return (s * series) + new Wide(e * Ln2High, 0) + Wide.Product(e, Ln2Low) + new Wide(e * Ln2Lowest, 0);
+    }
+
+    /// <summary>
+    /// e^<paramref name="x"/> for a double-double, not rounded: the reduction and series <see cref="Exp"/>
+    /// computes before it rounds, about 100 bits. Past a double's range it is infinite or 0.
+    /// </summary>
+    internal static Wide ExpWide(Wide x)
+    {
+        if (x.High > 710) return double.PositiveInfinity;
+        if (x.High < -746) return 0;
+        var k = Math.Round(x.High * InverseLn2);
+        var reduced = x - new Wide(k * Ln2High, 0) - Wide.Product(k, Ln2Low) - new Wide(k * Ln2Lowest, 0);
+        var s = reduced * (1.0 / 16);
+        Wide power = 1;
+        for (var j = 14; j >= 1; j--) power = 1 + (s * power / j);
+        for (var i = 0; i < 4; i++) power *= power;
+        return new Wide(Math.ScaleB(power.High, (int)k), Math.ScaleB(power.Low, (int)k));
     }
 
     /// <summary>

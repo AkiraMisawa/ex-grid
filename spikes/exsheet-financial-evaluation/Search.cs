@@ -762,7 +762,7 @@ static class Annuity
         }
     }
 
-    /// <summary>The growths PMT is tried with: those after them differ from g0 only at an nper PMT refuses, or at a rate of -1; g22, the financial power, and the second pass's families are tried too.</summary>
+    /// <summary>The growths PMT is tried with: those after them differ from g0 only at an nper that is not a whole number from 0 (of PMT's observations, PMT-011 and 012 alone), or at a rate of -1; g22, the financial power, and the second pass's families are tried too.</summary>
     private const int PmtGrowths = 18;
 
     private static Growth Minus1(double g) => double.IsFinite(g) ? new(X.Of(g), X.AddExact(X.Of(g), X.Of(-1))) : throw new NoAnswer("#NUM!");
@@ -1486,8 +1486,69 @@ static class Refusals
         if (xnpv.Count != 2) throw new InvalidOperationException($"{xnpv.Count} of XNPV's two evaluations survive");
         ok &= Report("XNPV, its two evaluations", xnpv, XnpvGrid(), Kept);
         Report("XNPV, every survivor", survivors["XNPV"], XnpvGrid(), Kept);
+        ok &= ReportPmt();
         return ok;
     }
+
+    /// <summary>
+    /// PMT (2026-10-12, ADR-0047's exception for PMT alone, decided with the user): no evaluation gives every observed
+    /// payment, so PMT has no survivors to agree, and the engine gives the exact payment rounded once. Over the annuity
+    /// grid the engine must give the payment computed here exactly (the growth exact at a whole nper, else e^(n ln b) in
+    /// 256-bit fixed point; the payment at the end rounded once; at the start that double over 1+rate, rounded once),
+    /// the financial power's Error Values, and #VALUE! where it refuses until Excel is asked.
+    /// </summary>
+    private static bool ReportPmt()
+    {
+        int inputs = 0, answered = 0;
+        var refused = new Dictionary<string, int>();
+        var failures = new List<string>();
+        foreach (var c in AnnuityGrid("PMT"))
+        {
+            inputs++;
+            var (exact, refusal) = ExactPmt(c.Input);
+            var engine = Engine(c);
+            if (refusal is not null)
+            {
+                if (engine == "#VALUE!") { refused[refusal] = refused.GetValueOrDefault(refusal) + 1; continue; }
+                failures.Add($"{c.Formula}: the engine {engine}, refused there ({refusal})");
+                continue;
+            }
+            if (engine == exact) { answered++; continue; }
+            failures.Add($"{c.Formula}: the engine {engine}, the exact payment {exact}");
+        }
+        Console.WriteLine($"\nPMT, the exact payment rounded once (ADR-0047's exception): {inputs} inputs; the engine gives it, or the financial power's Error Value, at {answered}");
+        foreach (var (reason, count) in refused) Console.WriteLine($"  {count} refused: {reason}");
+        Console.WriteLine(failures.Count == 0 ? "  the engine gives the exact payment at every other input" : $"  {failures.Count} inputs where the engine does not:");
+        foreach (var f in failures.Take(25)) Console.WriteLine($"    {f}");
+        return failures.Count == 0;
+    }
+
+    /// <summary>PMT's exact payment over the doubles, or the financial power's Error Value, or why the engine refuses the input.</summary>
+    private static (string Answer, string? Refusal) ExactPmt(Input input)
+    {
+        double r = input.Rate, n = input.Periods, pv = input.Third, fv = input.Fourth;
+        if (n == 0) return ("#NUM!", null);
+        if (r == 0) return (Format(-(pv + fv) / n), null);
+        try { Pow.Financial(1 + r, n, correctlyRounded: true); }
+        catch (NoAnswer power) { return (power.Error, null); }
+        var b = X.AddExact(X.One, X.Of(r));
+        if (b.Sign == 0) return ("", "a rate of -1 with nper above 0, where the forms over the growth part between -fv and an Error Value (PMT-034 asks)");
+        var m = Math.Abs(n);
+        X g;
+        if (m == Math.Floor(m)) g = Pow.ExactPower(b, (long)m);
+        else if (b.Sign > 0) g = Fixed.Power(b, X.Of(m), 320);
+        else g = Fixed.Power(b.Negate(), X.Of(m), 320).Negate();
+        if (n < 0) g = X.Div(X.One, g, 400);
+        if (!double.IsFinite(g.ToDouble())) return ("", "1+rate raised past a double's range, where the payment is a number and an evaluation in doubles gives #NUM! (PMT-038 asks)");
+        var e = X.AddExact(g, X.Of(-1));
+        if (e.Sign == 0) return ("", "a growth of exactly 1 (a rate of -2, an even nper), where every form divides by 0 (PMT-035 asks)");
+        var owed = X.MulExact(X.Of(r), X.AddExact(X.MulExact(X.Of(pv), g), X.Of(fv))).Negate();
+        var end = X.Div(owed, e, 53).ToDouble();
+        if (input.Type != 0 && double.IsFinite(end)) end = X.Div(X.Of(end), b, 53).ToDouble();
+        return (double.IsFinite(end) ? Format(end) : "#NUM!", null);
+    }
+
+    private static string Format(double d) => d == 0 ? "0" : d.ToString("R", CultureInfo.InvariantCulture);
 
     public record Case(string Formula, Input Input, (string Address, string Typed)[] Cells);
 

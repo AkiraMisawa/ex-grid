@@ -6,18 +6,20 @@ using static ExSheet.Engine.Tests.SheetTestExtensions;
 namespace ExSheet.Engine.Tests;
 
 /// <summary>
-/// ADR-0047 and ADR-0202: PMT, PV, FV and XNPV give Excel's double, to the bit. The seventeenth Windows
-/// run (verification/2026-10-11-windows-17) and the two area passes of 2026-10-12
-/// (verification/2026-10-12-windows-area and -area-2) read every case's double;
+/// ADR-0047 and ADR-0202: PV, FV and XNPV give Excel's double, to the bit, at every case Excel was asked,
+/// and PMT the exact payment rounded once, by ADR-0047's exception for PMT alone (decided with the user,
+/// 2026-10-12). The seventeenth Windows run (verification/2026-10-11-windows-17) and the two area passes
+/// of 2026-10-12 (verification/2026-10-12-windows-area and -area-2) read every case's double;
 /// <c>spikes/exsheet-financial-evaluation/</c> searched the evaluations that give them. PV and FV are the
 /// doubles' evaluation of Microsoft's identity, the payment times (1+rate*type)*((g-1)/rate), with 1+rate
-/// raised by the one power that gives every observed double and Error Value: squaring to a whole number,
-/// 1 over the power to a negative one, the square root at 0.5, e^(n ln(1+rate)) correctly rounded
+/// raised by the one power searched that gives every observed double and Error Value: squaring to a whole
+/// number, 1 over the power to a negative one, the square root at 0.5, e^(n ln(1+rate)) correctly rounded
 /// otherwise, an odd root of a negative 1+rate, and the ^ operator's Error Values at 1+rate = 0. XNPV
-/// divides each value by that power of its years and sums from the first. PMT is the payment at the end
-/// carried beyond a double and rounded once, and at the start that double divided by 1+rate, rounded
-/// once. NPV is refused for 0.1.0 (ADR-0202, note of 2026-10-12): no evaluation searched gives every
-/// double Excel gave for it.
+/// divides each value by that power of its years and sums from the first, and is #NUM! at a rate below 0,
+/// a check no evaluation gives. PMT is the payment at the end carried beyond a double and rounded once,
+/// and at the start that double divided by 1+rate, rounded once, with 1+rate raised exactly; 19 of the 30
+/// payments Excel was asked are 1 to 11 units in the last place from it. NPV is refused for 0.1.0
+/// (ADR-0202, note of 2026-10-12): no evaluation searched gives every double Excel gave for it.
 /// </summary>
 public class FinancialEvaluationTests
 {
@@ -128,12 +130,12 @@ public class FinancialEvaluationTests
         Assert.Equal(excel, Number(formula));
     }
 
-    [Theory] // ADR-0047: FV-020, FV-021 and PV-012, the second area pass: 0 to a negative power is #DIV/0!, as the ^ operator's =0^-1 is (ARITH-042); PMT refuses a negative nper
+    [Theory] // ADR-0047: FV-020, FV-021 and PV-012, the second area pass: 0 to a negative power is #DIV/0!, as the ^ operator's =0^-1 is (ARITH-042); PMT raises 1+rate by the same power (PMT-037 asks)
     [InlineData("=FV(-1,-0.5,-100)", "#DIV/0!")]
     [InlineData("=FV(-1,-10,-100)", "#DIV/0!")]
     [InlineData("=PV(-1,-10,-100)", "#DIV/0!")]
     [InlineData("=PV(-1,-0.5,-100,1000,1)", "#DIV/0!")]
-    [InlineData("=PMT(-1,-10,100)", "#VALUE!")]
+    [InlineData("=PMT(-1,-10,100)", "#DIV/0!")]
     public void ADR0047_A_negative_number_of_periods_at_a_rate_of_minus_1_is_DIV0(string formula, string error) =>
         Assert.Equal(error, NewSheet().Evaluate(formula).ToString());
 
@@ -152,11 +154,12 @@ public class FinancialEvaluationTests
         Assert.Equal(100, Number("=FV(-1,10,-100)")); // FV multiplies by the growth, 0, and answers
     }
 
-    [Theory] // ADR-0047: FV-017 and PV-011, the second area pass: a negative 1+rate has an odd root where 1/nper is odd, as the ^ operator's =(-8)^(1/3) (ARITH-043), and no other fractional power (#NUM!); PMT refuses a fractional nper
+    [Theory] // ADR-0047: FV-017 and PV-011, the second area pass: a negative 1+rate has an odd root where 1/nper is odd, as the ^ operator's =(-8)^(1/3) (ARITH-043), and no other fractional power (#NUM!); PMT raises 1+rate by the same power (PMT-036 asks)
     [InlineData("=FV(-9,1/3,-1)", "0.3333333333333333")]
     [InlineData("=PV(-1.5,0.5,-100)", "#NUM!")]
     [InlineData("=FV(-2,10.5,-100)", "#NUM!")]
-    [InlineData("=PMT(-2,10.5,100)", "#VALUE!")]
+    [InlineData("=PMT(-2,10.5,100)", "#NUM!")]
+    [InlineData("=PMT(-9,1/3,-1)", "-6")]
     public void ADR0047_At_a_rate_below_minus_1_a_fractional_number_of_periods_is_an_odd_root_or_NUM(string formula, string expected) =>
         Assert.Equal(expected, NewSheet().Evaluate(formula).ToString());
 
@@ -219,15 +222,44 @@ public class FinancialEvaluationTests
         Assert.Equal(-162.74539488251162, Number("=PMT(0.1,10,1000,0,0)"));
     }
 
-    [Theory] // ADR-0047 (note of 2026-10-12, admitted with some argument values refused): PMT-011 and PMT-012, where Excel answers and no evaluation searched gives its payment
-    [InlineData("=PMT(8%/12,10.5,10000)")]
-    [InlineData("=PMT(8%/12,-10,10000)")]
-    [InlineData("=PMT(0.1,0.5,1000)")]
-    [InlineData("=PMT(0.1,-1,1000,0,1)")]
-    public void ADR0047_PMT_refuses_a_number_of_periods_that_is_not_a_whole_number_from_0(string formula) =>
+    [Theory] // ADR-0047, the exception for PMT (decided with the user, 2026-10-12): PMT-011 and PMT-012, a fractional and a negative nper, are the exact payment rounded once, each one unit in the last place from Excel's double
+    [InlineData("=PMT(8%/12,10.5,10000)", -989.2729401451878, -989.2729401451879)]
+    [InlineData("=PMT(8%/12,-10,10000)", 970.3654226924855, 970.3654226924854)]
+    public void ADR0047_PMT_gives_the_exact_payment_at_a_fractional_or_negative_number_of_periods(string formula, double exact, double excel)
+    {
+        Assert.Equal(exact, Number(formula));
+        Assert.Equal(1, Math.Abs(BitConverter.DoubleToInt64Bits(exact) - BitConverter.DoubleToInt64Bits(excel)));
+    }
+
+    [Theory] // ADR-0047, the exception for PMT: the exact payment, computed with Python's decimal at 150 digits and rounded once, at inputs no run has asked; 2,710 such inputs gave it on 2026-10-12
+    [InlineData("=PMT(0.1,0.5,1000)", -2148.8088481701516)]
+    [InlineData("=PMT(0.1,-1,1000,0,1)", 909.0909090909091)]
+    [InlineData("=PMT(-0.3,-0.5,0,20000,0)", 30733.20053068151)]
+    [InlineData("=PMT(0.42,-1/3,1000,-5000,0)", -15649.385313401854)]
+    [InlineData("=PMT(-0.3,0.25,1000,20000,0)", -73549.37333577585)]
+    [InlineData("=PMT(1E-7,-240.75,10000,0,1)", 41.53636189198373)]
+    [InlineData("=PMT(1E-7,0.25,10000,0,1)", -39999.99850000012)]
+    [InlineData("=PMT(0.42,-1/3,250000,20000,1)", 649988.3863764966)]
+    [InlineData("=PMT(-0.3,-1/3,0,20000,1)", 67893.64337294643)]
+    public void ADR0047_PMT_raises_one_plus_rate_exactly_to_any_number_of_periods(string formula, double exact) =>
+        Assert.Equal(exact, Number(formula));
+
+    [Theory] // ADR-0047: PMT-034, 035 and 038 ask: at a rate of -1 with periods the forms of the identity part between -fv and an Error Value; a growth of exactly 1 divides every form by 0, with an Error Value no run has observed; past a double's range doubles give #NUM! and an x87's exponent the payment
+    [InlineData("=PMT(-1,10,1000,500)")]
+    [InlineData("=PMT(-1,10.5,1000,500,1)")]
+    [InlineData("=PMT(-2,2,1000)")]
+    [InlineData("=PMT(-2,10,1000,0,1)")]
+    [InlineData("=PMT(1,1100,1000)")]
+    [InlineData("=PMT(-9,360,1000,500)")]
+    [InlineData("=PMT(3,1000.5,1000)")]
+    public void ADR0047_PMT_refuses_where_its_forms_part_in_kind(string formula) =>
         Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
 
-    [Theory] // ADR-0047: past 2^53 every double is a whole number, and how Excel raises 1+rate to one has not been observed
+    [Fact] // ADR-0047: no periods is #NUM! (PMT-005) at a rate of -1 too, where the power's 0^0 is #NUM! as well
+    public void ADR0047_PMT_with_no_periods_is_NUM_at_a_rate_of_minus_1() =>
+        Assert.Equal(Value.FromError(ErrorValue.Num), NewSheet().Evaluate("=PMT(-1,0,1000)"));
+
+    [Theory] // ADR-0047: past 2^53 every double is a whole number, and how Excel raises 1+rate to one has not been observed; PMT refuses it as PV and FV do
     [InlineData("=FV(0.06/12,2^53+2,-200)")]
     [InlineData("=PV(0.06/12,-(2^53+2),-200)")]
     [InlineData("=PMT(0.06/12,2^53+2,1000)")]
@@ -286,7 +318,7 @@ public class FinancialEvaluationTests
         Assert.Equal(-10000 + (3000 / 1.07), sheet.Evaluate("=XNPV(0.07,A1:A2,B1:B2)").Number);
     }
 
-    [Theory] // ADR-0047: XNPV-007 to 010, 012 and 017, the second area pass: Excel gave #NUM! at every rate below 0 it was asked, -0.5 to -2; XNPV-020 asks a small one
+    [Theory] // ADR-0047: XNPV-007 to 010, 012 and 017, the second area pass: Excel gave #NUM! at every rate below 0 it was asked, -0.5 to -2, which no evaluation gives; at -0.01 it is the engine's answer, which XNPV-020 asks
     [InlineData("-1", "39448", "39508")]
     [InlineData("-1", "39448", "39448")]
     [InlineData("-1.5", "39448", "39813")]
@@ -303,15 +335,19 @@ public class FinancialEvaluationTests
         Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate($"=XNPV({rate},A1:A2,B1:B2)"));
     }
 
-    [Fact] // ADR-0047: XNPV-019 asks: at a rate of 0 "below 0" answers the sum and "0 or below" #NUM!, so XNPV refuses it
-    public void ADR0047_XNPV_at_a_rate_of_0_is_refused()
+    [Fact] // ADR-0047: XNPV-019 asks: at a rate of 0 "below 0" answers the sum and "0 or below" #NUM!, so XNPV refuses it, but where a date before the first or the counts give #NUM!, which both readings give
+    public void ADR0047_XNPV_at_a_rate_of_0_is_refused_only_where_the_readings_part()
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "-1000");
         sheet.Enter("A2", "300");
+        sheet.Enter("A3", "500");
         sheet.Enter("B1", "39448");
         sheet.Enter("B2", "39508");
+        sheet.Enter("B3", "39000");
         Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0,A1:A2,B1:B2)"));
+        Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate("=XNPV(0,A1:A3,B1:B3)"));
+        Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate("=XNPV(0,A1:A3,B1:B2)"));
     }
 
     [Fact] // ADR-0047: XNPV-018 asks: where the last addition nearly cancels, the sum and the sum with Excel's last-addition adjustment part, and both give every observed XNPV double
