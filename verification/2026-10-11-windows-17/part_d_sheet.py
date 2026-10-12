@@ -124,6 +124,8 @@ def d3():
 
 def d4():
     home()
+    # D10 holds a number, so that a number format's letter shows what it ran; cleared again at the end.
+    p.keys('1234.5{ENTER}{UP}'); time.sleep(SETTLE)
     r = step('d4', '0-alt-h', '{ALT}h')
     tips = [t['tip'] for t in r['state']['keytips']]
     p.keys('{ESC}{ESC}'); time.sleep(SETTLE)
@@ -131,16 +133,18 @@ def d4():
         home()
         before = state()
         keys = '{ALT}h' + ''.join('{' + c + '}' if c in '+^%~(){}[]' else c.lower() for c in tip)
-        row = step('d4', f'letter-{tip}', keys, pic=False)
+        row = step('d4', f'letter-{tip}', keys)
         row_after = row['state']
         changed = {k: (before.get(k), row_after.get(k)) for k in ('d10', 'toolbarItems', 'dialogs', 'editing', 'keyboard', 'focusFont') if before.get(k) != row_after.get(k)}
         record({'case': 'd4', 'step': f'letter-{tip}-what-it-ran', 'page': PAGE, 'changed': changed})
         if row_after['dialogs'] or row_after['keytips']:
             p.keys('{ESC}'); time.sleep(SETTLE)
             p.keys('{ESC}'); time.sleep(SETTLE)
+        step('d4', f'letter-{tip}-after-escape')
         if state()['d10'] != before['d10']:
             home(); p.keys('^{KEYZ}'); time.sleep(SETTLE)
             record({'case': 'd4', 'step': f'letter-{tip}-undone', 'page': PAGE, 'd10': state()['d10']})
+    home(); p.keys('{DEL}'); time.sleep(SETTLE)
 
 
 def d5():

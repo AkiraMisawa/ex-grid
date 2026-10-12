@@ -414,6 +414,86 @@ reading, "it moves on neither axis", is not what either does.
     16. Excel's Formula Bar was not asked.
 11. **The Heading reading:** both move the view sideways (above), where the seventh run read no movement.
 
-## Parts D to H
+## Part D — KeyTips, Ctrl+F1 and F10 (SH-51, SH-52, ticket 160), and SH-42
+
+### Excel (d1, d2)
+
+`excel/xl-server.ps1`, a new Excel of its own (16.0.20430.20146, English (UK) UI), 2026-10-12 09:14; the KeyTips read
+from Excel's pictures (each KeyTip is a window of its own, `MSO_KEYTIP_WINDOW_CLASS`, drawn by PrintWindow;
+`shots/part-d/d1-*.png`).
+
+**d1, Alt then H: every Home tab KeyTip, and what it stands on.**
+
+| Group | Letters |
+|---|---|
+| Clipboard | **V** Paste ▾, **X** Cut, **C** Copy ▾, **FP** Format Painter, **FO** the Clipboard pane (the group's launcher) |
+| Font | **FF** Font, **FS** Font Size, **FG** Increase Font Size, **FK** Decrease Font Size, **1** Bold, **2** Italic, **3** Underline ▾, **B** Borders ▾, **H** Fill Colour ▾, **FC** Font Colour ▾, **FN** the Font tab of Format Cells (launcher) |
+| Alignment | **AT** Top Align, **AM** Middle Align, **AB** Bottom Align, **FQ** Orientation ▾, **W** Wrap Text, **AL** Align Left, **AC** Centre, **AR** Align Right, **5** Decrease Indent, **6** Increase Indent, **M** Merge & Centre ▾, **FA** the Alignment tab (launcher) |
+| Number | **N** Number Format ▾, **AN** Accounting Number Format ▾, **P** Percent Style, **K** Comma Style, **0** Increase Decimal, **9** Decrease Decimal, **FM** the Number tab (launcher) |
+| Styles | **L** Conditional Formatting ▾, **T** Format as Table ▾, **J** Cell Styles ▾ |
+| Cells | **I** Insert ▾, **D** Delete ▾, **O** Format ▾ (a menu: row height, column width, …, Format Cells…) |
+| Editing | **U** AutoSum ▾, **FI** Fill ▾, **E** Clear ▾, **S** Sort & Filter ▾, **FD** Find & Select ▾ |
+| Add-ins | **AS** Add-ins; **Y** Create a PDF (Adobe Acrobat's add-in, installed on this machine) |
+
+**The letters the Home tab leaves free** (neither a KeyTip nor the first letter of one): **G, Q, R, Z, 4, 7, 8**; and
+**Y** where the Acrobat add-in is not installed. **Strikethrough has no Home tab letter.** Alt alone showed the tabs'
+KeyTips: F File, H Home, N Insert, JI Draw, P Page Layout, M Formulas, A Data, R Review, W View, U2 Automate, Y1 Help,
+Y2 Acrobat, and the Quick Access Toolbar's 1 to 4 and B. Escape twice: Ready, A1.
+
+**d2, Ctrl+F1 twice:** the first **collapsed the ribbon to its tabs**; the second **brought it back**
+(`shots/part-d/d2-*.png`).
+
+### ExSheet (d3 to d6)
+
+`part_d_sheet.py` over `pg-server.mjs` (real keys and presses), on `/sheet` (d3 to d6) and `/sheet?chrome=mud` (d3, d4,
+d6), under Chrome and Edge, on WebAssembly and on the Server host (0 ms), 2026-10-12 09:17 to 09:32. A first try of
+Chrome WebAssembly at 09:14 ran d4 on an empty D10, where a number format shows nothing; it is kept in
+`records/part-d-first-try/`, and every configuration then ran with D10 holding `1234.5` for d4. After each step the
+DOM was read (the KeyTips, where DOM focus is, whether the document had focus, the edit, D10's look), with the window
+in front and every visible top-level window of the browser's process: **no window of the browser's own (a menu) appeared
+at any step**, and the browser's window stayed in front. (The screen's pictures, CopyFromScreen, came out blank: the
+display was off. The page's own pictures were taken for the additions below.) The table, from `part-d-summary.md`:
+**every configuration read the same** in every step, but for one console warning (below).
+
+| # | `/sheet` (and `/sheet?chrome=mud`, where run) | Reading |
+|---|---|---|
+| d3 | The press on D10: the keyboard in the Keyboard Field. **Alt pressed and released alone: the Sheet's KeyTips, `H` (Home) and `Y` (This page)**, the keyboard on the toolbar; the document kept focus; **the browser's menu did not open** and neither its menu bar nor its address bar took the keyboard. Escape: the KeyTips gone, the keyboard back in the field. **F10: the same KeyTips**, the same keyboard. Escape: back | — |
+| d4 | Alt, H: **`1` Bold, `2` Italic, `3` Underline, `4` Strikethrough, `FC` Font Colour, `H` Fill Colour, `B` Borders, `AL` Align Left, `AC` Centre, `AR` Align Right, `N` Number Format, `P` Percent Style, `K` Comma Style, `O` Format Cells**. On D10 (`1234.5`), one at a time with Escape between: 1 bold, 2 italic, 3 underline, 4 a line through, each pressed on the toolbar; FC, H, B and N opened their lists (the colours, the borders, the Number Formats), the keyboard in the list; AL left, AC centre (AR: D10 was right-aligned already, the button pressed); **P `123450%`**; **K changed nothing** (ExSheet does not read Excel's Comma Style, which pads with `*`, and says so: ADR-0100, `SheetWords.CommaStyleUnread`); O opened Format Cells. Each format was undone with Ctrl+Z before the next | ExSheet uses Excel's Home tab letter where Excel has one (ADR-0100): **the same** for 1, 2, 3, FC, H, B, AL, AC, AR, N, P, K. **4**: Excel's Home tab has no Strikethrough letter, and 4 is free there. **O**: Excel's O opens the Format menu of the Cells group, ExSheet's opens Format Cells |
+| d5 | Ctrl+F1: **the toolbar hidden**, the keyboard in the field; Ctrl+F1 again: **shown**. The browser did not take the key | — |
+| d6 | F2 on D10: the Cell Editor open. **Alt: nothing started** (no KeyTips), the keyboard in the editor; **F10: nothing**; Escape: back in the field | SH-52: nothing starts |
+
+**The MudBlazor Chrome** read as the built-in one in d3, d4 and d6, but for this (**an addition**, `part_d_extra.py`,
+Chrome WebAssembly, `records/part-d-extra-wasm-chrome.jsonl`, `shots/part-d/extra-mud-*.png`): **the lists FC, H, B and N
+open stay open after Escape, once or twice.** The keyboard goes back to the Keyboard Field, but each list stays on screen
+(`.mud-popover-open`, laid out and visible in the page's own picture), and the next letter's list opens beside it: after
+FC, H, B and N, all four stood over the Sheet. Under the built-in Chrome the same lists closed with Escape.
+
+**The console:** on the Server host, under the MudBlazor Chrome (Chrome and Edge), one warning: `Blocked aria-hidden on an
+element because its descendant retained focus. The focus must not be hidden from assistive technology users. Avoid using
+aria-hidden on a focused element or its ancestor…` (Chromium's own). The built-in Chrome, and WebAssembly under either,
+logged info messages only.
+
+**An addition: the toolbar's Comma Style pressed with the real pointer** on D10 (`1234.5`): D10 unchanged, as K left it.
+
+### SH-42: Ctrl+1 to Ctrl+5 on the build
+
+`sh42-probe.mjs`, the eleventh run's `keys-probe.mjs` with `/sheet` in `keys.html`'s place (the eleventh run's
+`browser-input.ps1`, SendInput), in a profile of its own with seven tabs (`/sheet` third), under Chrome and Edge, on
+WebAssembly and the Server host, 2026-10-12 09:35. Before each key, `/sheet` the selected tab, D10 the Focus and the
+keyboard in the Keyboard Field; after it, the tab strip read through UI Automation (`records/sh42/`).
+
+| Key | What the page received | The Sheet | The browser |
+|---|---|---|---|
+| Ctrl+1 | `key=1`, on the Keyboard Field | **Format Cells opened** | no tab switched |
+| Ctrl+2 | `key=2` | **D10 bold** | no tab switched |
+| Ctrl+3 | `key=3` | **D10 italic** | no tab switched |
+| Ctrl+4 | `key=4` | **D10 underlined** | no tab switched |
+| Ctrl+5 | `key=5` | **D10 struck through** | no tab switched |
+
+The same in all four configurations, and each format undone with Ctrl+Z, the dialog closed with Escape. (The probe's
+record lists "tab opened: Number; …; Fill" after Ctrl+1: UI Automation's TabItem search reached Format Cells' own tabs
+inside the page. The browser's selected tab stayed `sheet-verify-17` throughout.)
+
+## Parts E to H
 
 *(Below, as each Part is finished.)*
