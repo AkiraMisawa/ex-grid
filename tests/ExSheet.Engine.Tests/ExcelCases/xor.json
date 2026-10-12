@@ -46,6 +46,15 @@
       "cells": {"ZZ1000": "=XOR(A6)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XOR-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: typed text that spells neither TRUE nor FALSE is passed over, as AND passes it over (AND-011)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=XOR(\"abc\",TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
     }
   ]
 }

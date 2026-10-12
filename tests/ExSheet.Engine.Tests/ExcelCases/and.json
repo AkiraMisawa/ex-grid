@@ -94,12 +94,12 @@
     },
     {
       "id": "AND-011",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: other typed text is #VALUE!",
+      "source": "observed",
+      "description": "Typed text that spells neither TRUE nor FALSE is passed over, as text in a range is (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AND(\"abc\",TRUE)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": true}
     },
     {
       "id": "AND-012",
@@ -118,6 +118,15 @@
       "cells": {"ZZ1000": "=AND(FALSE,1/0)"},
       "check": "ZZ1000",
       "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "AND-014",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: typed text alone is passed over (AND-011), which leaves nothing that counts: #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(\"abc\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

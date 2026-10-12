@@ -73,6 +73,15 @@
       "cells": {"ZZ1000": "=OR(TRUE,C2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "OR-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: typed text that spells neither TRUE nor FALSE is passed over, as AND passes it over (AND-011)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OR(\"abc\",FALSE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
     }
   ]
 }
