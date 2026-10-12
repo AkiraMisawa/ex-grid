@@ -31,7 +31,7 @@ public static class RowMarkRules
     /// not count towards it; they are said aloud beside the count instead. An empty
     /// result is "none".
     /// </summary>
-    public static RowMarkHeaderState HeaderState(RowMarkCounts counts)
+    internal static RowMarkHeaderState HeaderState(RowMarkCounts counts)
         => counts.MarkedInResult == 0 ? RowMarkHeaderState.None
             : counts.MarkedInResult < counts.RowsInResult ? RowMarkHeaderState.Some
             : RowMarkHeaderState.All;
@@ -40,5 +40,5 @@ public static class RowMarkRules
     /// are already marked — pressing "some" completes the marking, and only "all"
     /// clears it (ADR-0043).</summary>
     /// <returns>True to mark all; false to unmark all.</returns>
-    public static bool HeaderPress(RowMarkHeaderState state) => state != RowMarkHeaderState.All;
+    internal static bool HeaderPress(RowMarkHeaderState state) => state != RowMarkHeaderState.All;
 }

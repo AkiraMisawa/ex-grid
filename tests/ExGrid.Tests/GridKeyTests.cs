@@ -17,15 +17,15 @@ public class GridKeyTests
         => GridKeys.Resolve(key, ctrl, shift, alt, meta, metaIsPrimary);
 
     [Theory] // ADR-0012: the four forms of an arrow key
-    [InlineData(false, false, GridKeyKind.Move)]
-    [InlineData(true, false, GridKeyKind.Extend)]          // Shift
-    [InlineData(false, true, GridKeyKind.MoveToEdge)]      // Ctrl
-    [InlineData(true, true, GridKeyKind.ExtendToEdge)]     // Ctrl+Shift
-    public void An_arrow_resolves_by_its_modifiers(bool shift, bool ctrl, GridKeyKind expected)
+    [InlineData(false, false, nameof(GridKeyKind.Move))]
+    [InlineData(true, false, nameof(GridKeyKind.Extend))]          // Shift
+    [InlineData(false, true, nameof(GridKeyKind.MoveToEdge))]      // Ctrl
+    [InlineData(true, true, nameof(GridKeyKind.ExtendToEdge))]     // Ctrl+Shift
+    public void An_arrow_resolves_by_its_modifiers(bool shift, bool ctrl, string expected)
     {
         var action = Key("ArrowDown", ctrl: ctrl, shift: shift);
 
-        Assert.Equal(expected, action.Kind);
+        Assert.Equal(Enum.Parse<GridKeyKind>(expected), action.Kind);
         Assert.Equal(GridDirection.Down, action.Direction);
     }
 
@@ -123,16 +123,16 @@ public class GridKeyTests
     }
 
     [Theory] // ADR-0012: PageUp / PageDown move Focus and Viewport together; Shift extends
-    [InlineData("PageUp", false, GridKeyKind.MoveByViewport, GridDirection.Up)]
-    [InlineData("PageDown", false, GridKeyKind.MoveByViewport, GridDirection.Down)]
-    [InlineData("PageUp", true, GridKeyKind.ExtendByViewport, GridDirection.Up)]
-    [InlineData("PageDown", true, GridKeyKind.ExtendByViewport, GridDirection.Down)]
+    [InlineData("PageUp", false, nameof(GridKeyKind.MoveByViewport), GridDirection.Up)]
+    [InlineData("PageDown", false, nameof(GridKeyKind.MoveByViewport), GridDirection.Down)]
+    [InlineData("PageUp", true, nameof(GridKeyKind.ExtendByViewport), GridDirection.Up)]
+    [InlineData("PageDown", true, nameof(GridKeyKind.ExtendByViewport), GridDirection.Down)]
     public void The_viewport_keys_resolve_by_their_modifiers(
-        string key, bool shift, GridKeyKind expected, GridDirection direction)
+        string key, bool shift, string expected, GridDirection direction)
     {
         var action = Key(key, shift: shift);
 
-        Assert.Equal(expected, action.Kind);
+        Assert.Equal(Enum.Parse<GridKeyKind>(expected), action.Kind);
         Assert.Equal(direction, action.Direction);
     }
 
@@ -203,17 +203,17 @@ public class GridKeyTests
     private static readonly GridKeyClaims Everything = new(CanEdit: true, CanUndo: true, CanRedo: true);
 
     [Theory] // ADR-0007: undo on Ctrl+Z; redo on both Excel spellings, CapsLock or not
-    [InlineData("z", false, GridKeyKind.Undo)]
-    [InlineData("Z", false, GridKeyKind.Undo)]
-    [InlineData("y", false, GridKeyKind.Redo)]
-    [InlineData("Y", false, GridKeyKind.Redo)]
-    [InlineData("Z", true, GridKeyKind.Redo)]
-    [InlineData("z", true, GridKeyKind.Redo)]
-    public void Undo_and_redo_resolve_from_both_spellings(string key, bool shift, GridKeyKind expected)
+    [InlineData("z", false, nameof(GridKeyKind.Undo))]
+    [InlineData("Z", false, nameof(GridKeyKind.Undo))]
+    [InlineData("y", false, nameof(GridKeyKind.Redo))]
+    [InlineData("Y", false, nameof(GridKeyKind.Redo))]
+    [InlineData("Z", true, nameof(GridKeyKind.Redo))]
+    [InlineData("z", true, nameof(GridKeyKind.Redo))]
+    public void Undo_and_redo_resolve_from_both_spellings(string key, bool shift, string expected)
     {
-        Assert.Equal(expected, Key(key, ctrl: true, shift: shift).Kind);
+        Assert.Equal(Enum.Parse<GridKeyKind>(expected), Key(key, ctrl: true, shift: shift).Kind);
         // Command on a Mac folds into Control, so Cmd+Shift+Z is the same entry (ADR-0012).
-        Assert.Equal(expected, Key(key, shift: shift, meta: true).Kind);
+        Assert.Equal(Enum.Parse<GridKeyKind>(expected), Key(key, shift: shift, meta: true).Kind);
         // And the Windows key does not.
         Assert.Equal(GridKeyKind.None, Key(key, shift: shift, meta: true, metaIsPrimary: false).Kind);
     }
@@ -236,14 +236,14 @@ public class GridKeyTests
     }
 
     [Theory] // ADR-0035 / ADR-0054: the writing keys
-    [InlineData("Delete", false, GridKeyKind.Clear)]
-    [InlineData("Backspace", false, GridKeyKind.ClearAndEdit)]
-    [InlineData("d", true, GridKeyKind.FillDown)]
-    [InlineData("D", true, GridKeyKind.FillDown)]
-    [InlineData("r", true, GridKeyKind.FillRight)]
-    [InlineData("R", true, GridKeyKind.FillRight)]
-    public void The_writing_keys_resolve(string key, bool ctrl, GridKeyKind expected)
-        => Assert.Equal(expected, Key(key, ctrl: ctrl).Kind);
+    [InlineData("Delete", false, nameof(GridKeyKind.Clear))]
+    [InlineData("Backspace", false, nameof(GridKeyKind.ClearAndEdit))]
+    [InlineData("d", true, nameof(GridKeyKind.FillDown))]
+    [InlineData("D", true, nameof(GridKeyKind.FillDown))]
+    [InlineData("r", true, nameof(GridKeyKind.FillRight))]
+    [InlineData("R", true, nameof(GridKeyKind.FillRight))]
+    public void The_writing_keys_resolve(string key, bool ctrl, string expected)
+        => Assert.Equal(Enum.Parse<GridKeyKind>(expected), Key(key, ctrl: ctrl).Kind);
 
     [Fact] // ADR-0054 / ED-25: a display-only grid leaves the page Delete, Backspace, Ctrl+D and Ctrl+R
     public void The_writing_keys_are_claimed_only_on_a_grid_that_edits()

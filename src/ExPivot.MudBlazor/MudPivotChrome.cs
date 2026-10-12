@@ -28,8 +28,8 @@ public sealed class MudPivotChrome : IPivotChrome
     public static MudPivotChrome Default { get; } = new();
 
     /// <summary>A Material icon for a command's id — ExPivot's (<see cref="PivotCommandIds"/>) or
-    /// the grid's — or null for the default: <see cref="MudPivotIcons.ForCommand"/>, then the grid
-    /// Wrapper's own.</summary>
+    /// the grid's — or null for the default: the Wrapper's own Material icon for ExPivot's command,
+    /// then the grid Wrapper's.</summary>
     public Func<string, string?>? Icon { get; init; }
 
     /// <summary>The report grid's Chrome: <see cref="MudGridChrome"/>, wording ExPivot's commands

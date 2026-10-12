@@ -13,4 +13,4 @@ namespace ExGrid.Keys;
 /// <param name="CanFind">Whether anything can answer a Find (ADR-0055). Ctrl+F is claimed either
 /// way; this decides whether it opens the find panel — and the keys typed after it wait for the
 /// panel — or is refused.</param>
-public readonly record struct GridKeyClaims(bool CanEdit, bool CanUndo, bool CanRedo, bool CanFind = false);
+internal readonly record struct GridKeyClaims(bool CanEdit, bool CanUndo, bool CanRedo, bool CanFind = false);

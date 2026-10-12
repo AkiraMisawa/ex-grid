@@ -3,7 +3,7 @@ using ExGrid.Selection;
 namespace ExGrid.Keys;
 
 /// <summary>What the core does with a key it has taken (ADR-0012 / ADR-0011 / ADR-0020).</summary>
-public enum GridKeyKind
+internal enum GridKeyKind
 {
     /// <summary>Not the core's — it passes through to the browser and to whatever is
     /// inside the cell.</summary>
@@ -108,7 +108,7 @@ public enum GridKeyKind
 /// <param name="Direction">Which way, for the four movement kinds.</param>
 /// <param name="Order">Enter runs down columns, Tab runs across rows (ADR-0012).</param>
 /// <param name="Backward">Shift+Enter / Shift+Tab, and the corner Ctrl+Home takes.</param>
-public readonly record struct GridKeyAction(
+internal readonly record struct GridKeyAction(
     GridKeyKind Kind,
     GridDirection Direction = GridDirection.Down,
     CycleOrder Order = CycleOrder.ColumnMajor,

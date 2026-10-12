@@ -25,7 +25,7 @@ namespace ExGrid;
 /// tests hold that invariant, because it is the whole basis for calling this a fix
 /// rather than a change.</para>
 /// </summary>
-public readonly record struct ViewportBox
+internal readonly record struct ViewportBox
 {
     /// <param name="outerWidthPx">The width the Consumer declared — <c>ViewportWidth</c>,
     /// which keeps meaning the element's outer size (ADR-0013).</param>

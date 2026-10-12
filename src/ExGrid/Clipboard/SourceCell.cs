@@ -7,4 +7,4 @@ namespace ExGrid.Clipboard;
 /// </summary>
 /// <param name="Row">The row within the block, from 0.</param>
 /// <param name="Column">The column within the block, from 0.</param>
-public readonly record struct SourceCell(int Row, int Column);
+internal readonly record struct SourceCell(int Row, int Column);

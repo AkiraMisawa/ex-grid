@@ -38,7 +38,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     /// <summary>How many rows the first fetch asks for, before the grid has said how
     /// tall it is. Wide enough for an ordinary Viewport; the grid's own request replaces
     /// it as soon as one arrives.</summary>
-    public const int DefaultPageRows = 100;
+    internal const int DefaultPageRows = 100;
 
     private readonly Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> _fetch;
     private readonly int _readAheadRows;

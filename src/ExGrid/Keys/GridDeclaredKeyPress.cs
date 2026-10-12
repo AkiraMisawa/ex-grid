@@ -8,9 +8,10 @@ namespace ExGrid.Keys;
 /// open the Consumer decides whether it means anything at all. ExSheet's formatting keys are
 /// refused then, and say why (ADR-0071).
 /// </summary>
-/// <param name="Key">The key in <see cref="GridKeys.Canonical"/>'s form, exactly as it was declared
-/// — <c>Control+b</c>, <c>Control+Shift+$</c>. Command folds into Control where it is the Primary
-/// Modifier (ADR-0012).</param>
+/// <param name="Key">The key in the grid's canonical form, exactly as it was declared
+/// — <c>Control+b</c>, <c>Control+Shift+$</c>: the event's <c>key</c>, after <c>Control+</c>,
+/// <c>Meta+</c>, <c>Shift+</c> and <c>Alt+</c> in that order for the modifiers held. Command folds
+/// into Control where it is the Primary Modifier (ADR-0012).</param>
 /// <param name="EditOpen">Whether an edit was open when it was pressed: in the Cell Editor or the
 /// Formula Bar, in any of its states. The key changed nothing in the editor either way.</param>
 /// <param name="Selection">The Selection as the grid holds it at the key — the one the key acts on.

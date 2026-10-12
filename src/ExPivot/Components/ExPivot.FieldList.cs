@@ -12,7 +12,7 @@ public partial class ExPivot
 {
     /// <summary>Filter… lists at most this many Items at once; the search narrows the rest.
     /// Excel's own filter lists stop at the same number.</summary>
-    public const int ItemListCap = 10_000;
+    internal const int ItemListCap = 10_000;
 
     private static readonly PivotArea[] AreaOrder = [PivotArea.Filters, PivotArea.Columns, PivotArea.Rows, PivotArea.Values];
 

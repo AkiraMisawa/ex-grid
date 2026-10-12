@@ -57,8 +57,9 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     /// <summary>The Toolbar Row this item stands in; null for an item of a toolbar that declares no rows.</summary>
     [CascadingParameter] public ToolbarRow? Row { get; set; }
 
-    /// <summary>The scope this item takes its place on the toolbar from.</summary>
-    [CascadingParameter] public ToolbarOrder? Order { get; set; }
+    /// <summary>The scope this item takes its place on the toolbar from. Internal, as its type is
+    /// (ADR-0201): Blazor supplies a cascading parameter that is not public, on a Consumer's item too.</summary>
+    [CascadingParameter] internal ToolbarOrder? Order { get; set; }
 
     /// <summary>Where the item stands on the toolbar, in markup order.</summary>
     internal ToolbarOrder Place { get; private set; } = new();
