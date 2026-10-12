@@ -1187,8 +1187,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             return runsLetter(popover, k) ? closes : null;
         }
-        return k.key === 'Enter' && isTextField(target) && target.closest('.ex-popover-filter') ? closes : null;
+        // A button that closes its popover — a panel's OK, Apply or Cancel, which the Chrome marks
+        // ex-popover-closes — pressed from the keys: Enter, or Space, whose click comes at its keyup.
+        // It closes the popover as a command run does, a round trip later on a circuit, and a key
+        // typed meanwhile was the button's: ↓ was lost, and Enter pressed it again (ADR-0010's rule
+        // for a key that closes a popover; ADR-0044's note of 2026-10-12).
+        const closing = target.closest('.ex-popover-closes');
+        if (closing && !closing.matches(':disabled, [aria-disabled=true]') && !k.shiftKey && (k.key === 'Enter' || k.key === ' ')) {
+            return closes;
+        }
+        if (k.key !== 'Enter') {
+            return null;
+        }
+        // Enter in a field submits its form: the filter's, or one whose OK closes the popover.
+        const submitsClosing = target instanceof HTMLInputElement && implicitSubmitTypes.has(target.type)
+            && target.form?.querySelector('button[type=submit].ex-popover-closes:not(:disabled)');
+        return (isTextField(target) && target.closest('.ex-popover-filter')) || submitsClosing ? closes : null;
     };
+    // The fields in which Enter submits the form they stand in, as the browser's implicit submission has it.
+    const implicitSubmitTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
     const onSentinel = (target) => target instanceof Element && target.classList.contains('ex-focus-wrap')
         && popoverOf(target) !== null;
     // A popover closing, and the keyboard in flight back from it (decided with the user on
@@ -2476,9 +2493,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // until the keyboard has followed — to the root, or to what the command opened (handOff;
         // ADR-0039, 2026-10-01). So does a press on one choice among others (menuitemradio), which
         // makes it and closes its list: the keyboard is in flight back from a closing popover
-        // (ADR-0044's note of 2026-10-12, decided with the user).
+        // (ADR-0044's note of 2026-10-12, decided with the user). And a press on a button that closes
+        // its popover, a panel's OK, Apply or Cancel (ex-popover-closes; handsOver).
         if (core && !replaying && event.button === 0 && event.target instanceof Element) {
-            const item = event.target.closest('[role=menuitem], [role=menuitemradio]');
+            const item = event.target.closest('[role=menuitem], [role=menuitemradio], .ex-popover-closes');
             const menu = item ? popoverOf(item) : null;
             if (item && menu && !item.matches(':disabled, [aria-disabled=true]')) {
                 awaitingMove = { from: item, closes: menu };

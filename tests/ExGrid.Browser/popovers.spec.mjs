@@ -424,6 +424,106 @@ for (const chrome of CHROMES) {
             }
         });
 
+        // A panel's OK, Apply and Cancel close its popover as a command run does (ADR-0010's rule for a
+        // key that closes a popover; ADR-0044's note of 2026-10-12): each Chrome marks them
+        // ex-popover-closes. Notional > 0 excludes no row, so the Selection stands (ADR-0011) and the
+        // Focus is where the panel was opened, r1c2.
+        const closingButton = {
+            builtin: {
+                ok: (panel) => panel.locator('.ex-popover-actions button', { hasText: 'OK' }),
+                cancel: (panel) => panel.locator('.ex-popover-actions button', { hasText: 'Cancel' }),
+            },
+            mud: {
+                ok: (panel) => panel.locator('.mud-ex-grid-filter-apply'),
+                cancel: (panel) => panel.locator('.mud-ex-grid-filter-cancel'),
+            },
+        };
+
+        async function notionalAboveZero(page) {
+            const panel = await openNotionalPanel(page);
+            await CONDITION[chrome].choose(page, panel);
+            await CONDITION[chrome].operand(panel).fill('0');
+            await expect(closingButton[chrome].ok(panel)).toBeEnabled();
+            return panel;
+        }
+
+        test('keys typed while Enter on OK closes a filter panel are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0010, ADR-0044, 2026-10-12)', async ({ page }) => {
+            const all = await grid(page).getAttribute('aria-rowcount');
+            const panel = await notionalAboveZero(page);
+            await closingButton[chrome].ok(panel).focus();
+            const landed = await watchWhereKeysLand(page);
+            const circuit = await setRoundTrip(80);
+            try {
+                await page.keyboard.press('Enter');
+                await page.keyboard.press('ArrowDown');
+                await page.keyboard.press('ArrowDown');
+
+                await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+                await circuitQuiet();
+                await expectKeyboardOn(grid(page));
+                await expectActiveDescendant(grid(page), /r3c2$/);
+                expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+                if (circuit) {
+                    // Typed on OK, a round trip before the panel could go: the case the hold is for.
+                    expect(await landed()).toEqual([
+                        { key: 'Enter', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
+                }
+            } finally {
+                await setRoundTrip(0);
+            }
+            // OK applied the condition: Clear filter is there to take it away.
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover button[role=menuitem]', { hasText: /Clear filter/ })).toBeEnabled();
+        });
+
+        test('keys typed while Space on Cancel closes a filter panel are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0010, ADR-0044, 2026-10-12)', async ({ page }) => {
+            const panel = await notionalAboveZero(page);
+            await closingButton[chrome].cancel(panel).focus();
+            const landed = await watchWhereKeysLand(page);
+            const circuit = await setRoundTrip(80);
+            try {
+                await page.keyboard.press('Space');
+                await page.keyboard.press('ArrowDown');
+                await page.keyboard.press('ArrowDown');
+
+                await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+                await circuitQuiet();
+                await expectKeyboardOn(grid(page));
+                await expectActiveDescendant(grid(page), /r3c2$/);
+                if (circuit) {
+                    expect(await landed()).toEqual([
+                        { key: ' ', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
+                }
+            } finally {
+                await setRoundTrip(0);
+            }
+            // Cancel applied nothing.
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover button[role=menuitem]', { hasText: /Clear filter/ })).toBeDisabled();
+        });
+
+        test('a key typed while a press on OK closes a filter panel is the grid\'s: ↓ typed at once moves the Focus (ADR-0039, ADR-0044, 2026-10-12)', async ({ page }) => {
+            const panel = await notionalAboveZero(page);
+            const landed = await watchWhereKeysLand(page);
+            const circuit = await setRoundTrip(80);
+            try {
+                await closingButton[chrome].ok(panel).click();
+                await page.keyboard.press('ArrowDown');
+
+                await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+                await circuitQuiet();
+                await expectKeyboardOn(grid(page));
+                await expectActiveDescendant(grid(page), /r2c2$/);
+                if (circuit) {
+                    expect(await landed()).toEqual([{ key: 'ArrowDown', where: 'popover' }]);
+                }
+            } finally {
+                await setRoundTrip(0);
+            }
+        });
+
         test('in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039)', async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');

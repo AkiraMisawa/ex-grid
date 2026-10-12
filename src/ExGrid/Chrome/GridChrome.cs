@@ -126,6 +126,12 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// values, nothing ticked — and the panel stands; the panel shows its Apply unavailable
 /// while its answer is that one, as Excel's OK is (ADR-0009, ticket 76).</para>
 ///
+/// <para>A button of the contents' that closes the popover — OK, Apply, Cancel — carries the
+/// class <c>ex-popover-closes</c>. Pressed, by the pointer, Enter or Space, it closes the popover
+/// a round trip later on a circuit, and by the class the grid's key listener holds the keys typed
+/// meanwhile and hands them on where the keyboard lands, rather than to a button about to go
+/// (ADR-0010; ADR-0044's note of 2026-10-12).</para>
+///
 /// <para><see cref="Clear"/> removes the column's filter and closes. The one popover offers
 /// it as the "clear-filter" command above the panel, so the panels this package and
 /// <c>ExGrid.MudBlazor</c> ship draw no Clear of their own (ADR-0044).</para>
@@ -393,6 +399,12 @@ public sealed record FindContext(
 /// render. <see cref="Close"/> is the contents' own way out, a Cancel as far as the grid is
 /// concerned: what the contents did before calling it is theirs. A popup the contents open of
 /// their own is reported through <see cref="InnerPopupChanged"/>, as in every popover.</para>
+///
+/// <para>A button of the contents' that closes the popover — OK, Cancel — carries the class
+/// <c>ex-popover-closes</c>, and a choice among others is ARIA's <c>menuitemradio</c>: pressed, by
+/// the pointer or the keys, each closes it a round trip later on a circuit, and the grid holds the
+/// keys typed meanwhile and hands them on where the keyboard lands (ADR-0010; ADR-0044's note of
+/// 2026-10-12).</para>
 /// </summary>
 /// <param name="Close">Closes the popover; the keyboard returns to the root.</param>
 /// <param name="FocusRequest">Changes whenever the contents' first control is to take DOM focus.</param>

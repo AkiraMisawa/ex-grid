@@ -49,6 +49,20 @@ The user also said that round 2's stop 1 stands. How it reads now is my reading 
   - Format Cells' and ExPivot's MudSelect lists keep the keyboard on the select while they stand (MudBlazor's own
     keys), so no key is in flight when they close; nothing was added for them. This is read off MudBlazor's
     MudSelect, which keeps DOM focus on its input; no case of ours types into one as it closes.
+  - *(Round 3, continued; a reading of mine, which was stop 4.)* A panel's OK, Apply and Cancel close its popover
+    too, a round trip later on a circuit, and a key typed on the button meanwhile was the button's: ↓ was lost,
+    and Enter pressed it again. ADR-0010's rule decided on 2026-09-26 ("so is closing a popover by a key … The
+    keys behind a closing key are held until the popover is gone") already covers them, and the decision of
+    2026-10-12 says "closed by Escape or by a choice"; I read OK and Apply as the panel's choice and Cancel as
+    its Escape. Each Chrome marks such a button `ex-popover-closes`, as it marks its value list `ex-value-list`:
+    the built-in filter panel's OK and Cancel, `ExGrid.MudBlazor`'s Apply and Cancel, and the built-in Format
+    Cells' OK and Cancel. Enter or Space on one, a press on one, and Enter in a field of a form whose OK is one
+    hold the keys after it until the popover has gone, as Enter on a command does; the find panel's Previous
+    and Next close nothing and are not marked. `GridChrome`'s filter-panel and Consumer-popover docs say so.
+    Layer 3: Enter on OK, Space on Cancel and a press on OK, then ↓ typed at once, under both Chromes on both
+    hosts (popovers.spec.mjs), and Enter on Format Cells' OK under the built-in Chrome (format-cells.spec.mjs).
+    A panel that refuses what OK submits stands, and the keys behind it wait out the hold's two seconds, as
+    behind Enter in the filter's field today.
 - **R2 (b), Escape goes back a level.** Observed (the readings of 2026-10-12, R2 (b)): after Alt, H, F, C one Escape
   showed the Home tab's KeyTips with the keyboard not back in the cell, a second the tabs', a third none. ExSheet's
   levels map one to one: the list a KeyTip opened, its Toolbar Row's KeyTips, the rows' KeyTips, none. Under both
@@ -123,7 +137,10 @@ an ask of the core.
   root or on the band, and every order gives the slow outcome. The inference by the next key, `altGoesFirst` and the
   empty question go. The band and a MudBlazor list hold the `keyup`s typed on them in flight with their keys (Blazor
   handlers, no script). It is a listener ADR-0021's first entry does not name, and it reverses ADR-0100's and
-  ADR-0050 item 14's "no listener is added to the grid": a widening of the first entry, or a new one.
+  ADR-0050 item 14's "no listener is added to the grid": a widening of the first entry, or a new one. A capture-phase
+  `keyup` listener on the root is already proposed on `claude/ed30-composition-race` (23c6e9de, marked there as
+  pending a decision), for the Keyboard Field's IME under ADR-0021's seventh entry; (a) would widen what that
+  listener is for, rather than add a second one.
 - (d) **The core hears the release through a Blazor `keyup` on its own root** (no script; ADR-0021 unchanged): the
   gate tells the core of a held Alt as it holds it, the core pairs the release it hears after that with it, and
   raises the press in its turn with whether it was already released (a new member of `GridDeclaredKeyPress`). It
@@ -163,17 +180,28 @@ and the three split controls' arrows, which MudMenu draws (its activator wrapper
 let ADR-0100 say so; (b) draw the menus' lists in a MudPopover of the Chrome's own, with buttons of its own that take
 no Tab (a rewrite of `MudToolbarItem`'s lists, re-run on both hosts).
 
-### 4. A popover closed by its OK, Apply or Cancel
+### 4. Popovers and dialogs outside the grid's root
 
-My reading of the decision of 2026-10-12: "closed by Escape or by a choice" is Escape anywhere, and a choice made in a
-list, a menu or a palette (a command, a format, a colour). Built so. A filter panel's OK or Apply and Cancel, the
-built-in Format Cells' OK and Cancel, and ExPivot's panels' OK also close their popover, a round trip later on a
-circuit, and a key typed on the button meanwhile is still the button's: ↓ is lost, and Enter presses OK again. The
-gate cannot tell such a button from one that closes nothing (Select All, a preset) without a mark. Options: (a) take
-them in too: each Chrome marks the buttons that close its popover (the built-in panels' `.ex-popover-actions`, and
-the same mark on `ExGrid.MudBlazor`'s filter panel and ExPivot's built-in and MudBlazor panels), and Enter, Space or
-a press on one holds the keys after it as Enter on a command does, with a layer-3 case per Chrome on each host;
-(b) leave them, and let ADR-0044's note say the hold covers Escape and choices only.
+The decision of 2026-10-12 names "any popover the grid or a Chrome shows … filter panels, Format Cells' and other
+dialogs' lists … under the built-in Chrome and under MudBlazor". Two kinds stand outside the grid's root, where its
+key gate does not reach, and were not built:
+
+- ExPivot's own frames (ADR-0061): the Field List's menus and panels (an item filter among them) and the Pivot
+  Toolbar's, `PivotPopupFrame` and `PivotDialogFrame`, under both of ExPivot's Chromes. Escape or a choice closes
+  one in a render, and the button that opened it takes the keyboard a round trip later (`PivotFocusButton`).
+- `ExSheet.MudBlazor`'s Format Cells, a MudDialog (ADR-0071), closed by Escape, OK or Cancel; under the built-in
+  Chrome Format Cells is the grid's popover and holds.
+
+Read off the code, not run: on a circuit a key typed while one closes reaches the closing frame's control, or
+nothing once the frame is gone and before the button has the keyboard. Holding it needs its default prevented the
+moment it is typed — Tab, an arrow on a radio, Space on a checkbox act at once — and a Blazor handler's
+`preventDefault` is the render's, a round trip late; ADR-0021 keeps script out of these frames. Options: (a) leave
+them, and let ADR-0044's note say the hold covers the grid's popovers and the Sheet Toolbar's lists, with these a
+known limitation; (b) each frame holds the keys it hears once its close has begun and hands them on where the
+keyboard lands, with the defaults of keys typed before that render reaches the browser still acting in the closing
+frame (narrower, not deterministic); (c) open them in the grid's popover frame (`OpenPopoverAsync`), where the gate
+holds: ExPivot's frames stand outside any grid by ADR-0061, and MudBlazor's dialog is ADR-0071's choice; (d) a
+listener of the grid's script on these frames, a new ADR-0021 entry.
 
 ## Choices of mine
 
@@ -185,8 +213,12 @@ a press on one holds the keys after it as Enter on a command does, with a layer-
 - ExSheet's levels for R2 (b), and narrowing letters as a level of their own.
 - A hold the band finds standing when it takes DOM focus, from a Chrome that began closing a list and never said it
   had, is dropped rather than handed on.
-- "Closed by a choice" read as a choice made in a list, a menu or a palette; a popover's OK, Apply and Cancel are
-  stop 4.
+- "Closed by a choice" read as a choice made in a list, a menu or a palette, and a panel's OK and Apply (its
+  choice) with Cancel as its Escape: built, under ADR-0010's rule for a key that closes a popover, rather than
+  left as a stop. The mark is a class, `ex-popover-closes`, as `ex-value-list` is, on the buttons and nowhere
+  else; Enter in a field of a form whose submit button carries it holds too, in the fields the browser submits
+  from (text, search, url, tel, password, email, number).
+- ExPivot's frames and MudBlazor's Format Cells dialog left to stop 4 rather than built.
 - The F10 and the ↓ cases, rather than narrowing the texts that name them.
 - Stop 1's options (d) and (h), and the recommendation of (a).
 
@@ -457,10 +489,38 @@ New:
   press on one, as a press on a `menuitem` already did: the keys wait until the popover has gone and
   go where the keyboard lands, on the root or where the core or the Consumer handed it on. On the
   Server host at an 80 ms round trip, ↓ typed straight after Escape in a menu moved in the closing
-  menu and was lost, and a second Enter after a choice chose again. E held on a checkbox outside
+  menu and was lost, and a second Enter after a choice chose again. *(As built, a reading of that
+  decision and of ADR-0010's rule for a key that closes a popover.)* So do a panel's OK, Apply and
+  Cancel, which each Chrome marks `ex-popover-closes` (ADR-0010's note of 2026-10-12): pressed, or by
+  Enter or Space, and Enter in a field of a form whose OK is one. ↓ typed straight after Enter on a
+  filter panel's OK was lost on the closing button. E held on a checkbox outside
 ```
 
-### 7. docs/adr/0021-javascript-is-allowlisted-not-minimised.md
+### 7. docs/adr/0010-chrome-seams-column-menu-editor-loading.md
+
+Old:
+
+```
+(`data-ex-letters`), and a Chrome marks its value list `ex-value-list`, so the listener mirrors
+nothing but Tab, Shift+Tab and E. The two seconds count from the start of the hold, however
+many moves it holds behind.
+```
+
+New:
+
+```
+(`data-ex-letters`), and a Chrome marks its value list `ex-value-list`, so the listener mirrors
+nothing but Tab, Shift+Tab and E. The two seconds count from the start of the hold, however
+many moves it holds behind. *(2026-10-12, as built: a reading of this rule and of the decision of
+that day, ADR-0044's note.)* A button that closes the popover — a panel's OK, Apply or Cancel —
+closes it by a key too, Enter or Space, and by a press: a Chrome marks such a button
+`ex-popover-closes`, as it marks its value list, and the contents of a Consumer's popover mark
+theirs. Enter in a field of a form whose OK is so marked submits it, and holds as Enter in the
+filter's field does. A panel that refuses what OK submits stands, and the hold behind it ends at
+its two seconds.
+```
+
+### 8. docs/adr/0021-javascript-is-allowlisted-not-minimised.md
 
 Old:
 
@@ -482,7 +542,7 @@ given in turn by the key hold while the keyboard is on its way to that control's
 held for it.)*
 ```
 
-### 8. docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md
+### 9. docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md
 
 Old:
 
@@ -500,7 +560,7 @@ New:
         a focused element and says so in the console (ADR-0100's note of 2026-10-12).
 ```
 
-### 9. docs/definition-of-done.md
+### 10. docs/definition-of-done.md
 
 Old:
 
@@ -514,7 +574,7 @@ New:
 | **SH-52** | MUST | While the Sheet holds the keyboard, its Sheet Toolbar is shown and no edit is open, Alt (Option on macOS) released alone, or F10, shows a KeyTip per Toolbar Row (the formatting row's is H); a row's letter shows its items' letters, Excel's Home tab letters where Excel has one, Format Cells' through Excel's Format menu (O, E), and ExSheet's own otherwise (Strikethrough's 4, never a letter Excel's Home tab uses); a letter runs its item and leaves the keyboard on the Sheet; Escape goes back one level and ends from the top — from a list a KeyTip opened to its row's KeyTips, from letters that narrow a level to that level's (*2026-10-12, the readings' R2 (a) and (b), observed*); an unmatched key ends it doing nothing; Alt with another key stays a chord (Alt+↓, Alt+Enter); a Consumer's letters are only those declared, and two colliding at one level are refused at render naming both; while an edit is open they start nothing, and with the toolbar hidden Alt and F10 stay the browser's; on Windows the browser's menu does not open from a Sheet whose toolbar is shown (ADR-0100, ADR-0021) | Layer 2; Layer 3; beside Excel and by hand on Windows for the browser's keys (a Windows run) | as Excel, where Excel has the letter |
 ```
 
-### 10. docs/definition-of-done.md
+### 11. docs/definition-of-done.md
 
 Old:
 
@@ -525,10 +585,10 @@ Old:
 New:
 
 ```
-| **KB-32** | MUST | However a popover closes — Escape, its ▾, a pointer-down elsewhere in the instance, a command run (Clear filter among them, ADR-0044), Apply, Cancel — DOM focus returns to the root, **including from inside an Inner Popup**; a dismissing pointer-down keeps its own meaning; *(2026-10-12, decided with the user: keys typed while the keyboard is in flight back from a closing popover are held and handed on in order to where the keyboard lands)* the keys typed after Escape or a choice that closes it reach where the keyboard lands, in order (ADR-0039/0010/0044) | Layer 3 under both Chromes, on the Server host at an 80 ms round trip with the keys typed at once | `document.activeElement` is the root and the next arrow moves the Focus; ↓, ↓ typed straight after Escape in a column's menu move the Focus two rows |
+| **KB-32** | MUST | However a popover closes — Escape, its ▾, a pointer-down elsewhere in the instance, a command run (Clear filter among them, ADR-0044), Apply, Cancel — DOM focus returns to the root, **including from inside an Inner Popup**; a dismissing pointer-down keeps its own meaning; *(2026-10-12, decided with the user: keys typed while the keyboard is in flight back from a closing popover are held and handed on in order to where the keyboard lands)* the keys typed after Escape or a choice that closes it reach where the keyboard lands, in order, and *(as built, a reading)* after a panel's OK, Apply or Cancel (ADR-0039/0010/0044) | Layer 3 under both Chromes, on the Server host at an 80 ms round trip with the keys typed at once | `document.activeElement` is the root and the next arrow moves the Focus; ↓, ↓ typed straight after Escape in a column's menu, or after Enter on a filter panel's OK, move the Focus two rows |
 ```
 
-### 11. samples/ExGrid.Docs/Pages/Sheet/SheetFormatting.razor
+### 12. samples/ExGrid.Docs/Pages/Sheet/SheetFormatting.razor
 
 Old:
 
@@ -568,7 +628,7 @@ New:
             </li>
 ```
 
-### 12. samples/ExGrid.Docs/Pages/KeyboardByHand.cs
+### 13. samples/ExGrid.Docs/Pages/KeyboardByHand.cs
 
 Old:
 
@@ -582,7 +642,7 @@ New:
             "Show the KeyTips: each row's letter, then each item's, so that [Alt], [H], [1] sets bold and [Alt], [H], [O], [E] opens Format Cells. [Escape] goes back one level.",
 ```
 
-### 13. samples/ExGrid.Docs/Pages/Grid/GridSelectionAndKeys.razor
+### 14. samples/ExGrid.Docs/Pages/Grid/GridSelectionAndKeys.razor
 
 Old:
 
@@ -599,8 +659,8 @@ New:
         <p>
             <strong>Keys typed at once arrive in order.</strong> Over Blazor Server a popover opens or closes a round
             trip after the key or the press that asked, and the keys typed meanwhile wait and then go where the
-            keyboard lands: ↓, ↓ typed straight after Escape in a column's menu move the Focus two rows, rather than
-            moving in a menu that is going.
+            keyboard lands: ↓, ↓ typed straight after Escape in a column's menu, or after Enter on a filter panel's OK,
+            move the Focus two rows, rather than moving in a menu that is going or being lost on a button.
         </p>
         <p>
             Every key of the three products, each with the page that explains it, is in the
@@ -608,7 +668,7 @@ New:
         </p>
 ```
 
-### 14. samples/ExGrid.Docs/Pages/Grid/GridAppearance.razor
+### 15. samples/ExGrid.Docs/Pages/Grid/GridAppearance.razor
 
 Old:
 
@@ -623,6 +683,9 @@ New:
 ```
             announced in, by the ids in <code>RefusalLabelIds</code>; answering <code>null</code> leaves the
             built-in English (<a href="exgrid/clipboard#what-a-refusal-sounds-like">what a refusal sounds like</a>).
+            A third: a button that closes its panel — OK, Apply, Cancel — carries the class
+            <code>ex-popover-closes</code>, as the built-in and MudBlazor panels' do, so that the keys typed while
+            the panel goes wait for the keyboard to land rather than reach a button that is going.
         </p>
         <p>
             <strong>A frame of your own</strong> outside the grid — a dialog, a toolbar — takes the keyboard through

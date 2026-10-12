@@ -772,9 +772,11 @@
                                     }
                                 }
                             }
+                            @* Each closes the popover: marked so, the keys typed while it goes wait for the
+                               keyboard to land (ex-popover-closes; ADR-0010, ADR-0044's note of 2026-10-12). *@
                             <div class="ex-popover-actions">
-                                <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)" disabled="@(!PanelCanApply(panelColumn))">OK</button>
-                                <button type="button" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
+                                <button type="button" class="ex-popover-closes" @onclick="() => ApplyPanelAsync(panelColumn)" disabled="@(!PanelCanApply(panelColumn))">OK</button>
+                                <button type="button" class="ex-popover-closes" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
                             </div>
                         </form>
                     }

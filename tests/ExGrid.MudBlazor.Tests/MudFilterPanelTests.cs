@@ -57,6 +57,19 @@ public class MudFilterPanelTests : MudTestContext
     private static IElement Button(IRenderedComponent<ContainerFragment> cut, string cssClass)
         => cut.Find($".{cssClass}");
 
+    [Fact] // ADR-0010 / ADR-0044 (2026-10-12): Apply and Cancel close the panel, and carry the mark by which the grid's key listener holds the keys typed while it goes; nothing else in it does
+    public void Apply_and_cancel_are_marked_as_closing_the_panel()
+    {
+        var cut = RenderPanel(Context());
+
+        var marked = cut.FindAll(".ex-popover-closes");
+
+        Assert.Equal(2, marked.Count);
+        Assert.Same(Button(cut, "mud-ex-grid-filter-apply"), marked[0]);
+        Assert.Same(Button(cut, "mud-ex-grid-filter-cancel"), marked[1]);
+        Assert.All(marked, b => Assert.Equal("BUTTON", b.TagName));
+    }
+
     [Fact] // WR-1: a value list of MudCheckBoxes with a search field and a Blank entry, every value chosen at first
     public void The_value_list_is_mud_checkboxes_with_a_search_and_a_blank_entry()
     {
@@ -239,7 +252,7 @@ public class MudFilterPanelTests : MudTestContext
     {
         var cut = RenderPanel(Context(focusRequest: 0, focusLastRequest: 1));
 
-        var cancel = cut.FindComponents<MudButton>().Single(b => b.Instance.Class == "mud-ex-grid-filter-cancel");
+        var cancel = cut.FindComponents<MudButton>().Single(b => (b.Instance.Class ?? "").Split(' ').Contains("mud-ex-grid-filter-cancel"));
         var focused = Assert.Single(JSInterop.Invocations, i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase));
         Assert.Equal(ReferenceOf(cancel.Instance).Id, ((ElementReference)focused.Arguments[0]!).Id);
     }

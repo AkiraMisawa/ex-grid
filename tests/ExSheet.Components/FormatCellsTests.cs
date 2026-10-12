@@ -102,6 +102,18 @@ public class FormatCellsTests : SheetTestContext
         Assert.Contains("max-height:", frame.GetAttribute("style"));
     }
 
+    [Fact] // ADR-0010 / ADR-0044 (2026-10-12): OK and Cancel close Format Cells, and carry the mark by which the grid's key listener holds the keys typed while it goes; OK is the form's submit button, so Enter in a field holds too
+    public async Task Ok_and_cancel_are_marked_as_closing_format_cells()
+    {
+        var cut = RenderSheet();
+
+        await OpenAsync(cut, "B2");
+
+        var marked = Frame(cut).QuerySelectorAll(".ex-popover-closes");
+        Assert.Equal(["OK", "Cancel"], marked.Select(b => b.TextContent.Trim()).ToArray());
+        Assert.Equal("submit", marked[0].GetAttribute("type"));
+    }
+
     [Fact] // ADR-0071 / ADR-0050 item 14 / SH-45, case 22: Ctrl+1 opens it, and sets nothing itself
     public async Task Ctrl_1_opens_it()
     {
