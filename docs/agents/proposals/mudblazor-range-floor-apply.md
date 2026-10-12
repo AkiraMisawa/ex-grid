@@ -57,7 +57,9 @@ Two things the edits rely on, found while writing them:
   Both are in the floor record's §7 (`verification/2026-10-12-linux-mudblazor-floor/results.md`); they
   check the commands and the tests, and are not the record Step 4 asks for. What edit 5 now adds around
   them was not run: the record's directory `R`, the commit `C`, a log per version naming the commit, and
-  the tagging step of decision (6). No floor run has been made, so there is nothing to tag.
+  the tagging step of decision (6). Nor was the later layer-2 run's procedure of decision (9): its own `C`
+  and `R`, its record named in `laterRecords`, and its tag. No floor run has been made, so there is nothing
+  to tag.
 
 ## Not settled by the decisions, for the orchestrator
 
@@ -67,6 +69,16 @@ Two things the edits rely on, found while writing them:
   fixed or shown to fail at the demo pages' version.
 - **After the first version without a suffix**, what raising a floor needs: ADR-0022's note scopes itself
   to a `0.x` prerelease line and says it does not decide that.
+- **Where a later layer-2 run's commit must be.** Decision (9) asks only that its tag names its commit, and
+  edit 5 no longer says "made at a commit where the record holds". A later run made at a commit whose
+  Wrappers differ from the floor record's, as on a branch never merged, would still count. The
+  release-mechanics list records the same gap under "For whoever applies it"; holding the later commit's
+  Wrappers and demo pages to the floor commit's would close it, and is a decision.
+- **"Carried forward" still names the floor run and the layer-2 runs recorded with it** (edit 2's note on
+  "once", edit 5's holding paragraph, edit 8). Under decision (9) a later layer-2 record is carried forward
+  too, in a directory of its own and with no paths compared. Those notes are the user's decisions (3) and
+  (4) as written, so this list does not widen them; whether they should name the later records is the
+  orchestrator's to put to the user.
 
 ## Settled since, by the user's later decisions of 2026-10-12
 
@@ -104,13 +116,13 @@ Two things the edits rely on, found while writing them:
 ## The edits, in the order they apply
 
 1. **ADR-0022: a note on "Raising the floor is a breaking change".** Decision (2): ADR-0022's rule covers the Wrappers' MudBlazor floor, and a `0.x` prerelease line may raise it. Its precedent is the ADR's rewrite of 2026-09-25, which raised the runtime floor under a published prerelease, as the correction of that day records.
-2. **ADR-0205, "The Wrappers' MudBlazor range": the floor raised to 9.6.0, what "once" means, and a later 9.x.** Decisions (1), (3), (4), (7) and (9). The bullets of 2026-10-11 change only the range and the version the floor is run at; what restore does below the floor (NU1605) is said in the dated note that follows, with the raise. A floor record holds while the Wrappers and the demo pages are unchanged up to X, an exception to the note of 2026-10-11 under "After `0.1.0`" and to ADR-0208's "every automated layer still runs in full"; layer 2 runs across the declared range beside the floor run; a 9.x published after the record and before X asks for the layer-2 runs at that version only, the floor run holding while its paths are unchanged; and that layer-2 run is a run of its own, with a record and a tag of its own, which WR-10's entry names besides the floor record. That the release workflow refuses a tag without those runs is a dated note of its own, not credited to the user, as the release-mechanics list writes its check: a pointer to ADR-0208's check of the floor record, which that list's edit 24 states. Edit 2 does not state the check.
+2. **ADR-0205, "The Wrappers' MudBlazor range": the floor raised to 9.6.0, what "once" means, and a later 9.x.** Decisions (1), (3), (4), (7) and (9). The bullets of 2026-10-11 change only the range and the version the floor is run at; what restore does below the floor (NU1605) is said in the dated note that follows, with the raise. A floor record holds while the Wrappers and the demo pages are unchanged up to X, an exception to the note of 2026-10-11 under "After `0.1.0`" and to ADR-0208's "every automated layer still runs in full"; layer 2 runs across the declared range beside the floor run; a 9.x published after the record and before X asks for the layer-2 runs at that version only, the floor run holding while its paths are unchanged; and that layer-2 run is a run of its own, with a record and a tag of its own, which WR-10's entry names besides the floor record. That the release workflow refuses a tag without those runs is a dated note of its own, not credited to the user, as the release-mechanics list writes its check: a pointer to ADR-0208's check of WR-10's records, which that list's edit 24 states. Edit 2 does not state the check.
 3. **ADR-0205, Consequences: the range the package check, PV-1 and the readmes state.** Decision (1), and, in a dated note of 2026-10-12, decisions (3) and (4): where the floor run and layer 2 across the range are run and judged.
 4. **PRE-3: the range named, and `ExPivot.MudBlazor`'s entry.** Decision (1); the proposal's §5 wording with F = 9.6.0. The row is one line, so the block is the whole row.
 5. **Step 4: the Wrappers' MudBlazor floor, and layer 2 across the range.** Decisions (3) and (4): the proposal's §6(a) paragraph with F = 9.6.0, the layer-2 runs of §6(c), and the rule that a record holds while its code is unchanged. Decision (6): the record in a directory of its own, and the verified commit tagged `verified/` followed by that directory's name and pushed, with WR-10's entry in `verification/by-hand.json`. Decision (7): a later 9.x asks for the layer-2 runs at that version only. Decision (9): that run is a run of its own, recorded in a directory of its own and tagged by it, and WR-10's entry names its record besides the floor record. Inserted after the Server-host commands' Discharges paragraph, which stands as written; a dated note after it leaves WR-10 to the floor run.
 6. **§23: WR-10, the floor every Wrapper declares.** Decision (3): the proposal's §6(b) row with F = 9.6.0, the layer-2 runs of decision (4), the record's holding rule, and decisions (7) and (9) in dated notes.
 7. **PV-1: MudBlazor's range.** Decision (1); the proposal's §5 wording with F = 9.6.0. The row is one line, so the block is the whole row.
-8. **ADR-0208: a pointer to the one automated run a record carries forward.** Decision (3): the floor run and its layer-2 runs are the exception ADR-0205's notes of 2026-10-12 state. Only the pointer: the release workflow's check of the floor record is the release-mechanics list's edit 24, whose old text this edit's does not touch.
+8. **ADR-0208: a pointer to the one automated run a record carries forward.** Decision (3): the floor run and its layer-2 runs are the exception ADR-0205's notes of 2026-10-12 state. Only the pointer: the release workflow's check of WR-10's records is the release-mechanics list's edit 24, whose old text this edit's does not touch.
 
 ### 1. docs/adr/0022-packages-target-net10-and-run-on-everything-newer.md
 
@@ -331,7 +343,9 @@ done
 is `verified/` followed by the name of the record's directory under `verification/`, and nothing else,
 one tag per record directory.)* The record names `C` in full. In the same commit as the record, WR-10's
 entry in `verification/by-hand.json` names the commit, the tag, the record's path, the verdict and the
-MudBlazor versions its layer-2 runs covered. The session that made the run then pushes the tag:
+MudBlazor versions its layer-2 runs covered, and empties `laterRecords`: a new floor run's layer-2 runs
+cover every published version of the range, and earlier later records were made on the Wrappers it
+replaces. The session that made the run then pushes the tag:
 
 ```sh
 git add "$R" verification/by-hand.json
@@ -362,10 +376,18 @@ goes in its own `verification/<date>-<name>/` directory, and the run tags the co
 `verified/` followed by that directory's name, as every run does. WR-10's entry in
 `verification/by-hand.json` names that record (commit, tag, path, verdict, the version it covered)
 besides the floor record. The release check reads every record WR-10's entry names: the floor record's
-paths hold since its commit, and each later record's tag names its commit.)* The run is the loop above
-with `versions` set to the new version, `C` to the commit it is made at and `R` to a directory of its
-own. In the same commit as its record, WR-10's entry names the record in `laterRecords`, and the floor
-record stays in `record`; the session that made the run then pushes its tag:
+paths hold since its commit, and each later record's tag names its commit.)* The run is the loop above,
+with `C`, `R` and `versions` set for it first:
+
+```sh
+C=$(git rev-parse HEAD)                  # the commit the run verifies
+R=verification/<date>-<name>             # a directory of its own
+mkdir -p "$R"
+versions=<the new version>
+```
+
+In the same commit as its record, WR-10's entry names the record in `laterRecords`, and the floor record
+stays in `record`; the session that made the run then pushes its tag:
 
 ```sh
 git add "$R" verification/by-hand.json
@@ -387,7 +409,7 @@ New:
 
 `````text
 | **WR-9** | MUST | The Wrapper's own suites hold the core's console rules: zero errors, zero page errors, zero warnings from ExGrid's or the Wrapper's code, no unhandled exception (CON-1/2/3/6) | the shared layer-3 fixture; layer 2's unobserved-exception handler | as the core's |
-| **WR-10** | MUST | Each MudBlazor Wrapper works at the floor it declares, 9.6.0, and across its declared range: the layer-3 tests run under `ExGrid.MudBlazor`, `ExSheet.MudBlazor` and `ExPivot.MudBlazor` pass against a DemoHost built with the floor's MudBlazor, on both hosts, in Chrome and in Edge; and each Wrapper's layer-2 suite passes with MudBlazor pinned to every published version of its declared range ([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)). *(Added 2026-10-12, decided with the user, when the floor was raised to 9.6.0: the Wrappers' layer-3 tests, run that day on Playwright's Chromium against a DemoHost at 9.0.0, failed on both hosts, and bisected over 9.0.0 to 9.9.0, the lowest version at which they passed, but for two failures that are not MudBlazor's, was 9.6.0. That record is not this row's floor run.)* | Step 4's floor run and its layer-2 runs, recorded under `verification/`. The record holds while `src/*.MudBlazor/` and `samples/ExGrid.DemoPages/` are unchanged from the commit it was made at up to X (ADR-0205's note of 2026-10-12, the shape of ADR-0208). *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, whose record goes in its own `verification/<date>-<name>/` directory, tagged `verified/` followed by that directory's name, and WR-10's entry in `verification/by-hand.json` names that record besides the floor record; the release check reads every record the entry names.)* Between floor runs, Step 1 holds the floor on every run: the Wrappers' suites resolve 9.6.0, and their WR-10 tests pin the role and name on the focusable element of every MudSelect a Wrapper draws, and a refused operand's words | zero failures; a layer-3 failure that also fails at the demo pages' version is that test's, and is judged by the run at that version |
+| **WR-10** | MUST | Each MudBlazor Wrapper works at the floor it declares, 9.6.0, and across its declared range: the layer-3 tests run under `ExGrid.MudBlazor`, `ExSheet.MudBlazor` and `ExPivot.MudBlazor` pass against a DemoHost built with the floor's MudBlazor, on both hosts, in Chrome and in Edge; and each Wrapper's layer-2 suite passes with MudBlazor pinned to every published version of its declared range ([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)). *(Added 2026-10-12, decided with the user, when the floor was raised to 9.6.0: the Wrappers' layer-3 tests, run that day on Playwright's Chromium against a DemoHost at 9.0.0, failed on both hosts, and bisected over 9.0.0 to 9.9.0, the lowest version at which they passed, but for two failures that are not MudBlazor's, was 9.6.0. That record is not this row's floor run.)* | Step 4's floor run and its layer-2 runs, recorded under `verification/`. The record holds while `src/*.MudBlazor/` and `samples/ExGrid.DemoPages/` are unchanged from the commit it was made at up to X (ADR-0205's note of 2026-10-12, the shape of ADR-0208). *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, whose record goes in its own `verification/<date>-<name>/` directory, and the run tags the commit it verified `verified/` followed by that directory's name; WR-10's entry in `verification/by-hand.json` names that record besides the floor record; the release check reads every record the entry names.)* Between floor runs, Step 1 holds the floor on every run: the Wrappers' suites resolve 9.6.0, and their WR-10 tests pin the role and name on the focusable element of every MudSelect a Wrapper draws, and a refused operand's words | zero failures; a layer-3 failure that also fails at the demo pages' version is that test's, and is judged by the run at that version |
 `````
 
 ### 7. docs/definition-of-done.md
