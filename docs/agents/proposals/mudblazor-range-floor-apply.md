@@ -62,8 +62,9 @@ Two things the edits rely on, found while writing them:
   "beside the floor record". Edit 5 reads that as the floor record's own directory, one log per version
   (`mudblazor-layer2-<version>.log`), naming the commit it ran at; that reading is this branch's, not the
   user's. By decision (6) the directory keeps its one tag, which names the floor run's commit, so the later
-  run's commit gets no tag of its own. Whether the release workflow needs that commit, or reads only the
-  versions WR-10's index entry names, is the release-workflow branch's check (its edit 24).
+  run's commit gets no tag of its own. The release-mechanics list, as it stood when this list was last
+  checked against it, has its check read only the versions WR-10's index entry names (its edits 24 and
+  27), so that commit is not asked for; the check is that list's to settle.
 
 ## Settled since, by the user's later decisions of 2026-10-12
 
@@ -79,8 +80,9 @@ Two things the edits rely on, found while writing them:
 - **A 9.x published after the record and before X** (decision (7)): it asks for the layer-2 runs at that
   version only, recorded beside the floor record, and the floor run, layer 3 at 9.6.0, holds while its
   paths are unchanged. Edits 2, 5 and 6 say it, each in a dated note. That the release workflow refuses a
-  tag whose record lacks such a version is the release-workflow branch's check (its edit 24); edit 2
-  points to it.
+  tag whose record lacks such a version is the release-workflow branch's check (its edit 24), which that
+  branch writes in notes of the check's own, not credited to the user; edit 2 points to it in a note of
+  that kind.
 - **The floor run's tag** (decision (6)): the run's record goes in a directory of its own under
   `verification/`, and the run tags the commit it verified `verified/` followed by that directory's name
   and pushes it. WR-10's entry in `verification/by-hand.json` names the commit, the tag, the record's
@@ -93,7 +95,7 @@ Two things the edits rely on, found while writing them:
 ## The edits, in the order they apply
 
 1. **ADR-0022: a note on "Raising the floor is a breaking change".** Decision (2): ADR-0022's rule covers the Wrappers' MudBlazor floor, and a `0.x` prerelease line may raise it. Its precedent is the ADR's rewrite of 2026-09-25, which raised the runtime floor under a published prerelease, as the correction of that day records.
-2. **ADR-0205, "The Wrappers' MudBlazor range": the floor raised to 9.6.0, what "once" means, and a later 9.x.** Decisions (1), (3), (4) and (7). The bullets of 2026-10-11 change only the range and the version the floor is run at; what restore does below the floor (NU1605) is said in the dated note that follows, with the raise. A floor record holds while the Wrappers and the demo pages are unchanged up to X, an exception to the note of 2026-10-11 under "After `0.1.0`" and to ADR-0208's "every automated layer still runs in full"; layer 2 runs across the declared range beside the floor run; and a 9.x published after the record and before X asks for the layer-2 runs at that version only, the floor run holding while its paths are unchanged. That the release workflow refuses a tag without those runs is said with a pointer to ADR-0208's check of the floor record, which the release-mechanics list's edit 24 states; edit 2 does not state the check.
+2. **ADR-0205, "The Wrappers' MudBlazor range": the floor raised to 9.6.0, what "once" means, and a later 9.x.** Decisions (1), (3), (4) and (7). The bullets of 2026-10-11 change only the range and the version the floor is run at; what restore does below the floor (NU1605) is said in the dated note that follows, with the raise. A floor record holds while the Wrappers and the demo pages are unchanged up to X, an exception to the note of 2026-10-11 under "After `0.1.0`" and to ADR-0208's "every automated layer still runs in full"; layer 2 runs across the declared range beside the floor run; and a 9.x published after the record and before X asks for the layer-2 runs at that version only, the floor run holding while its paths are unchanged. That the release workflow refuses a tag without those runs is a dated note of its own, not credited to the user, as the release-mechanics list writes its check: a pointer to ADR-0208's check of the floor record, which that list's edit 24 states. Edit 2 does not state the check.
 3. **ADR-0205, Consequences: the range the package check, PV-1 and the readmes state.** Decision (1), and, in a dated note of 2026-10-12, decisions (3) and (4): where the floor run and layer 2 across the range are run and judged.
 4. **PRE-3: the range named, and `ExPivot.MudBlazor`'s entry.** Decision (1); the proposal's §5 wording with F = 9.6.0. The row is one line, so the block is the whole row.
 5. **Step 4: the Wrappers' MudBlazor floor, and layer 2 across the range.** Decisions (3) and (4): the proposal's §6(a) paragraph with F = 9.6.0, the layer-2 runs of §6(c), and the rule that a record holds while its code is unchanged. Decision (6): the record in a directory of its own, and the verified commit tagged `verified/` followed by that directory's name and pushed, with WR-10's entry in `verification/by-hand.json`. Decision (7): a later 9.x asks for the layer-2 runs at that version only. Inserted after the Server-host commands' Discharges paragraph, which stands as written; a dated note after it leaves WR-10 to the floor run.
@@ -192,7 +194,9 @@ New:
   replaces nothing.)*
   *(2026-10-12, decided with the user: **a 9.x published after the floor record and before X asks for
   the layer-2 runs at that version only**, recorded beside the floor record. The floor run, layer 3 at
-  9.6.0, still holds while its paths are unchanged. The release workflow refuses a tag without them, by
+  9.6.0, still holds while its paths are unchanged.)*
+  *(2026-10-12, how the release workflow holds the note above: it refuses a tag whose floor record does
+  not name such a version, by
   [ADR-0208](./0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md)'s
   check of the floor record.)*
 `````
