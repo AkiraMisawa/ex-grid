@@ -123,4 +123,161 @@ public class FillWiringTests : SheetTestContext
         Assert.Equal("2", CellText(cut, "A2"));
         Assert.False(cut.Instance.CanUndo);
     }
+
+    // ---- The handle on a whole axis (ADR-0050 item 5; decided with the user 2026-10-12; the readings of 2026-10-12, R5) ----
+
+    /// <summary>The fill handle's box, as its inline style places it in its layer.</summary>
+    private static (double Left, double Top, double Size) HandleBox(IRenderedComponent<ExSheet> cut)
+    {
+        var style = cut.Find(".ex-fill-handle").GetAttribute("style")!;
+        double Read(string name) => double.Parse(
+            System.Text.RegularExpressions.Regex.Match(style, name + @": (-?[0-9.]+)px").Groups[1].Value, CultureInfo.InvariantCulture);
+        return (Read("left"), Read("top"), Read("width"));
+    }
+
+    /// <summary>What the cell records, as a Formula or as the constant's text or number: rows off screen are read from the Sheet Document.</summary>
+    private static string? EntryAt(IRenderedComponent<ExSheet> cut, string address) =>
+        cut.Instance.ToDocument().Cells.SingleOrDefault(c => c.Address == CellAddress.Parse(address))?.Entry is { } entry
+            ? entry.Formula ?? (entry.Constant!.Value.Kind == ValueKind.Number
+                ? entry.Constant.Value.Number.ToString(CultureInfo.InvariantCulture)
+                : entry.Constant.Value.Text)
+            : null;
+
+    private static async Task DragAsync(IRenderedComponent<ExSheet> cut, (double X, double Y) from, (double X, double Y) to)
+    {
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = from.X, OffsetY = from.Y });
+        await cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = to.X, OffsetY = to.Y });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, OffsetX = to.X, OffsetY = to.Y });
+    }
+
+    private static SheetDocument ColumnC() =>
+        DocumentOf(("C1", "1"), ("C3", "a"), ("C20", "=ROW()"), ("C1048576", "z"));
+
+    [Fact] // ADR-0050 item 5 / DC-12, DC-13: column C's handle, beside its Heading, dragged two columns right fills C:E as Excel did (observed, R5 (3))
+    public async Task A_whole_column_dragged_right_fills_every_row_and_steps_its_lone_number()
+    {
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, ColumnC()).Add(s => s.SelectionChanged, selections.Add));
+        await GoToAsync(cut, "C:C");
+        var width = SheetColumns.DefaultWidthPx;
+        var row = ExSheet.DefaultRowHeightPx;
+        var right = HeadingWidth(cut) + 3 * width;
+
+        // At C1's top-right: centred on C's right edge, its top on row 1's top, beside the Heading.
+        var box = HandleBox(cut);
+        Assert.Equal((right, 0d), (box.Left + box.Size / 2, box.Top));
+
+        await DragAsync(cut, (right, box.Size / 2), (right + width * 1.5, row * 2.5));   // to E3
+
+        Assert.Equal("2", CellText(cut, "D1"));
+        Assert.Equal("3", CellText(cut, "E1"));
+        Assert.Equal("", CellText(cut, "D2"));
+        Assert.Equal("a", CellText(cut, "D3"));
+        Assert.Equal("a", CellText(cut, "E3"));
+        Assert.Equal("=ROW()", EntryAt(cut, "E20"));
+        Assert.Equal("z", EntryAt(cut, "D1048576"));
+        Assert.Equal("z", EntryAt(cut, "E1048576"));
+        // The Selection is C:E, whole columns, as Excel's became.
+        Assert.Equal([new SelectionRange(0, 2, Sheet.RowCount, 3)], selections[^1].Ranges);
+
+        // One step on the undo stack.
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal("", CellText(cut, "D1"));
+        Assert.Null(EntryAt(cut, "E1048576"));
+        Assert.False(cut.Instance.CanUndo);
+    }
+
+    [Fact] // ADR-0050 item 5 / DC-13: a whole column's handle dragged down changes nothing, as Excel's did (observed, R5 (3))
+    public async Task A_whole_column_dragged_down_changes_nothing()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, ColumnC()));
+        await GoToAsync(cut, "C:C");
+        var right = HeadingWidth(cut) + 3 * SheetColumns.DefaultWidthPx;
+        var box = HandleBox(cut);
+
+        await DragAsync(cut, (right, box.Size / 2), (right - SheetColumns.DefaultWidthPx / 2, ExSheet.DefaultRowHeightPx * 8.5));
+
+        Assert.Equal("", CellText(cut, "D1"));
+        Assert.False(cut.Instance.CanUndo);
+        Assert.Single(cut.FindAll(".ex-fill-handle"));
+    }
+
+    [Fact] // ADR-0050 item 5 / DC-12, DC-13: row 3's handle, at its bottom-left beside the Heading, dragged two rows down fills rows 4 and 5 as Excel did (observed, R5 (4))
+    public async Task A_whole_row_dragged_down_fills_every_column_and_steps_its_lone_number()
+    {
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps
+            .Add(s => s.Document, DocumentOf(("A3", "1"), ("C3", "a"), ("H3", "=COLUMN()"), ("XFD3", "z")))
+            .Add(s => s.SelectionChanged, selections.Add));
+        await GoToAsync(cut, "3:3");
+        var width = SheetColumns.DefaultWidthPx;
+        var row = ExSheet.DefaultRowHeightPx;
+        var left = HeadingWidth(cut);
+
+        // At A3's bottom-left: its left on A's left, beside the Heading, centred on the row's bottom.
+        var box = HandleBox(cut);
+        Assert.Equal((left, 3 * row), (box.Left, box.Top + box.Size / 2));
+
+        await DragAsync(cut, (left + box.Size / 2, 3 * row), (left + width / 2, row * 4.5));   // to A5
+
+        Assert.Equal("2", CellText(cut, "A4"));
+        Assert.Equal("3", CellText(cut, "A5"));
+        Assert.Equal("a", CellText(cut, "C5"));
+        Assert.Equal("=COLUMN()", EntryAt(cut, "H4"));
+        Assert.Equal("=COLUMN()", EntryAt(cut, "H5"));
+        Assert.Equal("z", EntryAt(cut, "XFD5"));
+        Assert.Equal([new SelectionRange(2, 0, 3, Sheet.ColumnCount)], selections[^1].Ranges);
+    }
+
+    [Fact] // ADR-0050 item 5 / DC-12: every cell (Ctrl+A) shows no handle, as Excel showed none in view (observed, R5 (1))
+    public async Task Every_cell_shows_no_handle()
+    {
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, ColumnC()).Add(s => s.SelectionChanged, selections.Add));
+        await GoToAsync(cut, "B2");
+        Assert.Single(cut.FindAll(".ex-fill-handle"));
+
+        await PressAsync(cut, "a", ctrl: true);
+
+        Assert.Equal([new SelectionRange(0, 0, Sheet.RowCount, Sheet.ColumnCount)], selections[^1].Ranges);
+        Assert.Empty(cut.FindAll(".ex-fill-handle"));
+    }
+
+    [Fact] // ADR-0050 item 5 / DC-12: column C scrolled three rows down keeps its handle at the top-right of the part in view, as Excel's stayed (observed, R5 (5))
+    public async Task A_whole_columns_handle_stays_in_view_with_row_1_scrolled_away()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, ColumnC()));
+        await GoToAsync(cut, "C:C");
+        var right = HeadingWidth(cut) + 3 * SheetColumns.DefaultWidthPx;
+        var row = ExSheet.DefaultRowHeightPx;
+
+        await ScrollToAsync(cut, 3 * row, 0);                   // row 4 at the top, as three presses on the arrow left it
+
+        var box = HandleBox(cut);
+        Assert.Equal((right, 0d), (box.Left + box.Size / 2, box.Top));
+
+        // Grabbed where it stands, it fills right as from row 1's.
+        await DragAsync(cut, (right, box.Size / 2), (right + SheetColumns.DefaultWidthPx / 2, row * 2.5));
+        Assert.Equal("2", EntryAt(cut, "D1"));
+        Assert.Equal("z", EntryAt(cut, "D1048576"));
+    }
+
+    [Fact] // ADR-0050 item 5 / ADR-0047: a bold column filled right paints its target's blank rows bold at once, written as the target column's own format
+    public async Task A_whole_columns_format_reaches_the_targets_blank_rows()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("C1"), "1");
+        sheet.Do(SheetEdit.SetCellFormat([CellRange.Parse("C:C")], new CellFormatChange { Bold = true }));
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+        await GoToAsync(cut, "C:C");
+        var right = HeadingWidth(cut) + 3 * SheetColumns.DefaultWidthPx;
+        var box = HandleBox(cut);
+
+        await DragAsync(cut, (right, box.Size / 2), (right + SheetColumns.DefaultWidthPx / 2, ExSheet.DefaultRowHeightPx * 2.5));
+
+        Assert.Contains("ex-font-xb", Cell(cut, "D5").ClassName);
+        // C and D record one bold run, and no cell of D records a Font of its own.
+        Assert.Equal((2, 3), cut.Instance.ToDocument().Columns.Select(c => (c.First, c.Last)).Single());
+        Assert.DoesNotContain(cut.Instance.ToDocument().Cells, c => c.Address.Column == 3 && c.Font is not null);
+    }
 }

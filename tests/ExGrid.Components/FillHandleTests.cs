@@ -358,7 +358,8 @@ public class FillHandleTests : GridTestContext
         Assert.Empty(fills);
     }
 
-    // ---- The handle on a whole axis (decided with the user, 2026-10-12; the seventeenth Windows run, h3) ----
+    // ---- The handle on a whole axis (decided with the user, 2026-10-12, from the seventeenth Windows run's h3;
+    //      several of them, every cell and a column scrolled away observed by the readings of 2026-10-12, R5) ----
 
     private static GridColumn<TestRow>[] EditableColumns() =>
     [
@@ -385,12 +386,13 @@ public class FillHandleTests : GridTestContext
 
         var handle = Assert.Single(cut.FindAll(".ex-fill-handle"));
         // Centred on the column's right edge (200), its top on row 0's top: beside the column's
-        // header, wholly below it, as Excel draws it — not at row 49's bottom, out of sight.
+        // header and wholly below it, where the header would cover the part of Excel's that
+        // straddles the Heading's edge (R5) — not at row 49's bottom, out of sight.
         Assert.Equal("left: 197px; top: 0px; width: 6px; height: 6px", handle.GetAttribute("style"));
         Assert.NotNull(handle.Closest(".ex-selection"));
     }
 
-    [Fact] // ADR-0050 item 5 / DC-12: several whole columns put it at the first row's top-right of the last of them
+    [Fact] // ADR-0050 item 5 / DC-12: several whole columns put it at the first row's top-right of the last of them (observed, R5: B:D)
     public async Task Several_whole_columns_put_the_handle_at_the_first_rows_top_right()
     {
         var cut = RenderGrid(ps => ps.Add(g => g.ShowFillHandle, true));
@@ -441,34 +443,127 @@ public class FillHandleTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-fill-target"));
     }
 
-    [Fact] // ADR-0050 item 5 / DC-12: a whole column's handle goes with its first row, out of the painted rows
-    public async Task A_whole_columns_handle_goes_with_its_first_row()
+    [Fact] // ADR-0050 item 5 / DC-12: a whole column's handle stays at the top of the part in view with its first row scrolled away (observed, R5 (5))
+    public async Task A_whole_columns_handle_is_held_at_the_readable_top()
     {
         var cut = RenderGrid(ps => ps.Add(g => g.ShowFillHandle, true));
         await ClickAsync(cut, 150, 70);
         await KeyAsync(cut, " ", ctrl: true);
-        Assert.Single(cut.FindAll(".ex-fill-handle"));
 
-        await ScrollToAsync(cut.Find(".ex-scroller"), 400);      // rows 20 onwards
+        await ScrollToAsync(cut.Find(".ex-scroller"), 400);      // rows 20 onwards, row 20 flush with the top
+        Assert.Equal("left: 197px; top: 0px; width: 6px; height: 6px",
+            Assert.Single(cut.FindAll(".ex-fill-handle")).GetAttribute("style"));
 
-        Assert.Empty(cut.FindAll(".ex-fill-handle"));
+        // Ten pixels into row 20: the slice still starts there, and the handle moves down with the
+        // readable area's top, never under the header.
+        await ScrollToAsync(cut.Find(".ex-scroller"), 410);
+        Assert.Equal("left: 197px; top: 10px; width: 6px; height: 6px",
+            Assert.Single(cut.FindAll(".ex-fill-handle")).GetAttribute("style"));
+        Assert.NotNull(cut.Find(".ex-fill-handle").Closest(".ex-selection"));
     }
 
-    [Fact] // ADR-0050 item 5 / DC-12: every cell (Ctrl+A) keeps the bottom-right corner until Excel is asked
-    public async Task Every_cell_keeps_the_bottom_right_corner()
+    [Fact] // ADR-0050 item 5 / DC-13: a whole column's handle held at the readable top is grabbed there, and drags across
+    public async Task A_held_handle_is_grabbed_where_it_stands()
     {
+        var fills = new List<GridFillIntent>();
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.ShowFillHandle, true)
+            .Add(g => g.OnFill, (GridFillIntent i) => fills.Add(i)), EditableColumns());
+        await ClickAsync(cut, 50, 70);                           // Book, row 3
+        await KeyAsync(cut, " ", ctrl: true);
+        await ScrollToAsync(cut.Find(".ex-scroller"), 410);      // the handle's centre is (100, 13)
+
+        await DownAsync(cut, 100, 13);
+        await MoveAsync(cut, 150, 100);                          // Amount
+        await UpAsync(cut, 150, 100);
+
+        var fill = Assert.Single(fills);
+        Assert.Equal(new SelectionRange(0, 0, 50, 1), fill.Source);
+        Assert.Equal(new SelectionRange(0, 1, 50, 1), fill.Target);
+    }
+
+    [Fact] // ADR-0050 item 5 / ED-31: a press is judged against the held handle where the scroll it was taken at put it
+    public async Task A_press_on_a_held_handle_is_judged_at_the_scroll_it_was_taken_at()
+    {
+        var fills = new List<GridFillIntent>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.ShowFillHandle, true)
+            .Add(g => g.OnFill, (GridFillIntent i) => fills.Add(i))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s), EditableColumns());
+        await ClickAsync(cut, 50, 70);
+        await KeyAsync(cut, " ", ctrl: true);
+        await ScrollToAsync(cut.Find(".ex-scroller"), 410);
+        int Attribute(string name) => int.Parse(cut.Find(".ex-viewport").GetAttribute(name)!, System.Globalization.CultureInfo.InvariantCulture);
+        var (first, sequence, layout) = (Attribute("data-ex-first-row"), Attribute("data-ex-sequence"), Attribute("data-ex-layout"));
+
+        // Taken at 400, the handle stood at the slice's top (its centre at y 3): (99, 13) is a press on
+        // Book's row 20 under it, whatever the core's own last reading of the scroll says.
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mousedown", 99, 13, first, 0, 400, sequence, layout));
+        await DownAsync(cut, 99, 13);
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mouseup", 99, 13, first, 0, 400, sequence, layout));
+        await UpAsync(cut, 99, 13);
+        Assert.Empty(fills);
+        Assert.Equal([new SelectionRange(20, 0, 1, 1)], selection!.Ranges);
+
+        // Taken at 410, the same offsets are on the handle.
+        await KeyAsync(cut, " ", ctrl: true);
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mousedown", 99, 13, first, 0, 410, sequence, layout));
+        await DownAsync(cut, 99, 13);
+        await MoveAsync(cut, 150, 100);
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mouseup", 150, 100, first, 0, 410, sequence, layout));
+        await UpAsync(cut, 150, 100);
+        Assert.Single(fills);
+    }
+
+    [Fact] // ADR-0050 item 5 / DC-12: a whole row's handle stays at the left of the part in view with its first column under the Row Headings (by generalisation from R5 (5))
+    public async Task A_whole_rows_handle_is_held_at_the_readable_left()
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.Columns, EditableColumns())
+            .Add(g => g.RowHeight, 20)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 150)
+            .Add(g => g.RowHeadings, row => (row + 1).ToString(System.Globalization.CultureInfo.InvariantCulture))
+            .Add(g => g.RowHeadingWidth, 40d)
+            .Add(g => g.ShowFillHandle, true));
+        await ClickAsync(cut, 90, 30);                           // Book, row 1 (the columns start at 40)
+        await KeyAsync(cut, " ", shift: true);
+        Assert.Equal("left: 40px; top: 37px; width: 6px; height: 6px",
+            Assert.Single(cut.FindAll(".ex-fill-handle")).GetAttribute("style"));
+
+        // Scrolled 120px across, Book lies under the Row Headings: the handle stands against their
+        // edge, 40px into the Viewport, which is 160px into the content.
+        await ScrollToAsync(cut.Find(".ex-scroller"), 0, 120);
+        Assert.Equal("left: 160px; top: 37px; width: 6px; height: 6px",
+            Assert.Single(cut.FindAll(".ex-fill-handle")).GetAttribute("style"));
+    }
+
+    [Fact] // ADR-0050 item 5 / DC-12: every cell (Ctrl+A) shows no handle, as Excel showed none in view (observed, R5 (1)), and its old corner is a cell
+    public async Task Every_cell_shows_no_handle()
+    {
+        var fills = new List<GridFillIntent>();
+        GridSelection? selection = null;
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Many(5))
             .Add(g => g.Columns, Columns())
             .Add(g => g.RowHeight, 20)
             .Add(g => g.ViewportHeight, 200)
             .Add(g => g.ViewportWidth, 350)
-            .Add(g => g.ShowFillHandle, true));
+            .Add(g => g.ShowFillHandle, true)
+            .Add(g => g.OnFill, (GridFillIntent i) => fills.Add(i))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
         await ClickAsync(cut, 50, 10);
         await KeyAsync(cut, "a", ctrl: true);                    // rows 0-4, every column
 
-        Assert.Equal("left: 297px; top: 97px; width: 6px; height: 6px",
-            Assert.Single(cut.FindAll(".ex-fill-handle")).GetAttribute("style"));
+        Assert.Empty(cut.FindAll(".ex-fill-handle"));
+
+        // Where the bottom-right handle stood (300, 100): a press selects, and fills nothing.
+        await DownAsync(cut, 299, 99);
+        await UpAsync(cut, 299, 99);
+        Assert.Empty(fills);
+        Assert.Equal([new SelectionRange(4, 2, 1, 1)], selection!.Ranges);
     }
 
     [Fact] // ADR-0050 item 5 / DC-13: dragged from the top-right, a whole column fills across, along one axis

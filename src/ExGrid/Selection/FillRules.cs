@@ -27,21 +27,25 @@ public static class FillRules
 
     /// <summary>
     /// Which corner of <paramref name="range"/> the handle stands at (ADR-0050, item 5; decided
-    /// with the user 2026-10-12, as Excel draws it in the seventeenth Windows run's h3): a range
-    /// spanning every row of <paramref name="extent"/> (whole columns) at its first row's top-right
-    /// corner, beside the column's Heading; one spanning every column (whole rows) at its first
-    /// column's bottom-left, beside the row's Heading — a bottom-right corner a million rows down,
-    /// or sixteen thousand columns across, is one nobody can reach. A range spanning both, every
-    /// cell (Ctrl+A), keeps the bottom-right corner, as every other range does, until Excel is
-    /// asked where it puts that one.
+    /// with the user 2026-10-12, from the seventeenth Windows run's h3), or null where there is none.
+    /// A range spanning every row of <paramref name="extent"/> (whole columns) at its first row's
+    /// top-right corner, beside the column's Heading; one spanning every column (whole rows) at its
+    /// first column's bottom-left, beside the row's Heading — a bottom-right corner a million rows
+    /// down, or sixteen thousand columns across, is one nobody can reach. Several whole columns put
+    /// it at the last one's top-right and several whole rows at the last one's bottom-left (observed,
+    /// the readings of 2026-10-12 (R5): columns B:D and rows 2:4, each selected from its first
+    /// Heading). A range spanning both, every cell (Ctrl+A), has none: Excel showed none in view
+    /// (observed, R5), and there is nowhere left to fill to. Every other range keeps its
+    /// bottom-right corner.
     /// </summary>
-    internal static FillHandleCorner HandleCorner(SelectionRange range, GridExtent extent)
+    internal static FillHandleCorner? HandleCorner(SelectionRange range, GridExtent extent)
     {
         var everyRow = range.SpansEveryRow(extent);
         var everyColumn = range.SpansEveryColumn(extent);
-        return everyRow == everyColumn ? FillHandleCorner.BottomRight
+        return everyRow && everyColumn ? null
             : everyRow ? FillHandleCorner.TopRight
-            : FillHandleCorner.BottomLeft;
+            : everyColumn ? FillHandleCorner.BottomLeft
+            : FillHandleCorner.BottomRight;
     }
 
     /// <summary>
@@ -116,10 +120,13 @@ internal enum FillHandleCorner
     /// <summary>The range's last row and last column: every range but the two below.</summary>
     BottomRight,
 
-    /// <summary>The first row's top-right corner, beside the column's Heading: whole columns.</summary>
+    /// <summary>The first row's top-right corner, beside the column's Heading: whole columns. Held at
+    /// the readable area's top while that row is scrolled above it.</summary>
     TopRight,
 
-    /// <summary>The first column's bottom-left corner, beside the row's Heading: whole rows.</summary>
+    /// <summary>The first column's bottom-left corner, beside the row's Heading: whole rows. Held at
+    /// the readable area's left while that column is scrolled under the Row Headings or the Pinned
+    /// Columns.</summary>
     BottomLeft,
 }
 

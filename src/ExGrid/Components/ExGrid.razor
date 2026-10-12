@@ -242,6 +242,7 @@
                 {
                     var pointDashes = PointDashesRange(visible);
                     var outlineCover = OutlineCoverAt(visible);
+                    var readableEdge = ReadableEdgeAt(visible);
                     @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0 || pointDashes is not null)
                     {
                         @* What selection costs to paint depends on how many rectangles there
@@ -326,7 +327,7 @@
                                 {
                                     <div class="ex-fill-target" style="@pinnedFillOutline"></div>
                                 }
-                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, FillHandleCornerOf(pinnedHandleRange), _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: true) is { } pinnedHandle)
+                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, FillHandleCornerOf(pinnedHandleRange), _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: true, readableEdge) is { } pinnedHandle)
                                 {
                                     <div class="ex-fill-handle" style="@pinnedHandle"></div>
                                 }
@@ -409,7 +410,7 @@
                                 {
                                     <div class="ex-fill-target" style="@fillOutline"></div>
                                 }
-                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, FillHandleCornerOf(handleRange), _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: false) is { } handle)
+                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, FillHandleCornerOf(handleRange), _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: false, readableEdge) is { } handle)
                                 {
                                     <div class="ex-fill-handle" style="@handle"></div>
                                 }
@@ -1532,9 +1533,13 @@
     /// <summary>
     /// A Consumer declaration (ADR-0050, item 5): fill is enabled. The fill handle is painted
     /// at the bottom-right corner of the Selection's last range, in the selection overlay —
-    /// at the first row's top-right for whole columns and the first column's bottom-left for
-    /// whole rows, beside their Headings, as Excel puts it; none for a disjoint Selection, and
-    /// none while an edit is open. Dragging it extends
+    /// for one or several whole columns at the first row's top-right of the last of them, and
+    /// for whole rows at the last one's bottom-left, beside their Headings, as Excel puts it
+    /// (the seventeenth Windows run, h3; several of them, the readings of 2026-10-12, R5), and
+    /// held at the readable area's edge while that row or column is scrolled away, as Excel's
+    /// stayed in view for a column (R5; for a row by generalisation); none for every cell,
+    /// where Excel showed none in view (R5), none for a disjoint Selection, and none while an
+    /// edit is open. Dragging it extends
     /// along one axis, the one the pointer went further along, with the target outlined; on
     /// release the grid raises one <see cref="OnFill"/> intent and writes nothing. A target
     /// covering a column that is not Editable is refused whole first, through
@@ -2599,14 +2604,30 @@
         => new(_selection.Selection.Focus.Row, 0, 1, Math.Max(1, Columns.Count));
 
     /// <summary>The range the fill handle stands on, when it is painted (ADR-0050, item 5):
-    /// declared, with no edit open, and a Selection of one range.</summary>
+    /// declared, with no edit open, and a Selection of one range that is not every cell.</summary>
     private SelectionRange? FillHandleRange
-        => ShowFillHandle && _editMode == EditMode.None ? FillRules.HandleRange(_selection.Selection) : null;
+        => ShowFillHandle && _editMode == EditMode.None && FillRules.HandleRange(_selection.Selection) is { } range
+            && FillRules.HandleCorner(range, Extent) is not null ? range : null;
 
-    /// <summary>The corner of <paramref name="range"/> the fill handle stands at (ADR-0050, item 5):
-    /// the top-right of whole columns, the bottom-left of whole rows, the bottom-right of the
-    /// rest. Painted and grabbed from the same answer.</summary>
-    private FillHandleCorner FillHandleCornerOf(SelectionRange range) => FillRules.HandleCorner(range, Extent);
+    /// <summary>The corner of <paramref name="range"/>, a <see cref="FillHandleRange"/>, the fill
+    /// handle stands at (ADR-0050, item 5): the top-right of whole columns, the bottom-left of whole
+    /// rows, the bottom-right of the rest. Painted and grabbed from the same answer.</summary>
+    private FillHandleCorner FillHandleCornerOf(SelectionRange range)
+        => FillRules.HandleCorner(range, Extent) ?? FillHandleCorner.BottomRight;
+
+    /// <summary>Where the readable area begins as the slice is painted, for a fill handle held at
+    /// its edge (ADR-0050, item 5): its top below the first painted row's top, and its left in the
+    /// content.</summary>
+    private SelectionStyles.ReadableEdge ReadableEdgeAt(RowRange visible)
+        => ReadableEdgeOf(_scrollTopPx, _scrollLeftPx, visible.Start, _geometry.RowHeightPx, _columnStyles.Geometry);
+
+    /// <summary>Where the readable area begins at a scroll offset, measured from
+    /// <paramref name="firstRow"/>'s top and in the content's coordinates.</summary>
+    private SelectionStyles.ReadableEdge ReadableEdgeOf(
+        double scrollTopPx, double scrollLeftPx, int firstRow, double rowHeightPx, ColumnGeometry columns)
+        => new(
+            Math.Max(0, _geometry.ContentOffsetAt(scrollTopPx) - ((firstRow - _pageStartRow) * rowHeightPx)),
+            Math.Clamp(scrollLeftPx, 0, columns.MaxScrollLeftPx) + columns.PinnedWidthPx);
 
     /// <summary>The outline a running fill drag paints: the source and what it has reached,
     /// as one rectangle — one axis, so the union is a rectangle.</summary>
@@ -4015,7 +4036,8 @@
     /// <summary>
     /// Whether the press lands on the fill handle (ADR-0050, item 5) — arithmetic, as every
     /// other press in the body is (ADR-0008): the same place the handle was painted at, at the
-    /// same corner, with a grab box twice its side about its centre. A handle that has scrolled
+    /// same corner, with a grab box twice its side about its centre, held at the readable area's
+    /// edge as the scroll the press was taken at puts it (ED-31). A handle that has scrolled
     /// under the Pinned Columns or the Row Headings cannot be grabbed, as it cannot be seen; and a
     /// press on a Row Heading is the Heading's, though a whole row's handle stands beside it.
     /// </summary>
@@ -4028,7 +4050,8 @@
             return false;
         var corner = FillHandleCornerOf(range);
         var size = _metrics.FillHandleSizePx;
-        var (centreX, centreY) = SelectionStyles.HandleCentrePx(range, corner, geometry, RowHeightOf(e), first, size);
+        var readable = ReadableEdgeOf(ScrollTopOf(e), ScrollLeftOf(e), first, RowHeightOf(e), geometry);
+        var (centreX, centreY) = SelectionStyles.HandleCentrePx(range, corner, geometry, RowHeightOf(e), first, size, readable);
         var scrollLeft = Math.Clamp(ScrollLeftOf(e), 0, geometry.MaxScrollLeftPx);
         if (SelectionStyles.HandleCell(range, corner).Column < geometry.PinnedCount)
             centreX += scrollLeft;

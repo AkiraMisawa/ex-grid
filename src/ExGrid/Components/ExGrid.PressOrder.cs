@@ -133,24 +133,27 @@ public partial class ExGrid<TRow>
     /// <param name="firstRow">The first row the Viewport painted then (<c>data-ex-first-row</c>);
     /// negative when it painted none.</param>
     /// <param name="scrollLeftPx">The scroller's horizontal offset then.</param>
+    /// <param name="scrollTopPx">The scroller's vertical offset then, which places a fill handle held
+    /// at the readable area's top (ADR-0050, item 5).</param>
     /// <param name="rowSequence">The Row Sequence Version the Viewport was painted under
     /// (<c>data-ex-sequence</c>).</param>
     /// <param name="layout">The layout the Viewport was painted under (<c>data-ex-layout</c>).</param>
     [JSInvokable]
     public void PressTakenAt(string kind, double offsetX, double offsetY, int firstRow,
-        double scrollLeftPx, int rowSequence, int layout)
+        double scrollLeftPx, double scrollTopPx, int rowSequence, int layout)
     {
         // It crosses the JS boundary: a NaN would travel silently into the offsets.
         _taken = !_disposed && double.IsFinite(offsetX) && double.IsFinite(offsetY) && double.IsFinite(scrollLeftPx)
-            ? new TakenAt(kind, offsetX, offsetY, firstRow, scrollLeftPx, rowSequence, layout)
+            && double.IsFinite(scrollTopPx)
+            ? new TakenAt(kind, offsetX, offsetY, firstRow, scrollLeftPx, scrollTopPx, rowSequence, layout)
             : null;
     }
 
     private sealed record TakenAt(string Kind, double OffsetX, double OffsetY, int FirstRow,
-        double ScrollLeftPx, int RowSequence, int Layout);
+        double ScrollLeftPx, double ScrollTopPx, int RowSequence, int Layout);
 
     /// <summary>A press or release as it was taken (ED-31): the offsets it was given, and the first
-    /// row, horizontal scroll and layout they were measured against. <see cref="Layout"/> is null
+    /// row, scroll and layout they were measured against. <see cref="Layout"/> is null
     /// when what it was taken on is no longer held: the press lands on no cell.</summary>
     private sealed class TakenMouseEventArgs : MouseEventArgs
     {
@@ -159,6 +162,8 @@ public partial class ExGrid<TRow>
         public int FirstRow { get; init; }
 
         public double ScrollLeftPx { get; init; }
+
+        public double ScrollTopPx { get; init; }
     }
 
     /// <summary>The event as it was taken, if the script told of it (ED-31); the event as it came
@@ -183,6 +188,7 @@ public partial class ExGrid<TRow>
             Layout = held ? layout : null,
             FirstRow = told.FirstRow,
             ScrollLeftPx = told.ScrollLeftPx,
+            ScrollTopPx = told.ScrollTopPx,
         };
     }
 
@@ -196,6 +202,11 @@ public partial class ExGrid<TRow>
     /// band (ED-31).</summary>
     private double ScrollLeftOf(MouseEventArgs e)
         => e is TakenMouseEventArgs taken ? taken.ScrollLeftPx : _scrollLeftPx;
+
+    /// <summary>The vertical scroll the event was taken at, which places a fill handle held at the
+    /// readable area's top (ED-31; ADR-0050, item 5).</summary>
+    private double ScrollTopOf(MouseEventArgs e)
+        => e is TakenMouseEventArgs taken ? taken.ScrollTopPx : _scrollTopPx;
 
     /// <summary>The columns the event's x was measured against (ED-31).</summary>
     private ColumnGeometry ColumnsOf(MouseEventArgs e)

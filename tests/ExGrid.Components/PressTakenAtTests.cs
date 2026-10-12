@@ -36,12 +36,12 @@ public class PressTakenAtTests : GridTestContext
 
     /// <summary>What the script tells the core of a press it saw on the rows as they are painted now.</summary>
     private static Task TellAsync(IRenderedComponent<ExGrid<TestRow>> cut, string kind, double x, double y,
-        int? firstRow = null, double scrollLeftPx = 0, int? rowSequence = null, int? layout = null)
+        int? firstRow = null, double scrollLeftPx = 0, int? rowSequence = null, int? layout = null, double scrollTopPx = 0)
     {
         var first = firstRow ?? Attribute(cut, "data-ex-first-row");
         var sequence = rowSequence ?? Attribute(cut, "data-ex-sequence");
         var painted = layout ?? Attribute(cut, "data-ex-layout");
-        return cut.InvokeAsync(() => cut.Instance.PressTakenAt(kind, x, y, first, scrollLeftPx, sequence, painted));
+        return cut.InvokeAsync(() => cut.Instance.PressTakenAt(kind, x, y, first, scrollLeftPx, scrollTopPx, sequence, painted));
     }
 
     private static Task PressAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)

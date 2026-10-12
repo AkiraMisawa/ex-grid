@@ -161,7 +161,7 @@ public class SourceReplacedTests : GridTestContext
         var layout = Attribute(cut, "data-ex-layout");
         Replace(cut, GridSource.From(Copies(rows)));
 
-        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mousedown", 50, 30, 0, 0, sequence, layout));
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mousedown", 50, 30, 0, 0, 0, sequence, layout));
         await DownAsync(cut, 50, 30);
 
         Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
@@ -262,7 +262,7 @@ public class SourceReplacedTests : GridTestContext
         var layout = Attribute(cut, "data-ex-layout");
         Replace(cut, GridSource.From(Copies(rows)));
 
-        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mouseup", 50, 70, 0, 0, sequence, layout));
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mouseup", 50, 70, 0, 0, 0, sequence, layout));
         await UpAsync(cut, 50, 70);
 
         Assert.Empty(heard.Fills);
