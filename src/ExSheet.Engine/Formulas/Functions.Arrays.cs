@@ -163,7 +163,8 @@ internal static partial class FunctionLibrary
     /// the result is a kept blank (<see cref="Made"/>). An Error Value key is answered only where it
     /// already follows every number, as Excel's <c>#N/A</c> followed the 7 of SORT-015, and the Formula
     /// is refused with <c>#VALUE!</c> elsewhere (<see cref="ErrorKeysSettled"/>). An index outside the
-    /// array, or an order other than 1 and −1, is <c>#VALUE!</c>, as Excel's is (SORT-007, 008).
+    /// array, or an order other than 1 and −1, is <c>#VALUE!</c>: Excel's was for an index past the
+    /// array and an order of 0 (SORT-007, 008), and the rest is the engine's, by generalisation.
     /// </summary>
     private static Operand Sort(FunctionCall call)
     {
@@ -383,8 +384,9 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// TRANSPOSE: the array's rows as columns. A blank stays blank, and spills as 0, as Excel's does
-    /// (TRANSPOSE-004); read inside the Formula it is marked as <c>SORT</c>'s is (<see cref="Made"/>).
+    /// TRANSPOSE: the array's rows as columns. A blank spills as 0, as Excel's did (TRANSPOSE-004); read
+    /// inside the Formula it stays blank, marked as <c>SORT</c>'s is (<see cref="Made"/>), a
+    /// generalisation TRANSPOSE-005 and 006 ask.
     /// </summary>
     private static Operand Transpose(FunctionCall call)
     {

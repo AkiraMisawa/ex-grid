@@ -359,11 +359,11 @@ every Error Value key: a `by_array`'s could as well be the result, as `FILTER`'s
 ### 4. src/ExSheet.Engine/README.md
 
 The engine's README, "Asked of Excel before they are answered": the fragment on `UNIQUE`, `SORT` and `SORTBY`. The
-financial area's proposal (`area-financial.md`, its 6b) rewrites the same bullet, and its new lines end inside this
-fragment, so the old lines below will not match once it is applied: apply the financial edit first, then replace this
-area's fragment alone, from "`UNIQUE` with a blank in its array" to "sort).", with the new lines from "`SORT` with an
-Error Value key" to "does not catch.", keeping the financial text before it, and reflow the bullet. Against this
-branch, where neither is applied, the block applies as it stands.
+financial area's proposal (`area-financial.md` on `claude/area2-financial`, its ### 13) rewrites the same bullet, and
+its new lines end inside this fragment, so the old lines below will not match once it is applied: apply the financial
+edit first, then replace this area's fragment alone, from "`UNIQUE` with a blank in its array" to "sort).", with the
+new lines from "`SORT` with an Error Value key" to "does not catch.", keeping the financial text before it, and reflow
+the bullet. Against this branch, where neither is applied, the block applies as it stands.
 
 Old:
 
