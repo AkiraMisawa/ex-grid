@@ -83,6 +83,62 @@ public class HeaderGroupRenderingTests : GridTestContext
         Assert.Contains("height: 64px", leaves[4].GetAttribute("style"));
     }
 
+    private static GridColumn<TestRow>[] InOrder(params int[] order)
+    {
+        var wide = TestRows.Wide(6);
+        return [.. order.Select(i => wide[i])];
+    }
+
+    [Fact] // HG-1, ADR-0032: membership is a set — the painted order comes from Columns, never the declaration
+    public void HG1_members_declared_scrambled_paint_in_the_columns_order()
+    {
+        // Declared C03, C01, C02; the flat order puts them at positions 3-5 as C02, C03, C01.
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.TotalCount, 20)
+            .Add(g => g.Columns, InOrder(0, 4, 5, 2, 3, 1))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 650)
+            .Add(g => g.HeaderGroups, (HeaderGroup[])[
+                new HeaderGroup("Set", [TestRows.ColumnName(3), TestRows.ColumnName(1), TestRows.ColumnName(2)])]));
+
+        var style = cut.Find(".ex-header-group").GetAttribute("style");
+        Assert.Contains("left: 300px", style);
+        Assert.Contains("width: 300px", style);
+        // The leaves under it, left to right, are in Columns order.
+        var leaves = cut.FindAll(".ex-header-cell").Select(c => c.TextContent.Trim()).ToArray();
+        Assert.Equal(TestRows.ColumnName(2), leaves[3]);
+        Assert.Equal(TestRows.ColumnName(3), leaves[4]);
+        Assert.Equal(TestRows.ColumnName(1), leaves[5]);
+        // Covered leaves are one tier tall, uncovered ones are band tall.
+        Assert.Contains("height: 32px", cut.FindAll(".ex-header-cell")[3].GetAttribute("style"));
+        Assert.Contains("height: 64px", cut.FindAll(".ex-header-cell")[2].GetAttribute("style"));
+    }
+
+    [Fact] // HG-5, ADR-0032: a reorder that separates a group's members is refused, naming adjacency
+    public void HG5_a_reorder_that_separates_the_members_is_refused()
+    {
+        HeaderGroup[] groups = [new HeaderGroup("CVA", [TestRows.ColumnName(1), TestRows.ColumnName(2), TestRows.ColumnName(3)])];
+        void Push(ComponentParameterCollectionBuilder<ExGrid<TestRow>> ps, GridColumn<TestRow>[] columns) => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.TotalCount, 20)
+            .Add(g => g.Columns, columns)
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 650)
+            .Add(g => g.HeaderGroups, groups);
+        var cut = Render<ExGrid<TestRow>>(ps => Push(ps, InOrder(0, 1, 2, 3, 4, 5)));
+        Assert.Single(cut.FindAll(".ex-header-group"));
+
+        // The Consumer moves C04 between C02 and C03: the members are no longer adjacent.
+        var refusal = Assert.Throws<InvalidOperationException>(() => cut.Render(ps => Push(ps, InOrder(0, 1, 2, 4, 3, 5))));
+        Assert.Contains("CVA", refusal.Message);
+        Assert.Contains("not adjacent", refusal.Message);
+    }
+
     [Fact] // ADR-0032 / HG-9: a viewport that cannot hold the band plus one row is refused, naming the band
     public void A_viewport_under_the_band_is_refused_naming_the_band()
     {
@@ -115,6 +171,45 @@ public class HeaderGroupRenderingTests : GridTestContext
         Assert.Contains("width: 300px", cut.Find(".ex-header-group").GetAttribute("style"));
     }
 
+    [Fact] // HG-10, ADR-0032/0004: scrolled so the group's first members leave the DOM while later ones are painted
+    public async Task HG10_a_rectangle_stands_when_its_first_members_are_virtualised_away()
+    {
+        // 40 columns of 100px; a group over C10-C19, content 1000-2000px.
+        HeaderGroup[] Groups() => [new HeaderGroup("Mid", [.. Enumerable.Range(10, 10).Select(TestRows.ColumnName)])];
+        var columns = TestRows.Wide(40);
+        void Push(ComponentParameterCollectionBuilder<ExGrid<TestRow>> ps) => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, columns)
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.HeaderGroups, Groups());
+        var cut = Render<ExGrid<TestRow>>(Push);
+
+        var unscrolled = cut.Find(".ex-header-group").GetAttribute("style")!;
+        Assert.Contains("left: 1000px", unscrolled);
+        Assert.Contains("width: 1000px", unscrolled);
+
+        // Ordinary moves to 1500px: C15 onwards is painted, C10-C12 are out of the DOM.
+        var scroller = cut.Find(".ex-scroller");
+        foreach (var left in new[] { 300d, 600d, 900d, 1200d, 1500d })
+            await ScrollToAsync(scroller, 0, left);
+        var painted = cut.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell")
+            .Select(c => TestRows.ColumnOf(c.TextContent)).ToArray();
+        Assert.Contains("C16", painted);
+        Assert.DoesNotContain("C10", painted);
+        Assert.DoesNotContain("C12", painted);
+
+        // The rectangle is composed again while scrolled there — the Consumer pushes its
+        // declaration anew — and it must still stand on the first member, painted or not.
+        cut.Render(Push);
+        var scrolled = cut.Find(".ex-header-group").GetAttribute("style")!;
+        Assert.Contains("left: 1000px", scrolled);
+        Assert.Contains("width: 1000px", scrolled);
+        Assert.Equal(unscrolled, scrolled);
+    }
+
     [Fact] // ADR-0032 / HG-12: a group label never hashes and never feeds Auto width
     public void A_long_label_gets_the_text_treatment_and_grows_nothing()
     {
@@ -140,6 +235,40 @@ public class HeaderGroupRenderingTests : GridTestContext
         }
         var cells = cut.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell");
         Assert.Equal(WidthOf(cells[0]), WidthOf(cells[1]));
+    }
+
+    [Fact] // HG-12, ADR-0032/0016: a long label over narrow Auto columns grows neither, against the same grid without it, and ellipsises
+    public void HG12_a_long_group_label_feeds_no_auto_width_and_gets_the_ellipsis()
+    {
+        // Two Auto columns of different content, so each earns a width of its own.
+        GridColumn<TestRow>[] columns =
+        [
+            new("A", ColumnType.Number, r => r.Amount),
+            new("Book", ColumnType.Text, r => r.Book),
+        ];
+        const string label = "A label far longer than the two member columns could ever carry between them";
+        IRenderedComponent<ExGrid<TestRow>> RenderWith(HeaderGroup[] groups) => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, columns)
+            .Add(g => g.HeaderGroups, groups));
+        static double WidthPx(AngleSharp.Dom.IElement element) => double.Parse(
+            System.Text.RegularExpressions.Regex.Match(element.GetAttribute("style")!, @"(?:^|;)\s*width: ([0-9.]+)px").Groups[1].Value,
+            System.Globalization.CultureInfo.InvariantCulture);
+        static double[] WidthsOf(IRenderedComponent<ExGrid<TestRow>> cut)
+            => [.. cut.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell").Select(WidthPx)];
+
+        var bare = RenderWith([]);
+        var grouped = RenderWith([new HeaderGroup(label, ["A", "Book"])]);
+
+        // The member columns keep exactly the widths their own contents earned.
+        Assert.Equal(WidthsOf(bare), WidthsOf(grouped));
+        var rectangle = grouped.Find(".ex-header-group");
+        Assert.Equal(WidthsOf(bare).Sum(), WidthPx(rectangle));
+        // The label is the Text treatment: painted verbatim, never ####, clipped by an ellipsis.
+        Assert.Equal(label, rectangle.TextContent);
+        Assert.Equal("ellipsis", ShippedStylesheetTests.Winning(rectangle, "text-overflow"));
+        Assert.Equal("hidden", ShippedStylesheetTests.Winning(rectangle, "overflow"));
+        Assert.Equal("nowrap", ShippedStylesheetTests.Winning(rectangle, "white-space"));
     }
 
     [Fact] // ADR-0032 / A11Y-13: a group cell carries aria-colspan equal to its member count
@@ -192,6 +321,57 @@ public class HeaderGroupRenderingTests : GridTestContext
         Assert.Equal(
             none.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell").Length,
             some.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell").Length);
+    }
+
+    [Fact] // HG-17, ADR-0032/0008: 3 groups over 40 columns — elements scale with groups, row renders unchanged
+    public async Task HG17_three_groups_over_forty_columns_cost_per_rectangle_and_no_row_renders()
+    {
+        static HeaderGroup[] Spans(params (int First, int Count)[] spans) =>
+            [.. spans.Select((s, n) => new HeaderGroup($"G{n}", [.. Enumerable.Range(s.First, s.Count).Select(TestRows.ColumnName)]))];
+        var wide = Spans((0, 10), (10, 15), (25, 15));   // every one of the 40 columns covered
+        var narrow = Spans((0, 2), (2, 2), (4, 2));      // 6 of the 40 covered
+        var columns = TestRows.Wide(40);
+        var window = TestRows.Many(200);
+        void Push(ComponentParameterCollectionBuilder<ExGrid<TestRow>> ps, HeaderGroup[] groups) => ps
+            .Add(g => g.Window, window)
+            .Add(g => g.TotalCount, 200)
+            .Add(g => g.Columns, columns)
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            // The band takes one tier from the Viewport; the ungrouped grid is given it back,
+            // so both paint the same rows and the comparison is about the band alone.
+            .Add(g => g.ViewportHeight, groups.Length == 0 ? 300 - HeaderPx : 300)
+            .Add(g => g.ViewportWidth, 650)
+            .Add(g => g.HeaderGroups, groups);
+
+        var none = Render<ExGrid<TestRow>>(ps => Push(ps, []));
+        var three = Render<ExGrid<TestRow>>(ps => Push(ps, wide));
+        var threeNarrow = Render<ExGrid<TestRow>>(ps => Push(ps, narrow));
+
+        // One element per rectangle, however many columns it spans: a group over fifteen
+        // columns costs what a group over two costs.
+        Assert.Equal(3, three.FindAll(".ex-header-group").Count);
+        static int Elements(IRenderedComponent<ExGrid<TestRow>> cut) => cut.FindAll("*").Count;
+        Assert.Equal(none.FindAll(".ex-row").Count, three.FindAll(".ex-row").Count);
+        Assert.Equal(Elements(three), Elements(threeNarrow));
+        Assert.Equal(3 + three.FindAll(".ex-header-groups-pinned").Count, Elements(three) - Elements(none));
+
+        // The rows know nothing of the band: the same scrolls cost the same row renders.
+        static async Task<int> RowRendersOver(GridTestContext context, IRenderedComponent<ExGrid<TestRow>> cut)
+        {
+            foreach (var top in new[] { 20d, 40d, 60d, 400d })
+                await context.ScrollToAsync(cut.Find(".ex-scroller"), top);
+            return cut.FindComponents<ExGridRow<TestRow>>().Sum(r => r.RenderCount);
+        }
+        Assert.Equal(await RowRendersOver(this, none), await RowRendersOver(this, three));
+
+        // And a relabelled declaration of the same shape renders the band, not one row.
+        var rows = three.FindComponents<ExGridRow<TestRow>>();
+        var before = rows.Select(r => r.RenderCount).ToArray();
+        three.Render(ps => Push(ps, [.. wide.Select(g => new HeaderGroup(g.Label + "'", g.Columns))]));
+        Assert.Equal("G0'", three.FindAll(".ex-header-group")[0].TextContent);
+        Assert.Equal(before, rows.Select(r => r.RenderCount).ToArray());
+        Assert.Equal(rows.Count, three.FindComponents<ExGridRow<TestRow>>().Count); // the same instances, none replaced
     }
 
     /// <summary>
