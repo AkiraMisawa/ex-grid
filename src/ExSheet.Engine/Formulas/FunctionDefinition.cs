@@ -64,6 +64,17 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     /// <summary>For <c>RAND</c> and <c>RANDBETWEEN</c>: which of the Formula's draws this call is, counted in its text (ADR-0180).</summary>
     public int Place { get; init; }
 
+    /// <summary>
+    /// Whether a Value of the call's array is read inside the Formula (ADR-0125): <see langword="false"/>
+    /// where the call is the Formula's whole expression, whose array only spills, or what <c>ROWS</c> or
+    /// <c>COLUMNS</c> measures; <see langword="true"/> wherever another function, an operator or a
+    /// <c>LET</c> takes it.
+    /// </summary>
+    public bool ValuesRead { get; init; } = true;
+
+    /// <summary>The argument evaluated for its extent alone, as <c>ROWS</c> and <c>COLUMNS</c> read it (<see cref="Evaluator.Measured"/>).</summary>
+    public Operand Measured(int index) => Evaluator.Measured(arguments[index]);
+
     /// <summary>Whether argument <paramref name="index"/> was given and not left empty (<see cref="MissingNode.IsEmpty"/>).</summary>
     public bool Has(int index) => index < arguments.Count && !MissingNode.IsEmpty(arguments[index]);
 }

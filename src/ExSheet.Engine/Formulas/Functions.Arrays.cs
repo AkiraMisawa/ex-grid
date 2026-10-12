@@ -85,30 +85,33 @@ internal static partial class FunctionLibrary
     /// UNIQUE: the distinct rows of <c>array</c> (its columns when <c>by_col</c> is TRUE), in the order
     /// they first appear; with <c>exactly_once</c> TRUE, only those that appear once. Text is compared
     /// without regard to case, as Excel's comparison operators compare it; a number and text that
-    /// reads as one are different. Nothing left is <c>#CALC!</c>. A blank is refused with
-    /// <c>#VALUE!</c> until Excel is asked whether it is one of a kind with 0.
+    /// reads as one are different. A blank is one of a kind only with another blank, never with 0,
+    /// and spills as 0, as Excel's does (UNIQUE-010, 011); read inside the Formula, it is refused
+    /// (<see cref="Made"/>). Nothing left is <c>#CALC!</c>.
     /// </summary>
     private static Operand Unique(FunctionCall call)
     {
         if (!TryArray(call, 0, out var array, out var failure)) return failure;
         if (!TryFlag(call, 1, out var byColumn, out failure)) return failure;
         if (!TryFlag(call, 2, out var exactlyOnce, out failure)) return failure;
-        if (array.All().Any(v => v is null)) return Operand.Of(ErrorValue.Value);
 
         var count = byColumn ? array.Columns : array.Rows;
         var width = byColumn ? array.Rows : array.Columns;
-        Value Item(int line, int at) => (byColumn ? array[at, line] : array[line, at])!.Value;
+        Value? Item(int line, int at) => byColumn ? array[at, line] : array[line, at];
         bool Same(int a, int b)
         {
             for (var k = 0; k < width; k++)
             {
-                var x = Item(a, k);
-                var y = Item(b, k);
-                if (x.Kind != y.Kind) return false;
-                if (x.IsError ? x.Error != y.Error : Evaluator.Compare(x, y) != 0) return false;
+                if (!SameItem(Item(a, k), Item(b, k))) return false;
             }
             return true;
         }
+        static bool SameItem(Value? x, Value? y) => (x, y) switch
+        {
+            (null, null) => true,
+            ({ } a, { } b) => a.Kind == b.Kind && (a.IsError ? a.Error == b.Error : Evaluator.Compare(a, b) == 0),
+            _ => false,
+        };
 
         // Each line's first equal, then how many there are of it.
         var first = new int[count];
@@ -138,16 +141,18 @@ internal static partial class FunctionLibrary
                 else result[k, at] = Item(kept[k], at);
             }
         }
-        return Operand.Of(result);
+        return Made(call, result);
     }
 
     /// <summary>
     /// SORT: <c>array</c>'s rows ordered by the column <c>sort_index</c> (from 1, the first when left
     /// out), ascending for <c>sort_order</c> 1 and descending for −1; its columns, by a row, when
     /// <c>by_col</c> is TRUE. Equal keys keep their order. Keys order as the comparison operators
-    /// order them: numbers, then text without regard to case, then booleans. An index outside the
-    /// array, or an order other than 1 and −1, is <c>#VALUE!</c>; a blank or an Error Value among
-    /// the keys is refused with <c>#VALUE!</c> until Excel is asked where it sorts.
+    /// order them: numbers, then text without regard to case, then booleans. A blank key sorts after
+    /// every other, in either order, and spills as 0, as Excel's does (SORT-012 to 014); a blank in
+    /// the result read inside the Formula is refused (<see cref="Made"/>). An index outside the
+    /// array, or an order other than 1 and −1, is <c>#VALUE!</c>; an Error Value among the keys is
+    /// refused with <c>#VALUE!</c> until Excel is asked where it sorts.
     /// </summary>
     private static Operand Sort(FunctionCall call)
     {
@@ -163,15 +168,16 @@ internal static partial class FunctionLibrary
         var at = (int)index - 1;
         var keys = Enumerable.Range(0, lines).Select(i => byColumn ? array[at, i] : array[i, at]).ToList();
         if (!TryOrderLines([(keys, descending)], lines, out var order)) return Operand.Of(ErrorValue.Value);
-        return Operand.Of(Reorder(array, order, byColumn));
+        return Made(call, Reorder(array, order, byColumn));
     }
 
     /// <summary>
     /// SORTBY: <c>array</c> ordered by one or more <c>by_array</c>s, each with its <c>sort_order</c>
     /// (1 when left out), the first deciding first. Each <c>by_array</c> is one column as tall as the
     /// array, which sorts its rows, or one row as wide, which sorts its columns, and all of them run
-    /// the same way; any other shape is <c>#VALUE!</c>. Keys order as in <see cref="Sort"/>, and are
-    /// refused as there.
+    /// the same way; any other shape is <c>#VALUE!</c>. Keys order as in <see cref="Sort"/>, a blank
+    /// after every other in either order, and an Error Value among them is refused as there; a blank
+    /// in the result read inside the Formula is refused (<see cref="Made"/>).
     /// </summary>
     private static Operand SortBy(FunctionCall call)
     {
@@ -193,23 +199,43 @@ internal static partial class FunctionLibrary
         }
         var lines = byColumn == true ? array.Columns : array.Rows;
         if (!TryOrderLines(keys, lines, out var order)) return Operand.Of(ErrorValue.Value);
-        return Operand.Of(Reorder(array, order, byColumn == true));
+        return Made(call, Reorder(array, order, byColumn == true));
     }
 
-    /// <summary>The order of <paramref name="lines"/> lines by their keys, stable; <see langword="false"/> when a key is blank or an Error Value.</summary>
+    /// <summary>
+    /// The array <c>UNIQUE</c>, <c>SORT</c> or <c>SORTBY</c> made, as the call gives it (ADR-0125). A
+    /// blank in it spills as 0, and <c>ROWS</c> and <c>COLUMNS</c> count it, as the area pass read
+    /// Excel's (SORT-012, UNIQUE-010, 011). Read as a Value anywhere else — by another function, an
+    /// operator or a <c>LET</c> — it has answers no run has observed, so the Formula is refused with
+    /// <c>#VALUE!</c> there (<see cref="Evaluator.Refuse"/>), until Excel is asked what it reads.
+    /// </summary>
+    private static Operand Made(FunctionCall call, ValueArray result) =>
+        call.ValuesRead && result.All().Any(v => v is null) ? call.Evaluator.Refuse() : Operand.Of(result);
+
+    /// <summary>
+    /// The order of <paramref name="lines"/> lines by their keys, stable; <see langword="false"/> when a
+    /// key is an Error Value. A blank key comes after every other key whichever the order, as
+    /// Excel's does: neither 0 nor empty text, which would come first (SORT-012 to 014).
+    /// </summary>
     private static bool TryOrderLines(List<(List<Value?> Keys, bool Descending)> keys, int lines, out int[] order)
     {
         order = [.. Enumerable.Range(0, lines)];
         foreach (var (values, _) in keys)
         {
-            if (values.Any(v => v is null or { IsError: true })) return false;
+            if (values.Any(v => v is { IsError: true })) return false;
         }
         order = [.. order.Order(Comparer<int>.Create((a, b) =>
         {
             foreach (var (values, descending) in keys)
             {
-                var compared = Evaluator.Compare(values[a], values[b]);
-                if (compared != 0) return descending ? -compared : compared;
+                var compared = (values[a], values[b]) switch
+                {
+                    (null, null) => 0,
+                    (null, _) => 1,
+                    (_, null) => -1,
+                    var (x, y) => descending ? -Evaluator.Compare(x, y) : Evaluator.Compare(x, y),
+                };
+                if (compared != 0) return compared;
             }
             return a.CompareTo(b);
         }))];

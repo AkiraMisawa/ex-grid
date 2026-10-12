@@ -152,10 +152,14 @@ internal static partial class FunctionLibrary
 
     private static Operand Columns(FunctionCall call) => Extent(call, rows: false);
 
-    /// <summary>ROWS and COLUMNS: how many rows or columns the range spans; a Linked Table's column is one column; a single Value, 1.</summary>
+    /// <summary>
+    /// ROWS and COLUMNS: how many rows or columns the range spans; a Linked Table's column is one column; a single Value, 1.
+    /// They read the extent alone, never a Value (<see cref="FunctionCall.Measured"/>), so they count a blank in
+    /// <c>UNIQUE</c>'s array as Excel's do (UNIQUE-011).
+    /// </summary>
     private static Operand Extent(FunctionCall call, bool rows)
     {
-        var operand = call.Operand(0);
+        var operand = call.Measured(0);
         if (operand.IsError) return operand;
         var count = operand.Kind switch
         {
