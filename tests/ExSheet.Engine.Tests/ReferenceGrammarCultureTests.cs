@@ -42,6 +42,12 @@ public class ReferenceGrammarCultureTests
         // Typed in lower case, written in the invariant upper case: under tr-TR, 'i' upper-cased by the
         // culture is 'İ', which no column is.
         (Sheet.DefaultName, "=sum(i3,$i$3:i$3)", "=SUM(I3,$I$3:I$3)", "=SUM(I4,$I$4:I$4)", 64),
+        // A Sheet's name and a Linked Table's, upper case with an 'I', typed in lower case: matched
+        // without the culture's case rules — under tr-TR, 'I' and 'i' are not one letter's two cases.
+        // The qualifier is written in the Sheet's own case; a structured reference keeps the case
+        // it was typed in.
+        ("RISK", "=risk!i3", "=RISK!I3", "=RISK!I4", 32),
+        (Sheet.DefaultName, "=sum(limit[line])", "=SUM(limit[line])", "=SUM(limit[line])", 7),
     ];
 
     public static TheoryData<string, string, string, string, string, double> FormsInCultures()
@@ -54,7 +60,7 @@ public class ReferenceGrammarCultureTests
         return data;
     }
 
-    /// <summary>A1=1, A2=2, B1=4, B2=8, C3=16, I3=32, and the Linked Table Positions.</summary>
+    /// <summary>A1=1, A2=2, B1=4, B2=8, C3=16, I3=32, and the Linked Tables Positions and LIMIT.</summary>
     private static void Fill(Sheet sheet)
     {
         foreach (var (address, number) in new[] { ("A1", "1"), ("A2", "2"), ("B1", "4"), ("B2", "8"), ("C3", "16"), ("I3", "32") })
@@ -66,6 +72,8 @@ public class ReferenceGrammarCultureTests
 
     private static void PushPositions(Sheet sheet)
     {
+        sheet.DeclareLinkedTable("LIMIT", ["LINE"]);
+        PushLimit(sheet);
         sheet.DeclareLinkedTable("Positions", ["Id", "PV", "Net PV", "Rate#"]);
         sheet.PushLinkedTable("Positions",
         [
@@ -108,6 +116,7 @@ public class ReferenceGrammarCultureTests
             Assert.Equal(declared.Name, reopened.Culture.Name);
             Assert.Equal(written, reopened.GetEntryText(At));
             PushPositions2(reopened);
+            PushLimit(reopened);
             Assert.Equal(computed, reopened.GetValue(At));
 
             // Written again: a row inserted at the top moves what it names, and the text is the invariant one.
@@ -123,6 +132,9 @@ public class ReferenceGrammarCultureTests
             CultureInfo.CurrentUICulture = previousUi;
         }
     }
+
+    private static void PushLimit(Sheet sheet) =>
+        sheet.PushLinkedTable("LIMIT", [[Value.FromNumber(3)], [Value.FromNumber(4)]]);
 
     /// <summary>A reopened Sheet has its Linked Tables declared, waiting for their first snapshot (ADR-0049).</summary>
     private static void PushPositions2(Sheet sheet) =>

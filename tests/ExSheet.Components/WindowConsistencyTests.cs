@@ -84,4 +84,51 @@ public class WindowConsistencyTests : SheetTestContext
         }
         Assert.Equal(28, frames[^1]["G8"]);
     }
+
+    [Fact] // SH-8, ADR-0047 / ADR-0048: an undo of one operation of several steps (a Number Format and the widening it brought) paints every row of it at once
+    public async Task SH8_no_painted_window_mixes_rows_before_and_after_an_undo_of_several_steps()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("A1"), "1234567.5");
+        sheet.Enter(CellAddress.Parse("A3"), "7654321.5");
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+        await GoToAsync(cut, "A1:A3");
+        await PressAsync(cut, "!", ctrl: true, shift: true);
+        Assert.Equal("1,234,567.50", CellText(cut, "A1"));
+        Assert.Equal("7,654,321.50", CellText(cut, "A3"));
+
+        var frames = new List<(string A1, string A3)>();
+        cut.OnMarkupUpdated += (_, _) => frames.Add((CellText(cut, "A1"), CellText(cut, "A3")));
+        Assert.True(await cut.Instance.UndoAsync());
+
+        Assert.NotEmpty(frames);
+        // Both rows formatted, or both not: never one row of the operation undone beside one that is not.
+        Assert.All(frames, frame => Assert.Equal(frame.A1.Contains(','), frame.A3.Contains(',')));
+        Assert.DoesNotContain(",", frames[^1].A1);
+        Assert.DoesNotContain(",", frames[^1].A3);
+    }
+
+    [Fact] // SH-8, ADR-0047 / ADR-0124: a change of zone is two engine steps (the day, then the volatile Formulas); every painted picture shows the second step's rows whole
+    public async Task SH8_no_painted_window_mixes_rows_when_a_change_of_zone_moves_now_on()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("C2"), "=TEXT(NOW(),\"hh:mm\")");
+        sheet.Enter(CellAddress.Parse("D6"), "=C2&\"!\"");
+        // 10:00 in London and 11:00 in Paris, on the same day: the day step changes nothing.
+        Clock.SetUtcNow(new DateTimeOffset(2026, 10, 2, 9, 0, 0, TimeSpan.Zero));
+        var cut = RenderSheet(ps => ps
+            .Add(s => s.Document, sheet.ToDocument())
+            .Add(s => s.TimeZone, TimeZoneInfo.FindSystemTimeZoneById("Europe/London")));
+        Assert.Equal("10:00!", CellText(cut, "D6"));
+
+        var frames = new List<(string C2, string D6)>();
+        cut.OnMarkupUpdated += (_, _) => frames.Add((CellText(cut, "C2"), CellText(cut, "D6")));
+        cut.Render(ps => ps.Add(s => s.TimeZone, TimeZoneInfo.FindSystemTimeZoneById("Europe/Paris")));
+        await cut.InvokeAsync(() => { });
+
+        cut.WaitForAssertion(() => Assert.Equal("11:00", CellText(cut, "C2")));
+        Assert.NotEmpty(frames);
+        Assert.All(frames, frame => Assert.Equal(frame.C2 + "!", frame.D6));
+        Assert.Equal("11:00!", CellText(cut, "D6"));
+    }
 }

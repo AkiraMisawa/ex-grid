@@ -64,7 +64,7 @@ public sealed class OrderKeyRefusalTests : PivotTestContext
         Assert.Equal("West,North,East", FirstLabels(cut, 3));
     }
 
-    [Fact] // LV-26, ADR-0152: a registered function that throws is refused by name on the Pivot Toolbar (OrderKeyFailed), never label order
+    [Fact] // LV-26, ADR-0152: a registered function that throws is refused by name on the Pivot Toolbar, never label order (that the wire carries it as OrderKeyFailed is layer 1, ReportProtocolTests)
     public async Task LV26_a_throwing_server_order_key_is_surfaced_by_name_and_no_label_order_is_shown()
     {
         var (remote, server) = OverTheWire();
@@ -80,7 +80,7 @@ public sealed class OrderKeyRefusalTests : PivotTestContext
         Assert.Empty(RowTexts(cut));
     }
 
-    [Fact] // LV-26, ADR-0152: an identifier the server never registered is refused by name on the Pivot Toolbar, never label order
+    [Fact] // LV-26, ADR-0152: an identifier the server never registered is refused by name on the Pivot Toolbar, never label order (its kind, UnknownOrderKeyPolicy, is layer 1)
     public async Task LV26_an_unknown_order_key_policy_is_surfaced_by_name_and_no_label_order_is_shown()
     {
         var (remote, server) = OverTheWire();
@@ -93,6 +93,22 @@ public sealed class OrderKeyRefusalTests : PivotTestContext
         Assert.Equal("The source could not answer: The Order Key policy 'missing' for 'Region' is not registered.", notice.TextContent);
         Assert.Null(cut.Instance.Report);
         Assert.Empty(RowTexts(cut));
+    }
+
+    [Fact] // LV-26, ADR-0152: a policy for a field the report does not have is refused by name on the Pivot Toolbar, never ignored
+    public async Task LV26_a_policy_for_a_field_the_report_lacks_is_surfaced_by_name()
+    {
+        var (remote, server) = OverTheWire();
+        await using var _ = server;
+
+        var cut = RenderPivot(RegionAmount,
+            ps => ps.Add(p => p.OrderKeyPolicies, new Dictionary<string, string> { ["Desk"] = "west-first" }),
+            reportSource: remote);
+        cut.WaitForState(() => !cut.Instance.IsLoading && (cut.Instance.Report is not null || cut.Instance.LastError is not null));
+
+        Assert.Equal("The source could not answer: The Order Key policy names unknown field 'Desk'.",
+            cut.Find(".ex-pivot-refusal-notice").TextContent);
+        Assert.Null(cut.Instance.Report);
     }
 
     [Fact] // LV-26, ADR-0152: with a report shown, a layout the throwing Order Key refuses is said by name; the report stays as it was, not redrawn in label order
@@ -115,6 +131,8 @@ public sealed class OrderKeyRefusalTests : PivotTestContext
             cut.Find(".ex-pivot-refusal-notice").TextContent));
         Assert.Same(shown, cut.Instance.Report);
         Assert.Equal(before, RowTexts(cut));
-        Assert.Equal(["Region"], cut.Instance.CurrentLayout.Rows.Select(p => p.Field));
+        // The pane goes back to the layout the report shows.
+        Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
+        Assert.False(FieldItem(cut, "Product").QuerySelector("input")!.HasAttribute("checked"));
     }
 }

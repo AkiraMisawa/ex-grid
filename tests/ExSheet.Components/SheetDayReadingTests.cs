@@ -78,20 +78,8 @@ public class SheetDayReadingTests : SheetTestContext
         cut.WaitForAssertion(() => Assert.Equal("2026-10-03", CellText(cut, "A1")));
     }
 
-    [Fact] // SH-57, ADR-0121: before the hour is up, the day is not read again
-    public async Task SH57_the_day_is_not_read_again_before_the_hour()
-    {
-        var cut = RenderInLondon();
-
-        _wall.Shift = TimeSpan.FromHours(15);
-        Clock.Advance(TimeSpan.FromMinutes(59));
-        await cut.InvokeAsync(() => { });
-
-        Assert.Equal("2026-10-02", CellText(cut, "A1"));
-    }
-
-    [Fact] // SH-57, ADR-0121: an hourly reading that finds the same day recalculates and repaints nothing
-    public async Task SH57_a_reading_that_finds_the_same_day_repaints_nothing()
+    [Fact] // SH-57, ADR-0121: hourly readings that find the same day repaint nothing (that they recalculate nothing is SheetDayTests.The_same_day_changes_nothing, layer 1), and the readings go on hour after hour
+    public async Task SH57_readings_that_find_the_same_day_repaint_nothing_and_go_on_each_hour()
     {
         var cut = RenderInLondon();
         var gridRenders = Grid(cut).RenderCount;
@@ -113,5 +101,11 @@ public class SheetDayReadingTests : SheetTestContext
             Assert.Equal(before[index].RenderCount, count);
         }
         Assert.Equal(gridRenders, Grid(cut).RenderCount);
+
+        // The readings went on: a fourth, an hour after the third, finds the day the wall clock was set to.
+        _wall.Shift = TimeSpan.FromHours(15);
+        Clock.Advance(TimeSpan.FromMinutes(61));
+        await cut.InvokeAsync(() => { });
+        cut.WaitForAssertion(() => Assert.Equal("2026-10-03", CellText(cut, "A1")));
     }
 }
