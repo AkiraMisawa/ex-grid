@@ -67,7 +67,7 @@
                                          process
     narrator start|stop                  Windows' own screen reader started (Narrator.exe) or ended
     narratorkeys <ms> <keys>             a chord with the Narrator key (Insert) held: Insert down, the
-                                         keys (Alt, Ctrl as + names: ALT+X, CTRL+X), Insert up
+                                         keys (Alt, Ctrl as + names: ALT+X, CTRL+X; SPACE), Insert up
     narratortext <ms>                    every window of Narrator's that is showing, and the names and
                                          values UI Automation reads under each (on a thread, time limit)
     quit
@@ -541,7 +541,7 @@ while ($true) {
             'narratorkeys' {
                 # Insert (the Narrator key, extended) held, then the chord's other keys.
                 $p = $rest.Split(' ', 2); $mods = @(); $key = $null
-                foreach ($k in $p[1].Split('+')) { switch ($k) { 'ALT' { $mods += 0x12 } 'CTRL' { $mods += 0x11 } 'SHIFT' { $mods += 0x10 } default { $key = [uint16][char]$k.ToUpperInvariant() } } }
+                foreach ($k in $p[1].Split('+')) { switch ($k) { 'ALT' { $mods += 0x12 } 'CTRL' { $mods += 0x11 } 'SHIFT' { $mods += 0x10 } 'SPACE' { $key = [uint16]0x20 } default { $key = [uint16][char]$k.ToUpperInvariant() } } }
                 $e = New-Object 'Collections.Generic.List[InputServer.Keys+INPUT]'; $e.Add([InputServer.Keys+INPUT]::Key(0x2D, $false, $true)); [InputServer.Keys]::Send($e); Start-Sleep -Milliseconds 40
                 foreach ($m in $mods) { $e = New-Object 'Collections.Generic.List[InputServer.Keys+INPUT]'; $e.Add([InputServer.Keys+INPUT]::Key([uint16]$m, $false, $false)); [InputServer.Keys]::Send($e); Start-Sleep -Milliseconds 40 }
                 $e = New-Object 'Collections.Generic.List[InputServer.Keys+INPUT]'; [InputServer.Keys]::Tap($e, $key, $false); [InputServer.Keys]::Send($e); Start-Sleep -Milliseconds 40

@@ -29,6 +29,7 @@ stays the verified commit of every Part that runs the build. The DemoHosts were 
 | `../../tests/ExSheet.Engine.Tests/ExcelOracle/results-2026-10-11-run17*.json` | Part A: every pass's results, as the oracle wrote them |
 | `excel/xl-server.ps1`, `excel/xs.py` | Parts B, C, D and H in Excel: an Excel of the script's own, driven with real keys and the real mouse |
 | `pg-server.mjs`, `pg.py`, `input-server.ps1` | the browser half: a headed Windows Chrome or Edge, real keys and presses through the sixteenth run's `input-server.ps1` (more named keys added) |
+| `part_f.py`, `loopback.ps1`, `part_f_heard.py` | Part F: the probe; under Narrator, the playback device's recording and its transcription |
 
 ## Environment
 
@@ -67,7 +68,9 @@ stays the verified commit of every Part that runs the build. The DemoHosts were 
   and asked for Excel's display language to be changed without them ("僕の介入なしでできるようにして"). It was changed
   through Excel's own Options by the session and put back.
 - **Narrator** (Part F): asked, the user chose to leave it to the end of the run; at the end, the user asked the session
-  to start it, then said they were away from the desk, and chose to run it when they are back.
+  to start it, then said they were away from the desk, and chose to run it when they are back. Back on 2026-10-12, the
+  user asked whether Narrator could be picked up with a microphone, and the passes of record were recorded from the
+  playback device instead (Part F).
 
 ## Part A — the case corpus, put to Excel (ADR-0202, SH-7)
 
@@ -587,15 +590,116 @@ was added to `%APPDATA%\nvda\nvda.ini` for the run, and the file was put back by
     Speech Viewer's whole text of both passes is in `records/part-f-nvda-*speech-viewer.txt`, with the terminal's window
     title left out.
 
-**Narrator: not run yet.** The user was asked first, as the procedure says, and chose to leave it to the end of the run.
+**Narrator 10.0.26100.8972**, run on 2026-10-12 from 20:21 to 20:53 BST, when the user was back at the desk.
 
-- At 12:30 the user asked the session to start it, and it was started (`Narrator.exe`, 10.0.26100.8972). Its "Narrator
-  updates" window was closed with Escape, and its home window minimised; the home window had kept the browser from the
-  front on the first try.
-- At the first step, the user said they were not at the Windows desk. The steps stopped there, and Narrator was stopped
-  (Insert+Escape). The partial records are in `records/part-f-first-try/part-f-narrator-*`.
-- Asked how to go on, **the user chose to run it when they are back**, listening as the procedure says. The DemoHosts and
-  the latency proxy are left running for it.
+- **The first try** (12:30): the user said they were not at the Windows desk at the first step. Narrator was started,
+  its "Narrator updates" window closed with Escape, and its home window minimised; the home window had kept the browser
+  from the front. The steps stopped there, and Narrator was stopped (Insert+Escape). The user chose to run it when back.
+  Records: `records/part-f-first-try/part-f-narrator-chrome-user-away*` and `-home-window-in-front*`.
+- **Two tries with the user answering each step, as the procedure says, did not hold** (`records/part-f-first-try/`):
+  - `-repeat-asked`: at the first step the user asked to hear it again, and the pass was started over.
+  - `-front-refused` and `-alt-tab`: the user answered in the session's terminal on the same desktop, which took the
+    foreground, so the next key would have reached the terminal. While Narrator ran, Windows refused to bring the
+    browser back by script: `SetForegroundWindow` after an Alt tap (`front`), and the same after Playwright's
+    `bringToFront` (`raise`, added to `pg-server.mjs` for this). `part_f.py` then waited for the user to bring it back
+    with Alt+Tab, and pressed the key 3 s later. A window switch so came before every key; before the second Tab, DOM
+    focus had moved from the Sheet Toolbar to its item 2, and the user heard "Italic". The try was stopped after ↓ (DOM
+    focus on `body`, no keydown), when the user asked what the test was for.
+- **The passes of record were heard from the sound Narrator made**, not by ear. The user asked whether Narrator could be
+  picked up with a microphone. It was recorded from the playback device itself instead, which takes no sound from the
+  room:
+  - `loopback.ps1` records what the default playback device plays (WASAPI loopback; Speakers (Realtek USB2.0 Audio),
+    48 kHz, 32-bit float, stereo). A loopback stream delivers nothing while nothing plays, so each packet is placed at its
+    own time and the gaps are written as silence.
+  - `part_f.py <browser> narrator paced` runs the same steps with no one touching the desktop. It waits 6 s after each
+    step and records the step's time (`at`). The browser was in front at every step (`front` in each record).
+  - `part_f_heard.py` cuts the recording at the steps' times, each piece 6.2 s, and transcribes each with whisper.cpp
+    1.9.2 (`ggml-small.en`), on this machine. Before the passes, WSL's and Windows' clocks differed by about +0.06 s
+    (a file's write time on NTFS against WSL's clock).
+  - The transcripts are `records/part-f-narrator-<browser>[-scan-off]-heard.json`. The recordings stay on Windows
+    (`%LOCALAPPDATA%\exgrid-layer3\run-2026-10-11-17\audio\`), because they also hold Narrator reading the session's
+    terminal title. A test recording showed that title being read about every 2 s while the terminal was in front.
+  - **Whisper's mishearings**, left as they are in the transcripts and corrected in the tables below: "16,300 and" and
+    "16,380" for 16,384; "copy", "kapi" and "capi" for "cap E"; "J" for column 7, which is G. "O" and "T" after → are
+    short sounds.
+- **Two passes in each browser:**
+  - **As Narrator starts.** Narrator is in scan mode, and says "Scan" as the page loads.
+  - **Scan mode off** (`paced scanoff`). After each fresh page, scan mode was turned off with Narrator's own key,
+    Insert+Space, before the steps, and Narrator said "Scan off". As the second page loaded, Narrator said "Scan" again,
+    and it was turned off again.
+
+**The DOM as Narrator starts, in scan mode** (`records/part-f-narrator-<browser>.jsonl`; "keydown" is whether the page
+saw the step's key):
+
+| Start | Step | Chrome | keydown | Edge | keydown |
+|---|---|---|---|---|---|
+| without a Focus | the script's focus | `button#sheet-revalue` | – | `button#sheet-revalue` | – |
+| | Tab | `button#sheet-undo` | no | `div.ex-sheet-toolbar` | Tab |
+| | Tab | `button#sheet-redo` | Tab | `input.ex-key-field` | Tab |
+| | ↓ | `button#sheet-format-cells` | no | `body` | no |
+| | → | `button#sheet-format-cells` | no | `body` | no |
+| | ↓ | `button#sheet-insert-row` | no | `body` | no |
+| | ↓ | `button#sheet-revalue` | no | `body` | no |
+| with a Focus | press D10 | `input.ex-key-field`, Focus D10 | – | the same | – |
+| | ↓ | `body`, Focus D10 | no | the same | no |
+| | → | `body`, Focus D10 | no | the same | no |
+| | ↓ | `body`, Focus D10 | no | the same | no |
+| | ↓ | `body`, no Focus cell named | no | the same | no |
+
+- **In scan mode no arrow reached the page, in either browser, with or without a Focus.** DOM focus left the Keyboard
+  Field for `body` at the first ↓. In Chrome without a Focus, the grid was never reached: DOM focus moved from button
+  to button. The first Tab there was not seen by the page either.
+- The Focus cell did not move. After the last ↓, neither the Keyboard Field nor the root named a Focus cell.
+
+**What Narrator said, in scan mode:**
+
+| Start | Step | Chrome | Edge |
+|---|---|---|---|
+| without a Focus | the page loads | `Scan, loading.` … the window's title … | the window's title, `… Microsoft Edge window …` |
+| | the script's focus | `… has finished loading, link, all link, pages, sheet, heading level 1, sheet, ExSheet drawn by …` | `Scan, revalue the positions by +1%, button.` |
+| | Tab | `Undo button.` | `Home group, bold, toggle button, off, bold, control and B.` |
+| | Tab | `Redo button` | `Enter table, 1,048,576 by 16,384` |
+| | ↓ | `Format cells, button` | `Scan off. Item. Scan.` |
+| | → | a short sound | a short sound |
+| | ↓ | `Insert a row above row 2, button.` | `Quantity, column header cap B, column 2 of 16384.` |
+| | ↓ | `Revalue the positions by +1%, button.` | `Price, column header cap C, column 3 of 16384.` |
+| with a Focus | the page loads | `Loading. ExGrid demo host has finished loading. Loading. Unavailable.` | `Exit table, ExGrid demo host, loading complete, …, unavailable` |
+| | press D10 | `Enter table 1,048,576 by 16,384` | the same |
+| | ↓ | `column header cap E, column 5 of 16384.` | the same |
+| | → | `New line.` | the same |
+| | ↓ | `column header cap F, column 6 of 16384` | the same |
+| | ↓ | `column header cap G, column 7 of 16384` | the same |
+
+- In Chrome, Narrator was still reading the page from the top when the script gave the Revalue button focus.
+- After the press on D10, ↓ moved Narrator's own reading cursor along the column headers (E, F, G), not the grid's
+  Focus. This is what the sixteenth run heard: "Scan", with DOM focus on `body` (ADR-0080).
+
+**With scan mode off** (`records/part-f-narrator-<browser>-scan-off.jsonl`), **the DOM is the table of the passes
+without a reader and under NVDA, in both browsers**:
+- every arrow's keydown reached the Keyboard Field, which kept DOM focus;
+- the Focus moved A1, B1, B2, B3 after the two Tabs, and D10, D11, E11, E12, E13 from the press.
+
+What Narrator said, the same in Chrome and in Edge:
+
+| Start | Step | Narrator said |
+|---|---|---|
+| without a Focus | the script's focus | `Revalue the positions by +1%, button.` |
+| | Tab | `Home group, bold, toggle button, off, bold, control and B.` |
+| | Tab | `Enter table, 1,048,576 by 16,384` |
+| | ↓ | `Item, column header cap A, row 2 of 1,048,576, column 1` |
+| | → | `Quantity, column header cap B, column 2 of 16384.` |
+| | ↓ | `12, row 3 of 1,048,576.` |
+| | ↓ | `7, row 4 of 1,048,576` |
+| with a Focus | press D10 | `Enter table 1,048,576 by 16,384` |
+| | ↓ | `Row 12 of 1,048,576.` |
+| | → | `column header cap E, column 5 of 16384.` |
+| | ↓ | `Row 13 of 1,048,576.` |
+| | ↓ | `Row 14 of 1,048,576` |
+
+- **Narrator names the row as the sheet's row plus one, as NVDA does**: D11 is `Row 12`, A1 is `row 2`.
+- It reads what changed: the row after ↓, the column and its header after →. A cell's value comes first. B1 holds `Qty`,
+  and the transcript has `Quantity`.
+- With scan mode off, the first Tab landed on the Sheet Toolbar in both browsers, as without a reader.
 
 ## Part G — ExGrid's by-hand rows, the record (ADR-0208)
 
@@ -885,7 +989,12 @@ Formula and Excel's answer, in Part A's "Every disagreement":
 - Under NVDA, nothing was spoken through the first steps after the browser started, when they began with the script's
   focus and Tab. A pass that began with a press spoke throughout.
 - NVDA names the row as the sheet's row plus one: `row 11` for D10.
-- Narrator: not run yet (above).
+- **Narrator, as it starts (scan mode)**: no arrow reached the grid, in Chrome or Edge, with or without a Focus. DOM
+  focus left the Keyboard Field for `body`; in Chrome without a Focus, it moved among the page's buttons. Narrator's
+  own cursor read the column headers instead. This is the sixteenth run's "Scan" with `body` (ADR-0080). §21.11 says a
+  keyboard defect here is fixed before the tag; whether this is one is not decided here.
+- **Narrator with scan mode off** (Insert+Space): the grid behaved as it did without a reader and under NVDA. Narrator
+  names the row as the sheet's row plus one, as NVDA does.
 
 **Part G, ExGrid's by-hand rows (ADR-0208).**
 

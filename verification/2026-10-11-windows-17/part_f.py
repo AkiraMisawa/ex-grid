@@ -9,10 +9,13 @@ every step the probe reads document.activeElement (the Keyboard Field input.ex-k
 Editor, or body), its aria-activedescendant, the Focus cell, and whether the document has focus; under NVDA,
 what its Speech Viewer gained since the step before (its own edit control's text, read with WM_GETTEXT).
 
-    python3 part_f.py <chrome|msedge> <none|nvda> [stepwise] [reversed]
+    python3 part_f.py <chrome|msedge> <none|nvda|narrator> [stepwise|paced] [reversed]
 
 With "stepwise" (Narrator: the user listens), each step waits for a line on stdin before the next, and
-records what the user heard, typed back by the session.
+records what the user heard, typed back by the session. With "paced" (Narrator, recorded: loopback.ps1), each step waits
+6 s for the reader to finish speaking, and the record holds the step's time ("at", Unix seconds) so the recording can be
+cut by step (part_f_heard.py); nothing else touches the desktop while it runs. Before a stepwise step, a browser that is no longer in front (the
+user answered in a terminal) is brought back, 3 s before the step's key, and the record says so ("refronted").
 """
 import json
 import os
@@ -26,11 +29,16 @@ import pg  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 CHANNEL, READER = sys.argv[1], sys.argv[2]
 STEPWISE = 'stepwise' in sys.argv[3:]
+PACED = 'paced' in sys.argv[3:]
+# "scanoff" (Narrator): after each fresh page, Narrator's scan mode turned off with its own key, Insert+Space, before
+# the steps; the record's name says so.
+SCANOFF = 'scanoff' in sys.argv[3:]
 # "reversed": the with-a-Focus steps first, then the without-a-Focus ones, to see whether what a reader says depends on
 # which comes first after the browser starts.
 REVERSED = 'reversed' in sys.argv[3:]
 BASE = 'http://localhost:5299'
-REC = os.path.join(HERE, 'records', f'part-f-{READER}-{CHANNEL}{"-reversed" if REVERSED else ""}.jsonl')
+SUFFIX = ('-reversed' if REVERSED else '') + ('-scan-off' if SCANOFF else '')
+REC = os.path.join(HERE, 'records', f'part-f-{READER}-{CHANNEL}{SUFFIX}.jsonl')
 SHEET = '.ex-grid:has(> .ex-formula-bar)'
 READY = """() => { const g = document.querySelector('.ex-grid:has(> .ex-formula-bar)'); if (!g) return false;
   const c = [...g.querySelectorAll('[id$="-r11c1"]')].map(e => e.textContent).join(''); return c.includes('318.25') && !!g.querySelector('input.ex-key-field'); }"""
@@ -68,13 +76,34 @@ def speech():
 
 
 SPOKEN = ['']
+FRESH_AT = [None]
+SCAN = [None]
 
 
 def step(start, name, do):
+    refronted = None
+    if STEPWISE:
+        # The user answers each step in a terminal on the same desktop, which takes the foreground; the browser is
+        # brought back first, and Narrator given time to read the window, so the key reaches the page.
+        title = p.eval('() => document.title')
+        if title not in p.input('foreground'):
+            try:
+                refronted = p.cmd(op='raise', timeout=60)['ok']
+            except Exception as e:
+                # Windows refused: the user brings the browser back (Alt+Tab), and the step waits for that.
+                print(json.dumps({'bring-back': f'{start} {name}', 'why': str(e)[:200]}), flush=True)
+                t0 = time.time()
+                while title not in p.input('foreground'):
+                    if time.time() - t0 > 600:
+                        raise TimeoutError('the browser was not brought back')
+                    time.sleep(0.5)
+                refronted = f'by the user after {time.time() - t0:.0f} s ({str(e)[:120]})'
+            time.sleep(3)
+    at = time.time()
     do()
-    time.sleep(1.2 if READER != 'none' else 0.7)
+    time.sleep(6 if PACED else 1.2 if READER != 'none' else 0.7)
     s = p.eval(STATE)
-    row = {'reader': READER, 'channel': CHANNEL, 'start': start, 'step': name, 'state': s,
+    row = {'reader': READER, 'channel': CHANNEL, 'start': start, 'step': name, 'at': round(at, 3), 'state': s, 'refronted': refronted,
            'events': [e for e in p.cmd(op='events')['value'] if e.get('type') in ('keydown', 'focusin', 'focusout')][-10:],
            'front': p.input('foreground')}
     sp = speech()
@@ -88,10 +117,16 @@ def step(start, name, do):
 
 
 def fresh():
+    FRESH_AT[0] = round(time.time(), 3)
     p.cmd(op='goto', url=f'{BASE}/sheet', ready=READY)
     p.cmd(op='calibrate')
     p.input(f"english {p.eval('() => document.title')}")
     p.input('imeoff')
+    if PACED:
+        time.sleep(6)   # what the reader says as the page loads, before the first step
+    if SCANOFF:
+        SCAN[0] = {'at': round(time.time(), 3), 'answer': p.input('narratorkeys 300 SPACE')}
+        time.sleep(4)
 
 
 def run():
@@ -107,7 +142,7 @@ def run():
 def without_focus():
     # Without a Focus: focus given by script to the Revalue button, the control before the grid, then Tab.
     fresh()
-    record({'reader': READER, 'channel': CHANNEL, 'start': 'without-focus', 'step': 'fresh page', 'state': p.eval(STATE), 'version': p.version})
+    record({'reader': READER, 'channel': CHANNEL, 'start': 'without-focus', 'step': 'fresh page', 'at': FRESH_AT[0], 'scanOff': SCAN[0], 'state': p.eval(STATE), 'version': p.version})
     step('without-focus', '0-focus-given-by-script-to-revalue', lambda: p.eval("() => { document.querySelector('#sheet-revalue').focus(); return document.activeElement?.id; }"))
     step('without-focus', '1-tab', lambda: p.keys('{TAB}'))
     # The Sheet Toolbar is the tab stop after the Revalue button (ADR-0100): a second Tab reaches the grid.
@@ -119,14 +154,14 @@ def without_focus():
 def with_focus():
     # With a Focus: a fresh page, a press on D10.
     fresh()
-    record({'reader': READER, 'channel': CHANNEL, 'start': 'with-focus', 'step': 'fresh page', 'state': p.eval(STATE)})
+    record({'reader': READER, 'channel': CHANNEL, 'start': 'with-focus', 'step': 'fresh page', 'at': FRESH_AT[0], 'scanOff': SCAN[0], 'state': p.eval(STATE)})
     step('with-focus', '1-press-d10', lambda: p.cmd(op='press', sel=f'{SHEET} [id$="-r9c3"]'))
     for n, k in [('2-down', '{DOWN}'), ('3-right', '{RIGHT}'), ('4-down', '{DOWN}'), ('5-down', '{DOWN}')]:
         step('with-focus', n, lambda k=k: p.keys(k))
 
 
 if __name__ == '__main__':
-    p = pg.Page.start(CHANNEL, name=f'pg-{CHANNEL}', log=os.path.join(HERE, 'records', f'part-f-{READER}-{CHANNEL}{"-reversed" if REVERSED else ""}-pg.jsonl'))
+    p = pg.Page.start(CHANNEL, name=f'pg-{CHANNEL}', log=os.path.join(HERE, 'records', f'part-f-{READER}-{CHANNEL}{SUFFIX}-pg.jsonl'))
     try:
         run()
     finally:

@@ -12,6 +12,7 @@
 // Commands ({"op": ...}):
 //   goto {url, ready?}            the page; ready: a JS expression polled until true (60 s)
 //   front                         the window to the front (by the title the page is given)
+//   raise                         the same, after Playwright's bringToFront (when another program holds the foreground)
 //   calibrate                     screen pixels for client points, from the page's own mousemove
 //   input {cmd}                   one command to input-server.ps1, as it is (type, burst, imeon, ...)
 //   press {sel, nth?, at?, dx?, dy?, button?}
@@ -129,6 +130,7 @@ for await (const line of rl) {
             say({ ok: 'goto', title, url: page.url() });
         }
         else if (c.op === 'front') { say({ ok: await input(`front ${title}`) }); }
+        else if (c.op === 'raise') { await page.bringToFront(); await sleep(400); say({ ok: await input(`front ${title}`) }); }
         else if (c.op === 'calibrate') { say({ ok: 'calibrate', ...(await calibrate()) }); }
         else if (c.op === 'input') { say({ ok: await input(c.cmd) }); }
         else if (c.op === 'press') {
