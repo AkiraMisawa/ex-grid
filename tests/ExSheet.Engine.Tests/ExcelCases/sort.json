@@ -100,7 +100,7 @@
       "cells": {"ZZ1000": "=SORT(Q1:Q2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0202, ADR-0125: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; the seventeenth Windows run read only the Anchor (7), and following it would guess the rest",
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; the seventeenth Windows run read only the Anchor (7), and following it would guess the rest",
       "excelExpect": {"value2": 7}
     },
     {
@@ -111,7 +111,7 @@
       "cells": {"ZZ1000": "=SORT(Q1:Q2)"},
       "check": "ZZ1001",
       "expect": {"value2": null},
-      "engineDiffersByDecision": "ADR-0202, ADR-0125: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
     },
     {
       "id": "SORT-013",
@@ -121,7 +121,7 @@
       "cells": {"ZZ1000": "=SORT(Q1:Q2,1,-1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0202, ADR-0125: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
     },
     {
       "id": "SORT-014",
@@ -130,7 +130,7 @@
       "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0202, ADR-0125: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
     }
   ]
 }

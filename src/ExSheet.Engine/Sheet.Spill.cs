@@ -13,27 +13,44 @@ public sealed partial class Sheet
     private const int MostPasses = 64;
 
     /// <summary>
+    /// How many passes the last recalculation made. Every volatile Formula is computed once in each:
+    /// once, and once more after each layout that changed something, never more than
+    /// <see cref="MostPasses"/>. Layer 1 reads it (ADR-0124).
+    /// </summary>
+    internal int RecalculationPasses { get; private set; }
+
+    /// <summary>
     /// One recalculation: what <paramref name="changed"/> reaches and every volatile Formula, the moment
     /// read once (ADR-0124); then the spills laid out, and what their layout changed recalculated with
-    /// every volatile Formula, until nothing moves.
+    /// every volatile Formula, until a layout changes nothing. It always ends on a layout, so an
+    /// Anchor shows what the last layout decided: <c>#SPILL!</c> where its Spill Range is in the way.
     /// </summary>
+    /// <remarks>
+    /// A volatile Formula is computed again after every layout that changed something, because a
+    /// Reference <c>INDIRECT</c> or <c>OFFSET</c> computes may read what the layout changed, and no
+    /// Dependent says so. Each draws and reads the clock as in the first pass (ADR-0180), and an
+    /// Anchor computed again with an array of the shape the layout blocked stays <c>#SPILL!</c>
+    /// (<c>RecalculatePass</c>), so computing it again changes nothing and the next layout settles.
+    /// A spill blocked or freed by a change is therefore two passes: every volatile Formula is
+    /// computed twice. Spills that move each other take a pass for each layout that moves one.
+    /// </remarks>
     private SheetChange Recalculate(HashSet<CellAddress> changed, SortedSet<int> rows)
     {
         _moment = NowSource?.Invoke();
         var changes = new List<SheetChange> { RecalculatePass(changed, rows, withVolatile: true) };
-        for (var pass = 1; pass < MostPasses; pass++)
+        var passes = 1;
+        while (true)
         {
             var laidOut = LayOutSpills();
             if (laidOut.Count == 0) break;
             foreach (var address in laidOut) rows.Add(address.Row);
             changes.Add(new SheetChange(laidOut, [], [.. laidOut.Select(a => a.Row).Distinct().Order()]));
             var readers = new HashSet<CellAddress>(laidOut.SelectMany(Dependents));
-            // A Reference INDIRECT or OFFSET computes may read what the layout changed, and no
-            // Dependent says so: the volatile Formulas are read again after a layout, as after any
-            // change (ADR-0124). Each draws and reads the clock as it did in the first pass.
-            if (readers.Count == 0 && _volatileFormulas.Count == 0) break;
+            if ((readers.Count == 0 && _volatileFormulas.Count == 0) || passes == MostPasses) break;
             changes.Add(RecalculatePass(readers, rows, withVolatile: true));
+            passes++;
         }
+        RecalculationPasses = passes;
         return SheetChange.Merge(changes);
     }
 

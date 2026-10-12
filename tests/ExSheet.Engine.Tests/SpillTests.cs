@@ -380,4 +380,98 @@ public class SpillTests
         Assert.Equal(1, elsewhere.Number("A1"));
         Assert.Equal(elsewhere.Number("B1"), blocked.Number("B1"));
     }
+
+    [Fact] // ADR-0124, ADR-0125: a blocked Anchor whose INDIRECT is read again after the layout stays #SPILL!, and spills when freed
+    public void ADR0124_a_blocked_INDIRECT_anchor_shows_spill()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("C1", "1");
+        sheet.Enter("C2", "2");
+        sheet.Enter("C3", "3");
+        sheet.Enter("A1", "=INDIRECT(\"C1:C3\")");
+        sheet.Enter("D1", "=A1");
+        Assert.Equal(1, sheet.Number("A1"));
+
+        sheet.Enter("A2", "x");
+
+        Assert.Equal(ErrorValue.Spill, sheet.Error("A1"));
+        Assert.Equal(ErrorValue.Spill, sheet.Error("D1"));
+        Assert.Equal(2, sheet.RecalculationPasses);
+
+        sheet.Enter("E5", "7");
+
+        Assert.Equal(ErrorValue.Spill, sheet.Error("A1"));
+        Assert.Equal(1, sheet.RecalculationPasses);
+
+        sheet.Enter("A2", "");
+
+        Assert.Equal(1, sheet.Number("A1"));
+        Assert.Equal(2, sheet.Number("A2"));
+        Assert.Equal(3, sheet.Number("A3"));
+    }
+
+    [Fact] // ADR-0124, ADR-0125: a blocked OFFSET Anchor stays #SPILL! through a change elsewhere
+    public void ADR0124_a_blocked_OFFSET_anchor_shows_spill()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("C1", "1");
+        sheet.Enter("C2", "2");
+        sheet.Enter("C3", "3");
+        sheet.Enter("A2", "x");
+        sheet.Enter("A1", "=OFFSET(C1,0,0,3,1)");
+
+        Assert.Equal(ErrorValue.Spill, sheet.Error("A1"));
+
+        sheet.Enter("E5", "7");
+
+        Assert.Equal(ErrorValue.Spill, sheet.Error("A1"));
+        Assert.Null(sheet.Value("A3"));
+    }
+
+    [Fact] // ADR-0180, ADR-0125: a blocked Anchor that draws stays #SPILL!, whether it is entered or recalculated after
+    public void ADR0180_a_blocked_anchor_that_draws_shows_spill()
+    {
+        var sheet = NewSheet();
+        sheet.SetSeed(42);
+        sheet.Enter("A2", "x");
+        sheet.Enter("A1", "=SEQUENCE(3)+0*RAND()");
+
+        Assert.Equal(ErrorValue.Spill, sheet.Error("A1"));
+        Assert.Equal(2, sheet.RecalculationPasses);
+
+        sheet.Enter("E5", "7");
+
+        Assert.Equal(ErrorValue.Spill, sheet.Error("A1"));
+        Assert.Equal(1, sheet.RecalculationPasses);
+
+        sheet.Enter("A2", "");
+
+        Assert.Equal(1, sheet.Number("A1"));
+        Assert.Equal(3, sheet.Number("A3"));
+    }
+
+    [Fact] // ADR-0124, ADR-0125: every volatile Formula is computed once, and once more after each layout that changes something
+    public void ADR0124_volatile_formulas_are_computed_once_more_per_layout_that_changes()
+    {
+        var sheet = NewSheet();
+        sheet.SetSeed(42);
+        sheet.Enter("E1", "=RAND()");
+        sheet.Enter("A1", "=SEQUENCE(3)");
+        sheet.Enter("C1", "=SEQUENCE(IFERROR(ROWS(A1#),1)+1)");
+        sheet.Enter("E2", "=SUM(INDIRECT(\"C1:C4\"))");
+        Assert.Equal(10, sheet.Number("E2"));
+
+        // No spill moves: one pass.
+        sheet.Enter("G9", "7");
+        Assert.Equal(1, sheet.RecalculationPasses);
+
+        // A3 blocks A1's spill (one layout), which shrinks C1's (a second): three passes, and the
+        // INDIRECT reads the second layout, which no Dependent would have told it of.
+        sheet.Enter("A3", "x");
+        Assert.Equal(3, sheet.RecalculationPasses);
+        Assert.Equal(ErrorValue.Spill, sheet.Error("A1"));
+        Assert.Equal(2, sheet.Number("C2"));
+        Assert.Null(sheet.Value("C3"));
+        Assert.Equal(3, sheet.Number("E2"));
+    }
 }

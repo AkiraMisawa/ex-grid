@@ -82,7 +82,7 @@
       "cells": {"ZZ1000": "=UNIQUE(Q1:Q2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0202, ADR-0125: a blank in UNIQUE's array is refused with #VALUE! until Excel is asked whether it is one of a kind with 0; the seventeenth Windows run read only the Anchor (7), and following it would guess the rest",
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank in UNIQUE's array is refused with #VALUE! until Excel is asked whether it is one of a kind with 0; the seventeenth Windows run read only the Anchor (7), and following it would guess the rest",
       "excelExpect": {"value2": 7}
     },
     {
@@ -93,7 +93,7 @@
       "cells": {"ZZ1000": "=UNIQUE(Q1:Q2)"},
       "check": "ZZ1001",
       "expect": {"value2": null},
-      "engineDiffersByDecision": "ADR-0202, ADR-0125: a blank in UNIQUE's array is refused with #VALUE! until Excel is asked whether it is one of a kind with 0; recorded, so that a run reads Excel's answer"
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank in UNIQUE's array is refused with #VALUE! until Excel is asked whether it is one of a kind with 0; recorded, so that a run reads Excel's answer"
     },
     {
       "id": "UNIQUE-011",
@@ -102,7 +102,7 @@
       "cells": {"A1": "0", "ZZ1000": "=ROWS(UNIQUE(A1:A2))"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0202, ADR-0125: a blank in UNIQUE's array is refused with #VALUE! until Excel is asked whether it is one of a kind with 0; recorded, so that a run reads Excel's answer"
+      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank in UNIQUE's array is refused with #VALUE! until Excel is asked whether it is one of a kind with 0; recorded, so that a run reads Excel's answer"
     }
   ]
 }

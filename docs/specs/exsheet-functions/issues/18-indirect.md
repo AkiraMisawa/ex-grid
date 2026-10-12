@@ -70,8 +70,15 @@ names; structured text goes through the Linked Table's column as `Table[Column]`
 waiting for its data waits, even under `IFERROR`, and one never declared, or a column it lacks, names no
 place (`#REF!`); `A1#` text reads the Anchor's Spill Range as `A1#` does, `#REF!` where it does not spill.
 Two gaps came with it. The recalculation now marks a table met through text as waiting, as it marks a
-waiting cell met through a computed Reference; and after a spill's layout changes it reads the volatile
-Formulas again, since what `INDIRECT` or `OFFSET` computes a Reference to is no Dependent of the cells
-the layout changed — before, `INDIRECT("A3")` kept a spilled cell's old Value when the spill was blocked
-(`IndirectTests`). The forms read or refused by generalising the observed ones are INDIRECT-030 to
-INDIRECT-042, `uncertain` for the next run.
+waiting cell met through a computed Reference; and after each layout of the spills that changes
+something it computes the volatile Formulas once more, since what `INDIRECT` or `OFFSET` computes a
+Reference to is no Dependent of the cells the layout changed — before, `INDIRECT("A3")` kept a spilled
+cell's old Value when the spill was blocked (`IndirectTests`). A change that blocks or frees one spill
+therefore computes each volatile Formula twice, and one that moves no spill once. An Anchor computed again
+with an array of the shape its layout blocked stays `#SPILL!`, so a volatile Anchor's second computation
+changes nothing and the recalculation ends on a layout that changes nothing; review found the first
+version of this branch recomputing such an Anchor up to 64 times and ending on its first Value, and it is
+fixed with `SpillTests`' blocked `INDIRECT`, `OFFSET` and `RAND` Anchors. `INDEX` with `column_num` left
+out is `#REF!` over a Spill Range of several rows and columns as over a typed range (INDEX-012; INDEX-017
+and 018 ask it of `A1#` and `INDIRECT("A1#")`). The forms read or refused by generalising the observed
+ones are INDIRECT-030 to INDIRECT-042, `uncertain` for the next run.

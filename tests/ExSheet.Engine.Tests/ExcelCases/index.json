@@ -142,6 +142,22 @@
       "cells": {"ZZ1000": "=INDEX(G1:H5,0)"},
       "check": "ZZ1000",
       "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "INDEX-017",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Spill Range of several rows and several columns is a Reference, as G1:H5 is, so column_num left out is #REF!, the rule INDEX-012 observed for a typed range",
+      "cells": {"J1": "=SEQUENCE(2,2)", "ZZ1000": "=INDEX(J1#,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "INDEX-018",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the Spill Range INDIRECT's text names is the Reference J1# typed is, so column_num left out is #REF!, the rule INDEX-012 observed for a typed range",
+      "cells": {"J1": "=SEQUENCE(2,2)", "ZZ1000": "=INDEX(INDIRECT(\"J1#\"),2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
     }
   ]
 }

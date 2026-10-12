@@ -15,7 +15,7 @@ repository's voice, ready to paste.
 | INDIRECT-026 | `=SUM(INDIRECT("A1#"))` | 6 | `#VALUE!` (by decision) | 6, `observed` | as 023 |
 | INDEX-012 | `=INDEX(G1:H5,2)` | `#REF!` | `Banana` (the row spilled) | `#REF!`, `observed` | the case was the engine's guess; ADR-0047 |
 | XMATCH-008 | `=XMATCH("Banana",G1:G5,0,2)` | 2 | `#VALUE!` | `#VALUE!`, `excelExpect` 2, `observed` | ADR-0047, "Settled while building": XLOOKUP's binary search over unsorted data is refused; Excel's algorithm is undocumented (XLOOKUP-116 to 122 carry Excel's answer the same way; 048 to 057 are recorded without it) |
-| SORT-011 | `=SORT(Q1:Q2)`, Q1 7, Q2 blank | 7 | `#VALUE!` | `#VALUE!`, `excelExpect` 7, `observed` | ADR-0202 allows keeping a refusal: the run read only the Anchor (below) |
+| SORT-011 | `=SORT(Q1:Q2)`, Q1 7, Q2 blank | 7 | `#VALUE!` | `#VALUE!`, `excelExpect` 7, `observed` | ADR-0047's refusal (its paragraph admitting `SORT` and `UNIQUE`), kept as ADR-0202 allows: the run read only the Anchor (below). The corpus cites "ADR-0202, ADR-0047" (it cited ADR-0125, which holds no such statement, before review) |
 | UNIQUE-009 | `=UNIQUE(Q1:Q2)` | 7 | `#VALUE!` | `#VALUE!`, `excelExpect` 7, `observed` | as SORT-011 |
 
 Two gaps the observed forms made visible were closed with them (outside this area's files, each a few lines):
@@ -23,13 +23,33 @@ Two gaps the observed forms made visible were closed with them (outside this are
 - `Sheet.cs`, the recalculation's reader: a Linked Table met through `INDIRECT`'s text while it waits marks the Formula
   as waiting, as a waiting cell met through a computed Reference already does, so `IFERROR(INDIRECT("Rates[Mid]"),0)`
   waits instead of showing 0.
-- `Sheet.Spill.cs`: after a spill's layout changes, the volatile Formulas are read again with the layout's Dependents.
-  What `INDIRECT` or `OFFSET` computes a Reference to is no Dependent of the cells the layout changed, so before this a
-  Formula reading a spilled cell that way kept its old Value: with A1 `=SEQUENCE(3)`, `=SUM(OFFSET(B1,0,-1,3,1))` stayed
-  3 after A3 blocked the spill, where `=SUM(A1:A3)` showed `#SPILL!`. This was there before the run (`INDIRECT("A3")`
-  and `OFFSET`), and `A1#` text would have shown it at once. A recalculation whose layout changes now computes the
-  volatile Formulas twice; each draws and reads the clock as in the first pass (ADR-0180's draw depends on the change
-  count, not the pass). What it costs on a large Sheet belongs to SH-19's measurement.
+- `Sheet.Spill.cs`: after each layout of the spills that changes something, the volatile Formulas are computed once
+  more, with the layout's Dependents. What `INDIRECT` or `OFFSET` computes a Reference to is no Dependent of the cells
+  the layout changed, so before this a Formula reading a spilled cell that way kept its old Value: with A1
+  `=SEQUENCE(3)`, `=SUM(OFFSET(B1,0,-1,3,1))` stayed 3 after A3 blocked the spill, where `=SUM(A1:A3)` showed `#SPILL!`.
+  This was there before the run (`INDIRECT("A3")` and `OFFSET`), and `A1#` text would have shown it at once. Each
+  computation draws and reads the clock as the first did (ADR-0180's draw depends on the change count, not the pass).
+- *Corrected after review (2026-10-12).* The first version of that change made a blocked Anchor whose own Formula is
+  volatile (`=INDIRECT("C1:C3")`, `=OFFSET(C1,0,0,3,1)`, `=SEQUENCE(3)+0*RAND()`) show its array's first Value instead
+  of `#SPILL!`: each volatile pass staged the first Value, each layout put `#SPILL!` back and reported the Anchor
+  changed, and the loop stopped at its 64th pass, after a pass and before a layout. Every volatile Formula was computed
+  64 times while such a spill stood. Now an Anchor computed again with an array of the shape its last layout blocked
+  stays `#SPILL!` (`Sheet.cs`, the pass), so computing it again changes nothing, and the recalculation always stops on
+  a layout. **The cost, stated:** every volatile Formula is computed once, and once more after each layout that
+  changes something — twice when a change blocks or frees one spill, once when no spill moves, one more for each
+  further spill that a layout moves (`SpillTests.ADR0124_volatile_formulas_are_computed_once_more_per_layout_that_changes`
+  pins 1, 2 and 3). The engine's cap of 64 passes is unchanged. What the extra pass costs on a large Sheet belongs to
+  SH-19's measurement.
+- *Found in review, not changed here.* A Formula that reads its own Spill Range through a typed Reference,
+  `A1` `=IF(A2=0,SEQUENCE(2),5)`, never settles: each layout changes what the next pass computes, and the
+  recalculation stops at the cap with `5` in A1 and A2 blank. ADR-0125's "Dependencies" makes a reader of a spilled
+  cell depend on the Anchor, which would make this a cycle (`#CIRC!`, ADR-0047; Excel reports a circular reference),
+  but the dependency graph does not route a spilled cell to its Anchor. It was there before this run, and it is no
+  run-17 case; it wants a ticket of its own.
+- `INDEX`: the rule INDEX-012 observed tests for a Reference, and a Spill Range is one: `=INDEX(A1#,2)` and
+  `=INDEX(INDIRECT("A1#"),2)` over `=SEQUENCE(2,2)` are `#REF!` as `=INDEX(A1:B2,2)` is (the first version spilled
+  `{3,4}` for both). `A1#` evaluates to the array the Anchor computed, so the operand now says it is a Spill Range.
+  INDEX-017 and INDEX-018 ask Excel, `uncertain`.
 
 ## ADR-0124: a dated note at the end of "`RAND`, `RANDBETWEEN` and `INDIRECT`"
 
@@ -44,18 +64,23 @@ Two gaps the observed forms made visible were closed with them (outside this are
 > or columns (`R3`, `C2`), a number with a leading 0, and structured or `#` text in R1C1 style. INDIRECT-030 to 042 put
 > the forms generalised from the observed ones to the next run. Excel reads R1C1 text in the letters of its display
 > language (`Z1S1` in a German Excel); ExSheet reads R and C in every culture, as its function names are English in
-> every culture, and the run's Excel was English. **What a volatile Formula computes a Reference to is read again after
-> a spill's layout changes**, since it is no Dependent of the cells the layout changed: a Reference `INDIRECT` or
-> `OFFSET` computes into a Spill Range follows it when it is blocked or freed, as a typed one does.)*
+> every culture, and the run's Excel was English. **A volatile Formula is computed once more after each layout of the
+> spills that changes something**, since what it computes a Reference to is no Dependent of the cells the layout
+> changed: a Reference `INDIRECT` or `OFFSET` computes into a Spill Range follows it when it is blocked or freed, as a
+> typed one does. An Anchor computed again with an array of the shape its layout blocked stays `#SPILL!`, so the
+> recalculation ends on a layout that changes nothing: a change that blocks or frees one spill computes each volatile
+> Formula twice, and one that moves no spill once.)*
 
 ## ADR-0125: a dated note at the end of "What becomes Excel's answer"
 
 > *(2026-10-12, after the seventeenth Windows run: **`INDEX` over a Reference of several rows and several columns, with
 > `column_num` left out, is `#REF!`**, as Excel's `=INDEX(G1:H5,2)` is (INDEX-012); a row or a column of 0 still spills
-> (INDEX-013), and over an array `row_num` alone is still the whole row, as Microsoft documents (INDEX-014). Whether
-> `column_num` left empty, `=INDEX(G1:H5,2,)`, is the whole row, and whether a row of 0 with it left out is `#REF!` too,
-> are INDEX-015 and 016 for the next run. **A blank among `SORT`'s and `SORTBY`'s keys, and in `UNIQUE`'s array, stays
-> refused with `#VALUE!`** (ADR-0202). Excel answers 7 for `=SORT(Q1:Q2)` and `=UNIQUE(Q1:Q2)` over 7 and a blank
+> (INDEX-013), and over an array `row_num` alone is still the whole row, as Microsoft documents (INDEX-014). A Spill
+> Range of several rows and columns, `A1#` typed or `INDIRECT("A1#")`, is a Reference as a typed range is, and takes the
+> same `#REF!` (INDEX-017 and 018 ask it). Whether `column_num` left empty, `=INDEX(G1:H5,2,)`, is the whole row, and
+> whether a row of 0 with it left out is `#REF!` too, are INDEX-015 and 016 for the next run. **A blank among `SORT`'s
+> and `SORTBY`'s keys, and in `UNIQUE`'s array, stays refused with `#VALUE!`**, as ADR-0047's paragraph admitting them
+> under this ADR wrote, kept before the tag under ADR-0202. Excel answers 7 for `=SORT(Q1:Q2)` and `=UNIQUE(Q1:Q2)` over 7 and a blank
 > (SORT-011, UNIQUE-009), and the Anchor shows only that a blank does not sort first as 0 would. Following it would
 > guess where the blank goes, what its spilled cell shows, how a descending sort places it and whether `UNIQUE` counts
 > it one of a kind with 0; SORT-012 to 014 and UNIQUE-010 and 011 ask those.)*
@@ -155,7 +180,8 @@ without comparing):
   empty 45; 034 `a1` a blank cell 45; 035 `INDIRECT("B3",FALSE)` `#REF!`; 036 `R[1]C[-1]` from C2 (recorded; Excel's 45
   if relative text reads from the Formula's cell); 037 `R3` and 038 `C2` summed (recorded); 039 `Positions[[PV]]`
   250.5; 040 `Missing[PV]` `#REF!`; 041 `Positions[Delta]` `#REF!`; 042 `A1#` over a constant `#REF!`.
-- INDEX-014 `=INDEX(SEQUENCE(2,2),2)` 3 (documented); 015 `=INDEX(G1:H5,2,)` `Banana`; 016 `=INDEX(G1:H5,0)` `#REF!`.
+- INDEX-014 `=INDEX(SEQUENCE(2,2),2)` 3 (documented); 015 `=INDEX(G1:H5,2,)` `Banana`; 016 `=INDEX(G1:H5,0)` `#REF!`;
+  017 `=INDEX(J1#,2)` and 018 `=INDEX(INDIRECT("J1#"),2)` over `=SEQUENCE(2,2)`, `#REF!`.
 - SORT-012 the second spilled cell of `=SORT(Q1:Q2)` (0 or empty text); SORT-013 `=SORT(Q1:Q2,1,-1)` (7 if a blank
   sorts last whatever the order); SORT-014 `=SORT(A1:A3)` over `b`, blank, `a` (`a` if a blank sorts last, not as empty
   text). UNIQUE-010 the second spilled cell of `=UNIQUE(Q1:Q2)`; UNIQUE-011 `=ROWS(UNIQUE(A1:A2))` over 0 and a blank (1
