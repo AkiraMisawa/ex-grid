@@ -635,12 +635,14 @@
    cell out. Its element stays, because under forced colors no tint is painted to mark it, and the
    forced-colors block below outlines it again. */
 .ex-range-single ~ .ex-focus::after { content: none; }
-/* The Focus among several ranges (ADR-0008, 2026-10-12). No range carries an outline there, as none
-   of Excel's did in the seventeenth Windows run (h2), and the Focus, which the core marks, takes a
-   thin border of one Device Pixel in a token of its own, --ex-focus-among-ranges-outline
-   (2026-10-12, decided with the user: where nothing names that token it is the Focus outline's
-   colour), so a Theme or a Wrapper that colours the Focus colours this border too, with no mapping
-   of its own. It lies inside the cell, a Device Pixel in from its top and left edges and from its
+/* The Focus among several ranges (ADR-0008, 2026-10-12): (2026-10-12, decided with the user: no
+   range carries an outline there, and the Focus, which the core marks, takes a thin border of one
+   Device Pixel in a token of its own, --ex-focus-among-ranges-outline; where nothing names that
+   token it is the Focus outline's colour), so a Theme or a Wrapper that colours the Focus colours
+   this border too, with no mapping of its own. The first was decided after the seventeenth Windows
+   run's h2, which read neither of Excel's ranges as carrying a single range's outline; the frame
+   of one device pixel the readings of 2026-10-12 read round each of Excel's areas (R4) is not drawn
+   here, and is put to the user. It lies inside the cell, a Device Pixel in from its top and left edges and from its
    own gridline, where Excel's active cell among several areas lay at 100% and 150% zoom on a 150%
    display (the readings of 2026-10-12, R4). Inside, nothing above the selection layer covers any
    side of it, beside the Headings, a Pinned Column or under the header, so it needs none of the

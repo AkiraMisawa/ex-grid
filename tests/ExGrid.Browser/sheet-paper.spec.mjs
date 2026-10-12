@@ -244,8 +244,9 @@ for (const [chrome, query] of CHROMES) {
 // the same three on the Paper, on a blank Sheet with nothing pinned as Excel's was, read on the same
 // lines: the border, one device pixel of #217346 a device pixel inside the cell; the white line
 // between it and the gridline; and, past the gridline, a neighbour in the area shaded #C7C7C7 (white
-// Paper × 0.78) and one outside it white. R4 read them at 150%, which chrome-150 lays out; at 100%
-// they are read the same, by generalisation (no run read Excel on a 100% display). The gridline's
+// Paper × 0.78) and one outside it white. R4 read them on a 150% display, at Excel's 100% and 150%
+// zoom, which chrome-150 lays out; at 100% they are read the same, by generalisation (no run read
+// Excel on a 100% display). The gridline's
 // own pixel round the cell is not read: R4 read it #AFAFAF, and the Paper paints its gridline there
 // (#E0E0E0), a difference no decision has taken up. Nor are the Headings beside A1, which R4 read as
 // Excel's 2 px of #217346 and the Paper does not draw.
