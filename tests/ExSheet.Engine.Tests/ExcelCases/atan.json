@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ATAN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: pi/4",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ATAN(1)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ATAN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: in degrees",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ATAN(1)*180/PI()"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ATAN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: DEGREES",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=DEGREES(ATAN(1))"},

@@ -27,8 +27,9 @@ script, that a press was handed on, and the Sheet holds its keys behind it.
       state for another instance (DC-54)
 - [x] Layer 3 on `/sheet`, Server host, 150 ms injected: `=`, a press on a PV cell and `*` at once
       gives `=XLOOKUP("R-4471", Positions[Id], Positions[PV])*`; `=SUM(1,`, a press, then `)` and Enter
-      at once, commits `=SUM(1,XLOOKUP(…))`, never `=SUM(1,)`; `=1+` and a press at once, at 0 ms and
-      at 150 ms, gives `=1+XLOOKUP(…)`, never `=XLOOKUP(…)` (DC-54)
+      at once, commits `=SUM(1,XLOOKUP(…))`, never `=SUM(1,)`; `=-(` and a press at once, at 0 ms and
+      at 150 ms, gives `=-(XLOOKUP(…)`, never `=XLOOKUP(…)` ahead of `-(`, nor `=-(` alone (DC-54;
+      `=1+` until 2026-10-11, see the comment of that day)
 
 ## Comments
 
@@ -85,3 +86,19 @@ script, that a press was handed on, and the Sheet holds its keys behind it.
     rerun alone. The same hang struck a base run too, so it is left as an environment issue.
   - The two files on WebAssembly: 37 passed, 11 skipped (the Server-only tests).
 
+2026-10-11, the layer-3 criterion corrected (decided with the user; DC-54's row corrected with it).
+
+- **Found on CI** (PR #78, the Server host at 0 ms, run 38176037623): `=1+` typed and the press made
+  once the positions grid was painted pointed at for `=` left `=1+` and the press the positions
+  grid's own. The Sheet's listener hands the held `1` and `+` into the Cell Editor one input each,
+  and on a circuit each is a render of its own: `=1` is no place for a Reference, so the grid was
+  painted otherwise for it, and pointed at again for `=1+`. The press landed between the two paints,
+  and a press made on a grid painted otherwise is SH-35's ordinary press, as ADR-0058 decides ("On
+  a circuit", the first gap). Measured locally (40 rounds at 0 ms): the paint for `=1` reached the
+  page as a task of its own in 6 rounds, for 2.3 to 9.6 ms.
+- **So the test types `=-(`**, whose every prefix is a place for a Reference: the grid stays painted
+  pointed at from the `=` on, and every ordering of the press among the held keys gives
+  `=-(XLOOKUP(…)`. Measured the test's way, 40 rounds at 0 ms: 12 presses landed while the Sheet
+  still held `-(`, 28 after, and all 40 wrote `=-(XLOOKUP(…)`; the grid was never painted otherwise.
+- **Layer 2** pins the ordering CI hit (`PointingScopeTests`,
+  `A_press_made_on_the_paint_for_a_text_that_does_not_point_is_the_grids_own`).

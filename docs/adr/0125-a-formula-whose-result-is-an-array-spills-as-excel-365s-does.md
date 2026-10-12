@@ -65,6 +65,18 @@ range, `INDEX` with a row or a column of 0, `XLOOKUP` with a return array of sev
 `IF`, `IFERROR`, `ISERROR` and the other functions given a range where they want one Value once
 they are lifted.
 
+*(2026-10-12, after the seventeenth Windows run: **`INDEX` over a Reference of several rows and several columns, with
+`column_num` left out, is `#REF!`**, as Excel's `=INDEX(G1:H5,2)` is (INDEX-012); a row or a column of 0 still spills
+(INDEX-013), and over an array `row_num` alone is still the whole row, as Microsoft documents (INDEX-014). A Spill
+Range of several rows and columns, `A1#` typed or `INDIRECT("A1#")`, is a Reference as a typed range is, and takes the
+same `#REF!` (INDEX-017 and 018 ask it). Whether `column_num` left empty, `=INDEX(G1:H5,2,)`, is the whole row, and
+whether a row of 0 with it left out is `#REF!` too, are INDEX-015 and 016 for the next run. **A blank among `SORT`'s
+and `SORTBY`'s keys, and in `UNIQUE`'s array, stays refused with `#VALUE!`**, as ADR-0047's paragraph admitting them
+under this ADR wrote, kept before the tag under ADR-0202. Excel answers 7 for `=SORT(Q1:Q2)` and `=UNIQUE(Q1:Q2)` over 7 and a blank
+(SORT-011, UNIQUE-009), and the Anchor shows only that a blank does not sort first as 0 would. Following it would
+guess where the blank goes, what its spilled cell shows, how a descending sort places it and whether `UNIQUE` counts
+it one of a kind with 0; SORT-012 to 014 and UNIQUE-010 and 011 ask those.)*
+
 ## Considered options
 
 - **Only the functions built for arrays spill, and `=A1:A3*2` stays `#VALUE!`.** Rejected with the

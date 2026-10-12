@@ -1,13 +1,11 @@
-using System.Text.RegularExpressions;
-
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
 /// <c>LET</c>'s names (ADR-0181), as Excel's keyboard accepts them. A name is seen by the values bound
 /// after it and by its own <c>LET</c>'s calculation, and an inner <c>LET</c> may bind it again; the
 /// parser resolves each name to its binding where it stands, so a name read before its binding, or
-/// inside its own value, resolves to none and is <c>#NAME?</c>. What Excel's keyboard refused, and what
-/// could mean something else, is refused on entry, as any Formula the engine cannot read is.
+/// inside its own value, resolves to none and is <c>#NAME?</c>. What Excel's keyboard refused is refused
+/// on entry, as any Formula the engine cannot read is.
 /// </summary>
 internal sealed partial class Parser
 {
@@ -40,10 +38,10 @@ internal sealed partial class Parser
 
     /// <summary>
     /// <c>LET(name1, value1, …, calculation)</c>: each value read with the names bound before it in
-    /// scope, the calculation with all of them. Refused on entry, as Excel refuses each with a dialog
-    /// or as no Windows run has seen it accept: too few arguments, an even number of them, a missing
-    /// calculation or value, a name bound twice, a 127th name, and a name <see cref="LetNameRefusal"/>
-    /// refuses.
+    /// scope, the calculation with all of them. A value left empty is bound as the empty argument it
+    /// is, as Excel's keyboard took <c>LET(x,,x)</c> and showed 0 (LET-107, run 17). Refused on entry,
+    /// as Excel refuses each with a dialog: too few arguments, an even number of them, a missing
+    /// calculation, a name bound twice, a 127th name, and a name <see cref="LetNameRefusal"/> refuses.
     /// </summary>
     private LetNode ParseLet(Token let)
     {
@@ -76,7 +74,6 @@ internal sealed partial class Parser
             }
             else
             {
-                if (argument is MissingNode) throw new FormulaSyntaxException(_formula, start.Position, $"the value of '{named!.Name}' is missing.");
                 named!.Value = argument;
                 scope.Bound.Add(named);
                 named = null;
@@ -109,12 +106,12 @@ internal sealed partial class Parser
     /// <summary>
     /// Why a name cannot be a <c>LET</c> name, or <see langword="null"/> when it can (ADR-0181): it
     /// starts with a letter of any script or <c>_</c>, goes on with letters, ASCII digits and <c>_</c>,
-    /// and is at most 249 characters. A name that could mean something else is refused until a
-    /// Windows run shows that Excel's keyboard accepts it: an R1C1 shape (<c>R1C1</c>, <c>R2</c>,
-    /// <c>C3</c>, <c>RC</c>), and the name of one of Excel's functions, declared or not
-    /// (<see cref="ExcelFunctionNames"/>). <c>c</c> and <c>r</c> alone are names,
-    /// as observed (LET-KEYS-002, 003). A name that reads as an A1 Reference is read as one, and
-    /// refused before it reaches here.
+    /// and is at most 249 characters. The name of a function, declared or not, and an R1C1 shape are
+    /// names, as Excel's keyboard took <c>SUM</c>, <c>IRR</c>, <c>N</c>, <c>R1C1</c> and <c>RC</c>
+    /// (LET-101, 111, 112, 103, 106; run 17); a name followed by <c>(</c> is still the function's
+    /// call, and never reaches here. A name that reads as an A1 Reference (<c>A1</c>, <c>R2</c>,
+    /// <c>C3</c>) is read as one, and <c>TRUE</c> and <c>FALSE</c> as booleans, and each is refused
+    /// before it reaches here, as Excel's keyboard refuses them (LET-KEYS-004, LET-104, 105, 102).
     /// </summary>
     private static string? LetNameRefusal(string name)
     {
@@ -123,14 +120,8 @@ internal sealed partial class Parser
         {
             return $"'{name}' cannot be a LET name: a name begins with a letter or _, and holds only letters, digits and _.";
         }
-        if (RowColumnShape().IsMatch(name)) return $"'{name}' reads as an R1C1 Reference, and cannot be a LET name.";
-        if (ExcelFunctionNames.Contains(name)) return $"'{name}' is the name of a function, and cannot be a LET name.";
         return null;
     }
-
-    /// <summary>An R1C1 Reference's shape: <c>R1C1</c>, <c>RC</c>, <c>R2</c>, <c>C3</c>; not <c>R</c> or <c>C</c> alone.</summary>
-    [GeneratedRegex(@"^(?:[Rr][0-9]*[Cc][0-9]*|[Rr][0-9]+|[Cc][0-9]+)$", RegexOptions.CultureInvariant)]
-    private static partial Regex RowColumnShape();
 
     /// <summary>
     /// Refuses a name of another script than ASCII that no <c>LET</c> around it binds, at its first

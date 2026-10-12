@@ -3,57 +3,186 @@ namespace ExSheet.Engine.Formulas;
 /// <summary>
 /// PMT, PV, FV and NPV, each to Microsoft's documentation of it: the annuity identity
 /// <c>pv*(1+rate)^nper + pmt*(1+rate*type)*((1+rate)^nper-1)/rate + fv = 0</c>, and its form at a
-/// rate of 0.
+/// rate of 0. PV and FV evaluate it as Excel does, in doubles, raising 1+rate to nper by squaring;
+/// PMT carries more than a double's precision, as Excel's does (the seventeenth Windows run,
+/// <c>spikes/exsheet-financial-evaluation/</c>).
 /// </summary>
 internal static partial class FunctionLibrary
 {
     /// <summary>
     /// The annuity's arguments: <c>rate</c>, <c>nper</c>, the third, and the optional fourth (0 when
-    /// left out) and <c>type</c>. A <c>type</c> other than 0 or 1 is refused with <c>#VALUE!</c> until
-    /// Excel is asked how it reads one (PMT-008).
+    /// left out) and <c>type</c>. A <c>type</c> that is a whole number other than 0 is payment at the
+    /// start of each period, as Excel reads one (PMT-008: 2 reads as 1); a fractional one is refused
+    /// with <c>#VALUE!</c> until Excel is asked how it reads one. At a rate other than 0, an
+    /// <c>nper</c> that is not a whole number from 0 to 2^53 is refused with <c>#VALUE!</c>: Excel
+    /// raises 1+rate to it by squaring, which needs a whole number, and how it raises to any other
+    /// has not been observed.
     /// </summary>
-    private static bool TryAnnuity(FunctionCall call, out double rate, out double periods, out double third, out double fourth, out double type, out Operand failure)
+    private static bool TryAnnuity(FunctionCall call, out double rate, out double periods, out double third, out double fourth, out bool atStart, out Operand failure)
     {
-        periods = third = fourth = type = 0;
+        periods = third = fourth = 0;
+        atStart = false;
+        var type = 0.0;
         if (!TryNumber(call, 0, out rate, out failure)) return false;
         if (!TryNumber(call, 1, out periods, out failure)) return false;
         if (!TryNumber(call, 2, out third, out failure)) return false;
         if (call.Has(3) && !TryNumber(call, 3, out fourth, out failure)) return false;
         if (call.Has(4) && !TryNumber(call, 4, out type, out failure)) return false;
-        if (type is not (0 or 1))
+        if (type != Math.Floor(type) || (rate != 0 && !(periods >= 0 && periods <= WholePeriods && periods == Math.Floor(periods))))
         {
             failure = Operand.Of(ErrorValue.Value);
             return false;
         }
+        atStart = type != 0;
         return true;
     }
 
-    /// <summary>PMT: the payment that pays <c>pv</c> down to <c>fv</c> over <c>nper</c> periods; <c>nper</c> of 0 is <c>#NUM!</c>.</summary>
+    /// <summary>The largest <c>nper</c> raised by squaring: 2^53, past which a double holds no odd whole number.</summary>
+    private const double WholePeriods = 9007199254740992;
+
+    /// <summary>
+    /// PMT: the payment that pays <c>pv</c> down to <c>fv</c> over <c>nper</c> periods; <c>nper</c> of 0
+    /// is <c>#NUM!</c>. Excel's payment is not the doubles' evaluation of the identity, which loses
+    /// the rate's low bits in 1+rate: Excel's PMT-001 to 003 and 008 equal the payment at the end of
+    /// each period computed beyond a double's precision and rounded once to a double, and the payment
+    /// at the start that double divided by 1+rate, again rounded once. <see cref="Wide"/> carries
+    /// both, and says which of the evaluations that give those four this one is.
+    /// </summary>
     private static Operand Pmt(FunctionCall call)
     {
-        if (!TryAnnuity(call, out var rate, out var periods, out var present, out var future, out var type, out var failure)) return failure;
+        if (!TryAnnuity(call, out var rate, out var periods, out var present, out var future, out var atStart, out var failure)) return failure;
         if (periods == 0) return Operand.Of(ErrorValue.Num);
         if (rate == 0) return Operand.Of(Evaluator.Number(-(present + future) / periods));
-        var growth = Math.Pow(1 + rate, periods);
-        return Operand.Of(Evaluator.Number(-(rate * ((present * growth) + future)) / ((1 + (rate * type)) * (growth - 1))));
+        var onePlusRate = Wide.Sum(1, rate);
+        var growth = Wide.Raise(onePlusRate, (long)periods);
+        var atEnd = (-(rate * ((present * growth) + future)) / (growth - 1)).High;
+        return Operand.Of(Evaluator.Number(atStart && double.IsFinite(atEnd) ? (atEnd / onePlusRate).High : atEnd));
     }
 
     /// <summary>PV: what a series of payments and a future value are worth now.</summary>
     private static Operand Pv(FunctionCall call)
     {
-        if (!TryAnnuity(call, out var rate, out var periods, out var payment, out var future, out var type, out var failure)) return failure;
+        if (!TryAnnuity(call, out var rate, out var periods, out var payment, out var future, out var atStart, out var failure)) return failure;
         if (rate == 0) return Operand.Of(Evaluator.Number(-(future + (payment * periods))));
-        var growth = Math.Pow(1 + rate, periods);
-        return Operand.Of(Evaluator.Number(-(future + (payment * (1 + (rate * type)) * (growth - 1) / rate)) / growth));
+        var growth = Raise(1 + rate, (long)periods);
+        var due = 1 + (rate * (atStart ? 1 : 0));
+        return Operand.Of(Evaluator.Number(-(future + (payment * due * ((growth - 1) / rate))) / growth));
     }
 
     /// <summary>FV: what a present value and a series of payments are worth after <c>nper</c> periods.</summary>
     private static Operand Fv(FunctionCall call)
     {
-        if (!TryAnnuity(call, out var rate, out var periods, out var payment, out var present, out var type, out var failure)) return failure;
+        if (!TryAnnuity(call, out var rate, out var periods, out var payment, out var present, out var atStart, out var failure)) return failure;
         if (rate == 0) return Operand.Of(Evaluator.Number(-(present + (payment * periods))));
-        var growth = Math.Pow(1 + rate, periods);
-        return Operand.Of(Evaluator.Number(-((present * growth) + (payment * (1 + (rate * type)) * (growth - 1) / rate))));
+        var growth = Raise(1 + rate, (long)periods);
+        var due = 1 + (rate * (atStart ? 1 : 0));
+        return Operand.Of(Evaluator.Number(-((present * growth) + (payment * due * ((growth - 1) / rate)))));
+    }
+
+    /// <summary>
+    /// <paramref name="value"/> to the power <paramref name="exponent"/> as Excel raises 1+rate in PV
+    /// and FV: by squaring, from the exponent's lowest bit, each product rounded to a double. Neither
+    /// the correctly rounded power, which <see cref="Math.Pow"/> approximates, nor repeated
+    /// multiplication gives Excel's FV-001, FV-003, PV-001 and PV-003; this gives each of them to the
+    /// bit.
+    /// </summary>
+    private static double Raise(double value, long exponent)
+    {
+        var result = 1.0;
+        var square = value;
+        while (exponent > 0)
+        {
+            if ((exponent & 1) != 0) result *= square;
+            exponent >>= 1;
+            if (exponent > 0) square *= square;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// A number carried as the unevaluated sum of two doubles, about 106 bits, for the payment PMT
+    /// computes beyond a double's precision: in effect the exact payment over Excel's doubles, rounded
+    /// once. Every operation is the standard error-free one (Dekker, Knuth; the QD library's accurate
+    /// forms), so the result is the same on every platform. <see cref="High"/> is the number rounded
+    /// to a double.
+    /// </summary>
+    /// <remarks>
+    /// This is a choice among several evaluations that give all four observed payments, not the one
+    /// they prove. The spike (<c>spikes/exsheet-financial-evaluation/</c>) found 2504 others that give
+    /// them, 304 of them in an x87's 64 bits. Those agree with this one at the rates observed and part
+    /// from it as the rate shrinks, because an x87's 1+rate keeps only the rate's bits above 2^-64: at
+    /// <c>=PMT(0.045/12,12,250000,-5000)</c> 38 of the 304 are one unit in the last place away, at
+    /// <c>=PMT(0.0365/365,365,10000)</c> they give four doubles across 7 units, and at
+    /// <c>=PMT(1/10000000,12,1000)</c> nine across 3390, from the 13th significant digit. PMT-016 to
+    /// PMT-018 ask Excel.
+    /// </remarks>
+    private readonly record struct Wide(double High, double Low)
+    {
+        public static implicit operator Wide(double value) => new(value, 0);
+
+        /// <summary>a + b exactly (Knuth's two-sum).</summary>
+        public static Wide Sum(double a, double b)
+        {
+            var sum = a + b;
+            var b2 = sum - a;
+            return new(sum, (a - (sum - b2)) + (b - b2));
+        }
+
+        /// <summary>a + b exactly, where |a| is at least |b| or a is 0.</summary>
+        private static Wide QuickSum(double a, double b)
+        {
+            var sum = a + b;
+            return new(sum, b - (sum - a));
+        }
+
+        /// <summary>a * b exactly, the rounding error recovered by a fused multiply-add.</summary>
+        private static Wide Product(double a, double b)
+        {
+            var product = a * b;
+            return new(product, Math.FusedMultiplyAdd(a, b, -product));
+        }
+
+        public static Wide operator -(Wide a) => new(-a.High, -a.Low);
+
+        public static Wide operator +(Wide a, Wide b)
+        {
+            var high = Sum(a.High, b.High);
+            var low = Sum(a.Low, b.Low);
+            var sum = QuickSum(high.High, high.Low + low.High);
+            return QuickSum(sum.High, sum.Low + low.Low);
+        }
+
+        public static Wide operator -(Wide a, Wide b) => a + -b;
+
+        public static Wide operator *(Wide a, Wide b)
+        {
+            var product = Product(a.High, b.High);
+            return QuickSum(product.High, product.Low + ((a.High * b.Low) + (a.Low * b.High)));
+        }
+
+        public static Wide operator /(Wide a, Wide b)
+        {
+            var first = a.High / b.High;
+            var rest = a - (b * first);
+            var second = rest.High / b.High;
+            rest -= b * second;
+            var third = rest.High / b.High;
+            return QuickSum(first, second) + third;
+        }
+
+        /// <summary><paramref name="value"/> to a whole power, by squaring.</summary>
+        public static Wide Raise(Wide value, long exponent)
+        {
+            Wide result = 1;
+            var square = value;
+            while (exponent > 0)
+            {
+                if ((exponent & 1) != 0) result *= square;
+                exponent >>= 1;
+                if (exponent > 0) square *= square;
+            }
+            return result;
+        }
     }
 
     /// <summary>

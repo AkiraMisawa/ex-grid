@@ -106,12 +106,14 @@
     },
     {
       "id": "TABLE-011",
-      "source": "documented",
+      "source": "observed",
       "description": "A column the table does not have is #REF!",
       "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
       "cells": {"A1": "=SUM(Positions[Delta])"},
       "check": "A1",
-      "expect": {"value2": "#REF!"}
+      "expect": {"value2": "#REF!"},
+      "engineDiffersByDecision": "ADR-0049 (2026-09-27, an unknown table or column is still accepted on entry): a column the table does not have is #REF!, where Excel refuses the Formula on entry; a deliberate difference since ADR-0047's first and second runs",
+      "excelExpect": {"refusedEntry": true}
     },
     {
       "id": "TABLE-012",
@@ -124,11 +126,13 @@
     },
     {
       "id": "TABLE-013",
-      "source": "documented",
+      "source": "observed",
       "description": "A structured reference to a Linked Table that was never declared is #NAME?",
       "cells": {"ZZ1000": "=Positions[PV]"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NAME?"}
+      "expect": {"value2": "#NAME?"},
+      "engineDiffersByDecision": "ADR-0049 (2026-09-27, an unknown table or column is still accepted on entry): a Linked Table never declared is #NAME?, where Excel refuses the Formula on entry; a deliberate difference since ADR-0047's first and second runs",
+      "excelExpect": {"refusedEntry": true}
     },
     {
       "id": "TABLE-014",

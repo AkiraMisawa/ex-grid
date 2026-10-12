@@ -1,0 +1,99 @@
+a new PowerShell reads en-US
+22:03:50 ARITH-006    agree       1.7 s
+22:03:51 ARITH-064    agree       1.5 s
+22:03:52 CW-018       agree       1.1 s
+22:03:53 CW-027       agree       1.0 s
+22:03:55 CW-028       agree       1.4 s
+22:03:56 CW-029       agree       1.0 s
+22:03:57 DATE-013     agree       1.0 s
+22:03:58 DATE-027     agree       0.9 s
+22:03:59 DATE-029     agree       1.0 s
+22:04:00 ERR-096      agree       1.0 s
+22:04:01 ERR-097      agree       0.9 s
+22:04:02 ERR-098      agree       0.9 s
+22:04:02 ERR-099      agree       0.9 s
+22:04:03 ERR-100      agree       0.9 s
+22:04:04 ERR-101      agree       0.9 s
+22:04:05 ERR-102      agree       0.9 s
+22:04:06 ERR-104      agree       0.9 s
+22:04:07 ERR-105      agree       0.9 s
+22:04:08 ERR-106      agree       1.3 s
+22:04:10 ERR-107      agree       1.4 s
+22:04:11 ERR-108      agree       1.3 s
+22:04:13 LVL-015      agree       1.6 s
+22:04:14 LVL-031      agree       1.3 s
+22:04:15 LVL-032      agree       1.3 s
+22:04:17 LVL-033      agree       1.3 s
+22:04:18 LVL-035      agree       1.3 s
+22:04:19 FF-011       agree       1.3 s
+22:04:20 FF-013       agree       1.4 s
+22:04:22 FF-023       agree       1.3 s
+22:04:23 FF-024       agree       0.9 s
+22:04:24 FF-025       agree       1.3 s
+22:04:25 FF-026       agree       1.3 s
+22:04:27 FF-027       agree       1.3 s
+22:04:28 FF-028       agree       0.9 s
+22:04:29 FF-029       agree       1.3 s
+22:04:30 FF-030       agree       1.3 s
+22:04:32 FF-031       agree       1.4 s
+22:04:33 FF-032       agree       1.3 s
+22:04:34 FF-033       agree       1.4 s
+22:04:35 FF-034       agree       0.9 s
+22:04:37 FF-035       agree       1.3 s
+22:04:37 TEXT-077     agree       0.9 s
+22:04:38 WD-001       agree       0.9 s
+22:04:39 WD-002       agree       0.9 s
+22:04:40 WD-003       agree       0.9 s
+22:04:41 WD-004       agree       0.9 s
+22:04:42 WD-005       agree       0.9 s
+22:04:43 WD-006       agree       0.9 s
+22:04:44 WD-007       agree       0.9 s
+22:04:45 WD-008       agree       0.9 s
+22:04:46 WD-009       agree       0.9 s
+22:04:47 WD-010       agree       0.9 s
+22:04:48 WD-011       agree       1.0 s
+22:04:48 WD-012       agree       0.9 s
+22:04:50 WD-013       agree       1.3 s
+22:04:50 LET-023      blocked     0.0 s
+22:04:50 LET-KEYS-001 blocked     0.0 s
+22:04:50 LET-KEYS-002 blocked     0.0 s
+22:04:50 LET-KEYS-003 blocked     0.0 s
+22:04:50 LET-KEYS-004 blocked     0.0 s
+22:04:50 LET-KEYS-005 blocked     0.0 s
+22:04:50 LET-KEYS-006 blocked     0.0 s
+22:04:50 LET-KEYS-007 blocked     0.0 s
+22:04:50 LET-KEYS-008 blocked     0.0 s
+22:04:50 LET-KEYS-009 blocked     0.0 s
+22:04:50 LET-KEYS-010 blocked     0.0 s
+22:04:50 LET-KEYS-011 blocked     0.0 s
+22:04:50 LET-KEYS-012 blocked     0.0 s
+22:04:50 LET-KEYS-013 blocked     0.0 s
+22:04:50 LET-KEYS-014 blocked     0.0 s
+22:04:51 LET-101      disagree    0.9 s
+22:04:55 LET-102      agree       4.1 s, dialogs: 1
+22:04:56 LET-103      disagree    0.9 s
+22:05:00 LET-104      agree       4.1 s, dialogs: 1
+22:05:04 LET-105      agree       4.1 s, dialogs: 1
+22:05:05 LET-106      disagree    0.9 s
+22:05:06 LET-107      disagree    0.9 s
+22:05:07 LET-110      agree       0.9 s
+22:05:08 LET-111      disagree    0.9 s
+22:05:08 LET-112      disagree    0.9 s
+22:05:12 TYPED-019    agree       3.4 s, dialogs: 1
+22:05:15 TYPED-020    agree       3.3 s, dialogs: 1
+22:05:17 TYPED-028    agree       1.3 s
+22:05:18 TYPED-029    agree       1.4 s
+22:05:19 TYPED-030    agree       0.9 s
+22:05:20 TYPED-031    agree       0.9 s
+22:05:21 TYPED-032    agree       0.9 s
+22:05:22 TYPED-053    agree       0.9 s
+22:05:22 TYPED-054    agree       0.9 s
+
+agree 68, disagree 6, blocked 15, recorded 0 -> %LOCALAPPDATA%\exgrid-layer3\run-2026-10-11-17\update-keys-en-US.json
+DISAGREE LET-101: expected the entry refused; Excel entered it
+DISAGREE LET-103: expected the entry refused; Excel entered it
+DISAGREE LET-106: expected the entry refused; Excel entered it
+DISAGREE LET-107: expected the entry refused; Excel entered it
+DISAGREE LET-111: expected the entry refused; Excel entered it
+DISAGREE LET-112: expected the entry refused; Excel entered it
+-Update: 68 agreeing cases now say source "observed"; disagreeing ones are untouched.

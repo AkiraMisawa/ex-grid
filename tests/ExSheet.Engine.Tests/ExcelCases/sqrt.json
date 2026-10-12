@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SQRT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SQRT(16)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SQRT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a negative number is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SQRT(-16)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "SQRT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SQRT(ABS(-16))"},
