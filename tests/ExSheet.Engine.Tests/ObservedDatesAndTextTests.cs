@@ -69,16 +69,23 @@ public class ObservedDatesAndTextTests
     public void Adr0047_EDate_and_EOMonth_before_1900_are_NUM(string formula) =>
         Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
 
-    [Theory] // ADR-0047: the start is cut down to its day as YEAR, MONTH and DAY cut it, so one between -1 and 0 is below 0, not serial 0 (EOMONTH-016 and 017, EDATE-017, to be asked)
+    [Theory] // ADR-0047: a start between -1 and 0 is serial 0 truncated and -1 cut down to its day; no run has observed which, so it is refused until Excel is asked (EOMONTH-016 and 017, EDATE-017)
     [InlineData("=EOMONTH(-0.5,0)")]
     [InlineData("=EOMONTH(-0.5,1)")]
     [InlineData("=EOMONTH(-0.0001,12)")]
+    [InlineData("=EOMONTH(-0.5,-1)")]
     [InlineData("=EDATE(-0.5,1)")]
     [InlineData("=EDATE(-0.9999,0)")]
-    [InlineData("=YEAR(-0.5)")]
-    [InlineData("=MONTH(-0.5)")]
-    [InlineData("=DAY(-0.5)")]
-    public void Adr0047_EDate_and_EOMonth_read_a_start_between_minus_1_and_0_as_Year_Month_and_Day_do_NUM(string formula) =>
+    [InlineData("=EDATE(-0.5,-1)")]
+    public void Adr0047_EDate_and_EOMonth_refuse_a_start_between_minus_1_and_0(string formula) =>
+        Assert.Equal(Error(ErrorValue.Value), NewSheet().Evaluate(formula));
+
+    [Theory] // ADR-0047: a start of -1 is #NUM! (EOMONTH-004, EDATE-007), and one below it is below 0 truncated or cut down
+    [InlineData("=EOMONTH(-1,0)")]
+    [InlineData("=EDATE(-1,1)")]
+    [InlineData("=EOMONTH(-1.5,1)")]
+    [InlineData("=EDATE(-1.0001,12)")]
+    public void Adr0047_EDate_and_EOMonth_from_minus_1_or_below_are_NUM(string formula) =>
         Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
 
     // ---- NETWORKDAYS and WORKDAY ------------------------------------------------------------------

@@ -138,20 +138,20 @@
     {
       "id": "EOMONTH-016",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a start between -1 and 0 is cut down to its day as YEAR, MONTH and DAY cut it, to -1, below 0, #NUM! as EOMONTH-004's -1 is, not truncated to serial 0's January 1900, 31",
+      "description": "Refused until Excel is asked: a start between -1 and 0 truncated, as the months are, is serial 0, and the end of January 1900 is 31; cut down to its day, as the engine's YEAR, MONTH and DAY cut a serial (YEAR-008 asks), it is -1, below 0, and #NUM! as EOMONTH-004's -1 is",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(-0.5,0)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": "#VALUE!"}
     },
     {
       "id": "EOMONTH-017",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a start between -1 and 0 is below 0 a month on too, #NUM!, not the end of February 1900, 59",
+      "description": "Refused until Excel is asked: the same a month on, the end of February 1900, 59, if the start is truncated to serial 0, or #NUM! if it is cut down to -1",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(-0.5,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

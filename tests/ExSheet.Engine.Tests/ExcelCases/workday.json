@@ -77,6 +77,15 @@
       "cells": {"ZZ1000": "=WORKDAY(2,-1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "WORKDAY-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a start between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; truncated, it would be serial 0, a Saturday, and a workday on is Monday, serial 2",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=WORKDAY(-0.5,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
     }
   ]
 }

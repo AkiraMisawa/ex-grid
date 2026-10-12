@@ -146,11 +146,11 @@
     {
       "id": "EDATE-017",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a start between -1 and 0 is cut down to its day as YEAR, MONTH and DAY cut it, to -1, below 0, #NUM! as EDATE-007's -1 is, not truncated to serial 0, whose day 0 EDATE-016 refuses",
+      "description": "Refused until Excel is asked: a start between -1 and 0 truncated is serial 0, whose day 0 EDATE-016 refuses; cut down to its day, as the engine's YEAR, MONTH and DAY cut a serial, it is -1, below 0, and #NUM! as EDATE-007's -1 is",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(-0.5,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }
