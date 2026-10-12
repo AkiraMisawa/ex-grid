@@ -240,13 +240,15 @@ public static partial class ByHand
                 var laterHold = true;
                 foreach (var later in row.Later ?? [])
                 {
-                    if (Verified(git, tree, row, later, "later record", fetchMissing, report) && LaterHolds(git, row, later, target, report))
-                        covered.AddRange(later.Versions ?? []);
-                    else
+                    var verified = Verified(git, tree, row, later, "later record", fetchMissing, report);
+                    if (verified && LaterHolds(git, row, later, target, report))
                     {
-                        laterHold = false;
-                        if (later.Verdict != "pass") toRun.Add($"{row.Name}'s later record {later.Path}, which reads '{later.Verdict}'");
+                        covered.AddRange(later.Versions ?? []);
+                        continue;
                     }
+                    laterHold = false;
+                    if (later.Verdict != "pass") toRun.Add($"{row.Name}'s later record {later.Path}, which reads '{later.Verdict}'");
+                    else if (verified) toRun.Add($"{row.Name}'s later record {later.Path}, whose paths changed since its commit");
                 }
                 // A MudBlazor version published after the floor record and before X asks for the layer-2 runs at it (2026-10-12).
                 var unrun = WrapperRange.Check(row, covered.Distinct(StringComparer.Ordinal).ToList(), targetTree, git.CommitTime(target), git.CommitTime(commit), mudBlazor, report);

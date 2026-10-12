@@ -441,7 +441,7 @@ public class ByHandTests
         using var repo = new Repo();
         var commit = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)");
         var listed = new Listed([.. Listed.Dated(Published).Versions,
-            new PublishedVersion("9.11.2", null, Listed: false), new PublishedVersion("9.11.3", DateTimeOffset.Parse("2026-10-20T00:00:00Z"), Listed: false),
+            new PublishedVersion("9.11.2", null, Listed: false), new PublishedVersion("9.11.3", DateTimeOffset.Parse("2026-11-20T00:00:00Z"), Listed: false),
             new PublishedVersion("9.5.1", null, Listed: false)]);
 
         var report = Check(repo, commit, commit, listed);
@@ -449,6 +449,8 @@ public class ByHandTests
         Assert.Empty(report.Refusals);
         Assert.Contains(report.Notices, n => n.Contains("WR-10 on Windows or Linux: MudBlazor 9.11.2, 9.11.3, within the range the Wrappers declare, are out of the check because they are unlisted on nuget.org"));
         Assert.DoesNotContain(report.Notices, n => n.Contains("9.5.1"));
+        // 9.11.3 has a date after X, and is still named only as unlisted, not as published after X.
+        Assert.DoesNotContain(report.Notices, n => n.Contains("not asked for") && n.Contains("9.11.3"));
         Assert.Contains(report.Notices, n => n.Contains("Holding on their records, their code unchanged since: WR-10 on Windows or Linux"));
     }
 
@@ -674,6 +676,7 @@ public class ByHandTests
         Assert.Contains(report.Refusals, r => r.Message.Contains("MudBlazor 9.12.0, published within the range"));
         Assert.DoesNotContain(report.Refusals, r => r.Message.Contains("between its record ("));
         Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
+        Assert.Contains(report.Notices, n => n.Contains("To run by hand at") && n.Contains("WR-10 on Windows or Linux's later record verification/2026-10-25-linux-mudblazor-9.12.0/mudblazor-layer2.log, whose paths changed since its commit"));
     }
 
     [Fact] // ADR-0208 (2026-10-12): only WR-10's entry names later records
@@ -798,7 +801,7 @@ public class ByHandTests
         var data = new Dictionary<string, string>
         {
             [RegistrationIndex] = $$"""{"count": 2, "items": [{"@id": "inlined", "items": [{{Leaf("9.5.0", "2026-05-26T19:35:44+00:00")}}]}, {"@id": "{{AwayPage}}"}]}""",
-            [AwayPage] = $$"""{"items": [{{Leaf("9.6.0", "2026-06-27T02:33:22.123+00:00")}}, {{Leaf("9.6.1", "1900-01-01T00:00:00+00:00", listed: false)}}, {{Unpublished}}]}""",
+            [AwayPage] = $$"""{"items": [{{Leaf("9.6.0", "2026-06-27T02:33:22.123+00:00")}}, {{Leaf("9.6.1", "1900-01-01T00:00:00+00:00", listed: false)}}, {{Leaf("9.6.3", "1900-01-01T00:00:00+00:00")}}, {{Unpublished}}]}""",
         };
         var registration = new NuGetRegistration(RegistrationIndex, address =>
         {
@@ -809,7 +812,7 @@ public class ByHandTests
         Assert.True(registration.TryRead(out var versions, out var failure), failure);
         Assert.Equal([RegistrationIndex, AwayPage], addresses);
         Assert.Equal(
-            [new PublishedVersion("9.5.0", DateTimeOffset.Parse("2026-05-26T19:35:44Z")), new PublishedVersion("9.6.0", DateTimeOffset.Parse("2026-06-27T02:33:22.123Z")), new PublishedVersion("9.6.1", null, Listed: false), new PublishedVersion("9.6.2", null, Listed: false)],
+            [new PublishedVersion("9.5.0", DateTimeOffset.Parse("2026-05-26T19:35:44Z")), new PublishedVersion("9.6.0", DateTimeOffset.Parse("2026-06-27T02:33:22.123Z")), new PublishedVersion("9.6.1", null, Listed: false), new PublishedVersion("9.6.3", null), new PublishedVersion("9.6.2", null, Listed: false)],
             versions);
 
         // Read once.

@@ -38,8 +38,8 @@ change could change its result.
   - for WR-10, a record its entry names besides the floor record is refused as the floor record would be,
     its paths compared from its own commit; or a stable MudBlazor version within the range the Wrappers
     declare, listed on nuget.org and published before X's commit time by its registration index or given no
-    date there, is not among the versions its records' layer-2 runs covered; or that index cannot be read *(2026-10-12, how the release workflow checks
-    the WR-10 row's notes below)*.
+    date there, is not among the versions its records' layer-2 runs covered; or that index cannot be read
+    *(2026-10-12, how the release workflow checks the WR-10 row's notes below)*.
 - **The records are indexed in `verification/by-hand.json`.** For each row it names the same paths as
   this table, the row's latest record, the commit that record was made at, and the record's tag. *(2026-10-12,
   how the release workflow checks the WR-10 row: for WR-10 each record names besides the MudBlazor versions

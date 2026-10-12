@@ -25,7 +25,7 @@
 #   every row checked by hand holding on a record its code has not changed since, judged at the
 #   tagged commit, the record's commit fetched through its verified/* tag, named for the record's
 #   directory; WR-10's records naming every stable MudBlazor version nuget.org gives as published
-#   and listed within the range the Wrappers declare before X's commit time, or gives no date for — and CI's long run, the soak and ST-1 at 10⁶ rows. Its notes carry a stable version's blocks, its Signed off block in a
+#   and listed within the range the Wrappers declare before X's commit time, or lists and gives no date for — and CI's long run, the soak and ST-1 at 10⁶ rows. Its notes carry a stable version's blocks, its Signed off block in a
 #   pending form of its own that says the sign-off is being made against this candidate; ci.yml's
 #   build of the Docs Site reads them by form, and refuses the stable form there (ADR-0190,
 #   2026-10-12). The release check does not read its Signed off block. Its GitHub release is a
