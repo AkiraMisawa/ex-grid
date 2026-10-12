@@ -324,7 +324,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Value, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: R1C1 text that names no place is #REF!, as A1 text's is: A1 text read as R1C1, a number past the Sheet's edge as XFE1 is (INDIRECT-017), another Sheet, a space; parts of two kinds joined (INDIRECT-058, 062; 075 to 077 ask the other orders), a # after anything but one cell or after one that does not spill, and a table never declared; with an offset or a number 0 beside the number, the Sheet or the join, whatever they would read
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: R1C1 text that names no place is #REF!, as A1 text's is: A1 text read as R1C1 (INDIRECT-035), another Sheet (INDIRECT-008), a space, parts of two kinds joined (INDIRECT-058, 062; 075 to 077 ask the other orders), a # after one cell that does not spill (A1#'s INDIRECT-042; 079 asks it), and a table never declared; and the engine's #REF!, which no run has observed, for a number past the Sheet's edge, as XFE1 is in A1 style (INDIRECT-017; 074 asks it); with an offset or a number 0 beside the number, the Sheet or the join, whatever they would read
     [InlineData("B3")]
     [InlineData("R1048577C2")]
     [InlineData("R3C16385")]
@@ -359,9 +359,7 @@ public class IndirectTests
     [InlineData("R0C2:R3")]
     [InlineData("R[-5]C[-1]:C2")]
     [InlineData("R3C2#")]
-    [InlineData("R3#")]
-    [InlineData("C2#")]
-    [InlineData("R2C2:R3C2#")]
+    [InlineData("R2C2:R3#")]
     [InlineData("R1048577C2#")]
     [InlineData("Sheet2!R1C1#")]
     [InlineData("#")]
@@ -373,6 +371,30 @@ public class IndirectTests
         sheet.Enter("C2", $"=INDIRECT(\"{text}\",FALSE)");
 
         Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
+    }
+
+    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an R1C1 range, row or column is refused with #VALUE!: the second area pass observed it after one cell only (INDIRECT-060), and the readings part, no place or the Spill Range of a cell it names or the cells themselves (INDIRECT-090, 091 ask it)
+    [InlineData("C2", "R2C2:R3C2#")]
+    [InlineData("C2", "R1C1:R2C1#")]
+    [InlineData("C2", "R3#")]
+    [InlineData("C2", "C1#")]
+    [InlineData("C2", "R2:R3#")]
+    [InlineData("C2", "C1:C2#")]
+    [InlineData("C2", "R[1]#")]
+    [InlineData("C2", "C[-1]#")]
+    [InlineData("C2", "RC[-1]:R[1]C[-1]#")]
+    [InlineData("C2", "r3#")]
+    [InlineData("C2", "Sheet1!R3#")]
+    [InlineData("ZZ1000", "R1C1:R2C1#")]
+    public void ADR0124_indirect_refuses_a_hash_after_an_r1c1_range_row_or_column(string cell, string text)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("A1", "=SEQUENCE(3)");
+        sheet.Enter(cell, $"=SUM(INDIRECT(\"{text}\",FALSE))");
+
+        Assert.Equal(ErrorValue.Value, sheet.Error(cell));
+        // In A1 style a # after a range is the engine's #REF!, which no run has observed (INDIRECT-092 asks it).
+        Assert.Equal(ErrorValue.Ref, sheet.Evaluate("=SUM(INDIRECT(\"A1:A2#\"))").Error);
     }
 
     [Theory] // ADR-0124 (2026-10-12), the area passes (INDIRECT-036, 045, 050): relative R1C1 text counts from the Formula's own cell, R and C each with a number or an offset in brackets
