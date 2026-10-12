@@ -1,9 +1,13 @@
-// The second search for the evaluation Excel uses for PMT, PV, FV, NPV and XNPV (2026-10-12, after the area pass).
+// The second and third searches for the evaluation Excel uses for PMT, PV, FV, NPV and XNPV (2026-10-12, after
+// the first area pass, and again after the second, which added PMT's accurate-e families, the financial power,
+// NPV's log1p discounts, XNPV's correctly rounded exponential, and the check of every survivor against the Error
+// Values Excel answered).
 //
-//     dotnet run spikes/exsheet-financial-evaluation/Search.cs             # the table
-//     dotnet run spikes/exsheet-financial-evaluation/Search.cs -- --json   # also rewrites search-cs.json
-//     dotnet run spikes/exsheet-financial-evaluation/Search.cs -- --predict "=PMT(0.05/12,36,250000,-5000)" ...
-//     dotnet run spikes/exsheet-financial-evaluation/Search.cs -- --refusals   # the engine's refusals against where the survivors part
+//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs             # the table
+//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --only PMT,NPV   # some functions
+//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --json   # also rewrites search-cs.json
+//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --predict "=PMT(0.05/12,36,250000,-5000)" ...
+//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --refusals   # the engine against the survivors
 //
 // Acceptance experiment only (ADR-0047, ADR-0202): nothing here ships. search.py, the first search, tried
 // some 13,000 evaluations against the seventeenth run's doubles. This one runs under .NET, because the
@@ -36,6 +40,8 @@ var observations = Observations.Load(root);
 var json = args.Contains("--json");
 var predict = new List<string>();
 for (var i = 0; i < args.Length - 1; i++) if (args[i] == "--predict") predict.Add(args[i + 1]);
+string[]? only = null;
+for (var i = 0; i < args.Length - 1; i++) if (args[i] == "--only") only = args[i + 1].Split(',');
 
 Console.WriteLine($"{observations.Count} Excel doubles ({RuntimeLabel()})");
 foreach (var o in observations) Console.WriteLine($"  {o.Id,-8} {o.Formula,-42} {o.Excel.ToString("R", CultureInfo.InvariantCulture)}  ({o.Files} results files)");
@@ -56,6 +62,8 @@ foreach (var (name, candidates) in new (string, IEnumerable<Candidate>)[]
     ("XNPV", Xnpv.Candidates()),
 })
 {
+    if (only is not null && !only.Contains(name)) continue;
+    var clock = System.Diagnostics.Stopwatch.StartNew();
     var cases = observations.Where(o => o.Function == name && !o.RateIsZero).ToList();
     var rows = new List<(Candidate Candidate, int Matches, Dictionary<string, long> Off)>();
     foreach (var candidate in candidates)
@@ -75,14 +83,31 @@ foreach (var (name, candidates) in new (string, IEnumerable<Candidate>)[]
     rows.Sort((a, b) => b.Matches != a.Matches ? b.Matches.CompareTo(a.Matches) : a.Off.Values.Sum(v => Math.Min(Math.Abs((double)v), 1e6)).CompareTo(b.Off.Values.Sum(v => Math.Min(Math.Abs((double)v), 1e6))));
     var all = rows.Where(r => r.Matches == cases.Count).ToList();
     survivorsByFunction[name] = all.Select(r => r.Candidate).ToList();
-    Console.WriteLine($"\n{name}: {cases.Count} observed doubles at a rate other than 0, {rows.Count} candidates, {all.Count} reproduce all");
+    // The Error Values Excel answered (2026-10-12, later): which each survivor gives.
+    var errors = Observations.Errors.Values.Where(e => e.Function == name).OrderBy(e => e.Id, StringComparer.Ordinal).ToList();
+    var errorRecord = new Dictionary<string, List<string>>();
+    foreach (var (candidate, _, _) in all)
+    {
+        var missed = errors.Where(e => Refusals.Answer(candidate, e.Input) != e.Error).Select(e => $"{e.Id} {Refusals.Answer(candidate, e.Input)} for {e.Error}").ToList();
+        errorRecord[candidate.Short] = missed;
+    }
+    Console.WriteLine($"\n{name}: {cases.Count} observed doubles at a rate other than 0, {rows.Count} candidates, {all.Count} reproduce all ({clock.Elapsed.TotalSeconds:F0} s)");
     var perCase = cases.ToDictionary(o => o.Id, o => rows.Count(r => !r.Off.ContainsKey(o.Id)));
     Console.WriteLine("  reproduced by: " + string.Join(", ", perCase.Select(p => $"{p.Key} {p.Value}")));
     foreach (var (candidate, matches, off) in rows.Take(14))
-        Console.WriteLine($"  {matches}/{cases.Count}  {candidate.Label}" + (off.Count > 0 ? $"   [ulps off: {string.Join(", ", off.Select(p => $"{p.Key} {Signed(p.Value)}"))}]" : ""));
-    var families = rows.GroupBy(r => r.Candidate.Family).Select(g => new { family = g.Key, candidates = g.Count(), best = g.Max(r => r.Matches), reproduceAll = g.Count(r => r.Matches == cases.Count) }).OrderByDescending(f => f.best).ToList();
-    Console.WriteLine("  by family (candidates, best match count, reproduce all):");
-    foreach (var f in families) Console.WriteLine($"    {f.best}/{cases.Count}  {f.candidates,6}  {f.reproduceAll,4}  {f.family}");
+        Console.WriteLine($"  {matches}/{cases.Count}  {candidate.Label}" + (off.Count > 0 ? $"   [ulps off: {string.Join(", ", off.Select(p => $"{p.Key} {Signed(p.Value)}"))}]" : "")
+            + (errorRecord.TryGetValue(candidate.Short, out var missedErrors) ? (missedErrors.Count == 0 ? $"   [and every observed Error Value, {errors.Count}]" : $"   [misses the Error Values {string.Join(", ", missedErrors)}]") : ""));
+    // The observed doubles no candidate of a family gives: the cases that rule the whole family out (2026-10-12, later).
+    var families = rows.GroupBy(r => r.Candidate.Family).Select(g => new
+    {
+        family = g.Key,
+        candidates = g.Count(),
+        best = g.Max(r => r.Matches),
+        reproduceAll = g.Count(r => r.Matches == cases.Count),
+        reproducedByNone = cases.Where(o => g.All(r => r.Off.ContainsKey(o.Id))).Select(o => o.Id).ToList(),
+    }).OrderByDescending(f => f.best).ToList();
+    Console.WriteLine("  by family (best match count, candidates, reproduce all; the observed doubles no candidate of the family gives):");
+    foreach (var f in families) Console.WriteLine($"    {f.best}/{cases.Count}  {f.candidates,6}  {f.reproduceAll,4}  {f.family}" + (f.reproducedByNone.Count > 0 ? $"   [none gives {string.Join(", ", f.reproducedByNone)}]" : ""));
     functions[name] = new
     {
         cases = cases.Select(o => o.Id).ToList(),
@@ -91,6 +116,8 @@ foreach (var (name, candidates) in new (string, IEnumerable<Candidate>)[]
         reproducedBy = perCase,
         byFamily = families,
         reproduceAll = all.Select(r => r.Candidate.Label).ToList(),
+        errorValues = errors.Select(e => $"{e.Id} {e.Formula} {e.Error}").ToList(),
+        survivorsMissingErrorValues = errorRecord.Where(p => p.Value.Count > 0).ToDictionary(p => p.Key, p => p.Value),
         best = rows.Where(r => r.Matches < cases.Count).Take(40).Select(r => new { candidate = r.Candidate.Label, matches = r.Matches, ulpsOff = r.Off }).ToList(),
         every = rows.Select(r => $"{r.Matches}/{cases.Count} {r.Candidate.Short}").ToList(),
     };
@@ -289,9 +316,15 @@ record Observation(string Id, string Formula, string Function, double Excel, Inp
     public bool RateIsZero => Input.Rate == 0;
 }
 
+/// <summary>An Error Value Excel answered (2026-10-12, the second area pass): a survivor is checked against these too.</summary>
+record ErrorObservation(string Id, string Formula, string Function, string Error, Input Input);
+
 static class Observations
 {
     private static readonly string[] Areas = ["fv", "pv", "pmt", "npv", "xnpv"];
+
+    /// <summary>Every Error Value Excel answered for a financial call whose arguments are numbers, by case and formula.</summary>
+    public static readonly Dictionary<(string, string), ErrorObservation> Errors = [];
 
     public static List<Observation> Load(string root)
     {
@@ -317,6 +350,14 @@ static class Observations
             {
                 if (!c.TryGetProperty("area", out var area) || !Areas.Contains(area.GetString())) continue;
                 if (!c.TryGetProperty("excel", out var excel) || excel.ValueKind != JsonValueKind.Object) continue;
+                if (excel.TryGetProperty("kind", out var errorKind) && errorKind.GetString() == "error" && excel.TryGetProperty("formula", out var errorFormula))
+                {
+                    var errorId = c.GetProperty("id").GetString()!;
+                    var text = errorFormula.GetString()!;
+                    if (Regex.IsMatch(text, @"^=(FV|PV|PMT|NPV|XNPV)\(") && !Regex.IsMatch(text, @"\((C2|A6),"))
+                        Errors[(errorId, text)] = new ErrorObservation(errorId, text, Regex.Match(text, "^=([A-Z]+)").Groups[1].Value, excel.GetProperty("value2").GetString()!, Parse(text, cells[errorId]));
+                    continue;
+                }
                 if (!excel.TryGetProperty("kind", out var kind) || kind.GetString() != "number") continue;
                 var id = c.GetProperty("id").GetString()!;
                 var formula = excel.GetProperty("formula").GetString()!;
@@ -400,6 +441,9 @@ readonly record struct X(BigInteger M, int E)
 
     public static X Of(double d)
     {
+        // A NaN or an infinity has no dyadic value; reading its bits as one fed Fixed.Exp a 2^1000 argument,
+        // whose series never ends (FV-017's rate of -9 made Goldberg's log1p NaN, 2026-10-12).
+        if (!double.IsFinite(d)) throw new NoAnswer("#NUM!");
         if (d == 0) return Zero;
         var bits = BitConverter.DoubleToInt64Bits(d);
         var exponent = (int)((bits >> 52) & 0x7FF);
@@ -614,9 +658,111 @@ static class Annuity
         ("doubles: 1+rate rounded", "squaring (whole n), 1/squaring (negative n), Math.Exp(n*Math.Log(1+r)) (positive other n), 1 over Math.Exp(-n*Math.Log(1+r)) (negative other n); e = g-1", (r, n) => Minus1(Pow.OneOver(1 + r, n, asPowerOperator: false))),
         ("doubles: 1+rate rounded", "squaring (whole n), 1/squaring (negative n), the ^ operator's (positive other n), 1 over the ^ operator's to -n (negative other n), the ^ operator's errors at 1+r = 0; e = g-1", (r, n) => Minus1(Pow.OneOver(1 + r, n, asPowerOperator: true))),
         ("doubles: 1+rate rounded", "squaring (whole n), 1/squaring (negative n), e^(n ln(1+r)) with ln and exp correctly rounded (other n, 1+r > 0; else as g0); e = g-1", (r, n) => Minus1(n == Math.Floor(n) || 1 + r <= 0 ? Pow.Squaring(1 + r, n) : Fixed.Exp(X.Mul(X.Of(n), Fixed.Ln(X.Of(1 + r), 53), 53), 53).ToDouble())),
+        // The second area pass (2026-10-12, later): g20 with ln and exp correctly rounded, the financial power
+        // XNPV-013 asks for (Pow.Financial).
+        ("doubles: 1+rate rounded", "the financial power: squaring (whole n), 1 over the power to -n (negative n), the square root at 0.5, else e^(n ln(1+r)) with ln and exp correctly rounded; a negative 1+r, the odd root where 1/n is odd, else #NUM!; 1+r = 0, 0^0 #NUM! and 0 to a negative power #DIV/0!; e = g-1", (r, n) => Minus1(Pow.Financial(1 + r, n, correctlyRounded: true))),
+        ("doubles: 1+rate rounded", "the financial power with the platform's ln and exp (Math.Log, Math.Exp); e = g-1", (r, n) => Minus1(Pow.Financial(1 + r, n, correctlyRounded: false))),
     ];
 
-    /// <summary>The growths PMT is tried with: those after them differ from g0 only at an nper PMT refuses, or at a rate of -1.</summary>
+    /// <summary>
+    /// PMT's families added by the second area pass (2026-10-12, later), each in doubles: (1+rate)^n - 1 carried
+    /// accurately by every pairing of a log1p (correctly rounded, the C library's, Goldberg's from a correctly
+    /// rounded or the platform's log, or log(1+r) corrected by (r-((1+r)-1))/(1+r)), the product n*L rounded or
+    /// exact, an exp (correctly rounded, the platform's, or 1+e) and an expm1 (correctly rounded, the C library's,
+    /// Kahan's from a correctly rounded or the platform's exp and log, or g-1); (1+rate)^n - 1 squared without
+    /// forming 1+rate, every way of squaring and of combining; and the period-by-period recurrence e += r(1+e)
+    /// in five orders.
+    /// </summary>
+    private static IEnumerable<(string Family, string Name, Func<double, double, Growth> Raise)> PmtFamilies()
+    {
+        (string, Func<double, double>)[] logs =
+        [
+            ("log1p cr", Pow.Log1pCr),
+            ("log1p (libm)", Pow.Log1pLibm),
+            ("Goldberg's log1p, log cr", x => Pow.Goldberg(x, Pow.LogCr)),
+            ("Goldberg's log1p, Math.Log", x => Pow.Goldberg(x, Math.Log)),
+            ("log(1+r) cr + (r-((1+r)-1))/(1+r)", x => Pow.Corrected(x, Pow.LogCr)),
+            ("Math.Log(1+r) + (r-((1+r)-1))/(1+r)", x => Pow.Corrected(x, Math.Log)),
+        ];
+        (string, Func<double, double>?)[] exps = [("exp cr", Pow.ExpCr), ("Math.Exp", Math.Exp), ("g = 1+e", null)];
+        (string, Func<double, double>?)[] expm1s =
+        [
+            ("expm1 cr", Pow.Expm1Cr),
+            ("expm1 (libm)", Pow.Expm1Libm),
+            ("Kahan's expm1, exp and log cr", x => Pow.Kahan(x, Pow.ExpCr, Pow.LogCr)),
+            ("Kahan's expm1, Math.Exp and Math.Log", x => Pow.Kahan(x, Math.Exp, Math.Log)),
+            ("e = g-1", null),
+        ];
+        foreach (var (logName, log) in logs)
+        foreach (var (expName, exp) in exps)
+        foreach (var (expm1Name, expm1) in expm1s)
+        {
+            if (exp is null && expm1 is null) continue;
+            yield return ("accurate e in doubles (second pass)", $"L={logName}, x=n*L rounded, g={expName}, e={expm1Name}", (r, n) =>
+            {
+                var x = n * log(r);
+                if (!double.IsFinite(x)) throw new NoAnswer("#NUM!");
+                var e = expm1 is null ? exp!(x) - 1 : expm1(x);
+                return new Growth(X.Of(exp is null ? 1 + e : exp(x)), X.Of(e));
+            });
+        }
+        foreach (var (logName, log) in logs)
+        foreach (var fromE in new[] { false, true })
+        {
+            yield return ("accurate e in doubles (second pass)", $"L={logName}, x=n*L exact, g={(fromE ? "1+e" : "exp cr")}, e=expm1 cr", (r, n) =>
+            {
+                var l = log(r);
+                if (!double.IsFinite(l)) throw new NoAnswer("#NUM!");
+                var x = X.MulExact(X.Of(n), X.Of(l));
+                var e = Fixed.Expm1(x, 53).ToDouble();
+                return new Growth(X.Of(fromE ? 1 + e : Fixed.Exp(x, 53).ToDouble()), X.Of(e));
+            });
+        }
+        (string, Func<double, double>)[] squares =
+        [
+            ("e*(2+e)", e => e * (2 + e)), ("2e+e*e", e => 2 * e + e * e), ("fma(e,e,2e)", e => Math.FusedMultiplyAdd(e, e, 2 * e)), ("(e+e)+e*e", e => (e + e) + e * e),
+        ];
+        (string, Func<double, double, double>)[] combines =
+        [
+            ("a+b+a*b", (a, b) => a + b + a * b), ("a+(b+a*b)", (a, b) => a + (b + a * b)), ("fma(a,b,a+b)", (a, b) => Math.FusedMultiplyAdd(a, b, a + b)),
+            ("a*(1+b)+b", (a, b) => a * (1 + b) + b), ("a+b*(1+a)", (a, b) => a + b * (1 + a)), ("(a+b)+a*b", (a, b) => (a + b) + a * b),
+        ];
+        foreach (var (squareName, square) in squares)
+        foreach (var (combineName, combine) in combines)
+        {
+            yield return ("(1+r)^n-1 squared without 1+r (second pass)", $"e squared as {squareName}, combined as {combineName}, from e=r; g=1+e", (r, n) =>
+            {
+                if (n != Math.Floor(n) || n < 0) throw new NoAnswer("#VALUE!");
+                var k = (long)n;
+                var result = 0.0;
+                var power = r;
+                while (k > 0)
+                {
+                    if ((k & 1) != 0) result = combine(result, power);
+                    k >>= 1;
+                    if (k > 0) power = square(power);
+                }
+                return new Growth(X.Of(1 + result), X.Of(result));
+            });
+        }
+        (string, Func<double, double, double>)[] steps =
+        [
+            ("e+r*(1+e)", (e, r) => e + r * (1 + e)), ("(e+r)+r*e", (e, r) => (e + r) + r * e), ("fma(r,e,e+r)", (e, r) => Math.FusedMultiplyAdd(r, e, e + r)),
+            ("e+(r+r*e)", (e, r) => e + (r + r * e)), ("e*r+(e+r)", (e, r) => e * r + (e + r)),
+        ];
+        foreach (var (stepName, step) in steps)
+        {
+            yield return ("period by period (second pass)", $"e = {stepName} each period, from 0; g=1+e", (r, n) =>
+            {
+                if (n != Math.Floor(n) || n < 0 || n > 100000) throw new NoAnswer("#VALUE!");
+                var e = 0.0;
+                for (var i = 0; i < (long)n; i++) e = step(e, r);
+                return new Growth(X.Of(1 + e), X.Of(e));
+            });
+        }
+    }
+
+    /// <summary>The growths PMT is tried with: those after them differ from g0 only at an nper PMT refuses, or at a rate of -1; g22, the financial power, and the second pass's families are tried too.</summary>
     private const int PmtGrowths = 18;
 
     private static Growth Minus1(double g) => double.IsFinite(g) ? new(X.Of(g), X.AddExact(X.Of(g), X.Of(-1))) : throw new NoAnswer("#NUM!");
@@ -734,7 +880,40 @@ static class Annuity
         ("M33 -(pv+fv*v)*r/((1+r*t)*(1-v)), v=1/g", (r, pv, fv, t, g, e) => { var v = One / g; return -(pv + fv * v) * r / ((One + r * t) * (One - v)); }),
         ("M34 -(pv+fv*v)/((1+r*t)*((1-v)/r)), v=1/g", (r, pv, fv, t, g, e) => { var v = One / g; return -(pv + fv * v) / ((One + r * t) * ((One - v) / r)); }),
         ("M35 -(pv+fv*v)*r/((1+r*t)*(e*v)), v=1/g", (r, pv, fv, t, g, e) => { var v = One / g; return -(pv + fv * v) * r / ((One + r * t) * (e * v)); }),
+        // The second area pass (2026-10-12, later).
+        ("M36 -(fv+pv*g)*r/(e*(1+r*t))", (r, pv, fv, t, g, e) => -(fv + pv * g) * r / (e * (One + r * t))),
+        ("M37 -((fv+pv*g)/e)*(r/(1+r*t))", (r, pv, fv, t, g, e) => -((fv + pv * g) / e) * (r / (One + r * t))),
+        ("M38 -(fv+pv*g)/(e*((1+r*t)/r))", (r, pv, fv, t, g, e) => -(fv + pv * g) / (e * ((One + r * t) / r))),
+        ("M39 -(pv + (pv+fv)/e)*r/(1+r*t)", (r, pv, fv, t, g, e) => -(pv + (pv + fv) / e) * r / (One + r * t)),
+        ("M40 -(pv*g+fv)*r/e/(1+r*t)", (r, pv, fv, t, g, e) => -(pv * g + fv) * r / e / (One + r * t)),
+        ("M41 -(r*(fv+pv*g))/(e*(1+r*t))", (r, pv, fv, t, g, e) => -(r * (fv + pv * g)) / (e * (One + r * t))),
     ];
+
+    /// <summary>
+    /// Whole evaluations of PMT that are not a form over (g, e) (2026-10-12, the second area pass): LibreOffice's
+    /// ScGetPMT, which reaches the payment at the start through expm1((n+1) log1p(r)) - r, with correctly rounded
+    /// functions or the C library's.
+    /// </summary>
+    private static IEnumerable<Candidate> PmtSchemes()
+    {
+        foreach (var (name, log1p, exp, expm1) in new (string, Func<double, double>, Func<double, double>, Func<double, double>)[]
+        {
+            ("correctly rounded", Pow.Log1pCr, Pow.ExpCr, Pow.Expm1Cr),
+            ("the C library's", Pow.Log1pLibm, Math.Exp, Pow.Expm1Libm),
+        })
+        {
+            yield return new Candidate("LibreOffice's ScGetPMT (second pass)", $"LibreOffice: L=log1p(r), -(fv+pv*exp(n*L))*r/expm1(n*L), at the start /(expm1((n+1)*L)-r) | {name}", $"LO {name}", input =>
+            {
+                var r = input.Rate;
+                var n = input.Periods;
+                var pv = input.Third;
+                var fv = input.Fourth;
+                var l = log1p(r);
+                var payment = input.Type != 0 ? (fv + pv * exp(n * l)) * r / (expm1((n + 1) * l) - r) : (fv + pv * exp(n * l)) * r / expm1(n * l);
+                return -payment;
+            });
+        }
+    }
 
     // How a payment at the start is reached: inside the form, or from the payment at the end stored to a double.
     private static readonly (string Name, Func<double, double, double>? Due)[] Dues =
@@ -747,17 +926,20 @@ static class Annuity
         ("at the start: end / (1+r) exact, rounded once", (end, r) => X.Div(X.Of(end), X.AddExact(X.One, X.Of(r)), 53).ToDouble()),
     ];
 
-    public static string[] GrowthNames => [.. Growths.Select((g, i) => $"g{i}: {g.Name} ({g.Family})")];
+    public static string[] GrowthNames => [.. Growths.Select(g => (g.Family, g.Name)).Concat(PmtFamilies().Select(g => (g.Family, g.Name))).Select((g, i) => $"g{i}: {g.Name} ({g.Family}){(i >= Growths.Length ? ", PMT only" : "")}")];
     public static string[] FormNames => [.. FvForms.Concat(PvForms).Concat(PmtForms).Select(f => f.Name)];
     public static string[] DueNames => [.. Dues.Select((d, i) => $"d{i}: {d.Name}")];
 
     public static IEnumerable<Candidate> Candidates(string function)
     {
+        if (function == "PMT") foreach (var scheme in PmtSchemes()) yield return scheme;
         var forms = function switch { "FV" => FvForms, "PV" => PvForms, _ => PmtForms };
         var dues = function == "PMT" ? Dues : Dues[..1];
-        foreach (var (gi, (family, growthName, raise)) in Growths.Index())
+        var growths = Growths.Select(g => (g.Family, g.Name, g.Raise, DoublesOnly: false)).ToList();
+        if (function == "PMT") growths.AddRange(PmtFamilies().Select(g => (g.Family, g.Name, g.Raise, DoublesOnly: true)));
+        foreach (var (gi, (family, growthName, raise, doublesOnly)) in growths.Index())
         {
-            if (function == "PMT" && gi >= PmtGrowths) continue;
+            if (function == "PMT" && gi >= PmtGrowths && gi < Growths.Length - 2) continue;
             var cache = new Dictionary<(double, double), (Growth? Growth, Exception? Failure)>();
             Growth GrowthOf(double r, double n)
             {
@@ -769,7 +951,7 @@ static class Annuity
                 }
                 return known.Growth ?? throw known.Failure!;
             }
-            foreach (var p in new[] { 53, 64 })
+            foreach (var p in doublesOnly ? new[] { 53 } : new[] { 53, 64 })
             foreach (var (formName, form) in forms)
             foreach (var (di, (dueName, due)) in dues.Index())
             {
@@ -865,8 +1047,69 @@ static class Pow
         return exact;
     }
 
+    /// <summary>
+    /// The financial power (2026-10-12, the second area pass): FV, PV and XNPV raise 1+rate by squaring to a whole
+    /// number, to a negative one as 1 over the power to its absolute value (FV-007, FV-022, PV-009), to 0.5 by the
+    /// square root (FV-016) and to any other by e^(n ln b) (FV-006, PV-005), the odd root of a negative base where
+    /// 1/n is an odd whole number (FV-017) and #NUM! for any other fraction of one (PV-011), and at a base of 0
+    /// 0^0 as #NUM! (FV-018) and 0 to a negative power as #DIV/0! (FV-020, FV-021, PV-012). With
+    /// <paramref name="correctlyRounded"/>, ln and exp are correctly rounded (XNPV-013); else the platform's.
+    /// </summary>
+    public static double Financial(double b, double n, bool correctlyRounded)
+    {
+        if (b == 0 && n == 0) throw new NoAnswer("#NUM!");
+        if (b == 0 && n < 0) throw new NoAnswer("#DIV/0!");
+        if (n < 0) return 1 / Financial(b, -n, correctlyRounded);
+        if (n == Math.Floor(n)) return n < 9007199254740992 ? Whole(b, (long)n) : throw new NoAnswer("#VALUE!");
+        if (b == 0) return 0;
+        Func<double, double> exp = correctlyRounded ? ExpCr : Math.Exp;
+        Func<double, double> log = correctlyRounded ? LogCr : Math.Log;
+        if (b > 0) return n == 0.5 ? Math.Sqrt(b) : exp(n * log(b));
+        var root = 1 / n;
+        if (double.IsFinite(root) && root == Math.Floor(root) && Math.Abs(root % 2) == 1) return -exp(log(-b) * n);
+        throw new NoAnswer("#NUM!");
+    }
+
+    public static double LogCr(double x)
+    {
+        if (!(x > 0 && double.IsFinite(x))) return x == 0 ? double.NegativeInfinity : double.NaN;
+        if (!LnCache.TryGetValue(x, out var y)) LnCache[x] = y = Fixed.Ln(X.Of(x), 53).ToDouble();
+        return y;
+    }
+    public static double Log1pLibm(double x) => Libm.Log1p(x);
+    public static double Expm1Libm(double x) => Libm.Expm1(x);
+
+    /// <summary>Goldberg's log1p from a log: log(1+x) * x / ((1+x) - 1).</summary>
+    public static double Goldberg(double x, Func<double, double> log)
+    {
+        var u = 1 + x;
+        return u == 1 ? x : log(u) * x / (u - 1);
+    }
+
+    /// <summary>log1p as log(1+x) corrected by the part of x that 1+x lost: log(u) + (x - (u-1))/u.</summary>
+    public static double Corrected(double x, Func<double, double> log)
+    {
+        var u = 1 + x;
+        return log(u) + (x - (u - 1)) / u;
+    }
+
+    /// <summary>Kahan's expm1 from an exp and a log: (u-1) * x / log u.</summary>
+    public static double Kahan(double x, Func<double, double> exp, Func<double, double> log)
+    {
+        var u = exp(x);
+        if (u == 1) return x;
+        var um1 = u - 1;
+        return um1 == -1 ? -1 : um1 * x / log(u);
+    }
+
     public static double Log1pCr(double r) => Fixed.Log1p(X.Of(r), 53).ToDouble();
-    public static double ExpCr(double x) => Fixed.Exp(X.Of(x), 53).ToDouble();
+    private static readonly Dictionary<double, double> ExpCache = [];
+    private static readonly Dictionary<double, double> LnCache = [];
+    public static double ExpCr(double x)
+    {
+        if (!ExpCache.TryGetValue(x, out var y)) ExpCache[x] = y = !double.IsFinite(x) ? Math.Exp(x) : x > 710 ? double.PositiveInfinity : x < -746 ? 0 : Fixed.Exp(X.Of(x), 53).ToDouble();
+        return y;
+    }
     public static double Expm1Cr(double x) => Fixed.Expm1(X.Of(x), 53).ToDouble();
 
     /// <summary>Goldberg's log1p from the platform's log: log(1+x) * x / ((1+x) - 1).</summary>
@@ -883,6 +1126,25 @@ static class Pow
         if (u == 1) return x;
         var um1 = u - 1;
         return um1 == -1 ? -1 : um1 * x / Math.Log(u);
+    }
+}
+
+/// <summary>The C library's log1p and expm1 (glibc's here), which .NET does not expose.</summary>
+static class Libm
+{
+    [System.Runtime.InteropServices.DllImport("libm.so.6", EntryPoint = "log1p")] private static extern double CLog1p(double x);
+    [System.Runtime.InteropServices.DllImport("libm.so.6", EntryPoint = "expm1")] private static extern double CExpm1(double x);
+
+    public static double Log1p(double x)
+    {
+        try { return CLog1p(x); }
+        catch (DllNotFoundException) { throw new NoAnswer("no libm"); }
+    }
+
+    public static double Expm1(double x)
+    {
+        try { return CExpm1(x); }
+        catch (DllNotFoundException) { throw new NoAnswer("no libm"); }
     }
 }
 
@@ -920,6 +1182,11 @@ static class Npv
         ("e^(i ln b), ln and exp correctly rounded; v/d", (r, b, n) => [.. Enumerable.Range(1, n).Select(i => (true, R.Of(Fixed.Exp(X.Mul(X.Of(i), Fixed.Ln(b, R.P), R.P), R.P))))]),
         ("e^(-i ln b), ln and exp correctly rounded; v*d", (r, b, n) => [.. Enumerable.Range(1, n).Select(i => (false, R.Of(Fixed.Exp(X.Mul(X.Of(-i), Fixed.Ln(b, R.P), R.P), R.P))))]),
         ("x87 2^(i log2 b): FYL2X, F2XM1, FSCALE; v/d", (r, b, n) => [.. Enumerable.Range(1, n).Select(i => (true, R.Of(X87Power(b, i))))]),
+        // The second area pass (2026-10-12, later): 1+rate never formed, and the factor squared.
+        ("e^(i log1p r), log1p and exp correctly rounded; v/d", (r, b, n) => [.. Enumerable.Range(1, n).Select(i => (true, R.Of(Fixed.Exp(X.Mul(X.Of(i), Fixed.Log1p(X.Of(r), R.P), R.P), R.P))))]),
+        ("e^(-i log1p r), log1p and exp correctly rounded; v*d", (r, b, n) => [.. Enumerable.Range(1, n).Select(i => (false, R.Of(Fixed.Exp(X.Mul(X.Of(-i), Fixed.Log1p(X.Of(r), R.P), R.P), R.P))))]),
+        ("(1/b)^i by squaring 1/b; v*d", (r, b, n) => [.. Enumerable.Range(1, n).Select(i => (false, R.Of(Pow.SquaringX((R.Of(1.0) / R.Of(b)).V, i, R.P))))]),
+        ("Math.Exp(i*Math.Log(b)) with Math.Log(b) once, by b^i = e^(i L); v*(1/d)", (r, b, n) => [.. Enumerable.Range(1, n).Select(i => (false, R.Of(1.0) / R.Of(Math.Exp(i * Math.Log(b.ToDouble())))))]),
     ];
 
     private static List<(bool, R)> Running(R b, int n, Func<R, R, R> step, bool divide, bool reciprocal)
@@ -946,6 +1213,7 @@ static class Npv
     [
         "forward", "from the last", "pairwise", "Kahan", "Neumaier", "positive and negative apart", "negative and positive apart",
         "by magnitude", "exact, rounded once", "forward, the last addition as Excel's", "forward, fused: total = fma(v, d, total)",
+        "pairwise, halving: (first half) + (second half), the first half the shorter", "by magnitude, the largest first",
     ];
 
     public static R Sum(string order, List<R> terms, List<(R V, bool Divide, R D)> parts)
@@ -1011,15 +1279,24 @@ static class Npv
             }
             case "forward, fused: total = fma(v, d, total)":
                 return parts.Aggregate(zero, (t, x) => x.Divide ? t + x.V / x.D : R.Fma(x.V, x.D, t));
+            case "pairwise, halving: (first half) + (second half), the first half the shorter":
+                return Halving(terms);
+            case "by magnitude, the largest first":
+                return terms.OrderByDescending(x => x.V.Abs().ToDouble()).Aggregate(zero, (t, x) => t + x);
         }
         throw new ArgumentException(order);
     }
+
+    /// <summary>The terms summed by halving: the sum of the first half plus the sum of the second, the first the shorter when they are odd.</summary>
+    public static R Halving(List<R> terms) =>
+        terms.Count == 1 ? terms[0] : Halving(terms[..(terms.Count / 2)]) + Halving(terms[(terms.Count / 2)..]);
 
     /// <summary>Excel's last addition (the engine's Arithmetic.FinalAdd): 0 when opposite signs are closer than 2^-49 of each.</summary>
     private static double FinalAdd(double a, double b)
     {
         var opposite = (a > 0 && b < 0) || (a < 0 && b > 0);
-        return opposite && Math.Abs(a + b) <= Math.ScaleB(Math.Max(Math.Abs(a), Math.Abs(b)), -49) ? 0 : a + b;
+        var difference = Math.Abs(a + b);
+        return opposite && a != -b && difference < Math.Abs(a) * Math.ScaleB(1, -49) && difference < Math.Abs(b) * Math.ScaleB(1, -49) ? 0 : a + b;
     }
 
     // Whole schemes that do not discount each value on its own: Horner's rule, from either end.
@@ -1111,12 +1388,18 @@ static class Xnpv
         ("e^(x ln b), ln and exp correctly rounded", (b, x) => Fixed.Exp(X.Mul(X.Of(x), Fixed.Ln(X.Of(b), 53), 53), 53).ToDouble()),
         ("x87 2^(x log2 b): FYL2X, F2XM1, FSCALE", (b, x) => Npv.X87Power(X.Of(b), x).ToDouble()),
         ("1/Math.Exp(-x*Math.Log(b))", (b, x) => 1 / Math.Exp(-x * Math.Log(b))),
+        // The second area pass (2026-10-12, later): the financial power with ln and exp correctly rounded, and its kin.
+        ("whole x by squaring, else e^(x ln b), ln and exp correctly rounded", (b, x) => x == Math.Floor(x) ? Pow.Whole(b, (long)x) : Pow.ExpCr(x * Pow.LogCr(b))),
+        ("whole x by Math.Pow, else e^(x ln b), ln and exp correctly rounded", (b, x) => x == Math.Floor(x) ? Math.Pow(b, x) : Pow.ExpCr(x * Pow.LogCr(b))),
+        ("whole x by squaring, else 1/e^(-x ln b), ln and exp correctly rounded", (b, x) => x == Math.Floor(x) ? Pow.Whole(b, (long)x) : 1 / Pow.ExpCr(-x * Pow.LogCr(b))),
+        ("whole x by squaring, else b^x correctly rounded", (b, x) => x == Math.Floor(x) ? Pow.Whole(b, (long)x) : Fixed.Power(X.Of(b), X.Of(x), 53).ToDouble()),
+        ("whole x by squaring, else the x87's 2^(x log2 b)", (b, x) => x == Math.Floor(x) ? Pow.Whole(b, (long)x) : Npv.X87Power(X.Of(b), x).ToDouble()),
     ];
 
     // How a value meets its discount d: divided by it, multiplied by 1/d, or multiplied by e^(-x ln b).
     private static readonly string[] Terms = ["v/d", "v*(1/d)", "v*Math.Exp(-x*Math.Log(b))"];
 
-    private static readonly string[] Orders = [.. Npv.Orders, "pairwise, halving: (first half) + (second half), the first half the shorter"];
+    private static readonly string[] Orders = Npv.Orders;
 
     public static string[] YearNames => [.. Years.Select((y, i) => $"y{i}: {y.Name}")];
     public static string[] DiscountNames => [.. Discounts.Select((d, i) => $"{i}: {d.Name}")];
@@ -1137,6 +1420,7 @@ static class Xnpv
             var label = $"years {yearsName} | discount {discountName} | {term} @{termP} | {order} @{sumP}";
             yield return new Candidate($"XNPV: {discountName}", label, $"y{yi} {ki} {term} t@{termP} o{oi}@{sumP}", input =>
             {
+                if (input.Values.Length != input.Dates!.Length) throw new NoAnswer("#NUM!");
                 var b = 1 + input.Rate;
                 var first = Math.Floor(input.Dates![0]);
                 var parts = new List<(R V, bool Divide, R D)>();
@@ -1145,6 +1429,7 @@ static class Xnpv
                     var list = new List<R>();
                     for (var i = 0; i < input.Values.Length; i++)
                     {
+                        if (Math.Floor(input.Dates[i]) < first) throw new NoAnswer("#NUM!");
                         var x = years(Math.Floor(input.Dates[i]) - first);
                         var v = R.Of(input.Values[i]);
                         var (divide, d) = ti switch
@@ -1159,14 +1444,11 @@ static class Xnpv
                     }
                     return list;
                 });
-                return R.At(sumP, () => (order.StartsWith("pairwise, halving") ? Halving(terms) : Npv.Sum(order, terms, parts)).ToDouble());
+                return R.At(sumP, () => Npv.Sum(order, terms, parts).ToDouble());
             });
         }
     }
 
-    /// <summary>The terms summed by halving: the sum of the first half plus the sum of the second, the first the shorter when they are odd.</summary>
-    private static R Halving(List<R> terms) =>
-        terms.Count == 1 ? terms[0] : Halving(terms[..(terms.Count / 2)]) + Halving(terms[(terms.Count / 2)..]);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1184,15 +1466,26 @@ static class Refusals
     public static bool Check(Dictionary<string, List<Candidate>> survivors)
     {
         var ok = true;
+        // The second area pass (2026-10-12, later): PV and FV raise 1+rate by one power, which FV's doubles settle
+        // but for its exponential and logarithm, the platform's (g20) or correctly rounded (g22). XNPV-013 settles
+        // that: the engine computes g22, and the inputs where g20 parts from it are counted, not failed.
         foreach (var function in new[] { "FV", "PV" })
-            ok &= Report(function, survivors[function], AnnuityGrid(function), Kept);
-        // XNPV computes six of its survivors: the days over 365 or times 1/365, each discount e^(x ln b), or
-        // at whole years squaring or Math.Pow, each value divided by it and summed from the first. Every
-        // other survivor is counted where it parts from them, for the user's decision (ADR-0202).
-        var six = survivors["XNPV"].Where(c => Regex.IsMatch(c.Short, @"^y[01] [012] v/d t@53 o0@53$")).ToList();
-        if (six.Count != 6) throw new InvalidOperationException($"{six.Count} of the six XNPV evaluations survive");
-        ok &= Report("XNPV, the six it computes", six, XnpvGrid(), Kept);
-        Report("XNPV, every survivor (not a failure: the user decides, ADR-0202)", survivors["XNPV"], XnpvGrid(), Kept);
+        {
+            var form = function == "FV" ? "F4" : "V5";
+            var power = survivors[function].Where(c => c.Short == $"{form} g22 @53").ToList();
+            if (power.Count != 1) throw new InvalidOperationException($"{function}'s {form} g22 does not survive");
+            ok &= Report($"{function}, the financial power with ln and exp correctly rounded (g22)", power, AnnuityGrid(function), Kept);
+            var platform = survivors[function].Where(c => c.Short == $"{form} g23 @53").ToList();
+            if (platform.Count == 1) Report($"{function}, g22 beside g23, the same power with the platform's ln and exp (not a failure: XNPV-013 rules the platform's out)", [.. power, .. platform], AnnuityGrid(function), Kept);
+            Report($"{function}, every survivor of {function}'s own doubles (not a failure: FV's settle PV's power)", survivors[function], AnnuityGrid(function), Kept);
+        }
+        // XNPV computes one evaluation: the days over 365, whole years by squaring, else e^(x ln b) correctly
+        // rounded, each value divided, summed from the first; it refuses where Excel's last-addition adjustment
+        // parts from that sum, the other survivor.
+        var xnpv = survivors["XNPV"].Where(c => Regex.IsMatch(c.Short, @"^y0 8 v/d t@53 o(0|9)@53$")).ToList();
+        if (xnpv.Count != 2) throw new InvalidOperationException($"{xnpv.Count} of XNPV's two evaluations survive");
+        ok &= Report("XNPV, its two evaluations", xnpv, XnpvGrid(), Kept);
+        Report("XNPV, every survivor", survivors["XNPV"], XnpvGrid(), Kept);
         return ok;
     }
 
@@ -1200,21 +1493,19 @@ static class Refusals
 
     /// <summary>
     /// Why the engine may differ from the survivors at an input, or null where it may not. <paramref name="unfused"/>
-    /// is the answer of g0's squaring with the unfused sum (F4, V5), which the engine gave before the area pass
-    /// wherever it answered at all.
+    /// is the first survivor's answer.
     /// </summary>
     private static string? Kept(Case c, bool part, string engine, string unfused)
     {
         var input = c.Input;
-        var whole = input.Periods == Math.Floor(input.Periods);
         if (c.Formula.StartsWith("=XNPV"))
-            return !part && engine == "#VALUE!" && input.Rate <= -1 ? "refused, the survivors agreeing: XNPV at a rate of -1 or below (XNPV-007 to 010 ask)" : null;
-        if (!part && engine == "#VALUE!" && input.Rate < -1 && !whole)
-            return "refused, the survivors agreeing: a fractional nper at a rate below -1, refused before the area pass (FV-017, PV-011 ask)";
-        if (part && engine == unfused && input.Rate == -1 && input.Periods == 0)
-            return "answered, the survivors parting: nper 0 at a rate of -1, answered before the area pass, where the ^ operator's 0^0 is #NUM! (FV-018 asks)";
-        if (part && engine == unfused && c.Formula.StartsWith("=FV") && input.Type == 0 && whole && input.Periods >= 0)
-            return "answered, the survivors parting: FV at the end of each period with a whole nper from 0, the unfused sum FV answered before the area pass, where a fused one parts (FV-019 asks)";
+        {
+            if (engine == "#NUM!" && input.Rate < 0) return "#NUM! at a rate below 0, as Excel gave at -0.5, -1, -1.5 and -2 (XNPV-007 to 010, 012, 017), which no evaluation models";
+            if (engine == "#VALUE!" && input.Rate == 0) return "refused at a rate of 0, where \"below 0\" and \"0 or below\" part (XNPV-019 asks)";
+            return null;
+        }
+        if (!part && engine == "#VALUE!" && c.Formula.StartsWith("=PV") && input.Rate == -1 && input.Periods > 0)
+            return "refused, the survivors dividing by a growth of 0: PV at a rate of -1 with nper above 0, whose Error Value no run has observed (PV-013 asks)";
         return null;
     }
 
@@ -1248,7 +1539,7 @@ static class Refusals
     }
 
     /// <summary>A survivor's answer as the engine writes a Value: the double's shortest round-trip form, or an Error Value.</summary>
-    private static string Answer(Candidate candidate, Input input)
+    public static string Answer(Candidate candidate, Input input)
     {
         try
         {
