@@ -788,9 +788,11 @@ nobody had asked for. What that means when writing a test:
   desk, the account numbers keeping their zeros; the seventeenth Windows run's `e16.csv`, read
   through the same unknown-file path, painting its values in General as Excel's PivotTable showed
   them, at most eleven characters (`0.3`, `1.23457E+11`, `1.23456789`, `1.23457E-05`), each whole
-  in its column and never `####` (ADR-0060, PV-7); the page's two samples, one under the declared
-  Schema and one under a suggested Schema, reading the same trades to the same total — a second
-  file read while a report stands; and the code shown under "The code" equal to its source.
+  in its column and never `####` (ADR-0060, PV-7); the readings of 2026-10-12's `e16b.csv`, its
+  number Items labelled in the same General as Excel labelled them (`1.23456789`, `1.23457E+11`;
+  R3 (c), ADR-0060); the page's two samples, one under the declared Schema and one under a
+  suggested Schema, reading the same trades to the same total — a second file read while a report
+  stands; and the code shown under "The code" equal to its source.
 - `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069, ADR-0151/0152), against the demo API server
   from either host. A server report scrolls beyond its first Window with a bounded number of rendered
   rows (LV-24); a report scrolled to its last row and then shrunk by a layout, computed in the page

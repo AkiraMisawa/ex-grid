@@ -11,7 +11,8 @@ import fs from 'node:fs';
 // large file paints its progress while it is read and Cancel stops it with nothing read; that an
 // unknown file's suggested Schema is shown with what is not clear, applied only once confirmed,
 // and read under to exact totals; that a value in General paints Excel's eleven characters whole in
-// its column; and that the code the page shows is the code it runs.
+// its column, and a number Item's label the same General; and that the code the page shows is the
+// code it runs.
 
 // Tall and wide enough for the report and the pane beside it, under the page's controls.
 test.use({ viewport: { width: 1400, height: 1100 } });
@@ -244,6 +245,39 @@ for (const chrome of ['builtin', 'mud']) {
                 ['C', '1.23456789'],
                 ['D', '1.23457E-05'],
                 ['Grand Total', '1.23457E+11'],
+            ]);
+        });
+
+        test(`ADR-0060: a number Item's label in General paints at most eleven characters, as Excel labelled the same file (${chrome})`, async ({ page }, testInfo) => {
+            // The readings of 2026-10-12's e16b.csv (R3 (c)), given to this page there and opened in
+            // Excel beside it: Excel labelled the Items 1.23456789 and 1.23457E+11, at the
+            // PivotTable's width and at forty characters, in its English (UK) and English (US) editions.
+            const file = testInfo.outputPath('e16b.csv');
+            fs.writeFileSync(file, `${[
+                'Key,Amount',
+                '1.23456789012345,1',
+                '123456789012.345,2',
+            ].join('\r\n')}\r\n`);
+            await open(page, chrome);
+
+            await page.locator('#csv-unknown-file').setInputFiles(file);
+            const suggestion = page.locator('#csv-suggestion');
+            await expect(suggestion.getByRole('heading')).toHaveText('The Schema suggested for e16b.csv');
+            // As the run's ExPivot suggested it: Key a Decimal, Amount an Integer.
+            await expect(suggestion.locator('tr[data-column="Key"]').getByRole('combobox')).toHaveValue('Decimal');
+            await expect(suggestion.locator('tr[data-column="Amount"]').getByRole('combobox')).toHaveValue('Integer');
+            await page.locator('#csv-confirm').click();
+            await expect(status(page)).toHaveText(/^e16b\.csv: 2 rows read in [\d.]+ s\.$/);
+            // A number field ticked goes to Values (ADR-0061); its menu moves it to Rows.
+            await pane(page).getByRole('checkbox', { name: 'Key', exact: true }).check();
+            await pane(page).getByRole('button', { name: 'Options for Sum of Key', exact: true }).click();
+            await page.getByRole('menuitem', { name: 'Move to Row Labels', exact: true }).click();
+            await pane(page).getByRole('checkbox', { name: 'Amount', exact: true }).check();
+
+            await expect.poll(() => paintedRows(page)).toEqual([
+                ['1.23456789', '1'],
+                ['1.23457E+11', '2'],
+                ['Grand Total', '3'],
             ]);
         });
 

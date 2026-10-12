@@ -3,10 +3,12 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// How an Item is painted (ADR-0060): text as it is, a number by the field's format or at most
-/// 15 significant digits, a date by the field's format or the culture's short date (with the
-/// time when there is one), a Boolean as <c>TRUE</c> / <c>FALSE</c>, a Blank as <c>(blank)</c>.
-/// Each Item is labelled once per report, however many branches it stands in.
+/// How an Item is painted (ADR-0060): text as it is, a number by the field's format or else in
+/// General as a value cell shows it (<see cref="PivotGeneral"/>: at most eleven characters besides
+/// a minus sign, and <c>-</c> for that sign in every culture), a date by the field's format or the
+/// culture's short date (with the time when there is one), a Boolean as <c>TRUE</c> /
+/// <c>FALSE</c>, a Blank as <c>(blank)</c>. Each Item is labelled once per report, however many
+/// branches it stands in.
 /// </summary>
 internal sealed class ItemLabels(PivotOptions options)
 {
@@ -37,9 +39,14 @@ internal sealed class ItemLabels(PivotOptions options)
             case PivotItemKind.Boolean:
                 return item.Key.Ticks == 1 ? "TRUE" : "FALSE";
             case PivotItemKind.Number:
-                return item.FirstValue is IFormattable number
-                    ? PivotNumberFormat.Apply(number, meta.Format ?? "G15", culture)
-                    : item.Key.Number.ToString("G15", culture);
+                // A number Item with no format of its field's own is labelled in General as Excel
+                // labels it, the rule a value cell shows a number by: 1.23456789, 1.23457E+11 (the
+                // readings of 2026-10-12, R3 (c), e16b; the same in the English (US) edition). Its
+                // key is the number itself, a double whatever the column (ADR-0060, "A number is
+                // its value").
+                return meta.Format is { } numberFormat && item.FirstValue is IFormattable number
+                    ? PivotNumberFormat.Apply(number, numberFormat, culture)
+                    : PivotGeneral.Text(item.Key.Number, culture);
             case PivotItemKind.Date:
                 var date = new DateTime(item.Key.Ticks);
                 var format = meta.Format ?? (date.TimeOfDay == TimeSpan.Zero ? "d" : "G");

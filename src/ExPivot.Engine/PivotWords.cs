@@ -3,9 +3,10 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// The words ExPivot paints, by id, with their English (ADR-0060). A Consumer replaces any of
-/// them through a function from id to text, returning null to keep the English. A word with
-/// <c>{0}</c> (and <c>{1}</c>) is a template: the id says what goes in it.
+/// The words ExPivot paints, by id, with their English (ADR-0060), which is Excel's English
+/// (United States) edition's: <c>Max of {0}</c>, <c>Summarize value field by</c>. A Consumer
+/// replaces any of them through a function from id to text, returning null to keep the English. A
+/// word with <c>{0}</c> (and <c>{1}</c>) is a template: the id says what goes in it.
 ///
 /// <para>The words of Excel's Japanese edition are bundled: <see cref="Japanese"/> is such a
 /// function, chosen in one line (<c>Label="PivotWords.Japanese"</c>). They never follow the
@@ -121,6 +122,12 @@ public static class PivotWords
         _ => throw new ArgumentOutOfRangeException(nameof(aggregation), aggregation, "Unknown PivotAggregation."),
     };
 
+    // The English is Excel's English (United States) edition's (ADR-0060's note of 2026-10-12):
+    // "Max of", "Min of" and "Summarize", which that edition shows
+    // (verification/2026-10-12-windows-pivot-en-us, (a) and (d)). The English (United Kingdom)
+    // edition's "Max. of", "Min. of" and "Summarise" (the readings of 2026-10-12, R3 (a) and (d))
+    // are a Known limitation of 0.1.0 (ADR-0202); a Consumer that wants them gives them through
+    // Label.
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
         [RowLabels] = "Row Labels",
@@ -153,7 +160,10 @@ public static class PivotWords
         ["caption-min"] = "Min of {0}",
         ["caption-product"] = "Product of {0}",
         // Excel captions Count Numbers as it captions Count, so a Count and a Count Numbers of one
-        // field are "Count of Value" and "Count of Value2" (ADR-0060, the seventeenth Windows run).
+        // field are "Count of Value" and "Count of Value2": through COM in the seventeenth Windows
+        // run (item 4) and in the readings of 2026-10-12 (R3 (a)), and "Count of Amount" chosen in
+        // Value Field Settings (R3 (d)), in the English (UK) edition, and the same in the English
+        // (US) one (verification/2026-10-12-windows-pivot-en-us, (a) and (d)).
         ["caption-count-numbers"] = "Count of {0}",
         ["caption-stddev"] = "StdDev of {0}",
         ["caption-stddevp"] = "StdDevp of {0}",
@@ -167,6 +177,11 @@ public static class PivotWords
 
         // The Field List and its panels (ADR-0061).
         ["field-list"] = "PivotTable Fields",
+        // Both instruction lines end with a colon, as Excel's pane draws them in the English (UK)
+        // and the Japanese editions (the readings of 2026-10-12, R3 (b)) and in the English (US)
+        // one (verification/2026-10-12-windows-pivot-en-us, (b)). It was read from pictures, as
+        // UI Automation's names leave it out; in Japanese it stands where U+003A stands, not
+        // U+FF1A, which the measurement cannot tell from a full-width colon drawn narrower.
         ["choose-fields"] = "Choose fields to add to report:",
         ["drag-fields"] = "Drag fields between areas below:",
         ["search-fields"] = "Search",
@@ -333,7 +348,9 @@ public static class PivotWords
         ["caption-max"] = "最大 / {0}",
         ["caption-min"] = "最小 / {0}",
         ["caption-product"] = "積 / {0}",
-        ["caption-count-numbers"] = "数値の個数 / {0}",
+        // The Japanese edition captions Count Numbers as it captions Count (the readings of
+        // 2026-10-12, R3 (d): chosen in Value Field Settings, and added through COM).
+        ["caption-count-numbers"] = "データの個数 / {0}",
         ["caption-stddev"] = "標本標準偏差 / {0}",
         ["caption-stddevp"] = "標準偏差 / {0}",
         ["caption-var"] = "標本分散 / {0}",

@@ -103,8 +103,10 @@ builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
   filter band and Filter… keep the ones they listed. `Clock` takes a `TimeProvider` for tests.
 - **ShowFieldList** can be bound (`@bind-ShowFieldList`) to remember the pane the user hid or
   showed from the Pivot Toolbar.
-- **Label** replaces any word by its id. `Label="PivotWords.Japanese"` speaks the words of
-  Excel's Japanese edition; the culture alone changes no word.
+- **Label** replaces any word by its id. The words are those of Excel's English (US) edition
+  (`Max of Amount`, where the English (UK) edition writes `Max. of Amount`);
+  `Label="PivotWords.Japanese"` speaks the words of Excel's Japanese edition; the culture alone
+  changes no word.
 - **PivotChrome** draws the Field List, the Pivot Toolbar, the menus, the panels, Show Details' tabs
   and dialog, and the Stale Report's notice in another design system; **Chrome** is the report
   grid's. For MudBlazor, use `ExPivot.MudBlazor`.

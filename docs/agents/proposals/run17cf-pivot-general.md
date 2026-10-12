@@ -1,15 +1,89 @@
-# Run 17 Parts C to F, ExPivot's General and Count Numbers' caption: what the orchestrator writes
+# Run 17 Parts C to F, ExPivot's General and its captions: what the orchestrator writes
 
-Branch `claude/run17cf-pivot-general`, from `main` (a533de01). The seventeenth Windows run's Part E
-(`verification/2026-10-11-windows-17/expivot.md`, items 4 and 16; `part-e/expivot-cells.md`, e16, and e05a, e05b,
-e08 and e15 for "the same value, shown differently"; `part-e/records/excel-wide.json`) read two things ExPivot did
-otherwise than Excel. Both follow Excel's answer. Nothing here changes an ADR, `CONTEXT.md`, the Definition of Done,
-a spec or the Docs Site: the text for each is below, in the repository's voice, as exact old -> new edits.
+Branch `claude/run17cf-pivot-general`, from `main` (a533de01). Two rounds of evidence are answered here:
+
+- **The seventeenth Windows run's Part E** (`verification/2026-10-11-windows-17/expivot.md`, items 4 and 16;
+  `part-e/expivot-cells.md`, e16, and e05a, e05b, e08 and e15 for "the same value, shown differently";
+  `part-e/records/excel-wide.json`), in Excel's English (United Kingdom) edition.
+- **The readings of 2026-10-12 (R3)**, which put ExPivot beside the same English (UK) edition, and the Japanese one for
+  R3 (b) and (d) (`verification/2026-10-12-windows-readings/report.md` on
+  `claude/exsheet-windows-readings-2026-10-12`, 89e0b5ad); and **the English (US) record of the same day**, which read
+  R3 (a), (b) and (d) again in Excel's English (United States) edition
+  (`verification/2026-10-12-windows-pivot-en-us/report.md` on `claude/exsheet-windows-pivot-en-us-2026-10-12`,
+  76c0067e; "the English (US) record" below).
+
+Nothing here is applied to an ADR, `CONTEXT.md`, the Definition of Done, `docs/specs/expivot/excel-behaviours.md` or
+the Docs Site. The text for each is the numbered list of edits below, in the repository's voice, as exact old -> new
+blocks that apply in order at the branch tip (`docs/agent-runs/check-proposal.py`, git-ignored, checks them).
 
 **Item 16 gates `0.1.0`** (ADR-0202: a gating disagreement is settled by correcting the ADR first, then the code).
-The code is on this branch; the ADR-0060 note below is the correction it follows, and goes in with it.
+The code is on this branch; edit 3 is the correction it follows, and goes in with it.
 
-## What was done, finding by finding
+## Round 3 (2026-10-12): R3 and the English (US) record, point by point
+
+| Point | Excel | ExPivot before | ExPivot now | Evidence |
+|---|---|---|---|---|
+| (a) Every Aggregation over a text-only field (e05c) | A (x, y) and B (z): `#DIV/0!` for Average, StdDev, Var, StdDevp and Varp; `0` for Sum, Max, Min, Product and Count Numbers; Count 2 and 1. C (two blanks): every cell empty, Count included. Grand Total likewise, Count 3 | the same, every cell | unchanged: **observed** | R3 (a), all 44 cells; the English (US) record, (a): "every other header and every cell is the same" |
+| (b) The Field List's two instruction lines | each ends with a colon, in English (UK), English (US) and Japanese, read from pictures; UI Automation's names leave it out | `:` U+003A at the end of both, in English and in `PivotWords.Japanese` | unchanged: **observed**, with the measurement's caveat | R3 (b); the English (US) record, (b) |
+| (c) A numeric Row field's Item label in General (e16b) | `1.23456789`, `1.23457E+11`, at the PivotTable's width and at forty characters | `1.23456789012345`, `123456789012.345` (`G15`) | **General as a value cell shows it**, the branch's rule: at most eleven characters besides a minus sign, `-` for that sign in every culture | R3 (c); the English (US) record, (a), "for e16b" |
+| (d) Count Numbers' caption | English (UK) and (US): `Count of Amount` chosen in Value Field Settings, `Count of Note2` beside a Count through COM. Japanese: `データの個数 / Amount`, chosen in the dialog and added through COM | English `Count of` (this branch's first round); Japanese `数値の個数 / {0}` | Japanese **`データの個数 / {0}`**; a repeated caption takes the next free number; a caption of the user's own is kept | R3 (a) and (d); the English (US) record, (a) and (d); run 17, items 4 and 14 |
+| (e) The English (UK) edition's words | UK: `Max. of`, `Min. of`, `Summarise Values By`. US: `Max of`, `Min of`, `Summarize Values By`, `Summarize value field by` | the US edition's words | unchanged; the UK words are a **Known limitation** of `0.1.0` | R3 (a), R3 (d) and its record `steps-by-hand.jsonl` (`Summarise Values By`); the English (US) record, (a) and (d) |
+
+**(a)** ADR-0060's table, columns "Records, but no number" and "Some value, none numeric", called the two right-hand
+columns readings. R3 (a) observed both over text, all eleven Aggregations, and the seventeenth run's item 5 (a) had
+observed "Records, but no number" for Average, StdDev and Var. Edit 2 records it; edit 8 rewrites
+`excel-behaviours.md`'s item 5, whose "over no numbers are `#DIV/0!`" is so over text and not over blanks. The layer-1
+tests that were marked readings now cite the observation, `Only_blanks_are_an_empty_cell` covers all eleven
+Aggregations, and `ADR0060_Every_Aggregation_over_a_text_only_field_is_as_Excel_showed_e05c` pins e05c's 44 cells and
+its headers as the English (US) edition gave them. No code changed.
+
+**(b)** R3 (b) read each line's last glyph from Excel's own picture, enlarged four times. In English the colon's dots
+stand one blank column after the last letter. In Japanese they begin four device pixels after `い`, where U+003A
+began (three to five pixels) and not where U+FF1A began (about ten) when the same text was drawn at that size in Yu
+Gothic UI and Meiryo UI; R3 says a full-width colon drawn narrower is not excluded by this. UI Automation's names leave
+the colon out in every edition, so the character itself was never read. ExPivot's four words already end with
+U+003A, and `ADR0061_The_Field_Lists_two_instruction_lines_end_with_a_colon` pins them. The seventeenth run's
+`expivot.md` (item 27) left this "not settled by this reading", having no picture; edits 6 and 11 settle it. No code
+changed.
+
+**(c)** `ItemLabels` labels a number Item whose field has no `format` with `PivotGeneral.Text`, the rule this branch
+built for values, where it wrote `G15`. An Item's key is its number, a `double` whatever the column (ADR-0060, "A
+number is its value"), so a Decimal column's `1.23456789012345` is labelled from that `double`, as Excel holds it.
+The same label reaches Filter…'s list and the report filter band, which read the engine's labels. A field's own
+`format` still labels as written. ADR-0060's "Labels" said "by its shortest round-trip text", which the code never
+did (it wrote 15 significant digits) and Excel does not show; edit 1 corrects it, and edit 3's General section names
+Item labels.
+
+**(d)** The English caption was already `Count of {0}` (this branch's first round). `PivotWords.Japanese` now
+captions Count Numbers `データの個数 / {0}`, as R3 (d) observed. Count Numbers keeps its own name, `数値の個数`, in
+the Aggregation list, as R3 (d) read the Japanese list. The numbering was already "the next free one"
+(`ValueCaptions.Resolve`: from 2 upward, past every caption taken and every Pivot Field's caption):
+- **observed** for a second Value Field in English: `Count of Note2` (R3 (a), and the English (US) record, (a)) and
+  `Sum of Amount2` (run 17, item 14, through COM). *The brief named "Sum twice" as by generalisation; the seventeenth
+  run's item 14 observed it.*
+- **by generalisation**: a third (`Count of Value3`), Count Numbers standing before the Count, and the number in the
+  Japanese words (`データの個数 / Amount2`; R3 (d)'s Japanese pivots held one Value Field).
+- **A caption of the user's own** (Value Field Settings' Custom Name, or `PivotValueField.Caption`) is kept as given.
+  In a layout, a default it would repeat goes round it, wherever the two stand: an own `Count of Amount` after a
+  Count makes that Count `Count of Amount2`, and an own `Count of Amount2` pushes the next default to `3`
+  (`ADR0060_A_caption_the_user_set_is_kept_and_the_generated_ones_go_round_it`). Typed into Value Field Settings, a
+  caption that another Value Field already shows is refused, "PivotTable field name already exists." (ADR-0060). All
+  of this is ExPivot's rule as it stood, not observed: no run gave Excel a Custom Name.
+- **Found, not fixed: the refusal does not hold under other words.** `PivotLayoutEdits.SetValueField` resolves the
+  other Value Fields' captions with no `PivotOptions`, so in English words. Under `PivotWords.Japanese`, `合計 / Amount`
+  typed as a Count's Custom Name beside a Sum of Amount, which shows `合計 / Amount`, is not refused: it is kept, and
+  the Sum becomes `合計 / Amount2` (checked against this branch's engine; English refuses `Sum of Amount` there). It
+  was so before this branch. The fix gives `SetValueField` the report's words, a change to a public signature, so it is
+  left for a decision (the report says the options).
+
+**(e)** By the user's rule of 2026-10-12, "read the US edition first", ExPivot's English is the US edition's, and keeps
+`Max of`, `Min of` and `Summarize value field by`. Its Aggregation list is the US edition's list, word for word and in
+its order (`ADR0060_The_English_words_are_Excels_English_US_editions`). Edit 5 is ADR-0060's note, edit 7 ADR-0202's
+Known limitations line, edit 14 the page's sentence, and the Release Notes' line is below. No code changed: a comment
+and the class's summary in `PivotWords.cs`, and the **Label** line of `src/ExPivot/README.md` (the package's readme),
+say which edition the English is.
+
+## The first two rounds, finding by finding
 
 | Finding | Excel (run 17) | Was | Now | Why |
 |---|---|---|---|---|
@@ -21,16 +95,20 @@ twelve characters or more, ported line for line (the decimal form, the scientifi
 away from zero from fifteen significant digits), because `ExPivot.Engine` references no package but `ExGrid.Data`
 (PV-1). Twelve, not eleven: ExSheet's limit is `min(width - (minus ? 1 : 0), 11)`, so at eleven a negative number
 has ten characters besides its sign, and only from twelve is every number's limit the pivot's eleven.
-`PivotValue.From` uses it wherever a Value Field has no `NumberFormat` and no Show Values As; a number format of the
-field's own is applied as written, as before. An exact `decimal` is rounded from its own digits,
-never a `double`'s, so a sum of money is shown from the sum itself. A column narrower than the text is ExGrid's
-`####` (ADR-0016), unchanged: a pivot never fits General narrower, as a cell does.
+`PivotValue.From` uses it wherever a Value Field has no `NumberFormat` and no Show Values As, and `ItemLabels` wherever
+a number Item's field has no `format` (round 3); a number format of the field's own is applied as written, as before.
+An exact `decimal` value is rounded from its own digits, never a `double`'s, so a sum of money is shown from the sum
+itself. A value column narrower than the text is ExGrid's `####` (ADR-0016), unchanged: a pivot never fits General
+narrower, as a cell does.
 
-**The minus sign is `-` in every culture**, as ExSheet's General writes it (`NumberText.General`, fitted) and Excel's
-General shows it. `G15` wrote the culture's own `NegativeSign`, which .NET's ICU data makes U+2212 `−` under sv-SE,
-fi-FI and nb-NO: `−1,4142135623731` there is now `-1,414213562`. Only the decimal separator is the culture's.
+**The minus sign is `-` in every culture**, as ExSheet's General writes it (`NumberText.General`, fitted). `G15` wrote
+the culture's own `NegativeSign`, which .NET's ICU data makes U+2212 `−` under sv-SE, fi-FI and nb-NO:
+`−1,4142135623731` there is now `-1,414213562`. Only the decimal separator is the culture's. No run read Excel under
+those cultures, so the sign there is by generalisation from ExSheet's rule; the first round's text said "and Excel's
+General shows it", which no run observed, and is corrected here and in `PivotGeneral.cs`.
 `ADR0060_The_minus_sign_is_a_hyphen_minus_in_every_culture` pins it in those three cultures, and first asserts that
-each culture's own sign is U+2212, so the case cannot pass without telling the two apart.
+each culture's own sign is U+2212, so the case cannot pass without telling the two apart;
+`ADR0060_A_number_Items_minus_sign_is_a_hyphen_minus_in_every_culture` does the same for an Item's label.
 
 **The two cannot drift apart silently.** `PivotGeneralTests` reads ExSheet's corpus,
 `tests/ExSheet.Engine.Tests/ExcelCases/general-width.json`, and pins every General case at a column twelve
@@ -38,13 +116,13 @@ characters or wider (GW-004, 009, 010, 011, 012, 013, 023) to the pivot's text; 
 `ADR0060_ADR0047_Every_wide_general_width_case_is_pinned` until its number is named there. Beside that, a sweep
 outside the suite compared `PivotGeneral.Text` with ExSheet's `NumberText.General` at widths 12, 40 and 100 over
 799,918 numbers (random bit patterns, decimals of every magnitude, ratios), under the invariant culture and de-DE:
-no difference.
+no difference. `ADR0060_A_number_Items_label_is_the_value_cells_General` holds an Item's label to the same function.
 
 **What it costs, measured.** On CoreCLR (Release, a million values), General takes about 0.75 µs a `double`
 where `G15` took 0.18, and 0.57 µs a `decimal` where `G15` took 0.08. A value cell is formatted when it is first
 read, so a painted screen does not feel it; a copy of the million cells the cap allows formats each once, about half
-a second more on CoreCLR. Nothing gates on it (PV-21 is observational); it is said here so that a slower large copy
-is not a surprise.
+a second more on CoreCLR. An Item is labelled once per report. Nothing gates on it (PV-21 is observational); it is
+said here so that a slower large copy is not a surprise.
 
 **A copy still carries the whole number (PV-7).** The HTML flavour, which Excel reads, holds the raw number
 (`123456789012.34567`); the TSV holds what the cell paints (`1.23457E+11`), as ADR-0005 and Excel's own text flavour
@@ -52,10 +130,6 @@ do. The TSV held the painted `G15` text before, so it is shorter now, not differ
 
 **Left as they are, and why:**
 
-- **A Number Item's label** (`ItemLabels.cs`, `G15`, or the field's `format`): not observed. The ask_excel item E-not-run
-  reads one; until then it stays.
-- **The Japanese caption of Count Numbers**, `数値の個数 / {0}`: not observed (item 27 ran without a Count Numbers
-  field). It stays; `PivotWordsTests` pins it as a reading.
 - **The Selection Summary under a General Focus** (`PivotSummary.cs`, and `LocalPivotReportSource.SummaryAsync`'s
   format, line 566): its figures are written `G15`, so they no longer read as the Focus cell paints (`1.414213562`
   painted, `Sum: 1.4142135623731` summarised). That is ADR-0130's rule, not item 16's, and ExSheet's status bar does
@@ -63,46 +137,104 @@ do. The TSV held the painted `G15` text before, so it is shorter now, not differ
   disagree over one number. `PivotSummary.cs`'s comment, which said the figures are shown "as the report shows that
   cell", now says so, and names the question. ask_excel below.
 - **A number format of the field's own under sv-SE, fi-FI or nb-NO** still writes the culture's U+2212, as .NET's
-  format strings do (`#,##0.00` gives `−1 234,57`), and so do the `G15` texts above (a Number Item's label, the
-  Selection Summary, Show Details). Only General's sign follows ExSheet's here; whether Excel's number formats write
-  `-` under those cultures was not asked.
+  format strings do (`#,##0.00` gives `−1 234,57`), and so do the `G15` texts above (the Selection Summary, Show
+  Details). Only General's sign follows ExSheet's here; whether Excel's number formats write `-` under those cultures
+  was not asked.
 - **Show Details' records** (`PivotDetailsSheet.cs`, `G15` where a field has no `format`) and **the sample in Value
   Field Settings' Number Format** (`ExPivot.FieldList.cs`, `G15` for an empty format; its number, `-1234.5678`,
   reads the same under either rule but for the sign under sv-SE, fi-FI and nb-NO): not observed, outside this
   area's files.
+- **Value Field Settings' Custom Name box** shows the bare default when the Aggregation changes (`Count of Amount`),
+  even where OK will number it (`Count of Amount2`, beside a Count of the field): R3 (d) observed the box only on a
+  PivotTable with one Value Field. ask_excel below.
 
 **If this branch is not in by the tag:** item 16 gates, so the tag waits for it. Count Numbers' caption is a wording
 difference, which ADR-0202 lets ship as a Known limitation; the line would read: "A Count Numbers Value Field is
-captioned `Count Numbers of <field>`, where Excel captions it `Count of <field>` (ADR-0060)."
+captioned `Count Numbers of <field>`, and in the Japanese words `数値の個数 / <field>`, where Excel captions it as
+Count, `Count of <field>` and `データの個数 / <field>` (ADR-0060)." So would the Item labels: "A number Item is
+labelled with up to 15 significant digits, where Excel labels it in General, at most eleven characters (ADR-0060)."
 
 ## Tests, each named with its ADR
 
-- `tests/ExPivot.Engine.Tests/PivotGeneralTests.cs` (new, layer 1): the run's cells (e05a, e05b, e08, e16) one by
+- `tests/ExPivot.Engine.Tests/PivotGeneralTests.cs` (layer 1): the run's cells (e05a, e05b, e08, e16) one by
   one and as a report over e16's records; ExSheet's wide general-width cases read from its corpus; rounding that
   carries into a twelfth integer digit; a minus sign not one of the eleven (a reading, as ExSheet's); the culture's
   separator; `-` for the minus sign under sv-SE, fi-FI and nb-NO, whose own is U+2212, as text and as a report
-  shows it; zero; exact decimals; a decimal and its double agreeing over 20,000 values; never more than eleven
-  characters over 20,000 doubles; a copy's raw form; a number format of the field's own left as written.
-- `tests/ExPivot.Engine.Tests/PivotWordsTests.cs` (new, layer 1): e04's Count and Count Numbers captioned `Count of
-  Value` and `Count of Value2`, in either order; Count Numbers alone `Count of Value`; the Japanese caption
-  unchanged (a reading).
+  shows it (by generalisation); zero; exact decimals; a decimal and its double agreeing over 20,000 values; never more
+  than eleven characters over 20,000 doubles; a copy's raw form; a number format of the field's own left as written.
+- `tests/ExPivot.Engine.Tests/ItemTests.cs` (layer 1, round 3): e16b's Items labelled `1.23456789` and `1.23457E+11`
+  with their sums (R3 (c)); Filter…'s list by the same labels; an Item's label equal to the value cell's General over
+  seven numbers, never more than eleven characters; `-` under sv-SE, fi-FI and nb-NO; a field's `format` still
+  labelling as written.
+- `tests/ExPivot.Engine.Tests/PivotWordsTests.cs` (layer 1): Count and Count Numbers captioned `Count of Value` and
+  `Count of Value2` (observed), Count Numbers alone `Count of Value` (observed), in either order (by
+  generalisation); the Japanese `データの個数 / Value` alone (observed) and `データの個数 / Value2` beside a Count (by
+  generalisation); the next free number, `…2` observed and `…3` by generalisation; a caption the user set kept, with
+  the defaults going round it, in English and in Japanese (ExPivot's rule); the English (US) edition's words and its
+  Aggregation list, in its order; the Field List's two lines ending with `:` in English and in Japanese.
 - `tests/ExPivot.Engine.Tests/AggregationTests.cs`: the texts that pinned fifteen digits now pin Excel's eleven
-  characters (`6.666666667`, `2.581988897`, `2.236067977`, `3.333333333`, `40.71428571`).
-- `tests/ExPivot.Engine.Tests/SortAndShowTests.cs` (outside the area's files, one assertion): `Default_captions`
-  expects `Count of Amount` for Count Numbers.
-- `tests/ExPivot.Components/PivotValueTextTests.cs` (new, layer 2): e16 painted as Excel showed it; a copy's TSV the
+  characters (`6.666666667`, `2.581988897`, `2.236067977`, `3.333333333`, `40.71428571`); round 3: the two
+  right-hand columns cite their observation, blanks are an empty cell for all eleven Aggregations, and e05c whole.
+- `tests/ExPivot.Engine.Tests/SortAndShowTests.cs` (one assertion): `Default_captions` expects `Count of Amount` for
+  Count Numbers.
+- `tests/ExPivot.Components/PivotValueTextTests.cs` (layer 2): e16 painted as Excel showed it; a copy's TSV the
   painted text and its HTML the full-precision numbers; Count and Count Numbers headed, and listed in Values, `Count
-  of Amount` and `Count of Amount2`.
-- `tests/ExGrid.Browser/pivot-csv.spec.mjs` (outside the area's files, one test added, layer 3): e16.csv given to
-  `/pivot-csv` through its unknown-file path, as the run gave it, and painted under both Chromes as Excel showed it,
-  each value whole in its column and never `####`. Run with `pivot.spec.mjs` on the Server and the WebAssembly
-  host, `--project=chrome` (Playwright's bundled Chromium, headed under xvfb): 88 passed and 7 skipped on each; the
-  new test with `--repeat-each=3`: 6 of 6 on each. Run again at the second round's tip, `pivot-csv.spec.mjs` alone
-  on each host: 14 of 14, and the new test with `--repeat-each=3` 6 of 6, on each.
+  of Amount` and `Count of Amount2`; round 3: the same in `PivotWords.Japanese`, `データの個数 / Amount` and
+  `データの個数 / Amount2`; e16b's Items painted `1.23456789` and `1.23457E+11`.
+- `tests/ExGrid.Browser/pivot-csv.spec.mjs` (layer 3): e16.csv given to `/pivot-csv` through its unknown-file path, as
+  the run gave it, and painted under both Chromes as Excel showed it, each value whole in its column and never
+  `####`; round 3: e16b.csv given the same way, its Schema suggested as the run's (Key a Decimal, Amount an Integer),
+  Key moved to Rows from its menu, and its Items painted `1.23456789` and `1.23457E+11`. Rounds 1 and 2 ran it with
+  Playwright's bundled Chromium; round 3 ran it with the installed Chrome and Edge, on both hosts (the report gives
+  the counts).
 
-## ADR-0060: what to write
+## The edits, in order
 
-**1. A new section, after "Show Values As"** (old -> new):
+The checker applies them one after another to the files at the branch tip: each old text must occur exactly once in
+its file when its turn comes, on whole lines.
+
+### 1. docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md
+
+Old:
+
+```
+- A number is labelled by the field's format under the report's culture, or by its shortest
+  round-trip text.
+```
+
+New:
+
+```
+- A number is labelled by the field's format under the report's culture, or, with none, in General
+  as a value is shown ("A value in General" below): at most eleven characters besides a minus sign,
+  so `1.23456789012345` is `1.23456789` and `123456789012.345` is `1.23457E+11`. *(2026-10-12,
+  observed in the readings of 2026-10-12 (R3 (c)), in Excel's English (UK) and English (US)
+  editions. This said "by its shortest round-trip text", which the code never wrote: it wrote 15
+  significant digits, and Excel shows neither.)*
+```
+
+### 2. docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md
+
+Old:
+
+```
+*("Records, but no number" means every value was Blank. The two right-hand columns are readings.)*
+```
+
+New:
+
+```
+*("Records, but no number" means every value was Blank. The two right-hand columns were readings.)*
+
+*(2026-10-12.)* **Both right-hand columns are observed**, every row of them. The readings of
+2026-10-12 (R3 (a), `e05c`) put all eleven Aggregations over a text field beside Excel: over text
+alone ("Some value, none numeric") and over blanks alone ("Records, but no number"), every cell
+was as the table says, Count over blanks empty too, in the English (UK) edition and in the English
+(US) one. The seventeenth Windows run had observed "Records, but no number" for Average, StdDev and
+Var (item 5 (a)).
+```
+
+### 3. docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md
 
 Old:
 
@@ -138,22 +270,25 @@ scientific form that fits is closer to the number than the decimal form that fit
 - Unlike a cell's, it is never fitted narrower: a column narrower than the text is `####` (ADR-0016).
 - An exact `decimal` is rounded from its own digits, never a `double`'s.
 - Whether a minus sign is one of the eleven was not asked. ExPivot follows ExSheet, where it is not (a reading).
-- The minus sign is `-` in every culture, as ExSheet's General writes it and Excel's shows it; only the decimal
-  separator is the culture's. The 15 significant digits written before took the culture's own sign, U+2212 `−` under
-  sv-SE, fi-FI and nb-NO.
+- The minus sign is `-` in every culture, as ExSheet's General writes it; only the decimal separator is the
+  culture's. No run read Excel under a culture whose own sign is another character, so that is by generalisation.
+  The 15 significant digits written before took the culture's own sign, U+2212 `−` under sv-SE, fi-FI and nb-NO.
 - A copy still carries the full-precision number (PV-7): the HTML flavour Excel reads holds the raw number, and the
   text flavour what the cell paints, as Excel's own text flavour does.
+- **A number Item with no format of its field's own is labelled in the same General** ("Labels" above): Excel
+  labelled `e16b`'s Items `1.23456789` and `1.23457E+11`, at the PivotTable's width and at forty characters (the
+  readings of 2026-10-12, R3 (c); the same in the English (US) edition). The label is the Item's everywhere it is
+  named: the report, Filter… and the report filter band.
 - *Corrected.* The reading was "at most 15 significant digits, as a cell does" (`excel-behaviours.md`, item 16).
   That is General written in full, as a concatenation or the Cell Editor writes it, not General shown in a cell,
   which a cell fits to eleven characters.
-- Not observed, and left at 15 significant digits until a run reads them: a Number Item's label, the Selection
-  Summary's figures under a General Focus (ADR-0130; ExSheet's are the same), Show Details' records, and the sample
-  in Value Field Settings.
+- Not observed, and left at 15 significant digits until a run reads them: the Selection Summary's figures under a
+  General Focus (ADR-0130; ExSheet's are the same), Show Details' records, and the sample in Value Field Settings.
 
 ## The report's shape
 ```
 
-**2. "Captions and words"** (old -> new):
+### 4. docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md
 
 Old:
 
@@ -167,29 +302,121 @@ New:
 ```
 - **A caption that a second Value Field would repeat takes a number**, such as `Sum of Amount2`, as
   in Excel.
-  - *(2026-10-12)* **Count Numbers is captioned as Count is**, `Count of Value`, so a Count and a Count Numbers of
-    one field are `Count of Value` and `Count of Value2`, as Excel captioned them in the seventeenth Windows run
-    (item 4). ExPivot wrote `Count Numbers of Value`, a caption Excel does not make. The bundled Japanese word,
-    `数値の個数 / {0}`, was not observed, and stays.
+  - *(2026-10-12)* **Count Numbers is captioned as Count is**: `Count of Amount`, and in the
+    Japanese words `データの個数 / Amount`. Excel captioned it so through COM beside a Count of the
+    same field (`Count of Value2`, the seventeenth Windows run, item 4; `Count of Note2`, the
+    readings of 2026-10-12, R3 (a)), and chosen alone in Value Field Settings (`Count of Amount`,
+    R3 (d)), in its English (UK) edition and in its English (US) one
+    (`verification/2026-10-12-windows-pivot-en-us`, (a) and (d)); its Japanese edition captioned it
+    `データの個数 / Amount`, through the dialog and through COM (R3 (d)). ExPivot wrote
+    `Count Numbers of Amount` and `数値の個数 / Amount`, captions Excel does not make. The Aggregation
+    keeps its own name, Count Numbers and `数値の個数`, in Value Field Settings' list, as both
+    editions list it.
+  - *(2026-10-12)* **The number is the next free one**: from `2` upward, past every caption already
+    taken and every Pivot Field's caption. A second Value Field is observed, in English: `Sum of
+    Amount2` (the seventeenth run, item 14) and `Count of Note2` (R3 (a)). A third (`3`), and the
+    number in the Japanese words (`データの個数 / Amount2`), are by generalisation.
+  - *(2026-10-12)* **A caption of a Value Field's own is kept as given**, and a default it would
+    repeat goes round it, wherever the two stand in Values: beside an own `Count of Amount`, the
+    Count that would take it is `Count of Amount2`. Typed into Value Field Settings, a caption another
+    Value Field already shows is refused, as below. This is ExPivot's rule; no run gave Excel a
+    Custom Name.
 ```
 
-## `docs/specs/expivot/excel-behaviours.md`: the readings corrected
+### 5. docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md
 
 Old:
 
 ```
-16. **General** writes at most 15 significant digits, as a cell does.
+- **The words a report paints are English by default**, and the Consumer can replace each one by
+  its id. They include `Row Labels`, `Grand Total`, `Total`, `(blank)`, `(All)`,
+  `(Multiple Items)`, `Values` and the Aggregations' names.
 ```
 
 New:
 
 ```
-16. **General** shows at most eleven characters besides a minus sign, whatever the column's width, as a cell's
-    General shows them in a column twelve characters wide or wider: decimals rounded to what fits, scientific where
-    the integer part has twelve or more digits or where that is closer (`1.414213562`, `1.23457E+11`,
-    `1.23457E-05`). *(Corrected by the seventeenth Windows run: the reading said 15 significant digits, which is
-    General written in full, not General shown.)*
+- **The words a report paints are English by default**, and the Consumer can replace each one by
+  its id. They include `Row Labels`, `Grand Total`, `Total`, `(blank)`, `(All)`,
+  `(Multiple Items)`, `Values` and the Aggregations' names.
+  - *(2026-10-12, decided with the user: read the US edition first.)* **The English is Excel's
+    English (United States) edition's.** That edition captions `Max of Note` and `Min of Note`,
+    lists `Sum, Count, Average, Max, Min, Product, Count Numbers, StdDev, StdDevp, Var, Varp`, and
+    heads the dialog `Summarize value field by` (`verification/2026-10-12-windows-pivot-en-us`, (a)
+    and (d)): ExPivot's words, in that order. The English (United Kingdom) edition writes `Max. of`,
+    `Min. of`, `Max.`, `Min.` and `Summarise Values By` (the readings of 2026-10-12, R3 (a) and (d)).
+    ExPivot does not bundle those, and that is a Known limitation of `0.1.0` (ADR-0202); a Consumer
+    gives them through `Label`.
 ```
+
+### 6. docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md
+
+Old:
+
+```
+  - *(2026-10-09.)* They include the sentences ExPivot gives the grid to say for it — a refused Copy or
+    Selection Summary — and a source's own refusal is said inside `source-refused`, never raw. As first
+    built with the report-Window design, five such sentences were English only (found in review).
+```
+
+New:
+
+```
+  - *(2026-10-09.)* They include the sentences ExPivot gives the grid to say for it — a refused Copy or
+    Selection Summary — and a source's own refusal is said inside `source-refused`, never raw. As first
+    built with the report-Window design, five such sentences were English only (found in review).
+  - *(2026-10-12.)* **The Field List's two instruction lines end with a colon**, in English and in
+    Japanese: `Choose fields to add to report:` and `Drag fields between areas below:`,
+    `レポートに追加するフィールドを選択してください:` and `次のボックス間でフィールドをドラッグしてください:`.
+    ExPivot ends each with `:` U+003A. Observed from Excel's own pictures in its English (UK) and
+    Japanese editions (the readings of 2026-10-12, R3 (b)) and its English (US) one
+    (`verification/2026-10-12-windows-pivot-en-us`, (b)). UI Automation's names leave the colon out,
+    so the character itself was not read. In Japanese the colon stands where U+003A stands, not
+    U+FF1A, in the same text drawn at that size; a full-width colon drawn narrower is not excluded by
+    that measurement.
+```
+
+### 7. docs/adr/0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md
+
+Old:
+
+```
+  seconds and holds the circuit that long. `verification/2026-10-11-linux-sh19/` has both.)*
+```
+
+New:
+
+```
+  seconds and holds the circuit that long. `verification/2026-10-11-linux-sh19/` has both.)*
+  *(2026-10-12, decided with the user: read the US edition first. Also ExPivot's English words, which are
+  Excel's English (United States) edition's: `Max of`, `Min of` and `Summarize`, where the English (United
+  Kingdom) edition writes `Max. of`, `Min. of` and `Summarise` (ADR-0060's note of that date). A Consumer
+  gives the UK edition's words through `Label`.)*
+```
+
+### 8. docs/specs/expivot/excel-behaviours.md
+
+Old:
+
+```
+5. **Average, StdDev, Var** over no numbers are `#DIV/0!`; StdDev and Var over one number are
+   `#DIV/0!`; StdDevp and Varp over one number are 0.
+```
+
+New:
+
+```
+5. **Over records whose every value is Blank**, every Aggregation is an empty cell, Count
+   included. **Over values none of which is a number**, Average, StdDev, Var, StdDevp and Varp are
+   `#DIV/0!`, Sum, Max, Min, Product and Count Numbers are 0, and Count counts the values. StdDev
+   and Var over one number are `#DIV/0!`; StdDevp and Varp over one number are 0. *(Observed: (a)
+   by the seventeenth Windows run, item 5 (a), for Average, StdDev and Var over blanks, and by the
+   readings of 2026-10-12, R3 (a), for all eleven over text and over blanks, in the English (UK)
+   and English (US) editions; (b) by the seventeenth run, item 5 (b). The reading said `#DIV/0!`
+   over no numbers, which is so over text and not over blanks.)*
+```
+
+### 9. docs/specs/expivot/excel-behaviours.md
 
 Old:
 
@@ -204,16 +431,72 @@ New:
 ```
 14. **Captions**: "Sum of Amount", "Count of Region", and a second Value Field of the same field
     and Aggregation "Sum of Amount2". Count Numbers is captioned as Count is, so a Count and a Count
-    Numbers of one field are "Count of Value" and "Count of Value2" *(the seventeenth Windows run, item
-    4)*. A caption equal to a field's caption or another Value Field's is refused with "PivotTable
-    field name already exists." — compared ignoring case.
+    Numbers of one field are "Count of Value" and "Count of Value2", and Count Numbers chosen in
+    Value Field Settings is "Count of Amount", "データの個数 / Amount" in Japanese. Max and Min are
+    "Max of Amount" and "Min of Amount" in the English (US) edition, whose words ExPivot's are; the
+    English (UK) edition writes "Max. of" and "Min. of". A caption equal to a field's caption or
+    another Value Field's is refused with "PivotTable field name already exists." — compared
+    ignoring case. *(Observed: the captions by the seventeenth Windows run, items 4 and 14, through
+    COM; Count Numbers', Max's and Min's by the readings of 2026-10-12, R3 (a) and (d), and the
+    English (US) record of that day, (a) and (d). Not asked: the refusal.)*
 ```
 
-## The Definition of Done: PV-7
+### 10. docs/specs/expivot/excel-behaviours.md
 
-The criterion holds as written; its Statement can name General, so a reader does not take "its number format" to
-leave General unsaid, and its Verification cell gains the layer-3 test that paints the run's e16 (old -> new, the
-whole row):
+Old:
+
+```
+16. **General** writes at most 15 significant digits, as a cell does.
+```
+
+New:
+
+```
+16. **General** shows at most eleven characters besides a minus sign, whatever the column's width, as a cell's
+    General shows them in a column twelve characters wide or wider: decimals rounded to what fits, scientific where
+    the integer part has twelve or more digits or where that is closer (`1.414213562`, `1.23457E+11`,
+    `1.23457E-05`). A number Item's label is the same General (`1.23456789`, `1.23457E+11`). *(Corrected by the
+    seventeenth Windows run: the reading said 15 significant digits, which is General written in full, not General
+    shown. The Item labels observed by the readings of 2026-10-12, R3 (c).)*
+```
+
+### 11. docs/specs/expivot/excel-behaviours.md
+
+Old:
+
+```
+27. **The Japanese edition's words**: `行ラベル`, `列ラベル`, `総計`, `集計`, `合計 / 金額`,
+    `データの個数 / 地域`, `(空白)`, `(すべて)`, `(複数のアイテム)`, `値`, and the pane's
+    `ピボットテーブルのフィールド`, each read against Excel's own screens.
+```
+
+New:
+
+```
+27. **The Japanese edition's words**: `行ラベル`, `列ラベル`, `総計`, `集計`, `合計 / 金額`,
+    `データの個数 / 地域`, `(空白)`, `(すべて)`, `(複数のアイテム)`, `値`, and the pane's
+    `ピボットテーブルのフィールド`, each read against Excel's own screens. Count Numbers is captioned
+    as Count is, `データの個数 / Amount`, and the pane's two instruction lines end with a colon.
+    *(Observed: the words by the seventeenth Windows run, item 27; Count Numbers' caption and the
+    colon by the readings of 2026-10-12, R3 (d) and (b), the colon from pictures, as UI Automation's
+    names leave it out.)*
+```
+
+### 12. docs/definition-of-done.md
+
+Old:
+
+```
+| **PV-3** | MUST | Items: text is told apart ignoring case and labelled by the first spelling to arrive among the records present; numbers by value, across Integer, Decimal and Double columns; dates by their clock value; a Blank as `(blank)`. They are ordered Number, Date, Text, Boolean, Error, Blank, with Blank last in either direction and a declared order first (ADR-0060) | Layer 1 | every clause a named test |
+```
+
+New:
+
+```
+| **PV-3** | MUST | Items: text is told apart ignoring case and labelled by the first spelling to arrive among the records present; numbers by value, across Integer, Decimal and Double columns, and labelled by the field's format or, with none, in General as a value is shown (ADR-0060's note of 2026-10-12); dates by their clock value; a Blank as `(blank)`. They are ordered Number, Date, Text, Boolean, Error, Blank, with Blank last in either direction and a declared order first (ADR-0060) | Layer 1 + Layer 3 (`pivot-csv.spec.mjs`, e16b) | every clause a named test |
+```
+
+### 13. docs/definition-of-done.md
 
 Old:
 
@@ -227,9 +510,34 @@ New:
 | **PV-7** | MUST | A value paints its engine text in its number format, or, with none, in General as Excel's PivotTable shows it: at most eleven characters besides a minus sign, and `-` for that sign in every culture (ADR-0060's note of 2026-10-12). A copy carries its full-precision number. A number format the engine cannot write within its caps is refused by name, in the sample and on OK (ADR-0060) | Layer 1 + Layer 2 + Layer 3 (`pivot-csv.spec.mjs`, e16) | as stated |
 ```
 
-## The Docs Site
+### 14. samples/ExGrid.Docs/Pages/Pivot/PivotValues.razor
 
-`samples/ExGrid.Docs/Pages/Pivot/PivotValues.razor`, "Number formats and ####" (old -> new):
+Old:
+
+```
+            <code>PivotAxis.Rows</code>, or drag Σ Values to Rows, to stack them instead. <code>Caption</code>
+            gives a Value Field a name of its own, Excel's <em>Custom Name</em>.
+```
+
+New:
+
+```
+            <code>PivotAxis.Rows</code>, or drag Σ Values to Rows, to stack them instead. Each is captioned as
+            Excel captions it: <code>Sum of Revenue</code>, and <code>Count of Revenue</code> for Count and Count
+            Numbers alike; a caption a second one would repeat takes the next free number, <code>Count of
+            Revenue2</code>. <code>Caption</code> gives a Value Field a name of its own, Excel's <em>Custom
+            Name</em>, which is kept as given.
+        </p>
+        <p>
+            The words are those of Excel's English (US) edition: <code>Max of Revenue</code>, <code>Min of
+            Revenue</code>, <em>Summarize value field by</em>. <code>PivotWords.Japanese</code> gives the Japanese
+            edition's, where Count and Count Numbers are both <code>データの個数 / Revenue</code>. The English (UK)
+            edition's <code>Max. of</code>, <code>Min. of</code> and <em>Summarise</em> are not bundled, a known
+            limitation of 0.1.0: <code>Label</code> gives them by id, as any word (<code>caption-max</code>,
+            <code>aggregation-max</code>, <code>summarize-by</code>).
+```
+
+### 15. samples/ExGrid.Docs/Pages/Pivot/PivotValues.razor
 
 Old:
 
@@ -245,44 +553,43 @@ New:
             <code>#,##0</code>, <code>#,##0.00</code>, <code>0.0%</code>. Without one a value is shown in
             General as Excel's PivotTable shows it: at most eleven characters besides a minus sign, whatever the
             column's width, so √2 reads <code>1.414213562</code> and a sum with twelve or more integer digits
-            <code>1.23457E+11</code>. Its minus sign is <code>-</code> in every culture, as Excel's General writes
-            it. A field's <code>format</code> in its declaration labels its Items when it stands in Rows or
-            Columns.
+            <code>1.23457E+11</code>. Its minus sign is <code>-</code> in every culture. A field's
+            <code>format</code> in its declaration labels its Items when it stands in Rows or Columns; without one,
+            a number Item is labelled in the same General, as Excel labels it.
 ```
 
-The same page, "Aggregations" (old -> new):
+No Example changes: every Docs Site Example and Showcase gives its Value Fields a `NumberFormat`, none puts a number
+field in Rows or Columns without a `format`, and none uses Count Numbers or the Japanese words with it, so none shows
+anything new and no GIF is re-recorded.
 
-Old:
+## The Release Notes' Known limitations line (for `0.1.0`)
 
-```
-            <code>PivotAxis.Rows</code>, or drag Σ Values to Rows, to stack them instead. <code>Caption</code>
-            gives a Value Field a name of its own, Excel's <em>Custom Name</em>.
-```
+Under "Known limitations" (ADR-0202), linking the page edit 14 writes:
 
-New:
-
-```
-            <code>PivotAxis.Rows</code>, or drag Σ Values to Rows, to stack them instead. Each is captioned as
-            Excel captions it: <code>Sum of Revenue</code>, and <code>Count of Revenue</code> for Count and Count
-            Numbers alike; a caption a second one would repeat takes a number, <code>Count of Revenue2</code>.
-            <code>Caption</code> gives a Value Field a name of its own, Excel's <em>Custom Name</em>.
-```
-
-No Example changes: every Docs Site Example and Showcase gives its Value Fields a `NumberFormat`, and none uses
-Count Numbers, so none shows anything new and no GIF is re-recorded.
+- **ExPivot:** The English words are Excel's English (US) edition's, `Max of`, `Min of` and `Summarize`; the English
+  (UK) edition's `Max. of`, `Min. of` and `Summarise` are not bundled, and a Consumer gives them through `Label`
+  ([Values](expivot/values#aggregations); ADR-0060).
 
 ## Change Notes written
 
-- `docs/releases/unreleased/run17cf-pivot-general-general-eleven-characters.md`: ExPivot, Behaviour.
-- `docs/releases/unreleased/run17cf-pivot-general-count-numbers-caption.md`: ExPivot, Behaviour.
+- `docs/releases/unreleased/run17cf-pivot-general-general-eleven-characters.md`: ExPivot, Behaviour (round 1).
+- `docs/releases/unreleased/run17cf-pivot-general-count-numbers-caption.md`: ExPivot, Behaviour (round 1; round 3
+  adds the Japanese caption).
+- `docs/releases/unreleased/run17cf-pivot-general-item-labels-general.md`: ExPivot, Behaviour (round 3).
 
 ## ask_excel (for the next Windows pass)
 
-- **A Number Item's label in General**: a row field of numbers holding `1.23456789012345` and `123456789012.345`.
-  Does Excel label them `1.23456789` and `1.23457E+11`, as a value cell shows them? (ExPivot: `G15`.)
 - **A negative value in General**: Average of `-1` and `-1` and `0` over three records (`-0.666666666666667`). Is it
-  `-0.666666667` (the sign not one of the eleven, as ExPivot reads it) or `-0.66666667`?
+  `-0.666666667` (the sign not one of the eleven, as ExPivot reads it) or `-0.66666667`? And under sv-SE, is the sign
+  `-` or U+2212?
 - **The status bar over a General pivot cell**: select the StdDev cell holding √2 alone. Is Sum `1.414213562`,
   `1.414213562373`, or `1.4142135623731`? (ExPivot and ExSheet: `G15`, ADR-0130.)
-- **The Japanese edition's Count Numbers caption** beside a Count of the same field: `数値の個数 / 値`, or
-  `データの個数 / 値2` as the English edition numbers it?
+- **The number in the Japanese edition**: a Count and a Count Numbers of one field. Is the second
+  `データの個数 / 値2`, as the English edition numbers it?
+- **Value Field Settings' Custom Name beside a Count**: on a PivotTable with Count of Amount and Sum of Amount, choose
+  Count Numbers for the Sum. Does the box show `Count of Amount` or `Count of Amount2`? (ExPivot's box shows the bare
+  default, and OK numbers it.)
+- **A Custom Name another Value Field's default would take**: type `Count of Amount` as the Custom Name of a Sum, then
+  add a Count of Amount. Is the new one `Count of Amount2`? (ExPivot: yes, by its own rule.)
+- **The Japanese edition's Aggregation list**: R3 (d) read Count as `個数` in the list, where ExPivot lists
+  `データの個数`. The rest of the list (StdDev to Varp) was not read.

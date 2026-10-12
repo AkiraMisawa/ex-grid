@@ -132,7 +132,7 @@ public class PivotGeneralTests
     public void ADR0060_General_writes_the_cultures_separator(string culture, string shown)
         => Assert.Equal(shown, PivotGeneral.Text(Math.Sqrt(2), CultureInfo.GetCultureInfo(culture)));
 
-    [Theory] // ADR-0060: the minus sign is '-' in every culture, as ExSheet's (Excel's) General writes it, never the culture's U+2212, which G15 wrote
+    [Theory] // ADR-0060 (by generalisation: no run read Excel under these cultures): the minus sign is '-' in every culture, as ExSheet's General writes it, never the culture's U+2212, which G15 wrote
     [InlineData("sv-SE")]
     [InlineData("fi-FI")]
     [InlineData("nb-NO")]

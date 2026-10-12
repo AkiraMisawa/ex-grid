@@ -10,7 +10,8 @@ namespace ExPivot.Components.Tests;
 /// <summary>
 /// A value cell as the report paints it (ADR-0060, the seventeenth Windows run's items 4 and 16):
 /// General at most eleven characters, as Excel's PivotTable shows it, a copy carrying the whole
-/// number (PV-7), and Count Numbers captioned as Excel captions it.
+/// number (PV-7), and Count Numbers captioned as Excel captions it, in English and in the bundled
+/// Japanese words (the readings of 2026-10-12, R3 (d)). A number Item's label is General too (R3 (c)).
 /// </summary>
 public class PivotValueTextTests : PivotTestContext
 {
@@ -72,5 +73,33 @@ public class PivotValueTextTests : PivotTestContext
 
         Assert.Equal(["Row Labels", "Count of Amount", "Count of Amount2"], HeaderTexts(cut));
         Assert.Equal(["Count of Amount", "Count of Amount2"], AreaEntries(cut, "Values"));
+    }
+
+    [Fact] // ADR-0060, observed (R3 (d), the Japanese edition): Count Numbers is captioned データの個数 / Amount, as Count is; beside a Count, numbered by generalisation
+    public void ADR0060_The_Japanese_words_caption_Count_Numbers_as_Count()
+    {
+        var cut = RenderPivot(new PivotLayout
+        {
+            Rows = [P("Group")],
+            Values = [new PivotValueField("Amount", PivotAggregation.Count), new PivotValueField("Amount", PivotAggregation.CountNumbers)],
+        }, ps => ps.Add(p => p.Label, PivotWords.Japanese), source: PivotSource.From(E16, ObservationFields));
+
+        Assert.Equal(["行ラベル", "データの個数 / Amount", "データの個数 / Amount2"], HeaderTexts(cut));
+        Assert.Equal(["データの個数 / Amount", "データの個数 / Amount2"], AreaEntries(cut, "値"));
+    }
+
+    private sealed record Keyed(decimal Key, int Amount);
+
+    [Fact] // ADR-0060, observed (the readings of 2026-10-12, R3 (c), e16b): a number Item with no format paints its label in General, as Excel labelled it
+    public void ADR0060_A_number_Items_label_paints_in_General()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Key")], Values = [Sum("Amount")] },
+            source: PivotSource.From<Keyed>([new(1.23456789012345m, 1), new(123456789012.345m, 2)],
+            [
+                new("Key", PivotFieldType.Number, k => k.Key),
+                new("Amount", PivotFieldType.Number, k => k.Amount),
+            ]));
+
+        Assert.Equal(["1.23456789 | 1", "1.23457E+11 | 2", "Grand Total | 3"], RowTexts(cut));
     }
 }
