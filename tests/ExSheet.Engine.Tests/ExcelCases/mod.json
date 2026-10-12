@@ -50,20 +50,20 @@
     {
       "id": "MOD-006",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a fractional remainder",
+      "description": "A fractional remainder (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(5.5,2)"},
       "check": "ZZ1000",
-      "expect": {"value2": 1.5, "digits": 12}
+      "expect": {"value2": 1.5}
     },
     {
       "id": "MOD-007",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a fractional remainder of a negative number",
+      "description": "A fractional remainder of a negative number (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(-7.5,2)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.5, "digits": 12}
+      "expect": {"value2": 0.5}
     },
     {
       "id": "MOD-008",
@@ -77,16 +77,16 @@
     {
       "id": "MOD-009",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: 0.3 over 0.1 leaves almost 0.1 in doubles",
+      "description": "0.3 over 0.1 leaves almost 0.1, 0.09999999999999998, the exact remainder (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(0.3,0.1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.1, "digits": 12}
+      "expect": {"value2": 0.09999999999999998}
     },
     {
       "id": "MOD-010",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a quotient of 2^40 is answered",
+      "description": "A quotient of 2^40 is answered (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(2^40,3)"},
       "check": "ZZ1000",
       "expect": {"value2": 1}
@@ -94,7 +94,7 @@
     {
       "id": "MOD-011",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a quotient just below 1125900000000, the limit a Microsoft 365 user reported, is answered",
+      "description": "A quotient just below 1125900000000, the limit a Microsoft 365 user reported, is answered (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(1125899999999,1)"},
       "check": "ZZ1000",
       "expect": {"value2": 0}
@@ -102,7 +102,7 @@
     {
       "id": "MOD-012",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a quotient of 1125900000000, the limit a Microsoft 365 user reported, is #NUM!",
+      "description": "A quotient of 1125900000000, the limit a Microsoft 365 user reported, is #NUM! (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(1125900000000,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
@@ -110,7 +110,7 @@
     {
       "id": "MOD-013",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: the limit is on the quotient, not the number: 3377699999997/3 is just below it",
+      "description": "The limit is on the quotient, not the number: 3377699999997/3 is just below it (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(3377699999997,3)"},
       "check": "ZZ1000",
       "expect": {"value2": 0}
@@ -118,7 +118,7 @@
     {
       "id": "MOD-014",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: 3377700000000/3 reaches the limit, #NUM!",
+      "description": "3377700000000/3 reaches the limit, #NUM! (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(3377700000000,3)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
@@ -126,7 +126,7 @@
     {
       "id": "MOD-015",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a quotient of 2^53 is #NUM!",
+      "description": "A quotient of 2^53 is #NUM! (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(2^53,3)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
@@ -134,7 +134,7 @@
     {
       "id": "MOD-016",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a quotient of 1E+16/7 is #NUM!",
+      "description": "A quotient of 1E+16/7 is #NUM! (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(1E+16,7)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
