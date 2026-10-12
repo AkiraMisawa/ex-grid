@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.7% | 88.7% |
-| ExSheet | 95.5% | 88.9% |
+| ExSheet | 95.6% | 89% |
 | ExPivot | 93.8% | 84.7% |
 | Data | 94.4% | 90.2% |
 
@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/12/2026 - 03:20:58 |
+| Generated on: | 10/12/2026 - 08:11:25 |
 | Parser: | MultiReport (13x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 817 |
 | Files: | 444 |
-| **Line coverage:** | 95% (55033 of 57906) |
-| Covered lines: | 55033 |
-| Uncovered lines: | 2873 |
-| Coverable lines: | 57906 |
-| Total lines: | 95657 |
-| **Branch coverage:** | 88% (31412 of 35692) |
-| Covered branches: | 31412 |
-| Total branches: | 35692 |
+| **Line coverage:** | 95% (55018 of 57875) |
+| Covered lines: | 55018 |
+| Uncovered lines: | 2857 |
+| Coverable lines: | 57875 |
+| Total lines: | 95685 |
+| **Branch coverage:** | 88% (31408 of 35674) |
+| Covered branches: | 31408 |
+| Total branches: | 35674 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -698,11 +698,11 @@
 |ExPivot.MudBlazor.MudPivotValueFieldSettings|100%|77.2%|
 
 </details>
-<details><summary>ExSheet - 91.7%</summary>
+<details><summary>ExSheet - 91.9%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**91.7%**|**84.8%**|
+|**ExSheet**|**91.9%**|**85.1%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -713,10 +713,10 @@
 |ExSheet.ColourItem|95.2%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|90.5%|84.6%|
+|ExSheet.Components.ExSheet|91%|85.4%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|90.5%|84.6%|
+|ExSheet.Components.ExSheet<T>|91%|85.4%|
 |ExSheet.Components.FormatCellsPanel|97.1%|87.4%|
 |ExSheet.DefaultToolbarRow|100%|50%|
 |ExSheet.FillItem|100%|50%|
@@ -888,7 +888,7 @@
 |ExSheet.Engine.SheetDocumentColumnWidth|100%||
 |ExSheet.Engine.SheetDocumentException|100%||
 |ExSheet.Engine.SheetDocumentTable|100%|100%|
-|ExSheet.Engine.SheetEdit|99.3%|81.4%|
+|ExSheet.Engine.SheetEdit|99.4%|85.7%|
 |ExSheet.Engine.SheetEdit.CellFormatEdit|100%||
 |ExSheet.Engine.SheetEdit.CellFormatsEdit|100%||
 |ExSheet.Engine.SheetEdit.CellsEdit|100%||
