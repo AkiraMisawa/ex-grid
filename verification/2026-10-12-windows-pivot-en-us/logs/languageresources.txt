@@ -1,0 +1,12 @@
+# HKCU\Software\Microsoft\Office\16.0\Common\LanguageResources, exported before Excel started and after it quit
+before:       828124b6d95c29e4cf1ec3c49dd2508295cbd2ea75292180f5502a2cda5f5a45
+after (dump): c01f0fe77d5dc8cfb319089733d3099d49bd622f72a7b1ff5b4025dbcd600b02
+
+38c38
+< "RegionalAndLanguageSettingsTimestamp"=hex(b):b5,5e,2e,ca,c1,59,dd,01
+---
+> "RegionalAndLanguageSettingsTimestamp"=hex(b):62,e8,47,bf,8d,5a,dd,01
+51c51
+< "RegionalAndLanguageSettingsTimestamp"=hex(b):b5,5e,2e,ca,c1,59,dd,01
+---
+> "RegionalAndLanguageSettingsTimestamp"=hex(b):62,e8,47,bf,8d,5a,dd,01
