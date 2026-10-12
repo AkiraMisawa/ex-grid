@@ -623,39 +623,43 @@
     },
     {
       "id": "ERR-078",
-      "source": "documented",
+      "source": "observed",
       "description": "A cycle is #CIRC! in each member and each dependent (A1)",
       "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
       "check": "A1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 1}
     },
     {
       "id": "ERR-079",
-      "source": "documented",
+      "source": "observed",
       "description": "A cycle is #CIRC! in each member and each dependent (B1)",
       "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
       "check": "B1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 0}
     },
     {
       "id": "ERR-080",
-      "source": "documented",
+      "source": "observed",
       "description": "A cycle is #CIRC! in each member and each dependent (C1)",
       "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
       "check": "C1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 2}
     },
     {
       "id": "ERR-081",
-      "source": "documented",
+      "source": "observed",
       "description": "A cycle is #CIRC! in each member and each dependent (D1)",
       "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
       "check": "D1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": "2x"}
     },
     {
       "id": "ERR-082",
@@ -667,21 +671,23 @@
     },
     {
       "id": "ERR-083",
-      "source": "documented",
+      "source": "observed",
       "description": "A Formula that reads itself is #CIRC!",
       "cells": {"A1": "=A1+1"},
       "check": "A1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 0}
     },
     {
       "id": "ERR-084",
-      "source": "documented",
+      "source": "observed",
       "description": "A Formula entered later that reads a cycle is #CIRC! too",
       "cells": {"A1": "=B1", "B1": "=A1", "Z1": "=A1+1"},
       "check": "Z1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 0}
     },
     {
       "id": "ERR-085",
@@ -761,12 +767,13 @@
     },
     {
       "id": "ERR-093",
-      "source": "documented",
+      "source": "observed",
       "description": "A range that includes its own cell is a cycle",
       "cells": {"A2": "5", "A1": "=SUM(A:A)"},
       "check": "A1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 0}
     },
     {
       "id": "ERR-094",
