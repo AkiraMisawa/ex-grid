@@ -16,7 +16,10 @@
         </p>
         <p>
             Enter commits and Escape cancels. A Formula the Sheet cannot read is not committed: the edit stays open,
-            and the Sheet says what is wrong. Tokens are written in Excel's spelling, so <code>=sum(a1,2)</code> is
+            and the Sheet says what is wrong. An edit opened with F2 and not typed into closes when its row is
+            scrolled far out of view, as ExGrid's does, once the browser has confirmed nothing was typed into it; once
+            you type, even as the Sheet scrolls, it stays open until you commit or cancel. Tokens are written in
+            Excel's spelling, so <code>=sum(a1,2)</code> is
             kept as <code>=SUM(A1,2)</code>. Recalculation reaches only what a change affects, and Values are
             published only from a completed recalculation.
         </p>
