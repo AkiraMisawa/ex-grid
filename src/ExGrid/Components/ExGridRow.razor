@@ -26,11 +26,13 @@
 *@
 @* role and the absolute index (ADR-0033): the DOM holds a Window, so the position
    among siblings is wrong in exactly the way virtualisation makes it — aria-rowindex
-   states the 1-based absolute one. aria-busy while a Placeholder: values that have
-   not arrived must not be read out as though they had (ADR-0004). *@
+   states the 1-based absolute one, counted after the header's rows (2026-10-12), so a
+   reader that counts painted rows at the top says what it reads here far down.
+   aria-busy while a Placeholder: values that have not arrived must not be read out as
+   though they had (ADR-0004). *@
 @{ _paintingHighlightEnd = null; }
 <div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder, Stripe)"
-     role="row" aria-rowindex="@(RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
+     role="row" aria-rowindex="@(HeaderRowCount + RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
     @if (HeadingStyle is not null)
     {
         @* The Row Heading (ADR-0050): first in the flow and held at the left edge, so every
@@ -150,9 +152,16 @@
     [Parameter] public CellTextMetrics Metrics { get; set; }
 
     /// <summary>The row's absolute, 0-based position in the whole result — what
-    /// <c>aria-rowindex</c> (1-based) and the cell ids are written from (ADR-0033).
+    /// <c>aria-rowindex</c> (1-based, after <see cref="HeaderRowCount"/>) and the cell ids
+    /// are written from (ADR-0033).
     /// Constant for a given row within a Window, so memoisation is untouched by it.</summary>
     [Parameter] public int RowIndex { get; set; }
+
+    /// <summary>How many header rows ARIA counts before the first data row: the leaf row
+    /// and each tier of Header Groups, or none while the header is hidden. The row's
+    /// <c>aria-rowindex</c> is <see cref="RowIndex"/> plus this plus one (ADR-0033,
+    /// 2026-10-12); the cell ids are not moved by it. Constant while the header's tiers are.</summary>
+    [Parameter] public int HeaderRowCount { get; set; }
 
     /// <summary>Whether this row wears a Row Stripe (ADR-0038): decided by the grid from
     /// the row's absolute position, so it changes only when <see cref="RowIndex"/> does —
@@ -282,6 +291,7 @@
     private Func<TRow, RowKind>? _renderedRowKind;
     private Func<GridActionEventArgs<TRow>, Task>? _renderedOnAction;
     private int _renderedRowIndex;
+    private int _renderedHeaderRowCount;
     private bool _renderedStripe;
     private CellEngagement _renderedEngagement = CellEngagement.None;
     private bool _renderedMarked;
@@ -323,6 +333,7 @@
             && ReferenceEquals(_renderedRowKind, RowKind)
             && ReferenceEquals(_renderedOnAction, OnAction)
             && _renderedRowIndex == RowIndex
+            && _renderedHeaderRowCount == HeaderRowCount
             && _renderedStripe == Stripe
             && _renderedEngagement == Engagement
             && _renderedMarked == Marked
@@ -355,6 +366,7 @@
         _renderedRowKind = RowKind;
         _renderedOnAction = OnAction;
         _renderedRowIndex = RowIndex;
+        _renderedHeaderRowCount = HeaderRowCount;
         _renderedStripe = Stripe;
         _renderedEngagement = Engagement;
         _renderedMarked = Marked;

@@ -97,6 +97,36 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Contains("FALSE Total", HeaderTexts(cut));
     }
 
+    [Fact] // ADR-0033 (2026-10-12): a report with no column field counts its header row first, and its rows after it
+    public void A_reports_header_row_is_aria_row_one()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
+
+        var grid = Grid(cut);
+        Assert.Equal("row", grid.Find(".ex-header").GetAttribute("role"));
+        Assert.Equal("1", grid.Find(".ex-header").GetAttribute("aria-rowindex"));
+        Assert.Equal("6", grid.Find(".ex-grid").GetAttribute("aria-rowcount"));
+        Assert.Equal(["2", "3", "4", "5", "6"], grid.FindAll(".ex-viewport .ex-row").Select(r => r.GetAttribute("aria-rowindex")));
+    }
+
+    [Fact] // ADR-0033 / ADR-0032 (2026-10-12): a report's column Items stand in a row of their own before its header row, and its rows count after both
+    public void A_reports_column_items_are_a_row_before_its_header_row()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Online"), P("Product")], Values = [Sum("Amount")] });
+
+        var grid = Grid(cut);
+        var header = grid.Find(".ex-header");
+        Assert.Equal("rowgroup", header.GetAttribute("role"));
+        var rows = header.QuerySelectorAll("[role=row]");
+        Assert.Equal(["1", "2"], rows.Select(r => r.GetAttribute("aria-rowindex")));
+        Assert.Equal(["FALSE", "TRUE"], rows[0].QuerySelectorAll("[role=columnheader]").Select(h => h.TextContent.Trim()));
+        Assert.Contains("FALSE Total", rows[1].QuerySelectorAll("[role=columnheader]").Select(h => h.TextContent.Trim()));
+        Assert.Equal(2, HeaderRowsOf(cut));
+        Assert.Equal(grid.Instance.TotalCount + 2,
+            int.Parse(grid.Find(".ex-grid").GetAttribute("aria-rowcount")!, System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal("3", grid.FindAll(".ex-viewport .ex-row")[0].GetAttribute("aria-rowindex"));
+    }
+
     [Fact] // ADR-0059/0060: a value paints its engine text; its raw form for a copy is the number
     public void Values_paint_their_text_and_copy_their_number()
     {

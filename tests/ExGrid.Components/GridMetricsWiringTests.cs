@@ -74,7 +74,7 @@ public class GridMetricsWiringTests : GridTestContext
         var cut = RenderGrid(ps => ps.Add(g => g.RowHeight, 20d));
         await ScrollToAsync(cut.Find(".ex-scroller"), 100 * 20, 0); // first visible row 100
         await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
-        Assert.Equal("101", cut.FindAll(".ex-row")[0].GetAttribute("aria-rowindex"));
+        Assert.Equal(100, AriaRows.PositionOf(cut.FindAll(".ex-row")[0]));
 
         cut.Render(ps => ps.Add(g => g.RowHeight, 30d));
 
@@ -82,7 +82,7 @@ public class GridMetricsWiringTests : GridTestContext
         // written over the offset it was at — where the anchor was taken from…
         Assert.Equal((100 * 30d, 100 * 20d), Js.Anchored[^1]);
         // …and the model already paints from it: the first visible row is unchanged.
-        Assert.Equal("101", cut.FindAll(".ex-row")[0].GetAttribute("aria-rowindex"));
+        Assert.Equal(100, AriaRows.PositionOf(cut.FindAll(".ex-row")[0]));
     }
 
     [Fact] // ADR-0028 / RR-2: a row-height-only change re-renders no surviving row

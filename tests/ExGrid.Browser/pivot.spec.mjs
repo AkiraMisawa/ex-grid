@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 
@@ -64,7 +64,7 @@ async function entriesOf(page, title) {
 }
 
 /** How many rows the report has: the grid says so on its root, whatever it paints. */
-const reportRows = async (page) => Number(await report(page).getAttribute('aria-rowcount'));
+const reportRows = (page) => dataRowCount(report(page));
 
 /** Whether two boxes overlap. */
 const overlaps = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;

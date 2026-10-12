@@ -174,6 +174,17 @@ public abstract class PivotTestContext : BunitContext
         });
     }
 
+    /// <summary>
+    /// How many rows the report's header counts in ARIA before its first row (ADR-0033, decided
+    /// with the user 2026-10-12): the leaf row, and a row per tier of the column fields' Header
+    /// Groups above it.
+    /// </summary>
+    internal static int HeaderRowsOf(IRenderedComponent<PivotComponent> cut)
+    {
+        var header = Grid(cut).Find(".ex-header");
+        return header.GetAttribute("role") == "row" ? 1 : header.QuerySelectorAll("[role=row]").Length;
+    }
+
     /// <summary>Renders a page of the tests' own, connected and interactive.</summary>
     internal IRenderedComponent<TPage> RenderPage<TPage>() where TPage : IComponent
     {

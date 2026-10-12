@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, dataRowCount } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 
 // ExPivot on /pivot-risk (ADR-0060, ADR-0069), under ExPivot's own markup and under
@@ -126,7 +126,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => paintedHeaders(page)).toHaveLength(TENORS.length + 2);
 
             const table = await paintedRows(page);
-            expect(table, 'every row painted').toHaveLength(Number(await report(page).getAttribute('aria-rowcount')));
+            expect(table, 'every row painted').toHaveLength(await dataRowCount(report(page)));
             const grand = table.at(-1);
             expect(grand.label).toBe('Grand Total');
             // Three desks, each a group row carrying its subtotal at the top, over its curves.
