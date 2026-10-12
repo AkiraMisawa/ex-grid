@@ -1,8 +1,8 @@
 # 13: Financial iteration that reproduces Excel
 
 Status: needs-info
-Roadmap: ExSheet — IRR, XIRR and RATE, once an iteration is found that gives every answer Excel was
-seen to give; until then they are `#NAME?` (ADR-0047).
+Roadmap: ExSheet — NPV, IRR, XIRR and RATE, once an evaluation is found that gives every answer Excel
+was seen to give; until then they are `#NAME?` (ADR-0047, ADR-0202).
 
 **What to build:** IRR, XIRR and RATE under ADR-0047's existing admission rule, including the
 selected root, stopping result and failure cases at 15 significant digits.
@@ -35,3 +35,23 @@ but that nothing yet reproduces. What would unblock them:
 Microsoft's documented tolerances cannot prove any domain of arguments to match, so none is admitted
 with the rest refused (ADR-0047's note of 2026-10-10). The Status stays `needs-info`: the missing
 information is the algorithm.
+
+2026-10-12, the area pass (`verification/2026-10-12-windows-area/`, ADR-0202's note of 2026-10-12): `NPV`
+joins this ticket, undeclared (`#NAME?`) for 0.1.0. The pass read NPV-005 to 008, which ask what the
+seventeenth run's NPV-001 and 002 left open. Excel answers the same values alike whether they are typed
+or read from a range, and with the rate typed or in a cell, so a split by the kind of argument is ruled
+out. That leaves three distinct observed doubles (NPV-001, NPV-002/005/006 and NPV-003), and no
+evaluation searched gives all three: 301 in `search.py` and 3,876 in `Search.cs` (every way of
+discounting a value, every order of summing, Horner's rule from either end, 53 and 64 bits, fused
+multiply-adds, an x87 register stored to a double, Excel's last-addition adjustment). The running
+product summed forward gives NPV-001 and NPV-003 and is one unit in the last place from NPV-005;
+Horner's rule from the first value with a fused multiply-add gives NPV-001 and NPV-005 and is one unit
+from NPV-003. NPV-009 to 022 are recorded cases chosen to tell the nearest evaluations apart
+(`spikes/exsheet-financial-evaluation/discriminate.txt`). IRR's root is where NPV is 0, so the
+evaluation found for NPV is the one IRR's iteration would rest on.
+
+`PMT` stays Supported, but its last digits are open here too: PMT-013 to 016 and 018 differ from
+Excel's by one to three units in the last place, and none of the 11,242 evaluations in `search.py` nor
+the 7,344 in `Search.cs` gives every payment Excel was seen to give. PMT-011 and 012 (an `nper` of 10.5
+and of -10) are refused by decision until one does. Whether PMT is corrected or refused before the tag is
+the user's question (ADR-0202); PMT-019 to 033 ask Excel more.

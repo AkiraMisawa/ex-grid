@@ -1,22 +1,23 @@
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
-/// PMT, PV, FV and NPV, each to Microsoft's documentation of it: the annuity identity
+/// PMT, PV, FV and XNPV, each to Microsoft's documentation of it: the annuity identity
 /// <c>pv*(1+rate)^nper + pmt*(1+rate*type)*((1+rate)^nper-1)/rate + fv = 0</c>, and its form at a
-/// rate of 0. PV and FV evaluate it as Excel does, in doubles, raising 1+rate to nper by squaring;
-/// PMT carries more than a double's precision, as Excel's does (the seventeenth Windows run,
-/// <c>spikes/exsheet-financial-evaluation/</c>).
+/// rate of 0. PV and FV evaluate it as Excel does, in doubles, raising 1+rate to nper as
+/// <see cref="Growth"/> says; PMT carries more than a double's precision, as Excel's does (the
+/// seventeenth Windows run and the area pass of 2026-10-12, <c>spikes/exsheet-financial-evaluation/</c>).
+/// NPV is not declared, and is <c>#NAME?</c> as IRR is: no evaluation searched gives every double
+/// Excel gave for it (ADR-0202, note of 2026-10-12).
 /// </summary>
 internal static partial class FunctionLibrary
 {
     /// <summary>
     /// The annuity's arguments: <c>rate</c>, <c>nper</c>, the third, and the optional fourth (0 when
-    /// left out) and <c>type</c>. A <c>type</c> that is a whole number other than 0 is payment at the
-    /// start of each period, as Excel reads one (PMT-008: 2 reads as 1); a fractional one is refused
-    /// with <c>#VALUE!</c> until Excel is asked how it reads one. At a rate other than 0, an
-    /// <c>nper</c> that is not a whole number from 0 to 2^53 is refused with <c>#VALUE!</c>: Excel
-    /// raises 1+rate to it by squaring, which needs a whole number, and how it raises to any other
-    /// has not been observed.
+    /// left out) and <c>type</c>. <c>type</c> is read as a truth value, as Excel reads it: 0 is
+    /// payment at the end of each period, and any other number at the start (PMT-008 to PMT-010:
+    /// 2, 0.5 and -1 each give the payment at the start; 0.5 is not truncated to 0). At a rate other
+    /// than 0, an <c>nper</c> whose absolute value is a whole number past 2^53 is refused with
+    /// <c>#VALUE!</c>: how Excel raises 1+rate to one has not been observed.
     /// </summary>
     private static bool TryAnnuity(FunctionCall call, out double rate, out double periods, out double third, out double fourth, out bool atStart, out Operand failure)
     {
@@ -28,7 +29,7 @@ internal static partial class FunctionLibrary
         if (!TryNumber(call, 2, out third, out failure)) return false;
         if (call.Has(3) && !TryNumber(call, 3, out fourth, out failure)) return false;
         if (call.Has(4) && !TryNumber(call, 4, out type, out failure)) return false;
-        if (type != Math.Floor(type) || (rate != 0 && !(periods >= 0 && periods <= WholePeriods && periods == Math.Floor(periods))))
+        if (rate != 0 && Math.Abs(periods) > WholePeriods)
         {
             failure = Operand.Of(ErrorValue.Value);
             return false;
@@ -41,6 +42,23 @@ internal static partial class FunctionLibrary
     private const double WholePeriods = 9007199254740992;
 
     /// <summary>
+    /// 1+<paramref name="rate"/> raised to <paramref name="periods"/>, as Excel raises it in PV and FV.
+    /// A whole number from 0 is reached by squaring (<see cref="Raise"/>); a negative whole number is
+    /// 1 over the power of its absolute value so raised; any other is e^(nper ln(1+rate)), by the
+    /// platform's <see cref="Math.Exp"/> and <see cref="Math.Log(double)"/>, as the <c>^</c> operator
+    /// raises a positive base to a fractional exponent (<see cref="Arithmetic.Power"/>). Each gives
+    /// Excel's double to the bit where the area pass of 2026-10-12 read one: FV-007's -10 (squaring
+    /// 1/(1+rate) instead is 19 units in the last place away), and FV-006's and PV-005's 10.5 (a
+    /// correctly rounded power is two units from PV-005).
+    /// </summary>
+    private static double Growth(double rate, double periods)
+    {
+        var onePlusRate = 1 + rate;
+        if (periods != Math.Floor(periods)) return Math.Exp(periods * Math.Log(onePlusRate));
+        return periods >= 0 ? Raise(onePlusRate, (long)periods) : 1 / Raise(onePlusRate, (long)-periods);
+    }
+
+    /// <summary>
     /// PMT: the payment that pays <c>pv</c> down to <c>fv</c> over <c>nper</c> periods; <c>nper</c> of 0
     /// is <c>#NUM!</c>. Excel's payment is not the doubles' evaluation of the identity, which loses
     /// the rate's low bits in 1+rate: Excel's PMT-001 to 003 and 008 equal the payment at the end of
@@ -48,9 +66,16 @@ internal static partial class FunctionLibrary
     /// at the start that double divided by 1+rate, again rounded once. <see cref="Wide"/> carries
     /// both, and says which of the evaluations that give those four this one is.
     /// </summary>
+    /// <remarks>
+    /// At a rate other than 0, an <c>nper</c> that is not a whole number, or is below 0, is refused
+    /// with <c>#VALUE!</c>, although Excel answers it (PMT-011 and PMT-012): no evaluation searched
+    /// gives Excel's payment there, nor every other payment Excel was seen to give (ADR-0047, note of
+    /// 2026-10-12: admitted with some argument values refused).
+    /// </remarks>
     private static Operand Pmt(FunctionCall call)
     {
         if (!TryAnnuity(call, out var rate, out var periods, out var present, out var future, out var atStart, out var failure)) return failure;
+        if (rate != 0 && (periods < 0 || periods != Math.Floor(periods))) return Operand.Of(ErrorValue.Value);
         if (periods == 0) return Operand.Of(ErrorValue.Num);
         if (rate == 0) return Operand.Of(Evaluator.Number(-(present + future) / periods));
         var onePlusRate = Wide.Sum(1, rate);
@@ -59,24 +84,32 @@ internal static partial class FunctionLibrary
         return Operand.Of(Evaluator.Number(atStart && double.IsFinite(atEnd) ? (atEnd / onePlusRate).High : atEnd));
     }
 
-    /// <summary>PV: what a series of payments and a future value are worth now.</summary>
+    /// <summary>
+    /// PV: what a series of payments and a future value are worth now. The payment multiplies the
+    /// product of 1+rate*type and ((1+rate)^nper-1)/rate, as Excel groups it: multiplying the payment
+    /// by 1+rate*type first is one unit in the last place from Excel's PV-007.
+    /// </summary>
     private static Operand Pv(FunctionCall call)
     {
         if (!TryAnnuity(call, out var rate, out var periods, out var payment, out var future, out var atStart, out var failure)) return failure;
         if (rate == 0) return Operand.Of(Evaluator.Number(-(future + (payment * periods))));
-        var growth = Raise(1 + rate, (long)periods);
+        var growth = Growth(rate, periods);
         var due = 1 + (rate * (atStart ? 1 : 0));
-        return Operand.Of(Evaluator.Number(-(future + (payment * due * ((growth - 1) / rate))) / growth));
+        return Operand.Of(Evaluator.Number(-(future + (payment * (due * ((growth - 1) / rate)))) / growth));
     }
 
-    /// <summary>FV: what a present value and a series of payments are worth after <c>nper</c> periods.</summary>
+    /// <summary>
+    /// FV: what a present value and a series of payments are worth after <c>nper</c> periods. The
+    /// payment is grouped as in <see cref="Pv"/>: the other grouping is one unit in the last place
+    /// from Excel's FV-009.
+    /// </summary>
     private static Operand Fv(FunctionCall call)
     {
         if (!TryAnnuity(call, out var rate, out var periods, out var payment, out var present, out var atStart, out var failure)) return failure;
         if (rate == 0) return Operand.Of(Evaluator.Number(-(present + (payment * periods))));
-        var growth = Raise(1 + rate, (long)periods);
+        var growth = Growth(rate, periods);
         var due = 1 + (rate * (atStart ? 1 : 0));
-        return Operand.Of(Evaluator.Number(-((present * growth) + (payment * due * ((growth - 1) / rate)))));
+        return Operand.Of(Evaluator.Number(-((present * growth) + (payment * (due * ((growth - 1) / rate))))));
     }
 
     /// <summary>
@@ -113,8 +146,11 @@ internal static partial class FunctionLibrary
     /// from it as the rate shrinks, because an x87's 1+rate keeps only the rate's bits above 2^-64: at
     /// <c>=PMT(0.045/12,12,250000,-5000)</c> 38 of the 304 are one unit in the last place away, at
     /// <c>=PMT(0.0365/365,365,10000)</c> they give four doubles across 7 units, and at
-    /// <c>=PMT(1/10000000,12,1000)</c> nine across 3390, from the 13th significant digit. PMT-016 to
-    /// PMT-018 ask Excel.
+    /// <c>=PMT(1/10000000,12,1000)</c> nine across 3390, from the 13th significant digit.
+    /// The area pass of 2026-10-12 asked Excel. Its PMT-017, at 10^-7, is this one's double, but its
+    /// PMT-013 to 016 and 018 are one to three units in the last place from this one's, and none of the evaluations searched
+    /// since (<c>search.py</c> and <c>Search.cs</c>, some 18,000) gives every payment Excel gave. This
+    /// one stays until the user decides whether PMT is corrected or refused (ADR-0202).
     /// </remarks>
     private readonly record struct Wide(double High, double Low)
     {
@@ -183,21 +219,6 @@ internal static partial class FunctionLibrary
             }
             return result;
         }
-    }
-
-    /// <summary>
-    /// NPV: each value discounted by its period, the first one period away; the values are the
-    /// numbers SUM takes. A rate of -1 is <c>#DIV/0!</c>.
-    /// </summary>
-    private static Operand Npv(FunctionCall call)
-    {
-        if (!TryNumber(call, 0, out var rate, out var failure)) return failure;
-        var values = new List<double>();
-        if (CollectNumbers(call, values, from: 1) is { } error) return Operand.Of(error);
-        if (rate == -1) return Operand.Of(ErrorValue.Div0);
-        var total = 0.0;
-        for (var i = 0; i < values.Count; i++) total += values[i] / Math.Pow(1 + rate, i + 1);
-        return Operand.Of(Evaluator.Number(total));
     }
 
     /// <summary>

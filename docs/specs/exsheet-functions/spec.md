@@ -1,7 +1,9 @@
 # ExSheet's function catalogue
 
 Status: done — but for [ticket 13](issues/13-financial-iteration.md) (`needs-info`): `IRR`, `XIRR` and
-`RATE` are Blocked, since no algorithm reproduces Excel's, and are not pursued for now. And but for
+`RATE` are Blocked, since no algorithm reproduces Excel's, and are not pursued for now; and `NPV` is
+Blocked with them since the area pass of 2026-10-12, since no evaluation searched gives every double
+Excel gave for it (ADR-0202's note of that date). And but for
 tickets [07](issues/07-log-and-trigonometry.md) and [16](issues/16-subtotal-and-aggregate.md)
 (`ready-for-human`): the `uncertain` cases the seventeenth run's answers led to are asked by an
 `oracle.ps1 -Area` run before the tag (ADR-0208). Tickets 14 to 18,
@@ -242,10 +244,10 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `PMT` | Supported | — | Excel is reported to give a General cell a currency format on entry; ExSheet gives none until that is observed |
-| `PV` | Supported | — | |
-| `FV` | Supported | — | |
-| `NPV` | Supported | — | |
+| `PMT` | Supported | — | At a rate other than 0, an `nper` that is not a whole number from 0 is #VALUE! (ADR-0047, note of 2026-10-12). Excel gives a General cell its currency format on entry (the area pass of 2026-10-12 read `$#,##0.00_);[Red]($#,##0.00)` for PMT, PV, FV and NPV); ExSheet gives none |
+| `PV` | Supported | — | `type` is read as a truth value; any `nper` is answered |
+| `FV` | Supported | — | `type` is read as a truth value; any `nper` is answered |
+| `NPV` | Blocked | P3 | Observed: no evaluation searched gives every double Excel gave, to the last bit (NPV-001 to 008, `spikes/exsheet-financial-evaluation/`). Refused for 0.1.0 as IRR is (ADR-0202, note of 2026-10-12). Ticket 13 |
 | `XNPV` | Supported | — | |
 | `IRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
 | `XIRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
@@ -375,6 +377,13 @@ function Excel adds is listed here.
     the list beside the rows is what the engine refuses, kept equal to it by `FunctionCatalogueTests`.
     *(2026-10-11, the seventeenth run: Excel's keyboard took a function's name as a `LET` name, so the
     list is no longer what the engine refuses; see the list's paragraph.)*
+14. **The area pass of 2026-10-12 asked the financial functions' open cases** (ADR-0202's note of
+    that date, `verification/2026-10-12-windows-area/`). `PV` and `FV` answer any `nper` and any `type`
+    as Excel does, to the last bit. `PMT` reads `type` as they do; a non-whole or negative `nper` is
+    refused, and five of its payments differ from Excel's by one to three units in the last place,
+    which no evaluation searched explains, so whether it is corrected or refused is the user's
+    question. `NPV` is Blocked: no evaluation searched gives every double Excel gave for it. Ticket 13
+    holds both.
 
 The retained evidence is `verification/2026-10-03-windows-functions/`. New corpus cases preserve
 its IDs, typed fixtures and exact numeric expectations. A deliberate refusal keeps Excel's
