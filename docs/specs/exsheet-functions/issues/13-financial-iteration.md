@@ -87,9 +87,31 @@ engine's by 1 to 11 units in the last place.
 may differ from Excel's in digits no format displays (observed up to 11 units in the last place, PMT-026, a
 relative error of about 1e-15), because the engine gives the exact payment rounded once and the difference is
 Excel's own rounding; 0.1.0 lists it under Known limitations (ADR-0202). The payments that differ are recorded
-as differences by that decision, and PMT-011 and 012 (an `nper` of 10.5 and of -10), refused before only
-because PMT's evaluation is not Excel's, are answered by the same exact model with 1+rate raised as `PV` and
-`FV` raise it, each one unit in the last place from Excel's. Where its forms part in kind, a number against an
-Error Value or one Error Value against another, `PMT` refuses until Excel is asked (PMT-034, 035 and 038).
-`PMT` leaves this ticket's questions; an evaluation found later that gives every payment Excel gave would end
-the exception. `NPV` is not part of the exception and stays here, undeclared.
+as differences by that decision. `PMT` leaves this ticket's questions; an evaluation found later that gives
+every payment Excel gave would end the exception. `NPV` is not part of the exception and stays here,
+undeclared.
+
+2026-10-12, the third round of the financial area, applying that decision (the branch's choices, not the
+user's). The engine holds PMT's exact payment between bounds that decide its double, with (1+rate)^nper - 1
+raised from the rate itself, so that it is the exact payment rounded once at any rate above -1 and any `nper`:
+the previous round's double-double lost the rate below about 1e-15 and at subnormal parts, and was 1 or 2 units
+in the last place off at 874 of 3,167 such payments. `spikes/exsheet-financial-evaluation/pmt_exact.py`
+checked the engine against Python's decimal at 1200 digits over 20,000 inputs, and it gave decimal's answer at
+every one. PMT-011 and 012 (an `nper` of 10.5 and of -10) are answered so, each one unit in the last place from
+Excel's. PMT's readings are taken as the evaluations within 64 units in the last place of Excel's at every
+observed payment (`Search.cs --pmt-spread`): (1+rate)^nper - 1 through log1p and expm1, an x87's FYL2XP1 and
+F2XM1, or exact, in the forms that come so near, and LibreOffice's `ScGetPMT`. Where they part in kind, a number
+against an Error Value or one Error Value against another, or beyond the last digits through a double's range,
+`PMT` refuses until Excel is asked (PMT-034 to PMT-046; `Search.cs --refusals` runs every reading with a
+double's range over 16,896 inputs, and the engine refuses wherever they part in kind): at a rate of -1 with
+periods, below -1 with a whole `nper` or a fraction whose reciprocal is odd, where a quantity a reading computes
+passes a double's range or falls below its normal numbers, at a growth below 2^-52, and with no periods at the
+start. Two questions for the user come of it:
+
+- At PMT-013, PMT-025 and PMT-026, Excel's double and the exact payment rounded once differ in the 15th
+  significant digit, which ExSheet's General shows (-7363.70312397638 against -7363.70312397637,
+  50.9055213011993 against 50.9055213011994, 1.84529075808832 against 1.84529075808831): the decision's "digits
+  no format displays" does not hold there.
+- Where the readings part beyond the last digits by cancellation, PMT answers: among the 16,896 inputs, a
+  reading lies up to some 2 * 10^10 units in the last place from the exact payment where the engine gives it
+  (=PMT(-0.5,36.25,-150,0,0), where pv*r and (pv+fv)*r/(g-1) nearly cancel).
