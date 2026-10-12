@@ -1,5 +1,5 @@
 dotnet 10.0.203 (nix-managed)
-MOD: 32 cases observed (67 reads), 27 of them numbers; 41 candidates.
+MOD: 32 cases observed (67 reads), 27 of them numbers; 75 candidates.
 
 16/32  A   n - d*FLOOR(n/d), doubles
          MOD-017 gives 0.5000152587890625, Excel 0.5000078322611261
@@ -388,30 +388,75 @@ MOD: 32 cases observed (67 reads), 27 of them numbers; 41 candidates.
          MOD-030 gives 0, Excel 2.7755575615628914E-17
          MOD-031 gives 0, Excel 2.7755575615628914E-17
          MOD-032 gives 1, Excel 0
+32/32  B9@54 B9 at 54 bits: +d rounded to nearest at 54 bits, stored, 0 where the double is the divisor
+32/32  B10@54 B10 at 54 bits: 0 where the 54-bit sum is the divisor
+32/32  B12@54 B12 at 54 bits: +d truncated at 54 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@55 B9 at 55 bits: +d rounded to nearest at 55 bits, stored, 0 where the double is the divisor
+32/32  B10@55 B10 at 55 bits: 0 where the 55-bit sum is the divisor
+32/32  B12@55 B12 at 55 bits: +d truncated at 55 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@56 B9 at 56 bits: +d rounded to nearest at 56 bits, stored, 0 where the double is the divisor
+32/32  B10@56 B10 at 56 bits: 0 where the 56-bit sum is the divisor
+32/32  B12@56 B12 at 56 bits: +d truncated at 56 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@57 B9 at 57 bits: +d rounded to nearest at 57 bits, stored, 0 where the double is the divisor
+32/32  B10@57 B10 at 57 bits: 0 where the 57-bit sum is the divisor
+32/32  B12@57 B12 at 57 bits: +d truncated at 57 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@58 B9 at 58 bits: +d rounded to nearest at 58 bits, stored, 0 where the double is the divisor
+32/32  B10@58 B10 at 58 bits: 0 where the 58-bit sum is the divisor
+32/32  B12@58 B12 at 58 bits: +d truncated at 58 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@59 B9 at 59 bits: +d rounded to nearest at 59 bits, stored, 0 where the double is the divisor
+32/32  B10@59 B10 at 59 bits: 0 where the 59-bit sum is the divisor
+32/32  B12@59 B12 at 59 bits: +d truncated at 59 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@60 B9 at 60 bits: +d rounded to nearest at 60 bits, stored, 0 where the double is the divisor
+32/32  B10@60 B10 at 60 bits: 0 where the 60-bit sum is the divisor
+32/32  B12@60 B12 at 60 bits: +d truncated at 60 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@61 B9 at 61 bits: +d rounded to nearest at 61 bits, stored, 0 where the double is the divisor
+32/32  B10@61 B10 at 61 bits: 0 where the 61-bit sum is the divisor
+32/32  B12@61 B12 at 61 bits: +d truncated at 61 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@62 B9 at 62 bits: +d rounded to nearest at 62 bits, stored, 0 where the double is the divisor
+32/32  B10@62 B10 at 62 bits: 0 where the 62-bit sum is the divisor
+32/32  B12@62 B12 at 62 bits: +d truncated at 62 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@63 B9 at 63 bits: +d rounded to nearest at 63 bits, stored, 0 where the double is the divisor
+32/32  B10@63 B10 at 63 bits: 0 where the 63-bit sum is the divisor
+32/32  B12@63 B12 at 63 bits: +d truncated at 63 bits, stored to nearest, 0 where the double is the divisor
+31/32  B9@65 B9 at 65 bits: +d rounded to nearest at 65 bits, stored, 0 where the double is the divisor
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+31/32  B10@65 B10 at 65 bits: 0 where the 65-bit sum is the divisor
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+32/32  B12@65 B12 at 65 bits: +d truncated at 65 bits, stored to nearest, 0 where the double is the divisor
+31/32  B12@66 B12 at 66 bits: +d truncated at 66 bits, stored to nearest, 0 where the double is the divisor
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
 
-Fit every observed value: 3 of 41: B9, B10, B12.
+Fit every observed value: 34 of 75: B9, B10, B12, B9@54, B10@54, B12@54, B9@55, B10@55, B12@55, B9@56, B10@56, B12@56, B9@57, B10@57, B12@57, B9@58, B10@58, B12@58, B9@59, B10@59, B12@59, B9@60, B10@60, B12@60, B9@61, B10@61, B12@61, B9@62, B10@62, B12@62, B9@63, B10@63, B12@63, B12@65.
+At the hardware's widths (a double's 53 bits, an x87 register's 64), which the engine models: B9, B10, B12; at widths no hardware holds: 31.
 
-Predictions for the new cases, the candidates grouped by the double they give (* fits every observed value), and the engine's answer:
+Predictions for the new cases, the candidates grouped by the double they give (* fits every observed value at the
+hardware's widths, + at a width no hardware holds), and the engine's answer:
   MOD-033 =MOD(-1E-17,1)   engine: #VALUE!
-    1                          A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, *B10, B11, B13, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3
-    0                          B8, *B9, *B12
+    1                          A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, *B10, B11, B13, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3, +B10@56, +B10@57, +B10@58, +B10@59, +B10@60, +B10@61, +B10@62, +B10@63, B10@65
+    0                          B8, *B9, *B12, +B9@54, +B10@54, +B12@54, +B9@55, +B10@55, +B12@55, +B9@56, +B12@56, +B9@57, +B12@57, +B9@58, +B12@58, +B9@59, +B12@59, +B9@60, +B12@60, +B9@61, +B12@61, +B9@62, +B12@62, +B9@63, +B12@63, B9@65, +B12@65, B12@66
     0.9999999999999999         B14, B15, B16
   MOD-034 =MOD(-0.084474,2270)   engine: #VALUE!
-    2269.915526                A, A2, A3, A4, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3
-    2269.9155259999998         A5, B11, *B12, B13, B14, B15, B16
+    2269.915526                A, A2, A3, A4, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3, B9@65, B10@65, +B12@65, B12@66
+    2269.9155259999998         A5, B11, *B12, B13, B14, B15, B16, +B9@54, +B10@54, +B12@54, +B9@55, +B10@55, +B12@55, +B9@56, +B10@56, +B12@56, +B9@57, +B10@57, +B12@57, +B9@58, +B10@58, +B12@58, +B9@59, +B10@59, +B12@59, +B9@60, +B10@60, +B12@60, +B9@61, +B10@61, +B12@61, +B9@62, +B10@62, +B12@62, +B9@63, +B10@63, +B12@63
   MOD-035 =MOD(-0.008511,81200)   engine: #VALUE!
-    81199.991489               A, A2, A3, A4, A6, A7, A8, A9, B, B2, B3, B6, B7, B8, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, E, E2, E3
-    81199.99148900001          A5, B4, B5, *B9, *B10, D, D2, D3, D4, D5
+    81199.991489               A, A2, A3, A4, A6, A7, A8, A9, B, B2, B3, B6, B7, B8, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, E, E2, E3, +B12@54, +B12@55, +B12@56, +B12@57, +B12@58, +B12@59, +B12@60, +B12@61, +B12@62, +B12@63, +B12@65, B12@66
+    81199.99148900001          A5, B4, B5, *B9, *B10, D, D2, D3, D4, D5, +B9@54, +B10@54, +B9@55, +B10@55, +B9@56, +B10@56, +B9@57, +B10@57, +B9@58, +B10@58, +B9@59, +B10@59, +B9@60, +B10@60, +B9@61, +B10@61, +B9@62, +B10@62, +B9@63, +B10@63, B9@65, B10@65
   MOD-036 =MOD(0.071472,-276)   engine: #VALUE!
-    -275.928528                A, A2, A3, A4, A6, A7, A8, A9, B, B2, B3, B6, B7, B8, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, E, E2, E3
-    -275.92852800000003        A5, B4, B5, *B9, *B10, D, D2, D3, D4, D5
+    -275.928528                A, A2, A3, A4, A6, A7, A8, A9, B, B2, B3, B6, B7, B8, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, E, E2, E3, +B12@54, +B12@55, +B12@56, +B12@57, +B12@58, +B12@59, +B12@60, +B12@61, +B12@62, +B12@63, B9@65, B10@65, +B12@65, B12@66
+    -275.92852800000003        A5, B4, B5, *B9, *B10, D, D2, D3, D4, D5, +B9@54, +B10@54, +B9@55, +B10@55, +B9@56, +B10@56, +B9@57, +B10@57, +B9@58, +B10@58, +B9@59, +B10@59, +B9@60, +B10@60, +B9@61, +B10@61, +B9@62, +B10@62, +B9@63, +B10@63
   MOD-037 =MOD(-1E-16,1)   engine: 0.9999999999999999
-    0.9999999999999999         A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5
+    0.9999999999999999         A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, +B9@54, +B10@54, +B12@54, +B9@55, +B10@55, +B12@55, +B9@56, +B10@56, +B12@56, +B9@57, +B10@57, +B12@57, +B9@58, +B10@58, +B12@58, +B9@59, +B10@59, +B12@59, +B9@60, +B10@60, +B12@60, +B9@61, +B10@61, +B12@61, +B9@62, +B10@62, +B12@62, +B9@63, +B10@63, +B12@63, B9@65, B10@65, +B12@65, B12@66
     1                          E, E2, E3
   MOD-038 =MOD(1E-20,1)   engine: 1E-20
-    1E-20                      A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3
+    1E-20                      A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3, +B9@54, +B10@54, +B12@54, +B9@55, +B10@55, +B12@55, +B9@56, +B10@56, +B12@56, +B9@57, +B10@57, +B12@57, +B9@58, +B10@58, +B12@58, +B9@59, +B10@59, +B12@59, +B9@60, +B10@60, +B12@60, +B9@61, +B10@61, +B12@61, +B9@62, +B10@62, +B12@62, +B9@63, +B10@63, +B12@63, B9@65, B10@65, +B12@65, B12@66
+  MOD-039 =MOD(-0.024901,2350)   engine: 2349.975099
+    2349.975099                A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3, +B12@54, +B12@55, +B12@56, +B12@57, +B12@58, +B12@59, +B12@60, +B12@61, +B12@62, +B12@63, B9@65, B10@65, +B12@65, B12@66
+    2349.9750990000002         +B9@54, +B10@54, +B9@55, +B10@55, +B9@56, +B10@56, +B9@57, +B10@57, +B9@58, +B10@58, +B9@59, +B10@59, +B9@60, +B10@60, +B9@61, +B10@61, +B9@62, +B10@62, +B9@63, +B10@63
+  MOD-040 =MOD(-0.006664,5250)   engine: 5249.993336
+    5249.993336                A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, B11, *B12, B13, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3, +B9@63, +B10@63, B9@65, B10@65, +B12@65, B12@66
+    5249.9933359999995         B14, B15, B16, +B9@54, +B10@54, +B12@54, +B9@55, +B10@55, +B12@55, +B9@56, +B10@56, +B12@56, +B9@57, +B10@57, +B12@57, +B9@58, +B10@58, +B12@58, +B9@59, +B10@59, +B12@59, +B9@60, +B10@60, +B12@60, +B9@61, +B10@61, +B12@61, +B9@62, +B10@62, +B12@62, +B12@63
 
-Inputs where the candidates that fit every observed value part (the grid):
+Inputs where the candidates at the hardware's widths that fit every observed value part (the grid):
   0 inputs of 432 part them.
 
 What the engine refuses in each search, and why:
@@ -421,7 +466,7 @@ What the engine refuses in each search, and why:
   200,000 far smaller than the divisor: 200000 answered or refused, 43902 refused (the divisor itself, as a double but not in the register 43874, truncated at 64 bits, another double 28)
   500,000 whose sum with the divisor lies near a midpoint: 500000 answered or refused, 86401 refused (the divisor itself, as a double but not in the register 6, truncated at 64 bits, another double 86395)
 
-Every input searched (3616066): the pairs of fitting candidates that part, how often, and the first input.
+Every input searched (3616066): the pairs of fitting candidates at the hardware's widths that part, how often, and the first input.
   B10/B12    130316  =MOD(-0.084474,2270): 2269.915526 / 2269.9155259999998
   B9/B10      43880  =MOD(3.7736E-16,-56.400000000000006): 0 / -56.400000000000006
   B9/B12      86444  =MOD(-0.084474,2270): 2269.915526 / 2269.9155259999998
@@ -454,7 +499,7 @@ Everyday inputs where each pair parts (the grid, and numbers of up to five digit
     =MOD(-0.018642,9490): B9 9489.981358000001 | B10 9489.981358000001 | B12 9489.981358
     =MOD(0.071472,-276): B9 -275.92852800000003 | B10 -275.92852800000003 | B12 -275.928528
 
-Classes, the candidates that fit and never part: 3.
+Classes, the candidates at the hardware's widths that fit and never part: 3.
   B9   (B4, then 0 where the double is the divisor)
   B10   (B4, 0 where the x87 register holds the divisor (((n%d)+d)%d, every step in the register))
   B12   (B11, then 0 where the double is the divisor)
@@ -465,5 +510,83 @@ Each pair of classes, and the asked cases that part it:
   B10 / B12  MOD-033, MOD-034, MOD-035, MOD-036
   Every pair parts at an asked case.
 
-The engine (Functions.Math.cs, as EngineMod below): refuses 130316 of 3616066; answers otherwise as every candidate that fits does.
+The engine (Functions.Math.cs, as EngineMod below): refuses 130316 of 3616066; answers otherwise as every candidate at the hardware's widths that fits does.
   It refuses exactly where they part.
+
+What the engine answers where a candidate at a width no hardware holds, which fits every observed value, gives
+another double: of the inputs it answers in each search, how many, and the share of those of up to five digits.
+                                               grid       5 digits  near multiple    far smaller  near midpoint  5 digits, share
+  answered                                      418        1915635        1000000         156098         413599        100.0000%
+  B9@54                                           0          40858              0          29577           1862          2.1329%
+  B10@54                                          0          40858              0          29577           1862          2.1329%
+  B12@54                                          5          45509              0          34033           1017          2.3757%
+  B9@55                                           0          22095              0          14890           1862          1.1534%
+  B10@55                                          0          22095              0          14890           1862          1.1534%
+  B12@55                                          0          20396              0          14093           1017          1.0647%
+  B9@56                                           0          10551              0           7370           1862          0.5508%
+  B10@56                                          0          10551              0           7370           1862          0.5508%
+  B12@56                                          0           9240              0           7007           1017          0.4823%
+  B9@57                                           0           4426              0           3702           1862          0.2310%
+  B10@57                                          0           4426              0           3702           1862          0.2310%
+  B12@57                                          0           4191              0           3394           1017          0.2188%
+  B9@58                                           0           1989              0           1899           1862          0.1038%
+  B10@58                                          0           1989              0           1899           1862          0.1038%
+  B12@58                                          0           1850              0           1685           1017          0.0966%
+  B9@59                                           0            747              0            963           1862          0.0390%
+  B10@59                                          0            747              0            963           1862          0.0390%
+  B12@59                                          0            834              0            850           1017          0.0435%
+  B9@60                                           0            313              0            427           1862          0.0163%
+  B10@60                                          0            313              0            427           1862          0.0163%
+  B12@60                                          0            308              0            423           1017          0.0161%
+  B9@61                                           0            108              0            210           1862          0.0056%
+  B10@61                                          0            108              0            210           1862          0.0056%
+  B12@61                                          0            117              0            181           1017          0.0061%
+  B9@62                                           0             32              0             85           1862          0.0017%
+  B10@62                                          0             32              0             85           1862          0.0017%
+  B12@62                                          0             33              0             91           1017          0.0017%
+  B9@63                                           0              8              0             18           1190          0.0004%
+  B10@63                                          0              8              0             18           1190          0.0004%
+  B12@63                                          0              9              0             28           1017          0.0005%
+  B12@65                                          0              1              0              0           1619          0.0001%
+  any of them                                     5          65972              0          49517           3481          3.4439%
+
+  The first input of up to five digits (or of the grid) where each gives another double than the engine, and the
+  asked cases the engine answers where it does:
+    B9@54   =MOD(-0.68852,577): engine 576.31148, B9@54 576.3114800000001; asked: MOD-039, MOD-040
+    B10@54  =MOD(-0.68852,577): engine 576.31148, B10@54 576.3114800000001; asked: MOD-039, MOD-040
+    B12@54  =MOD(-0.3,7): engine 6.7, B12@54 6.699999999999999; asked: MOD-040
+    B9@55   =MOD(81.514,-60500): engine -60418.486, B9@55 -60418.486000000004; asked: MOD-039, MOD-040
+    B10@55  =MOD(81.514,-60500): engine -60418.486, B10@55 -60418.486000000004; asked: MOD-039, MOD-040
+    B12@55  =MOD(-910.87,19300): engine 18389.13, B12@55 18389.129999999997; asked: MOD-040
+    B9@56   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@56 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@56  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@56 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@56  =MOD(-0.65019,914): engine 913.34981, B12@56 913.3498099999999; asked: MOD-040
+    B9@57   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@57 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@57  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@57 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@57  =MOD(-2.9753000000000003,914): engine 911.0247, B12@57 911.0246999999999; asked: MOD-040
+    B9@58   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@58 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@58  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@58 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@58  =MOD(-0.034337,11300): engine 11299.965663, B12@58 11299.965662999999; asked: MOD-040
+    B9@59   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@59 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@59  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@59 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@59  =MOD(0.083795,-6560): engine -6559.916205, B12@59 -6559.9162049999995; asked: MOD-040
+    B9@60   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@60 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@60  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@60 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@60  =MOD(-0.49107000000000006,62800): engine 62799.50893, B12@60 62799.508929999996; asked: MOD-040
+    B9@61   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@61 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@61  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@61 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@61  =MOD(-6.698300000000001,41000): engine 40993.3017, B12@61 40993.301699999996; asked: MOD-040
+    B9@62   =MOD(-0.069032,96.80000000000001): engine 96.730968, B9@62 96.73096800000002; asked: MOD-039, MOD-040
+    B10@62  =MOD(-0.069032,96.80000000000001): engine 96.730968, B10@62 96.73096800000002; asked: MOD-039, MOD-040
+    B12@62  =MOD(0.8477800000000001,-574): engine -573.15222, B12@62 -573.1522199999999; asked: MOD-040
+    B9@63   =MOD(-0.24973,7040): engine 7039.75027, B9@63 7039.7502700000005; asked: MOD-039
+    B10@63  =MOD(-0.24973,7040): engine 7039.75027, B10@63 7039.7502700000005; asked: MOD-039
+    B12@63  =MOD(-0.000763,39600): engine 39599.999237, B12@63 39599.999236999996; asked: MOD-040
+    B12@65  =MOD(-0.06289399999999999,280): engine 279.93710599999997, B12@65 279.937106; asked: none
+
+Refusing wherever any candidate that fits every observed value parts would refuse what the engine refuses and
+the inputs of "any of them" above. Refusing wherever the divisor is added and the sum is not exact, which no
+observed answer would then pin, would refuse, of all inputs searched in each search:
+                                               grid       5 digits  near multiple    far smaller  near midpoint
+  searched                                      418        1915648        1000000         200000         500000
+  the divisor added, sum not exact               17         192038              0         200000         500000

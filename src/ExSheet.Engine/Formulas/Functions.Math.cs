@@ -33,24 +33,30 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// MOD: <c>number - divisor*INT(number/divisor)</c>, as Microsoft defines it, so the result takes
-    /// the divisor's sign, computed as every evaluation that gives each answer Excel was seen to give
-    /// computes it, and <c>#VALUE!</c> where they part (ADR-0047, ADR-0202). The remainder is exact:
-    /// Excel's <c>MOD(123456789012,0.7)</c> is 0.5000078322611261 (MOD-017), where the identity in doubles
-    /// is 0.5000152587890625, and its <c>MOD(1,0.1)</c> 0.09999999999999995 (MOD-020), where the double
-    /// quotient, 10, gives 0. Where the remainder has the number's sign, the divisor is added in a
-    /// register wider than a double and the sum then stored as one: <c>MOD(-0.087626,6630)</c> is
-    /// 6629.9123739999995 (MOD-029), the sum rounded first to an x87 register's 64 bits and then to a
-    /// double, where rounded once it is 6629.912374; and a sum stored as the divisor itself is 0:
-    /// <c>MOD(-1E-20,1)</c> is 0 (MOD-032), not 1. A remainder a hair from 0 is itself: <c>MOD(1.1,0.1)</c>
-    /// is 2.7755575615628914E-17 (MOD-030). Three evaluations give all 32 observed answers
-    /// (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>): the sum rounded to 64 bits, taken as 0
-    /// where the double stored is the divisor (<c>B9</c>), or where the register holds it (<c>B10</c>); and
-    /// the sum truncated to 64 bits, taken as 0 where the double is the divisor (<c>B12</c>). They part
-    /// where the sum is the divisor as a double but not in the register, as at <c>MOD(-1E-17,1)</c>, and
+    /// the divisor's sign, computed as every evaluation at the hardware's widths (a double's 53 bits, an
+    /// x87 register's 64) that gives each answer Excel was seen to give computes it, and <c>#VALUE!</c>
+    /// where they part (ADR-0047, ADR-0202). The remainder is exact: Excel's
+    /// <c>MOD(123456789012,0.7)</c> is 0.5000078322611261 (MOD-017), where the identity in doubles is
+    /// 0.5000152587890625, and its <c>MOD(1,0.1)</c> 0.09999999999999995 (MOD-020), where the double
+    /// quotient, 10, gives 0. Where the remainder has the number's sign, the divisor is added and the sum
+    /// held wider than a double before it is stored as one: <c>MOD(-0.087626,6630)</c> is
+    /// 6629.9123739999995 (MOD-029), the sum held at 64 bits, rounded to nearest or truncated, and then
+    /// stored as a double, where rounded once it is 6629.912374; and a sum stored as the divisor itself is
+    /// 0: <c>MOD(-1E-20,1)</c> is 0 (MOD-032), not 1. A remainder a hair from 0 is itself:
+    /// <c>MOD(1.1,0.1)</c> is 2.7755575615628914E-17 (MOD-030). At 64 bits three evaluations give all 32
+    /// observed answers (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>): the sum rounded to
+    /// nearest, taken as 0 where the double stored is the divisor (<c>B9</c>), or where the register holds
+    /// it (<c>B10</c>); and the sum truncated, taken as 0 where the double is the divisor (<c>B12</c>). They
+    /// part where the sum is the divisor as a double but not at 64 bits, as at <c>MOD(-1E-17,1)</c>, and
     /// where truncating at 64 bits stores another double than rounding there, as at
     /// <c>MOD(-0.084474,2270)</c>; <see cref="TurnedRemainder"/> refuses those, and MOD-033 to MOD-036 ask
-    /// them. A divisor of 0 is <c>#DIV/0!</c>, and a quotient of <see cref="ModQuotientLimit"/> or more
-    /// <c>#NUM!</c>.
+    /// them. The same three with the sum held at 54 to 63 bits rounded, or at 54 to 65 truncated, give all
+    /// 32 as well. No hardware holds those widths, and the engine does not model them: it answers on the
+    /// judgment that only the hardware's widths are natural, which no observed answer settles, and so
+    /// answers where they would give another double: 3.4% of the inputs of up to five digits the search
+    /// tried, about 2% at 54 bits, rounded or truncated, and about half as many at each further bit.
+    /// MOD-039 and MOD-040 ask two. A divisor of 0 is <c>#DIV/0!</c>, and a quotient of
+    /// <see cref="ModQuotientLimit"/> or more <c>#NUM!</c>.
     /// </summary>
     private static Operand Mod(FunctionCall call)
     {
