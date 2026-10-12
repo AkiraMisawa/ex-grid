@@ -367,7 +367,8 @@ test('UX-19: under forced colors every range is outlined and the Focus inside a 
     expect(forced.focus, JSON.stringify(forced)).toEqual({ style: 'solid', width: forced.focus.width, offset: `-${forced.focus.width}`, box: 'none' });
 });
 
-// ---- DC-12: the fill handle on a whole axis, beside its Heading -----------------------------------
+// ---- DC-12: the fill handle on a whole axis, beside its Heading (ADR-0050; 2026-10-12, decided with
+//      the user: it follows Excel, from the seventeenth Windows run's h3; the readings of 2026-10-12, R5)
 
 /** A Column Heading by its letters, and a Row Heading by its number, as headings.spec.mjs finds them. */
 const columnHeading = (grid, letters) => grid.locator('.ex-header-cell', { hasText: new RegExp(`^${letters}$`) });
@@ -387,7 +388,7 @@ async function handleShows(page, grid) {
 }
 
 for (const [chrome, query] of CHROMES) {
-    test(`DC-12 (${chrome} Chrome): a whole column's handle stands at its first row's top-right, beside its Heading and wholly below it (ADR-0050; the seventeenth Windows run, h3)`, async ({ page }) => {
+    test(`DC-12 (${chrome} Chrome): a whole column's handle stands at its first row's top-right, beside its Heading and wholly below it, where Excel's straddles the Heading's edge (ADR-0050; the seventeenth Windows run, h3; the readings of 2026-10-12, R5 (2))`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await columnHeading(grid, 'C').click({ force: true });
@@ -408,7 +409,7 @@ for (const [chrome, query] of CHROMES) {
         expect(seen.shows, JSON.stringify(seen)).toBe(true);
     });
 
-    test(`DC-12 (${chrome} Chrome): a whole row's handle stands at its first column's bottom-left, beside its Heading and wholly right of it (ADR-0050; the seventeenth Windows run, h3)`, async ({ page }) => {
+    test(`DC-12 (${chrome} Chrome): a whole row's handle stands at its first column's bottom-left, beside its Heading and wholly right of it, where Excel's stands on the Heading's edge (ADR-0050; the seventeenth Windows run, h3; the readings of 2026-10-12, R5 (2))`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await pressAt(rowHeading(grid, 3));
@@ -428,4 +429,45 @@ for (const [chrome, query] of CHROMES) {
         const seen = await handleShows(page, grid);
         expect(seen.shows, JSON.stringify(seen)).toBe(true);
     });
+
+    test(`DC-12 (${chrome} Chrome): with row 1 scrolled away, a whole column's handle stays at the top-right of the part in view, beside the header and uncovered (ADR-0050; the readings of 2026-10-12, R5 (5))`, async ({ page }) => {
+        await openSheet(page, query);
+        const grid = sheet(page);
+        await columnHeading(grid, 'C').click({ force: true });
+        await expectFocusAt(grid, 'C1');
+        await parkPointer(page, grid);
+        // Three rows down, as R5's three presses on the scroll bar's arrow left it: row 4 at the top.
+        const rowHeight = (await cell(grid, 'C2').boundingBox()).height;
+        await grid.locator('.ex-scroller').first().evaluate((scroller, px) => { scroller.scrollTop = px; }, 3 * rowHeight);
+        await expect(grid.locator('.ex-viewport').first()).toHaveAttribute('data-ex-first-row', '3');
+
+        const c4 = await cell(grid, 'C4').boundingBox();
+        const header = await columnHeading(grid, 'C').boundingBox();
+        await expect.poll(async () => {
+            const box = await grid.locator('.ex-fill-handle').boundingBox();
+            return box === null ? 'not painted' : JSON.stringify({
+                centredOnTheRightEdge: Math.abs(box.x + box.width / 2 - (c4.x + c4.width)) <= 1,
+                topOnTheTopInView: Math.abs(box.y - c4.y) <= 1,
+                belowTheHeading: box.y >= header.y + header.height - 1,
+            });
+        }).toBe(JSON.stringify({ centredOnTheRightEdge: true, topOnTheTopInView: true, belowTheHeading: true }));
+        const seen = await handleShows(page, grid);
+        expect(seen.shows, JSON.stringify(seen)).toBe(true);
+    });
 }
+
+test('DC-12: every cell (Ctrl+A) shows no fill handle, as Excel showed none in view (ADR-0050; the readings of 2026-10-12, R5 (1))', async ({ page }) => {
+    await openSheet(page, '');
+    const grid = sheet(page);
+    // A cell clear of the page's data, as R5 pressed Ctrl+A on an empty sheet.
+    await clickCell(grid, 'F12');
+    await expect(grid.locator('.ex-fill-handle')).toHaveCount(1);
+    await expect(grid.locator('.ex-range')).toHaveCount(0);
+
+    await page.keyboard.press('ControlOrMeta+A');
+
+    // Every cell selected: a range is drawn, the Focus stays, and the handle is gone.
+    await expect(grid.locator('.ex-selection .ex-range')).not.toHaveCount(0);
+    await expectFocusAt(grid, 'F12');
+    await expect(grid.locator('.ex-fill-handle')).toHaveCount(0);
+});

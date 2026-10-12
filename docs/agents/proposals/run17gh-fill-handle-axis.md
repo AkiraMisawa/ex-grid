@@ -116,7 +116,8 @@ with a format along it or not, costs the cells that hold something and the targe
 - **Layer 3**: `declarations.spec.mjs`, round 2's two cases rewritten to R5's on free cells of
   `/sheet` (E1 `1`, E3 `a`, E9 `=ROW()`: dragged down inside E, nothing; dragged to F3, F1 `2`, F3
   `a`, F9 `9` and `=ROW()` in the bar, G1 empty, one Ctrl+Z; A6 `1`, C6 `a`, E6 `=COLUMN()`: dragged
-  across inside row 6, nothing; dragged to D8, A7 `2`, A8 `3`, C8 `a`, E8 `5`, one Ctrl+Z), and a
+  across inside row 6, nothing, A7's `As of` kept; dragged to D8, A7 `2`, A8 `3`, C8 `a`, E8 `5`,
+  B6's blank copied over B7's date, one Ctrl+Z giving rows 7 and 8 back), and a
   new case: E:E scrolled three rows, its handle at E4's top-right, dragged to F6, F5 `x` and F1 `2`.
   After each fill the handle is waited for at its new place (F1's top-right: the Selection is E:F,
   whole columns; A8's bottom-left: rows 6:8), and after each drag along the axis at its old one (the
@@ -339,10 +340,12 @@ New:
 ```
                 <strong>The fill handle</strong>, with <code>ShowFillHandle</code>, is the square at the corner of the
                 selection: its bottom-right, or the top-right of whole columns and the bottom-left of whole rows, one
-                or several, beside the header or the Row Headings, as Excel puts it (read beside Excel on 2026-10-11
-                and 2026-10-12). It stays at the edge of the part in view when that first row or column is scrolled
-                away, and a selection of every cell has none. Drag it and the grid raises <code>OnFill</code> with
-                the source range and the target beside it; what a fill means — a copy, a series — is yours.
+                or several, beside the header or the Row Headings, as Excel puts it (observed beside Excel: one
+                column and one row in the Windows run of 2026-10-11, several in the readings of 2026-10-12, R5). It
+                stays at the edge of the part in view when that first row or column is scrolled away, as Excel's
+                did for a column (R5; for a row by generalisation), and a selection of every cell has none, as
+                Excel showed none (R5). Drag it and the grid raises <code>OnFill</code> with the source range and
+                the target beside it; what a fill means — a copy, a series — is yours.
 ```
 
 ### 9. samples/ExGrid.Docs/Pages/Sheet/SheetOverview.razor
@@ -360,9 +363,9 @@ New:
 ```
             Beyond typing, the user gets what a spreadsheet user expects: the fill handle (Formulas with
             their References shifted, a series from two or more numbers, dates by day — any other pattern is
-            refused, with the reason; for whole columns or rows it stands beside the Heading and fills every
-            row or column, a single number going on by one, as Excel's did beside it on 2026-10-12), Ctrl+D
-            and Ctrl+R, Delete to clear contents and keep formats, Ctrl+F to
+            refused, with the reason; for one or several whole columns or rows it stands beside the Heading
+            and fills every row or column, a single number going on by one, as Excel's did beside it in the
+            readings of 2026-10-12, R5), Ctrl+D and Ctrl+R, Delete to clear contents and keep formats, Ctrl+F to
 ```
 
 ### 10. samples/ExGrid.Docs/Pages/Sheet/SheetFormatting.razor
