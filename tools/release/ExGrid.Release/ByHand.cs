@@ -161,7 +161,8 @@ public static partial class ByHand
                     IReadOnlyList<string>? versions = null;
                     if (row == WrapperRange.Row)
                     {
-                        // Decided with the user on 2026-10-12: the record names the MudBlazor versions its layer-2 runs covered.
+                        // The record names the MudBlazor versions its layer-2 runs covered, so that a version published
+                        // after it can be asked for (ADR-0205, ADR-0208, 2026-10-12).
                         versions = Versions(held, name, report);
                         if (versions is null) good = false;
                     }

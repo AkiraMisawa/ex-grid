@@ -271,7 +271,7 @@
         "samples/ExGrid.DemoPages/"
       ],
       "record": null,
-      "note": "The Wrappers' MudBlazor floor run of Step 4 and the layer-2 runs across the declared range beside it (ADR-0205's notes of 2026-10-12): automated, made once by a person on a desktop with Chrome and Edge installed, and carried forward by its record while the Wrappers and the demo pages are unchanged; a MudBlazor 9.x published after it asks for the layer-2 runs at that version only, which its record's 'versions' then names (decided with the user, 2026-10-12). Never made: verification/2026-10-12-linux-mudblazor-floor/ (claude/mudblazor-range-floor) is a bisection on Playwright's bundled Chromium, and does not discharge it."
+      "note": "The Wrappers' MudBlazor floor run of Step 4 and the layer-2 runs across the declared range beside it (ADR-0205's notes of 2026-10-12): automated, made once by a person on a desktop with Chrome and Edge installed, and carried forward by its record while the Wrappers and the demo pages are unchanged. A MudBlazor 9.x published after it asks for the layer-2 runs at that version only (decided with the user, 2026-10-12), and its record's 'versions' then names that version. Never made: verification/2026-10-12-linux-mudblazor-floor/ (claude/mudblazor-range-floor) is a bisection on Playwright's bundled Chromium, and does not discharge it."
     }
   ]
 }
