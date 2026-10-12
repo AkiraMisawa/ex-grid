@@ -37,6 +37,10 @@ What the branch did, in brief:
   period before), PV-013 (rate −1), PV-014 and PV-015 (PV at 0.5 and −2.5, where PV's own observations leave
   readings FV's settle), XNPV-018 (the last addition), XNPV-019 (rate 0), XNPV-020 (rate −0.01).
 
+The branch edits itself what is not an ADR, the glossary, the Definition of Done or the Docs Site: the
+engine, the corpus, the spike, the area's Change Notes, the catalogue's PMT, PV, FV, NPV and XNPV rows and its
+note 15 (`docs/specs/exsheet-functions/spec.md`), and a comment on ticket 13.
+
 Each edit below is exact: the old text, then the new, whole lines with the target's indentation. They replace
 every edit the first round's version of this file proposed; none of those has been applied.
 
