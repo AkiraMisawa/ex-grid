@@ -58,14 +58,19 @@ Column it does not, and ADR-0071 recorded that as owed. Read against the code (`
 - **ExSheet's stylesheet puts `mix-blend-mode: multiply` on the pinned shade layer itself**, whose
   children are plain, and on each scrollable tint. A later sibling group in the Viewport blends with
   everything the Viewport painted before it, the pinned cells included — so the layer, not its contents,
-  is what blends. The overrides that took isolation and `z-index` away go.
+  is what blends. The overrides that took isolation and `z-index` away go. *(As built, 2026-10-12: what
+  went is the tint's `::before` and its `z-index`, and the range's `isolation`. The scrollable layer's
+  `z-index: auto` on the Paper stays, since the tint's group is the Viewport only while that layer makes
+  no stacking context of its own.)*
 - **The bands multiply on the Paper too**, on both sides (decided with the user): "on the Paper every wash
   multiplies and a line stays as drawn". Over white nothing changes, and ExSheet turns on neither band
   itself.
 - **The core's stylesheet gets no blend.** ExGrid and ExPivot paint the same pixels, in the same order —
   bands, tints, boxes — as before.
 - **Under forced colors** the tints and the shade layer are not painted, stated rather than left to how
-  a browser forces a translucent background.
+  a browser forces a translucent background. *(As built, 2026-10-12: no tint is painted and nothing
+  blends, and the shade layer still holds the bands' forced-colors outlines on both sides, so a band
+  keeps its dotted edge in forced colours as it did before this decision.)*
 
 ### What it costs, and what is checked
 
