@@ -41,12 +41,84 @@ public static class ReleaseNotes
         "ExPivot.Engine", "ExPivot", "ExPivot.MudBlazor",
     ];
 
-    /// <summary>Every version's headings, in order (ADR-0190).</summary>
+    /// <summary>A prerelease's headings, in order (ADR-0190).</summary>
     public static readonly ImmutableArray<string> Headings =
         ["Highlights", "Breaking changes", "Behaviour changes", "ExGrid", "ExSheet", "ExPivot", "Data"];
 
-    /// <summary>The headings a version without a suffix carries besides (Definition of Done §1 and Step 7).</summary>
-    public static readonly ImmutableArray<string> StableHeadings = ["Signed off", "SHOULD criteria accepted failing"];
+    /// <summary>
+    /// A release's blocks, the headings only a version without a suffix and a release candidate rehearsing it
+    /// carry: Known limitations (ADR-0202), Signed off and SHOULD criteria accepted failing (ADR-0190, the
+    /// Definition of Done's §1 and Step 7), Out of scope for this version and Supported (ADR-0205).
+    /// </summary>
+    public static readonly ImmutableArray<string> StableHeadings =
+        ["Known limitations", "Signed off", "SHOULD criteria accepted failing", "Out of scope for this version", "Supported"];
+
+    /// <summary>
+    /// A release's headings, in order, which a release candidate's notes carry too: ADR-0190's, with Known
+    /// limitations after Behaviour changes (ADR-0202), and the release's own blocks after the products
+    /// (ADR-0190, ADR-0205).
+    /// </summary>
+    public static readonly ImmutableArray<string> StableOrder =
+    [
+        "Highlights", "Breaking changes", "Behaviour changes", "Known limitations",
+        "ExGrid", "ExSheet", "ExPivot", "Data",
+        "Signed off", "SHOULD criteria accepted failing", "Out of scope for this version", "Supported",
+    ];
+
+    /// <summary>
+    /// The lines of a release's Signed off block, in order, each beginning with its label in bold (ADR-0205).
+    /// The release workflow reads the commit X from the <c>Commit:</c> line and the record from <c>Record:</c>.
+    /// </summary>
+    public static readonly ImmutableArray<string> SignedOffLabels = ["Record", "Commit", "Toolchain", "OS", "Browsers"];
+
+    /// <summary>The lines of a release's Supported block, in order, each beginning with its label in bold (ADR-0205).</summary>
+    public static readonly ImmutableArray<string> SupportedLabels = ["Hosts", "Browsers", "Target framework", "Packages"];
+
+    /// <summary>What a version's suffix makes it, and so whether its notes carry a release's blocks (ADR-0190, ADR-0205).</summary>
+    public enum VersionKind
+    {
+        /// <summary>
+        /// A suffix other than <c>-rc.N</c>, as an alpha's or a beta's (<c>-beta.2</c>): published before any sign-off
+        /// (ADR-0042), and its notes carry none of a release's blocks.
+        /// </summary>
+        Prerelease,
+
+        /// <summary>
+        /// <c>-rc.N</c>, N from 1: a release candidate, which rehearses the stable path (ADR-0205), its release's notes
+        /// included. Its notes carry a release's blocks and are checked as a release's are (ADR-0190, 2026-10-12).
+        /// </summary>
+        Candidate,
+
+        /// <summary>No suffix: a release in the Definition of Done's sense, whose notes carry a release's blocks.</summary>
+        Release,
+    }
+
+    /// <summary>
+    /// What <paramref name="version"/> is by its suffix: none is a release, <c>-rc.N</c> with N from 1 a release
+    /// candidate, and any other a prerelease. A suffix that begins <c>rc</c> spelt otherwise is a prerelease here,
+    /// and <see cref="LooksLikeCandidate"/> says so.
+    /// </summary>
+    public static VersionKind VersionKindOf(string version)
+    {
+        var dash = version.IndexOf('-');
+        if (dash < 0)
+            return VersionKind.Release;
+        return CandidateSuffix.IsMatch(version.Substring(dash + 1)) ? VersionKind.Candidate : VersionKind.Prerelease;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="version"/>'s suffix begins <c>rc</c>, in any case, without being <c>-rc.N</c>: as
+    /// <c>-rc1</c>, <c>-RC.1</c> or <c>-rc.0</c>. Its notes would be read as a beta's, without the blocks a candidate
+    /// rehearses, so the build refuses the name.
+    /// </summary>
+    public static bool LooksLikeCandidate(string version)
+    {
+        var dash = version.IndexOf('-');
+        if (dash < 0)
+            return false;
+        var suffix = version.Substring(dash + 1);
+        return suffix.StartsWith("rc", StringComparison.OrdinalIgnoreCase) && !CandidateSuffix.IsMatch(suffix);
+    }
 
     /// <summary>The prerelease note's file under <c>docs/releases/</c>.</summary>
     public const string PrereleaseNoteName = "prerelease-note.md";
@@ -83,7 +155,7 @@ public static class ReleaseNotes
         category: "ExGrid.Docs",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "A version's notes name it on their first line, carry Published, Packages and Target, and every heading in order, each saying None. when it has nothing; a Change Note names its Product and Kind (ADR-0190).");
+        description: "A version's notes name it on their first line, carry Published, Packages and Target, and every heading in order, each saying None. when it has nothing; a version without a suffix, and a release candidate (-rc.N) rehearsing it, also carry Known limitations, Signed off, SHOULD criteria accepted failing, Out of scope for this version and Supported, and an alpha or a beta none of them; a Change Note names its Product and Kind (ADR-0190, ADR-0202, ADR-0205).");
 
     /// <summary>A link leads nowhere.</summary>
     public static readonly DiagnosticDescriptor LinkNowhere = new(
@@ -108,6 +180,9 @@ public static class ReleaseNotes
     private static readonly Regex VersionPattern = new(
         @"^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$", RegexOptions.CultureInvariant);
 
+    // A release candidate's suffix, as the release workflow reads a tag's: rc.N, N from 1 with no leading zero.
+    private static readonly Regex CandidateSuffix = new(@"^rc\.[1-9][0-9]*$", RegexOptions.CultureInvariant);
+
     private static readonly Regex HeaderLine = new(@"^([A-Za-z][A-Za-z ]*):(.*)$", RegexOptions.CultureInvariant);
 
     private static readonly Regex Slug = new(@"^[a-z0-9][a-z0-9-]*\.md$", RegexOptions.CultureInvariant);
@@ -118,23 +193,61 @@ public static class ReleaseNotes
 
     private static readonly Regex Lead = new(@"^\*\*([^*\n]+?):\*\*(?:[ \n]+|$)", RegexOptions.CultureInvariant);
 
-    private static readonly Regex SignedOffRecord = new(@"verification/[^/\s`]+/results\.md", RegexOptions.CultureInvariant);
+    private static readonly Regex SignedOffRecord = new(@"verification/[^/\s`\]\[()]+/results\.md", RegexOptions.CultureInvariant);
+
+    private static readonly Regex SignedOffCommit = new(@"^\s*\[?`([0-9A-Za-z]*)`", RegexOptions.CultureInvariant);
+
+    private static readonly Regex FullCommit = new(@"^[0-9a-f]{40}$", RegexOptions.CultureInvariant);
+
+    private static readonly Regex AnyFullCommit = new(@"(?<![0-9A-Za-z])[0-9a-f]{40}(?![0-9A-Za-z])", RegexOptions.CultureInvariant);
+
+    private static readonly Regex CriterionId = new(@"^[A-Z][A-Z0-9]*-[0-9]+[a-z]?$", RegexOptions.CultureInvariant);
+
+    private static readonly Regex Section21Item = new(@"§(21\.[0-9]+[a-z]?)(?![0-9A-Za-z])", RegexOptions.CultureInvariant);
+
+    private static readonly Regex AnyLink = new(@"\]\([^)\s]+\)", RegexOptions.CultureInvariant);
+
+    private static readonly Regex PackageToken = new(@"[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)*", RegexOptions.CultureInvariant);
+
+    // The Definition of Done's criterion rows, `| **ID** | LEVEL | …`, and its §21 items, `### 21.N` and `| **21.N** |`.
+    private static readonly Regex CriterionRow = new(@"^\| \*\*([A-Z][A-Z0-9]*-[0-9]+[a-z]?)\*\* \| *(MUST|SHOULD|OBSERVATIONAL)\b", RegexOptions.CultureInvariant);
+
+    private static readonly Regex Section21Row = new(@"^(?:### |\| \*\*)(21\.[0-9]+[a-z]?)(?![0-9A-Za-z])", RegexOptions.CultureInvariant);
 
     /// <summary>
     /// Reads, checks and emits the notes. <paramref name="pages"/> and <paramref name="adrs"/> are what
     /// links are checked against; <paramref name="build"/> says whether this build publishes a version,
-    /// whose notes must then be cut.
+    /// whose notes must then be cut. <paramref name="definitionOfDone"/> is what the build that publishes a
+    /// release checks that release's SHOULD criteria accepted failing and its §21 items out of scope against.
     /// </summary>
     public static (ImmutableArray<Diagnostic> Diagnostics, SourceText Source) Build(
         ImmutableArray<NotesInput> files,
         ImmutableArray<PageInput> pages,
         ImmutableDictionary<string, string> adrs,
-        DocsBuildInfo build)
+        DocsBuildInfo build,
+        SourceText? definitionOfDone = null)
     {
-        var reader = new Reader(files, pages, adrs, build);
+        var reader = new Reader(files, pages, adrs, build, definitionOfDone);
         reader.Run();
         return (reader.Diagnostics.ToImmutable(), Emit(reader));
     }
+
+    // Where each heading only a version without a suffix carries comes from, and what it says.
+    private static string StableSource(string heading) => heading switch
+    {
+        "Known limitations" => "ADR-0202",
+        "Signed off" or "SHOULD criteria accepted failing" => "the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205",
+        _ => "ADR-0205",
+    };
+
+    private static string StableWhat(string heading) => heading switch
+    {
+        "Known limitations" => "what it does not do, each line linking the page of the site that says it in full, or None.",
+        "Signed off" => "the verification/<date>/results.md its sign-off was made against, the commit X, and the toolchain, OS and browser versions used",
+        "SHOULD criteria accepted failing" => "each SHOULD criterion that fails with the written reason it was accepted, or None.",
+        "Out of scope for this version" => "each of the Definition of Done's §21 items accepted in writing as out of its scope, linked, or None.",
+        _ => "the hosts, the browsers, the target framework and the packages it supports",
+    };
 
     /// <summary>
     /// Orders two versions by SemVer 2 precedence: a prerelease before its release, and a prerelease's
@@ -201,8 +314,16 @@ public static class ReleaseNotes
         ImmutableArray<NotesInput> files,
         ImmutableArray<PageInput> pages,
         ImmutableDictionary<string, string> adrs,
-        DocsBuildInfo build)
+        DocsBuildInfo build,
+        SourceText? definitionOfDone)
     {
+        // The Definition of Done's criteria by ID with their level, and its §21 items; null when it did not reach the build.
+        private readonly Dictionary<string, string>? _criteria = definitionOfDone is null ? null : ReadCriteria(definitionOfDone);
+
+        private readonly HashSet<string>? _section21 = definitionOfDone is null ? null : ReadSection21(definitionOfDone);
+
+        private bool _toldNoDefinitionOfDone;
+
         public ImmutableArray<Diagnostic>.Builder Diagnostics { get; } = ImmutableArray.CreateBuilder<Diagnostic>();
 
         public List<NotesVersion> Versions { get; } = [];
@@ -255,6 +376,44 @@ public static class ReleaseNotes
             }
 
             CheckAcross();
+        }
+
+        private static Dictionary<string, string> ReadCriteria(SourceText text)
+        {
+            var criteria = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var line in text.Lines)
+            {
+                if (CriterionRow.Match(line.ToString()) is { Success: true } row && !criteria.ContainsKey(row.Groups[1].Value))
+                    criteria[row.Groups[1].Value] = row.Groups[2].Value;
+            }
+            return criteria;
+        }
+
+        private static HashSet<string> ReadSection21(SourceText text)
+        {
+            var items = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var line in text.Lines)
+            {
+                if (Section21Row.Match(line.ToString()) is { Success: true } row)
+                    items.Add(row.Groups[1].Value);
+            }
+            return items;
+        }
+
+        // A release's SHOULD criteria and §21 items are read against the Definition of Done by the build that
+        // publishes it; when it did not reach that build they cannot be, and that is said once rather than passed.
+        private bool HasDefinitionOfDone(int start, int length, List<NotesProblem> problems)
+        {
+            if (definitionOfDone is not null)
+                return true;
+            if (!_toldNoDefinitionOfDone)
+            {
+                _toldNoDefinitionOfDone = true;
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, start, length,
+                    "docs/definition-of-done.md did not reach the build, so the criteria and §21 items this release names cannot be checked. "
+                    + "ExGrid.Docs.csproj hands it over as AdditionalFiles; restore that item (ADR-0190)."));
+            }
+            return false;
         }
 
         private void Report(NotesInput file, List<NotesProblem> problems)
@@ -509,12 +668,18 @@ public static class ReleaseNotes
         {
             var name = file.Name.Substring(0, file.Name.Length - 3);
             var text = file.Text;
-            var stable = name.IndexOf('-') < 0;
+            var kind = VersionKindOf(name);
             var first = text.Lines.Count > 0 ? text.Lines[0].ToString() : "";
             if (first != "# " + name)
             {
                 problems.Add(new NotesProblem(NotesProblemKind.Shape, 0, Math.Max(1, first.Length),
                     $"A version's notes begin with the line '# {name}', the file's name, and this one begins '{first}' ({Adr})."));
+            }
+            if (LooksLikeCandidate(name))
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, 0, Math.Max(1, first.Length),
+                    $"{name} looks like a release candidate, and a candidate is written -rc.N with N from 1, as 0.1.0-rc.1. Spelt otherwise, its notes "
+                    + "are read as a beta's, which carry none of the blocks a candidate rehearses. Name the file and its first line -rc.N (ADR-0190, ADR-0205)."));
             }
 
             var line = SkipBlank(text, 1);
@@ -599,13 +764,36 @@ public static class ReleaseNotes
             }
 
             var blocks = NotesMarkdown.ReadBlocks(text, line, problems);
-            var sections = ReadSections(file, blocks, stable, problems);
+            var header = new VersionHeader(name, kind, packages, Target.IsMatch(target) ? target : null, Publishing: build.Version == name);
+            var sections = ReadSections(file, blocks, header, problems);
             Versions.Add(new NotesVersion(file, name, published, publishedStart, publishedLength, packages, target, sections));
         }
 
-        private ImmutableArray<Section> ReadSections(NotesInput file, ImmutableArray<NotesBlock> blocks, bool stable, List<NotesProblem> problems)
+        // What the sections of a version are read against: its name, what its suffix makes it, its header lines, and
+        // whether this build publishes it. A release candidate's blocks are read as a release's are (ADR-0190, ADR-0205).
+        // Only the build that publishes a version reads its criteria and §21 items against the Definition of Done: at
+        // the tag the Definition of Done is the one the release was signed off against, and a version already
+        // published stays true of its own day however the Definition of Done is restated after it.
+        private sealed record VersionHeader(string Name, VersionKind Kind, ImmutableArray<string> Packages, string? Target, bool Publishing)
         {
-            var expected = stable ? Headings.AddRange(StableHeadings) : Headings;
+            // Whether its notes carry a release's blocks: a release's, and a release candidate's, which rehearse them.
+            public bool CarriesRelease => Kind != VersionKind.Prerelease;
+        }
+
+        private static string Missing(string heading, string? before, VersionHeader header)
+        {
+            var where = before is null ? "" : $" before '## {before}'";
+            if (!header.CarriesRelease || !StableHeadings.Contains(heading))
+                return $"'## {heading}' is missing{where}. Every heading is present, in order, and one with nothing under it says None. ({Adr}).";
+            return header.Kind == VersionKind.Release
+                ? $"'## {heading}' is missing{where}. A version without a suffix is a release, and its notes say {StableWhat(heading)} ({StableSource(heading)})."
+                : $"'## {heading}' is missing{where}. A release candidate rehearses its release's notes (ADR-0190, ADR-0205), so they carry every block a version "
+                  + $"without a suffix does, and say {StableWhat(heading)} ({StableSource(heading)}).";
+        }
+
+        private ImmutableArray<Section> ReadSections(NotesInput file, ImmutableArray<NotesBlock> blocks, VersionHeader header, List<NotesProblem> problems)
+        {
+            var expected = header.CarriesRelease ? StableOrder : Headings;
             var groups = new List<(NotesHeading Heading, List<NotesBlock> Blocks)>();
             foreach (var block in blocks)
             {
@@ -629,8 +817,10 @@ public static class ReleaseNotes
                 var index = expected.IndexOf(heading.Title);
                 if (index < 0)
                 {
-                    var why = !stable && StableHeadings.Contains(heading.Title)
-                        ? $"Only a version without a suffix carries '## {heading.Title}' (the Definition of Done's §1 and Step 7). A prerelease is not signed off."
+                    var why = !header.CarriesRelease && StableHeadings.Contains(heading.Title)
+                        ? $"Only a version without a suffix, or a release candidate (-rc.N) rehearsing it, carries '## {heading.Title}' ({StableSource(heading.Title)}). "
+                          + $"{header.Name} is another prerelease, as an alpha or a beta is: it is not signed off, and its prerelease note links what the "
+                          + "Definition of Done still owes. Remove the heading (ADR-0190, ADR-0205)."
                         : $"'## {heading.Title}' is not one of the notes' headings, which are {string.Join(", ", expected)}, in that order ({Adr}).";
                     problems.Add(new NotesProblem(NotesProblemKind.Shape, heading.Start, heading.Title.Length + 3, why));
                     continue;
@@ -642,25 +832,16 @@ public static class ReleaseNotes
                     continue;
                 }
                 for (var missing = next; missing < index; missing++)
-                {
-                    problems.Add(new NotesProblem(NotesProblemKind.Shape, heading.Start, heading.Title.Length + 3,
-                        $"'## {expected[missing]}' is missing before '## {heading.Title}'. Every heading is present, in order, and one with nothing under it says None. ({Adr})."));
-                }
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, heading.Start, heading.Title.Length + 3, Missing(expected[missing], heading.Title, header)));
                 next = index + 1;
-                sections.Add(ReadSection(heading, content, problems));
+                sections.Add(ReadSection(heading, content, header, problems));
             }
             for (var missing = next; missing < expected.Length; missing++)
-            {
-                var end = Math.Max(0, file.Text.Length - 1);
-                var why = StableHeadings.Contains(expected[missing])
-                    ? $"'## {expected[missing]}' is missing. A version without a suffix is a release, and its notes name its sign-off and every SHOULD accepted failing (the Definition of Done's §1 and Step 7; {Adr})."
-                    : $"'## {expected[missing]}' is missing. Every heading is present, in order, and one with nothing under it says None. ({Adr}).";
-                problems.Add(new NotesProblem(NotesProblemKind.Shape, end, 1, why));
-            }
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, Math.Max(0, file.Text.Length - 1), 1, Missing(expected[missing], null, header)));
             return sections.ToImmutable();
         }
 
-        private Section ReadSection(NotesHeading heading, List<NotesBlock> content, List<NotesProblem> problems)
+        private Section ReadSection(NotesHeading heading, List<NotesBlock> content, VersionHeader header, List<NotesProblem> problems)
         {
             var title = heading.Title;
             var product = Products.Contains(title) ? title : null;
@@ -669,17 +850,28 @@ public static class ReleaseNotes
                 "Highlights" => "Highlights",
                 "Breaking changes" => "Breaking",
                 "Behaviour changes" => "Behaviour",
+                "Known limitations" => "KnownLimitations",
                 "Signed off" => "SignedOff",
                 "SHOULD criteria accepted failing" => "ShouldAccepted",
+                "Out of scope for this version" => "OutOfScope",
+                "Supported" => "Supported",
                 _ => "Product",
             };
             var headingSpan = title.Length + 3;
+            // Signed off and Supported are never empty: a release was signed off on something, and supports something.
+            var labelled = kind switch
+            {
+                "SignedOff" => SignedOffLabels,
+                "Supported" => SupportedLabels,
+                _ => ImmutableArray<string>.Empty,
+            };
 
             if (content.Count == 0)
             {
                 var say = product is null ? "None." : NoChange;
-                problems.Add(new NotesProblem(NotesProblemKind.Shape, heading.Start, headingSpan,
-                    $"'## {title}' has nothing under it. Write '{say}', so a reader can tell nothing from not written ({Adr})."));
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, heading.Start, headingSpan, labelled.IsEmpty
+                    ? $"'## {title}' has nothing under it. Write '{say}', so a reader can tell nothing from not written ({Adr})."
+                    : $"'## {title}' has nothing under it. Write its lines, {LabelList(labelled)}, one each, in that order ({StableSource(title)})."));
                 return new Section(title, kind, product, false, []);
             }
             if (content.Count == 1 && content[0] is NotesParagraph only && only.Text.Text.Trim() == "None.")
@@ -691,14 +883,26 @@ public static class ReleaseNotes
                 }
                 if (kind == "SignedOff")
                 {
+                    var who = header.Kind == VersionKind.Candidate ? "A release is signed off, and its candidate rehearses the block" : "A release is signed off";
                     problems.Add(new NotesProblem(NotesProblemKind.Shape, only.Start, 5,
-                        "A release is signed off: name the verification/<date>/results.md the sign-off was made against (the Definition of Done's Step 7)."));
+                        $"{who}: write its lines, {LabelList(labelled)}, naming the verification/<date>/results.md the sign-off was made against and the commit X (the Definition of Done's Step 7; ADR-0205)."));
+                }
+                if (kind == "Supported")
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, only.Start, 5,
+                        $"A release supports something: write its lines, {LabelList(labelled)} (ADR-0205)."));
                 }
                 return new Section(title, kind, product, true, []);
             }
 
             var items = ImmutableArray.CreateBuilder<Item>();
+            if (!labelled.IsEmpty)
+            {
+                ReadLabelled(heading, content, labelled, header, items, problems);
+                return new Section(title, kind, product, false, items.ToImmutable());
+            }
             var highlights = 0;
+            var accepted = new HashSet<string>(StringComparer.Ordinal);
             foreach (var block in content)
             {
                 if (block is NotesParagraph paragraph && paragraph.Text.Text.Trim() == "None.")
@@ -730,7 +934,7 @@ public static class ReleaseNotes
                         }
                         items.Add(rendered);
                         break;
-                    case "Breaking" or "Behaviour":
+                    case "Breaking" or "Behaviour" or "KnownLimitations":
                         if (block is not NotesBullet change)
                         {
                             problems.Add(new NotesProblem(NotesProblemKind.Shape, block.Start, 1,
@@ -746,11 +950,27 @@ public static class ReleaseNotes
                             items.Add(Bullet(change, 0, problems));
                             continue;
                         }
-                        items.Add(Bullet(change, lead.Length, problems) with
+                        var reached = Bullet(change, lead.Length, problems) with
                         {
                             Products = named.ToImmutableArray(),
-                            Kind = kind,
-                        });
+                            // A known limitation is not a change, so it gives the page it links no "Changed in" chip.
+                            Kind = kind == "KnownLimitations" ? "" : kind,
+                        };
+                        if (kind == "KnownLimitations" && reached.Links.IsEmpty)
+                        {
+                            problems.Add(new NotesProblem(NotesProblemKind.Shape, change.Start, 1,
+                                "Each of the Known limitations names the limitation in a sentence and links the page of the site that says it in full, "
+                                + "as - **ExSheet:** `IRR` is `#NAME?` ([Functions](exsheet/functions)) (ADR-0202)."));
+                        }
+                        items.Add(reached);
+                        break;
+                    case "ShouldAccepted":
+                        if (ReadAccepted(block, header, accepted, problems) is { } should)
+                            items.Add(should);
+                        break;
+                    case "OutOfScope":
+                        if (ReadOutOfScope(block, header, problems) is { } outOfScope)
+                            items.Add(outOfScope);
                         break;
                     case "Product":
                         if (block is NotesParagraph note)
@@ -773,18 +993,302 @@ public static class ReleaseNotes
                         }
                         items.Add(Bullet(line, label.Length, problems) with { Products = [product!], Kind = what });
                         break;
-                    default:
-                        var item = block is NotesParagraph other ? Paragraph(other, problems) : Bullet((NotesBullet)block, 0, problems);
-                        if (kind == "SignedOff" && !SignedOffRecord.IsMatch(item.Text))
-                        {
-                            problems.Add(new NotesProblem(NotesProblemKind.Shape, block.Start, 1,
-                                "Signed off names the verification/<date>/results.md the sign-off was made against (the Definition of Done's Step 7)."));
-                        }
-                        items.Add(item);
-                        break;
                 }
             }
             return new Section(title, kind, product, false, items.ToImmutable());
+        }
+
+        private static string LabelList(ImmutableArray<string> labels) =>
+            string.Join(", ", labels.Take(labels.Length - 1).Select(l => $"**{l}:**")) + $" and **{labels[labels.Length - 1]}:**";
+
+        // What a labelled line says when it is missing or empty: what to write, and why.
+        private static string LabelHint(string section, string label, VersionHeader header) => (section, label) switch
+        {
+            ("Signed off", "Record") =>
+                $"Write - **Record:** [verification/<date>/results.md]({NotesMarkdown.Repository}/blob/v{header.Name}/verification/<date>/results.md), "
+                + "the record the sign-off was made against, linked at this version's tag (the Definition of Done's Step 7; ADR-0205).",
+            ("Signed off", "Commit") =>
+                "Write - **Commit:** and the commit X every step of §22 ran at, its 40 characters in a code span: the release workflow reads it, "
+                + "and refuses a tag that differs from it outside verification/ and docs/releases/ (ADR-0205).",
+            ("Signed off", "Toolchain") => "Name the versions of the toolchain the sign-off ran with: the .NET SDK, Node and Playwright (the Definition of Done's Step 7).",
+            ("Signed off", "OS") => "Name each operating system the sign-off ran on, with its version (the Definition of Done's Step 7).",
+            ("Signed off", _) => "Name each browser the sign-off ran, with its version (the Definition of Done's Step 7).",
+            ("Supported", "Hosts") => "Name the hosts it supports, as WebAssembly and Blazor Server (ADR-0205).",
+            ("Supported", "Browsers") => "Name the browsers it supports, as Chrome and Edge (ADR-0017, ADR-0205).",
+            ("Supported", "Target framework") => $"Name its target framework, as its Target: line does{(header.Target is null ? "" : ": " + header.Target)} (ADR-0205).",
+            _ => "Name the packages it supports: those its Packages: line names (ADR-0205).",
+        };
+
+        // Signed off and Supported: bullets, each beginning with its label in bold, one each, in order. Each label's
+        // line is checked for what it must say.
+        private void ReadLabelled(NotesHeading heading, List<NotesBlock> content, ImmutableArray<string> labels, VersionHeader header,
+            ImmutableArray<Item>.Builder items, List<NotesProblem> problems)
+        {
+            var title = heading.Title;
+            var source = StableSource(title);
+            var next = 0;
+            NotesBullet? recordLine = null;
+            foreach (var block in content)
+            {
+                if (block is not NotesBullet bullet)
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, block.Start, 1,
+                        block is NotesParagraph { Text.Text: var none } && none.Trim() == "None."
+                            ? $"'## {title}' is never None.: write its lines, {LabelList(labels)} ({source})."
+                            : $"'## {title}' holds bullets, each beginning with its label in bold, {LabelList(labels)}, one each, in that order ({source}). Make this one of them, or leave it out."));
+                    continue;
+                }
+                var lead = Lead.Match(bullet.Text.Text);
+                var label = lead.Success ? lead.Groups[1].Value : null;
+                var index = label is null ? -1 : labels.IndexOf(label);
+                var links = new List<NotesLink>();
+                var item = Bullet(bullet, 0, problems, links);
+                items.Add(item);
+                if (index < 0)
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, bullet.Start, 1,
+                        $"Each line under '## {title}' begins with its label in bold, {LabelList(labels)}, one each, in that order ({source}); "
+                        + (label is null ? "this one begins with none." : $"**{label}:** is not one of them.")));
+                    continue;
+                }
+                if (index < next)
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, bullet.Start, 1,
+                        $"**{label}:** is written twice, or out of order: the lines under '## {title}' are {LabelList(labels)}, in that order ({source})."));
+                    continue;
+                }
+                for (var missing = next; missing < index; missing++)
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, bullet.Start, 1,
+                        $"**{labels[missing]}:** is missing before **{label}:**. {LabelHint(title, labels[missing], header)}"));
+                }
+                next = index + 1;
+
+                var value = bullet.Text.Text.Substring(lead.Length);
+                var valueStart = bullet.Text.OffsetOf(lead.Length);
+                var plain = Regex.Replace(item.Text, @"^\s*" + Regex.Escape(label + ":") + @"\s*", "");
+                if (value.Trim().Length == 0 && bullet.Children.IsEmpty)
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, bullet.Start, Math.Max(1, lead.Length),
+                        $"**{label}:** says nothing. {LabelHint(title, label!, header)}"));
+                    continue;
+                }
+                switch ((title, label))
+                {
+                    case ("Signed off", "Record"):
+                        recordLine = bullet;
+                        CheckRecord(bullet, plain, links, header, valueStart, Math.Max(1, value.TrimEnd().Length), problems);
+                        break;
+                    case ("Signed off", "Commit"):
+                        var commit = SignedOffCommit.Match(value);
+                        if (!commit.Success || !FullCommit.IsMatch(commit.Groups[1].Value))
+                        {
+                            var said = commit.Success ? $"'{commit.Groups[1].Value}' is not one" : "this line names none";
+                            problems.Add(new NotesProblem(NotesProblemKind.Shape, valueStart, Math.Max(1, value.TrimEnd().Length),
+                                $"**Commit:** is the commit X the sign-off was made against, its full 40 characters in lower case in a code span, as "
+                                + $"`0123456789abcdef0123456789abcdef01234567`, and {said}. The release workflow reads it, and refuses a tag that differs from it "
+                                + "outside verification/ and docs/releases/ (ADR-0205)."));
+                        }
+                        break;
+                    case ("Supported", "Target framework"):
+                        if (header.Target is { } target && !Regex.IsMatch(plain, @"(?<![0-9A-Za-z.])" + Regex.Escape(target) + @"(?![0-9A-Za-z])"))
+                        {
+                            problems.Add(new NotesProblem(NotesProblemKind.Shape, valueStart, Math.Max(1, value.TrimEnd().Length),
+                                $"**Target framework:** names {target}, as the Target: line does; the two cannot say different things (ADR-0205)."));
+                        }
+                        break;
+                    case ("Supported", "Packages"):
+                        var named = new HashSet<string>(PackageToken.Matches(plain).Cast<Match>().Select(m => m.Value).Where(p => Packages.Contains(p)), StringComparer.Ordinal);
+                        var left = header.Packages.Where(p => !named.Contains(p)).ToList();
+                        var extra = named.Where(p => !header.Packages.Contains(p)).OrderBy(p => Packages.IndexOf(p)).ToList();
+                        if (left.Count > 0 || extra.Count > 0)
+                        {
+                            var why = left.Count > 0
+                                ? $"leaves out {string.Join(", ", left)}, which the Packages: line names"
+                                : $"names {string.Join(", ", extra)}, which the Packages: line does not";
+                            problems.Add(new NotesProblem(NotesProblemKind.Shape, valueStart, Math.Max(1, value.TrimEnd().Length),
+                                $"**Packages:** {why}. The two name the same packages, by their IDs (ADR-0205)."));
+                        }
+                        break;
+                }
+            }
+            for (var missing = next; missing < labels.Length; missing++)
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, heading.Start, title.Length + 3,
+                    $"'## {title}' names no **{labels[missing]}:**. {LabelHint(title, labels[missing], header)}"));
+            }
+            if (title == "Signed off")
+                CheckSignedOffNamesOne(content, recordLine, problems);
+        }
+
+        // The release workflow reads the whole Signed off block for the one record and the one commit X it names
+        // (ADR-0205), so a second of either anywhere in it, a link's address included, is refused here first. The
+        // record named on the Record line itself is CheckRecord's; a nested bullet that merely begins **Record:**
+        // is another line, read here like any other.
+        private static void CheckSignedOffNamesOne(List<NotesBlock> content, NotesBullet? recordLine, List<NotesProblem> problems)
+        {
+            var lines = content.OfType<NotesBullet>().SelectMany(b => b.Children.Prepend(b)).ToList();
+            var commits = new List<(string Value, int Start)>();
+            foreach (var line in lines)
+            {
+                foreach (Match match in AnyFullCommit.Matches(line.Text.Text))
+                    commits.Add((match.Value, line.Text.OffsetOf(match.Index)));
+            }
+            if (commits.Select(c => c.Value).Distinct(StringComparer.Ordinal).Skip(1).FirstOrDefault() is { } second)
+            {
+                var at = commits.First(c => c.Value == second);
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, at.Start, second.Length,
+                    $"'## Signed off' names a second commit, {second}: the release workflow reads the one commit X the block names, "
+                    + "and refuses a block that names two. Name X once, on its **Commit:** line (ADR-0205)."));
+            }
+            foreach (var line in lines.Where(l => !ReferenceEquals(l, recordLine)))
+            {
+                if (SignedOffRecord.Match(line.Text.Text) is { Success: true } record)
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, line.Text.OffsetOf(record.Index), record.Length,
+                        $"{record.Value} is named outside the **Record:** line: the release workflow reads the one record the block names, "
+                        + "and refuses a block that names two. Name the record once, on its **Record:** line (ADR-0205)."));
+                }
+            }
+        }
+
+        // The Record line names one verification/<dir>/results.md and links it at this version's tag: the record is
+        // added after the commit it signs off, so it exists at the tag and not at X (ADR-0205). The line is read twice:
+        // as it renders, for the record it names, and as it is written, as the release workflow reads it, where a
+        // link's address and a backslash escape are text too. The two must find the same one record.
+        private static void CheckRecord(NotesBullet line, string plain, List<NotesLink> links, VersionHeader header, int valueStart, int span, List<NotesProblem> problems)
+        {
+            var records = SignedOffRecord.Matches(plain).Cast<Match>().Select(m => m.Value).Distinct(StringComparer.Ordinal).ToList();
+            if (records.Count != 1)
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, valueStart, span,
+                    (records.Count == 0 ? "**Record:** names no verification/<date>/results.md. " : $"**Record:** names {records.Count} records, {string.Join(", ", records)}, and a sign-off is made against one. ")
+                    + LabelHint("Signed off", "Record", header)));
+                return;
+            }
+            var expected = $"{NotesMarkdown.Repository}/blob/v{header.Name}/{records[0]}";
+            foreach (var written in SignedOffRecord.Matches(line.Text.Text).Cast<Match>()
+                .Where(m => m.Value != records[0]).GroupBy(m => m.Value, StringComparer.Ordinal).Select(g => g.First()))
+            {
+                var at = line.Text.OffsetOf(written.Index);
+                var inAddress = links.Any(l => at >= l.Start && at < l.Start + l.Length);
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, at, written.Length,
+                    (inAddress
+                        ? $"**Record:** names a second record, {written.Value}, in a link's address. "
+                        : $"**Record:** writes {written.Value}, which the site renders as {records[0]}, and the release workflow reads what is written: to it, that is a second record. ")
+                    + "The workflow reads the block as it is written, link addresses, escapes and entities included, and refuses a block that names two records. "
+                    + $"Link only the record, as [{records[0]}]({expected}), and write its path plainly (ADR-0205)."));
+            }
+            var link = links.FirstOrDefault(l => l.External);
+            if (link is null)
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, valueStart, span,
+                    $"**Record:** links the record at this version's tag, as [{records[0]}]({expected}): it is added after the commit X it signs off, "
+                    + "so it is read at the tag (ADR-0205)."));
+            }
+            else if (link.Target != expected)
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Link, link.Start, link.Length,
+                    $"This link leads to {link.Target}, and the record this line names is {expected}, at this version's tag. Link that address (ADR-0205)."));
+            }
+        }
+
+        // A SHOULD criterion accepted failing: a bullet that begins with its ID in bold, then the written reason. The ID
+        // is a SHOULD of the Definition of Done: a MUST that fails stops the release, and an OBSERVATIONAL number never fails.
+        private Item? ReadAccepted(NotesBlock block, VersionHeader header, HashSet<string> accepted, List<NotesProblem> problems)
+        {
+            const string Form = "Each SHOULD criterion accepted failing is a bullet that begins with its ID in bold, then the written reason it was accepted, "
+                + "as - **UX-10:** … (the Definition of Done's §1).";
+            if (block is not NotesBullet bullet)
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, block.Start, 1, Form));
+                return null;
+            }
+            var item = Bullet(bullet, 0, problems);
+            var lead = Lead.Match(bullet.Text.Text);
+            var ids = lead.Success ? lead.Groups[1].Value.Split(',').Select(p => p.Trim()).ToList() : [];
+            if (!lead.Success || ids.Any(id => !CriterionId.IsMatch(id)))
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, bullet.Start, 1, Form));
+                return item;
+            }
+            if (bullet.Text.Text.Substring(lead.Length).Trim().Length == 0 && bullet.Children.IsEmpty)
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, bullet.Start, Math.Max(1, lead.Length),
+                    $"**{lead.Groups[1].Value}:** gives no reason. A SHOULD that fails is accepted only with a written reason, naming why (the Definition of Done's §1)."));
+            }
+            var at = lead.Groups[1].Index;
+            foreach (var part in lead.Groups[1].Value.Split(','))
+            {
+                var id = part.Trim();
+                var start = bullet.Text.OffsetOf(at + (part.Length - part.TrimStart().Length));
+                at += part.Length + 1;
+                if (!accepted.Add(id))
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, start, id.Length,
+                        $"{id} is accepted twice. Give each criterion one line, with its reason."));
+                    continue;
+                }
+                if (!header.Publishing || !HasDefinitionOfDone(start, id.Length, problems))
+                    continue;
+                if (!_criteria!.TryGetValue(id, out var level))
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Link, start, id.Length,
+                        $"{id} names no criterion: the Definition of Done has no row **{id}**. Correct the ID."));
+                }
+                else if (level == "MUST")
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, start, id.Length,
+                        $"{id} is a MUST, and no reason accepts a MUST that fails: release is not possible while it fails (the Definition of Done's §1). "
+                        + "Make it pass before the tag; only a SHOULD is accepted failing."));
+                }
+                else if (level == "OBSERVATIONAL")
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, start, id.Length,
+                        $"{id} is OBSERVATIONAL: it is recorded and never a gate, so it does not fail and is not accepted (the Definition of Done's §1). Leave it out."));
+                }
+            }
+            return item;
+        }
+
+        // A §21 item out of scope: a bullet that names the item, as §21.11, and links where it was accepted in writing.
+        private Item? ReadOutOfScope(NotesBlock block, VersionHeader header, List<NotesProblem> problems)
+        {
+            const string Form = "Each line under '## Out of scope for this version' is a bullet that names the Definition of Done's §21 item accepted in writing "
+                + "as out of this version's scope, as §21.11, and links where it was accepted (the Definition of Done's Step 7; ADR-0205).";
+            if (block is not NotesBullet bullet)
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, block.Start, 1, Form));
+                return null;
+            }
+            var item = Bullet(bullet, 0, problems);
+            var raw = bullet.Text.Text + string.Concat(bullet.Children.Select(c => "\n" + c.Text.Text));
+            var named = Section21Item.Matches(bullet.Text.Text).Cast<Match>().ToList();
+            if (named.Count == 0 || !AnyLink.IsMatch(raw))
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, bullet.Start, 1, Form));
+                return item;
+            }
+            foreach (var match in named)
+            {
+                var start = bullet.Text.OffsetOf(match.Index);
+                if (!header.Publishing || !HasDefinitionOfDone(start, match.Length, problems))
+                    break;
+                if (!_section21!.Contains(match.Groups[1].Value))
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Link, start, match.Length,
+                        $"{match.Value} names no item of the Definition of Done's §21, whose items are "
+                        + $"{string.Join(", ", _section21.OrderBy(s => s, Comparer<string>.Create(CompareItems)).Select(s => "§" + s))}. Correct the number."));
+                }
+            }
+            return item;
+        }
+
+        private static int CompareItems(string a, string b)
+        {
+            int Number(string s) => int.Parse(new string(s.Substring(3).TakeWhile(char.IsDigit).ToArray()), CultureInfo.InvariantCulture);
+            var order = Number(a).CompareTo(Number(b));
+            return order != 0 ? order : string.CompareOrdinal(a, b);
         }
 
         private Item Paragraph(NotesParagraph paragraph, List<NotesProblem> problems)
@@ -793,13 +1297,15 @@ public static class ReleaseNotes
             return new Item(inline.Html, inline.Text, [], "", inline.Links.Where(l => !l.External).Select(l => l.Target).ToImmutableArray(), Bullet: false);
         }
 
-        // A bullet, from `from` in its text, with its nested bullets.
-        private Item Bullet(NotesBullet bullet, int from, List<NotesProblem> problems)
+        // A bullet, from `from` in its text, with its nested bullets. `allLinks`, when given, receives every link
+        // it holds, those that leave the site included.
+        private Item Bullet(NotesBullet bullet, int from, List<NotesProblem> problems, List<NotesLink>? allLinks = null)
         {
             var inline = Render(bullet.Text, problems, from: from);
             var html = new StringBuilder(inline.Html);
             var text = new StringBuilder(inline.Text);
             var links = inline.Links.Where(l => !l.External).Select(l => l.Target).ToList();
+            allLinks?.AddRange(inline.Links);
             if (!bullet.Children.IsEmpty)
             {
                 html.Append("<ul>");
@@ -809,6 +1315,7 @@ public static class ReleaseNotes
                     html.Append("<li>").Append(nested.Html).Append("</li>");
                     text.Append(' ').Append(nested.Text);
                     links.AddRange(nested.Links.Where(l => !l.External).Select(l => l.Target));
+                    allLinks?.AddRange(nested.Links);
                 }
                 html.Append("</ul>");
             }

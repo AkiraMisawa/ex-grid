@@ -1,10 +1,18 @@
 @* The Release Notes (ADR-0190): what each version published, newest first, and on a site not published
    from a tag, what is not on nuget.org yet. Every heading is shown, and one with nothing under it says
-   "None.", so a reader can tell nothing from not written. The chips filter by product, or keep only the
-   breaking and behaviour changes. Nothing is fetched: the notes were read when the site was built. *@
+   "None.", so a reader can tell nothing from not written. A release, a version without a suffix, also
+   shows its Known limitations (ADR-0202), and its sign-off, SHOULD criteria accepted failing, scope and
+   support (ADR-0190, ADR-0205); so does a release candidate, -rc.N, which rehearses its release's notes
+   (ADR-0190 and ADR-0205, 2026-10-12). The chips filter by product, or keep only the breaking and behaviour
+   changes. Nothing is fetched: the notes were read when the site was built. *@
 <div class="docs-notes-intro">
     <p>
-        A version's day is the UTC day nuget.org received its packages.
+        A version's day is the UTC day nuget.org received its packages. A release, a version without a
+        suffix, also names what it does not do under Known limitations, the record and commit it was signed off
+        against, every SHOULD criterion accepted failing and why, what was left out of its scope, and the hosts,
+        browsers, target framework and packages it supports. A release candidate, <code>-rc.N</code>, carries the
+        same blocks, checked as a release's are, so that a release's notes are read before its tag; an alpha or a
+        beta carries none of them.
         @if (!ReleaseNotes.AnyRelease)
         {
             <text>
@@ -161,7 +169,7 @@
                             @foreach (var item in run)
                             {
                                 <li class="docs-notes-item">
-                                    @if (heading.Kind is ReleaseSectionKind.Breaking or ReleaseSectionKind.Behaviour)
+                                    @if (heading.Kind is ReleaseSectionKind.Breaking or ReleaseSectionKind.Behaviour or ReleaseSectionKind.KnownLimitations)
                                     {
                                         <span class="docs-notes-label">@string.Join(", ", item.Products)</span>@(" ")
                                     }
@@ -202,17 +210,19 @@
 
     private void SetBreaking(string? value) => _breakingOnly = value == BreakingOnly;
 
-    // Which headings the filters keep: the breaking and behaviour changes always; a product's own
-    // heading when no product, or that product, is chosen; the rest only when nothing is filtered.
+    // Which headings the filters keep: the breaking and behaviour changes always; a release's Known
+    // limitations, which name their products, unless only the breaking and behaviour changes are kept; a
+    // product's own heading when no product, or that product, is chosen; the rest only when nothing is filtered.
     private bool Visible(ReleaseSection section) => section.Kind switch
     {
         ReleaseSectionKind.Breaking or ReleaseSectionKind.Behaviour => true,
+        ReleaseSectionKind.KnownLimitations => !_breakingOnly,
         ReleaseSectionKind.Product => !_breakingOnly && (_product is null || section.Product == _product),
         _ => !Filtered,
     };
 
     private IReadOnlyList<ReleaseItem> Items(ReleaseSection section) =>
-        _product is not null && section.Kind is ReleaseSectionKind.Breaking or ReleaseSectionKind.Behaviour
+        _product is not null && section.Kind is ReleaseSectionKind.Breaking or ReleaseSectionKind.Behaviour or ReleaseSectionKind.KnownLimitations
             ? section.Items.Where(i => i.Products.Contains(_product)).ToList()
             : section.Items;
 
