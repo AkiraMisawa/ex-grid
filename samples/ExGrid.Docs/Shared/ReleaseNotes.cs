@@ -18,7 +18,10 @@ internal enum ReleaseSectionKind
     /// <summary>A release's known limitations, each naming its products and linking the page that says it in full (ADR-0202).</summary>
     KnownLimitations,
 
-    /// <summary>A release's sign-off: the record, the commit X, and the toolchain, OS and browser versions it was made with (ADR-0205).</summary>
+    /// <summary>
+    /// A release's sign-off: the record, the commit X, and the toolchain, OS and browser versions it was made with (ADR-0205).
+    /// A release candidate's says, in its pending form, that the sign-off is being made against it (2026-10-12).
+    /// </summary>
     SignedOff,
 
     /// <summary>A release's SHOULD criteria accepted failing, each with its reason.</summary>
@@ -80,6 +83,21 @@ internal sealed record ReleaseVersion(string Version, string? PublishedInFile, I
 
     /// <summary>Whether it carries a prerelease suffix (ADR-0042).</summary>
     public bool Prerelease => Version.Contains('-');
+
+    /// <summary>
+    /// Whether it is a release candidate, <c>-rc.N</c>: a prerelease that rehearses its release, whose notes open
+    /// with the candidate's note rather than the prerelease note (ADR-0205, 2026-10-12). The build refuses any other
+    /// spelling of one.
+    /// </summary>
+    public bool Candidate
+    {
+        get
+        {
+            var dash = Version.IndexOf('-');
+            var suffix = dash < 0 ? "" : Version[(dash + 1)..];
+            return suffix.Length > 3 && suffix.StartsWith("rc.", StringComparison.Ordinal) && suffix[3] != '0' && suffix[3..].All(char.IsAsciiDigit);
+        }
+    }
 
     /// <summary>Its tag.</summary>
     public string Tag => "v" + Version;
@@ -161,8 +179,15 @@ internal static partial class ReleaseNotes
 
     private static readonly string PrereleaseNoteHtml = ReadPrereleaseNote();
 
-    /// <summary>The prerelease note, held once in <c>docs/releases/prerelease-note.md</c>, at the version's tag.</summary>
-    public static string PrereleaseNote(ReleaseVersion version) => PrereleaseNoteHtml.Replace("{ref}", version.Tag);
+    private static readonly string CandidateNoteHtml = ReadCandidateNote();
+
+    /// <summary>
+    /// The note a prerelease's notes open with, at the version's tag: the candidate's note, held once in
+    /// <c>docs/releases/candidate-note.md</c>, for a release candidate (2026-10-12); the prerelease note, held once in
+    /// <c>docs/releases/prerelease-note.md</c>, for any other prerelease.
+    /// </summary>
+    public static string PrereleaseNote(ReleaseVersion version) =>
+        (version.Candidate ? CandidateNoteHtml : PrereleaseNoteHtml).Replace("{ref}", version.Tag);
 
     /// <summary>The version published before <paramref name="version"/>, if any.</summary>
     public static ReleaseVersion? Previous(ReleaseVersion version)
@@ -328,4 +353,6 @@ internal static partial class ReleaseNotes
     private static partial ChangeNote[] ReadChangeNotes();
 
     private static partial string ReadPrereleaseNote();
+
+    private static partial string ReadCandidateNote();
 }

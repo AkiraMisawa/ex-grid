@@ -24,7 +24,46 @@ public class SignOffTests
 
         Assert.Empty(report.Refusals);
         Assert.Equal(x, signedOff);
-        Assert.Contains("is the signed-off commit", Assert.Single(report.Notices));
+        Assert.Contains(report.Notices, n => n.Contains("is the signed-off commit"));
+        Assert.Contains(report.Notices, n => n.Contains("is the commit v0.1.0-rc.1 was tagged on"));
+    }
+
+    [Fact] // ADR-0205 (2026-10-12): the sign-off is made against a release candidate, so X is a candidate's commit
+    public void A_signed_off_commit_no_candidate_was_tagged_on_is_refused()
+    {
+        using var repo = new Repo();
+        var x = Fixture.ReadyToSignOff(repo);
+        var y = Fixture.SignedOff(repo, x, candidate: false);
+
+        var refusal = Assert.Single(Check(repo, y, out var signedOff).Refusals);
+        Assert.Equal(x, signedOff);
+        Assert.Contains($"The signed-off commit {x[..12]} is not the commit of a release candidate of 0.1.0: no v0.1.0-rc.N is tagged", refusal.Message);
+    }
+
+    [Fact] // ADR-0205 (2026-10-12): a candidate of the version tagged on another commit, or a candidate of another version, is not X's
+    public void A_candidate_tagged_elsewhere_is_not_X_s()
+    {
+        using var repo = new Repo();
+        var earlier = repo.Write("src/Code/early.cs", "early").Commit("An earlier candidate's commit");
+        repo.Tag("v0.1.0-rc.1", earlier);
+        var x = Fixture.ReadyToSignOff(repo);
+        repo.Tag("v0.2.0-rc.1", x).Tag("v0.1.0-beta.9", x).Tag("v0.1.0-rc1", x);
+        var y = Fixture.SignedOff(repo, x, candidate: false);
+
+        var refusal = Assert.Single(Check(repo, y, out _).Refusals);
+        Assert.Contains("is not the commit of a release candidate of 0.1.0 (v0.1.0-rc.1 is tagged elsewhere)", refusal.Message);
+    }
+
+    [Fact] // ADR-0190, ADR-0205 (2026-10-12): the pending form is a candidate's; a version without a suffix is signed off
+    public void A_stable_version_s_block_in_the_pending_form_is_refused()
+    {
+        using var repo = new Repo();
+        var x = Fixture.ReadyToSignOff(repo);
+        var y = Fixture.SignedOff(repo, x, block: "- **Pending:** the Definition of Done is being signed off against this release candidate, `v0.1.0-rc.1`.");
+
+        var refusals = Check(repo, y, out _).Refusals;
+        Assert.Contains(refusals, r => r.Message.Contains("is in its pending form, **Pending:**, which is a release candidate's"));
+        Assert.Contains(refusals, r => r.Message.Contains("names no verification/<date>/results.md"));
     }
 
     [Fact] // ADR-0205: records filed after X, and changed again before the tag, are records still
@@ -34,6 +73,7 @@ public class SignOffTests
         Fixture.ReadyToSignOff(repo);
         repo.Write(Fixture.Results, "Verified at the commit that holds this file.");
         var x = repo.Commit("The record, filed before the notes");
+        repo.Tag("v0.1.0-rc.1", x);
         repo.Write(Fixture.Results, $"Verified commit: {x}\n").Write("docs/releases/0.1.0.md", Fixture.Notes("0.1.0", $"`{Fixture.Results}` at {x}"));
         var y = repo.Commit("Notes");
 
@@ -132,6 +172,7 @@ public class SignOffTests
     {
         using var repo = new Repo();
         var x = Fixture.ReadyToSignOff(repo);
+        repo.Tag("v0.1.0-rc.1", x);
         repo.Write("docs/releases/0.1.0.md", Fixture.Notes("0.1.0", $"Against `{Fixture.Results}`, at `{x}`."));
         var y = repo.Commit("Notes without the record");
 
@@ -144,6 +185,7 @@ public class SignOffTests
         using var repo = new Repo();
         var earlier = repo.Write("a.txt", "a").Commit();
         var x = Fixture.ReadyToSignOff(repo);
+        repo.Tag("v0.1.0-rc.1", x);
         repo.Write(Fixture.Results, $"Verified commit: `{earlier[..7]}`")
             .Write("docs/releases/0.1.0.md", Fixture.Notes("0.1.0", $"Against `{Fixture.Results}`, at `{x}`."));
         var y = repo.Commit("Signs off");

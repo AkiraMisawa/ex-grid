@@ -38,6 +38,9 @@ public class ReleaseNotesTests
     private const string PrereleaseNote =
         "A prerelease (ADR-0042): what it still owes is [at this commit](https://github.com/AkiraMisawa/ex-grid/blob/{ref}/docs/implementation-status.md).\n";
 
+    private const string CandidateNote =
+        "A release candidate (ADR-0042): the sign-off is being made against it; what it still owes is [at this commit](https://github.com/AkiraMisawa/ex-grid/blob/{ref}/docs/implementation-status.md).\n";
+
     // A version's notes with every heading; `replace` swaps a heading's "None." for other lines.
     private static string Version(string name, string published = "2026-10-04", params (string Heading, string Body)[] replace)
     {
@@ -71,6 +74,7 @@ public class ReleaseNotesTests
     private static (string, string)[] Valid(params (string, string)[] more) =>
     [
         Notes("prerelease-note.md", PrereleaseNote),
+        Notes("candidate-note.md", CandidateNote),
         Notes("0.1.0-beta.1.md", Version("0.1.0-beta.1", "2026-09-25")),
         Notes("0.1.0-beta.2.md", Version("0.1.0-beta.2")),
         .. more,
@@ -110,6 +114,7 @@ public class ReleaseNotesTests
         Assert.Contains("""["exgrid/selection#status-bar-figures"], true),""", source);
         Assert.Contains("""new("selection-summary", "ExGrid", global::ExGrid.Docs.ReleaseKind.Added, "exgrid/selection#status-bar-figures", [new("0130", "https://github.com/AkiraMisawa/ex-grid/blob/main/docs/adr/0130-the-selection-summary.md")],""", source);
         Assert.Contains("private static partial string ReadPrereleaseNote() => \"<p>A prerelease (", source);
+        Assert.Contains("private static partial string ReadCandidateNote() => \"<p>A release candidate (", source);
         Assert.Contains("/blob/{ref}/docs/implementation-status.md", source);
     }
 
@@ -522,6 +527,10 @@ public class ReleaseNotesTests
 
     private static readonly string SignedOff = SignedOffAt("0.1.0");
 
+    // A release candidate's Signed off block, its pending form: the sign-off is being made against the candidate, named by its tag.
+    private static string PendingAt(string name) =>
+        $"- **Pending:** the Definition of Done is being signed off against this release candidate, `v{name}`. The release's notes will name the record and this candidate's commit.";
+
     // The Signed off block of the version `name`, its record linked at that version's tag.
     private static string SignedOffAt(string name) => string.Join("\n",
         $"- **Record:** [verification/2026-11-02/results.md](https://github.com/AkiraMisawa/ex-grid/blob/v{name}/verification/2026-11-02/results.md)",
@@ -549,7 +558,7 @@ public class ReleaseNotesTests
             ("ExSheet", "No change. Its packages are republished at this version."),
             ("ExPivot", "No change. Its packages are republished at this version."),
             ("Data", "No change. Its packages are republished at this version."),
-            ("Signed off", SignedOffAt(name)),
+            ("Signed off", ReleaseNotes.VersionKindOf(name) == ReleaseNotes.VersionKind.Candidate ? PendingAt(name) : SignedOffAt(name)),
             ("SHOULD criteria accepted failing", "- **UX-10:** The bar's width follows the token on Chrome and not on Edge's overlay scrollbars; accepted in writing on 2026-11-01."),
             ("Out of scope for this version", "- Find All and Replace, a reservation of §21.11 ([accepted in writing](https://github.com/AkiraMisawa/ex-grid/blob/v0.1.0/docs/definition-of-done.md#2111-reserved-with-a-named-trigger--not-open-and-not-to-be-mistaken-for-oversights))."),
             ("Supported", Supported),
@@ -667,12 +676,13 @@ public class ReleaseNotesTests
             at = source.IndexOf("global::ExGrid.Docs.ReleaseSectionKind." + kind + ",", at + 1, StringComparison.Ordinal);
             Assert.True(at > 0, $"the candidate's section {kind} is emitted in its place");
         }
-        Assert.Contains($"<strong>Record:</strong> <a href=\\\"https://github.com/AkiraMisawa/ex-grid/blob/v{name}/verification/2026-11-02/results.md\\\"", source);
+        Assert.Contains($"<strong>Pending:</strong> the Definition of Done is being signed off against this release candidate, <code>v{name}</code>.", source);
+        Assert.DoesNotContain("<strong>Record:</strong>", source);
     }
 
     [Theory] // ADR-0190, ADR-0202, ADR-0205 (2026-10-12): a release candidate missing one of a release's blocks is refused, saying what the block holds
     [InlineData("Known limitations", "'## Known limitations' is missing before '## ExGrid'", "what it does not do", "(ADR-0202)")]
-    [InlineData("Signed off", "'## Signed off' is missing before '## SHOULD criteria accepted failing'", "the verification/<date>/results.md its sign-off was made against", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
+    [InlineData("Signed off", "'## Signed off' is missing before '## SHOULD criteria accepted failing'", "in its pending form, one line beginning **Pending:**, that the sign-off is being made against this candidate", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
     [InlineData("SHOULD criteria accepted failing", "'## SHOULD criteria accepted failing' is missing before '## Out of scope for this version'", "each SHOULD criterion that fails", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
     [InlineData("Out of scope for this version", "'## Out of scope for this version' is missing before '## Supported'", "§21 items", "(ADR-0205)")]
     [InlineData("Supported", "'## Supported' is missing.", "the hosts, the browsers, the target framework and the packages", "(ADR-0205)")]
@@ -704,10 +714,7 @@ public class ReleaseNotesTests
             Assert.Single(errors, e => e.GetMessage().StartsWith($"'## {heading}' is missing", StringComparison.Ordinal));
     }
 
-    [Theory] // ADR-0190, ADR-0205 (2026-10-12): a release candidate's blocks are checked as a release's are, at its own tag, and against the Definition of Done by the build that publishes it
-    [InlineData("Signed off", "LINK-AT-RELEASE", "EXDOCS009", "and the record this line names is https://github.com/AkiraMisawa/ex-grid/blob/v0.1.0-rc.1/verification/2026-11-02/results.md, at this version's tag")]
-    [InlineData("Signed off", "SHORT-COMMIT", "EXDOCS008", "**Commit:** is the commit X the sign-off was made against, its full 40 characters")]
-    [InlineData("Signed off", "None.", "EXDOCS008", "A release is signed off, and its candidate rehearses the block: write its lines")]
+    [Theory] // ADR-0190, ADR-0205 (2026-10-12): a release candidate's blocks are checked as a release's are, and against the Definition of Done by the build that publishes it; its Signed off block, in its pending form, is the tests below
     [InlineData("SHOULD criteria accepted failing", "- **VZ-12:** Measured, and accepted in writing.", "EXDOCS008", "VZ-12 is a MUST, and no reason accepts a MUST that fails")]
     [InlineData("Out of scope for this version", "- A column band, §21.12 ([accepted](https://example.com/accepted)).", "EXDOCS009", "§21.12 names no item of the Definition of Done's §21")]
     [InlineData("Supported", "- **Hosts:** WebAssembly and Blazor Server.\n- **Browsers:** Chrome and Edge.\n- **Target framework:** `net8.0`.\n- **Packages:** ExGrid and ExGrid.MudBlazor.", "EXDOCS008", "**Target framework:** names net10.0, as the Target: line does")]
@@ -715,12 +722,6 @@ public class ReleaseNotesTests
     public void A_release_candidate_s_blocks_are_checked_as_a_release_s_are(string heading, string body, string id, string message)
     {
         const string Name = "0.1.0-rc.1";
-        body = body switch
-        {
-            "LINK-AT-RELEASE" => SignedOffAt("0.1.0"),
-            "SHORT-COMMIT" => SignedOffAt(Name).Replace($"`{Commit}`", "`0123456`"),
-            _ => body,
-        };
         var error = One(RunVersion(Name, Release(Name, replace: (heading, body))), id);
 
         Assert.Contains(message, error.GetMessage());
@@ -1007,5 +1008,88 @@ public class ReleaseNotesTests
 
         Assert.Empty(Notices(run));
         Assert.Contains("global::ExGrid.Docs.ReleaseSectionKind.Supported", run.Source("ReleaseNotes.g.cs"));
+    }
+
+    // A release candidate's Signed off block (ADR-0190 and ADR-0205, 2026-10-12): its own pending form, saying the sign-off is
+    // being made against this candidate, and no other; a version without a suffix never takes it.
+
+    [Theory] // ADR-0190, ADR-0205 (2026-10-12): a release candidate with the pending Signed off form builds, on the build that publishes it and on any other
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_release_candidate_with_the_pending_signed_off_form_builds(bool publishing)
+    {
+        var run = RunVersion("0.1.0-rc.2", Release("0.1.0-rc.2"), publishing: publishing);
+
+        Assert.Empty(Notices(run));
+        var source = run.Source("ReleaseNotes.g.cs");
+        Assert.Contains("""new("Signed off", global::ExGrid.Docs.ReleaseSectionKind.SignedOff, null, false,""", source);
+        Assert.Contains("<strong>Pending:</strong> the Definition of Done is being signed off against this release candidate, <code>v0.1.0-rc.2</code>.", source);
+    }
+
+    [Fact] // ADR-0190, ADR-0205 (2026-10-12): a version without a suffix is signed off, so the pending form is refused on it, saying which form it takes
+    public void A_stable_version_with_the_pending_signed_off_form_is_an_error()
+    {
+        var text = Release(replace: ("Signed off", PendingAt("0.1.0")));
+
+        foreach (var publishing in new[] { true, false })
+        {
+            var error = One(RunRelease(text, publishing: publishing), "EXDOCS008");
+            Assert.Contains("**Pending:** is a release candidate's Signed off form, which says the sign-off is being made against it. A version without a suffix is published once it is signed off", error.GetMessage());
+            Assert.Contains("**Record:**, **Commit:**, **Toolchain:**, **OS:** and **Browsers:**", error.GetMessage());
+            Assert.Equal(LineOf(text, "- **Pending:**"), Line(error));
+        }
+    }
+
+    [Fact] // ADR-0190, ADR-0205 (2026-10-12): a release candidate's sign-off is still being made, so a Signed off block in the stable form is refused on it
+    public void A_release_candidate_with_a_stable_form_signed_off_is_an_error()
+    {
+        var text = Release("0.1.0-rc.1", replace: ("Signed off", SignedOffAt("0.1.0-rc.1")));
+
+        foreach (var publishing in new[] { true, false })
+        {
+            var error = One(RunVersion("0.1.0-rc.1", text, publishing: publishing), "EXDOCS008");
+            Assert.Contains("A release candidate's Signed off block takes its pending form, one line. Write - **Pending:** the Definition of Done is being signed off against this release candidate, `v0.1.0-rc.1`.", error.GetMessage());
+            Assert.Contains("are a release's lines, written in the notes of the version without a suffix once its sign-off is made against this candidate", error.GetMessage());
+            Assert.Equal(LineOf(text, "- **Record:**"), Line(error));
+        }
+    }
+
+    [Theory] // ADR-0190, ADR-0205 (2026-10-12): the pending line names the candidate by its tag, and no record and no commit, in one line
+    [InlineData("- **Pending:** the Definition of Done is being signed off against this release candidate.", "**Pending:** names the candidate the sign-off is being made against by its tag, `v0.1.0-rc.1`, in a code span.")]
+    [InlineData("- **Pending:** the Definition of Done is being signed off against `v0.1.0-rc.2`.", "**Pending:** names the candidate the sign-off is being made against by its tag, `v0.1.0-rc.1`, in a code span.")]
+    [InlineData("- **Pending:** being signed off against `v0.1.0-rc.1`, to be recorded in verification/2026-11-02/results.md.", "**Pending:** names verification/2026-11-02/results.md, and a release candidate's block names no record")]
+    [InlineData("- **Pending:** being signed off against `v0.1.0-rc.1`, at `0123456789abcdef0123456789abcdef01234567`.", "**Pending:** names the commit 0123456789abcdef0123456789abcdef01234567, and a release candidate's block names none")]
+    [InlineData("- **Pending:** being signed off against `v0.1.0-rc.1`.\n  - On Windows first.", "**Pending:** is one line, without lines nested under it")]
+    [InlineData("- **Pending:** being signed off against `v0.1.0-rc.1`.\n- **Pending:** and on macOS.", "**Pending:** is written twice, or out of order")]
+    [InlineData("None.", "A release candidate's sign-off is being made against it, and its block says so. Write - **Pending:**")]
+    [InlineData("Being signed off against `v0.1.0-rc.1`.", "'## Signed off' holds bullets, each beginning with its label in bold, **Pending:**")]
+    public void A_pending_line_out_of_form_is_an_error(string body, string message)
+    {
+        var text = Release("0.1.0-rc.1", replace: ("Signed off", body));
+        var errors = Notices(RunVersion("0.1.0-rc.1", text));
+
+        var error = Assert.Single(errors, e => e.GetMessage().Contains(message));
+        Assert.Equal("EXDOCS008", error.Id);
+        Assert.EndsWith("docs/releases/0.1.0-rc.1.md", FileOf(error));
+    }
+
+    [Fact] // ADR-0190, ADR-0205 (2026-10-12): a release candidate's notes open with the candidate's note, held once with {ref}, and not the prerelease note
+    public void The_candidate_note_is_held_once_and_needed_by_a_release_candidate()
+    {
+        var candidate = Notes("0.1.0-rc.1.md", Release("0.1.0-rc.1"));
+        var withoutNote = Valid(candidate, Dod).Where(f => !f.Item1.EndsWith("candidate-note.md"));
+
+        var missing = One(Run(withoutNote), "EXDOCS008");
+        Assert.Contains("docs/releases/candidate-note.md is missing, and every release candidate's notes begin with it, not with the prerelease note", missing.GetMessage());
+        Assert.Equal(Location.None, missing.Location);
+
+        // An alpha's or a beta's notes need only the prerelease note.
+        Assert.Empty(Notices(Run(Valid().Where(f => !f.Item1.EndsWith("candidate-note.md")))));
+
+        var noRef = One(Run(withoutNote.Append(Notes("candidate-note.md", "A release candidate (ADR-0042).\n"))), "EXDOCS008");
+        Assert.Contains("The candidate's note names no {ref}", noRef.GetMessage());
+
+        var bullet = Notices(Run(withoutNote.Append(Notes("candidate-note.md", "## A release candidate\n\n" + CandidateNote))));
+        Assert.Contains("The candidate's note is a paragraph or two, which every release candidate's notes begin with: no heading and no bullet.", Assert.Single(bullet).GetMessage());
     }
 }

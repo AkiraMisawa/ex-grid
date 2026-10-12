@@ -23,6 +23,12 @@ public interface ISourceTree
 
     /// <summary>The files directly inside <paramref name="directory"/>, by their paths from the root, in ordinal order.</summary>
     IReadOnlyList<string> Files(string directory);
+
+    /// <summary>
+    /// The files a <c>:(glob)</c> pattern matches, by their paths from the root, as git matches it: <c>*</c>
+    /// within a directory, <c>**</c> across them.
+    /// </summary>
+    IReadOnlyList<string> Matches(string pattern);
 }
 
 /// <summary>A commit's tree, read through git.</summary>
@@ -64,6 +70,9 @@ public sealed class CommitTree(Git git, string commit) : ISourceTree
         files.Sort(StringComparer.Ordinal);
         return files;
     }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> Matches(string pattern) => git.FilesAt(Commit, pattern);
 }
 
 /// <summary>A directory on disk: the working tree as it stands, committed or not.</summary>
@@ -97,4 +106,16 @@ public sealed class DirectoryTree(string root) : ISourceTree
             .Order(StringComparer.Ordinal)
             .ToList();
     }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Read through git, so that the pattern is matched as the release workflow matches it: the files git
+    /// tracks or would add, and not those it ignores.
+    /// </remarks>
+    public IReadOnlyList<string> Matches(string pattern) =>
+        new Git(Root).Out("ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", Git.Pathspec(pattern))
+            .Split('\0', StringSplitOptions.RemoveEmptyEntries)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToList();
 }

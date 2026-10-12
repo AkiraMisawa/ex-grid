@@ -3,11 +3,13 @@ namespace ExGrid.Release;
 /// <summary>
 /// The checks of what a tagged commit holds that only a version on the stable path needs (ADR-0205,
 /// ADR-0208). A stable version runs all of them. A release candidate runs all but the two that read
-/// a sign-off — the "Signed off" block and the structural check — so that the stable path is
-/// rehearsed before it is used. A plain prerelease runs none.
-/// <para>A release candidate's notes carry a stable version's blocks, its Signed off block among
-/// them, and the Docs Site's build checks them as it checks a stable version's (ADR-0190 and
-/// ADR-0205, 2026-10-12). This check does not read a candidate's Signed off block.</para>
+/// a sign-off — the "Signed off" block, read in full, and the structural check — so that the stable
+/// path is rehearsed before it is used. A plain prerelease runs none.
+/// <para>A release candidate's notes carry a stable version's blocks, its Signed off block in a pending
+/// form of its own that says the sign-off is being made against this candidate, and they are read by
+/// form only, by the Docs Site's build, which refuses a candidate's block in the stable form and a
+/// stable version's in the pending one. The sign-off is read in full only on a stable tag, whose commit
+/// is the candidate's commit X plus only records and notes (ADR-0190 and ADR-0205, 2026-10-12).</para>
 /// </summary>
 public static class Gate
 {
@@ -32,7 +34,7 @@ public static class Gate
         }
         else
         {
-            report.Notice($"{version.Tag} is a release candidate: it runs a stable version's checks but the sign-off's, the Signed off block and the structural check. Its notes' blocks, the Signed off block among them, are the Docs Site build's to check, as a stable version's are (ADR-0190, ADR-0205).");
+            report.Notice($"{version.Tag} is a release candidate: it runs a stable version's checks but the two that read a sign-off, the Signed off block and the structural check. Its notes' blocks are read by form, by the Docs Site's build, its Signed off block in the pending form that says the sign-off is being made against this candidate; the stable tag that follows is this commit plus only records and notes (ADR-0190, ADR-0205, 2026-10-12).");
         }
 
         Corpus.Check(tag, report);

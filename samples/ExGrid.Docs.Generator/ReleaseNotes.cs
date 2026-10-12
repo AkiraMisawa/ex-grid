@@ -19,10 +19,10 @@ public sealed record NotesInput(string FullPath, string Name, SourceText Text);
 
 /// <summary>
 /// The Release Notes (ADR-0190): each published version's file, <c>docs/releases/&lt;version&gt;.md</c>;
-/// the Change Notes under <c>docs/releases/unreleased/</c>, written with each change; and the prerelease
-/// note every prerelease's notes begin with. They are read in the notes' Markdown subset
-/// (<see cref="NotesMarkdown"/>), checked against their shape, the decision records and the site map,
-/// and emitted for the site's Release notes page.
+/// the Change Notes under <c>docs/releases/unreleased/</c>, written with each change; the prerelease
+/// note an alpha's or a beta's notes begin with; and the candidate's note a release candidate's begin with
+/// (2026-10-12). They are read in the notes' Markdown subset (<see cref="NotesMarkdown"/>), checked against
+/// their shape, the decision records and the site map, and emitted for the site's Release notes page.
 /// </summary>
 public static class ReleaseNotes
 {
@@ -70,6 +70,14 @@ public static class ReleaseNotes
     /// The release workflow reads the commit X from the <c>Commit:</c> line and the record from <c>Record:</c>.
     /// </summary>
     public static readonly ImmutableArray<string> SignedOffLabels = ["Record", "Commit", "Toolchain", "OS", "Browsers"];
+
+    /// <summary>
+    /// A release candidate's Signed off block, its pending form: one line, <c>**Pending:**</c>, that says the
+    /// sign-off is being made against this candidate and names its tag, and names no record and no commit. It is
+    /// the only form a candidate's block may take, and a version without a suffix may not take it (ADR-0190 and
+    /// ADR-0205, 2026-10-12).
+    /// </summary>
+    public static readonly ImmutableArray<string> PendingLabels = ["Pending"];
 
     /// <summary>The lines of a release's Supported block, in order, each beginning with its label in bold (ADR-0205).</summary>
     public static readonly ImmutableArray<string> SupportedLabels = ["Hosts", "Browsers", "Target framework", "Packages"];
@@ -123,6 +131,9 @@ public static class ReleaseNotes
     /// <summary>The prerelease note's file under <c>docs/releases/</c>.</summary>
     public const string PrereleaseNoteName = "prerelease-note.md";
 
+    /// <summary>The candidate's note's file under <c>docs/releases/</c>: what a release candidate's notes begin with (2026-10-12).</summary>
+    public const string CandidateNoteName = "candidate-note.md";
+
     /// <summary>The folder of the Change Notes under <c>docs/releases/</c>.</summary>
     public const string UnreleasedFolder = "unreleased/";
 
@@ -155,7 +166,7 @@ public static class ReleaseNotes
         category: "ExGrid.Docs",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "A version's notes name it on their first line, carry Published, Packages and Target, and every heading in order, each saying None. when it has nothing; a version without a suffix, and a release candidate (-rc.N) rehearsing it, also carry Known limitations, Signed off, SHOULD criteria accepted failing, Out of scope for this version and Supported, and an alpha or a beta none of them; a Change Note names its Product and Kind (ADR-0190, ADR-0202, ADR-0205).");
+        description: "A version's notes name it on their first line, carry Published, Packages and Target, and every heading in order, each saying None. when it has nothing; a version without a suffix, and a release candidate (-rc.N) rehearsing it, also carry Known limitations, Signed off, SHOULD criteria accepted failing, Out of scope for this version and Supported, and an alpha or a beta none of them; a candidate's Signed off block takes its pending form, and a release's never does; a Change Note names its Product and Kind (ADR-0190, ADR-0202, ADR-0205).");
 
     /// <summary>A link leads nowhere.</summary>
     public static readonly DiagnosticDescriptor LinkNowhere = new(
@@ -240,9 +251,11 @@ public static class ReleaseNotes
         _ => "ADR-0205",
     };
 
-    private static string StableWhat(string heading) => heading switch
+    private static string StableWhat(string heading, VersionKind kind = VersionKind.Release) => heading switch
     {
         "Known limitations" => "what it does not do, each line linking the page of the site that says it in full, or None.",
+        "Signed off" when kind == VersionKind.Candidate =>
+            "in its pending form, one line beginning **Pending:**, that the sign-off is being made against this candidate, named by its tag",
         "Signed off" => "the verification/<date>/results.md its sign-off was made against, the commit X, and the toolchain, OS and browser versions used",
         "SHOULD criteria accepted failing" => "each SHOULD criterion that fails with the written reason it was accepted, or None.",
         "Out of scope for this version" => "each of the Definition of Done's §21 items accepted in writing as out of its scope, linked, or None.",
@@ -332,6 +345,8 @@ public static class ReleaseNotes
 
         public string PrereleaseNote { get; private set; } = "";
 
+        public string CandidateNote { get; private set; } = "";
+
         private Dictionary<string, HashSet<string>> _site = new(StringComparer.OrdinalIgnoreCase);
 
         private NotesContext Context(bool allowRef) => new(adrs, build.GitRef, allowRef);
@@ -361,7 +376,9 @@ public static class ReleaseNotes
             {
                 var problems = new List<NotesProblem>();
                 if (file.Name == PrereleaseNoteName)
-                    ReadPrereleaseNote(file, problems);
+                    PrereleaseNote = ReadNote(file, "The prerelease note", "every alpha's and beta's notes begin with", problems);
+                else if (file.Name == CandidateNoteName)
+                    CandidateNote = ReadNote(file, "The candidate's note", "every release candidate's notes begin with", problems);
                 else if (file.Name.StartsWith(UnreleasedFolder, StringComparison.Ordinal))
                     ReadChange(file, problems);
                 else if (file.Name.EndsWith(".md", StringComparison.Ordinal) && VersionPattern.IsMatch(file.Name.Substring(0, file.Name.Length - 3)))
@@ -369,8 +386,8 @@ public static class ReleaseNotes
                 else
                 {
                     problems.Add(new NotesProblem(NotesProblemKind.Shape, 0, 1,
-                        $"docs/releases/ holds a version's notes (<version>.md, as 0.1.0-beta.2.md), the prerelease note ({PrereleaseNoteName}) "
-                        + $"and Change Notes ({UnreleasedFolder}<slug>.md), and {file.Name} is none of them. Rename it or move it out ({Adr})."));
+                        $"docs/releases/ holds a version's notes (<version>.md, as 0.1.0-beta.2.md), the prerelease note ({PrereleaseNoteName}), "
+                        + $"the candidate's note ({CandidateNoteName}) and Change Notes ({UnreleasedFolder}<slug>.md), and {file.Name} is none of them. Rename it or move it out ({Adr})."));
                 }
                 Report(file, problems);
             }
@@ -513,7 +530,9 @@ public static class ReleaseNotes
             return line;
         }
 
-        private void ReadPrereleaseNote(NotesInput file, List<NotesProblem> problems)
+        // The prerelease note and the candidate's note: a paragraph or two, with {ref} where the commit goes, which
+        // the notes of every version of their kind begin with on the site and on the GitHub release.
+        private string ReadNote(NotesInput file, string which, string role, List<NotesProblem> problems)
         {
             var blocks = NotesMarkdown.ReadBlocks(file.Text, 0, problems);
             var html = new StringBuilder();
@@ -523,7 +542,7 @@ public static class ReleaseNotes
                 if (block is not NotesParagraph paragraph)
                 {
                     problems.Add(new NotesProblem(NotesProblemKind.Shape, block.Start, 1,
-                        "The prerelease note is a paragraph or two, which every prerelease's notes begin with: no heading and no bullet."));
+                        $"{which} is a paragraph or two, which {role}: no heading and no bullet."));
                     continue;
                 }
                 sawRef |= paragraph.Text.Text.Contains("{ref}");
@@ -532,15 +551,15 @@ public static class ReleaseNotes
             if (blocks.IsEmpty)
             {
                 problems.Add(new NotesProblem(NotesProblemKind.Shape, 0, 1,
-                    "The prerelease note is empty. It says what ADR-0042 promises of a prerelease, with {ref} where the commit goes."));
+                    $"{which} is empty. It says what ADR-0042{(file.Name == CandidateNoteName ? " and ADR-0205 promise of a release candidate" : " promises of a prerelease")}, with {{ref}} where the commit goes."));
             }
             else if (!sawRef)
             {
                 problems.Add(new NotesProblem(NotesProblemKind.Shape, 0, 1,
-                    "The prerelease note names no {ref}: it links what the Definition of Done still owes at the commit a version was built from, "
+                    $"{which} names no {{ref}}: it links what the Definition of Done still owes at the commit a version was built from, "
                     + "as https://github.com/AkiraMisawa/ex-grid/blob/{ref}/docs/implementation-status.md (ADR-0042)."));
             }
-            PrereleaseNote = html.ToString();
+            return html.ToString();
         }
 
         private void ReadChange(NotesInput file, List<NotesProblem> problems)
@@ -788,7 +807,7 @@ public static class ReleaseNotes
             return header.Kind == VersionKind.Release
                 ? $"'## {heading}' is missing{where}. A version without a suffix is a release, and its notes say {StableWhat(heading)} ({StableSource(heading)})."
                 : $"'## {heading}' is missing{where}. A release candidate rehearses its release's notes (ADR-0190, ADR-0205), so they carry every block a version "
-                  + $"without a suffix does, and say {StableWhat(heading)} ({StableSource(heading)}).";
+                  + $"without a suffix does, and say {StableWhat(heading, header.Kind)} ({StableSource(heading)}).";
         }
 
         private ImmutableArray<Section> ReadSections(NotesInput file, ImmutableArray<NotesBlock> blocks, VersionHeader header, List<NotesProblem> problems)
@@ -858,10 +877,12 @@ public static class ReleaseNotes
                 _ => "Product",
             };
             var headingSpan = title.Length + 3;
-            // Signed off and Supported are never empty: a release was signed off on something, and supports something.
+            // Signed off and Supported are never empty: a release was signed off on something, and supports something. A
+            // release candidate's Signed off block is its pending form, the sign-off being made against it (2026-10-12).
+            var pending = kind == "SignedOff" && header.Kind == VersionKind.Candidate;
             var labelled = kind switch
             {
-                "SignedOff" => SignedOffLabels,
+                "SignedOff" => pending ? PendingLabels : SignedOffLabels,
                 "Supported" => SupportedLabels,
                 _ => ImmutableArray<string>.Empty,
             };
@@ -883,9 +904,9 @@ public static class ReleaseNotes
                 }
                 if (kind == "SignedOff")
                 {
-                    var who = header.Kind == VersionKind.Candidate ? "A release is signed off, and its candidate rehearses the block" : "A release is signed off";
-                    problems.Add(new NotesProblem(NotesProblemKind.Shape, only.Start, 5,
-                        $"{who}: write its lines, {LabelList(labelled)}, naming the verification/<date>/results.md the sign-off was made against and the commit X (the Definition of Done's Step 7; ADR-0205)."));
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, only.Start, 5, pending
+                        ? $"A release candidate's sign-off is being made against it, and its block says so. {LabelHint("Signed off", "Pending", header)}"
+                        : $"A release is signed off: write its lines, {LabelList(labelled)}, naming the verification/<date>/results.md the sign-off was made against and the commit X (the Definition of Done's Step 7; ADR-0205)."));
                 }
                 if (kind == "Supported")
                 {
@@ -896,6 +917,11 @@ public static class ReleaseNotes
             }
 
             var items = ImmutableArray.CreateBuilder<Item>();
+            if (kind == "SignedOff" && WrongSignedOffForm(content, header, problems) is { } wrong)
+            {
+                items.AddRange(wrong);
+                return new Section(title, kind, product, false, items.ToImmutable());
+            }
             if (!labelled.IsEmpty)
             {
                 ReadLabelled(heading, content, labelled, header, items, problems);
@@ -998,8 +1024,41 @@ public static class ReleaseNotes
             return new Section(title, kind, product, false, items.ToImmutable());
         }
 
-        private static string LabelList(ImmutableArray<string> labels) =>
-            string.Join(", ", labels.Take(labels.Length - 1).Select(l => $"**{l}:**")) + $" and **{labels[labels.Length - 1]}:**";
+        private static string LabelList(ImmutableArray<string> labels) => labels.Length == 1
+            ? $"**{labels[0]}:**"
+            : string.Join(", ", labels.Take(labels.Length - 1).Select(l => $"**{l}:**")) + $" and **{labels[labels.Length - 1]}:**";
+
+        // A Signed off block in the other kind's form: a candidate's in a release's labelled lines, or a release's in a
+        // candidate's pending form. One error at the block, which says which form this version's takes, rather than one
+        // for each line; null when the block is in neither, or in its own (ADR-0190, ADR-0205, 2026-10-12).
+        private List<Item>? WrongSignedOffForm(List<NotesBlock> content, VersionHeader header, List<NotesProblem> problems)
+        {
+            var bullets = content.OfType<NotesBullet>().ToList();
+            var labels = bullets.Select(b => Lead.Match(b.Text.Text)).Where(m => m.Success).Select(m => m.Groups[1].Value).ToList();
+            var first = bullets.FirstOrDefault();
+            if (first is null)
+                return null;
+            if (header.Kind == VersionKind.Candidate && labels.Any(l => SignedOffLabels.Contains(l)))
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, first.Start, 1,
+                    $"A release candidate's Signed off block takes its pending form, one line. {LabelHint("Signed off", "Pending", header)} "
+                    + $"{LabelList(SignedOffLabels)} are a release's lines, written in the notes of the version without a suffix once its sign-off is made against "
+                    + "this candidate; the release workflow reads them only on a stable tag (ADR-0190, ADR-0205, 2026-10-12)."));
+            }
+            else if (header.Kind == VersionKind.Release && labels.Contains("Pending"))
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, first.Start, 1,
+                    "**Pending:** is a release candidate's Signed off form, which says the sign-off is being made against it. A version without a suffix "
+                    + $"is published once it is signed off, and its block says on what: write its lines, {LabelList(SignedOffLabels)}, naming the "
+                    + "verification/<date>/results.md the sign-off was made against and the commit X, the candidate's (the Definition of Done's Step 7; "
+                    + "ADR-0190, ADR-0205, 2026-10-12)."));
+            }
+            else
+            {
+                return null;
+            }
+            return bullets.Select(b => Bullet(b, 0, problems)).ToList();
+        }
 
         // What a labelled line says when it is missing or empty: what to write, and why.
         private static string LabelHint(string section, string label, VersionHeader header) => (section, label) switch
@@ -1010,6 +1069,9 @@ public static class ReleaseNotes
             ("Signed off", "Commit") =>
                 "Write - **Commit:** and the commit X every step of §22 ran at, its 40 characters in a code span: the release workflow reads it, "
                 + "and refuses a tag that differs from it outside verification/ and docs/releases/ (ADR-0205).",
+            ("Signed off", "Pending") =>
+                $"Write - **Pending:** the Definition of Done is being signed off against this release candidate, `v{header.Name}`. It names the candidate "
+                + "by its tag in a code span, and no record and no commit: those are the release's, named once the sign-off is made (ADR-0190, ADR-0205, 2026-10-12).",
             ("Signed off", "Toolchain") => "Name the versions of the toolchain the sign-off ran with: the .NET SDK, Node and Playwright (the Definition of Done's Step 7).",
             ("Signed off", "OS") => "Name each operating system the sign-off ran on, with its version (the Definition of Done's Step 7).",
             ("Signed off", _) => "Name each browser the sign-off ran, with its version (the Definition of Done's Step 7).",
@@ -1075,6 +1137,9 @@ public static class ReleaseNotes
                 }
                 switch ((title, label))
                 {
+                    case ("Signed off", "Pending"):
+                        CheckPending(bullet, header, valueStart, Math.Max(1, value.TrimEnd().Length), problems);
+                        break;
                     case ("Signed off", "Record"):
                         recordLine = bullet;
                         CheckRecord(bullet, plain, links, header, valueStart, Math.Max(1, value.TrimEnd().Length), problems);
@@ -1117,8 +1182,42 @@ public static class ReleaseNotes
                 problems.Add(new NotesProblem(NotesProblemKind.Shape, heading.Start, title.Length + 3,
                     $"'## {title}' names no **{labels[missing]}:**. {LabelHint(title, labels[missing], header)}"));
             }
-            if (title == "Signed off")
+            if (title == "Signed off" && header.Kind == VersionKind.Release)
                 CheckSignedOffNamesOne(content, recordLine, problems);
+        }
+
+        // A candidate's pending line names the candidate by its tag, in a code span, and names no record and no commit,
+        // as written, a link's address included: the record and X are the release's, written once the sign-off is made
+        // (ADR-0190, ADR-0205, 2026-10-12). It is one line, without nested ones.
+        private static void CheckPending(NotesBullet line, VersionHeader header, int valueStart, int span, List<NotesProblem> problems)
+        {
+            var tag = $"`v{header.Name}`";
+            if (line.Text.Text.IndexOf(tag, StringComparison.Ordinal) < 0)
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, valueStart, span,
+                    $"**Pending:** names the candidate the sign-off is being made against by its tag, {tag}, in a code span. "
+                    + LabelHint("Signed off", "Pending", header)));
+            }
+            foreach (var text in line.Children.Prepend(line).Select(l => l.Text))
+            {
+                if (SignedOffRecord.Match(text.Text) is { Success: true } record)
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, text.OffsetOf(record.Index), record.Length,
+                        $"**Pending:** names {record.Value}, and a release candidate's block names no record: the sign-off is being made, and its record is "
+                        + "named by the version without a suffix that follows (ADR-0190, ADR-0205, 2026-10-12)."));
+                }
+                if (AnyFullCommit.Match(text.Text) is { Success: true } commit)
+                {
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, text.OffsetOf(commit.Index), commit.Length,
+                        $"**Pending:** names the commit {commit.Value}, and a release candidate's block names none: X is this candidate's own commit, "
+                        + "named by the version without a suffix that follows (ADR-0190, ADR-0205, 2026-10-12)."));
+                }
+            }
+            if (!line.Children.IsEmpty)
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, line.Children[0].Start, 1,
+                    "**Pending:** is one line, without lines nested under it (ADR-0190, 2026-10-12)."));
+            }
         }
 
         // The release workflow reads the whole Signed off block for the one record and the one commit X it names
@@ -1336,10 +1435,16 @@ public static class ReleaseNotes
                     + $"the cut of the next version writes this one's, the UTC day nuget.org received it ({Adr})."));
             }
 
-            if (PrereleaseNote.Length == 0 && !files.Any(f => f.Name == PrereleaseNoteName) && ordered.Any(v => v.Name.IndexOf('-') >= 0))
+            if (PrereleaseNote.Length == 0 && !files.Any(f => f.Name == PrereleaseNoteName) && ordered.Any(v => VersionKindOf(v.Name) == VersionKind.Prerelease))
             {
                 Diagnostics.Add(Diagnostic.Create(WrongShape, Location.None,
-                    $"docs/releases/{PrereleaseNoteName} is missing, and every prerelease's notes begin with it: what ADR-0042 promises of a prerelease, with {{ref}} where the commit goes ({Adr})."));
+                    $"docs/releases/{PrereleaseNoteName} is missing, and every alpha's and beta's notes begin with it: what ADR-0042 promises of a prerelease, with {{ref}} where the commit goes ({Adr})."));
+            }
+            if (CandidateNote.Length == 0 && !files.Any(f => f.Name == CandidateNoteName) && ordered.Any(v => VersionKindOf(v.Name) == VersionKind.Candidate))
+            {
+                Diagnostics.Add(Diagnostic.Create(WrongShape, Location.None,
+                    $"docs/releases/{CandidateNoteName} is missing, and every release candidate's notes begin with it, not with the prerelease note: what a candidate "
+                    + $"promises, that the sign-off is being made against it, with {{ref}} where the commit goes (ADR-0042, ADR-0205; {Adr}, 2026-10-12)."));
             }
 
             if (build.Version == "dev")
@@ -1425,6 +1530,8 @@ public static class ReleaseNotes
         code.AppendLine("    ];");
         code.AppendLine();
         code.Append("    private static partial string ReadPrereleaseNote() => ").Append(Literal(reader.PrereleaseNote)).AppendLine(";");
+        code.AppendLine();
+        code.Append("    private static partial string ReadCandidateNote() => ").Append(Literal(reader.CandidateNote)).AppendLine(";");
         code.AppendLine("}");
         return SourceText.From(code.ToString(), Encoding.UTF8);
     }

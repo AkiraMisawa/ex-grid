@@ -3,8 +3,11 @@ using System.Text.RegularExpressions;
 
 namespace ExGrid.Release;
 
-/// <summary>The latest record of a row checked by hand: the commit it was made at, the file that holds it, and its verdict.</summary>
-public sealed record ByHandRecord(string Commit, string Path, string Verdict);
+/// <summary>
+/// The latest record of a row checked by hand: the commit it was made at; the <c>verified/*</c> tag its run
+/// put on that commit, through which the release workflow fetches it; the file that holds it; and its verdict.
+/// </summary>
+public sealed record ByHandRecord(string Commit, string Tag, string Path, string Verdict);
 
 /// <summary>
 /// A row the Definition of Done checks by hand, where it is checked, the paths whose change could
@@ -24,6 +27,12 @@ public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> P
 /// The rows and their paths are in two places that must agree: the Definition of Done's Step 4 table,
 /// "Rows checked by hand, and the code each covers", which a reader reads; and the record index,
 /// <c>verification/by-hand.json</c>, which this check reads, beside each row's latest record.
+/// <para>A record names the commit its run verified and the <c>verified/*</c> tag the run put on it, and
+/// the commit is fetched through that tag: a squash merge or a deleted branch cannot take it away, and a
+/// commit that cannot be fetched refuses the tag as unchecked, never lets it pass (2026-10-12). WR-10's
+/// floor run, an automated run a person makes once and its record carries forward, is indexed beside the
+/// rows, with its paths written as a <c>:(glob)</c> pattern where a directory name varies (ADR-0205's note
+/// of 2026-10-12).</para>
 /// </summary>
 public static partial class ByHand
 {
@@ -32,6 +41,14 @@ public static partial class ByHand
 
     /// <summary>The verdicts a record may carry. Only a pass lets a row hold.</summary>
     public static readonly IReadOnlyList<string> Verdicts = ["pass", "fail", "not run"];
+
+    /// <summary>
+    /// How a record's tag is named: <c>verified/&lt;date&gt;-windows-&lt;NN&gt;</c> for a numbered Windows run,
+    /// <c>verified/&lt;date&gt;-windows-&lt;name&gt;</c> for an area or readings pass, and likewise on another
+    /// platform, as <c>verified/2026-11-02-macos-kb3</c>: the date the run began, in lower case, words joined
+    /// by hyphens.
+    /// </summary>
+    public const string TagForm = "verified/<date>-<platform>-<NN or name>, as verified/2026-10-11-windows-17";
 
     /// <summary>Reads the record index, refusing what is malformed; null when it cannot be read at all.</summary>
     public static IReadOnlyList<ByHandRow>? ReadIndex(ISourceTree tree, Report report)
@@ -79,7 +96,7 @@ public static partial class ByHand
                     {
                         var value = path.ValueKind == JsonValueKind.String ? path.GetString()! : "";
                         if (!IsPath(value))
-                            report.Refuse($"{name} in {IndexPath} names '{value}', which is not a path from the repository's root: a file, or a directory ending in /, with no glob and no '..'.", IndexPath);
+                            report.Refuse($"{name} in {IndexPath} names '{value}', which is not a path from the repository's root: a file, or a directory ending in /, with no wildcard and no '..', or a pattern written {Git.GlobMagic}<pattern>.", IndexPath);
                         else
                             paths.Add(value);
                     }
@@ -95,12 +112,20 @@ public static partial class ByHand
                 else if (held.ValueKind == JsonValueKind.Object)
                 {
                     var commit = Text(held, "commit") ?? "";
+                    var tag = Text(held, "tag") ?? "";
                     var at = Text(held, "path") ?? "";
                     var verdict = Text(held, "verdict") ?? "";
                     var good = true;
                     if (!FullCommit().IsMatch(commit))
                     {
                         report.Refuse($"{name}'s record in {IndexPath} names its commit as '{commit}'. Write the commit the record was made at in full, forty hex digits.", IndexPath);
+                        good = false;
+                    }
+                    if (!VerifiedTag().IsMatch(tag))
+                    {
+                        report.Refuse(tag.Length == 0
+                            ? $"{name}'s record in {IndexPath} names no 'tag'. A run tags the commit it verified, {TagForm}, and pushes the tag; the record names it, and the release workflow fetches the commit through it (ADR-0208, 2026-10-12)."
+                            : $"{name}'s record in {IndexPath} names the tag '{tag}', and a run's tag is {TagForm} (ADR-0208, 2026-10-12).", IndexPath);
                         good = false;
                     }
                     if (!at.StartsWith("verification/", StringComparison.Ordinal) || !IsPath(at) || at.EndsWith('/'))
@@ -113,7 +138,7 @@ public static partial class ByHand
                         report.Refuse($"{name}'s record in {IndexPath} has the verdict '{verdict}', and a verdict is one of {string.Join(", ", Verdicts)}.", IndexPath);
                         good = false;
                     }
-                    if (good) record = new ByHandRecord(commit, at, verdict);
+                    if (good) record = new ByHandRecord(commit, tag, at, verdict);
                 }
                 else if (held.ValueKind != JsonValueKind.Null)
                 {
@@ -146,7 +171,7 @@ public static partial class ByHand
         var toRun = new List<string>();
         foreach (var row in index)
         {
-            var missing = row.Paths.Where(p => p.EndsWith('/') ? !targetTree.IsDirectory(p) : !targetTree.IsFile(p)).ToList();
+            var missing = row.Paths.Where(p => !Names(targetTree, p)).ToList();
             if (missing.Count > 0)
                 report.Refuse($"{row.Name} names {string.Join(", ", missing)}, which {targetTree.Name} does not have. A row's paths are reviewed in any change that moves the code they name (ADR-0208).", IndexPath);
 
@@ -168,12 +193,22 @@ public static partial class ByHand
                 toRun.Add(row.Name);
                 continue;
             }
-            var commit = git.Commit(record.Commit) ?? (fetchMissing && git.TryFetch(record.Commit) ? git.Commit(record.Commit) : null);
-            if (commit is null)
+            // The record's commit, through the tag its run put on it (2026-10-12): asked of the remote when this
+            // clone does not have the tag, and refused as unchecked when it cannot be had or names another commit.
+            var tagged = git.TagCommit(record.Tag) ?? (fetchMissing ? git.FetchTag(record.Tag) : null);
+            if (tagged is null)
             {
-                report.Refuse($"{row.Name}'s record was made at {record.Commit[..12]}, which this repository does not have, so whether its code changed since cannot be checked. Keep a branch or a tag on that commit (ADR-0208).", IndexPath);
+                report.Refuse($"{row.Name}'s record was made at {record.Commit[..12]}, and the tag {record.Tag} that keeps that commit is not in this repository"
+                    + (fetchMissing ? $", and {git.Remote} did not give it" : " (fetch the tags, or run with --fetch-missing)")
+                    + ", so whether its code changed since cannot be checked. The run that made the record tags the commit it verified and pushes the tag (ADR-0208, 2026-10-12).", IndexPath);
                 continue;
             }
+            if (tagged != record.Commit)
+            {
+                report.Refuse($"{row.Name}'s record was made at {record.Commit[..12]}, and its tag {record.Tag} names {tagged[..12]}. A run's tag names the commit it verified and is never moved, so one of the two is wrong (ADR-0208, 2026-10-12).", IndexPath);
+                continue;
+            }
+            var commit = record.Commit;
             var changed = git.ChangedPaths(commit, target, row.Paths);
             if (changed.Count > 0)
             {
@@ -218,19 +253,41 @@ public static partial class ByHand
             report.Refuse($"{listed.Name} is in {table.Source}'s table and not in {IndexPath}. The two list the same rows (ADR-0208).", table.Source, listed.Line);
     }
 
-    /// <summary>A path from the repository's root: no glob, no backslash, no '..', not absolute.</summary>
-    public static bool IsPath(string path) =>
-        path.Length > 0
-        && !path.StartsWith('/')
-        && !path.Contains('\\')
-        && path.IndexOfAny(['*', '?', '[', ']']) < 0
-        && path.TrimEnd('/').Split('/').All(part => part.Length > 0 && part != "." && part != "..");
+    /// <summary>
+    /// A path from the repository's root, not absolute, with no backslash and no '..': a file, or a
+    /// directory ending in <c>/</c>, with no wildcard; or a pattern written <c>:(glob)&lt;pattern&gt;</c>,
+    /// whose <c>*</c> stays within a directory and <c>**</c> crosses them, as
+    /// <c>:(glob)src/*.MudBlazor/**</c> reaches every file below each Wrapper.
+    /// </summary>
+    public static bool IsPath(string path)
+    {
+        var glob = path.StartsWith(Git.GlobMagic, StringComparison.Ordinal);
+        var body = glob ? path[Git.GlobMagic.Length..] : path;
+        return body.Length > 0
+            && !body.StartsWith('/')
+            && !body.StartsWith(':')
+            && !body.Contains('\\')
+            && (glob ? body.IndexOfAny(['*', '?', '[']) >= 0 : body.IndexOfAny(['*', '?', '[', ']']) < 0)
+            && body.TrimEnd('/').Split('/').All(part => part.Length > 0 && part != "." && part != "..");
+    }
+
+    /// <summary>
+    /// Whether <paramref name="tree"/> has what <paramref name="path"/> names: the file, the directory, or,
+    /// for a <c>:(glob)</c> pattern, at least one file it matches.
+    /// </summary>
+    public static bool Names(ISourceTree tree, string path) =>
+        path.StartsWith(Git.GlobMagic, StringComparison.Ordinal) ? tree.Matches(path).Count > 0
+        : path.EndsWith('/') ? tree.IsDirectory(path)
+        : tree.IsFile(path);
 
     private static string? Text(JsonElement item, string name) =>
         item.ValueKind == JsonValueKind.Object && item.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     [GeneratedRegex(@"^[0-9a-f]{40}$", RegexOptions.CultureInvariant)]
     private static partial Regex FullCommit();
+
+    [GeneratedRegex(@"^verified/[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant)]
+    private static partial Regex VerifiedTag();
 }
 
 /// <summary>

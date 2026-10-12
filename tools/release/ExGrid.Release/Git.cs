@@ -90,21 +90,51 @@ public sealed class Git
     }
 
     /// <summary>
-    /// The paths that differ between two commits' trees, limited to <paramref name="paths"/> when given
-    /// (a directory as <c>dir/</c>): <c>git diff --name-only</c>, which is empty exactly when
-    /// <c>git diff --quiet</c> succeeds.
+    /// The paths that differ between two commits' trees, limited to <paramref name="paths"/> when given:
+    /// <c>git diff --name-only</c>, which is empty exactly when <c>git diff --quiet</c> succeeds. A path is
+    /// read as <see cref="Pathspec"/> writes it: a file, or a directory as <c>dir/</c>, literally; a
+    /// <c>:(glob)</c> pattern as a glob.
     /// </summary>
     public IReadOnlyList<string> ChangedPaths(string from, string to, IReadOnlyCollection<string>? paths = null)
     {
-        var args = new List<string> { "--literal-pathspecs", "diff", "--name-only", "-z", "--no-renames", "--no-ext-diff", from, to };
+        var args = new List<string> { "diff", "--name-only", "-z", "--no-renames", "--no-ext-diff", from, to };
         if (paths is not null)
         {
             if (paths.Count == 0) return [];
             args.Add("--");
-            args.AddRange(paths);
+            args.AddRange(paths.Select(Pathspec));
         }
         return Out([.. args]).Split('\0', StringSplitOptions.RemoveEmptyEntries);
     }
+
+    /// <summary>
+    /// The files of <paramref name="commit"/>'s tree that <paramref name="path"/> names, read as
+    /// <see cref="Pathspec"/> writes it: what the commit holds of a row's path, a glob's included.
+    /// </summary>
+    public IReadOnlyList<string> FilesAt(string commit, string path) =>
+        Out("diff", "--name-only", "-z", "--no-renames", "--no-ext-diff", EmptyTree(), commit, "--", Pathspec(path))
+            .Split('\0', StringSplitOptions.RemoveEmptyEntries);
+
+    /// <summary>
+    /// How git is given a path the checks read: a <c>:(glob)</c> pattern as it is, where <c>*</c> stays
+    /// within a directory and <c>**</c> crosses them; anything else as <c>:(literal)</c>, so that a
+    /// character git would read as a wildcard is a character, and a directory written <c>dir/</c> names
+    /// every file under it.
+    /// </summary>
+    public static string Pathspec(string path) =>
+        path.StartsWith(GlobMagic, StringComparison.Ordinal) ? path : ":(literal)" + path;
+
+    /// <summary>The magic a row's path may begin with, the one git pathspec magic the index takes.</summary>
+    public const string GlobMagic = ":(glob)";
+
+    private string? _emptyTree;
+
+    // The empty tree's name in this repository's object format, which git knows without storing it.
+    private string EmptyTree() => _emptyTree ??= Out("rev-parse", "--show-object-format").Trim() switch
+    {
+        "sha256" => "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321",
+        _ => "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+    };
 
     /// <summary>The refs under <paramref name="prefix"/>, by full name.</summary>
     public IReadOnlyList<string> Refs(string prefix) =>
@@ -114,11 +144,21 @@ public sealed class Git
     public IReadOnlyList<string> Tags() =>
         Out("tag", "--list").Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
 
-    /// <summary>Asks the remote for a commit this clone does not have, by its full name. True when it is here after.</summary>
-    public bool TryFetch(string commit)
+    /// <summary>The commit the tag <paramref name="tag"/> names, peeled, or null when this clone has no such tag.</summary>
+    public string? TagCommit(string tag)
     {
-        Run("fetch", "--quiet", "--no-tags", "--no-recurse-submodules", Remote, commit);
-        return Commit(commit) is not null;
+        var result = Run("rev-parse", "--verify", "--quiet", $"refs/tags/{tag}^{{commit}}");
+        return result.Code == 0 ? result.Out.Trim() : null;
+    }
+
+    /// <summary>
+    /// Asks the remote for the tag <paramref name="tag"/>, which this clone does not have, and the commit it
+    /// names. Returns that commit, or null when the remote has no such tag or could not be asked.
+    /// </summary>
+    public string? FetchTag(string tag)
+    {
+        Run("fetch", "--quiet", "--no-tags", "--no-recurse-submodules", Remote, $"refs/tags/{tag}:refs/tags/{tag}");
+        return TagCommit(tag);
     }
 
     /// <summary>The object type at <paramref name="path"/> in <paramref name="commit"/>'s tree: blob, tree, or null.</summary>

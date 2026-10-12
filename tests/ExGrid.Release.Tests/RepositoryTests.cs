@@ -12,8 +12,11 @@ public class RepositoryTests
 {
     private static readonly DirectoryTree Tree = new(RepositoryRoot());
 
-    /// <summary>The rows ADR-0208 names as checked by hand.</summary>
-    private static readonly string[] Adr0208Rows = ["VZ-14", "VZ-16", "FN-12e", "ED-30", "SH-42", "SH-51", "SH-52", "KB-3", "VZ-18", "§21.11"];
+    /// <summary>
+    /// The rows ADR-0208 names as checked by hand, and WR-10, the Wrappers' MudBlazor floor run, which a
+    /// person makes once and its record carries forward (ADR-0205's notes of 2026-10-12).
+    /// </summary>
+    private static readonly string[] IndexedRows = ["VZ-14", "VZ-16", "FN-12e", "ED-30", "SH-42", "SH-51", "SH-52", "KB-3", "VZ-18", "§21.11", "WR-10"];
 
     [Fact] // ADR-0208: the record index and the Definition of Done's table cannot drift
     public void The_record_index_and_the_table_name_the_same_rows_and_paths()
@@ -30,12 +33,30 @@ public class RepositoryTests
         Assert.Equal(index.Count, table.Rows.Count);
     }
 
-    [Fact] // ADR-0208: every row the decision names is indexed
-    public void Every_row_ADR_0208_names_is_indexed()
+    [Fact] // ADR-0208, ADR-0205 (2026-10-12): every row the decision names is indexed, and WR-10's floor run beside them
+    public void Every_row_ADR_0208_names_and_WR_10_are_indexed()
     {
         var index = ByHand.ReadIndex(Tree, new Report())!;
 
-        Assert.Equal(Adr0208Rows.Order(StringComparer.Ordinal), index.Select(r => r.Row).Distinct().Order(StringComparer.Ordinal));
+        Assert.Equal(IndexedRows.Order(StringComparer.Ordinal), index.Select(r => r.Row).Distinct().Order(StringComparer.Ordinal));
+    }
+
+    [Fact] // ADR-0208 (2026-10-12): FN-12e is a Windows row and a macOS row, and WR-10 reads every file below each Wrapper and the demo pages
+    public void FN_12e_is_two_rows_and_WR_10_names_the_wrappers_and_the_demo_pages()
+    {
+        var index = ByHand.ReadIndex(Tree, new Report())!;
+
+        Assert.Equal(["Windows", "macOS"], index.Where(r => r.Row == "FN-12e").Select(r => r.Where));
+        Assert.All(index.Where(r => r.Row == "FN-12e"), r =>
+        {
+            Assert.Contains("src/ExGrid.MudBlazor/MudExGridPresentation.cs", r.Paths);
+            Assert.Contains("src/ExGrid.MudBlazor/RobotoGlyphTable.cs", r.Paths);
+        });
+        var wr10 = Assert.Single(index, r => r.Row == "WR-10");
+        Assert.Equal([":(glob)src/*.MudBlazor/**", "samples/ExGrid.DemoPages/"], wr10.Paths);
+        var wrappers = Tree.Matches(wr10.Paths[0]);
+        foreach (var wrapper in new[] { "src/ExGrid.MudBlazor/", "src/ExSheet.MudBlazor/", "src/ExPivot.MudBlazor/" })
+            Assert.Contains(wrappers, f => f.StartsWith(wrapper, StringComparison.Ordinal) && f.EndsWith(".csproj", StringComparison.Ordinal));
     }
 
     [Fact] // ADR-0208: a path that names nothing is a list nobody reviewed when its code moved
@@ -45,7 +66,7 @@ public class RepositoryTests
 
         var missing = index
             .SelectMany(row => row.Paths.Select(path => (row, path)))
-            .Where(p => p.path.EndsWith('/') ? !Tree.IsDirectory(p.path) : !Tree.IsFile(p.path))
+            .Where(p => !ByHand.Names(Tree, p.path))
             .Select(p => $"{p.row.Name}: {p.path}")
             .Concat(index.Where(r => r.Record is { } record && !Tree.IsFile(record.Path)).Select(r => $"{r.Name}'s record: {r.Record!.Path}"))
             .Concat(index.Where(r => r.Record is { } record && Tree.ReadText(record.Path) is { } text && !SignOff.Names(text, record.Commit))
@@ -74,6 +95,9 @@ public class RepositoryTests
         Assert.Contains("tools/release/ExGrid.Release -c Release -- gate", release);
         Assert.Contains("long: ${{ needs.admit.outputs.long == 'true' }}", release);
         Assert.Contains("if: needs.admit.outputs.site == 'true'", release);
+        // A candidate's release opens with the candidate's note, any other prerelease's with the prerelease note (ADR-0190, 2026-10-12).
+        Assert.Contains("cat docs/releases/candidate-note.md", release);
+        Assert.Contains("cat docs/releases/prerelease-note.md", release);
     }
 
     private static string RepositoryRoot()

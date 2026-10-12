@@ -3,8 +3,11 @@
 # - by the release (release.yml's last job), once the packages are on nuget.org: it passes the
 #   version, its tag and the UTC day of the push (ADR-0190), and the site states that version. The
 #   site describes the latest stable version once one is tagged (ADR-0205): a version without a
-#   suffix publishes it when no stable tag is above it, so a patch to an older line does not; a
-#   prerelease only while no version without a suffix is tagged;
+#   suffix publishes it when no stable tag is above it by SemVer precedence, so a patch to an older
+#   line does not; a prerelease, a release candidate among them, only while no version without a
+#   suffix is tagged (2026-10-12, decided with the user). A release candidate's section opens with
+#   the candidate's note, docs/releases/candidate-note.md, and its Signed off block says the sign-off
+#   is being made against it: the build that publishes it reads both;
 # - on demand (workflow_dispatch), from main or a lab/* branch and from no other ref: the site then
 #   states the branch and the commit, and says above every page that it describes changes that are
 #   not on nuget.org. A lab/* site says that it is an experiment.

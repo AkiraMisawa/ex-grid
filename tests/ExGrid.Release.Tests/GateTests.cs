@@ -35,7 +35,7 @@ public class GateTests
         Assert.Empty(report.Refusals);
     }
 
-    [Fact] // ADR-0205: a candidate rehearses the stable path without a sign-off of its own
+    [Fact] // ADR-0205 (2026-10-12): a candidate rehearses the stable path without a sign-off of its own; its notes, read by form by the Docs Site's build, are not read here
     public void A_candidate_runs_every_check_but_the_sign_offs()
     {
         using var repo = new Repo();
@@ -44,7 +44,7 @@ public class GateTests
         var report = Run(repo, "v0.1.0-rc.1", commit);
 
         Assert.Empty(report.Refusals);
-        Assert.Contains(report.Notices, n => n.Contains("is a release candidate"));
+        Assert.Contains(report.Notices, n => n.Contains("is a release candidate") && n.Contains("pending form"));
         Assert.Contains(report.Notices, n => n.Contains("Every case under"));
         Assert.Contains(report.Notices, n => n.Contains("Every row checked by hand holds"));
     }
@@ -89,9 +89,10 @@ public class GateTests
         var row = new Row("VZ-14", "Windows", ["src/Code/"]);
         repo.Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var x = repo.Commit("The row, never recorded");
-        // The sign-off's own run records the row at X, after X.
+        // The sign-off's own run records the row at X, after X, and tags X.
+        repo.Tag("verified/2026-11-02-windows-18", x);
         repo.Write("verification/2026-11-02-windows/report.md", $"Verified commit: {x}")
-            .Write("verification/by-hand.json", Fixture.Index(row with { Record = (x, "verification/2026-11-02-windows/report.md", "pass") }));
+            .Write("verification/by-hand.json", Fixture.Index(row with { Record = (x, "verification/2026-11-02-windows/report.md", "pass"), Tag = "verified/2026-11-02-windows-18" }));
         repo.Commit("Records the row at X");
         var y = Fixture.SignedOff(repo, x);
 
@@ -99,5 +100,17 @@ public class GateTests
 
         Assert.Empty(report.Refusals);
         Assert.NotEqual(coded, x);
+    }
+
+    [Fact] // ADR-0205 (2026-10-12): the stable tag is the candidate's commit X plus records and notes, so a sign-off made at no candidate's commit is refused
+    public void A_stable_version_signed_off_at_no_candidate_s_commit_is_refused()
+    {
+        using var repo = new Repo();
+        var x = Fixture.ReadyToSignOff(repo);
+        var y = Fixture.SignedOff(repo, x, candidate: false);
+
+        var report = Run(repo, "v0.1.0", y);
+
+        Assert.Contains("is not the commit of a release candidate of 0.1.0: no v0.1.0-rc.N is tagged", Assert.Single(report.Refusals).Message);
     }
 }

@@ -7,11 +7,18 @@ namespace ExGrid.Release;
 /// tag is what was signed off (ADR-0205): the "Signed off" block names a
 /// <c>verification/&lt;date&gt;/results.md</c> that exists at the tag, and the commit X the sign-off
 /// was made against; the tag differs from X only under <c>verification/</c> and <c>docs/releases/</c>.
+/// <para>The sign-off is made against a release candidate, whose notes say so in the Signed off block's
+/// pending form, so X is the commit a release candidate of the same version was tagged on (ADR-0190 and
+/// ADR-0205, 2026-10-12). Only a stable tag's block is read here; a candidate's is read by form, by the
+/// Docs Site's build.</para>
 /// </summary>
 public static partial class SignOff
 {
     /// <summary>The heading of the block, as ADR-0190's notes write it.</summary>
     public const string Heading = "## Signed off";
+
+    /// <summary>The label of a release candidate's Signed off line, the block's pending form (ADR-0190, 2026-10-12).</summary>
+    public const string PendingLabel = "**Pending:**";
 
     /// <summary>What may change between the signed-off commit and the tag: the records, and the notes.</summary>
     public static readonly IReadOnlyList<string> AfterSignOff = ["verification/", "docs/releases/"];
@@ -36,6 +43,12 @@ public static partial class SignOff
         {
             report.Refuse($"{notes} has no '{Heading}' block. A version without a suffix is published only once it is signed off, and its notes name the results.md and the commit X the sign-off was made against (ADR-0205; the Definition of Done's Step 7).", notes);
             return null;
+        }
+
+        if (block.Contains(PendingLabel, StringComparison.Ordinal))
+        {
+            report.Refuse($"'{Heading}' in {notes} is in its pending form, {PendingLabel}, which is a release candidate's: it says the sign-off is being made. "
+                + "A version without a suffix is published once it is signed off, and its block names the results.md and the commit X (ADR-0190, ADR-0205, 2026-10-12).", notes, line);
         }
 
         var records = RecordPath().Matches(block).Select(m => m.Value).Distinct(StringComparer.Ordinal).ToList();
@@ -77,6 +90,23 @@ public static partial class SignOff
         }
 
         if (x is null) return null;
+
+        // X is a release candidate's commit: the sign-off is made against a candidate, and the stable tag is
+        // that candidate's commit plus its records and notes (ADR-0205, 2026-10-12).
+        var candidates = git.Tags()
+            .Where(t => t.StartsWith($"v{version.Version}-rc.", StringComparison.Ordinal) && TagVersion.Read(t, new Report()) is { Kind: ReleaseKind.Candidate })
+            .ToList();
+        var atX = candidates.Where(t => git.TagCommit(t) == x).ToList();
+        if (atX.Count == 0)
+        {
+            report.Refuse($"The signed-off commit {x[..12]} is not the commit of a release candidate of {version.Version}"
+                + (candidates.Count == 0 ? $": no v{version.Version}-rc.N is tagged. " : $" ({string.Join(", ", candidates)} {(candidates.Count == 1 ? "is" : "are")} tagged elsewhere). ")
+                + "The sign-off is made against a candidate, whose notes say so, and the stable tag is that candidate's commit plus its records and notes (ADR-0205, 2026-10-12).", notes, line);
+        }
+        else
+        {
+            report.Notice($"The signed-off commit {x[..12]} is the commit {string.Join(" and ", atX)} {(atX.Count == 1 ? "was" : "were")} tagged on.");
+        }
 
         if (!git.IsAncestor(x, tagCommit))
         {

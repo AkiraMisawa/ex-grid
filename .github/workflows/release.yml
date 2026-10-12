@@ -20,18 +20,22 @@
 #   prerelease, and its text begins with the prerelease note.
 # - A release candidate (-rc.N), so that the stable path is rehearsed before it is used
 #   (ADR-0205): besides, ADR-0208's checks before CI's twenty minutes — no Excel case uncertain or
-#   documented without a written reason it cannot be asked (an oracleSkip that does not say "ask by
-#   keys", since oracle.ps1 -Keys asks those), and every row checked by hand holding
-#   on a record its code has not changed since, judged at the tagged commit — and CI's long run,
-#   the soak and ST-1 at 10⁶ rows. Its notes carry a stable version's blocks, Signed off among
-#   them, which ci.yml's build of the Docs Site checks as a stable version's (ADR-0190); the
-#   release check does not read its Signed off block. Its GitHub release is a prerelease.
+#   documented without a written reason it cannot be asked (an oracleSkip that says why oracle.ps1
+#   cannot ask it; not "ask by keys", which oracle.ps1 -Keys asks, nor engineDiffersByDecision), and
+#   every row checked by hand holding on a record its code has not changed since, judged at the
+#   tagged commit, the record's commit fetched through its verified/* tag — and CI's long run, the
+#   soak and ST-1 at 10⁶ rows. Its notes carry a stable version's blocks, its Signed off block in a
+#   pending form of its own that says the sign-off is being made against this candidate; ci.yml's
+#   build of the Docs Site reads them by form, and refuses the stable form there (ADR-0190,
+#   2026-10-12). The release check does not read its Signed off block. Its GitHub release is a
+#   prerelease, and its text begins with the candidate's note, not the prerelease note.
 # - A version without a suffix, a release in the Definition of Done's sense: besides, its notes'
 #   "Signed off" block names a verification/<date>/results.md that is at the tag and the commit X
-#   the sign-off was made against, in full; the tag differs from X only under verification/ and
-#   docs/releases/; and the rows checked by hand are judged at X (ADR-0205, ADR-0208). This replaces
-#   the refusal of every version without a suffix that ADR-0042 held until the sign-off. Its GitHub
-#   release is a release, with no prerelease note.
+#   the sign-off was made against, in full, the commit a release candidate of the version was tagged
+#   on; the tag differs from X only under verification/ and docs/releases/; and the rows checked by
+#   hand are judged at X (ADR-0205, ADR-0208). This replaces the refusal of every version without a
+#   suffix that ADR-0042 held until the sign-off. Its GitHub release is a release, with no note
+#   before its text.
 #
 # The key is a one-hour one from Trusted Publishing: nuget.org holds a policy naming this
 # repository and this file, and the secret NUGET_USER holds the nuget.org profile name. The GitHub
@@ -67,8 +71,9 @@ jobs:
       long: ${{ steps.admit.outputs.long }}
       site: ${{ steps.admit.outputs.site }}
     steps:
-      # Every branch and every tag: main and release/* for where the tag is, the tags for whether a
-      # stable version exists, and the branches that hold the commits the by-hand records were made at.
+      # Every branch and every tag: main and release/* for where the tag is; the tags for whether a
+      # stable version exists, for the release candidate a stable version's X was tagged as, and for
+      # the verified/* tags through which the by-hand records' commits are read (ADR-0208, 2026-10-12).
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -108,7 +113,7 @@ jobs:
             refused=1
           done < <(find docs/releases/unreleased -type f -name '*.md' 2> /dev/null | sort)
           for other in docs/releases/*.md; do
-            [[ "$other" == "$notes" || "$other" == docs/releases/prerelease-note.md ]] && continue
+            [[ "$other" == "$notes" || "$other" == docs/releases/prerelease-note.md || "$other" == docs/releases/candidate-note.md ]] && continue
             line=$(tr -d '\r' < "$other" | grep -n -x -m 1 'Published: pending' | cut -d: -f1 || true)
             if [[ -n "$line" ]]; then
               echo "::error file=$other,line=$line::$other still reads Published: pending. The cut of $VERSION writes the UTC day nuget.org received that version (ADR-0190)."
@@ -120,8 +125,9 @@ jobs:
       # The stable path, for a version without a suffix and for a release candidate, before CI's
       # twenty minutes (ADR-0205, ADR-0208): the sign-off and the structural check (a version without
       # a suffix only), the corpus check, and the rows checked by hand. Run even when the notes were
-      # refused, so that one run names everything the tag still needs. A record made at a commit no
-      # branch holds is asked of the remote by its name.
+      # refused, so that one run names everything the tag still needs. A record's commit is read
+      # through the verified/* tag its run pushed; one this clone lacks is asked of the remote, and a
+      # tag the remote does not have refuses the tag as unchecked (ADR-0208, 2026-10-12).
       - name: The stable path's checks
         if: ${{ !cancelled() && steps.admit.outcome == 'success' && steps.admit.outputs.kind != 'prerelease' }}
         run: dotnet run --project tools/release/ExGrid.Release -c Release -- gate --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --fetch-missing
@@ -204,9 +210,10 @@ jobs:
             --skip-duplicate
           echo "published-on=$(date -u +%F)" >> "$GITHUB_OUTPUT"
 
-      # The release's text is the version's Release Notes (ADR-0190), after the prerelease note for a
-      # prerelease, a release candidate among them (ADR-0042, ADR-0205): the files the Docs Site
-      # renders, so the two cannot say different things. The first line, the version, is the
+      # The release's text is the version's Release Notes (ADR-0190), after the candidate's note for a
+      # release candidate and the prerelease note for any other prerelease (ADR-0042, ADR-0205; the
+      # candidate's note 2026-10-12), and after nothing for a version without a suffix: the files the
+      # Docs Site renders, so the two cannot say different things. The first line, the version, is the
       # release's title already; "pending" becomes the day just recorded; a route of the site becomes
       # its whole address; and ADR-NNNN links the record at this commit, as the site links it. GitHub links #NN to the pull request itself. These rewrites
       # see no Markdown structure, so the site's build refuses what they would render otherwise than the
@@ -220,10 +227,10 @@ jobs:
         run: |
           set -euo pipefail
           {
-            if [[ "$KIND" != stable ]]; then
-              cat docs/releases/prerelease-note.md
-              echo
-            fi
+            case "$KIND" in
+              candidate) cat docs/releases/candidate-note.md; echo ;;
+              prerelease) cat docs/releases/prerelease-note.md; echo ;;
+            esac
             tail -n +2 "docs/releases/$VERSION.md"
           } | perl -pe '
             s/\r$//;
