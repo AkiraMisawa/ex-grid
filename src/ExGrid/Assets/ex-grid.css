@@ -635,20 +635,21 @@
    cell out. Its element stays, because under forced colors no tint is painted to mark it, and the
    forced-colors block below outlines it again. */
 .ex-range-single ~ .ex-focus::after { content: none; }
-/* The Focus among several ranges (ADR-0008, 2026-10-12): (2026-10-12, decided with the user: no
-   range carries an outline there, and the Focus, which the core marks, takes a thin border of one
-   Device Pixel in a token of its own, --ex-focus-among-ranges-outline; where nothing names that
-   token it is the Focus outline's colour), so a Theme or a Wrapper that colours the Focus colours
-   this border too, with no mapping of its own. The first was decided after the seventeenth Windows
-   run's h2, which read neither of Excel's ranges as carrying a single range's outline; the frame
-   of one device pixel the readings of 2026-10-12 read round each of Excel's areas (R4) is not drawn
-   here, and is put to the user. It lies inside the cell, a Device Pixel in from its top and left edges and from its
-   own gridline, where Excel's active cell among several areas lay at 100% and 150% zoom on a 150%
-   display (the readings of 2026-10-12, R4). Inside, nothing above the selection layer covers any
-   side of it, beside the Headings, a Pinned Column or under the header, so it needs none of the
-   sides the core marks (UX-18); and every side is a whole Device Pixel from an edge that lies on
-   one, so it lies on Device Pixels as the other lines do (ADR-0090). Paint only: nothing in C#
-   reads its width. */
+/* The Focus among several ranges (ADR-0008, 2026-10-12). (2026-10-12, decided with the user: no
+   range carries an outline there, and the Focus takes a thin border of one Device Pixel in a token
+   of its own, --ex-focus-among-ranges-outline; where nothing names that token it is the Focus
+   outline's colour.) So a Theme or a Wrapper that colours the Focus colours this border too, with no
+   mapping of its own. The core marks that Focus with a class of its own, decided from the Selection.
+   The first decision followed the seventeenth Windows run's h2, which read neither of Excel's ranges
+   as carrying a single range's outline (observed: run 17, h2); the line of one device pixel the
+   readings of 2026-10-12 read round each of Excel's areas (observed: R4) is not drawn here, and is
+   put to the user. The border lies inside the cell, a Device Pixel in from its top and left edges
+   and from its own gridline (this stylesheet's choice), where Excel's active cell among several areas
+   lay at Excel's 100% and 150% zoom on a 150% display (observed: the readings of 2026-10-12, R4; at a
+   100% display by generalisation). Inside, nothing above the selection layer covers any side of it,
+   beside the Headings, a Pinned Column or under the header, so it needs none of the sides the core
+   marks (UX-18); and every side is a whole Device Pixel from an edge that lies on one, so it lies on
+   Device Pixels as the other lines do (ADR-0090). Paint only: nothing in C# reads its width. */
 .ex-focus.ex-focus-among-ranges::after {
     top: var(--ex-dp, 1px);
     left: var(--ex-dp, 1px);

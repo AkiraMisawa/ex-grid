@@ -219,13 +219,15 @@ New:
 - **The outline is 2 Device Pixels of `#217346`, on the gridline and one Device Pixel outside it,
   with a white line of one Device Pixel inside it.** Today it is 2 CSS px in the Ink. The single range's
   outline and the Focus's outline are drawn alike.
-  - *Several ranges* *(2026-10-12, decided with the user: among several ranges no range carries
-    this outline and no fill handle is shown, and the Focus takes, in place of its outline, a border
-    of one Device Pixel inside its cell, in the Focus outline's colour, `#217346` on the Paper;
-    [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*. It has no white line of its own:
-    the cell's ground lies between it and the gridline, the Paper's white on a cell with no Fill,
-    which is the white the readings of 2026-10-12 measured there (R4). Under `ExSheet.MudBlazor` it
-    is the palette's primary, as the Focus outline is.
+  - *Several ranges.* This outline and the Focus's are not drawn among several ranges
+    ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)) *(2026-10-12, decided with the user:
+    among several ranges no range carries an outline and no fill handle is shown, and the Focus
+    takes a thin border of one Device Pixel; on the Paper it is `#217346`, as the readings of
+    2026-10-12 measured (R4))*. The border lies inside the Focus's cell, a Device Pixel in from its
+    edges and its gridline, and has no white line of its own: the cell's ground lies between it and
+    the gridline, the Paper's white on a cell with no Fill, which is the white the readings of
+    2026-10-12 observed there (R4; over a Fill, unobserved). Under `ExSheet.MudBlazor` it is the
+    palette's primary, as the Focus outline is.
 ```
 
 ### 5. docs/definition-of-done.md
@@ -257,7 +259,7 @@ Old:
 New:
 
 ```
-| **SH-54** | MUST | On a Sheet's Paper, a single range's outline and the Focus's when one cell is selected are 2 Device Pixels on the gridline and one outside it, with a white line of one Device Pixel inside that is not drawn while an edit is open; under the built-in Chrome the outline is `#217346` and the shade `#C7C7C7` over white; a black line inside the shade stays `#000000`; the Focus cell is unshaded; under `ExSheet.MudBlazor` the outline is the palette's primary and the shade the primary mixed into white (ADR-0071, 2026-10-02) *(2026-10-11, [ADR-0206](adr/0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md): also in a Pinned Column and across the pinned boundary, under both Chromes; it had been checked only where nothing is pinned.)* *(2026-10-12, decided with the user: among several ranges no range is outlined, and the Focus takes a border of one Device Pixel inside its cell in the outline's colour, `#217346` under the built-in Chrome and the palette's primary under `ExSheet.MudBlazor`; ADR-0008.)* It has no white line of its own: between it and the gridline lies the cell's ground, white on white Paper, as the readings of 2026-10-12 measured (R4) | Layer 3 pixels at 100% and 150% under both Chromes | as stated |
+| **SH-54** | MUST | On a Sheet's Paper, a single range's outline and the Focus's when one cell is selected are 2 Device Pixels on the gridline and one outside it, with a white line of one Device Pixel inside that is not drawn while an edit is open; under the built-in Chrome the outline is `#217346` and the shade `#C7C7C7` over white; a black line inside the shade stays `#000000`; the Focus cell is unshaded; under `ExSheet.MudBlazor` the outline is the palette's primary and the shade the primary mixed into white (ADR-0071, 2026-10-02) *(2026-10-11, [ADR-0206](adr/0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md): also in a Pinned Column and across the pinned boundary, under both Chromes; it had been checked only where nothing is pinned.)* *(2026-10-12, decided with the user: among several ranges no range is outlined, and the Focus takes a thin border of one Device Pixel, `#217346` on the Paper; ADR-0008.)* That border lies inside the Focus's cell, a Device Pixel in from its edges and its gridline, in the outline's colour, so the palette's primary under `ExSheet.MudBlazor`, and has no white line of its own: between it and the gridline lies the cell's ground, white on white Paper, as the readings of 2026-10-12 observed (R4) | Layer 3 pixels at 100% and 150% under both Chromes | as stated |
 ```
 
 ### 7. samples/ExGrid.Docs/Pages/Grid/GridAppearance.razor
@@ -278,7 +280,8 @@ New:
 
 ### 8. samples/ExGrid.Docs/Pages/Grid/GridAppearance.razor
 
-After the shade's paragraph.
+After the shade's paragraph. Its "observed" is the readings of 2026-10-12 (R4), at Excel's 100% and 150% zoom
+on a 150% display; on a display at 100% it is by generalisation.
 
 Old:
 
@@ -301,11 +304,11 @@ New:
         <p>
             A single range is outlined in <code>--ex-selection-outline</code>, and the Focus inside it is only left
             unshaded. Among several ranges, made with Ctrl+click, no range carries that outline and no fill handle is
-            shown, and the Focus cell takes a thin border of one device pixel inside it, as Excel's active cell does, in
-            <code>--ex-focus-among-ranges-outline</code>. Unset, that is the Focus outline's colour, so a theme that
-            colours <code>--ex-focus-outline</code> colours this border too, and under ExGrid.MudBlazor it is the
-            palette's primary. The theme in "A theme, tones and a stale price" below sets only
-            <code>--ex-focus-outline</code>: Ctrl+click in it.
+            shown, and the Focus cell takes a thin border of one device pixel inside it, where Excel's active cell was
+            observed to have one, in <code>--ex-focus-among-ranges-outline</code>. Unset, that is the Focus outline's
+            colour, so a theme that colours <code>--ex-focus-outline</code> colours this border too, and under
+            ExGrid.MudBlazor it is the palette's primary. The theme in "A theme, tones and a stale price" below sets
+            only <code>--ex-focus-outline</code>: Ctrl+click in it.
         </p>
 ```
 
@@ -331,7 +334,9 @@ New:
 
 ### 10. samples/ExGrid.Docs/Pages/Sheet/SheetFormatting.razor
 
-The Selection's look on the Paper, which ExSheet's page describes (ExSheet shows the change too).
+The Selection's look on the Paper, which ExSheet's page describes (ExSheet shows the change too). Its "observed" is
+the readings of 2026-10-12 (R4), at Excel's 100% and 150% zoom on a 150% display; on a display at 100% it is by
+generalisation.
 
 Old:
 
@@ -348,8 +353,8 @@ New:
         </p>
         <p>
             Among several ranges, made with Ctrl+click, no range carries the green outline and there is no fill handle,
-            and the active cell takes a thin border of one screen pixel inside it, in the outline's green, as Excel's
-            is. Under ExSheet.MudBlazor it is the palette's primary, as the outline is.
+            and the active cell takes a thin border of one screen pixel inside it, in the outline's green: Excel's active
+            cell was observed with that border. Under ExSheet.MudBlazor it is the palette's primary, as the outline is.
             <code>--ex-focus-among-ranges-outline</code> colours it.
         </p>
         <DocsExample Builtin="typeof(BordersUnderSelection)" Mud="typeof(BordersUnderSelectionMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">

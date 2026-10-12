@@ -36,14 +36,16 @@ names. They are these, by file:
   `/appearance` (`appearance.spec.mjs`), with a Fill beneath and the Selection above; on the Sheet
   (`sheet-borders.spec.mjs`, with SH-46's); and in `part-c.spec.mjs` the Selection's outline and
   shade on the Paper under both Chromes (SH-54), its shade over the lines in a Pinned Column and
-  across the pinned boundary (ADR-0206), a Consumer's coloured shade over a pinned Fill and line,
-  the lines outside a pinned tint kept on their Device Pixels with the page a third of a pixel off,
-  column A's shade while scrolling, and VZ-17's vertical gridline. SH-41's sweep of the bold edge
-  (VZ-19, `sheet-paper.spec.mjs`), where a number may use one Device Pixel of its cell's right
-  padding (ADR-0090). And the Focus among several ranges, a border of one Device Pixel inside its
-  cell (UX-19, ADR-0008 of 2026-10-12): ExGrid's own on `/wide` (`selection-look.spec.mjs`), on the
-  Paper under both Chromes and in the readings of 2026-10-12's three selections
-  (`sheet-paper.spec.mjs`), and under `ExGrid.MudBlazor` on `/mud` (`mud.spec.mjs`).
+  across the pinned boundary (ADR-0206), and across it in the dark scheme under both Chromes, a
+  Consumer's coloured shade over a pinned Fill and line, the lines outside a pinned tint kept on
+  their Device Pixels with the page a third of a pixel off, column A's shade while scrolling, no
+  tint over a pinned range under forced colors, and VZ-17's vertical gridline. SH-41's sweep of the
+  bold edge under both Chromes (VZ-19, `sheet-paper.spec.mjs`), where a number may use one Device
+  Pixel of its cell's right padding (ADR-0090). And the Focus among several ranges, a border of one
+  Device Pixel inside its cell (UX-19, ADR-0008 of 2026-10-12): ExGrid's own on `/wide`
+  (`selection-look.spec.mjs`), on the Paper under both Chromes and in the three selections of the
+  readings of 2026-10-12 (R4) (`sheet-paper.spec.mjs`), and under `ExGrid.MudBlazor` on `/mud`
+  (`mud.spec.mjs`).
 
 `selection-look.spec.mjs` and `sheet-paper.spec.mjs` emulate their viewport everywhere else, and
 leave the window to Chrome there, since an emulated viewport is painted at a scale of 1.

@@ -2558,10 +2558,11 @@
     private string RangeClass => _selection.Selection.Ranges.Count == 1 ? "ex-range ex-range-single" : "ex-range";
 
     /// <summary>The Focus's classes (ADR-0008, 2026-10-12): among several ranges, where no range
-    /// carries an outline, the Focus is marked, and the stylesheet draws it as Excel draws the
-    /// active cell there, a thin border of one Device Pixel inside its cell, in a token of its own
-    /// (<c>--ex-focus-among-ranges-outline</c>). Decided by the Selection, not the layer, because a
-    /// layer may hold the Focus and no range's box. Interned, as <see cref="RangeClass"/> is.</summary>
+    /// carries an outline, the Focus is marked, and the stylesheet draws it a thin border of one
+    /// Device Pixel inside its cell, in a token of its own (<c>--ex-focus-among-ranges-outline</c>),
+    /// where Excel's active cell there was observed (the readings of 2026-10-12, R4). Decided by
+    /// the Selection, not the layer, because a layer may hold the Focus and no range's box.
+    /// Interned, as <see cref="RangeClass"/> is.</summary>
     private string FocusClass => _selection.Selection.Ranges.Count > 1 ? "ex-focus ex-focus-among-ranges" : "ex-focus";
 
     /// <summary>
