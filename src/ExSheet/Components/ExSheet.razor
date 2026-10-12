@@ -731,7 +731,7 @@
     /// whether an edit is open (ADR-0050 item 14). With no edit open it sets what Excel sets under
     /// the Sheet's culture on the Selection, as one step on the undo stack, a toggle in the
     /// direction the Focus cell gives it (<see cref="SheetFormatKeys.ChangeFor"/>). A Number Format
-    /// key and Ctrl+5 widen the columns whose numbers no longer fit, in that step
+    /// key, Ctrl+5 and Ctrl+U widen the columns whose numbers no longer fit, in that step
     /// (<see cref="SheetFormatKeys.WidensAsANumberFormatDoes"/>). While an edit is
     /// open it changes nothing, says why, and is raised through <see cref="OnFormatKeyRefused"/>
     /// (SH-43). Ctrl+1 opens Format Cells instead of setting anything, and while an edit is open it

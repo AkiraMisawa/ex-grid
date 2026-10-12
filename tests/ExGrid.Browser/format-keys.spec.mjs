@@ -1,5 +1,5 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
-import { sheet, openSheet, cell, editor, nameBox, pressCell, toolbarItem } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, editor, nameBox, pressCell, toolbarItem, enter, boxOf } from './sheet-helpers.mjs';
 
 // Excel's formatting keys on /sheet (ticket 51; ADR-0071 "Keys", ADR-0050 item 14), with real keys:
 // each toggle and Number Format key reaching the Sheet before the browser's own meaning, and with
@@ -167,4 +167,58 @@ test('SH-43/ADR-0071: with an edit open, Ctrl+U changes nothing, is taken from t
     await pressCell(grid, 'F2');
     await expect(font(page)).toHaveText('regular');
     await expect(numberFormat(page)).toHaveText('General');
+});
+
+// The seventeenth Windows run's h7 (ADR-0071; ticket 100's path): over a number showing ####,
+// Excel's Ctrl+U widened a column nobody had sized, from 8.09 to 11.73, and Ctrl+I did not; at a
+// width set through COM, neither did. E1 and F1 read C9, so the number arrives by recalculation,
+// which widens nothing, as Excel's set through COM did: typed into E1 it would have widened E.
+test('ADR-0071/SH-42 (the seventeenth run, h7): Ctrl+U over #### widens a column at the standard width and leaves a sized one at its width; Ctrl+I widens neither; one Ctrl+Z takes back both', async ({ page }) => {
+    const grid = sheet(page);
+    const header = (name) => grid.locator('.ex-header-cell', { hasText: new RegExp(`^${name}$`) });
+    // While C9 is empty each shows 89.12, which fits, so neither the Formulas nor the format widens.
+    await enter(page, grid, 'E1', '=C9*100+89.12');
+    await enter(page, grid, 'F1', '=E1');
+    await pressCell(grid, 'E1');
+    await page.keyboard.press('Shift+ArrowRight');
+    await page.keyboard.press('ControlOrMeta+Shift+Digit1');
+    await expect(numberFormat(page)).toHaveText('#,##0.00');
+    await expect(cell(grid, 'F1')).toHaveText('89.12');
+    const standard = (await boxOf(header('E'))).width;
+
+    // F is sized narrower by its grip, as a user sizes it, to about h7's width 5.
+    const grip = await boxOf(header('F').locator('.ex-resize-grip'));
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(grip.x + grip.width / 2 - 40, grip.y + grip.height / 2, { steps: 6 });
+    await page.mouse.up();
+    await expect.poll(async () => Math.round(standard - (await boxOf(header('F'))).width)).toBeGreaterThanOrEqual(35);
+    const sized = (await boxOf(header('F'))).width;
+
+    // 1234567 fits C in General, so C stays; E1 and F1 now hold 123456789.12, which shows ####.
+    await enter(page, grid, 'C9', '1234567');
+    await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+    await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+    expect((await boxOf(header('E'))).width).toBeCloseTo(standard, 0);
+
+    await pressCell(grid, 'E1');
+    await page.keyboard.press('Shift+ArrowRight');
+    await page.keyboard.press('ControlOrMeta+i');
+    await expect(font(page)).toHaveText('italic');
+    await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+    expect((await boxOf(header('E'))).width).toBeCloseTo(standard, 0);
+
+    await page.keyboard.press('ControlOrMeta+u');
+    await expect(font(page)).toHaveText('italic underline');
+    await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
+    await expect.poll(async () => (await boxOf(header('E'))).width).toBeGreaterThan(standard + 10);
+    await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+    expect((await boxOf(header('F'))).width).toBeCloseTo(sized, 0);
+
+    // The width is a step of the key's own: one Ctrl+Z takes back the underline and the width.
+    await page.keyboard.press('ControlOrMeta+Z');
+    await expect(font(page)).toHaveText('italic');
+    await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+    await expect.poll(async () => (await boxOf(header('E'))).width).toBeCloseTo(standard, 0);
+    expect((await boxOf(header('F'))).width).toBeCloseTo(sized, 0);
 });

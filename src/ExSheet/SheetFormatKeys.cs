@@ -81,7 +81,8 @@ internal static class SheetFormatKeys
     /// as Excel shows them (the twelfth run, case 19): <c>05-Jan-26</c> and <c>09:05</c> under
     /// en-GB, <c>5-Jan-26</c> and <c>9:05 AM</c> under en-US, <c>05-1-26</c> and <c>9:05</c> under
     /// ja-JP. A Number Format widens the columns it no longer fits, as every Number Format set on
-    /// the Selection does (case 17), and so does strikethrough (<see cref="WidensAsANumberFormatDoes"/>).
+    /// the Selection does (case 17), and so do strikethrough and underline
+    /// (<see cref="WidensAsANumberFormatDoes"/>).
     /// The outline is thin and Automatic on each range's four edges; no borders clears every edge
     /// of each range.
     /// </summary>
@@ -108,12 +109,17 @@ internal static class SheetFormatKeys
 
     /// <summary>
     /// Whether a key that sets no Number Format still widens the columns whose numbers no longer
-    /// fit, exactly as a Number Format key does (ticket 58's rule): Ctrl+5, setting strikethrough or
-    /// taking it off, as Excel's widened column A for <c>1234567.50</c> (the fourteenth Windows run,
-    /// case 7). Ctrl+B and the Fill did not, in any of three orders, and Ctrl+I, Ctrl+U and the
-    /// Border keys stay as Ctrl+B is until a run asks (ADR-0071).
+    /// fit, exactly as a Number Format key does (ticket 58's rule): a column at the standard width,
+    /// or one an entry or a key widened, and never one the user sized, in the key's one undo step.
+    /// Ctrl+5, setting strikethrough or taking it off, as Excel's widened column A for
+    /// <c>1234567.50</c> (the fourteenth Windows run, case 7, and again in the seventeenth's h8).
+    /// Ctrl+U (or Ctrl+4, the same key), setting underline or taking it off, as Excel's widened
+    /// column A from 8.09 to 11.73 for <c>123456789.12</c> in <c>0.00</c> (the seventeenth Windows
+    /// run, h7). Ctrl+B and the Fill did not, in any of three orders (case 7), nor did Ctrl+I (h7).
+    /// The Border keys stay as Ctrl+B is until a run asks (ADR-0071). That taking either off widens
+    /// is a reading: both runs pressed the keys only to set them.
     /// </summary>
-    internal static bool WidensAsANumberFormatDoes(Kind kind) => kind == Kind.Strikethrough;
+    internal static bool WidensAsANumberFormatDoes(Kind kind) => kind is Kind.Strikethrough or Kind.Underline;
 
     private static Dictionary<string, Kind> Build()
     {

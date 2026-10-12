@@ -19,7 +19,9 @@ namespace ExSheet.Components.Tests;
 /// widens; and the date and time keys show Excel's built-ins in the Sheet culture's own form. The
 /// fourteenth run added Ctrl+5, which widens as a Number Format key does, where Ctrl+B and the Fill
 /// do not (ticket 100; ADR-0071, "What the fourteenth Windows run settled", case 7;
-/// <c>verification/2026-10-01-windows-excel-14/cell-format-14.md</c>).
+/// <c>verification/2026-10-01-windows-excel-14/cell-format-14.md</c>). The seventeenth run added
+/// Ctrl+U, which widens as Ctrl+5 does, where Ctrl+I does not (its Part H, h7;
+/// <c>verification/2026-10-11-windows-17/report.md</c>).
 /// </summary>
 public class FormatWideningTests : SheetTestContext
 {
@@ -37,12 +39,13 @@ public class FormatWideningTests : SheetTestContext
     /// <summary>
     /// The fourteenth run's case 7: A1 holds 1234567.5 in <c>0.00</c>, which shows <c>####</c> at the
     /// default width, with <paramref name="also"/> set on it too. The format is in the document, as
-    /// Excel's passes b to d set it on the empty A1 before the number, so nothing widened it.
+    /// Excel's passes b to d set it on the empty A1 before the number, so nothing widened it. The
+    /// seventeenth run's h7 typed <paramref name="typed"/> 123456789.12 instead.
     /// </summary>
-    private static SheetDocument Hashed(CellFormatChange? also = null)
+    private static SheetDocument Hashed(CellFormatChange? also = null, string typed = "1234567.5")
     {
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-GB"));
-        sheet.Enter(CellAddress.Parse("A1"), "1234567.5");
+        sheet.Enter(CellAddress.Parse("A1"), typed);
         sheet.SetCellFormat([CellRange.Parse("A1")], new CellFormatChange { NumberFormat = NumberFormat.Parse("0.00") });
         if (also is not null) sheet.SetCellFormat([CellRange.Parse("A1")], also);
         return sheet.ToDocument();
@@ -208,8 +211,8 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal("1,234,567.50", CellText(cut, "B5"));
     }
 
-    [Fact] // ADR-0071 case 17 and the fourteenth run's case 7: Ctrl+B, Ctrl+I, Ctrl+U, a Fill and a Border leave the width though a number already shows ####; a Number Format widens it
-    public async Task Bold_italic_underline_a_fill_and_a_border_never_widen()
+    [Fact] // ADR-0071 case 17, the fourteenth run's case 7 and the seventeenth's h7: Ctrl+B, Ctrl+I, a Fill and a Border leave the width though a number already shows ####; a Number Format widens it
+    public async Task Bold_italic_a_fill_and_a_border_never_widen()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-GB", ("A1", "1234567890"))));
         // A Consumer's edit is done as written, and widens nothing (DoAsync).
@@ -219,12 +222,11 @@ public class FormatWideningTests : SheetTestContext
 
         await PressAsync(cut, "b", ctrl: true);
         await PressAsync(cut, "i", ctrl: true);
-        await PressAsync(cut, "u", ctrl: true);
         await PressAsync(cut, "&", ctrl: true, shift: true);
         await PressAsync(cut, "_", ctrl: true, shift: true);
         // The Fill, as a toolbar's Fill Colour button sets it (the fourteenth run set it with the mouse).
         Assert.True(await cut.Instance.SetCellFormatAsync(new CellFormatChange { Fill = Yellow }));
-        Assert.True(FormatAt(cut, "A1").Font is { Bold: true, Italic: true, Underline: true });
+        Assert.True(FormatAt(cut, "A1").Font is { Bold: true, Italic: true, Underline: false });
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
         Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
         Assert.Matches("^#+$", CellText(cut, "A1"));
@@ -379,6 +381,108 @@ public class FormatWideningTests : SheetTestContext
         Assert.False(FormatAt(cut, "A1").Font.Strikethrough);
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
         Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
+    }
+
+    // ---- The seventeenth run's h7: Ctrl+U widens as Ctrl+5 does, and Ctrl+I does not ----
+
+    /// <summary>h7's number, 123456789.12 in <c>0.00</c>, as it shows once a column holds it.</summary>
+    private const string H7Shown = "123456789.12";
+
+    [Theory] // ADR-0071, the seventeenth run's h7: Ctrl+U widens a column at the default width whose number shows ####, as Ctrl+5 and a Number Format key do, recorded as a width an entry widened. Ctrl+4 is the same key (ADR-0071, "Keys"), so it widens too: a reading, since the run pressed Ctrl+U
+    [InlineData("u")]
+    [InlineData("U")]
+    [InlineData("4")]
+    public async Task Ctrl_u_widens_as_a_number_format_key_does_h7(string key)
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed(typed: "123456789.12")));
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+        await GoToAsync(cut, "A1");
+
+        await PressAsync(cut, key, ctrl: true);
+
+        Assert.True(FormatAt(cut, "A1").Font.Underline);
+        Assert.Equal(H7Shown, CellText(cut, "A1"));
+        Assert.Equal(WidenedFor(H7Shown), WidthOf(cut, 0), 6);
+        var width = Assert.Single(cut.Instance.ToDocument().ColumnWidths);
+        Assert.Equal((0, 0), (width.First, width.Last));
+        Assert.Equal(SheetColumnWidthKind.WidenedByEntry, width.Kind);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 1));
+    }
+
+    [Fact] // ADR-0071, the seventeenth run's h7, in the run's order: Ctrl+I leaves the default width and the number shows #### in italic; Ctrl+U then widens the column
+    public async Task Ctrl_i_never_widens_and_ctrl_u_then_does_h7()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed(typed: "123456789.12")));
+        await GoToAsync(cut, "A1");
+
+        await PressAsync(cut, "i", ctrl: true);
+        Assert.True(FormatAt(cut, "A1").Font.Italic);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
+        Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+
+        await PressAsync(cut, "u", ctrl: true);
+        Assert.Equal(new CellFont(Italic: true, Underline: true), FormatAt(cut, "A1").Font);
+        Assert.Equal(H7Shown, CellText(cut, "A1"));
+        Assert.Equal(WidenedFor(H7Shown), WidthOf(cut, 0), 6);
+    }
+
+    [Fact] // ADR-0071, the seventeenth run's h7, read for taking it off (the run pressed Ctrl+U only to set it): Ctrl+U over an underlined number that shows #### takes underline off and widens the same way
+    public async Task Ctrl_u_taking_underline_off_widens_the_same_way_h7()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed(new CellFormatChange { Underline = true }, typed: "123456789.12")));
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+        await GoToAsync(cut, "A1");
+
+        await PressAsync(cut, "u", ctrl: true);
+
+        Assert.False(FormatAt(cut, "A1").Font.Underline);
+        Assert.Equal(H7Shown, CellText(cut, "A1"));
+        Assert.Equal(WidenedFor(H7Shown), WidthOf(cut, 0), 6);
+    }
+
+    [Fact] // ADR-0071, the seventeenth run's h7, ADR-0048: Ctrl+U's widening is part of its one undo step, undone and redone with the underline
+    public async Task Ctrl_us_widening_is_part_of_its_one_undo_step_h7()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed(typed: "123456789.12")));
+        await GoToAsync(cut, "A1");
+        await PressAsync(cut, "u", ctrl: true);
+
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.False(FormatAt(cut, "A1").Font.Underline);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
+        Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+        Assert.False(cut.Instance.CanUndo);
+
+        Assert.True(await cut.Instance.RedoAsync());
+        Assert.True(FormatAt(cut, "A1").Font.Underline);
+        Assert.Equal(H7Shown, CellText(cut, "A1"));
+        Assert.Equal(WidenedFor(H7Shown), WidthOf(cut, 0), 6);
+    }
+
+    [Fact] // ADR-0071, the seventeenth run's h7 with the twelfth's case 18: Ctrl+U never widens a column the user sized, at the default width or at h7's width 5, and neither does Ctrl+I
+    public async Task Ctrl_u_never_widens_a_column_the_user_sized_h7()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-GB"));
+        sheet.Enter(CellAddress.Parse("A1"), "123456789.12");
+        sheet.Enter(CellAddress.Parse("B1"), "123456789.12");
+        sheet.SetCellFormat([CellRange.Parse("A1:B1")], new CellFormatChange { NumberFormat = NumberFormat.Parse("0.00") });
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+        var five = SheetColumns.PxOf(5, Metrics);
+        await ResizeAsync(cut, "A", SheetColumns.DefaultWidthPx);
+        await ResizeAsync(cut, "B", five);
+        await GoToAsync(cut, "A1:B1");
+
+        await PressAsync(cut, "i", ctrl: true);
+        await PressAsync(cut, "u", ctrl: true);
+
+        Assert.Equal(new CellFont(Italic: true, Underline: true), FormatAt(cut, "B1").Font);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0), 6);
+        Assert.Equal(five, WidthOf(cut, 1), 6);
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+        Assert.Matches("^#+$", CellText(cut, "B1"));
+        Assert.All(cut.Instance.ToDocument().ColumnWidths, w => Assert.Equal(SheetColumnWidthKind.SetByUser, w.Kind));
     }
 
     // ---- Case 19: the date and time keys' built-ins under three cultures ----

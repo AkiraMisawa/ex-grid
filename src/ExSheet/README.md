@@ -355,10 +355,12 @@ Column widths are part of the Sheet Document, in characters as Excel counts them
 column, and a number typed into a column that it widens, are steps on the undo stack like any
 other, and raise `DocumentChanged`; an opened document brings its widths with it. A Number Format
 set on the Selection — a formatting key, Format Cells' OK, `SetCellFormatAsync` — widens a column
-whose numbers it no longer fits in the same way, in its own undo step. A width an entry or a Number
-Format widened the column to stays automatic, and a longer number widens the column again; a width
-the user set — a drag or a size to fit — is custom, and nothing widens that column. A column inserted
-to the right of either takes its width as one the user set, as Excel's does.
+whose numbers it no longer fits in the same way, in its own undo step, and so do Ctrl+5 and Ctrl+U,
+which set no Number Format, as Excel's do; Ctrl+B and Ctrl+I do not. A width an entry, a Number
+Format or one of those keys widened the column to stays automatic, and a longer number widens the
+column again; a width the user set — a drag or a size to fit — is custom, and nothing widens that
+column. A column inserted to the right of either takes its width as one the user set, as Excel's
+does.
 
 ## The Sheet Toolbar
 

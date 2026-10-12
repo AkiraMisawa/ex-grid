@@ -59,3 +59,33 @@ did not, in any of three orders. ADR-0071, "What the fourteenth Windows run sett
     - ExGrid.Tests: 1089 passed.
     - ExGrid.Components: 1356 passed, 1 skipped.
     - ExGrid.MudBlazor.Tests: 198 passed.
+
+*(2026-10-12, agent run17gh-widening.)* The seventeenth Windows run corrects the second box for
+Ctrl+U (`verification/2026-10-11-windows-17/report.md`, Part H, h7). Over 123456789.12 in `0.00`
+showing `####` at the standard width, Excel's Ctrl+U widened column A from 8.09 to 11.73, and
+Ctrl+I did not. At a width set through COM (5), none of the three did, Format Cells' Font tab among
+them. Its h8 observed Ctrl+5 widen again.
+
+- **Ctrl+U now widens as Ctrl+5 does**, by this ticket's path. `WidensAsANumberFormatDoes` is true
+  for underline as for strikethrough, so Ctrl+4, the same key, widens too.
+  - It widens a column at the standard width, or one an entry or a key widened, and never one the
+    user sized.
+  - Setting underline and taking it off widen alike. Taking it off is a reading, as for Ctrl+5.
+  - The width steps are part of the key's one undo step.
+- **Ctrl+B and Ctrl+I still never widen.** h7 observed Ctrl+I not to.
+- **Format Cells' OK, `SetCellFormatAsync` and the Sheet Toolbar's toggles are unchanged.** In h7,
+  Excel widened for the Font tab with Bold and OK, where Ctrl+B did not widen in the fourteenth run.
+  What follows from that waits for the user's question.
+- **Tests.**
+  - Layer 2 (`FormatWideningTests`, each named with h7):
+    - Ctrl+U, with CapsLock off and on, and Ctrl+4 widen, and the column is recorded with the
+      entry's kind.
+    - Ctrl+I then Ctrl+U, in the run's order.
+    - Taking underline off widens.
+    - One undo step, undone and redone.
+    - A sized column, at the default width or at h7's 5, does not widen.
+  - `Bold_italic_underline_a_fill_and_a_border_never_widen` loses underline, and is now
+    `Bold_italic_a_fill_and_a_border_never_widen`.
+  - With the change taken out, six of the new tests fail.
+  - Layer 3 (`format-keys.spec.mjs`): Ctrl+I and Ctrl+U over `####` in a standard column and a
+    column sized by its grip, and one Ctrl+Z.

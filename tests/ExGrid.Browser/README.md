@@ -601,7 +601,9 @@ nobody had asked for. What that means when writing a test:
   page's status line, and the edit committing as typed (SH-43). The page's line under the Sheet
   reads the Focus cell's Cell Format back. The page's
   *Format selection as #,##0.00* pressed straight after Shift+ArrowDown on a 150 ms circuit, before
-  the Sheet has heard the move, formats the extended range as one step (ticket 56).
+  the Sheet has heard the move, formats the extended range as one step (ticket 56). Over numbers
+  showing `####`, Ctrl+I widens no column and Ctrl+U widens the one at the standard width, never the
+  one sized by its grip, in the key's one step (the seventeenth Windows run's h7; ADR-0071).
 - `sheet-borders.spec.mjs` — ExSheet's Borders beside Excel's (ADR-0071, DC-59, SH-46; ticket 49)
   on `/sheet?case=…`, the eleventh, twelfth and fourteenth Windows runs' set-ups, read in device
   pixels: Excel's thirteen line styles on a bottom and on a right edge, scrolled down the Sheet, at
