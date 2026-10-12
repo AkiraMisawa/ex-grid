@@ -23,7 +23,12 @@ nix develop -c dotnet run spikes/exsheet-financial-evaluation/Search.cs         
 nix develop -c dotnet run spikes/exsheet-financial-evaluation/Search.cs -- --json       # rewrites search-cs.json
 nix develop -c dotnet run spikes/exsheet-financial-evaluation/Search.cs -- --discriminate   # the inputs that tell the nearest apart (discriminate.txt)
 nix develop -c dotnet run spikes/exsheet-financial-evaluation/Search.cs -- --predict "=FV(0.05/12,12,-150,-1000,1)"
+nix develop -c dotnet run spikes/exsheet-financial-evaluation/Search.cs -- --refusals   # the engine against where the survivors part (exits 1 if not)
+nix develop -c dotnet run spikes/exsheet-financial-evaluation/Search.cs -- --discriminate-xnpv   # the inputs that tell XNPV's survivors apart (discriminate-xnpv.txt)
 ```
+
+`Search.cs` references `src/ExSheet.Engine` (`#:project`) for `--refusals`, which enters each input as a
+Formula in a `Sheet` through the engine's public surface; everything else in it is the standard library.
 
 `search.py` reads each case's cells from the corpus; Excel's arguments are its own doubles (`0.06/12` and
 `8%/12` are divided in doubles, as Excel's operators do). Its logarithms and exponentials come from
@@ -45,14 +50,16 @@ and with the rate in a cell), NPV-005 and 006 another (typed or in a range), NPV
 
 | Function | Observed doubles (rate ≠ 0) | `search.py` candidates | `Search.cs` candidates | Reproduce all | Best other |
 |---|---:|---:|---:|---|---|
-| FV | 8 | 1022 | 360 | **one evaluation** (below) | 7 of 8 |
-| PV | 6 | 1022 | 360 | **one evaluation** (below) | 5 of 6 |
+| FV | 8 | 1022 | 440 | **three evaluations** (below), each with every reading of a fractional `nper` | 7 of 8 |
+| PV | 6 | 1022 | 440 | **one evaluation** (below), with every reading of a fractional `nper` | 5 of 6 |
 | PMT | 14 | 11242 | 7344 | **none** | 10 of 14 |
 | NPV | 7 | 301, then 456 | 3876 | **none** | 6 of 7 |
-| XNPV | 2 | 12 | — | 2 | 1 of 2 |
+| XNPV | 2 | 12 | 1496 | 2 in `search.py`, **72** in `Search.cs` (below) | 1 of 2 |
 
 *(The first search, 2026-10-12 before the area pass, had 3 FV, 2 PV, 4 PMT and 3 NPV doubles; its
-conclusions that the area pass changed are corrected below, each where it was.)*
+conclusions that the area pass changed are corrected below, each where it was. Later the same day
+`Search.cs` gained four readings of a fractional or negative `nper` for PV and FV, and a search of
+XNPV; its counts above are that run's.)*
 
 `search.py`'s candidates: a way of raising 1+rate to `nper` (a correctly rounded power; squaring from
 the lowest or the highest bit; repeated multiplication; e^(n ln(1+rate)); e^(n log1p(rate)); the x87's
@@ -83,17 +90,27 @@ count, and the legend for its short labels):
 
 ### FV and PV: the doubles' evaluation, any `nper`, the payment grouped with its factor
 
-One evaluation gives all 8 FV and all 6 PV doubles, in both searches:
+These evaluations give all 8 FV and all 6 PV doubles, in both searches:
 
 - **1+rate raised to `nper`** by squaring from the exponent's lowest bit when `nper` is a whole number,
   1 over that when it is a negative whole number, and e^(nper ln(1+rate)) by the platform's `exp` and
   `log` otherwise, each step a double. Squaring 1/(1+rate) for FV-007's −10 is 19 units in the last place
   away; a correctly rounded power is two units from PV-005's 10.5; `Math.Pow` for both misses both.
-  *(2026-10-12, later: the engine takes the `^` operator's own evaluation for a fractional `nper`,
-  `Arithmetic.Power`, which is e^(nper ln(1+rate)) but the correctly rounded square root at exactly 0.5
-  (ARITH-133), so that `=(1+r)^n` and FV's power cannot differ. No observed double has an `nper` of
-  0.5, so every one is given as before; `g_pv_fv` in `search.py` models it. At a rate below −1 the
-  engine refuses a fractional `nper`: `^` gives a negative base an odd root, e^(nper ln(1+rate)) none.)*
+  *(2026-10-12, later: no observed double has an `nper` of 0.5, nor a negative one that is not a whole
+  number, so the observations leave more than one reading of those. `search.py`'s `g_pv_fv` is the `^`
+  operator's evaluation, `Arithmetic.Power`, the correctly rounded square root at exactly 0.5 (ARITH-133)
+  and e^(nper ln(1+rate)) otherwise; `Search.cs`'s g0 is e^(nper ln(1+rate)) at 0.5 too; and g19 and g20
+  raise a negative fraction as 1 over the power to its absolute value, as FV-007's −10 is reached, by
+  either. g18 is the `^` operator's with its errors where 1+rate is 0: =0^0 is `#NUM!` (ARITH-041) and 0 to
+  a negative power `#DIV/0!` (ARITH-042), where squaring gives 0^0 as 1 and 1 over 0^n no finite number.
+  g21 is g0 with a correctly rounded `ln` and `exp`, as `search.py` models a library; it parts from g0 at
+  no input `--refusals` draws, so the platform's library makes no difference there.
+  So `=(1+r)^n` and the same power inside FV can differ, at a rate of −1 and wherever FV's reading is not
+  the operator's. All five give every observed double, and they part at 0.5 (FV-016), at some negative
+  fractions (FV-022), and at a rate of −1 with a negative `nper` (FV-020, FV-021, PV-012): the engine
+  computes each and refuses with `#VALUE!` where they part. At a rate below −1 it refuses a fractional
+  `nper` as before: where 1/nper is an odd whole number, `^` gives a negative base an odd root and
+  e^(nper ln(1+rate)) none; elsewhere neither has one.)*
 - **FV = −(pv·g + pmt·((1+rate·type)·((g−1)/rate)))** and **PV = −(fv + pmt·((1+rate·type)·((g−1)/rate)))/g**:
   the payment multiplies the product of 1+rate·type and the annuity factor. Multiplying the payment by
   1+rate·type first, as the engine did, is one unit in the last place below Excel's FV-009 and PV-007,
@@ -102,10 +119,13 @@ One evaluation gives all 8 FV and all 6 PV doubles, in both searches:
   not truncated.
 
 `search.py` finds it as F4 (and F7, the same products in another order); `Search.cs` as F4, F7 and F8,
-which are the same products, and also F9 and F10, which take pv·g into a fused multiply-add. PV's V5 and
-V9 are one evaluation. No observed double tells F4 from F9 and F10; FV-014 and FV-015 ask (a fused
-multiply-add gives 2900.6645063063966 and 123950.02507801352 for them), and FV-016 asks whether half a
-period is the square root, as `^` takes it and the engine now does, or e^(0.5 ln(1+rate)).
+which are the same products, and also F9 and F10, which fuse pv·g, or the payment's product, into a
+multiply-add. PV's V5 and V9 are one evaluation; its fused V10 misses. No observed double tells F4 from F9
+and F10, which part where FV has both a present value and a payment: the engine refuses those with
+`#VALUE!` where they part (FV-014 and FV-015 ask; a fused multiply-add gives 2900.6645063063966 and
+123950.02507801352 for them), but at the end of each period with a whole `nper` from 0, where FV gave F4's
+double before the area pass and still does until Excel is asked (FV-019, where F9 gives 483.06382918288557
+and F10 483.0638291828854).
 
 ### PMT: no evaluation gives every observed payment
 
@@ -158,14 +178,47 @@ Excel's doubles where they differ.
 
 ### XNPV
 
-XNPV-001 and XNPV-004 are both given by e^(x ln(1+rate)) in doubles, with x the days over 365 (divided,
-or multiplied by 1/365). A correctly rounded power, and `Math.Pow`, are 8 units in the last place from
-XNPV-004, which was asked to tell them apart; the corpus compared XNPV at 6 decimals, so the oracle
-counted it as agreeing. The engine now takes e^(x ln(1+rate)), and XNPV-001 and 004 compare every bit.
-XNPV-005 and 006 ask whole years, where squaring, a correctly rounded power and e^(x ln(1+rate)) part.
-At a rate of −1 or below 1+rate has no logarithm, and `Math.Pow`, which the engine took before, answers
-some arguments there (the first value, and whole years below −1): the engine refuses that rate with
-`#VALUE!`, and XNPV-007 to 010 ask.
+XNPV-001 and XNPV-004 are both given by e^(x ln(1+rate)) in doubles summed forward, with x the days over
+365 (divided, or multiplied by 1/365). A correctly rounded power, and `Math.Pow`, so summed are 8 units in
+the last place from XNPV-004, which was asked to tell them apart; the corpus compared XNPV at 6 decimals,
+so the oracle counted it as agreeing. The engine now takes e^(x ln(1+rate)), and XNPV-001 and 004 compare
+every bit. At a rate of −1 or below 1+rate has no logarithm, and `Math.Pow`, which the engine took before,
+answers some arguments there (the first value, and whole years below −1): the engine refuses that rate
+with `#VALUE!`, and XNPV-007 to 010 ask.
+
+*(2026-10-12, later.)* `search.py` tried 12 evaluations. `Search.cs` tries 1,496: the days over 365 or
+times 1/365; the discount by `Math.Exp(x*Math.Log(b))`, at whole years by squaring or by `Math.Pow`,
+`Math.Pow` throughout, a correctly rounded power, e^(x ln b) correctly rounded, the x87's, or 1 over
+e^(−x ln b); each value divided by it, multiplied by its reciprocal, or by e^(−x ln b); NPV's orders of
+summing and pairwise by halving; terms and sum at 53 or 64 bits. **72 give both observed doubles.** The
+engine computes six of them, the days over 365 or times 1/365 with e^(x ln b), or at whole years squaring
+or `Math.Pow`, each value divided and summed forward, and refuses where those six part: whole years
+(XNPV-005, 006) and the days at which the two years part (XNPV-011). The other 66 part from them at about
+half the inputs `--refusals` draws, so XNPV's evaluation is open as PMT's is, and whether XNPV answers
+there is the user's question (ADR-0202). `--discriminate-xnpv` finds six inputs that split the 72 into 38
+groups, each of evaluations that agree on every input drawn (forward, forward fused and forward with
+Excel's last addition, for instance); XNPV-012 to 017 ask them. A correctly rounded e^(x ln b) parts from
+the platform's `Math.Exp` and `Math.Log` at one of them, so the platform's library is among the questions.
+
+## The refusals (`--refusals`)
+
+ADR-0047 admits an answer only where it follows from Excel's observed answers, and where the
+evaluations those leave part, the engine refuses with `#VALUE!`. `--refusals` runs each survivor of the
+search over a grid, and the engine through its public `Sheet`, and requires the engine's answer where they
+agree and `#VALUE!` where they part. FV and PV: 12 rates (−9, −1.5, −1 and −0.5 among them), 19 numbers of
+periods (whole, negative, 0.5, −0.5, 10.5, −10.5, 1/3 and others), four payments, four present or future
+values and both types, 7,296 inputs each. XNPV: the corpus's inputs and 4,000 drawn (up to seven values,
+dates whole years apart, the days at which /365 and *(1/365) part, and any). The last run (2026-10-12):
+
+| | Survivors | Agree | Part | Exceptions, listed and asked |
+|---|---:|---:|---:|---|
+| FV | 25 | 5,792 | 1,504 | 144 answered at the end with a whole `nper` from 0 (FV-019); 32 answered at a rate of −1 with no periods (FV-018); 512 refused at a rate below −1 with a fractional `nper` though the survivors agree |
+| PV | 10 | 6,682 | 614 | 32 answered at a rate of −1 with no periods; 512 refused below −1 as FV's |
+| XNPV, the six | 6 | 3,749 | 255 | 604 refused at a rate of −1 or below though they agree |
+| XNPV, all 72 | 72 | 2,081 | 1,923 | the six's 604; 1,668 answered where the 72 part, for the user (ADR-0202) |
+
+The exceptions are answers the engine gave before the area pass, kept until Excel is asked, and refusals
+kept from before it; every other input matches. The check exits 1 if any other input differs.
 
 ## The C# port
 
@@ -174,7 +227,8 @@ from 1 to 1000 and also 0.5, 10.5, 36.25, −1, −12 and −10.5, types 0, 1, 2
 among them; FV and PV by the evaluation above, PMT by the exact model (or `#VALUE!` where it refuses an
 `nper`), each PMT at least 0.0007 of a unit in the last place from a rounding boundary. A throwaway
 layer-1 test entered each as a Formula and compared the engine's double: all 1200 equal (2026-10-12,
-Linux). PMT's port carries double-double numbers (about 106 bits), which gives the exact model's double
+Linux). *(Later that day the engine began refusing PV and FV where their readings part, which `--vectors`
+does not model; `--refusals` is the check of PV and FV now.)* PMT's port carries double-double numbers (about 106 bits), which gives the exact model's double
 except very near a rounding boundary.
 
 ## Files
@@ -183,3 +237,4 @@ except very near a rounding boundary.
 - `Search.cs`, `search-cs.json`: the second, and its last `--json` run (every candidate's match count,
   short labels with their legend, each function's 40 best that do not reproduce all).
 - `discriminate.txt`: the last `--discriminate` run, the inputs PMT-020 to 033 and NPV-009 to 022 ask.
+- `discriminate-xnpv.txt`: the last `--discriminate-xnpv` run, the inputs XNPV-012 to 017 ask.

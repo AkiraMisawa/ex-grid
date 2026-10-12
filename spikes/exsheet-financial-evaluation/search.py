@@ -264,10 +264,13 @@ def g_expm1_log1p(rate, n, p):
 
 
 def g_pv_fv(rate, n, p):
-    """The PV/FV model (2026-10-12): squaring for a whole n, 1 over it for a negative one, and otherwise the
-    ^ operator's evaluation (the engine's Arithmetic.Power): the C library's exp(n log(1+rate)), but the
-    square root correctly rounded at an n of exactly 0.5 (ARITH-133), all in doubles. Python's math.exp,
-    math.log and math.sqrt are glibc's, as .NET's on Linux."""
+    """One reading of PV and FV (2026-10-12): squaring for a whole n, 1 over it for a negative one, and
+    otherwise the ^ operator's evaluation (the engine's Arithmetic.Power): the C library's exp(n log(1+rate)),
+    but the square root correctly rounded at an n of exactly 0.5 (ARITH-133), all in doubles. Python's
+    math.exp, math.log and math.sqrt are glibc's, as .NET's on Linux. No observed double has an n of 0.5, nor
+    a negative fraction, so this and Search.cs's other readings of those all survive; the engine computes
+    each and refuses where they part (Search.cs --refusals), and --vectors, which takes this one alone, no
+    longer models the engine there."""
     b = 1 + float(rate.v)
     if n == int(n):
         k = abs(int(n))
@@ -832,7 +835,8 @@ def npv_wide(observations):
 
 
 def model_fv(rate, nper, pmt, pv, kind):
-    """FV as the engine evaluates it (2026-10-12): F4, the payment times (1+r*t)*((g-1)/r)."""
+    """FV by F4, the payment times (1+r*t)*((g-1)/r), and g_pv_fv's reading (2026-10-12): where the engine
+    answers, its double, which F9, F10 and the other readings of 1+rate's power give too (Search.cs)."""
     if rate == 0:
         return float(-(pv + pmt * nper))
     with precision(53):
@@ -842,7 +846,8 @@ def model_fv(rate, nper, pmt, pv, kind):
 
 
 def model_pv(rate, nper, pmt, fv, kind):
-    """PV as the engine evaluates it (2026-10-12): V5, the payment grouped as FV's."""
+    """PV by V5, the payment grouped as FV's, and g_pv_fv's reading (2026-10-12): where the engine answers, its
+    double."""
     if rate == 0:
         return float(-(fv + pmt * nper))
     with precision(53):
