@@ -39,6 +39,10 @@ public abstract class MudPivotTestContext : BunitContext
     {
         Services.AddMudServices();
         JSInterop.Mode = JSRuntimeMode.Loose;
+        // The stamp this build of the grid was made with, or every grid refuses its script and
+        // paints no rows (ADR-0123); everything else answers loosely.
+        JSInterop.SetupModule(global::ExGrid.Testing.ShippedScript.Address)
+            .Setup<string>("stamp").SetResult(global::ExGrid.Testing.ShippedScript.Stamp);
     }
 
     //  Region  Product  Amount  Quantity  Online
@@ -229,7 +233,8 @@ public abstract class MudPivotTestContext : BunitContext
     /// </summary>
     internal BunitJSModuleInterop ReportGridHandle()
     {
-        var module = JSInterop.SetupModule("./_content/ExGrid/ex-grid.min.js");
+        var module = JSInterop.SetupModule(ExGrid.Testing.ShippedScript.Address);
+        module.Setup<string>("stamp").SetResult(ExGrid.Testing.ShippedScript.Stamp);
         module.SetupModule("attach", _ => true);
         return module.SetupModule("attach",
             invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotDisplayRow>>);

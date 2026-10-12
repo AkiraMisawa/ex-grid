@@ -407,6 +407,17 @@ is added to the stable table, so what a Consumer may style does not grow:
 UX-4's walk checks each class against the stable table, the internal names, and these prefixes and
 families; a class that matches none fails it, so the next unnamed class is caught by name.
 
+## Not a styling surface: the reload notices *(2026-10-11, [ADR-0123](./0123-shipped-scripts-and-stylesheets-are-minified-and-each-package-asks-for-the-files-it-was-built-with.md))*
+
+The notices that say a page holds another version's script or stylesheet are found by
+`data-ex-notice`, `data-ex-stylesheet` and `data-ex-stamp`. These are attributes because their
+selector is a contract between versions: a stylesheet of one version finds the notice a DLL of another
+renders, so it can never change. They are not on the stable list, and no Consumer or Wrapper styles by
+them; the notice's appearance is its Visual Tokens. Like the attributes the script reads
+(`data-ex-reveal`, `data-ex-sequence`, …), they mark an element for the grid's own code, not a state for
+a theme, so "classes, not `data-*` attributes" is not broken. They are rendered once per root, never
+per cell, so P5 is untouched.
+
 ## Added by ADR-0170 *(2026-10-07, decided with the user)*
 
 - **Internal class**, which may change without notice: `ex-copied-range`, the dashes around a

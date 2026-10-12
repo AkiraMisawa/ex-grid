@@ -464,6 +464,10 @@ public static class PivotWords
         ["copy"] = "コピー",
         ["copy-with-headers"] = "見出し付きでコピー",
 
+        // The notices of a page that holds another version's files (ExGrid.Chrome.ReloadNoticeLabelIds,
+        // ADR-0123): the report's grid refusing its script, and either product's stylesheet notice.
+        ["reload-notice-script"] = "このページには別のバージョンのグリッドのスクリプトがあります。ページを再読み込みしてください。",
+        ["reload-notice-stylesheet"] = "このページには別のバージョンのスタイルシートがあります。ページを再読み込みしてください。",
         // What ExGrid says in the report grid's live region when it refuses a copy, or a paste, fill
         // or Delete, by the id of its words (ExGrid.Chrome.RefusalLabelIds, ADR-0203): ExGrid words
         // them only in English. The grid writes the refusing column's header for {column}.

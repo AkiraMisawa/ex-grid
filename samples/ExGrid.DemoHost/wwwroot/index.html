@@ -10,8 +10,8 @@
          /favicon.ico, and its 404 fails the layer-3 console capture (CON-1). -->
     <link rel="icon" href="data:," />
     <link rel="preload" id="webassembly" />
-    <link rel="stylesheet" href="_content/ExGrid/ex-grid.min#[.{fingerprint}].css" />
-    <link rel="stylesheet" href="_content/ExSheet/ex-sheet.min#[.{fingerprint}].css" />
+    <!-- ExGrid's and ExSheet's stylesheets are root components (Program.cs), each at the address of
+         the file the package was built with (ADR-0123). -->
     <link rel="stylesheet" href="_content/ExGrid.DemoPages/app.css" />
     <script type="importmap"></script>
 </head>

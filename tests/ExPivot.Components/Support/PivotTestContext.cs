@@ -24,7 +24,7 @@ public sealed record Sale(string? Region, string Product, decimal Amount, int Qu
 /// </summary>
 public abstract class PivotTestContext : BunitContext
 {
-    private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
+    private static string ModulePath => ExGrid.Testing.ShippedScript.Address;
 
     /// <summary>ExGrid's settle delay: once a scroll has been still this long, the grid paints the
     /// rows it landed on and asks for them (ADR-0004).</summary>
@@ -39,6 +39,7 @@ public abstract class PivotTestContext : BunitContext
     {
         Services.AddSingleton<TimeProvider>(Clock);
         _module = JSInterop.SetupModule(ModulePath);
+        _module.Setup<string>("stamp").SetResult(ExGrid.Testing.ShippedScript.Stamp);
         StandIn(_module.SetupModule("attach", _ => true));
         // Blazor's own FocusAsync, which the built-in views use to hand the keyboard on.
         JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true).SetVoidResult();

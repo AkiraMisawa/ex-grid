@@ -53,6 +53,7 @@ internal static class FeatureMatrixByHand
         new("IGridChrome.FormulaBarText", "The Formula Bar's text field", ["ADR-0051"]),
         new("IGridChrome.EditorCompletion", "The completion list and argument hint", ["ADR-0051"]),
         new("IGridChrome.SelectionSummary", "The Selection Summary in the status line", ["ADR-0130"]),
+        new("IGridChrome.Stylesheets", "The notice that the page holds another version of the Wrapper's stylesheet", ["ADR-0123"]),
         new("IGridChrome.Words", "The words a refusal is announced in", ["ADR-0203"]),
         new("ISheetChrome.FormatCells", "Format Cells", ["ADR-0071"]),
         new("ISheetChrome.ToolbarItem", "The Sheet Toolbar's items", ["ADR-0100"]),
@@ -67,5 +68,6 @@ internal static class FeatureMatrixByHand
         new("IPivotChrome.DetailsTabs", "Show Details' tabs at the report's foot", ["ADR-0059"]),
         new("IPivotChrome.DetailsDialog", "Show Details' dialog", ["ADR-0059"]),
         new("IPivotChrome.StaleReport", "The Stale Report's notice", ["ADR-0067"]),
+        new("IPivotChrome.Stylesheets", "The notice that the page holds another version of the Wrapper's stylesheet", ["ADR-0123"]),
     ];
 }

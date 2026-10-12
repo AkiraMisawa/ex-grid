@@ -21,7 +21,7 @@ namespace ExSheet.Components.Tests.Support;
 /// </summary>
 public abstract class SheetTestContext : BunitContext
 {
-    private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
+    private static string ModulePath => ExGrid.Testing.ShippedScript.Address;
 
     private readonly BunitJSModuleInterop _handle;
     private bool _rendererInfoSet;
@@ -30,6 +30,7 @@ public abstract class SheetTestContext : BunitContext
     {
         Services.AddSingleton<TimeProvider>(Clock);
         var module = JSInterop.SetupModule(ModulePath);
+        module.Setup<string>("stamp").SetResult(ExGrid.Testing.ShippedScript.Stamp);
         _handle = module.SetupModule("attach", _ => true);
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);

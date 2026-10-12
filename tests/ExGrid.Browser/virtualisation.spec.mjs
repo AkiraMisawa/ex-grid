@@ -346,7 +346,7 @@ async function countGridInterop(page) {
     const client = await page.context().newCDPSession(page);
     let module;
     client.on('Debugger.scriptParsed', (e) => {
-        if (/\/_content\/ExGrid\/ex-grid(\.[\w-]+)*\.js$/.test(e.url)) {
+        if (/\/_content\/ExGrid\/ex-grid(\.[\w-]+)*\.js(\?v=[0-9a-f]{12})?$/.test(e.url)) {
             module = e;
         }
     });

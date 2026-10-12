@@ -134,14 +134,29 @@ for id in $packages; do
   grep -qF "$feed" "$meta" || fail "$id $version came from somewhere other than $feed"
 done
 
-# The paths the README tells a Consumer to link, and the module the component imports.
-for f in _content/ExGrid/ex-grid.min.css _content/ExGrid/ex-grid.min.js _content/ExGrid.MudBlazor/mud-ex-grid.min.css \
-         _content/ExSheet/ex-sheet.min.css _content/ExSheet.MudBlazor/mud-ex-sheet.min.css \
-         _content/ExPivot/ex-pivot.min.css _content/ExPivot.MudBlazor/mud-ex-pivot.min.css; do
-  [ -f "$out/wwwroot/$f" ] || fail "the published application has no $f"
+# Each package asks for the files it was built with (ADR-0123): its stylesheet component, and the
+# grid's import, ask for the shipped file at its path with the first twelve hex digits of its SHA-256
+# as ?v=, and the grid compares the script's stamp, its source's SHA-256, with the one it was built
+# with. So each packed assembly must carry the version of the file packed beside it, and the
+# stamp that file names; and the application must serve that same file at that path. The
+# application links nothing itself: its six stylesheets are the packages' components.
+if grep -q '_content/Ex' "$out/wwwroot/index.html"; then fail "the application's index.html still links a package's file itself"; fi
+utf16() { LC_ALL=C tr -d '\000'; }
+for pair in ExGrid:ex-grid.min.css ExGrid:ex-grid.min.js ExGrid.MudBlazor:mud-ex-grid.min.css \
+            ExSheet:ex-sheet.min.css ExSheet.MudBlazor:mud-ex-sheet.min.css \
+            ExPivot:ex-pivot.min.css ExPivot.MudBlazor:mud-ex-pivot.min.css; do
+  id=${pair%%:*}; f=${pair#*:}
+  packed=$(unzip -p "$feed/$id.$version.nupkg" "staticwebassets/$f" | sha256sum | cut -c1-64)
+  served="$out/wwwroot/_content/$id/$f"
+  [ -f "$served" ] || fail "the published application has no _content/$id/$f"
+  [ "$(sha256sum < "$served" | cut -c1-64)" = "$packed" ] || fail "_content/$id/$f is not the file $id packed"
+  shipped=$(unzip -p "$feed/$id.$version.nupkg" "staticwebassets/$f")
+  stamp=$(grep -m1 -oE 'sha256:[0-9a-f]{64}' <<<"${shipped:0:300}" | cut -c8- || true)
+  [ -n "$stamp" ] || fail "$id's $f names no source hash"
+  assembly=$(unzip -p "$feed/$id.$version.nupkg" "lib/net10.0/$id.dll" | utf16)
+  grep -qF "${packed:0:12}" <<<"$assembly" || fail "$id.dll does not carry the version of the $f it packs (${packed:0:12}): run tools/assets/minify.mjs"
+  grep -qF "$stamp" <<<"$assembly" || fail "$id.dll does not carry the stamp of the $f it packs ($stamp)"
 done
-grep -qF '"./_content/ExGrid/ex-grid.min.js"' "$root/src/ExGrid/Components/ExGrid.razor" \
-  || fail "the component no longer imports ./_content/ExGrid/ex-grid.min.js; update this check with it"
 
 echo "== trimmed packed Consumer: Arrow and report protocol round trips"
 # RoundTrip runs what the application above compiled for a browser: it writes a Snapshot of every
