@@ -17,6 +17,26 @@ function toolbar(page) {
     return page.locator('.ex-sheet-toolbar').first();
 }
 
+/** Format Cells: the grid's popover under the built-in Chrome, a MudDialog under the other. */
+function formatCellsOf(page, grid, chrome) {
+    return chrome === 'mud' ? page.locator('.mud-dialog.mud-ex-sheet-format-cells') : grid.locator('.ex-popover-consumer');
+}
+
+/**
+ * Types KeyTips: Alt, then, once the rows' KeyTips show and the toolbar holds the keyboard, each
+ * letter. A letter typed on a circuit before the KeyTips have taken the keyboard reaches the cell
+ * (found by this file at an 80 ms round trip, and left to its own decision): these tests read what
+ * the letters do once the toolbar has them.
+ */
+async function keyTips(page, ...letters) {
+    await page.keyboard.press('Alt');
+    await expect(toolbar(page).locator('.ex-sheet-keytip')).toHaveText(['H', 'Y']);
+    await expect(toolbar(page)).toBeFocused();
+    for (const letter of letters) {
+        await page.keyboard.press(letter);
+    }
+}
+
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
         test.beforeEach(async ({ page }) => {
@@ -158,6 +178,31 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('ArrowDown');
         await expectFocusAt(grid, 'A5');
     });
+}
+
+// What the seventeenth Windows run found in Part D: Excel reaches Format Cells… by O, E, through its
+// Format menu.
+for (const chrome of ['builtin', 'mud']) {
+    test(`SH-52/ADR-0100 (2026-10-12): Format Cells is Alt, H, O, E, as Excel's Format menu reaches it — O narrows the KeyTips, E opens it (${chrome})`, async ({ page }) => {
+        await openSheet(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        const tips = toolbar(page).locator('.ex-sheet-keytip');
+        const formatCells = formatCellsOf(page, grid, chrome);
+
+        await keyTips(page, 'h', 'o');
+        await expect(tips).toHaveText(['OE']);
+        await expect(formatCells).toHaveCount(0);
+        await page.keyboard.press('e');
+
+        await expect(formatCells).toBeVisible();
+        await expect(tips).toHaveCount(0);
+        await page.keyboard.press('Escape');
+        await expect(formatCells).toHaveCount(0);
+        await expectKeyboardOn(grid);
+    });
+
+
 }
 
 test('SH-52/ADR-0100: F10, H, A, C centres the Focus cell; Escape backs out a level; Alt with an arrow is a chord', async ({ page }) => {

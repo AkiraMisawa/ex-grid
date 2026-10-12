@@ -400,8 +400,12 @@ public sealed class FormatCellsItem : ToolbarItemBase
     /// <inheritdoc />
     protected override ToolbarItemFace Face() => new(ToolbarItemKind.Button, "Format Cells", ToolbarIcon.FormatCells) { Shortcut = "Ctrl+1" };
 
+    // Excel's Home tab reaches Format Cells… through the Cells group's Format menu: O opens the menu,
+    // and the menu's E is Format Cells… (the seventeenth Windows run, d1). ExSheet has no such menu,
+    // so its letters are both: O narrows the KeyTips to this one and E runs it, as Excel's hands do,
+    // and an E typed after O never lands in the dialog (ADR-0100's note of 2026-10-12).
     /// <inheritdoc />
-    protected override string? DefaultKeyTip => "O";
+    protected override string? DefaultKeyTip => "OE";
 }
 
 /// <summary>A gap between groups of Toolbar Items. It is never a tab stop and does nothing.</summary>

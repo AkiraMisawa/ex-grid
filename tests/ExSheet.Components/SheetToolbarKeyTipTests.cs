@@ -111,6 +111,7 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Contains("AL", shown);
         Assert.Contains("4", shown);
         Assert.Contains("N", shown);
+        Assert.Contains("OE", shown);
 
         var reclaimed = ReclaimCount;
         await TypeOnToolbarAsync(cut, "1");
@@ -184,6 +185,48 @@ public class SheetToolbarKeyTipTests : SheetTestContext
 
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice")));
         Assert.Equal(CellFill.None, FormatAt(cut, "B2").Fill);
+    }
+
+    [Fact] // ADR-0100's note of 2026-10-12, SH-52: Format Cells is Excel's O, E — O narrows the KeyTips to it and opens nothing, and E opens it
+    public async Task Format_cells_is_o_then_e()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        await PressAsync(cut, "F10");
+        await TypeOnToolbarAsync(cut, "H");
+
+        await TypeOnToolbarAsync(cut, "O");
+        // Excel's O opens the Cells group's Format menu, whose E is Format Cells… (the seventeenth
+        // Windows run, d1): an E typed after O is a KeyTip's, never the dialog's.
+        Assert.Equal(["OE"], ShownKeyTips(cut));
+        Assert.Empty(cut.FindAll(".ex-format-cells"));
+
+        await TypeOnToolbarAsync(cut, "E");
+
+        Assert.Empty(ShownKeyTips(cut));
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-format-cells")));
+    }
+
+    [Fact] // ADR-0100's note of 2026-10-12, SH-52: a Consumer's O beside Format Cells would be taken for its O, E, and is refused by name
+    public void A_consumers_o_beside_format_cells_is_refused_by_name()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => RenderToolbarSheet(ps => ps.Add(s => s.ToolbarContent, (RenderFragment)(builder =>
+        {
+            builder.OpenComponent<ToolbarRow>(0);
+            builder.AddComponentParameter(1, nameof(ToolbarRow.ChildContent), (RenderFragment)(row =>
+            {
+                row.OpenComponent<FormatCellsItem>(0);
+                row.CloseComponent();
+                row.OpenComponent<ToolbarButton>(1);
+                row.AddComponentParameter(2, nameof(ToolbarButton.Text), "Open");
+                row.AddComponentParameter(3, nameof(ToolbarButton.KeyTip), "O");
+                row.CloseComponent();
+            }));
+            builder.CloseComponent();
+        }))));
+
+        Assert.Contains("'OE' of FormatCellsItem 'Format Cells'", ex.Message);
+        Assert.Contains("'O' of ToolbarButton 'Open'", ex.Message);
     }
 
     [Fact] // ADR-0100, SH-52: a Consumer's row and item carry the letters declared, and reach the item
