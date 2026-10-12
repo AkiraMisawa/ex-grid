@@ -111,13 +111,27 @@ public class ObservedDatesAndTextTests
     public void Adr0047_EDate_and_EOMonth_cut_a_start_between_minus_1_and_0_down_to_minus_1_which_is_NUM(string formula) =>
         Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
 
-    [Fact] // ADR-0047: every function that reads a date cuts a serial between -1 and 0 down to -1 (YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005, NETWORKDAYS-009, WORKDAY-010, EOMONTH-016, EDATE-017, observed)
-    public void Adr0047_A_serial_between_minus_1_and_0_is_NUM_under_every_function_that_reads_a_date()
+    [Fact] // ADR-0047: the nine functions the second area pass asked at -0.5 cut a serial between -1 and 0 down to -1, which is #NUM! (YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005, NETWORKDAYS-009, WORKDAY-010, EOMONTH-016, EDATE-017, observed)
+    public void Adr0047_A_serial_between_minus_1_and_0_is_NUM_under_the_nine_functions_the_second_area_pass_asked()
     {
         var sheet = NewSheet();
         foreach (var formula in new[] { "=YEAR(-0.5)", "=MONTH(-0.5)", "=DAY(-0.5)", "=WEEKDAY(-0.5)", "=DAYS(1,-0.5)", "=DAYS(-0.5,1)", "=NETWORKDAYS(-0.5,6)", "=NETWORKDAYS(6,-0.5)", "=WORKDAY(-0.5,1)", "=EOMONTH(-0.5,0)", "=EDATE(-0.5,0)", "=EDATE(-0.5,1)" })
             Assert.Equal(Error(ErrorValue.Num), sheet.Evaluate(formula));
     }
+
+    // ADR-0047: DATEDIF, YEARFRAC, HOUR, MINUTE and SECOND refuse any serial below 0 with #NUM! before reading its day or
+    // time, and do not cut it down. Excel was observed at -1 under three (DATEDIF-045, YEARFRAC-056, MINUTE-002); between
+    // -1 and 0, and under HOUR and SECOND at all, #NUM! is the engine's answer, by generalisation, until a case asks Excel.
+    [Theory]
+    [InlineData("=DATEDIF(-0.5,1,\"D\")")]
+    [InlineData("=YEARFRAC(-0.5,1)")]
+    [InlineData("=HOUR(-0.5)")]
+    [InlineData("=MINUTE(-0.5)")]
+    [InlineData("=SECOND(-0.5)")]
+    [InlineData("=HOUR(-1)")]
+    [InlineData("=SECOND(-1)")]
+    public void Adr0047_DateDif_YearFrac_and_the_time_parts_give_NUM_for_a_serial_below_0_by_generalisation(string formula) =>
+        Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
 
     [Theory] // ADR-0047: a start of -1 is #NUM! (EOMONTH-004, EDATE-007), and one below it is below 0 truncated or cut down
     [InlineData("=EOMONTH(-1,0)")]

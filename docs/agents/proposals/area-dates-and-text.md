@@ -73,7 +73,11 @@ became `Adr0047_EDate_from_serial_0_is_the_day_before_the_first_of_the_month_it_
 `Adr0047_EDate_from_serial_0_is_refused_where_the_readings_that_fit_part` (6), with
 `Adr0047_EOMonth_from_serial_0_answers_where_EDates_readings_part`. `Adr0047_EDate_and_EOMonth_refuse_a_start_between_minus_1_and_0`
 became `Adr0047_EDate_and_EOMonth_cut_a_start_between_minus_1_and_0_down_to_minus_1_which_is_NUM` (the same 7
-formulas), with `Adr0047_A_serial_between_minus_1_and_0_is_NUM_under_every_function_that_reads_a_date` (12).
+formulas), with `Adr0047_A_serial_between_minus_1_and_0_is_NUM_under_the_nine_functions_the_second_area_pass_asked`
+(12; it was named `…_under_every_function_that_reads_a_date`, and its comment said every such function cuts the serial
+down, which `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` do not) and
+`Adr0047_DateDif_YearFrac_and_the_time_parts_give_NUM_for_a_serial_below_0_by_generalisation` (7, the engine's answer:
+see "A serial between -1 and 0 under the five other functions" below).
 `Adr0047_EDate_and_EOMonth_before_1900_are_NUM` gains `EDATE(31,-1)`, 31 December 1899. The comments that said "to be
 asked" of observed cases say "observed".
 
@@ -102,11 +106,32 @@ other argument is not answered by agreement: Excel's reading of a boolean typed 
 functions, 1 under `DATEDIF` (DATEDIF-046) and `#VALUE!` under `YEARFRAC` (YEARFRAC-054), so each case holds the
 engine's `#VALUE!` and asks.
 
-`DATEDIF` and `YEARFRAC` answer `#NUM!` for a serial between -1 and 0 (`TryDifferenceDate` refuses a negative serial
-before truncating it), which is the answer the second pass read under seven other functions. Their corpus files are
-ticket 11's, written from the run of 2026-10-03 in a form of their own (a culture, an observation, the bits), so no case
-is added there; two for the orchestrator to place, each the engine's `#NUM!`: `=DATEDIF(-0.5,1,"D")` and
-`=YEARFRAC(-0.5,1)`.
+**A serial between -1 and 0 under the five other functions that read a date.** `DATEDIF`, `YEARFRAC`, `HOUR`,
+`MINUTE` and `SECOND` answer `#NUM!` for it: `TryDifferenceDate` and `TimePart` refuse any serial below 0 before
+reading its day or time, and do not cut it down. Excel was observed to answer `#NUM!` at -1 under three of them
+(DATEDIF-045 and YEARFRAC-056, the run of 2026-10-03; MINUTE-002, the seventeenth run) and at -0.5 under the nine
+functions the second pass asked (above); between -1 and 0 under the five, and under `HOUR` and `SECOND` at all, it is
+the engine's answer, by generalisation, and no case asks it. `datedif.json` and `yearfrac.json` are ticket 11's,
+written from the run of 2026-10-03 in a form of their own (a culture, an observation, the bits), and `hour.json`,
+`minute.json` and `second.json` are not among this area's files, so no case is added there; five for the orchestrator
+to place, each `uncertain` with the engine's `#NUM!`: `=DATEDIF(-0.5,1,"D")`, `=YEARFRAC(-0.5,1)`, `=HOUR(-0.5)`,
+`=MINUTE(-0.5)` and `=SECOND(-0.5)`. The engine's README edit 3, below, says the same.
+
+**A decision for the orchestrator, or the user: does the generalisation stand under `DATEDIF`?** `DATEDIF`'s date
+coercion is not shown to be the nine functions': it reads a boolean typed as a start date as 1 (DATEDIF-046), where
+`EDATE` gives `#VALUE!` (EDATE-009) and so does `YEARFRAC` (YEARFRAC-054). The readings part between -1 and 0: cut
+down to -1, or refused below 0, `DATEDIF(-0.5,1,"D")` is `#NUM!`; truncated to serial 0, it is 1. The same question
+reaches the time parts, which no case asks below -1 or between -1 and 0: refused, `HOUR(-0.5)` is `#NUM!`; read as a
+time of day, 12:00, it is 12, and `MINUTE(-0.5)` and `SECOND(-0.5)` are 0. The options:
+
+1. **The generalisation stands.** The engine keeps `#NUM!` for a serial below 0 under the five, the README edit says
+   it is the engine's answer by generalisation, and the five cases above ask Excel. This branch is written so, and
+   its code is unchanged there.
+2. **THE RULE's refusal (ADR-0202).** Where the readings part and no run observed Excel's, the function refuses:
+   `DATEDIF` (and, if the same is held of them, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND`) answers `#VALUE!` for a
+   serial between -1 and 0 until Excel is asked, a serial of -1 staying `#NUM!` where DATEDIF-045, YEARFRAC-056 and
+   MINUTE-002 observed it. `TryDifferenceDate` and `TimePart` change, the five cases hold `#VALUE!`, and the README
+   edit and the catalogue's rows say so instead.
 
 A sibling the rule reaches and this area may not write: a cell's General in a wide column with a negative number.
 `general-width.json` has none (GW-003 and GW-024 are negative in narrow columns). A case for the next pass, if the
@@ -190,7 +215,11 @@ follow Excel's answers** (`verification/2026-10-12-windows-area/` and `-area-2/`
   day where the month is shorter (EOMONTH-012 to 015, EDATE-013 to 015).
 - **A date between -1 and 0 is cut down to -1, and is `#NUM!`**, under `YEAR`, `MONTH`, `DAY`, `WEEKDAY`, `DAYS`,
   `NETWORKDAYS`, `WORKDAY`, `EOMONTH` and `EDATE` alike (YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005,
-  NETWORKDAYS-009, WORKDAY-010, EOMONTH-016 and 017, EDATE-017). Excel does not truncate it to serial 0.
+  NETWORKDAYS-009, WORKDAY-010, EOMONTH-016 and 017, EDATE-017). Under them, Excel does not truncate it to
+  serial 0. `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for any serial below 0 and do not
+  cut it down; Excel was observed to at -1 under three of them (DATEDIF-045, YEARFRAC-056, MINUTE-002), and
+  between -1 and 0, and under `HOUR` and `SECOND` at all, `#NUM!` is the engine's answer, by generalisation,
+  until a case asks Excel.
 - **`EDATE` from serial 0 keeps its day 0, which is the day before the 1st of the month reached** (EDATE-016). Six
   of the 112 readings `spikes/exsheet-date-readings/` writes out give every observed answer of the two functions, and
   they part at three months: the day before 1 January 1900 is serial 0 by `DATE`'s arithmetic and 31 December 1899,
@@ -311,7 +340,13 @@ New:
   is `#NUM!`. `EDATE` and `EOMONTH` read a start of serial 0 or 60 as `MONTH` and `DAY` read it, in
   January 1900 and on the 29th of February: `EOMONTH(0,1)` is 59 and `EDATE(60,1)` is 89, and from
   serial 0 `EDATE` keeps day 0, the day before the 1st, so `EDATE(0,1)` is 31. A date between -1 and
-  0 is cut down to -1, and is `#NUM!` under every function that reads a date, as Excel's is.
+  0 is cut down to -1, and is `#NUM!`, under `YEAR`, `MONTH`, `DAY`, `WEEKDAY`, `DAYS`,
+  `NETWORKDAYS`, `WORKDAY`, `EOMONTH` and `EDATE`, as Excel was observed to answer at -0.5
+  (YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005, NETWORKDAYS-009, WORKDAY-010, EOMONTH-016
+  and 017, EDATE-017). `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for any
+  serial below 0, which they do not cut down. Excel was observed to at -1 under three of them
+  (DATEDIF-045, YEARFRAC-056, MINUTE-002); between -1 and 0, and under `HOUR` and `SECOND` at all,
+  it is the engine's answer, by generalisation, until a case asks Excel.
 ```
 
 ## The catalogue, `docs/specs/exsheet-functions/spec.md` (shared with the financial area)
@@ -371,7 +406,9 @@ last box stays open: EDATE-018 to 023 and EOMONTH-018 are `uncertain`, and so ar
 `DAYS`, `NETWORKDAYS`, `WORKDAY`) is shared and not written here; a line for it, if the orchestrator wants one:
 "2026-10-12, the second area pass: WEEKDAY-008, DAYS-005, NETWORKDAYS-009 and WORKDAY-010 are `#NUM!` in Excel, as
 the engine answers: a serial between -1 and 0 is cut down to -1. NETWORKDAYS-010 and WORKDAY-011 ask the refusal of a
-boolean typed as a date, which no case asked before."
+boolean typed as a date, which no case asked before." Ticket 11 (`YEARFRAC` and `DATEDIF`) and the ticket of `HOUR`,
+`MINUTE` and `SECOND` are not this area's either: the five cases of a serial between -1 and 0, and the decision on
+`DATEDIF`'s, are the orchestrator's (above, "A serial between -1 and 0 under the five other functions").
 
 ## Change Notes
 
