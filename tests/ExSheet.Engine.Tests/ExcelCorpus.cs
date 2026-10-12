@@ -129,15 +129,17 @@ internal static class ExcelCorpus
 
         if (expect.TryGetProperty("widthAtMost", out var widthAtMost))
         {
-            // The check column's width after every typed entry is no wider than this (characters).
+            // The check column's width when the case is read, after its last typed entry, is no wider
+            // than this (characters).
             var actual = sheet.GetColumnWidth(at.Column)?.Width ?? Sheet.DefaultColumnWidth;
             if (actual > widthAtMost.GetDouble()) differences.Add($"widthAtMost: expected at most {widthAtMost.GetDouble().ToString(CultureInfo.InvariantCulture)}, got {actual.ToString(CultureInfo.InvariantCulture)}");
         }
 
         if (expect.TryGetProperty("widthAtLeast", out var widthAtLeast))
         {
-            // The check column's width after every typed entry is at least this (characters): a
-            // column a typed entry widened is widened again by a longer one (ADR-0046, 2026-09-28; CW-028).
+            // The check column's width when the case is read, after its last typed entry, is at least
+            // this (characters): a column a typed entry widened is widened again by a longer one
+            // (ADR-0046, 2026-09-28; CW-028).
             var actual = sheet.GetColumnWidth(at.Column)?.Width ?? Sheet.DefaultColumnWidth;
             if (actual < widthAtLeast.GetDouble()) differences.Add($"widthAtLeast: expected at least {widthAtLeast.GetDouble().ToString(CultureInfo.InvariantCulture)}, got {actual.ToString(CultureInfo.InvariantCulture)}");
         }

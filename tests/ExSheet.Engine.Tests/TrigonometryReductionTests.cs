@@ -5,12 +5,15 @@ using static ExSheet.Engine.Tests.SheetTestExtensions;
 namespace ExSheet.Engine.Tests;
 
 /// <summary>
-/// ADR-0047: SIN, COS, TAN, COT, CSC and SEC give Excel's doubles. Excel reduces an angle by pi rounded to
-/// the x87's 64-bit significand (<c>FLDPI</c>, 0xC90FDAA22168C235 × 2^-62), not by the true pi and not by
-/// <c>PI()</c>'s double, so <c>SIN(PI())</c> is the difference between those two, 1.22514845490862E-16,
-/// where the double's own sine is 1.2246467991473532E-16. The seventeenth Windows run observed it, with
-/// <c>COS(PI()/2)</c> and <c>TAN(PI()/2)</c>. SIN, COS and TAN are the doubles nearest the exact values of
-/// the reduced angle; COT, CSC and SEC are 1 over them, divided as doubles. The experiment that found the
+/// ADR-0047: SIN, COS, TAN, COT, CSC and SEC reproduce every double Excel was observed to return for them.
+/// Excel reduces an angle by pi rounded to the x87's 64-bit significand (<c>FLDPI</c>,
+/// 0xC90FDAA22168C235 × 2^-62), not by the true pi and not by <c>PI()</c>'s double, so <c>SIN(PI())</c> is
+/// the difference between those two, 1.22514845490862E-16, where the double's own sine is
+/// 1.2246467991473532E-16. The seventeenth Windows run observed it, with <c>COS(PI()/2)</c> and
+/// <c>TAN(PI()/2)</c>. SIN, COS and TAN are the doubles nearest the exact values of the reduced angle; COT,
+/// CSC and SEC are 1 over them, divided as doubles. Other constructions of TAN, COT and SEC fit every
+/// observation too; this one rounds least, and TAN-006 and 007, COT-006 to 008 and SEC-005 ask Excel
+/// which is its own. The experiment that found the
 /// computation, and that gives the known answers below from 120-digit arithmetic, is
 /// <c>spikes/exsheet-trig-reduction/compare.py</c> (its <c>--known</c> table).
 /// </summary>

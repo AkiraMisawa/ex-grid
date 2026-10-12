@@ -193,8 +193,8 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// The holidays argument: a range's numbers and a typed number, each truncated to its day. Text
-    /// or a boolean among them is refused with <c>#VALUE!</c> until Excel is asked; an Error Value
-    /// is the result.
+    /// among them is <c>#VALUE!</c>, as Excel's is (WORKDAY-005); a boolean among them is refused with
+    /// <c>#VALUE!</c> until Excel is asked; an Error Value is the result.
     /// </summary>
     private static bool TryHolidays(FunctionCall call, int index, out HashSet<int> holidays, out Operand failure)
     {

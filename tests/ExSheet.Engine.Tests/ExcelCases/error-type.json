@@ -105,10 +105,11 @@
     {
       "id": "ERRORTYPE-013",
       "source": "observed",
-      "description": "Excel's number for #SPILL! typed into a cell is 9 (typed with real keys in the seventeenth Windows run; through COM Excel reads #N/A)",
+      "description": "Excel's number for #SPILL! typed into a cell is 9 (typed with real keys in the seventeenth Windows run)",
       "cells": {"A1": "#SPILL!", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 9}
+      "expect": {"value2": 9},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by keys"
     },
     {
       "id": "ERRORTYPE-014",
@@ -130,34 +131,38 @@
     {
       "id": "ERRORTYPE-016",
       "source": "observed",
-      "description": "Excel's number for #FIELD! typed into a cell is 13 (typed with real keys)",
+      "description": "Excel's number for #FIELD! typed into a cell is 13 (typed with real keys in the seventeenth Windows run)",
       "cells": {"A1": "#FIELD!", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 13}
+      "expect": {"value2": 13},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by keys"
     },
     {
       "id": "ERRORTYPE-017",
       "source": "observed",
-      "description": "Excel's number for #BLOCKED! typed into a cell is 11 (typed with real keys)",
+      "description": "Excel's number for #BLOCKED! typed into a cell is 11 (typed with real keys in the seventeenth Windows run)",
       "cells": {"A1": "#BLOCKED!", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 11}
+      "expect": {"value2": 11},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by keys"
     },
     {
       "id": "ERRORTYPE-018",
       "source": "observed",
-      "description": "Excel's number for #CONNECT! typed into a cell is 10 (typed with real keys)",
+      "description": "Excel's number for #CONNECT! typed into a cell is 10 (typed with real keys in the seventeenth Windows run)",
       "cells": {"A1": "#CONNECT!", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 10}
+      "expect": {"value2": 10},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by keys"
     },
     {
       "id": "ERRORTYPE-019",
       "source": "observed",
-      "description": "Excel's number for #UNKNOWN! typed into a cell is 12 (typed with real keys)",
+      "description": "Excel's number for #UNKNOWN! typed into a cell is 12 (typed with real keys in the seventeenth Windows run)",
       "cells": {"A1": "#UNKNOWN!", "ZZ1000": "=ERROR.TYPE(A1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 12}
+      "expect": {"value2": 12},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by keys"
     },
     {
       "id": "ERRORTYPE-020",

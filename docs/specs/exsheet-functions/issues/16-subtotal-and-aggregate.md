@@ -1,6 +1,9 @@
 # 16: SUBTOTAL and AGGREGATE, while a Sheet cannot hide a row
 
-Status: done
+Status: ready-for-human
+Roadmap: ExSheet — `SUBTOTAL` and `AGGREGATE` checked against Excel for the forms no Windows run has
+asked yet: a call in a branch `IF` never takes, a function number or option that is not whole, and what
+may stand where only a Reference is taken.
 
 **What to build:** `SUBTOTAL` and `AGGREGATE` under
 [ADR-0047](../../../adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)'s
@@ -34,6 +37,12 @@ note of 2026-10-10, "The catalogue's last Decide rows".
       of a Spill Range its Anchor's, calls `SUBTOTAL` or `AGGREGATE` anywhere; `SUBTOTAL` (every
       function number) and `AGGREGATE`'s options 0 to 3 pass over it, and options 4 to 7 count its
       Value. The engine follows it (comment of 2026-10-12)*
+- [ ] `oracle.ps1 -Area subtotal,aggregate` before the tag (ADR-0208): the `uncertain` cases the
+      seventeenth run's answers led to, SUBTOTAL-039 to 044 and AGGREGATE-055 to 061. The engine agrees
+      with each answer, or is corrected to it, before this ticket is done. *(Added 2026-10-12 after
+      review: ADR-0208 does not close a ticket on "the next Windows run asks", and these questions came
+      after the seventeenth run.)* The `LARGE`, `SMALL` and `MOD` cases asked with them are not this
+      ticket's
 
 ## Comments
 
@@ -114,3 +123,7 @@ would once a run had read it.
 
 The new `uncertain` cases need an `oracle.ps1 -Area` run over `subtotal`, `aggregate`, `large`, `small`
 and `mod` before the tag (ADR-0208).
+
+2026-10-12, after review: the Status is `ready-for-human` again, with an open box for that run. The ticket
+had been closed with its own feature's questions open, SUBTOTAL-039 to 044 and AGGREGATE-055 to 061, which
+ADR-0208 does not allow.

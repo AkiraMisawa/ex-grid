@@ -41,6 +41,27 @@ Optional, on the second run's sentence "The deliberate differences recorded earl
 > and 013: refused on entry; COPY-025: the text `=SUM(1.5,2)`), as ADR-0208's release check asks of
 > every case that differs by decision. The seventeenth run gave the same answers.)*
 
+## 2b. ADR-0047: a note on "A circular reference is `#CIRC!`" *(added after review, 2026-10-12)*
+
+ERR-078, 080 and 081 record Excel's 1, 2 and `2x` beside the engine's `#CIRC!`, and their reasons said "where Excel
+shows 0", which only ERR-079's B1 does. **On the branch** the three reasons now say: Excel shows 0 only in B1,
+whose entry closed the cycle, and here the Value the cell had before, which B1's 0 also gives. ADR-0047's paragraph
+under "Error Values, and the one ExSheet adds" says only "Excel shows 0 and a warning in the status bar, and the 0 is a
+number that flows into every dependent Formula". A dated note after that paragraph:
+
+> *(2026-10-12, the seventeenth Windows run: **Excel showed 0 in one cell of a cycle, not in each.** With A1
+> `=B1+1`, C1 `=A1*2` and D1 `=C1&"x"` entered first and B1 `=A1` last, B1, whose entry closed the cycle, showed 0,
+> and A1, C1 and D1 kept 1, 2 and `2x` (ERR-078 to 081): the Values they had before, which B1's 0 also gives them. A
+> Formula entered while a cycle stands showed 0 whatever it computes from a cell of the cycle: `=A1+1`, `=ISNUMBER(A1)`
+> and `=ERROR.TYPE(A1)` over A1 `=B1`, B1 `=A1` (ERR-084, ISNUMBER-008, ERRORTYPE-020). Which Values Excel shows
+> depends on the order the cells were entered, which a Sheet does not keep. The decision stands, for the same
+> reason.)*
+
+**This note and logic-error-type's ADR-0047 item 2 touch the same paragraph.** That item reads ERRORTYPE-020 and
+ISNUMBER-008 as "the 0 does not flow into the dependent Formula as a number; the dependent shows 0 of its own". ERR-080
+and 081 show dependents with Values other than 0. The note above reads both areas' cases together, and
+`docs/agents/proposals/run17-apply.md` carries it in place of the two.
+
 ## 3. Definition of Done, SH-26 (and SH-22's evidence)
 
 SH-26's requirement, after "a user's width replaces an entry's, never the reverse":
@@ -90,6 +111,9 @@ which agreed by hand in b10. CW-026 is blocked by its undo, and stays observed f
   or Breaking, and the Docs build refuses any other.
 - **CW-026's `oracleSkip` does not say "ask by keys"**, unlike the triage's wording: its undo cannot go
   through COM, so a keys pass would type it and then block. It names b10 as where it was asked.
+- **Corrected after review (2026-10-12):** `ExcelCorpus.cs`' comments on `widthAtMost` and `widthAtLeast` said
+  "the check column's width after every typed entry"; the harness and `oracle.ps1` read it once, when the case is
+  read, as `column-widths.json`'s `about` says, and the comments now say so.
 - **Two files outside the area's list**, doc comments only, because the rule change made them false:
   `src/ExSheet.Engine/Sheet.Structure.cs` (`InsertColumns`' summary said an inserted column takes the
   width "automatic or custom as it is") and `src/ExSheet.Engine/SheetColumnWidth.cs`

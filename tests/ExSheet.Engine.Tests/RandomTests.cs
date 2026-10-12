@@ -284,7 +284,7 @@ public class RandomTests
         Assert.Equal(seen[^1], sheet.Number("A1"));
     }
 
-    [Fact] // ADR-0180 (2026-10-11), the seventeenth Windows run's b2: renaming the Sheet is a change, and so are its undo and redo, as Excel drew again on each; INDIRECT still reads by the Sheet's name
+    [Fact] // ADR-0180 (2026-10-11), the seventeenth Windows run's b2: renaming the Sheet is a change, and so are its undo and redo, as Excel drew again on the rename and its undo; the redo draws as any redo does (b1); INDIRECT still reads by the Sheet's name
     public void ADR0180_a_rename_draws_again()
     {
         var sheet = Seeded();

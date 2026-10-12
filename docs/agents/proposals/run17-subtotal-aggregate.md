@@ -239,9 +239,19 @@ on every number in range. LibreOffice's `ScSubTotal` and `ScAggregate` read both
 ## 8. Recorded, not changed
 
 - **AGGREGATE's function-number list** (b4): Excel's lists 13 `MODE.SNGL` and 16 to 19 as well. They stay
-  out by ADR-0047's note of 2026-10-10 (the engine answers `#VALUE!` for them, and completion offers only
+  out (the engine answers `#VALUE!` for them by ADR-0047's note of 2026-10-10, and completion offers only
   numbers it evaluates, as `Subtotal_and_aggregate_list_only_what_the_engine_evaluates` pins). AGGREGATE-027
   to 031 now carry Excel's answers as `excelExpect` (`#N/A`, 34, 32, 34, 31.5), `observed`.
+  *(Added after review, 2026-10-12: ADR-0047's note of 2026-10-10 says only that those numbers are
+  `#VALUE!`, and no ADR records that completion leaves them out. So that a later reader sees the
+  difference was decided, not overlooked, ADR-0058 gains a sentence after the bullet "`=SUM(A` lists the
+  functions ExSheet computes … A deliberate difference.":)*
+
+  > - **An argument's list offers only the values ExSheet computes** *(2026-10-12, the seventeenth Windows
+  >   run, Part B's b4)*. Excel's list for `AGGREGATE`'s `function_num` offers 13 (`MODE.SNGL`) and 16 to
+  >   19 (`PERCENTILE.INC`, `QUARTILE.INC`, `PERCENTILE.EXC`, `QUARTILE.EXC`). ExSheet's leaves them out,
+  >   because it answers them `#VALUE!` (ADR-0047's note of 2026-10-10): offering them would make the
+  >   Formula an error the moment one was chosen, as above. A deliberate difference.
 - **The `SMALL` k the triage asked to round up** is refused instead: the sources disagree for `SMALL`
   (section 6), and no run has read it. Rounding up would be a guess between them.
 

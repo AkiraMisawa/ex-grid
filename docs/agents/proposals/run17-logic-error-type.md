@@ -17,6 +17,19 @@ does not edit is below, each in the repository's voice, ready to apply.
 | ISNUMBER-008 (cycle) | 0 | Differs by decision (ADR-0047). `excelExpect` 0, was the guess TRUE; `observed` | as above |
 | ERRORTYPE-021 `=ERROR.TYPE(C1:C2)` | `#N/A` (recorded) | Differs by decision (ADR-0125). `excelExpect` `#N/A` added; `observed` | Excel 365 lifts the function: C1 holds 10, so the first Value is `#N/A` |
 
+*Corrected after review (2026-10-12):*
+
+- **ERRORTYPE-013 and 016 to 019 carry `oracleSkip` "…; ask by keys"**, in ERR-096's wording ("Range.FormulaLocal keeps
+  this as text, but typed with real keys Excel reads the Error Value (verification/2026-10-11-windows-17); ask by
+  keys"). Without it every later COM pass would have read `#N/A` for them, reported five false disagreements, and
+  left them out of the next keys pass unless someone added them by hand again, as run 17's step 3 had to. Their
+  descriptions no longer say "through COM Excel reads #N/A"; the mark says it.
+- **The other half of the `AND`/`OR`/`XOR` rule is the engine's, not Excel's.** That typed text spelling TRUE or
+  FALSE still counts was cited to AND-010, but once AND-011 showed `"abc"` passed over, AND-010 (`=AND("TRUE",1)`)
+  is TRUE either way. **AND-015** `=AND("FALSE",TRUE)` (the engine FALSE; TRUE if Excel passes over all typed text)
+  and **OR-010** `=OR("true",FALSE)` (the engine TRUE) ask it, `uncertain`. AND-010's description says what it
+  shows, and `LogicalArgumentTests`' comment says the engine's answer waits on AND-015 and OR-010.
+
 `ERROR.TYPE`'s switch keeps a last arm that answers `#VALUE!`: an Error Value the engine gains later is
 refused until Excel is asked, never guessed. `#GETTING_DATA` and `#CIRC!` are still given back; a typed
 `#BUSY!` stays text, so its `ERROR.TYPE` is `#N/A` (pinned by `ErrorTypeTests`).
@@ -51,7 +64,8 @@ read something else (ERRORTYPE-020, ISNUMBER-008):
 > - **`AND`, `OR` and `XOR` pass over typed text that spells neither TRUE nor FALSE** (AND-011), as
 >   they pass over text inside a range; with nothing that counts, the result is still `#VALUE!`. The
 >   corpus had refused it with `#VALUE!` on the engine's guess. OR-009, XOR-006 and AND-014 ask Excel
->   the rule's other cases.
+>   the rule's other cases. That typed text spelling TRUE or FALSE still counts is the engine's answer,
+>   which no observation settles (AND-010 is TRUE either way); AND-015 and OR-010 ask it.
 
 ## Definition of Done, SH-68
 
@@ -104,5 +118,7 @@ sentence.
 
 ## For the next oracle run
 
-`oracle.ps1 -Area and,or,xor` asks AND-014, OR-009 and XOR-006 (ADR-0208: the release refuses a version
-while a case is `uncertain`).
+`oracle.ps1 -Area and,or,xor` asks AND-014, AND-015, OR-009, OR-010 and XOR-006 (ADR-0208: the release
+refuses a version while a case is `uncertain`). AND-015 and OR-010 are the ones that tell whether typed
+text spelling TRUE or FALSE counts or is passed over. ERRORTYPE-013 and 016 to 019 are asked by keys,
+which their `oracleSkip` mark now says, as ERR-096 to 108's does.

@@ -86,7 +86,7 @@ public class SeedWiringTests : SheetTestContext
         Assert.Equal(Alone(Draws(), Seed, 2), Shown(cut));
     }
 
-    [Fact] // ADR-0180, the seventeenth Windows run's b1 and b2: a rename is a change, and its undo and redo are too, so each draws anew, as Excel's did; the engine alone follows at the count of changes
+    [Fact] // ADR-0180, the seventeenth Windows run's b1 and b2: a rename is a change, and its undo and redo are too, so each draws anew, as Excel drew again on the rename and its undo (b2) and on a redo (b1); the engine alone follows at the count of changes
     public async Task ADR0180_a_rename_its_undo_and_its_redo_draw_again()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, Draws()).Add(s => s.Seed, Seed));

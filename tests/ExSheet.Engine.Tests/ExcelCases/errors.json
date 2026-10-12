@@ -628,7 +628,7 @@
       "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
       "check": "A1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0 only in B1, whose entry closed the cycle, and 1 here (excelExpect): the Value A1 had before, which B1's 0 plus 1 also gives",
       "excelExpect": {"value2": 1}
     },
     {
@@ -648,7 +648,7 @@
       "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
       "check": "C1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0 only in B1, whose entry closed the cycle, and 2 here (excelExpect): the Value C1 had before, which A1's 1 also gives",
       "excelExpect": {"value2": 2}
     },
     {
@@ -658,7 +658,7 @@
       "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
       "check": "D1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0 only in B1, whose entry closed the cycle, and 2x here (excelExpect): the Value D1 had before, which C1's 2 also gives",
       "excelExpect": {"value2": "2x"}
     },
     {

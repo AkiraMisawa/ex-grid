@@ -97,6 +97,15 @@
       "cells": {"ZZ1000": "=EDATE(31,1)"},
       "check": "ZZ1000",
       "expect": {"value2": 59}
+    },
+    {
+      "id": "EDATE-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a result before 1900, a month before 15 January 1900, is #NUM!, as EOMONTH's is (EOMONTH-005, and Microsoft documents #NUM! for EOMONTH's invalid result); EDATE's follows by analogy, where it was #VALUE! before the seventeenth run's corrections",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(15,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
     }
   ]
 }

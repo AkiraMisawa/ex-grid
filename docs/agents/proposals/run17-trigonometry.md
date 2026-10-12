@@ -102,6 +102,15 @@ At 0, `#DIV/0!`, as Excel's; no limit at 2^27, as Excel's; `CSCH` — As `COTH`;
 as Excel's; `ACOTH` — An absolute value not above 1 is `#NUM!`, as Excel's (the documentation names
 `#VALUE!` as well). Item 6 of the queue may add: "The seventeenth Windows run answered them (2026-10-11)."
 
+*(Added after review, 2026-10-12.)* The `LOG` row (the table of the section before "### Trigonometry") still says "base 1 is `#DIV/0!` until
+Excel is asked", the one stale "until Excel is asked" ticket 07 would otherwise leave. Replace its Notes
+
+> Base 10 when left out, through `LOG10`'s logarithm; base 1 is `#DIV/0!` until Excel is asked
+
+with
+
+> Base 10 when left out, through `LOG10`'s logarithm; base 1 is `#DIV/0!`, as Excel's (the seventeenth run, LOG-007)
+
 ## Proposed: ticket 07 (`docs/specs/exsheet-functions/issues/07-log-and-trigonometry.md`)
 
 Tick the box "The next Windows run asks Excel every `uncertain` case" (the seventeenth run did; every
@@ -112,6 +121,15 @@ case it names agreed except SIN-004 and COS-004, now followed), and add under Co
 > reduces an angle by the x87's 64-bit pi, which the engine now does (`SIN(PI())`
 > 1.22514845490862E-16), and answers `COTH`, `CSCH` and `SECH` past 2^27. TAN-006 and 007, COT-006 to 008, SEC-005, SIN-008, COS-006 and COTH-004 to 006 are
 > new `uncertain` cases for the next run.
+
+## Corrected after review (2026-10-12)
+
+- The Change Note `run17-trigonometry-reduction.md` said the six "now give Excel's doubles to the last bit, on every
+  runtime". Several constructions of `TAN`, `COT` and `SEC` fit all 19 observations and part at `TAN(1)`, `TAN(9)`,
+  `COT(1)`, `COT(4)`, `COT(9)` and `SEC(1)`, which is why those are `uncertain`. It now says they "reproduce, to the
+  last bit, every double Excel was observed to return for them, and give the same doubles on every runtime".
+  `TrigonometryReductionTests`' summary made the same claim and says the same now.
+- The catalogue's `LOG` row had no edit (above, under the catalogue).
 
 ## Docs Site
 

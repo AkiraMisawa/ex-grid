@@ -38,7 +38,10 @@ public class LogicalArgumentTests
         Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
     }
 
-    [Theory] // ADR-0047 (AND-010): typed text that spells TRUE or FALSE, in either case, still counts
+    // ADR-0047: the engine's answer, waiting on AND-015 and OR-010. Typed text that spells TRUE or FALSE, in
+    // either case, counts; Excel was seen only to pass over text that spells neither (AND-011), and AND-010
+    // is TRUE whether "TRUE" counts or is passed over, so no observation settles this half of the rule yet.
+    [Theory]
     [InlineData("=AND(\"FALSE\",TRUE)", false)]
     [InlineData("=OR(\"true\",FALSE)", true)]
     [InlineData("=XOR(\"True\",FALSE)", true)]

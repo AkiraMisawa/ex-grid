@@ -1107,7 +1107,7 @@
     {
       "id": "LET-101",
       "source": "observed",
-      "description": "A declared function's name is a LET name: Excel's keyboard entered it (run 17); a name followed by ( is still the call (ADR-0181)",
+      "description": "A declared function's name is a LET name: Excel's keyboard entered it (run 17). That a name followed by ( is still the call is the engine's rule (ADR-0181, LetTests), not observed here",
       "cells": {
         "A10": "=LET(SUM,2,SUM+1)"
       },

@@ -64,6 +64,7 @@ Each holds the engine's answer, or its refusal, for the next Windows run to ask
 |---|---|---|---|
 | EDATE-010 | `=EDATE(60,1)` | `#VALUE!` (refused) | what a start on the day that never existed gives |
 | EDATE-011 | `=EDATE(31,1)` | 59 | February 1900's 28 days under `EDATE`, as EOMONTH-008 showed for `EOMONTH` |
+| EDATE-012 | `=EDATE(15,-1)` | `#NUM!` | a result before 1900, `#NUM!` as EOMONTH-005's, or `#VALUE!` as the engine gave before (added after review, 2026-10-12: only a unit test pinned it) |
 | EOMONTH-010 | `=EOMONTH(0,1)` | `#VALUE!` (refused) | what a start on serial 0 gives |
 | EOMONTH-011 | `=EOMONTH(DATE(1900,3,1),-1)` | 59 | the end of February counted back from March: 59, not 60 |
 | NETWORKDAYS-006 | `=NETWORKDAYS(1,1)` | 0 | serial 1 a Sunday (`WEEKDAY`) against a Monday (1 January 1900 on the real calendar) |

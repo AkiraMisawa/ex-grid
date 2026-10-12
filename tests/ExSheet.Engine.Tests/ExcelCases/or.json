@@ -82,6 +82,15 @@
       "cells": {"ZZ1000": "=OR(\"abc\",FALSE)"},
       "check": "ZZ1000",
       "expect": {"value2": false}
+    },
+    {
+      "id": "OR-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: typed text that spells TRUE, in lower case, counts, so the result is TRUE; FALSE if Excel passes over all typed text (AND-011, AND-015)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OR(\"true\",FALSE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
     }
   ]
 }
