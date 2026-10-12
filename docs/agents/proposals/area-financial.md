@@ -7,11 +7,16 @@ README says what each candidate family reproduces).
 
 What the branch did, in brief:
 
-- **Followed**: `type` is a truth value (PMT-009). PV and FV answer any `nper` (FV-006, FV-007, PV-005).
-  PV and FV group the payment as Excel does (FV-009, PV-007). XNPV discounts by e^(x ln(1+rate))
-  (XNPV-004, found by the search; it had agreed only at 6 decimals).
+- **Followed**: `type` is a truth value (PMT-009). PV and FV answer any `nper` (FV-006, FV-007, PV-005),
+  raising 1+rate to a fractional one as the `^` operator does (section 2). PV and FV group the payment
+  as Excel does (FV-009, PV-007). XNPV discounts by e^(x ln(1+rate)) (XNPV-004, found by the search; it
+  had agreed only at 6 decimals).
 - **Refused by decision**: PMT with an `nper` that is not a whole number from 0 (PMT-011, PMT-012).
   `NPV` is undeclared, as ADR-0202's note of 2026-10-12 decides when no evaluation fits (NPV-001 to 008).
+- **Refused until Excel is asked**, where the evaluations Excel's doubles leave part: PV and FV with an
+  `nper` that is not a whole number at a rate below -1 (FV-017, PV-011 ask), and XNPV at a rate of -1
+  or below (XNPV-007 to 010 ask), where `Math.Pow`, the engine's evaluation before, gave a number for
+  some arguments.
 - **Stopped, for the user**: PMT's last digits (PMT-013 to 016 and 018). Section 1.
 
 Each edit below is exact: the old text, then the new. Line breaks are as the files have them.
@@ -61,12 +66,18 @@ it. The options:
 If 1 cannot be made before the tag, 2 is what ADR-0202 says. The branch keeps PMT as it is: the user
 decides.
 
-## 2. The fractional power: the platform's `exp` and `log` (chosen)
+## 2. The fractional power: the `^` operator's own evaluation (chosen)
 
-PV's and FV's fractional `nper` is raised as e^(nper ln(1+rate)) by `Math.Exp` and `Math.Log`, the
-platform's own. That is the evaluation the `^` operator already takes for a fractional exponent
-(`Arithmetic.Power`, ADR-0047's third run), and on glibc it gives FV-006 and PV-005 to the bit. A
-portable, correctly rounded `exp` and `log`, as the trigonometry's reduction is portable, was not taken:
+PV's and FV's fractional `nper` is raised by `Arithmetic.Power`, the evaluation the `^` operator (and
+`POWER`) takes for a fractional exponent: e^(nper ln(1+rate)) by the platform's `Math.Exp` and
+`Math.Log`, but at an exponent of exactly 0.5 the square root correctly rounded, as Excel's `=2^0.5` is
+(ARITH-133, the third run). One evaluation serves both, so `=(1+r)^n` and the same power inside FV
+cannot differ. On glibc it gives FV-006 and PV-005 to the bit, and every other observed PV and FV
+double is unchanged (the corpus, and `search.py`'s PV/FV model, F4 and V5, still give all 8 and all 6):
+none has an `nper` of 0.5, the one exponent where the square root and e^(0.5 ln(1+rate)) part. FV-016
+asks it: `=FV(0.42,0.5,-100)` is 45.627983043166275 by the square root, the engine's answer, and
+45.62798304316633 by e^(0.5 ln(1+rate)). A portable, correctly rounded `exp` and `log`, as the
+trigonometry's reduction is portable, was not taken:
 
 - the engine's `^`, `EXP`, `LN`, `LOG`, the hyperbolic functions and now XNPV already rest on the
   platform's functions, and making one of them portable would let `=(1+r)^n` and the same power inside
@@ -75,6 +86,12 @@ portable, correctly rounded `exp` and `log`, as the trigonometry's reduction is 
   rounded pair would give the same doubles here, and the evidence (two doubles) cannot tell them apart;
 - on Windows, .NET calls the UCRT's `exp` and `log`, which is the library Excel itself is most likely to
   call there.
+
+At a rate below -1, 1+rate is negative. There the `^` operator gives an odd root (Excel's `=(-8)^(1/3)`
+is -1.9999999999999998, ARITH-043), while e^(nper ln(1+rate)) has no answer for any fractional `nper`,
+so the observed doubles leave candidates that part: a fractional `nper` there is refused with `#VALUE!`,
+as it was before this branch, and FV-017 (`=FV(-9,1/3,-1)`, where `^` would give 0.3333333333333333)
+and PV-011 ask. A whole `nper` there is still raised by squaring, which does not depend on the sign.
 
 If a Windows run shows .NET on Windows differing from Excel on a fractional `nper`, the remedy is the
 trigonometry's: compute both portably. FV-012, 013 and 016, PV-010 and XNPV-005 and 006 ask the
@@ -120,11 +137,15 @@ New:
   Excel raises 1+rate to any other has not been observed. At a rate of 0 no power is raised, and any
   `nper` is answered. *(Answered by the area pass of 2026-10-12 for PV and FV: Excel raises 1+rate to a
   negative whole number as 1 over the power by squaring (FV-007; squaring 1/(1+rate) is 19 units in the
-  last place away), and to any other as e^(nper ln(1+rate)), the `^` operator's evaluation, by the
-  platform's `exp` and `log` (FV-006, PV-005; a correctly rounded power is two units from PV-005). PV
-  and FV now answer any `nper`. PMT still refuses an `nper` that is not a whole number from 0: Excel
-  answers PMT-011 and PMT-012, but no evaluation searched gives those payments with every other payment
-  Excel gave. Past 2^53, where every double is a whole number, all three still refuse.)*
+  last place away), and to any other as e^(nper ln(1+rate)) by the platform's `exp` and `log` (FV-006,
+  PV-005; a correctly rounded power is two units from PV-005). The engine takes the `^` operator's own
+  evaluation of a fractional exponent, which is that but for the square root at exactly 0.5 (ARITH-133),
+  so that `=(1+r)^n` and the same power inside FV cannot differ; no observed double has an `nper` of
+  0.5, and FV-016 asks it. PV and FV now answer any `nper` but one that is not a whole number at a rate
+  below -1, where the `^` operator's odd roots and e^(nper ln(1+rate)) part (FV-017 and PV-011 ask).
+  PMT still refuses an `nper` that is not a whole number from 0: Excel answers PMT-011 and PMT-012, but
+  no evaluation searched gives those payments with every other payment Excel gave. Past 2^53, where
+  every double is a whole number, all three still refuse.)*
 ```
 
 ### 3c. A dated note after the paragraph that ends the note
@@ -155,7 +176,9 @@ gives all 14 of Excel's payments. The engine keeps the exact model until the use
 ADR-0202, whether PMT is corrected or refused; PMT-019 to 033 ask Excel more. And XNPV, which the
 search covered: XNPV-004, asked to tell a correctly rounded power from e^(x ln(1+rate)), is the second
 to the bit, where `Math.Pow` was 8 units away. The corpus had compared XNPV at 6 decimals, so the pass
-counted it as agreeing; XNPV now takes e^(x ln(1+rate)) and its cases compare every bit.
+counted it as agreeing; XNPV now takes e^(x ln(1+rate)) and its cases compare every bit. At a rate of
+-1 or below, where 1+rate has no logarithm and `Math.Pow` gave a number for some arguments, XNPV is
+refused with `#VALUE!` until Excel is asked (XNPV-007 to 010).
 ```
 
 *(If the user takes option 2 of section 1, the sentence "The engine keeps the exact model ... ask Excel
@@ -243,10 +266,13 @@ New:
             <li>
                 <b><code>PV</code>, <code>FV</code> and <code>XNPV</code></b> give, to the last digit, every result
                 Excel was seen to give for them. Which result that is depends on how Excel raises 1+rate to the
-                number of periods: by squaring to a whole number, 1 over that to a negative one, and as
-                e<sup>nper ln(1+rate)</sup> to any other, so <code>PV</code> and <code>FV</code> answer any number of
-                periods, as Excel does. <code>type</code> is read as a truth value: any number but 0, 0.5 and 2 as
-                well as 1, is payment at the start of each period, as Excel reads it.
+                number of periods: by squaring to a whole number, 1 over that to a negative one, and as the
+                <code>^</code> operator raises it to any other, so <code>PV</code> and <code>FV</code> answer any
+                number of periods, as Excel does. At a rate below -1, a number of periods that is not a whole
+                number is <code>#VALUE!</code> in <code>PV</code> and <code>FV</code>, and a rate of -1 or below is
+                <code>#VALUE!</code> in <code>XNPV</code>, until Excel has been asked. <code>type</code> is read as
+                a truth value: any number but 0, 0.5 and 2 as well as 1, is payment at the start of each period, as
+                Excel reads it.
                 <b><code>PMT</code></b> reads <code>type</code> the same way, and gives Excel's payment at the rates
                 asked, from 10<sup>-7</sup> to 10% a period, but for a few monthly and daily payments whose last
                 digit differs from Excel's by one to three units. At a rate other than 0, a number of periods that
@@ -265,13 +291,13 @@ digit, and no evaluation found gives every payment Excel was seen to give.")*
 Old:
 
 ```
-Among them: IRR, XIRR and RATE, which it does not support, and a Reference Outline, which cannot be dragged.
+        new("What the stable version does not do is said where a reader meets it: on the product's page, and under Known limitations in its Release Notes. Among them: IRR, XIRR and RATE, which it does not support, and a Reference Outline, which cannot be dragged.",
 ```
 
 New:
 
 ```
-Among them: NPV, IRR, XIRR and RATE, which it does not support, and a Reference Outline, which cannot be dragged.
+        new("What the stable version does not do is said where a reader meets it: on the product's page, and under Known limitations in its Release Notes. Among them: NPV, IRR, XIRR and RATE, which it does not support, and a Reference Outline, which cannot be dragged.",
 ```
 
 The Functions page needs no edit: it reads the catalogue, where `NPV` is now Blocked under ticket 13, so
@@ -310,12 +336,14 @@ Old:
 New:
 
 ```
-  `k` that is not a whole number, and `LARGE` with one between 0 and 1; `UNIQUE` with a blank in its
+  `k` that is not a whole number, and `LARGE` with one between 0 and 1; `PV` and `FV` with an `nper`
+  that is not a whole number at a rate below -1, `PMT`, `PV` and `FV` with an `nper` past 2^53 at a
+  rate other than 0, and `XNPV` at a rate of -1 or below (`#VALUE!`); `UNIQUE` with a blank in its
   array, and `SORT` and `SORTBY` with a blank or an
 ```
 
 *(Other areas may rewrite the same bullet for `EOMONTH`, `EDATE`, `SMALL` and `LARGE`; only the `PMT`,
-`PV` and `FV` clause is this area's.)*
+`PV`, `FV` and `XNPV` clause is this area's.)*
 
 ### 6c. The financial bullet
 
@@ -337,9 +365,12 @@ New:
 - **`PV`, `FV` and `XNPV` give every double Excel was observed to give, to the bit** (ADR-0047, the
   seventeenth run and the area pass of 2026-10-12). `PV` and `FV` evaluate Microsoft's identity in
   doubles, the payment times (1+rate·type)·((g−1)/rate), raising 1+rate by squaring to a whole `nper`,
-  1 over that to a negative one, and as e^(nper ln(1+rate)) by the platform's `exp` and `log` to any
-  other. `XNPV` discounts each value by e^(years ln(1+rate)). `type` is a truth value: any number other
-  than 0, 0.5 included, is payment at the start. **`PMT` is not settled**: it computes the payment at the
+  1 over that to a negative one, and to any other as the `^` operator raises it (`Arithmetic.Power`:
+  e^(nper ln(1+rate)) by the platform's `exp` and `log`, but the square root at exactly 0.5). At a rate
+  below -1 an `nper` that is not a whole number is `#VALUE!` until Excel is asked. `XNPV` discounts each
+  value by e^(years ln(1+rate)), and is `#VALUE!` at a rate of -1 or below until Excel is asked. `type`
+  is a truth value: any number other than 0, 0.5 included, is payment at the start. **`PMT` is not
+  settled**: it computes the payment at the
   end exactly and rounds it once, and the payment at the start divides that double by 1+rate, rounded
   once. That gives Excel's PMT-001 to 003, 008 to 010 and 017 (a rate of 10^-7), but PMT-013 to 016
   and 018 differ from Excel's by one to three units in the last place, and no evaluation searched gives
@@ -354,7 +385,8 @@ Old:
 ```
 `IRR`, `XIRR` and `RATE` remain undeclared (`#NAME?`). The solver experiment in
 `spikes/exsheet-financial-solvers/` does not yet reproduce Excel's chosen roots, stopping results
-and failures.
+and failures. The October 3 observation run did not resolve existing Supported functions' other
+`uncertain` corpus cases.
 ```
 
 New:
@@ -363,7 +395,8 @@ New:
 `IRR`, `XIRR` and `RATE` remain undeclared (`#NAME?`). The solver experiment in
 `spikes/exsheet-financial-solvers/` does not yet reproduce Excel's chosen roots, stopping results
 and failures. `NPV` is undeclared too (ADR-0202, note of 2026-10-12): no evaluation in
-`spikes/exsheet-financial-evaluation/` gives every double Excel gave for it.
+`spikes/exsheet-financial-evaluation/` gives every double Excel gave for it. The October 3
+observation run did not resolve existing Supported functions' other `uncertain` corpus cases.
 ```
 
 ## 7. Change Notes this branch's change makes false (written by the run 17 branch, not this area's)
@@ -377,29 +410,39 @@ At a rate other than 0, `PMT`, `PV` and `FV` with a number of periods that is no
 New:
 
 ```
-At a rate other than 0, `PMT` with a number of periods that is not a whole number, or is negative, is now `#VALUE!` where it gave a number, though Excel answers it; at a rate of 0 every number of periods is still answered. A Formula that relied on a fractional `nper` in `PMT` shows `#VALUE!`.
+At a rate other than 0, `PMT` with a number of periods that is not a whole number, or is negative, is now `#VALUE!` where it gave a number, though Excel answers it, and so are `PV` and `FV` with a number of periods that is not a whole number at a rate below -1, where they were `#NUM!`, until Excel has been asked; at a rate of 0 every number of periods is still answered. A Formula that relied on a fractional `nper` in `PMT` shows `#VALUE!`.
 ```
 
 `docs/releases/unreleased/run17-financial-annuity-doubles.md`, old:
 
 ```
-For `PMT` that rests on payments at rates of 0.5% to 10% a period; at much smaller rates Excel has not been asked, and its payment may differ from the 13th significant digit. A `type` that is a whole number other than 0, such as 2, is payment at the start of each period, as Excel reads it, where it was `#VALUE!`.
+`PMT`, `PV` and `FV` now give, to the last digit, every result the seventeenth Windows run read from Excel for them, where they differed in the 13th to 15th significant digit: `PV` and `FV` raise 1+rate by squaring, and `PMT` computes the payment exactly before rounding it once. For `PMT` that rests on payments at rates of 0.5% to 10% a period; at much smaller rates Excel has not been asked, and its payment may differ from the 13th significant digit. A `type` that is a whole number other than 0, such as 2, is payment at the start of each period, as Excel reads it, where it was `#VALUE!`.
 ```
 
 New:
 
 ```
-For `PMT` that holds at the rates Excel was asked, from 10^-7 to 10% a period, but for a few monthly and daily payments whose last digit differs from Excel's (see the notes of the area pass). A `type` other than 0, such as 2 or 0.5, is payment at the start of each period, as Excel reads it, where it was `#VALUE!`.
+`PMT`, `PV` and `FV` now give, to the last digit, every result the seventeenth Windows run read from Excel for them, where they differed in the 13th to 15th significant digit: `PV` and `FV` raise 1+rate by squaring, and `PMT` computes the payment exactly before rounding it once. For `PMT` that holds at the rates Excel was asked, from 10^-7 to 10% a period, but for a few monthly and daily payments whose last digit differs from Excel's (see the notes of the area pass). A `type` other than 0, such as 2 or 0.5, is payment at the start of each period, as Excel reads it, where it was `#VALUE!`.
 ```
 
-## 8. Ticket 04 (applied by the orchestrator with the other areas' comments)
+## 8. Tickets 04 and 05 (applied by the orchestrator with the other areas' comments)
 
 A pointer under `## Comments` of `docs/specs/exsheet-functions/issues/04-p2-ready-functions.md`:
 
 ```
 2026-10-12, the area pass: `NPV` is refused for 0.1.0 (ADR-0202's note of that date) and moves to
-ticket 13 with `PMT`'s last digits; `PV` and `FV` answer any `nper` and `type` as Excel does
+ticket 13 with `PMT`'s last digits; `PV` and `FV` answer any `nper` and `type` as Excel does, but an
+`nper` that is not a whole number at a rate below -1, refused until Excel is asked (FV-017, PV-011)
 (`spikes/exsheet-financial-evaluation/`).
+```
+
+A pointer under `## Comments` of `docs/specs/exsheet-functions/issues/05-p3-ready-functions.md`:
+
+```
+2026-10-12, the area pass: `XNPV` discounts by e^(years ln(1+rate)), Excel's XNPV-004 to the bit,
+where `Math.Pow` was 8 units in the last place away, and its cases compare every bit. A rate of -1 or
+below is refused with `#VALUE!` until Excel is asked (XNPV-007 to 010): there 1+rate has no logarithm,
+and `Math.Pow` gave a number for some arguments (`spikes/exsheet-financial-evaluation/`).
 ```
 
 ## 9. Found on the way, for the orchestrator
@@ -407,15 +450,46 @@ ticket 13 with `PMT`'s last digits; `PV` and `FV` answer any `nper` and `type` a
 - **XNPV disagreed, hidden by `"digits": 6`.** The branch follows Excel in its own commit (`634ad2f8`),
   which touches `xnpv.json`, outside this area's files: two expectations and two new cases. Drop the
   commit if XNPV is to stay as it was.
-- **`oracle.ps1` writes Excel's double with `ToString('R')`.** Microsoft documents that "R" does not
-  always round-trip on 64-bit .NET Framework, which Windows PowerShell 5.1 is, and names `G17` as the
-  workaround. A double written with 15 or fewer significant digits may be a neighbour of Excel's. Of
-  this area's, PMT-015 (`-852.5226402171`) and NPV-003 (`5.56724267468069`) are so written; neither
-  string lies near enough to a midpoint for the failure to apply, so neither changes a conclusion. The
-  corpus's other short ones are unchecked.
+- **`oracle.ps1` writes Excel's double with `ToString('R')`.** Section 10 proposes `G17`.
 - **Excel gives a financial Formula's General cell its currency format on entry.** The area pass read
   `$#,##0.00_);[Red]($#,##0.00)` on every PMT, PV, FV and NPV cell; ExSheet gives none. The catalogue's
   PMT note said "until that is observed" and now says it was. Following it is a cell-format question
   for another ticket.
 - **Python 3.12 and later sum floats with compensation** (`sum()`), so a spike that sums doubles with
   `sum()` models no evaluation Excel performs. Neither search uses it for a modelled sum.
+
+## 10. `oracle.ps1`: write Excel's doubles with `"G17"`, not `"R"` (for the orchestrator)
+
+**The finding.** `oracle.ps1` records each number Excel answers as `$v.ToString('R', $Invariant)`.
+Windows PowerShell 5.1 runs on .NET Framework, where Microsoft documents that `"R"` does not always
+round-trip a `Double` (on 64-bit .NET Framework, some values formatted with `"R"` parse back as a
+neighbouring double) and recommends `"G17"` instead; `"R"` was only made to round-trip in .NET Core
+3.0. So a string the oracle wrote with 15 or fewer significant digits may name a neighbour of Excel's
+double, and the corpus, the area searches and this proposal read those strings as Excel's. Of this
+area's, PMT-015 (`-852.5226402171`) and NPV-003 (`5.56724267468069`) are so written; neither string
+lies near enough to a midpoint for the failure to apply, so neither changes a conclusion here. The
+corpus's other short ones are unchecked.
+
+What is not affected: the oracle's agree or disagree compares the double in memory with the corpus's
+expectation parsed on the same .NET Framework (`$expected -eq [double]$Answer.value2`), so the written
+string plays no part in a case's status. (Whether .NET Framework parses every 17-digit expectation to
+its nearest double is a separate question, unchecked here.) What is at risk is what is written:
+`number`, and `value2`, which `ConvertTo-Json` formats on Windows PowerShell 5.1 by its own means, so the
+string to trust is `number` once it is `"G17"`.
+
+`tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1`, old:
+
+```
+    elseif ($v -is [double]) { $answer.value2 = $v; $answer.kind = 'number'; $answer.number = $v.ToString('R', $Invariant) }
+```
+
+New:
+
+```
+    elseif ($v -is [double]) { $answer.value2 = $v; $answer.kind = 'number'; $answer.number = $v.ToString('G17', $Invariant) }
+```
+
+`"G17"` always writes 17 significant digits, so `-852.5226402171` would read `-852.52264021710005`: the
+same double, written so that any parser gets it back. The next `oracle.ps1 -Area` pass (PMT-019 to 033,
+NPV-009 to 022, FV-016, FV-017, PV-011, XNPV-005 to 010) should run with it, and an importer that takes
+Excel's double from a result file should read `number`.
