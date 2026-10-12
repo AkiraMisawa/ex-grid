@@ -61,10 +61,12 @@ did not, in any of three orders. ADR-0071, "What the fourteenth Windows run sett
     - ExGrid.MudBlazor.Tests: 198 passed.
 
 *(2026-10-12, agent run17gh-widening.)* The seventeenth Windows run corrects the second box for
-Ctrl+U (`verification/2026-10-11-windows-17/report.md`, Part H, h7). Over 123456789.12 in `0.00`
-showing `####` at the standard width, Excel's Ctrl+U widened column A from 8.09 to 11.73, and
-Ctrl+I did not. At a width set through COM (5), none of the three did, Format Cells' Font tab among
-them. Its h8 observed Ctrl+5 widen again.
+Ctrl+U (`verification/2026-10-11-windows-17/report.md`, Part H, h7). Each key was pressed in a
+workbook of its own. Over 123456789.12 in `0.00` showing `########` at the standard width, Excel's
+Ctrl+U widened column A from 8.09 to 11.73, and Ctrl+I did not. Over 123456.78 in `0.00` showing
+`#####` at a width set through COM (5), none of the three did, Format Cells' Font tab among them.
+Its h8 observed Ctrl+5 widen column A over 123456789.12 from 8.09 to 11.73, and not at the set
+width.
 
 - **Ctrl+U now widens as Ctrl+5 does**, by this ticket's path. `WidensAsANumberFormatDoes` is true
   for underline as for strikethrough, so Ctrl+4, the same key, widens too.
@@ -80,7 +82,8 @@ them. Its h8 observed Ctrl+5 widen again.
   - Layer 2 (`FormatWideningTests`, each named with h7):
     - Ctrl+U, with CapsLock off and on, and Ctrl+4 widen, and the column is recorded with the
       entry's kind.
-    - Ctrl+I then Ctrl+U, in the run's order.
+    - Ctrl+I then Ctrl+U on one cell. The run pressed each in a workbook of its own, so the two
+      together are a reading.
     - Taking underline off widens.
     - One undo step, undone and redone.
     - A sized column, at the default width or at h7's 5, does not widen.
@@ -89,3 +92,52 @@ them. Its h8 observed Ctrl+5 widen again.
   - With the change taken out, six of the new tests fail.
   - Layer 3 (`format-keys.spec.mjs`): Ctrl+I and Ctrl+U over `####` in a standard column and a
     column sized by its grip, and one Ctrl+Z.
+
+*(2026-10-12, agent run17gh-widening, second part.)* The user decided what follows from h7's Font
+tab: Format Cells' OK widens for any part of the Font it sets (Bold observed, the rest a reading
+then), `SetCellFormatAsync` follows Format Cells' OK, and each Sheet Toolbar toggle widens as the key
+it names. The readings of 2026-10-12 (`verification/2026-10-12-windows-readings/report.md`, R6) have
+since observed the Font tab widen for Italic, Underline and a colour each set alone, the Fill and
+Alignment tabs not widen, and the Home tab's Bold, Italic and Underline buttons act as their keys.
+
+- **One rule per kind of command**, in `SheetWidening`. `SheetFormatKeys.WidensAsANumberFormatDoes`
+  is gone.
+  - `WidensAsAKeyDoes`: a Number Format, underline or strikethrough. The keys use it, and so does
+    `SetCellFormatFromFocusAsync`, the public command the toolbar's toggles set through (ADR-0100), so
+    Underline and Strikethrough widen and Bold and Italic do not.
+  - `WidensAsFormatCellsOkDoes`: a Number Format or any part of the Font. Format Cells' OK uses it,
+    under both Chromes, since both reach `OkFormatCellsAsync`, and so does `SetCellFormatAsync`.
+  - The toolbar's Font Colour face sets through `SetCellFormatAsync`, so it widens too. That Excel's
+    Font Color button does is a reading.
+  - A Fill, Borders and an alignment widen nothing under either rule.
+  - The widening is this ticket's path, unchanged: never a column the user sized, and in the action's
+    one undo step.
+- **Tests.**
+  - Layer 2 (`FormatWideningTests`):
+    - Format Cells' OK widens for Bold, Italic, Underline, a colour, Strikethrough and Normal font,
+      and one undo takes back both. The Fill, Alignment and Border tabs do not widen.
+    - Format Cells' OK with Bold leaves a sized column, at the default width and at 5.
+    - `SetCellFormatAsync` widens for each Font part, and not for a Fill, an alignment or Borders. It
+      leaves a sized column.
+    - `SetCellFormatFromFocusAsync` widens for underline, and not for bold and italic.
+    - Each toolbar toggle widens as its key does, in one undo step, and none widens a sized column.
+    - The Font Colour face widens, and the Fill Colour face does not.
+  - Layer 2 under the MudBlazor Chrome (`MudFormatCellsTests`): OK with Bold widens, and OK with a
+    Fill does not.
+  - `Strikethrough_from_format_cells_or_set_cell_format_never_widens_case_14_7` asserted the old
+    reading, and is gone. The theories above hold the opposite.
+  - With both rules made "a Number Format only", and Bold added to the keys' rule, 17 tests fail in
+    `ExSheet.Components` and 1 in `ExSheet.MudBlazor.Tests`.
+  - Layer 3:
+    - `format-cells.spec.mjs` and `format-cells-mud.spec.mjs`: OK with Bold over `####` widens a
+      standard column, leaves one sized by its grip, and one Ctrl+Z takes it back. OK with a Fill
+      widens nothing.
+    - `sheet-toolbar.spec.mjs`, under both Chromes: Italic and Bold widen nothing. Underline and
+      Strikethrough widen, each taken back by one Ctrl+Z.
+    - The set-up is `hashesAtTheStandardWidth` in `sheet-helpers.mjs`, which `format-keys.spec.mjs`'s
+      Ctrl+U test now uses too.
+  - **Layer 3 run**, Playwright's Chromium, headed under xvfb, `--project=chrome`:
+    - The four spec files on each host: 51 passed on the Server host, and 51 on WebAssembly.
+    - The five new or rewritten tests with `--repeat-each=3`: 15 passed on each host.
+  - Layers 1 and 2: ExSheet.Components.Tests 784 passed, ExSheet.MudBlazor.Tests 63, and
+    ExSheet.Engine.Tests 4762, with 3 skipped.

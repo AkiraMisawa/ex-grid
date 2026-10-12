@@ -356,8 +356,11 @@ column, and a number typed into a column that it widens, are steps on the undo s
 other, and raise `DocumentChanged`; an opened document brings its widths with it. A Number Format
 set on the Selection — a formatting key, Format Cells' OK, `SetCellFormatAsync` — widens a column
 whose numbers it no longer fits in the same way, in its own undo step, and so do Ctrl+5 and Ctrl+U,
-which set no Number Format, as Excel's do; Ctrl+B and Ctrl+I do not. A width an entry, a Number
-Format or one of those keys widened the column to stays automatic, and a longer number widens the
+which set no Number Format, as Excel's do; Ctrl+B and Ctrl+I do not. Format Cells' OK widens for any
+part of the Font it sets, bold and italic among them, as Excel's Font tab does, and so does
+`SetCellFormatAsync`. The Sheet Toolbar's toggles, and `SetCellFormatFromFocusAsync` they set
+through, widen as the keys do. A Fill, Borders or an alignment widens nothing. A width an entry, a
+Number Format or a Font change widened the column to stays automatic, and a longer number widens the
 column again; a width the user set — a drag or a size to fit — is custom, and nothing widens that
 column. A column inserted to the right of either takes its width as one the user set, as Excel's
 does.
@@ -406,7 +409,7 @@ that collide at one level are refused when the toolbar renders. ExSheet's items 
 - **An item of your own** derives from `ToolbarItemBase`. It reads the Sheet through the cascaded
   `SheetToolbarContext` and acts through the Sheet's public commands.
   `SetCellFormatFromFocusAsync` is the command for a change made from the Focus cell's Cell
-  Format, as a toggle needs.
+  Format, as a toggle needs, and it widens a column as the formatting keys do.
 
 ## More
 

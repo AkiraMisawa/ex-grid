@@ -665,7 +665,10 @@ nobody had asked for. What that means when writing a test:
   the box shrinks below one row; and two Sheets each with their own. On a 150 ms circuit on the
   Server host, the page's *Format Cells…* pressed straight after Shift+ArrowDown, and the Context
   Menu's item chosen as soon as the menu opens on another cell, each open over the Selection the grid
-  holds and stand when the move's notification lands (ticket 56).
+  holds and stand when the move's notification lands (ticket 56). Over numbers showing `####`, OK
+  with a Fill widens no column, and OK with Bold widens the one at the standard width, never the one
+  sized by its grip, in OK's one step (ADR-0071, decided 2026-10-12; the seventeenth Windows run's
+  h7).
 - `format-cells-keys.spec.mjs` — keys typed while Format Cells opens (ticket 93; ADR-0050 item 16
   and ADR-0039, notes of 2026-10-01), under both Chromes, at an 80 ms round trip on the Server host:
   a digit typed straight after a press on "Format Cells…", a press and a round trip, Enter on the
@@ -681,7 +684,9 @@ nobody had asked for. What that means when writing a test:
   typed at full speed arriving whole, Enter as OK; Tab and Shift+Tab kept inside; More Colours as
   MudBlazor's colour picker, read back through Format Cells; and, however it closes, the next
   arrow moving the Focus — from the page's button too, which MudBlazor would otherwise hand the
-  keyboard back to. Two Sheets each keep their own last tab and get the keyboard back.
+  keyboard back to. Over numbers showing `####`, OK widens as under the built-in Chrome: not for a
+  Fill, and for Bold the column at the standard width, never the one sized by its grip, in OK's one
+  step. Two Sheets each keep their own last tab and get the keyboard back.
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed

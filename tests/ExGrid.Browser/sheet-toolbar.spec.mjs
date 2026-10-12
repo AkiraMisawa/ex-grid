@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // The Sheet Toolbar (ADR-0100, ticket 54; SH-48 to SH-50), on /sheet under both Chromes: above the
@@ -97,6 +97,40 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'C3');
             await toolbarItem(page, 'Fill Colour').click();
             await expect(cell(grid, 'C3')).toHaveCSS('background-color', 'rgb(0, 176, 240)');
+        });
+
+        // Decided with the user on 2026-10-12 (ADR-0071): each toggle widens a column over #### as
+        // the key it names does — Underline as Ctrl+U (the seventeenth Windows run's h7),
+        // Strikethrough as Ctrl+5 (the fourteenth's case 7) — and Bold and Italic widen nothing, as
+        // Ctrl+B and Ctrl+I do not.
+        test(`ADR-0100/ADR-0071 (decided 2026-10-12): over #### Italic and Bold widen no column; Underline and Strikethrough widen one at the standard width, never one sized by its grip, each taken back by one Ctrl+Z (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
+            const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
+            const focusFont = page.locator('#sheet-focus-font');
+
+            await toolbarItem(page, 'Italic').click();
+            await expect(focusFont).toHaveText('italic');
+            await toolbarItem(page, 'Bold').click();
+            await expect(focusFont).toHaveText('bold italic');
+            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+            expect(await width('E')).toBeCloseTo(standard, 0);
+
+            for (const [item, shown] of [['Underline', 'bold italic underline'], ['Strikethrough', 'bold italic strikethrough']]) {
+                await toolbarItem(page, item).click();
+                await expect(focusFont).toHaveText(shown);
+                await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
+                await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
+                await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+                expect(await width('F')).toBeCloseTo(sized, 0);
+
+                // The width is a step of the press's own: one Ctrl+Z takes back the emphasis and the width.
+                await expectKeyboardOn(grid);
+                await page.keyboard.press('ControlOrMeta+Z');
+                await expect(focusFont).toHaveText('bold italic');
+                await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+                await expect.poll(() => width('E')).toBeCloseTo(standard, 0);
+            }
         });
 
         test(`ADR-0100: the page's own action runs over the Selection (${chrome})`, async ({ page }) => {

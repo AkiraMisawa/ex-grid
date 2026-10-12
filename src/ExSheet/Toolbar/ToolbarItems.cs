@@ -7,7 +7,12 @@ namespace ExSheet;
 // SetCellFormatAsync, CellFormatAt through the toolbar's Focus format, OpenFormatCellsAsync — and
 // carries Excel's Home tab KeyTip where Excel has one (a reading until a Windows run reads them all).
 
-/// <summary>A toggle that sets one Font emphasis, on or off as the Focus cell gives it, as the key does (ADR-0071).</summary>
+/// <summary>
+/// A toggle that sets one Font emphasis, on or off as the Focus cell gives it, as the key does
+/// (ADR-0071), through <c>SetCellFormatFromFocusAsync</c>. Over numbers showing ####, it widens a
+/// column the user has not sized as its key does (decided 2026-10-12): Underline and Strikethrough
+/// widen, Bold and Italic do not.
+/// </summary>
 public abstract class FontToggleItem : ToolbarItemBase
 {
     private readonly Func<CellFormat, CellFormatChange> _toggle;
@@ -24,7 +29,7 @@ public abstract class FontToggleItem : ToolbarItemBase
         new(ToolbarItemKind.Toggle, name, icon) { Shortcut = shortcut, Pressed = Has(Context.FocusFormat.Font) };
 }
 
-/// <summary>Bold (ADR-0100): Ctrl+B's toggle.</summary>
+/// <summary>Bold (ADR-0100): Ctrl+B's toggle. It widens no column, as Ctrl+B does not.</summary>
 public sealed class BoldItem : FontToggleItem
 {
     /// <summary>Bold, on or off as the Focus cell gives it.</summary>
@@ -40,7 +45,7 @@ public sealed class BoldItem : FontToggleItem
     protected override string? DefaultKeyTip => "1";
 }
 
-/// <summary>Italic (ADR-0100): Ctrl+I's toggle.</summary>
+/// <summary>Italic (ADR-0100): Ctrl+I's toggle. It widens no column, as Ctrl+I does not.</summary>
 public sealed class ItalicItem : FontToggleItem
 {
     /// <summary>Italic, on or off as the Focus cell gives it.</summary>
@@ -56,7 +61,10 @@ public sealed class ItalicItem : FontToggleItem
     protected override string? DefaultKeyTip => "2";
 }
 
-/// <summary>A single underline (ADR-0100): Ctrl+U's toggle.</summary>
+/// <summary>
+/// A single underline (ADR-0100): Ctrl+U's toggle. It widens a column whose numbers it no longer
+/// fits, as Ctrl+U does (ADR-0071; the seventeenth Windows run's h7).
+/// </summary>
 public sealed class UnderlineItem : FontToggleItem
 {
     /// <summary>A single underline, on or off as the Focus cell gives it.</summary>
@@ -73,9 +81,10 @@ public sealed class UnderlineItem : FontToggleItem
 }
 
 /// <summary>
-/// Strikethrough (ADR-0100): Ctrl+5's toggle. It sets the Font as Format Cells' Font tab does, which
-/// widens no column. Excel's Home tab has no KeyTip for it; ExSheet's own is 4, a letter Excel's Home
-/// tab does not use (a reading until a Windows run reads them all).
+/// Strikethrough (ADR-0100): Ctrl+5's toggle. It widens a column whose numbers it no longer fits, as
+/// Ctrl+5 does (ADR-0071; the fourteenth Windows run's case 7). Excel's Home tab has no KeyTip for
+/// it; ExSheet's own is 4, a letter Excel's Home tab does not use (a reading until a Windows run reads
+/// them all).
 /// </summary>
 public sealed class StrikethroughItem : FontToggleItem
 {
@@ -143,7 +152,12 @@ public abstract class ColourItem : ToolbarItemBase
     });
 }
 
-/// <summary>The Font colour (ADR-0100): Excel's Font Color, red on its face until another is chosen.</summary>
+/// <summary>
+/// The Font colour (ADR-0100): Excel's Font Color, red on its face until another is chosen. It sets
+/// the colour through <c>SetCellFormatAsync</c>, so it widens a column whose numbers no longer fit as
+/// Format Cells' OK does (decided 2026-10-12). That Excel's Font Color button widens is a reading: no
+/// run has pressed it over ####.
+/// </summary>
 public sealed class FontColourItem : ColourItem
 {
     /// <summary>The Font colour, red on the face as Excel's starts.</summary>
