@@ -8,8 +8,9 @@ tickets 82 and 83). This folder holds the evidence and the tool that makes it.
 | File | What it is |
 |---|---|
 | `corpus.json` | The 3,091 strings ExSheet's built-in formats paint: Number and Currency in each negative style at 0 and 2 places, Percentage, Scientific, General, each culture's built-in currency, and the Date and Time types, under 24 cultures, for amounts, fractions, every month and times either side of noon |
-| `measure.mjs` | Measures one face in Chrome: every corpus string, and every glyph the corpus holds, the letters and currency signs a table may hold, and every glyph `CellTextMetrics` names in a class, at 14px and 12px, weights 400, 500, 600 and 700, tabular digits. `--text <string>` measures a string and prints it |
-| `<face>.<platform>.json` | One face as `measure.mjs` measured it, on one platform |
+| `measure.mjs` | Measures one face in Chrome or Edge: every corpus string, and every glyph the corpus holds, the letters and currency signs a table may hold, and every glyph `CellTextMetrics` names in a class, at 14px and 12px, weights 400, 500, 600 and 700, tabular digits. `--text <string>` measures a string and prints it |
+| `<face>.<platform>.json` | One face as `measure.mjs` measured it, on one platform, in Chrome: `system-ui.macos.json`, `roboto.macos.json` and `dejavu-sans.macos.json` (2026-10-01) |
+| `<face>.<platform>.<browser>.json` | One face measured on one platform in the browser `--browser` named: `system-ui.windows.chrome.json`, `system-ui.windows.msedge.json`, `roboto.windows.chrome.json` and `roboto.windows.msedge.json` (Chrome 154 and Edge 155, display en-GB at 150%, the seventeenth Windows run, 2026-10-11) |
 | `tables.mjs` | Writes the per-glyph tables from the records: `src/ExGrid/Columns/DefaultGlyphWidths.cs` and `src/ExGrid.MudBlazor/RobotoGlyphTable.cs` |
 | `classes.mjs` | The glyphs `CellTextMetrics` names in a class, which a table leaves out |
 | `GlyphWidthRecord.cs` | Reads a record; compiled into the test projects below |
@@ -20,10 +21,11 @@ tickets 82 and 83). This folder holds the evidence and the tool that makes it.
   A format that changes its output fails it, and the corpus it makes is written beside the test
   binary as `corpus.generated.json`.
 - **ExGrid.Tests, `GlyphWidthCorpusTests`**: under the core's defaults, at every density, no corpus
-  string paints wider than its estimate and no glyph wider than its class, in `system-ui.*` and
-  `dejavu-sans.*`. Weights 400 to 600 are held to the regular widths, 700 to the bold ones.
+  string paints wider than its estimate and no glyph wider than its class, in `system-ui.*` (macOS's
+  and Windows', each browser's record) and `dejavu-sans.*`. Weights 400 to 600 are held to the
+  regular widths, 700 to the bold ones.
 - **ExGrid.MudBlazor.Tests, `RobotoGlyphWidthCorpusTests`**: the same, under the widths
-  `MudExGridPresentation` cascades, in `roboto.*`.
+  `MudExGridPresentation` cascades, in `roboto.*` (macOS's and Windows').
 
 A record measured from another corpus is refused (`corpusSha256`).
 
@@ -44,6 +46,18 @@ has not been measured yet:
 
    Each writes `<face>.<platform>.json` here. `system-ui` is whatever the platform resolves it to,
    so a run on Linux or Windows adds a record of its own, and the core's tests read it too.
+
+   To measure with Edge, or to keep one record per browser on a platform, name the browser:
+   `--browser chrome` or `--browser msedge`. Each is found where it installs itself, and the record
+   is `<face>.<platform>.<browser>.json`. On Windows, measure `system-ui` and `roboto` in both,
+   as the Windows records were:
+
+   ```sh
+   node tests/GlyphWidths/measure.mjs system-ui --browser chrome
+   node tests/GlyphWidths/measure.mjs system-ui --browser msedge
+   node tests/GlyphWidths/measure.mjs roboto --browser chrome
+   node tests/GlyphWidths/measure.mjs roboto --browser msedge
+   ```
 3. Write the tables again: `node tests/GlyphWidths/tables.mjs`.
 4. Run layer 1. A failure names each string or glyph charged under its width, the face that painted
    it, and the size and weight. A glyph a table holds is fixed by step 3. Otherwise raise the
@@ -56,8 +70,8 @@ has not been measured yet:
 A letter or currency sign is charged its own measured width where a table holds it, and the other
 class otherwise (ticket 83). A table holds only glyphs its face draws itself in every record:
 - **the core's** a glyph DejaVu Sans draws, which is what Linux paints `system-ui` in, at the
-  widest any core record shows — macOS's `system-ui`, whatever font of the stack painted it, and
-  DejaVu Sans — measured at 14px and at 12px apart;
+  widest any core record shows — macOS's `system-ui` and Windows' (Segoe UI, in Chrome and Edge),
+  whatever font of the stack painted it, and DejaVu Sans — measured at 14px and at 12px apart;
 - **Roboto's** a glyph Roboto draws, at the wider of its 14px width and its 12px one scaled to 14,
   because the core scales the table.
 
@@ -66,18 +80,23 @@ lacks is painted in a fallback the platform chooses, so it stays the other class
 
 ## How a width is read
 
-- Headless Chrome at a device scale factor of 1, from a page that sets the face the grid sets:
-  `ex-grid.css`'s `system-ui, sans-serif`, `MudExGridFont.Roboto.Family` over the files the demo
-  pages serve, and DejaVu Sans Book and Bold as web fonts (Linux has no 600, so 600 matches Bold
-  there and here).
+- Headless Chrome or Edge at a device scale factor of 1, from a page that sets the face the grid
+  sets: `ex-grid.css`'s `system-ui, sans-serif`, `MudExGridFont.Roboto.Family` over the files the
+  demo pages serve, and DejaVu Sans Book and Bold as web fonts (Linux has no 600, so 600 matches
+  Bold there and here).
 - A glyph's width is the wider of the glyph alone and a hundred in a row, divided by a hundred: a
   glyph that kerns with itself reads short in a run (Roboto's `//`), and a glyph alone is laid out
   to the next 1/64px. A string's width is the string as one run.
 - Every width is in 64ths of a pixel, rounded up, so no reading is under what was painted.
 - `painters` names the face that painted each glyph. A glyph the family does not draw is painted
-  by the platform's fallback: on macOS, Thai in every face (Thonburi), Hebrew in Roboto (Arial),
-  `₴` and `฿` in Roboto (Helvetica Neue), `₼` in DejaVu Sans (Kefa), and the ideographs and
-  Hangul in every face (PingFang, Apple SD Gothic Neo).
+  by the platform's fallback:
+  - on macOS, Thai in every face (Thonburi), Hebrew in Roboto (Arial), `₴` and `฿` in Roboto
+    (Helvetica Neue), `₼` in DejaVu Sans (Kefa), and the ideographs and Hangul in every face
+    (PingFang, Apple SD Gothic Neo);
+  - on Windows, `system-ui` is Segoe UI, and Segoe UI Semibold at 500 and 600. Thai is painted in
+    Tahoma in every face, the ideographs in Microsoft YaHei (Chrome) or Noto Sans JP (Edge), and
+    Hangul in Malgun Gothic. In Roboto, Hebrew, `֏`, `؋` and `₡ ₭ ₮ ₲ ₴ ₵ ₸ ₾ ₿` are painted in
+    Arial, `฿` in Tahoma, `৳` in Nirmala UI and `៛` in Leelawadee UI.
 
 ## What stays out
 
@@ -88,9 +107,10 @@ lacks is painted in a fallback the platform chooses, so it stays the other class
 - **Cultures outside the 24.** Their letters in the Latin, Greek and Cyrillic ranges are in the
   tables, but their strings are not in the corpus. Letters of other scripts are the other class's.
 - **Fallback faces on another platform.** A glyph the face does not draw is measured in the
-  fallback this platform chose, and left out of the tables. Linux and Windows choose others.
-- **Windows' `system-ui`**, Segoe UI, until a record from Windows is added. Running `measure.mjs`
-  there and then `tables.mjs` folds it into the core's table.
+  fallback each measured platform chose, and left out of the tables. Linux chooses others.
+- **Windows under a display language other than English**, where `system-ui` is another face:
+  Yu Gothic UI under Japanese, for one. The Windows records are of an English (United Kingdom)
+  display, where it is Segoe UI. Whether those faces are measured is an open question for the user.
 - **A Consumer's own font.** Whoever sets `--ex-font-family` owes the widths (ADR-0027's
   metrics-bearing obligation, ADR-0030), and a table if they want letters charged their own widths
   (`GlyphWidthTable`). Without one, a letter is charged the other class. This tool can measure a

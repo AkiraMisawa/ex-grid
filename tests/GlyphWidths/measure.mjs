@@ -1,23 +1,28 @@
-// Measures what Chrome paints for every string in corpus.json, and for every glyph they hold, in
-// one face, at 14px and 12px, at weights 400, 500, 600 and 700, with tabular digits — the numbers
-// the per-class estimate has to cover (ADR-0016; tickets 82 and 83). README.md beside this file
-// says when to run it and what reads its output.
+// Measures what Chrome or Edge paints for every string in corpus.json, and for every glyph they
+// hold, in one face, at 14px and 12px, at weights 400, 500, 600 and 700, with tabular digits — the
+// numbers the per-class estimate has to cover (ADR-0016; tickets 82 and 83). README.md beside this
+// file says when to run it and what reads its output.
 //
 //   node tests/GlyphWidths/measure.mjs roboto
 //   node tests/GlyphWidths/measure.mjs system-ui
+//   node tests/GlyphWidths/measure.mjs system-ui --browser msedge
 //   node tests/GlyphWidths/measure.mjs dejavu-sans --dejavu "$(nix build --no-link --print-out-paths nixpkgs#dejavu_fonts)/share/fonts/truetype"
 //
-// Writes <face>.<platform>.json here. `--chrome <path>` names the browser; otherwise Google
-// Chrome is looked for where it installs itself. `--text <string>`, given once or more, measures
-// those strings instead and prints them, writing nothing.
+// Writes <face>.<platform>.json here, measured in Google Chrome. `--browser chrome` or
+// `--browser msedge` names the browser, and the record is then <face>.<platform>.<browser>.json,
+// so a platform measured in both keeps both (Windows). Each is looked for where it installs
+// itself; `--chrome <path>` names the executable instead. `--text <string>`, given once or more,
+// measures those strings instead and prints them, writing nothing.
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { classed } from './classes.mjs';
 
-const here = path.dirname(new URL(import.meta.url).pathname);
+// fileURLToPath, not the URL's pathname: on Windows the pathname is /C:/…, which is no path there.
+const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..', '..');
 
 const args = process.argv.slice(2);
@@ -76,6 +81,24 @@ const tabled = [
 const glyphs = [...new Set([...corpus.flatMap((s) => [...s]), ...(texts.length > 0 ? [] : [...tabled, ...classed])])]
   .sort((a, b) => a.codePointAt(0) - b.codePointAt(0));
 
+// Where each browser installs itself. Without --browser, Chrome, and the record's name says no browser.
+const named = option('--browser');
+const installed = {
+  chrome: {
+    darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    linux: '/usr/bin/google-chrome',
+    win32: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  },
+  msedge: {
+    darwin: '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    linux: '/usr/bin/microsoft-edge',
+    win32: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  },
+};
+if (named !== undefined && !installed[named]) throw new Error(`Unknown browser '${named}'. One of: ${Object.keys(installed).join(', ')}.`);
+const chrome = option('--chrome') ?? installed[named ?? 'chrome'][process.platform];
+if (!chrome || !fs.existsSync(chrome)) throw new Error(`No browser at '${chrome}'. Name it with --chrome <path>.`);
+
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'glyph-widths-'));
 fs.writeFileSync(path.join(work, 'page.html'), `<!doctype html><html><head><meta charset="utf-8"><style>${css}
 body { margin: 0; }
@@ -83,11 +106,6 @@ body { margin: 0; }
      font-style: normal; position: absolute; left: 0; top: 0; }
 </style></head><body><div id="host"></div></body></html>`);
 
-const chrome = option('--chrome') ?? {
-  darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  linux: '/usr/bin/google-chrome',
-  win32: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-}[process.platform];
 const profile = path.join(work, 'profile');
 const browser = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`,
   '--no-first-run', '--no-default-browser-check', '--force-device-scale-factor=1', 'about:blank'], { stdio: 'ignore' });
@@ -96,7 +114,7 @@ try {
   const portFile = path.join(profile, 'DevToolsActivePort');
   for (let i = 0; i < 400 && !fs.existsSync(portFile); i++) await new Promise((r) => setTimeout(r, 50));
   const port = fs.readFileSync(portFile, 'utf8').split('\n')[0];
-  const pageUrl = new URL(`file://${path.join(work, 'page.html')}`).href;
+  const pageUrl = pathToFileURL(path.join(work, 'page.html')).href;
   const target = await (await fetch(`http://127.0.0.1:${port}/json/new?${pageUrl}`, { method: 'PUT' })).json();
   const socket = new WebSocket(target.webSocketDebuggerUrl);
   await new Promise((r) => socket.addEventListener('open', r));
@@ -202,7 +220,7 @@ try {
     // One line per array, so a re-measurement diffs by weight and size rather than by number.
     const json = JSON.stringify(out, null, 1).replace(/\[\n\s*([^\][{}]*?)\n\s*\]/g,
       (_, inner) => `[${inner.split(/,\n\s*/).join(',')}]`);
-    const file = path.join(here, `${face}.${platform}.json`);
+    const file = path.join(here, named ? `${face}.${platform}.${named}.json` : `${face}.${platform}.json`);
     fs.writeFileSync(file, json + '\n');
     console.log(`${path.relative(repo, file)}: ${glyphs.length} glyphs, ${corpus.length} strings, ${measured.userAgent}`);
   }
