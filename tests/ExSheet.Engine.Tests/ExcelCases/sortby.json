@@ -118,6 +118,15 @@
       "cells": {"ZZ1000": "=SORTBY(Q1:Q2,H1:H2,-1)"},
       "check": "ZZ1000",
       "expect": {"value2": 0}
+    },
+    {
+      "id": "SORTBY-014",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: in a descending key a blank key sorts last in SORTBY too, as in SORT (SORT-013) and as SORTBY's did in an ascending key (SORTBY-007), so 20, whose key is 7, comes first; 10 if the blank key sorted first",
+      "fixture": "lookupData",
+      "cells": {"Z2": "7", "ZZ1000": "=SORTBY(H1:H2,Z1:Z2,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 20}
     }
   ]
 }

@@ -5,27 +5,32 @@ using static ExSheet.Engine.Tests.SheetTestExtensions;
 namespace ExSheet.Engine.Tests;
 
 /// <summary>
-/// A blank among <c>SORT</c>'s and <c>SORTBY</c>'s keys and in <c>UNIQUE</c>'s array, as the area passes of
-/// 2026-10-12 read Excel (ADR-0125): a blank key sorts after every other key whichever the order, blanks keep
-/// their order, and a blank spills as 0; in <c>UNIQUE</c> a blank is one of a kind only with another blank.
-/// Read inside the Formula, <c>COUNTA</c> counts the blank <c>SORT</c> and <c>UNIQUE</c> keep in the array
-/// (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c>, <c>SORT</c>'s is blank to <c>ISBLANK</c> (SORT-022), the
-/// empty value a blank cell holds, and <c>UNIQUE</c>'s equal to empty text (UNIQUE-018); the engine takes
-/// <c>UNIQUE</c>'s for a blank cell's value too, which UNIQUE-020 asks. <c>SORTBY</c>, <c>FILTER</c> and
-/// <c>TRANSPOSE</c> are taken to keep the same blank, which no run has read (SORTBY-011 to 013, FILTER-012 and 013,
+/// A blank among <c>SORT</c>'s and <c>SORTBY</c>'s keys and in <c>UNIQUE</c>'s array (ADR-0125). The area passes of
+/// 2026-10-12 read Excel's <c>SORT</c> sort a blank key after numbers and text in either order and after a boolean
+/// ascending (SORT-011 to 014, 016 to 019, 024, 025), keep two blank keys in their order in a descending sort
+/// (SORT-023), and spill a blank as 0 (SORT-012); its <c>SORTBY</c> sort a blank key after a number in an ascending key
+/// (SORTBY-007 to 009); and its <c>UNIQUE</c> count a blank one of a kind only with another blank (UNIQUE-011 to 015).
+/// The engine carries those, by generalisation, to a blank key after a boolean in a descending sort (SORT-040 asks), to
+/// blank keys kept in their order ascending, as Excel kept equal keys (SORT-004; SORT-041 asks), and to the rest of
+/// <c>SORTBY</c>'s keys as <c>SORT</c>'s (SORTBY-014 asks a descending one); beside an Error Value key the Formula is
+/// refused with <c>#VALUE!</c> (SORT-031 asks). Read inside the Formula, <c>COUNTA</c> counts the blank <c>SORT</c> and
+/// <c>UNIQUE</c> keep in the array (SORT-021, UNIQUE-017), and taken out by <c>INDEX</c>, <c>SORT</c>'s is blank to
+/// <c>ISBLANK</c> (SORT-022), the empty value a blank cell holds, and <c>UNIQUE</c>'s equal to empty text (UNIQUE-018);
+/// the engine takes <c>UNIQUE</c>'s for a blank cell's value too, which UNIQUE-020 asks. <c>SORTBY</c>, <c>FILTER</c>
+/// and <c>TRANSPOSE</c> are taken to keep the same blank, which no run has read (SORTBY-011 to 013, FILTER-012 and 013,
 /// TRANSPOSE-005 and 006 ask). The operators, and the functions that read one Value through
-/// <c>FunctionCall.OneValue</c> (<c>LEN</c>, <c>ISTEXT</c>, <c>MATCH</c>'s lookup value), read it as a blank cell's,
-/// a generalisation of <c>ISBLANK</c>'s answer for <c>SORT</c>'s and <c>=</c>'s for <c>UNIQUE</c>'s, which no run
-/// has read beyond them; those that read it through <c>FunctionCall.Operand</c>, <c>XLOOKUP</c>'s lookup value
-/// and <c>ROUND</c> among them, refuse it. <c>SUMPRODUCT</c> and <c>CONCAT</c>, and <c>SUM</c> where both readings
-/// give the one sum, take it because every reading of it gives them the one answer, and a lookup takes an array
-/// holding it where it never reads it. Where a function's reading of it parts (<c>AVERAGE</c>, <c>MIN</c>,
-/// <c>COUNT</c>, <c>COUNTA</c> given it as one Value, a search through it, another of the five) the Formula is
-/// refused with <c>#VALUE!</c> (ADR-0125, ADR-0202). An Error Value key is answered in <c>SORT</c> only where it
-/// already follows every number, the shape of SORT-015, where sorting it after the numbers and keeping its
-/// place give the one order; it is refused with <c>#VALUE!</c> elsewhere (ADR-0047). The cases themselves are
-/// in <c>ExcelCases/sort.json</c>, <c>sortby.json</c>, <c>unique.json</c>, <c>filter.json</c> and
-/// <c>transpose.json</c>; the rule across the forms is here.
+/// <c>FunctionCall.OneValue</c> (<c>LEN</c>, <c>ISTEXT</c>, <c>MATCH</c>'s and <c>VLOOKUP</c>'s lookup value), read it
+/// as a blank cell's, a generalisation of <c>ISBLANK</c>'s answer for <c>SORT</c>'s and <c>=</c>'s for <c>UNIQUE</c>'s,
+/// which no run has read beyond them; those that read it through <c>FunctionCall.Operand</c>, <c>XLOOKUP</c>'s lookup
+/// value and <c>ROUND</c> among them, refuse it. <c>SUMPRODUCT</c> and <c>CONCAT</c>, and <c>SUM</c> where both
+/// readings give the one sum, take it because every reading of it gives them the one answer, and a lookup takes an
+/// array holding it where it never reads it. Where a function's reading of it parts (<c>AVERAGE</c>, <c>MIN</c>,
+/// <c>COUNT</c>, <c>COUNTA</c> given it as one Value, a search through it, another of the five) the Formula is refused
+/// with <c>#VALUE!</c> (ADR-0125, ADR-0202). An Error Value key is answered in <c>SORT</c> only where it already
+/// follows every number, the shape of SORT-015, where sorting it after the numbers and keeping its place give the one
+/// order; it is refused with <c>#VALUE!</c> elsewhere (ADR-0047). The cases themselves are in
+/// <c>ExcelCases/sort.json</c>, <c>sortby.json</c>, <c>unique.json</c>, <c>filter.json</c> and <c>transpose.json</c>;
+/// the rule across the forms is here.
 /// </summary>
 public class SortAndUniqueBlankTests
 {
@@ -42,7 +47,7 @@ public class SortAndUniqueBlankTests
         { } v => v.Error,
     };
 
-    [Theory] // ADR-0125 (SORT-011 to 014): a blank key sorts after every other key, in either order, and spills as 0
+    [Theory] // ADR-0125 (SORT-011 to 014, 016 to 019, 024, 025; SORT-040 asks): a blank key sorts after numbers and text in either order and after a boolean ascending, as Excel's did, and after a boolean descending, by generalisation; it spills as 0
     [InlineData("=SORT(A1:A3)", "7", "", "3", new object[] { 3d, 7d, 0d })]
     [InlineData("=SORT(A1:A3,1,-1)", "7", "", "3", new object[] { 7d, 3d, 0d })]
     [InlineData("=SORT(A1:A3)", "b", "", "a", new object[] { "a", "b", 0d })]
@@ -50,7 +55,7 @@ public class SortAndUniqueBlankTests
     [InlineData("=SORT(A1:A3)", "1", "", "TRUE", new object[] { 1d, true, 0d })]
     [InlineData("=SORT(A1:A3,1,-1)", "1", "", "TRUE", new object[] { true, 1d, 0d })]
     [InlineData("=SORT(A1:A3)", "", "0", "", new object[] { 0d, 0d, 0d })]
-    public void ADR0125_a_blank_key_sorts_after_every_other_key_in_either_order(string formula, string a1, string a2, string a3, object[] expected)
+    public void ADR0125_a_blank_key_sorts_after_numbers_text_and_booleans_in_either_order(string formula, string a1, string a2, string a3, object[] expected)
     {
         var sheet = NewSheet();
         if (a1 != "") sheet.Enter("A1", a1);
@@ -76,7 +81,7 @@ public class SortAndUniqueBlankTests
         Assert.Equal(0, sheet.Number("ZZ1002"));
     }
 
-    [Theory] // ADR-0125: blank keys keep their order, as equal keys do, whichever the order; the rest of each row moves with its key
+    [Theory] // ADR-0125 (SORT-023; SORT-041 asks): blank keys keep their order, as Excel's did in a descending sort, and ascending as Excel kept equal keys (SORT-004), by generalisation; the rest of each row moves with its key
     [InlineData("=SORT(A1:B3)")]
     [InlineData("=SORT(A1:B3,1,-1)")]
     public void ADR0125_blank_keys_keep_their_order(string formula)
@@ -107,7 +112,7 @@ public class SortAndUniqueBlankTests
         Assert.Equal([1d, 2d, 0d], new[] { "ZZ1000", "AAA1000", "AAB1000" }.Select(sheet.Number));
     }
 
-    [Theory] // ADR-0125 (SORTBY-007): SORTBY's blank keys sort as SORT's, last in either order
+    [Theory] // ADR-0125 (SORTBY-007; SORTBY-014 asks): SORTBY sorts a blank key last, as Excel's did in an ascending key, and in a descending one as SORT's does, by generalisation
     [InlineData("=SORTBY(A1:A2,B1:B2)")]
     [InlineData("=SORTBY(A1:A2,B1:B2,-1)")]
     public void ADR0125_sortby_puts_a_blank_key_last_in_either_order(string formula)
@@ -122,7 +127,7 @@ public class SortAndUniqueBlankTests
         Assert.Equal([20d, 10d], Spilled(sheet, 2));
     }
 
-    [Theory] // ADR-0125 (SORTBY-008): among equal first keys, a blank second key sorts last in either order; a blank first key sorts its line last whatever the second key
+    [Theory] // ADR-0125 (SORTBY-008; SORTBY-014 asks): among equal first keys, a blank second key sorts last, as Excel's did ascending, and descending by generalisation; a blank first key sorts its line last whatever the second key, descending by generalisation too
     [InlineData("=SORTBY(A1:A3,B1:B3,1,C1:C3,1)", new object[] { 20d, 10d, 30d })]
     [InlineData("=SORTBY(A1:A3,B1:B3,1,C1:C3,-1)", new object[] { 20d, 10d, 30d })]
     [InlineData("=SORTBY(A1:A3,C1:C3,1,B1:B3,1)", new object[] { 30d, 20d, 10d })]
@@ -144,7 +149,7 @@ public class SortAndUniqueBlankTests
         Assert.Equal(expected, Spilled(sheet, 3));
     }
 
-    [Theory] // ADR-0125 (SORTBY-009): two blank first keys are equal, so the second key orders them, in either of its orders
+    [Theory] // ADR-0125 (SORTBY-009): two blank first keys are equal, so the second key orders them, as Excel's did in a descending second key, and in an ascending one by generalisation
     [InlineData(-1, new object[] { 30d, 20d, 10d })]
     [InlineData(1, new object[] { 30d, 10d, 20d })]
     public void ADR0125_sortby_orders_blank_first_keys_by_the_next_key(int order, object[] expected)
@@ -360,7 +365,7 @@ public class SortAndUniqueBlankTests
         Assert.Equal(expected, sheet.Evaluate(formula).Number);
     }
 
-    [Theory] // ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and one-Value readers read it so
+    [Theory] // ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation
     [InlineData("=ISBLANK(INDEX(SORT(A1:A3),3))", true)]
     [InlineData("=ISBLANK(INDEX(UNIQUE(A1:A3),2))", true)]
     [InlineData("=ISBLANK(INDEX(SORTBY(A1:A3,B1:B3),2))", true)]
@@ -381,6 +386,8 @@ public class SortAndUniqueBlankTests
     [InlineData("=INDEX(SORT(B1:C3),1,2)", "y")]
     [InlineData("=ISBLANK(INDEX(SORT(B1:C3),2,2))", true)]
     [InlineData("=ISBLANK(INDEX(UNIQUE(A2),1))", true)]
+    [InlineData("=MATCH(INDEX(SORT(A1:A3),3),A1:A3,0)", ErrorValue.NA)]
+    [InlineData("=VLOOKUP(INDEX(SORT(A1:A3),3),A1:B3,2,FALSE)", ErrorValue.NA)]
     public void ADR0125_a_kept_blank_taken_out_is_read_as_a_blank_cells_value(string formula, object expected)
     {
         var sheet = WithABlank();
@@ -480,6 +487,20 @@ public class SortAndUniqueBlankTests
     [InlineData("=LEN(UNIQUE(D1:D3))")]
     [InlineData("=ISBLANK(SORT(D1:D3))")]
     public void ADR0125_a_kept_blank_read_where_the_readings_part_is_refused(string formula)
+    {
+        var sheet = WithNumbersAndABlank();
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
+    }
+
+    [Theory] // ADR-0125, ADR-0202: a function that reads its one Value through FunctionCall.Operand refuses a kept blank given as that Value, where MATCH's lookup value, read through FunctionCall.OneValue, reads it as a blank cell's: XLOOKUP's and XMATCH's lookup value, ROUND's arguments, ERROR.TYPE's and a criterion of the conditional aggregates
+    [InlineData("=XLOOKUP(INDEX(SORT(D1:D3),3),D1:D3,D1:D3)")]
+    [InlineData("=XMATCH(INDEX(SORT(D1:D3),3),D1:D3)")]
+    [InlineData("=ROUND(INDEX(SORT(D1:D3),3),0)")]
+    [InlineData("=ROUND(1.5,INDEX(SORT(D1:D3),3))")]
+    [InlineData("=ERROR.TYPE(INDEX(SORT(D1:D3),3))")]
+    [InlineData("=COUNTIF(D1:D3,INDEX(SORT(D1:D3),3))")]
+    public void ADR0125_a_one_value_argument_read_through_operand_refuses_a_kept_blank(string formula)
     {
         var sheet = WithNumbersAndABlank();
 

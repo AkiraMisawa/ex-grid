@@ -153,14 +153,17 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// SORT: <c>array</c>'s rows ordered by the column <c>sort_index</c> (from 1, the first when left
     /// out), ascending for <c>sort_order</c> 1 and descending for −1; its columns, by a row, when
-    /// <c>by_col</c> is TRUE. Equal keys keep their order. Keys order as the comparison operators
-    /// order them: numbers, then text without regard to case, then booleans. A blank key sorts after
-    /// every other, in either order, and spills as 0, as Excel's does (SORT-012 to 014, 016 to 020,
-    /// 023 to 025); a blank in the result is a kept blank (<see cref="Made"/>). An Error Value key is
-    /// answered only where it already follows every number, as Excel's <c>#N/A</c> followed the 7 of
-    /// SORT-015, and the Formula is refused with <c>#VALUE!</c> elsewhere (<see cref="ErrorKeysSettled"/>).
-    /// An index outside the array, or an order other than 1 and −1, is <c>#VALUE!</c>, as Excel's is
-    /// (SORT-007, 008).
+    /// <c>by_col</c> is TRUE. Equal keys keep their order. Keys order as the comparison operators order
+    /// them: numbers, then text without regard to case, then booleans. A blank key sorts after numbers
+    /// and text in either order and after a boolean ascending, as Excel's did (SORT-011 to 014, 016 to
+    /// 020, 024, 025), and after a boolean descending, by generalisation (SORT-040 asks); blank keys
+    /// keep their order, as Excel's did in a descending sort (SORT-023), and ascending as equal keys
+    /// do, by generalisation (SORT-041 asks); beside an Error Value key the Formula is refused
+    /// (SORT-031 asks). A blank spills as 0, as Excel's did (SORT-012, 017, 019, 020, 025); a blank in
+    /// the result is a kept blank (<see cref="Made"/>). An Error Value key is answered only where it
+    /// already follows every number, as Excel's <c>#N/A</c> followed the 7 of SORT-015, and the Formula
+    /// is refused with <c>#VALUE!</c> elsewhere (<see cref="ErrorKeysSettled"/>). An index outside the
+    /// array, or an order other than 1 and −1, is <c>#VALUE!</c>, as Excel's is (SORT-007, 008).
     /// </summary>
     private static Operand Sort(FunctionCall call)
     {
@@ -184,8 +187,9 @@ internal static partial class FunctionLibrary
     /// (1 when left out), the first deciding first. Each <c>by_array</c> is one column as tall as the
     /// array, which sorts its rows, or one row as wide, which sorts its columns, and all of them run
     /// the same way; any other shape is <c>#VALUE!</c>. Keys order as in <see cref="Sort"/>, a blank
-    /// after every other, as Excel's was in an ascending key (SORTBY-007 to 009), and in a descending
-    /// one as <c>SORT</c>'s is; a blank in the result is a kept blank, as <c>SORT</c>'s is
+    /// last: Excel's was after a number in an ascending key (SORTBY-007 to 009), and the rest, a
+    /// descending key among it, is <c>SORT</c>'s order by generalisation (SORTBY-014 asks a descending
+    /// one); a blank in the result is a kept blank, as <c>SORT</c>'s is
     /// (<see cref="Made"/>). An Error Value among the keys refuses the Formula with
     /// <c>#VALUE!</c>: SORT-015 read <c>SORT</c>'s, and a <c>by_array</c>'s could as well be the result,
     /// as <c>FILTER</c>'s <c>include</c>'s is (SORTBY-010 asks).
@@ -238,10 +242,13 @@ internal static partial class FunctionLibrary
     private static Operand Made(ValueArray result) => Operand.Of(result).WithKeptBlank();
 
     /// <summary>
-    /// The order of <paramref name="lines"/> lines by their keys, stable. A blank key comes after every
-    /// other key whichever the order, as Excel's <c>SORT</c> put it: neither 0 nor empty text, which
-    /// would come first (SORT-012 to 014). An Error Value key is ordered only where <paramref name="errorKeysOrdered"/>
-    /// allows it and every reading SORT-015 leaves gives the one order (<see cref="ErrorKeysSettled"/>);
+    /// The order of <paramref name="lines"/> lines by their keys, stable. A blank key comes after
+    /// numbers, text and booleans whichever the order: Excel's <c>SORT</c> put it after numbers and text
+    /// in either order and after a boolean ascending (SORT-011 to 014, 016 to 019, 024, 025), neither
+    /// as 0 nor as empty text, which would come first (SORT-012, 014), and after a boolean descending is
+    /// the engine's by generalisation (SORT-040 asks). An Error Value key is ordered only where
+    /// <paramref name="errorKeysOrdered"/> allows it and every reading SORT-015 leaves gives the one order
+    /// (<see cref="ErrorKeysSettled"/>), which a blank beside it never does (SORT-031 asks);
     /// <see langword="false"/> anywhere else a key is an Error Value.
     /// </summary>
     private static bool TryOrderLines(List<(List<Value?> Keys, bool Descending)> keys, int lines, bool errorKeysOrdered, out int[] order)

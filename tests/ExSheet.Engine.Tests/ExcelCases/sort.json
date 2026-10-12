@@ -334,6 +334,22 @@
       "cells": {"ZZ1000": "=ISBLANK(INDEX(IF(TRUE,SORT(Q1:Q2)),2))"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-040",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: in a descending sort a blank key sorts after a boolean too, as Excel's did after numbers and text (SORT-013, 016) and after a boolean ascending (SORT-018), so the last cell is the blank's and shows 0; not 0 if the blank sorted first",
+      "cells": {"A1": "1", "A3": "TRUE", "ZZ1000": "=SORT(A1:A3,1,-1)"},
+      "check": "ZZ1002",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SORT-041",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: in an ascending sort two blank keys keep their order, as Excel kept equal keys (SORT-004) and two blank keys in a descending sort (SORT-023), so x is second, after the 1's z; y if they were reversed",
+      "cells": {"B1": "x", "B2": "y", "A3": "1", "B3": "z", "ZZ1000": "=SORT(A1:B3)"},
+      "check": "AAA1001",
+      "expect": {"value2": "x", "kind": "text"}
     }
   ]
 }
