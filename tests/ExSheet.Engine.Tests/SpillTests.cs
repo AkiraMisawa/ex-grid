@@ -337,4 +337,47 @@ public class SpillTests
         Assert.Null(sheet.GetEntry(At("D2")));
         Assert.Equal(At("D1"), sheet.SpilledFrom(At("D2")));
     }
+
+    [Fact] // ADR-0125, ADR-0124: a Reference OFFSET computes into a Spill Range reads it as the layout leaves it, blocked or freed, as a typed one does
+    public void A_computed_reference_into_a_spill_follows_its_layout()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "=SEQUENCE(3)");
+        sheet.Enter("C1", "=SUM(OFFSET(B1,0,-1,3,1))");
+        sheet.Enter("D1", "=SUM(A1:A3)");
+        Assert.Equal(6, sheet.Number("C1"));
+        Assert.Equal(6, sheet.Number("D1"));
+
+        sheet.Enter("A3", "x");
+
+        Assert.Equal(ErrorValue.Spill, sheet.Error("A1"));
+        Assert.Equal(ErrorValue.Spill, sheet.Error("D1"));
+        Assert.Equal(ErrorValue.Spill, sheet.Error("C1"));
+
+        sheet.Enter("A3", "");
+
+        Assert.Equal(6, sheet.Number("D1"));
+        Assert.Equal(6, sheet.Number("C1"));
+    }
+
+    [Fact] // ADR-0125, ADR-0124, ADR-0180: a volatile Formula read again after a layout draws as it drew before the layout
+    public void A_volatile_formula_read_again_after_a_layout_draws_the_same()
+    {
+        Sheet Drawn(string obstacle)
+        {
+            var sheet = NewSheet();
+            sheet.SetSeed(42);
+            sheet.Enter("B1", "=RAND()");
+            sheet.Enter("A1", "=SEQUENCE(2)");
+            sheet.Enter(obstacle, "x");
+            return sheet;
+        }
+
+        var blocked = Drawn("A2");
+        var elsewhere = Drawn("A5");
+
+        Assert.Equal(ErrorValue.Spill, blocked.Error("A1"));
+        Assert.Equal(1, elsewhere.Number("A1"));
+        Assert.Equal(elsewhere.Number("B1"), blocked.Number("B1"));
+    }
 }

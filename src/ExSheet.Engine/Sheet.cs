@@ -626,7 +626,16 @@ public sealed partial class Sheet
         public IEnumerable<CellAddress> NonBlankIn(Area area) =>
             sheet.CellsIn(area).Where(a => Read(a) is not null).Order();
 
-        public Operand TableColumn(string table, string column) => sheet.TableColumn(table, column);
+        /// <summary>
+        /// A Linked Table's column. One a Formula names waits before it is evaluated (<c>Taint</c>);
+        /// one <c>INDIRECT</c>'s text names is met here, and waits the same way (ADR-0049, ADR-0124).
+        /// </summary>
+        public Operand TableColumn(string table, string column)
+        {
+            var read = sheet.TableColumn(table, column);
+            if (read.IsError && read.Scalar!.Value.Error == ErrorValue.GettingData && Met != ErrorValue.Circ) Met = ErrorValue.GettingData;
+            return read;
+        }
 
         public Node? FormulaAt(CellAddress address)
         {
