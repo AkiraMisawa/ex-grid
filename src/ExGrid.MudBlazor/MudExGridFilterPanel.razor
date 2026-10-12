@@ -42,10 +42,12 @@
     {
         var search = _searchText ?? "";
         var shown = domain.Values.Where(v => FilterPanelChoices.Matches(search, TextOf(v))).ToArray();
-        <MudTextField @ref="_search" T="string" @bind-Value="_searchText" Immediate="true"
-                      Label="@Own(MudExGridWords.Search)" Variant="Variant.Outlined" Margin="Margin.Dense"
-                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                      Class="mud-ex-grid-filter-search" />
+        <div style="display: contents" @ref="_searchBox">
+            <MudTextField @ref="_search" T="string" @bind-Value="_searchText" Immediate="true"
+                          Label="@Own(MudExGridWords.Search)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Class="mud-ex-grid-filter-search" />
+        </div>
         @if (FilterPanelChoices.OffersAddToFilter(Context.Current, search))
         {
             <MudCheckBox T="bool" @bind-Value="_addToCurrent" Label="@Own(MudExGridWords.AddToFilter)"
@@ -67,17 +69,21 @@
     }
     else
     {
-        <MudSelect @ref="_operatorField" T="FilterOperator" Value="_operator" ValueChanged="OnOperatorChanged"
-                   Label="@Mud("MudDataGrid_Operator")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
-                   OpenChanged="ReportPopup" Class="mud-ex-grid-filter-operator">
-            @foreach (var op in Context.Allowed)
-            {
-                <MudSelectItem T="FilterOperator" Value="op">@OperatorWord(op)</MudSelectItem>
-            }
-        </MudSelect>
+        <div style="display: contents" @ref="_operatorBox">
+            <MudSelect @ref="_operatorField" T="FilterOperator" Value="_operator" ValueChanged="OnOperatorChanged"
+                       Label="@Mud("MudDataGrid_Operator")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                       OpenChanged="ReportPopup" Class="mud-ex-grid-filter-operator">
+                @foreach (var op in Context.Allowed)
+                {
+                    <MudSelectItem T="FilterOperator" Value="op">@OperatorWord(op)</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
         @if (FilterPanelChoices.TakesOperand(_operator))
         {
-            @OperandField(_first)
+            <div style="display: contents" @ref="_firstOperandBox">
+                @OperandField(_first)
+            </div>
         }
         @* A second condition, joined by And or Or, as Excel's Custom AutoFilter (ADR-0009). *@
         <MudRadioGroup T="FilterCombinator" @bind-Value="_combinator" Class="mud-ex-grid-filter-join">
@@ -101,7 +107,9 @@
     <div class="mud-ex-grid-filter-actions">
         <MudButton ButtonType="ButtonType.Submit" Disabled="@(!CanApply)" Color="Color.Primary" Size="Size.Small"
                    Class="mud-ex-grid-filter-apply">@Mud("MudDataGrid_Apply")</MudButton>
-        <MudButton @ref="_cancel" OnClick="Context.Close" Size="Size.Small" Class="mud-ex-grid-filter-cancel">@Mud("MudDataGrid_Cancel")</MudButton>
+        <div style="display: contents" @ref="_cancelBox">
+            <MudButton @ref="_cancel" OnClick="Context.Close" Size="Size.Small" Class="mud-ex-grid-filter-cancel">@Mud("MudDataGrid_Cancel")</MudButton>
+        </div>
     </div>
 </form>
 
@@ -146,6 +154,13 @@
     private MudTextField<string>? _search;
     private MudSelect<FilterOperator>? _operatorField;
     private MudButton? _cancel;
+    // The boxes of the controls the panel hands the keyboard to, for the core's focus function: a
+    // MudSelect, a date picker and a MudButton expose no element of their own, and the core gives
+    // DOM focus to the first control inside a box (ADR-0204). Laid out as if they were not there.
+    private ElementReference _searchBox;
+    private ElementReference _operatorBox;
+    private ElementReference _firstOperandBox;
+    private ElementReference _cancelBox;
     private DomFocusTarget _domFocusOwed;
     // Zero at each opening: the core's popover is keyed by the opening, so each is a new
     // instance of this component, and zero is a request not made (ADR-0044).
@@ -456,8 +471,14 @@
             await FocusLastAsync();
     }
 
+    // Each through the core's focus function where the context carries one (ADR-0204): the core
+    // grants it only while the keyboard is still this grid's, so a request landing a round trip late
+    // takes nothing from another grid. Without one — a context the core did not make — the control's
+    // own FocusAsync.
     private Task FocusFirstAsync()
-        => FocusQuietlyAsync(_search is not null && _chosen is not null ? _search.FocusAsync() : _operatorField?.FocusAsync());
+        => _search is not null && _chosen is not null
+            ? TakeAsync(_searchBox, _search.FocusAsync)
+            : TakeAsync(_operatorBox, _operatorField is { } field ? field.FocusAsync : null);
 
     /// <summary>Where a search is typed (ADR-0044): the search box over a value list, the
     /// first condition's value in the condition form — or its operator, while that operator
@@ -465,10 +486,22 @@
     private Task FocusSearchAsync()
         => _chosen is not null || !FilterPanelChoices.TakesOperand(_operator)
             ? FocusFirstAsync()
-            : FocusQuietlyAsync(_first.TextField?.FocusAsync() ?? _first.NumberField?.FocusAsync()
-                ?? _first.DateField?.FocusAsync() ?? _first.MomentField?.FocusAsync() ?? _first.FlagField?.FocusAsync());
+            : TakeAsync(_firstOperandBox, FirstOperandFocus());
 
-    private Task FocusLastAsync() => FocusQuietlyAsync(_cancel?.FocusAsync());
+    private Func<ValueTask>? FirstOperandFocus()
+        => _first.TextField is { } text ? text.FocusAsync
+            : _first.NumberField is { } number ? number.FocusAsync
+            : _first.DateField is { } date ? date.FocusAsync
+            : _first.MomentField is { } moment ? moment.FocusAsync
+            : _first.FlagField is { } flag ? flag.FocusAsync
+            : null;
+
+    private Task FocusLastAsync() => TakeAsync(_cancelBox, _cancel is { } cancel ? cancel.FocusAsync : null);
+
+    private Task TakeAsync(ElementReference box, Func<ValueTask>? own)
+        => Context.TakeFocus is { } take && box.Id is not null
+            ? take(box, false)
+            : FocusQuietlyAsync(own?.Invoke());
 
     /// <summary>A focus the panel asked for, if there was a control to ask: a popover can
     /// close before the call lands, and a closed circuit focuses nothing; neither is worth

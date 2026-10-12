@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "NUMBERVALUE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: separators given",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NUMBERVALUE(\"2.500,27\",\",\",\".\")"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "NUMBERVALUE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a percent sign divides by 100",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NUMBERVALUE(\"3.5%\")"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "NUMBERVALUE-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Empty text is 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NUMBERVALUE(\"\")"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "NUMBERVALUE-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Spaces are ignored",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NUMBERVALUE(\" 3 000 \")"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "NUMBERVALUE-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a group separator after the decimal one is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NUMBERVALUE(\"1.2,3\")"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "NUMBERVALUE-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: two percent signs divide by 10000",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NUMBERVALUE(\"5%%\")"},

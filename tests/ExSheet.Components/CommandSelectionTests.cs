@@ -122,9 +122,10 @@ public class CommandSelectionTests : SheetTestContext
         var heard = new List<GridSelection>();
         var sheet = RenderSheet(ps => ps.Add(s => s.SelectionChanged, heard.Add));
         await GoToAsync(sheet, "B2");
-        // The menu's first item takes DOM focus after the render that opens the menu: on a circuit a
-        // round trip, held here, and the selection notification after it waits for it.
-        var focus = JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true);
+        // The menu's first item takes DOM focus after the render that opens the menu, through the
+        // handle's conditional focus (ADR-0204): on a circuit a round trip, held here, and the
+        // selection notification after it waits for it.
+        var focus = UnansweredPopoverFocus();
 
         // Outside the Selection, the secondary click collapses it onto C3 and opens the menu there.
         await SecondaryClickAsync(sheet, "C3");

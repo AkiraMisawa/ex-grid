@@ -43,18 +43,38 @@
     <span id="action-status">@_lastAction</span>
 </p>
 
-<ExGrid TRow="DemoPosition"
-        Window="DemoData.Positions"
-        Columns="_columns"
-        CellState="_cellState"
-        RowKind="RowKindOf"
-        OnAction="OnAction"
-        RowHeight="28"
-        ViewportHeight="420"
-        ViewportWidth="1100"
-        PinnedColumnCount="1"
-        OnEdit="OnEdit"
-        Chrome="_chrome" />
+@* The Note template's control takes the keyboard through this grid (ADR-0204): held once, so the
+   cascade never changes. *@
+<CascadingValue Name="TakeKeyboard" Value="TakeKeyboard" IsFixed="true">
+    <ExGrid TRow="DemoPosition" @ref="_grid"
+            Window="DemoData.Positions"
+            Columns="_columns"
+            CellState="_cellState"
+            RowKind="RowKindOf"
+            OnAction="OnAction"
+            RowHeight="28"
+            ViewportHeight="420"
+            ViewportWidth="1100"
+            PinnedColumnCount="1"
+            OnEdit="OnEdit"
+            Chrome="_chrome" />
+</CascadingValue>
+
+@* ?second=1: a second grid, for a press on another grid while a Note's request for the keyboard is
+   on its way (ADR-0204, SRV-5): the other grid keeps the keyboard. *@
+@if (Second == "1")
+{
+    <h2>A second grid</h2>
+    <div id="second-grid">
+        <ExGrid TRow="DemoPosition"
+                Window="DemoData.Positions"
+                Columns="SecondColumns"
+                RowHeight="28"
+                ViewportHeight="200"
+                ViewportWidth="480"
+                Chrome="_chrome" />
+    </div>
+}
 
 @code {
     /// <summary>Which Chrome the grid runs with (<see cref="DemoChrome"/>).</summary>
@@ -66,8 +86,26 @@
     [SupplyParameterFromQuery(Name = "editable")]
     public string? Editable { get; set; }
 
+    /// <summary><c>?second=1</c>: a second grid below, which another grid's press can give the
+    /// keyboard to while a request for it is on its way (ADR-0204).</summary>
+    [SupplyParameterFromQuery(Name = "second")]
+    public string? Second { get; set; }
+
+    private static readonly GridColumn<DemoPosition>[] SecondColumns =
+    [
+        new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(180))),
+        new("Intraday", ColumnType.Number, r => r.Intraday),
+    ];
+
     private IGridChrome? _chrome;
     private IReadOnlyList<GridColumn<DemoPosition>> _columns = Columns;
+    private ExGrid<DemoPosition>? _grid;
+    private Func<ElementReference, Task>? _takeKeyboard;
+
+    // A template's control takes the keyboard through the grid, which grants it only while the
+    // keyboard is still the grid's (ADR-0204); before the grid is there, the control's own focus.
+    private Func<ElementReference, Task> TakeKeyboard => _takeKeyboard ??=
+        control => _grid is { } grid ? grid.HandKeyboardToAsync(control) : control.FocusAsync().AsTask();
 
     protected override void OnParametersSet()
     {
@@ -92,7 +130,7 @@
     /// the grid's own keys stay out of its way. Typing, arrows and Ctrl+A all belong to
     /// the field while it has focus. It is a component rather than bare markup because
     /// Space enters it (ADR-0037): the grid asks, and only a component can answer by
-    /// focusing its own input.
+    /// taking the keyboard for its own input, through the grid (ADR-0204).
     /// </summary>
     private static readonly RenderFragment<TemplateCellContext<DemoPosition>> NoteTemplate =
         cell => @<NoteInput Cell="cell" />;

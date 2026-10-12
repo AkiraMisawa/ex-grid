@@ -413,13 +413,14 @@
     },
     {
       "id": "FILL-045",
-      "source": "documented",
+      "source": "observed",
       "description": "Text Excel would continue is refused, not filled with copies (jan)",
       "cells": {"A1": "jan"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
       "check": "A2",
       "expect": {"refused": "FillPatternNotSupported", "value2": null},
-      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies"
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": "feb"}
     },
     {
       "id": "FILL-046",
@@ -482,33 +483,36 @@
     },
     {
       "id": "FILL-052",
-      "source": "documented",
+      "source": "observed",
       "description": "Numbers mixed with anything else are refused (1 and a)",
       "cells": {"A1": "1", "A2": "a"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
       "check": "A3",
       "expect": {"refused": "FillPatternNotSupported", "value2": null},
-      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies"
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": 2}
     },
     {
       "id": "FILL-053",
-      "source": "documented",
+      "source": "observed",
       "description": "Numbers mixed with anything else are refused (1 and =A1)",
       "cells": {"A1": "1", "A2": "=A1"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
       "check": "A3",
       "expect": {"refused": "FillPatternNotSupported", "value2": null},
-      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies"
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": 2}
     },
     {
       "id": "FILL-054",
-      "source": "documented",
+      "source": "observed",
       "description": "Numbers mixed with anything else are refused (1 and a blank)",
       "cells": {"A1": "1"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
       "check": "A3",
       "expect": {"refused": "FillPatternNotSupported", "value2": null},
-      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies"
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": 2}
     },
     {
       "id": "FILL-055",

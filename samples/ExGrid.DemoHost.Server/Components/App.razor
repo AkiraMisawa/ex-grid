@@ -1,6 +1,8 @@
 @* The document a Blazor Web App serves. Every page is interactive on the circuit, and is
    prerendered first — the default a Consumer gets (ADR-0019). The pages and the router
    are ExGrid.DemoPages', shared with the WebAssembly host. *@
+@using global::ExGrid.Components
+@using global::ExSheet.Components
 <!DOCTYPE html>
 <html lang="en">
 
@@ -12,8 +14,10 @@
     @* No icon ships with the host; without this line the browser requests /favicon.ico,
        and its 404 fails the layer-3 console capture (CON-1). *@
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="@Assets["_content/ExGrid/ex-grid.min.css"]" />
-    <link rel="stylesheet" href="@Assets["_content/ExSheet/ex-sheet.min.css"]" />
+    @* The packages' stylesheets at the fingerprinted address MapStaticAssets gives each file
+       (ADR-0123): the components ask Assets, as the grid does for its script. *@
+    <ExGridStylesheet />
+    <ExSheetStylesheet />
     <link rel="stylesheet" href="@Assets["_content/ExGrid.DemoPages/app.css"]" />
     <ImportMap />
     <HeadOutlet @rendermode="InteractiveServer" />

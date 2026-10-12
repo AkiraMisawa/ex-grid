@@ -21,7 +21,7 @@ namespace ExSheet.Components.Tests.Support;
 /// </summary>
 public abstract class SheetTestContext : BunitContext
 {
-    private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
+    private static string ModulePath => ExGrid.Testing.ShippedScript.Address;
 
     private readonly BunitJSModuleInterop _handle;
     private bool _rendererInfoSet;
@@ -30,17 +30,26 @@ public abstract class SheetTestContext : BunitContext
     {
         Services.AddSingleton<TimeProvider>(Clock);
         var module = JSInterop.SetupModule(ModulePath);
+        module.Setup<string>("stamp").SetResult(ExGrid.Testing.ShippedScript.Stamp);
         _handle = module.SetupModule("attach", _ => true);
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         _handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose", "handOff" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose", "handOff", "takeFocus", "followFocus" })
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
+        // ST-2's question (ADR-0007's note of 2026-10-11, refined): the test's input reaches the
+        // core ahead of the answer, as a browser's does, so the browser here answers "untouched".
+        _handle.Setup<bool>("askUntouched", _ => true).SetResult(true);
+        _handle.SetupVoid("closeAnswered", _ => true).SetVoidResult();
     }
 
     internal FakeTimeProvider Clock { get; } = new();
+
+    /// <summary>A popover's conditional focus (ADR-0204) the browser has not carried out yet, finished
+    /// when the test says: every one asked from here on lands on it.</summary>
+    internal JSRuntimeInvocationHandler UnansweredPopoverFocus() => _handle.SetupVoid("takeFocus", _ => true);
 
     /// <summary>How many times the grid has asked for the keyboard back on its root (ADR-0039, ADR-0021).</summary>
     internal int ReclaimCount => _handle.Invocations["reclaimFocus"].Count;

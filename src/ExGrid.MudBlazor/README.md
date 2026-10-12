@@ -31,12 +31,17 @@ an application on MudBlazor 10 is told so at restore (NU1608). Set MudBlazor up 
 - MudBlazor's stylesheet and script
 - `<MudThemeProvider />` and `<MudPopoverProvider />` in your layout
 
-Then add both grid stylesheets:
+Then add both grid stylesheets, as components in the head: `<ExGridStylesheet />` and
+`<MudExGridStylesheet />` in `App.razor`'s `<head>` in a Blazor Web App, or root components in a
+standalone application's `Program.cs`:
 
-```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
-<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.min.css" />
+```csharp
+builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
+builder.RootComponents.Add<ExGrid.MudBlazor.MudExGridStylesheet>("head::after");
 ```
+
+Each links its file at the address of the one the package was built with, so a normal reload after
+an upgrade brings the new files.
 
 ## A grid on a paper
 

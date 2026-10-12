@@ -28,8 +28,8 @@ public class SelectionSummaryWiringTests : SheetTestContext
         cut.WaitForAssertion(() => Assert.Equal("Average: 7.2Count: 6Sum: 36", Summary(cut)));
     }
 
-    [Fact] // ADR-0130 / SM-12: an Error Value among the cells leaves Count alone
-    public async Task ADR0130_an_error_leaves_count_alone()
+    [Fact] // ADR-0130 / SM-12: an Error Value among the cells leaves the counts (Numerical Count is not among the default figures) and hides Average and Sum
+    public async Task ADR0130_an_error_leaves_the_counts_and_hides_the_sums()
     {
         var cut = RenderSheet();
         await EnterAsync(cut, "A1", "1");

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "TANH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TANH(-2)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "TANH-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TANH(0)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "TANH-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TANH(0.5)"},

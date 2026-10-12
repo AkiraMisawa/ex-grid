@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.RegularExpressions;
 using ExSheet.Engine;
 using Xunit;
@@ -9,8 +8,9 @@ namespace ExSheet.Engine.Tests;
 /// ADR-0047: <c>docs/specs/exsheet-functions/spec.md</c> catalogues the declared set and the queue
 /// after it. Its <b>Supported</b> rows are read here and must be exactly
 /// <see cref="DeclaredFunction.All"/>, so the catalogue cannot drift from the engine. Every name it
-/// lists, its rows and its list of Excel's functions not in the queue, must be exactly the names the
-/// engine refuses as a <c>LET</c> name for being a function's (ADR-0181's note of 2026-10-11).
+/// lists, its rows and its list of Excel's functions not in the queue, is one of Excel's functions,
+/// each of which <c>LetTests</c> binds as a <c>LET</c> name where its shape is a name's (ADR-0181,
+/// run 17).
 /// </summary>
 public class FunctionCatalogueTests
 {
@@ -86,15 +86,6 @@ public class FunctionCatalogueTests
     internal static IReadOnlyList<string> ExcelFunctions() =>
         [.. Catalogue().Select(r => r.Name), .. NotQueued().Select(n => n.Name)];
 
-    /// <summary>The names the engine refuses as a <c>LET</c> name for being a function's, read from its internal list.</summary>
-    private static IReadOnlyList<string> RefusedAsFunctionNames()
-    {
-        var names = typeof(DeclaredFunction).Assembly.GetType("ExSheet.Engine.Formulas.ExcelFunctionNames", throwOnError: true)!
-            .GetProperty("All", BindingFlags.Public | BindingFlags.Static)!
-            .GetValue(null);
-        return [.. Assert.IsAssignableFrom<IEnumerable<string>>(names)];
-    }
-
     [Fact] // ADR-0047: the catalogue's Supported rows are exactly the declared set
     public void The_catalogues_supported_rows_are_the_declared_set() =>
         Assert.Equal(
@@ -112,18 +103,6 @@ public class FunctionCatalogueTests
             Assert.Contains(r.Status, Statuses);
             Assert.Equal(r.Status == "Supported", r.Priority == "—");
         });
-    }
-
-    [Fact] // ADR-0181 (2026-10-11), ADR-0047: the names refused as a LET name for being a function's are exactly the catalogue's, its rows and its list of Excel's functions not in the queue
-    public void ADR0181_the_names_refused_as_a_functions_are_exactly_the_ones_the_catalogue_lists()
-    {
-        var catalogued = ExcelFunctions().Order(StringComparer.Ordinal).ToList();
-        var refused = RefusedAsFunctionNames().Order(StringComparer.Ordinal).ToList();
-
-        Assert.True(catalogued.SequenceEqual(refused),
-            $"Catalogued and not refused: {string.Join(", ", catalogued.Except(refused, StringComparer.Ordinal))}. "
-            + $"Refused and not catalogued: {string.Join(", ", refused.Except(catalogued, StringComparer.Ordinal))}. "
-            + "List the function in docs/specs/exsheet-functions/spec.md and in ExcelFunctionNames together.");
     }
 
     [Fact] // ADR-0047, ADR-0181: a function not in the queue is listed once, under its own letter, in order, and has no row

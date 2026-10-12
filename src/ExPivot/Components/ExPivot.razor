@@ -25,6 +25,13 @@
 <div class="ex-pivot" style="@RootStyle"
      @onmousedown="() => DismissFieldMenu(fieldMenu)" @onmousedown:stopPropagation
      @onfocusin="() => DismissFieldMenu(fieldMenu)" @onfocusin:stopPropagation>
+    @* ExPivot's stylesheet notice (ADR-0123, ERR-11), shown only by another version's stylesheet, and
+       beside it one for each stylesheet the Pivot Chrome brings, with the same markup. *@
+    <div data-ex-notice="stylesheet" data-ex-stylesheet="@NoticeStylesheet" data-ex-stamp="@NoticeStamp" style="display: none">@StylesheetNoticeWords</div>
+    @foreach (var brought in PivotChrome?.Stylesheets ?? [])
+    {
+        <div data-ex-notice="stylesheet" data-ex-stylesheet="@brought.Name" data-ex-stamp="@brought.Stamp" style="display: none">@StylesheetNoticeWords</div>
+    }
     @* While Show Details' dialog stands, what it covers takes neither the keyboard nor the pointer:
        the dialog is modal (ADR-0059). While the report is a Stale Report it carries
        ex-pivot-report-stale, by which ExPivot's stylesheet paints its value cells in a muted colour

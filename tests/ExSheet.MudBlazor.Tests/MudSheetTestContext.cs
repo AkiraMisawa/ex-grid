@@ -25,7 +25,7 @@ namespace ExSheet.MudBlazor.Tests;
 /// </summary>
 public abstract class MudSheetTestContext : BunitContext
 {
-    private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
+    private static string ModulePath => ExGrid.Testing.ShippedScript.Address;
 
     private readonly BunitJSModuleInterop _handle;
     private bool _rendererInfoSet;
@@ -36,6 +36,7 @@ public abstract class MudSheetTestContext : BunitContext
         Services.AddSingleton<TimeProvider>(new FakeTimeProvider());
         JSInterop.Mode = JSRuntimeMode.Loose;
         var module = JSInterop.SetupModule(ModulePath);
+        module.Setup<string>("stamp").SetResult(ExGrid.Testing.ShippedScript.Stamp);
         _handle = module.SetupModule("attach", _ => true);
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
@@ -44,6 +45,10 @@ public abstract class MudSheetTestContext : BunitContext
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
+        // ST-2's question (ADR-0007's note of 2026-10-11, refined): the test's input reaches the
+        // core ahead of the answer, as a browser's does, so the browser here answers "untouched".
+        _handle.Setup<bool>("askUntouched", _ => true).SetResult(true);
+        _handle.SetupVoid("closeAnswered", _ => true).SetVoidResult();
     }
 
     /// <summary>How many times the grid has been asked to take the keyboard back (ADR-0021's note of 2026-09-30).</summary>

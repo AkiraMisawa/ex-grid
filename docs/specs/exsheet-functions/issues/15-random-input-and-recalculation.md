@@ -21,10 +21,12 @@ refusals.
 - [x] Record the decision before introducing hidden random state or admitting the functions (ADR-0180)
 - [x] The engine: the Sheet's seed as data (`#GETTING_DATA` until one is set, as `TODAY` is with no
       day), the count of changes, and each draw computed from its four inputs, with no shared stream
-- [x] Which changes count:
-      - they do: an edit, an insertion or a deletion, the undo or redo of one, and a Linked Table's
-        snapshot;
-      - they do not: a recalculation by the clock, and a change of format
+- [x] Which changes count, each once however many steps it takes:
+      - they do: an edit, an insertion or a deletion, the undo or redo of one, a Linked Table's
+        snapshot, and a Linked Table's declaration, or one that replaces it (ADR-0180's second note
+        of 2026-10-11);
+      - they do not: a recalculation by the clock, a change of format, and a rename (ADR-0180's
+        first note of 2026-10-11)
 - [x] `RAND` and `RANDBETWEEN` in the volatile set (ADR-0124)
 - [x] `RANDBETWEEN`'s arguments: ADR-0180's refusals, and the answers observed in Excel
 - [x] ExSheet:
@@ -93,3 +95,37 @@ Linked Table's declaration is a change; ADR-0180's list does not name it, and it
 and one that replaces it, is a change and draws again; the same declaration again draws nothing
 (`ADR0180_a_linked_tables_declaration_draws_again`). The Formulas page, both READMEs and the Change Note
 say so. The seventeenth Windows run asks Excel whether a refresh that brings the same data draws again.
+
+2026-10-11, after the second review: a paste ExSheet wrote in several engine steps — typed fields with
+exact numbers, and its own copy over a Selection of several ranges — counted a change for each step, and
+so did its undo and redo, though `Changes` says an operation counts once. Each is now one engine edit
+(`SheetEdit.PasteText(fields, entries)` and `SheetEdit.Paste(block, targets)`): one step on the undo
+stack and one change (`ADR0180_a_paste_in_several_parts_counts_once`, and in `SeedWiringTests` the
+pastes, their undo and redo, and a refused paste, which draws nothing). Three questions, not two, are
+left for the sign-off's Windows run by hand: what an undo does to a draw, whether a rename draws again,
+and whether a refresh that brings the same data draws again.
+
+2026-10-12, from the seventeenth Windows run (`verification/2026-10-11-windows-17/report.md`, Part B b1
+to b3; `records/part-b.jsonl`), which asked Excel the three questions left above:
+- **An undo draws again (b1): agrees.** Every Ctrl+Z and Ctrl+Y, twice each, drew a number Excel had not
+  shown before, never the draw before the edit nor the one after it. ExSheet already draws again on each;
+  `ADR0180_an_undo_and_a_redo_draw_again` (it was `ADR0180_an_undo_draws_again`) now pins redo as well as
+  undo, two rounds each, every draw new.
+- **A rename draws again (b2): followed**, as ADR-0180's first note of 2026-10-11 said it would. Excel drew
+  again on the rename, offered its undo, and drew again when Ctrl+Z put the name back. A rename is now a
+  change, and so are its undo and redo, each counted once as `_operationDepth` already ensures
+  (`Sheet.ApplyRename` and `Sheet.UndoRename`); a rename to the name the Sheet has, and its undo and redo,
+  change nothing. `ADR0180_a_rename_draws_nothing` became `ADR0180_a_rename_draws_again` (INDIRECT by the
+  Sheet's name still reads the right place), with `ADR0180_a_rename_to_the_same_name_draws_nothing`, the
+  rename's three counts in `ADR0180_each_change_counts_once`, and
+  `SeedWiringTests.ADR0180_a_rename_its_undo_and_its_redo_draw_again` through the component.
+- **A refresh that brings the same data draws again (b3): agrees.** Excel's Refresh All drew again each
+  time, with the file unchanged and changed alike. ExSheet's counterpart is `PushLinkedTable`, which
+  already counts as a change whatever its rows; `ADR0180_a_snapshot_draws_again_whatever_its_rows` and a
+  second push of the same rows in `ADR0180_each_change_counts_once` pin it. The same declaration again
+  still draws nothing: a refresh brings data, it does not declare its query again.
+
+The Change Note `sheet-seed.md` now names the rename among the changes: `RAND` is in no published
+version yet, so its Added note is what changes, not a Behaviour note. The ADR-0180 notes, both READMEs,
+the Formulas page and SH-66 are proposed to the orchestrator in
+`docs/agents/proposals/run17-draws-rename.md`. Nothing is left open here.

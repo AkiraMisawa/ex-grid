@@ -324,8 +324,9 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// A figure's text. Counts are whole numbers in the invariant culture. The others take the
-    /// format of the Focus's column where it is a Number column with a format of its own — until
-    /// Excel's own rule is read in a Windows run (ADR-0130) — and the number's own text otherwise:
+    /// format of the Focus's column where it is a Number column with a format of its own — a grid's
+    /// formats are its columns', so this is its form of Excel's rule, the active cell's format
+    /// whatever the other cells' (ADR-0130, read in a Windows run) — and the number's own text otherwise:
     /// exact as it is, or a <c>double</c> to ten significant digits, as Excel's status bar shows one.
     /// </summary>
     private string SummaryText(SummaryFigures figure, AggregateResult value)
@@ -414,6 +415,7 @@ public partial class ExGrid<TRow>
             builder.AddComponentParameter(2, nameof(SummaryFiguresMenu.Label), (Func<string, string>)Label);
             builder.AddComponentParameter(3, nameof(SummaryFiguresMenu.Toggle), (Func<SummaryFigures, Task>)ToggleSummaryFigureAsync);
             builder.AddComponentParameter(4, nameof(SummaryFiguresMenu.Popover), context);
+            builder.AddComponentParameter(5, nameof(SummaryFiguresMenu.TakeFocus), TakePopoverFocus);
             builder.CloseComponent();
         }, Label(SummaryLabelIds.Menu));
 

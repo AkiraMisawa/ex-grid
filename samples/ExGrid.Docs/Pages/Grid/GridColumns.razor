@@ -93,6 +93,49 @@
                      Files="@(["Examples/Grid/Position.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="Keeping a view">
+        <p>
+            The columns a user shows, their order, their widths, how many are pinned, the sort and the filter are
+            the user's <strong>View State</strong>, which your application keeps for them. The grid holds none of it,
+            so a view is what you hand the grid. <code>GridViewState.Of</code> takes it from there — the
+            <code>Columns</code> list, <code>PinnedColumnCount</code>, and the sort and the filter in force, a
+            <code>Source</code>'s <code>Sorts</code> and <code>Filter</code> when you have one — and
+            <code>GridViewStateJson.Write</code> turns it into JSON to store. <code>GridViewStateJson.Read</code>
+            reads it back, told the names of every column you declare. Apply it as you answer the gestures: build the
+            <code>Columns</code> list in its order at its widths, set <code>PinnedColumnCount</code>, and hand its
+            sort and filter on.
+        </p>
+        <p>
+            Filters and widths round-trip. Each filter operand keeps its type: a <code>decimal</code> is written as
+            its exact digits, a <code>DateTime</code> with its kind, a <code>DateTimeOffset</code> with its offset,
+            so a restored condition means what it meant. A width is <code>"Auto"</code> or its pixels, never the
+            width an Auto column was painted at, so a restored Auto column measures itself again. A column the user
+            hid is one the view leaves out. A <code>GridViewState</code> is one value: two compare equal when they
+            hold the same view, so a view read back equals the one written, and comparing the stored view with
+            <code>GridViewState.Of</code> tells you whether the user has changed it.
+        </p>
+        <p>
+            A stored view that cannot be read is refused with a <code>JsonException</code> that names what is wrong
+            — a column you no longer declare, a width that is neither form, an operand that is not its type (a
+            <code>decimal</code> with more digits than a <code>decimal</code> holds included, which is refused rather
+            than rounded), a version this release does not read — rather than restored in part. The JSON carries a version from its
+            first release. <code>GridViewStateJson.WriteQuery</code> and <code>ReadQuery</code> do the same for a
+            <code>GridQuery</code> alone, for your own server. An Opaque Filter has no JSON form here: its meaning
+            is yours, so keep it beside the view. Nor does a view have any other: a <code>GridViewState</code>, a
+            <code>ColumnViewState</code> or a <code>ColumnWidth</code> handed to <code>System.Text.Json</code>
+            directly is refused with a <code>NotSupportedException</code> that names
+            <code>GridViewStateJson</code>, since written that way a width and an operand would not come back as
+            they went. Put the string <code>Write</code> returns into your own document instead.
+        </p>
+        <DocsExample Title="Save and restore a view" Builtin="typeof(SavedView)" Mud="typeof(SavedViewMud)"
+                     Files="@(["Examples/Grid/Position.cs"])">
+            Widen a column, drag a header, pin from a column's ▾ menu, sort, and filter <em>P&amp;L</em> to values
+            above 0. Save the view, press Reset, and restore it: the stored JSON below the grid is what comes back.
+            Save or restore again without changing anything, and the Example says so: it compares the view read
+            back with the one on screen.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="Mark, Template and Action columns">
         <ul>
             <li>
@@ -122,6 +165,16 @@
                 Keep the template in a static field: a new lambda per render makes the column look changed.
             </li>
             <li>
+                <strong>A template's control can take the keyboard.</strong> <kbd>Space</kbd> on the cell asks for it:
+                the context's <code>FocusRequest</code> turns non-zero on one render. The control answers by handing its
+                element to the grid's <code>HandKeyboardToAsync</code>, not with its own <code>FocusAsync</code>. Over
+                Blazor Server the request lands a round trip after the <kbd>Space</kbd>, and the grid gives the keyboard
+                only while it is still the grid's, so a user who has moved on to another grid in the meantime keeps it
+                there. The Example's Note column does this, with the grid cascaded to its control; <kbd>Esc</kbd> brings
+                the keyboard back. What is typed there is the page's, kept by position, and the column's value reads it
+                back, so a note sorts, filters and copies like any other value.
+            </li>
+            <li>
                 <strong><code>GridColumn.ActionColumn(...)</code></strong> carries buttons and no value. A press raises
                 <code>OnAction</code> with the row and the action's name. With the keyboard, Space presses a single
                 action, or enters a cell with several, where ← and → choose and Space presses the one chosen.
@@ -137,12 +190,15 @@
             </li>
         </ul>
         <DocsExample Title="Marks, a template and actions" Builtin="typeof(SpecialColumns)" Mud="typeof(SpecialColumnsMud)"
-                     Files="@(["Examples/Grid/Position.cs"])" />
+                     Files="@(["Examples/Grid/NoteField.razor", "Examples/Grid/Position.cs"])" />
     </DocsSection>
 
     <DocsSection Title="API">
         <ApiTable Type="typeof(GridColumn<>)" />
         <ApiTable Type="typeof(ExGrid.Columns.ColumnWidthSpec)" />
         <ApiTable Type="typeof(ExGrid.Columns.HeaderGroup)" />
+        <ApiTable Type="typeof(GridViewState)" />
+        <ApiTable Type="typeof(ColumnViewState)" />
+        <ApiTable Type="typeof(GridViewStateJson)" />
     </DocsSection>
 </DocsPage>

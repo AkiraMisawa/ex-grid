@@ -119,5 +119,17 @@ The run ExGrid's own by-hand rows need anyway (VZ-14, VZ-16, FN-12e, ED-30, SM-7
   the seventeenth run's Part G is the record of those rows, not a dry run. The eighteenth runs only the
   rows whose code changes between the seventeenth's commit and `0.1.0-rc.1`. If none changes, there is
   no eighteenth run.)*
+- *(2026-10-12, decided with the user.)* **`NPV`, and `PMT` at small rates, are asked of Excel before
+  they are corrected or refused.** The seventeenth run found `NPV` four and thirty-two units in the last
+  place from Excel on two observed cases, and no evaluation searched gives all three observed values.
+  `PMT` gives every observed value to the bit, but at a rate of 10^-7 the evaluations that fit the
+  observations part from the thirteenth significant digit, and no run has observed such a rate. Both go
+  to the one `oracle.ps1 -Area` pass before `0.1.0-rc.1` (ADR-0208's note of this date), and the answers
+  decide. If no such pass can be made before the tag, `NPV` is refused for `0.1.0` as `IRR` is, listed
+  under Known limitations, and `PMT` stays as it is.
 - `0.1.0`'s Known limitations will hold at least: `IRR`, `XIRR` and `RATE`; dragging a Reference Outline;
   ExPivot's speed near its cap; and whatever of ExPivot's layout and wording the run finds different.
+  *(2026-10-12, decided with the user: also a whole-column `SUM` on every row of a large Sheet. SH-19 is the
+  case it decided, a 10,000 × 20 block with its twenty whole-column totals beside it, where an edit takes
+  tens of milliseconds; with such a `SUM` on every row instead, an edit was measured at about 40 to 48
+  seconds and holds the circuit that long. `verification/2026-10-11-linux-sh19/` has both.)*

@@ -419,8 +419,9 @@ public class ShippedStylesheetTests
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
         // One attribute of this instance's own root, nothing wider and nothing measured. The
-        // module's other observer is the coloured text's, on a layer's text and colours (DC-51).
-        Assert.Equal(2, Regex.Matches(script.Text, @"new MutationObserver\(").Count);
+        // module's other observers are the coloured text's, on a layer's text and colours (DC-51),
+        // and the page follow's, on the root's own follow number (ADR-0204).
+        Assert.Equal(3, Regex.Matches(script.Text, @"new MutationObserver\(").Count);
         Assert.Matches(new Regex(@"revealObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-reveal'\] \}\)"), script.Text);
         // Let go as soon as the write is made or replaced, and with the instance.
         Assert.Matches(new Regex(@"const dropReveal = \(\) => \{[^}]*revealObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
@@ -491,12 +492,13 @@ public class ShippedStylesheetTests
         // ...into the surface that last held the keyboard, one of this grid's own.
         Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
         Assert.Contains("const standingField = () => surfaceField(ownSurface(lastSurface));", script.Text, StringComparison.Ordinal);
-        // Script moves DOM focus in these six places only (ADR-0021, five since ADR-0080, six since
-        // 2026-10-02): this, the hand-back to the root or its Keyboard Field, the open edit's own
-        // focus, and the keyboard handed on to a control of the Consumer's, each only while the
-        // keyboard is this grid's; the root's own focus passed on to its Keyboard Field; and the
-        // field given up by a press during a composition.
-        Assert.Equal(6, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
+        // Script moves DOM focus in these seven places only (ADR-0021, five since ADR-0080, six since
+        // 2026-10-02, seven since ADR-0204): this, the hand-back to the root or its Keyboard Field,
+        // the open edit's own focus, the keyboard handed on to a control of the Consumer's, and a
+        // popover's control taking it a round trip after a gesture, each only while the keyboard is
+        // this grid's; the root's own focus passed on to its Keyboard Field; and the field given up
+        // by a press during a composition.
+        Assert.Equal(7, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
@@ -589,13 +591,14 @@ public class ShippedStylesheetTests
         // Nothing measured, nothing on the document or the window.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), handOn.Value + heard.Value);
         Assert.DoesNotMatch(new Regex(@"window\.addEventListener|window\.dispatchEvent|document\.dispatchEvent|document\.addEventListener\('ex-"), script.Text);
-        // And no state outside an instance: the module's one top-level statement is attach, so
-        // everything above lives in one instance's closure and no instance keeps another's.
+        // And no state outside an instance: the module's top-level statements are attach, and the
+        // stamp the grid reads before it (ADR-0123), which holds nothing; so everything above lives
+        // in one instance's closure and no instance keeps another's.
         var topLevel = script.Text.Split('\n')
             .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
                 && !line.StartsWith("/**", StringComparison.Ordinal))
             .ToList();
-        Assert.Equal(["export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone) {", "}"], topLevel);
+        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
@@ -650,9 +653,9 @@ public class ShippedStylesheetTests
 
         // Selected in those two places alone, by no listener of its own, and no focus is moved: the
         // press's default gives the field the keyboard (ADR-0021's decisions about focus are not
-        // added to: six since 2026-10-02, none of them this one's).
+        // added to: six since 2026-10-02 and seven since ADR-0204, none of them this one's).
         Assert.Equal(2, Regex.Matches(script, @"nameBox(Selected)?\.select\(\);").Count);
-        Assert.Equal(6, Regex.Matches(script, @"\.(focus|blur)\(").Count);
+        Assert.Equal(7, Regex.Matches(script, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 
@@ -713,9 +716,10 @@ public class ShippedStylesheetTests
         Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
         Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
         Assert.Contains("fromField !== true", body, StringComparison.Ordinal);
-        // Scrolled into view as Blazor's FocusAsync did: no preventScroll here.
-        Assert.Contains("field.focus();", body, StringComparison.Ordinal);
-        Assert.DoesNotContain("preventScroll", body, StringComparison.Ordinal);
+        // Not scrolled by the focus itself: the page follows the editor as it follows a move, to the
+        // nearest edge, once it has painted (ADR-0204).
+        Assert.Contains("field.focus({ preventScroll: true });", body, StringComparison.Ordinal);
+        Assert.Contains("followEditor(field);", body, StringComparison.Ordinal);
         // Declined, the surface asked for is the edit's, where the held keys and a press back go.
         Assert.Contains("lastSurface = box;", body, StringComparison.Ordinal);
         Assert.Contains("focusDeclined = true", body, StringComparison.Ordinal);
@@ -724,6 +728,64 @@ public class ShippedStylesheetTests
         // the keyboard last held, never to the grid it went to (ADR-0010, same day).
         Assert.Contains("editing === 'none' || editorFocused() || focusDeclined", script.Text, StringComparison.Ordinal);
         Assert.Contains("focusDeclined ? standingField()", script.Text, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0204 / KB-45: the page follows a move through the scroll entry — scrollIntoView to the nearest edge, waiting on the root's own follow number, after the paint, only while the keyboard is this grid's and for the Focus it was taken for, nothing measured
+    public void KB45_the_page_follows_a_move_through_the_scroll_entry_and_measures_nothing()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        // The one call that moves the page, to the nearest edge, with the grid's own scroller put back
+        // where its reveal left it.
+        Assert.Single(Regex.Matches(script, @"scrollIntoView\("));
+        var bring = Regex.Match(script, @"const bringIntoWindow = \(element\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(bring.Success, "bringIntoWindow is not in the module");
+        Assert.Contains("element.scrollIntoView({ block: 'nearest', inline: 'nearest' });", bring.Value, StringComparison.Ordinal);
+        Assert.Contains("scroller.scrollTop = top;", bring.Value, StringComparison.Ordinal);
+        Assert.Contains("scroller.scrollLeft = left;", bring.Value, StringComparison.Ordinal);
+
+        // Held on the root's own follow number, as a reveal is on its own, and observed only while held.
+        Assert.Matches(new Regex(@"followObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-follow'\] \}\)"), script);
+        Assert.Matches(new Regex(@"const dropFollow = \(\) => \{.*?followObserver\.disconnect\(\);", RegexOptions.Singleline), script);
+        Assert.Matches(new Regex(@"dispose: \(\) => \{.*?dropFollow\(\);", RegexOptions.Singleline), script);
+
+        // After the frame that paints it, in the task after its paint, and after a reveal's write and
+        // repaint: nothing is read on the path to a paint.
+        var after = Regex.Match(script, @"const afterPaint = \(request, run\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(after.Success, "afterPaint is not in the module");
+        Assert.Contains("requestAnimationFrame(", after.Value, StringComparison.Ordinal);
+        Assert.Contains("setTimeout(", after.Value, StringComparison.Ordinal);
+        Assert.Contains("if (pendingReveal || repaint)", after.Value, StringComparison.Ordinal);
+
+        // Only while the keyboard is still this grid's, and only for the Focus it was taken for — as the
+        // root names it, painted or not (ADR-0052: the Focus may be off the painted rows while the
+        // Extent is followed) — found inside this root by the id its own render wrote.
+        var awaited = Regex.Match(script, @"const awaitFollowedRender = \(\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(awaited.Success, "awaitFollowedRender is not in the module");
+        Assert.Contains("!keyboardStillHere() || root.getAttribute('data-ex-follow-focus') !== request.focus", awaited.Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("aria-activedescendant", awaited.Value, StringComparison.Ordinal);
+        Assert.Contains("root.querySelector(`#${CSS.escape(request.target)}`)", awaited.Value, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"const keyboardStillHere = \(\) => \{\s*const active = document\.activeElement;\s*return !!root && \(!active \|\| active === document\.body \|\| active === document\.documentElement \|\| root\.contains\(active\)\);"), script);
+
+        // No layout is read anywhere in it.
+        foreach (var part in new[] { bring.Value, after.Value, awaited.Value })
+            Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), part);
+    }
+
+    [Fact] // ADR-0204 / KB-45, SRV-5: a popover's focus taken a round trip after a gesture asks the editor's question first, and leaves a field of the grid's own beside the rows, nothing measured
+    public void KB45_a_popovers_focus_asks_whether_the_keyboard_is_still_here()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var method = Regex.Match(script, @"takeFocus: \(element, preventScroll\) => \{.*?\n        \},", RegexOptions.Singleline);
+        Assert.True(method.Success, "takeFocus is not in the handle");
+        var body = method.Value;
+
+        Assert.Contains("(!active || active === document.body || active === document.documentElement", body, StringComparison.Ordinal);
+        Assert.Contains("(root.contains(active) && !own)", body, StringComparison.Ordinal);
+        Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
+        Assert.Contains("element.isConnected", body, StringComparison.Ordinal);
+        Assert.Contains("target.focus({ preventScroll: preventScroll === true });", body, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
     }
 
     /// <summary>The body of the module's <c>const name = (event) =&gt; { … };</c>, at attach's level.</summary>
@@ -1468,6 +1530,50 @@ public class ShippedStylesheetTests
         // A state that is restated by an outline too keeps it on a cell carrying both.
         Assert.True(IndexOf(".ex-cell.ex-changed") < IndexOf(".ex-cell.ex-state-missing"));
         Assert.True(IndexOf(".ex-cell.ex-changed") < IndexOf(".ex-cell.ex-state-modified"));
+    }
+
+    [Fact] // ADR-0206 / DC-59: the core's stylesheet blends nothing — ExGrid and ExPivot paint the bands, then the tints, then the boxes, source over — and nothing on the tint or the pinned shade layer transitions
+    public void The_core_stylesheet_blends_nothing_and_the_new_layers_do_not_transition()
+    {
+        var (css, rules) = CoreStylesheet();
+
+        Assert.DoesNotContain("mix-blend-mode", css, StringComparison.Ordinal);
+        // And no range isolates its own painting: the outlines lie over the tints by tree order.
+        Assert.DoesNotContain(rules, rule => rule.Selectors.Any(selector => selector.StartsWith(".ex-range", StringComparison.Ordinal))
+            && rule.Body.Contains("isolation", StringComparison.Ordinal));
+        var named = rules.Where(rule => rule.Selectors.Any(selector => selector.Contains(".ex-range-tint", StringComparison.Ordinal) || selector.Contains(".ex-shade-pinned", StringComparison.Ordinal))).ToList();
+        Assert.NotEmpty(named);
+        Assert.All(named, rule => Assert.DoesNotMatch(new Regex(@"(?<![\w-])(transition|animation|isolation|mix-blend-mode)(-[\w-]+)?\s*:"), rule.Body));
+        // The range's box paints no tint of its own any more: nothing draws a ::before on it.
+        Assert.DoesNotContain(rules, rule => rule.Selectors.Any(selector => selector.StartsWith(".ex-range::before", StringComparison.Ordinal)));
+    }
+
+    [Fact] // ADR-0206 / ADR-0008 / ADR-0029: the tint paints the selection's fill, clipped by the hole it carries; the pinned shade layer is a sticky, unclickable layer above the pinned cells, as the pinned selection layer is
+    public void The_tint_paints_the_fill_through_its_hole_and_the_shade_layer_stands_as_the_pinned_layer_does()
+    {
+        var rules = UnconditionalRules();
+
+        var tint = Assert.Single(rules, rule => rule.Selectors.SequenceEqual([".ex-range-tint"]));
+        Assert.Contains("background: var(--ex-selection-fill, rgba(60, 120, 216, 0.18));", tint.Body, StringComparison.Ordinal);
+        Assert.Contains("clip-path: var(--ex-range-hole);", tint.Body, StringComparison.Ordinal);
+        Assert.Contains("--ex-range-hole: none;", tint.Body, StringComparison.Ordinal);
+
+        // The shade layer is placed exactly as the pinned selection layer: one rule for both.
+        var place = Assert.Single(rules, rule => rule.Selectors.Contains(".ex-shade-pinned") && rule.Body.Contains("position", StringComparison.Ordinal));
+        Assert.Contains(".ex-selection-pinned", place.Selectors);
+        Assert.Matches(new Regex(@"position:\s*sticky;.*z-index:\s*3;"), place.Body);
+        Assert.Contains(rules, rule => rule.Selectors.Contains(".ex-shade-pinned") && rule.Body.Contains("pointer-events: none", StringComparison.Ordinal));
+    }
+
+    [Fact] // ADR-0206 / UX-7: under forced colors no tint is painted, stated rather than left to how a browser forces a translucent background; every range keeps its box's outline
+    public void Under_forced_colours_no_tint_is_painted()
+    {
+        var (_, forced) = ForcedColorsSplit();
+
+        var tint = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-range-tint"));
+        Assert.Matches(new Regex(@"display:\s*none;"), tint.Body);
+        var box = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-range"));
+        Assert.Matches(new Regex(@"outline-style:\s*solid;"), box.Body);
     }
 
     [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-66: a mark comes and goes in one step — nothing in the core's stylesheet transitions or animates

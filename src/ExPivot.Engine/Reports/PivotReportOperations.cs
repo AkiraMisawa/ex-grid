@@ -65,7 +65,7 @@ public sealed record PivotReportSummaryQuery(PivotReportVersion Version, IReadOn
 /// <param name="Counts">Value and number counts.</param>
 /// <param name="Sum">The finished sum, exact wherever possible.</param>
 /// <param name="Extremes">The extrema.</param>
-/// <param name="HasError">An error was selected; numeric figures must be omitted.</param>
+/// <param name="HasError">An error was selected: Average, Min, Max and Sum must be omitted, and Count and Numerical Count are still shown, so <see cref="AggregateCounts.Numbers"/> must not count the error (ADR-0130).</param>
 /// <param name="NumberFormat">The Focus value's number format, if any.</param>
 /// <param name="CultureName">The explicitly selected report culture.</param>
 /// <param name="Refusal">The refusal, if any.</param>

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SIN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(PI()/2)"},
@@ -13,34 +13,34 @@
     },
     {
       "id": "SIN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: 30 degrees",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(30*PI()/180)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.5, "digits": 12}
+      "expect": {"value2": 0.49999999999999994}
     },
     {
       "id": "SIN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: RADIANS",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(RADIANS(30))"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.5, "digits": 12}
+      "expect": {"value2": 0.49999999999999994}
     },
     {
       "id": "SIN-004",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: \"approximately 0\", the double's remainder",
+      "source": "observed",
+      "description": "Excel reduces the angle by pi to the x87's 64 bits: the difference between that pi and PI()'s double, not the double's own sine",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(PI())"},
       "check": "ZZ1000",
-      "expect": {"value2": 1.2246467991473532e-16}
+      "expect": {"value2": 1.22514845490862e-16}
     },
     {
       "id": "SIN-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 2^27, the limit COT documents, is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(2^27)"},
@@ -49,21 +49,30 @@
     },
     {
       "id": "SIN-006",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: just under 2^27 is answered",
+      "source": "observed",
+      "description": "Just under 2^27 is answered, the angle reduced as Excel reduces it",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(2^27-1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -0.9559933287732995, "digits": 9}
+      "expect": {"value2": -0.9559933287726706}
     },
     {
       "id": "SIN-007",
-      "source": "documented",
+      "source": "observed",
       "description": "Text that is no number is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(A6)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SIN-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 2*PI() less twice Excel's pi, at another quadrant than SIN-004 (the double's true sine is -2.4492935982947064E-16)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIN(2*PI())"},
+      "check": "ZZ1000",
+      "expect": {"value2": -2.45029690981724e-16}
     }
   ]
 }

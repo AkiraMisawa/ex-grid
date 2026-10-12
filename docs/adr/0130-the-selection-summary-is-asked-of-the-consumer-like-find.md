@@ -56,7 +56,7 @@ question.** The shape is Find's ([ADR-0055](./0055-find-is-asked-of-the-consumer
 definition, in one place — `ExGrid.Data` — serves both, so a pivot cell's Sum and the status bar's
 Sum over the same records cannot disagree.
 
-| Value in a cell | Count | Numerical Count | Sum, Average, Min, Max |
+| Value in a cell | Count | Numerical Count | Sum, Average, Min, Max (the figures that read numbers) |
 |---|---|---|---|
 | A number (any CLR numeric type) | counted | counted | included |
 | Text, including `"123"` | counted | — | — |
@@ -73,8 +73,9 @@ Sum over the same records cannot disagree.
   definition was placed.)* A date's Min and Max may be added later, by an ADR, if they are wanted.
 - **Integer and Decimal values are summed exactly**, as PV-4 sums them. Double values are summed
   as ExPivot sums them.
-- **An error among the values leaves only Count.** That is what Excel is understood to do; it is
-  confirmed in a Windows run before the criterion is signed off.
+- **An error among the values leaves Count and Numerical Count**, and no other figure: Excel's status
+  bar, as the seventeenth Windows run read it (below). *(It first read "leaves only Count", what Excel
+  was understood to do.)*
 - **A cell covered by two ranges counts once.** Hidden columns are not summarised. An Action Column
   is blank. A Template Column contributes its value accessor's answer, never its markup — the rule
   copy follows ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)).
@@ -82,8 +83,9 @@ Sum over the same records cannot disagree.
   and a pivot's subtotals are summed with the rest when they are selected, as Excel sums them. Row
   Kind carries no aggregate meaning, and a summary that skipped some visible cells would break the
   one promise the status bar makes.
-- **The figures are formatted with the Focus's column's format** until Excel's own rule is read in
-  a Windows run; then they follow Excel.
+- **The figures are formatted with the Focus's format**: Excel's rule, read in a Windows run (below),
+  is the active cell's format for every figure but the counts. On a grid the Focus's format is its
+  column's.
 
 ## Each product answers for itself
 
@@ -150,13 +152,15 @@ criteria inside ExGrid's release (Definition of Done §2).
   carry each figure's **text**: ExSheet writes Average, Min, Max and Sum in the Focus cell's Number
   Format, ExPivot in the Focus cell's Value Field format, and the grid formats the rest itself.
   Excel shows its status bar in the active cell's format, so this is Excel's rule, not a guess;
-  the Windows run still reads what Excel does across mixed formats.
+  the Windows run still reads what Excel does across mixed formats. *(Read 2026-10-12: the active
+  cell's format, whatever the others'.)*
 - **A Focus column's format that cannot take the figure** — one written as `(int)v` — falls back
   to the figure's own text rather than to nothing. Counts are whole numbers in the invariant
   culture; an unformatted `double` shows ten significant digits, as Excel's status bar does.
 - **SM-7 and the format rule were implemented without waiting for the Windows run**, as the user
   asked: an error among the values leaves Count, and the Focus's column's format is used. Both
-  stand to be corrected by the run.
+  stand to be corrected by the run. *(The run, 2026-10-12, corrected SM-7 — Numerical Count stands
+  beside Count — and confirmed the format rule.)*
 
 ## The strip can be switched off *(decided with the user, 2026-10-06)*
 
@@ -188,6 +192,25 @@ Viewport.
 - **It compares the selected positions only.** The figures are taken over the Selection, so a row that
   moved outside it changes no figure, and the cost follows the Selection's rows in the Window rather than
   the Window.
+
+## Read in a Windows run *(2026-10-12)*
+
+The seventeenth Windows run read Excel's status bar under the gestures this decision left to it
+(`verification/2026-10-11-windows-17/`, Part B's b5 to b8), all six figures ticked.
+
+- **An error among the values leaves Count and Numerical Count.** Over `1`, `2`, `=1/0`, `x` and a blank, Excel
+  shows `Count: 4    Numerical Count: 2` and no other figure (b5); with the error cleared, all six (b6). An error
+  is counted and is never a number, and every figure that reads numbers is shown nowhere. The family followed:
+  `Aggregation.CountNumbers` answers beside `Count` where an error is among the values, in ExSheet, in ExPivot
+  (its own cells and a server's parts alike) and through `GridSummaryCells`. *(It read "leaves only Count", as
+  Excel was understood to do; the run showed Numerical Count beside it.)*
+- **A Boolean is counted and not numerically, and ExSheet's dates are numbers**, as the table and the refinement
+  above say: over `1`, `TRUE`, the date 46306 and `x`, Excel shows `Count: 4`, `Numerical Count: 2`, `Max.: 46306`
+  and `Sum: 46307` (b7). One cell shows no figure.
+- **Every figure but the two counts wears the active cell's format, whatever the other cells' formats.** Over
+  `1,000.00` and `2000%`, Excel shows `Sum: 1,020.00` from the first and `Sum: 102000%` from the second (b8). This
+  is the rule ExSheet and ExPivot already followed, to the cell; a grid's formats are its columns', so the Focus's
+  column's format is the same rule on a grid, and it stays.
 
 ## Considered options
 

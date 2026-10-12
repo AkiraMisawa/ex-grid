@@ -4,8 +4,14 @@
 @using ExGrid.Rows
 @implements IDisposable
 
-<ExGrid TRow="Position" Source="_source" Columns="_columns" OnAction="OnAction" OnMarkRefused="OnMarkRefused"
-        PinnedColumnCount="2" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+@* The Note template's control takes the keyboard through this grid, and keeps what is typed in the
+   page's notes: both cascaded once, so they never change. *@
+<CascadingValue Name="TakeKeyboard" Value="TakeKeyboard" IsFixed="true">
+    <CascadingValue Name="Notes" Value="_notes" IsFixed="true">
+        <ExGrid TRow="Position" @ref="_grid" Source="_source" Columns="_columns" OnAction="OnAction" OnMarkRefused="OnMarkRefused"
+                PinnedColumnCount="2" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+    </CascadingValue>
+</CascadingValue>
 
 <p style="margin: 12px 0 0; font-size: 14px">
     @(_source.Marks.Counts?.Marked ?? 0) of @_source.Window.Count marked. @_lastAction
@@ -24,7 +30,11 @@
             <span style="width: 36px; text-align: right">@cell.Row.LimitUsed.ToString("0%", Invariant)</span>
         </div>;
 
-    private static readonly GridColumn<Position>[] Columns =
+    // Space enters this one: its control takes the keyboard (NoteField).
+    private static readonly RenderFragment<TemplateCellContext<Position>> Note = cell => @<NoteField Cell="cell" />;
+
+    // Built once, over this page's notes: the Note column's value is the note typed for the position.
+    private static GridColumn<Position>[] ColumnsOver(Dictionary<int, string> notes) =>
     [
         GridColumn<Position>.MarkColumn(),
         new("Id", ColumnType.Number, p => p.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(70)), align: CellAlign.Left),
@@ -32,16 +42,31 @@
         new("Trader", ColumnType.Text, p => p.Trader),
         GridColumn<Position>.TemplateColumn("LimitUsed", ColumnType.Number, p => p.LimitUsed, LimitBar,
             header: "Limit used", width: new ColumnWidthSpec(ColumnWidth.Fixed(180))),
+        GridColumn<Position>.TemplateColumn("Note", ColumnType.Text, p => notes.GetValueOrDefault(p.Id), Note,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(140))),
         GridColumn<Position>.ActionColumn("Actions", [new GridAction("hedge", "Hedge"), new GridAction("close", "Close")]),
     ];
 
     private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
-    private readonly IReadOnlyList<GridColumn<Position>> _columns = Columns;
+    private readonly Dictionary<int, string> _notes = [];
+    private IReadOnlyList<GridColumn<Position>> _columns = [];
+    private ExGrid<Position>? _grid;
+    private Func<ElementReference, Task>? _takeKeyboard;
+
+    // A template's control takes the keyboard through the grid, which gives it only while the
+    // keyboard is still the grid's. Held in a field, so the cascade is the same delegate throughout.
+    private Func<ElementReference, Task> TakeKeyboard => _takeKeyboard ??=
+        control => _grid is { } grid ? grid.HandKeyboardToAsync(control) : Task.CompletedTask;
     private string _lastAction = "";
     private string _markRefusal = "";
 
-    // The source keeps the marks, by row; this page only shows the count.
-    protected override void OnInitialized() => _source.Marks.Changed += StateHasChanged;
+    // The columns are built once, over the notes. The source keeps the marks, by row; this page only
+    // shows the count.
+    protected override void OnInitialized()
+    {
+        _columns = ColumnsOver(_notes);
+        _source.Marks.Changed += StateHasChanged;
+    }
 
     private void OnAction(GridActionEventArgs<Position> action)
         => _lastAction = $"{action.ActionName} asked for position {action.Row.Id} ({action.Row.Instrument}).";

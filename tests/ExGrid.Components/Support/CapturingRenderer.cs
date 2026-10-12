@@ -120,16 +120,20 @@ internal sealed class CapturingRenderer(TimeProvider clock) : Renderer(new Servi
              : null;
     }
 
-    /// <summary>Every call answered with a default; a module or a handle is this object again.</summary>
+    /// <summary>Every call answered with a default; a module or a handle is this object again,
+    /// and the module's stamp is this build's, so the grid attaches (ADR-0123).</summary>
     private sealed class FakeJS : IJSRuntime, IJSObjectReference
     {
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => ValueTask.FromResult(Make<TValue>());
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => ValueTask.FromResult(Make<TValue>(identifier));
 
         public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
-            => ValueTask.FromResult(Make<TValue>());
+            => ValueTask.FromResult(Make<TValue>(identifier));
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-        private TValue Make<TValue>() => typeof(TValue) == typeof(IJSObjectReference) ? (TValue)(object)this : default!;
+        private TValue Make<TValue>(string identifier)
+            => typeof(TValue) == typeof(IJSObjectReference) ? (TValue)(object)this
+             : identifier == "stamp" ? (TValue)(object)ExGrid.Testing.ShippedScript.Stamp
+             : default!;
     }
 }
