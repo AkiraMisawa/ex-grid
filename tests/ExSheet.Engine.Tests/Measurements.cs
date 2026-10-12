@@ -17,54 +17,31 @@ namespace ExSheet.Engine.Tests;
 /// </code>
 /// The case is the one decided with the user on 2026-10-11 (the Definition of Done's SH-19): a
 /// synthetic Sheet from a fixed seed, 10,000 rows by 20 columns with about 50,000 Formulas — per-row
-/// arithmetic, a running total chained down a column, and <c>SUM</c> over whole columns. How it is
-/// laid out is <see cref="Case"/>'s. The first three measurements are SH-19's; the fourth is the same
-/// Sheet with each row's last Formula reading a whole column, which the decided case does not ask
-/// for, and which takes many minutes: run SH-19's alone with
-/// <c>-method "ExSheet.Engine.Tests.Measurements.SH19_*"</c>.
+/// arithmetic, a running total chained down a column, and <c>SUM</c> over whole columns, its twenty
+/// totals standing beside the block. How it is laid out is <see cref="Entries"/>'s.
 /// </summary>
 /// <remarks>
 /// The engine is synchronous and single-threaded (<see cref="Sheet"/>'s remarks): each piece of work
 /// is done on the thread that asks, in one piece, so a time here is how long the change holds the
-/// Sheet, and on the Server host the circuit that drives it.
+/// Sheet, and on the Server host the circuit that drives it. The Sheet with a whole-column <c>SUM</c>
+/// on every row, which SH-19 does not ask for, is measured by <c>spikes/exsheet-sh19-whole-column</c>.
 /// </remarks>
 public class Measurements
 {
+    private const string Name = "SH-19's case";
     private const int Rows = 10_000;
     private const int Seed = 20261011;
 
-    /// <summary>
-    /// How the case is laid out. Rows 1 to 10,000 of columns A to T are the 10,000 by 20:
-    /// <list type="bullet">
-    /// <item>A to O hold constants from the seed: a quantity in A, a price in B, and amounts in C to O;</item>
-    /// <item>P, Q and R are per-row arithmetic, each reading the one before it: <c>=A1*B1</c>,
-    /// <c>=P1-C1+D1*E1</c> and <c>=(Q1+F1)/(1+G1/100)</c>;</item>
-    /// <item>S is the running total chained down the column: <c>=R1</c>, then <c>=S1+R2</c> and on, so
-    /// that S10000 is reached through 10,000 cells;</item>
-    /// <item>T is per-row arithmetic again, <c>=R1*H1/100-I1</c>.</item>
-    /// </list>
-    /// Beside the block, V1 to V20 total each of its columns over the whole column, <c>=SUM(A:A)</c> to
-    /// <c>=SUM(T:T)</c> — beside it, since a whole-column <c>SUM</c> inside its own column would read
-    /// itself. That is 50,020 Formulas and 150,000 constants. In the variant, T is each row's share of
-    /// R's whole-column total, <c>=R1/SUM(R:R)</c>, so 10,020 Formulas read a whole column, not 20.
-    /// </summary>
-    private sealed record Case(string Name, bool ShareOfTotal, int WarmUps, int Runs);
-
-    /// <summary>SH-19's case. Each time is taken seven times, after two runs to warm up.</summary>
-    private static readonly Case Decided = new("SH-19's case", ShareOfTotal: false, WarmUps: 2, Runs: 7);
-
-    /// <summary>
-    /// The variant. Its runs take tens of seconds each, so each is taken three times with no run to
-    /// warm up; the spread of the three says what that costs.
-    /// </summary>
-    private static readonly Case EveryRowReadsAWholeColumn = new("every row's share of a whole-column SUM", ShareOfTotal: true, WarmUps: 0, Runs: 3);
+    // Each time is taken seven times, after two runs to warm up.
+    private const int WarmUps = 2;
+    private const int Runs = 7;
 
     [Fact(Explicit = true)] // SH-19 / ADR-0047 / ADR-0048: a full recalculation, every Value computed again from the Entries as a Sheet Document opens
     public void SH19_a_full_recalculation()
     {
         var output = TestContext.Current.TestOutputHelper!;
         output.WriteLine(Machine());
-        FullRecalculation(output, Decided, Built(Decided));
+        FullRecalculation(output, Built());
     }
 
     [Fact(Explicit = true)] // SH-19 / ADR-0047: one edit's propagation, from a constant to everything that reads it
@@ -72,7 +49,7 @@ public class Measurements
     {
         var output = TestContext.Current.TestOutputHelper!;
         output.WriteLine(Machine());
-        Edits(output, Decided, Built(Decided));
+        Edits(output, Built());
     }
 
     [Fact(Explicit = true)] // SH-19 / ADR-0046 / ADR-0047: a row inserted near the top, every Reference below it rewritten, and its undo
@@ -80,30 +57,16 @@ public class Measurements
     {
         var output = TestContext.Current.TestOutputHelper!;
         output.WriteLine(Machine());
-        Insertion(output, Decided, Built(Decided));
-    }
-
-    [Fact(Explicit = true)] // ADR-0047: SH-19's three measurements again where 10,000 Formulas each read a whole column (formula-dependencies.md §11)
-    public void Every_row_reading_a_whole_column()
-    {
-        var output = TestContext.Current.TestOutputHelper!;
-        output.WriteLine(Machine());
-        var built = Stopwatch.StartNew();
-        var sheet = Built(EveryRowReadsAWholeColumn);
-        output.WriteLine(string.Create(CultureInfo.InvariantCulture,
-            $"{EveryRowReadsAWholeColumn.Name}: built by one SetEntries in {built.Elapsed.TotalMilliseconds:F0} ms"));
-        FullRecalculation(output, EveryRowReadsAWholeColumn, sheet);
-        Edits(output, EveryRowReadsAWholeColumn, sheet);
-        Insertion(output, EveryRowReadsAWholeColumn, sheet);
+        Insertion(output, Built());
     }
 
     /// <summary>The Sheet opened from its Sheet Document: every Value computed from the Entries, as a Consumer's saved Sheet opens (ADR-0048).</summary>
-    private static void FullRecalculation(ITestOutputHelper output, Case layout, Sheet sheet)
+    private static void FullRecalculation(ITestOutputHelper output, Sheet sheet)
     {
         var document = sheet.ToDocument();
-        output.WriteLine(Describe(layout, document));
+        output.WriteLine(Describe(document));
         Sheet? opened = null;
-        Report(output, $"{layout.Name}: Sheet.Open, every Value computed", Time(() => opened = Sheet.Open(document), layout, () => Check(opened!, layout)));
+        Report(output, $"{Name}: Sheet.Open, every Value computed", Time(() => opened = Sheet.Open(document), () => Check(opened!)));
     }
 
     /// <summary>
@@ -112,28 +75,26 @@ public class Measurements
     /// 11 in turn so that every run changes the Value. Each run recalculates the Formulas it reaches
     /// and no other (ADR-0047), and how many those are is checked with its Values.
     /// </summary>
-    private static void Edits(ITestOutputHelper output, Case layout, Sheet sheet)
+    private static void Edits(ITestOutputHelper output, Sheet sheet)
     {
         foreach (var (where, address, reached) in new[]
                  {
                      // P1, Q1, R1 and T1, S1 to S10000, and the totals of A and of P to T: 10,010.
-                     // In the variant every T reads R's total, so T2 to T10000 as well.
-                     ("A1, which the whole running total reads", new CellAddress(0, 0), layout.ShareOfTotal ? (2 * Rows) + 9 : Rows + 10),
-                     // P to T of its row, and the totals of A and of P to T: 11. In the variant,
-                     // the other 9,999 of T as well.
-                     ("A10000, which its own row and the totals read", new CellAddress(Rows - 1, 0), layout.ShareOfTotal ? Rows + 10 : 11),
+                     ("A1, which the whole running total reads", new CellAddress(0, 0), Rows + 10),
+                     // P to T of its row, and the totals of A and of P to T: 11.
+                     ("A10000, which its own row and the totals read", new CellAddress(Rows - 1, 0), 11),
                      // V15, =SUM(O:O).
                      ("O5000, which only its column's total reads", new CellAddress(4_999, 14), 1),
                  })
         {
             var next = 0;
             SheetStep? step = null;
-            var times = Time(() => step = sheet.Do(SheetEdit.Enter(address, (++next % 2 == 0 ? 7 : 11).ToString(CultureInfo.InvariantCulture))), layout, () =>
+            var times = Time(() => step = sheet.Do(SheetEdit.Enter(address, (++next % 2 == 0 ? 7 : 11).ToString(CultureInfo.InvariantCulture))), () =>
             {
                 Assert.Equal(reached, step!.Change.Recalculated.Count);
-                Check(sheet, layout);
+                Check(sheet);
             });
-            Report(output, $"{layout.Name}: an edit to {where}", times,
+            Report(output, $"{Name}: an edit to {where}", times,
                 $"{step!.Change.Recalculated.Count:N0} recalculated, {step.Change.ValueChanges.Count:N0} Values changed");
         }
     }
@@ -145,43 +106,56 @@ public class Measurements
     /// the next is done: the inserted Sheet with row 2 blank, every number one row further down than
     /// it was and every Formula reading where its cells went; the undone one as it was before.
     /// </summary>
-    private static void Insertion(ITestOutputHelper output, Case layout, Sheet sheet)
+    private static void Insertion(ITestOutputHelper output, Sheet sheet)
     {
-        for (var warm = 0; warm < layout.WarmUps; warm++)
+        for (var warm = 0; warm < WarmUps; warm++)
         {
             sheet.Do(SheetEdit.InsertRows(1)).Undo();
         }
         var before = Numbers(sheet);
         // Every Formula on row 2 or below has its References rewritten, and every one that reads a
-        // whole column reads cells that moved: all but row 1's Formulas that read no whole column,
-        // which are P1 to T1 in SH-19's case and P1 to S1 in the variant, where T1 reads R's total.
-        var reached = (Rows * 5) + 20 - (layout.ShareOfTotal ? 4 : 5);
+        // whole column reads cells that moved: all but row 1's, P1 to T1, which read no whole column.
+        var reached = (Rows * 5) + 20 - 5;
         var inserts = new Series();
         var undos = new Series();
         SheetStep? step = null;
-        for (var run = 0; run < layout.Runs; run++)
+        for (var run = 0; run < Runs; run++)
         {
             inserts.Time(() => step = sheet.Do(SheetEdit.InsertRows(1)));
             Assert.Equal(reached, step!.Change.Recalculated.Count);
-            Check(sheet, layout, insertedAt: 1);
+            Check(sheet, insertedAt: 1);
             Assert.Equal(before, Numbers(sheet, insertedAt: 1));
             undos.Time(() => step!.Undo());
-            Check(sheet, layout);
+            Check(sheet);
             Assert.Equal(before, Numbers(sheet));
         }
-        Report(output, $"{layout.Name}: a row inserted at row 2", inserts,
+        Report(output, $"{Name}: a row inserted at row 2", inserts,
             $"{step!.Change.Recalculated.Count:N0} recalculated, {step.Change.Rows.Count:N0} rows changed");
-        Report(output, $"{layout.Name}: that insertion undone", undos);
+        Report(output, $"{Name}: that insertion undone", undos);
     }
 
-    private static Sheet Built(Case layout)
+    private static Sheet Built()
     {
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
-        sheet.SetEntries(Entries(layout));
+        sheet.SetEntries(Entries());
         return sheet;
     }
 
-    private static List<KeyValuePair<CellAddress, Entry?>> Entries(Case layout)
+    /// <summary>
+    /// The case as it is laid out. Rows 1 to 10,000 of columns A to T are the 10,000 by 20:
+    /// <list type="bullet">
+    /// <item>A to O hold constants from the seed: a quantity in A, a price in B, and amounts in C to O;</item>
+    /// <item>P, Q and R are per-row arithmetic, each reading the one before it: <c>=A1*B1</c>,
+    /// <c>=P1-C1+D1*E1</c> and <c>=(Q1+F1)/(1+G1/100)</c>;</item>
+    /// <item>S is the running total chained down the column: <c>=R1</c>, then <c>=S1+R2</c> and on, so
+    /// that S10000 is reached through 10,000 cells;</item>
+    /// <item>T is per-row arithmetic again, <c>=R1*H1/100-I1</c>.</item>
+    /// </list>
+    /// Beside the block, V1 to V20 total each of its columns over the whole column, <c>=SUM(A:A)</c> to
+    /// <c>=SUM(T:T)</c> — beside it, since a whole-column <c>SUM</c> inside its own column would read
+    /// itself. That is 50,020 Formulas, 20 of them reading a whole column, and 150,000 constants.
+    /// </summary>
+    private static List<KeyValuePair<CellAddress, Entry?>> Entries()
     {
         var random = new Random(Seed);
         var entries = new List<KeyValuePair<CellAddress, Entry?>>((Rows * 20) + 20);
@@ -194,7 +168,7 @@ public class Measurements
             {
                 Put(row, column, Entry.FromValue(Value.FromNumber(Math.Round(random.NextDouble() * 1000, 2))));
             }
-            var formulas = RowFormulas(layout, row, row == 0 ? null : row - 1);
+            var formulas = RowFormulas(row, row == 0 ? null : row - 1);
             for (var i = 0; i < formulas.Length; i++)
             {
                 Put(row, 15 + i, Entry.FromFormula(formulas[i]));
@@ -211,7 +185,7 @@ public class Measurements
     /// The Formulas of P to T in the block's row now at <paramref name="row"/>, where the block's row
     /// before it is now at <paramref name="above"/> (both counted from 0), or none for the first.
     /// </summary>
-    private static string[] RowFormulas(Case layout, int row, int? above)
+    private static string[] RowFormulas(int row, int? above)
     {
         var n = (row + 1).ToString(CultureInfo.InvariantCulture);
         var a = ((above ?? 0) + 1).ToString(CultureInfo.InvariantCulture);
@@ -221,7 +195,7 @@ public class Measurements
             $"=P{n}-C{n}+D{n}*E{n}",
             $"=(Q{n}+F{n})/(1+G{n}/100)",
             above is null ? $"=R{n}" : $"=S{a}+R{n}",
-            layout.ShareOfTotal ? $"=R{n}/SUM(R:R)" : $"=R{n}*H{n}/100-I{n}",
+            $"=R{n}*H{n}/100-I{n}",
         ];
     }
 
@@ -242,7 +216,7 @@ public class Measurements
     /// row inserted at <paramref name="insertedAt"/>, the block's rows below it are one further down,
     /// and that row holds nothing.
     /// </summary>
-    private static void Check(Sheet sheet, Case layout, int? insertedAt = null)
+    private static void Check(Sheet sheet, int? insertedAt = null)
     {
         double At(int row, int column) => Number(sheet, new CellAddress(Place(row, insertedAt), column));
         void Reads(string formula, int row, int column)
@@ -257,7 +231,7 @@ public class Measurements
         var running = 0.0;
         for (var row = 0; row < Rows; row++)
         {
-            var formulas = RowFormulas(layout, Place(row, insertedAt), row == 0 ? null : Place(row - 1, insertedAt));
+            var formulas = RowFormulas(Place(row, insertedAt), row == 0 ? null : Place(row - 1, insertedAt));
             for (var i = 0; i < formulas.Length; i++)
             {
                 Reads(formulas[i], row, 15 + i);
@@ -270,7 +244,7 @@ public class Measurements
             var q = p - At(row, 2) + (At(row, 3) * At(row, 4));
             var r = (q + At(row, 5)) / (1 + (At(row, 6) / 100));
             running += r;
-            var t = layout.ShareOfTotal ? r / At(17, 21) : (r * At(row, 7) / 100) - At(row, 8);
+            var t = (r * At(row, 7) / 100) - At(row, 8);
             double[] computed = [p, q, r, running, t];
             for (var i = 0; i < computed.Length; i++)
             {
@@ -322,13 +296,13 @@ public class Measurements
     private static void Close(double expected, double actual, CellAddress where) =>
         Assert.True(Math.Abs(expected - actual) <= 1e-9 * Math.Max(1, Math.Abs(expected)), $"{where} is {actual}, where {expected} was expected.");
 
-    private static string Describe(Case layout, SheetDocument document)
+    private static string Describe(SheetDocument document)
     {
         var formulas = document.Cells.Count(c => c.Entry is { IsFormula: true });
         var wholeColumns = document.Cells.Count(c => c.Entry?.Formula?.Contains(":", StringComparison.Ordinal) == true);
         var constants = document.Cells.Count(c => c.Entry is { IsFormula: false });
         return string.Create(CultureInfo.InvariantCulture,
-            $"{layout.Name}: {Rows:N0} rows by 20 columns, and 20 totals beside them; {formulas:N0} Formulas, {wholeColumns:N0} of them reading a whole column, and {constants:N0} constants (seed {Seed})");
+            $"{Name}: {Rows:N0} rows by 20 columns, and 20 totals beside them; {formulas:N0} Formulas, {wholeColumns:N0} of them reading a whole column, and {constants:N0} constants (seed {Seed})");
     }
 
     private static string Machine() => string.Create(CultureInfo.InvariantCulture,
@@ -347,15 +321,15 @@ public class Measurements
         }
     }
 
-    /// <summary>Each of the layout's runs timed, after its runs to warm up, and checked after it, outside the clock.</summary>
-    private static Series Time(Action run, Case layout, Action check)
+    /// <summary>Each run timed, after the runs to warm up, and checked after it, outside the clock.</summary>
+    private static Series Time(Action run, Action check)
     {
-        for (var warm = 0; warm < layout.WarmUps; warm++)
+        for (var warm = 0; warm < WarmUps; warm++)
         {
             run();
         }
         var series = new Series();
-        for (var i = 0; i < layout.Runs; i++)
+        for (var i = 0; i < Runs; i++)
         {
             series.Time(run);
             check();

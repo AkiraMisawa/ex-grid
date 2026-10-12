@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- SH-19's three measurements on a variant of its Sheet that SH-19 does not ask for: a
+       whole-column SUM on every row (=R1/SUM(R:R)), where the decided case has its twenty
+       whole-column totals beside the block. It left tests/ExSheet.Engine.Tests' Measurements when
+       SH-19's case was decided (2026-10-12), and is a Known limitation of 0.1.0 (ADR-0202). Not in
+       ExGrid.slnx. Disposable. Run in Release; README.md says how. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- The same GC as the test runner that measured it before: workstation. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExSheet.Engine\ExSheet.Engine.csproj" />
+  </ItemGroup>
+
+</Project>

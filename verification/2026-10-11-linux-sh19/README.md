@@ -43,6 +43,14 @@ nix develop -c dotnet tests/ExSheet.Engine.Tests/bin/Release/net10.0/ExSheet.Eng
   -class ExSheet.Engine.Tests.Measurements                # and the variant below, about a quarter of an hour
 ```
 
+*(Moved on 2026-10-12, when SH-19's case was decided with the user as the one below. `Measurements.cs`
+now holds SH-19's three alone, and `-explicit only` runs exactly those three in that project. The
+variant left the suite for `spikes/exsheet-sh19-whole-column`, a console project outside
+`ExGrid.slnx` that builds the same Sheet from the same seed, times the same three measurements and
+checks every run as the test did:
+`nix develop -c dotnet run -c Release --project spikes/exsheet-sh19-whole-column`. The commands
+above are the ones the passes here ran.)*
+
 - **The Sheet** is built from seed 20261011. Rows 1 to 10,000 of columns A to T are the 10,000 by 20:
   - A to O hold constants: a quantity in A, a price in B, amounts in C to O;
   - P, Q and R are per-row arithmetic, each reading the one before: `=A1*B1`, `=P1-C1+D1*E1`,
@@ -130,6 +138,12 @@ written that way, so that 10,020 Formulas read a whole column where SH-19's case
 decided case; it was measured because the cost it shows is the one
 `docs/specs/exsheet/formula-dependencies.md` §11 names as "cost to know", and its open question 11
 asks about. Its runs take tens of seconds each, so each is taken three times, with no run to warm up.
+
+*(Since 2026-10-12 the variant runs as `spikes/exsheet-sh19-whole-column`, not in the test suite: the
+user decided that SH-19 is the case above, and that an edit of about 45 s where a whole-column `SUM`
+sits on every row is a Known limitation of `0.1.0` (ADR-0202). The spike's README carries the
+numbers below and a run of its own. They were taken by the test `Every_row_reading_a_whole_column`,
+since removed, and stay as recorded.)*
 
 The third pass, from 22:30 to 22:44 UTC at a load average of 4 to 6:
 
@@ -221,6 +235,9 @@ Observations, not decisions: what to do about any of them is the user's.
   reads — the variant below, each row's share of a total — and read that way an edit takes about
   45 s and holds the circuit as long, where the spec asks that "a large Sheet stays responsive"
   (`docs/specs/exsheet/spec.md`, story 19). Which reading SH-19 means is the user's to say.
+  *(Decided with the user on 2026-10-12: SH-19 is the reading this record took, the totals beside
+  the block; the variant is a Known limitation of `0.1.0` (ADR-0202), and runs as
+  `spikes/exsheet-sh19-whole-column`.)*
 - **An edit's time follows the whole-column `SUM`s it reaches more than the cells it recalculates.**
   One Formula, `=SUM(O:O)`: 17 ms. Eleven, six of them whole-column `SUM`s: 41 ms. 10,010, the same
   six and the 10,000-cell running total: 87 ms. Not profiled. Read as a sum, each whole-column `SUM`
@@ -271,7 +288,8 @@ Observations, not decisions: what to do about any of them is the user's.
   neither: it pastes nothing, and its Sheet holds no volatile function. Whether SH-19's case grows to
   cover them is the user's to decide.
 - **A decided reading of the case.** Where its whole-column `SUM`s stand changes an edit's time a
-  hundredfold (What the numbers say, the first point); this record took one reading.
+  hundredfold (What the numbers say, the first point); this record took one reading. *(The user
+  decided on 2026-10-12 that it is SH-19's; see the variant's note above.)*
 
 ## Raw
 
