@@ -8,9 +8,10 @@ namespace ExSheet.Engine.Tests;
 /// <summary>
 /// <c>LET</c> (ADR-0181, docs/specs/exsheet-functions ticket 14, SH-67): names bound inside one
 /// Formula, sequentially and lexically, as Excel's keyboard accepts them. The October 3
-/// observations are in <c>ExcelCases/let.json</c>; what they cannot state is here — the names
-/// refused on entry beyond those observed, dependencies through bindings, Linked Tables, and a
-/// Formula's References rewritten around its names.
+/// observations, and the seventeenth Windows run's answers by keys (LET-101 to LET-112), are in
+/// <c>ExcelCases/let.json</c>; what they cannot state is here — the rule each observed name stands
+/// for, dependencies through bindings, Linked Tables, and a Formula's References rewritten around
+/// its names.
 /// </summary>
 public class LetTests
 {
@@ -19,27 +20,23 @@ public class LetTests
     private static string Pairs(int count) =>
         "=LET(" + string.Concat(Enumerable.Range(0, count).Select(i => $"name_{i},{i},")) + "1)";
 
-    [Theory] // ADR-0181, SH-67: a malformed LET, or a name that could mean something else, is refused on entry as an unreadable Formula is
+    [Theory] // ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is
     [InlineData("=LET(x,1,x,2,x)")]          // a name bound twice
     [InlineData("=LET(x,1,X,2,x)")]          // without regard to case
     [InlineData("=LET(x,1)")]                // no calculation
     [InlineData("=LET(x,1,y,2,x+y,3)")]      // an even number of arguments
+    [InlineData("=LET(x,,y,x)")]             // an even number of arguments, after a value left empty
     [InlineData("=LET(x,1,)")]               // a calculation left empty
-    [InlineData("=LET(x,,x)")]               // a value left empty, refused until Excel is asked
+    [InlineData("=LET(x,,)")]                // a calculation left empty after a value left empty
+    [InlineData("=LET(,1,1)")]               // a name left empty
     [InlineData("=LET(A1,2,A1)")]            // a Reference, which the keyboard refuses (LET-KEYS-004)
     [InlineData("=LET($A$1,2,1)")]
     [InlineData("=LET(XFD1048576,2,1)")]
-    [InlineData("=LET(R1C1,2,1)")]           // the R1C1 shapes
-    [InlineData("=LET(R2,2,1)")]
-    [InlineData("=LET(C3,2,1)")]
-    [InlineData("=LET(rc,2,1)")]
-    [InlineData("=LET(SUM,2,1)")]            // a function's name
-    [InlineData("=LET(let,2,1)")]
-    [InlineData("=LET(IRR,1,IRR)")]          // one of Excel's functions the engine does not declare (LET-111)
-    [InlineData("=LET(N,1,N)")]              // one letter, unlike c and r (LET-112)
-    [InlineData("=LET(t,1,t)")]
-    [InlineData("=LET(rate,0.05,rate*100)")]
-    [InlineData("=LET(TRUE,2,1)")]
+    [InlineData("=LET(R2,2,R2+1)")]          // an A1 Reference, as the keyboard refuses it (LET-104)
+    [InlineData("=LET(C3,2,C3+1)")]          // likewise (LET-105)
+    [InlineData("=LET(RC1,2,1)")]            // column RC, row 1
+    [InlineData("=LET(LOG10,2,1)")]          // a function's name that is also an A1 Reference
+    [InlineData("=LET(TRUE,2,1)")]           // as the keyboard refuses it (LET-102)
     [InlineData("=LET(false,2,1)")]
     [InlineData("=LET(a.b,2,a.b)")]          // a dot (LET-024)
     [InlineData("=LET(1,2,1)")]              // a number (LET-027)
@@ -59,67 +56,124 @@ public class LetTests
     private static FormulaSyntaxException Refusal(string formula) =>
         Assert.Throws<FormulaSyntaxException>(() => NewSheet().Enter("A1", formula));
 
-    /// <summary>The words a LET name is refused with for being a function's name, and nothing else (ADR-0181).</summary>
-    private static string FunctionNameRefused(string name) => $"'{name}' is the name of a function, and cannot be a LET name.";
-
-    [Fact] // ADR-0181 (2026-10-11), SH-67: the name of every one of Excel's functions the catalogue lists, declared or not, is refused as a LET name, so declaring one later leaves every stored LET as it opened
-    public void ADR0181_every_excel_function_the_catalogue_lists_is_refused_as_a_let_name()
+    [Theory] // ADR-0181 (run 17), SH-67: a name that reads as an A1 Reference, or a boolean, is refused where it stands, in its own words, as the keyboard refuses it (LET-104, LET-105, LET-102)
+    [InlineData("=LET(R2,2,R2+1)", "'R2' reads as a Reference, and cannot be a LET name.")]
+    [InlineData("=LET(c3,2,c3+1)", "'c3' reads as a Reference, and cannot be a LET name.")]
+    [InlineData("=LET(true,2,1)", "TRUE cannot be a LET name.")]
+    public void ADR0181_a_reference_or_a_boolean_is_refused_where_it_stands(string formula, string reason)
     {
-        var names = FunctionCatalogueTests.ExcelFunctions();
-        Assert.Contains("IRR", names);
-        Assert.Contains("NPER", names);
-        var accepted = names.Where(name =>
-        {
-            try
-            {
-                NewSheet().Enter("A1", $"=LET({name},1,1)");
-                return true;
-            }
-            catch (FormulaSyntaxException)
-            {
-                return false;
-            }
-        }).ToList();
+        var refused = Refusal(formula);
 
-        Assert.True(accepted.Count == 0, $"Accepted as LET names: {string.Join(", ", accepted)}");
+        Assert.Equal(5, refused.Position);
+        Assert.Equal(reason, refused.Reason);
     }
 
-    [Fact] // ADR-0181 (2026-10-11), SH-67: every one of Excel's function names that is a name in shape, and no Reference or boolean, is refused where it stands with the words a declared one is refused with
-    public void ADR0181_every_excel_function_name_is_refused_with_a_function_names_words()
+    [Fact] // ADR-0181 (run 17), SH-67: every one of Excel's function names that is a name in shape, and no Reference or boolean, is a LET name, declared by the engine or not, as the keyboard took SUM, IRR and N (LET-101, LET-111, LET-112)
+    public void ADR0181_every_excel_function_name_that_is_a_name_is_a_let_name()
     {
         var names = FunctionCatalogueTests.ExcelFunctions()
             .Where(name => !name.Contains('.') && name is not ("TRUE" or "FALSE") && !CellAddress.TryParse(name, out _))
             .ToList();
-        Assert.Contains("IRR", names);
         Assert.Contains("SUM", names);
+        Assert.Contains("IRR", names);
+        Assert.Contains("N", names);
+        Assert.Contains("LET", names);
+        var sheet = NewSheet();
 
-        Assert.All(names, name =>
-        {
-            var refused = Refusal($"=LET({name},1,1)");
-            Assert.Equal(5, refused.Position);
-            Assert.Equal(FunctionNameRefused(name), refused.Reason);
-        });
+        Assert.All(names, name => Assert.Equal(2, sheet.Evaluate($"=LET({name},1,{name}+1)").Number));
     }
 
-    [Theory] // ADR-0181 (2026-10-11), SH-67: the name of an Excel function the engine does not declare is refused at the same character, with the same words, as a declared one's
+    [Theory] // ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101)
     [InlineData("IRR", "SUM")]
     [InlineData("NPER", "RAND")]
     [InlineData("xirr", "rows")]
     [InlineData("N", "PI")]
-    public void ADR0181_an_undeclared_excel_function_is_refused_as_a_declared_one_is(string undeclared, string declared)
+    public void ADR0181_an_undeclared_excel_function_is_bound_as_a_declared_one_is(string undeclared, string declared)
     {
         Assert.Null(DeclaredFunction.Find(undeclared));
         Assert.NotNull(DeclaredFunction.Find(declared));
+        var sheet = NewSheet();
 
-        foreach (var formula in new[] { "=LET({0},1,{0})", "=1+LET(x,2,{0},3,x)", "=LET(x,LET({0},1,{0}),x)" })
+        foreach (var (formula, value) in new[] { ("=LET({0},1,{0})", 1d), ("=1+LET(x,2,{0},3,x)", 3d), ("=LET(x,LET({0},1,{0}),x)", 1d) })
         {
-            var byDeclared = Refusal(string.Format(CultureInfo.InvariantCulture, formula, declared));
-            var byUndeclared = Refusal(string.Format(CultureInfo.InvariantCulture, formula, undeclared));
-
-            Assert.Equal(byDeclared.Position, byUndeclared.Position);
-            Assert.Equal(byDeclared.Reason.Replace($"'{declared}'", $"'{undeclared}'", StringComparison.Ordinal), byUndeclared.Reason);
-            Assert.Equal(FunctionNameRefused(undeclared), byUndeclared.Reason);
+            Assert.Equal(value, sheet.Evaluate(string.Format(CultureInfo.InvariantCulture, formula, declared)).Number);
+            Assert.Equal(value, sheet.Evaluate(string.Format(CultureInfo.InvariantCulture, formula, undeclared)).Number);
         }
+    }
+
+    [Fact] // ADR-0181 (run 17), SH-67: a function's name followed by ( is still the function's call, whatever a LET binds; an undeclared one's call is still #NAME?
+    public void ADR0181_a_bound_functions_name_followed_by_a_parenthesis_is_still_its_call()
+    {
+        var sheet = NewSheet();
+
+        Assert.Equal(3, sheet.Evaluate("=LET(SUM,2,SUM(SUM,1))").Number);
+        Assert.Equal(5, sheet.Evaluate("=LET(PI,2,ROUND(PI(),0)+PI)").Number);
+        Assert.Equal(6, sheet.Evaluate("=LET(LET,2,LET(x,LET*3,x))").Number);
+        Assert.Equal(ErrorValue.Name, sheet.Evaluate("=LET(IRR,1,IRR(IRR))").Error);
+        Assert.Equal("=LET(SUM,2,SUM(SUM,1))", Entered("=let(SUM,2,sum(SUM,1))"));
+        Assert.Equal("=LET(sum,2,SUM(sum,1))", Entered("=let(sum,2,sum(sum,1))"));
+    }
+
+    [Fact] // ADR-0181 (run 17), SH-67: a function's name is bound in the scope ADR-0181 gives every name, and outside every LET it is #NAME? as before
+    public void ADR0181_a_functions_name_is_bound_only_where_its_let_reaches()
+    {
+        var sheet = NewSheet();
+
+        Assert.Equal(ErrorValue.Name, sheet.Evaluate("=LET(x,1,1)+SUM").Error);
+        Assert.Equal(ErrorValue.Name, sheet.Evaluate("=LET(SUM,1,1)+SUM").Error);
+        Assert.Equal(ErrorValue.Name, sheet.Evaluate("=LET(x,N,N,1,x)").Error);
+        Assert.Equal(5, sheet.Evaluate("=LET(N,2,LET(N,N+3,N))").Number);
+    }
+
+    [Theory] // ADR-0181 (run 17), SH-67: an R1C1 shape that does not read as an A1 Reference is a name, as the keyboard took R1C1 and RC (LET-103, LET-106)
+    [InlineData("=LET(R1C1,2,R1C1+1)")]
+    [InlineData("=LET(RC,2,RC+1)")]
+    [InlineData("=LET(rc,2,RC+1)")]
+    [InlineData("=LET(r1c1,2,R1C1+1)")]
+    [InlineData("=LET(R1C,2,R1C+1)")]
+    [InlineData("=LET(R10C20,2,r10c20+1)")]
+    public void ADR0181_an_r1c1_shape_is_a_name(string formula)
+    {
+        Assert.Equal(3, NewSheet().Evaluate(formula).Number);
+    }
+
+    [Fact] // ADR-0181 (run 17), SH-67: a value left empty is bound, and the name alone shows 0, as the keyboard showed for LET(x,,x) (LET-107) and as IF(TRUE,) shows
+    public void ADR0181_a_value_left_empty_is_bound()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "=LET(x,,x)");
+
+        Assert.Equal(0, sheet.Number("A1"));
+        Assert.Equal("=LET(x,,x)", sheet.GetEntry(CellAddress.Parse("A1"))!.Formula);
+        Assert.Equal(sheet.Evaluate("=IF(TRUE,)"), sheet.Evaluate("=LET(x,,x)"));
+        Assert.Equal(1, sheet.Evaluate("=LET(x,,y,x,1)").Number);
+        Assert.Equal(0, sheet.Evaluate("=LET(x,,y,x,y)").Number);
+        Assert.Equal(0, sheet.Evaluate("=LET(x,,y,,x)").Number);
+    }
+
+    [Theory] // ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place
+    [InlineData("=LET(x,,IF(FALSE,1,x))&\"a\"", "=IF(FALSE,1,)&\"a\"")]
+    [InlineData("=LET(x,,y,x,IF(FALSE,1,y))&\"a\"", "=IF(FALSE,1,)&\"a\"")]
+    [InlineData("=LET(x,,LOG(100,x))", "=LOG(100,)")]
+    [InlineData("=LET(x,,ROUND(2.5,x))", "=ROUND(2.5,)")]
+    [InlineData("=LET(x,,SUM(x,1))", "=SUM(,1)")]
+    [InlineData("=LET(x,,COUNTA(x,1))", "=COUNTA(,1)")]
+    [InlineData("=LET(x,,CONCAT(\"a\",x,\"b\"))", "=CONCAT(\"a\",,\"b\")")]
+    [InlineData("=LET(x,,x+1)", "=1+0")]
+    [InlineData("=LET(x,,x&\"a\")", "=\"a\"")]
+    public void ADR0181_a_name_bound_empty_reads_as_the_empty_argument_would(string bound, string written)
+    {
+        var sheet = NewSheet();
+
+        Assert.Equal(sheet.Evaluate(written), sheet.Evaluate(bound));
+    }
+
+    /// <summary>The Formula an entry stores.</summary>
+    private static string Entered(string typed)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", typed);
+        return sheet.GetEntry(CellAddress.Parse("A1"))!.Formula!;
     }
 
     [Fact] // ADR-0181, SH-67: a name of 250 characters, and a 127th pair, are refused; 249 characters and 126 pairs are not
