@@ -411,6 +411,17 @@ New:
   spine's sixth principle, left to whoever owns the fixture.
 - `verification/2026-10-11-windows-17/part-e/pivot-probe.mjs` (on `claude/exsheet-windows-verify-17`) reads the
   report's rows by `aria-rowindex`; a later run of it subtracts the header's rows.
+- Seen in the third round, in tests this branch does not touch, and only in a whole-solution run while the machine
+  was loaded (load average about 20 to 28, other checkouts building and running layer 3):
+  `EditingNotificationTests.The_opening_and_the_end_are_raised_before_the_browser_has_answered` failed twice with
+  "Collection was modified; enumeration operation may not execute" at its `Assert.Equal([true, false], told)`, and
+  `AllocationTests.Scrolling_allocates_the_same_at_a_thousand_and_a_million_rows` (MEM-1) failed once. In five whole
+  runs of each over the same hour, the last three alternated, the branch failed three times and `origin/main`
+  (`2265cda6`) none; `ExGrid.Components` alone passed every time. The first reads a list that the grid's notification appends to, so a
+  continuation on another thread can still be appending while it is read; the second takes
+  `GC.GetAllocatedBytesForCurrentThread` across awaits, whose continuations can run on another thread. Neither path
+  is one this branch changed. Whether the branch makes them likelier is not settled by five runs: a candidate for the
+  spine's sixth principle, left to whoever owns those tests.
 
 ## The check's output
 
