@@ -11,6 +11,7 @@ tickets 82 and 83). This folder holds the evidence and the tool that makes it.
 | `measure.mjs` | Measures one face in Chrome or Edge: every corpus string, and every glyph the corpus holds, the letters and currency signs a table may hold, and every glyph `CellTextMetrics` names in a class, at 14px and 12px, weights 400, 500, 600 and 700, tabular digits. `--text <string>` measures a string and prints it |
 | `<face>.<platform>.json` | One face as `measure.mjs` measured it, on one platform, in Chrome: `system-ui.macos.json`, `roboto.macos.json` and `dejavu-sans.macos.json` (2026-10-01) |
 | `<face>.<platform>.<browser>.json` | One face measured on one platform in the browser `--browser` named: `system-ui.windows.chrome.json`, `system-ui.windows.msedge.json`, `roboto.windows.chrome.json` and `roboto.windows.msedge.json` (Chrome 154 and Edge 155, display en-GB at 150%, the seventeenth Windows run, 2026-10-11) |
+| `<face>.windows-ja.<browser>.json` | Windows under a Japanese display language, where `system-ui` is Yu Gothic UI: `system-ui.windows-ja.chrome.json` and `system-ui.windows-ja.msedge.json` (Chrome 154 and Edge 155, display ja-JP at 150%, regional format en-GB, 2026-10-12; `verification/2026-10-12-windows-glyphs-ja/`). `measure.mjs` names a record by platform only, so the display language was added to the name by hand. Roboto's records of the same run are not here (What stays out) |
 | `tables.mjs` | Writes the per-glyph tables from the records: `src/ExGrid/Columns/DefaultGlyphWidths.cs` and `src/ExGrid.MudBlazor/RobotoGlyphTable.cs` |
 | `classes.mjs` | The glyphs `CellTextMetrics` names in a class, which a table leaves out |
 | `GlyphWidthRecord.cs` | Reads a record; compiled into the test projects below |
@@ -21,11 +22,11 @@ tickets 82 and 83). This folder holds the evidence and the tool that makes it.
   A format that changes its output fails it, and the corpus it makes is written beside the test
   binary as `corpus.generated.json`.
 - **ExGrid.Tests, `GlyphWidthCorpusTests`**: under the core's defaults, at every density, no corpus
-  string paints wider than its estimate and no glyph wider than its class, in `system-ui.*` (macOS's
-  and Windows', each browser's record) and `dejavu-sans.*`. Weights 400 to 600 are held to the
-  regular widths, 700 to the bold ones.
+  string paints wider than its estimate and no glyph wider than its class, in `system-ui.*` (macOS's,
+  and Windows' under an English and a Japanese display, each browser's record) and `dejavu-sans.*`.
+  Weights 400 to 600 are held to the regular widths, 700 to the bold ones.
 - **ExGrid.MudBlazor.Tests, `RobotoGlyphWidthCorpusTests`**: the same, under the widths
-  `MudExGridPresentation` cascades, in `roboto.*` (macOS's and Windows').
+  `MudExGridPresentation` cascades, in `roboto.*` (macOS's and Windows' under an English display).
 
 A record measured from another corpus is refused (`corpusSha256`).
 
@@ -58,6 +59,12 @@ has not been measured yet:
    node tests/GlyphWidths/measure.mjs roboto --browser chrome
    node tests/GlyphWidths/measure.mjs roboto --browser msedge
    ```
+
+   Under a display language other than English, `system-ui` is another face. Sign in under that
+   language, measure the same four, and give the records the language in their platform's name, as
+   `<face>.windows-ja.<browser>.json` is Japanese's, so they sit beside the English ones and are read
+   with them. `measure.mjs` writes the platform only, so a run from a copy of these files, as the
+   Japanese one was, keeps the English records here from being overwritten.
 3. Write the tables again: `node tests/GlyphWidths/tables.mjs`.
 4. Run layer 1. A failure names each string or glyph charged under its width, the face that painted
    it, and the size and weight. A glyph a table holds is fixed by step 3. Otherwise raise the
@@ -70,8 +77,9 @@ has not been measured yet:
 A letter or currency sign is charged its own measured width where a table holds it, and the other
 class otherwise (ticket 83). A table holds only glyphs its face draws itself in every record:
 - **the core's** a glyph DejaVu Sans draws, which is what Linux paints `system-ui` in, at the
-  widest any core record shows — macOS's `system-ui` and Windows' (Segoe UI, in Chrome and Edge),
-  whatever font of the stack painted it, and DejaVu Sans — measured at 14px and at 12px apart;
+  widest any core record shows — macOS's `system-ui` and Windows' (Segoe UI under an English
+  display and Yu Gothic UI under a Japanese one, in Chrome and Edge), whatever font of the stack
+  painted it, and DejaVu Sans — measured at 14px and at 12px apart;
 - **Roboto's** a glyph Roboto draws, at the wider of its 14px width and its 12px one scaled to 14,
   because the core scales the table.
 
@@ -88,6 +96,10 @@ lacks is painted in a fallback the platform chooses, so it stays the other class
   glyph that kerns with itself reads short in a run (Roboto's `//`), and a glyph alone is laid out
   to the next 1/64px. A string's width is the string as one run.
 - Every width is in 64ths of a pixel, rounded up, so no reading is under what was painted.
+- The painters are read after the widths, and each glyph is read again then: one that is another
+  width by the time its painter is read means the face changed while measuring, and nothing is
+  written. Without that check, Roboto under a Japanese display was recorded with Arial's widths and
+  Roboto named as their painter (What stays out).
 - `painters` names the face that painted each glyph. A glyph the family does not draw is painted
   by the platform's fallback:
   - on macOS, Thai in every face (Thonburi), Hebrew in Roboto (Arial), `₴` and `฿` in Roboto
@@ -97,6 +109,12 @@ lacks is painted in a fallback the platform chooses, so it stays the other class
     Tahoma in every face, the ideographs in Microsoft YaHei (Chrome) or Noto Sans JP (Edge), and
     Hangul in Malgun Gothic. In Roboto, Hebrew, `֏`, `؋` and `₡ ₭ ₮ ₲ ₴ ₵ ₸ ₾ ₿` are painted in
     Arial, `฿` in Tahoma, `৳` in Nirmala UI and `៛` in Leelawadee UI.
+  - on Windows under a Japanese display, `system-ui` is Yu Gothic UI, and Yu Gothic UI Semibold at
+    500 and 600: the Latin, Greek and Cyrillic letters, the digits and signs, the currency signs but
+    those below, and the ideographs, 467 of the 523 glyphs. The Hebrew letters and `֏`, which it
+    lacks, are painted in Segoe UI (Semibold at 500 and 600), Thai, `؋` and `₭ ₲ ₴ ₵ ₼ ₽ ₾ ₿` in
+    Tahoma, and Hangul in Malgun Gothic. Chrome and Edge are alike. A glyph painted in the same face
+    as under English reads the same width.
 
 ## What stays out
 
@@ -108,9 +126,22 @@ lacks is painted in a fallback the platform chooses, so it stays the other class
   tables, but their strings are not in the corpus. Letters of other scripts are the other class's.
 - **Fallback faces on another platform.** A glyph the face does not draw is measured in the
   fallback each measured platform chose, and left out of the tables. Linux chooses others.
-- **Windows under a display language other than English**, where `system-ui` is another face:
-  Yu Gothic UI under Japanese, for one. The Windows records are of an English (United Kingdom)
-  display, where it is Segoe UI. Whether those faces are measured is an open question for the user.
+- **Windows under a display language other than English and Japanese.** `system-ui` is the message
+  font Windows sets for its display language, so under another one it may be another face again.
+  English (United Kingdom), where it is Segoe UI, and Japanese, where it is Yu Gothic UI, are
+  measured (2026-10-11 and 2026-10-12); no other display language is, Chinese and Korean among them.
+  Whether more are measured is an open question for the user.
+- **Roboto under a Japanese display.** Its records of 2026-10-12, in
+  `verification/2026-10-12-windows-glyphs-ja/glyphs/`, are not read. Every glyph they name Roboto as
+  the painter of reads another face's width: 446 of the 451 read exactly Arial's advance (Liberation
+  Sans's, metric for metric) at 14px and 12px, at 400 and at 700, and the English record's do not.
+  The widths were read in the stack's fallback, and the painters after Roboto had applied. Read as
+  Roboto's, they would put `%` (12.453px) and `E` (9.344px) past the wide and digit classes
+  `MudExGridPresentation` cascades (10.4 and 8.3). Roboto is a web font the page serves, so its own
+  widths should not change with the display language, and the glyphs it lacks read the same widths
+  as under English, the ideographs included (Noto Sans JP's in Chrome, Microsoft YaHei's before, an
+  em either way). Whether it is measured again, with the check in "How a width is read", is an open
+  question for the user.
 - **A Consumer's own font.** Whoever sets `--ex-font-family` owes the widths (ADR-0027's
   metrics-bearing obligation, ADR-0030), and a table if they want letters charged their own widths
   (`GlyphWidthTable`). Without one, a letter is charged the other class. This tool can measure a

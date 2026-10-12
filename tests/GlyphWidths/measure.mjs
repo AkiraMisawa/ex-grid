@@ -161,11 +161,12 @@ try {
       return px;
     };
     const in64ths = (px) => Math.ceil(px * 64 - 1e-6);
-    const out = { userAgent: navigator.userAgent, sizes: {} };
+    const out = { userAgent: navigator.userAgent, sizes: {}, alone: {} };
     for (const size of sizes) {
       const at = out.sizes[size] = { glyphs: {}, strings: {} };
       for (const w of weights) {
         const one = widths(glyphs, size, w), run = widths(glyphs.map((g) => g.repeat(100)), size, w);
+        if (size === 14) out.alone[w] = one;
         at.glyphs[w] = one.map((px, i) => in64ths(Math.max(px, run[i] / 100)));
         at.strings[w] = widths(strings, size, w).map(in64ths);
       }
@@ -192,6 +193,19 @@ try {
     for (let i = 0; i < attributes.length; i += 2) a[attributes[i]] = attributes[i + 1];
     const { fonts } = await send('CSS.getPlatformFontsForNode', { nodeId });
     painters[a['data-w']][+a['data-i']] = fonts.map((f) => f.familyName).join(' + ');
+  }
+  // The widths and the painters are read at different moments. A face that changed in between, such
+  // as a web font that applied after the widths were read, would leave a record whose widths are one
+  // face's and whose painters another's (Roboto under a Japanese display on 2026-10-12 read Arial's
+  // widths and named Roboto). So each glyph's span, its painter read, must still be as wide as the
+  // glyph alone was measured at 14px, or nothing is written.
+  const again = await evaluate(`[...document.querySelectorAll('span[data-w]')]
+    .map((s) => [+s.dataset.w, +s.dataset.i, s.getBoundingClientRect().width])`);
+  const changed = again.filter(([w, i, px]) => px !== measured.alone[w][i]);
+  if (changed.length > 0) {
+    throw new Error(`The face changed while measuring: ${changed.length} glyphs are another width now that their `
+      + `painters are read (${changed.slice(0, 8).map(([w, i, px]) => `'${glyphs[i]}' at ${w}, ${measured.alone[w][i]}px `
+      + `then ${px}px, painted by ${painters[w][i]}`).join('; ')}). Nothing was written; measure again.`);
   }
   socket.close();
 

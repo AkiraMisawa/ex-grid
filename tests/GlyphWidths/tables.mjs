@@ -7,8 +7,9 @@
 // A glyph joins a table only where every record shows the face drawing it itself. A glyph the face
 // lacks is painted in a fallback the platform chooses, so it is left to the other class.
 // - The core's: a glyph DejaVu Sans draws, which is what Linux paints for system-ui. Its width is the
-//   widest any core record shows: macOS's system-ui stack and Windows' (Segoe UI), fallback
-//   included, in each browser measured, and DejaVu Sans.
+//   widest any core record shows: macOS's system-ui stack and Windows' (Segoe UI under an English
+//   display, Yu Gothic UI under a Japanese one), fallback included, in each browser measured, and
+//   DejaVu Sans.
 // - Roboto's: a glyph Roboto draws, at the wider of its 14px width and its 12px one scaled to 14.
 // Each width is the widest at 400, 500 and 600 (regular) or at 700 (bold), a shade over.
 import fs from 'node:fs';
@@ -19,16 +20,18 @@ import { classed } from './classes.mjs';
 // fileURLToPath, not the URL's pathname: on Windows the pathname is /C:/…, which is no path there.
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..', '..');
+// A record is <face>.<platform>[.<browser>].json. The platform in its name can say more than the
+// one measure.mjs writes into it: windows-ja is Windows under a Japanese display language.
 const records = (face) => fs.readdirSync(here)
   .filter((f) => f.startsWith(`${face}.`) && f.endsWith('.json'))
-  .map((f) => JSON.parse(fs.readFileSync(path.join(here, f), 'utf8')));
+  .map((f) => ({ ...JSON.parse(fs.readFileSync(path.join(here, f), 'utf8')), named: f.split('.')[1] }));
 const regular = [400, 500, 600];
 const bold = [700];
 const shade = (px) => Math.ceil((px + 0.005) * 100) / 100;
 const eligible = (g) => /[\p{L}\p{Sc}]/u.test(g) && !classed.includes(g);
 const width = (r, g, size, weights) => {
   const i = r.glyphs.indexOf(g);
-  if (i < 0) throw new Error(`${r.face} (${r.platform}) has no reading for '${g}'.`);
+  if (i < 0) throw new Error(`${r.face} (${r.named}) has no reading for '${g}'.`);
   return Math.max(...weights.map((w) => r.sizes[size].glyphs[w][i] / 64));
 };
 const drawsItself = (r, g, family) => {
@@ -56,7 +59,7 @@ const browser = (r) => {
   const edge = / Edg\/(\d+)/.exec(r.userAgent);
   return edge ? `Edge ${edge[1]}` : `Chrome ${/Chrome\/(\d+)/.exec(r.userAgent)?.[1] ?? '?'}`;
 };
-const measuredBy = (rs) => [...new Set(rs.map((r) => `${r.face} on ${r.platform} in ${browser(r)} (${r.measured})`))].join(', ');
+const measuredBy = (rs) => [...new Set(rs.map((r) => `${r.face} on ${r.named} in ${browser(r)} (${r.measured})`))].join(', ');
 const entries = (rows) => rows.map(([g, r, b]) => `        (${JSON.stringify(g)}, ${r.toFixed(2)}, ${b.toFixed(2)}),`).join('\n');
 const table = (name, size, rows, summary) => `    /// <summary>${summary}</summary>
     public static GlyphWidthTable ${name} { get; } = new(${size},
@@ -82,9 +85,10 @@ namespace ExGrid.Columns;
 
 /// <summary>
 /// The core's per-glyph widths (ADR-0016; ticket 83): each letter and currency sign DejaVu Sans
-/// draws, at the widest of macOS's <c>system-ui</c>, Windows' <c>system-ui</c> (Segoe UI) and
-/// DejaVu Sans, so a date's month or a currency symbol is charged what it paints rather than the
-/// other class. Regular is the widest at 400, 500 and 600, bold at 700, a shade over.
+/// draws, at the widest of macOS's <c>system-ui</c>, Windows' <c>system-ui</c> (Segoe UI under an
+/// English display, Yu Gothic UI under a Japanese one) and DejaVu Sans, so a date's month or a
+/// currency symbol is charged what it paints rather than the other class. Regular is the widest at
+/// 400, 500 and 600, bold at 700, a shade over.
 /// </summary>
 internal static class DefaultGlyphWidths
 {
