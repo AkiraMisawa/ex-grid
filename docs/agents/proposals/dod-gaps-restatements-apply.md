@@ -17,7 +17,8 @@ in order.
 2. **(b) WR-2 is restated to ticket 96**: a number operand is a `MudTextField` read in the current culture.
    Edit 5.
 3. **(c) UX-1**: the three bare pixel values in `ex-grid.css` come from Grid Metrics, emitted inline on the
-   instance root, and lie on Device Pixels. Code and tests on this branch; any ADR-0027/0028 edit is below.
+   instance root, and lie on Device Pixels. Code and tests on this branch (merged from `claude/dod-gaps-ux1`);
+   edits 10, 11 and 12, and edit 13 names the tests.
 4. **(g) VZ-18's check on the remote-isolation (Citrix) PC is a Known limitation of `0.1.0`.** It is not run,
    and the 2026-10-08 observation, which names no commit, is not taken as its record. Edits 6, 7, 8 and 9, and
    the Release Notes line below. The release check's side (`verification/by-hand.json` and the table of rows
@@ -57,6 +58,10 @@ carry this line, in the form ADR-0202 gives:
 7. **§21.11: VZ-18's reservation.** Decision (g): the run on that PC is not made at `0.1.0`'s sign-off.
 8. **§21.11: "VZ-18 is checked as written".** Decision (g).
 9. **ADR-0202: `0.1.0`'s Known limitations.** Decision (g).
+10. **ADR-0029: the Geometry Tokens gain the grip's and the guide's widths.** Decision (c).
+11. **ADR-0029: a dated note on why.** Decision (c).
+12. **ADR-0028: the two metrics in "What geometry consists of".** Decision (c).
+13. **UX-1: the tests that hold it.** The audit's: the row had no test; uncredited.
 
 ### 1. docs/definition-of-done.md
 
@@ -216,4 +221,70 @@ New:
   *(2026-10-12, decided with the user: also ExGrid's VZ-18 on the remote-isolation (Citrix) PC. The
   repaint after a reveal is in, and its layer-3 test gates; the check on that PC is not run for `0.1.0`,
   and the observation of 2026-10-08, which names no commit, is not taken as its record.)*
+````
+
+### 10. docs/adr/0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md
+
+Old:
+
+````text
+--ex-menu-button-width   --ex-menu-button-inset   --ex-sort-mark-width
+```
+````
+
+New:
+
+````text
+--ex-menu-button-width   --ex-menu-button-inset   --ex-sort-mark-width
+--ex-resize-grip-width   --ex-column-guide-width
+```
+````
+
+### 11. docs/adr/0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md
+
+Old:
+
+````text
+([ADR-0016](./0016-column-width-and-overflow.md)), and the mark's `" ▲"` was a stylesheet
+literal.)*
+````
+
+New:
+
+````text
+([ADR-0016](./0016-column-width-and-overflow.md)), and the mark's `" ▲"` was a stylesheet
+literal.)*
+*(2026-10-12, decided with the user: `--ex-resize-grip-width` and `--ex-column-guide-width` come from
+Grid Metrics, emitted inline on the instance root as the other geometry is. The grip's 5px and the resize
+guide's and drop indicator's 2px were the last bare pixels in `ex-grid.css`. The guide and the indicator
+lie on Device Pixels ([ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)).)*
+````
+
+### 12. docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md
+
+Old:
+
+````text
+| **MenuButtonWidthPx / MenuButtonInsetPx** *(added later, when review caught the pairing re-entering through the ▾ button)* | an Auto column's **header** estimate, which must clear the menu button ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)/0016) | was `16px`/`6px` in CSS with no C# side at all — the estimate ignored the button |
+````
+
+New:
+
+````text
+| **MenuButtonWidthPx / MenuButtonInsetPx** *(added later, when review caught the pairing re-entering through the ▾ button)* | an Auto column's **header** estimate, which must clear the menu button ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)/0016) | was `16px`/`6px` in CSS with no C# side at all — the estimate ignored the button |
+| **ResizeGripWidthPx / ColumnGuideWidthPx** *(added 2026-10-12, decided with the user, UX-1)* | the stylesheet only: the grip's hit width ([ADR-0016](./0016-column-width-and-overflow.md)) and the painted width of the resize guide and the drop indicator, drawn in whole Device Pixels ([ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)) | were `5px`/`2px` in CSS with no C# side |
+````
+
+### 13. docs/definition-of-done.md
+
+Old:
+
+````text
+| **UX-1** | MUST | No colour is a C# parameter, and no pixel is only a stylesheet value (ADR-0027) | grep the public surface for colour-typed parameters; grep `ex-grid.css` for length literals | zero colour parameters; every length in the stylesheet is a `var(--ex-*)` read or a non-geometric visual value |
+````
+
+New:
+
+````text
+| **UX-1** | MUST | No colour is a C# parameter, and no pixel is only a stylesheet value (ADR-0027) | grep the public surface for colour-typed parameters; grep `ex-grid.css` for length literals. Layer 2 holds both: `NoColourParameterTests` and `StylesheetLengthTests` *(2026-10-12, not a decision: the row had no test; the second reads every length in `ex-grid.css` against the Geometry Tokens the root emits and an allowlist of non-geometric visual values, each with its reason)* | zero colour parameters; every length in the stylesheet is a `var(--ex-*)` read or a non-geometric visual value |
 ````
