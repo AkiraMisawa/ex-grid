@@ -911,6 +911,7 @@ def main():
     parser.add_argument("--detail", action="store_true", help="print every candidate's doubles")
     parser.add_argument("--vectors", metavar="FILE", help="write the engine model's doubles for generated inputs")
     parser.add_argument("--discriminate", action="store_true", help="list inputs that tell the survivors apart")
+    parser.add_argument("--spread", metavar="FORMULA", action="append", default=[], help="the doubles PMT's survivors give for a formula such as =PMT(1/10000000,12,1000)")
     options = parser.parse_args()
     observations, table = search()
     table["NPV, wider"] = npv_wide(observations)
@@ -952,6 +953,33 @@ def main():
         Path(options.vectors).write_text(json.dumps(vectors(400, 17), indent=0) + "\n", encoding="utf-8")
     if options.discriminate:
         print_discriminators(survivors_of)
+    for formula in options.spread:
+        print_spread(formula, survivors_of["PMT"])
+
+
+def print_spread(formula, labels):
+    """The doubles PMT's survivors give for one formula: all of them, then the 64-bit kind, then the exact payment rounded once (the engine's model)."""
+    name, args, _ = parse_call(formula)
+    if name != "PMT":
+        raise SystemExit("--spread takes a PMT formula")
+    args = annuity_args(args)
+    kept = set(labels)
+    runs = [(label, run) for label, run in annuity_candidates("PMT", pmt_forms()) if label in kept]
+    rate, nper, present, future, kind = args
+    growth = (1 + rate) ** int(nper)
+    exact = float(-(rate * (present * growth + future)) / (growth - 1))
+    if kind != 0:
+        exact = float(Q(exact) / (1 + rate))
+    print(f"\n{formula}: the exact payment rounded once (the engine's model) {exact!r}")
+    for title, chosen in (("every survivor", runs), ("at 64 bits, raised by no excess form", [(l, r) for l, r in runs if "@64 | rest@64" in l and "excess" not in l])):
+        counts = {}
+        for _, run in chosen:
+            value = run(args)
+            counts[value] = counts.get(value, 0) + 1
+        values = sorted(counts)
+        print(f"  {title}: {len(chosen)} give {len(values)} doubles, {abs(ulps(values[0], values[-1]))} units in the last place apart")
+        for value in values:
+            print(f"      {value!r}: {counts[value]}" + ("  (the engine's)" if value == exact else ""))
 
 
 def print_discriminators(survivors_of):

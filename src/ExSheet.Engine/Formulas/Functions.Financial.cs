@@ -43,10 +43,10 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// PMT: the payment that pays <c>pv</c> down to <c>fv</c> over <c>nper</c> periods; <c>nper</c> of 0
     /// is <c>#NUM!</c>. Excel's payment is not the doubles' evaluation of the identity, which loses
-    /// the rate's low bits in 1+rate: it is the payment at the end of each period computed beyond a
-    /// double's precision and rounded once to a double, and the payment at the start is that double
-    /// divided by 1+rate, again rounded once (PMT-001 to 003 and 008). <see cref="Wide"/> carries
-    /// both.
+    /// the rate's low bits in 1+rate: Excel's PMT-001 to 003 and 008 equal the payment at the end of
+    /// each period computed beyond a double's precision and rounded once to a double, and the payment
+    /// at the start that double divided by 1+rate, again rounded once. <see cref="Wide"/> carries
+    /// both, and says which of the evaluations that give those four this one is.
     /// </summary>
     private static Operand Pmt(FunctionCall call)
     {
@@ -100,12 +100,22 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// A number carried as the unevaluated sum of two doubles, about 106 bits, for the payment Excel
-    /// computes beyond a double's precision: an x87's 64 bits would serve as well, and the two give the
-    /// same double but within about 2^-60 of a rounding boundary. Every operation is the standard
-    /// error-free one (Dekker, Knuth; the QD library's accurate forms), so the result is the same on
-    /// every platform. <see cref="High"/> is the number rounded to a double.
+    /// A number carried as the unevaluated sum of two doubles, about 106 bits, for the payment PMT
+    /// computes beyond a double's precision: in effect the exact payment over Excel's doubles, rounded
+    /// once. Every operation is the standard error-free one (Dekker, Knuth; the QD library's accurate
+    /// forms), so the result is the same on every platform. <see cref="High"/> is the number rounded
+    /// to a double.
     /// </summary>
+    /// <remarks>
+    /// This is a choice among several evaluations that give all four observed payments, not the one
+    /// they prove. The spike (<c>spikes/exsheet-financial-evaluation/</c>) found 2504, 304 of them in
+    /// an x87's 64 bits. Those agree with this one at the rates observed and part from it as the rate
+    /// shrinks, because an x87's 1+rate keeps only the rate's bits above 2^-64: at
+    /// <c>=PMT(0.045/12,12,250000,-5000)</c> 38 of the 304 are one unit in the last place away, at
+    /// <c>=PMT(0.0365/365,365,10000)</c> they give four doubles across 7 units, and at
+    /// <c>=PMT(1/10000000,12,1000)</c> nine across 3390, from the 13th significant digit. PMT-016 to
+    /// PMT-018 ask Excel.
+    /// </remarks>
     private readonly record struct Wide(double High, double Low)
     {
         public static implicit operator Wide(double value) => new(value, 0);

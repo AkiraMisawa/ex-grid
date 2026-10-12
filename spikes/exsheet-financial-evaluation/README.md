@@ -14,6 +14,7 @@ python3 -B spikes/exsheet-financial-evaluation/search.py --detail         # ever
 python3 -B spikes/exsheet-financial-evaluation/search.py --json           # rewrites results.json
 python3 -B spikes/exsheet-financial-evaluation/search.py --discriminate   # inputs that tell the survivors apart (several minutes)
 python3 -B spikes/exsheet-financial-evaluation/search.py --vectors FILE   # the engine's evaluation at 400 generated inputs
+python3 -B spikes/exsheet-financial-evaluation/search.py --spread "=PMT(1/10000000,12,1000)"   # the doubles PMT's survivors give for one formula
 ```
 
 Standard library only. The script reads every `results-*.json` under `ExcelOracle/` (only the
@@ -73,14 +74,32 @@ The 2504 survivors are of two kinds:
 
 - **348 compute the payment at the end accurately** — at 64 bits, by any way of raising and in any of
   the 19 forms (304), or in doubles from correctly rounded log1p and expm1 (44) — store it to a
-  double, and divide by 1+rate at 64 bits or exactly. That the 304 hold whatever the form or the way
-  of raising is why the engine takes this kind: it does not rest on a choice the observations cannot
-  make.
+  double, and divide by 1+rate at 64 bits or exactly.
 - 2156 carry (1+rate)^n − 1 by an excess form; of those, 100 stay in doubles throughout (squaring
   from the highest bit, 2+a or a+a for the square). They are a narrow fit to four doubles.
 
-PMT-013 to 016 tell the two kinds apart (and the excess forms among themselves); the engine's answer
-is the first kind's in each.
+**The engine takes none of them exactly: it takes the exact payment over Excel's doubles, rounded
+once** (and at the start, that double divided by 1+rate exactly, rounded once). That model also gives
+all four observed doubles, and it is the limit the accurate kind approaches as its precision grows. It
+is a choice among several that fit, not one the observations make. *(Corrected 2026-10-12, after
+review: this section first said that the 304 hold whatever the form or the way of raising, so that the
+engine's kind "does not rest on a choice the observations cannot make", and that PMT-013 to 016 tell
+the kinds apart. Both were wrong.)* The 304 agree with the exact model only at the rates observed. An
+x87's 1+rate keeps only the rate's bits above 2^-64, so the smaller the rate, the more of it they lose,
+each in its own way. `--spread` shows how far they part:
+
+| Formula | The engine | The 304 at 64 bits | All 2504 survivors |
+|---|---|---|---|
+| PMT-013 `=PMT(0.05/12,36,250000,-5000)` | -7363.703123976373 | 1 double, the engine's | 7 doubles |
+| PMT-014 `=PMT(0.0725/12,12,250000,0,1)` | -21530.430018725492 | 1 double, the engine's | 4 doubles |
+| PMT-015 `=PMT(0.05/12,12,10000,0,1)` | -852.5226402170998 | 1 double, the engine's | 5 doubles |
+| PMT-016 `=PMT(0.045/12,12,250000,-5000)` | -20936.48778866115 | 2 doubles, 1 unit in the last place apart (38 give …154) | 5 doubles, 4 units apart |
+| PMT-018 `=PMT(0.0365/365,365,10000)` | -27.90167156122446 | 4 doubles, 7 units apart | 9 doubles, 12 units apart |
+| PMT-017 `=PMT(1/10000000,12,1000)` | -83.33338750000993 | 9 doubles, 3390 units apart, from the 13th significant digit | 12 doubles, 3392 units apart |
+
+So PMT-013 to 015 tell the accurate kind from the excess forms; PMT-016 splits the accurate kind
+itself; and PMT-017 and 018, at small rates, are where the candidates differ most. `--discriminate`
+did not find those: it keeps one form per family and searches rates of 0.0037 and above.
 
 ### NPV: no single evaluation reproduces all three
 
@@ -105,9 +124,10 @@ in doubles: the engine's `Math.Pow` among them. One observation does not tell th
 once) at 400 generated inputs: rates typed as `k/d/100`, 1 to 1000 periods, types 0, 1 and 2,
 negative rates among them, each PMT at least 0.0007 of a unit in the last place from a rounding
 boundary. A throwaway layer-1 test entered each as a Formula and compared the engine's double:
-all 1200 equal (2026-10-12). PMT's port carries double-double numbers (about 106 bits), so it gives
-the 64-bit evaluation's double except within about 2^-60 of a boundary, where which one Excel's
-register gives cannot be known from outside anyway.
+all 1200 equal (2026-10-12). PMT's port carries double-double numbers (about 106 bits), which gives
+the exact model's double except very near a rounding boundary (the vectors stay at least 0.0007 of a
+unit in the last place from one). The check compares the port with the exact model only. It says
+nothing of the 64-bit evaluations, which part from the exact model at small rates (above).
 
 `results.json` is the last `--json` run: each function's match counts, the candidates that reproduce
 every observed double (grouped by evaluation for PMT), and the 40 best that do not, with their

@@ -1,5 +1,38 @@
 # Run 17, financial area: what the orchestrator applies, and the one question
 
+## The question for the user (ADR-0202: correct, or refuse the arguments, before the tag)
+
+*(Written 2026-10-12 after review; it gathers section 4's NPV question and the PMT finding below into one.)*
+
+Two of the financial answers rest on a choice the seventeenth run's observations do not make:
+
+- **NPV disagrees.** No evaluation the search tried gives all three observed doubles. The engine's NPV differs from
+  Excel's by 4 units in the last place on NPV-001 and 32 on NPV-002, in ordinary cash flows (section 4).
+- **PMT at small rates is unobserved, and the candidates part there.** The engine takes the exact payment rounded once,
+  one of 2504 evaluations that give all four observed payments (rates of 0.5% to 10% a period). The 304 of them in an
+  x87's 64 bits part from it as the rate shrinks: one unit in the last place at PMT-016, seven at a daily rate over a
+  year (PMT-018, `=PMT(0.0365/365,365,10000)`), 3,390 from the 13th significant digit at a rate of 10^-7 (PMT-017,
+  `=PMT(1/10000000,12,1000)`). No observation disagrees with the engine, and none tells which candidate Excel is.
+
+ADR-0202: "A function that disagrees is corrected before the tag, or the arguments where it disagrees are refused with
+an Error Value." Which of these?
+
+1. **Ask Excel first** (recommended). `oracle.ps1 -Area pmt,npv` asks NPV-005 to 008 and PMT-013 to 018 through COM, no
+   keys, in minutes. The spike reruns on every observed double (`search.py`, `--spread`). NPV follows if one evaluation
+   gives all its doubles, and PMT's choice is kept or corrected on what Excel answers at small rates. Whatever the run
+   leaves unsettled comes back as option 2 or 3, before the tag.
+2. **Refuse now, until a run settles each.** `NPV` at a rate other than 0 is `#VALUE!` (a rate of 0 sums the values, and
+   a sum is Excel's). `PMT` at a rate below the smallest observed, say a magnitude under 0.001 a period, is `#VALUE!`.
+   Nothing is quietly wrong, but a common function steps back, and the PMT bound is a line drawn between observations.
+3. **Refuse NPV, keep PMT.** NPV disagrees, so ADR-0202 requires option 1 or 2 for it. PMT has no observed
+   disagreement. Its exact model is the payment correctly rounded, and it shows the same to the cent and well beyond.
+   PMT-016 to 018 record the open question.
+4. **For NPV only: take the split by argument kind, or undeclare `NPV`** (`#NAME?`, as `IRR` is). See section 4.
+
+**Recommendation:** 1. If no run can be made before the tag, then 3. NPV is a known disagreement and ADR-0202 settles it
+by refusal. PMT is not one, and refusing small rates would refuse an answer no run has shown to be wrong. The engine
+does not change until the user decides.
+
 Branch `claude/run17-financial`. The cases: FV-001, FV-003, NPV-001, NPV-002, PMT-001 to 003, PV-001,
 PV-003 (each a double that differed from Excel's in the 13th to 15th significant digit) and PMT-008
 (`type` 2, refused). The search is `spikes/exsheet-financial-evaluation/` (README, `search.py`,
@@ -23,11 +56,16 @@ At the end of ADR-0047, after the note of 2026-10-11:
 > - **PV and FV** are evaluated in doubles, in the identity's order, with 1+rate raised to `nper` by
 >   squaring from the exponent's lowest bit. Excel's FV-001 lies 39 units in the last place from the
 >   correctly rounded power's evaluation; squaring gives FV-001 to 003, PV-001 and PV-003 to the bit.
-> - **PMT** is not: the payment at the end of each period is carried beyond a double and rounded
->   once, and the payment at the start is that double divided by 1+rate, unrounded, and rounded once
->   (PMT-001 to 003 and 008). Every evaluation at an x87's 64 bits gives these, whatever its form. The
->   engine carries about 106 bits, which gives the same double except within about 2^-60 of a rounding
->   boundary.
+> - **PMT** is not. Excel's payments equal the payment at the end of each period carried beyond a
+>   double and rounded once, and, at the start, that double divided by 1+rate, unrounded, and rounded
+>   once (PMT-001 to 003 and 008). The engine takes the exact model: the payment computed exactly over
+>   Excel's doubles and rounded once. That is one of 2504 evaluations that give all four observed
+>   doubles, not the one they prove. 304 of them are in an x87's 64 bits. They agree with the exact
+>   model at the rates observed, 0.5% to 10% a period, and part from it as the rate shrinks, because an
+>   x87's 1+rate keeps only the rate's bits above 2^-64. At PMT-016, 38 of them are one unit in the
+>   last place away. At a daily rate over a year they give four doubles across 7 units (PMT-018). At a
+>   rate of 10^-7 they give nine across 3,390 units, from the 13th significant digit (PMT-017). PMT-013
+>   to 018 ask Excel.
 > - **A `type` that is a whole number other than 0 is payment at the start**, as Excel read 2
 >   (PMT-008). A fractional one stays `#VALUE!` until Excel is asked.
 > - Following "admitted with some argument values refused", at a rate other than 0 an `nper` that is
@@ -54,10 +92,13 @@ with
 
 and after that list add a bullet:
 
-> - **`PMT`, `PV` and `FV` give Excel's double, to the bit** (ADR-0047, the seventeenth run). `PV` and
->   `FV` evaluate Microsoft's identity in doubles, raising 1+rate by squaring; `PMT` computes the payment
->   at the end beyond a double and rounds it once, and the payment at the start divides that double by
->   1+rate. A `type` that is a whole number other than 0 is payment at the start, as 1 is.
+> - **`PMT`, `PV` and `FV` give every double Excel was observed to give, to the bit** (ADR-0047, the
+>   seventeenth run). `PV` and `FV` evaluate Microsoft's identity in doubles, raising 1+rate by squaring.
+>   `PMT` computes the payment at the end exactly and rounds it once, and the payment at the start
+>   divides that double by 1+rate, rounded once. For `PMT` that is one of several evaluations that fit
+>   the four payments observed, at rates of 0.5% to 10% a period. At smaller rates they part, from the
+>   13th significant digit at a rate of 10^-7, and PMT-016 to 018 ask Excel. A `type` that is a whole
+>   number other than 0 is payment at the start, as 1 is.
 
 ## 3. The Docs Site
 
@@ -65,11 +106,14 @@ and after that list add a bullet:
 section "Supported functions", the list of what the engine refuses gains an item (after `RANDBETWEEN`'s):
 
 > <li>
->     <b><code>PMT</code>, <code>PV</code> and <code>FV</code></b> give Excel's result to the last digit, which
->     depends on how Excel raises 1+rate to the number of periods. At a rate other than 0, a number of
->     periods that is not a whole number, or is negative, is <code>#VALUE!</code> until Excel has been asked
->     how it raises to one; so is a <code>type</code> that is not a whole number. Any other <code>type</code>
->     but 0, 2 as well as 1, is payment at the start of each period, as Excel reads it.
+>     <b><code>PMT</code>, <code>PV</code> and <code>FV</code></b> give, to the last digit, every result Excel
+>     was seen to give for them. Which result that is depends on how Excel raises 1+rate to the number of
+>     periods. For <code>PMT</code> it rests on payments at rates of 0.5% to 10% a period. At much smaller
+>     rates Excel has not been asked, and its payment may differ from ExSheet's from the 13th significant
+>     digit. At a rate other than 0, a number of periods that is not a whole number, or is negative, is
+>     <code>#VALUE!</code> until Excel has been asked how it raises to one; so is a <code>type</code> that is
+>     not a whole number. Any other <code>type</code> but 0, 2 as well as 1, is payment at the start of each
+>     period, as Excel reads it.
 > </li>
 
 The Change Note (`docs/releases/unreleased/run17-financial-annuity-doubles.md`) points there.
@@ -126,10 +170,12 @@ its evaluation (a rate of 0 sums the values, and a sum is Excel's).
 | PMT-010 | `=PMT(0.1,10,1000,0,-1)` | -147.95035898410148 | a negative `type` is payment at the start |
 | PMT-011 | `=PMT(8%/12,10.5,10000)` | `#VALUE!` | a fractional `nper` |
 | PMT-012 | `=PMT(8%/12,-10,10000)` | `#VALUE!` | a negative `nper` |
-| PMT-013 | `=PMT(0.05/12,36,250000,-5000)` | -7363.703123976373 | the engine's kind (64 bits or more) against the excess forms in doubles (…375, …374, …372) |
+| PMT-013 | `=PMT(0.05/12,36,250000,-5000)` | -7363.703123976373 | the accurate kind (the exact model and all 304 at 64 bits give this) against the excess forms (…375, …374, …372) |
 | PMT-014 | `=PMT(0.0725/12,12,250000,0,1)` | -21530.430018725492 | the same at the start (…49, …485) |
 | PMT-015 | `=PMT(0.05/12,12,10000,0,1)` | -852.5226402170998 | the same (…2171002, …2171, …2170999) |
-| PMT-016 | `=PMT(0.045/12,12,250000,-5000)` | -20936.48778866115 | the same (…154) |
+| PMT-016 | `=PMT(0.045/12,12,250000,-5000)` | -20936.48778866115 | splits the 64-bit kind itself: 266 of the 304 give the exact model's double, 38 give …154 |
+| PMT-017 | `=PMT(1/10000000,12,1000)` | -83.33338750000993 | a small rate: the 304 give nine doubles across 3,390 units in the last place, to …5811 |
+| PMT-018 | `=PMT(0.0365/365,365,10000)` | -27.90167156122446 | a daily rate over a year: the 304 give four doubles across 7 units, all 2504 nine across 12 |
 | NPV-005 | `=NPV(0.08,8000,9200,10000,12000,14500)` | 41922.06155493236 | NPV-002's values typed as arguments: the running product gives …236, the exact value …237 |
 | NPV-006 | `=NPV(A1,A3:A7)`, NPV-002's cells | 41922.06155493236 | NPV-002 without `+A2`: whether the 1 in the last place is NPV's or the addition's |
 | NPV-007 | `=NPV(0.1,A1:A4)`, NPV-001's values in A1:A4 | 1188.4434123352216 | NPV-001's values in a range: the split by argument kind predicts …228, the running product …207 |
@@ -169,9 +215,19 @@ raised). Full lists: `results.json`; per-candidate distances: `search.py --detai
   (FV-009 decides). PV — the same raising, V1 (the engine), V2, V4, V5, V7 (PV-006 and 007 decide).
   PMT — 304 at 64 bits in every form and way of raising, 44 from log1p and expm1, 2156 excess forms
   (100 of them in doubles throughout), all with the payment at the start divided after the payment at
-  the end is stored, or inline for 68 excess forms. The engine takes the 64-bit kind (PMT-013 to 016
-  decide). NPV — none; best: the running product in doubles summed forward (NPV-002 −1 of 41922's last
+  the end is stored, or inline for 68 excess forms. The engine takes the exact model (the payment
+  computed exactly and rounded once), which also gives all four but is none of the 2504. It agrees with
+  every 64-bit survivor on PMT-013 to 015, with 266 of the 304 on PMT-016, and with fewer as the rate
+  shrinks (PMT-017, 018; `--spread`). *(Corrected after review: this said "the engine takes the 64-bit
+  kind (PMT-013 to 016 decide)". PMT-013 to 015 separate only the excess forms, and PMT-016 splits the
+  64-bit kind. `--discriminate` keeps one form per family and searches rates of 0.0037 and above, so it
+  could not find the small rates where the candidates part.)* NPV — none; best: the running product in doubles summed forward (NPV-002 −1 of 41922's last
   place), and 64-bit or summed-from-the-last evaluations (NPV-001 −2 to +9). XNPV — `pow`, the
   correctly rounded power and e^(x ln b), each in doubles (XNPV-004 decides).
 - **The C# port** was checked against the search's model at 400 generated inputs, all three functions:
-  1200 doubles, all equal.
+  1200 doubles, all equal. For PMT the model is the exact one, so the check says nothing of the 64-bit
+  evaluations. *(The branch first said, in `Wide`'s doc comment, in the spike's README and in section 1,
+  that about 106 bits give an x87 64-bit evaluation's double "except within about 2^-60 of a rounding
+  boundary". That was false. The 64-bit forms lose the rate's bits below 2^-64 in 1+rate, so they part
+  from the exact model, and from one another, at small rates, not only near a boundary. All four places
+  are corrected.)*

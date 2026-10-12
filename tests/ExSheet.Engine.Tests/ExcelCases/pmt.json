@@ -113,7 +113,7 @@
     {
       "id": "PMT-013",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: with a future value, where the payment carried beyond a double and the evaluations in doubles that also give PMT-001 to 008 differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "description": "Engine's answer, Excel to be asked: with a future value. Every evaluation in an x87's 64 bits that gives PMT-001 to 008 gives this double, as the engine's exact payment rounded once does; the evaluations that carry (1+rate)^n-1 in excess forms give six others, a few units in the last place away (spikes/exsheet-financial-evaluation/, --spread)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.05/12,36,250000,-5000)"},
       "check": "ZZ1000",
@@ -122,7 +122,7 @@
     {
       "id": "PMT-014",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: at the start of each period, where the payment carried beyond a double and the evaluations in doubles that also give PMT-001 to 008 differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "description": "Engine's answer, Excel to be asked: at the start of each period. Every evaluation in an x87's 64 bits that gives PMT-001 to 008 gives this double, as the engine's exact payment rounded once does; the excess forms give three others, a few units in the last place away (spikes/exsheet-financial-evaluation/, --spread)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.0725/12,12,250000,0,1)"},
       "check": "ZZ1000",
@@ -131,7 +131,7 @@
     {
       "id": "PMT-015",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: at the start of each period, where the payment carried beyond a double and the evaluations in doubles that also give PMT-001 to 008 differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "description": "Engine's answer, Excel to be asked: at the start of each period. Every evaluation in an x87's 64 bits that gives PMT-001 to 008 gives this double, as the engine's exact payment rounded once does; the excess forms give four others, a few units in the last place away (spikes/exsheet-financial-evaluation/, --spread)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.05/12,12,10000,0,1)"},
       "check": "ZZ1000",
@@ -140,11 +140,29 @@
     {
       "id": "PMT-016",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: with a future value, where the payment carried beyond a double and the evaluations in doubles that also give PMT-001 to 008 differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "description": "Engine's answer, Excel to be asked: with a future value. The evaluations that give PMT-001 to 008 part here, the 64-bit ones among themselves: the engine's exact payment rounded once and 266 of the 304 in an x87's 64 bits give this double, the other 38 give -20936.487788661154, one unit in the last place away, and the excess forms others (spikes/exsheet-financial-evaluation/, --spread)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.045/12,12,250000,-5000)"},
       "check": "ZZ1000",
       "expect": {"value2": -20936.48778866115}
+    },
+    {
+      "id": "PMT-017",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at a small rate the evaluations that give PMT-001 to 008 part widely, because an x87's 1+rate keeps only the rate's bits above 2^-64. The 304 in an x87's 64 bits give nine doubles across 3390 units in the last place, differing from the 13th significant digit (-83.33338750000993 to -83.33338750005811); the engine's exact payment rounded once is the first of them (spikes/exsheet-financial-evaluation/, --spread)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(1/10000000,12,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -83.33338750000993}
+    },
+    {
+      "id": "PMT-018",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a daily rate over a year. The 304 evaluations in an x87's 64 bits that give PMT-001 to 008 give four doubles across 7 units in the last place, and all 2504 that give them nine across 12; the engine's exact payment rounded once is one of the four (spikes/exsheet-financial-evaluation/, --spread)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.0365/365,365,10000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -27.90167156122446}
     }
   ]
 }
