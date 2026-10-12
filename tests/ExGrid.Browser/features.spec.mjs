@@ -480,6 +480,77 @@ test('a menu copy writes without a prompt, and with headers (CP-19/CP-17, ADR-00
         .toMatch(/^Trader\r?\n/);
 });
 
+/** Waits until the first grid's selected range covers the cells from [row, column] to [row, column], whole. */
+async function expectRangeCovers(page, [fromRow, fromColumn], [toRow, toColumn]) {
+    const from = await grid(page).locator(`[id$='r${fromRow}c${fromColumn}']`).boundingBox();
+    const to = await grid(page).locator(`[id$='r${toRow}c${toColumn}']`).boundingBox();
+    const want = { x: from.x, y: from.y, right: to.x + to.width, bottom: to.y + to.height };
+    await expect.poll(async () => {
+        const box = await grid(page).locator('.ex-selection .ex-range').boundingBox();
+        if (!box) {
+            return 'not painted';
+        }
+        const near = (p, q) => Math.abs(p - q) <= 1.5;
+        return near(box.x, want.x) && near(box.y, want.y) && near(box.x + box.width, want.right) && near(box.y + box.height, want.bottom)
+            ? 'covers'
+            : JSON.stringify({ box, want });
+    }).toBe('covers');
+}
+
+// Overwrite is Excel's Enter mode (ADR-0010): the Shift+arrows and Shift+Home commit the entry and
+// then extend the Selection, as they do with no edit open, where they once selected the editor's
+// text (the seventeenth Windows run, Part C, case 7). Caret keeps them the editor's.
+test('in Overwrite Shift+Home and Shift+↓ commit and extend the Selection; in Caret Shift+Home selects the text (ED-2, ADR-0010)', async ({ page }) => {
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 2, 1); // Trader, editable
+    await page.keyboard.type('AB');
+    await expect(editor).toHaveValue('AB');
+
+    await page.keyboard.press('Shift+Home');
+
+    await expect(editor).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Trader=AB');
+    await expectRangeCovers(page, [2, 0], [2, 1]);
+    expect(await activeDescendant(grid(page))).toMatch(/r2c1$/);
+
+    // Shift+↓ the same way: typed onto the Focus, which the extension left where it was, and the
+    // range the Selection holds grows a row, as Shift+↓ grows it with no edit open (ADR-0012).
+    await page.keyboard.type('CD');
+    await expect(editor).toHaveValue('CD');
+    await page.keyboard.press('Shift+ArrowDown');
+    await expect(editor).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Trader=CD');
+    await expectRangeCovers(page, [2, 0], [3, 1]);
+    expect(await activeDescendant(grid(page))).toMatch(/r2c1$/);
+
+    // In Caret (F2) the same key is the editor's: it selects the text, and nothing commits.
+    await page.keyboard.press('F2');
+    await expect(editor).toBeVisible();
+    await page.keyboard.press('End');
+    await page.keyboard.press('Shift+Home');
+    await expect.poll(() => editor.evaluate((input) => [input.selectionStart, input.selectionEnd]))
+        .toEqual([0, (await editor.inputValue()).length]);
+    await expect(editor).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+});
+
+test('a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selection stays (ED-2, ED-15, ADR-0034)', async ({ page }) => {
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 0, 2); // Notional, which carries the verdict
+    await page.keyboard.type('abc');
+
+    await page.keyboard.press('Shift+ArrowDown');
+
+    await expect(editor).toHaveValue('abc');
+    await expect(editor).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#edit-status')).not.toContainText('Notional=abc');
+    await expect(grid(page).locator('.ex-selection .ex-range')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    expect(await activeDescendant(grid(page))).toMatch(/r0c2$/);
+});
+
 test('a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034)', async ({ page }) => {
     await clickCell(page, 0, 2);                   // Notional, which carries the verdict
     await page.keyboard.type('abc');

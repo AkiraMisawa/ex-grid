@@ -14,7 +14,8 @@ namespace ExGrid.Components.Tests;
 /// F4 cycles the Reference at the caret (ADR-0051, 2026-09-29; DC-45's layer 2 half, DC-1): with
 /// the Consumer's cycling function declared, F4 while an edit is open hands it the text and the
 /// selection the key carries, writes back the text it answers — in both editor surfaces — and has
-/// the listener place the selection it answers. While pointing, F4 rewrites the Reference the
+/// the listener place the selection it answers: as a selection in Caret, Excel's Edit mode, and as
+/// a caret at its end in Overwrite and while pointing (the seventeenth Windows run). While pointing, F4 rewrites the Reference the
 /// outline wrote and pointing goes on. Without the function, or with no edit open, F4 is not the
 /// grid's. The gate's half is inspected in <see cref="ShippedStylesheetTests"/>; real keys are
 /// layer 3's. 50 rows of 20px in a 350 × 200 Viewport; Book (A) edits.
@@ -34,7 +35,7 @@ public partial class ReferenceCycleTests : GridTestContext
 
     /// <summary>
     /// The shape of ExSheet's answer, for one-letter columns: the Reference the caret is inside or
-    /// touching goes to its next form, A1 → $A$1 → A$1 → $A1 → A1, and the caret to its end.
+    /// touching goes to its next form, A1 → $A$1 → A$1 → $A1 → A1, answered with its span.
     /// </summary>
     private static EditorRewrite? Cycle(string text, int start, int end)
     {
@@ -54,7 +55,7 @@ public partial class ReferenceCycleTests : GridTestContext
             };
             var written = (next.Item1 ? "$" : "") + column + (next.Item2 ? "$" : "") + row;
             var at = m.Index + written.Length;
-            return new EditorRewrite(text[..m.Index] + written + text[(m.Index + m.Length)..], at, at);
+            return new EditorRewrite(text[..m.Index] + written + text[(m.Index + m.Length)..], m.Index, at);
         }
         return null;
     }
@@ -197,8 +198,22 @@ public partial class ReferenceCycleTests : GridTestContext
         Assert.Equal(("=$A$1+B2", 5, 5), SelectionsPlaced()[^1]);
     }
 
-    [Fact] // ADR-0051 / DC-45: a selection answered is placed as a selection
-    public async Task DC45_a_selection_answered_is_placed_as_a_selection()
+    [Fact] // ADR-0051 / DC-45 / SH-28: in Caret, Excel's Edit mode, the selection answered is placed as a selection — the rewritten Reference selected (the seventeenth Windows run, Part C, cases 2 to 4)
+    public async Task DC45_in_caret_the_answer_is_placed_as_a_selection()
+    {
+        var cut = RenderGrid();
+        await TypeFormulaAsync(cut, "=A1+B2");
+        await PressAsync(cut, "F2", "=A1+B2", 6);
+        Assert.Equal("caret", EditingTold()[^1].Mode);
+
+        await PressAsync(cut, "F4", "=A1+B2", 3, moved: true);
+
+        Assert.Equal("=$A$1+B2", CellEditorText(cut));
+        Assert.Equal(("=$A$1+B2", 1, 5), SelectionsPlaced()[^1]);
+    }
+
+    [Fact] // ADR-0051 / DC-45 / SH-28: in Overwrite, Excel's Enter mode, a selection answered is placed as a caret at its end (the seventeenth Windows run, Part C, cases 1, 10, 21, 22)
+    public async Task DC45_in_overwrite_the_answer_is_placed_as_a_caret_at_its_end()
     {
         var cut = RenderGrid(cycle: (_, _, _) => new EditorRewrite("=$A$1+$B$2", 1, 10));
         await TypeFormulaAsync(cut, "=A1+B2");
@@ -206,7 +221,26 @@ public partial class ReferenceCycleTests : GridTestContext
         await PressAsync(cut, "F4", "=A1+B2", 1, 6);
 
         Assert.Equal("=$A$1+$B$2", CellEditorText(cut));
-        Assert.Equal(("=$A$1+$B$2", 1, 10), SelectionsPlaced()[^1]);
+        Assert.Equal(("=$A$1+$B$2", 10, 10), SelectionsPlaced()[^1]);
+        Assert.Equal("overwrite", EditingTold()[^1].Mode);
+    }
+
+    [Fact] // ADR-0051 / DC-45: in Caret, a second press before the selection is placed cycles the same Reference — a placement in flight carries a selection as it carries a caret
+    public async Task DC45_in_caret_a_second_press_before_the_selection_lands_cycles_the_same_reference()
+    {
+        var asked = new List<(string, int, int)>();
+        var cut = RenderGrid(asked: asked);
+        await TypeFormulaAsync(cut, "=A1+B2");
+        await PressAsync(cut, "F2", "=A1+B2", 6);
+        Js.UnansweredCaretPlacement();
+
+        await PressAsync(cut, "F4", "=A1+B2", 3, moved: true);
+        // Setting the value left the browser's caret at the end, after B2: not the user's.
+        await PressAsync(cut, "F4", "=$A$1+B2", 8);
+
+        Assert.Equal(("=$A$1+B2", 1, 5), asked[^1]);
+        Assert.Equal("=A$1+B2", CellEditorText(cut));
+        Assert.Equal(("=A$1+B2", 1, 4), SelectionsPlaced()[^1]);
     }
 
     [Fact] // ADR-0051 / DC-45: F4 in the Formula Bar writes the bar and the Cell Editor alike, and the edit stays in the bar
@@ -223,7 +257,9 @@ public partial class ReferenceCycleTests : GridTestContext
 
         Assert.Equal("=$B$2", BarText(cut));
         Assert.Equal("=$B$2", CellEditorText(cut));
-        Assert.Equal(("=$B$2", 5, 5), SelectionsPlaced()[^1]);
+        // The bar is in Caret, Excel's Edit mode: the rewritten Reference selected (ADR-0051, the
+        // seventeenth Windows run; the bar's own F4 is not yet asked of Excel).
+        Assert.Equal(("=$B$2", 1, 5), SelectionsPlaced()[^1]);
         Assert.Equal("caret", EditingTold()[^1].Mode);
     }
 
@@ -305,6 +341,8 @@ public partial class ReferenceCycleTests : GridTestContext
         Assert.Equal("=$A$2", CellEditorText(cut));
         Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
         Assert.Equal("point", EditingTold()[^1].Mode);
+        // While pointing, a caret at the end of the rewritten Reference (the seventeenth Windows run).
+        Assert.Equal(("=$A$2", 5, 5), SelectionsPlaced()[^1]);
         await PressAsync(cut, "ArrowDown", "=$A$2", 5);
         Assert.Equal("=A3", CellEditorText(cut));
     }

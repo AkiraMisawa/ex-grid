@@ -270,7 +270,7 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal("=$B$2*2", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
     }
 
-    [Fact] // ADR-0051 / SH-28 / DC-45: F4 cycles in the Formula Bar, and the Cell Editor shows the same text
+    [Fact] // ADR-0051 / SH-28 / DC-45: F4 cycles in the Formula Bar — the end of the range at the caret — and the Cell Editor shows the same text; the bar is in Caret, so the rewritten end is selected (the seventeenth Windows run, Part C, case 5)
     public async Task SH28_F4_cycles_the_reference_in_the_formula_bar()
     {
         var cut = RenderSheet();
@@ -280,8 +280,9 @@ public class FormulaEntryWiringTests : SheetTestContext
 
         await PressInEditorAsync(cut, "F4", "=SUM(A1:C3)", 10, fromBar: true);
 
-        Assert.Equal("=SUM($A$1:$C$3)", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
-        Assert.Equal("=SUM($A$1:$C$3)", EditorText(cut));
+        Assert.Equal("=SUM(A1:$C$3)", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+        Assert.Equal("=SUM(A1:$C$3)", EditorText(cut));
+        Assert.Equal(("=SUM(A1:$C$3)", 8, 12), LastPlaced());
     }
 
     [Fact] // ADR-0051 / SH-28: a selection over several References cycles each of them
@@ -333,11 +334,50 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Null(SheetFormulaAids.CycleReference("=1+2", 4, 4));
     }
 
-    [Fact] // ADR-0051 / SH-28: the engine's cycle is handed to the grid as it is, text and selection
+    [Fact] // ADR-0051 / SH-28: the engine's cycle is handed to the grid as it is, text and the span rewritten — for a caret as for a selection
     public void SH28_the_engines_cycle_is_the_grids_rewrite()
     {
-        Assert.Equal(new global::ExGrid.Cells.EditorRewrite("=$A$1+B2", 5, 5), SheetFormulaAids.CycleReference("=A1+B2", 3, 3));
+        Assert.Equal(new global::ExGrid.Cells.EditorRewrite("=$A$1+B2", 1, 5), SheetFormulaAids.CycleReference("=A1+B2", 3, 3));
         Assert.Equal(new global::ExGrid.Cells.EditorRewrite("=$A$1+$B$2", 1, 10), SheetFormulaAids.CycleReference("=A1+B2", 1, 6));
+    }
+
+    /// <summary>The selection the grid last asked the listener to place: text, start, end.</summary>
+    private (string Text, int Start, int End) LastPlaced()
+    {
+        var placed = JSInterop.Invocations.Last(i => i.Identifier == "setCaret");
+        return ((string)placed.Arguments[0]!, (int)placed.Arguments[1]!, (int)placed.Arguments[2]!);
+    }
+
+    [Fact] // ADR-0051 / SH-28 / C-diff-4, C-diff-3: in Edit mode (F2), =SUM(A1:B2) with the caret after B2 cycles B2 alone, each form selected (the seventeenth Windows run, Part C, case 5: 8-12, 8-11, 8-11, 8-10)
+    public async Task SH28_in_edit_mode_F4_cycles_the_end_of_a_range_at_the_caret_and_selects_it()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", "=SUM(A1:B2)");
+        await PressInEditorAsync(cut, "F2", "=SUM(A1:B2)", 11);
+        var (text, start, end) = ("=SUM(A1:B2)", 10, 10);
+        var seen = new List<(string, int, int)>();
+
+        for (var press = 0; press < 4; press++)
+        {
+            await PressInEditorAsync(cut, "F4", text, start, selectionEnd: end);
+            (text, start, end) = LastPlaced();
+            seen.Add((text, start, end));
+        }
+
+        Assert.Equal([("=SUM(A1:$B$2)", 8, 12), ("=SUM(A1:B$2)", 8, 11), ("=SUM(A1:$B2)", 8, 11), ("=SUM(A1:B2)", 8, 10)], seen);
+        Assert.Equal("=SUM(A1:B2)", EditorText(cut));
+    }
+
+    [Fact] // ADR-0051 / SH-28 / C-diff-3, C-diff-6, C-diff-8: typed into a cell (Enter mode), F4 leaves a caret at the end of the rewritten end, in upper case (the seventeenth Windows run, Part C, cases 21 and 22)
+    public async Task SH28_in_enter_mode_F4_leaves_a_caret_after_the_rewritten_reference()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", "=b2:a1");
+
+        await PressInEditorAsync(cut, "F4", "=b2:a1", 6);
+
+        Assert.Equal("=b2:$A$1", EditorText(cut));
+        Assert.Equal(("=b2:$A$1", 8, 8), LastPlaced());
     }
 
     // ---- The editor's verdict (ADR-0034) ----

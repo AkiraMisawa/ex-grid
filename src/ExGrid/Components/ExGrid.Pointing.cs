@@ -39,8 +39,11 @@ public partial class ExGrid<TRow>
     /// selection (start, end) the F4 key carries from the browser, in the Cell Editor or the
     /// Formula Bar alike; it answers the whole new text and the selection in it, or null for
     /// nothing to change. The answer is written to both editor surfaces and its selection placed
-    /// in the one being typed in. While pointing, the caret it is asked at is the end of the
-    /// Reference the outline wrote, and pointing goes on over the rewritten Reference. The grid
+    /// in the one being typed in: as a selection while the edit is in Caret, Excel's Edit mode,
+    /// and as a caret at the selection's end in Overwrite and while pointing, as Excel places it
+    /// after F4 (ADR-0051, the seventeenth Windows run). While pointing, the caret it is asked at
+    /// is the end of the Reference the outline wrote, and pointing goes on over the rewritten
+    /// Reference. The grid
     /// never reads a Formula. Declared, the key listener claims F4 while an edit is open, and
     /// only then; null — the default — leaves F4 to the browser everywhere.
     /// </summary>
@@ -208,11 +211,11 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>
-    /// An arrow, Shift and an arrow, Home or End while editing (ADR-0051). While an outline
-    /// stands over unchanged text they move it; otherwise, in Overwrite or Point, an arrow or
-    /// Home starts pointing from the edited cell when the Consumer says a Reference can go at the
-    /// caret, and End there is claimed and does nothing (ADR-0058, Q53). Anywhere else the key
-    /// keeps the meaning ADR-0012 gives it.
+    /// An arrow, Shift and an arrow, Home, Shift+Home or End while editing (ADR-0051). While an
+    /// outline stands over unchanged text they move or extend it; otherwise, in Overwrite or
+    /// Point, an arrow, a Shift+arrow, Home or Shift+Home starts pointing from the edited cell when
+    /// the Consumer says a Reference can go at the caret, and End there is claimed and does nothing
+    /// (ADR-0058, Q53). Anywhere else the key keeps the meaning ADR-0010 and ADR-0012 give it.
     /// </summary>
     /// <returns>Whether the key was Point's: it pointed, or it was End where Point could
     /// start.</returns>
@@ -232,6 +235,10 @@ public partial class ExGrid<TRow>
             "Shift+ArrowRight" => (GridDirection.Right, 1),
             "Home" => (GridDirection.Left, 2),
             "End" => (GridDirection.Right, 2),
+            // Overwrite claims Shift+Home with the Shift+arrows (ADR-0010, ED-2), and Point with
+            // them: it extends the outline to the row's first column, as it extends a Selection,
+            // from the edited cell where no outline stands yet (the Shift+arrows' rule).
+            "Shift+Home" => (GridDirection.Left, 3),
             _ => null,
         };
         if (step is not { } move)
@@ -267,6 +274,7 @@ public partial class ExGrid<TRow>
         {
             0 => _pointer!.Move(move.Direction, extent),
             1 => _pointer!.Extend(move.Direction, extent),
+            3 => _pointer!.ExtendToEdge(move.Direction, extent),
             _ => _pointer!.MoveToEdge(move.Direction, extent),
         };
         WritePointedReference();
@@ -367,9 +375,13 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// F4 while an edit is open (ADR-0051, 2026-09-29): the Consumer's rewrite of the text the
-    /// key carried, at the selection it carried, written back and its selection placed. In two
-    /// cases the selection is not the key's to give. While pointing, it is the caret at the end
-    /// of the Reference the outline wrote: that Reference is the one F4 cycles, and pointing
+    /// key carried, at the selection it carried, written back and its selection placed — as a
+    /// selection while the edit is in Caret, Excel's Edit mode, where Excel selects the rewritten
+    /// Reference, and as a caret at the selection's end in Overwrite and while pointing, where
+    /// Excel leaves one (the seventeenth Windows run, Part C). The Formula Bar is always in Caret
+    /// outside Point (ADR-0051, 2026-09-30). In two cases the selection is not the key's to
+    /// give. While pointing, it is the caret at the end of the Reference the outline wrote: that
+    /// Reference is the one F4 cycles, and pointing
     /// goes on over what it became. And while a placement the core asked for is still in flight
     /// in that very text, the browser's selection there is where setting the value left it —
     /// the end — and not the user's: the placement's is used, as a caret report ahead of it is
@@ -430,7 +442,10 @@ public partial class ExGrid<TRow>
             && string.CompareOrdinal(rewritten, 0, text, 0, before) == 0
             && string.CompareOrdinal(rewritten, rewritten.Length - after, text, text.Length - after, after) == 0;
         _editText = rewritten;
-        _editCaret = answer.SelectionStart;
+        // Selected in Caret; a caret at its end in Overwrite and Point (ADR-0051, the seventeenth
+        // Windows run). A placement still in flight carries the selection as it carries a caret.
+        var selects = _editMode == EditMode.Caret && !pointing;
+        _editCaret = selects ? answer.SelectionStart : answer.SelectionEnd;
         PlaceCaret(answer.SelectionEnd);
         if (pointing)
         {

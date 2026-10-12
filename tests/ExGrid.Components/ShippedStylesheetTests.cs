@@ -1097,12 +1097,13 @@ public class ShippedStylesheetTests
         // the placement came: that caret stands, and is reported again as the user's.
         // The same call places the selection F4's rewrite answered (ADR-0051, 2026-09-29). It is
         // brought into view first (ticket 75; A_caret_placed_by_the_core_is_brought_into_view).
-        Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*if \(movedByUser\(input\)\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*(?://[^\n]*\n\s*)*showCaret\(input, end\);\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
+        Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*(?://[^\n]*\n\s*)*const moved = input \? movedByUser\(input\) : false;\s*if \(input && input\.value === text\) \{\s*if \(moved\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*(?://[^\n]*\n\s*)*showCaret\(input, end\);\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
             RegexOptions.Singleline), script.Text);
         // The user's move: a press in an editor surface's text, or a caret key left to it or
         // answered by the listener on an Apple platform (ticket 32) — only while the field still
-        // holds the text it was made in.
-        Assert.Matches(new Regex(@"const movedByUser = \(input\) => caretMoved !== null && caretMoved\.input === input && caretMoved\.text === input\.value;"), script.Text);
+        // holds the text it was made in, and forgotten once it does not, so that an equal text written
+        // later is not taken for it (ADR-0051; the seventeenth Windows run, Part C, cases 8 and 9).
+        Assert.Matches(new Regex(@"const movedByUser = \(input\) => \{\s*if \(caretMoved === null \|\| caretMoved\.input !== input\) \{\s*return false;\s*\}\s*if \(caretMoved\.text !== input\.value\) \{\s*caretMoved = null;\s*return false;\s*\}\s*return true;\s*\};"), script.Text);
         Assert.Equal(4, Regex.Matches(script.Text, @"noteCaretMove\((event\.target|input)\);").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), script.Text);
     }

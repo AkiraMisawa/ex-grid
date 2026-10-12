@@ -310,10 +310,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const editingKeys = new Set(
         ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2',
             'Control+f', 'Control+F']);
+    // Overwrite, Excel's Enter mode (ADR-0010, ED-2): the arrows, Home and End, and the four
+    // Shift+arrows and Shift+Home, which commit and extend the Selection — or point, where a
+    // Reference can go — rather than select text in the input (the seventeenth Windows run, Part
+    // C, case 7). Shift+End and the Primary Modifier's arrows stay the editor's.
     const overwriteKeys = new Set([
-        ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
-    // Pointing (ADR-0051's second round): Overwrite's keys and the four Shift+arrows, which
-    // extend the outline rather than select text in the input. And while a completion list
+        ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',
+        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight', 'Shift+Home']);
+    // Pointing (ADR-0051's second round): Overwrite's keys, the four Shift+arrows among them,
+    // which extend the outline rather than select text in the input. And while a completion list
     // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
     // Shift+arrows are the editor's — unless the list is open over Point, where they do what
     // Point does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B
@@ -655,12 +660,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // it says it is the user's, so the core takes it over the placement it has in flight
     // (ADR-0051's third round: a press in the text while pointing ends pointing; found on the
     // Server host, Windows, fourth run, DC-19/DC-34). Only while the field still holds that
-    // text: once it has changed, the move was made in text the core no longer holds.
+    // text: once it has changed, the move was made in text the core no longer holds, and it is
+    // forgotten there and then. A move belongs to the text it was made in, not to an equal text
+    // written later: F4 cycling a whole column back to =SUM(A:A), the text a ← was pressed in,
+    // took the browser's caret at the end for the user's, and the third F4 touched no Reference
+    // (the seventeenth Windows run, Part C, cases 8 and 9).
     let caretMoved = null;
     const noteCaretMove = (input) => {
         caretMoved = { input, text: input.value };
     };
-    const movedByUser = (input) => caretMoved !== null && caretMoved.input === input && caretMoved.text === input.value;
+    const movedByUser = (input) => {
+        if (caretMoved === null || caretMoved.input !== input) {
+            return false;
+        }
+        if (caretMoved.text !== input.value) {
+            caretMoved = null;
+            return false;
+        }
+        return true;
+    };
     const reportCaretOf = (input) => {
         const caret = input.selectionStart ?? input.value.length;
         if (input.value === reportedText && caret === reportedCaret) {
@@ -2995,8 +3013,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // repeat.
         setCaret: (text, caret, end) => {
             const input = editorInput();
+            // Read first: a move made in text the field no longer holds is forgotten now, before the
+            // field can come back to that text (movedByUser).
+            const moved = input ? movedByUser(input) : false;
             if (input && input.value === text) {
-                if (movedByUser(input)) {
+                if (moved) {
                     reportedText = null;
                     reportCaretOf(input);
                     return;

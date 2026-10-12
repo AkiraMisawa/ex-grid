@@ -430,6 +430,11 @@ public partial class ExGrid<TRow>
                 CloseCompletion();
                 StateHasChanged();
                 return true;
+            // In a list of names, where no Reference can go, the Shift+arrows and Shift+Home are
+            // the editor's (ADR-0058, Q51): one that arrives all the same, claimed by a gate not yet
+            // told, neither points nor commits and extends, as Overwrite's would (ADR-0010, ED-2).
+            case "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home":
+                return true;
         }
         return false;
     }

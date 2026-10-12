@@ -550,18 +550,24 @@ public static partial class FormulaEntry
         candidate is { } value && value.Kind == key.Kind && !key.IsError && Formulas.Evaluator.Compare(value, key) == 0;
 
     /// <summary>
-    /// F4 (ADR-0051, 2026-09-29): the Reference at the caret cycled to its next form —
-    /// <c>A1</c> → <c>$A$1</c> → <c>A$1</c> → <c>$A1</c> → <c>A1</c> — and the caret at the end of
-    /// it. The Reference at the caret is the one the caret is inside or touching, on either side.
-    /// With a selection, every Reference it covers, overlaps or touches at either end cycles —
-    /// <c>+</c> selected in <c>=A1+B1</c> cycles both — each to the next form of the first one,
-    /// and the selection covers what was rewritten. A range cycles as one, its
-    /// next form taken from its first end and given to both; whole columns and whole rows have
-    /// two forms (<c>A:A</c> ↔ <c>$A:$A</c>); a Sheet qualifier is kept, and only the cell part
-    /// cycles. Only the <c>$</c> signs change: every other character stays as it was typed.
-    /// <see langword="null"/> — nothing changes — for text that is not a Formula, and where no
-    /// Reference is at the caret or in the selection: a function name, a number, text in
-    /// quotes, a structured reference. A Reference is what the formula grammar reads as one.
+    /// F4 (ADR-0051, 2026-09-29; as Excel does it, the seventeenth Windows run): the Reference at
+    /// the caret cycled to its next form — <c>A1</c> → <c>$A$1</c> → <c>A$1</c> → <c>$A1</c> →
+    /// <c>A1</c> — answered with the span of what was rewritten. The Reference at the caret is the
+    /// one the caret is inside or touching, on either side; the two ends of a cell range are
+    /// References of their own, so only the end at the caret cycles, from its own form
+    /// (<c>=SUM(A1:B2|)</c> gives <c>=SUM(A1:$B$2)</c>; <c>A1|:B2</c> touches <c>A1</c>,
+    /// <c>A1:|B2</c> touches <c>B2</c>). With a selection, every end it covers, overlaps or
+    /// touches cycles — <c>+</c> selected in <c>=A1+B1</c> cycles both — each to the next form of
+    /// the first one. Whole columns and whole rows are one Reference of two forms (<c>A:A</c> ↔
+    /// <c>$A:$A</c>); a Sheet qualifier is kept, before the first end, and only the cell part
+    /// cycles. The rewritten parts' column letters are written in upper case (<c>=b2</c> gives
+    /// <c>=$B$2</c>); every other character, a Sheet qualifier among them, stays as it was typed.
+    /// The span answered runs from the first Reference rewritten — its Sheet qualifier included —
+    /// to the end of the last, for a caret as for a selection: the grid selects it in Excel's Edit
+    /// mode and leaves a caret at its end elsewhere (ADR-0051). <see langword="null"/> — nothing
+    /// changes — for text that is not a Formula, and where no Reference is at the caret or in the
+    /// selection: a function name, a number, text in quotes, a structured reference. A Reference
+    /// is what the formula grammar reads as one.
     /// </summary>
     /// <param name="text">The text being edited.</param>
     /// <param name="selectionStart">Where the selection starts, or the caret.</param>
@@ -577,55 +583,83 @@ public static partial class FormulaEntry
         // Inside or touching, for a caret and a selection alike (observed in Excel: + selected
         // in =A1+B1 gives =$A$1+$B$1). A caret takes the first Reference it touches.
         var caret = selectionStart == selectionEnd;
-        var targets = new List<Match>();
+        var targets = new List<CycleTarget>();
         foreach (var token in Scan(text))
         {
             var touched = token.Start <= selectionEnd && selectionStart <= token.End;
             if (!touched || token.Kind != TokenKind.Operand || token.Unterminated || token.HasBrackets) continue;
             // The operand is a Reference only where the grammar reads one over the whole of it.
-            if (Formulas.Lexer.MatchReference(text, token.Start) is { } reference && reference.Index + reference.Length == token.End)
+            if (Formulas.Lexer.MatchReference(text, token.Start) is not { } reference || reference.Index + reference.Length != token.End) continue;
+            foreach (var target in Targets(reference))
             {
-                targets.Add(reference);
+                if (target.Start > selectionEnd || selectionStart > target.End) continue;
+                targets.Add(target);
                 if (caret) break;
             }
+            if (caret && targets.Count > 0) break;
         }
         if (targets.Count == 0) return null;
 
         var form = NextForm(targets[0]);
         var rewritten = new StringBuilder(text.Length + 4 * targets.Count);
         var at = 0;
-        var start = targets[0].Index;
-        foreach (var reference in targets)
+        var start = targets[0].Start;
+        foreach (var target in targets)
         {
-            rewritten.Append(text, at, reference.Index - at);
-            at = reference.Index;
-            foreach (var (part, column) in Parts(reference))
+            foreach (var (part, column) in target.Parts)
             {
                 rewritten.Append(text, at, part.Index - at);
                 if (column ? form.Column : form.Row) rewritten.Append('$');
-                rewritten.Append(part.Value.TrimStart('$'));
+                var written = part.Value.TrimStart('$');
+                rewritten.Append(column ? written.ToUpperInvariant() : written);
                 at = part.Index + part.Length;
             }
-            rewritten.Append(text, at, reference.Index + reference.Length - at);
-            at = reference.Index + reference.Length;
         }
         var end = rewritten.Length;
         rewritten.Append(text, at, text.Length - at);
-        return new ReferenceCycle(rewritten.ToString(), caret ? end : start, end);
+        return new ReferenceCycle(rewritten.ToString(), start, end);
     }
 
     /// <summary>
-    /// The form F4 gives next, from the first end of <paramref name="reference"/>: whether
-    /// columns and rows are written with <c>$</c>. A cell's four forms run relative, both, the
-    /// row alone, the column alone; whole columns and whole rows have two, relative and
-    /// absolute, and give both axes the one they take, so that in a selection a cell after them
-    /// follows the same way.
+    /// What F4 cycles in a Reference the grammar matched: the span it stands over, and its column
+    /// and row parts in the order written, each with whether it is a column. A cell range's two
+    /// ends are two (the seventeenth Windows run: Excel cycles only the end at the caret), the
+    /// first with the Sheet qualifier before it; a whole column or row is one, both its parts
+    /// together, and a cell one.
     /// </summary>
-    private static (bool Column, bool Row) NextForm(Match reference)
+    private sealed record CycleTarget(int Start, int End, bool Whole, (Group Part, bool Column)[] Parts);
+
+    private static IEnumerable<CycleTarget> Targets(Match reference)
     {
-        if (reference.Groups["cc1"].Success) return reference.Groups["cc1"].Value[0] == '$' ? (false, false) : (true, true);
-        if (reference.Groups["rr1"].Success) return reference.Groups["rr1"].Value[0] == '$' ? (false, false) : (true, true);
-        return (reference.Groups["c1"].Value[0] == '$', reference.Groups["r1"].Value[0] == '$') switch
+        var end = reference.Index + reference.Length;
+        if (reference.Groups["cc1"].Success)
+        {
+            yield return new CycleTarget(reference.Index, end, true, [(reference.Groups["cc1"], true), (reference.Groups["cc2"], true)]);
+            yield break;
+        }
+        if (reference.Groups["rr1"].Success)
+        {
+            yield return new CycleTarget(reference.Index, end, true, [(reference.Groups["rr1"], false), (reference.Groups["rr2"], false)]);
+            yield break;
+        }
+        var (c1, r1) = (reference.Groups["c1"], reference.Groups["r1"]);
+        yield return new CycleTarget(reference.Index, r1.Index + r1.Length, false, [(c1, true), (r1, false)]);
+        var (c2, r2) = (reference.Groups["c2"], reference.Groups["r2"]);
+        if (c2.Success)
+            yield return new CycleTarget(c2.Index, r2.Index + r2.Length, false, [(c2, true), (r2, false)]);
+    }
+
+    /// <summary>
+    /// The form F4 gives next, from <paramref name="target"/>'s own parts: whether columns and
+    /// rows are written with <c>$</c>. A cell's four forms run relative, both, the row alone, the
+    /// column alone; whole columns and whole rows have two, relative and absolute, taken from
+    /// their first part, and give both axes the one they take, so that in a selection a cell
+    /// after them follows the same way.
+    /// </summary>
+    private static (bool Column, bool Row) NextForm(CycleTarget target)
+    {
+        if (target.Whole) return target.Parts[0].Part.Value[0] == '$' ? (false, false) : (true, true);
+        return (target.Parts[0].Part.Value[0] == '$', target.Parts[1].Part.Value[0] == '$') switch
         {
             (false, false) => (true, true),
             (true, true) => (false, true),
@@ -633,19 +667,6 @@ public static partial class FormulaEntry
             _ => (false, false),
         };
     }
-
-    /// <summary>The column and row parts of a Reference the grammar matched, in the order written, each with whether it is a column.</summary>
-    private static IEnumerable<(Group Part, bool Column)> Parts(Match reference)
-    {
-        foreach (var (name, column) in PartNames)
-        {
-            var group = reference.Groups[name];
-            if (group.Success) yield return (group, column);
-        }
-    }
-
-    private static readonly (string Name, bool Column)[] PartNames =
-        [("c1", true), ("r1", false), ("c2", true), ("r2", false), ("cc1", true), ("cc2", true), ("rr1", false), ("rr2", false)];
 
     /// <summary>
     /// Every Reference in the text of a Formula being edited, in the order written (ADR-0057): its

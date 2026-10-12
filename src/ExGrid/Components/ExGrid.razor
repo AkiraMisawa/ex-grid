@@ -6628,6 +6628,19 @@
         if (await DropKeyAimedWithADroppedSelectionAsync(paint, opensAnEdit: false))
             return;
 
+        MoveByKey(action, key);
+    }
+
+    /// <summary>
+    /// A key that moves or selects, answered over the Selection as it stands with no edit open
+    /// (ADR-0012): the Focus moved or the range extended, the Focus or the Extent kept in view,
+    /// and the page turned to follow it. Also what Overwrite's Shift+arrows and Shift+Home do once
+    /// their commit has landed, as Excel's Enter mode does with them (ADR-0010, ED-2).
+    /// </summary>
+    /// <param name="action">What the key means, from <see cref="GridKeys.Resolve(string, bool, bool, bool, bool, bool)"/>.</param>
+    /// <param name="key">The key's <c>key</c> field: only an arrow asks the Consumer's edge answer.</param>
+    private void MoveByKey(GridKeyAction action, string key)
+    {
         var extent = Extent;
         if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
             return;
@@ -7556,7 +7569,8 @@
     /// (ADR-0012), so Cmd+Enter fills on a Mac and Win+Enter is nobody's here. A form not
     /// named below is not the editor's and does nothing. <b>The cases mirror
     /// <c>editingKeys</c> / <c>overwriteKeys</c> in <c>ex-grid.js</c></b> — the two must
-    /// move together. F4, which the gate adds to them only where the Consumer declared
+    /// move together: Overwrite claims the arrows, Home and End, and the Shift+arrows and
+    /// Shift+Home (ADR-0010, ED-2). F4, which the gate adds to them only where the Consumer declared
     /// <see cref="CycleReference"/>, is answered before this, from the selection its message
     /// carries (ADR-0051, 2026-09-29).</param>
     private async Task OnEditingKeyAsync(string canonical)
@@ -7569,7 +7583,8 @@
         // press has just moved into the Formula Bar (ADR-0051, 2026-09-30). They move no Focus
         // (ADR-0010).
         if (_editMode == EditMode.Caret
-            && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End")
+            && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End"
+                or "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home")
         {
             _suppressRender = false;
             return;
@@ -7641,7 +7656,38 @@
             case "End":
                 await CommitAndMoveAsync(next => next.MoveToEdge(GridDirection.Right, Extent));
                 return;
+            case "Shift+ArrowUp":
+            case "Shift+ArrowDown":
+            case "Shift+ArrowLeft":
+            case "Shift+ArrowRight":
+            case "Shift+Home":
+                // Excel's Enter mode commits the entry and extends the Selection with them (ADR-0010,
+                // ED-2; the seventeenth Windows run, Part C, case 7): where no Reference can go, they
+                // are commit gestures, and then do what the same key does with no edit open. Shift+End
+                // stays the editor's until Excel is asked (ADR-0010).
+                await CommitAndExtendAsync(canonical);
+                return;
         }
+    }
+
+    /// <summary>
+    /// Overwrite's Shift+arrows and Shift+Home where no Reference can go (ADR-0010, ED-2): the
+    /// edit commits, and the key then extends the Selection exactly as it does with no edit open
+    /// (ADR-0012), the Extent kept in view. A Reject or a refusal holds the commit, and the key
+    /// keeps no meaning of its own (ADR-0034), as for the arrows.
+    /// </summary>
+    private async Task CommitAndExtendAsync(string canonical)
+    {
+        if (!await CommitEditAsync())
+        {
+            StateHasChanged();
+            return;
+        }
+        var key = canonical["Shift+".Length..];
+        MoveByKey(GridKeys.Resolve(key, ctrl: false, shift: true, alt: false, meta: false, metaIsPrimary: false), key);
+        // The edit has ended even where the key extends nothing — Shift+Home in the first column —
+        // and the render that takes the editor down is owed either way.
+        StateHasChanged();
     }
 
     /// <summary>A commit leaves the grid as an intent and nothing else (ADR-0007): the

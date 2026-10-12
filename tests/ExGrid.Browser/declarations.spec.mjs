@@ -1135,8 +1135,10 @@ test('DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key l
 // ---------------------------------------------------------------------------------------------
 // F4 cycles the Reference at the caret (DC-45; ADR-0051, 2026-09-29). Where each edge case lands
 // is SH-28's, pinned in layer 1; what is asked here is that the real key reaches the grid only
-// while an edit is open, that both surfaces show the rewrite and the caret lands after it, and
-// that a burst on a circuit is decided press by press from the text each key carries.
+// while an edit is open, that both surfaces show the rewrite, that it is selected in Caret —
+// Excel's Edit mode, and the Formula Bar's — and a caret after it in Overwrite and while pointing
+// (the seventeenth Windows run, Part C), and that a burst on a circuit is decided press by press
+// from the text each key carries.
 
 const FORMS = ['=$B$2', '=B$2', '=$B2', '=B2'];
 const selectionOf = (locator) => locator.evaluate((input) => [input.selectionStart, input.selectionEnd]);
@@ -1193,18 +1195,20 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(bar(grid)).toHaveValue('=$B$2');
     });
 
-    test(`DC-45: =B2 and four F4 presses in the Formula Bar give the same four forms, and the bar keeps the keyboard (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-45: =B2 and four F4 presses in the Formula Bar give the same four forms, each selected, and the bar keeps the keyboard (${chrome} Chrome)`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F2');
         await clickBarEnd(grid);
         await typeSteadily(page, bar(grid), '=B2');
 
+        // The bar is in Caret, Excel's Edit mode: the rewritten Reference is selected (ADR-0051,
+        // the seventeenth Windows run, Part C, cases 2 to 5; the bar's own F4 is not yet asked).
         for (const form of FORMS) {
             await page.keyboard.press('F4');
             await expect(bar(grid)).toHaveValue(form);
             await expect(editor(grid)).toHaveValue(form);
-            await expect.poll(() => caret(bar(grid))).toBe(form.length);
+            await expect.poll(() => selectionOf(bar(grid))).toEqual([1, form.length]);
         }
         await expect(bar(grid)).toBeFocused();
         await page.keyboard.press('Escape');
@@ -1239,7 +1243,8 @@ test('DC-45: F4 cycles the Reference the caret touches mid-text, and every Refer
 
     await page.keyboard.press('F4');
     await expect(bar(grid)).toHaveValue('=$A$1+B2');
-    await expect.poll(() => caret(bar(grid))).toBe(5);
+    // Selected, as Excel's Edit mode selects it (the seventeenth Windows run, Part C, cases 2 to 4).
+    await expect.poll(() => selectionOf(bar(grid))).toEqual([1, 5]);
 
     // The whole text selected: both References go to the next form of the first, and the
     // selection covers what was rewritten.
@@ -1280,8 +1285,8 @@ test('DC-45: while pointing, F4 cycles the pointed Reference and pointing goes o
     await expect(nameBox(grid)).toHaveValue('F3');
     await expect.poll(() => caret(editor(grid))).toBe(5);
 
-    // The outline moves on, and writes its Reference as pointing writes it (ADR-0051's reading;
-    // whether Excel keeps the $ form is asked in the seventh Windows run).
+    // The outline moves on, and writes its Reference as pointing writes it, in the relative form, as
+    // Excel does (observed in the seventeenth Windows run, Part C, case 15b: =A3).
     await page.keyboard.press('ArrowDown');
     await expect(editor(grid)).toHaveValue('=F4');
     await expectCovers(point, grid, 'F4', 'F4');
@@ -1333,15 +1338,125 @@ test('DC-45: on a 150 ms circuit, a second F4 before the caret is placed cycles 
     await page.keyboard.press('F4');
     await page.keyboard.press('F4');
 
+    // The bar is in Caret: the placement in flight carries the selection over $A$1 as it carried a
+    // caret, and the second press cycles it again, which ends selected (ADR-0051).
     await expect(bar(grid)).toHaveValue('=A$1+B2');
-    await expect.poll(() => caret(bar(grid))).toBe(4);
+    await expect.poll(() => selectionOf(bar(grid))).toEqual([1, 4]);
     // Long past the last placement's round trip, nothing else has changed.
     await page.waitForTimeout(500);
     await expect(bar(grid)).toHaveValue('=A$1+B2');
-    expect(await caret(bar(grid))).toBe(4);
+    expect(await selectionOf(bar(grid))).toEqual([1, 4]);
     await setRoundTrip(0);
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);
+});
+
+// The seventeenth Windows run put F4's edge cases to Excel (Part C). In Edit mode — F2 in the cell,
+// and the Formula Bar — Excel selects the rewritten Reference; the two ends of a range cycle each
+// on its own; a whole column cycles in two; typed into a cell (Enter mode) the caret stands after
+// the rewritten Reference, whose column letters are written in upper case.
+
+/** Opens an edit on F2 holding `text` with the caret after the Reference before its last character, as F2 and ← leave it in the cell, or a press at the bar's end and ← in the bar. */
+async function caretBeforeTheLastCharacter(page, grid, surface, text) {
+    await pressCell(grid, 'F2');
+    if (surface === 'cell') {
+        await page.keyboard.type(text);
+        await expect(editor(grid)).toHaveValue(text);
+        // Caret, Excel's Edit mode: ← moves the caret.
+        await page.keyboard.press('F2');
+    } else {
+        await clickBarEnd(grid);
+        await typeSteadily(page, bar(grid), text);
+    }
+    const field = surface === 'cell' ? editor(grid) : bar(grid);
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(() => caret(field)).toBe(text.length - 1);
+    return field;
+}
+
+for (const surface of ['cell', 'bar']) {
+    test(`SH-28/DC-45: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A and $A:$A, each selected (ADR-0051; the seventeenth Windows run, Part C, cases 8 and 9; ${surface})`, async ({ page }) => {
+        const grid = sheet(page);
+        const field = await caretBeforeTheLastCharacter(page, grid, surface, '=SUM(A:A)');
+
+        for (const [text, selected] of [['=SUM($A:$A)', [5, 10]], ['=SUM(A:A)', [5, 8]], ['=SUM($A:$A)', [5, 10]]]) {
+            await page.keyboard.press('F4');
+            await expect(field).toHaveValue(text);
+            await expect(surface === 'cell' ? bar(grid) : editor(grid)).toHaveValue(text);
+            await expect.poll(() => selectionOf(field)).toEqual(selected);
+        }
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+
+    test(`SH-28/DC-45: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone through its four forms, each selected (ADR-0051; the seventeenth Windows run, Part C, case 5; ${surface})`, async ({ page }) => {
+        const grid = sheet(page);
+        const field = await caretBeforeTheLastCharacter(page, grid, surface, '=SUM(A1:B2)');
+
+        for (const [text, selected] of [
+            ['=SUM(A1:$B$2)', [8, 12]], ['=SUM(A1:B$2)', [8, 11]], ['=SUM(A1:$B2)', [8, 11]], ['=SUM(A1:B2)', [8, 10]],
+        ]) {
+            await page.keyboard.press('F4');
+            await expect(field).toHaveValue(text);
+            await expect.poll(() => selectionOf(field)).toEqual(selected);
+        }
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+}
+
+test('SH-28/DC-45: typed into a cell, F4 leaves the caret after the rewritten Reference, in upper case, and the other end of a range as typed (ADR-0051; the seventeenth Windows run, Part C, cases 21 and 22)', async ({ page }) => {
+    const grid = sheet(page);
+    for (const [typed, cycled] of [['=b2', '=$B$2'], ['=B2:A1', '=B2:$A$1']]) {
+        await pressCell(grid, 'F2');
+        await page.keyboard.type(typed);
+        await expect(editor(grid)).toHaveValue(typed);
+
+        await page.keyboard.press('F4');
+
+        await expect(editor(grid)).toHaveValue(cycled);
+        await expect(bar(grid)).toHaveValue(cycled);
+        await expect.poll(() => selectionOf(editor(grid))).toEqual([cycled.length, cycled.length]);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    }
+});
+
+// Overwrite is Excel's Enter mode (ADR-0010, ED-2): typed into a cell, Shift+Home and the
+// Shift+arrows commit the entry and extend the Selection, where ExSheet once selected the editor's
+// text (the seventeenth Windows run, Part C, case 7: B10:D10).
+test('ED-2: typed into a cell, Shift+Home commits the Formula and extends the Selection to the row\'s first column; Shift+→ then moves the Extent (ADR-0010; the seventeenth Windows run, Part C, case 7)', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'D10');
+    await page.keyboard.type('=A1+B2');
+    await expect(editor(grid)).toHaveValue('=A1+B2');
+
+    await page.keyboard.press('Shift+Home');
+
+    await expect(editor(grid)).toHaveCount(0);
+    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'A10', 'D10');
+    await expect(nameBox(grid)).toHaveValue('D10');
+    await expect(bar(grid)).toHaveValue('=A1+B2');
+
+    await page.keyboard.press('Shift+ArrowRight');
+    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'B10', 'D10');
+    await expect(nameBox(grid)).toHaveValue('D10');
+});
+
+test('ED-2/DC-19: typed = into a cell, Shift+↓ points a range from the edited cell instead of selecting text, and nothing commits (ADR-0010, ADR-0051)', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'F2');
+    await page.keyboard.type('=1+');
+    await expect(editor(grid)).toHaveValue('=1+');
+
+    await page.keyboard.press('Shift+ArrowDown');
+
+    await expect(editor(grid)).toHaveValue('=1+F2:F3');
+    await expectCovers(grid.locator('.ex-selection .ex-point'), grid, 'F2', 'F3');
+    await expect(nameBox(grid)).toHaveValue('F2');
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+    await expectFocusAt(grid, 'F2');
 });
 
 // ---------------------------------------------------------------------------------------------
