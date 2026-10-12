@@ -7,9 +7,10 @@ namespace ExSheet.Engine.Tests;
 /// F4 cycles the Reference at the caret (ADR-0051, 2026-09-29; SH-28): the engine's rewrite of
 /// the text being edited, as Excel does it (the seventeenth Windows run, Part C). A <c>|</c> marks
 /// the caret; two of them mark a selection, from the first to the second. The engine answers the
-/// span of what it rewrote, for a caret as for a selection: the grid selects it in Excel's Edit
-/// mode and leaves a caret at its end elsewhere, so <see cref="Cycled"/> writes both marks and
-/// <see cref="CycledToCaret"/> the caret at the span's end.
+/// span of what it rewrote, for a caret as for a selection: the grid selects it where the key
+/// carried a selection or a caret the user moved, and leaves a caret at its end where typing left
+/// the caret (ADR-0051), so <see cref="Cycled"/> writes both marks and <see cref="CycledToCaret"/>
+/// the caret at the span's end.
 /// </summary>
 public class ReferenceCycleTests
 {
@@ -33,7 +34,7 @@ public class ReferenceCycleTests
             : answer.Text.Insert(answer.SelectionEnd, "|").Insert(answer.SelectionStart, "|");
     }
 
-    /// <summary>The answer with only the caret at the span's end marked, as Overwrite and Point place it.</summary>
+    /// <summary>The answer with only the caret at the span's end marked, as the grid places it where typing left the caret, and while pointing.</summary>
     private static string? CycledToCaret(string marked)
     {
         var (text, start, end) = Marked(marked);
@@ -159,6 +160,20 @@ public class ReferenceCycleTests
     public void SH28_whole_columns_and_rows_have_two_forms(string marked, string expected)
     {
         Assert.Equal(expected, Cycled(marked));
+    }
+
+    [Fact] // ADR-0051 / SH-28: a pointed range is asked as a selection over the whole of it, and both ends cycle together, press after press (observed, the readings of 2026-10-12, R1 (vi): =, ↓, Shift+↓, F4 in D10 gave =$D$11:$D$12)
+    public void SH28_a_pointed_range_cycles_both_ends_together()
+    {
+        var text = "=|D11:D12|";
+        var seen = new List<string>();
+        for (var press = 0; press < 4; press++)
+        {
+            text = Cycled(text)!;
+            seen.Add(text);
+        }
+
+        Assert.Equal(["=|$D$11:$D$12|", "=|D$11:D$12|", "=|$D11:$D12|", "=|D11:D12|"], seen);
     }
 
     [Fact] // ADR-0051 / SH-28 / C-diff-7: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A, $A:$A — a cycle of two (Part C, cases 8 and 9)

@@ -74,9 +74,9 @@ internal static class SheetFormulaAids
     /// F4 (ADR-0051, 2026-09-29): the Reference at the caret — the end of a range the caret
     /// touches — or every one the selection covers, overlaps or touches, cycled to its next form
     /// by the engine (<see cref="FormulaEntry.CycleReference"/>), with the selection over what was
-    /// rewritten: the grid selects it in Excel's Edit mode and leaves a caret at its end in Enter
-    /// mode and while pointing (the seventeenth Windows run). Null where nothing changes: no
-    /// Reference there, or text that is not a Formula.
+    /// rewritten: the grid selects it where the key carried a selection or a caret the user moved,
+    /// and leaves a caret at its end where typing left the caret, and while pointing (ADR-0051).
+    /// Null where nothing changes: no Reference there, or text that is not a Formula.
     /// </summary>
     internal static EditorRewrite? CycleReference(string text, int selectionStart, int selectionEnd) =>
         FormulaEntry.CycleReference(text, selectionStart, selectionEnd) is { } cycle

@@ -270,19 +270,62 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal("=$B$2*2", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
     }
 
-    [Fact] // ADR-0051 / SH-28 / DC-45: F4 cycles in the Formula Bar — the end of the range at the caret — and the Cell Editor shows the same text; the bar is in Caret, so the rewritten end is selected (the seventeenth Windows run, Part C, case 5)
+    [Fact] // ADR-0051 / SH-28 / DC-45: F4 cycles in the Formula Bar — the end of the range at the caret — and the Cell Editor shows the same text; the caret moved by ←, the rewritten end is selected (observed, R1 (v): =SUM(A1:B2), ←, F4 gave =SUM(A1:$B$2) with $B$2 selected)
     public async Task SH28_F4_cycles_the_reference_in_the_formula_bar()
     {
         var cut = RenderSheet();
-        await GoToAsync(cut, "B2");
+        await GoToAsync(cut, "D10");
         await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
-        await TypeInBarAsync(cut, "=SUM(A1:C3)");
+        await TypeInBarAsync(cut, "=SUM(A1:B2)");
 
-        await PressInEditorAsync(cut, "F4", "=SUM(A1:C3)", 10, fromBar: true);
+        await PressInEditorAsync(cut, "F4", "=SUM(A1:B2)", 10, fromBar: true, moved: true);
 
-        Assert.Equal("=SUM(A1:$C$3)", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
-        Assert.Equal("=SUM(A1:$C$3)", EditorText(cut));
-        Assert.Equal(("=SUM(A1:$C$3)", 8, 12), LastPlaced());
+        Assert.Equal("=SUM(A1:$B$2)", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+        Assert.Equal("=SUM(A1:$B$2)", EditorText(cut));
+        Assert.Equal(("=SUM(A1:$B$2)", 8, 12), LastPlaced());
+    }
+
+    [Fact] // ADR-0051 / SH-28 / DC-45: typed into the Formula Bar, F4 leaves a caret at the end of the rewritten Reference, nothing selected (observed, R1 (iv): =B2, F4 gave =$B$2 with a caret at its end)
+    public async Task SH28_F4_typed_into_the_formula_bar_leaves_a_caret()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "D10");
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        await TypeInBarAsync(cut, "=B2");
+
+        await PressInEditorAsync(cut, "F4", "=B2", 3, fromBar: true);
+
+        Assert.Equal("=$B$2", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+        Assert.Equal(("=$B$2", 5, 5), LastPlaced());
+    }
+
+    [Fact] // ADR-0051 / ED-29: in the Formula Bar, after =, ↓ is the editor's: the edit stays in Caret, the text stays =, nothing is outlined; F4 and ↓ change nothing, and + types on (observed, R1 (i) to (iii))
+    public async Task ED29_in_the_formula_bar_down_after_equals_does_not_point()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "D10");
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        await TypeInBarAsync(cut, "=");
+        var grid = Grid(cut);
+        var placed = JSInterop.Invocations.Count(i => i.Identifier == "setCaret");
+
+        // The gate leaves ↓ to the editor in Caret; one that reaches the core all the same, as F4 does,
+        // changes nothing.
+        await PressInEditorAsync(cut, "ArrowDown", "=", 1, fromBar: true);
+        await PressInEditorAsync(cut, "F4", "=", 1, fromBar: true);
+        await PressInEditorAsync(cut, "ArrowDown", "=", 1, fromBar: true);
+
+        Assert.Equal("=", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+        Assert.Empty(cut.FindAll(".ex-selection .ex-point"));
+        Assert.Equal("caret", JSInterop.Invocations.Last(i => i.Identifier == "setEditing").Arguments[0]);
+        Assert.Equal(placed, JSInterop.Invocations.Count(i => i.Identifier == "setCaret"));
+        Assert.Equal("D10", NameBox(cut));
+
+        await TypeInBarAsync(cut, "=+");
+        Assert.Equal("=+", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+        Assert.Equal("=+", EditorText(cut));
+        Assert.Empty(cut.FindAll(".ex-selection .ex-point"));
+        Assert.Equal(new CellPosition(9, 3), grid.Instance.ReadSelection().Selection.Focus);
     }
 
     [Fact] // ADR-0051 / SH-28: a selection over several References cycles each of them
@@ -348,7 +391,7 @@ public class FormulaEntryWiringTests : SheetTestContext
         return ((string)placed.Arguments[0]!, (int)placed.Arguments[1]!, (int)placed.Arguments[2]!);
     }
 
-    [Fact] // ADR-0051 / SH-28 / C-diff-4, C-diff-3: in Edit mode (F2), =SUM(A1:B2) with the caret after B2 cycles B2 alone, each form selected (the seventeenth Windows run, Part C, case 5: 8-12, 8-11, 8-11, 8-10)
+    [Fact] // ADR-0051 / SH-28 / C-diff-4, C-diff-3: in Edit mode (F2), =SUM(A1:B2) with the caret moved after B2 by ← cycles B2 alone, each form selected (observed, the seventeenth Windows run, Part C, case 5: 8-12, 8-11, 8-11, 8-10)
     public async Task SH28_in_edit_mode_F4_cycles_the_end_of_a_range_at_the_caret_and_selects_it()
     {
         var cut = RenderSheet();
@@ -359,7 +402,8 @@ public class FormulaEntryWiringTests : SheetTestContext
 
         for (var press = 0; press < 4; press++)
         {
-            await PressInEditorAsync(cut, "F4", text, start, selectionEnd: end);
+            // The first press carries the caret ← moved; each after it, the selection the one before placed.
+            await PressInEditorAsync(cut, "F4", text, start, selectionEnd: end, moved: press == 0);
             (text, start, end) = LastPlaced();
             seen.Add((text, start, end));
         }
@@ -368,7 +412,7 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal("=SUM(A1:B2)", EditorText(cut));
     }
 
-    [Fact] // ADR-0051 / SH-28 / C-diff-3, C-diff-6, C-diff-8: typed into a cell (Enter mode), F4 leaves a caret at the end of the rewritten end, in upper case (the seventeenth Windows run, Part C, cases 21 and 22)
+    [Fact] // ADR-0051 / SH-28 / C-diff-3, C-diff-6, C-diff-8: typed into a cell (Enter mode), F4 leaves a caret at the end of the rewritten end, in upper case (observed, the seventeenth Windows run, Part C, cases 21 and 22)
     public async Task SH28_in_enter_mode_F4_leaves_a_caret_after_the_rewritten_reference()
     {
         var cut = RenderSheet();
@@ -378,6 +422,96 @@ public class FormulaEntryWiringTests : SheetTestContext
 
         Assert.Equal("=b2:$A$1", EditorText(cut));
         Assert.Equal(("=b2:$A$1", 8, 8), LastPlaced());
+    }
+
+    [Fact] // ADR-0051 / SH-28 / DC-45: while pointing, F4 cycles both ends of the pointed range together and pointing goes on over it, the caret at its end, so that a key typed next follows it (observed, R1 (vi): =, ↓, Shift+↓, F4 in D10 gave =$D$11:$D$12; Part C, case 16: + typed after F4 follows the Reference)
+    public async Task SH28_while_pointing_F4_cycles_both_ends_of_the_pointed_range()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", "=");
+        await PressInEditorAsync(cut, "ArrowDown", "=", 1);
+        await PressInEditorAsync(cut, "ArrowDown", "=D11", 4, shift: true);
+        Assert.Equal("=D11:D12", EditorText(cut));
+
+        await PressInEditorAsync(cut, "F4", "=D11:D12", 8);
+
+        Assert.Equal("=$D$11:$D$12", EditorText(cut));
+        Assert.Equal(("=$D$11:$D$12", 12, 12), LastPlaced());
+        Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
+        Assert.Equal("D11", NameBox(cut));
+
+        // Pointing goes on over the rewritten range: F4 again cycles it whole.
+        await PressInEditorAsync(cut, "F4", "=$D$11:$D$12", 12);
+        Assert.Equal("=D$11:D$12", EditorText(cut));
+
+        // A key typed next follows the Reference, and pointing ends.
+        await TypeAsync(cut, "=D$11:D$12+");
+        Assert.Equal("=D$11:D$12+", EditorText(cut));
+        Assert.Empty(cut.FindAll(".ex-selection .ex-point"));
+    }
+
+    [Fact] // ADR-0051 / ADR-0010, ED-2: while pointing, Shift+Home extends the outline to the row's first column and pointing goes on (observed, R1 (viii): =, ↓, Shift+Home in D10 gave =A11:D11, in Point)
+    public async Task ED2_while_pointing_shift_home_extends_to_the_rows_first_column()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", "=");
+        await PressInEditorAsync(cut, "ArrowDown", "=", 1);
+
+        await PressInEditorAsync(cut, "Home", "=D11", 4, shift: true);
+
+        Assert.Equal("=A11:D11", EditorText(cut));
+        Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
+        Assert.Equal("D11", NameBox(cut));
+        Assert.Equal(new CellPosition(9, 3), Grid(cut).Instance.ReadSelection().Selection.Focus);
+    }
+
+    [Fact] // ADR-0051 / ADR-0010, ED-2: while pointing at a range, Shift+Home extends it from its fixed end to the row's first column, as it extends a Selection (a reading: Excel was asked from a single cell, R1 (viii))
+    public async Task ED2_while_pointing_at_a_range_shift_home_extends_from_its_fixed_end()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", "=");
+        await PressInEditorAsync(cut, "ArrowDown", "=", 1);
+        await PressInEditorAsync(cut, "ArrowDown", "=D11", 4, shift: true);
+
+        await PressInEditorAsync(cut, "Home", "=D11:D12", 8, shift: true);
+
+        Assert.Equal("=A11:D12", EditorText(cut));
+        Assert.Equal("D11", NameBox(cut));
+    }
+
+    [Fact] // ADR-0051 / ADR-0010, ED-2: typed = into D10, Shift+Home points from D10 to the row's first column (observed with a Ctrl+C before it, R1's reading after (vi)'s first step: = in D10, a Ctrl+C that copied nothing, then Shift+Home pointed, and a Ctrl+C copied A10:D10; the text =A10:D10 by generalisation)
+    public async Task ED2_after_equals_shift_home_points_from_the_edited_cell()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", "=");
+
+        await PressInEditorAsync(cut, "Home", "=", 1, shift: true);
+
+        Assert.Equal("=A10:D10", EditorText(cut));
+        Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
+    }
+
+    [Theory] // ADR-0010 / ED-2: typed into a cell (Enter mode), Ctrl+→ commits and moves to the Sheet's edge, Ctrl+Shift+→ commits and selects to it, and the Shift+arrows commit and extend from D10 (observed, R1 (vii))
+    [InlineData("ArrowRight", true, false, "XFD10", 9, 16383, 9, 16383)]
+    [InlineData("ArrowRight", true, true, "D10", 9, 3, 9, 16383)]
+    [InlineData("ArrowRight", false, true, "D10", 9, 3, 9, 4)]
+    [InlineData("ArrowDown", false, true, "D10", 9, 3, 10, 3)]
+    [InlineData("ArrowLeft", false, true, "D10", 9, 3, 9, 2)]
+    public async Task ED2_in_enter_mode_the_keys_commit_and_move_or_extend(
+        string key, bool ctrl, bool shift, string nameBox, int focusRow, int focusColumn, int extentRow, int extentColumn)
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", "abc");
+
+        await PressInEditorAsync(cut, key, "abc", 3, shift: shift, ctrl: ctrl);
+
+        Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+        Assert.Equal(nameBox, NameBox(cut));
+        var selection = Grid(cut).Instance.ReadSelection().Selection;
+        Assert.Equal(new CellPosition(focusRow, focusColumn), selection.Focus);
+        Assert.Equal(new CellPosition(extentRow, extentColumn), selection.Extent);
+        await GoToAsync(cut, "D10");
+        Assert.Equal("abc", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
     }
 
     // ---- The editor's verdict (ADR-0034) ----

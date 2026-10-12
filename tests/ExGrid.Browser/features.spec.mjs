@@ -535,6 +535,41 @@ test('in Overwrite Shift+Home and Shift+↓ commit and extend the Selection; in 
     await expect(editor).toHaveCount(0);
 });
 
+// The Primary Modifier's arrows the same way (ADR-0010, ED-2): Excel's Enter mode committed on Ctrl+→
+// and moved, and on Ctrl+Shift+→ committed and extended (the readings of 2026-10-12, R1 (vii)); the
+// other directions follow by generalisation. In Caret Ctrl+← is the editor's.
+test('in Overwrite Ctrl+← commits and moves to the row\'s first column, Ctrl+Shift+← commits and extends to it; in Caret Ctrl+← moves the caret (ED-2, ADR-0010)', async ({ page }) => {
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 2, 1); // Trader, editable
+    await page.keyboard.type('EF');
+    await expect(editor).toHaveValue('EF');
+
+    await page.keyboard.press('Control+ArrowLeft');
+
+    await expect(editor).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Trader=EF');
+    await expect.poll(() => activeDescendant(grid(page))).toMatch(/r2c0$/);
+
+    await clickCell(page, 2, 1);
+    await page.keyboard.type('GH');
+    await expect(editor).toHaveValue('GH');
+    await page.keyboard.press('Control+Shift+ArrowLeft');
+    await expect(editor).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Trader=GH');
+    await expectRangeCovers(page, [2, 0], [2, 1]);
+    expect(await activeDescendant(grid(page))).toMatch(/r2c1$/);
+
+    // In Caret (F2) the same key is the editor's: the caret moves, and nothing commits.
+    await page.keyboard.press('F2');
+    await expect(editor).toBeVisible();
+    await page.keyboard.press('End');
+    await page.keyboard.press('Control+ArrowLeft');
+    await expect.poll(() => editor.evaluate((input) => input.selectionStart)).toBe(0);
+    await expect(editor).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+});
+
 test('a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selection stays (ED-2, ED-15, ADR-0034)', async ({ page }) => {
     const editor = grid(page).locator('input.ex-editor');
     await clickCell(page, 0, 2); // Notional, which carries the verdict

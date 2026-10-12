@@ -310,24 +310,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const editingKeys = new Set(
         ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2',
             'Control+f', 'Control+F']);
-    // Overwrite, Excel's Enter mode (ADR-0010, ED-2): the arrows, Home and End, and the four
-    // Shift+arrows and Shift+Home, which commit and extend the Selection — or point, where a
-    // Reference can go — rather than select text in the input (the seventeenth Windows run, Part
-    // C, case 7). Shift+End and the Primary Modifier's arrows stay the editor's.
-    const overwriteKeys = new Set([
-        ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',
-        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight', 'Shift+Home']);
-    // Pointing (ADR-0051's second round): Overwrite's keys, the four Shift+arrows among them,
-    // which extend the outline rather than select text in the input — all but Shift+Home, which
-    // Point leaves to the editor as it always has: no run has seen what Excel does with it while
-    // pointing, and that is the next ask of Excel (ED-2's claim is Overwrite's). And
-    // while a completion list is open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →,
-    // Home, End and the Shift+arrows are the editor's — unless the list is open over Point, where
-    // they do what Point does with them, as they do without it (ADR-0058: the tenth Windows run,
-    // and Part B of the ninth).
+    // Pointing (ADR-0051's second round): the arrows, Home and End, the four Shift+arrows and
+    // Shift+Home, which move or extend the outline rather than select text in the input (Shift+Home
+    // observed in Excel: the readings of 2026-10-12, R1 (viii)). And while a completion list is
+    // open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
+    // Shift+arrows are the editor's — unless the list is open over Point, where they do what Point
+    // does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B of the
+    // ninth).
     const pointKeys = new Set([
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',
-        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
+        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight', 'Shift+Home']);
+    // Overwrite, Excel's Enter mode (ADR-0010, ED-2): Point's keys, which commit and move or extend
+    // the Selection — or point, where a Reference can go — rather than move the caret or select
+    // text in the input, and the Primary Modifier's arrows with Shift or without, which commit and
+    // move or extend to the edge (observed: the seventeenth Windows run, Part C, case 7; R1 (vii)).
+    // Shift+End stays the editor's: Excel's commits and turns on an End Mode (R1 (vii)), which the
+    // grid does not have (ADR-0058, Q53), and what it does here is not decided.
+    const overwriteKeys = new Set([
+        ...pointKeys, 'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
+        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
     // Pointing from outside (ADR-0058, "The keyboard"): while what Point wrote was written for a
     // press on another grid, and the Consumer that wrote it hears the arrows, Point's keys and the
     // Primary Modifier's arrows, with Shift or without, which the Consumer refuses rather than let
@@ -624,7 +625,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // measurement: no layout is read. The selection's end goes with it for F4, which cycles
     // every Reference a selection covers, and so does whether the user moved the caret in that
     // very text: until the core's placement lands, the browser's own caret there is not the
-    // user's, and the core tells the two apart as it does for a report (ADR-0051, 2026-09-29).
+    // user's, and the core tells the two apart as it does for a report (ADR-0051, 2026-09-29);
+    // and a caret the user moved leaves F4's rewrite selected, where one typing left stays a
+    // caret, as Excel's did (the readings of 2026-10-12, R1 (iv) and (v)).
     // Whether the key is a held key's repeat goes with it too: auto-repeat is visible only here,
     // and by the time a key reaches .NET a repeat looks like a press. The core raises a
     // Consumer's OnLeave once per press, however long Escape is held (ADR-0070). A field of the

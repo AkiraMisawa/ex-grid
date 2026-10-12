@@ -10,14 +10,19 @@ using Xunit;
 namespace ExGrid.Components.Tests;
 
 /// <summary>
-/// Overwrite is Excel's Enter mode, and the Shift+arrows and Shift+Home mean there what they mean
-/// with no edit open (ADR-0010, "Two editing states"; ED-2): the seventeenth Windows run saw Excel
-/// commit an entry typed into a cell on Shift+Home and extend the Selection (Part C, case 7), where
-/// ExGrid selected the editor's text. Where a Reference can go they point, as Point does with them;
-/// elsewhere they commit and extend, a Reject holding the commit as it does for the arrows
-/// (ADR-0034). Caret keeps them the editor's, and Shift+End stays the editor's until Excel is asked.
-/// The gate's half is read from the shipped script here; real keys are layer 3's. Three editable
-/// columns of 100px, 20px rows.
+/// Overwrite is Excel's Enter mode, and the Shift+arrows, Shift+Home and the Primary Modifier's
+/// arrows mean there what they mean with no edit open (ADR-0010, "Two editing states"; ED-2). Excel
+/// was seen to commit an entry typed into a cell and extend the Selection on Shift+Home (the
+/// seventeenth Windows run, Part C, case 7) and on Shift+→, Shift+↓ and Shift+←, and to commit and
+/// move on Ctrl+→ and commit and extend on Ctrl+Shift+→ (the readings of 2026-10-12, R1 (vii)),
+/// where ExGrid selected the editor's text or moved its caret; the other directions follow by
+/// generalisation. Where a Reference can go the Shift keys point, as Point does with them (=, then
+/// Shift+Home, observed with a Ctrl+C before it in R1's reading after its first step), and the
+/// Primary Modifier's arrows do nothing (Excel not asked); elsewhere they commit, a Reject holding
+/// the commit as it does for the arrows (ADR-0034). Caret keeps them the editor's. Shift+End stays
+/// the editor's: Excel's turns on an End Mode the grid does not have (R1 (vii); ADR-0058, Q53), and
+/// what it does here is not decided. The gate's half is read from the shipped script here; real
+/// keys are layer 3's. Three editable columns of 100px, 20px rows.
 /// </summary>
 public class OverwriteShiftKeyTests : GridTestContext
 {
@@ -69,9 +74,9 @@ public class OverwriteShiftKeyTests : GridTestContext
 
     /// <summary>A key as the capture listener forwards it while editing, with the editor's text and caret.</summary>
     private static Task PressAsync(
-        IRenderedComponent<ExGrid<TestRow>> cut, string key, bool shift = false, string? text = null, int caret = -1)
+        IRenderedComponent<ExGrid<TestRow>> cut, string key, bool shift = false, string? text = null, int caret = -1, bool ctrl = false)
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(
-            key, false, shift, false, false, false, editorText: text, editorCaret: caret, editorSelectionEnd: caret));
+            key, ctrl, shift, false, false, false, editorText: text, editorCaret: caret, editorSelectionEnd: caret));
 
     /// <summary>Types <paramref name="typed"/> onto the selected cell: Overwrite, the caret at the end.</summary>
     private static async Task TypeAsync(IRenderedComponent<ExGrid<TestRow>> cut, string typed)
@@ -81,7 +86,7 @@ public class OverwriteShiftKeyTests : GridTestContext
             await cut.Find(".ex-viewport .ex-editor").InputAsync(new ChangeEventArgs { Value = typed });
     }
 
-    [Theory] // ADR-0010 / ED-2: in Overwrite a Shift+arrow commits the entry and extends the Selection from the edited cell, as Excel's Enter mode does (the seventeenth Windows run, Part C, case 7)
+    [Theory] // ADR-0010 / ED-2: in Overwrite a Shift+arrow commits the entry and extends the Selection from the edited cell, as Excel's Enter mode does (observed, R1 (vii): Shift+→ D10:E10, Shift+↓ D10:D11, Shift+← C10:D10; Shift+↑ by generalisation)
     [InlineData("ArrowRight", 2, 2)]
     [InlineData("ArrowLeft", 2, 0)]
     [InlineData("ArrowUp", 1, 1)]
@@ -163,12 +168,14 @@ public class OverwriteShiftKeyTests : GridTestContext
         Assert.Same(before, selection);
     }
 
-    [Theory] // ADR-0142 / ADR-0011, ADR-0010, ED-2: a commit whose own handler moves the order lands, and the Selection it drops stays dropped: the Shift+arrow or Shift+Home that asked for the commit places no Selection from the first cell on screen, as Enter and the plain arrows place none
-    [InlineData("ArrowDown", true)]
-    [InlineData("ArrowLeft", true)]
-    [InlineData("Home", true)]
-    [InlineData("ArrowDown", false)]
-    public async Task ED2_a_commit_whose_handler_moves_the_order_extends_no_dropped_selection(string key, bool shift)
+    [Theory] // ADR-0142 / ADR-0011, ADR-0010, ED-2: a commit whose own handler moves the order lands, and the Selection it drops stays dropped: the Shift+arrow, Shift+Home or Primary Modifier's arrow that asked for the commit places no Selection from the first cell on screen, as Enter and the plain arrows place none
+    [InlineData("ArrowDown", true, false)]
+    [InlineData("ArrowLeft", true, false)]
+    [InlineData("Home", true, false)]
+    [InlineData("ArrowDown", false, false)]
+    [InlineData("ArrowRight", false, true)]
+    [InlineData("ArrowDown", true, true)]
+    public async Task ED2_a_commit_whose_handler_moves_the_order_extends_no_dropped_selection(string key, bool shift, bool ctrl)
     {
         var rows = TestRows.Many(50);
         var source = new TestSource();
@@ -192,7 +199,7 @@ public class OverwriteShiftKeyTests : GridTestContext
         await ClickCellAsync(cut, 2, 1);
         await TypeAsync(cut, "75");
 
-        await PressAsync(cut, key, shift: shift, text: "75", caret: 2);
+        await PressAsync(cut, key, shift: shift, ctrl: ctrl, text: "75", caret: 2);
 
         Assert.Equal(("Amount", "75"), (Assert.Single(edits).Column, edits[0].Value));
         Assert.Empty(cut.FindAll(".ex-editor"));
@@ -218,7 +225,7 @@ public class OverwriteShiftKeyTests : GridTestContext
         Assert.Equal("75", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
     }
 
-    [Fact] // ADR-0010 / ED-2: Shift+End is not Overwrite's until Excel is asked — one that reaches the core commits nothing
+    [Fact] // ADR-0010 / ED-2: Shift+End is not Overwrite's — Excel's turns on an End Mode the grid does not have (R1 (vii)), and what it does here is not decided — so one that reaches the core commits nothing
     public async Task ED2_shift_end_in_overwrite_commits_nothing()
     {
         var edits = new List<GridEditIntent<TestRow>>();
@@ -247,7 +254,7 @@ public class OverwriteShiftKeyTests : GridTestContext
         Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
     }
 
-    [Fact] // ADR-0010 / ADR-0051 / ED-2: where a Reference can go, Overwrite's Shift+Home points from the edited cell to the row's first column (a reading, until Excel is asked)
+    [Fact] // ADR-0010 / ADR-0051 / ED-2: where a Reference can go, Overwrite's Shift+Home points from the edited cell to the row's first column (observed with a Ctrl+C before it, R1's reading after its first step: = in D10, a Ctrl+C that copied nothing, then Shift+Home pointed, and a Ctrl+C copied A10:D10)
     public async Task ED2_where_a_reference_can_go_shift_home_points_to_the_rows_first_column()
     {
         var edits = new List<GridEditIntent<TestRow>>();
@@ -262,8 +269,8 @@ public class OverwriteShiftKeyTests : GridTestContext
         Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
     }
 
-    [Fact] // ADR-0051 / ADR-0010, ED-2: Shift+Home is not Point's — the gate leaves it to the editor while pointing, as before, until Excel is asked — and one that reaches the core then neither moves the outline nor commits and extends
-    public async Task ED2_while_pointing_shift_home_neither_points_nor_commits()
+    [Fact] // ADR-0051 / ADR-0010, ED-2: while pointing, Shift+Home extends the outline from its fixed end to the row's first column, and pointing goes on — nothing commits (observed, R1 (viii): =, ↓, Shift+Home in D10 gave =A11:D11, in Point)
+    public async Task ED2_while_pointing_shift_home_extends_the_outline_to_the_rows_first_column()
     {
         var edits = new List<GridEditIntent<TestRow>>();
         GridSelection? selection = null;
@@ -277,23 +284,109 @@ public class OverwriteShiftKeyTests : GridTestContext
         await PressAsync(cut, "Home", shift: true, text: "=C4", caret: 3);
 
         Assert.Empty(edits);
-        Assert.Equal("=C4", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+        Assert.Equal("=A4:C4", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
         Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
+        Assert.Same(before, selection);
+
+        // Pointing goes on over what Shift+Home wrote: ↓ moves the outline on from its fixed end.
+        await PressAsync(cut, "ArrowDown", text: "=A4:C4", caret: 6);
+        Assert.Equal("=C5", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+    }
+
+    [Theory] // ADR-0010 / ED-2: in Overwrite the Primary Modifier's arrows commit the entry and then move or extend to the edge as with no edit open (observed, R1 (vii): Ctrl+→ moved to XFD10, Ctrl+Shift+→ selected D10:XFD10; the other directions by generalisation)
+    [InlineData("ArrowRight", false, 2, 2, 2, 2)]
+    [InlineData("ArrowDown", false, 49, 1, 49, 1)]
+    [InlineData("ArrowLeft", false, 2, 0, 2, 0)]
+    [InlineData("ArrowUp", false, 0, 1, 0, 1)]
+    [InlineData("ArrowRight", true, 2, 1, 2, 2)]
+    [InlineData("ArrowDown", true, 2, 1, 49, 1)]
+    public async Task ED2_in_overwrite_a_primary_modifier_arrow_commits_and_goes_to_the_edge(
+        string arrow, bool shift, int focusRow, int focusColumn, int extentRow, int extentColumn)
+    {
+        var edits = new List<GridEditIntent<TestRow>>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(edits, s => selection = s);
+        await ClickCellAsync(cut, 2, 1);
+        await TypeAsync(cut, "75");
+
+        await PressAsync(cut, arrow, shift: shift, ctrl: true, text: "75", caret: 2);
+
+        var edit = Assert.Single(edits);
+        Assert.Equal(("Amount", "75"), (edit.Column, edit.Value));
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.Equal(new CellPosition(focusRow, focusColumn), selection!.Focus);
+        Assert.Equal(new CellPosition(extentRow, extentColumn), selection.Extent);
+    }
+
+    [Theory] // ADR-0034 / ADR-0010 / ED-2 / ED-15: a Reject holds the commit a Primary Modifier's arrow asks for, and the key keeps no meaning of its own
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ED2_a_reject_holds_a_primary_modifier_arrows_commit(bool shift)
+    {
+        var edits = new List<GridEditIntent<TestRow>>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(edits, s => selection = s, validate: (_, _) => EditVerdict.Reject("no"));
+        await ClickCellAsync(cut, 2, 1);
+        var before = selection;
+        await TypeAsync(cut, "abc");
+
+        await PressAsync(cut, "ArrowRight", shift: shift, ctrl: true, text: "abc", caret: 3);
+
+        Assert.Empty(edits);
+        Assert.Equal("abc", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+        Assert.Equal("true", cut.Find(".ex-viewport .ex-editor").GetAttribute("aria-invalid"));
         Assert.Same(before, selection);
     }
 
-    [Fact] // ADR-0010 / ED-2: the gate's Overwrite set claims the four Shift+arrows and Shift+Home beside the arrows, Home and End — and not Shift+End; its Point set the same, but Shift+Home, which Point leaves to the editor until Excel is asked (ADR-0051)
+    [Theory] // ADR-0010 / ED-2: in Caret, Excel's Edit mode, the Primary Modifier's arrows are the editor's — one that reaches the core while the gate is told the change commits nothing
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ED2_in_caret_a_primary_modifier_arrow_commits_nothing(bool shift)
+    {
+        var edits = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(edits, _ => { });
+        await ClickCellAsync(cut, 2, 1);
+        await TypeAsync(cut, "75");
+        await PressAsync(cut, "F2", text: "75", caret: 2);
+
+        await PressAsync(cut, "ArrowRight", shift: shift, ctrl: true, text: "75", caret: 2);
+
+        Assert.Empty(edits);
+        Assert.Equal("75", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+    }
+
+    [Theory] // ADR-0010 / ADR-0051 / ADR-0058 Q53 / ED-2: where a Reference can go, Overwrite's Primary Modifier's arrows are claimed and do nothing — Excel was not asked — rather than commit a Formula that ends too early
+    [InlineData("ArrowDown", false)]
+    [InlineData("ArrowRight", true)]
+    public async Task ED2_where_a_reference_can_go_a_primary_modifier_arrow_does_nothing(string arrow, bool shift)
+    {
+        var edits = new List<GridEditIntent<TestRow>>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(edits, s => selection = s, point: true);
+        await ClickCellAsync(cut, 2, 1);
+        var before = selection;
+        await TypeAsync(cut, "=");
+
+        await PressAsync(cut, arrow, shift: shift, ctrl: true, text: "=", caret: 1);
+
+        Assert.Empty(edits);
+        Assert.Equal("=", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+        Assert.Empty(cut.FindAll(".ex-selection .ex-point"));
+        Assert.Same(before, selection);
+    }
+
+    [Fact] // ADR-0010 / ED-2: the gate's Point set claims the four Shift+arrows and Shift+Home beside the arrows, Home and End (R1 (viii)); its Overwrite set those and the Primary Modifier's arrows, with Shift or without (R1 (vii)) — and neither claims Shift+End
     public void ED2_the_gate_claims_the_shift_keys_in_overwrite()
     {
         var script = AssetSources.Read("ExGrid", "ex-grid.js");
 
         Assert.Matches(new System.Text.RegularExpressions.Regex(
-            @"const overwriteKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
+            @"const pointKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
             + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight', 'Shift\+Home'\]\);"),
             script);
         Assert.Matches(new System.Text.RegularExpressions.Regex(
-            @"const pointKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
-            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight'\]\);"),
+            @"const overwriteKeys = new Set\(\[\s*\.\.\.pointKeys, 'Control\+ArrowUp', 'Control\+ArrowDown', 'Control\+ArrowLeft', 'Control\+ArrowRight',\s*"
+            + @"'Control\+Shift\+ArrowUp', 'Control\+Shift\+ArrowDown', 'Control\+Shift\+ArrowLeft', 'Control\+Shift\+ArrowRight'\]\);"),
             script);
     }
 }

@@ -90,12 +90,17 @@ public partial class ExGrid<TRow>
            && pointAt(_editText, _editCaret);
 
     /// <summary>The key gate's set for the current state (ADR-0010): Caret leaves the arrows
-    /// to the editor. While a list is open, in any state, only its ↑/↓ are claimed beside the
-    /// editing keys, so ← and → move the caret — and ←, →, Home, End and the Shift+arrows too
-    /// while it is open over Point, where they point (ADR-0058). Point claims Overwrite's keys
-    /// and the four Shift+arrows, which extend the outline (ADR-0051's second round); and, while
-    /// what Point wrote was written from outside and a Consumer hears the arrows, the Primary
-    /// Modifier's arrows too (ADR-0058, "The keyboard").</summary>
+    /// to the editor. Overwrite, Excel's Enter mode, claims the arrows, Home and End, the four
+    /// Shift+arrows and Shift+Home, and the Primary Modifier's arrows with Shift or without, which
+    /// commit and move or extend (ADR-0010, ED-2; observed in Excel, the seventeenth Windows run,
+    /// Part C, case 7, and the readings of 2026-10-12, R1 (vii)). While a list is open, in any
+    /// state, only its ↑/↓ are claimed beside the editing keys, so ← and → move the caret — and
+    /// ←, →, Home, End and the Shift+arrows too while it is open over Point, where they point
+    /// (ADR-0058). Point claims the arrows, Home and End, the four Shift+arrows and Shift+Home,
+    /// which move or extend the outline (ADR-0051's second round; Shift+Home observed, R1
+    /// (viii)), but not the Primary Modifier's arrows; and, while what Point wrote was written
+    /// from outside and a Consumer hears the arrows, the Primary Modifier's arrows too (ADR-0058,
+    /// "The keyboard").</summary>
     private string GateMode() => _editMode switch
     {
         EditMode.None => "none",
@@ -430,10 +435,13 @@ public partial class ExGrid<TRow>
                 CloseCompletion();
                 StateHasChanged();
                 return true;
-            // In a list of names, where no Reference can go, the Shift+arrows and Shift+Home are
-            // the editor's (ADR-0058, Q51): one that arrives all the same, claimed by a gate not yet
-            // told, neither points nor commits and extends, as Overwrite's would (ADR-0010, ED-2).
-            case "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home":
+            // While a list is open, Shift+Home and the Primary Modifier's arrows are the editor's,
+            // and the Shift+arrows too in a list of names, where no Reference can go (ADR-0058,
+            // Q51): one that arrives all the same, claimed by a gate not yet told, neither points
+            // nor commits and moves, as Overwrite's would (ADR-0010, ED-2).
+            case "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home"
+                or "Control+ArrowUp" or "Control+ArrowDown" or "Control+ArrowLeft" or "Control+ArrowRight"
+                or "Control+Shift+ArrowUp" or "Control+Shift+ArrowDown" or "Control+Shift+ArrowLeft" or "Control+Shift+ArrowRight":
                 return true;
         }
         return false;

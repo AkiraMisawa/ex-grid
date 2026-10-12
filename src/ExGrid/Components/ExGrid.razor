@@ -6634,8 +6634,9 @@
     /// <summary>
     /// A key that moves or selects, answered over the Selection as it stands with no edit open
     /// (ADR-0012): the Focus moved or the range extended, the Focus or the Extent kept in view,
-    /// and the page turned to follow it. Also what Overwrite's Shift+arrows and Shift+Home do once
-    /// their commit has landed, as Excel's Enter mode does with them (ADR-0010, ED-2).
+    /// and the page turned to follow it. Also what Overwrite's Shift+arrows, Shift+Home and
+    /// Primary Modifier's arrows do once their commit has landed, as Excel's Enter mode does with
+    /// them (ADR-0010, ED-2).
     /// </summary>
     /// <param name="action">What the key means, from <see cref="GridKeys.Resolve(string, bool, bool, bool, bool, bool)"/>.</param>
     /// <param name="key">The key's <c>key</c> field: only an arrow asks the Consumer's edge answer.</param>
@@ -7569,8 +7570,9 @@
     /// (ADR-0012), so Cmd+Enter fills on a Mac and Win+Enter is nobody's here. A form not
     /// named below is not the editor's and does nothing. <b>The cases mirror
     /// <c>editingKeys</c> / <c>overwriteKeys</c> / <c>pointKeys</c> in <c>ex-grid.js</c></b> — the
-    /// two must move together: Overwrite claims the arrows, Home and End, and the Shift+arrows and
-    /// Shift+Home (ADR-0010, ED-2); Point the same, but Shift+Home. F4, which the gate adds to them
+    /// two must move together: Overwrite claims the arrows, Home and End, the Shift+arrows and
+    /// Shift+Home, and the Primary Modifier's arrows with Shift or without (ADR-0010, ED-2); Point
+    /// the arrows, Home and End, the Shift+arrows and Shift+Home. F4, which the gate adds to them
     /// only where the Consumer declared <see cref="CycleReference"/>, is answered before this, from
     /// the selection its message carries (ADR-0051, 2026-09-29).</param>
     private async Task OnEditingKeyAsync(string canonical)
@@ -7584,7 +7586,9 @@
         // (ADR-0010).
         if (_editMode == EditMode.Caret
             && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End"
-                or "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home")
+                or "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home"
+                or "Control+ArrowUp" or "Control+ArrowDown" or "Control+ArrowLeft" or "Control+ArrowRight"
+                or "Control+Shift+ArrowUp" or "Control+Shift+ArrowDown" or "Control+Shift+ArrowLeft" or "Control+Shift+ArrowRight")
         {
             _suppressRender = false;
             return;
@@ -7659,35 +7663,61 @@
             case "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home"
                 when _editMode == EditMode.Overwrite:
                 // Excel's Enter mode commits the entry and extends the Selection with them (ADR-0010,
-                // ED-2; the seventeenth Windows run, Part C, case 7): where no Reference can go, they
-                // are commit gestures, and then do what the same key does with no edit open. Shift+End
-                // stays the editor's until Excel is asked (ADR-0010). Overwrite's alone: in Point one
-                // that is not Point's — Shift+Home, which the gate leaves to the editor — commits
-                // nothing, as before.
-                await CommitAndExtendAsync(canonical);
+                // ED-2): where no Reference can go, they are commit gestures, and then do what the
+                // same key does with no edit open (observed: the seventeenth Windows run, Part C, case
+                // 7, Shift+Home; the readings of 2026-10-12, R1 (vii), Shift+→, Shift+↓ and Shift+←;
+                // Shift+↑ by generalisation). Where one can go, Point took them first.
+                await CommitAndKeyAsync(canonical);
+                return;
+            case "Control+ArrowUp" or "Control+ArrowDown" or "Control+ArrowLeft" or "Control+ArrowRight"
+                or "Control+Shift+ArrowUp" or "Control+Shift+ArrowDown" or "Control+Shift+ArrowLeft" or "Control+Shift+ArrowRight"
+                when _editMode == EditMode.Overwrite:
+                // The Primary Modifier's arrows too commit, and then move or extend to the edge as
+                // with no edit open (observed, R1 (vii): Ctrl+→ committed and moved to XFD10, and
+                // Ctrl+Shift+→ committed and selected D10:XFD10; the other directions by
+                // generalisation). Where a Reference can go at the caret, Excel was not asked: they
+                // are claimed and do nothing, as End does there (ADR-0058, Q53), rather than commit
+                // a Formula that ends too early.
+                if (PointAt is { } referenceCanGo && ReferenceText is not null && _editCaret >= 0
+                    && _editCaret <= _editText.Length && referenceCanGo(_editText, _editCaret))
+                {
+                    StateHasChanged();
+                    return;
+                }
+                await CommitAndKeyAsync(canonical);
                 return;
         }
     }
 
     /// <summary>
-    /// Overwrite's Shift+arrows and Shift+Home where no Reference can go (ADR-0010, ED-2): the
-    /// edit commits, and the key then extends the Selection exactly as it does with no edit open
-    /// (ADR-0012), the Extent kept in view. A Reject or a refusal holds the commit, and the key
-    /// keeps no meaning of its own (ADR-0034), as for the arrows. A commit whose own handler moved
-    /// the order has dropped the Selection the key was aimed with (ADR-0011, ADR-0142): it extends
+    /// Overwrite's Shift+arrows and Shift+Home, and its Primary Modifier's arrows with Shift or
+    /// without, where no Reference can go (ADR-0010, ED-2): the edit commits, and the key then
+    /// moves or extends the Selection exactly as it does with no edit open (ADR-0012) — an arrow
+    /// with the Primary Modifier to the edge the Consumer answers (ADR-0050, item 2) — the Focus or
+    /// the Extent kept in view. A Reject or a refusal holds the commit, and the key keeps no
+    /// meaning of its own (ADR-0034), as for the arrows. A commit whose own handler moved the order
+    /// has dropped the Selection the key was aimed with (ADR-0011, ADR-0142): it moves and extends
     /// nothing, and places no Selection from the first cell on screen, as Enter and the arrows move
     /// nothing then (<see cref="CommitAndMoveAsync"/>).
     /// </summary>
-    private async Task CommitAndExtendAsync(string canonical)
+    /// <param name="canonical">The key in <see cref="GridKeys.Canonical"/>'s form: <c>Control+</c>,
+    /// then <c>Shift+</c>, then the key.</param>
+    private async Task CommitAndKeyAsync(string canonical)
     {
         if (!await CommitEditAsync() || _selection.Selection.IsEmpty)
         {
             StateHasChanged();
             return;
         }
-        var key = canonical["Shift+".Length..];
-        MoveByKey(GridKeys.Resolve(key, ctrl: false, shift: true, alt: false, meta: false, metaIsPrimary: false), key);
-        // The edit has ended even where the key extends nothing — Shift+Home in the first column —
+        var key = canonical;
+        var ctrl = key.StartsWith("Control+", StringComparison.Ordinal);
+        if (ctrl)
+            key = key["Control+".Length..];
+        var shift = key.StartsWith("Shift+", StringComparison.Ordinal);
+        if (shift)
+            key = key["Shift+".Length..];
+        MoveByKey(GridKeys.Resolve(key, ctrl, shift, alt: false, meta: false, metaIsPrimary: false), key);
+        // The edit has ended even where the key moves nothing — Shift+Home in the first column —
         // and the render that takes the editor down is owed either way.
         StateHasChanged();
     }

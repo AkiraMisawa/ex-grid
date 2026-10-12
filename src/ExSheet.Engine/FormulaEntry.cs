@@ -57,7 +57,7 @@ public sealed record ArgumentHint(DeclaredFunction Function, int ArgumentIndex, 
 /// <param name="Length">How many characters it replaces.</param>
 public readonly record struct PointSite(int Start, int Length);
 
-/// <summary>What F4 makes of the text being edited (ADR-0051): the new text, and the span in it of what was rewritten, which a grid selects in Excel's Edit mode and collapses to a caret at its end elsewhere.</summary>
+/// <summary>What F4 makes of the text being edited (ADR-0051): the new text, and the span in it of what was rewritten, which a grid selects or collapses to a caret at its end as the edit stands.</summary>
 /// <param name="Text">The text with the Reference or References cycled.</param>
 /// <param name="SelectionStart">Where what was rewritten starts in <paramref name="Text"/>, a Sheet qualifier before it included.</param>
 /// <param name="SelectionEnd">Where it ends.</param>
@@ -563,8 +563,8 @@ public static partial class FormulaEntry
     /// cycles. The rewritten parts' column letters are written in upper case (<c>=b2</c> gives
     /// <c>=$B$2</c>); every other character, a Sheet qualifier among them, stays as it was typed.
     /// The span answered runs from the first Reference rewritten — its Sheet qualifier included —
-    /// to the end of the last, for a caret as for a selection: the grid selects it in Excel's Edit
-    /// mode and leaves a caret at its end elsewhere (ADR-0051). <see langword="null"/> — nothing
+    /// to the end of the last, for a caret as for a selection: the grid decides whether to select
+    /// it or leave a caret at its end (ADR-0051). <see langword="null"/> — nothing
     /// changes — for text that is not a Formula, and where no Reference is at the caret or in the
     /// selection: a function name, a number, text in quotes, a structured reference. A Reference
     /// is what the formula grammar reads as one.
