@@ -47,6 +47,8 @@
                                    Value2
     addsheet <name>                setup only, through COM: a sheet added after the last
     select <range>                 setup only, through COM: a range selected
+    clearsheet                     setup only: the active sheet's Tables removed, its cells cleared
+    table <range> <name>           setup only: a range made a Table of that name, headers in its first row
     setfmt <A1> <format>           setup only, through COM: a Number Format (en-US), on an empty cell
     colwidth <A1> [<A1> ...]       each cell's column width and UseStandardWidth, and the sheet's
                                    StandardWidth
@@ -347,6 +349,19 @@ while ($true) {
             }
             'addsheet' { $s = $script:Book.Worksheets.Add([Type]::Missing, $script:Book.Worksheets.Item($script:Book.Worksheets.Count)); $s.Name = $rest; [void]$script:Book.Worksheets.Item(1).Activate(); Answer "ok addsheet $rest" }
             'select' { [void]$script:Xl.ActiveSheet.Range($rest).Select(); Answer "ok select $rest" }
+            'clearsheet' {
+                # Between cases, setup only: every Table of the active sheet removed, every cell cleared, A1 selected.
+                $ws = $script:Xl.ActiveSheet
+                foreach ($lo in @($ws.ListObjects)) { $lo.Delete() }
+                [void]$ws.Cells.Clear(); [void]$ws.Range('A1').Select()
+                Answer "ok clearsheet $($ws.Name)"
+            }
+            'table' {
+                # Setup only: a range made a Table of that name, its first row the headers.
+                $p = $rest.Split(' ', 2); $ws = $script:Xl.ActiveSheet
+                $lo = $ws.ListObjects.Add(1, $ws.Range($p[0]), [Type]::Missing, 1); $lo.Name = $p[1]
+                Answer "ok table $($lo.Name) $($lo.Range.Address($false, $false))"
+            }
             'setfmt' {
                 # Setup only: a Number Format through COM, in en-US (PowerShell 5.1's binder would pass the
                 # user's locale), on a cell that holds nothing yet (a format set on a value widens a column).

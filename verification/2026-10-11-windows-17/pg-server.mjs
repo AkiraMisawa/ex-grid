@@ -21,6 +21,7 @@
 //   events                        what the probe's listeners logged since the last call
 //   shot {file, clip?, sel?}      the page's picture (Playwright), of a clip or an element's box
 //   cdpshot {file, clip?}         the compositor's picture in device pixels (CDP, fromSurface)
+//   pixels {clip, file?}          the compositor's picture of a small clip in device pixels, decoded: RGB rows
 //   rtt {control, ms}             the latency proxy's round trip
 //   version                       the browser's version
 //   console                       the console messages and page errors since the last call
@@ -157,6 +158,23 @@ for await (const line of rl) {
             const r = await s.send('Page.captureScreenshot', { format: 'png', fromSurface: true, ...(c.clip ? { clip: { ...c.clip, scale: 1 } } : {}) });
             fs.writeFileSync(c.file, Buffer.from(r.data, 'base64')); await s.detach();
             say({ ok: 'cdpshot', file: c.file });
+        }
+        else if (c.op === 'pixels') {
+            // The compositor's picture of a clip (CSS px) in device pixels (CDP, fromSurface), decoded in
+            // the page: every pixel's RGB, row by row. For small clips only.
+            const s = await context.newCDPSession(page);
+            const r = await s.send('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false, clip: { ...c.clip, scale: 1 } });
+            await s.detach();
+            if (c.file) fs.writeFileSync(c.file, Buffer.from(r.data, 'base64'));
+            const px = await page.evaluate(async (a) => {
+                const bytes = Uint8Array.from(atob(a), (ch) => ch.charCodeAt(0));
+                const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+                const cv = new OffscreenCanvas(bmp.width, bmp.height); const ctx = cv.getContext('2d'); ctx.drawImage(bmp, 0, 0);
+                const d = ctx.getImageData(0, 0, bmp.width, bmp.height).data; const rows = [];
+                for (let y = 0; y < bmp.height; y++) { const row = []; for (let x = 0; x < bmp.width; x++) { const i = (y * bmp.width + x) * 4; row.push([d[i], d[i + 1], d[i + 2]]); } rows.push(row); }
+                return { width: bmp.width, height: bmp.height, rows };
+            }, r.data);
+            say({ ok: 'pixels', ...px });
         }
         else if (c.op === 'rtt') { const r = await fetch(`${c.control}/?rtt=${c.ms}`, { method: 'POST' }); say({ ok: 'rtt', status: r.status, now: await (await fetch(c.control)).text() }); }
         else if (c.op === 'version') { say({ ok: 'version', value: browser.version() }); }

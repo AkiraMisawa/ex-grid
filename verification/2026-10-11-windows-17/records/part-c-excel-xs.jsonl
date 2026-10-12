@@ -1,0 +1,859 @@
+{"t": "23:31:04", "cmd": "start", "answer": "ok start pid=14848 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=43287"}
+{"t": "23:31:05", "cmd": "setup D10 =B2", "answer": "ok setup D10 t=44334"}
+{"t": "23:31:05", "cmd": "select D10", "answer": "ok select D10 t=44384"}
+{"t": "23:31:06", "cmd": "cell D10 D11 E10 D9 C10", "answer": "ok cell D10: number 0 | formula \"=B2\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D9: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=45661"}
+{"t": "23:31:06", "cmd": "keys 40 {F4}", "answer": "ok keys 1 t=45792"}
+{"t": "23:31:08", "cmd": "cell D10 D11 E10 D9 C10", "answer": "ok cell D10: number 0 | formula \"=B2\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D9: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=47496"}
+{"t": "23:31:08", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=47583"}
+{"t": "23:31:08", "cmd": "shot c17-no-edit", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-no-edit.png windows: XLMAIN@-11,-11,3851,2099 t=47767"}
+{"t": "23:31:08", "cmd": "crop c17-no-edit 0 270 1500 60 c17-no-edit-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-no-edit-bar.png t=47852"}
+{"t": "23:31:08", "cmd": "crop c17-no-edit 0 2055 500 33 c17-no-edit-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-no-edit-mode.png t=47892"}
+{"t": "23:31:09", "cmd": "select F10", "answer": "ok select F10 t=47951"}
+{"t": "23:31:09", "cmd": "keys 40 x{ENTER}", "answer": "ok keys 2 t=48082"}
+{"t": "23:31:09", "cmd": "select D10", "answer": "ok select D10 t=48412"}
+{"t": "23:31:09", "cmd": "keys 40 {F4}", "answer": "ok keys 1 t=48712"}
+{"t": "23:31:11", "cmd": "cell D10 D11 E10 F10 F11", "answer": "ok cell D10: number 0 | formula \"=B2\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; F10: String \"x\" | formula \"x\" | text \"x\" | numberFormat \"General\" ;; F11: empty | formula \"\" | text \"\" | numberFormat \"General\" t=50213"}
+{"t": "23:31:11", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=50249"}
+{"t": "23:31:11", "cmd": "shot c17-after-a-typed-entry", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-after-a-typed-entry.png windows: XLMAIN@-11,-11,3851,2099 t=50434"}
+{"t": "23:31:11", "cmd": "crop c17-after-a-typed-entry 0 270 1500 60 c17-after-a-typed-entry-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-after-a-typed-entry-bar.png t=50464"}
+{"t": "23:31:11", "cmd": "crop c17-after-a-typed-entry 0 2055 500 33 c17-after-a-typed-entry-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-after-a-typed-entry-mode.png t=50519"}
+{"t": "23:31:11", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=50712"}
+{"t": "23:31:11", "cmd": "select D10", "answer": "ok select D10 t=50735"}
+{"t": "23:31:12", "cmd": "keys 80 =B2{F4}", "answer": "ok keys 4 t=51364"}
+{"t": "23:31:13", "cmd": "shot c1-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=52125"}
+{"t": "23:31:13", "cmd": "crop c1-typed-f4x1 0 270 1500 60 c1-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x1-bar.png t=52166"}
+{"t": "23:31:13", "cmd": "crop c1-typed-f4x1 0 2055 500 33 c1-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x1-mode.png t=52224"}
+{"t": "23:31:13", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=52281"}
+{"t": "23:31:13", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=52370"}
+{"t": "23:31:13", "cmd": "clipclear", "answer": "ok clipclear t=52688"}
+{"t": "23:31:13", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=52812"}
+{"t": "23:31:14", "cmd": "clipboard", "answer": "ok clipboard \"\" t=53203"}
+{"t": "23:31:14", "cmd": "clipclear", "answer": "ok clipclear t=53258"}
+{"t": "23:31:14", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=53447"}
+{"t": "23:31:14", "cmd": "clipboard", "answer": "ok clipboard \"=$B$2\" t=53826"}
+{"t": "23:31:15", "cmd": "clipclear", "answer": "ok clipclear t=53881"}
+{"t": "23:31:15", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=54140"}
+{"t": "23:31:15", "cmd": "clipboard", "answer": "ok clipboard \"=$B$2\" t=54501"}
+{"t": "23:31:15", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=54599"}
+{"t": "23:31:16", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=54922"}
+{"t": "23:31:16", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=54980"}
+{"t": "23:31:16", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=55158"}
+{"t": "23:31:16", "cmd": "select D10", "answer": "ok select D10 t=55196"}
+{"t": "23:31:17", "cmd": "keys 80 =B2{F4}{F4}", "answer": "ok keys 5 t=55910"}
+{"t": "23:31:17", "cmd": "shot c1-typed-f4x2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x2.png windows: XLMAIN@-11,-11,3851,2099 t=56698"}
+{"t": "23:31:17", "cmd": "crop c1-typed-f4x2 0 270 1500 60 c1-typed-f4x2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x2-bar.png t=56734"}
+{"t": "23:31:17", "cmd": "crop c1-typed-f4x2 0 2055 500 33 c1-typed-f4x2-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x2-mode.png t=56790"}
+{"t": "23:31:18", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=56846"}
+{"t": "23:31:18", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=56947"}
+{"t": "23:31:18", "cmd": "clipclear", "answer": "ok clipclear t=57251"}
+{"t": "23:31:18", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=57366"}
+{"t": "23:31:18", "cmd": "clipboard", "answer": "ok clipboard \"\" t=57769"}
+{"t": "23:31:19", "cmd": "clipclear", "answer": "ok clipclear t=57827"}
+{"t": "23:31:19", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=58009"}
+{"t": "23:31:19", "cmd": "clipboard", "answer": "ok clipboard \"=B$2\" t=58396"}
+{"t": "23:31:19", "cmd": "clipclear", "answer": "ok clipclear t=58452"}
+{"t": "23:31:19", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=58701"}
+{"t": "23:31:20", "cmd": "clipboard", "answer": "ok clipboard \"=B$2\" t=59072"}
+{"t": "23:31:20", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=59181"}
+{"t": "23:31:20", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=59548"}
+{"t": "23:31:20", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=59606"}
+{"t": "23:31:20", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=59795"}
+{"t": "23:31:21", "cmd": "select D10", "answer": "ok select D10 t=59823"}
+{"t": "23:31:21", "cmd": "keys 80 =B2{F4}{F4}{F4}", "answer": "ok keys 6 t=60629"}
+{"t": "23:31:22", "cmd": "shot c1-typed-f4x3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x3.png windows: XLMAIN@-11,-11,3851,2099 t=61372"}
+{"t": "23:31:22", "cmd": "crop c1-typed-f4x3 0 270 1500 60 c1-typed-f4x3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x3-bar.png t=61409"}
+{"t": "23:31:22", "cmd": "crop c1-typed-f4x3 0 2055 500 33 c1-typed-f4x3-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x3-mode.png t=61466"}
+{"t": "23:31:22", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=61518"}
+{"t": "23:31:22", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=61614"}
+{"t": "23:31:23", "cmd": "clipclear", "answer": "ok clipclear t=61929"}
+{"t": "23:31:23", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=62057"}
+{"t": "23:31:23", "cmd": "clipboard", "answer": "ok clipboard \"\" t=62446"}
+{"t": "23:31:23", "cmd": "clipclear", "answer": "ok clipclear t=62504"}
+{"t": "23:31:23", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=62706"}
+{"t": "23:31:24", "cmd": "clipboard", "answer": "ok clipboard \"=$B2\" t=63073"}
+{"t": "23:31:24", "cmd": "clipclear", "answer": "ok clipclear t=63129"}
+{"t": "23:31:24", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=63389"}
+{"t": "23:31:24", "cmd": "clipboard", "answer": "ok clipboard \"=$B2\" t=63749"}
+{"t": "23:31:25", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=63849"}
+{"t": "23:31:25", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=64173"}
+{"t": "23:31:25", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=64230"}
+{"t": "23:31:25", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=64413"}
+{"t": "23:31:25", "cmd": "select D10", "answer": "ok select D10 t=64449"}
+{"t": "23:31:26", "cmd": "keys 80 =B2{F4}{F4}{F4}{F4}", "answer": "ok keys 7 t=65348"}
+{"t": "23:31:27", "cmd": "shot c1-typed-f4x4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x4.png windows: XLMAIN@-11,-11,3851,2099 t=66095"}
+{"t": "23:31:27", "cmd": "crop c1-typed-f4x4 0 270 1500 60 c1-typed-f4x4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x4-bar.png t=66138"}
+{"t": "23:31:27", "cmd": "crop c1-typed-f4x4 0 2055 500 33 c1-typed-f4x4-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c1-typed-f4x4-mode.png t=66194"}
+{"t": "23:31:27", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=66247"}
+{"t": "23:31:27", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=66351"}
+{"t": "23:31:27", "cmd": "clipclear", "answer": "ok clipclear t=66655"}
+{"t": "23:31:28", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=66783"}
+{"t": "23:31:28", "cmd": "clipboard", "answer": "ok clipboard \"\" t=67182"}
+{"t": "23:31:28", "cmd": "clipclear", "answer": "ok clipclear t=67242"}
+{"t": "23:31:28", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=67438"}
+{"t": "23:31:29", "cmd": "clipboard", "answer": "ok clipboard \"=B2\" t=67828"}
+{"t": "23:31:29", "cmd": "clipclear", "answer": "ok clipclear t=67886"}
+{"t": "23:31:29", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=68136"}
+{"t": "23:31:29", "cmd": "clipboard", "answer": "ok clipboard \"=B2\" t=68524"}
+{"t": "23:31:29", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=68634"}
+{"t": "23:31:30", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=68954"}
+{"t": "23:31:30", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=69013"}
+{"t": "23:31:30", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=69193"}
+{"t": "23:31:30", "cmd": "select D10", "answer": "ok select D10 t=69233"}
+{"t": "23:31:31", "cmd": "keys 80 =A1{+}B2{LEFT}{LEFT}{LEFT}{F4}", "answer": "ok keys 10 t=70426"}
+{"t": "23:31:32", "cmd": "shot c2-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c2-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=71173"}
+{"t": "23:31:32", "cmd": "crop c2-typed-f4x1 0 270 1500 60 c2-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c2-typed-f4x1-bar.png t=71217"}
+{"t": "23:31:32", "cmd": "crop c2-typed-f4x1 0 2055 500 33 c2-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c2-typed-f4x1-mode.png t=71274"}
+{"t": "23:31:32", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A10 selection=A10 t=71332"}
+{"t": "23:31:33", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=A1+B2\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=A1+B2\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=72292"}
+{"t": "23:31:33", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=72476"}
+{"t": "23:31:33", "cmd": "select D10", "answer": "ok select D10 t=72543"}
+{"t": "23:31:34", "cmd": "keys 80 =A1{+}B2{F2}{LEFT}{LEFT}{LEFT}{F4}", "answer": "ok keys 11 t=73816"}
+{"t": "23:31:35", "cmd": "shot c2-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c2-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@358,581,371,604 t=74589"}
+{"t": "23:31:35", "cmd": "crop c2-f2-f4x1 0 270 1500 60 c2-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c2-f2-f4x1-bar.png t=74613"}
+{"t": "23:31:35", "cmd": "crop c2-f2-f4x1 0 2055 500 33 c2-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c2-f2-f4x1-mode.png t=74669"}
+{"t": "23:31:35", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=74722"}
+{"t": "23:31:35", "cmd": "clipclear", "answer": "ok clipclear t=74777"}
+{"t": "23:31:35", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=74902"}
+{"t": "23:31:36", "cmd": "clipboard", "answer": "ok clipboard \"$A$1\" t=75299"}
+{"t": "23:31:36", "cmd": "clipclear", "answer": "ok clipclear t=75356"}
+{"t": "23:31:36", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=75540"}
+{"t": "23:31:37", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=75928"}
+{"t": "23:31:37", "cmd": "clipclear", "answer": "ok clipclear t=75984"}
+{"t": "23:31:37", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=76229"}
+{"t": "23:31:37", "cmd": "clipboard", "answer": "ok clipboard \"=$A$1+B2\" t=76609"}
+{"t": "23:31:37", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=76708"}
+{"t": "23:31:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=77035"}
+{"t": "23:31:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=77091"}
+{"t": "23:31:38", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=77272"}
+{"t": "23:31:38", "cmd": "select D10", "answer": "ok select D10 t=77308"}
+{"t": "23:31:39", "cmd": "keys 80 =A1{+}B2{HOME}{RIGHT}{F4}", "answer": "ok keys 9 t=78397"}
+{"t": "23:31:40", "cmd": "shot c3-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c3-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=79171"}
+{"t": "23:31:40", "cmd": "crop c3-typed-f4x1 0 270 1500 60 c3-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c3-typed-f4x1-bar.png t=79212"}
+{"t": "23:31:40", "cmd": "crop c3-typed-f4x1 0 2055 500 33 c3-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c3-typed-f4x1-mode.png t=79266"}
+{"t": "23:31:40", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B10 selection=B10 t=79323"}
+{"t": "23:31:41", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=A1+B2\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=A1+B2\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=80324"}
+{"t": "23:31:41", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=80506"}
+{"t": "23:31:41", "cmd": "select D10", "answer": "ok select D10 t=80573"}
+{"t": "23:31:42", "cmd": "keys 80 =A1{+}B2{F2}{HOME}{RIGHT}{F4}", "answer": "ok keys 10 t=81754"}
+{"t": "23:31:43", "cmd": "shot c3-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c3-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@358,581,371,604 t=82535"}
+{"t": "23:31:43", "cmd": "crop c3-f2-f4x1 0 270 1500 60 c3-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c3-f2-f4x1-bar.png t=82573"}
+{"t": "23:31:43", "cmd": "crop c3-f2-f4x1 0 2055 500 33 c3-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c3-f2-f4x1-mode.png t=82629"}
+{"t": "23:31:43", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=82682"}
+{"t": "23:31:43", "cmd": "clipclear", "answer": "ok clipclear t=82735"}
+{"t": "23:31:43", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=82858"}
+{"t": "23:31:44", "cmd": "clipboard", "answer": "ok clipboard \"$A$1\" t=83254"}
+{"t": "23:31:44", "cmd": "clipclear", "answer": "ok clipclear t=83310"}
+{"t": "23:31:44", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=83495"}
+{"t": "23:31:44", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=83881"}
+{"t": "23:31:45", "cmd": "clipclear", "answer": "ok clipclear t=83938"}
+{"t": "23:31:45", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=84184"}
+{"t": "23:31:45", "cmd": "clipboard", "answer": "ok clipboard \"=$A$1+B2\" t=84562"}
+{"t": "23:31:45", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=84661"}
+{"t": "23:31:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=84987"}
+{"t": "23:31:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=85044"}
+{"t": "23:31:46", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=85229"}
+{"t": "23:31:46", "cmd": "select D10", "answer": "ok select D10 t=85260"}
+{"t": "23:31:47", "cmd": "keys 80 =A1{+}B2{HOME}{RIGHT}{RIGHT}{F4}", "answer": "ok keys 10 t=86442"}
+{"t": "23:31:48", "cmd": "shot c4-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c4-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=87214"}
+{"t": "23:31:48", "cmd": "crop c4-typed-f4x1 0 270 1500 60 c4-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c4-typed-f4x1-bar.png t=87256"}
+{"t": "23:31:48", "cmd": "crop c4-typed-f4x1 0 2055 500 33 c4-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c4-typed-f4x1-mode.png t=87311"}
+{"t": "23:31:48", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=87370"}
+{"t": "23:31:49", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=A1+B2\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=A1+B2\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=88415"}
+{"t": "23:31:49", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=88604"}
+{"t": "23:31:49", "cmd": "select D10", "answer": "ok select D10 t=88664"}
+{"t": "23:31:51", "cmd": "keys 80 =A1{+}B2{F2}{HOME}{RIGHT}{RIGHT}{F4}", "answer": "ok keys 11 t=89942"}
+{"t": "23:31:51", "cmd": "shot c4-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c4-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@358,581,371,604 t=90727"}
+{"t": "23:31:51", "cmd": "crop c4-f2-f4x1 0 270 1500 60 c4-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c4-f2-f4x1-bar.png t=90760"}
+{"t": "23:31:51", "cmd": "crop c4-f2-f4x1 0 2055 500 33 c4-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c4-f2-f4x1-mode.png t=90816"}
+{"t": "23:31:52", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=90870"}
+{"t": "23:31:52", "cmd": "clipclear", "answer": "ok clipclear t=90923"}
+{"t": "23:31:52", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=91046"}
+{"t": "23:31:52", "cmd": "clipboard", "answer": "ok clipboard \"$A$1\" t=91449"}
+{"t": "23:31:52", "cmd": "clipclear", "answer": "ok clipclear t=91497"}
+{"t": "23:31:52", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=91679"}
+{"t": "23:31:53", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=92066"}
+{"t": "23:31:53", "cmd": "clipclear", "answer": "ok clipclear t=92122"}
+{"t": "23:31:53", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=92369"}
+{"t": "23:31:53", "cmd": "clipboard", "answer": "ok clipboard \"=$A$1+B2\" t=92745"}
+{"t": "23:31:54", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=92852"}
+{"t": "23:31:54", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=93218"}
+{"t": "23:31:54", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=93275"}
+{"t": "23:31:54", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=93460"}
+{"t": "23:31:54", "cmd": "select D10", "answer": "ok select D10 t=93492"}
+{"t": "23:31:56", "cmd": "keys 80 =SUM{(}A1:B2{)}{LEFT}{F4}", "answer": "ok keys 13 t=94957"}
+{"t": "23:31:56", "cmd": "shot c5-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=95708"}
+{"t": "23:31:56", "cmd": "crop c5-typed-f4x1 0 270 1500 60 c5-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x1-bar.png t=95747"}
+{"t": "23:31:57", "cmd": "crop c5-typed-f4x1 0 2055 500 33 c5-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x1-mode.png t=95806"}
+{"t": "23:31:57", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=95865"}
+{"t": "23:31:58", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(A1:B2)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(A1:B2)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=96917"}
+{"t": "23:31:58", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=97096"}
+{"t": "23:31:58", "cmd": "select D10", "answer": "ok select D10 t=97159"}
+{"t": "23:31:59", "cmd": "keys 80 =SUM{(}A1:B2{)}{LEFT}{F4}{F4}", "answer": "ok keys 14 t=98725"}
+{"t": "23:32:00", "cmd": "shot c5-typed-f4x2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x2.png windows: XLMAIN@-11,-11,3851,2099 t=99491"}
+{"t": "23:32:00", "cmd": "crop c5-typed-f4x2 0 270 1500 60 c5-typed-f4x2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x2-bar.png t=99535"}
+{"t": "23:32:00", "cmd": "crop c5-typed-f4x2 0 2055 500 33 c5-typed-f4x2-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x2-mode.png t=99593"}
+{"t": "23:32:00", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=99652"}
+{"t": "23:32:01", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(A1:B2)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(A1:B2)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=100656"}
+{"t": "23:32:02", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=100866"}
+{"t": "23:32:02", "cmd": "select D10", "answer": "ok select D10 t=100928"}
+{"t": "23:32:03", "cmd": "keys 80 =SUM{(}A1:B2{)}{LEFT}{F4}{F4}{F4}", "answer": "ok keys 15 t=102583"}
+{"t": "23:32:04", "cmd": "shot c5-typed-f4x3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x3.png windows: XLMAIN@-11,-11,3851,2099 t=103338"}
+{"t": "23:32:04", "cmd": "crop c5-typed-f4x3 0 270 1500 60 c5-typed-f4x3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x3-bar.png t=103380"}
+{"t": "23:32:04", "cmd": "crop c5-typed-f4x3 0 2055 500 33 c5-typed-f4x3-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x3-mode.png t=103437"}
+{"t": "23:32:04", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=103495"}
+{"t": "23:32:05", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(A1:B2)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(A1:B2)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=104509"}
+{"t": "23:32:05", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=104692"}
+{"t": "23:32:05", "cmd": "select D10", "answer": "ok select D10 t=104756"}
+{"t": "23:32:07", "cmd": "keys 80 =SUM{(}A1:B2{)}{LEFT}{F4}{F4}{F4}{F4}", "answer": "ok keys 16 t=106504"}
+{"t": "23:32:08", "cmd": "shot c5-typed-f4x4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x4.png windows: XLMAIN@-11,-11,3851,2099 t=107260"}
+{"t": "23:32:08", "cmd": "crop c5-typed-f4x4 0 270 1500 60 c5-typed-f4x4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x4-bar.png t=107289"}
+{"t": "23:32:08", "cmd": "crop c5-typed-f4x4 0 2055 500 33 c5-typed-f4x4-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-typed-f4x4-mode.png t=107346"}
+{"t": "23:32:08", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=107404"}
+{"t": "23:32:09", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(A1:B2)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(A1:B2)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=108437"}
+{"t": "23:32:09", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=108641"}
+{"t": "23:32:09", "cmd": "select D10", "answer": "ok select D10 t=108705"}
+{"t": "23:32:11", "cmd": "keys 80 =SUM{(}A1:B2{)}{F2}{LEFT}{F4}", "answer": "ok keys 14 t=110271"}
+{"t": "23:32:12", "cmd": "shot c5-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,600,676 ; Net UI Tool Window@435,581,448,604 t=111052"}
+{"t": "23:32:12", "cmd": "crop c5-f2-f4x1 0 270 1500 60 c5-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x1-bar.png t=111118"}
+{"t": "23:32:12", "cmd": "crop c5-f2-f4x1 0 2055 500 33 c5-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x1-mode.png t=111174"}
+{"t": "23:32:12", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=111228"}
+{"t": "23:32:12", "cmd": "clipclear", "answer": "ok clipclear t=111280"}
+{"t": "23:32:12", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=111401"}
+{"t": "23:32:12", "cmd": "clipboard", "answer": "ok clipboard \"$B$2\" t=111800"}
+{"t": "23:32:12", "cmd": "clipclear", "answer": "ok clipclear t=111856"}
+{"t": "23:32:13", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=112040"}
+{"t": "23:32:13", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:\" t=112427"}
+{"t": "23:32:13", "cmd": "clipclear", "answer": "ok clipclear t=112484"}
+{"t": "23:32:13", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=112731"}
+{"t": "23:32:14", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:$B$2)\" t=113108"}
+{"t": "23:32:14", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=113207"}
+{"t": "23:32:14", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=113532"}
+{"t": "23:32:14", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=113591"}
+{"t": "23:32:14", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=113775"}
+{"t": "23:32:14", "cmd": "select D10", "answer": "ok select D10 t=113808"}
+{"t": "23:32:16", "cmd": "keys 80 =SUM{(}A1:B2{)}{F2}{LEFT}{F4}{F4}", "answer": "ok keys 15 t=115460"}
+{"t": "23:32:17", "cmd": "shot c5-f2-f4x2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x2.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,600,676 ; Net UI Tool Window@430,581,443,604 t=116245"}
+{"t": "23:32:17", "cmd": "crop c5-f2-f4x2 0 270 1500 60 c5-f2-f4x2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x2-bar.png t=116267"}
+{"t": "23:32:17", "cmd": "crop c5-f2-f4x2 0 2055 500 33 c5-f2-f4x2-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x2-mode.png t=116324"}
+{"t": "23:32:17", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=116376"}
+{"t": "23:32:17", "cmd": "clipclear", "answer": "ok clipclear t=116429"}
+{"t": "23:32:17", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=116551"}
+{"t": "23:32:18", "cmd": "clipboard", "answer": "ok clipboard \"B$2\" t=116946"}
+{"t": "23:32:18", "cmd": "clipclear", "answer": "ok clipclear t=117003"}
+{"t": "23:32:18", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=117186"}
+{"t": "23:32:18", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:\" t=117571"}
+{"t": "23:32:18", "cmd": "clipclear", "answer": "ok clipclear t=117627"}
+{"t": "23:32:18", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=117877"}
+{"t": "23:32:19", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:B$2)\" t=118250"}
+{"t": "23:32:19", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=118349"}
+{"t": "23:32:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=118676"}
+{"t": "23:32:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=118730"}
+{"t": "23:32:20", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=118920"}
+{"t": "23:32:20", "cmd": "select D10", "answer": "ok select D10 t=118946"}
+{"t": "23:32:21", "cmd": "keys 80 =SUM{(}A1:B2{)}{F2}{LEFT}{F4}{F4}{F4}", "answer": "ok keys 16 t=120693"}
+{"t": "23:32:22", "cmd": "shot c5-f2-f4x3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x3.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,600,676 ; Net UI Tool Window@430,581,443,604 t=121487"}
+{"t": "23:32:22", "cmd": "crop c5-f2-f4x3 0 270 1500 60 c5-f2-f4x3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x3-bar.png t=121508"}
+{"t": "23:32:22", "cmd": "crop c5-f2-f4x3 0 2055 500 33 c5-f2-f4x3-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x3-mode.png t=121564"}
+{"t": "23:32:22", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=121618"}
+{"t": "23:32:22", "cmd": "clipclear", "answer": "ok clipclear t=121670"}
+{"t": "23:32:22", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=121797"}
+{"t": "23:32:23", "cmd": "clipboard", "answer": "ok clipboard \"$B2\" t=122187"}
+{"t": "23:32:23", "cmd": "clipclear", "answer": "ok clipclear t=122243"}
+{"t": "23:32:23", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=122438"}
+{"t": "23:32:23", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:\" t=122812"}
+{"t": "23:32:24", "cmd": "clipclear", "answer": "ok clipclear t=122869"}
+{"t": "23:32:24", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=123115"}
+{"t": "23:32:24", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:$B2)\" t=123489"}
+{"t": "23:32:24", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=123589"}
+{"t": "23:32:25", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=123914"}
+{"t": "23:32:25", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=123971"}
+{"t": "23:32:25", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=124161"}
+{"t": "23:32:25", "cmd": "select D10", "answer": "ok select D10 t=124189"}
+{"t": "23:32:27", "cmd": "keys 80 =SUM{(}A1:B2{)}{F2}{LEFT}{F4}{F4}{F4}{F4}", "answer": "ok keys 17 t=126035"}
+{"t": "23:32:27", "cmd": "shot c5-f2-f4x4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x4.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,600,676 ; Net UI Tool Window@424,581,437,604 t=126831"}
+{"t": "23:32:28", "cmd": "crop c5-f2-f4x4 0 270 1500 60 c5-f2-f4x4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x4-bar.png t=126854"}
+{"t": "23:32:28", "cmd": "crop c5-f2-f4x4 0 2055 500 33 c5-f2-f4x4-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c5-f2-f4x4-mode.png t=126909"}
+{"t": "23:32:28", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=126964"}
+{"t": "23:32:28", "cmd": "clipclear", "answer": "ok clipclear t=127016"}
+{"t": "23:32:28", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=127137"}
+{"t": "23:32:28", "cmd": "clipboard", "answer": "ok clipboard \"B2\" t=127535"}
+{"t": "23:32:28", "cmd": "clipclear", "answer": "ok clipclear t=127591"}
+{"t": "23:32:28", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=127775"}
+{"t": "23:32:29", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:\" t=128160"}
+{"t": "23:32:29", "cmd": "clipclear", "answer": "ok clipclear t=128216"}
+{"t": "23:32:29", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=128460"}
+{"t": "23:32:30", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:B2)\" t=128838"}
+{"t": "23:32:30", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=128945"}
+{"t": "23:32:30", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=129259"}
+{"t": "23:32:30", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=129318"}
+{"t": "23:32:30", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=129501"}
+{"t": "23:32:30", "cmd": "select D10", "answer": "ok select D10 t=129533"}
+{"t": "23:32:31", "cmd": "keys 80 =$A1:B2{LEFT}{F4}", "answer": "ok keys 9 t=130631"}
+{"t": "23:32:32", "cmd": "shot c6-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c6-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=131402"}
+{"t": "23:32:32", "cmd": "crop c6-typed-f4x1 0 270 1500 60 c6-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c6-typed-f4x1-bar.png t=131447"}
+{"t": "23:32:32", "cmd": "crop c6-typed-f4x1 0 2055 500 33 c6-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c6-typed-f4x1-mode.png t=131507"}
+{"t": "23:32:32", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=131567"}
+{"t": "23:32:33", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=$A1:B2\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=$A1:B2\" | text \"0\" | numberFormat \"General\" ;; D11: number 0 | formula \"\" | text \"0\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: number 0 | formula \"\" | text \"0\" | numberFormat \"General\" t=132699"}
+{"t": "23:32:34", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=132889"}
+{"t": "23:32:34", "cmd": "select D10", "answer": "ok select D10 t=132947"}
+{"t": "23:32:35", "cmd": "keys 80 =$A1:B2{F2}{LEFT}{F4}", "answer": "ok keys 10 t=134129"}
+{"t": "23:32:36", "cmd": "shot c6-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c6-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@398,581,411,604 t=134906"}
+{"t": "23:32:36", "cmd": "crop c6-f2-f4x1 0 270 1500 60 c6-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c6-f2-f4x1-bar.png t=134936"}
+{"t": "23:32:36", "cmd": "crop c6-f2-f4x1 0 2055 500 33 c6-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c6-f2-f4x1-mode.png t=134993"}
+{"t": "23:32:36", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=135048"}
+{"t": "23:32:36", "cmd": "clipclear", "answer": "ok clipclear t=135101"}
+{"t": "23:32:36", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=135225"}
+{"t": "23:32:36", "cmd": "clipboard", "answer": "ok clipboard \"$B$2\" t=135628"}
+{"t": "23:32:36", "cmd": "clipclear", "answer": "ok clipclear t=135686"}
+{"t": "23:32:36", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=135875"}
+{"t": "23:32:37", "cmd": "clipboard", "answer": "ok clipboard \"=$A1:\" t=136265"}
+{"t": "23:32:37", "cmd": "clipclear", "answer": "ok clipclear t=136323"}
+{"t": "23:32:37", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=136572"}
+{"t": "23:32:38", "cmd": "clipboard", "answer": "ok clipboard \"=$A1:$B$2\" t=136953"}
+{"t": "23:32:38", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=137052"}
+{"t": "23:32:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=137382"}
+{"t": "23:32:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=137441"}
+{"t": "23:32:38", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=137629"}
+{"t": "23:32:38", "cmd": "select D10", "answer": "ok select D10 t=137659"}
+{"t": "23:32:39", "cmd": "keys 80 =A1{+}B2+{HOME}+{RIGHT}{F4}", "answer": "ok keys 9 t=138755"}
+{"t": "23:32:40", "cmd": "shot c7-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c7-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=139539"}
+{"t": "23:32:40", "cmd": "crop c7-typed-f4x1 0 270 1500 60 c7-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c7-typed-f4x1-bar.png t=139572"}
+{"t": "23:32:40", "cmd": "crop c7-typed-f4x1 0 2055 500 33 c7-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c7-typed-f4x1-mode.png t=139630"}
+{"t": "23:32:40", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=B10:D10 t=139687"}
+{"t": "23:32:41", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=140876"}
+{"t": "23:32:42", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=141081"}
+{"t": "23:32:42", "cmd": "select D10", "answer": "ok select D10 t=141143"}
+{"t": "23:32:43", "cmd": "keys 80 =A1{+}B2{F2}+{HOME}+{RIGHT}{F4}", "answer": "ok keys 10 t=142333"}
+{"t": "23:32:44", "cmd": "shot c7-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c7-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@386,581,399,604 t=143125"}
+{"t": "23:32:44", "cmd": "crop c7-f2-f4x1 0 270 1500 60 c7-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c7-f2-f4x1-bar.png t=143149"}
+{"t": "23:32:44", "cmd": "crop c7-f2-f4x1 0 2055 500 33 c7-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c7-f2-f4x1-mode.png t=143205"}
+{"t": "23:32:44", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=143259"}
+{"t": "23:32:44", "cmd": "clipclear", "answer": "ok clipclear t=143311"}
+{"t": "23:32:44", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=143434"}
+{"t": "23:32:44", "cmd": "clipboard", "answer": "ok clipboard \"$A$1+$B$2\" t=143831"}
+{"t": "23:32:44", "cmd": "clipclear", "answer": "ok clipclear t=143888"}
+{"t": "23:32:45", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=144073"}
+{"t": "23:32:45", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=144459"}
+{"t": "23:32:45", "cmd": "clipclear", "answer": "ok clipclear t=144515"}
+{"t": "23:32:45", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=144764"}
+{"t": "23:32:46", "cmd": "clipboard", "answer": "ok clipboard \"=$A$1+$B$2\" t=145138"}
+{"t": "23:32:46", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=145238"}
+{"t": "23:32:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=145571"}
+{"t": "23:32:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=145625"}
+{"t": "23:32:46", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=145815"}
+{"t": "23:32:46", "cmd": "select D10", "answer": "ok select D10 t=145842"}
+{"t": "23:32:48", "cmd": "keys 80 =SUM{(}A:A{)}{LEFT}{F4}", "answer": "ok keys 11 t=147113"}
+{"t": "23:32:48", "cmd": "shot c8-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=147855"}
+{"t": "23:32:49", "cmd": "crop c8-typed-f4x1 0 270 1500 60 c8-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-typed-f4x1-bar.png t=147892"}
+{"t": "23:32:49", "cmd": "crop c8-typed-f4x1 0 2055 500 33 c8-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-typed-f4x1-mode.png t=147949"}
+{"t": "23:32:49", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=148008"}
+{"t": "23:32:50", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(A:A)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(A:A)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=149153"}
+{"t": "23:32:50", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=149347"}
+{"t": "23:32:50", "cmd": "select D10", "answer": "ok select D10 t=149408"}
+{"t": "23:32:51", "cmd": "keys 80 =SUM{(}A:A{)}{LEFT}{F4}{F4}", "answer": "ok keys 12 t=150787"}
+{"t": "23:32:52", "cmd": "shot c8-typed-f4x2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-typed-f4x2.png windows: XLMAIN@-11,-11,3851,2099 t=151570"}
+{"t": "23:32:52", "cmd": "crop c8-typed-f4x2 0 270 1500 60 c8-typed-f4x2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-typed-f4x2-bar.png t=151611"}
+{"t": "23:32:52", "cmd": "crop c8-typed-f4x2 0 2055 500 33 c8-typed-f4x2-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-typed-f4x2-mode.png t=151667"}
+{"t": "23:32:52", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=151726"}
+{"t": "23:32:54", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(A:A)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(A:A)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=152957"}
+{"t": "23:32:54", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=153167"}
+{"t": "23:32:54", "cmd": "select D10", "answer": "ok select D10 t=153227"}
+{"t": "23:32:55", "cmd": "keys 80 =SUM{(}A:A{)}{LEFT}{F4}{F4}{F4}", "answer": "ok keys 13 t=154694"}
+{"t": "23:32:56", "cmd": "shot c8-typed-f4x3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-typed-f4x3.png windows: XLMAIN@-11,-11,3851,2099 t=155440"}
+{"t": "23:32:56", "cmd": "crop c8-typed-f4x3 0 270 1500 60 c8-typed-f4x3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-typed-f4x3-bar.png t=155480"}
+{"t": "23:32:56", "cmd": "crop c8-typed-f4x3 0 2055 500 33 c8-typed-f4x3-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-typed-f4x3-mode.png t=155536"}
+{"t": "23:32:56", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=155596"}
+{"t": "23:32:57", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(A:A)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(A:A)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=156770"}
+{"t": "23:32:58", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=156991"}
+{"t": "23:32:58", "cmd": "select D10", "answer": "ok select D10 t=157045"}
+{"t": "23:32:59", "cmd": "keys 80 =SUM{(}A:A{)}{F2}{LEFT}{F4}", "answer": "ok keys 12 t=158412"}
+{"t": "23:33:00", "cmd": "shot c8-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,600,676 ; Net UI Tool Window@82,581,750,604 t=159176"}
+{"t": "23:33:00", "cmd": "crop c8-f2-f4x1 0 270 1500 60 c8-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-f2-f4x1-bar.png t=159195"}
+{"t": "23:33:00", "cmd": "crop c8-f2-f4x1 0 2055 500 33 c8-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-f2-f4x1-mode.png t=159251"}
+{"t": "23:33:00", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=159305"}
+{"t": "23:33:00", "cmd": "clipclear", "answer": "ok clipclear t=159357"}
+{"t": "23:33:00", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=159473"}
+{"t": "23:33:01", "cmd": "clipboard", "answer": "ok clipboard \"$A:$A\" t=159873"}
+{"t": "23:33:01", "cmd": "clipclear", "answer": "ok clipclear t=159943"}
+{"t": "23:33:01", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=160118"}
+{"t": "23:33:01", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(\" t=160501"}
+{"t": "23:33:01", "cmd": "clipclear", "answer": "ok clipclear t=160558"}
+{"t": "23:33:01", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=160807"}
+{"t": "23:33:02", "cmd": "clipboard", "answer": "ok clipboard \"=SUM($A:$A)\" t=161181"}
+{"t": "23:33:02", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=161290"}
+{"t": "23:33:02", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=161659"}
+{"t": "23:33:02", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=161718"}
+{"t": "23:33:03", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=161913"}
+{"t": "23:33:03", "cmd": "select D10", "answer": "ok select D10 t=161934"}
+{"t": "23:33:04", "cmd": "keys 80 =SUM{(}A:A{)}{F2}{LEFT}{F4}{F4}", "answer": "ok keys 13 t=163396"}
+{"t": "23:33:05", "cmd": "shot c8-f2-f4x2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-f2-f4x2.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,600,676 ; Net UI Tool Window@71,581,739,604 t=164197"}
+{"t": "23:33:05", "cmd": "crop c8-f2-f4x2 0 270 1500 60 c8-f2-f4x2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-f2-f4x2-bar.png t=164226"}
+{"t": "23:33:05", "cmd": "crop c8-f2-f4x2 0 2055 500 33 c8-f2-f4x2-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-f2-f4x2-mode.png t=164284"}
+{"t": "23:33:05", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=164340"}
+{"t": "23:33:05", "cmd": "clipclear", "answer": "ok clipclear t=164393"}
+{"t": "23:33:05", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=164516"}
+{"t": "23:33:06", "cmd": "clipboard", "answer": "ok clipboard \"A:A\" t=164923"}
+{"t": "23:33:06", "cmd": "clipclear", "answer": "ok clipclear t=164983"}
+{"t": "23:33:06", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=165168"}
+{"t": "23:33:06", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(\" t=165566"}
+{"t": "23:33:06", "cmd": "clipclear", "answer": "ok clipclear t=165622"}
+{"t": "23:33:06", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=165865"}
+{"t": "23:33:07", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A:A)\" t=166255"}
+{"t": "23:33:07", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=166355"}
+{"t": "23:33:07", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=166688"}
+{"t": "23:33:07", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=166749"}
+{"t": "23:33:08", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=166943"}
+{"t": "23:33:08", "cmd": "select D10", "answer": "ok select D10 t=166969"}
+{"t": "23:33:09", "cmd": "keys 80 =SUM{(}A:A{)}{F2}{LEFT}{F4}{F4}{F4}", "answer": "ok keys 14 t=168538"}
+{"t": "23:33:10", "cmd": "shot c8-f2-f4x3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-f2-f4x3.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,600,676 ; Net UI Tool Window@82,581,750,604 t=169321"}
+{"t": "23:33:10", "cmd": "crop c8-f2-f4x3 0 270 1500 60 c8-f2-f4x3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-f2-f4x3-bar.png t=169357"}
+{"t": "23:33:10", "cmd": "crop c8-f2-f4x3 0 2055 500 33 c8-f2-f4x3-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c8-f2-f4x3-mode.png t=169413"}
+{"t": "23:33:10", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=169468"}
+{"t": "23:33:10", "cmd": "clipclear", "answer": "ok clipclear t=169520"}
+{"t": "23:33:10", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=169640"}
+{"t": "23:33:11", "cmd": "clipboard", "answer": "ok clipboard \"$A:$A\" t=170043"}
+{"t": "23:33:11", "cmd": "clipclear", "answer": "ok clipclear t=170108"}
+{"t": "23:33:11", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=170288"}
+{"t": "23:33:11", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(\" t=170677"}
+{"t": "23:33:11", "cmd": "clipclear", "answer": "ok clipclear t=170733"}
+{"t": "23:33:12", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=170979"}
+{"t": "23:33:12", "cmd": "clipboard", "answer": "ok clipboard \"=SUM($A:$A)\" t=171359"}
+{"t": "23:33:12", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=171458"}
+{"t": "23:33:12", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=171789"}
+{"t": "23:33:12", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=171851"}
+{"t": "23:33:13", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=172038"}
+{"t": "23:33:13", "cmd": "select D10", "answer": "ok select D10 t=172063"}
+{"t": "23:33:14", "cmd": "keys 80 =SUM{(}1:1{)}{LEFT}{F4}", "answer": "ok keys 11 t=173349"}
+{"t": "23:33:15", "cmd": "shot c9-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=174129"}
+{"t": "23:33:15", "cmd": "crop c9-typed-f4x1 0 270 1500 60 c9-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-typed-f4x1-bar.png t=174173"}
+{"t": "23:33:15", "cmd": "crop c9-typed-f4x1 0 2055 500 33 c9-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-typed-f4x1-mode.png t=174229"}
+{"t": "23:33:15", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=174290"}
+{"t": "23:33:16", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(1:1)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(1:1)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=175490"}
+{"t": "23:33:16", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=175738"}
+{"t": "23:33:16", "cmd": "select D10", "answer": "ok select D10 t=175793"}
+{"t": "23:33:18", "cmd": "keys 80 =SUM{(}1:1{)}{LEFT}{F4}{F4}", "answer": "ok keys 12 t=177161"}
+{"t": "23:33:18", "cmd": "shot c9-typed-f4x2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-typed-f4x2.png windows: XLMAIN@-11,-11,3851,2099 t=177911"}
+{"t": "23:33:19", "cmd": "crop c9-typed-f4x2 0 270 1500 60 c9-typed-f4x2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-typed-f4x2-bar.png t=177948"}
+{"t": "23:33:19", "cmd": "crop c9-typed-f4x2 0 2055 500 33 c9-typed-f4x2-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-typed-f4x2-mode.png t=178005"}
+{"t": "23:33:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=178065"}
+{"t": "23:33:20", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(1:1)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(1:1)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=179291"}
+{"t": "23:33:20", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=179560"}
+{"t": "23:33:20", "cmd": "select D10", "answer": "ok select D10 t=179619"}
+{"t": "23:33:22", "cmd": "keys 80 =SUM{(}1:1{)}{LEFT}{F4}{F4}{F4}", "answer": "ok keys 13 t=181082"}
+{"t": "23:33:22", "cmd": "shot c9-typed-f4x3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-typed-f4x3.png windows: XLMAIN@-11,-11,3851,2099 t=181841"}
+{"t": "23:33:22", "cmd": "crop c9-typed-f4x3 0 270 1500 60 c9-typed-f4x3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-typed-f4x3-bar.png t=181872"}
+{"t": "23:33:23", "cmd": "crop c9-typed-f4x3 0 2055 500 33 c9-typed-f4x3-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-typed-f4x3-mode.png t=181928"}
+{"t": "23:33:23", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=182013"}
+{"t": "23:33:24", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(1:1)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(1:1)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=183225"}
+{"t": "23:33:24", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=183486"}
+{"t": "23:33:24", "cmd": "select D10", "answer": "ok select D10 t=183541"}
+{"t": "23:33:26", "cmd": "keys 80 =SUM{(}1:1{)}{F2}{LEFT}{F4}", "answer": "ok keys 12 t=184911"}
+{"t": "23:33:26", "cmd": "shot c9-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,600,676 ; Net UI Tool Window@81,581,749,604 t=185671"}
+{"t": "23:33:26", "cmd": "crop c9-f2-f4x1 0 270 1500 60 c9-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-f2-f4x1-bar.png t=185694"}
+{"t": "23:33:26", "cmd": "crop c9-f2-f4x1 0 2055 500 33 c9-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-f2-f4x1-mode.png t=185751"}
+{"t": "23:33:26", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=185807"}
+{"t": "23:33:27", "cmd": "clipclear", "answer": "ok clipclear t=185858"}
+{"t": "23:33:27", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=185980"}
+{"t": "23:33:27", "cmd": "clipboard", "answer": "ok clipboard \"$1:$1\" t=186375"}
+{"t": "23:33:27", "cmd": "clipclear", "answer": "ok clipclear t=186432"}
+{"t": "23:33:27", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=186617"}
+{"t": "23:33:28", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(\" t=186999"}
+{"t": "23:33:28", "cmd": "clipclear", "answer": "ok clipclear t=187055"}
+{"t": "23:33:28", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=187302"}
+{"t": "23:33:28", "cmd": "clipboard", "answer": "ok clipboard \"=SUM($1:$1)\" t=187678"}
+{"t": "23:33:28", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=187776"}
+{"t": "23:33:29", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=188102"}
+{"t": "23:33:29", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=188159"}
+{"t": "23:33:29", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=188399"}
+{"t": "23:33:29", "cmd": "select D10", "answer": "ok select D10 t=188428"}
+{"t": "23:33:31", "cmd": "keys 80 =SUM{(}1:1{)}{F2}{LEFT}{F4}{F4}", "answer": "ok keys 13 t=189896"}
+{"t": "23:33:31", "cmd": "shot c9-f2-f4x2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-f2-f4x2.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,600,676 ; Net UI Tool Window@70,581,738,604 t=190672"}
+{"t": "23:33:31", "cmd": "crop c9-f2-f4x2 0 270 1500 60 c9-f2-f4x2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-f2-f4x2-bar.png t=190736"}
+{"t": "23:33:31", "cmd": "crop c9-f2-f4x2 0 2055 500 33 c9-f2-f4x2-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-f2-f4x2-mode.png t=190793"}
+{"t": "23:33:32", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=190850"}
+{"t": "23:33:32", "cmd": "clipclear", "answer": "ok clipclear t=190902"}
+{"t": "23:33:32", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=191024"}
+{"t": "23:33:32", "cmd": "clipboard", "answer": "ok clipboard \"1:1\" t=191422"}
+{"t": "23:33:32", "cmd": "clipclear", "answer": "ok clipclear t=191478"}
+{"t": "23:33:32", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=191667"}
+{"t": "23:33:33", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(\" t=192050"}
+{"t": "23:33:33", "cmd": "clipclear", "answer": "ok clipclear t=192108"}
+{"t": "23:33:33", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=192354"}
+{"t": "23:33:33", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(1:1)\" t=192729"}
+{"t": "23:33:34", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=192835"}
+{"t": "23:33:34", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=193202"}
+{"t": "23:33:34", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=193260"}
+{"t": "23:33:34", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=193494"}
+{"t": "23:33:34", "cmd": "select D10", "answer": "ok select D10 t=193526"}
+{"t": "23:33:36", "cmd": "keys 80 =SUM{(}1:1{)}{F2}{LEFT}{F4}{F4}{F4}", "answer": "ok keys 14 t=195084"}
+{"t": "23:33:37", "cmd": "shot c9-f2-f4x3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-f2-f4x3.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,600,676 ; Net UI Tool Window@81,581,749,604 t=195865"}
+{"t": "23:33:37", "cmd": "crop c9-f2-f4x3 0 270 1500 60 c9-f2-f4x3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-f2-f4x3-bar.png t=195885"}
+{"t": "23:33:37", "cmd": "crop c9-f2-f4x3 0 2055 500 33 c9-f2-f4x3-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c9-f2-f4x3-mode.png t=195942"}
+{"t": "23:33:37", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=195998"}
+{"t": "23:33:37", "cmd": "clipclear", "answer": "ok clipclear t=196052"}
+{"t": "23:33:37", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=196187"}
+{"t": "23:33:37", "cmd": "clipboard", "answer": "ok clipboard \"$1:$1\" t=196595"}
+{"t": "23:33:37", "cmd": "clipclear", "answer": "ok clipclear t=196645"}
+{"t": "23:33:38", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=196833"}
+{"t": "23:33:38", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(\" t=197233"}
+{"t": "23:33:38", "cmd": "clipclear", "answer": "ok clipclear t=197291"}
+{"t": "23:33:38", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=197549"}
+{"t": "23:33:39", "cmd": "clipboard", "answer": "ok clipboard \"=SUM($1:$1)\" t=197926"}
+{"t": "23:33:39", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=198026"}
+{"t": "23:33:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=198362"}
+{"t": "23:33:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=198421"}
+{"t": "23:33:39", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=198659"}
+{"t": "23:33:40", "cmd": "uia", "answer": "ok uia Formula Bar:328,267,3840,324 Name Box:not found Status Bar:0,2055,3840,2088 Sheet Tab:not found Sheet1:160,2007,259,2055 t=199569"}
+{"t": "23:33:40", "cmd": "addsheet Sheet2", "answer": "ok addsheet Sheet2 t=199708"}
+{"t": "23:33:40", "cmd": "select D10", "answer": "ok select D10 t=199752"}
+{"t": "23:33:42", "cmd": "keys 80 =Sheet2!A1{F4}", "answer": "ok keys 11 t=201036"}
+{"t": "23:33:42", "cmd": "shot c10-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c10-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=201794"}
+{"t": "23:33:42", "cmd": "crop c10-typed-f4x1 0 270 1500 60 c10-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c10-typed-f4x1-bar.png t=201835"}
+{"t": "23:33:43", "cmd": "crop c10-typed-f4x1 0 2055 500 33 c10-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c10-typed-f4x1-mode.png t=201892"}
+{"t": "23:33:43", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=201948"}
+{"t": "23:33:43", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=202041"}
+{"t": "23:33:43", "cmd": "clipclear", "answer": "ok clipclear t=202362"}
+{"t": "23:33:43", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=202474"}
+{"t": "23:33:43", "cmd": "clipboard", "answer": "ok clipboard \"\" t=202884"}
+{"t": "23:33:44", "cmd": "clipclear", "answer": "ok clipclear t=202939"}
+{"t": "23:33:44", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=203125"}
+{"t": "23:33:44", "cmd": "clipboard", "answer": "ok clipboard \"=Sheet2!$A$1\" t=203515"}
+{"t": "23:33:44", "cmd": "clipclear", "answer": "ok clipclear t=203572"}
+{"t": "23:33:44", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=203819"}
+{"t": "23:33:45", "cmd": "clipboard", "answer": "ok clipboard \"=Sheet2!$A$1\" t=204201"}
+{"t": "23:33:45", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=204301"}
+{"t": "23:33:45", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=204630"}
+{"t": "23:33:45", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=204689"}
+{"t": "23:33:45", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=204874"}
+{"t": "23:33:46", "cmd": "setup A1 Id", "answer": "ok setup A1 t=204903"}
+{"t": "23:33:46", "cmd": "setup B1 PV", "answer": "ok setup B1 t=204964"}
+{"t": "23:33:46", "cmd": "setup A2 R-1", "answer": "ok setup A2 t=205016"}
+{"t": "23:33:46", "cmd": "setup A3 R-2", "answer": "ok setup A3 t=205074"}
+{"t": "23:33:46", "cmd": "setup B2 10", "answer": "ok setup B2 t=205138"}
+{"t": "23:33:46", "cmd": "setup B3 20", "answer": "ok setup B3 t=205197"}
+{"t": "23:33:46", "cmd": "table A1:B3 Positions", "answer": "ok table Positions A1:B3 t=205410"}
+{"t": "23:33:46", "cmd": "select D1", "answer": "ok select D1 t=205466"}
+{"t": "23:33:48", "cmd": "keys 80 =SUM{(}Positions[PV]{)}{LEFT}{F4}", "answer": "ok keys 21 t=207692"}
+{"t": "23:33:49", "cmd": "shot c11-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c11-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=208460"}
+{"t": "23:33:49", "cmd": "crop c11-typed-f4x1 0 270 1500 60 c11-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c11-typed-f4x1-bar.png t=208502"}
+{"t": "23:33:49", "cmd": "crop c11-typed-f4x1 0 2055 500 33 c11-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c11-typed-f4x1-mode.png t=208559"}
+{"t": "23:33:49", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C1 t=208619"}
+{"t": "23:33:50", "cmd": "cell D1 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D1: number 30 | formula \"=SUM(Positions[PV])\" | text \"30\" | numberFormat \"General\" ;; A1: String \"Id\" | formula \"Id\" | text \"Id\" | numberFormat \"General\" ;; A2: String \"R-1\" | formula \"R-1\" | text \"R-1\" | numberFormat \"General\" ;; A3: String \"R-2\" | formula \"R-2\" | text \"R-2\" | numberFormat \"General\" ;; D10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=209943"}
+{"t": "23:33:51", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=210127"}
+{"t": "23:33:51", "cmd": "setup A1 Id", "answer": "ok setup A1 t=210176"}
+{"t": "23:33:51", "cmd": "setup B1 PV", "answer": "ok setup B1 t=210234"}
+{"t": "23:33:51", "cmd": "setup A2 R-1", "answer": "ok setup A2 t=210291"}
+{"t": "23:33:51", "cmd": "setup A3 R-2", "answer": "ok setup A3 t=210351"}
+{"t": "23:33:51", "cmd": "setup B2 10", "answer": "ok setup B2 t=210408"}
+{"t": "23:33:51", "cmd": "setup B3 20", "answer": "ok setup B3 t=210468"}
+{"t": "23:33:51", "cmd": "table A1:B3 Positions", "answer": "ok table Positions A1:B3 t=210581"}
+{"t": "23:33:51", "cmd": "select D1", "answer": "ok select D1 t=210634"}
+{"t": "23:33:54", "cmd": "keys 80 =SUM{(}Positions[PV]{)}{F2}{LEFT}{F4}", "answer": "ok keys 22 t=212943"}
+{"t": "23:33:54", "cmd": "shot c11-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c11-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,384,600,415 t=213740"}
+{"t": "23:33:54", "cmd": "crop c11-f2-f4x1 0 270 1500 60 c11-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c11-f2-f4x1-bar.png t=213763"}
+{"t": "23:33:54", "cmd": "crop c11-f2-f4x1 0 2055 500 33 c11-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c11-f2-f4x1-mode.png t=213822"}
+{"t": "23:33:54", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=213877"}
+{"t": "23:33:55", "cmd": "clipclear", "answer": "ok clipclear t=213929"}
+{"t": "23:33:55", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=214058"}
+{"t": "23:33:55", "cmd": "clipboard", "answer": "ok clipboard \"\" t=214445"}
+{"t": "23:33:55", "cmd": "clipclear", "answer": "ok clipclear t=214503"}
+{"t": "23:33:55", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=214694"}
+{"t": "23:33:56", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(Positions[PV]\" t=215076"}
+{"t": "23:33:56", "cmd": "clipclear", "answer": "ok clipclear t=215132"}
+{"t": "23:33:56", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=215390"}
+{"t": "23:33:56", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(Positions[PV])\" t=215754"}
+{"t": "23:33:56", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=215855"}
+{"t": "23:33:57", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D1 selection=D1 t=216186"}
+{"t": "23:33:57", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D1 selection=D1 t=216242"}
+{"t": "23:33:57", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=216445"}
+{"t": "23:33:57", "cmd": "select D10", "answer": "ok select D10 t=216511"}
+{"t": "23:33:58", "cmd": "keys 80 =SUM{(}A1{)}{HOME}{RIGHT}{RIGHT}{F4}", "answer": "ok keys 12 t=217882"}
+{"t": "23:33:59", "cmd": "shot c12-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c12-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=218619"}
+{"t": "23:33:59", "cmd": "crop c12-typed-f4x1 0 270 1500 60 c12-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c12-typed-f4x1-bar.png t=218661"}
+{"t": "23:33:59", "cmd": "crop c12-typed-f4x1 0 2055 500 33 c12-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c12-typed-f4x1-mode.png t=218720"}
+{"t": "23:33:59", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10 t=218779"}
+{"t": "23:34:01", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=SUM(A1)\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=SUM(A1)\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=220130"}
+{"t": "23:34:01", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=220489"}
+{"t": "23:34:01", "cmd": "select D10", "answer": "ok select D10 t=220538"}
+{"t": "23:34:03", "cmd": "keys 80 =SUM{(}A1{)}{F2}{HOME}{RIGHT}{RIGHT}{F4}", "answer": "ok keys 13 t=222004"}
+{"t": "23:34:03", "cmd": "shot c12-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c12-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@342,645,598,676 t=222772"}
+{"t": "23:34:03", "cmd": "crop c12-f2-f4x1 0 270 1500 60 c12-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c12-f2-f4x1-bar.png t=222793"}
+{"t": "23:34:04", "cmd": "crop c12-f2-f4x1 0 2055 500 33 c12-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c12-f2-f4x1-mode.png t=222852"}
+{"t": "23:34:04", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=222906"}
+{"t": "23:34:04", "cmd": "clipclear", "answer": "ok clipclear t=222958"}
+{"t": "23:34:04", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=223070"}
+{"t": "23:34:04", "cmd": "clipboard", "answer": "ok clipboard \"\" t=223474"}
+{"t": "23:34:04", "cmd": "clipclear", "answer": "ok clipclear t=223480"}
+{"t": "23:34:04", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=223629"}
+{"t": "23:34:05", "cmd": "clipboard", "answer": "ok clipboard \"=S\" t=223999"}
+{"t": "23:34:05", "cmd": "clipclear", "answer": "ok clipclear t=224056"}
+{"t": "23:34:05", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=224303"}
+{"t": "23:34:05", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1)\" t=224679"}
+{"t": "23:34:05", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=224778"}
+{"t": "23:34:06", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=225107"}
+{"t": "23:34:06", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=225166"}
+{"t": "23:34:06", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=225345"}
+{"t": "23:34:06", "cmd": "select D10", "answer": "ok select D10 t=225381"}
+{"t": "23:34:07", "cmd": "keys 80 =1{+}2{F4}", "answer": "ok keys 5 t=226098"}
+{"t": "23:34:08", "cmd": "shot c13-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c13-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=226888"}
+{"t": "23:34:08", "cmd": "crop c13-typed-f4x1 0 270 1500 60 c13-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c13-typed-f4x1-bar.png t=226918"}
+{"t": "23:34:08", "cmd": "crop c13-typed-f4x1 0 2055 500 33 c13-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c13-typed-f4x1-mode.png t=226975"}
+{"t": "23:34:08", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=227029"}
+{"t": "23:34:08", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=227132"}
+{"t": "23:34:08", "cmd": "clipclear", "answer": "ok clipclear t=227434"}
+{"t": "23:34:08", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=227562"}
+{"t": "23:34:09", "cmd": "clipboard", "answer": "ok clipboard \"\" t=227954"}
+{"t": "23:34:09", "cmd": "clipclear", "answer": "ok clipclear t=228014"}
+{"t": "23:34:09", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=228202"}
+{"t": "23:34:09", "cmd": "clipboard", "answer": "ok clipboard \"=1+2\" t=228607"}
+{"t": "23:34:09", "cmd": "clipclear", "answer": "ok clipclear t=228661"}
+{"t": "23:34:10", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=228911"}
+{"t": "23:34:10", "cmd": "clipboard", "answer": "ok clipboard \"=1+2\" t=229300"}
+{"t": "23:34:10", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=229401"}
+{"t": "23:34:10", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=229740"}
+{"t": "23:34:10", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=229799"}
+{"t": "23:34:11", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=229980"}
+{"t": "23:34:11", "cmd": "select D10", "answer": "ok select D10 t=230019"}
+{"t": "23:34:11", "cmd": "keys 80 B2{F4}", "answer": "ok keys 3 t=230553"}
+{"t": "23:34:12", "cmd": "shot c14-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c14-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=231340"}
+{"t": "23:34:12", "cmd": "crop c14-typed-f4x1 0 270 1500 60 c14-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c14-typed-f4x1-bar.png t=231378"}
+{"t": "23:34:12", "cmd": "crop c14-typed-f4x1 0 2055 500 33 c14-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c14-typed-f4x1-mode.png t=231436"}
+{"t": "23:34:12", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=231492"}
+{"t": "23:34:12", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=231586"}
+{"t": "23:34:13", "cmd": "clipclear", "answer": "ok clipclear t=231909"}
+{"t": "23:34:13", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=232023"}
+{"t": "23:34:13", "cmd": "clipboard", "answer": "ok clipboard \"\" t=232435"}
+{"t": "23:34:13", "cmd": "clipclear", "answer": "ok clipclear t=232490"}
+{"t": "23:34:13", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=232679"}
+{"t": "23:34:14", "cmd": "clipboard", "answer": "ok clipboard \"B2\" t=233070"}
+{"t": "23:34:14", "cmd": "clipclear", "answer": "ok clipclear t=233127"}
+{"t": "23:34:14", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=233375"}
+{"t": "23:34:14", "cmd": "clipboard", "answer": "ok clipboard \"B2\" t=233757"}
+{"t": "23:34:14", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=233854"}
+{"t": "23:34:15", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=234186"}
+{"t": "23:34:15", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=234246"}
+{"t": "23:34:15", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=234422"}
+{"t": "23:34:15", "cmd": "select A1", "answer": "ok select A1 t=234457"}
+{"t": "23:34:16", "cmd": "keys 80 ={DOWN}{F4}", "answer": "ok keys 3 t=234989"}
+{"t": "23:34:16", "cmd": "shot c15-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c15-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@70,320,83,343 t=235774"}
+{"t": "23:34:16", "cmd": "crop c15-typed-f4x1 0 270 1500 60 c15-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c15-typed-f4x1-bar.png t=235809"}
+{"t": "23:34:16", "cmd": "crop c15-typed-f4x1 0 2055 500 33 c15-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c15-typed-f4x1-mode.png t=235866"}
+{"t": "23:34:17", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=235921"}
+{"t": "23:34:17", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=236027"}
+{"t": "23:34:17", "cmd": "clipclear", "answer": "ok clipclear t=236386"}
+{"t": "23:34:17", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=236507"}
+{"t": "23:34:18", "cmd": "clipboard", "answer": "ok clipboard \"$A$2\" t=236907"}
+{"t": "23:34:18", "cmd": "clipclear", "answer": "ok clipclear t=236962"}
+{"t": "23:34:18", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=237148"}
+{"t": "23:34:18", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=237537"}
+{"t": "23:34:18", "cmd": "clipclear", "answer": "ok clipclear t=237594"}
+{"t": "23:34:18", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=237839"}
+{"t": "23:34:19", "cmd": "clipboard", "answer": "ok clipboard \"=$A$2\" t=238217"}
+{"t": "23:34:19", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=238317"}
+{"t": "23:34:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=238646"}
+{"t": "23:34:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=238705"}
+{"t": "23:34:19", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=238774"}
+{"t": "23:34:19", "cmd": "select A1", "answer": "ok select A1 t=238813"}
+{"t": "23:34:20", "cmd": "keys 80 ={DOWN}{F4}{DOWN}", "answer": "ok keys 4 t=239442"}
+{"t": "23:34:21", "cmd": "shot c15b-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c15b-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@59,320,72,343 t=240224"}
+{"t": "23:34:21", "cmd": "crop c15b-typed-f4x1 0 270 1500 60 c15b-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c15b-typed-f4x1-bar.png t=240256"}
+{"t": "23:34:21", "cmd": "crop c15b-typed-f4x1 0 2055 500 33 c15b-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c15b-typed-f4x1-mode.png t=240314"}
+{"t": "23:34:21", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=240369"}
+{"t": "23:34:21", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=240464"}
+{"t": "23:34:21", "cmd": "clipclear", "answer": "ok clipclear t=240779"}
+{"t": "23:34:21", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=240901"}
+{"t": "23:34:22", "cmd": "clipboard", "answer": "ok clipboard \"A3\" t=241301"}
+{"t": "23:34:22", "cmd": "clipclear", "answer": "ok clipclear t=241357"}
+{"t": "23:34:22", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=241542"}
+{"t": "23:34:23", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=241929"}
+{"t": "23:34:23", "cmd": "clipclear", "answer": "ok clipclear t=241986"}
+{"t": "23:34:23", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=242232"}
+{"t": "23:34:23", "cmd": "clipboard", "answer": "ok clipboard \"=A3\" t=242611"}
+{"t": "23:34:23", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=242710"}
+{"t": "23:34:24", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=243039"}
+{"t": "23:34:24", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=243097"}
+{"t": "23:34:24", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=243170"}
+{"t": "23:34:24", "cmd": "select A1", "answer": "ok select A1 t=243205"}
+{"t": "23:34:24", "cmd": "keys 80 ={DOWN}{F4}{+}", "answer": "ok keys 4 t=243835"}
+{"t": "23:34:25", "cmd": "shot c16-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c16-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=244606"}
+{"t": "23:34:25", "cmd": "crop c16-typed-f4x1 0 270 1500 60 c16-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c16-typed-f4x1-bar.png t=244648"}
+{"t": "23:34:25", "cmd": "crop c16-typed-f4x1 0 2055 500 33 c16-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c16-typed-f4x1-mode.png t=244706"}
+{"t": "23:34:25", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=244762"}
+{"t": "23:34:25", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=244865"}
+{"t": "23:34:26", "cmd": "clipclear", "answer": "ok clipclear t=245174"}
+{"t": "23:34:26", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=245289"}
+{"t": "23:34:26", "cmd": "clipboard", "answer": "ok clipboard \"\" t=245693"}
+{"t": "23:34:26", "cmd": "clipclear", "answer": "ok clipclear t=245748"}
+{"t": "23:34:27", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=245933"}
+{"t": "23:34:27", "cmd": "clipboard", "answer": "ok clipboard \"=$A$2+\" t=246318"}
+{"t": "23:34:27", "cmd": "clipclear", "answer": "ok clipclear t=246374"}
+{"t": "23:34:27", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=246625"}
+{"t": "23:34:28", "cmd": "clipboard", "answer": "ok clipboard \"=$A$2+\" t=246997"}
+{"t": "23:34:28", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=247104"}
+{"t": "23:34:28", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=247472"}
+{"t": "23:34:28", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=247531"}
+{"t": "23:34:28", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=247602"}
+{"t": "23:34:28", "cmd": "select D10", "answer": "ok select D10 t=247643"}
+{"t": "23:34:29", "cmd": "keys 80 =A1{+}B1{LEFT}{LEFT}+{LEFT}{F4}", "answer": "ok keys 10 t=248832"}
+{"t": "23:34:30", "cmd": "shot c18-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c18-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=249604"}
+{"t": "23:34:30", "cmd": "crop c18-typed-f4x1 0 270 1500 60 c18-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c18-typed-f4x1-bar.png t=249642"}
+{"t": "23:34:30", "cmd": "crop c18-typed-f4x1 0 2055 500 33 c18-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c18-typed-f4x1-mode.png t=249698"}
+{"t": "23:34:30", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B10 selection=A10:B10 t=249792"}
+{"t": "23:34:32", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=A1+B1\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=A1+B1\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=251149"}
+{"t": "23:34:32", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=251328"}
+{"t": "23:34:32", "cmd": "select D10", "answer": "ok select D10 t=251365"}
+{"t": "23:34:33", "cmd": "keys 80 =A1{+}B1{F2}{LEFT}{LEFT}+{LEFT}{F4}", "answer": "ok keys 11 t=252645"}
+{"t": "23:34:34", "cmd": "shot c18-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c18-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@386,581,399,604 t=253432"}
+{"t": "23:34:34", "cmd": "crop c18-f2-f4x1 0 270 1500 60 c18-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c18-f2-f4x1-bar.png t=253468"}
+{"t": "23:34:34", "cmd": "crop c18-f2-f4x1 0 2055 500 33 c18-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c18-f2-f4x1-mode.png t=253525"}
+{"t": "23:34:34", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=253580"}
+{"t": "23:34:34", "cmd": "clipclear", "answer": "ok clipclear t=253633"}
+{"t": "23:34:34", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=253756"}
+{"t": "23:34:35", "cmd": "clipboard", "answer": "ok clipboard \"$A$1+$B$1\" t=254154"}
+{"t": "23:34:35", "cmd": "clipclear", "answer": "ok clipclear t=254209"}
+{"t": "23:34:35", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=254407"}
+{"t": "23:34:35", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=254780"}
+{"t": "23:34:36", "cmd": "clipclear", "answer": "ok clipclear t=254836"}
+{"t": "23:34:36", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=255084"}
+{"t": "23:34:36", "cmd": "clipboard", "answer": "ok clipboard \"=$A$1+$B$1\" t=255460"}
+{"t": "23:34:36", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=255558"}
+{"t": "23:34:37", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=255887"}
+{"t": "23:34:37", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=255946"}
+{"t": "23:34:37", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=256132"}
+{"t": "23:34:37", "cmd": "select D10", "answer": "ok select D10 t=256161"}
+{"t": "23:34:38", "cmd": "keys 80 =A1{+}B2{HOME}{RIGHT}{RIGHT}+{RIGHT}+{RIGHT}+{RIGHT}{F4}", "answer": "ok keys 13 t=257630"}
+{"t": "23:34:39", "cmd": "shot c19-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c19-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=258377"}
+{"t": "23:34:39", "cmd": "crop c19-typed-f4x1 0 270 1500 60 c19-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c19-typed-f4x1-bar.png t=258418"}
+{"t": "23:34:39", "cmd": "crop c19-typed-f4x1 0 2055 500 33 c19-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c19-typed-f4x1-mode.png t=258475"}
+{"t": "23:34:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C10 selection=C10:F10 t=258535"}
+{"t": "23:34:41", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=259989"}
+{"t": "23:34:41", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=260191"}
+{"t": "23:34:41", "cmd": "select D10", "answer": "ok select D10 t=260255"}
+{"t": "23:34:42", "cmd": "keys 80 =A1{+}B2{F2}{HOME}{RIGHT}{RIGHT}+{RIGHT}+{RIGHT}+{RIGHT}{F4}", "answer": "ok keys 14 t=261817"}
+{"t": "23:34:43", "cmd": "shot c19-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c19-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@386,581,399,604 t=262595"}
+{"t": "23:34:43", "cmd": "crop c19-f2-f4x1 0 270 1500 60 c19-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c19-f2-f4x1-bar.png t=262627"}
+{"t": "23:34:43", "cmd": "crop c19-f2-f4x1 0 2055 500 33 c19-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c19-f2-f4x1-mode.png t=262685"}
+{"t": "23:34:43", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=262742"}
+{"t": "23:34:43", "cmd": "clipclear", "answer": "ok clipclear t=262795"}
+{"t": "23:34:44", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=262919"}
+{"t": "23:34:44", "cmd": "clipboard", "answer": "ok clipboard \"$A$1+$B$2\" t=263327"}
+{"t": "23:34:44", "cmd": "clipclear", "answer": "ok clipclear t=263383"}
+{"t": "23:34:44", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=263567"}
+{"t": "23:34:45", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=263964"}
+{"t": "23:34:45", "cmd": "clipclear", "answer": "ok clipclear t=264021"}
+{"t": "23:34:45", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=264282"}
+{"t": "23:34:45", "cmd": "clipboard", "answer": "ok clipboard \"=$A$1+$B$2\" t=264655"}
+{"t": "23:34:45", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=264755"}
+{"t": "23:34:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=265091"}
+{"t": "23:34:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=265150"}
+{"t": "23:34:46", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=265335"}
+{"t": "23:34:46", "cmd": "select D10", "answer": "ok select D10 t=265366"}
+{"t": "23:34:47", "cmd": "keys 80 =A1{+}$B$2{HOME}{RIGHT}+{END}{F4}", "answer": "ok keys 12 t=266739"}
+{"t": "23:34:48", "cmd": "shot c20-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c20-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=267511"}
+{"t": "23:34:48", "cmd": "crop c20-typed-f4x1 0 270 1500 60 c20-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c20-typed-f4x1-bar.png t=267546"}
+{"t": "23:34:48", "cmd": "crop c20-typed-f4x1 0 2055 500 33 c20-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c20-typed-f4x1-mode.png t=267605"}
+{"t": "23:34:48", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B10 selection=B10 t=267669"}
+{"t": "23:34:50", "cmd": "cell D10 A1 A2 A3 D10 D11 C10 E10", "answer": "ok cell D10: number 0 | formula \"=A1+$B$2\" | text \"0\" | numberFormat \"General\" ;; A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; A3: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D10: number 0 | formula \"=A1+$B$2\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=269138"}
+{"t": "23:34:50", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=269333"}
+{"t": "23:34:50", "cmd": "select D10", "answer": "ok select D10 t=269390"}
+{"t": "23:34:51", "cmd": "keys 80 =A1{+}$B$2{F2}{HOME}{RIGHT}+{END}{F4}", "answer": "ok keys 13 t=270849"}
+{"t": "23:34:52", "cmd": "shot c20-f2-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c20-f2-f4x1.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@386,581,399,604 t=271637"}
+{"t": "23:34:52", "cmd": "crop c20-f2-f4x1 0 270 1500 60 c20-f2-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c20-f2-f4x1-bar.png t=271657"}
+{"t": "23:34:52", "cmd": "crop c20-f2-f4x1 0 2055 500 33 c20-f2-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c20-f2-f4x1-mode.png t=271713"}
+{"t": "23:34:52", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=271769"}
+{"t": "23:34:52", "cmd": "clipclear", "answer": "ok clipclear t=271821"}
+{"t": "23:34:53", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=271945"}
+{"t": "23:34:53", "cmd": "clipboard", "answer": "ok clipboard \"$A$1+$B$2\" t=272351"}
+{"t": "23:34:53", "cmd": "clipclear", "answer": "ok clipclear t=272400"}
+{"t": "23:34:53", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=272584"}
+{"t": "23:34:54", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=272972"}
+{"t": "23:34:54", "cmd": "clipclear", "answer": "ok clipclear t=273028"}
+{"t": "23:34:54", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=273271"}
+{"t": "23:34:54", "cmd": "clipboard", "answer": "ok clipboard \"=$A$1+$B$2\" t=273650"}
+{"t": "23:34:54", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=273759"}
+{"t": "23:34:55", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=274130"}
+{"t": "23:34:55", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=274190"}
+{"t": "23:34:55", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=274378"}
+{"t": "23:34:55", "cmd": "select D10", "answer": "ok select D10 t=274405"}
+{"t": "23:34:56", "cmd": "keys 80 =b2{F4}", "answer": "ok keys 4 t=275021"}
+{"t": "23:34:56", "cmd": "shot c21-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c21-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=275801"}
+{"t": "23:34:56", "cmd": "crop c21-typed-f4x1 0 270 1500 60 c21-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c21-typed-f4x1-bar.png t=275847"}
+{"t": "23:34:57", "cmd": "crop c21-typed-f4x1 0 2055 500 33 c21-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c21-typed-f4x1-mode.png t=275908"}
+{"t": "23:34:57", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=275963"}
+{"t": "23:34:57", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=276057"}
+{"t": "23:34:57", "cmd": "clipclear", "answer": "ok clipclear t=276373"}
+{"t": "23:34:57", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=276501"}
+{"t": "23:34:58", "cmd": "clipboard", "answer": "ok clipboard \"\" t=276891"}
+{"t": "23:34:58", "cmd": "clipclear", "answer": "ok clipclear t=276948"}
+{"t": "23:34:58", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=277141"}
+{"t": "23:34:58", "cmd": "clipboard", "answer": "ok clipboard \"=$B$2\" t=277516"}
+{"t": "23:34:58", "cmd": "clipclear", "answer": "ok clipclear t=277574"}
+{"t": "23:34:58", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=277820"}
+{"t": "23:34:59", "cmd": "clipboard", "answer": "ok clipboard \"=$B$2\" t=278197"}
+{"t": "23:34:59", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=278305"}
+{"t": "23:34:59", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=278676"}
+{"t": "23:34:59", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=278733"}
+{"t": "23:35:00", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=278919"}
+{"t": "23:35:00", "cmd": "select D10", "answer": "ok select D10 t=278949"}
+{"t": "23:35:00", "cmd": "keys 80 =B2:A1{F4}", "answer": "ok keys 7 t=279850"}
+{"t": "23:35:01", "cmd": "shot c22-typed-f4x1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c22-typed-f4x1.png windows: XLMAIN@-11,-11,3851,2099 t=280608"}
+{"t": "23:35:01", "cmd": "crop c22-typed-f4x1 0 270 1500 60 c22-typed-f4x1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c22-typed-f4x1-bar.png t=280642"}
+{"t": "23:35:01", "cmd": "crop c22-typed-f4x1 0 2055 500 33 c22-typed-f4x1-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c22-typed-f4x1-mode.png t=280699"}
+{"t": "23:35:01", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=280755"}
+{"t": "23:35:01", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=280850"}
+{"t": "23:35:02", "cmd": "clipclear", "answer": "ok clipclear t=281165"}
+{"t": "23:35:02", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=281293"}
+{"t": "23:35:02", "cmd": "clipboard", "answer": "ok clipboard \"\" t=281682"}
+{"t": "23:35:02", "cmd": "clipclear", "answer": "ok clipclear t=281689"}
+{"t": "23:35:02", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=281876"}
+{"t": "23:35:03", "cmd": "clipboard", "answer": "ok clipboard \"=B2:$A$1\" t=282258"}
+{"t": "23:35:03", "cmd": "clipclear", "answer": "ok clipclear t=282315"}
+{"t": "23:35:03", "cmd": "keys 60 {END}+{HOME}^c", "answer": "ok keys 3 t=282562"}
+{"t": "23:35:04", "cmd": "clipboard", "answer": "ok clipboard \"=B2:$A$1\" t=282939"}
+{"t": "23:35:04", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=283040"}
+{"t": "23:35:04", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=283370"}
+{"t": "23:35:04", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=283429"}
+{"t": "23:36:09", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=348708"}
+{"t": "23:36:09", "cmd": "select D10", "answer": "ok select D10 t=348734"}
+{"t": "23:36:10", "cmd": "keys 40 abc{ENTER}", "answer": "ok keys 4 t=348978"}
+{"t": "23:36:10", "cmd": "select D10", "answer": "ok select D10 t=349403"}
+{"t": "23:36:10", "cmd": "cell D10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" t=349653"}
+{"t": "23:36:10", "cmd": "keys 40 {F4}", "answer": "ok keys 1 t=349724"}
+{"t": "23:36:11", "cmd": "cell D10", "answer": "ok cell D10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=350549"}
+{"t": "23:36:11", "cmd": "shot repeat-check", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\repeat-check.png windows: XLMAIN@-11,-11,3851,2099 t=350715"}
+{"t": "23:36:11", "cmd": "crop repeat-check 0 270 1500 60 repeat-check-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\repeat-check-bar.png t=350754"}
+{"t": "23:36:11", "cmd": "crop repeat-check 0 2055 500 33 repeat-check-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\repeat-check-mode.png t=350812"}
+{"t": "23:36:38", "cmd": "stop", "answer": "ok stop 14848 ended by Stop-Process (its own) t=377205"}
+{"t": "23:36:40", "cmd": "start", "answer": "ok start pid=5136 book=Book1 sheet=Sheet1 openedByItself= before=14848 layout=0x08090809 version=16.0 t=378953"}
+{"t": "23:36:41", "cmd": "keys 40 {DOWN 9}{RIGHT 3}", "answer": "ok keys 12 t=380520"}
+{"t": "23:36:41", "cmd": "keys 40 =B2{ENTER}{UP}", "answer": "ok keys 5 t=380773"}
+{"t": "23:36:42", "cmd": "cell D10 D11 E10", "answer": "ok cell D10: number 0 | formula \"=B2\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=381799"}
+{"t": "23:36:43", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=381845"}
+{"t": "23:36:43", "cmd": "keys 40 {F4}", "answer": "ok keys 1 t=381935"}
+{"t": "23:36:44", "cmd": "cell D10 D11 E10", "answer": "ok cell D10: number 0 | formula \"=B2\" | text \"0\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=383554"}
+{"t": "23:36:44", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=383584"}
+{"t": "23:36:44", "cmd": "shot c17-keys-only", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-keys-only.png windows: XLMAIN@-11,-11,3851,2099 t=383745"}
+{"t": "23:36:44", "cmd": "crop c17-keys-only 0 270 1500 60 c17-keys-only-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-keys-only-bar.png t=383800"}
+{"t": "23:36:45", "cmd": "crop c17-keys-only 0 2055 500 33 c17-keys-only-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-keys-only-mode.png t=383860"}
+{"t": "23:36:45", "cmd": "keys 60 {RIGHT 2}^b{LEFT 2}", "answer": "ok keys 5 t=384235"}
+{"t": "23:36:45", "cmd": "keys 40 {F4}", "answer": "ok keys 1 t=384731"}
+{"t": "23:36:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=385546"}
+{"t": "23:36:47", "cmd": "cell D10 F10", "answer": "ok cell D10: number 0 | formula \"=B2\" | text \"0\" | numberFormat \"General\" ;; F10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=386001"}
+{"t": "23:36:47", "cmd": "shot c17-after-ctrl-b", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-after-ctrl-b.png windows: XLMAIN@-11,-11,3851,2099 t=386177"}
+{"t": "23:36:47", "cmd": "crop c17-after-ctrl-b 0 270 1500 60 c17-after-ctrl-b-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-after-ctrl-b-bar.png t=386232"}
+{"t": "23:36:47", "cmd": "crop c17-after-ctrl-b 0 2055 500 33 c17-after-ctrl-b-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\c17-after-ctrl-b-mode.png t=386290"}
+{"t": "23:37:03", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=402502"}
+{"t": "23:37:03", "cmd": "select A1", "answer": "ok select A1 t=402521"}
+{"t": "23:37:03", "cmd": "keys 40 ^{HOME}", "answer": "ok keys 1 t=402618"}
+{"t": "23:37:04", "cmd": "geo A1 C1", "answer": "ok geo A1:41,353,137,381 C1:233,353,329,381 t=402991"}
+{"t": "23:37:04", "cmd": "click 281 339", "answer": "ok click t=403525"}
+{"t": "23:37:05", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C:C t=404091"}
+{"t": "23:37:05", "cmd": "shot heading-1-c-clicked", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\heading-1-c-clicked.png windows: XLMAIN@-11,-11,3851,2099 t=404266"}
+{"t": "23:37:05", "cmd": "crop heading-1-c-clicked 0 270 1500 60 heading-1-c-clicked-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\heading-1-c-clicked-bar.png t=404306"}
+{"t": "23:37:05", "cmd": "crop heading-1-c-clicked 0 2055 500 33 heading-1-c-clicked-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\heading-1-c-clicked-mode.png t=404366"}
+{"t": "23:37:05", "cmd": "keys 40 ^+{RIGHT}", "answer": "ok keys 1 t=404461"}
+{"t": "23:37:06", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C:XFD t=405291"}
+{"t": "23:37:06", "cmd": "shot heading-2-ctrl-shift-right", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\heading-2-ctrl-shift-right.png windows: XLMAIN@-11,-11,3851,2099 t=405471"}
+{"t": "23:37:06", "cmd": "crop heading-2-ctrl-shift-right 0 270 1500 60 heading-2-ctrl-shift-right-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\heading-2-ctrl-shift-right-bar.png t=405507"}
+{"t": "23:37:06", "cmd": "crop heading-2-ctrl-shift-right 0 2055 500 33 heading-2-ctrl-shift-right-mode 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\heading-2-ctrl-shift-right-mode.png t=405566"}
+{"t": "23:37:06", "cmd": "geo A1 C1", "answer": "ok geo A1:-1569080,353,-1568984,381 C1:-1568888,353,-1568792,381 t=405638"}

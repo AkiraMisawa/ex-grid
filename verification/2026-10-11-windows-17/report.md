@@ -291,6 +291,129 @@ Each Excel was ended by `Stop-Process` (its own process) when it had not quit wi
   before b5 are Excel's own session counters (`ExcelPreviousSessionId`, the AutoRecover sentinels, an add-in's load
   times), which change with every Excel started. `Excel15.xlb` is unchanged since 22:47:48 (the last oracle pass).
 
-## Parts C to H
+## Part C — F4's edge cases (SH-28, ADR-0051), and the Heading reading (ADR-0052)
+
+### How it ran
+
+- **Excel** (`excel/part_c.py` over `excel/xl-server.ps1`), 23:30 to 23:37 on 2026-10-11, under **en-US**, as the
+  seventh run's Part A writes ("a blank sheet, en-US"): `Set-Culture en-US` at 23:30:20 and en-GB again at 23:37:29,
+  under the user's answer of Part A; the International export after it is identical to the one before the run. One
+  Excel of the script's own, a new workbook. Before each case the sheet was cleared through COM (setup) and the
+  target cell selected (D10; D1 for case 11 with the Table `Positions` (A1:B3, `Id`, `PV`) made through COM; A1 for
+  15 and 16; a `Sheet2` added for case 10). Then the case's keys, every F4 a real key press (SendInput).
+- **How Excel's text was read before the commit**, with Excel's own clipboard, after a picture (the Formula Bar and the
+  status bar's mode cropped, `shots/part-c-excel/`): F2 when the edit was in Enter or Point mode (never after the case
+  pressed F2 itself), so that the next keys move the caret; Ctrl+C (what is selected); Shift+Home and Ctrl+C (the text
+  from the start to the caret, or to the selection's anchor); End, Shift+Home and Ctrl+C (the whole text); Escape. When
+  Excel answered COM after the case's keys, no edit was open: **the keys had committed the entry**, and the cells were
+  read instead.
+- **Each case ran as written, typed into the cell, and, where its keys move the caret, also with F2 pressed after the
+  text (an addition).** Typed into a cell, the edit is in Enter mode, where ← or Home commits the entry and moves the
+  selection; the seventh run's caret readings are about Edit mode, which F2 gives. Excel's Formula Bar was not asked
+  separately.
+- **ExSheet** (`part_c_sheet.py` over `pg-server.mjs`), on `/sheet` under Chrome and Edge, on WebAssembly and on the
+  Server host (proxy at 0 ms), each case typed into D10 and again into the Formula Bar (a press 8 CSS px inside its
+  right end, then the same keys), and, in the cell, with F2 too where Excel had it; the text and the selection read
+  from the DOM (`records/part-c-sheet-<host>-<browser>.jsonl`, pictures of the Sheet for WebAssembly and Chrome in
+  `shots/part-c-sheet/`). ExSheet's cases all ran in D10 (`/sheet` keeps D10 empty), so cases 15 and 16 point at D11
+  and D12 where Excel's pointed at A2 and A3. Behind 150 ms, on the Server host: case 1 as a burst (`=B2` and four F4
+  in one SendInput call), twice, and F4 with no edit open. Chrome WebAssembly, Chrome Server and Edge Server ran
+  2026-10-11 23:44 to 00:01; Edge WebAssembly 2026-10-12 09:06 (its first try, 00:02 to 00:07, was interrupted at case
+  20 and is kept as `records/part-c-sheet-wasm-msedge-interrupted.jsonl`).
+
+**Two things the setup itself did, found while reading the records:**
+
+- **F4 with no edit open repeats Excel's last action, and that includes the setup's COM `Cells.Clear()`.** Checked on
+  its own (`repeat-check` in `records/part-c-excel.jsonl`): D10 typed `abc`, D10 selected, F4: D10 empty. So in cases 7
+  and 19 typed as written, where the Enter-mode keys committed the entry and left a selection over D10, the F4 that
+  followed cleared it (`shots/part-c-excel/c7-typed-f4x1-cells.png`, `c19-…`). Case 17 was therefore asked again by
+  keys alone in a fresh Excel (below).
+- Typed as written, case 6 committed `=$A1:B2`, which spilled into D10:E11 (zeros on Excel's blank sheet; `/sheet`'s
+  A1:B2 in ExSheet).
+
+### The 22 cases
+
+`[n]` a caret after n characters; `[a-b]` a selection from a to b. "committed": no edit open after the keys. ExSheet's
+four configurations (Chrome and Edge, WebAssembly and Server) read the same in every row.
+
+| Case | F4 | Reading | Excel, typed | Excel, F2 first | ExSheet, cell typed | ExSheet, cell F2 first | ExSheet, Formula Bar | Configurations agreeing |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | `=$B$2` | `=$B$2 [5]` | `—` | `=$B$2 [5]` | `—` | `=$B$2 [5]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 1 | 2 | `=B$2` | `=B$2 [4]` | `—` | `=B$2 [4]` | `—` | `=B$2 [4]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 1 | 3 | `=$B2` | `=$B2 [4]` | `—` | `=$B2 [4]` | `—` | `=$B2 [4]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 1 | 4 | `=B2` | `=B2 [3]` | `—` | `=B2 [3]` | `—` | `=B2 [3]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 2 | 1 | `=$A$1+B2` | `committed` | `=$A$1+B2 [1-5]` | `committed` | `=$A$1+B2 [5]` | `=$A$1+B2 [5]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 3 | 1 | `=$A$1+B2` | `committed` | `=$A$1+B2 [1-5]` | `committed` | `=$A$1+B2 [5]` | `=$A$1+B2 [5]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 4 | 1 | `=$A$1+B2` | `committed` | `=$A$1+B2 [1-5]` | `committed` | `=$A$1+B2 [5]` | `=$A$1+B2 [5]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 5 | 1 | `=SUM($A$1:$B$2)` | `committed` | `=SUM(A1:$B$2) [8-12]` | `committed` | `=SUM($A$1:$B$2) [14]` | `=SUM($A$1:$B$2) [14]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 5 | 2 | `=SUM(A$1:B$2)` | `committed` | `=SUM(A1:B$2) [8-11]` | `committed` | `=SUM(A$1:B$2) [12]` | `=SUM(A$1:B$2) [12]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 5 | 3 | `=SUM($A1:$B2)` | `committed` | `=SUM(A1:$B2) [8-11]` | `committed` | `=SUM($A1:$B2) [12]` | `=SUM($A1:$B2) [12]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 5 | 4 | `=SUM(A1:B2)` | `committed` | `=SUM(A1:B2) [8-10]` | `committed` | `=SUM(A1:B2) [11]` | `=SUM(A1:B2) [11]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 6 | 1 | `=A1:B2` | `committed` | `=$A1:$B$2 [5-9]` | `committed` | `=A1:B2 [6]` | `=A1:B2 [6]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 7 | 1 | `=$A$1+$B$2 (the span selected)` | `committed` | `=$A$1+$B$2 [1-10]` | `=$A$1+$B$2 [1-10]` | `=$A$1+$B$2 [1-10]` | `=$A$1+$B$2 [1-10]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 8 | 1 | `=SUM($A:$A)` | `committed` | `=SUM($A:$A) [5-10]` | `committed` | `=SUM($A:$A) [10]` | `=SUM($A:$A) [10]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 8 | 2 | `=SUM(A:A)` | `committed` | `=SUM(A:A) [5-8]` | `committed` | `=SUM(A:A) [9]` | `=SUM(A:A) [9]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 8 | 3 | `=SUM($A:$A)` | `committed` | `=SUM($A:$A) [5-10]` | `committed` | `=SUM(A:A) [9]` | `=SUM(A:A) [9]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 9 | 1 | `=SUM($1:$1)` | `committed` | `=SUM($1:$1) [5-10]` | `committed` | `=SUM($1:$1) [10]` | `=SUM($1:$1) [10]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 9 | 2 | `=SUM(1:1)` | `committed` | `=SUM(1:1) [5-8]` | `committed` | `=SUM(1:1) [9]` | `=SUM(1:1) [9]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 9 | 3 | `=SUM($1:$1)` | `committed` | `=SUM($1:$1) [5-10]` | `committed` | `=SUM(1:1) [9]` | `=SUM(1:1) [9]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 10 | 1 | `=Sheet2!$A$1` | `=Sheet2!$A$1 [12]` | `—` | `=Sheet2!$A$1 [12]` | `—` | `=Sheet2!$A$1 [12]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 11 | 1 | `unchanged` | `committed` | `=SUM(Positions[PV]) [18]` | `committed` | `=SUM(Positions[PV]) [18]` | `=SUM(Positions[PV]) [18]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 12 | 1 | `unchanged` | `committed` | `=SUM(A1) [2]` | `committed` | `=SUM(A1) [2]` | `=SUM(A1) [2]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 13 | 1 | `unchanged` | `=1+2 [4]` | `—` | `=1+2 [4]` | `—` | `=1+2 [4]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 14 | 1 | `unchanged` | `B2 [2]` | `—` | `B2 [2]` | `—` | `B2 [2]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 15 | 1 | `=$A$2` | `=$A$2 [1-5]` | `—` | `=$D$11 [6]` | `—` | `= [1]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 15b | 1 | `=A3 (or =$A$3: record which)` | `=A3 [1-3]` | `—` | `=D12 [4]` | `—` | `= [1]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 16 | 1 | `=$A$2+, pointing ends` | `=$A$2+ [6]` | `—` | `=$D$11+ [7]` | `—` | `=+ [2]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 18 | 1 | `=$A$1+$B$1` | `committed` | `=$A$1+$B$1 [1-10]` | `committed` | `=$A$1+$B$1 [1-10]` | `=$A$1+$B$1 [1-10]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 19 | 1 | `=$A$1+$B$2` | `committed` | `=$A$1+$B$2 [1-10]` | `committed` | `=$A$1+$B$2 [1-10]` | `=$A$1+$B$2 [1-10]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 20 | 1 | `=$A$1+$B$2` | `committed` | `=$A$1+$B$2 [1-10]` | `committed` | `=$A$1+$B$2 [1-10]` | `=$A$1+$B$2 [1-10]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 21 | 1 | `=$b$2` | `=$B$2 [5]` | `—` | `=$b$2 [5]` | `—` | `=$b$2 [5]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+| 22 | 1 | `=$B$2:$A$1` | `=B2:$A$1 [8]` | `—` | `=$B$2:$A$1 [10]` | `—` | `=$B$2:$A$1 [10]` | all (server-chrome, server-msedge, wasm-chrome, wasm-msedge, wasm-msedge-interrupted) |
+
+
+**F4 with no edit open (case 17).** In a fresh Excel, by keys alone (D10 reached with the arrows, `=B2` typed, Enter,
+↑, F4): **nothing changed**, no edit opened. (With the setup's COM write as the last action, F4 repeated it: see above.)
+In ExSheet, in every configuration (D10 typed `=B2`, Enter, ↑, F4): **nothing changed**, no edit opened; the page saw
+one F4 keydown, not default-prevented.
+
+**Behind 150 ms (Server host, Chrome and Edge, twice each):** `=B2` and four F4 in one SendInput call (16 key events in
+8 to 14 ms): the Cell Editor read **`=B2`** at 0.3 s, 1 s and 3 s, which is the fourth form of the cycle, as case 1's
+fourth press reads unhurried. Nothing was lost, doubled or reordered, as far as the end state shows.
+
+### The Heading reading (the seventh run's Part C, ADR-0052)
+
+| | Excel (empty sheet, en-US) | ExSheet, `/sheet`, all four configurations |
+|---|---|---|
+| A click on Column Heading C | `C:C`, the active cell C1 | the Name Box `C1`, column C selected |
+| Then Ctrl+Shift+→ | **`C:XFD`**, the active cell C1; **the view moved sideways** to the right end (XDR to XEF in view), not down | **C:XFD** shaded, the active cell C1 (Name Box `C1`, the bar `Price`); **the view moved sideways** to the end (XEZ to XFD in view beside the pinned A), not down |
+
+`/sheet` is not an empty Sheet (row 1: `Item`, `Qty`, `Price`, `Amount`). Excel and ExSheet agree; the seventh run's
+reading, "it moves on neither axis", is not what either does.
+
+### The differences (ADR-0051, "F4 cycles the Reference at the caret"; ADR-0052 for the Heading)
+
+1. **Typed into a cell, ← and Home commit the entry before F4, in Excel and in ExSheet alike** (cases 2 to 6, 8, 9, 11,
+   12, 18 to 20 as written). The seventh run's readings for those cases hold only in Edit mode (F2) or the Formula Bar.
+2. **Case 7 as written:** Shift+Home and Shift+→ in Enter mode: **Excel committed** (the selection then B10:D10);
+   **ExSheet selected the text in the editor** (`A1+B2`, 1 to 10) and F4 rewrote it to `=$A$1+$B$2`, the span selected.
+3. **After F4 in Edit mode, Excel selects the rewritten Reference** (cases 2 to 4: `$A$1` selected, 1 to 5; case 5:
+   `$B$2`; cases 8 and 9: the whole column or row Reference); **ExSheet leaves a caret at its end**, as the seventh run
+   read. Typed in Enter mode (case 1, 10, 13, 21, 22), Excel left a caret at the end too.
+4. **Case 5, a range at the caret:** **Excel cycles only the end at the caret**: `=SUM(A1:$B$2)`, `=SUM(A1:B$2)`,
+   `=SUM(A1:$B2)`, `=SUM(A1:B2)`. **ExSheet cycles both ends**, as the seventh run read: `=SUM($A$1:$B$2)` …
+5. **Case 6:** **Excel `=$A1:$B$2`** (the end at the caret, `B2`, given the next form; `$A1` left); **ExSheet `=A1:B2`**,
+   as read.
+6. **Case 22:** **Excel `=B2:$A$1`** (only `A1`, at the caret); **ExSheet `=$B$2:$A$1`**, as read.
+7. **Cases 8 and 9, the third press:** **Excel `=SUM($A:$A)` and `=SUM($1:$1)`** (a cycle of two, as read); **ExSheet
+   `=SUM(A:A)` and `=SUM(1:1)`**: its third press leaves the text as the second did.
+8. **Case 21:** **Excel `=$B$2`**, upper case; **ExSheet `=$b$2`**, the case kept, as read.
+9. **Case 15b:** after F4 then ↓ while pointing, **Excel `=A3`** (relative again), the reading's first option; ExSheet the
+   same (`=D12`).
+10. **In ExSheet's Formula Bar, `=` then ↓ does not point** (cases 15, 15b, 16): the bar reads `=`, and `=+` after case
+    16. Excel's Formula Bar was not asked.
+11. **The Heading reading:** both move the view sideways (above), where the seventh run read no movement.
+
+## Parts D to H
 
 *(Below, as each Part is finished.)*

@@ -8,8 +8,8 @@
     window in front named.
 
     The seventeenth run (verify-on-windows-17.md) took it unchanged but for more named keys: ALT (a tap
-    of Alt alone), F1 and F5 to F12, KEY0 to KEY9 (for Ctrl+1 to Ctrl+5), KEYB, KEYI, KEYU, KEYY, APPS
-    and INS.
+    of Alt alone), F1 and F5 to F12, KEY0 to KEY9 (for Ctrl+1 to Ctrl+5), KEYB, KEYI, KEYU, KEYY, APPS,
+    INS, and OEMPLUS and OEMMINUS (the = and - keys, for the browser's zoom).
 
     Earlier: the fifteenth run's helper sent every key through SendInput as a virtual-key and a scan
     code (never KEYEVENTF_UNICODE, which bypasses the IME), switched the window to the Japanese
@@ -314,7 +314,8 @@ $named = @{ DOWN = @(0x28, 1); UP = @(0x26, 1); LEFT = @(0x25, 1); RIGHT = @(0x2
     # Added by the seventeenth run: Alt alone, the function keys, and the digits by name (for Ctrl+1).
     ALT = @(0x12, 0); F1 = @(0x70, 0); F5 = @(0x74, 0); F6 = @(0x75, 0); F7 = @(0x76, 0); F8 = @(0x77, 0); F9 = @(0x78, 0); F10 = @(0x79, 0); F11 = @(0x7A, 0); F12 = @(0x7B, 0)
     KEY0 = @(0x30, 0); KEY1 = @(0x31, 0); KEY2 = @(0x32, 0); KEY3 = @(0x33, 0); KEY4 = @(0x34, 0); KEY5 = @(0x35, 0); KEY6 = @(0x36, 0); KEY7 = @(0x37, 0); KEY8 = @(0x38, 0); KEY9 = @(0x39, 0)
-    KEYB = @(0x42, 0); KEYI = @(0x49, 0); KEYU = @(0x55, 0); KEYY = @(0x59, 0); APPS = @(0x5D, 1); INS = @(0x2D, 1) }   # KEYF for Ctrl+F, ^{KEYF}: a modifier needs a name of two letters or more
+    KEYB = @(0x42, 0); KEYI = @(0x49, 0); KEYU = @(0x55, 0); KEYY = @(0x59, 0); APPS = @(0x5D, 1); INS = @(0x2D, 1)
+    OEMPLUS = @(0xBB, 0); OEMMINUS = @(0xBD, 0) }   # the = and - keys by name, for Ctrl+= and Ctrl+- (the browser's zoom)   # KEYF for Ctrl+F, ^{KEYF}: a modifier needs a name of two letters or more
 
 # SendKeys' notation to key groups: each group is one key as a user presses it (with its Shift).
 function Parse-Keys([string]$Spec) {
