@@ -17,6 +17,11 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="ExSheet.Components.Tests" />
+    <!-- The Wrapper's layer 2 and the keyboard reference's check find the grid a Sheet draws, which
+         is an ExGrid of ExSheet's own rows: SheetRow is internal (ADR-0201). Granted to test
+         projects only, never to a package. -->
+    <InternalsVisibleTo Include="ExSheet.MudBlazor.Tests" />
+    <InternalsVisibleTo Include="ExGrid.Docs.Generator.Tests" />
   </ItemGroup>
 
   <!-- ExSheet depends on exactly the core and engine versions it was built with, as the

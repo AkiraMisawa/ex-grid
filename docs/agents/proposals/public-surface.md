@@ -17,3 +17,10 @@ match is a comment in `ExGrid.razor` that says why an armed flag is not left sta
 Nothing for `CONTEXT.md` or `docs/definition-of-done.md`. The criteria that name a type made internal as the place a
 layer-1 test reads (`ColumnGeometry`, `ViewportGeometry`, `ViewportBox`, `OverflowRules`, `GridKeys`,
 `CellClasses` / `RowClasses`) stay true: the tests reach them through `InternalsVisibleTo`.
+
+## ExSheet, ExSheet.Engine and ExSheet.MudBlazor (list exsheet)
+
+Nothing for `docs/adr/`, `CONTEXT.md` or `docs/definition-of-done.md`. ADR-0100's note on `ToolbarOrder` is already
+written, and no ADR, criterion or glossary entry names another type or member made internal here. ADR-0201's Context
+says ExSheet.Engine declares no `InternalsVisibleTo`; that was true when it was written (2026-10-11), and the engine
+now grants `ExSheet.Engine.Tests` (since #83) and `ExSheet.Components.Tests` (this branch), both test projects.

@@ -14,7 +14,7 @@ namespace ExSheet;
 /// answer. That is safe because an instance is retired the moment the Sheet reports a change on
 /// its row: while it is current, what it would read has not changed since it was made.
 /// </remarks>
-public sealed class SheetRow
+internal sealed class SheetRow
 {
     private readonly Sheet _sheet;
     private Dictionary<int, SheetCellText?>? _cells;
