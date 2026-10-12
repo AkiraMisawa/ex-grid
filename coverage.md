@@ -4,7 +4,7 @@
 |---|---|---|
 | ExGrid | 95.6% | 88.6% |
 | ExSheet | 95.7% | 89% |
-| ExPivot | 93.9% | 84.7% |
+| ExPivot | 94.2% | 85.2% |
 | Data | 94.5% | 90.3% |
 
 # Summary
@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/12/2026 - 11:34:28 |
+| Generated on: | 10/12/2026 - 17:13:06 |
 | Parser: | MultiReport (13x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 826 |
-| Files: | 456 |
-| **Line coverage:** | 95% (55436 of 58299) |
-| Covered lines: | 55436 |
-| Uncovered lines: | 2863 |
-| Coverable lines: | 58299 |
-| Total lines: | 96899 |
-| **Branch coverage:** | 88% (31685 of 35984) |
-| Covered branches: | 31685 |
-| Total branches: | 35984 |
+| Classes: | 825 |
+| Files: | 455 |
+| **Line coverage:** | 95.1% (55435 of 58246) |
+| Covered lines: | 55435 |
+| Uncovered lines: | 2811 |
+| Coverable lines: | 58246 |
+| Total lines: | 97616 |
+| **Branch coverage:** | 88.1% (31683 of 35934) |
+| Covered branches: | 31683 |
+| Total branches: | 35934 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -158,8 +158,8 @@
 |ExGrid.Components.ExGrid.SummaryQuestion<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenAt<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|91%|87.8%|
 |ExGrid.Components.ExGrid<TRow>|95.5%|90.2%|
+|ExGrid.Components.ExGrid<TRow>|91%|87.8%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -466,11 +466,11 @@
 |ExGrid.MudBlazor.RobotoGlyphTable|100%||
 
 </details>
-<details><summary>ExPivot - 90.1%</summary>
+<details><summary>ExPivot - 91%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**90.1%**|**79.7%**|
+|**ExPivot**|**91%**|**81%**|
 |ExPivot.Chrome.IPivotChrome|41.6%||
 |ExPivot.Chrome.PivotAreaEntryView|100%||
 |ExPivot.Chrome.PivotAreaView|100%||
@@ -524,7 +524,6 @@
 |ExPivot.PivotCommandIds|95%|93.3%|
 |ExPivot.PivotDetailItem|100%||
 |ExPivot.PivotDetails|100%||
-|ExPivot.PivotSummary|0%|0%|
 
 </details>
 <details><summary>ExPivot.Engine - 95.9%</summary>
@@ -650,7 +649,7 @@
 |ExPivot.Engine.PivotReportUpdate|100%||
 |ExPivot.Engine.PivotReportVersion|100%||
 |ExPivot.Engine.PivotReportWindow|100%||
-|ExPivot.Engine.PivotRowKey|100%|85.2%|
+|ExPivot.Engine.PivotRowKey|98%|82.3%|
 |ExPivot.Engine.PivotRowLabel|100%||
 |ExPivot.Engine.PivotSlicing|100%|60%|
 |ExPivot.Engine.PivotSort|100%||
@@ -756,7 +755,7 @@
 |ExSheet.PointingScope.Step|100%||
 |ExSheet.SheetAppearance|97.6%|96%|
 |ExSheet.SheetCellText|94.4%|100%|
-|ExSheet.SheetClipboard|94.1%|74%|
+|ExSheet.SheetClipboard|94.1%|75%|
 |ExSheet.SheetColumnList|96.7%|100%|
 |ExSheet.SheetColumns|100%|77.7%|
 |ExSheet.SheetCommandIds|100%|100%|
