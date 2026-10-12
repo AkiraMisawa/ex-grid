@@ -1820,7 +1820,8 @@
     // A Toolbar Item's choices under the built-in Chrome: a menu in the grid's popover frame, which
     // takes the keyboard and gives it back when it closes (ADR-0039, ADR-0040).
     // A Toolbar Item's choices in the grid's popover frame. Escape there goes back to the KeyTips that
-    // opened them, as Excel goes back one level (ADR-0100's note of 2026-10-12), so the toolbar hears it
+    // opened them, as Excel went back one level when read on Windows (observed, the readings of 2026-10-12,
+    // R2 (b); ADR-0100's note of that day), so the toolbar hears it
     // as the grid closes the popover, and hears when they have gone, however they closed.
     private async Task OpenToolbarChoicesAsync(string title, IReadOnlyList<ToolbarChoice> choices, Func<Task>? escaped, Action? gone)
     {

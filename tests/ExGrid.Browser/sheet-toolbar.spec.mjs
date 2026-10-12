@@ -468,6 +468,29 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
         });
 
+        test(`SH-52/ADR-0100/ADR-0050: F10, H, 2 typed at once sets italic, with no edit opened and the KeyTips gone (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'A4');
+            await setRoundTrip(80);
+
+            // F10 is a declared key: the keys after it wait for the Sheet's answer, which hands the keyboard
+            // to the toolbar (ADR-0050 item 16), as the keys after Alt's release do.
+            await page.keyboard.press('F10');
+            await page.keyboard.press('h');
+            await page.keyboard.press('2');
+
+            await expect(page.locator('#sheet-focus-font')).toHaveText('italic');
+            await circuitQuiet();
+            await expect(tips(page)).toHaveCount(0);
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'A4')).toHaveText('Plums');
+            await expectKeyboardOn(grid);
+            await page.keyboard.press('ArrowDown');
+            await expectFocusAt(grid, 'A5');
+            await page.keyboard.press('Control+z');
+            await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+        });
+
         test(`SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, Escape, Escape typed at once leaves no list and no KeyTips, with the keyboard on the Sheet (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
@@ -595,7 +618,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('italic');
         });
 
-        test(`ADR-0100/ADR-0050 (decided with the user, 2026-10-12): a colour chosen in a list, then Enter typed in the list as it closes, fills the cell once and moves the Focus (${chrome})`, async ({ page }) => {
+        test(`ADR-0100/ADR-0050 (decided with the user, 2026-10-12): a colour chosen in a list, then Enter and ↓ typed in the list as it closes, fills the cell once and moves the Focus twice (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await keyTips(page, 'h', 'h');
@@ -607,21 +630,25 @@ for (const chrome of ['builtin', 'mud']) {
             const landed = await watchWhereKeysLand(page);
             const circuit = await setRoundTrip(80);
 
-            // The second Enter at once, while the list the first one closes still stands: under either
-            // Chrome it is held, from the list itself, and is the Sheet's once the keyboard is back.
+            // The second Enter and the ↓ at once, while the list the first Enter closes still stands: under
+            // either Chrome they are held, from the list itself, and are the Sheet's once the keyboard is back.
             await page.keyboard.press('Enter');
             await page.keyboard.press('Enter');
+            await page.keyboard.press('ArrowDown');
 
-            await expectFocusAt(grid, 'B4');
+            await expectFocusAt(grid, 'B5');
             await circuitQuiet();
             await expect(openLists(page)).toHaveCount(0);
             await expect(cell(grid, 'B3')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
             await expect(cell(grid, 'B4')).not.toHaveCSS('background-color', 'rgb(0, 0, 0)');
+            await expect(cell(grid, 'B5')).not.toHaveCSS('background-color', 'rgb(0, 0, 0)');
             await expectKeyboardOn(grid);
             if (circuit) {
-                // On a circuit both Enters were typed in the list, a round trip before it could close:
-                // without the hold the second chose again or was lost, and the Focus stayed on B3.
-                expect(await landed()).toEqual([{ key: 'Enter', where: 'list' }, { key: 'Enter', where: 'list' }]);
+                // On a circuit all three were typed in the list, a round trip before it could close: without
+                // the hold the second Enter chose again or was lost, the ↓ moved in the list, and the Focus
+                // stayed on B3.
+                expect(await landed()).toEqual([
+                    { key: 'Enter', where: 'list' }, { key: 'Enter', where: 'list' }, { key: 'ArrowDown', where: 'list' }]);
             }
         });
     });

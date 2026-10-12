@@ -372,6 +372,34 @@ for (const chrome of CHROMES) {
             }
         });
 
+        test('keys typed while Escape closes a filter panel from its search box are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12)', async ({ page }) => {
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            // E goes to the filter's search box (FL-15).
+            await page.keyboard.press('e');
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+            const landed = await watchWhereKeysLand(page);
+            const circuit = await setRoundTrip(80);
+            try {
+                await page.keyboard.press('Escape');
+                await page.keyboard.press('ArrowDown');
+                await page.keyboard.press('ArrowDown');
+
+                await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+                await circuitQuiet();
+                await expectKeyboardOn(grid(page));
+                await expectActiveDescendant(grid(page), /r3c0$/);
+                if (circuit) {
+                    // Typed in the search box, a round trip before the panel could go: the case the hold is for.
+                    expect(await landed()).toEqual([
+                        { key: 'Escape', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
+                }
+            } finally {
+                await setRoundTrip(0);
+            }
+        });
+
         test('a key typed while a command pressed in a menu closes it is the grid\'s: ↓ typed at once moves the Focus (ADR-0044, 2026-10-12)', async ({ page }) => {
             await clickCell(page, 2, 1);
             await grid(page).locator("[id$='r2c1']").click({ button: 'right', force: true });

@@ -407,7 +407,9 @@ public sealed class FormatCellsItem : ToolbarItemBase
     // 2026-10-12, R2 (a); the seventeenth run's d1 read the Home tab's letters). ExSheet has no such
     // menu, so its letters are both: O narrows the KeyTips to this one and E runs it, as Excel's hands
     // do, and an E typed after O never lands in the dialog. Escape after O shows the Home row's every
-    // letter again, as Escape closes Excel's Format menu (ADR-0100's note of 2026-10-12).
+    // letter again: three Escapes after Alt, H, O left Excel Ready (observed, R2 (a)), so Excel's Format
+    // menu is a level of its own; that its first Escape shows the Home tab's letters is by generalisation
+    // from R2 (b) (ADR-0100's note of 2026-10-12).
     /// <inheritdoc />
     protected override string? DefaultKeyTip => "OE";
 }

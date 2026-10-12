@@ -47,7 +47,8 @@ The user also said that round 2's stop 1 stands. How it reads now is my reading 
     `ChoicesClosed`. `MudSheetChrome` uses it; `ChoicesClosed` is now called once the list has gone, after a choice
     too.
   - Format Cells' and ExPivot's MudSelect lists keep the keyboard on the select while they stand (MudBlazor's own
-    keys), so no key is in flight when they close; nothing was added for them.
+    keys), so no key is in flight when they close; nothing was added for them. This is read off MudBlazor's
+    MudSelect, which keeps DOM focus on its input; no case of ours types into one as it closes.
 - **R2 (b), Escape goes back a level.** Observed (the readings of 2026-10-12, R2 (b)): after Alt, H, F, C one Escape
   showed the Home tab's KeyTips with the keyboard not back in the cell, a second the tabs', a third none. ExSheet's
   levels map one to one: the list a KeyTip opened, its Toolbar Row's KeyTips, the rows' KeyTips, none. Under both
@@ -60,14 +61,18 @@ The user also said that round 2's stop 1 stands. How it reads now is my reading 
   observed (R2 (a)). The comment on `FormatCellsItem.DefaultKeyTip` and the tests say so.
 - **The verifier's finding 3.** format-cells-mud.spec.mjs's Alt, H, O, E case types at machine speed, waiting for
   nothing, and holds that no letter reached the cell.
-- **Finding 4.** The texts below claim only what a test ran; what depends on the stop below is narrowed.
+- **Finding 4.** The texts below claim only what a test ran; what depends on the stop below is narrowed. The claims
+  that had no case got one: F10, H, 2 typed at once (the F10 of "one Alt, or F10, then letters"), and a ↓ typed in a
+  list as it closes (the arrow of "a letter, an arrow, Enter or Escape"), under both Chromes, at 80 ms on Server and
+  on WebAssembly. Every text that states what Excel does says it was read on Windows, or by generalisation.
 - **Finding 5.** The Change Note `run17cf-toolbar-mud-alt-release-hold.md` and the ADR-0050 note say that a
   Consumer's `keyup` handler tells the gate before its first `await`: the gate waits only for `Ping`'s answer.
-- **Finding 6.** The case "a colour chosen in a list, then Enter typed in the list as it closes" types the second
-  Enter at once under both Chromes, and on the Server host holds that both Enters' keydowns landed in the list,
-  which can close only a round trip later: without the hold the second Enter chose again or was lost, and the
-  Focus stayed. On WebAssembly the list closes inside the first Enter's dispatch and nothing is in flight; the case
-  holds the outcome only.
+- **Finding 6.** The case "a colour chosen in a list, then Enter and ↓ typed in the list as it closes" types the
+  second Enter and the ↓ at once under both Chromes, and on the Server host holds that all three keydowns landed in
+  the list, which can close only a round trip later: the keys are provably typed while the hold is in flight, and
+  without it the second Enter chose again or was lost, the ↓ moved in the list, and the Focus stayed on B3. On
+  WebAssembly the list closes inside the first Enter's dispatch and nothing is in flight; the case holds the outcome
+  only.
 - **Merged `main` (ADR-0201's baseline):** the new public members are in the packages' `PublicAPI.Unshipped.txt`.
 
 ## My reading of decision (B): round 2's stop 1
@@ -84,13 +89,14 @@ which is a round trip wide.
 
 ## Stops, for the user
 
-### 1. The Alt-alone hold cannot give one outcome at every speed without hearing Alt's release (finding 2)
+### 1. The Alt-alone hold cannot give one outcome at every speed without a decision (finding 2)
 
-**The case.** The gate hears no `keyup` (ADR-0021; ADR-0100 chose the Sheet's own Blazor `keyup` for the release).
-It knows the release of a declared Alt that went down alone by the key after it, and holds that key until the Sheet
-has answered the release. The Sheet decides on the release from the press it heard through the declared key.
-Whenever an Alt goes down alone while the gate holds keys, its press and its release reach the Sheet in an order
-that depends on the round trip:
+**The case.** The gate hears no `keyup` (ADR-0021), and the release of the Alt key is the Consumer's to hear: ADR-0100
+chose the Sheet's own Blazor `keyup` for it "rather than adding a listener to the grid", and ADR-0050 item 14's note
+says "No listener is added to the grid". The gate knows the release of a declared Alt that went down alone by the
+key after it, and holds that key until the Sheet has answered the release; the Sheet decides on the release from the
+press it heard through the declared key. Whenever an Alt goes down alone while the gate holds keys, its press and
+its release reach the Sheet in an order that depends on the round trip:
 
 - Held in its turn, its press reaches the Sheet after its own release, which the Sheet then heard as no Alt's:
   Enter (an edit's commit), then Alt typed at once, and the KeyTips never show.
@@ -99,27 +105,47 @@ that depends on the round trip:
   ahead of keys a frame heard on the way back, whose contents are not yet known, it overtakes them too.
 - Replayed to the band, as any key, it would be skipped as a modifier, and its release would already have reached
   the Sheet.
+- Typed on the toolbar's band while it gives the keyboard back, or in a MudBlazor list as it closes, its press is
+  held there with the keys, and its release reaches the Sheet, or nothing at all from MudBlazor's popover, which is
+  outside the Sheet's element.
 
-Evidence: the trace of these three orders is in the code (`afterAltAlone`, `altGoesFirst`, the drain's modifier skip,
-`ExSheet.OnKeyUpAsync`); the first two are the verifier's observations on round 2. Pairing the Sheet's `keyup` with
-the gate's presses without the gate hearing the release needs a count both sides keep, which a key pressed or
-released outside the Sheet's element breaks for every key after it.
+Evidence: the trace of these orders is in the code (`afterAltAlone`, `altGoesFirst`, the drain's modifier skip,
+`ExSheet.OnKeyUpAsync`, `SheetToolbar.OnKeyAsync`); the first two are the verifier's observations on round 2. No
+layer-3 case pins them: a case would pin a defect. Pairing the Sheet's `keyup` with the gate's presses by counting
+them needs a count both sides keep, which a key pressed or released outside the Sheet's element breaks for every key
+after it.
 
-**Options.**
+**Options.** Each but (c) makes every order give the slow outcome; each but (c) changes a recorded decision or adds
+an ask of the core.
 
 - (a) **The gate hears Alt's `keyup` on the root, in the capture phase, and holds it with the keys** while it holds
   any, replaying it in turn as it replays a key: the Sheet's handler hears the release where it was typed, on the
   root or on the band, and every order gives the slow outcome. The inference by the next key, `altGoesFirst` and the
-  empty question go. It is a listener ADR-0021's first entry does not name, and ADR-0100 recorded "rather than adding
-  a listener to the grid": a widening of the first entry, or a new one, either way a decision.
+  empty question go. The band and a MudBlazor list hold the `keyup`s typed on them in flight with their keys (Blazor
+  handlers, no script). It is a listener ADR-0021's first entry does not name, and it reverses ADR-0100's and
+  ADR-0050 item 14's "no listener is added to the grid": a widening of the first entry, or a new one.
+- (d) **The core hears the release through a Blazor `keyup` on its own root** (no script; ADR-0021 unchanged): the
+  gate tells the core of a held Alt as it holds it, the core pairs the release it hears after that with it, and
+  raises the press in its turn with whether it was already released (a new member of `GridDeclaredKeyPress`). It
+  still reverses ADR-0050 item 14's "No listener is added to the grid", and the band and a MudBlazor list still hold
+  the `keyup`s typed on them in flight, as in (a).
+- (h) **The release stays the Consumer's, and the core raises a held Alt twice**: its press at once, marked as ahead of
+  held keys, so that the release the Consumer hears comes after it, and its turn once the keys before it have been
+  answered, or word that it went to a frame or a popover, or was dropped; the Consumer acts on the release only at
+  the turn. No listener, and no recorded decision reversed; new members of `GridDeclaredKeyPress` and a ticket per
+  held Alt, which the toolbar's band also issues for an Alt typed on it while it gives the keyboard back. The
+  heaviest, and an Alt typed in a MudBlazor list as it closes is still not heard released (its popover is outside
+  the Sheet's element) unless the list passes its `keyup`s on too.
 - (b) **The core raises the Alt key alone in turn and the Consumer answers the press, not the release**: the KeyTips
   start on Alt's keydown, a chord's key after it ends them. ADR-0100's "pressed and released alone" changes, and so
   does what a Consumer hears for `Alt+Alt`.
 - (c) **Keep the Alt-alone hold as built**, and let ADR-0100 and the Change Notes say that an Alt typed while keys are
   held can have an outcome that depends on the round trip: a known limitation against the spine's sixth principle.
 
+My recommendation, not a decision: (a), the one queue every key and its release go through, and the smallest change.
+
 Until this is decided the branch keeps round 2's code for Alt; the texts below claim no more than its tests ran (one
-Alt, then letters, typed at once).
+Alt, or F10, then letters, typed at once).
 
 ### 2. Keys typed on the band while a list opens
 
@@ -137,6 +163,18 @@ and the three split controls' arrows, which MudMenu draws (its activator wrapper
 let ADR-0100 say so; (b) draw the menus' lists in a MudPopover of the Chrome's own, with buttons of its own that take
 no Tab (a rewrite of `MudToolbarItem`'s lists, re-run on both hosts).
 
+### 4. A popover closed by its OK, Apply or Cancel
+
+My reading of the decision of 2026-10-12: "closed by Escape or by a choice" is Escape anywhere, and a choice made in a
+list, a menu or a palette (a command, a format, a colour). Built so. A filter panel's OK or Apply and Cancel, the
+built-in Format Cells' OK and Cancel, and ExPivot's panels' OK also close their popover, a round trip later on a
+circuit, and a key typed on the button meanwhile is still the button's: ↓ is lost, and Enter presses OK again. The
+gate cannot tell such a button from one that closes nothing (Select All, a preset) without a mark. Options: (a) take
+them in too: each Chrome marks the buttons that close its popover (the built-in panels' `.ex-popover-actions`, and
+the same mark on `ExGrid.MudBlazor`'s filter panel and ExPivot's built-in and MudBlazor panels), and Enter, Space or
+a press on one holds the keys after it as Enter on a command does, with a layer-3 case per Chrome on each host;
+(b) leave them, and let ADR-0044's note say the hold covers Escape and choices only.
+
 ## Choices of mine
 
 - The seam member's shape: `Func<KeyboardEventArgs?, Action<KeyboardEventArgs>> ChoicesClosing`, a positional
@@ -147,6 +185,10 @@ no Tab (a rewrite of `MudToolbarItem`'s lists, re-run on both hosts).
 - ExSheet's levels for R2 (b), and narrowing letters as a level of their own.
 - A hold the band finds standing when it takes DOM focus, from a Chrome that began closing a list and never said it
   had, is dropped rather than handed on.
+- "Closed by a choice" read as a choice made in a list, a menu or a palette; a popover's OK, Apply and Cancel are
+  stop 4.
+- The F10 and the ↓ cases, rather than narrowing the texts that name them.
+- Stop 1's options (d) and (h), and the recommendation of (a).
 
 ## Edits
 
@@ -507,13 +549,14 @@ New:
 ```
                 <b>KeyTips.</b> Release Alt on its own, or press F10, and each row shows its letter: ExSheet's row is H,
                 as Excel's Home tab is, and its items carry Excel's letters, so Alt, H, 1 sets bold and Alt, H, O, E
-                opens Format Cells, as Excel's Format menu reaches it. The letters can be typed straight after Alt, over
-                Blazor Server too: those typed before the KeyTips show wait for them. A list a KeyTip opens takes the
-                keyboard under either Chrome: the arrows move among its choices and Enter makes one. Escape goes back one
-                level, as in Excel: from a list to its row's letters, then to the rows', then to the Sheet. A letter, an
-                arrow, Enter or Escape typed while a list closes, or while the keyboard goes back to the Sheet, goes
-                where the keyboard lands. Your rows and buttons have a KeyTip where you set <code>KeyTip</code>; two
-                letters that collide at one level are refused when the toolbar renders.
+                opens Format Cells, as Excel's Format menu reaches it (read on Windows). The letters can be typed
+                straight after Alt, over Blazor Server too: those typed before the KeyTips show wait for them. A list a
+                KeyTip opens takes the keyboard under either Chrome: the arrows move among its choices and Enter makes
+                one. Escape goes back one level, as Excel's did when read on Windows: from a list to its row's letters,
+                then to the rows', then to the Sheet. A letter, an arrow, Enter or Escape typed while a list closes, or
+                while the keyboard goes back to the Sheet, goes where the keyboard lands. Your rows and buttons have a
+                KeyTip where you set <code>KeyTip</code>; two letters that collide at one level are refused when the
+                toolbar renders.
             </li>
             <li>
                 <b>The look is the Chrome's.</b> The built-in Chrome draws plain buttons with inline-SVG pictures;
@@ -536,7 +579,7 @@ Old:
 New:
 
 ```
-            "Show the KeyTips: each row's letter, then each item's, so that [Alt], [H], [1] sets bold and [Alt], [H], [O], [E] opens Format Cells. [Esc] goes back one level.",
+            "Show the KeyTips: each row's letter, then each item's, so that [Alt], [H], [1] sets bold and [Alt], [H], [O], [E] opens Format Cells. [Escape] goes back one level.",
 ```
 
 ### 13. samples/ExGrid.Docs/Pages/Grid/GridSelectionAndKeys.razor

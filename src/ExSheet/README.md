@@ -394,7 +394,8 @@ own, or pressing F10, shows a letter for each Toolbar Row. ExSheet's default row
 Home tab is. The row's letter then shows the items' letters, which are Excel's, so Alt, H, 1 sets
 bold and Alt, H, O, E opens Format Cells. The letters can be typed straight after Alt: those typed
 before the KeyTips show wait for them, on a Blazor Server circuit too. Escape goes back one level, as
-Excel's does: from a list a KeyTip opened to its row's letters, then to the rows', then to the Sheet.
+Excel's did when read on Windows: from a list a KeyTip opened to its row's letters, then to the rows',
+then to the Sheet.
 A letter, an arrow, Enter or Escape typed while a list closes, or while the keyboard goes back to the
 Sheet, goes where the keyboard lands. A row or a `ToolbarButton` of yours has a KeyTip only where you set its `KeyTip`. Two letters
 that collide at one level are refused when the toolbar renders. ExSheet's items are `BoldItem`,

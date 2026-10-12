@@ -121,8 +121,8 @@ public sealed record ToolbarChoice(
 /// answered is still asked for only while the two differ.</param>
 /// <param name="ChoicesClosed">A Chrome whose list is its own calls this once the list has closed, without a
 /// choice or after making one, so the Sheet Toolbar takes the keyboard on from wherever the close left it: back
-/// to the Sheet, or, after Escape in a list a KeyTip opened, to the toolbar's KeyTips, as Excel goes back one
-/// level (ADR-0100's note of 2026-10-12).</param>
+/// to the Sheet, or, after Escape in a list a KeyTip opened, to the toolbar's KeyTips, as Excel went back one
+/// level when read on Windows (observed: the readings of 2026-10-12, R2 (b); ADR-0100's note of that day).</param>
 /// <param name="ChoicesClosing">A Chrome whose list is its own calls this as the list begins to close — a
 /// choice made, Escape, or the design system's own means while the keyboard is in it — with the key that
 /// closes it (null when no key does), and passes every key typed in the list from then until it has gone to

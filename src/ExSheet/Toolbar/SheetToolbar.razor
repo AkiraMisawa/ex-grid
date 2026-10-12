@@ -48,7 +48,8 @@
     Escape goes back one level, as Excel's does (the Windows readings of 2026-10-12, R2 (b)): from a
     list a KeyTip opened to its row's letters, with the keyboard on the band, from a row's letters to
     the rows', and from the rows' to the Sheet; typed letters that narrow a level are a level of their
-    own, as Excel's Format menu is behind O. A list closing is the keyboard in flight: the keys typed
+    own, as Excel's Format menu is behind O (observed, R2 (a): three Escapes after Alt, H, O left Excel
+    Ready). A list closing is the keyboard in flight: the keys typed
     meanwhile, in the list itself (ToolbarItemContext.ChoicesClosing) or on the band, are held and
     handed on in order to where the keyboard lands (decided with the user, 2026-10-12).
 
@@ -183,8 +184,9 @@
     private async Task OnKeyTipKeyAsync(KeyboardEventArgs e)
     {
         // Escape goes back one level (ADR-0100; the Windows readings of 2026-10-12, R2 (b)). Letters typed
-        // that narrow a level are a level of their own, as Excel's Format menu is behind O: Escape shows the
-        // level's every letter again. From the rows' letters it ends them.
+        // that narrow a level are a level of their own, as Excel's Format menu is behind O (observed, R2 (a):
+        // three Escapes after Alt, H, O left Excel Ready): Escape shows the level's every letter again. From
+        // the rows' letters it ends them.
         if (e.Key == "Escape" && Context.KeyTipTyped.Length > 0)
         {
             Context.ShowKeyTips(Context.KeyTips, Context.KeyTipRow);
