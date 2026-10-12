@@ -143,7 +143,8 @@ internal static partial class FunctionLibrary
     /// <c>TEXT(1/3,"General")</c> is <c>0.333333333</c>, <c>TEXT(-1/3,"General")</c> is
     /// <c>-0.333333333</c> and <c>TEXT(1/3,"@")</c> is <c>0.333333333</c>, as Excel was observed to
     /// answer (ADR-0120; TEXTFN-017, the seventeenth Windows run; TEXTFN-025 and TEXTFN-028, the area
-    /// pass of 2026-10-12). <see langword="null"/> where General cannot show the number at all.
+    /// pass of 2026-10-12; TEXTFN-029 to 034, the second). <see langword="null"/> where General cannot
+    /// show the number at all.
     /// </summary>
     private static string? TextGeneral(double number, CultureInfo culture) =>
         NumberText.General(number, NumberText.GeneralLimit + (number < 0 ? 1 : 0), culture);
