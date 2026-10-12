@@ -471,8 +471,7 @@ public partial class ExPivot
     /// The Window clamped into the report <paramref name="answered"/> holds, when the Window it was
     /// asked for runs past that report's last row: the same height, ending at the last row — from
     /// row 0 when the report is shorter than that — as the grid clamps its own slice when its total
-    /// shrinks (ExGrid's <c>ViewportGeometry.SliceAt</c>), so the Window shown covers what the grid
-    /// paints. Null when the Window lies within the report. A clamped Window starts earlier than the
+    /// shrinks, so the Window shown covers what the grid paints. Null when the Window lies within the report. A clamped Window starts earlier than the
     /// one it replaces, and one starting at row 0 is never clamped again.
     /// </summary>
     private static PivotReportWindow? ClampedInto(PivotReportState answered)

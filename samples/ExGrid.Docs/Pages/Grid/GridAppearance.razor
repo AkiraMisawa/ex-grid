@@ -62,6 +62,17 @@
             Roboto.
         </p>
         <p>
+            For a MudBlazor theme in another font, give the paper a <code>MudExGridFont</code> as its
+            <code>Font</code>: the family and the widths measured for it, in one value. The paper writes the family
+            as <code>--ex-font-family</code> and hands the grid the widths in the same render, so the font on screen
+            and the widths behind <code>####</code> cannot come from different hands. It does not read the theme's
+            typography, because a font the grid was not measured for would put one font on screen and another's
+            widths in the arithmetic. Below, the theme's font is the system font, the one ExGrid's own stylesheet
+            paints, so its widths are the ones ExGrid measured: under the built-in Chrome there is nothing to set.
+        </p>
+        <DocsExample Title="A font other than Roboto" Builtin="typeof(FontGrid)" Mud="typeof(FontGridMud)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
+        <p>
             Those metrics are a <code>CellTextMetrics</code>: a width per class of character, and a table of single
             glyphs measured on their own. When something that is not the grid sizes text that the grid will show —
             a server that computes a report and decides its label widths, as ExPivot's server source does — hand it

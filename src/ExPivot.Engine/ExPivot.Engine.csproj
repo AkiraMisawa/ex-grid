@@ -15,7 +15,8 @@
 
   <ItemGroup>
     <!-- Layer 1 reaches the cell index's hash and the slices' row counter, which have no public
-         surface (ADR-0066). -->
+         surface (ADR-0066), and pins the whole-report path, the cube and the report a report
+         source computes through, which a Consumer reads as display rows (ADR-0201). -->
     <InternalsVisibleTo Include="ExPivot.Engine.Tests" />
     <!-- Layer 2 follows the engine reports a live ExPivot keeps alive, which its report source
          holds out of reach of any public surface (ADR-0160, LV-22). -->

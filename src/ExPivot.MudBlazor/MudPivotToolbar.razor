@@ -1,3 +1,17 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish (the collision AGENTS.md records for the grid's
+   Wrapper): every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExPivot
+@using global::ExPivot.Chrome
+@using global::ExPivot.Engine
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 @* The Pivot Toolbar above the report under MudBlazor (ADR-0061/0062): the report filter band on its
    left, handed over drawn — MudPivotReportFilters — and on its right, in ExPivot's order, Layout ▾,
    Refresh when the source can be refreshed, and the Field List's toggle, as text MudButtons with

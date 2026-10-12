@@ -63,7 +63,7 @@ public sealed class GlyphWidthTable
 
     /// <summary>The width of <paramref name="codePoint"/> at <see cref="MeasuredAtPx"/>, at the bold
     /// weight or the regular ones; false when the table does not hold it.</summary>
-    public bool TryGetWidthPx(int codePoint, bool bold, out double widthPx)
+    internal bool TryGetWidthPx(int codePoint, bool bold, out double widthPx)
     {
         if (_widths.TryGetValue(codePoint, out var widths))
         {

@@ -11,7 +11,7 @@ namespace ExGrid.Columns;
 /// changed column declaration correctly means a fresh tracker re-measured from the next
 /// Window.
 /// </summary>
-public readonly record struct AutoWidth
+internal readonly record struct AutoWidth
 {
     private readonly ColumnWidthSpec _spec;
 
