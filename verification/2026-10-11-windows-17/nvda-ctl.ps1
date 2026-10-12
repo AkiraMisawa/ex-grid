@@ -14,6 +14,8 @@
 #>
 param([string]$Cmd)
 $ErrorActionPreference = 'Stop'
+# What NVDA said can hold any character: the answer is written as UTF-8, not the console's code page.
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
 Add-Type -TypeDefinition @'
 using System; using System.Collections.Generic; using System.Diagnostics; using System.Runtime.InteropServices; using System.Text;
 namespace NvdaCtl {

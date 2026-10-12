@@ -63,6 +63,10 @@ stays the verified commit of every Part that runs the build. The DemoHosts were 
   the user answered "変更していいよ。いちいちきかなくていい" (go ahead; no need to ask each time), and agreed to ja-JP. The
   later changes of Part A were made under that answer, and each is recorded below.
 - NVDA was not installed; asked whether to install it, the user installed it (2026.2).
+- **Office's Japanese display language** (Part E, item 27): asked, the user agreed to add it, approved each UAC prompt,
+  and asked for Excel's display language to be changed without them ("僕の介入なしでできるようにして"). It was changed
+  through Excel's own Options by the session and put back.
+- **Narrator** (Part F): asked, the user chose to leave it to the end of the run.
 
 ## Part A — the case corpus, put to Excel (ADR-0202, SH-7)
 
@@ -510,6 +514,80 @@ The record is **`expivot.md`**, one row per item; the cells side by side in `par
 - **Not run in this pass**: items 10, 11, 18 to 26 and 28 (layout and wording only; Excel's Field List gestures need its
   pane driven by hand).
 
-## Parts F to H
+## Part F — where the keyboard is after ↓ (the Definition of Done's §21.11)
+
+`/sheet` on the WebAssembly host, in Chrome 154 and then Edge 155, headed on Windows (`part_f.py`). Every key is a real key
+through `SendInput`, and the press on D10 is a real click. After each step the probe read `document.activeElement`, its
+`aria-activedescendant`, the Focus cell, and whether the document had focus. Under NVDA it also read what the Speech
+Viewer gained, from its own edit control (`WM_GETTEXT`, no key sent). Records: `records/part-f-<reader>-<browser>*.jsonl`.
+
+- **Without a Focus.** A fresh page. Focus was given to the Revalue button by script, then Tab was pressed.
+  - **The first Tab lands on the Sheet Toolbar** (`div.ex-sheet-toolbar`, `aria-activedescendant` its first item). It is
+    the tab stop between the Revalue button and the grid (ADR-0100). A second Tab reaches the grid.
+  - The probe's first pass pressed Tab once, so ↓ → ↓ ↓ went to the toolbar: ↓ stayed on item 1, → went to item 2. That
+    pass is kept in `records/part-f-first-try/`. The pass of record presses Tab twice.
+- **With a Focus.** A fresh page, a press on D10.
+- **The steps.** In each state ↓, →, ↓, ↓. The console held two `info` messages and nothing else, in every pass.
+
+**The DOM, the same without a reader and under NVDA, in Chrome and in Edge:**
+
+| Start | Step | `activeElement` | `aria-activedescendant` | Focus |
+|---|---|---|---|---|
+| without a Focus | the script's focus | `button#sheet-revalue` | – | – |
+| | Tab | `div.ex-sheet-toolbar` | the toolbar's item 1 | – |
+| | Tab | `input.ex-key-field` | – | – |
+| | ↓ | `input.ex-key-field` | A1 | A1 |
+| | → | `input.ex-key-field` | B1 | B1 |
+| | ↓ | `input.ex-key-field` | B2 | B2 |
+| | ↓ | `input.ex-key-field` | B3 | B3 |
+| with a Focus | press D10 | `input.ex-key-field` | D10 | D10 |
+| | ↓ | `input.ex-key-field` | D11 | D11 |
+| | → | `input.ex-key-field` | E11 | E11 |
+| | ↓ | `input.ex-key-field` | E12 | E12 |
+| | ↓ | `input.ex-key-field` | E13 | E13 |
+
+- **DOM focus stays on the Keyboard Field at every step, with and without a Focus, under both readers' runs. It never
+  goes to `body`.** After each arrow, the Focus moves and `aria-activedescendant` names its cell, which exists.
+- Reaching the grid by Tab gives the Keyboard Field focus with no Focus cell. The first ↓ then makes **A1** the Focus. It
+  does not move a Focus, since there was none.
+
+**NVDA 2026.2** (OneCore voice, English (UK)). Started with its Speech Viewer shown at start-up: `showSpeechViewerAtStartup`
+was added to `%APPDATA%\nvda\nvda.ini` for the run, and the file was put back byte for byte afterwards (SHA-256
+`71a66181…`). NVDA was stopped with `nvda -q`. What it said, step by step:
+
+| Start | Step | NVDA said (Speech Viewer) |
+|---|---|---|
+| with a Focus | press D10 | `table` / `row 11  D  column 4` |
+| | ↓ | `row 12  D  column 4` |
+| | → | `row 12  E  column 5` |
+| | ↓ | `row 13  E  column 5` |
+| | ↓ | `row 14  E  column 5` |
+| without a Focus | the script's focus | `Revalue the positions by +1%  button` |
+| | Tab | `Formatting  tool bar` / `Home  grouping` / `Bold  toggle button  not pressed  Bold (Ctrl+B)` |
+| | Tab | `table` / `edit  blank` |
+| | ↓ | `Item  row 2  A  column 1` |
+| | → | `Qty  row 2  B  column 2` |
+| | ↓ | `12  row 3  B  column 2` |
+| | ↓ | `7  row 4  B  column 2` |
+
+- The same words in Chrome and in Edge.
+- **The row NVDA names is the sheet's row plus one**: D10 is `row 11`, A1 is `row 2`. The column is the letter and its
+  index. A cell with a value is read value first (`Item`, `Qty`, `12`, `7`); D10 to E13 are empty and are read without one.
+- **The first pass said nothing at all through its without-a-Focus steps**, in both browsers
+  (`records/part-f-nvda-<browser>.jsonl`).
+  - In that pass, those steps came first after the browser started. NVDA had read the page as it loaded
+    (`ExGrid demo host`, `Loading…`; in Edge also `Loading page`, `Loading complete`), and then nothing from the script's
+    focus to the last ↓. The DOM moved as in the table above. The with-a-Focus steps that followed were read as in the
+    table.
+  - **A second pass in the other order** (`records/part-f-nvda-<browser>-reversed.jsonl`): the press on D10 came first,
+    and NVDA spoke from that step (`ExGrid demo host` / `Loading…` / `table` / `row 11 …`). The without-a-Focus steps
+    that followed were read as in the table.
+  - Which is the cause was not asked further: the order, or a press as the first thing after the browser starts. The
+    Speech Viewer's whole text of both passes is in `records/part-f-nvda-*speech-viewer.txt`, with the terminal's window
+    title left out.
+
+**Narrator: not yet run.** Asked first, as the procedure says, the user chose to leave it to the end of the run.
+
+## Parts G and H
 
 *(Below, as each Part is finished.)*

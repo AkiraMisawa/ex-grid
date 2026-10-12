@@ -2,13 +2,14 @@
 screen reader (the Definition of Done's section 21.11).
 
 /sheet, WebAssembly, under Chrome and then Edge. Two starting states: without a Focus (a fresh page, focus
-given by script to the control before the grid, the Revalue button, then a real Tab into the grid), and with
+given by script to the Revalue button, then a real Tab, which lands on the Sheet Toolbar, and a second, which reaches the
+grid), and with
 a Focus (a fresh page, a real press on D10). Then Down, Right, Down, Down, each a real key (SendInput). After
 every step the probe reads document.activeElement (the Keyboard Field input.ex-key-field, the root, the Cell
 Editor, or body), its aria-activedescendant, the Focus cell, and whether the document has focus; under NVDA,
 what its Speech Viewer gained since the step before (its own edit control's text, read with WM_GETTEXT).
 
-    python3 part_f.py <chrome|msedge> <none|nvda> [stepwise]
+    python3 part_f.py <chrome|msedge> <none|nvda> [stepwise] [reversed]
 
 With "stepwise" (Narrator: the user listens), each step waits for a line on stdin before the next, and
 records what the user heard, typed back by the session.
@@ -24,9 +25,12 @@ import pg  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CHANNEL, READER = sys.argv[1], sys.argv[2]
-STEPWISE = len(sys.argv) > 3 and sys.argv[3] == 'stepwise'
+STEPWISE = 'stepwise' in sys.argv[3:]
+# "reversed": the with-a-Focus steps first, then the without-a-Focus ones, to see whether what a reader says depends on
+# which comes first after the browser starts.
+REVERSED = 'reversed' in sys.argv[3:]
 BASE = 'http://localhost:5299'
-REC = os.path.join(HERE, 'records', f'part-f-{READER}-{CHANNEL}.jsonl')
+REC = os.path.join(HERE, 'records', f'part-f-{READER}-{CHANNEL}{"-reversed" if REVERSED else ""}.jsonl')
 SHEET = '.ex-grid:has(> .ex-formula-bar)'
 READY = """() => { const g = document.querySelector('.ex-grid:has(> .ex-formula-bar)'); if (!g) return false;
   const c = [...g.querySelectorAll('[id$="-r11c1"]')].map(e => e.textContent).join(''); return c.includes('318.25') && !!g.querySelector('input.ex-key-field'); }"""
@@ -49,14 +53,14 @@ def record(row):
     row['t'] = time.strftime('%H:%M:%S')
     with open(REC, 'a', encoding='utf-8') as f:
         f.write(json.dumps(row, ensure_ascii=False) + '\n')
-    print(json.dumps(row, ensure_ascii=False)[:500], flush=True)
+    print(json.dumps(row, ensure_ascii=False), flush=True)
 
 
 def speech():
     if READER != 'nvda':
         return None
     r = subprocess.run(['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', f'{pg.WIN_PATH}\\nvda-ctl.ps1', 'speech'],
-                       capture_output=True, text=True, cwd='/mnt/c', stdin=subprocess.DEVNULL)
+                       capture_output=True, text=True, encoding='utf-8', errors='replace', cwd='/mnt/c', stdin=subprocess.DEVNULL)
     try:
         return json.loads(r.stdout.strip().splitlines()[-1])
     except Exception:
@@ -93,24 +97,36 @@ def fresh():
 def run():
     if READER == 'nvda':
         sp = speech(); SPOKEN[0] = sp if isinstance(sp, str) else ''
+    if REVERSED:
+        with_focus(); without_focus()
+    else:
+        without_focus(); with_focus()
+    record({'reader': READER, 'channel': CHANNEL, 'start': 'console', 'messages': p.cmd(op='console')['value']})
+
+
+def without_focus():
     # Without a Focus: focus given by script to the Revalue button, the control before the grid, then Tab.
     fresh()
     record({'reader': READER, 'channel': CHANNEL, 'start': 'without-focus', 'step': 'fresh page', 'state': p.eval(STATE), 'version': p.version})
     step('without-focus', '0-focus-given-by-script-to-revalue', lambda: p.eval("() => { document.querySelector('#sheet-revalue').focus(); return document.activeElement?.id; }"))
     step('without-focus', '1-tab', lambda: p.keys('{TAB}'))
+    # The Sheet Toolbar is the tab stop after the Revalue button (ADR-0100): a second Tab reaches the grid.
+    step('without-focus', '1b-tab-again', lambda: p.keys('{TAB}'))
     for i, (n, k) in enumerate([('2-down', '{DOWN}'), ('3-right', '{RIGHT}'), ('4-down', '{DOWN}'), ('5-down', '{DOWN}')]):
         step('without-focus', n, lambda k=k: p.keys(k))
+
+
+def with_focus():
     # With a Focus: a fresh page, a press on D10.
     fresh()
     record({'reader': READER, 'channel': CHANNEL, 'start': 'with-focus', 'step': 'fresh page', 'state': p.eval(STATE)})
     step('with-focus', '1-press-d10', lambda: p.cmd(op='press', sel=f'{SHEET} [id$="-r9c3"]'))
     for n, k in [('2-down', '{DOWN}'), ('3-right', '{RIGHT}'), ('4-down', '{DOWN}'), ('5-down', '{DOWN}')]:
         step('with-focus', n, lambda k=k: p.keys(k))
-    record({'reader': READER, 'channel': CHANNEL, 'start': 'console', 'messages': p.cmd(op='console')['value']})
 
 
 if __name__ == '__main__':
-    p = pg.Page.start(CHANNEL, name=f'pg-{CHANNEL}', log=os.path.join(HERE, 'records', f'part-f-{READER}-{CHANNEL}-pg.jsonl'))
+    p = pg.Page.start(CHANNEL, name=f'pg-{CHANNEL}', log=os.path.join(HERE, 'records', f'part-f-{READER}-{CHANNEL}{"-reversed" if REVERSED else ""}-pg.jsonl'))
     try:
         run()
     finally:
