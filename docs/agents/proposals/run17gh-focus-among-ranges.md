@@ -16,9 +16,10 @@ The two decisions this branch builds, as the edits write them:
   colour, `--ex-focus-outline`, ExGrid's accent, so under the MudBlazor Wrappers it follows their primary with no
   mapping of its own, and not `CanvasText`.)*
 
-Everything else in the edits is this branch's, and none of it is credited to the user: the border's place inside
-the cell, the cell's own ground between it and the gridline, the class the core marks the Focus with, and forced
-colours drawing the Focus outline in its place.
+Everything else in the edits is this branch's, and none of it is credited to the user: the border taking the place
+of the Focus's 2 px outline (this branch's reading of "takes a thin border"), the border's place inside the cell,
+the cell's own ground between it and the gridline, the class the core marks the Focus with, and forced colours
+drawing the Focus outline in the border's place.
 
 ## Stop: two parts of R4 that the Paper does not paint, for the user
 
