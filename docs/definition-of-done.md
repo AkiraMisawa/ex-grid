@@ -915,10 +915,11 @@ other products, §23's and §25–§32's — and ASY-6's first half.
 skipped or explicit and not asked for, is a failure unless it is one of them:
 
 - **ST-1's 10⁶-row case** (`ExGrid.Components`, `ConsistencyTests`), skipped by name and run in Step 5;
-- **the seven `[Fact(Explicit = true)]` measurements**, which xUnit reports as not run by explicit
+- **the ten `[Fact(Explicit = true)]` measurements**, which xUnit reports as not run by explicit
   test filtering, and Step 6 runs: DA-17's two in `ExGrid.Data.Tests` (`MeasureTests`), ADR-0065's
-  one in `ExGrid.Data.Arrow.Tests` (`MeasureTests`), and PV-21's four in `ExPivot.Engine.Tests`
-  (`Measurements`);
+  one in `ExGrid.Data.Arrow.Tests` (`MeasureTests`), PV-21's four in `ExPivot.Engine.Tests`
+  (`Measurements`), and SH-19's three in `ExSheet.Engine.Tests` (`Measurements`:
+  `SH19_a_full_recalculation`, `SH19_one_edits_propagation`, `SH19_a_row_inserted_near_the_top`);
 - **`CsvClockTests`' one test** (`ExGrid.Data.Tests`), and only on a machine where a process cannot
   move its time zone through `TZ` — Windows — whose own zone has a base offset of zero, UTC's or
   London's: the test reads under Tokyo's zone where `TZ` moves it, and skips by name where its
@@ -928,6 +929,11 @@ skipped or explicit and not asked for, is a failure unless it is one of them:
 case", and Step 1's "zero skips; a skipped test is a failure unless `results.md` records why". The
 one run holds every product's suites, and the rule names each skip it allows rather than leaving
 any to a note.)*
+
+*(2026-10-12: "seven" became "ten" with SH-19's three. SH-19 is the case the user decided on
+2026-10-12, a 10,000 × 20 block with its twenty whole-column totals beside it (ADR-0202's note of
+that date); its measurements are explicit tests as PV-21's are, and the variant with a whole-column
+`SUM` on every row runs as `spikes/exsheet-sh19-whole-column`, outside the suite.)*
 
 ### Step 3 — Static inspection
 
@@ -1039,16 +1045,17 @@ gate, as a note.
 
 **The other products' OBSERVATIONAL rows are recorded here too**, each as its row says:
 
-- **SH-19** — ExSheet's recalculation time at a large Sheet, and completion's keystroke-to-list
-  time on a circuit.
-- **PV-21** and **DA-17** — on CoreCLR, the seven explicit measurements Step 2 allows as skips, in a
+- **SH-19** — ExSheet's recalculation time at a large Sheet: on CoreCLR, its three explicit
+  measurements in a Release build (the loop below); and completion's keystroke-to-list time on a
+  circuit.
+- **PV-21** and **DA-17** — on CoreCLR, their explicit measurements Step 2 allows as skips, in a
   Release build (the loop below); in the browser, `measure-pivot.spec.mjs` on a published WebAssembly build without
   AOT, against a host serving one and a demo API server holding a million trades, as the spec's
   header says (`EXGRID_MEASURE=pivot EXGRID_MEASURE_CSV=<the trade export> npx playwright test
   measure-pivot.spec.mjs`):
 
   ```sh
-  for t in ExGrid.Data.Tests ExGrid.Data.Arrow.Tests ExPivot.Engine.Tests; do
+  for t in ExGrid.Data.Tests ExGrid.Data.Arrow.Tests ExPivot.Engine.Tests ExSheet.Engine.Tests; do
     nix develop -c dotnet build tests/$t -c Release
     nix develop -c dotnet tests/$t/bin/Release/net10.0/$t.dll -explicit only -showLiveOutput
   done 2>&1 | tee verification/<date>/measure-coreclr.log
@@ -1339,7 +1346,7 @@ so this section gates the tag ([ADR-0200](adr/0200-the-first-stable-version-is-0
 | **SH-66** | MUST | `RAND` draws in [0,1) and `RANDBETWEEN` a whole number between its bounds, both bounds included. Each draw is a function of the Sheet Seed, the cell, the call's place in its Formula and the count of changes since the Sheet was opened, so the same Entries, seed and count give the same draws whatever order cells are computed in. Two calls draw twice, a `LET` binding draws once, and everything that reads a draw in one recalculation reads the same Value. An edit, an insertion or deletion, a rename of the Sheet, the undo or redo of one, a Linked Table's snapshot whatever its rows, and a Linked Table's declaration draw again; a recalculation by the clock, a change of format and a rename to the Sheet's own name draw nothing. A Sheet with no seed answers `#GETTING_DATA`. ExSheet takes the Consumer's `Seed`, or chooses one when it opens a Sheet Document, which records neither seed nor draw. `RANDBETWEEN` gives `#VALUE!` for a fractional bound and for one above 2^53 in magnitude, and otherwise answers as observed (ADR-0180) | Layer 1 + Layer 2 | as stated |
 | **SH-67** | MUST | A `LET` name is seen by the values bound after it and by its own calculation only; an inner `LET` may bind it again, and a name read before its binding or inside its own value is `#NAME?`. Names are compared without regard to case, start with a letter or `_`, go on with letters, digits and `_`, and are at most 249 characters; a `LET` holds at most 126 pairs. Refused on entry: a name that reads as an A1 Reference, `TRUE`, `FALSE`, a name bound twice, an even number of arguments and a missing calculation. A function's name, declared or not, and an R1C1 shape that reads as no A1 Reference are names, and a value left empty is bound (`LET(x,,x)` is 0), as Excel's keyboard was observed to take them (the seventeenth run). `Table[Column]` inside a `LET` reads the Linked Table whatever is bound. Each binding is computed at most once, when first read, and an unused binding's Error Value does not reach the result. A `LET` depends on everything its text names, so an unused binding over a cycle is `#CIRC!` and one over a waiting Linked Table is `#GETTING_DATA` (ADR-0181) | Layer 1 (the case corpus, the observed `LET` cases included) + Layer 2 (refusal on entry) | as stated |
 | **SH-68** | MUST | `SUBTOTAL` and `AGGREGATE` answer their corpus cases while no row can be hidden, and a test named for ADR-0047 fails on the day one can. Inside their range, a cell whose Formula, or whose Spill Range's Anchor's, calls `SUBTOTAL` or `AGGREGATE` anywhere is nested: `SUBTOTAL` and `AGGREGATE`'s options 0 to 3 pass over it and options 4 to 7 count its Value, as the seventeenth Windows run read Excel's answers; an `AGGREGATE` function number for a function the engine does not support is `#VALUE!`, and a Formula that gives one of their reference-only arguments something that can never be a Reference is refused on entry. `ERROR.TYPE` gives `#GETTING_DATA` and `#CIRC!` back, and Excel's numbers for its newer Error Values: `#SPILL!` 9, `#CONNECT!` 10, `#BLOCKED!` 11, `#UNKNOWN!` 12, `#FIELD!` 13, `#CALC!` 14. `INDIRECT` reads A1-style text naming a place on the same Sheet, R1C1 text naming an absolute cell or a range of two, a Linked Table's column as structured text (waiting while the table does) and `A1#`, keeps its text through an insertion or deletion, gives `#VALUE!` for R1C1 text that is relative or names whole rows or columns, and `#REF!` for text that names no place, a table or a column that does not exist included (ADR-0047's and ADR-0124's notes of 2026-10-10, ADR-0124's of 2026-10-12) *(2026-10-11, decided with the user: for `AGGREGATE`'s options 4 to 7, a cell in range whose whole Formula is a `SUBTOTAL` makes the result `#VALUE!` until the sign-off's Windows run reads Excel's answer, which Microsoft documents as counted; then it follows Excel.)* *(2026-10-12: the seventeenth run read it — 6, counted — and the engine follows Excel, ADR-0047's note of that date.)* *(2026-10-12, the seventeenth Windows run read `ERROR.TYPE`'s numbers for Excel's newer Error Values, which the row had refused with `#VALUE!` until Excel was asked; it now follows Excel, ADR-0047's note of this date.)* | Layer 1 | as stated |
-| **SH-19** | OBSERVATIONAL | Recalculation time at a large Sheet, and completion's keystroke-to-list time on a circuit. *(The case, decided with the user on 2026-10-11: a synthetic Sheet from a fixed seed, 10,000 rows by 20 columns with about 50,000 Formulas — per-row arithmetic, a running total chained down a column, and `SUM` over whole columns. Recorded: a full recalculation, one edit's propagation, and a row inserted near the top; completion's keystroke-to-list time on the Server host with 150 ms injected. Until then no case was named and nothing measured it.)* | recorded in `metrics.json` | recorded, never gated |
+| **SH-19** | OBSERVATIONAL | Recalculation time at a large Sheet, and completion's keystroke-to-list time on a circuit. *(The case, decided with the user on 2026-10-11: a synthetic Sheet from a fixed seed, 10,000 rows by 20 columns with about 50,000 Formulas — per-row arithmetic, a running total chained down a column, and `SUM` over whole columns. Recorded: a full recalculation, one edit's propagation, and a row inserted near the top; completion's keystroke-to-list time on the Server host with 150 ms injected. Until then no case was named and nothing measured it.)* *(2026-10-12, decided with the user: the whole-column `SUM`s are the twenty totals beside the block. A whole-column `SUM` on every row instead is a Known limitation of `0.1.0` (ADR-0202's note of that date), measured by `spikes/exsheet-sh19-whole-column`, not by this row.)* | recorded in `metrics.json` | recorded, never gated |
 
 ---
 
