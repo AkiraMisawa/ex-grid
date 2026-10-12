@@ -58,13 +58,14 @@
     },
     {
       "id": "VALUEFN-007",
-      "source": "uncertain",
+      "source": "observed",
       "culture": "de-DE",
       "description": "Under de-DE, the Sheet's culture reads the comma as the decimal separator",
       "cells": {"ZZ1000": "=VALUE(\"1,5\")"},
       "check": "ZZ1000",
       "expect": {"value2": 1.5},
-      "engineDiffersByDecision": "ADR-0124: VALUE reads text under the Sheet's culture, where Excel reads the system's locale"
+      "engineDiffersByDecision": "ADR-0124: VALUE reads text under the Sheet's culture, where Excel reads the system's locale",
+      "excelExpect": {"value2": 1.5}
     }
   ]
 }
