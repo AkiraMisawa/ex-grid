@@ -20,7 +20,8 @@
 #   prerelease, and its text begins with the prerelease note.
 # - A release candidate (-rc.N), so that the stable path is rehearsed before it is used
 #   (ADR-0205): besides, ADR-0208's checks before CI's twenty minutes — no Excel case uncertain or
-#   documented without a written reason it cannot be asked, and every row checked by hand holding
+#   documented without a written reason it cannot be asked (an oracleSkip that does not say "ask by
+#   keys", since oracle.ps1 -Keys asks those), and every row checked by hand holding
 #   on a record its code has not changed since, judged at the tagged commit — and CI's long run,
 #   the soak and ST-1 at 10⁶ rows. Its GitHub release is a prerelease.
 # - A version without a suffix, a release in the Definition of Done's sense: besides, its notes'
@@ -33,9 +34,10 @@
 # The key is a one-hour one from Trusted Publishing: nuget.org holds a policy naming this
 # repository and this file, and the secret NUGET_USER holds the nuget.org profile name. The GitHub
 # release's text is the version's Release Notes. Last, once nuget.org has the packages, the Docs
-# Site is published for the version (docs.yml, ADR-0110), with the UTC day of the push (ADR-0190):
-# by a version without a suffix always, and by a prerelease only while no version without a suffix
-# is tagged, since the site then describes the latest stable version (ADR-0205).
+# Site is published for the version (docs.yml, ADR-0110), with the UTC day of the push (ADR-0190).
+# The site describes the latest stable version once one is tagged (ADR-0205), so a version without a
+# suffix publishes it when no stable tag is above it by SemVer precedence (a patch to an older line
+# does not), and a prerelease only while no version without a suffix is tagged.
 name: Release
 
 on:
@@ -261,9 +263,9 @@ jobs:
   # The Docs Site for this version, once nuget.org has it (ADR-0110, ADR-0042): the site states a
   # version only after its packages can be installed, and the day they could be (ADR-0190).
   # Trusted Publishing stays in the publish job above, since nuget.org's policy names this file.
-  # Once a version without a suffix is tagged, a prerelease publishes no site: the site describes
-  # the latest stable version, and a prerelease's notes are on its GitHub release (ADR-0205). The
-  # admit job decides it, and says so.
+  # The site describes the latest stable version once one is tagged (ADR-0205): a prerelease then
+  # publishes none, its notes being on its GitHub release, and neither does a stable version some
+  # stable tag is above, a patch to an older line. The admit job decides it, and says so.
   docs:
     name: The Docs Site
     needs: [admit, publish]

@@ -24,7 +24,8 @@ branch". This branch is cut from `main`, so the orchestrator decides between two
 - Hold both for the release branch.
 
 A prerelease from `main` behaves as before, except for one change: once a version without a suffix is
-tagged, its release publishes no Docs Site.
+tagged, its release publishes no Docs Site. Nor does a stable version some stable tag is above (reading
+3).
 
 ## Readings this rewrite writes down, for the orchestrator to confirm
 
@@ -40,12 +41,34 @@ the text below, so it becomes the decision once the orchestrator commits it.
    workflow refused, and that was never deleted, therefore keeps prereleases from publishing the site.
    The admit job says so, so this is not quiet. The alternative is to read published GitHub releases,
    which puts a network answer into the decision.
+   - **A stable version publishes the site only when no stable tag is above it** by SemVer precedence.
+     ADR-0205 has patches come from the release branch while `main` moves to the next minor, so
+     `v0.1.1` from `release/0.1` may come after `v0.2.0`. Published, its site would replace `0.2.0`'s
+     and describe a version without `0.2.0`'s features, while nuget.org's latest is `0.2.0`. The admit
+     job decides it and says so; `docs.yml` refuses such a call that comes anyway.
 4. **A suffix that begins with `rc` is a release candidate only as `-rc.N`**, with N from 1. Any other
    spelling is refused, not published as a plain prerelease without the checks a candidate rehearses.
 5. **No leading zero in the three numbers**: NuGet would publish `v01.2.0` as `1.2.0`, a version the
    tag does not name.
-6. **`engineDiffersByDecision` counts as a written reason**, beside `oracleSkip`, in ADR-0208's corpus
-   check, as the brief for this branch asked.
+6. **Only `oracleSkip` is a written reason a case cannot be asked**, as ADR-0208 says, and not every
+   `oracleSkip`.
+   - **`engineDiffersByDecision` is not one.** The brief for this branch asked for it to count, and the
+     first version of the check counted it. The case data shows the reading does not hold: `oracle.ps1`
+     asks such a case, comparing Excel's answer with its `excelExpect`, or recording it when there is
+     none. On `main` after #83 and #84, SORT-012 to 014 and UNIQUE-010 to 011 are `uncertain` with an
+     `engineDiffersByDecision` that reads "refused with `#VALUE!` until Excel is asked";
+     INDIRECT-036 to 038 with one that reads "R1C1 text in a form no run has observed"; INDIRECT-043
+     with "`#VALUE!` until a Windows run observes it". Counted as a reason, these nine would have let
+     `rc.1` and `0.1.0` through with those questions open, against ADR-0208 and ADR-0202's SH-7. Such
+     a case is closed by a run of `oracle.ps1` and a person who settles what it recorded, then marks it
+     `observed`.
+   - **An `oracleSkip` that says "ask by keys" is not one either.** `oracle.ps1` blocks such a case
+     through COM and asks it under `-Keys` (column-widths CW-030 to 032 on `main`), so it is inside
+     ADR-0208's remedy. The check counts it open, matching the words as `oracle.ps1` does, ignoring
+     case, and the refusal names `oracle.ps1 -Area <files> -Keys -Update` for it.
+   - **If the user wants `engineDiffersByDecision` to count later**, it should still leave open a case
+     with an `excelExpect` while its source is not `observed` (that `excelExpect` states Excel's answer
+     without anyone having asked), and a case whose text says Excel is still to be asked.
 7. **A release candidate's rows checked by hand are judged at the tagged commit.** It has no sign-off,
    so it has no X.
    - This refuses `rc.1` until every row holds there, so an eighteenth run, if one is needed, is made
@@ -154,7 +177,9 @@ What this section said before is quoted beside each change.
      **A release candidate is refused besides** while either of ADR-0208's checks fails:
      - **The corpus.** Any of ExSheet's Excel cases
        (`tests/ExSheet.Engine.Tests/ExcelCases`) is `uncertain` or `documented` without a written
-       reason it cannot be asked: `oracleSkip`, or `engineDiffersByDecision`.
+       reason it cannot be asked, in `oracleSkip`. An `oracleSkip` that says "ask by keys" is no such
+       reason, since `oracle.ps1 -Keys` asks the case; nor is `engineDiffersByDecision`, since
+       `oracle.ps1` asks that case too.
      - **The rows checked by hand.** For any row the Definition of Done checks by hand, at the tagged
        commit:
        - it has no record;
@@ -211,12 +236,14 @@ What this section said before is quoted beside each change.
     with the version, the tag and the UTC day the packages were pushed. The site states a version only
     once nuget.org has it.
     *(2026-10-11, ADR-0205: **once a stable version exists, a prerelease's release publishes no Docs
-    Site.**
+    Site, and neither does a stable version that a stable tag is above.**
     - A stable version exists once the repository has a tag without a suffix.
     - The site describes the latest stable version. A prerelease's notes are on its GitHub release, and
       reach the site with the next stable publish.
-    - The release's first job decides it, and says so. `docs.yml` refuses a prerelease's call that
-      comes anyway.)*
+    - A patch to an older line, such as `0.1.1` from `release/0.1` after `0.2.0`, publishes none:
+      versions are compared by SemVer precedence, so its site would replace a later version's.
+    - The release's first job decides it, and says so. `docs.yml` refuses a call that comes anyway,
+      and refuses too when it cannot read the repository's tags.)*
 - **Trusted Publishing, not a stored key.** The publish job exchanges GitHub's OIDC token for a
   nuget.org key that lives an hour (`NuGet/login`). The only standing configuration:
   - a policy on nuget.org naming this repository and `release.yml`;

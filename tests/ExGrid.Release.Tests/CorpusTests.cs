@@ -10,7 +10,7 @@ public class CorpusTests
         return (Corpus.Open(new CommitTree(repo.Git, commit), report), report);
     }
 
-    [Fact] // ADR-0208: a case is open while it is uncertain or documented without a written reason
+    [Fact] // ADR-0208: a case is open while it is uncertain or documented without a written reason it cannot be asked
     public void Uncertain_and_documented_cases_without_a_reason_are_open()
     {
         using var repo = new Repo();
@@ -22,16 +22,78 @@ public class CorpusTests
                 ("ABS-005", "documented", null, "ADR-0048: renaming the Sheet is an undoable step"),
                 ("ABS-006", "uncertain", "   ", null),
                 ("ABS-007", null, null, null),
-                ("ABS-008", "guessed", null, null)))
+                ("ABS-008", "guessed", null, null),
+                ("ABS-009", "observed", null, "ADR-0120: the engine answers otherwise, and Excel's answer is observed"),
+                ("ABS-010", "documented", "Excel cannot be asked this through COM", "ADR-0048: and the engine differs")))
             .Write($"{Fixture.Corpus}/fixtures.json", "{\"functionData\": {}}");
         var commit = repo.Commit();
 
         var (open, report) = Read(repo, commit);
 
         Assert.Empty(report.Refusals);
-        Assert.Equal(["ABS-002", "ABS-003", "ABS-006", "ABS-007", "ABS-008"], open.Select(c => c.Id));
+        Assert.Equal(["ABS-002", "ABS-003", "ABS-005", "ABS-006", "ABS-007", "ABS-008"], open.Select(c => c.Id));
         Assert.All(open, c => Assert.Equal($"{Fixture.Corpus}/abs.json", c.File));
+        Assert.All(open, c => Assert.False(c.ByKeys));
         Assert.Equal("(no source)", open.Single(c => c.Id == "ABS-007").Source);
+    }
+
+    [Fact] // ADR-0208: oracle.ps1 asks a case whose engine differs by decision, so engineDiffersByDecision excuses nothing
+    public void A_case_the_engine_answers_otherwise_by_decision_is_open_until_Excel_is_asked()
+    {
+        using var repo = new Repo();
+        repo.Write($"{Fixture.Corpus}/sort.json", Fixture.Cases(
+            ("SORT-012", "uncertain", null, "ADR-0047: refused with #VALUE! until Excel is asked; recorded, so that a run reads Excel's answer"),
+            ("SORT-013", "documented", null, "ADR-0120: the engine answers otherwise")));
+        var commit = repo.Commit();
+
+        var report = new Report();
+        Corpus.Check(new CommitTree(repo.Git, commit), report);
+
+        Assert.Contains("uncertain: SORT-012; documented: SORT-013", report.Refusals[0].Message);
+        Assert.Contains("neither is engineDiffersByDecision", report.Refusals[^1].Message);
+        Assert.Contains("oracle.ps1 -Area sort -Update", report.Refusals[^1].Message);
+    }
+
+    [Theory] // ADR-0208: an oracleSkip that says "ask by keys" is a case oracle.ps1 -Keys asks, so it is open
+    [InlineData("A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer; ask by keys")]
+    [InlineData("Typed with real keys Excel formats the result as 0.0%; Ask By Keys")]
+    public void A_case_to_ask_by_keys_is_open(string skip)
+    {
+        using var repo = new Repo();
+        repo.Write($"{Fixture.Corpus}/column-widths.json", Fixture.Cases(
+            ("CW-030", "uncertain", skip, null),
+            ("CW-031", "documented", "Excel's undo does not reach changes made through COM; ask by hand", null)));
+        var commit = repo.Commit();
+
+        var (open, report) = Read(repo, commit);
+
+        Assert.Empty(report.Refusals);
+        var asked = Assert.Single(open);
+        Assert.Equal("CW-030", asked.Id);
+        Assert.True(asked.ByKeys);
+    }
+
+    [Fact] // ADR-0208: the remedy names -Keys for the files whose open cases oracle.ps1 asks by keys
+    public void The_refusal_names_the_run_by_keys_for_the_cases_asked_by_keys()
+    {
+        using var repo = new Repo();
+        repo.Write($"{Fixture.Corpus}/column-widths.json", Fixture.Cases(
+                ("CW-029", "uncertain", null, null),
+                ("CW-030", "uncertain", "A value set through COM never widens a column; ask by keys", null)))
+            .Write($"{Fixture.Corpus}/dates.json", Fixture.Cases(("DATE-027", "uncertain", "A two-digit year typed with real keys; ask by keys", null)))
+            .Write($"{Fixture.Corpus}/round.json", Fixture.Cases(("ROUND-001", "uncertain", null, null)));
+        var commit = repo.Commit();
+
+        var report = new Report();
+        Corpus.Check(new CommitTree(repo.Git, commit), report);
+
+        Assert.Equal(4, report.Refusals.Count);
+        Assert.Contains("uncertain: CW-029, CW-030 (by keys)", report.Refusals[0].Message);
+        Assert.Contains("uncertain: DATE-027 (by keys)", report.Refusals[1].Message);
+        var remedy = report.Refusals[3].Message;
+        Assert.Contains("4 of ExSheet's Excel cases, in 3 files", remedy);
+        Assert.Contains("oracle.ps1 -Area column-widths,round -Update", remedy);
+        Assert.Contains("oracle.ps1 -Area column-widths,dates -Keys -Update for the cases it asks by keys", remedy);
     }
 
     [Fact] // ADR-0208: the refusal names each file's open cases and the run of oracle.ps1 that answers them
@@ -52,7 +114,8 @@ public class CorpusTests
         Assert.Contains("uncertain: ABS-001; documented: ABS-002", report.Refusals[0].Message);
         Assert.Contains("1 case in", report.Refusals[1].Message);
         Assert.Contains("3 of ExSheet's Excel cases, in 2 files", report.Refusals[2].Message);
-        Assert.Contains("oracle.ps1 -Area abs,round -Update", report.Refusals[2].Message);
+        Assert.Contains("oracle.ps1 -Area abs,round -Update.", report.Refusals[2].Message);
+        Assert.DoesNotContain("-Keys", report.Refusals[2].Message);
     }
 
     [Fact] // ADR-0208: no case open, nothing refused
@@ -95,6 +158,22 @@ public class CorpusTests
         var (_, report) = Read(repo, commit);
 
         Assert.Contains("has no case files under", Assert.Single(report.Refusals).Message);
+    }
+
+    [Fact] // ADR-0208: given a directory inside the working tree, the corpus is still found from the root
+    public void The_corpus_is_found_from_a_subdirectory()
+    {
+        using var repo = new Repo();
+        repo.Write($"{Fixture.Corpus}/abs.json", Fixture.Cases(("ABS-001", "uncertain", null, null)))
+            .Write("tools/release/notes.md", "A directory to run from.");
+        var commit = repo.Commit();
+        var inside = new Git(Path.Combine(repo.Root, "tools", "release"));
+
+        var report = new Report();
+        var open = Corpus.Open(new CommitTree(inside, commit), report);
+
+        Assert.Empty(report.Refusals);
+        Assert.Equal("ABS-001", Assert.Single(open).Id);
     }
 
     [Fact] // The tag's tree is read, not the working tree

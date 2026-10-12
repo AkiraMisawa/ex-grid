@@ -12,12 +12,15 @@ bullet after "So the release publishes the site, after the push":
 
 > - *(2026-10-11, decided with the user,
 >   [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md).)*
->   **Once a stable version exists, a prerelease's release publishes no site.**
+>   **Once a stable version exists, a prerelease's release publishes no site, and neither does a
+>   stable version that a stable tag is above.**
 >   - The site describes the latest stable version. A prerelease's notes are on its GitHub release,
 >     and reach the site with the next stable publish.
 >   - A stable version exists once the repository has a tag without a suffix.
->   - `release.yml`'s first job decides it, and says so. `docs.yml` refuses a prerelease's call that
->     comes anyway.
+>   - A patch to an older line, such as `0.1.1` from `release/0.1` after `0.2.0`, publishes no site:
+>     versions are compared by SemVer precedence, and its pages would replace a later version's.
+>   - `release.yml`'s first job decides it, and says so. `docs.yml` refuses a call that comes anyway,
+>     and refuses too when it cannot read the repository's tags.
 >   - The on-demand publish of `main` or a `lab/*` branch stays, under its banner.
 
 ## 2. The Definition of Done counts the test projects

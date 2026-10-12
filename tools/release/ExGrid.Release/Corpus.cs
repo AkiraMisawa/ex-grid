@@ -5,7 +5,8 @@ namespace ExGrid.Release;
 /// <summary>
 /// ADR-0208's corpus check: a version without a suffix, and a release candidate, are refused while
 /// any of ExSheet's Excel cases is still <c>uncertain</c> or <c>documented</c> without a written
-/// reason it cannot be asked. The release asks Excel nothing; it checks that no question is open.
+/// reason it cannot be asked (<c>oracleSkip</c>). The release asks Excel nothing; it checks that no
+/// question is open.
 /// </summary>
 public static class Corpus
 {
@@ -13,15 +14,30 @@ public static class Corpus
     public const string Directory = "tests/ExSheet.Engine.Tests/ExcelCases";
 
     /// <summary>
-    /// The fields that hold a written reason a case cannot be put to Excel, or need not be:
-    /// <c>oracleSkip</c>, why <c>oracle.ps1</c> cannot ask it (an undo, which COM cannot reach), and
-    /// <c>engineDiffersByDecision</c>, the decision by which the engine answers otherwise than Excel.
-    /// Reading the second as a written reason is this check's, and is the orchestrator's to confirm.
+    /// The field that holds a written reason a case cannot be put to Excel: why <c>oracle.ps1</c>
+    /// cannot ask it, as an undo cannot go through COM (ADR-0208). It is the only field that excuses a
+    /// case. <c>engineDiffersByDecision</c> does not: <c>oracle.ps1</c> asks such a case, comparing
+    /// Excel's answer with its <c>excelExpect</c>, or recording it when there is none, so its question
+    /// is open until a run answers it.
     /// </summary>
-    public static readonly IReadOnlyList<string> Reasons = ["oracleSkip", "engineDiffersByDecision"];
+    public const string Reason = "oracleSkip";
 
-    /// <summary>A case still to be asked of Excel: its file and its id.</summary>
-    public sealed record OpenCase(string File, string Id, string Source);
+    /// <summary>
+    /// The words that make an <c>oracleSkip</c> a case <c>oracle.ps1</c> asks by keys: blocked through
+    /// COM, and asked when <c>-Keys</c> types it. Matched as <c>oracle.ps1</c> matches them, ignoring
+    /// case. Such a case can be asked, so it is open.
+    /// </summary>
+    public const string AskByKeys = "ask by keys";
+
+    /// <summary>
+    /// A case still to be asked of Excel: its file, its id, its source, and whether <c>oracle.ps1</c>
+    /// asks it only under <c>-Keys</c>, its <c>oracleSkip</c> saying "ask by keys".
+    /// </summary>
+    public sealed record OpenCase(string File, string Id, string Source, bool ByKeys = false);
+
+    /// <summary>Whether an <c>oracleSkip</c> names a case <c>oracle.ps1 -Keys</c> asks.</summary>
+    public static bool AsksByKeys(string? oracleSkip) =>
+        oracleSkip is not null && oracleSkip.Contains(AskByKeys, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The open cases in <paramref name="tree"/>, refusing every file that cannot be read.</summary>
     public static IReadOnlyList<OpenCase> Open(ISourceTree tree, Report report)
@@ -62,16 +78,18 @@ public static class Corpus
                     var id = Text(item, "id") ?? $"case {index}";
                     var source = Text(item, "source");
                     if (source == "observed") continue;
-                    if (source is "uncertain" or "documented" && Reasons.Any(reason => !string.IsNullOrWhiteSpace(Text(item, reason))))
+                    var skip = Text(item, Reason);
+                    var byKeys = AsksByKeys(skip);
+                    if (source is "uncertain" or "documented" && !string.IsNullOrWhiteSpace(skip) && !byKeys)
                         continue;
-                    open.Add(new OpenCase(file, id, source ?? "(no source)"));
+                    open.Add(new OpenCase(file, id, source ?? "(no source)", byKeys));
                 }
             }
         }
         return open;
     }
 
-    /// <summary>Refuses the tag when any case is open, naming each by file, and the run of <c>oracle.ps1</c> that answers them.</summary>
+    /// <summary>Refuses the tag when any case is open, naming each by file, and the runs of <c>oracle.ps1</c> that answer them.</summary>
     public static void Check(ISourceTree tree, Report report)
     {
         var refusedBefore = report.Refusals.Count;
@@ -79,16 +97,27 @@ public static class Corpus
         if (open.Count == 0)
         {
             if (report.Refusals.Count == refusedBefore)
-                report.Notice($"Every case under {Directory} is observed, or says why it cannot be asked (ADR-0208).");
+                report.Notice($"Every case under {Directory} is observed, or says in {Reason} why it cannot be asked (ADR-0208).");
             return;
         }
         foreach (var file in open.GroupBy(c => c.File))
         {
-            var bySource = string.Join("; ", file.GroupBy(c => c.Source).Select(s => $"{s.Key}: {string.Join(", ", s.Select(c => c.Id))}"));
+            var bySource = string.Join("; ", file.GroupBy(c => c.Source).Select(s => $"{s.Key}: {string.Join(", ", s.Select(c => c.ByKeys ? $"{c.Id} (by keys)" : c.Id))}"));
             report.Refuse($"{file.Count()} case{(file.Count() == 1 ? "" : "s")} in {file.Key} still to be asked of Excel ({bySource}).", file.Key);
         }
-        var areas = open.Select(c => Path.GetFileNameWithoutExtension(c.File)).Distinct(StringComparer.Ordinal).ToList();
-        report.Refuse($"{open.Count} of ExSheet's Excel cases, in {areas.Count} files, are uncertain or documented without a written reason they cannot be asked (oracleSkip, or engineDiffersByDecision). A version without a suffix, and a release candidate, are tagged only once none is: ask Excel with oracle.ps1 -Area {string.Join(',', areas)} -Update, or write why a case cannot be asked (ADR-0208).");
+
+        static string Areas(IEnumerable<OpenCase> cases) =>
+            string.Join(',', cases.Select(c => Path.GetFileNameWithoutExtension(c.File)).Distinct(StringComparer.Ordinal));
+        var files = open.Select(c => c.File).Distinct(StringComparer.Ordinal).Count();
+        var runs = new List<string>();
+        if (open.Any(c => !c.ByKeys)) runs.Add($"oracle.ps1 -Area {Areas(open.Where(c => !c.ByKeys))} -Update");
+        if (open.Any(c => c.ByKeys)) runs.Add($"oracle.ps1 -Area {Areas(open.Where(c => c.ByKeys))} -Keys -Update for the cases it asks by keys");
+        report.Refuse(
+            $"{open.Count} of ExSheet's Excel cases, in {files} file{(files == 1 ? "" : "s")}, are uncertain or documented without a written reason they cannot be asked ({Reason}). "
+            + $"An {Reason} that says \"{AskByKeys}\" is no such reason, and neither is engineDiffersByDecision: oracle.ps1 asks both. "
+            + $"A version without a suffix, and a release candidate, are tagged only once none is open: ask Excel with {string.Join(", and ", runs)}. "
+            + "A case Excel disagrees with, or whose answer it only records (engineDiffersByDecision without excelExpect), is settled by a person, who marks it observed; "
+            + $"a case that cannot be asked says why in {Reason} (ADR-0208).");
     }
 
     private static string? Text(JsonElement item, string name) =>

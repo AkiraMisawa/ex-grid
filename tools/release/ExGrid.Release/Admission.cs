@@ -23,9 +23,11 @@ public sealed record Admission(TagVersion Version, string Commit, bool Long, boo
     /// Reads the tag and refuses it when its version is malformed or its commit is on neither
     /// <c>main</c> nor a <c>release/*</c> branch (ADR-0042, ADR-0205). Decides, besides, whether the
     /// long run gates it — a stable version and a release candidate — and whether it publishes the
-    /// Docs Site: a stable version always; a prerelease only while no stable version exists, since
-    /// the site describes the latest stable version once there is one (ADR-0205). A stable version
-    /// exists once the repository has a tag without a suffix.
+    /// Docs Site, which describes the latest stable version once there is one (ADR-0205): a stable
+    /// version when no stable tag is above it by SemVer precedence, so that a patch to an older line
+    /// (<c>v0.1.1</c> from <c>release/0.1</c> after <c>v0.2.0</c>) leaves the newer version's site in
+    /// place; a prerelease only while no stable version exists. A stable version exists once the
+    /// repository has a tag without a suffix.
     /// </summary>
     public static Admission? Admit(Git git, string tag, string commit, Report report)
     {
@@ -48,10 +50,21 @@ public sealed record Admission(TagVersion Version, string Commit, bool Long, boo
 
         if (version is null) return null;
 
-        var stable = git.Tags().Where(TagVersion.IsStableTag).Order(StringComparer.Ordinal).ToList();
-        var site = version.Kind == ReleaseKind.Stable || stable.Count == 0;
-        if (!site)
-            report.Notice($"{string.Join(", ", stable)} {(stable.Count == 1 ? "is" : "are")} tagged, so {tag}, a prerelease, publishes no Docs Site: the site describes the latest stable version, and a prerelease's notes are on its GitHub release (ADR-0205).");
+        var stable = git.Tags().Where(TagVersion.IsStableTag).Order(Comparer<string>.Create(TagVersion.CompareNumbers)).ToList();
+        bool site;
+        if (version.Kind == ReleaseKind.Stable)
+        {
+            var above = stable.Where(t => TagVersion.CompareNumbers(t, tag) > 0).ToList();
+            site = above.Count == 0;
+            if (!site)
+                report.Notice($"{string.Join(", ", above)} {(above.Count == 1 ? "is" : "are")} tagged above {tag}, so {tag} publishes no Docs Site: the site describes the latest stable version, and a patch to an older line leaves it in place. Its notes are on its GitHub release (ADR-0205).");
+        }
+        else
+        {
+            site = stable.Count == 0;
+            if (!site)
+                report.Notice($"{string.Join(", ", stable)} {(stable.Count == 1 ? "is" : "are")} tagged, so {tag}, a prerelease, publishes no Docs Site: the site describes the latest stable version, and a prerelease's notes are on its GitHub release (ADR-0205).");
+        }
 
         return new Admission(version, full, version.RehearsesStable, site);
 

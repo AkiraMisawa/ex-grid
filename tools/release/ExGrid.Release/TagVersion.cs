@@ -58,6 +58,31 @@ public sealed partial record TagVersion(string Tag, string Version, ReleaseKind 
     /// <summary>Whether <paramref name="tag"/> names a version without a suffix: a stable version.</summary>
     public static bool IsStableTag(string tag) => tag.StartsWith('v') && Shape().Match(tag[1..]) is { Success: true } m && m.Groups["suffix"].Value.Length == 0;
 
+    /// <summary>
+    /// Orders two tags by the precedence SemVer gives their three numbers: MAJOR, then MINOR, then PATCH,
+    /// each compared as a number, so <c>v0.10.0</c> is above <c>v0.9.0</c>. A suffix is not compared:
+    /// this orders stable versions. Negative when <paramref name="a"/> is below <paramref name="b"/>.
+    /// </summary>
+    public static int CompareNumbers(string a, string b)
+    {
+        var left = Numbers(a);
+        var right = Numbers(b);
+        for (var i = 0; i < 3; i++)
+        {
+            // No leading zero, so the longer number is the larger, and two of one length compare as text.
+            var order = left[i].Length != right[i].Length
+                ? left[i].Length.CompareTo(right[i].Length)
+                : string.CompareOrdinal(left[i], right[i]);
+            if (order != 0) return Math.Sign(order);
+        }
+        return 0;
+
+        static string[] Numbers(string tag) =>
+            tag.StartsWith('v') && Shape().Match(tag[1..]) is { Success: true } m
+                ? [m.Groups[1].Value, m.Groups[2].Value, m.Groups[3].Value]
+                : throw new ArgumentException($"{tag} does not name a version.", nameof(tag));
+    }
+
     [GeneratedRegex(@"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?<suffix>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$", RegexOptions.CultureInvariant)]
     private static partial Regex Shape();
 

@@ -1,7 +1,8 @@
 using ExGrid.Release;
 
 // The release workflow's checks of a tag (ADR-0042, ADR-0205, ADR-0208). Run by
-// .github/workflows/release.yml, and locally from the repository's root:
+// .github/workflows/release.yml, and locally from the repository's root. Run from a directory inside
+// the working tree, or given one with --repo, every check still reads its paths from the root:
 //
 //   dotnet run --project tools/release/ExGrid.Release -- admit --tag v0.1.0-rc.1 --commit HEAD
 //   dotnet run --project tools/release/ExGrid.Release -- gate --tag v0.1.0-rc.1 --commit HEAD
@@ -91,8 +92,7 @@ try
                 Console.Error.WriteLine($"{at} is not a commit of this repository.");
                 return 2;
             }
-            var root = git.Out("rev-parse", "--show-toplevel").Trim();
-            ByHand.Check(git, new DirectoryTree(root), full, report, fetchMissing: false);
+            ByHand.Check(git, new DirectoryTree(git.Repository), full, report, fetchMissing: false);
             report.WriteTo(Console.Out);
             return report.Admitted ? 0 : 1;
         }

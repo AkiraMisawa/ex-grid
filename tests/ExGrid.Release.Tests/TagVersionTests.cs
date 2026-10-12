@@ -63,4 +63,15 @@ public class TagVersionTests
     [InlineData("verified/2026-10-12", false)]
     public void A_stable_tag_is_one_without_a_suffix(string tag, bool stable) =>
         Assert.Equal(stable, TagVersion.IsStableTag(tag));
+
+    [Theory] // ADR-0205: stable versions are ordered by SemVer precedence, each number as a number
+    [InlineData("v0.2.0", "v0.1.1", 1)]
+    [InlineData("v0.1.1", "v0.2.0", -1)]
+    [InlineData("v0.10.0", "v0.9.0", 1)]
+    [InlineData("v1.0.0", "v0.99.99", 1)]
+    [InlineData("v0.1.10", "v0.1.9", 1)]
+    [InlineData("v0.1.0", "v0.1.0", 0)]
+    [InlineData("v12345678901234567890.0.0", "v9.0.0", 1)]
+    public void Stable_versions_are_ordered_by_their_numbers(string a, string b, int order) =>
+        Assert.Equal(order, TagVersion.CompareNumbers(a, b));
 }

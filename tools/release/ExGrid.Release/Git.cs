@@ -7,19 +7,37 @@ namespace ExGrid.Release;
 public sealed record GitResult(int Code, string Out, string Error);
 
 /// <summary>
-/// The git commands the checks read a repository with. Every one runs in the repository given,
-/// with paths unquoted and renames not detected, so a path git prints is the path as committed.
+/// The git commands the checks read a repository with. Every one runs at the top of the working
+/// tree, with paths unquoted and renames not detected, so a path git prints is the path as committed
+/// and a path the checks give is read from the repository's root.
 /// </summary>
-public sealed class Git(string repository)
+public sealed class Git
 {
-    /// <summary>The working tree, or any directory inside it.</summary>
-    public string Repository { get; } = repository;
+    /// <summary>
+    /// Reads the repository that <paramref name="directory"/> is in. The directory may be the top of
+    /// the working tree or any directory inside it: the top is resolved once, here, and every command
+    /// runs there. Run from a subdirectory, <c>git diff -- &lt;paths&gt;</c> and <c>git ls-tree</c>
+    /// would read their paths from that subdirectory, match nothing, and let every row hold.
+    /// </summary>
+    public Git(string directory)
+    {
+        var top = Start(directory, ["rev-parse", "--show-toplevel"]);
+        Repository = top.Code == 0 && top.Out.Trim() is { Length: > 0 } root ? root : directory;
+    }
+
+    /// <summary>
+    /// The top of the working tree every command runs in; the directory given, when git found no
+    /// working tree there, so that every command says why.
+    /// </summary>
+    public string Repository { get; }
 
     /// <summary>The remote whose branches a tag must be on.</summary>
     public string Remote { get; init; } = "origin";
 
     /// <summary>Runs git with these arguments and returns what it answered, whatever its exit code.</summary>
-    public GitResult Run(params string[] args)
+    public GitResult Run(params string[] args) => Start(Repository, args);
+
+    private static GitResult Start(string directory, IEnumerable<string> args)
     {
         var start = new ProcessStartInfo("git")
         {
@@ -30,7 +48,7 @@ public sealed class Git(string repository)
             StandardErrorEncoding = new UTF8Encoding(false),
         };
         start.ArgumentList.Add("-C");
-        start.ArgumentList.Add(Repository);
+        start.ArgumentList.Add(directory);
         start.ArgumentList.Add("-c");
         start.ArgumentList.Add("core.quotepath=off");
         foreach (var arg in args) start.ArgumentList.Add(arg);

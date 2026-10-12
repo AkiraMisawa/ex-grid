@@ -93,6 +93,30 @@ public class AdmissionTests
         Assert.Empty(patch.Notices);
     }
 
+    [Fact] // ADR-0205: the site describes the latest stable version, so a patch to an older line publishes none
+    public void A_patch_to_an_older_line_publishes_no_site()
+    {
+        using var repo = new Repo();
+        var first = repo.Write("a.txt", "a").Commit();
+        repo.Tag("v0.1.0", first);
+        var second = repo.Write("a.txt", "b").Commit();
+        repo.Tag("v0.2.0", second).Tag("v0.9.0", second).Remote("main", second);
+        repo.Branch("release/0.1", first);
+        var fix = repo.Write("a.txt", "fixed").Commit("An urgent fix on the older line");
+        repo.Remote("release/0.1", fix);
+
+        var patch = new Report();
+        Assert.False(Admission.Admit(repo.Git, "v0.1.1", fix, patch)!.PublishesSite);
+        Assert.Empty(patch.Refusals);
+        Assert.Contains("v0.2.0, v0.9.0 are tagged above v0.1.1, so v0.1.1 publishes no Docs Site", Assert.Single(patch.Notices));
+
+        // The latest line's own patch, and a version above every stable tag, publish it; numbers compare as numbers.
+        Assert.True(Admission.Admit(repo.Git, "v0.9.1", second, new Report())!.PublishesSite);
+        Assert.True(Admission.Admit(repo.Git, "v0.10.0", second, new Report())!.PublishesSite);
+        // A re-run of the latest stable tag publishes it again.
+        Assert.True(Admission.Admit(repo.Git, "v0.9.0", second, new Report())!.PublishesSite);
+    }
+
     [Fact] // ADR-0110, ADR-0205: before any stable version, a prerelease still publishes the site
     public void A_prerelease_before_any_stable_version_publishes_the_site()
     {

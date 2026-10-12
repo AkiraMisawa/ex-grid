@@ -40,6 +40,24 @@ public class ByHandTests
         Assert.Contains(report.Notices, n => n.Contains("To run by hand at") && n.Contains("VZ-14 on Windows"));
     }
 
+    [Fact] // ADR-0208: given a directory inside the working tree, the check still reads the row's paths from the root
+    public void A_git_given_a_subdirectory_reads_the_paths_from_the_root()
+    {
+        using var repo = new Repo();
+        Fixture.ReadyToSignOff(repo);
+        var later = repo.Write("src/Code/a.cs", "class A { int changed; }").Commit("A change the row covers");
+        var inside = new Git(Path.Combine(repo.Root, "src", "Other"));
+
+        var report = new Report();
+        ByHand.Check(inside, new CommitTree(inside, later), later, report, fetchMissing: false);
+
+        Assert.Equal(new Git(repo.Root).Repository, inside.Repository);
+        var refusal = Assert.Single(report.Refusals);
+        Assert.Contains("VZ-14 on Windows: the code it covers changed between its record", refusal.Message);
+        Assert.Contains("src/Code/a.cs", refusal.Message);
+        Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
+    }
+
     [Fact] // ADR-0208: a file path is compared as a file, a directory path as everything under it
     public void Files_and_directories_are_compared_as_named()
     {
