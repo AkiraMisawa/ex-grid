@@ -32,25 +32,61 @@ internal static partial class FunctionLibrary
         TryNumber(call, 0, out var number, out var failure) ? Operand.Of(Value.FromNumber(Math.Floor(number))) : failure;
 
     /// <summary>
-    /// MOD: <c>number - divisor*INT(number/divisor)</c>, as Microsoft defines it, computed exactly
-    /// and rounded once, so the result takes the divisor's sign. That is Excel's double on every case
-    /// a Windows run has read: <c>MOD(123456789012,0.7)</c> is 0.5000078322611261 (MOD-017), where the
-    /// identity evaluated in doubles gives 0.5000152587890625, and <c>MOD(0.3,0.1)</c> is
-    /// 0.09999999999999998 (MOD-009). <c>%</c> on doubles is the exact remainder, with the number's
-    /// sign; where that is not the divisor's, adding the divisor is the one rounding. Other evaluations
-    /// fit the same cases (a fused multiply-add, an x87 register), and MOD-020 to MOD-029 ask Excel
-    /// where they part (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>). A divisor of 0 is
-    /// <c>#DIV/0!</c>, and a quotient of <see cref="ModQuotientLimit"/> or more <c>#NUM!</c>.
+    /// MOD: <c>number - divisor*INT(number/divisor)</c>, as Microsoft defines it, so the result takes
+    /// the divisor's sign, where every evaluation that gives each answer Excel was seen to give gives
+    /// the same double, and <c>#VALUE!</c> where they part (ADR-0047, ADR-0202). Excel's
+    /// <c>MOD(123456789012,0.7)</c> is 0.5000078322611261 (MOD-017), the identity computed exactly and
+    /// rounded once, where in doubles it is 0.5000152587890625; no evaluation in doubles gives it.
+    /// Seven classes of evaluation give all seventeen observed answers
+    /// (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>), and they part in four places:
+    /// <list type="bullet">
+    /// <item>where the double quotient rounds up onto a whole number the exact quotient is below, as in
+    /// <c>MOD(1,0.1)</c>: the exact remainder is about the divisor, a fused multiply-add over that
+    /// quotient a hair of the wrong sign, and that taken as 0 is 0. The multiply-add differs from the
+    /// exact remainder there and only there.</item>
+    /// <item>where the remainder is not 0 but within 2^-49 of the number, as in <c>MOD(1.1,0.1)</c>:
+    /// Excel's cancellation of a final addition (<see cref="Arithmetic"/>) would make it 0.</item>
+    /// <item>where the remainder plus the divisor rounds to the divisor itself, as in
+    /// <c>MOD(-1E-20,1)</c>: the divisor, or 0.</item>
+    /// <item>where that addition, made first in an x87 register's 64 bits, would round twice to another
+    /// double, as in <c>MOD(-0.087626,6630)</c>, at the last bit.</item>
+    /// </list>
+    /// Elsewhere it answers the exact remainder rounded once: <c>%</c> on doubles is exact, with the
+    /// number's sign, and adding the divisor where that is not the divisor's is the one rounding.
+    /// MOD-020 to MOD-032 ask Excel where the classes part. A divisor of 0 is <c>#DIV/0!</c>, and a
+    /// quotient of <see cref="ModQuotientLimit"/> or more <c>#NUM!</c>.
     /// </summary>
     private static Operand Mod(FunctionCall call)
     {
         if (!TryNumber(call, 0, out var number, out var failure)) return failure;
         if (!TryNumber(call, 1, out var divisor, out failure)) return failure;
         if (divisor == 0) return Operand.Of(ErrorValue.Div0);
-        if (Math.Abs(number / divisor) >= ModQuotientLimit) return Operand.Of(ErrorValue.Num);
+        var quotient = number / divisor;
+        if (Math.Abs(quotient) >= ModQuotientLimit) return Operand.Of(ErrorValue.Num);
         var remainder = number % divisor;
-        if (remainder != 0 && (remainder < 0) != (divisor < 0)) remainder += divisor;
-        return Operand.Of(Evaluator.Number(remainder));
+        var turned = remainder != 0 && (remainder < 0) != (divisor < 0);
+        var exact = turned ? remainder + divisor : remainder;
+        if (Math.FusedMultiplyAdd(-divisor, Math.Floor(quotient), number) != exact
+            || (exact != 0 && Math.Abs(exact) <= Math.Abs(number) * Arithmetic.CancelTolerance)
+            || (turned && (exact == divisor || RoundsTwice(remainder, divisor))))
+            return Operand.Of(ErrorValue.Value);
+        return Operand.Of(Evaluator.Number(exact));
+    }
+
+    /// <summary>
+    /// Whether <paramref name="a"/> + <paramref name="b"/>, where |a| &lt; |b|, rounded first to an x87
+    /// register's 64-bit significand and then to a double, is another double than the sum rounded once.
+    /// That happens where the exact sum lies within half a 64-bit unit of the midpoint between two
+    /// doubles and the sum rounded once is the odd one, which a tie then leaves. The error of the sum
+    /// is exact (Fast2Sum), and so is each comparison.
+    /// </summary>
+    private static bool RoundsTwice(double a, double b)
+    {
+        var sum = a + b;
+        var error = a - (sum - b);
+        if (error == 0 || (BitConverter.DoubleToInt64Bits(sum) & 1) == 0) return false;
+        var gap = Math.BitIncrement(Math.Abs(sum)) - Math.Abs(sum);
+        return Math.Abs(error) >= gap * (2047.0 / 4096);
     }
 
     // ---- PRODUCT, MEDIAN, LARGE, SMALL --------------------------------------------------------
