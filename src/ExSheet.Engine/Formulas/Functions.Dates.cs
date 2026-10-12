@@ -6,9 +6,6 @@ namespace ExSheet.Engine.Formulas;
 /// </summary>
 internal static partial class FunctionLibrary
 {
-    /// <summary>The serial of 29 February 1900, the day that never existed.</summary>
-    private const int NeverExisted = 60;
-
     /// <summary>
     /// DATE: each argument truncated to a whole number. A year from 0 to 1899 has 1900 added, and a
     /// year below 0 or from 10000 is <c>#NUM!</c>. Months and days outside their ranges roll over
@@ -83,19 +80,21 @@ internal static partial class FunctionLibrary
     private static Operand EDate(FunctionCall call) => MonthsAway(call, endOfMonth: false);
 
     /// <summary>
-    /// EOMONTH and EDATE: the start date and the months are truncated to whole numbers. EDATE keeps
-    /// the start's day, or the month's last day where the month is shorter; EOMONTH gives the
-    /// month's last day. The months are counted on the real calendar, where February 1900 has 28
-    /// days, and a day before 1 March 1900 is its own serial, 1 to 59: <c>EOMONTH(31,1)</c> is 28
-    /// February 1900, 59, and <c>EDATE(DATE(1900,3,15),-1)</c> is 15 February, 46, as Excel was
-    /// observed to answer (ADR-0047; EOMONTH-008 and EDATE-008, the seventeenth Windows run). A
-    /// start below 0, or a result outside 1900 to 9999, is <c>#NUM!</c>, and a boolean typed as
-    /// either argument is <c>#VALUE!</c>, as in Excel (EOMONTH-009, EDATE-009).
+    /// EOMONTH and EDATE: the start date and the months are truncated to whole numbers. The start is
+    /// read as YEAR, MONTH and DAY read it, so serial 0 is 0 January 1900 and serial 60 is 29
+    /// February 1900. EDATE keeps the start's day, or the month's last day where the month is
+    /// shorter; EOMONTH gives the month's last day. The months are counted on the real calendar,
+    /// where February 1900 has 28 days, and a day before 1 March 1900 is its own serial, 1 to 59:
+    /// <c>EOMONTH(31,1)</c> is 28 February 1900, 59, <c>EOMONTH(0,1)</c> is 59 too,
+    /// <c>EDATE(DATE(1900,3,15),-1)</c> is 15 February, 46, and <c>EDATE(60,1)</c> is 29 March,
+    /// 89, as Excel was observed to answer (ADR-0047; EOMONTH-008 and EDATE-008, the seventeenth
+    /// Windows run; EOMONTH-010 and EDATE-010, the area pass of 2026-10-12). A start below 0, or a
+    /// result outside 1900 to 9999, is <c>#NUM!</c>, and a boolean typed as either argument is
+    /// <c>#VALUE!</c>, as in Excel (EOMONTH-009, EDATE-009).
     /// </summary>
     /// <remarks>
-    /// A start of serial 0 (0 January 1900) or 60 (29 February 1900, the day that never existed) is
-    /// refused with <c>#VALUE!</c> until Excel is asked (EOMONTH-010, EDATE-010): neither is a day
-    /// of the real calendar these functions count on.
+    /// EDATE from serial 0 is refused with <c>#VALUE!</c> until Excel is asked (EDATE-016): its day
+    /// is 0, and no run has observed what day 0 of a month becomes.
     /// </remarks>
     private static Operand MonthsAway(FunctionCall call, bool endOfMonth)
     {
@@ -109,9 +108,9 @@ internal static partial class FunctionLibrary
         start = Math.Truncate(start);
         months = Math.Truncate(months);
         if (start < 0 || start > DateSerial.Maximum) return Operand.Of(ErrorValue.Num);
-        if (start is 0 or NeverExisted) return Operand.Of(ErrorValue.Value);
 
         var (year, month, day) = DateSerial.ToDate((int)start);
+        if (!endOfMonth && day == 0) return Operand.Of(ErrorValue.Value);
         var total = year * 12.0 + (month - 1) + months;
         var toYear = Math.Floor(total / 12);
         if (toYear < 1900 || toYear > 9999) return Operand.Of(ErrorValue.Num);

@@ -82,12 +82,12 @@
     },
     {
       "id": "EDATE-010",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a start on serial 60, 29 February 1900, the day that never existed",
+      "source": "observed",
+      "description": "A start on serial 60 is read as DAY reads it, the 29th of February 1900 (DAY-002), and a month on keeps the 29th: 29 March, 89",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(60,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 89}
     },
     {
       "id": "EDATE-011",
@@ -106,6 +106,42 @@
       "cells": {"ZZ1000": "=EDATE(15,-1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "EDATE-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: from serial 60, the 29th of February 1900, no months on is the month's last day on the real calendar, 28 February, 59, as EDATE-010 keeps the 29th where the month has one",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(60,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 59}
+    },
+    {
+      "id": "EDATE-014",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: from serial 60, twelve months on is 28 February 1901, 425, as February 1901 has 28 days",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(60,12)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 425}
+    },
+    {
+      "id": "EDATE-015",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: from serial 60, a month before is 29 January 1900, 29",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(60,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 29}
+    },
+    {
+      "id": "EDATE-016",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a start on serial 0, 0 January 1900, whose day is 0, as DAY reads it (DAY-004); what day 0 of another month becomes is not observed",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }
