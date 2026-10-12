@@ -48,19 +48,26 @@ async function serveChanged(page, pattern, change) {
 const serveScript = (page, change) => serveChanged(page, SCRIPT, change);
 
 /**
- * Whether the host's page pins the grid's script by integrity in its import map, read from the page
- * as the host serves it, before the test navigates. A Release build of a Blazor Web App on
- * MapStaticAssets writes it; `dotnet run`'s does not, and a standalone WebAssembly application's
- * import map does not name the script. Where it is pinned, the browser refuses a changed body before
- * the grid sees it, and the grid hears a script that did not load; where it is not, the grid's own
- * stamp is what refuses it. ERR-10 holds on both, by different tests.
+ * Whether the host's page pins, by integrity in its import map, the address the grid asks for its
+ * script at, read from the page as the host serves it, before the test navigates. The Server host
+ * asks for the fingerprinted file (ERR-9), which a Release build of a Blazor Web App on
+ * MapStaticAssets pins and `dotnet run`'s does not. The WebAssembly host asks for the plain path with
+ * ?v= (ERR-9): its import map pins the plain path and the fingerprinted file, but no entry names an
+ * address with a query, so nothing pins the one the grid asks for. Where it is pinned, the browser
+ * refuses a changed body before the grid sees it, and the grid hears a script that did not load;
+ * where it is not, the grid's own stamp is what refuses it. ERR-10 holds on both, by different tests.
  */
 async function scriptIntegrityPinned(page, path) {
+    if (!SERVER) return false;
     const html = await (await page.request.get(path)).text();
     const json = /<script type="importmap"[^>]*>([\s\S]*?)<\/script>/.exec(html)?.[1];
     if (!json) return false;
     const base = new URL(path, BASE_URL);
-    return Object.keys(JSON.parse(json).integrity ?? {}).some((address) => SCRIPT.test(new URL(address, base).pathname));
+    const FINGERPRINTED = /\/_content\/ExGrid\/ex-grid\.min\.[a-z0-9]+\.js$/;
+    return Object.keys(JSON.parse(json).integrity ?? {}).some((address) => {
+        const url = new URL(address, base);
+        return !url.search && FINGERPRINTED.test(url.pathname);
+    });
 }
 
 /** Serves a stylesheet changed by `change`. */
