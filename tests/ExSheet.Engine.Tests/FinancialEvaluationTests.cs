@@ -1,22 +1,23 @@
 using System.Numerics;
+using ExSheet.Engine.Formulas;
 using Xunit;
 using static ExSheet.Engine.Tests.SheetTestExtensions;
 
 namespace ExSheet.Engine.Tests;
 
 /// <summary>
-/// ADR-0047 and ADR-0202: PMT, PV and FV give Excel's double, to the bit. The seventeenth Windows run
-/// (verification/2026-10-11-windows-17, results-2026-10-11-run17-update-en-US.json) and the area pass
-/// of 2026-10-12 (verification/2026-10-12-windows-area, results-2026-10-12-area-com-en-US.json) read
-/// every case's double; <c>spikes/exsheet-financial-evaluation/</c> searched the evaluations that give
-/// them. PV and FV are the doubles' evaluation of Microsoft's identity, the payment times
-/// (1+rate*type)*((g-1)/rate), with 1+rate raised by squaring to a whole number and 1 over that to a
-/// negative one; where the evaluations that give every observed double part (the square root or
-/// e^(0.5 ln(1+rate)) at half a period, a negative fraction raised directly or as 1 over the power, a
-/// fused multiply-add in FV), PV and FV are #VALUE!. PMT is the payment at the end carried beyond a
-/// double and rounded once, and at the start that double divided by 1+rate, rounded once. NPV is
-/// refused for 0.1.0 (ADR-0202, note of 2026-10-12): no evaluation searched gives every double Excel
-/// gave for it.
+/// ADR-0047 and ADR-0202: PMT, PV, FV and XNPV give Excel's double, to the bit. The seventeenth Windows
+/// run (verification/2026-10-11-windows-17) and the two area passes of 2026-10-12
+/// (verification/2026-10-12-windows-area and -area-2) read every case's double;
+/// <c>spikes/exsheet-financial-evaluation/</c> searched the evaluations that give them. PV and FV are the
+/// doubles' evaluation of Microsoft's identity, the payment times (1+rate*type)*((g-1)/rate), with 1+rate
+/// raised by the one power that gives every observed double and Error Value: squaring to a whole number,
+/// 1 over the power to a negative one, the square root at 0.5, e^(n ln(1+rate)) correctly rounded
+/// otherwise, an odd root of a negative 1+rate, and the ^ operator's Error Values at 1+rate = 0. XNPV
+/// divides each value by that power of its years and sums from the first. PMT is the payment at the end
+/// carried beyond a double and rounded once, and at the start that double divided by 1+rate, rounded
+/// once. NPV is refused for 0.1.0 (ADR-0202, note of 2026-10-12): no evaluation searched gives every
+/// double Excel gave for it.
 /// </summary>
 public class FinancialEvaluationTests
 {
@@ -79,95 +80,85 @@ public class FinancialEvaluationTests
         Assert.NotEqual(801.7640221710038, correctlyRounded);
     }
 
-    [Theory] // ADR-0047: where every reading of a fractional nper gives the same double, PV and FV give it, and it is the ^ operator's (FV-012, FV-013, PV-010)
-    [InlineData("0.05", "0.5")]
-    [InlineData("0.06/12", "10.5")]
-    [InlineData("0.06/12", "-10.5")]
-    [InlineData("0.06/12", "10.25")]
-    [InlineData("0.05", "10.5")]
-    [InlineData("-0.5", "1/3")]
-    public void ADR0047_PV_and_FV_answer_a_fractional_number_of_periods_where_its_readings_agree(string rate, string periods)
+    [Theory] // ADR-0047: FV-012, FV-013 and PV-010, the second area pass; a fraction is e^(n ln(1+rate)) with ln and exp correctly rounded, a negative one 1 over the power to its absolute value
+    [InlineData("0.06/12", 10.25, 2098.0640302830534)]
+    [InlineData("0.06/12", -10.5, -2040.8618907559849)]
+    public void ADR0047_A_fraction_of_a_period_is_e_to_n_ln_one_plus_rate_correctly_rounded(string rate, double periods, double excel)
     {
-        Assert.Equal(Number($"=((1+{rate})^({periods})-1)/({rate})"), Number($"=FV({rate},{periods},-1)"));
-        Assert.Equal(Number($"=(((1+{rate})^({periods})-1)/({rate}))/(1+{rate})^({periods})"), Number($"=PV({rate},{periods},-1)"));
+        var r = 0.06 / 12;
+        var power = CorrectlyRounded.Exp(Math.Abs(periods) * CorrectlyRounded.Log(1 + r));
+        var growth = periods < 0 ? 1 / power : power;
+        Assert.Equal(excel, -(-200 * (1 * ((growth - 1) / r))));
+        Assert.Equal(excel, Number($"=FV({rate},{periods.ToString(System.Globalization.CultureInfo.InvariantCulture)},-200)"));
+        Assert.Equal(48.19985410293382, Number("=PV(0.05,0.5,-100)"));
     }
 
-    [Fact] // ADR-0047, ADR-0202: FV-016, half a period, where the square root (the ^ operator's, ARITH-133) and e^(0.5 ln(1+rate)) (FV-006's at 10.5) part: no observed double tells which, so FV refuses it
-    public void ADR0047_Half_a_period_is_refused_where_the_square_root_and_e_to_half_ln_one_plus_rate_part()
+    [Fact] // ADR-0047: FV-016, the second area pass: half a period is the square root of 1+rate, as the ^ operator takes it (ARITH-133), where e^(0.5 ln(1+rate)) is 8 units in the last place away
+    public void ADR0047_Half_a_period_is_the_square_root_of_one_plus_rate()
     {
-        var bySquareRoot = -(-100 * (1 * ((Math.Sqrt(1.42) - 1) / 0.42)));
-        var byLogarithm = -(-100 * (1 * ((Math.Exp(0.5 * Math.Log(1.42)) - 1) / 0.42)));
-        Assert.Equal(45.627983043166275, bySquareRoot);
+        var byLogarithm = -(-100 * (1 * ((CorrectlyRounded.Exp(0.5 * CorrectlyRounded.Log(1.42)) - 1) / 0.42)));
+        Assert.Equal(45.627983043166275, Number("=FV(0.42,0.5,-100)"));
+        Assert.Equal(45.627983043166275, -(-100 * (1 * ((Math.Sqrt(1.42) - 1) / 0.42))));
         Assert.Equal(45.62798304316633, byLogarithm);
-        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate("=FV(0.42,0.5,-100)"));
-        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate("=PV(0.42,0.5,-100)"));
+        Assert.Equal(38.290152786502574, Number("=PV(0.42,0.5,-100)"));      // PV-014 asks: PV raises as FV does
+        Assert.Equal(-38.29015278650258, Number("=FV(0.42,-0.5,-100)"));     // FV-024 asks: 1 over the square root
     }
 
-    [Fact] // ADR-0047, ADR-0202: FV-022, a negative fraction raised directly or as 1 over the power to its absolute value, as FV-007's -10 is: where they part, FV refuses it
-    public void ADR0047_A_negative_fraction_is_refused_where_its_power_and_one_over_the_power_part()
-    {
-        var growth = Math.Exp(-2.5 * Math.Log(1 + (0.06 / 12)));
-        var overGrowth = 1 / Math.Exp(2.5 * Math.Log(1 + (0.06 / 12)));
-        Assert.Equal(-247.828794185625, 100 * ((growth - 1) / (0.06 / 12)));
-        Assert.Equal(-247.8287941856272, 100 * ((overGrowth - 1) / (0.06 / 12)));
-        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate("=FV(0.06/12,-2.5,-100)"));
-        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate("=PV(0.06/12,-2.5,-100)"));
-    }
-
-    [Theory] // ADR-0047, ADR-0202: FV-014 and FV-015, a present value and a payment at the start, or with an nper that is not a whole number from 0, where the unfused sum and a fused multiply-add part; each gives every observed FV double
-    [InlineData("=FV(0.05/12,12,-150,-1000,1)", 0.05 / 12, 12, -150, -1000)]
-    [InlineData("=FV(0.03/12,240,-100,-50000,1)", 0.03 / 12, 240, -100, -50000)]
-    [InlineData("=FV(8/12/100,480,-1000000,1000,1)", 8.0 / 12 / 100, 480, -1000000, 1000)]
-    [InlineData("=FV(0.06/12,10.5,-150,1000)", 0.06 / 12, 10.5, -150, 1000)]
-    public void ADR0047_FV_is_refused_where_the_unfused_sum_and_a_fused_one_part(string formula, double rate, double periods, double payment, double present)
-    {
-        var growth = periods == Math.Floor(periods) ? RaisedBySquaring(1 + rate, (int)periods) : Math.Exp(periods * Math.Log(1 + rate));
-        var annuity = (1 + (formula.EndsWith(",1)") ? rate : 0)) * ((growth - 1) / rate);
-        var unfused = -((present * growth) + (payment * annuity));
-        double[] fused = [-Math.FusedMultiplyAdd(present, growth, payment * annuity), -Math.FusedMultiplyAdd(payment, annuity, present * growth)];
-        Assert.Contains(fused, f => f != unfused);
-        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
-    }
-
-    [Fact] // ADR-0047: FV-019, at the end with a whole nper from 0, FV answers the unfused sum, as before the area pass, until Excel is asked; FV-001 and FV-005, with both at the start, are the same double either way
-    public void ADR0047_FV_at_the_end_with_a_whole_number_of_periods_keeps_the_unfused_sum_until_Excel_is_asked()
+    [Fact] // ADR-0047: FV-022, the second area pass: a negative fraction is 1 over the power to its absolute value, as FV-007's -10 is, where raising to -2.5 directly is 78 units in the last place away
+    public void ADR0047_A_negative_fraction_is_one_over_the_power_to_its_absolute_value()
     {
         var rate = 0.06 / 12;
-        var growth = RaisedBySquaring(1 + rate, 10);
-        var annuity = (growth - 1) / rate;
-        Assert.Equal(483.06382918288546, -((1000 * growth) + (-150 * annuity)));
-        Assert.Equal(483.06382918288557, -Math.FusedMultiplyAdd(1000, growth, -150 * annuity));
-        Assert.Equal(483.0638291828854, -Math.FusedMultiplyAdd(-150, annuity, 1000 * growth));
-        Assert.Equal(483.06382918288546, Number("=FV(0.06/12,10,-150,1000)"));
-        Assert.Equal(2581.4033740601185, Number("=FV(0.06/12,10,-200,-500,1)"));
+        var logarithm = CorrectlyRounded.Log(1 + rate);
+        Assert.Equal(-247.8287941856272, Number("=FV(0.06/12,-2.5,-100)"));
+        Assert.Equal(-247.8287941856272, 100 * (((1 / CorrectlyRounded.Exp(2.5 * logarithm)) - 1) / rate));
+        Assert.Equal(-247.828794185625, 100 * ((CorrectlyRounded.Exp(-2.5 * logarithm) - 1) / rate));
+        Assert.Equal(-250.93828076244577, Number("=PV(0.06/12,-2.5,-100)"));  // PV-015 asks
     }
 
-    [Theory] // ADR-0047, ADR-0202: FV-020, FV-021 and PV-012, a negative nper at a rate of -1, where 1+rate is 0: no finite number (#NUM!) by squaring or e^(nper ln(1+rate)), #DIV/0! by the ^ operator (ARITH-042)
-    [InlineData("=FV(-1,-0.5,-100)")]
-    [InlineData("=FV(-1,-10,-100)")]
-    [InlineData("=PV(-1,-10,-100)")]
-    [InlineData("=PV(-1,-0.5,-100,1000,1)")]
-    [InlineData("=PMT(-1,-10,100)")]
-    public void ADR0047_A_negative_number_of_periods_at_a_rate_of_minus_1_is_refused(string formula)
+    [Theory] // ADR-0047: FV-014, FV-015 and FV-019, the second area pass: a present value and a payment are the sum as written, where fusing either product into a multiply-add is one unit in the last place away
+    [InlineData("=FV(0.05/12,12,-150,-1000,1)", 0.05 / 12, 12, -150, -1000, 2900.664506306397)]
+    [InlineData("=FV(0.03/12,240,-100,-50000,1)", 0.03 / 12, 240, -100, -50000, 123950.02507801351)]
+    [InlineData("=FV(0.06/12,10,-150,1000)", 0.06 / 12, 10, -150, 1000, 483.06382918288546)]
+    public void ADR0047_FV_is_the_sum_as_written_not_a_fused_one(string formula, double rate, int periods, double payment, double present, double excel)
     {
-        Assert.Equal(Value.FromError(ErrorValue.Div0), NewSheet().Evaluate("=(1+-1)^-10"));
-        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
+        var growth = RaisedBySquaring(1 + rate, periods);
+        var annuity = (1 + (formula.EndsWith(",1)") ? rate : 0)) * ((growth - 1) / rate);
+        Assert.Equal(excel, -((present * growth) + (payment * annuity)));
+        Assert.Contains(new[] { -Math.FusedMultiplyAdd(present, growth, payment * annuity), -Math.FusedMultiplyAdd(payment, annuity, present * growth) }, fused => fused != excel);
+        Assert.Equal(excel, Number(formula));
     }
 
-    [Fact] // ADR-0047: FV-018, no periods at a rate of -1 is 0^0 by squaring, 1, as FV answered before the area pass, where the ^ operator's =0^0 is #NUM! (ARITH-041); Excel is asked
-    public void ADR0047_No_periods_at_a_rate_of_minus_1_is_answered_as_before_until_Excel_is_asked()
+    [Theory] // ADR-0047: FV-020, FV-021 and PV-012, the second area pass: 0 to a negative power is #DIV/0!, as the ^ operator's =0^-1 is (ARITH-042); PMT refuses a negative nper
+    [InlineData("=FV(-1,-0.5,-100)", "#DIV/0!")]
+    [InlineData("=FV(-1,-10,-100)", "#DIV/0!")]
+    [InlineData("=PV(-1,-10,-100)", "#DIV/0!")]
+    [InlineData("=PV(-1,-0.5,-100,1000,1)", "#DIV/0!")]
+    [InlineData("=PMT(-1,-10,100)", "#VALUE!")]
+    public void ADR0047_A_negative_number_of_periods_at_a_rate_of_minus_1_is_DIV0(string formula, string error) =>
+        Assert.Equal(error, NewSheet().Evaluate(formula).ToString());
+
+    [Fact] // ADR-0047: FV-018, the second area pass: no periods at a rate of -1 is 0^0, #NUM!, as the ^ operator's =0^0 is (ARITH-041), where squaring gave 1 and FV 500
+    public void ADR0047_No_periods_at_a_rate_of_minus_1_is_NUM()
     {
-        Assert.Equal(500, Number("=FV(-1,0,-100,-500)"));
+        Assert.Equal(Value.FromError(ErrorValue.Num), NewSheet().Evaluate("=FV(-1,0,-100,-500)"));
+        Assert.Equal(Value.FromError(ErrorValue.Num), NewSheet().Evaluate("=PV(-1,0,-100,-500)"));
         Assert.Equal(Value.FromError(ErrorValue.Num), NewSheet().Evaluate("=(1+-1)^0"));
     }
 
-    [Theory] // ADR-0047: at a rate below -1 a fractional nper is refused, as before the area pass: where 1/nper is odd, ^ gives an odd root and e^(nper ln(1+rate)) none; elsewhere neither has one, and no run has observed FV or PV there (FV-017, PV-011 ask)
-    [InlineData("=FV(-9,1/3,-1)")]
-    [InlineData("=PV(-1.5,0.5,-100)")]
-    [InlineData("=FV(-2,10.5,-100)")]
-    [InlineData("=PMT(-2,10.5,100)")]
-    public void ADR0047_At_a_rate_below_minus_1_a_fractional_number_of_periods_is_refused(string formula) =>
-        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
+    [Fact] // ADR-0047: PV-013 asks: at a rate of -1 the growth is 0 and PV divides by it; which Error Value Excel gives there has not been observed
+    public void ADR0047_PV_at_a_rate_of_minus_1_with_periods_is_refused()
+    {
+        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate("=PV(-1,10,-100)"));
+        Assert.Equal(100, Number("=FV(-1,10,-100)")); // FV multiplies by the growth, 0, and answers
+    }
+
+    [Theory] // ADR-0047: FV-017 and PV-011, the second area pass: a negative 1+rate has an odd root where 1/nper is odd, as the ^ operator's =(-8)^(1/3) (ARITH-043), and no other fractional power (#NUM!); PMT refuses a fractional nper
+    [InlineData("=FV(-9,1/3,-1)", "0.3333333333333333")]
+    [InlineData("=PV(-1.5,0.5,-100)", "#NUM!")]
+    [InlineData("=FV(-2,10.5,-100)", "#NUM!")]
+    [InlineData("=PMT(-2,10.5,100)", "#VALUE!")]
+    public void ADR0047_At_a_rate_below_minus_1_a_fractional_number_of_periods_is_an_odd_root_or_NUM(string formula, string expected) =>
+        Assert.Equal(expected, NewSheet().Evaluate(formula).ToString());
 
     [Fact] // ADR-0047: a whole nper at a rate below -1 is still raised by squaring, which does not depend on the base's sign
     public void ADR0047_At_a_rate_below_minus_1_a_whole_number_of_periods_is_answered() =>
@@ -260,50 +251,81 @@ public class FinancialEvaluationTests
         Assert.Equal(342.04308747657205, byPow);
     }
 
-    [Theory] // ADR-0047, ADR-0202: XNPV-005, 006 and 011, where e^(x ln(1+rate)), squaring and Math.Pow at whole years, or the days over 365 and times 1/365, part; each gives XNPV-001 and 004
-    [InlineData("0.07", "39813", "40178", "40543")]
-    [InlineData("0.06", "39813", "40178", "40543")]
-    [InlineData("0.05", "39549", null, null)]
-    public void ADR0047_XNPV_is_refused_where_its_evaluations_part(string rate, string second, string? third, string? fourth)
+    [Theory] // ADR-0047: XNPV-005, 006, 011 and 013, the second area pass: whole years by squaring, the days over 365, and e^(x ln(1+rate)) with ln and exp correctly rounded otherwise
+    [InlineData("0.07", new[] { "-10000", "3000", "4200", "6800" }, new[] { "39448", "39813", "40178", "40543" }, 2023.0065393622904)]
+    [InlineData("0.06", new[] { "-10000", "3000", "4200", "6800" }, new[] { "39448", "39813", "40178", "40543" }, 2277.5848519247406)]
+    [InlineData("0.05", new[] { "-10000", "2750" }, new[] { "39448", "39549" }, -7286.877809009438)]
+    [InlineData("0.1", new[] { "1000", "4200", "-10000", "3000", "-1000", "3250" }, new[] { "39448", "41204", "41007", "40245", "40272", "41174" }, 700.2269770028577)]
+    public void ADR0047_XNPV_gives_Excels_double(string rate, string[] values, string[] dates, double excel)
     {
         var sheet = NewSheet();
-        string?[] values = ["-10000", "3000", "4200", "6800"];
-        string?[] dates = ["39448", second, third, fourth];
-        var count = third is null ? 2 : 4;
-        for (var i = 0; i < count; i++)
+        for (var i = 0; i < values.Length; i++)
         {
-            sheet.Enter($"A{i + 1}", values[i]!);
-            sheet.Enter($"B{i + 1}", dates[i]!);
+            sheet.Enter($"A{i + 1}", values[i]);
+            sheet.Enter($"B{i + 1}", dates[i]);
         }
-        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate($"=XNPV({rate},A1:A{count},B1:B{count})"));
+        Assert.Equal(Value.FromNumber(excel), sheet.Evaluate($"=XNPV({rate},A1:A{values.Length},B1:B{values.Length})"));
     }
 
-    [Fact] // ADR-0047: whole years where the three discounts agree, and days that 365 divides and 1/365 multiplies alike, are answered
-    public void ADR0047_XNPV_answers_where_its_evaluations_agree()
+    [Fact] // ADR-0047: XNPV-013, at 797 days a correctly rounded exponential gives Excel's discount, where glibc's exp is one unit in the last place below it
+    public void ADR0047_XNPV_013s_discount_is_the_correctly_rounded_exponential()
+    {
+        var exponent = 797.0 / 365 * CorrectlyRounded.Log(1.1);
+        Assert.Equal(1.2313555711418425, CorrectlyRounded.Exp(exponent));
+        Assert.Equal(CorrectlyRounded.ExpExact(exponent), CorrectlyRounded.Exp(exponent));
+    }
+
+    [Fact] // ADR-0047: whole years where squaring gives what 1+rate is, and days that 365 divides, are answered
+    public void ADR0047_XNPV_answers_whole_years_by_squaring()
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "-10000");
         sheet.Enter("A2", "3000");
         sheet.Enter("B1", "39448");
         sheet.Enter("B2", "39813");
-        Assert.Equal(1.07, Math.Exp(1 * Math.Log(1.07)));
         Assert.Equal(-10000 + (3000 / 1.07), sheet.Evaluate("=XNPV(0.07,A1:A2,B1:B2)").Number);
     }
 
-    [Theory] // ADR-0047: XNPV refuses a rate of -1 or below, where e^(x ln(1+rate)) has no answer and Math.Pow, the engine's before, has some (XNPV-007 to 010 ask)
+    [Theory] // ADR-0047: XNPV-007 to 010, 012 and 017, the second area pass: Excel gave #NUM! at every rate below 0 it was asked, -0.5 to -2; XNPV-020 asks a small one
     [InlineData("-1", "39448", "39508")]
     [InlineData("-1", "39448", "39448")]
     [InlineData("-1.5", "39448", "39813")]
     [InlineData("-2", "39448", "39508")]
-    public void ADR0047_XNPV_refuses_a_rate_of_minus_1_or_below(string rate, string first, string second)
+    [InlineData("-0.5", "39448", "39508")]
+    [InlineData("-0.01", "39448", "39508")]
+    public void ADR0047_XNPV_at_a_rate_below_0_is_NUM(string rate, string first, string second)
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "-1000");
         sheet.Enter("A2", "300");
         sheet.Enter("B1", first);
         sheet.Enter("B2", second);
-        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate($"=XNPV({rate},A1:A2,B1:B2)"));
-        Assert.Equal(ValueKind.Number, sheet.Evaluate("=XNPV(-0.5,A1:A2,B1:B2)").Kind);
+        Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate($"=XNPV({rate},A1:A2,B1:B2)"));
+    }
+
+    [Fact] // ADR-0047: XNPV-019 asks: at a rate of 0 "below 0" answers the sum and "0 or below" #NUM!, so XNPV refuses it
+    public void ADR0047_XNPV_at_a_rate_of_0_is_refused()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "-1000");
+        sheet.Enter("A2", "300");
+        sheet.Enter("B1", "39448");
+        sheet.Enter("B2", "39508");
+        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0,A1:A2,B1:B2)"));
+    }
+
+    [Fact] // ADR-0047: XNPV-018 asks: where the last addition nearly cancels, the sum and the sum with Excel's last-addition adjustment part, and both give every observed XNPV double
+    public void ADR0047_XNPV_is_refused_where_its_last_addition_nearly_cancels()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1000");
+        sheet.Enter("A2", "-1100");
+        sheet.Enter("B1", "39448");
+        sheet.Enter("B2", "39813");
+        Assert.Equal(1.1368683772161603E-13, 1000 + (-1100 / 1.1));
+        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0.1,A1:A2,B1:B2)"));
+        sheet.Enter("A2", "-1000");
+        Assert.Equal(1000 + (-1000 / 1.1), sheet.Evaluate("=XNPV(0.1,A1:A2,B1:B2)").Number);
     }
 
     [Theory] // ADR-0202, note of 2026-10-12: NPV is undeclared for 0.1.0, #NAME? as IRR is; XNPV stays

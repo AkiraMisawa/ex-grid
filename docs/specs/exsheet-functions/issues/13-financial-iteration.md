@@ -65,3 +65,16 @@ six and refuses where they part (XNPV-005, 006 and 011); the 72 part at 1,668 of
 `Search.cs --refusals` draws where the engine answers. Whether XNPV is refused for 0.1.0 as NPV is, refused
 wherever the 72 part, or asked before the tag is the user's question (ADR-0202); XNPV-012 to 017 are the
 inputs that tell the 72 apart (`discriminate-xnpv.txt`).
+
+2026-10-12, the second area pass (`verification/2026-10-12-windows-area-2/`): `XNPV` is settled and leaves
+this ticket's questions. Its nine observed doubles and eight Error Values are given by one evaluation of the
+2,592 the third search tries (`spikes/exsheet-financial-evaluation/`): the days over 365, whole years by
+squaring and e^(years ln(1+rate)) with the exponential and the logarithm correctly rounded otherwise, each
+value divided, summed from the first, and `#NUM!` at a rate below 0. XNPV-013 is the correctly rounded
+exponential's double where glibc's is a unit low, so the engine now computes both functions correctly
+rounded on every platform; PV and FV take the same power, and every one of their observed doubles and Error
+Values is its. `NPV` stays here, undeclared: none of the 5,796 evaluations gives all 21 observed doubles, and
+the best give 7 (NPV-009 to 022 are recorded with Excel's doubles). `PMT` stays Supported with its last
+digits open: none of the 39,602 evaluations gives all 29 observed payments, and the best give 16; PMT-013 to
+016, 018, 020, 021 and 023 to 032 differ from the engine's by 1 to 11 units in the last place. Whether PMT is
+refused for 0.1.0 is the user's question (ADR-0202; `docs/agents/proposals/area-financial.md`, section 1).

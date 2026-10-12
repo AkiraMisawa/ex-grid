@@ -68,7 +68,7 @@
     {
       "id": "PV-008",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a type of 0.5 is payment at the start of each period, as PMT-009 found it is for PMT",
+      "description": "A type of 0.5 is payment at the start of each period, as PMT-009 found it is for PMT",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,10,-100,1000,0.5)"},
       "check": "ZZ1000",
@@ -77,7 +77,7 @@
     {
       "id": "PV-009",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a negative number of periods, 1 over 1+rate raised by squaring as FV-007's",
+      "description": "A negative number of periods: 1 over 1+rate raised by squaring, as FV-007's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,-10,-100)"},
       "check": "ZZ1000",
@@ -86,7 +86,7 @@
     {
       "id": "PV-010",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: half a period, answered because the square root of 1+rate, the ^ operator's evaluation at an exponent of 0.5 (ARITH-133), and e^(0.5 ln(1+rate)), PV-005's evaluation at 10.5, give the same double here; FV-016 is where they part",
+      "description": "Half a period: the square root of 1+rate, as FV-016's; e^(0.5 ln(1+rate)) gives the same double here (PV-014 is where they part)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,0.5,-100)"},
       "check": "ZZ1000",
@@ -94,21 +94,57 @@
     },
     {
       "id": "PV-011",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: half a period at a rate below -1, refused as before the area pass of 2026-10-12, although the ^ operator and e^(nper ln(1+rate)) both have no answer for a negative base to the power 0.5 (#NUM!): no run has observed what PV gives there",
+      "source": "observed",
+      "description": "Half a period at a rate below -1: a negative 1+rate has no square root, and PV is #NUM!; a fraction whose reciprocal is odd has an odd root (FV-017)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(-1.5,0.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "PV-012",
+      "source": "observed",
+      "description": "Ten periods before, at a rate of -1: 0 to a negative power is #DIV/0!, as FV-021's is",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(-1,-10,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "PV-013",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: at a rate of -1 the growth is 0 to the power 10, 0, and PV divides by it; which Error Value Excel gives there has not been observed (FV-018's #NUM! and FV-020's #DIV/0! come from the power, not from a division)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(-1,10,-100)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
     },
     {
-      "id": "PV-012",
+      "id": "PV-014",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: ten periods before, at a rate of -1, refused as FV-021 is: 1 over 0 to the power 10 by squaring leaves PV no finite number (#NUM!), where the ^ operator gives 0 to a negative power as #DIV/0! (ARITH-042)",
+      "description": "Engine's answer, Excel to be asked: half a period is the square root of 1+rate, as FV-016's, PV raising 1+rate as FV does (PV-005 and PV-009 to PV-012 agree); e^(0.5 ln(1+rate)) gives 38.29015278650262",
       "fixture": "functionData",
-      "cells": {"ZZ1000": "=PV(-1,-10,-100)"},
+      "cells": {"ZZ1000": "=PV(0.42,0.5,-100)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 38.290152786502574}
+    },
+    {
+      "id": "PV-015",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1 over the power to 2.5, as FV-022's; raising to -2.5 directly gives -250.9382807624435",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.06/12,-2.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -250.93828076244577}
+    },
+    {
+      "id": "PV-016",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: e^(nper ln(1+rate)) with the exponential and the logarithm correctly rounded, as XNPV-013 found them, gives 1091.2943662943903; glibc's exp and log, which .NET takes on Linux, give 1091.2943662943944",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.06/12,11.25,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1091.2943662943903}
     }
   ]
 }
