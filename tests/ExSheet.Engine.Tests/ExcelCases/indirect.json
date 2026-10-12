@@ -240,7 +240,7 @@
     },
     {
       "id": "INDIRECT-030",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R1C1 text naming an absolute range of two cells is a range, which SUM reads",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=SUM(INDIRECT(\"R2C2:R5C2\",FALSE))"},
       "check": "ZZ1000",
@@ -248,7 +248,7 @@
     },
     {
       "id": "INDIRECT-031",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R1C1 text in lower case reads its cell, as A1 text in lower case does",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"r3c2\",FALSE)"},
       "check": "ZZ1000",
@@ -256,7 +256,7 @@
     },
     {
       "id": "INDIRECT-032",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R1C1 text qualified with the Sheet's own name reads its cell, as A1 text does",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"Sheet1!R3C2\",FALSE)"},
       "check": "ZZ1000",
@@ -264,7 +264,7 @@
     },
     {
       "id": "INDIRECT-033",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a1 left empty is R1C1 style, as FALSE is",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"R3C2\",)"},
       "check": "ZZ1000",
@@ -272,7 +272,7 @@
     },
     {
       "id": "INDIRECT-034",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a1 given as a blank cell is R1C1 style, as FALSE is",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"R3C2\",D9)"},
       "check": "ZZ1000",
@@ -280,7 +280,7 @@
     },
     {
       "id": "INDIRECT-035",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: A1 text read in R1C1 style names no place",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"B3\",FALSE)"},
       "check": "ZZ1000",
@@ -315,7 +315,7 @@
     },
     {
       "id": "INDIRECT-039",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a structured reference's text in double brackets reads the column, as the typed one does",
       "cells": {"ZZ1000": "=INDIRECT(\"Positions[[PV]]\")"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5]]}},
@@ -324,7 +324,7 @@
     },
     {
       "id": "INDIRECT-040",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a structured reference's text naming a table that does not exist names no place",
       "cells": {"ZZ1000": "=INDIRECT(\"Missing[PV]\")"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5]]}},
@@ -333,7 +333,7 @@
     },
     {
       "id": "INDIRECT-041",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a structured reference's text naming a column the table does not have names no place",
       "cells": {"ZZ1000": "=INDIRECT(\"Positions[Delta]\")"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5]]}},
@@ -342,7 +342,7 @@
     },
     {
       "id": "INDIRECT-042",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a Spill Range's text naming a cell that does not spill is #REF!, as A1# typed is",
       "cells": {"A1": "7", "ZZ1000": "=SUM(INDIRECT(\"A1#\"))"},
       "check": "ZZ1000",

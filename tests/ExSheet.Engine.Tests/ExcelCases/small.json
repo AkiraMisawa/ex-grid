@@ -44,7 +44,7 @@
     },
     {
       "id": "SMALL-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: k is read at 15 significant digits, so 1+2^-52 is 1",
       "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,1+2^-52)"},
       "check": "ZZ1000",

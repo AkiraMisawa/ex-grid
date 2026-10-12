@@ -85,7 +85,7 @@
     },
     {
       "id": "PMT-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative type is payment at the start of each period, as 2 is",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,-1)"},
@@ -148,7 +148,7 @@
     },
     {
       "id": "PMT-017",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: at a small rate the evaluations that give PMT-001 to 008 part widely, because an x87's 1+rate keeps only the rate's bits above 2^-64. The 304 in an x87's 64 bits give nine doubles across 3390 units in the last place, differing from the 13th significant digit (-83.33338750000993 to -83.33338750005811); the engine's exact payment rounded once is the first of them (spikes/exsheet-financial-evaluation/, --spread)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(1/10000000,12,1000)"},

@@ -85,7 +85,7 @@
     },
     {
       "id": "MOD-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a quotient of 2^40 is answered",
       "cells": {"ZZ1000": "=MOD(2^40,3)"},
       "check": "ZZ1000",
@@ -93,7 +93,7 @@
     },
     {
       "id": "MOD-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a quotient just below 1125900000000, the limit a Microsoft 365 user reported, is answered",
       "cells": {"ZZ1000": "=MOD(1125899999999,1)"},
       "check": "ZZ1000",
@@ -101,7 +101,7 @@
     },
     {
       "id": "MOD-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a quotient of 1125900000000, the limit a Microsoft 365 user reported, is #NUM!",
       "cells": {"ZZ1000": "=MOD(1125900000000,1)"},
       "check": "ZZ1000",
@@ -109,7 +109,7 @@
     },
     {
       "id": "MOD-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the limit is on the quotient, not the number: 3377699999997/3 is just below it",
       "cells": {"ZZ1000": "=MOD(3377699999997,3)"},
       "check": "ZZ1000",
@@ -117,7 +117,7 @@
     },
     {
       "id": "MOD-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 3377700000000/3 reaches the limit, #NUM!",
       "cells": {"ZZ1000": "=MOD(3377700000000,3)"},
       "check": "ZZ1000",
@@ -125,7 +125,7 @@
     },
     {
       "id": "MOD-015",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a quotient of 2^53 is #NUM!",
       "cells": {"ZZ1000": "=MOD(2^53,3)"},
       "check": "ZZ1000",
@@ -133,7 +133,7 @@
     },
     {
       "id": "MOD-016",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a quotient of 1E+16/7 is #NUM!",
       "cells": {"ZZ1000": "=MOD(1E+16,7)"},
       "check": "ZZ1000",

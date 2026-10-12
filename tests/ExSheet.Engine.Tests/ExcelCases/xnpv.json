@@ -28,7 +28,7 @@
     },
     {
       "id": "XNPV-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: dates where a correctly rounded power and e^(x ln(1+rate)), the ^ operator's, differ in the last place (spikes/exsheet-financial-evaluation/)",
       "cells": {"A1": "-10000", "A2": "2750", "A3": "2750", "A4": "2750", "A5": "4250", "B1": "39448", "B2": "39522", "B3": "40089", "B4": "40217", "B5": "40327", "ZZ1000": "=XNPV(0.12,A1:A5,B1:B5)"},
       "check": "ZZ1000",

@@ -45,7 +45,7 @@
     },
     {
       "id": "NETWORKDAYS-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: serial 1 is a Sunday, as WEEKDAY says, and no workday (on the real calendar 1 January 1900 was a Monday)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NETWORKDAYS(1,1)"},
@@ -54,7 +54,7 @@
     },
     {
       "id": "NETWORKDAYS-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: serial 6 is a Friday, as WEEKDAY says, and a workday (on the real calendar 6 January 1900 was a Saturday)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NETWORKDAYS(6,6)"},
@@ -63,7 +63,7 @@
     },
     {
       "id": "NETWORKDAYS-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: serial 60, the day that never existed, is a Wednesday and a workday",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NETWORKDAYS(60,60)"},

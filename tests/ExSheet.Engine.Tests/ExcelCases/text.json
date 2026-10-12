@@ -210,7 +210,7 @@
     },
     {
       "id": "TEXTFN-023",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: with an empty code, text that is no number stays as it is, as under a code without a text section",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(\"abc\",\"\")"},
@@ -219,7 +219,7 @@
     },
     {
       "id": "TEXTFN-024",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: with an empty code, a boolean stays TRUE",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(TRUE,\"\")"},
@@ -237,7 +237,7 @@
     },
     {
       "id": "TEXTFN-026",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: twelve digits go scientific in General's 11 characters, as in a wide column",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(123456789012,\"General\")"},
@@ -246,7 +246,7 @@
     },
     {
       "id": "TEXTFN-027",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a small number that decimals show exactly stays decimal in General, as in a cell",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(0.00001,\"General\")"},

@@ -484,7 +484,7 @@
     },
     {
       "id": "AGGREGATE-055",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a function number that is not whole is truncated, as SUBTOTAL's is: 9.5 is 9",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9.5,6,A1:A11)"},
@@ -493,7 +493,7 @@
     },
     {
       "id": "AGGREGATE-056",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an option that is not whole is truncated: 6.5 is 6",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,6.5,A1:A11)"},
@@ -502,7 +502,7 @@
     },
     {
       "id": "AGGREGATE-057",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a Reference after k is taken on entry (AGGREGATE-040 was refused for a number there), and the array form with an argument after k is #VALUE!",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(14,6,A1:A11,1,B1:B3)"},
@@ -511,7 +511,7 @@
     },
     {
       "id": "AGGREGATE-058",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: in the reference form too, a number as the fifth argument is refused on entry",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(9,6,A1:A3,B1:B3,5)"},
@@ -520,7 +520,7 @@
     },
     {
       "id": "AGGREGATE-059",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: LARGE's k of 1.2 is rounded up to 2 (81), not rounded to 1 (96)",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(14,6,A1:A11,1.2)"},

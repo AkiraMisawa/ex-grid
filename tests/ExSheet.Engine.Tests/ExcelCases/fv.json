@@ -40,7 +40,7 @@
     },
     {
       "id": "FV-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a type of 2 is payment at the start of each period, as PMT-008 found it is for PMT",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.06/12,10,-200,-500,2)"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "FV-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: at a rate of 0 a number of periods that is not a whole number is answered, no power being raised",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0,10.5,-100)"},
@@ -85,7 +85,7 @@
     },
     {
       "id": "FV-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: thirty years of months, nine squarings",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.05/12,360,-150)"},
