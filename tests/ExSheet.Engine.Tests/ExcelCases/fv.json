@@ -49,21 +49,21 @@
     },
     {
       "id": "FV-006",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a number of periods that is not a whole number, which squaring cannot raise to",
+      "source": "observed",
+      "description": "A number of periods that is not a whole number: 1+rate is raised to it as e^(nper ln(1+rate)), which gives Excel's double; a correctly rounded power is two units in the last place from PV-005's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.06/12,10.5,-200)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 2150.588229777517}
     },
     {
       "id": "FV-007",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a negative number of periods",
+      "source": "observed",
+      "description": "A negative number of periods: 1 over 1+rate raised to 10 by squaring, which gives Excel's double; squaring 1/(1+rate) is 19 units in the last place away",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.06/12,-10,-200)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": -1946.0823721571962}
     },
     {
       "id": "FV-008",
@@ -76,12 +76,12 @@
     },
     {
       "id": "FV-009",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: at the start of each period, where multiplying the payment by 1+rate first and multiplying it last differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "source": "observed",
+      "description": "At the start of each period: the payment multiplies (1+rate)*((g-1)/rate), Excel's grouping; multiplying the payment by 1+rate first is one unit in the last place below Excel's (spikes/exsheet-financial-evaluation/)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.05/12,12,-150,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 1849.502608424663}
+      "expect": {"value2": 1849.5026084246633}
     },
     {
       "id": "FV-010",
@@ -91,6 +91,114 @@
       "cells": {"ZZ1000": "=FV(0.05/12,360,-150)"},
       "check": "ZZ1000",
       "expect": {"value2": 124838.79530422161}
+    },
+    {
+      "id": "FV-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a type of 0.5 is payment at the start of each period, as PMT-009 found it is for PMT",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.06/12,10,-200,-500,0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2581.4033740601185}
+    },
+    {
+      "id": "FV-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a quarter period past a whole number, raised as FV-006's half period is",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.06/12,10.25,-200)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2098.0640302830534}
+    },
+    {
+      "id": "FV-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number of periods that is not a whole number, where e^(nper ln(1+rate)), FV-006's evaluation at 10.5, and 1 over the power to 10.5, as FV-007's -10 is 1 over the power to 10, give the same double",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.06/12,-10.5,-200)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -2040.8618907559849}
+    },
+    {
+      "id": "FV-014",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at the start, with a present value and a payment, refused: the unfused sum gives 2900.664506306397 and a fused multiply-add of pv*g, or of the payment, into it 2900.6645063063966, and each gives every observed FV double (spikes/exsheet-financial-evaluation/, Search.cs, F4, F9 and F10)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.05/12,12,-150,-1000,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "FV-015",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: as FV-014, over 240 periods, refused: the unfused sum gives 123950.02507801351 and a fused multiply-add 123950.02507801352",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.03/12,240,-100,-50000,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "FV-016",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: half a period, refused: the square root of 1+rate, the ^ operator's evaluation at an exponent of 0.5 (ARITH-133), gives 45.627983043166275, and e^(0.5 ln(1+rate)), FV-006's evaluation at 10.5, gives 45.62798304316633, and no observed double tells which FV takes",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.42,0.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "FV-017",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a third of a period at a rate below -1, refused, where the ^ operator gives a negative base an odd root (as =(-8)^(1/3) is -1.9999999999999998, which gives 0.3333333333333333 here) and e^(nper ln(1+rate)) has no answer (#NUM!)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(-9,1/3,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "FV-018",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: no periods at a rate of -1, where 1+rate is 0: squaring gives 0 to the power 0 as 1, as FV answered before the area pass of 2026-10-12, where the ^ operator gives =0^0 as #NUM! (ARITH-041)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(-1,0,-100,-500)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 500}
+    },
+    {
+      "id": "FV-019",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at the end of each period, with a present value and a payment, the unfused sum, as FV answered before the area pass of 2026-10-12; a fused multiply-add of pv*g into it gives 483.06382918288557, and of the payment 483.0638291828854, and no observed double has both at the end (Search.cs, F4, F9 and F10)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.06/12,10,-150,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 483.06382918288546}
+    },
+    {
+      "id": "FV-020",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: half a period before, at a rate of -1, refused: 1+rate is 0, and e^(nper ln(1+rate)) leaves FV no finite number (#NUM!), where the ^ operator gives 0 to a negative power as #DIV/0! (ARITH-042)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(-1,-0.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "FV-021",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: ten periods before, at a rate of -1, refused: 1 over 0 to the power 10 by squaring leaves FV no finite number (#NUM!), where the ^ operator gives 0 to a negative power as #DIV/0! (ARITH-042)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(-1,-10,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "FV-022",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number of periods that is not a whole number, refused: e^(nper ln(1+rate)) gives -247.828794185625, and 1 over the power to 2.5, as FV-007's -10 is 1 over the power to 10, gives -247.8287941856272",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.06/12,-2.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

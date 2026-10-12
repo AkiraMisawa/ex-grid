@@ -127,7 +127,6 @@ internal static partial class FunctionLibrary
         new("PMT", 3, 5, "rate, nper, pv, [fv], [type]", "Returns the periodic payment for an annuity.", Pmt),
         new("PV", 3, 5, "rate, nper, pmt, [fv], [type]", "Returns the present value of an investment.", Pv),
         new("FV", 3, 5, "rate, nper, pmt, [pv], [type]", "Returns the future value of an investment.", Fv),
-        new("NPV", 2, Open, "rate, value1, [value2], ...", "Returns the net present value of an investment based on a series of periodic cash flows and a discount rate.", Npv),
         new("RANK.EQ", 2, 3, "number, ref, [order]", "Returns the rank of a number in a list of numbers.", RankEq) { ReferenceOnly = (1, 1) },
         new("STDEV.S", 1, Open, "number1, [number2], ...", "Estimates standard deviation based on a sample.", StdevS),
         new("STDEV.P", 1, Open, "number1, [number2], ...", "Calculates standard deviation based on the entire population.", StdevP),

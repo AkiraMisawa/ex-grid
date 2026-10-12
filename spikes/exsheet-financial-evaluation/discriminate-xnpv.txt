@@ -1,0 +1,79 @@
+# Search.cs --discriminate-xnpv, 2026-10-12: the inputs that tell XNPV's 72 surviving evaluations apart, and which gives what.
+# XNPV-012 to XNPV-017 are these inputs, in this order. Each line under an input is a double, how many of the
+# survivors give it, and one of them.
+
+XNPV: 72 survivors; the inputs that tell them apart
+  =XNPV(-0.5,A1:A7,B1:B7) with A1=3000 B1=39448 A2=3250 B2=40565 A3=1000 B3=39813 A4=-10000 B4=40443 A5=-10000 B5=40184 A6=1000 B6=39951 A7=2500 B7=41390  (8 doubles; 8 groups so far)
+      27991.36431220571: 24, e.g. years (d-d0)*(1/365) | discount whole x by Math.Pow, else Math.Exp(x*Math.Log(b)) | v/d @64 | forward, fused: total = fma(v, d, total) @53
+      27991.364312205726: 16, e.g. years (d-d0)/365 | discount Math.Exp(x*Math.Log(b)) | v/d @53 | forward @53
+      27991.364312205722: 14, e.g. years (d-d0)/365 | discount e^(x ln b), ln and exp correctly rounded | v/d @53 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      27991.36431220577: 6, e.g. years (d-d0)/365 | discount b^x correctly rounded | v*(1/d) @64 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      27991.364312205755: 6, e.g. years (d-d0)*(1/365) | discount x87 2^(x log2 b): FYL2X, F2XM1, FSCALE | v/d @64 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      27991.364312205707: 4, e.g. years (d-d0)*(1/365) | discount whole x by Math.Pow, else Math.Exp(x*Math.Log(b)) | v/d @53 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      27991.364312205704: 1, e.g. years (d-d0)*(1/365) | discount 1/Math.Exp(-x*Math.Log(b)) | v/d @53 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      27991.36431220572: 1, e.g. years (d-d0)/365 | discount 1/Math.Exp(-x*Math.Log(b)) | v/d @53 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+  =XNPV(0.1,A1:A6,B1:B6) with A1=1000 B1=39448 A2=4200 B2=41204 A3=-10000 B3=41007 A4=3000 B4=40245 A5=-1000 B5=40272 A6=3250 B6=41174  (6 doubles; 16 groups so far)
+      700.2269770028581: 24, e.g. years (d-d0)/365 | discount Math.Exp(x*Math.Log(b)) | v/d @53 | forward @53
+      700.2269770028579: 16, e.g. years (d-d0)*(1/365) | discount x87 2^(x log2 b): FYL2X, F2XM1, FSCALE | v/d @64 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      700.2269770028588: 12, e.g. years (d-d0)/365 | discount b^x correctly rounded | v*(1/d) @64 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      700.2269770028583: 10, e.g. years (d-d0)/365 | discount e^(x ln b), ln and exp correctly rounded | v*(1/d) @53 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      700.2269770028577: 8, e.g. years (d-d0)/365 | discount e^(x ln b), ln and exp correctly rounded | v/d @53 | forward @53
+      700.2269770028574: 2, e.g. years (d-d0)/365 | discount e^(x ln b), ln and exp correctly rounded | v/d @53 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+  =XNPV(0.06,A1:A5,B1:B5) with A1=300 B1=39448 A2=2500 B2=40543 A3=-1000 B3=39538 A4=4200 B4=39472 A5=300 B5=39477  (3 doubles; 23 groups so far)
+      5895.866486179552: 56, e.g. years (d-d0)/365 | discount Math.Exp(x*Math.Log(b)) | v/d @53 | forward @53
+      5895.866486179551: 11, e.g. years (d-d0)/365 | discount whole x by squaring, else Math.Exp(x*Math.Log(b)) | v/d @53 | forward @53
+      5895.866486179553: 5, e.g. years (d-d0)*(1/365) | discount whole x by Math.Pow, else Math.Exp(x*Math.Log(b)) | v*(1/d) @53 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+  =XNPV(0.07,A1:A7,B1:B7) with A1=1000 B1=39448 A2=300 B2=40178 A3=6800 B3=40353 A4=1000 B4=41412 A5=3000 B5=40511 A6=-10000 B6=40543 A7=3000 B7=40702  (5 doubles; 31 groups so far)
+      4384.942714531475: 34, e.g. years (d-d0)/365 | discount b^x correctly rounded | v*(1/d) @64 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      4384.942714531477: 16, e.g. years (d-d0)/365 | discount Math.Exp(x*Math.Log(b)) | v/d @53 | forward @53
+      4384.942714531474: 10, e.g. years (d-d0)*(1/365) | discount whole x by Math.Pow, else Math.Exp(x*Math.Log(b)) | v*(1/d) @53 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      4384.942714531473: 8, e.g. years (d-d0)*(1/365) | discount x87 2^(x log2 b): FYL2X, F2XM1, FSCALE | v/d @64 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      4384.942714531476: 4, e.g. years (d-d0)/365 | discount e^(x ln b), ln and exp correctly rounded | v/d @53 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+  =XNPV(0.09,A1:A2,B1:B2) with A1=3250 B1=39448 A2=-10000 B2=40502  (2 doubles; 35 groups so far)
+      -4546.946936260144: 64, e.g. years (d-d0)/365 | discount Math.Exp(x*Math.Log(b)) | v/d @53 | forward @53
+      -4546.946936260145: 8, e.g. years (d-d0)/365 | discount b^x correctly rounded | v*(1/d) @64 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+  =XNPV(-0.5,A1:A7,B1:B7) with A1=4250 B1=39448 A2=500 B2=41222 A3=-10000 B3=40017 A4=1000 B4=40178 A5=4200 B5=41509 A6=3250 B6=40128 A7=-10000 B7=41485  (5 doubles; 38 groups so far)
+      -263095.6950543715: 25, e.g. years (d-d0)/365 | discount Math.Exp(x*Math.Log(b)) | v/d @53 | forward @53
+      -263095.6950543714: 25, e.g. years (d-d0)*(1/365) | discount whole x by Math.Pow, else Math.Exp(x*Math.Log(b)) | v/d @64 | forward, fused: total = fma(v, d, total) @53
+      -263095.6950543713: 11, e.g. years (d-d0)*(1/365) | discount x87 2^(x log2 b): FYL2X, F2XM1, FSCALE | v/d @64 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      -263095.69505437143: 6, e.g. years (d-d0)/365 | discount b^x correctly rounded | v*(1/d) @64 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+      -263095.69505437155: 5, e.g. years (d-d0)/365 | discount e^(x ln b), ln and exp correctly rounded | v/d @53 | pairwise, halving: (first half) + (second half), the first half the shorter @53
+  38 groups; each holds evaluations that give the same double at every input of the grid:
+    4: y0 0 v/d t@53 o0@53; y0 0 v/d t@64 o10@53; y0 0 v/d t@53 o9@53; ...
+    4: y0 2 v/d t@64 o10@53; y0 2 v/d t@53 o10@53; y0 2 v/d t@53 o9@53; ...
+    4: y0 1 v/d t@53 o0@53; y0 1 v/d t@53 o9@53; y0 1 v/d t@53 o10@53; ...
+    4: y0 5 v/d t@53 o0@53; y0 5 v/d t@53 o9@53; y0 5 v/d t@53 o10@53; ...
+    4: y1 2 v/d t@64 o10@53; y1 2 v/d t@53 o10@53; y1 2 v/d t@53 o9@53; ...
+    4: y1 0 v/d t@64 o10@53; y1 0 v/d t@53 o10@53; y1 0 v/d t@53 o9@53; ...
+    4: y1 1 v/d t@53 o9@53; y1 1 v/d t@53 o10@53; y1 1 v/d t@64 o10@53; ...
+    4: y1 7 v/d t@53 o0@53; y1 7 v/d t@53 o9@53; y1 7 v/d t@53 o10@53; ...
+    4: y0 7 v/d t@53 o9@53; y0 7 v/d t@53 o10@53; y0 7 v/d t@53 o0@53; ...
+    4: y1 5 v/d t@53 o0@53; y1 5 v/d t@53 o10@53; y1 5 v/d t@64 o10@53; ...
+    2: y0 4 v*(1/d) t@64 o11@53; y0 3 v*(1/d) t@64 o11@53
+    2: y0 3 v/d t@64 o11@53; y0 4 v/d t@64 o11@53
+    2: y1 4 v/d t@64 o11@53; y1 3 v/d t@64 o11@53
+    2: y1 4 v*(1/d) t@64 o11@53; y1 3 v*(1/d) t@64 o11@53
+    1: y0 6 v*(1/d) t@64 o11@53
+    1: y0 6 v/d t@64 o11@53
+    1: y1 6 v/d t@64 o11@53
+    1: y1 6 v*(1/d) t@64 o11@53
+    1: y0 5 v/d t@53 o11@53
+    1: y1 2 v*(1/d) t@53 o11@53
+    1: y1 0 v*(1/d) t@53 o11@53
+    1: y0 0 v*(1/d) t@53 o11@53
+    1: y1 1 v*(1/d) t@53 o11@53
+    1: y0 2 v*(1/d) t@53 o11@53
+    1: y0 1 v*(1/d) t@53 o11@53
+    1: y0 5 v*(1/d) t@53 o11@53
+    1: y0 2 v/d t@53 o11@53
+    1: y0 0 v/d t@53 o11@53
+    1: y0 1 v/d t@53 o11@53
+    1: y1 5 v*(1/d) t@53 o11@53
+    1: y1 7 v*(1/d) t@53 o11@53
+    1: y0 7 v*(1/d) t@53 o11@53
+    1: y1 7 v/d t@53 o11@53
+    1: y1 2 v/d t@53 o11@53
+    1: y1 0 v/d t@53 o11@53
+    1: y1 1 v/d t@53 o11@53
+    1: y1 5 v/d t@53 o11@53
+    1: y0 7 v/d t@53 o11@53
