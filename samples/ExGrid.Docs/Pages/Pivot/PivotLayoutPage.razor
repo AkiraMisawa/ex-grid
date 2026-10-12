@@ -70,7 +70,9 @@
         <p>
             Select cells of the report and the line under it shows Excel's Average, Count and Sum of what you
             selected. As in Excel, a subtotal or a grand total you select is summed with the rest — select a whole
-            column and the total counts its parts twice. <code>ShowSelectionSummary="false"</code> turns the line off.
+            column and the total counts its parts twice. An error value among them leaves Count and Numerical
+            Count, as in Excel, and the figures wear the format of the Focus cell's Value Field.
+            <code>ShowSelectionSummary="false"</code> turns the line off.
         </p>
         <DocsExample Builtin="typeof(ReportForms)" Mud="typeof(ReportFormsMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
     </DocsSection>

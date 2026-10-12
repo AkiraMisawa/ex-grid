@@ -1,0 +1,356 @@
+{
+    "ran":  "2026-10-11T22:20:38",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20146",
+    "windowsRegionalFormat":  "en-US",
+    "formulasEnteredThrough":  "Range.Formula2",
+    "constantsEnteredThrough":  "Range.FormulaLocal",
+    "summary":  {
+                    "agree":  0,
+                    "disagree":  11,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "AGGREGATE-025",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: option 4 with a whole-Formula SUBTOTAL in the range is #VALUE!; Microsoft documents option 4 as ignoring nothing, so Excel is expected to count the nested SUBTOTAL (6), and the engine follows Excel\u0027s answer once a run has read it (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=AGGREGATE(9,4,D1:D3)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 6 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "AGGREGATE-042",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: option 5 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=AGGREGATE(9,5,D1:D3)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 6 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "AGGREGATE-043",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: option 6 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=AGGREGATE(9,6,D1:D3)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 6 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "AGGREGATE-044",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: option 7 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=AGGREGATE(9,7,D1:D3)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 6 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "AGGREGATE-045",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: option 4 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=AGGREGATE(9,4,D1:D3)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 6 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "AGGREGATE-046",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: option 5 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=AGGREGATE(9,5,D1:D3)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 6 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "AGGREGATE-047",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: option 6 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=AGGREGATE(9,6,D1:D3)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 6 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "AGGREGATE-048",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: option 7 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=AGGREGATE(9,7,D1:D3)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 6 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "AGGREGATE-049",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: the array form (LARGE) under option 4 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  3,
+                                    "kind":  "number",
+                                    "number":  "3",
+                                    "text":  "3",
+                                    "formula":  "=AGGREGATE(14,4,D1:D3,1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 3 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "AGGREGATE-050",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: the array form (LARGE) under option 6 with a whole-Formula SUBTOTAL in the range is #VALUE! (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  3,
+                                    "kind":  "number",
+                                    "number":  "3",
+                                    "text":  "3",
+                                    "formula":  "=AGGREGATE(14,6,D1:D3,1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 3 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "AGGREGATE-051",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: the array form (LARGE) under option 4 with a whole-Formula AGGREGATE in the range is #VALUE! (SH-68, 2026-10-11)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  3,
+                                    "kind":  "number",
+                                    "number":  "3",
+                                    "text":  "3",
+                                    "formula":  "=AGGREGATE(14,4,D1:D3,1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel 3 (number)"
+                                      ]
+                  }
+              ]
+}

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "MOD-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(3,2)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "MOD-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the sign is the divisor's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(-3,2)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "MOD-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the sign is the divisor's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(3,-2)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "MOD-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the sign is the divisor's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(-3,-2)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "MOD-005",
-      "source": "documented",
+      "source": "observed",
       "description": "A divisor of 0 is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(3,0)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "MOD-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a fractional remainder",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(5.5,2)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "MOD-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a fractional remainder of a negative number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(-7.5,2)"},
@@ -67,21 +67,85 @@
     },
     {
       "id": "MOD-008",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a quotient of 2^27 or more, where older versions of Excel gave #NUM!",
+      "source": "observed",
+      "description": "A quotient of 2^27, where Excel 2007 and earlier gave #NUM! (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(2^27,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": 0}
     },
     {
       "id": "MOD-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 0.3 over 0.1 leaves almost 0.1 in doubles",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(0.3,0.1)"},
       "check": "ZZ1000",
       "expect": {"value2": 0.1, "digits": 12}
+    },
+    {
+      "id": "MOD-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a quotient of 2^40 is answered",
+      "cells": {"ZZ1000": "=MOD(2^40,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "MOD-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a quotient just below 1125900000000, the limit a Microsoft 365 user reported, is answered",
+      "cells": {"ZZ1000": "=MOD(1125899999999,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "MOD-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a quotient of 1125900000000, the limit a Microsoft 365 user reported, is #NUM!",
+      "cells": {"ZZ1000": "=MOD(1125900000000,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "MOD-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the limit is on the quotient, not the number: 3377699999997/3 is just below it",
+      "cells": {"ZZ1000": "=MOD(3377699999997,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "MOD-014",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 3377700000000/3 reaches the limit, #NUM!",
+      "cells": {"ZZ1000": "=MOD(3377700000000,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "MOD-015",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a quotient of 2^53 is #NUM!",
+      "cells": {"ZZ1000": "=MOD(2^53,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "MOD-016",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a quotient of 1E+16/7 is #NUM!",
+      "cells": {"ZZ1000": "=MOD(1E+16,7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "MOD-017",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: number-divisor*INT(number/divisor) in doubles gives 0.5000152587890625, where an exact remainder (C's fmod) gives 0.5000078322611261",
+      "cells": {"ZZ1000": "=MOD(123456789012,0.7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5000152587890625}
     }
   ]
 }

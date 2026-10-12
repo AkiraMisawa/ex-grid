@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "REPT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=REPT(\"*-\",3)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "REPT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=REPT(\"-\",10)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "REPT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "0 times is empty text",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=REPT(\"a\",0)&\"x\""},
@@ -31,7 +31,7 @@
     },
     {
       "id": "REPT-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Longer than a cell holds is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=REPT(\"ab\",20000)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "REPT-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative count is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=REPT(\"a\",-1)"},

@@ -220,7 +220,7 @@
     },
     {
       "id": "DATE-027",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a two-digit year 49 typed is 2049, the last of Windows' default window",
       "cells": {"A1": "1/1/49"},
       "check": "A1",
@@ -237,7 +237,7 @@
     },
     {
       "id": "DATE-029",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a two-digit year after a month name reads as a numeric one: 31-Dec-49 is 2049",
       "cells": {"A1": "31-Dec-49"},
       "check": "A1",

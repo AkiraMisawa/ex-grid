@@ -129,15 +129,17 @@ internal static class ExcelCorpus
 
         if (expect.TryGetProperty("widthAtMost", out var widthAtMost))
         {
-            // The check column's width after every typed entry is no wider than this (characters).
+            // The check column's width when the case is read, after its last typed entry, is no wider
+            // than this (characters).
             var actual = sheet.GetColumnWidth(at.Column)?.Width ?? Sheet.DefaultColumnWidth;
             if (actual > widthAtMost.GetDouble()) differences.Add($"widthAtMost: expected at most {widthAtMost.GetDouble().ToString(CultureInfo.InvariantCulture)}, got {actual.ToString(CultureInfo.InvariantCulture)}");
         }
 
         if (expect.TryGetProperty("widthAtLeast", out var widthAtLeast))
         {
-            // The check column's width after every typed entry is at least this (characters): a
-            // column a typed entry widened is widened again by a longer one (ADR-0046, 2026-09-28; CW-028).
+            // The check column's width when the case is read, after its last typed entry, is at least
+            // this (characters): a column a typed entry widened is widened again by a longer one
+            // (ADR-0046, 2026-09-28; CW-028).
             var actual = sheet.GetColumnWidth(at.Column)?.Width ?? Sheet.DefaultColumnWidth;
             if (actual < widthAtLeast.GetDouble()) differences.Add($"widthAtLeast: expected at least {widthAtLeast.GetDouble().ToString(CultureInfo.InvariantCulture)}, got {actual.ToString(CultureInfo.InvariantCulture)}");
         }
@@ -188,7 +190,8 @@ internal static class ExcelCorpus
     /// Whether the case asks how the typed entries widened the check column (<c>widens</c>,
     /// <c>widthAtMost</c>, <c>widthAtLeast</c>). The oracle types those cases with real keys, and Excel widens the
     /// column as it goes; the engine leaves widening to the component, so the harness does it
-    /// the component's way after each of the case's own cells (<see cref="Widen"/>).
+    /// the component's way after each of the case's own cells, and of its <c>enter</c> actions, in
+    /// the typed cell's own column (<see cref="Widen"/>), which need not be the check column (CW-023, CW-025).
     /// </summary>
     private static bool TypedWidening(JsonElement c) =>
         c.GetProperty("expect") is var expect && (expect.TryGetProperty("widens", out _) || expect.TryGetProperty("widthAtMost", out _) || expect.TryGetProperty("widthAtLeast", out _));
@@ -270,10 +273,15 @@ internal static class ExcelCorpus
         }
     }
 
-    /// <summary>Does the case's actions in order; the first refused one stops them, and its reason is returned.</summary>
+    /// <summary>
+    /// Does the case's actions in order; the first refused one stops them, and its reason is returned.
+    /// In a typed case (<see cref="TypedWidening"/>) an <c>enter</c> action is typed too, so the harness
+    /// widens each of its cells' columns after it as the component does (<see cref="Widen"/>; CW-030..032).
+    /// </summary>
     private static SheetRefusalReason? Act(Sheet sheet, JsonElement c)
     {
         if (!c.TryGetProperty("action", out var action)) return null;
+        var widen = TypedWidening(c);
         var steps = new Stack<SheetStep>();
         foreach (var a in action.ValueKind == JsonValueKind.Array ? [.. action.EnumerateArray()] : new[] { action })
         {
@@ -293,6 +301,10 @@ internal static class ExcelCorpus
                 return refusal.Reason;
             }
             steps.Push(sheet.Do(edit));
+            if (widen && what == "enter")
+            {
+                foreach (var cell in a.GetProperty("cells").EnumerateObject()) Widen(sheet, CellAddress.Parse(cell.Name));
+            }
         }
         return null;
     }

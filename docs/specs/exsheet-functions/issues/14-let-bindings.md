@@ -82,3 +82,22 @@ name-shaped one at its own character with the words a declared one's gets, and `
 component in `SUM`'s words. The Status is `done`: every box is ticked, and the questions left for the
 sign-off's Windows run are corpus cases, LET-101 to LET-112 (`uncertain`), asked by keys where the corpus
 says so.
+
+2026-10-11, the seventeenth Windows run's answers (Excel 16.0.20430.20146, typed with real keys under
+en-US; `results-2026-10-11-run17-update-keys-en-US.json`, and LET-102, 104 and 105 rerun alone for their
+dialogs): Excel's keyboard **entered** `=LET(SUM,2,SUM+1)` (3, LET-101), `=LET(IRR,1,IRR)` (1, LET-111),
+`=LET(N,1,N)` (1, LET-112), `=LET(R1C1,2,R1C1+1)` (3, LET-103), `=LET(RC,2,RC+1)` (3, LET-106) and
+`=LET(x,,x)` (0, LET-107), and **refused** `=LET(TRUE,2,1)`, `=LET(R2,2,R2+1)` and `=LET(C3,2,C3+1)` with
+"There's a problem with this formula" (LET-102, 104, 105, which agree). Under ADR-0181's own rule (a name
+that could mean something else is refused until a Windows run shows that Excel accepts it), the engine
+now follows: the name of a function, declared or not, is a `LET` name, and a name followed by `(` is
+still the function's call (`=LET(SUM,2,SUM(SUM,1))` is 3); an R1C1 shape that does not read as an A1
+Reference is a name; a value left empty is bound, and the name reads as that empty argument would read
+in its place, so `=LET(x,,x)` shows 0, as `=IF(TRUE,)` does. `R2` and `C3` stay refused because they read
+as A1 References, and `TRUE` and `FALSE` because they read as booleans. A missing calculation, a missing
+name and an even number of arguments stay refused. `ExcelFunctionNames` refused nothing any more and is
+gone, with `FunctionCatalogueTests`' check that it equalled the catalogue's names; `LetTests` instead
+binds every catalogued name that is a name in shape. The six cases are `observed` with Excel's answer.
+ADR-0181's note, the catalogue's paragraph on the list of Excel's functions not in the queue, the
+engine's README and the Docs Site's Formulas page are proposed to the orchestrator
+(`docs/agents/proposals/run17-let-names.md`).

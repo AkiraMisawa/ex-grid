@@ -1,0 +1,152 @@
+Python 3.13.16 on Linux-6.18.44-fc-v114-x86_64-with-glibc2.39
+19 numbers Excel returned for SIN, COS, TAN, COT, CSC and SEC
+
+  COS-001  =COS(1.047)              x = 1.047                    Excel 0.5001710745970701
+  COS-002  =COS(60*PI()/180)        x = 1.0471975511965976       Excel 0.5000000000000001
+  COS-003  =COS(RADIANS(60))        x = 1.0471975511965976       Excel 0.5000000000000001
+  COS-004  =COS(PI()/2)             x = 1.5707963267948966       Excel 6.1257422745431e-17
+  COT-001  =COT(30)                 x = 30.0                     Excel -0.15611995216165922
+  COT-002  =COT(45)                 x = 45.0                     Excel 0.6173696237835551
+  CSC-001  =CSC(15)                 x = 15.0                     Excel 1.5377805615408537
+  SEC-001  =SEC(45)                 x = 45.0                     Excel 1.9035944074044246
+  SEC-002  =SEC(30)                 x = 30.0                     Excel 6.482921234962678
+  SEC-004  =SEC(0)                  x = 0.0                      Excel 1.0
+  SIN-001  =SIN(PI()/2)             x = 1.5707963267948966       Excel 1.0
+  SIN-002  =SIN(30*PI()/180)        x = 0.5235987755982988       Excel 0.49999999999999994
+  SIN-003  =SIN(RADIANS(30))        x = 0.5235987755982988       Excel 0.49999999999999994
+  SIN-004  =SIN(PI())               x = 3.141592653589793        Excel 1.22514845490862e-16
+  SIN-006  =SIN(2^27-1)             x = 134217727.0              Excel -0.9559933287726706
+  TAN-001  =TAN(0.785)              x = 0.785                    Excel 0.9992039901050427
+  TAN-002  =TAN(45*PI()/180)        x = 0.7853981633974483       Excel 0.9999999999999999
+  TAN-003  =TAN(RADIANS(45))        x = 0.7853981633974483       Excel 0.9999999999999999
+  TAN-004  =TAN(PI()/2)             x = 1.5707963267948966       Excel 1.6324552277619072e+16
+
+## Whole computations: how many of Excel's numbers each reproduces bit for bit
+
+15/19  libm of x (the engine before)
+        COS-004  =COS(PI()/2)             Excel 6.1257422745431e-17      candidate 6.123233995736766e-17
+        SIN-004  =SIN(PI())               Excel 1.22514845490862e-16     candidate 1.2246467991473532e-16
+        SIN-006  =SIN(2^27-1)             Excel -0.9559933287726706      candidate -0.9559933287732995
+        TAN-004  =TAN(PI()/2)             Excel 1.6324552277619072e+16   candidate 1.633123935319537e+16
+14/19  true pi, correctly rounded
+        COS-004  =COS(PI()/2)             Excel 6.1257422745431e-17      candidate 6.123233995736766e-17
+        CSC-001  =CSC(15)                 Excel 1.5377805615408537       candidate 1.5377805615408535
+        SIN-004  =SIN(PI())               Excel 1.22514845490862e-16     candidate 1.2246467991473532e-16
+        SIN-006  =SIN(2^27-1)             Excel -0.9559933287726706      candidate -0.9559933287732995
+        TAN-004  =TAN(PI()/2)             Excel 1.6324552277619072e+16   candidate 1.633123935319537e+16
+18/19  x87 pi, exact reduction, correctly rounded
+        CSC-001  =CSC(15)                 Excel 1.5377805615408537       candidate 1.5377805615408535
+19/19  x87 pi, exact reduction, SIN/COS doubles then double arithmetic
+19/19  x87 pi, exact reduction, TAN from tan(r)
+17/19  x87 pi, exact reduction, r a double, libm
+        COS-001  =COS(1.047)              Excel 0.5001710745970701       candidate 0.5001710745970702
+        CSC-001  =CSC(15)                 Excel 1.5377805615408537       candidate 1.5377805615408533
+17/19  x87 pi, exact reduction, r a double-double, libm
+        COS-001  =COS(1.047)              Excel 0.5001710745970701       candidate 0.5001710745970702
+        CSC-001  =CSC(15)                 Excel 1.5377805615408537       candidate 1.5377805615408533
+17/19  x87 pi, extended-precision reduction, correctly rounded
+        CSC-001  =CSC(15)                 Excel 1.5377805615408537       candidate 1.5377805615408535
+        SIN-006  =SIN(2^27-1)             Excel -0.9559933287726706      candidate -0.9559933287729744
+18/19  x87 pi, extended-precision reduction, SIN/COS doubles
+        SIN-006  =SIN(2^27-1)             Excel -0.9559933287726706      candidate -0.9559933287729744
+14/19  FSIN's 66-bit pi, exact reduction, correctly rounded
+        COS-004  =COS(PI()/2)             Excel 6.1257422745431e-17      candidate 6.123031769111886e-17
+        CSC-001  =CSC(15)                 Excel 1.5377805615408537       candidate 1.5377805615408535
+        SIN-004  =SIN(PI())               Excel 1.22514845490862e-16     candidate 1.2246063538223773e-16
+        SIN-006  =SIN(2^27-1)             Excel -0.9559933287726706      candidate -0.9559933287733501
+        TAN-004  =TAN(PI()/2)             Excel 1.6324552277619072e+16   candidate 1.6331778728383844e+16
+19/19  x87 pi, exact reduction, SIN/COS/TAN correctly rounded, COT/CSC/SEC 1 over them (the engine now)
+19/19  the engine's double-double computation, ported
+ 8/19  double PI(), exact reduction, correctly rounded
+        COS-002  =COS(60*PI()/180)        Excel 0.5000000000000001       candidate 0.5
+        COS-003  =COS(RADIANS(60))        Excel 0.5000000000000001       candidate 0.5
+        COS-004  =COS(PI()/2)             Excel 6.1257422745431e-17      candidate 0.0
+        COT-001  =COT(30)                 Excel -0.15611995216165922     candidate -0.1561199521616604
+        COT-002  =COT(45)                 Excel 0.6173696237835551       candidate 0.6173696237835526
+        CSC-001  =CSC(15)                 Excel 1.5377805615408537       candidate 1.5377805615408546
+        SEC-001  =SEC(45)                 Excel 1.9035944074044246       candidate 1.9035944074044302
+        SEC-002  =SEC(30)                 Excel 6.482921234962678        candidate 6.482921234962629
+        SIN-004  =SIN(PI())               Excel 1.22514845490862e-16     candidate 0.0
+        SIN-006  =SIN(2^27-1)             Excel -0.9559933287726706      candidate -0.9559933303083186
+        TAN-004  =TAN(PI()/2)             Excel 1.6324552277619072e+16   candidate inf
+10/19  double PI(), double arithmetic, r a double, libm
+        COS-002  =COS(60*PI()/180)        Excel 0.5000000000000001       candidate 0.5
+        COS-003  =COS(RADIANS(60))        Excel 0.5000000000000001       candidate 0.5
+        COS-004  =COS(PI()/2)             Excel 6.1257422745431e-17      candidate -0.0
+        COT-001  =COT(30)                 Excel -0.15611995216165922     candidate -0.15611995216166225
+        CSC-001  =CSC(15)                 Excel 1.5377805615408537       candidate 1.5377805615408546
+        SEC-002  =SEC(30)                 Excel 6.482921234962678        candidate 6.482921234962555
+        SIN-004  =SIN(PI())               Excel 1.22514845490862e-16     candidate -0.0
+        SIN-006  =SIN(2^27-1)             Excel -0.9559933287726706      candidate -0.9559933306152045
+        TAN-004  =TAN(PI()/2)             Excel 1.6324552277619072e+16   candidate -inf
+
+## TAN, COT, CSC and SEC from the x87-pi reduction: each way of building them
+
+  TAN 4/4  tan(x) correctly rounded
+  TAN 4/4  SIN/COS, each a double, divided
+  TAN 4/4  tan(r) a double, -1/that in odd quadrants
+  COT 2/2  1/TAN, TAN as tan(x) correctly rounded
+  COT 1/2  1/TAN, TAN as SIN/COS, each a double, divided   misses COT-001
+  COT 2/2  1/TAN, TAN as tan(r) a double, -1/that in odd quadrants
+  COT 2/2  cot(x) correctly rounded
+  COT 2/2  COS/SIN, each a double, divided
+  CSC 1/1  1/SIN in double
+  CSC 0/1  csc(x) correctly rounded   misses CSC-001
+  SEC 3/3  1/COS in double
+  SEC 3/3  sec(x) correctly rounded
+
+## The engine's double-double computation (ported) against the exact one it is meant to round
+
+  the observations: 19/19
+  20000 seeded arguments, every function: SIN 20000/20000, COS 20000/20000, TAN 20000/20000, COT 20000/20000, CSC 20000/20000, SEC 20000/20000
+
+## Arguments that would tell apart the ways that reproduce every observation
+
+  =TAN(1.0)
+      1.5574077246549023       tan(x) correctly rounded
+      1.557407724654902        SIN/COS, each a double, divided
+      1.557407724654902        tan(r) a double, -1/that in odd quadrants
+  =TAN(8.0)
+      -6.799711455220379       tan(x) correctly rounded
+      -6.799711455220378       SIN/COS, each a double, divided
+      -6.799711455220378       tan(r) a double, -1/that in odd quadrants
+  =TAN(9.0)
+      -0.45231565944180985     tan(x) correctly rounded
+      -0.4523156594418099      SIN/COS, each a double, divided
+      -0.45231565944180985     tan(r) a double, -1/that in odd quadrants
+  =TAN(12.0)
+      -0.6358599286615808      tan(x) correctly rounded
+      -0.6358599286615807      SIN/COS, each a double, divided
+      -0.6358599286615808      tan(r) a double, -1/that in odd quadrants
+  =COT(1.0)
+      0.6420926159343306       1/TAN, TAN as tan(x) correctly rounded
+      0.6420926159343308       1/TAN, TAN as tan(r) a double, -1/that in odd quadrants
+      0.6420926159343308       cot(x) correctly rounded
+      0.6420926159343308       COS/SIN, each a double, divided
+  =COT(4.0)
+      0.8636911544506167       1/TAN, TAN as tan(x) correctly rounded
+      0.8636911544506167       1/TAN, TAN as tan(r) a double, -1/that in odd quadrants
+      0.8636911544506166       cot(x) correctly rounded
+      0.8636911544506167       COS/SIN, each a double, divided
+  =COT(9.0)
+      -2.210845410999195       1/TAN, TAN as tan(x) correctly rounded
+      -2.210845410999195       1/TAN, TAN as tan(r) a double, -1/that in odd quadrants
+      -2.210845410999195       cot(x) correctly rounded
+      -2.2108454109991946      COS/SIN, each a double, divided
+  =COT(10.0)
+      1.5423510453569202       1/TAN, TAN as tan(x) correctly rounded
+      1.5423510453569202       1/TAN, TAN as tan(r) a double, -1/that in odd quadrants
+      1.54235104535692         cot(x) correctly rounded
+      1.54235104535692         COS/SIN, each a double, divided
+  =SEC(1.0)
+      1.8508157176809255       1/COS in double
+      1.8508157176809257       sec(x) correctly rounded
+  =SEC(3.0)
+      -1.0101086659079939      1/COS in double
+      -1.0101086659079936      sec(x) correctly rounded
+  =SEC(4.0)
+      -1.5298856564663974      1/COS in double
+      -1.5298856564663976      sec(x) correctly rounded
+  =SEC(5.0)
+      3.5253200858160887       1/COS in double
+      3.5253200858160882       sec(x) correctly rounded

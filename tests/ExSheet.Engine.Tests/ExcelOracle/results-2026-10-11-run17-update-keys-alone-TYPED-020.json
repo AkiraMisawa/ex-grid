@@ -1,0 +1,49 @@
+{
+    "ran":  "2026-10-11T22:47:48",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20146",
+    "windowsRegionalFormat":  "en-US",
+    "formulasEnteredThrough":  "typed (keyboard input), as every other cell of a case",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  1,
+                    "disagree":  0,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "TYPED-020",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Ticket 19 row 26: a leading - before a Reference makes a Formula (here reading its own cell)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=-A1"
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=-A1"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=-A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "22:47:47.645 TYPED-020: typing -A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  }
+              ]
+}

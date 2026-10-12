@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "DAY-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: the day of 15 April 2011",
       "cells": {"A1": "4/15/2011", "ZZ1000": "=DAY(A1)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "DAY-002",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: serial 60 is the 29th",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=DAY(60)"},
@@ -21,7 +21,7 @@
     },
     {
       "id": "DAY-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: serial 59 is the 28th",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=DAY(59)"},
@@ -30,7 +30,7 @@
     },
     {
       "id": "DAY-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: serial 0 is day 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=DAY(0)"},

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ACOSH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ACOSH(1)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ACOSH-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ACOSH(10)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ACOSH-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: below 1 is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ACOSH(0.5)"},

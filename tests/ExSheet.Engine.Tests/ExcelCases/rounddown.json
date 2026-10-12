@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ROUNDDOWN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: down to no decimals",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROUNDDOWN(3.2,0)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ROUNDDOWN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: down to no decimals",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROUNDDOWN(76.9,0)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ROUNDDOWN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: down to three decimals",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROUNDDOWN(3.14159,3)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "ROUNDDOWN-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a negative number rounds toward zero",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROUNDDOWN(-3.14159,1)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "ROUNDDOWN-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: to the left of the decimal point",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROUNDDOWN(31415.92654,-2)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "ROUNDDOWN-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the number as Excel holds it to 15 digits, so 0.3-0.1 rounds down to 0.2",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROUNDDOWN(0.3-0.1,1)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "ROUNDDOWN-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number below the place rounds down to 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROUNDDOWN(0.009,1)"},
