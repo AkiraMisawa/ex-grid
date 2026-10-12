@@ -10,7 +10,7 @@ namespace ExPivot.Engine;
 /// totals, Show Values As, formats and captions are laid out from it again without asking the
 /// source (<see cref="PivotEngine.Report"/>); <see cref="Holds"/> says whether a layout can be.
 /// </summary>
-public sealed class PivotCube
+internal sealed class PivotCube
 {
     private readonly Dictionary<long, int> _cells;
     private readonly PartColumns[] _values;

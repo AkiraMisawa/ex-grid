@@ -20,6 +20,12 @@
     <ProjectReference Include="..\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The Wrapper's layer 2 reads the icons it falls back to, which a Consumer never calls
+         (ADR-0201). Granted to the test project only, never to a package. -->
+    <InternalsVisibleTo Include="ExPivot.MudBlazor.Tests" />
+  </ItemGroup>
+
   <!-- Exactly the ExPivot and ExGrid.MudBlazor it was built with (ADR-0042), as the grid's
        Wrapper depends on exactly its core. -->
   <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">

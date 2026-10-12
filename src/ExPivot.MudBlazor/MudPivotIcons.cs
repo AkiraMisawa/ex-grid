@@ -4,7 +4,7 @@ using global::MudBlazor;
 namespace ExPivot.MudBlazor;
 
 /// <summary>The Material icons of ExPivot's commands and Areas (ADR-0062).</summary>
-public static class MudPivotIcons
+internal static class MudPivotIcons
 {
     /// <summary>A command's icon, by its id (<see cref="PivotCommandIds"/>), or null.</summary>
     public static string? ForCommand(string id)

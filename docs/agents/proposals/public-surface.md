@@ -24,3 +24,19 @@ Nothing for `docs/adr/`, `CONTEXT.md` or `docs/definition-of-done.md`. ADR-0100'
 written, and no ADR, criterion or glossary entry names another type or member made internal here. ADR-0201's Context
 says ExSheet.Engine declares no `InternalsVisibleTo`; that was true when it was written (2026-10-11), and the engine
 now grants `ExSheet.Engine.Tests` (since #83) and `ExSheet.Components.Tests` (this branch), both test projects.
+
+## ExPivot.Engine, ExPivot and ExPivot.MudBlazor (list expivot)
+
+Nothing for `docs/adr/`, `CONTEXT.md` or `docs/definition-of-done.md`. ADR-0060's note on the whole-report path is
+already written, and the Engine's README now computes through `PivotReportSource` as that note says. Two things for
+the orchestrator to know:
+
+- **`MudPivotButton` stays public, marked `[EditorBrowsable(Never)]`, where the list said internal.** The list took
+  it to be a C# component that can be internal as ExPivot's `PivotGridHost` and `PivotDetailsGrid` are; but those two
+  are placed through a `RenderTreeBuilder`, and the Wrapper's five Razor parts place `MudPivotButton` in markup,
+  which Razor binds only to a public component (RZ10012 at the first build). So it is one of ADR-0201's "Razor
+  components a Consumer does not place", and no Change Note is written for it. Making it internal means placing it
+  from code in those five parts, which is the kind of rewrite ADR-0201 rejected for `0.1.0`; the review before `1.0`
+  can reconsider it with the rest. No ADR text changes: ADR-0201 already says ExPivot.MudBlazor's parts are public.
+- ADR-0201's Context says ExPivot.MudBlazor declares no `InternalsVisibleTo`; that was true when it was written, and
+  it now grants `ExPivot.MudBlazor.Tests` (this branch), a test project, for `MudPivotIcons`.
