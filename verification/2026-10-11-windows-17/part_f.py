@@ -9,7 +9,7 @@ every step the probe reads document.activeElement (the Keyboard Field input.ex-k
 Editor, or body), its aria-activedescendant, the Focus cell, and whether the document has focus; under NVDA,
 what its Speech Viewer gained since the step before (its own edit control's text, read with WM_GETTEXT).
 
-    python3 part_f.py <chrome|msedge> <none|nvda|narrator> [stepwise|paced] [reversed]
+    python3 part_f.py <chrome|msedge> <none|nvda|narrator> [stepwise|paced] [reversed|scanoff|again|wait10|silence-a|-b|-c]
 
 With "stepwise" (Narrator: the user listens), each step waits for a line on stdin before the next, and
 records what the user heard, typed back by the session. With "paced" (Narrator, recorded: loopback.ps1), each step waits
@@ -37,7 +37,15 @@ SCANOFF = 'scanoff' in sys.argv[3:]
 # which comes first after the browser starts.
 REVERSED = 'reversed' in sys.argv[3:]
 BASE = 'http://localhost:5299'
-SUFFIX = ('-reversed' if REVERSED else '') + ('-scan-off' if SCANOFF else '')
+# NVDA's silence through the first pass's without-a-Focus steps (2026-10-12, at the desk). Before the requester's three
+# ways arrived: "again", the first pass's order once more; "wait10", 10 s after the page is ready before the script's
+# focus. The requester's three ways, each after NVDA's "Loading complete" (waited for, up to 20 s): "silence-a", exactly
+# as the first pass; "silence-b", a real press on the page outside the grid and the toolbar (the heading's empty right
+# end) before the script's focus; "silence-c", no script focus: a real press on the Revalue button, then Tab twice.
+AGAIN, WAIT10 = 'again' in sys.argv[3:], 'wait10' in sys.argv[3:]
+WAY = next((a[len('silence-'):] for a in sys.argv[3:] if a.startswith('silence-')), None)
+SUFFIX = (('-reversed' if REVERSED else '') + ('-scan-off' if SCANOFF else '') + ('-again' if AGAIN else '')
+          + ('-wait10' if WAIT10 else '') + (f'-silence-{WAY}' if WAY else ''))
 REC = os.path.join(HERE, 'records', f'part-f-{READER}-{CHANNEL}{SUFFIX}.jsonl')
 SHEET = '.ex-grid:has(> .ex-formula-bar)'
 READY = """() => { const g = document.querySelector('.ex-grid:has(> .ex-formula-bar)'); if (!g) return false;
@@ -76,6 +84,7 @@ def speech():
 
 
 SPOKEN = ['']
+BEGUN = ['']
 FRESH_AT = [None]
 SCAN = [None]
 
@@ -116,6 +125,25 @@ def step(start, name, do):
     record(row)
 
 
+POINT = """([x, y]) => { const e = document.elementFromPoint(x, y);
+  return { x, y, element: e ? e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') : null, text: e?.textContent?.trim().slice(0, 60) ?? null,
+    inGrid: !!e?.closest('.ex-grid'), inToolbar: !!e?.closest('.ex-sheet-toolbar'), focusable: !!e?.closest('button, a, input, [tabindex]') }; }"""
+
+
+def loading_complete():
+    # NVDA's "Loading complete" in the Speech Viewer, since the pass began (Edge says it; Chrome may not).
+    t0 = time.time()
+    while time.time() - t0 < 20:
+        sp = speech()
+        if isinstance(sp, str) and 'Loading complete' in sp[len(BEGUN[0]):]:
+            break
+        time.sleep(0.5)
+    sp = speech()
+    heard = isinstance(sp, str) and 'Loading complete' in sp[len(BEGUN[0]):]
+    record({'reader': READER, 'channel': CHANNEL, 'start': 'without-focus', 'step': 'waited for Loading complete',
+            'heard': heard, 'waited': round(time.time() - t0, 1)})
+
+
 def fresh():
     FRESH_AT[0] = round(time.time(), 3)
     p.cmd(op='goto', url=f'{BASE}/sheet', ready=READY)
@@ -132,6 +160,7 @@ def fresh():
 def run():
     if READER == 'nvda':
         sp = speech(); SPOKEN[0] = sp if isinstance(sp, str) else ''
+        BEGUN[0] = SPOKEN[0]
     if REVERSED:
         with_focus(); without_focus()
     else:
@@ -143,7 +172,20 @@ def without_focus():
     # Without a Focus: focus given by script to the Revalue button, the control before the grid, then Tab.
     fresh()
     record({'reader': READER, 'channel': CHANNEL, 'start': 'without-focus', 'step': 'fresh page', 'at': FRESH_AT[0], 'scanOff': SCAN[0], 'state': p.eval(STATE), 'version': p.version})
-    step('without-focus', '0-focus-given-by-script-to-revalue', lambda: p.eval("() => { document.querySelector('#sheet-revalue').focus(); return document.activeElement?.id; }"))
+    if WAIT10:
+        step('without-focus', '0a-wait-10-s', lambda: time.sleep(10))
+    if WAY:
+        loading_complete()
+    if WAY == 'b':
+        where = p.cmd(op='where', sel='h1')
+        x = where['box'][0] + where['box'][2] - 30
+        record({'reader': READER, 'channel': CHANNEL, 'start': 'without-focus', 'step': 'the point to press',
+                'point': p.eval(POINT, [x, where['client'][1]])})
+        step('without-focus', '0a-press-on-the-page-outside-the-grid', lambda: p.cmd(op='press', sel='h1', at='right', dx=30))
+    if WAY == 'c':
+        step('without-focus', '0-press-on-revalue', lambda: p.cmd(op='press', sel='#sheet-revalue'))
+    else:
+        step('without-focus', '0-focus-given-by-script-to-revalue', lambda: p.eval("() => { document.querySelector('#sheet-revalue').focus(); return document.activeElement?.id; }"))
     step('without-focus', '1-tab', lambda: p.keys('{TAB}'))
     # The Sheet Toolbar is the tab stop after the Revalue button (ADR-0100): a second Tab reaches the grid.
     step('without-focus', '1b-tab-again', lambda: p.keys('{TAB}'))

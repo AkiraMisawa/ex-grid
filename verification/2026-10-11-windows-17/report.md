@@ -590,6 +590,34 @@ was added to `%APPDATA%\nvda\nvda.ini` for the run, and the file was put back by
     Speech Viewer's whole text of both passes is in `records/part-f-nvda-*speech-viewer.txt`, with the terminal's window
     title left out.
 
+**NVDA's silence, asked again three ways** (2026-10-12, 21:01 to 21:08 BST, at the requester's ask; the same build and
+hosts, NVDA 2026.2 with its Speech Viewer, `nvda.ini` put back byte for byte afterwards, SHA-256 `71a66181…`). Each
+pass was a fresh browser, the without-a-Focus steps first, then the with-a-Focus steps as before
+(`records/part-f-nvda-<browser>-silence-<way>.jsonl`):
+
+- **(a) exactly as the first pass**: the script's focus on Revalue, Tab, Tab, ↓ → ↓ ↓;
+- **(b) a real press on the page outside the grid and the toolbar first**: on the heading's empty right end
+  (`h1`, 30 px from its right edge; the record's `point` says it is in neither the grid nor the toolbar, and not
+  focusable), then the steps of (a);
+- **(c) no script focus**: a real press on the Revalue button, then Tab, Tab, ↓ → ↓ ↓.
+
+Each waited first for NVDA's "Loading complete" in the Speech Viewer, up to 20 s. **Edge said it** (within 1 s), and
+**Chrome did not** in 20 s, in any pass.
+
+| Way | Chrome | Edge |
+|---|---|---|
+| (a) | **nothing** from the script's focus to the last ↓ (the page's load only: `ExGrid demo host` / `Loading…`) | **nothing** (`Loading page` / `Loading complete` / `ExGrid demo host` / `Loading…` only) |
+| (b) | every step read, as in Part F's table: `Revalue the positions by +1%  button`, the toolbar, `table` / `edit  blank`, `Item  row 2  A  column 1`, `Qty  row 2  B  column 2`, `12  row 3  B  column 2`, `7  row 4  B  column 2` | the same |
+| (c) | every step read, the same words; the press itself read `Revalue the positions by +1%  button` | the same |
+
+- **DOM focus after each ↓ was the Keyboard Field in every pass**, and the Focus moved A1, B1, B2, B3, as in Part F's
+  table. The with-a-Focus steps that followed were read as before (`table` / `row 11  D  column 4` …).
+- **(b) and (c) speak, and (a) does not.** By the measure the requester gave, the silence comes from the probe's
+  scripted focus before any user input, and is recorded only.
+- Two passes before the three ways arrived are kept as they ran, without the wait for "Loading complete": the first
+  pass's order once more (`-again`), and the same with 10 s after the page was ready (`-wait10`, Chrome only). Both were
+  silent through the same steps.
+
 **Narrator 10.0.26100.8972**, run on 2026-10-12 from 20:21 to 20:53 BST, when the user was back at the desk.
 
 - **The first try** (12:30): the user said they were not at the Windows desk at the first step. Narrator was started,
@@ -988,6 +1016,9 @@ Formula and Excel's answer, in Part A's "Every disagreement":
   The first ↓ then makes A1 the Focus.
 - Under NVDA, nothing was spoken through the first steps after the browser started, when they began with the script's
   focus and Tab. A pass that began with a press spoke throughout.
+- NVDA's silence, asked three ways (2026-10-12): silent when the script's focus came before any real input, in both
+  browsers; a press first, outside the grid or on the Revalue button, and every step was read. Recorded only, by the
+  requester's measure.
 - NVDA names the row as the sheet's row plus one: `row 11` for D10.
 - **Narrator, as it starts (scan mode)**: no arrow reached the grid, in Chrome or Edge, with or without a Focus. DOM
   focus left the Keyboard Field for `body`; in Chrome without a Focus, it moved among the page's buttons. Narrator's
