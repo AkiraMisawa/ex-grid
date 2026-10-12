@@ -10,7 +10,9 @@ namespace ExSheet.Engine.Tests;
 /// read as it stands after each recalculation, whatever the change, and a Formula that reaches itself
 /// through it. The forms it reads and refuses are in <c>ExcelCases/indirect.json</c>; the forms the
 /// seventeenth Windows run observed (R1C1, structured and <c>A1#</c> text, INDIRECT-023 to 026) are
-/// read here as the Formula forms they name are, cycles, waits and spills included.
+/// read here as the Formula forms they name are, cycles, waits and spills included, and so are the
+/// relative and whole-row and whole-column R1C1 text the area pass of 2026-10-12 observed
+/// (INDIRECT-036 to 038).
 /// </summary>
 public class IndirectTests
 {
@@ -248,21 +250,17 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Ref, sheet.Evaluate("=INDIRECT(\"R3C2\",TRUE)").Error);
     }
 
-    [Theory] // ADR-0124 (2026-10-10): R1C1 text in a form no Windows run has observed — relative, whole rows or columns, a leading 0 — is refused with #VALUE!, as are structured and A1# text in R1C1 style
-    [InlineData("R[1]C[-1]")]
-    [InlineData("R[-1]C")]
-    [InlineData("RC[1]")]
-    [InlineData("RC")]
-    [InlineData("R")]
-    [InlineData("C")]
-    [InlineData("R3")]
-    [InlineData("C2")]
-    [InlineData("R3:R5")]
-    [InlineData("C2:C3")]
-    [InlineData("R3C2:R[1]C2")]
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12): R1C1 text in a form no Windows run has observed — a number with a leading 0 or a +, a cell joined to a whole row or column, a row to a column — is refused with #VALUE!, as are structured and A1# text in R1C1 style (INDIRECT-058 to 061 ask them)
     [InlineData("R03C2")]
     [InlineData("R0C2")]
-    [InlineData("Sheet1!RC")]
+    [InlineData("R3C02")]
+    [InlineData("R[01]C2")]
+    [InlineData("R[+1]C2")]
+    [InlineData("R3C2:R5")]
+    [InlineData("R3:R5C2")]
+    [InlineData("R3:C2")]
+    [InlineData("C2:RC")]
+    [InlineData("Sheet1!R3C2:C2")]
     [InlineData("R3C2#")]
     [InlineData("Positions[PV]")]
     public void ADR0124_indirect_refuses_r1c1_text_no_run_has_observed(string text)
@@ -274,11 +272,17 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Value, sheet.Evaluate($"=INDIRECT(\"{text}\",FALSE)").Error);
     }
 
-    [Theory] // ADR-0124 (2026-10-10), ADR-0046: R1C1 text that names no place is #REF!, as A1 text's is: A1 text read as R1C1, a row or column past the Sheet's edge, another Sheet, a space
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: R1C1 text that names no place is #REF!, as A1 text's is: A1 text read as R1C1, a row or column past the Sheet's edge, another Sheet, a space
     [InlineData("B3")]
     [InlineData("R1048577C2")]
     [InlineData("R3C16385")]
     [InlineData("R3C2:R99999999C2")]
+    [InlineData("R1048577")]
+    [InlineData("C16385")]
+    [InlineData("R2:R1048577")]
+    [InlineData("C99999999999")]
+    [InlineData("Sheet2!R3")]
+    [InlineData("Sheet2!C2")]
     [InlineData("Sheet2!R3C2")]
     [InlineData(" R3C2")]
     [InlineData("R3C2 ")]
@@ -290,6 +294,127 @@ public class IndirectTests
         var sheet = MicrosoftsExample();
 
         Assert.Equal(ErrorValue.Ref, sheet.Evaluate($"=INDIRECT(\"{text}\",FALSE)").Error);
+    }
+
+    [Theory] // ADR-0124 (2026-10-12), the area pass (INDIRECT-036, 044, 045, 050): relative R1C1 text counts from the Formula's own cell, R and C each with a number, an offset in brackets or nothing
+    [InlineData("C2", "=INDIRECT(\"R[1]C[-1]\",FALSE)", 45)]
+    [InlineData("C2", "=INDIRECT(\"RC[-1]\",FALSE)", 1.333)]
+    [InlineData("C3", "=INDIRECT(\"R[-1]C[-1]\",FALSE)", 1.333)]
+    [InlineData("C2", "=INDIRECT(\"R3C[-1]\",FALSE)", 45)]
+    [InlineData("C2", "=INDIRECT(\"R[2]C2\",FALSE)", 10)]
+    [InlineData("A5", "=INDIRECT(\"RC[1]\",FALSE)", 62)]
+    [InlineData("C5", "=INDIRECT(\"R[0]C[-1]\",FALSE)", 62)]
+    [InlineData("C5", "=INDIRECT(\"R[-0]C[-1]\",FALSE)", 62)]
+    [InlineData("C2", "=INDIRECT(\"rc[-1]\",FALSE)", 1.333)]
+    [InlineData("C2", "=INDIRECT(\"Sheet1!R[1]C[-1]\",FALSE)", 45)]
+    [InlineData("C2", "=INDIRECT(\"R[1]C[-1]\",0)", 45)]
+    [InlineData("C2", "=INDIRECT(\"R[7]C[-1]\",FALSE)", 0)]
+    public void ADR0124_indirect_reads_relative_r1c1_text_from_its_own_cell(string cell, string formula, double expected)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter(cell, formula);
+
+        Assert.Equal(expected, sheet.Number(cell), 9);
+    }
+
+    [Theory] // ADR-0124 (2026-10-12), the area pass (INDIRECT-037, 038, 046 to 049, 051): a row part alone is a whole row, a column part alone a whole column, and two parts of the same kind joined by ':' the rectangle they span
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"R3\",FALSE))", 45)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"C2\",FALSE))", 118.333)]
+    [InlineData("C2", "=SUM(INDIRECT(\"R[1]\",FALSE))", 45)]
+    [InlineData("C2", "=SUM(INDIRECT(\"C[-1]\",FALSE))", 118.333)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"R2:R3\",FALSE))", 46.333)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"R3:R2\",FALSE))", 46.333)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"C1:C2\",FALSE))", 118.333)]
+    [InlineData("C2", "=SUM(INDIRECT(\"RC[-1]:R[1]C[-1]\",FALSE))", 46.333)]
+    [InlineData("C2", "=SUM(INDIRECT(\"R[1]C[-1]:RC[-1]\",FALSE))", 46.333)]
+    [InlineData("C2", "=SUM(INDIRECT(\"R2C2:R[3]C[-1]\",FALSE))", 118.333)]
+    [InlineData("ZZ1000", "=ROWS(INDIRECT(\"R2:R3\",FALSE))", 2)]
+    [InlineData("ZZ1000", "=COLUMNS(INDIRECT(\"R3\",FALSE))", 16384)]
+    [InlineData("ZZ1000", "=ROWS(INDIRECT(\"C2\",FALSE))", 1048576)]
+    [InlineData("ZZ1000", "=COLUMNS(INDIRECT(\"C1:C2\",FALSE))", 2)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"Sheet1!R3\",FALSE))", 45)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"r3\",FALSE))", 45)]
+    public void ADR0124_indirect_reads_whole_rows_columns_and_rectangles_of_r1c1_text(string cell, string formula, double expected)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter(cell, formula);
+
+        Assert.Equal(expected, sheet.Number(cell), 9);
+    }
+
+    [Theory] // ADR-0124 (2026-10-12), ADR-0046 (INDIRECT-052): an offset past the Sheet's edge names no place, #REF!, on either side and on either axis
+    [InlineData("C2", "R[-5]C")]
+    [InlineData("C2", "R[-2]C[-1]")]
+    [InlineData("C2", "RC[-3]")]
+    [InlineData("C2", "R[1048575]C")]
+    [InlineData("XFD1", "RC[1]")]
+    [InlineData("C2", "R[-2]")]
+    [InlineData("C2", "C[-3]")]
+    [InlineData("C2", "R[-1]:R[-2]")]
+    [InlineData("C2", "R[9999999999]C")]
+    public void ADR0124_indirect_r1c1_offset_past_the_sheets_edge_is_ref(string cell, string text)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter(cell, $"=INDIRECT(\"{text}\",FALSE)");
+
+        Assert.Equal(ErrorValue.Ref, sheet.Error(cell));
+    }
+
+    [Fact] // ADR-0124 (2026-10-12), ADR-0047, SH-59: relative R1C1 text that reaches the Formula's own cell, row or column is #CIRC!
+    public void ADR0124_relative_r1c1_text_to_its_own_place_is_circ()
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("C2", "=INDIRECT(\"RC\",FALSE)");
+        sheet.Enter("D2", "=SUM(INDIRECT(\"R\",FALSE))");
+        sheet.Enter("E2", "=SUM(INDIRECT(\"C\",FALSE))");
+        sheet.Enter("F2", "=SUM(INDIRECT(\"RC[-3]:R[3]C\",FALSE))");
+
+        Assert.Equal(ErrorValue.Circ, sheet.Error("C2"));
+        Assert.Equal(ErrorValue.Circ, sheet.Error("D2"));
+        Assert.Equal(ErrorValue.Circ, sheet.Error("E2"));
+        Assert.Equal(ErrorValue.Circ, sheet.Error("F2"));
+    }
+
+    [Fact] // ADR-0124 (2026-10-12), SH-68: relative R1C1 text counts from where its Formula stands now: an insertion moves the Formula and leaves the text, and its undo moves it back
+    public void ADR0124_relative_r1c1_text_counts_from_the_formulas_cell_after_it_moves()
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("D5", "=INDIRECT(\"R[-2]C[-2]\",FALSE)");
+        Assert.Equal(45, sheet.Number("D5"));
+
+        // A row inserted above row 4 moves the Formula to D6 and B4's 10 to B5; B3 stays, and two rows
+        // up from D6 is the new, blank B4.
+        var step = sheet.Do(SheetEdit.InsertRows(3));
+
+        Assert.Equal("=INDIRECT(\"R[-2]C[-2]\",FALSE)", sheet.GetEntry(CellAddress.Parse("D6"))!.Formula);
+        Assert.Equal(0, sheet.Number("D6"));
+        Assert.Equal(10, sheet.Number("B5"));
+
+        step.Undo();
+
+        Assert.Equal(45, sheet.Number("D5"));
+    }
+
+    [Fact] // ADR-0124 (2026-10-12): the same relative R1C1 text in each cell of a column reads the cell beside each
+    public void ADR0124_the_same_relative_r1c1_text_reads_beside_each_cell()
+    {
+        var sheet = MicrosoftsExample();
+        foreach (var cell in new[] { "C2", "C3", "C4", "C5" }) sheet.Enter(cell, "=INDIRECT(\"RC[-1]\",FALSE)*2");
+
+        Assert.Equal(2.666, sheet.Number("C2"), 9);
+        Assert.Equal(90, sheet.Number("C3"));
+        Assert.Equal(20, sheet.Number("C4"));
+        Assert.Equal(124, sheet.Number("C5"));
+    }
+
+    [Fact] // ADR-0124 (2026-10-12), ADR-0125: relative R1C1 text naming a range spills where it is the result
+    public void ADR0124_relative_r1c1_range_spills()
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("D2", "=INDIRECT(\"RC[-2]:R[1]C[-2]\",FALSE)");
+
+        Assert.Equal(1.333, sheet.Number("D2"));
+        Assert.Equal(45, sheet.Number("D3"));
     }
 
     [Fact] // ADR-0124 (2026-10-10), ADR-0047, SH-59: a Formula that reaches itself through R1C1 text is #CIRC!, and R1C1 text follows a change to the cell it names

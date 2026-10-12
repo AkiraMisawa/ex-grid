@@ -29,12 +29,26 @@ Status: done
 - [x] The forms the seventeenth run observed are read as Excel reads them: R1C1 text naming an
       absolute cell (`a1` FALSE, 0, a blank or left empty) and a range of two such cells; a structured
       reference's text as the typed `Table[Column]` is read, waiting with it; `A1#` as the typed `A1#`
-      is read. Relative R1C1 text and R1C1 text naming whole rows or columns stay `#VALUE!`
-- [ ] For the next Windows run: INDIRECT-030 to INDIRECT-043, the forms read or refused by
+      is read. Relative R1C1 text and R1C1 text naming whole rows or columns stay `#VALUE!` *(until
+      the area pass observed them, below)*
+- [x] For the next Windows run: INDIRECT-030 to INDIRECT-043, the forms read or refused by
       generalising what the seventeenth run observed (an R1C1 range, lower case, the qualifier, `a1`
       left empty or blank, A1 text read as R1C1, relative and whole-row and whole-column R1C1 text, a
       structured reference in double brackets or naming no table or column, `A1#` text naming a cell
-      that does not spill)
+      that does not spill) *(The area pass, 2026-10-12: every case agreed but the four refused, which
+      Excel reads; R1C1 text is read now, below, and a Linked Table's bare name stays refused.)*
+- [x] R1C1 text is read in R1C1 notation's ordinary meaning, as the area pass observed (INDIRECT-036
+      to 038): R and C each take a number, an offset in brackets from the Formula's own cell, or
+      nothing; a row part alone is a whole row and a column part alone a whole column; two parts of
+      the same kind joined by `:` name the rectangle they span; an offset past the Sheet's edge is
+      `#REF!`. A number with a leading 0, a cell joined to a whole row or column, structured or `#`
+      text in R1C1 style and a declared Linked Table's bare name stay `#VALUE!`
+- [ ] For the next Windows run: INDIRECT-044 to INDIRECT-061, the R1C1 forms read by generalising
+      what the area pass observed (an offset on either axis, a whole row or column by offset, rows and
+      columns joined, a rectangle of two relative cells, an offset past the Sheet's edge), what a
+      declared Linked Table's bare name reads (its columns, rows, first cell, count and spill), and the
+      R1C1 forms still refused (a cell joined to a whole row, a leading 0, `#` and structured text in
+      R1C1 style)
 
 ## Comments
 
@@ -89,3 +103,24 @@ Table's bare name (`INDIRECT("Positions")`) is `#VALUE!`, not `#REF!`, since Exc
 structured reference to the table's data and no run has observed it (ADR-0124's note;
 `ADR0124_a_linked_tables_bare_name_is_value_and_any_other_name_ref`). INDIRECT-043 asks it; it was
 INDIRECT-030 on the review's branch, a number the run's corrections took meanwhile.
+
+2026-10-12, after the area pass (`verification/2026-10-12-windows-area/report.md`, "Recorded (9)"):
+Excel answered the three R1C1 forms the seventeenth run's note kept refused, each with the notation's
+ordinary meaning. `INDIRECT("R[1]C[-1]",FALSE)` in C2 is 45, B3's Value: a bracketed offset counts from
+the Formula's own cell. `SUM(INDIRECT("R3",FALSE))` is 45, row 3, and `SUM(INDIRECT("C2",FALSE))` is
+118.333, column B. INDIRECT-036 to 038 are `observed`, and R1C1 text is read by the rule they settle,
+generalised as the seventeenth run's R3C2 was to ranges, case and qualifiers: R and C each with a
+number, an offset in brackets (from `Evaluator.Self`, the Formula's own cell) or nothing; a row part
+alone a whole row, a column part alone a whole column; two parts of the same kind joined by `:` the
+rectangle they span; an offset past the Sheet's edge `#REF!`. INDIRECT is volatile, so a Formula moved
+by an insertion counts from its new cell at once (`IndirectTests`). A cell joined to a whole row or
+column (`R2C2:R3`) stays `#VALUE!` beside a leading 0 and structured or `#` text in R1C1 style: no run
+has observed one, and INDIRECT-058 to 061 ask them. INDIRECT-044 to 052 put the generalised forms to the
+next run, the offset past the edge among them, since Excel might wrap it round to the last rows.
+`SUM(INDIRECT("Positions"))` is 250.5 in Excel (INDIRECT-043, now `observed` with Excel's answer beside the
+refusal, as SORT-011 is). Over a one-row table whose other column is text, that does not say whether the
+bare name reads the table's data or one column, and ExSheet has no typed bare table name to read it as
+(typed, `Positions` is `#NAME?`; ADR-0049 reads a Linked Table by column), so the refusal stays.
+INDIRECT-053 to 057 ask its columns, rows, first cell, count and spill over a table of two rows; what a
+bare name reads, typed and through `INDIRECT`, then wants a decision. `COUNTA` over the refusal counts
+it as one Value, as it counts any Error Value (INDIRECT-056 records 1).
