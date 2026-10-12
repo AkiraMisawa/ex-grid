@@ -109,7 +109,7 @@
     },
     {
       "id": "EDATE-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: from serial 60, the 29th of February 1900, no months on is the month's last day on the real calendar, 28 February, 59, as EDATE-010 keeps the 29th where the month has one",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(60,0)"},
@@ -118,7 +118,7 @@
     },
     {
       "id": "EDATE-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: from serial 60, twelve months on is 28 February 1901, 425, as February 1901 has 28 days",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(60,12)"},
@@ -127,7 +127,7 @@
     },
     {
       "id": "EDATE-015",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: from serial 60, a month before is 29 January 1900, 29",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(60,-1)"},

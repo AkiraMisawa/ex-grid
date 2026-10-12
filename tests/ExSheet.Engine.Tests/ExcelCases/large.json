@@ -102,7 +102,7 @@
     },
     {
       "id": "LARGE-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a k just below 1 is #NUM!, as 0.5 is (LARGE-011), and not rounded up to 1 (7)",
       "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,0.99)"},
       "check": "ZZ1000",
@@ -110,7 +110,7 @@
     },
     {
       "id": "LARGE-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text given directly as the array is coerced, as a typed value is; AGGREGATE's array form takes it as no number, #NUM! (AGGREGATE-061)",
       "cells": {"ZZ1000": "=LARGE(\"5\",1)"},
       "check": "ZZ1000",

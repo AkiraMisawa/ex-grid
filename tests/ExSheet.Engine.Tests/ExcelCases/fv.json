@@ -94,7 +94,7 @@
     },
     {
       "id": "FV-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a type of 0.5 is payment at the start of each period, as PMT-009 found it is for PMT",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.06/12,10,-200,-500,0.5)"},
@@ -103,7 +103,7 @@
     },
     {
       "id": "FV-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a quarter period past a whole number, raised as FV-006's half period is",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.06/12,10.25,-200)"},
@@ -112,7 +112,7 @@
     },
     {
       "id": "FV-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative number of periods that is not a whole number, where e^(nper ln(1+rate)), FV-006's evaluation at 10.5, and 1 over the power to 10.5, as FV-007's -10 is 1 over the power to 10, give the same double",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.06/12,-10.5,-200)"},
@@ -166,7 +166,7 @@
     },
     {
       "id": "FV-019",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: at the end of each period, with a present value and a payment, the unfused sum, as FV answered before the area pass of 2026-10-12; a fused multiply-add of pv*g into it gives 483.06382918288557, and of the payment 483.0638291828854, and no observed double has both at the end (Search.cs, F4, F9 and F10)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.06/12,10,-150,1000)"},

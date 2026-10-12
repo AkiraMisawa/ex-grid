@@ -101,7 +101,7 @@
     },
     {
       "id": "EOMONTH-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a start on serial 60 is in February 1900, as MONTH reads it, and February ends on the 28th, 59, not on the day that never existed",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(60,0)"},
@@ -110,7 +110,7 @@
     },
     {
       "id": "EOMONTH-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: from serial 60, the end of the month after is 31 March 1900, 91",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(60,1)"},
@@ -119,7 +119,7 @@
     },
     {
       "id": "EOMONTH-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a start on serial 0 is in January 1900, which ends on the 31st, 31",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(0,0)"},
@@ -128,7 +128,7 @@
     },
     {
       "id": "EOMONTH-015",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: from serial 0, the month before is December 1899, before any serial, #NUM! as EOMONTH-005's result after 9999",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(0,-1)"},

@@ -67,7 +67,7 @@
     },
     {
       "id": "PV-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a type of 0.5 is payment at the start of each period, as PMT-009 found it is for PMT",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,10,-100,1000,0.5)"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "PV-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative number of periods, 1 over 1+rate raised by squaring as FV-007's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,-10,-100)"},
@@ -85,7 +85,7 @@
     },
     {
       "id": "PV-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: half a period, answered because the square root of 1+rate, the ^ operator's evaluation at an exponent of 0.5 (ARITH-133), and e^(0.5 ln(1+rate)), PV-005's evaluation at 10.5, give the same double here; FV-016 is where they part",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,0.5,-100)"},

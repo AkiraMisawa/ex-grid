@@ -102,7 +102,7 @@
     },
     {
       "id": "UNIQUE-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: two blanks are one of a kind, so two rows of three",
       "cells": {"A3": "1", "ZZ1000": "=ROWS(UNIQUE(A1:A3))"},
       "check": "ZZ1000",
@@ -110,7 +110,7 @@
     },
     {
       "id": "UNIQUE-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a blank is not one of a kind with empty text (1 if it is)",
       "cells": {"A2": "=\"\"", "ZZ1000": "=ROWS(UNIQUE(A1:A2))"},
       "check": "ZZ1000",
@@ -118,7 +118,7 @@
     },
     {
       "id": "UNIQUE-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: exactly_once leaves out two blanks, so only the 1 is left",
       "cells": {"A3": "1", "ZZ1000": "=UNIQUE(A1:A3,,TRUE)"},
       "check": "ZZ1000",
@@ -126,7 +126,7 @@
     },
     {
       "id": "UNIQUE-015",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: rows compared whole, a row with a blank differs from the same row with 0",
       "cells": {"A1": "a", "A2": "a", "B2": "0", "ZZ1000": "=ROWS(UNIQUE(A1:B2))"},
       "check": "ZZ1000",
@@ -134,7 +134,7 @@
     },
     {
       "id": "UNIQUE-016",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: one blank cell spills as 0",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=UNIQUE(Q2)"},

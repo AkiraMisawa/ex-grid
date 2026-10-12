@@ -368,7 +368,7 @@
     },
     {
       "id": "INDIRECT-045",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R[-1]C[-1] from C3 is B2, an offset above and to the left",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "C3": "=INDIRECT(\"R[-1]C[-1]\",FALSE)"},
       "check": "C3",
@@ -376,7 +376,7 @@
     },
     {
       "id": "INDIRECT-046",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R[1] from C2 is the whole of row 3, which SUM reads",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "C2": "=SUM(INDIRECT(\"R[1]\",FALSE))"},
       "check": "C2",
@@ -384,7 +384,7 @@
     },
     {
       "id": "INDIRECT-047",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: C[-1] from C2 is the whole of column B, which SUM reads",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "C2": "=SUM(INDIRECT(\"C[-1]\",FALSE))"},
       "check": "C2",
@@ -392,7 +392,7 @@
     },
     {
       "id": "INDIRECT-048",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R2:R3 is the rows they span, which SUM reads",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=SUM(INDIRECT(\"R2:R3\",FALSE))"},
       "check": "ZZ1000",
@@ -400,7 +400,7 @@
     },
     {
       "id": "INDIRECT-049",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: C1:C2 is the columns they span, A and B, which SUM reads (A5 holds the number 5)",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=SUM(INDIRECT(\"C1:C2\",FALSE))"},
       "check": "ZZ1000",
@@ -408,7 +408,7 @@
     },
     {
       "id": "INDIRECT-050",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R3C[-1] from C2 is B3, an absolute row with a relative column",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "C2": "=INDIRECT(\"R3C[-1]\",FALSE)"},
       "check": "C2",

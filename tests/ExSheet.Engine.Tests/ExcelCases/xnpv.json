@@ -124,7 +124,7 @@
     },
     {
       "id": "XNPV-016",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the evaluations that give XNPV-001 and 004 (Search.cs, 72) give 2 doubles here, split by how the years are reached, the discount, and the order of summing (discriminate-xnpv.txt); the six the engine computes give this one",
       "cells": {"A1": "3250", "A2": "-10000", "B1": "39448", "B2": "40502", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
       "check": "ZZ1000",

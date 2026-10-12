@@ -137,7 +137,7 @@
     },
     {
       "id": "SORT-016",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: in a descending sort of text a blank key is still last, so b comes first",
       "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3,1,-1)"},
       "check": "ZZ1000",
@@ -145,7 +145,7 @@
     },
     {
       "id": "SORT-017",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: in a descending sort of text the blank key's cell is the last and shows 0",
       "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3,1,-1)"},
       "check": "ZZ1002",
@@ -153,7 +153,7 @@
     },
     {
       "id": "SORT-018",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a blank key sorts after a boolean too, so TRUE is second",
       "cells": {"A1": "1", "A3": "TRUE", "ZZ1000": "=SORT(A1:A3)"},
       "check": "ZZ1001",
@@ -161,7 +161,7 @@
     },
     {
       "id": "SORT-019",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: after a number and a boolean the blank key is last and shows 0",
       "cells": {"A1": "1", "A3": "TRUE", "ZZ1000": "=SORT(A1:A3)"},
       "check": "ZZ1002",
@@ -169,7 +169,7 @@
     },
     {
       "id": "SORT-020",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: by_col, a blank key in the row sorts its column last, which shows 0",
       "cells": {"A1": "2", "C1": "1", "ZZ1000": "=SORT(A1:C1,1,1,TRUE)"},
       "check": "AAB1000",
@@ -195,7 +195,7 @@
     },
     {
       "id": "SORT-023",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: in a descending sort two blank keys keep their order, so x is second, after the 1's z",
       "cells": {"B1": "x", "B2": "y", "A3": "1", "B3": "z", "ZZ1000": "=SORT(A1:B3,1,-1)"},
       "check": "AAA1001",
@@ -203,7 +203,7 @@
     },
     {
       "id": "SORT-024",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: over b, a blank and a, b is second, after the a of SORT-014",
       "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3)"},
       "check": "ZZ1001",
@@ -211,7 +211,7 @@
     },
     {
       "id": "SORT-025",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: over b, a blank and a, the blank key is last and its cell shows 0",
       "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3)"},
       "check": "ZZ1002",

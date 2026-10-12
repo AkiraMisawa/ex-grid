@@ -547,7 +547,7 @@
     },
     {
       "id": "AGGREGATE-062",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: SMALL's k below 1 is #NUM!, as LARGE's is (LARGE-011)",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(15,6,A1:A11,0.5)"},
@@ -556,7 +556,7 @@
     },
     {
       "id": "AGGREGATE-063",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: LARGE's k below 1 is #NUM!, and not rounded up to 1 (96), as LARGE's is (LARGE-011)",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(14,6,A1:A11,0.5)"},
@@ -565,7 +565,7 @@
     },
     {
       "id": "AGGREGATE-064",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a boolean given directly is an array of that one Value, which holds no number, as text is (AGGREGATE-061)",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(14,6,TRUE,1)"},
@@ -574,7 +574,7 @@
     },
     {
       "id": "AGGREGATE-065",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text that is no number, given directly, holds no number either, for SMALL as for LARGE (AGGREGATE-061)",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(15,6,\"abc\",1)"},
@@ -583,7 +583,7 @@
     },
     {
       "id": "AGGREGATE-066",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: SMALL's k of 8.9 over nine numbers is truncated to the 8th smallest, 81, and not rounded to the 9th, 96",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(15,6,A1:A11,8.9)"},
@@ -592,7 +592,7 @@
     },
     {
       "id": "AGGREGATE-067",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an Error Value given directly is the result, as an Error Value argument is; were it an array of that one Value, as a number, text or a boolean is (AGGREGATE-039, 061, 064), option 6 would pass over it and LARGE would be #NUM!",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(14,6,1/0,1)"},

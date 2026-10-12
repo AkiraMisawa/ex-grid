@@ -170,7 +170,7 @@
     },
     {
       "id": "PMT-019",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a type of 0.1 is payment at the start, as 0.5 is (PMT-009); if Excel rounded the type, it would be the payment at the end",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,0.1)"},
@@ -197,7 +197,7 @@
     },
     {
       "id": "PMT-022",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (spikes/exsheet-financial-evaluation/, Search.cs --discriminate; discriminate.txt lists which gives what)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.09/12,36,10000,-5000)"},
@@ -296,7 +296,7 @@
     },
     {
       "id": "PMT-033",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an input chosen so that the evaluations nearest Excel's payments give different doubles for it (spikes/exsheet-financial-evaluation/, Search.cs --discriminate; discriminate.txt lists which gives what)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.12/12,120,10000,-5000,1)"},

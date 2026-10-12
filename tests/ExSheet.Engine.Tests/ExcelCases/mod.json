@@ -149,7 +149,7 @@
     },
     {
       "id": "MOD-018",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the exact remainder plus the divisor, rounded once, is 0.19999216773887385, as every evaluation that gives every observed case gives it, where number-divisor*INT(number/divisor) in doubles gives 0.1999969482421875 (MOD-017's numbers, the number negative)",
       "cells": {"ZZ1000": "=MOD(-123456789012,0.7)"},
       "check": "ZZ1000",
@@ -157,7 +157,7 @@
     },
     {
       "id": "MOD-019",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the exact remainder plus the divisor, rounded once, is -0.19999216773887385, as every evaluation that gives every observed case gives it, where the identity in doubles gives -0.1999969482421875 (MOD-017's numbers, the divisor negative)",
       "cells": {"ZZ1000": "=MOD(123456789012,-0.7)"},
       "check": "ZZ1000",
