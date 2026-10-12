@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.mjs';
-import { SERVER } from './hosting.mjs';
+import { SERVER, BASE_URL } from './hosting.mjs';
 
 // Each package asks for the files it was built with (ADR-0123, rewritten 2026-10-11). What only a
 // browser shows, on the DemoHost under both hosts:
@@ -11,8 +11,11 @@ import { SERVER } from './hosting.mjs';
 //   not displace. A deploy over a cache is freshness.spec.mjs's.
 // - ERR-10: a script that is not the one the grid was built with — another version's, or one older
 //   than the stamp — is refused before anything attaches, said in place of the rows and once in the
-//   live region, and the page says nothing in its console. A missing script is layer 2's: a missing
-//   file is a console error of the browser's own.
+//   live region, and the page says nothing in its console. Where the host pins the script by
+//   integrity in its import map (a Release Blazor Web App on MapStaticAssets), the browser refuses a
+//   changed body first, with a console error of its own the test names, and the grid says the same
+//   words as for a script that did not load. A missing script is layer 2's: a missing file is a
+//   console error of the browser's own.
 // - ERR-11: each of the six packages' stylesheet notice — a Wrapper's rendered for the stylesheet its
 //   Chrome brings — hidden by its own stylesheet, shown by another version's, and not shown while no
 //   stylesheet has arrived.
@@ -41,40 +44,23 @@ async function serveChanged(page, pattern, change) {
     });
 }
 
-/** Serves the grid's script changed by `change`, as a page holding another build of it would.
- *
- * A Blazor Web App's import map can carry the script's integrity: a Release build on MapStaticAssets
- * writes it, and the browser then blocks a changed body before the grid sees it, with a console
- * error of its own. That block reaches the grid as a script that did not load, which layer 2 holds,
- * as it holds a missing file. ERR-10 is the grid's own refusal, the check behind that one, so the
- * page is served without the script's integrity entry, and the changed script itself reaches the
- * grid. A host whose import map names no integrity, as `dotnet run`'s does not, is served as it is.
- * Only the page's own document is routed: a route over every request also takes the circuit's
- * WebSocket, whose handshake an installed Chrome then never completes (CI, 2026-10-12). */
-async function serveScript(page, change, path = '/wide') {
-    await page.route((url) => url.pathname === path, async (route) => {
-        if (route.request().resourceType() !== 'document') {
-            await route.fallback();
-            return;
-        }
-        const response = await route.fetch();
-        const headers = { ...response.headers() };
-        delete headers['content-encoding'];
-        delete headers['content-length'];
-        const body = (await response.text()).replace(
-            /(<script type="importmap"[^>]*>)([\s\S]*?)(<\/script>)/,
-            (all, open, json, close) => {
-                const map = JSON.parse(json);
-                for (const address of Object.keys(map.integrity ?? {})) {
-                    if (SCRIPT.test(new URL(address, route.request().url()).pathname)) {
-                        delete map.integrity[address];
-                    }
-                }
-                return open + JSON.stringify(map) + close;
-            });
-        await route.fulfill({ status: response.status(), headers, body });
-    });
-    await serveChanged(page, SCRIPT, change);
+/** Serves the grid's script changed by `change`, as a page holding another build of it would. */
+const serveScript = (page, change) => serveChanged(page, SCRIPT, change);
+
+/**
+ * Whether the host's page pins the grid's script by integrity in its import map, read from the page
+ * as the host serves it, before the test navigates. A Release build of a Blazor Web App on
+ * MapStaticAssets writes it; `dotnet run`'s does not, and a standalone WebAssembly application's
+ * import map does not name the script. Where it is pinned, the browser refuses a changed body before
+ * the grid sees it, and the grid hears a script that did not load; where it is not, the grid's own
+ * stamp is what refuses it. ERR-10 holds on both, by different tests.
+ */
+async function scriptIntegrityPinned(page, path) {
+    const html = await (await page.request.get(path)).text();
+    const json = /<script type="importmap"[^>]*>([\s\S]*?)<\/script>/.exec(html)?.[1];
+    if (!json) return false;
+    const base = new URL(path, BASE_URL);
+    return Object.keys(JSON.parse(json).integrity ?? {}).some((address) => SCRIPT.test(new URL(address, base).pathname));
 }
 
 /** Serves a stylesheet changed by `change`. */
@@ -176,6 +162,8 @@ test.describe('ERR-9: the address of each file', () => {
 test.describe('ERR-10: a script that is not the one the grid was built with', () => {
     for (const [what, change] of [['another version\'s script', anotherVersion], ['a script older than the stamp', olderThanTheStamp]]) {
         test(`ERR-10 / ADR-0123: ${what} is refused before anything attaches, said in place of the rows and once in the live region`, async ({ page }) => {
+            test.skip(await scriptIntegrityPinned(page, '/wide'),
+                'this host pins the script by integrity, so the browser refuses a changed body first: the next test');
             await recordAnnouncements(page);
             await serveScript(page, change);
 
@@ -202,15 +190,41 @@ test.describe('ERR-10: a script that is not the one the grid was built with', ()
     }
 
     test('ERR-10 / ADR-0123: the script the grid was built with attaches, and nothing is refused', async ({ page }) => {
-        await serveScript(page, countingAttaches);
-
+        // The script as the host serves it, unchanged: a changed body, even one that only counts,
+        // is refused where the host pins the script by integrity.
         await page.goto('/wide');
 
-        const grid = page.locator('.ex-grid').first();
-        await expect(grid).toHaveAttribute('tabindex', /^-?\d+$/);
-        expect(await page.evaluate(() => globalThis.__exAttaches)).toBe(await page.locator('.ex-grid').count());
+        const grids = page.locator('.ex-grid');
+        await expect(grids.first()).toHaveAttribute('tabindex', /^-?\d+$/);
+        // Every grid attached: each takes its tab stop, which a refused grid does not.
+        await expect(page.locator('.ex-grid:not([tabindex])')).toHaveCount(0);
         await expect(page.locator('[data-ex-notice="script"]')).toHaveCount(0);
-        await expect(grid.locator('.ex-row').first()).toBeVisible();
+        await expect(grids.first().locator('.ex-row').first()).toBeVisible();
+    });
+
+    test.describe('where the host pins the script by integrity', () => {
+        test.use({ expectedErrors: [/Failed to find a valid digest in the 'integrity' attribute for resource '[^']*\/_content\/ExGrid\/ex-grid\.min[^']*\.js/] });
+
+        test('ERR-10 / ADR-0123: another version\'s script is blocked by the browser, and the grid says so as for a script that did not load, attaching nothing', async ({ page }) => {
+            test.skip(!(await scriptIntegrityPinned(page, '/wide')),
+                'this host does not pin the script by integrity: the grid\'s own stamp refuses it, the tests above');
+            await recordAnnouncements(page);
+            await serveScript(page, anotherVersion);
+
+            await page.goto('/wide');
+
+            const grid = page.locator('.ex-grid').first();
+            const refusal = grid.locator('.ex-viewport > [data-ex-notice="script"]');
+            await expect(refusal).toBeVisible();
+            await expect(refusal).toHaveText(SCRIPT_REFUSED);
+            await expect(grid.locator('.ex-announce')).toHaveText(SCRIPT_REFUSED);
+            // The changed body never ran: nothing attached, and the grid neither waits nor takes a tab stop.
+            expect(await page.evaluate(() => globalThis.__exAttaches ?? 0)).toBe(0);
+            await expect(grid).not.toHaveAttribute('aria-busy');
+            await expect(grid).not.toHaveAttribute('tabindex');
+            await expect(grid).not.toHaveClass(/\bex-loading\b/);
+            await expect(grid.locator('.ex-row')).toHaveCount(0);
+        });
     });
 });
 
