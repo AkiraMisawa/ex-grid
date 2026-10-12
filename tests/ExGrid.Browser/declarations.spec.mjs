@@ -1136,9 +1136,9 @@ test('DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key l
 // F4 cycles the Reference at the caret (DC-45; ADR-0051, 2026-09-29). Where each edge case lands
 // is SH-28's, pinned in layer 1; what is asked here is that the real key reaches the grid only
 // while an edit is open, that both surfaces show the rewrite, that it is selected in Caret —
-// Excel's Edit mode, and the Formula Bar's — and a caret after it in Overwrite and while pointing
-// (the seventeenth Windows run, Part C), and that a burst on a circuit is decided press by press
-// from the text each key carries.
+// Excel's Edit mode: after F2 in a cell, and in the Formula Bar until F2 takes it to Enter mode —
+// and a caret after it in Overwrite and while pointing (the seventeenth Windows run, Part C), and
+// that a burst on a circuit is decided press by press from the text each key carries.
 
 const FORMS = ['=$B$2', '=B$2', '=$B2', '=B2'];
 const selectionOf = (locator) => locator.evaluate((input) => [input.selectionStart, input.selectionEnd]);
@@ -1351,10 +1351,11 @@ test('DC-45: on a 150 ms circuit, a second F4 before the caret is placed cycles 
     await expect(editor(grid)).toHaveCount(0);
 });
 
-// The seventeenth Windows run put F4's edge cases to Excel (Part C). In Edit mode — F2 in the cell,
-// and the Formula Bar — Excel selects the rewritten Reference; the two ends of a range cycle each
-// on its own; a whole column cycles in two; typed into a cell (Enter mode) the caret stands after
-// the rewritten Reference, whose column letters are written in upper case.
+// The seventeenth Windows run put F4's edge cases to Excel (Part C). In Edit mode — after F2 in the
+// cell — Excel selects the rewritten Reference, and ExSheet selects it in Caret, which the Formula
+// Bar is in until F2 takes it to Enter mode; the two ends of a range cycle each on its own; a whole
+// column cycles in two; typed into a cell (Enter mode) the caret stands after the rewritten
+// Reference, whose column letters are written in upper case.
 
 /** Opens an edit on F2 holding `text` with the caret after the Reference before its last character, as F2 and ← leave it in the cell, or a press at the bar's end and ← in the bar. */
 async function caretBeforeTheLastCharacter(page, grid, surface, text) {

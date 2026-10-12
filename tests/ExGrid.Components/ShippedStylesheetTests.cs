@@ -1331,7 +1331,10 @@ public class ShippedStylesheetTests
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
-        Assert.Matches(new Regex(@"const pointKeys = new Set\(\[\s*\.\.\.overwriteKeys, 'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight'\]\);"),
+        // Overwrite's keys and the four Shift+arrows — not Shift+Home, which Overwrite claims and Point
+        // leaves to the editor until Excel is asked (ADR-0010, ED-2).
+        Assert.Matches(new Regex(@"const pointKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
+            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight'\]\);"),
             script.Text);
         Assert.Matches(new Regex(@"const completionKeys = new Set\(\[\.\.\.editingKeys, 'ArrowUp', 'ArrowDown'\]\);"), script.Text);
         // ADR-0058 (the tenth Windows run; Part B of the ninth, Q51) / SH-36: a list open over Point

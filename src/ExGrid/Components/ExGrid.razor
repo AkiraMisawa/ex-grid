@@ -7568,11 +7568,11 @@
     /// read outside editing: Command folds into Control only where it is Command
     /// (ADR-0012), so Cmd+Enter fills on a Mac and Win+Enter is nobody's here. A form not
     /// named below is not the editor's and does nothing. <b>The cases mirror
-    /// <c>editingKeys</c> / <c>overwriteKeys</c> in <c>ex-grid.js</c></b> — the two must
-    /// move together: Overwrite claims the arrows, Home and End, and the Shift+arrows and
-    /// Shift+Home (ADR-0010, ED-2). F4, which the gate adds to them only where the Consumer declared
-    /// <see cref="CycleReference"/>, is answered before this, from the selection its message
-    /// carries (ADR-0051, 2026-09-29).</param>
+    /// <c>editingKeys</c> / <c>overwriteKeys</c> / <c>pointKeys</c> in <c>ex-grid.js</c></b> — the
+    /// two must move together: Overwrite claims the arrows, Home and End, and the Shift+arrows and
+    /// Shift+Home (ADR-0010, ED-2); Point the same, but Shift+Home. F4, which the gate adds to them
+    /// only where the Consumer declared <see cref="CycleReference"/>, is answered before this, from
+    /// the selection its message carries (ADR-0051, 2026-09-29).</param>
     private async Task OnEditingKeyAsync(string canonical)
     {
         // An open completion list has the first word on its own keys (ADR-0051).
@@ -7656,15 +7656,14 @@
             case "End":
                 await CommitAndMoveAsync(next => next.MoveToEdge(GridDirection.Right, Extent));
                 return;
-            case "Shift+ArrowUp":
-            case "Shift+ArrowDown":
-            case "Shift+ArrowLeft":
-            case "Shift+ArrowRight":
-            case "Shift+Home":
+            case "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home"
+                when _editMode == EditMode.Overwrite:
                 // Excel's Enter mode commits the entry and extends the Selection with them (ADR-0010,
                 // ED-2; the seventeenth Windows run, Part C, case 7): where no Reference can go, they
                 // are commit gestures, and then do what the same key does with no edit open. Shift+End
-                // stays the editor's until Excel is asked (ADR-0010).
+                // stays the editor's until Excel is asked (ADR-0010). Overwrite's alone: in Point one
+                // that is not Point's — Shift+Home, which the gate leaves to the editor — commits
+                // nothing, as before.
                 await CommitAndExtendAsync(canonical);
                 return;
         }
@@ -7674,11 +7673,14 @@
     /// Overwrite's Shift+arrows and Shift+Home where no Reference can go (ADR-0010, ED-2): the
     /// edit commits, and the key then extends the Selection exactly as it does with no edit open
     /// (ADR-0012), the Extent kept in view. A Reject or a refusal holds the commit, and the key
-    /// keeps no meaning of its own (ADR-0034), as for the arrows.
+    /// keeps no meaning of its own (ADR-0034), as for the arrows. A commit whose own handler moved
+    /// the order has dropped the Selection the key was aimed with (ADR-0011, ADR-0142): it extends
+    /// nothing, and places no Selection from the first cell on screen, as Enter and the arrows move
+    /// nothing then (<see cref="CommitAndMoveAsync"/>).
     /// </summary>
     private async Task CommitAndExtendAsync(string canonical)
     {
-        if (!await CommitEditAsync())
+        if (!await CommitEditAsync() || _selection.Selection.IsEmpty)
         {
             StateHasChanged();
             return;

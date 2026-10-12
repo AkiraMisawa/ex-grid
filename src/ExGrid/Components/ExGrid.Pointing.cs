@@ -211,11 +211,14 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>
-    /// An arrow, Shift and an arrow, Home, Shift+Home or End while editing (ADR-0051). While an
-    /// outline stands over unchanged text they move or extend it; otherwise, in Overwrite or
-    /// Point, an arrow, a Shift+arrow, Home or Shift+Home starts pointing from the edited cell when
-    /// the Consumer says a Reference can go at the caret, and End there is claimed and does nothing
-    /// (ADR-0058, Q53). Anywhere else the key keeps the meaning ADR-0010 and ADR-0012 give it.
+    /// An arrow, Shift and an arrow, Home, End, or Shift+Home in Overwrite, while editing
+    /// (ADR-0051). While an outline stands over unchanged text they move or extend it; otherwise,
+    /// in Overwrite or Point, an arrow, a Shift+arrow or Home starts pointing from the edited cell
+    /// when the Consumer says a Reference can go at the caret, and so does Shift+Home in Overwrite
+    /// (ADR-0010, ED-2), to the row's first column; End there is claimed and does nothing
+    /// (ADR-0058, Q53). Shift+Home is not Point's: the gate leaves it to the editor while pointing,
+    /// as it always has, until Excel is asked. Anywhere else the key keeps the meaning ADR-0010 and
+    /// ADR-0012 give it.
     /// </summary>
     /// <returns>Whether the key was Point's: it pointed, or it was End where Point could
     /// start.</returns>
@@ -235,10 +238,11 @@ public partial class ExGrid<TRow>
             "Shift+ArrowRight" => (GridDirection.Right, 1),
             "Home" => (GridDirection.Left, 2),
             "End" => (GridDirection.Right, 2),
-            // Overwrite claims Shift+Home with the Shift+arrows (ADR-0010, ED-2), and Point with
-            // them: it extends the outline to the row's first column, as it extends a Selection,
-            // from the edited cell where no outline stands yet (the Shift+arrows' rule).
-            "Shift+Home" => (GridDirection.Left, 3),
+            // Overwrite claims Shift+Home with the Shift+arrows (ADR-0010, ED-2): where a Reference
+            // can go it points from the edited cell to the row's first column, as it extends a
+            // Selection (a reading, until Excel is asked). Point does not claim it, and one that
+            // reaches the core while pointing does nothing here, as before.
+            "Shift+Home" when _editMode == EditMode.Overwrite => (GridDirection.Left, 3),
             _ => null,
         };
         if (step is not { } move)
@@ -378,11 +382,11 @@ public partial class ExGrid<TRow>
     /// key carried, at the selection it carried, written back and its selection placed — as a
     /// selection while the edit is in Caret, Excel's Edit mode, where Excel selects the rewritten
     /// Reference, and as a caret at the selection's end in Overwrite and while pointing, where
-    /// Excel leaves one (the seventeenth Windows run, Part C). The Formula Bar is always in Caret
-    /// outside Point (ADR-0051, 2026-09-30). In two cases the selection is not the key's to
-    /// give. While pointing, it is the caret at the end of the Reference the outline wrote: that
-    /// Reference is the one F4 cycles, and pointing
-    /// goes on over what it became. And while a placement the core asked for is still in flight
+    /// Excel leaves one (the seventeenth Windows run, Part C). In Caret: after F2 in a cell, and in
+    /// the Formula Bar until F2 takes it to Enter mode (ADR-0051, 2026-09-30; ED-29). In two cases
+    /// the selection is not the key's to give. While pointing, it is the caret at the end of the
+    /// Reference the outline wrote: that Reference is the one F4 cycles, and pointing goes on over
+    /// what it became. And while a placement the core asked for is still in flight
     /// in that very text, the browser's selection there is where setting the value left it —
     /// the end — and not the user's: the placement's is used, as a caret report ahead of it is
     /// not taken (ADR-0051's second round). The user's own move in that text is newer, and

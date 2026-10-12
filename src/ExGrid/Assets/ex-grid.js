@@ -318,13 +318,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',
         'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight', 'Shift+Home']);
     // Pointing (ADR-0051's second round): Overwrite's keys, the four Shift+arrows among them,
-    // which extend the outline rather than select text in the input. And while a completion list
-    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
-    // Shift+arrows are the editor's — unless the list is open over Point, where they do what
-    // Point does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B
-    // of the ninth).
+    // which extend the outline rather than select text in the input — all but Shift+Home, which
+    // Point leaves to the editor as it always has: no run has seen what Excel does with it while
+    // pointing, and that is the next ask of Excel (ED-2's claim is Overwrite's). And
+    // while a completion list is open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →,
+    // Home, End and the Shift+arrows are the editor's — unless the list is open over Point, where
+    // they do what Point does with them, as they do without it (ADR-0058: the tenth Windows run,
+    // and Part B of the ninth).
     const pointKeys = new Set([
-        ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
+        ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',
+        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
     // Pointing from outside (ADR-0058, "The keyboard"): while what Point wrote was written for a
     // press on another grid, and the Consumer that wrote it hears the arrows, Point's keys and the
     // Primary Modifier's arrows, with Shift or without, which the Consumer refuses rather than let

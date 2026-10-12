@@ -163,6 +163,43 @@ public class OverwriteShiftKeyTests : GridTestContext
         Assert.Same(before, selection);
     }
 
+    [Theory] // ADR-0142 / ADR-0011, ADR-0010, ED-2: a commit whose own handler moves the order lands, and the Selection it drops stays dropped: the Shift+arrow or Shift+Home that asked for the commit places no Selection from the first cell on screen, as Enter and the plain arrows place none
+    [InlineData("ArrowDown", true)]
+    [InlineData("ArrowLeft", true)]
+    [InlineData("Home", true)]
+    [InlineData("ArrowDown", false)]
+    public async Task ED2_a_commit_whose_handler_moves_the_order_extends_no_dropped_selection(string key, bool shift)
+    {
+        var rows = TestRows.Many(50);
+        var source = new TestSource();
+        source.Push(rows, totalCount: rows.Length);
+        var edits = new List<GridEditIntent<TestRow>>();
+        GridSelection? selection = null;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.OnEdit, (GridEditIntent<TestRow> intent) =>
+            {
+                edits.Add(intent);
+                // The Consumer's own write moves the order, as a sort on the edited column does: the
+                // rows come back in another order under a new Row Sequence Version (ADR-0011).
+                source.Push([rows[1], rows[0], .. rows[2..]], totalCount: rows.Length, rowSequenceVersion: source.RowSequenceVersion + 1);
+            })
+            .Add(g => g.SelectionChanged, s => selection = s));
+        await ClickCellAsync(cut, 2, 1);
+        await TypeAsync(cut, "75");
+
+        await PressAsync(cut, key, shift: shift, text: "75", caret: 2);
+
+        Assert.Equal(("Amount", "75"), (Assert.Single(edits).Column, edits[0].Value));
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
+        Assert.True(selection!.IsEmpty);
+    }
+
     [Theory] // ADR-0010 / ED-2: in Caret, Excel's Edit mode, the Shift+arrows and Shift+Home are the editor's — one that reaches the core while the gate is told the change commits nothing
     [InlineData("ArrowRight")]
     [InlineData("ArrowUp")]
@@ -210,7 +247,7 @@ public class OverwriteShiftKeyTests : GridTestContext
         Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
     }
 
-    [Fact] // ADR-0010 / ADR-0051 / ED-2: where a Reference can go, Overwrite's Shift+Home points from the edited cell to the row's first column, and in Point it extends the outline there (a reading, until Excel is asked)
+    [Fact] // ADR-0010 / ADR-0051 / ED-2: where a Reference can go, Overwrite's Shift+Home points from the edited cell to the row's first column (a reading, until Excel is asked)
     public async Task ED2_where_a_reference_can_go_shift_home_points_to_the_rows_first_column()
     {
         var edits = new List<GridEditIntent<TestRow>>();
@@ -222,16 +259,30 @@ public class OverwriteShiftKeyTests : GridTestContext
 
         Assert.Empty(edits);
         Assert.Equal("=A3:C3", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
-
-        // In Point: ↓ moves the outline to C4, and Shift+Home extends it to A4.
-        await PressAsync(cut, "ArrowDown", text: "=A3:C3", caret: 6);
-        Assert.Equal("=C4", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
-        await PressAsync(cut, "Home", shift: true, text: "=C4", caret: 3);
-        Assert.Equal("=A4:C4", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
-        Assert.Empty(edits);
+        Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
     }
 
-    [Fact] // ADR-0010 / ED-2: the gate's Overwrite set claims the four Shift+arrows and Shift+Home beside the arrows, Home and End — and not Shift+End
+    [Fact] // ADR-0051 / ADR-0010, ED-2: Shift+Home is not Point's — the gate leaves it to the editor while pointing, as before, until Excel is asked — and one that reaches the core then neither moves the outline nor commits and extends
+    public async Task ED2_while_pointing_shift_home_neither_points_nor_commits()
+    {
+        var edits = new List<GridEditIntent<TestRow>>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(edits, s => selection = s, point: true);
+        await ClickCellAsync(cut, 2, 2);
+        var before = selection;
+        await TypeAsync(cut, "=");
+        await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
+        Assert.Equal("=C4", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+
+        await PressAsync(cut, "Home", shift: true, text: "=C4", caret: 3);
+
+        Assert.Empty(edits);
+        Assert.Equal("=C4", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+        Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
+        Assert.Same(before, selection);
+    }
+
+    [Fact] // ADR-0010 / ED-2: the gate's Overwrite set claims the four Shift+arrows and Shift+Home beside the arrows, Home and End — and not Shift+End; its Point set the same, but Shift+Home, which Point leaves to the editor until Excel is asked (ADR-0051)
     public void ED2_the_gate_claims_the_shift_keys_in_overwrite()
     {
         var script = AssetSources.Read("ExGrid", "ex-grid.js");
@@ -239,6 +290,10 @@ public class OverwriteShiftKeyTests : GridTestContext
         Assert.Matches(new System.Text.RegularExpressions.Regex(
             @"const overwriteKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
             + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight', 'Shift\+Home'\]\);"),
+            script);
+        Assert.Matches(new System.Text.RegularExpressions.Regex(
+            @"const pointKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
+            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight'\]\);"),
             script);
     }
 }

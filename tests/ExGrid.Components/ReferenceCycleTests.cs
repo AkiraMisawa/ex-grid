@@ -263,6 +263,25 @@ public partial class ReferenceCycleTests : GridTestContext
         Assert.Equal("caret", EditingTold()[^1].Mode);
     }
 
+    [Fact] // ADR-0051 / DC-45 / ED-29: the Formula Bar is in Caret only until F2 takes it to Enter mode — F4 there after F2 leaves a caret at the rewritten Reference's end, as Overwrite does in the cell
+    public async Task DC45_F4_in_the_formula_bar_after_F2_leaves_a_caret()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 10);
+        var bar = cut.Find(".ex-formula-bar-text");
+        await bar.FocusAsync(new FocusEventArgs());
+        await bar.InputAsync(new ChangeEventArgs { Value = "=B2" });
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync("=B2", 3));
+        await PressAsync(cut, "F2", "=B2", 3, fromBar: true);
+        Assert.Equal("overwrite", EditingTold()[^1].Mode);
+
+        await PressAsync(cut, "F4", "=B2", 3, fromBar: true);
+
+        Assert.Equal("=$B$2", BarText(cut));
+        Assert.Equal("=$B$2", CellEditorText(cut));
+        Assert.Equal(("=$B$2", 5, 5), SelectionsPlaced()[^1]);
+    }
+
     [Fact] // ADR-0051 / DC-45: no answer — a caret touching no Reference — changes nothing
     public async Task DC45_no_answer_changes_nothing()
     {
