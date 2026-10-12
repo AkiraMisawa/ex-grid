@@ -5,26 +5,26 @@
 | ExGrid | 95.7% | 88.7% |
 | ExSheet | 95.4% | 88.5% |
 | ExPivot | 93.8% | 84.7% |
-| Data | 94.5% | 90.3% |
+| Data | 94.4% | 90.2% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/11/2026 - 23:30:04 |
+| Generated on: | 10/12/2026 - 00:32:42 |
 | Parser: | MultiReport (13x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 802 |
-| Files: | 440 |
-| **Line coverage:** | 94.9% (54147 of 57000) |
-| Covered lines: | 54147 |
-| Uncovered lines: | 2853 |
-| Coverable lines: | 57000 |
-| Total lines: | 94015 |
-| **Branch coverage:** | 87.8% (30748 of 34995) |
-| Covered branches: | 30748 |
-| Total branches: | 34995 |
+| Classes: | 816 |
+| Files: | 445 |
+| **Line coverage:** | 95% (54763 of 57644) |
+| Covered lines: | 54763 |
+| Uncovered lines: | 2881 |
+| Coverable lines: | 57644 |
+| Total lines: | 95197 |
+| **Branch coverage:** | 87.8% (31235 of 35544) |
+| Covered branches: | 31235 |
+| Total branches: | 35544 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -89,6 +89,7 @@
 |ExGrid.Chrome.SummaryFigureText|100%||
 |ExGrid.Chrome.SummaryLabelIds|100%||
 |ExGrid.CircuitBinding|100%|100%|
+|ExGrid.ClauseDocument|100%||
 |ExGrid.Clipboard.ClipboardBlock|100%||
 |ExGrid.Clipboard.ClipboardData|91.6%|84.3%|
 |ExGrid.Clipboard.ClipboardParse|93.5%|70.7%|
@@ -106,6 +107,7 @@
 |ExGrid.Clipboard.PastePlan|100%|100%|
 |ExGrid.Clipboard.PasteShape|100%|100%|
 |ExGrid.Clipboard.SourceCell|100%||
+|ExGrid.ColumnDocument|100%||
 |ExGrid.ColumnGeometry|98.9%|93.1%|
 |ExGrid.ColumnInfo<TRow>|100%|100%|
 |ExGrid.Columns.AutoWidth|100%|100%|
@@ -121,6 +123,7 @@
 |ExGrid.Columns.OverflowDecision|100%||
 |ExGrid.Columns.OverflowRules|100%|100%|
 |ExGrid.Columns.ResolvedHeaderGroup|100%||
+|ExGrid.ColumnViewState|90.9%||
 |ExGrid.ColumnWidthChange|100%||
 |ExGrid.Components.AppearanceStyles|96.9%|93.8%|
 |ExGrid.Components.AppearanceStyles.ByReference|100%|50%|
@@ -153,11 +156,11 @@
 |ExGrid.Components.ExGrid.SummaryQuestion<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenAt<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.3%|89.9%|
-|ExGrid.Components.ExGrid<TRow>|91.6%|88.3%|
+|ExGrid.Components.ExGrid<TRow>|91.4%|88.1%|
+|ExGrid.Components.ExGrid<TRow>|95.4%|90%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
-|ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
+|ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ReferenceHighlights|100%|97.7%|
 |ExGrid.Components.RowAppearance|96.1%|75%|
 |ExGrid.Components.RowClasses|96.5%|92.8%|
@@ -170,8 +173,11 @@
 |ExGrid.FetchingGridSource<TRow>|80.8%|64.2%|
 |ExGrid.FetchingGridSource<TRow>|96.2%|84.4%|
 |ExGrid.FilterClause|100%||
+|ExGrid.FilterDocument|100%||
+|ExGrid.FilterEquality|87.5%|81.2%|
 |ExGrid.FilterOperators|96.5%|80%|
 |ExGrid.FilterSpec|100%||
+|ExGrid.FilterSpecDocument|100%||
 |ExGrid.Finding.GridFind|100%|100%|
 |ExGrid.Finding.GridFindRequest|88.8%||
 |ExGrid.Finding.GridFindResult|100%||
@@ -183,13 +189,15 @@
 |ExGrid.GridMetrics|97.6%|92.5%|
 |ExGrid.GridPage<TRow>|95%|100%|
 |ExGrid.GridPresentationDefaults|93.8%|75%|
-|ExGrid.GridQuery|100%||
+|ExGrid.GridQuery|100%|85.7%|
 |ExGrid.GridQueryEngine|95.6%|93.3%|
 |ExGrid.GridQueryEngine.PreparedClause|83.3%||
 |ExGrid.GridQueryEngine.PreparedColumn<TRow>|100%||
 |ExGrid.GridQueryEngine.RowOrder<TRow>|95.2%|100%|
 |ExGrid.GridQueryEngine<TRow>|95.6%|93.3%|
 |ExGrid.GridSource|100%|100%|
+|ExGrid.GridViewState|96.6%|84.2%|
+|ExGrid.GridViewStateJson|97.6%|90.6%|
 |ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource.ChangePlan<TRow>|100%|100%|
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
@@ -205,6 +213,10 @@
 |ExGrid.LiveRequery|97.2%|95.8%|
 |ExGrid.LiveRequery<TRow>|97.2%|95.8%|
 |ExGrid.LiveRequeryOutcome<TRow>|100%||
+|ExGrid.OnlyThroughGridViewStateJson<T>|100%||
+|ExGrid.OperandDocument|100%||
+|ExGrid.QueryDocument|100%||
+|ExGrid.RangeDocument|100%||
 |ExGrid.RowChange<TRow>|100%||
 |ExGrid.RowRange|100%||
 |ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
@@ -235,6 +247,7 @@
 |ExGrid.Selection.HeldSelection|100%|100%|
 |ExGrid.Selection.SelectionRange|100%|100%|
 |ExGrid.SortCycle|100%|100%|
+|ExGrid.SortDocument|100%||
 |ExGrid.SortSpec|100%||
 |ExGrid.Summarizing.GridSummary|100%|100%|
 |ExGrid.Summarizing.GridSummaryCells|77.7%|75%|
@@ -250,13 +263,14 @@
 |ExGrid.ViewportBox|100%|100%|
 |ExGrid.ViewportGeometry|100%|97.9%|
 |ExGrid.ViewportSize|100%|75%|
+|ExGrid.ViewStateDocument|100%||
 
 </details>
 <details><summary>ExGrid.Data - 94.6%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.6%**|**90.5%**|
 |ExGrid.Data.AggregateAccumulator|86%|87%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -345,7 +359,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
