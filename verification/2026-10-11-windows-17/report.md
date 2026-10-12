@@ -66,7 +66,8 @@ stays the verified commit of every Part that runs the build. The DemoHosts were 
 - **Office's Japanese display language** (Part E, item 27): asked, the user agreed to add it, approved each UAC prompt,
   and asked for Excel's display language to be changed without them ("僕の介入なしでできるようにして"). It was changed
   through Excel's own Options by the session and put back.
-- **Narrator** (Part F): asked, the user chose to leave it to the end of the run.
+- **Narrator** (Part F): asked, the user chose to leave it to the end of the run; at the end, the user asked the session
+  to start it, then said they were away from the desk, and chose to run it when they are back.
 
 ## Part A — the case corpus, put to Excel (ADR-0202, SH-7)
 
@@ -586,7 +587,15 @@ was added to `%APPDATA%\nvda\nvda.ini` for the run, and the file was put back by
     Speech Viewer's whole text of both passes is in `records/part-f-nvda-*speech-viewer.txt`, with the terminal's window
     title left out.
 
-**Narrator: not yet run.** Asked first, as the procedure says, the user chose to leave it to the end of the run.
+**Narrator: not run yet.** The user was asked first, as the procedure says, and chose to leave it to the end of the run.
+
+- At 12:30 the user asked the session to start it, and it was started (`Narrator.exe`, 10.0.26100.8972). Its "Narrator
+  updates" window was closed with Escape, and its home window minimised; the home window had kept the browser from the
+  front on the first try.
+- At the first step, the user said they were not at the Windows desk. The steps stopped there, and Narrator was stopped
+  (Insert+Escape). The partial records are in `records/part-f-first-try/part-f-narrator-*`.
+- Asked how to go on, **the user chose to run it when they are back**, listening as the procedure says. The DemoHosts and
+  the latency proxy are left running for it.
 
 ## Part G — ExGrid's by-hand rows, the record (ADR-0208)
 
@@ -807,4 +816,99 @@ device pixels.
 | h10 | **A shown top taken away**: A1's bottom thick, A2 recording nothing. Format Cells over A2 opens its Border tab with **a thick top, its button pressed**. The Top button (Alt+T) takes it away, and after OK **A1's bottom is gone too**: neither cell keeps a line there. **Both cells recording an outer edge** could not be made here: set through COM, A2's top thin after A1's bottom thick reads back as A1's bottom thin as well (one line on the edge), and Format Cells over A2 and over A1 shows that thin line | — | ticket 102: the taking-away observed; "which one the dialog shows where both record one" not asked, since Excel would not record two |
 | h11 | The DemoHost's case `fills`, cell for cell, at Excel's 100% and 150% zoom (`h-h11-zoom-*-cells.png`): no gridline between two filled cells side by side (B2 \| C2, B5 \| C5). A double line is black, a pixel of the fill's colour, and black, **one device pixel each**, at both zooms (`h-h11-excel*-e2-double-zoom.png`). The case holds double lines and no dashes | `/sheet?case=fills` at the browser's 100% and 150% (DPR 1.5 and 2.25; the zoom set on `/wide`): the same, no gridline between filled cells, and the double line black, the fill's colour and black, one Device Pixel each, at both (`h-h11-sheet*-e2-double-zoom.png`). A case opens without its Sheet Toolbar, as the page says | SH-46, ticket 99 |
 | h12 | `@;0` and `0;@;0`, on 12 and on `abc`: **Excel refuses both**. Through COM, "Unable to set the NumberFormat property of the Range class". Typed in Format Cells' Custom box, OK leaves the dialog open with the code selected, and **says nothing**: no message box. Both cells stay General, `12` and `abc` | — | ticket 89 |
+
+## Every difference, and what it belongs to
+
+Each difference this run found from a reading, from Excel, or from an earlier run, with the ticket, ADR or Definition of
+Done row it belongs to. Nothing is proposed: each is recorded for a human to decide.
+
+**Part A, the corpus against Excel (ADR-0202, SH-7, ADR-0047).** 79 cases disagree. Each is on its own line, with its
+Formula and Excel's answer, in Part A's "Every disagreement":
+
+- **ticket 16 and the revisions, nested SUBTOTAL and AGGREGATE**: SUBTOTAL-020, 021, 035 to 038; AGGREGATE-025, 026,
+  042 to 054. Excel counts or skips the nested Formula's cell, where the corpus refuses.
+- **ticket 17, ERROR.TYPE of the newer Error Values**: ERRORTYPE-013 to 019 and 020. Excel answers 9, 14, 13, 11, 10,
+  12 and 0.
+- **ticket 18, INDIRECT's R1C1**: INDIRECT-023 (45).
+- **AGGREGATE-038 to 040; LARGE-007; SUBTOTAL-027, 029, 030; RANKEQ-005; SORT-011; UNIQUE-009; XMATCH-008; AND-011;
+  INDEX-012; SUBSTITUTE-005; EDATE-008; EOMONTH-008; NETWORKDAYS-005; ISNUMBER-008**: Excel answers, refuses, or
+  answers otherwise, as listed there.
+- **TEXTFN-009** (de-DE), **TEXTFN-017 to 020**.
+- **The last digits** (ADR-0047's digits): COS-004, SIN-004, TAN-004, FV-001, FV-003, NPV-001, NPV-002, PMT-001 to
+  003, PV-001, PV-003. **PMT-008**: Excel answers −147.95, where the corpus gives `#VALUE!`.
+- **2^27**: COTH-002, CSCH-002, SECH-003, MOD-008.
+- **LET typed by keys** (ADR-0181): LET-101, 103, 106, 107, 111 and 112 are entered, where the corpus refuses them.
+- **Carried since the first run**: TABLE-011, TABLE-013, COPY-025.
+
+**Part B, by hand in Excel.**
+
+- b4, ticket 16: SUBTOTAL's list in `Functions.cs` names `STDEV`, `STDEVP`, `VAR`, `VARP` (7, 8, 10, 11, 107, 108,
+  110, 111), where Excel shows `STDEV.S`, `STDEV.P`, `VAR.S`, `VAR.P`.
+- b4: AGGREGATE's `function_num` list leaves out 13 and 16 to 19, which Excel lists. This is ExSheet's own decision,
+  by its comment.
+
+**Part C, F4 (SH-28, ADR-0051) and the Heading (ADR-0052).** Part C's "The differences", items 1 to 11:
+
+- typed in Enter mode, ← and Home commit, in both Excel and ExSheet;
+- case 7: Shift+Home in Enter mode commits in Excel, and selects text in ExSheet;
+- after F4, Excel selects the rewritten Reference, and ExSheet leaves a caret;
+- Excel cycles only the end at the caret (cases 5, 6, 22), and ExSheet both ends;
+- A:A's third press: Excel cycles two forms, and ExSheet's third press stays as the second;
+- case 21: Excel upper-cases the Reference, and ExSheet keeps its case;
+- ExSheet's Formula Bar does not point after `=` and ↓ (cases 15, 15b, 16);
+- the Heading reading: the view moves sideways in both Excel and ExSheet, where the seventh run read no move.
+
+**Part D, KeyTips (SH-51, SH-52, ticket 160).**
+
+- ExSheet's Home KeyTips: `4` (free in Excel's Home tab) is Strikethrough, and `O` opens Format Cells, where Excel's `O`
+  is the Format menu.
+- **Under the MudBlazor Chrome, the lists FC, H, B and N stay open after Escape and pile up**, in all four
+  configurations (`ExSheet.MudBlazor`, ticket 160).
+- On the Server host under the MudBlazor Chrome, the console warns "Blocked aria-hidden on an element because its
+  descendant retained focus…" (CON-1 to 4).
+
+**Part E, ExPivot (ticket 07, ADR-0060, ADR-0061, ADR-0064).**
+
+- item 4: Count Numbers over a column read as Text: Excel 1, 2, 3; ExPivot 0.
+- item 5 (a): over no numbers, Average, StdDev and Var are an empty cell in both, not `#DIV/0!` as the reading says.
+- item 16: Excel's General shows eleven characters; ExPivot's shows fifteen digits. Excel truncates a CSV's numbers to
+  fifteen digits on opening it.
+- items 12 and 13: Excel's `Column Labels` corner row and its `Total Sum of …` grand total columns; ExPivot draws no
+  corner row, and a `Grand Total` band.
+- item 27: Excel paints `列ラベル`, and ExPivot has no corner row for it. The Field List's two instructions end in `:` in
+  ExPivot; UI Automation reads Excel's without one, which no picture settled.
+
+**Part F, the screen readers (§21.11).**
+
+- Without a Focus, the first Tab from Revalue lands on the Sheet Toolbar, and a second Tab reaches the grid (ADR-0100).
+  The first ↓ then makes A1 the Focus.
+- Under NVDA, nothing was spoken through the first steps after the browser started, when they began with the script's
+  focus and Tab. A pass that began with a press spoke throughout.
+- NVDA names the row as the sheet's row plus one: `row 11` for D10.
+- Narrator: not run yet (above).
+
+**Part G, ExGrid's by-hand rows (ADR-0208).**
+
+- FN-12e: seven Segoe UI glyphs measure above their charge on Windows: ƒ at every weight; ť and the Hebrew `ג` `ט` `י`
+  `ס` `פ` at some weights. The row's first clause is not met as written.
+- ED-30: k6 is still two compositions where the reading expects one; D10 holds `かな感じ`, as Excel's does. k8's press on
+  D12 lands on the IME's own list, as in the sixteenth run and in Excel, so the row's last clause is not run as written.
+- ED-30, beside the sixteenth run: k6, k6x and k6y no longer lose a key on WebAssembly. k16's root now carries its focus
+  ring mark.
+- VZ-16: the probe's first passes misread the compositor's clip at the browser's zoom. That was a probe error, not a
+  finding; the passes are kept in `records/part-g-first-try/`.
+
+**Part H, beside Excel.**
+
+- h2, ticket 24 question 2: ExSheet's active cell border in a multi-range selection is green, where Excel's is black.
+- h3, ticket 24 question 3: Excel puts a whole column's fill handle at its top right, and a whole row's at its bottom
+  left. ExSheet draws none in view for the column, and the row's at its far right end, off screen.
+- h5, SH-36: XMATCH's two lists are Excel's and are not ExSheet's; XMATCH carries no list in `Functions.cs`.
+- h6, DC-33 and ticket 14: after a refused paste, the live region is empty, where the third run read the earlier
+  Selection's words.
+- h7, SH-45: at the standard width, Ctrl+U and Format Cells' Font tab widen a column over `####`, and Ctrl+I does not.
+  At a set width none widens.
+- h8, ticket 100: Ctrl+5 widens at the standard width, as the fourteenth run read.
+- h10, ticket 102: two cells each recording their own line on a shared edge could not be made in Excel.
+- h12, ticket 89: Excel refuses `@;0` and `0;@;0`, through COM and, without a message, in Format Cells.
 
