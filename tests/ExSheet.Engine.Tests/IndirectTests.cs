@@ -250,7 +250,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Ref, sheet.Evaluate("=INDIRECT(\"R3C2\",TRUE)").Error);
     }
 
-    [Theory] // ADR-0124 (2026-10-10, 2026-10-12): R1C1 text in a form no Windows run has observed — a number with a leading 0 or a +, a cell joined to a whole row or column, a row to a column — is refused with #VALUE!, as are structured and A1# text in R1C1 style (INDIRECT-058 to 061 ask them)
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12): R1C1 text in a form no Windows run has observed — a number with a leading 0 or a +, a cell joined to a whole row or column, a row to a column — is refused with #VALUE!, as are structured and A1# text in R1C1 style (INDIRECT-058 to 063 ask them)
     [InlineData("R03C2")]
     [InlineData("R0C2")]
     [InlineData("R3C02")]
@@ -342,7 +342,7 @@ public class IndirectTests
         Assert.Equal(expected, sheet.Number(cell), 9);
     }
 
-    [Theory] // ADR-0124 (2026-10-12), ADR-0046 (INDIRECT-052): an offset past the Sheet's edge names no place, #REF!, on either side and on either axis
+    [Theory] // ADR-0124 (2026-10-12), ADR-0046: an offset past the Sheet's edge names no place, #REF!, on either side and on either axis; the engine's answer until a run reads Excel's, which might wrap it round (INDIRECT-052)
     [InlineData("C2", "R[-5]C")]
     [InlineData("C2", "R[-2]C[-1]")]
     [InlineData("C2", "RC[-3]")]

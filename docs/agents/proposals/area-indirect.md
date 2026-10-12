@@ -4,8 +4,8 @@ The area pass of 2026-10-12 (`verification/2026-10-12-windows-area/report.md`, "
 `tests/ExSheet.Engine.Tests/ExcelOracle/results-2026-10-12-area-com-en-US.json`) read Excel's answer to the four
 `INDIRECT` cases the engine refused by decision. This file holds the text this area would put into ADR-0124, the
 Definition of Done, the function catalogue, the engine's README, the Docs Site and `linked-tables.json`, none of which a
-background agent changes. Each edit is exact: the old text, then the new. Every other change is on the branch
-`claude/area-indirect`.
+background agent changes. Each edit is exact and in whole lines, with the target's own indentation: the old lines, then
+the new, each in a fence. Every other change is on the branch `claude/area-indirect`.
 
 ## What was done, per case
 
@@ -23,10 +23,12 @@ as the seventeenth run's R3C2 was to ranges, case and qualifiers:
   `Evaluator.Self` gives, read only), or nothing (an offset of 0).
 - A row part alone is a whole row, and a column part alone a whole column.
 - Two parts of the same kind joined by `:` name the rectangle they span.
-- An offset or a number past the Sheet's edge names no place: `#REF!`.
-- Still `#VALUE!`: a number written with a leading 0 (`R03C2`, `R[01]C`), an offset written with `+` (`R[+1]C`), a
-  cell joined to a whole row or column or a row to a column (`R2C2:R3`, `R3:C2`), and structured or `#` text in R1C1
-  style. Text that is not R1C1 notation is `#REF!`, as before.
+- A number past the Sheet's edge names no place, `#REF!`, as `XFE1` does in A1 style (INDIRECT-017, observed). An
+  offset past the edge is `#REF!` too, but that is the engine's answer, not one a run has observed: Excel might wrap it
+  round to the last rows, and INDIRECT-052 asks it.
+- Still `#VALUE!`: a number written with a leading 0 (`R03C2`, `R[01]C`) or with `+` (`R[+1]C`), a cell joined to a
+  whole row or column (`R2C2:R3`) or a row joined to a column (`R3:C2`), and structured or `#` text in R1C1 style.
+  Text that is not R1C1 notation is `#REF!`, as before.
 
 `INDIRECT` is volatile, so a Formula an insertion moves counts its offsets from its new cell at once
 (`IndirectTests.ADR0124_relative_r1c1_text_counts_from_the_formulas_cell_after_it_moves`). A Formula evaluated in no
@@ -36,7 +38,8 @@ cell, so no Consumer meets it.
 **One reading to confirm.** The triage's "two parts joined by `:` name the rectangle they span" is implemented for two
 parts of the same kind (cell and cell, row and row, column and column), which are the forms its cases name. A cell
 joined to a whole row (`R2C2:R3`) has no A1 counterpart a Formula takes (`B2:3` is not a Reference), and Excel could
-read it as the range operator's rectangle (`A2:XFD3`) or as no place; it stays `#VALUE!`, and INDIRECT-058 asks it.
+read it as the range operator's rectangle (`A2:XFD3`) or as no place; it stays `#VALUE!`, and INDIRECT-058 asks it. A
+row joined to a column (`R3:C2`) is refused for the same reason, and INDIRECT-062 asks it.
 
 ### New cases (all `uncertain`)
 
@@ -79,6 +82,8 @@ can settle them:
 | INDIRECT-059 | `=INDIRECT("R03C2",FALSE)` | `#VALUE!` | 45, as R3C2 |
 | INDIRECT-060 | `=SUM(INDIRECT("R1C1#",FALSE))` over A1 `=SEQUENCE(3)` | `#VALUE!` | 6, as A1# |
 | INDIRECT-061 | `=INDIRECT("Positions[PV]",FALSE)` | `#VALUE!` | 250.5, as in A1 style |
+| INDIRECT-062 | `=ROWS(INDIRECT("R3:C2",FALSE))` | `#VALUE!` | 1048576, the whole Sheet the range operator gives (`#REF!` if it names no place) |
+| INDIRECT-063 | in C2, `=INDIRECT("R[+1]C[-1]",FALSE)` | `#VALUE!` | 45, as R[1]C[-1] |
 
 ## INDIRECT-043: Excel's answer is the evidence, and the decision it needs
 
@@ -123,47 +128,63 @@ The engine's answer, `#NAME?`, was checked on this branch (`=COLUMNS(Positions)`
 
 ## ADR-0124: the note of 2026-10-12, one sentence
 
-Old:
+`docs/adr/0124-volatile-functions-are-recalculated-after-every-change.md`, the three lines that hold the sentence
+"**R1C1 text in a form no run has observed stays `#VALUE!`**". Old:
 
-> **R1C1 text in a form no run has observed stays `#VALUE!`**: relative (`R[1]C[-1]`, `RC`), whole rows
-> or columns (`R3`, `C2`), a number with a leading 0, and structured or `#` text in R1C1 style. INDIRECT-030 to 042 put
-> the forms generalised from the observed ones to the next run.
+```markdown
+does not spill. **R1C1 text in a form no run has observed stays `#VALUE!`**: relative (`R[1]C[-1]`, `RC`), whole rows
+or columns (`R3`, `C2`), a number with a leading 0, and structured or `#` text in R1C1 style. INDIRECT-030 to 042 put
+the forms generalised from the observed ones to the next run. Excel reads R1C1 text in the letters of its display
+```
 
 New:
 
-> **R1C1 text in a form no run has observed stays `#VALUE!`**: a number with a leading 0, and structured or `#` text
-> in R1C1 style. Relative text (`R[1]C[-1]`, `RC`) and whole rows or columns (`R3`, `C2`) were refused with them until
-> the area pass of the same day observed them (the note below). INDIRECT-030 to 042 put the forms generalised from the
-> observed ones to the next run.
+```markdown
+does not spill. **R1C1 text in a form no run has observed stays `#VALUE!`**: a number with a leading 0, and structured
+or `#` text in R1C1 style. Relative text (`R[1]C[-1]`, `RC`) and whole rows or columns (`R3`, `C2`) were refused with
+them until the area pass of the same day observed them, and the note below names what that pass still refuses.
+INDIRECT-030 to 042 put the forms generalised from the observed ones to the next run. Excel reads R1C1 text in the
+letters of its display
+```
 
 ## ADR-0124: a dated note after it, at the end of "`RAND`, `RANDBETWEEN` and `INDIRECT`"
 
-> *(2026-10-12, after the area pass (ADR-0208's remedy): **R1C1 text is read in the notation's ordinary meaning, as
-> Excel was observed to read it.** In C2, `INDIRECT("R[1]C[-1]",FALSE)` is 45, B3's Value: an offset in brackets counts
-> from the Formula's own cell. `SUM(INDIRECT("R3",FALSE))` is 45, row 3, and `SUM(INDIRECT("C2",FALSE))` is 118.333,
-> column B (INDIRECT-036 to 038). Generalised as R3C2 was: R and C each take a number, an offset in brackets (`[n]`,
-> `[-n]`) or nothing, an offset of 0; a row part alone is a whole row, a column part alone a whole column; two parts of
-> the same kind joined by `:` name the rectangle they span; an offset past the Sheet's edge names no place, `#REF!`.
-> `INDIRECT` is volatile, so a Formula a structural edit moves counts from its new cell. **Still `#VALUE!`**: a number
-> written with a leading 0 or a `+`, a cell joined to a whole row or column (`R2C2:R3`), and structured or `#` text in
-> R1C1 style. INDIRECT-044 to 052 put the generalised forms to the next run, an offset past the edge among them, which
-> Excel might wrap round to the last rows; INDIRECT-058 to 061 ask the refused ones. **A declared Linked Table's bare
-> name stays `#VALUE!`.** Excel's `SUM(INDIRECT("Positions"))` is 250.5 (INDIRECT-043), but over a table of one row
-> whose other column is text that does not tell the table's data from one column, and ExSheet has no typed bare table
-> name to read it as: typed, `Positions` is `#NAME?`, and
-> [ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md) reads a Linked Table by column. INDIRECT-053
-> to 057 ask what it reads; following it then wants a decision on what a bare name reads, typed and through
-> `INDIRECT`.)*
+The section is the ADR's last. After its last line, `Formula twice, and one that moves no spill once.)*`, a blank line
+and:
+
+```markdown
+*(2026-10-12, after the area pass (ADR-0208's remedy): **R1C1 text is read in the notation's ordinary meaning, as
+Excel was observed to read it.** In C2, `INDIRECT("R[1]C[-1]",FALSE)` is 45, B3's Value: an offset in brackets counts
+from the Formula's own cell. `SUM(INDIRECT("R3",FALSE))` is 45, row 3, and `SUM(INDIRECT("C2",FALSE))` is 118.333,
+column B (INDIRECT-036 to 038). Generalised as R3C2 was: R and C each take a number, an offset in brackets (`[n]`,
+`[-n]`) or nothing, an offset of 0; a row part alone is a whole row, a column part alone a whole column; two parts of
+the same kind joined by `:` name the rectangle they span. A number past the Sheet's edge names no place, `#REF!`, as
+`XFE1` does (INDIRECT-017). An offset past it is `#REF!` too, the engine's answer until a run reads Excel's, which
+might wrap it round to the last rows (INDIRECT-052). `INDIRECT` is volatile, so a Formula a structural edit moves
+counts from its new cell. **Still `#VALUE!`**: a number written with a leading 0 or a `+`, a cell joined to a whole
+row or column (`R2C2:R3`) or a row to a column (`R3:C2`), and structured or `#` text in R1C1 style. INDIRECT-044 to
+052 put the generalised forms to the next run, and INDIRECT-058 to 063 the refused ones. **A declared Linked Table's
+bare name stays `#VALUE!`.** Excel's `SUM(INDIRECT("Positions"))` is 250.5 (INDIRECT-043), but over a table of one
+row whose other column is text that does not tell the table's data from one column, and ExSheet has no typed bare
+table name to read it as: typed, `Positions` is `#NAME?`, and
+[ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md) reads a Linked Table by column. INDIRECT-053
+to 057 ask what it reads; following it then wants a decision on what a bare name reads, typed and through
+`INDIRECT`.)*
+```
 
 ## The engine's README (`src/ExSheet.Engine/README.md`)
 
 The function table's row. Old:
 
-> | `INDIRECT` | `ref_text, [a1]` — text naming a place on the same Sheet, A1 or absolute R1C1, a Linked Table's column or `A1#`; volatile (ADR-0124) |
+```markdown
+| `INDIRECT` | `ref_text, [a1]` — text naming a place on the same Sheet, A1 or absolute R1C1, a Linked Table's column or `A1#`; volatile (ADR-0124) |
+```
 
 New:
 
-> | `INDIRECT` | `ref_text, [a1]` — text naming a place on the same Sheet, A1 or R1C1 (relative, whole rows and columns included), a Linked Table's column or `A1#`; volatile (ADR-0124) |
+```markdown
+| `INDIRECT` | `ref_text, [a1]` — text naming a place on the same Sheet, A1 or R1C1 (relative, whole rows and columns included), a Linked Table's column or `A1#`; volatile (ADR-0124) |
+```
 
 The paragraph under "`INDIRECT` reads A1-style text naming a cell or a range of this Sheet". Old:
 
@@ -181,37 +202,54 @@ New:
 
 ```markdown
   never it, so `INDIRECT("B5")` names B5 whatever moved. It also reads the forms the seventeenth
-  Windows run and the area pass observed: R1C1 text (`a1` FALSE, 0, a blank or left empty) in the
-  notation's ordinary meaning — R and C each with a number, an offset in brackets from the Formula's
-  own cell or nothing, a row part alone a whole row, a column part alone a whole column, and two parts
-  of the same kind joined by `:` the rectangle they span — a structured reference's text as
-  `Table[Column]` typed is read, waiting while the table waits, and `A1#` as typed `A1#` is read. A
-  number with a leading 0, a cell joined to a whole row or column, structured or `#` text in R1C1
-  style, and a declared Linked Table's bare name (`Positions`, which Excel reads as the table's data)
-  are `#VALUE!` until a run observes them, and text that names no place is `#REF!`, as in Excel: an
-  offset past the Sheet's edge, another Sheet's name, a table never declared or a column it lacks.
-  What a computed Reference
+  Windows run and the area pass observed, by the rule they settle: R1C1 text (`a1` FALSE, 0, a blank
+  or left empty) in the notation's ordinary meaning — R and C each with a number, an offset in
+  brackets from the Formula's own cell or nothing, a row part alone a whole row, a column part alone
+  a whole column, and two parts of the same kind joined by `:` the rectangle they span — a structured
+  reference's text as `Table[Column]` typed is read, waiting while the table waits, and `A1#` as typed
+  `A1#` is read. R1C1 text with a number written with a leading 0 or a `+`, a cell joined to a whole
+  row or column or a row to a column, or structured or `#` text, and a declared Linked Table's bare
+  name (`Positions`, which Excel reads as the table's data), are `#VALUE!` until a run observes them.
+  Text that names no place is `#REF!`, as in Excel: another Sheet's name, a table never declared or a
+  column it lacks. An offset past the Sheet's edge is `#REF!` too, the engine's answer until a run
+  reads Excel's (INDIRECT-052), which might wrap it round to the last rows. What a computed Reference
 ```
 
 ## The function catalogue (`docs/specs/exsheet-functions/spec.md`, the `INDIRECT` row)
 
 Old:
 
-> | `INDIRECT` | Supported | — | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; absolute R1C1 text, a Linked Table's column as structured text and `A1#`, as the seventeenth run observed; relative and whole-row or whole-column R1C1 text is `#VALUE!`, and text that names no place is `#REF!` (ADR-0124, 2026-10-10 and 2026-10-12). Ticket 18 |
+```markdown
+| `INDIRECT` | Supported | — | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; absolute R1C1 text, a Linked Table's column as structured text and `A1#`, as the seventeenth run observed; relative and whole-row or whole-column R1C1 text is `#VALUE!`, and text that names no place is `#REF!` (ADR-0124, 2026-10-10 and 2026-10-12). Ticket 18 |
+```
 
 New:
 
-> | `INDIRECT` | Supported | — | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; R1C1 text, absolute, relative to the Formula's own cell, and whole rows and columns, a Linked Table's column as structured text and `A1#`, as the seventeenth run and the area pass observed; a Linked Table's bare name and a leading 0 in R1C1 text are `#VALUE!`, and text that names no place is `#REF!` (ADR-0124, 2026-10-10 and 2026-10-12). Ticket 18 |
+```markdown
+| `INDIRECT` | Supported | — | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; R1C1 text (absolute, relative to the Formula's own cell, a whole row or column, or the rectangle two parts of the same kind span), a Linked Table's column as structured text and `A1#`, as the seventeenth run and the area pass observed and by the rule they settle; `#VALUE!` for a Linked Table's bare name and for R1C1 text with a number written with a leading 0 or a `+`, a cell joined to a whole row or column or a row to a column, or structured or `#` text; `#REF!` for text that names no place, and for an offset past the Sheet's edge until Excel is asked (ADR-0124, 2026-10-10 and 2026-10-12). Ticket 18 |
+```
 
 ## The Definition of Done, SH-68: the `INDIRECT` clause
 
-Old:
+The whole SH-68 line of `docs/definition-of-done.md`; only its `INDIRECT` sentence changes. Old:
 
-> `INDIRECT` reads A1-style text naming a place on the same Sheet, R1C1 text naming an absolute cell or a range of two, a Linked Table's column as structured text (waiting while the table does) and `A1#`, keeps its text through an insertion or deletion, gives `#VALUE!` for R1C1 text that is relative or names whole rows or columns, and `#REF!` for text that names no place, a table or a column that does not exist included (ADR-0047's and ADR-0124's notes of 2026-10-10, ADR-0124's of 2026-10-12)
+```markdown
+| **SH-68** | MUST | `SUBTOTAL` and `AGGREGATE` answer their corpus cases while no row can be hidden, and a test named for ADR-0047 fails on the day one can. Inside their range, a cell whose Formula, or whose Spill Range's Anchor's, calls `SUBTOTAL` or `AGGREGATE` anywhere is nested: `SUBTOTAL` and `AGGREGATE`'s options 0 to 3 pass over it and options 4 to 7 count its Value, as the seventeenth Windows run read Excel's answers; an `AGGREGATE` function number for a function the engine does not support is `#VALUE!`, and a Formula that gives one of their reference-only arguments something that can never be a Reference is refused on entry. `ERROR.TYPE` gives `#GETTING_DATA` and `#CIRC!` back, and Excel's numbers for its newer Error Values: `#SPILL!` 9, `#CONNECT!` 10, `#BLOCKED!` 11, `#UNKNOWN!` 12, `#FIELD!` 13, `#CALC!` 14. `INDIRECT` reads A1-style text naming a place on the same Sheet, R1C1 text naming an absolute cell or a range of two, a Linked Table's column as structured text (waiting while the table does) and `A1#`, keeps its text through an insertion or deletion, gives `#VALUE!` for R1C1 text that is relative or names whole rows or columns, and `#REF!` for text that names no place, a table or a column that does not exist included (ADR-0047's and ADR-0124's notes of 2026-10-10, ADR-0124's of 2026-10-12) *(2026-10-11, decided with the user: for `AGGREGATE`'s options 4 to 7, a cell in range whose whole Formula is a `SUBTOTAL` makes the result `#VALUE!` until the sign-off's Windows run reads Excel's answer, which Microsoft documents as counted; then it follows Excel.)* *(2026-10-12: the seventeenth run read it — 6, counted — and the engine follows Excel, ADR-0047's note of that date.)* *(2026-10-12, the seventeenth Windows run read `ERROR.TYPE`'s numbers for Excel's newer Error Values, which the row had refused with `#VALUE!` until Excel was asked; it now follows Excel, ADR-0047's note of this date.)* | Layer 1 | as stated |
+```
 
 New:
 
-> `INDIRECT` reads A1-style text naming a place on the same Sheet, R1C1 text naming a cell, a whole row or column, or the rectangle two of them span, absolute or relative to the Formula's own cell, a Linked Table's column as structured text (waiting while the table does) and `A1#`, keeps its text through an insertion or deletion, gives `#VALUE!` for a Linked Table's bare name and for R1C1 text with a leading 0, and `#REF!` for text that names no place, an offset past the Sheet's edge and a table or a column that does not exist included (ADR-0047's and ADR-0124's notes of 2026-10-10, ADR-0124's of 2026-10-12)
+```markdown
+| **SH-68** | MUST | `SUBTOTAL` and `AGGREGATE` answer their corpus cases while no row can be hidden, and a test named for ADR-0047 fails on the day one can. Inside their range, a cell whose Formula, or whose Spill Range's Anchor's, calls `SUBTOTAL` or `AGGREGATE` anywhere is nested: `SUBTOTAL` and `AGGREGATE`'s options 0 to 3 pass over it and options 4 to 7 count its Value, as the seventeenth Windows run read Excel's answers; an `AGGREGATE` function number for a function the engine does not support is `#VALUE!`, and a Formula that gives one of their reference-only arguments something that can never be a Reference is refused on entry. `ERROR.TYPE` gives `#GETTING_DATA` and `#CIRC!` back, and Excel's numbers for its newer Error Values: `#SPILL!` 9, `#CONNECT!` 10, `#BLOCKED!` 11, `#UNKNOWN!` 12, `#FIELD!` 13, `#CALC!` 14. `INDIRECT` reads A1-style text naming a place on the same Sheet, R1C1 text naming a cell, a whole row or column, or the rectangle two parts of the same kind span, absolute or relative to the Formula's own cell, a Linked Table's column as structured text (waiting while the table does) and `A1#`, keeps its text through an insertion or deletion, gives `#VALUE!` for a Linked Table's bare name and for R1C1 text with a number written with a leading 0 or a `+`, a cell joined to a whole row or column, a row joined to a column, or structured or `#` text, and `#REF!` for text that names no place, a table or a column that does not exist included, and for an offset past the Sheet's edge until a run reads Excel's answer (ADR-0047's and ADR-0124's notes of 2026-10-10, ADR-0124's of 2026-10-12) *(2026-10-11, decided with the user: for `AGGREGATE`'s options 4 to 7, a cell in range whose whole Formula is a `SUBTOTAL` makes the result `#VALUE!` until the sign-off's Windows run reads Excel's answer, which Microsoft documents as counted; then it follows Excel.)* *(2026-10-12: the seventeenth run read it — 6, counted — and the engine follows Excel, ADR-0047's note of that date.)* *(2026-10-12, the seventeenth Windows run read `ERROR.TYPE`'s numbers for Excel's newer Error Values, which the row had refused with `#VALUE!` until Excel was asked; it now follows Excel, ADR-0047's note of this date.)* | Layer 1 | as stated |
+```
+
+The `INDIRECT` sentence alone, old:
+
+> `INDIRECT` reads A1-style text naming a place on the same Sheet, R1C1 text naming an absolute cell or a range of two, a Linked Table's column as structured text (waiting while the table does) and `A1#`, keeps its text through an insertion or deletion, gives `#VALUE!` for R1C1 text that is relative or names whole rows or columns, and `#REF!` for text that names no place, a table or a column that does not exist included (ADR-0047's and ADR-0124's notes of 2026-10-10, ADR-0124's of 2026-10-12)
+
+and new:
+
+> `INDIRECT` reads A1-style text naming a place on the same Sheet, R1C1 text naming a cell, a whole row or column, or the rectangle two parts of the same kind span, absolute or relative to the Formula's own cell, a Linked Table's column as structured text (waiting while the table does) and `A1#`, keeps its text through an insertion or deletion, gives `#VALUE!` for a Linked Table's bare name and for R1C1 text with a number written with a leading 0 or a `+`, a cell joined to a whole row or column, a row joined to a column, or structured or `#` text, and `#REF!` for text that names no place, a table or a column that does not exist included, and for an offset past the Sheet's edge until a run reads Excel's answer (ADR-0047's and ADR-0124's notes of 2026-10-10, ADR-0124's of 2026-10-12)
 
 ## The Docs Site (`samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor`, the `INDIRECT` bullet)
 
@@ -230,15 +268,21 @@ Old:
 New:
 
 ```html
-                rewrites the References beside it, never the text. It also reads what Excel was seen to read: R1C1
-                text (<code>a1</code> FALSE) naming a cell or a range, <code>R3C2</code> or <code>R2C2:R5C2</code>,
-                relative to the Formula's own cell, <code>R[1]C[-1]</code> or <code>RC[-1]</code>, or whole rows and
-                columns, <code>R3</code>, <code>C2</code> or <code>R2:R3</code>; a Linked Table's column as text,
-                <code>Positions[PV]</code>, which waits while the table does; and a Spill Range, <code>A1#</code>. A
-                Linked Table's name on its own (<code>"Positions"</code>, which Excel reads as the table's data) is
-                <code>#VALUE!</code> until Excel has been asked what it reads; text that names no place, an offset past
-                the Sheet's edge, another Sheet's name or a table that does not exist included, is <code>#REF!</code>,
-                as in Excel.
+                rewrites the References beside it, never the text. It also reads what Excel was seen to read, and what
+                follows from it: R1C1 text (<code>a1</code> FALSE) naming a cell or a range, <code>R3C2</code> or
+                <code>R2C2:R5C2</code>, relative to the Formula's own cell, <code>R[1]C[-1]</code> or
+                <code>RC[-1]</code>, or whole rows and columns, <code>R3</code>, <code>C2</code> or
+                <code>R2:R3</code>; a Linked Table's column as text, <code>Positions[PV]</code>, which waits while the
+                table does; and a Spill Range, <code>A1#</code>. R1C1 text in a form Excel has not yet been asked about
+                is <code>#VALUE!</code>: a number written with a leading 0 or a <code>+</code>, <code>R03C2</code> or
+                <code>R[+1]C</code>; a cell joined to a whole row or column, <code>R2C2:R3</code>, or a row to a
+                column, <code>R3:C2</code>; and a Linked Table's column or a Spill Range written in R1C1 style,
+                <code>Positions[PV]</code> or <code>R1C1#</code> with <code>a1</code> FALSE. So is a Linked Table's
+                name on its own (<code>"Positions"</code>, which Excel reads as the table's data), until Excel has
+                been asked what it reads. Text that names no place, another Sheet's name or a table that does not
+                exist included, is <code>#REF!</code>, as in Excel. An offset past the Sheet's edge,
+                <code>R[-5]C</code> from row 2, is <code>#REF!</code> too: that is this engine's answer until Excel has
+                been asked whether it wraps round to the last rows.
 ```
 
 No Example shows R1C1 text, so none changes.
@@ -246,7 +290,7 @@ No Example shows R1C1 text, so none changes.
 ## Ticket 18 and the Change Note (written on the branch)
 
 - `docs/specs/exsheet-functions/issues/18-indirect.md`: the open box for INDIRECT-030 to 043 is ticked with the area
-  pass's answer, a box for the R1C1 rule is added and ticked, and a new open box asks INDIRECT-044 to 061; a comment of
+  pass's answer, a box for the R1C1 rule is added and ticked, and a new open box asks INDIRECT-044 to 063; a comment of
   2026-10-12 records the pass and the bare-name evidence.
 - `docs/releases/unreleased/area-indirect-r1c1-relative-rows-columns.md` (ExSheet, Behaviour,
   `exsheet/formulas#supported-functions`, ADR-0124).
