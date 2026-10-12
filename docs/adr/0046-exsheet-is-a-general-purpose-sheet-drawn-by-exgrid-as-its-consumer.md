@@ -199,3 +199,11 @@ Sheet has to rewrite the References to it in the other.
   the user replaces one widened by entry; an entry never turns a user's width back into the other
   kind. A document saved under the withdrawn 2026-09-27 rule marked an entry's width custom, and
   reopens with it as the user's; accepted, since no such document exists outside this repository.)*
+  *(2026-10-12, the seventeenth Windows run, b10: **a column inserted to the right of a width widened
+  by entry takes that width as set by the user.** Excel wrote the inserted column `customWidth`
+  without `bestFit`, while the column to its left kept `bestFit` (CW-023). `bestFit` is the flag
+  ECMA-376 gives a column that a typed number widens again, so Excel's inserted column holds the
+  width as one the user set, not one an entry widened. Deletion moves a width with its kind (CW-025:
+  `bestFit` kept), and undo puts a width back of its kind (CW-026: `bestFit` back). A Sheet Document
+  saved before keeps the kinds it recorded. Whether a longer number then leaves the inserted column
+  as it is, and still widens the column to its left, goes to the next keys run (CW-030 to 032).)*

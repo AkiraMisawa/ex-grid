@@ -206,6 +206,50 @@ public class GridSummaryTests
             source.SummarizeAsync(Ask(SummaryFigures.Sum, new SelectionRange(0, 0, 1, 1)), CancellationToken.None));
     }
 
+    [Fact] // ADR-0130 / SM-7: an error among the cells leaves Count and Numerical Count, as Excel's status bar (run 17, b5)
+    public void ADR0130_an_error_among_the_cells_leaves_count_and_numerical_count()
+    {
+        // Excel's b5: 1, 2, #DIV/0!, x and a blank show "Count: 4    Numerical Count: 2" and nothing else.
+        var cells = new GridSummaryCells();
+        cells.AddNumber(1m);
+        cells.AddNumber(2d);
+        cells.AddError();
+        cells.AddOther();
+        cells.Add(null);
+
+        var result = cells.Answer(SummaryFigures.All, figure => "text " + figure);
+
+        Assert.Equal(SummaryFigures.All, result.Figures);
+        Assert.Equal(4m, result[SummaryFigures.Count]!.Value.Exact);
+        Assert.Equal(2m, result[SummaryFigures.NumericalCount]!.Value.Exact);
+        foreach (var figure in new[] { SummaryFigures.Average, SummaryFigures.Min, SummaryFigures.Max, SummaryFigures.Sum })
+        {
+            Assert.False(result[figure]!.Value.IsNumber);
+            Assert.Null(result.TextOf(figure));
+        }
+        // The counts are the grid's whole numbers, never an answerer's formatted text.
+        Assert.Null(result.TextOf(SummaryFigures.NumericalCount));
+    }
+
+    [Fact] // ADR-0130 / SM-7: once the error is gone, every figure is back (run 17, b6, SM-7's control)
+    public void ADR0130_without_the_error_every_figure_is_shown()
+    {
+        var cells = new GridSummaryCells();
+        cells.AddNumber(1d);
+        cells.AddNumber(2d);
+        cells.AddOther();
+
+        var result = cells.Answer(SummaryFigures.All);
+
+        // Excel's b6: "Average: 1.5    Count: 3    Numerical Count: 2    Min.: 1    Max.: 2    Sum: 3".
+        Assert.Equal(1.5d, result[SummaryFigures.Average]!.Value.Number);
+        Assert.Equal(3m, result[SummaryFigures.Count]!.Value.Exact);
+        Assert.Equal(2m, result[SummaryFigures.NumericalCount]!.Value.Exact);
+        Assert.Equal(1d, result[SummaryFigures.Min]!.Value.Number);
+        Assert.Equal(2d, result[SummaryFigures.Max]!.Value.Number);
+        Assert.Equal(3d, result[SummaryFigures.Sum]!.Value.Number);
+    }
+
     [Fact] // ADR-0130: a text for a figure that was not answered is refused by name
     public void ADR0130_a_text_without_an_answer_is_refused()
         => Assert.Throws<ArgumentException>(() => GridSummaryResult.Answered(

@@ -73,21 +73,23 @@
     },
     {
       "id": "NAME-009",
-      "source": "documented",
+      "source": "observed",
       "description": "A cycle through the Sheet's own name is a cycle (A1)",
       "cells": {"A1": "=Sheet1!B1", "B1": "=A1"},
       "check": "A1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 0}
     },
     {
       "id": "NAME-010",
-      "source": "documented",
+      "source": "observed",
       "description": "A cycle through the Sheet's own name is a cycle (B1)",
       "cells": {"A1": "=Sheet1!B1", "B1": "=A1"},
       "check": "B1",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 0}
     },
     {
       "id": "NAME-011",
@@ -328,12 +330,11 @@
     {
       "id": "NAME-036",
       "source": "documented",
-      "description": "Undoing a rename puts back every Formula exactly",
+      "description": "Undoing a rename puts back every Formula exactly. Excel undoes a rename too (ADR-0048, 2026-09-27): it offered the undo, and Ctrl+Z put the name back (verification/2026-10-11-windows-17, b2), where the Formulas after the undo were not read",
       "cells": {"A1": "5", "B1": "=Sheet1!A1"},
       "action": [{"do": "rename", "name": "Data"}, {"do": "undo"}],
       "check": "B1",
       "expect": {"formula": "=Sheet1!A1", "value2": 5},
-      "engineDiffersByDecision": "ADR-0048: renaming the Sheet is an undoable step; Excel is reported not to undo a rename",
       "oracleSkip": "Excel's undo does not reach changes made through COM; ask by hand"
     },
     {

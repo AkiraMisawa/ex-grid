@@ -68,3 +68,19 @@ A saved view is a format users' data is kept in. Once it ships, changing it brea
 - The entry point and the View State's type are added to the public surface and its baseline
   (ADR-0201).
 - `CONTEXT.md`'s **View State** gains a line naming the entry point.
+
+## As built *(2026-10-11)*
+
+- **"Round-trips equal" is held as a Consumer reads it, by `==`.** `GridViewState` and `GridQuery`
+  compare by what they hold — the same columns and sort levels in order, and the same filter, each
+  operand of the same type and value — not by which lists hold it. A record's own equality compared
+  the lists by reference, so a value read back was never equal to the one written, and a view the user
+  had not changed always looked changed.
+- **Handing a `GridViewState`, `ColumnViewState` or `ColumnWidth` to `System.Text.Json` directly is
+  refused by name.** Each carries an internal converter that throws `NotSupportedException` naming
+  this entry point. In a Consumer's own source-generated context, SYSLIB1220 now warns of that
+  converter at build time, which is the intended outcome: the warning that showed a public type could
+  not be serialised that way is now the one that says it must not be.
+- **Writing refuses what reading would refuse.** A sort level or filter key with no column name, a
+  null part, or a value outside its enum is refused on the way out with the part named, so nothing is
+  written that cannot be read back.

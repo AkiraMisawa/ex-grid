@@ -35,3 +35,6 @@ What the Windows run asks first, because the engine's answer is a reading rather
 whether numbers inside a range count for `AND` and `OR`, and how typed text and an empty argument
 count; whether `INDEX` over one row takes `row_num` alone along the row; `ROUNDUP` and `ROUNDDOWN`
 over doubles that sit beside a decimal boundary (`0.1+0.2`, `0.3-0.1`); and `MOD(0.3,0.1)`.
+
+2026-10-12: the seventeenth Windows run answered EOMONTH-008 and EDATE-008 (59 and 46). Before 1 March 1900
+the months are counted on the real calendar; a start of serial 0 or 60 stays refused (ADR-0047's note).

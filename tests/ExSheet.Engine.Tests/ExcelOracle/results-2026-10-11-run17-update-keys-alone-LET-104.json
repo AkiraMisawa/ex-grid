@@ -1,0 +1,39 @@
+{
+    "ran":  "2026-10-11T22:47:29",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20146",
+    "windowsRegionalFormat":  "en-US",
+    "formulasEnteredThrough":  "typed (keyboard input), as every other cell of a case",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  1,
+                    "disagree":  0,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "LET-104",
+                      "area":  "let",
+                      "source":  "observed",
+                      "description":  "Refused until Excel is asked: R and a row number as a LET name (ADR-0181)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "the keyboard entry of =LET(R2,2,R2+1) was refused: LET-104: typing =LET(R2,2,R2+1): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "22:47:28.534 LET-104: typing =LET(R2,2,R2+1): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                     ]
+                  }
+              ]
+}

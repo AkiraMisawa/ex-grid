@@ -1362,28 +1362,9 @@
         }
         try
         {
-            if (exact.Count == 0)
-            {
-                await PerformAsync(SheetEdit.PasteText(typed));
-                return;
-            }
-            // The typed fields and the exact numbers are one operation on the undo stack
-            // (ADR-0048). The engine takes typed text, whose reading can give a cell a format,
-            // and exact Entries in separate edits, so the paste is two engine steps, typed first.
-            var steps = new List<SheetStep>(2);
-            if (typed.Count > 0) steps.Add(sheet.Do(SheetEdit.PasteText(typed)));
-            try
-            {
-                steps.Add(sheet.Do(SheetEdit.SetEntries(exact)));
-            }
-            catch (SheetRefusedException)
-            {
-                // Nothing is half pasted: the typed fields are put back.
-                if (steps.Count > 0) await ChangedAsync(steps[0].Undo(), raiseDocument: false);
-                throw;
-            }
-            _history.Record(steps);
-            await ChangedAsync([.. steps.Select(step => step.Change)]);
+            // The typed fields and the exact numbers are one engine edit: one step on the undo
+            // stack (ADR-0048), and one change, which draws once (ADR-0180).
+            await PerformAsync(exact.Count == 0 ? SheetEdit.PasteText(typed) : SheetEdit.PasteText(typed, exact));
         }
         catch (SheetRefusedException refused)
         {
@@ -1398,37 +1379,22 @@
     /// relative References shifted by the distance pasted, written over each target range the
     /// grid approved — from its top-left when the range is the block's size, repeated over it
     /// when the range is a whole multiple of it. Several ranges exist only for a block of one
-    /// cell (ADR-0014); they are several engine steps and one operation on the undo stack. A
-    /// refusal is told to the grid, which then leaves the Selection where it was.
+    /// cell (ADR-0014); they are one engine edit, so one step on the undo stack (ADR-0048) and one
+    /// change, which draws once (ADR-0180). A refusal is told to the grid, which then leaves the
+    /// Selection where it was.
     /// </summary>
     private async Task PasteEntriesAsync(SheetBlock block, global::ExGrid.Clipboard.GridPasteIntent intent)
     {
-        var sheet = CurrentSheet;
-        var targets = intent.Plan.Targets;
-        var steps = new List<SheetStep>(targets.Count);
         try
         {
-            foreach (var target in targets)
-            {
-                var edit = target.RowCount == block.RowCount && target.ColumnCount == block.ColumnCount
-                    ? SheetEdit.Paste(block, new CellAddress(target.TopRow, target.LeftColumn))
-                    : SheetEdit.Paste(block, SheetFormulaAids.RangeOf(target));
-                steps.Add(sheet.Do(edit));
-            }
+            await PerformAsync(SheetEdit.Paste(block, intent.Plan.Targets.Select(SheetFormulaAids.RangeOf)));
         }
         catch (SheetRefusedException refused)
         {
-            // Nothing is half pasted: what was written before the refusal is put back.
-            var undone = new List<SheetChange>();
-            for (var i = steps.Count - 1; i >= 0; i--) undone.Add(steps[i].Undo());
             intent.Refuse();
-            if (undone.Count > 0) await ChangedAsync(undone, raiseDocument: false);
             Tell(SheetWords.Refused(refused.Refusal));
             StateHasChanged();
-            return;
         }
-        _history.Record(steps);
-        await ChangedAsync([.. steps.Select(step => step.Change)]);
     }
 
     /// <summary>

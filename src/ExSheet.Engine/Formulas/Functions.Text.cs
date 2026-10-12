@@ -101,23 +101,26 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// The longest General text <c>TEXT</c> answers. Excel is reported to fit TEXT's General to a
-    /// width, as it fits a cell's; at 11 characters or fewer every reading of that width agrees, and
-    /// past it the answer waits for a Windows run (ADR-0120).
+    /// The width, in characters, that <c>TEXT</c> fits its General to, as a cell's General is fitted
+    /// to its column: <c>TEXT(1/3,"General")</c> is <c>0.333333333</c>, as Excel was observed to
+    /// answer (ADR-0120; TEXTFN-017, the seventeenth Windows run).
     /// </summary>
-    private const int TextGeneralLimit = 11;
+    private const int TextGeneralWidth = 11;
 
     /// <summary>
     /// TEXT (ADR-0120): the Value as a cell in the format shows it under the Sheet's culture, the
     /// code read in the invariant spelling and as written. A blank is 0, and text that reads as a
-    /// number is that number. A code the cell formats refuse, an empty code, and a number the
+    /// number is that number. A number in General is General fitted to 11 characters. An empty code
+    /// shows a number as empty text, as Excel was observed to (TEXTFN-018), and text and booleans as
+    /// any code without a text section shows them. A code the cell formats refuse and a number the
     /// format cannot show are <c>#VALUE!</c>; the code's colour is dropped.
     /// </summary>
     private static Operand FormatAsText(FunctionCall call)
     {
         if (!TryScalar(call, 0, out var value, out var failure)) return failure;
         if (!TryText(call, 1, out var code, out failure)) return failure;
-        if (code.Length == 0 || !NumberFormat.TryParseAsWritten(code, out var format)) return Operand.Of(ErrorValue.Value);
+        var format = NumberFormat.General;
+        if (code.Length > 0 && !NumberFormat.TryParseAsWritten(code, out format)) return Operand.Of(ErrorValue.Value);
 
         var culture = call.Evaluator.Culture;
         var shown = value switch
@@ -126,13 +129,29 @@ internal static partial class FunctionLibrary
             { Kind: ValueKind.Text } text when ConstantParser.TryParseNumber(text.Text, culture, out var number) => Value.FromNumber(number),
             { } other => other,
         };
+        if (shown.Kind == ValueKind.Number && code.Length == 0) return Operand.Of(Value.FromText(""));
         if (shown.Kind == ValueKind.Number && format.ShowsNumbersAsGeneral)
         {
-            var general = NumberText.General(shown.Number, culture);
-            return general.Length > TextGeneralLimit ? Operand.Of(ErrorValue.Value) : Operand.Of(Value.FromText(general));
+            return TextGeneral(shown.Number, format.IsGeneral, culture) is { } general
+                ? Operand.Of(Value.FromText(general))
+                : Operand.Of(ErrorValue.Value);
         }
         var (formatted, cannotShow, _) = format.Format(shown, culture);
         return cannotShow ? Operand.Of(ErrorValue.Value) : Operand.Of(Value.FromText(formatted));
+    }
+
+    /// <summary>
+    /// A number as TEXT's General shows it: General fitted to 11 characters (TEXTFN-017).
+    /// <see langword="null"/>, refused until Excel is asked, where readings the run did not settle
+    /// disagree: a negative number whose General differs as its minus sign takes one of the 11
+    /// characters or not (<c>-1/3</c>, TEXTFN-025), and a number under a code of a text section
+    /// alone, <c>@</c>, whose fitted General is not its General in full (<c>1/3</c>, TEXTFN-028).
+    /// </summary>
+    private static string? TextGeneral(double number, bool generalCode, CultureInfo culture)
+    {
+        var fitted = NumberText.General(number, TextGeneralWidth, culture);
+        if (fitted is null || fitted != NumberText.General(number, TextGeneralWidth + 1, culture)) return null;
+        return generalCode || fitted == NumberText.General(number, culture) ? fitted : null;
     }
 
     // ---- TEXTJOIN, CONCATENATE, SUBSTITUTE, REPLACE, FIND ---------------------------------------
@@ -219,7 +238,10 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// SUBSTITUTE: <c>new_text</c> for every <c>old_text</c>, case-sensitive and left to right without
-    /// overlapping, or for the <c>instance_num</c>-th alone; an <c>instance_num</c> below 1 is
+    /// overlapping, or for the <c>instance_num</c>-th alone, the occurrences then counted at every
+    /// character, overlapping ones included: <c>SUBSTITUTE("aaaa","aa","b",2)</c> replaces the
+    /// <c>aa</c> that starts at the second character, <c>aba</c>, as Excel was observed to answer
+    /// (ADR-0047; SUBSTITUTE-005, the seventeenth Windows run). An <c>instance_num</c> below 1 is
     /// <c>#VALUE!</c>, and an empty <c>old_text</c> changes nothing.
     /// </summary>
     private static Operand Substitute(FunctionCall call)
@@ -233,10 +255,10 @@ internal static partial class FunctionLibrary
             instance = Math.Truncate(instance);
             if (instance < 1) return Operand.Of(ErrorValue.Value);
             if (old.Length == 0) return Operand.Of(Value.FromText(text));
-            var at = -old.Length;
+            var at = -1;
             for (var n = 0; n < instance; n++)
             {
-                at = text.IndexOf(old, at + old.Length, StringComparison.Ordinal);
+                at = text.IndexOf(old, at + 1, StringComparison.Ordinal);
                 if (at < 0) return Operand.Of(Value.FromText(text));
             }
             return Operand.Of(Value.FromText(string.Concat(text.AsSpan(0, at), replacement, text.AsSpan(at + old.Length))));

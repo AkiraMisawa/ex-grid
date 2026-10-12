@@ -443,7 +443,17 @@ nobody had asked for. What that means when writing a test:
   triangle in the corner alone, in its token's colour, a pinned one still sticky (UX-20), the dark
   scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2/3), the
   editor's box is the cell's (ED-9), the runaway auto-scroll stops (SL-14/15), the
-  Blazor error UI never shows (CON-5).
+  Blazor error UI never shows (CON-5), and every class painted under a root — watched from
+  `/features`, `/cells`, `/tones`, `/stripes`, `/marks`, `/appearance` and `/sheet` while their
+  states are put on — is one ADR-0029 names, stable or internal, by name, by an internal prefix
+  (`ex-popover-`, `ex-find-`) or as one of a Sheet's appearance families, transcribed from the ADR
+  (UX-4). A class nothing names fails it by name. What the walk does not put on, it does not
+  check: Placeholder rows (`ex-placeholder`), the pager (`ex-pager`; no route sets `PageSize`), the
+  Size Tip (`ex-size-tip`; no resize is held on a Sheet's headings), the change mark (`ex-changed`),
+  and a loading grid (`ex-loading`), which it meets on the way into a page but does not require.
+  The Copied Range (`ex-copied-range`) is reached only in a browser with the `clipboardchange`
+  event — the installed Chrome and Edge from 143. In a browser without it, Playwright's own
+  Chromium among them, the walk says so in an annotation and goes on.
 - `virtualisation.spec.mjs` — the large-data criteria at the Definition of Done's own
   scenario, `/wide` at 10⁶ rows × 100 columns (§12): the far corner reached and painted
   (BIG-1), the same element count at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1 —
@@ -563,7 +573,13 @@ nobody had asked for. What that means when writing a test:
   2* pressed on a 150 ms circuit before the button has greyed out, refused by name in the status
   line, and `99` still in Plums' row; the buttons following an edit opened by typing and by the
   Formula Bar and ended by a cancel and by a commit after a Reject; a Linked Table push taken while
-  an edit is open (SH-29, ticket 26); the Focus
+  an edit is open (SH-29, ticket 26); an edit opened with F2, and one opened by a press into the
+  Formula Bar, closing untyped when the Sheet is scrolled so far that the Window it pushes no longer
+  holds the row — the keyboard back on the Keyboard Field, ↓ pressed the moment it is back moving
+  the Focus, at 0 ms and, on the Server host, at 150 ms, the buttons offered again, and nothing
+  written; and on the Server host at 150 ms, a character typed as the Window moves off an F2 edit
+  keeping the edit with it, which Enter writes once the row is back in view (ST-2, ADR-0007's note of
+  2026-10-11 as refined the same day: the browser says whether anything was typed); the Focus
   at XFD1048576 with the DOM no larger than at A1 (SH-2); Home, End, Shift+Home and Shift+End in
   Caret in the Cell Editor and the Formula Bar moving and extending the caret with nothing
   scrolled and the edit kept, which on macOS the listener answers (ticket 32).

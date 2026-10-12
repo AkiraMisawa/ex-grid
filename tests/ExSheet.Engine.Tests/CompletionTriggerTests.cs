@@ -88,6 +88,42 @@ public class CompletionTriggerTests
             f => Assert.All(Enumerable.Range(0, 8), index => Assert.Empty(f.ValuesOf(index))));
     }
 
+    [Fact] // ADR-0058, ticket 16: SUBTOTAL's list is Excel's, character for character, as the seventeenth Windows run read it (Part B's b4)
+    public void Subtotal_lists_excels_texts()
+    {
+        Assert.Equal(
+        [
+            "1 - AVERAGE", "2 - COUNT", "3 - COUNTA", "4 - MAX", "5 - MIN", "6 - PRODUCT", "7 - STDEV.S", "8 - STDEV.P",
+            "9 - SUM", "10 - VAR.S", "11 - VAR.P",
+            "101 - AVERAGE", "102 - COUNT", "103 - COUNTA", "104 - MAX", "105 - MIN", "106 - PRODUCT", "107 - STDEV.S",
+            "108 - STDEV.P", "109 - SUM", "110 - VAR.S", "111 - VAR.P",
+        ], DeclaredFunction.Find("SUBTOTAL")!.ValuesOf(0).Select(v => v.Text));
+        Assert.All(DeclaredFunction.Find("SUBTOTAL")!.ValuesOf(0), v => Assert.StartsWith(v.Value + " - ", v.Text, StringComparison.Ordinal));
+    }
+
+    [Fact] // ADR-0058, ticket 16: AGGREGATE's lists are Excel's texts, as the seventeenth Windows run read them (Part B's b4), for the function numbers the engine evaluates
+    public void Aggregate_lists_excels_texts()
+    {
+        var aggregate = DeclaredFunction.Find("AGGREGATE")!;
+
+        Assert.Equal(
+        [
+            "1 - AVERAGE", "2 - COUNT", "3 - COUNTA", "4 - MAX", "5 - MIN", "6 - PRODUCT", "7 - STDEV.S", "8 - STDEV.P",
+            "9 - SUM", "10 - VAR.S", "11 - VAR.P", "12 - MEDIAN", "14 - LARGE", "15 - SMALL",
+        ], aggregate.ValuesOf(0).Select(v => v.Text));
+        Assert.Equal(
+        [
+            "0 - Ignore nested SUBTOTAL and AGGREGATE functions",
+            "1 - Ignore hidden rows, nested SUBTOTAL and AGGREGATE functions",
+            "2 - Ignore error values, nested SUBTOTAL and AGGREGATE functions",
+            "3 - Ignore hidden rows, error values, nested SUBTOTAL and AGGREGATE functions",
+            "4 - Ignore nothing",
+            "5 - Ignore hidden rows",
+            "6 - Ignore error values",
+            "7 - Ignore hidden rows and error values",
+        ], aggregate.ValuesOf(1).Select(v => v.Text));
+    }
+
     [Fact] // ADR-0058 / ADR-0047 (2026-10-10): SUBTOTAL's and AGGREGATE's lists write only a number the engine evaluates, never one it refuses
     public void Subtotal_and_aggregate_list_only_what_the_engine_evaluates()
     {

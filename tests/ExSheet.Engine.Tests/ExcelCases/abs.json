@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ABS-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a positive number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ABS(2)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ABS-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a negative number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ABS(-2)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ABS-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: a negative number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ABS(-4)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "ABS-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a blank cell is 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ABS(A5)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "ABS-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: numeric text is read as its number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ABS(\"-3\")"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "ABS-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: other text is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ABS(A6)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "ABS-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an Error Value is the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ABS(C2)"},

@@ -240,7 +240,7 @@
     },
     {
       "id": "TYPED-028",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a leading + before a Reference to another cell makes a Formula that reads it",
       "cells": {"A1": "5", "B1": "+A1"},
       "check": "B1",
@@ -249,7 +249,7 @@
     },
     {
       "id": "TYPED-029",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a leading - before a Reference to another cell makes a Formula that negates it",
       "cells": {"A1": "5", "B1": "-A1"},
       "check": "B1",
@@ -258,7 +258,7 @@
     },
     {
       "id": "TYPED-030",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a leading - before arithmetic makes a Formula",
       "cells": {"A1": "-1-2"},
       "check": "A1",
@@ -267,7 +267,7 @@
     },
     {
       "id": "TYPED-031",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a leading - before a name makes a Formula, which is #NAME?",
       "cells": {"A1": "-abc"},
       "check": "A1",
@@ -451,7 +451,7 @@
     },
     {
       "id": "TYPED-053",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a leading - before a name and a Reference is the Formula of their intersection, #NAME?",
       "cells": {"A1": "-total B2"},
       "check": "A1",

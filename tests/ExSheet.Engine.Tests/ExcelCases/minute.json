@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "MINUTE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's example: 12:45",
       "cells": {"A1": "12:45", "ZZ1000": "=MINUTE(A1)"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "MINUTE-002",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative serial is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MINUTE(-1)"},

@@ -188,7 +188,7 @@ public class RandomTests
         Assert.NotEqual(drawn, sheet.Number("A1"));
     }
 
-    [Fact] // ADR-0180, SH-66: each kind of change counts once — an edit, an insertion, a deletion, an undo, a redo, a snapshot, a declaration — and nothing else counts
+    [Fact] // ADR-0180, SH-66: each kind of change counts once — an edit, an insertion, a deletion, an undo, a redo, a snapshot, a declaration, a rename — and nothing else counts
     public void ADR0180_each_change_counts_once()
     {
         var sheet = Seeded();
@@ -217,14 +217,48 @@ public class RandomTests
         changes = sheet.Changes;
         Counts(1, () => pasted.Undo());
         Counts(1, () => sheet.PushLinkedTable("Rates", [[Value.FromText("EURUSD"), Value.FromNumber(1.08)]]));
+        Counts(1, () => sheet.PushLinkedTable("Rates", [[Value.FromText("EURUSD"), Value.FromNumber(1.08)]]));   // the same rows again: a refresh, as Excel's
         Counts(1, () => sheet.DeclareLinkedTable("Fx", ["Pair"]));                         // a new declaration
         Counts(0, () => sheet.DeclareLinkedTable("Fx", ["Pair"]));                         // the same one again: nothing changed
         Counts(1, () => sheet.DeclareLinkedTable("Fx", ["Pair", "Spot"], key: "Pair"));    // one that replaces it
+        var renamed = sheet.Do(SheetEdit.Rename("Prices"));
+        Assert.Equal(changes + 1, sheet.Changes);
+        changes = sheet.Changes;
+        Counts(1, () => renamed.Undo());
+        Counts(1, () => renamed.Redo());
+        Counts(0, () => sheet.Rename("Prices"));                                          // the same name: nothing changed
         Counts(0, () => sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse("A1:B4"), NumberFormat.Parse("0.00"))));
         Counts(0, () => sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("A:B"), 12)));
         Counts(0, () => sheet.RecalculateVolatile());
         Counts(0, () => sheet.SetToday(new DateOnly(2026, 10, 11)));
         Counts(0, () => sheet.SetSeed(Seed + 1));
+    }
+
+    [Fact] // ADR-0180, ADR-0048: a paste over several ranges, and one of typed fields with exact Entries, is one change, and so is its undo and its redo
+    public void ADR0180_a_paste_in_several_parts_counts_once()
+    {
+        var sheet = Seeded();
+        sheet.Enter("A1", "=RAND()");
+        sheet.Enter("B1", "=ROW()");
+        var block = sheet.Copy(CellRange.Parse("B1")).Block!;
+        var changes = sheet.Changes;
+
+        SheetStep Counts(Func<SheetStep> change)
+        {
+            var step = change();
+            Assert.Equal(changes + 1, sheet.Changes);
+            changes = sheet.Changes;
+            return step;
+        }
+
+        var several = Counts(() => sheet.Do(SheetEdit.Paste(block, [CellRange.Parse("B2"), CellRange.Parse("D2:D5"), CellRange.Parse("F1")])));
+        Counts(() => { several.Undo(); return several; });
+        Counts(() => { several.Redo(); return several; });
+        var mixed = Counts(() => sheet.Do(SheetEdit.PasteText(
+            [new(CellAddress.Parse("C1"), "50%"), new(CellAddress.Parse("C2"), "=C1*2")],
+            [new KeyValuePair<CellAddress, Entry?>(CellAddress.Parse("C3"), Entry.FromValue(Value.FromNumber(0.1 + 0.2)))])));
+        Counts(() => { mixed.Undo(); return mixed; });
+        Counts(() => { mixed.Redo(); return mixed; });
     }
 
     [Fact] // ADR-0180 (2026-10-11): declaring a Linked Table, or replacing its declaration, is a change and draws again, whether or not a Formula reads the table
@@ -245,8 +279,40 @@ public class RandomTests
         Assert.NotEqual(afterDeclaring, sheet.Number("A1"));
     }
 
-    [Fact] // ADR-0180 (2026-10-11): renaming the Sheet is not a change; it recalculates what INDIRECT reads by the Sheet's name, and the draws come out the same, as they do for its undo and redo
-    public void ADR0180_a_rename_draws_nothing()
+    [Fact] // ADR-0180, the seventeenth Windows run's b3: a snapshot draws again whatever its rows, the same rows pushed again included, as each of Excel's refreshes drew again with the file unchanged
+    public void ADR0180_a_snapshot_draws_again_whatever_its_rows()
+    {
+        var sheet = Seeded();
+        sheet.DeclareLinkedTable("Rates", ["Pair", "Spot"], key: "Pair");
+        sheet.Enter("A1", "=RAND()");
+        sheet.Enter("B1", "=SUM(Rates[Spot])");
+        IReadOnlyList<Value?>[] rows = [[Value.FromText("EURUSD"), Value.FromNumber(1.08)], [Value.FromText("USDJPY"), Value.FromNumber(150)]];
+        List<double> seen = [sheet.Number("A1")];
+
+        void DrawsAgain()
+        {
+            Assert.DoesNotContain(sheet.Number("A1"), seen);
+            seen.Add(sheet.Number("A1"));
+        }
+
+        sheet.PushLinkedTable("Rates", rows);
+        DrawsAgain();
+        sheet.PushLinkedTable("Rates", rows);                                             // unchanged data: a refresh still draws again
+        DrawsAgain();
+        sheet.PushLinkedTable("Rates", rows);
+        DrawsAgain();
+        Assert.Equal(151.08, sheet.Number("B1"), 10);
+
+        sheet.PushLinkedTable("Rates", [rows[0], [Value.FromText("USDJPY"), Value.FromNumber(151)]]);
+        DrawsAgain();
+        Assert.Equal(152.08, sheet.Number("B1"), 10);
+
+        sheet.DeclareLinkedTable("Rates", ["Pair", "Spot"], key: "Pair");                 // the same declaration again is no refresh: nothing changed
+        Assert.Equal(seen[^1], sheet.Number("A1"));
+    }
+
+    [Fact] // ADR-0180 (2026-10-11), the seventeenth Windows run's b2: renaming the Sheet is a change, and so are its undo and redo, as Excel drew again on the rename and its undo; the redo draws as any redo does (b1); INDIRECT still reads by the Sheet's name
+    public void ADR0180_a_rename_draws_again()
     {
         var sheet = Seeded();
         sheet.Enter("A1", "=RAND()");
@@ -254,44 +320,79 @@ public class RandomTests
         sheet.Enter("B1", "7");
         sheet.Enter("C1", "=INDIRECT(\"Prices!B1\")+RAND()*0");
         var changes = sheet.Changes;
-        var drawn = (Rand: sheet.Number("A1"), Between: sheet.Number("A2"));
+        var seen = new List<(double, double)> { (sheet.Number("A1"), sheet.Number("A2")) };
         Assert.Equal(ErrorValue.Ref, sheet.Error("C1"));
+
+        void DrawsAgain()
+        {
+            Assert.Equal(changes + 1, sheet.Changes);
+            changes = sheet.Changes;
+            var drawn = (sheet.Number("A1"), sheet.Number("A2"));
+            Assert.DoesNotContain(drawn, seen);
+            seen.Add(drawn);
+        }
 
         var renamed = sheet.Do(SheetEdit.Rename("Prices"));
-
-        Assert.Equal(7, sheet.Number("C1"));                                              // recalculated: INDIRECT's text names the Sheet now
-        Assert.Equal(changes, sheet.Changes);
-        Assert.Equal(drawn, (sheet.Number("A1"), sheet.Number("A2")));
+        Assert.Equal(7, sheet.Number("C1"));                                              // INDIRECT's text names the Sheet now
+        DrawsAgain();
 
         renamed.Undo();
+        Assert.Equal(Sheet.DefaultName, sheet.Name);
         Assert.Equal(ErrorValue.Ref, sheet.Error("C1"));
-        Assert.Equal(changes, sheet.Changes);
-        Assert.Equal(drawn, (sheet.Number("A1"), sheet.Number("A2")));
+        DrawsAgain();
 
         renamed.Redo();
-        sheet.Rename("Costs");
-        Assert.Equal(ErrorValue.Ref, sheet.Error("C1"));
-        Assert.Equal(changes, sheet.Changes);
-        Assert.Equal(drawn, (sheet.Number("A1"), sheet.Number("A2")));
+        Assert.Equal(7, sheet.Number("C1"));
+        DrawsAgain();
 
-        sheet.Enter("Z1", "x");                                                           // an edit still draws again
-        Assert.Equal(changes + 1, sheet.Changes);
-        Assert.NotEqual(drawn.Rand, sheet.Number("A1"));
+        sheet.Rename("Costs");                                                            // a rename outside the undo stack counts once too
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C1"));
+        DrawsAgain();
     }
 
-    [Fact] // ADR-0180: an undo is a change like any other, so the Values it brings back draw again
-    public void ADR0180_an_undo_draws_again()
+    [Fact] // ADR-0180: a rename to the name the Sheet already has changes nothing, so it draws nothing, nor does its undo or redo
+    public void ADR0180_a_rename_to_the_same_name_draws_nothing()
     {
         var sheet = Seeded();
         sheet.Enter("A1", "=RAND()");
-        var before = sheet.Number("A1");
+        var changes = sheet.Changes;
+        var drawn = sheet.Number("A1");
+
+        var same = sheet.Do(SheetEdit.Rename(Sheet.DefaultName));
+        Assert.Empty(same.Change.ValueChanges);
+        same.Undo();
+        same.Redo();
+        sheet.Rename(Sheet.DefaultName);
+
+        Assert.Equal(changes, sheet.Changes);
+        Assert.Equal(drawn, sheet.Number("A1"));
+    }
+
+    [Fact] // ADR-0180, the seventeenth Windows run's b1: an undo and a redo are changes like any other, so the Values they bring back draw anew, never an earlier draw, as Excel's did each time
+    public void ADR0180_an_undo_and_a_redo_draw_again()
+    {
+        var sheet = Seeded();
+        sheet.Enter("A1", "=RAND()");
+        List<double> seen = [sheet.Number("A1")];
         var step = sheet.Do(SheetEdit.Enter(CellAddress.Parse("B1"), "1"));
-        var after = sheet.Number("A1");
+        seen.Add(sheet.Number("A1"));
 
-        step.Undo();
+        void DrawsAnew()
+        {
+            Assert.DoesNotContain(sheet.Number("A1"), seen);
+            seen.Add(sheet.Number("A1"));
+        }
 
-        Assert.NotEqual(before, sheet.Number("A1"));
-        Assert.NotEqual(after, sheet.Number("A1"));
+        for (var round = 0; round < 2; round++)
+        {
+            step.Undo();
+            Assert.Null(sheet.Value("B1"));
+            DrawsAnew();
+
+            step.Redo();
+            Assert.Equal(1, sheet.Number("B1"));
+            DrawsAnew();
+        }
     }
 
     [Fact] // ADR-0180, SH-66: a Sheet whose seed was never set waits, whichever branch the Formula takes, and draws once it is given one

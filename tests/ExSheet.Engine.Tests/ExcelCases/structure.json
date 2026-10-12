@@ -185,12 +185,13 @@
     },
     {
       "id": "STRUCT-021",
-      "source": "documented",
+      "source": "observed",
       "description": "A Formula reading a cycle is #CIRC!",
       "cells": {"A1": "=B1+1", "B1": "=A1+1", "C2": "=A1"},
       "check": "C2",
       "expect": {"value2": "#CIRC!"},
-      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 0}
     },
     {
       "id": "STRUCT-022",

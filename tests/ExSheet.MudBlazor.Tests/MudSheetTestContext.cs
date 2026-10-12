@@ -44,6 +44,10 @@ public abstract class MudSheetTestContext : BunitContext
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
+        // ST-2's question (ADR-0007's note of 2026-10-11, refined): the test's input reaches the
+        // core ahead of the answer, as a browser's does, so the browser here answers "untouched".
+        _handle.Setup<bool>("askUntouched", _ => true).SetResult(true);
+        _handle.SetupVoid("closeAnswered", _ => true).SetVoidResult();
     }
 
     /// <summary>How many times the grid has been asked to take the keyboard back (ADR-0021's note of 2026-09-30).</summary>
