@@ -6,8 +6,8 @@ namespace ExSheet.Engine.Formulas;
 /// </summary>
 internal static partial class FunctionLibrary
 {
-    /// <summary>The serial of 1 March 1900, the first day after the one that never existed.</summary>
-    private const int FirstMarch1900 = 61;
+    /// <summary>The serial of 29 February 1900, the day that never existed.</summary>
+    private const int NeverExisted = 60;
 
     /// <summary>
     /// DATE: each argument truncated to a whole number. A year from 0 to 1899 has 1900 added, and a
@@ -85,13 +85,17 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// EOMONTH and EDATE: the start date and the months are truncated to whole numbers. EDATE keeps
     /// the start's day, or the month's last day where the month is shorter; EOMONTH gives the
-    /// month's last day. A start below 0, or a result outside 1900 to 9999, is <c>#NUM!</c>.
+    /// month's last day. The months are counted on the real calendar, where February 1900 has 28
+    /// days, and a day before 1 March 1900 is its own serial, 1 to 59: <c>EOMONTH(31,1)</c> is 28
+    /// February 1900, 59, and <c>EDATE(DATE(1900,3,15),-1)</c> is 15 February, 46, as Excel was
+    /// observed to answer (ADR-0047; EOMONTH-008 and EDATE-008, the seventeenth Windows run). A
+    /// start below 0, or a result outside 1900 to 9999, is <c>#NUM!</c>, and a boolean typed as
+    /// either argument is <c>#VALUE!</c>, as in Excel (EOMONTH-009, EDATE-009).
     /// </summary>
     /// <remarks>
-    /// Refused with <c>#VALUE!</c> until Excel is asked (EOMONTH-008 and 009, EDATE-008 and 009): a boolean typed
-    /// as either argument, and a start or a result before 1 March 1900, where Excel's calendar has
-    /// the day that never existed and which answer these functions give around it is not
-    /// documented.
+    /// A start of serial 0 (0 January 1900) or 60 (29 February 1900, the day that never existed) is
+    /// refused with <c>#VALUE!</c> until Excel is asked (EOMONTH-010, EDATE-010): neither is a day
+    /// of the real calendar these functions count on.
     /// </remarks>
     private static Operand MonthsAway(FunctionCall call, bool endOfMonth)
     {
@@ -105,7 +109,7 @@ internal static partial class FunctionLibrary
         start = Math.Truncate(start);
         months = Math.Truncate(months);
         if (start < 0 || start > DateSerial.Maximum) return Operand.Of(ErrorValue.Num);
-        if (start < FirstMarch1900) return Operand.Of(ErrorValue.Value);
+        if (start is 0 or NeverExisted) return Operand.Of(ErrorValue.Value);
 
         var (year, month, day) = DateSerial.ToDate((int)start);
         var total = year * 12.0 + (month - 1) + months;
@@ -114,7 +118,6 @@ internal static partial class FunctionLibrary
         var toMonth = (int)(total - toYear * 12) + 1;
         var length = DateTime.DaysInMonth((int)toYear, toMonth);
         var serial = DateSerial.FromDate((int)toYear, toMonth, endOfMonth ? length : Math.Min(day, length))!.Value;
-        if (serial < FirstMarch1900) return Operand.Of(ErrorValue.Value);
         return Operand.Of(Value.FromNumber(serial));
     }
 
@@ -161,9 +164,12 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// A date argument of NETWORKDAYS and WORKDAY, truncated to its day, as EOMONTH reads one: a
-    /// boolean typed is refused with <c>#VALUE!</c> until Excel is asked; below 0 or past
-    /// 31 December 9999 is <c>#NUM!</c>; before 1 March 1900 is refused with <c>#VALUE!</c>.
+    /// A date argument of NETWORKDAYS and WORKDAY, truncated to its day: a boolean typed is refused
+    /// with <c>#VALUE!</c> until Excel is asked; below 0 or past 31 December 9999 is <c>#NUM!</c>.
+    /// Every serial from 0 is a day, the ones before 1 March 1900 included, and takes the day of
+    /// the week WEEKDAY gives it (<see cref="DateSerial.DayOfWeek"/>): serial 0 a Saturday, 1 a
+    /// Sunday, 60 a Wednesday. <c>NETWORKDAYS(30,100)</c> is 51, as Excel was observed to answer
+    /// (ADR-0047; NETWORKDAYS-005, the seventeenth Windows run).
     /// </summary>
     private static bool TryWorkdayDate(FunctionCall call, int index, out int serial, out Operand failure)
     {
@@ -179,11 +185,6 @@ internal static partial class FunctionLibrary
         if (number < 0 || number > DateSerial.Maximum)
         {
             failure = Operand.Of(ErrorValue.Num);
-            return false;
-        }
-        if (number < FirstMarch1900)
-        {
-            failure = Operand.Of(ErrorValue.Value);
             return false;
         }
         serial = (int)number;
@@ -256,9 +257,9 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// WORKDAY: the day <c>days</c> working days after <c>start_date</c> (before it when negative),
-    /// passing over weekends and holidays; <c>days</c> truncated, and 0 gives the start itself. A
-    /// result past 31 December 9999 is <c>#NUM!</c>, and one before 1 March 1900 is refused with
-    /// <c>#VALUE!</c>.
+    /// passing over weekends and holidays; <c>days</c> truncated, and 0 gives the start itself. The
+    /// days before 1 March 1900 count as NETWORKDAYS counts them (<see cref="TryWorkdayDate"/>), and
+    /// a result before serial 0 or past 31 December 9999 is <c>#NUM!</c>.
     /// </summary>
     private static Operand Workday(FunctionCall call)
     {
@@ -272,8 +273,7 @@ internal static partial class FunctionLibrary
         while (remaining > 0)
         {
             serial += step;
-            if (serial > DateSerial.Maximum) return Operand.Of(ErrorValue.Num);
-            if (serial < FirstMarch1900) return Operand.Of(ErrorValue.Value);
+            if (serial < 0 || serial > DateSerial.Maximum) return Operand.Of(ErrorValue.Num);
             if (IsWorkday(serial, holidays)) remaining--;
         }
         return Operand.Of(Value.FromNumber(serial));

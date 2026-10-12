@@ -37,12 +37,12 @@
     },
     {
       "id": "SUBSTITUTE-005",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: occurrences are counted without overlapping",
+      "source": "observed",
+      "description": "With instance_num, occurrences are counted at every character, overlapping ones included: the second aa starts at the second character",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUBSTITUTE(\"aaaa\",\"aa\",\"b\",2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "aab"}
+      "expect": {"value2": "aba"}
     },
     {
       "id": "SUBSTITUTE-006",

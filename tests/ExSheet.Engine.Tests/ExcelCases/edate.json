@@ -64,21 +64,39 @@
     },
     {
       "id": "EDATE-008",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a result before 1 March 1900",
+      "source": "observed",
+      "description": "A result before 1 March 1900 is its own serial: 15 February 1900 is 46",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(DATE(1900,3,15),-1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 46}
     },
     {
       "id": "EDATE-009",
       "source": "observed",
-      "description": "Refused until Excel is asked: a boolean typed as an argument",
+      "description": "A boolean typed as an argument is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(TRUE,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "EDATE-010",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a start on serial 60, 29 February 1900, the day that never existed",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(60,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "EDATE-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: from 31 January 1900, a month on is 28 February, 59, as February 1900 has 28 days",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(31,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 59}
     }
   ]
 }
