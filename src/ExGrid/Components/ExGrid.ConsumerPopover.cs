@@ -1,6 +1,7 @@
 using System.Globalization;
 using ExGrid.Chrome;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
 namespace ExGrid.Components;
@@ -92,6 +93,76 @@ public partial class ExGrid<TRow>
     /// </summary>
     /// <returns>A task that completes once the request has been made.</returns>
     public Task ReturnKeyboardAsync() => InvokeAsync(() => ReclaimFocusAsync());
+
+    /// <summary>
+    /// The core's focus function for a frame of the Consumer's own, outside the grid, that holds the
+    /// keyboard and gives it back — a toolbar, a list of its own (ADR-0050 item 16's note of
+    /// 2026-10-12, the mirror of <see cref="HandKeyboardToFrameAsync"/>) — with the keys typed on the
+    /// frame on the way. The keyboard goes back to the grid's root, to its Keyboard Field on a grid that
+    /// edits (ADR-0080), granted where <see cref="ReturnKeyboardAsync()"/> is granted and also while
+    /// DOM focus is still on <paramref name="from"/> or inside it: the frame need not first give the
+    /// keyboard up to nothing, where a key typed reaches no grid at all.
+    ///
+    /// <para>On Blazor Server the request lands a round trip after the call, and the keys typed on the
+    /// frame meanwhile reach the Consumer's handlers, not the grid. The Consumer holds them, in order,
+    /// from the moment it asks, and <paramref name="typedOnTheWay"/> hands them over: the grid asks for
+    /// them once the browser has taken the keyboard back, behind every key the frame heard before that
+    /// moment, so the list is whole. They are then the grid's, ahead of any key typed on the root since,
+    /// each meaning what it means there (ADR-0010). Declined — the user has put the keyboard elsewhere
+    /// meanwhile (ADR-0018) — the grid still asks, so the frame stops holding, and drops them. Before
+    /// the grid is attached to the page, and after it is gone, it asks at once and drops them.</para>
+    ///
+    /// <para>It moves neither the Focus nor the Selection, and scrolls nothing. It adds no JavaScript:
+    /// it is the grid's own hand-back, whose condition is widened to the frame (ADR-0021).</para>
+    /// </summary>
+    /// <param name="from">The frame's element that holds the keyboard, or that holds the element that
+    /// does.</param>
+    /// <param name="typedOnTheWay">Called once, on the renderer's context: returns the keys typed on the
+    /// frame since the Consumer asked, in order, and stops holding them.</param>
+    /// <returns>A task that completes once the request has been made.</returns>
+    public Task ReturnKeyboardAsync(ElementReference from, Func<IReadOnlyList<KeyboardEventArgs>> typedOnTheWay)
+    {
+        ArgumentNullException.ThrowIfNull(typedOnTheWay);
+        return InvokeAsync(async () =>
+        {
+            if (_disposed || _scrollHandle is null)
+            {
+                typedOnTheWay();
+                return;
+            }
+            var ticket = ++_takeBacks;
+            _typedOnTheWay[ticket] = typedOnTheWay;
+            try
+            {
+                // A frame not yet drawn has no element to name: the root's own condition stands.
+                await _scrollHandle.InvokeVoidAsync("takeKeyboardBack", string.IsNullOrEmpty(from.Id) ? null : from, ticket);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+                if (_typedOnTheWay.Remove(ticket, out var typed))
+                    typed();
+            }
+        });
+    }
+
+    // The frames giving the keyboard back (ReturnKeyboardAsync with a frame), by the ticket the key
+    // gate answers with, until it asks for the keys typed on them.
+    private readonly Dictionary<int, Func<IReadOnlyList<KeyboardEventArgs>>> _typedOnTheWay = [];
+    private int _takeBacks;
+
+    /// <summary>
+    /// The key gate has taken the keyboard back from a Consumer's frame, or been declined it
+    /// (<see cref="ReturnKeyboardAsync(ElementReference, Func{IReadOnlyList{KeyboardEventArgs}})"/>):
+    /// the keys typed on the frame on the way, which it holds and hands on as the root's.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="ticket">The hand-back the gate answers.</param>
+    /// <returns>The keys, in order; none for a hand-back already answered.</returns>
+    [JSInvokable]
+    public IReadOnlyList<KeyboardEventArgs> KeysTypedOnTheWay(int ticket)
+        => _typedOnTheWay.Remove(ticket, out var typed) ? typed() : [];
 
     /// <summary>
     /// Hands the keyboard this grid holds on to a control of the Consumer's own, outside the grid —

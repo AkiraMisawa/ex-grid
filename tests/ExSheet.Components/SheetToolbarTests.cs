@@ -392,12 +392,12 @@ public class SheetToolbarTests : SheetTestContext
         Assert.Equal(Item(cut, "Font Colour").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
 
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Home" });
-        var reclaimed = ReclaimCount;
+        var returned = KeyboardReturns;
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
 
         Assert.True(FormatAt(cut, "B2").Font.Bold);
         // A command run from the toolbar's keys gives the keyboard back to the Sheet.
-        Assert.True(ReclaimCount > reclaimed);
+        Assert.True(KeyboardReturns > returned);
     }
 
     [Fact] // ADR-0100: the keys follow the markup's order, the default row's items before a Consumer row beside it
@@ -430,34 +430,73 @@ public class SheetToolbarTests : SheetTestContext
     public async Task Escape_gives_the_keyboard_back()
     {
         var cut = RenderToolbarSheet();
-        var reclaimed = ReclaimCount;
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        var returned = KeyboardReturns;
 
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
-        Assert.True(ReclaimCount > reclaimed);
+        Assert.True(KeyboardReturns > returned);
     }
 
-    [Fact] // ADR-0100's note of 2026-10-12 (the seventeenth Windows run, Part D): the element the keyboard leaves the toolbar through holds focus, so it is never aria-hidden
-    public async Task The_element_the_keyboard_leaves_through_is_not_hidden_from_assistive_technology()
+    [Fact] // ADR-0050 item 16's note of 2026-10-12: the keyboard goes back from the band itself, which the core takes it from; no element of the toolbar's own holds it on the way, to be hidden or not
+    public async Task The_keyboard_goes_back_from_the_band_itself()
     {
         var cut = RenderToolbarSheet();
         await GoToAsync(cut, "B2");
         await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
-        // The browser has not yet put the keyboard on the element: it stands, focused, a round trip.
-        var focus = JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true);
+        var taken = TakeBackCount;
         var reclaimed = ReclaimCount;
 
-        var escape = cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
-        var leaving = cut.WaitForElement(".ex-sheet-toolbar-leaving");
-        Assert.Equal("-1", leaving.GetAttribute("tabindex"));
-        Assert.False(leaving.HasAttribute("aria-hidden"));
+        Assert.Equal(taken + 1, TakeBackCount);
         Assert.Equal(reclaimed, ReclaimCount);
-
-        focus.SetVoidResult();
-        await escape;
         Assert.Empty(cut.FindAll(".ex-sheet-toolbar-leaving"));
-        Assert.True(ReclaimCount > reclaimed);
+        Assert.Empty(AnswerTakeBacks(cut));
+    }
+
+    [Fact] // ADR-0100, ADR-0050 item 16's note of 2026-10-12: keys typed on the band while the keyboard is on its way back are held, in order, and handed to the grid; Enter never presses the item again
+    public async Task Keys_typed_on_the_way_back_are_the_sheets_in_order()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        var toolbar = cut.Find(".ex-sheet-toolbar");
+        await toolbar.FocusAsync(new FocusEventArgs());
+        Assert.Equal(Item(cut, "Bold").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+
+        // Enter presses Bold and asks for the keyboard back; on a circuit it lands a round trip later,
+        // and the keys typed meanwhile still reach the band.
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "x" });
+
+        // Bold was pressed once, and the keys after it pressed nothing, moved nothing on the band.
+        Assert.True(FormatAt(cut, "B2").Font.Bold);
+        Assert.Equal(Item(cut, "Bold").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+        Assert.Equal(["Enter", "ArrowRight", "x"], AnswerTakeBacks(cut).Select(k => k.Key));
+        // Handed on, the band's keys are its own again.
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        Assert.Equal(Item(cut, "Italic").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+    }
+
+    [Fact] // ADR-0100, ADR-0050 item 16's note of 2026-10-12: a key typed on an element inside the band while the band does not hold the keyboard — a Chrome's, on the way out of its list — is the Sheet's, handed on with the keyboard
+    public async Task A_key_typed_inside_the_band_while_it_does_not_hold_the_keyboard_is_the_sheets()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        var toolbar = cut.Find(".ex-sheet-toolbar");
+        await toolbar.FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
+
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+
+        Assert.False(FormatAt(cut, "B2").Font.Bold);
+        Assert.Empty(AnswerTakeBacks(cut));
+        var toolbarContext = cut.FindComponent<SheetToolbar>().Instance.Context;
+        await cut.InvokeAsync(() => toolbarContext.ReturnKeyboardAsync());
+        Assert.Equal(["Enter"], AnswerTakeBacks(cut).Select(k => k.Key));
+        Assert.False(FormatAt(cut, "B2").Font.Bold);
     }
 
     // ---- The Chrome draws, the meaning stays (SH-50) ----

@@ -1,6 +1,7 @@
 using System.Globalization;
 using ExSheet.Engine;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using SheetComponent = ExSheet.Components.ExSheet;
 
 namespace ExSheet;
@@ -106,15 +107,47 @@ public sealed class SheetToolbarContext
     /// <summary>
     /// Gives the keyboard back to the Sheet, as a command run from the toolbar's keys does (ADR-0100):
     /// from the toolbar itself when it holds DOM focus, which the core does not take the keyboard
-    /// from on its own.
+    /// from on its own. A list an item opened from the keyboard that may still be on its way is asked
+    /// to close (<see cref="ToolbarItemContext.CloseRequest"/>), so it does not take the keyboard
+    /// from the Sheet after it.
     /// </summary>
-    public Task ReturnKeyboardAsync() => LeaveToolbar?.Invoke() ?? _returnKeyboard();
+    public Task ReturnKeyboardAsync()
+    {
+        foreach (var item in _items.ToList()) item.RequestCloseOfChoices();
+        return LeaveToolbar?.Invoke() ?? _returnKeyboard();
+    }
 
     /// <summary>The toolbar's own way of giving the keyboard back, while it is shown.</summary>
     internal Func<Task>? LeaveToolbar { get; set; }
 
     /// <summary>The core's focus function itself (ADR-0021's note of 2026-09-30).</summary>
     internal Task ReturnKeyboardToSheetAsync() => _returnKeyboard();
+
+    /// <summary>
+    /// The core's focus function from a frame of the Sheet's own, the toolbar, with the keys typed on
+    /// it on the way (ADR-0050 item 16's note of 2026-10-12). Set by the Sheet.
+    /// </summary>
+    internal Func<ElementReference, Func<IReadOnlyList<KeyboardEventArgs>>, Task>? TakeKeyboardBack { get; set; }
+
+    /// <summary>
+    /// Tells the grid's key gate that the keyboard is going to the toolbar, a frame of the Sheet's own
+    /// outside the grid (ADR-0050 item 16): the keys typed until the toolbar holds it are the toolbar's.
+    /// Set by the Sheet.
+    /// </summary>
+    internal Func<Task>? HandKeyboardToToolbar { get; set; }
+
+    /// <summary>
+    /// Gives the toolbar's band the keyboard through the grid (<c>HandKeyboardToAsync</c>), which, while
+    /// it holds keys for the toolbar, gives it in turn, with those keys (ADR-0050 item 16's note of
+    /// 2026-10-12). Set by the Sheet.
+    /// </summary>
+    internal Func<ElementReference, Task>? GiveToolbarTheKeyboard { get; set; }
+
+    /// <summary>Closes the list titled so in the Sheet's built-in frame, if it is what the frame shows. Set by the Sheet.</summary>
+    internal Func<string, Task>? CloseChoices { get; set; }
+
+    /// <summary>Closes the built-in frame's list titled <paramref name="title"/>, if it stands (ADR-0100's note of 2026-10-12).</summary>
+    internal Task CloseChoicesAsync(string title) => CloseChoices?.Invoke(title) ?? Task.CompletedTask;
 
     /// <summary>
     /// Opens <paramref name="choices"/> in the Sheet's built-in frame: a popover inside the Sheet's

@@ -394,8 +394,10 @@ public sealed class FormatCellsItem : ToolbarItemBase
     /// <inheritdoc />
     protected override Task PressAsync() => Context.Sheet.OpenFormatCellsAsync();
 
-    /// <inheritdoc />
-    protected override bool ReturnsKeyboard => false;
+    // A press from the keys gives the keyboard back to the Sheet, as every item's does: Format Cells
+    // takes it from the grid (its popover, or the frame the grid hands it to), which holds the keys
+    // typed meanwhile for it, those typed on the toolbar's band among them (ADR-0100's note of
+    // 2026-10-12). It declined the hand-back once, when it would have taken the keyboard from the popover.
 
     /// <inheritdoc />
     protected override ToolbarItemFace Face() => new(ToolbarItemKind.Button, "Format Cells", ToolbarIcon.FormatCells) { Shortcut = "Ctrl+1" };

@@ -14,14 +14,22 @@
 
     Giving the keyboard back from here is the one subtle part. The core's focus function is granted
     only while DOM focus is inside the grid or on nothing (ADR-0021's note of 2026-09-30), and the
-    toolbar is neither. So the keyboard is first put on an empty element of the toolbar's own with
-    Blazor's FocusAsync, the element is removed, and once the browser has applied that render DOM
-    focus is on nothing and the core takes the keyboard back — the way ExSheet.MudBlazor's Format
-    Cells leaves its dialog. No script is added (ADR-0021).
+    toolbar is neither: so the toolbar names itself as the frame the keyboard comes back from, and the
+    core takes it from there too (ADR-0050 item 16's note of 2026-10-12). On a circuit that lands a
+    round trip after the key that asked for it, and a key typed meanwhile — on the band, or on an
+    element a Chrome put the keyboard on inside it on the way out of its own list — would be the
+    toolbar's: Enter pressed the last item again. From the moment the keyboard is on its way back the
+    toolbar holds those keys, in order, and hands them to the grid once the core has the keyboard,
+    which then answers them as it answers its own (ADR-0010). Nothing a key does depends on when it
+    was typed. No script is added (ADR-0021).
+
+    The KeyTips take the keyboard here the other way: the grid's key gate is told the keyboard is
+    going to a frame of the Sheet's own, so the letters typed before the band holds it are held there
+    and handed to the band in order (ADR-0050 item 16; ADR-0100's note of 2026-10-12).
 *@
 <div class="ex-sheet-toolbar" role="toolbar" aria-label="@SheetWords.ToolbarName" aria-orientation="horizontal"
      tabindex="0" style="@Style" aria-activedescendant="@ActiveId" @ref="_band"
-     @onkeydown="OnKeyAsync" @onkeydown:preventDefault="_keysAreKeyTips" @onfocus="OnFocus" @onfocusout="OnFocusOut">
+     @onkeydown="OnKeyAsync" @onkeydown:preventDefault="@(_keysAreKeyTips || _typedOnTheWay is not null)" @onfocus="OnFocus" @onfocusout="OnFocusOut">
     @if (Context.KeyTips == KeyTipStage.Rows && Context.Rows.Count == 0)
     {
         <span class="ex-sheet-keytip ex-sheet-row-keytip" aria-hidden="true">@SheetToolbarContext.ImplicitRowKeyTip</span>
@@ -31,12 +39,6 @@
             @(Content ?? DefaultRow)
         </CascadingValue>
     </CascadingValue>
-    @if (_leaving)
-    {
-        @* Never aria-hidden: it holds focus, and Chromium refuses to hide a focused element, saying so
-           in the console while its accessibility tree is on (the seventeenth Windows run, Part D). *@
-        <span class="ex-sheet-toolbar-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1" @ref="_leavingFrom"></span>
-    }
 </div>
 
 @code {
@@ -59,13 +61,13 @@
 
     private string? ActiveId => Context.Active?.Describe().Id;
 
-    // The keyboard on its way back to the Sheet: the element it leaves from stands, it has been put
-    // there, and the hand-back waits for the render that removes it.
-    private bool _leaving;
-    private bool _leftFromElement;
-    private bool _handBackAfterRender;
-    private ElementReference _leavingFrom;
-    private TaskCompletionSource? _handedBack;
+    // The keys typed on the band, or on an element inside it, while the keyboard is on its way back to
+    // the Sheet: held, in order, until the grid has the keyboard and asks for them; null otherwise.
+    private List<KeyboardEventArgs>? _typedOnTheWay;
+    private readonly Func<IReadOnlyList<KeyboardEventArgs>> _handKeysOn;
+
+    /// <summary>The handler the grid asks for the held keys through, held in a field (AGENTS.md, the Blazor traps).</summary>
+    public SheetToolbar() => _handKeysOn = HandKeysOn;
 
     private ElementReference _band;
 
@@ -102,10 +104,17 @@
         if (Context.Rows.Count > 0 && Context.Rows.All(row => row.KeyTip is null)) return;
         Context.ShowKeyTips(KeyTipStage.Rows);
         _keysAreKeyTips = true;
+        // Told before anything else, as the release is heard: the grid's key gate holds the letters
+        // typed until the band has the keyboard, and hands them to it (ADR-0050 item 16; ADR-0100's
+        // note of 2026-10-12). It answers after this, whatever was typed. The band takes the keyboard
+        // through the grid, which gives it in turn, with the letters held for it, so a letter typed
+        // straight on the band never overtakes one still held.
+        var handedOff = Context.HandKeyboardToToolbar?.Invoke() ?? Task.CompletedTask;
         StateHasChanged();
         try
         {
-            await _band.FocusAsync(preventScroll: true);
+            await (Context.GiveToolbarTheKeyboard?.Invoke(_band) ?? _band.FocusAsync(preventScroll: true).AsTask());
+            await handedOff;
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -175,16 +184,29 @@
     }
 
     /// <summary>
-    /// Gives the keyboard back to the Sheet from the toolbar: through the toolbar's own empty
-    /// element, removed before the core is asked, so that DOM focus is on nothing when it is.
+    /// Gives the keyboard back to the Sheet from the toolbar: the core takes it from the band, or from
+    /// an element inside it, and the keys typed there meanwhile are held and handed to the grid.
     /// </summary>
     private Task GiveKeyboardBackAsync()
     {
-        if (!_hasFocus) return Context.ReturnKeyboardToSheetAsync();
-        _handedBack ??= new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _leaving = true;
+        if (Context.TakeKeyboardBack is not { } takeBack) return Context.ReturnKeyboardToSheetAsync();
+        if (_typedOnTheWay is null)
+        {
+            _typedOnTheWay = [];
+            StateHasChanged();
+        }
+        return takeBack(_band, _handKeysOn);
+    }
+
+    // The grid has the keyboard, or was declined it: the keys held on the way are its, and the band's
+    // keys are its own again.
+    private IReadOnlyList<KeyboardEventArgs> HandKeysOn()
+    {
+        var keys = _typedOnTheWay ?? [];
+        _typedOnTheWay = null;
+        _keysAreKeyTips = false;
         StateHasChanged();
-        return _handedBack.Task;
+        return keys;
     }
 
     // Noted as the render is drawn, not after it: see ToolbarRow.
@@ -193,41 +215,6 @@
     {
         _drawnKeyTips = KeyTipsShown;
         return true;
-    }
-
-    /// <inheritdoc />
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (_leaving && !_leftFromElement)
-        {
-            _leftFromElement = true;
-            try
-            {
-                await _leavingFrom.FocusAsync(preventScroll: true);
-            }
-            catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
-            {
-                // The page went, or the circuit did.
-            }
-            _leaving = false;
-            _handBackAfterRender = true;
-            StateHasChanged();
-            return;
-        }
-        if (_handBackAfterRender)
-        {
-            _handBackAfterRender = false;
-            _leftFromElement = false;
-            var handedBack = _handedBack;
-            _handedBack = null;
-            await Context.ReturnKeyboardToSheetAsync();
-            handedBack?.TrySetResult();
-            if (_keysAreKeyTips)
-            {
-                _keysAreKeyTips = false;
-                StateHasChanged();
-            }
-        }
     }
 
     private bool _hasFocus;
@@ -239,7 +226,6 @@
         if (Context.LeaveToolbar == GiveKeyboardBackAsync) Context.LeaveToolbar = null;
         if (Context.StartKeyTips == StartKeyTipsAsync) Context.StartKeyTips = null;
         Context.ShowKeyTips(KeyTipStage.Off);
-        _handedBack?.TrySetResult();
     }
 
     private void OnFocus()
@@ -256,7 +242,7 @@
         _hasFocus = false;
         // The KeyTips end when the keyboard leaves: a list an item opened, or a press elsewhere.
         Context.ShowKeyTips(KeyTipStage.Off);
-        if (_keysAreKeyTips && !_leaving && !_handBackAfterRender)
+        if (_keysAreKeyTips && _typedOnTheWay is null)
         {
             _keysAreKeyTips = false;
             StateHasChanged();
@@ -277,6 +263,16 @@
 
     private async Task OnKeyAsync(KeyboardEventArgs e)
     {
+        // On its way back to the Sheet, the keyboard's keys are the Sheet's: held, and handed on once
+        // the grid has it. So are the keys typed on an element inside the band while the band itself
+        // does not hold the keyboard: a Chrome's, which its list closing put the keyboard on (no Toolbar
+        // Item is a tab stop, and a press on one takes no focus), and which gives it back next.
+        if (_typedOnTheWay is null && !_hasFocus && !KeyTipsShown) _typedOnTheWay = [];
+        if (_typedOnTheWay is { } onTheWay)
+        {
+            onTheWay.Add(e);
+            return;
+        }
         if (KeyTipsShown)
         {
             await OnKeyTipKeyAsync(e);

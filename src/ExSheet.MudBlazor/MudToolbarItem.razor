@@ -15,12 +15,20 @@
     reaches MudMenu, whose Escape and Tab would hand the keyboard to its button rather than the Sheet.
 
     When a list closes — a choice, Escape, or MudBlazor's own means — the keyboard is given back to
-    the Sheet. The core's focus function is granted only while DOM focus is in the grid or on nothing
-    (ADR-0021's note of 2026-09-30), and the list is drawn in MudBlazor's popover provider, which
+    the Sheet. The core's focus function is granted only while DOM focus is in the grid, on nothing,
+    or in the toolbar's band it is taken back from (ADR-0021's note of 2026-09-30; ADR-0050 item 16's
+    note of 2026-10-12), and the list is drawn in MudBlazor's popover provider, outside the band, which
     removes it in a render of its own. So where the keyboard was in the list, it is first put on an
-    empty element of this item's own, the list closes, the element goes, and the Sheet is asked once
-    the browser has applied that render — the way the toolbar leaves its band. That element is never
+    empty element of this item's own, inside the band; the list closes, the choice is made, and the
+    toolbar takes the keyboard back from there. A key typed on that element meanwhile reaches the band,
+    which holds it and hands it to the Sheet with the keyboard, so it is never the toolbar's — Enter
+    pressed the last item again. The element goes once the keyboard has left it. It is never
     aria-hidden: it holds focus. No script is added (ADR-0021): DOM focus moves by Blazor's FocusAsync.
+
+    When the toolbar takes the keyboard back while the list may still be on its way (CloseRequest:
+    Escape typed on the band before the list took the keyboard), the list closes, a focus not yet
+    given is dropped, and the toolbar has the keyboard back already; a list that was given the
+    keyboard first holds it, and closes as Escape in it does (ADR-0100's note of 2026-10-12).
 *@
 <span class="@WrapperClass" id="@Context.Id" @onmousedown:preventDefault="true">
     @switch (Context.Kind)
@@ -86,7 +94,9 @@
     }
     @if (_leaving)
     {
-        <span class="mud-ex-sheet-toolbar-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1" @ref="_leavingFrom"></span>
+        @* Its keys reach the band, which holds them for the Sheet; their defaults are the element's, prevented. *@
+        <span class="mud-ex-sheet-toolbar-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1"
+              @onkeydown:preventDefault="true" @ref="_leavingFrom"></span>
     }
 </span>
 
@@ -106,8 +116,11 @@
 
     private MudMenu? _menu;
     private int _answeredOpen;
+    private int _answeredClose;
     private bool _open;
     private bool _giveBackAfterRender;
+    // The list closing because the toolbar asked (CloseRequest), which gives the keyboard back itself.
+    private bool _closingForRequest;
 
     // The choices in the order they are drawn — the words, then the swatches — and their elements,
     // by that order. The place the keyboard is on is kept here, moved by the keys, not read from DOM
@@ -210,16 +223,41 @@
     };
 
     /// <inheritdoc />
-    protected override void OnInitialized() => _answeredOpen = Context.OpenRequest;
+    protected override void OnInitialized()
+    {
+        _answeredOpen = Context.OpenRequest;
+        _answeredClose = Context.CloseRequest;
+    }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // The toolbar's keys asked for the list (Enter on a menu, ↓ on a split control, a KeyTip).
+        // The toolbar took the keyboard back while the list may have been on its way (ADR-0100's note
+        // of 2026-10-12): it closes, and a focus into it not yet given is dropped. One that was given
+        // first holds the keyboard, which the toolbar's hand-back does not take from it: it closes as
+        // Escape in it does, and gives the keyboard back.
+        if (Context.CloseRequest != _answeredClose)
+        {
+            _answeredClose = Context.CloseRequest;
+            _keyboardIntoList = false;
+            if (_keyboardInList && !_closing)
+            {
+                await CloseAsync(null);
+                return;
+            }
+            if (_menu is not null && _open && !_closing)
+            {
+                _closingForRequest = true;
+                await _menu.CloseMenuAsync();
+                _closingForRequest = false;
+            }
+        }
+        // The toolbar's keys asked for the list (Enter on a menu, ↓ on a split control, a KeyTip); one
+        // asked for before the last close request is not answered.
         if (Context.OpenRequest != _answeredOpen)
         {
             _answeredOpen = Context.OpenRequest;
-            if (_menu is not null && !_closing)
+            if (_menu is not null && !_closing && Context.OpenRequest != Context.CloseRequest)
             {
                 var standing = _open;
                 _keyboardIntoList = true;
@@ -232,8 +270,9 @@
         }
         if (_leaving && !_leftFromElement)
         {
-            // The keyboard leaves the list for this item's own element, the list closes, the choice
-            // is made, and the element goes; the Sheet is asked once the browser has removed it.
+            // The keyboard leaves the list for this item's own element inside the band, the list
+            // closes, the choice is made, and the toolbar takes the keyboard back from the band, with
+            // the keys typed on the element meanwhile; the element then goes.
             _leftFromElement = true;
             try
             {
@@ -249,8 +288,10 @@
                 _chosen = null;
                 await chosen.Choose();
             }
+            await Context.ChoicesClosed();
             _leaving = false;
-            _giveBackAfterRender = true;
+            _leftFromElement = false;
+            _closing = false;
             StateHasChanged();
             return;
         }
@@ -287,6 +328,8 @@
         _focused = -1;
         if (open || _closing) return Task.CompletedTask;
         _keyboardIntoList = false;
+        // Closed because the toolbar asked: it has the keyboard back already.
+        if (_closingForRequest) return Task.CompletedTask;
         if (_keyboardInList)
         {
             // Closed by MudBlazor's own means while the keyboard was in the list: it leaves through
@@ -308,7 +351,8 @@
     // Focus cell has, else the first that can be made, as the built-in list starts.
     private async Task OnListDrawnAsync()
     {
-        if (!_keyboardIntoList || _closing) return;
+        // Not after the toolbar asked for the list to close: the keyboard is the Sheet's again.
+        if (!_keyboardIntoList || _closing || Context.CloseRequest != _answeredClose) return;
         _keyboardIntoList = false;
         var selected = _drawn.Select((choice, at) => (choice, at)).FirstOrDefault(c => c.choice.Selected && c.choice.DisabledReason is null);
         _focused = selected.choice is null ? Next(-1, 1) : selected.at;

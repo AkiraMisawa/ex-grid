@@ -20,7 +20,7 @@
             <button type="button" role="menuitemradio" class="ex-sheet-swatch-choice" title="@choice.Label"
                     aria-label="@choice.Label" aria-checked="@(choice.Selected ? "true" : "false")"
                     tabindex="@(at == _focused ? 0 : -1)" @ref="_buttons[at]"
-                    @onclick="() => ChooseAsync(at)" @onfocus="() => _focused = at">
+                    @onclick="() => ChooseAsync(at)" @onfocus="() => Focused(at)">
                 <span class="ex-sheet-swatch" style="@SwatchStyle(colour)"></span>
             </button>
         }
@@ -29,7 +29,7 @@
             <button type="button" role="menuitemradio" class="ex-sheet-choice" aria-checked="@(choice.Selected ? "true" : "false")"
                     aria-disabled="@(choice.DisabledReason is null ? null : "true")" title="@choice.DisabledReason"
                     tabindex="@(at == _focused ? 0 : -1)" @ref="_buttons[at]"
-                    @onclick="() => ChooseAsync(at)" @onfocus="() => _focused = at">
+                    @onclick="() => ChooseAsync(at)" @onfocus="() => Focused(at)">
                 <span class="ex-sheet-choice-label">@choice.Label</span>
                 @if (choice.DisabledReason is { } reason)
                 {
@@ -92,9 +92,24 @@
         }
     }
 
+    // The choices this list has asked to take DOM focus, whose focus has not yet been heard. On a circuit
+    // a request lands a round trip after the key that moved, and the key after it has moved the place
+    // on already: the landing is not a move (ADR-0039's note of 2026-09-25; the Sheet Toolbar's ↓, →
+    // typed at once, 2026-10-12).
+    private readonly List<int> _askedFocus = [];
+
+    // A choice took DOM focus: one this list asked for, landing, moves nothing; any other — Tab
+    // wrapping, a press — is where the keys start from.
+    private void Focused(int at)
+    {
+        if (_askedFocus.Remove(at)) return;
+        _focused = at;
+    }
+
     private async Task FocusAsync(int at, bool preventScroll)
     {
         if (at < 0 || at >= _buttons.Length || _buttons[at].Context is null) return;
+        _askedFocus.Add(at);
         try
         {
             await _buttons[at].FocusAsync(preventScroll);

@@ -109,6 +109,16 @@ public sealed record ToolbarChoice(
 /// <param name="Active">Whether the keyboard is on this item inside the Sheet Toolbar.</param>
 /// <param name="OpenRequest">Changes whenever the item's choices are to open from the keyboard. A Chrome
 /// whose list is its own opens it when this changes, as a popover answers its focus requests.</param>
+/// <param name="CloseRequest">Changes whenever the Sheet Toolbar takes the keyboard back while the item's
+/// choices may be open from the keyboard (ADR-0100's note of 2026-10-12): a key typed on the toolbar
+/// before the list took the keyboard — Escape, a KeyTip — gave it back to the Sheet. A Chrome whose
+/// list is its own closes it when this changes, drops a focus into it not yet given, and does not call
+/// <see cref="ChoicesClosed"/> for that close: the toolbar takes the keyboard back itself. A list whose
+/// focus was already given when the close was asked for holds the keyboard by then, where the toolbar's
+/// hand-back does not take it from: it closes as it does on its own, and calls
+/// <see cref="ChoicesClosed"/>. It takes the value <see cref="OpenRequest"/> had when the close was asked
+/// for, so a Chrome that answers both after one render knows which came last: an opening it has not yet
+/// answered is still asked for only while the two differ.</param>
 /// <param name="ChoicesClosed">A Chrome whose list is its own calls this when the list closes without a
 /// choice, so the Sheet takes the keyboard back.</param>
 /// <param name="Content">A Consumer item's own content, drawn in place of a picture and text; null for
@@ -130,6 +140,7 @@ public sealed record ToolbarItemContext(
     CellColour? Colour,
     bool Active,
     int OpenRequest,
+    int CloseRequest,
     Func<Task> ChoicesClosed,
     Microsoft.AspNetCore.Components.RenderFragment? Content,
     string? KeyTip,
@@ -146,9 +157,10 @@ public sealed record ToolbarItemContext(
         && Icon == other.Icon && Text == other.Text && Pressed == other.Pressed && Enabled == other.Enabled
         && DisabledReason == other.DisabledReason && ReferenceEquals(Invoke, other.Invoke)
         && Choices.SequenceEqual(other.Choices) && Colour == other.Colour && Active == other.Active
-        && OpenRequest == other.OpenRequest && ReferenceEquals(ChoicesClosed, other.ChoicesClosed)
+        && OpenRequest == other.OpenRequest && CloseRequest == other.CloseRequest
+        && ReferenceEquals(ChoicesClosed, other.ChoicesClosed)
         && ReferenceEquals(Content, other.Content) && KeyTip == other.KeyTip && ShowKeyTip == other.ShowKeyTip;
 
     /// <inheritdoc />
-    public override int GetHashCode() => HashCode.Combine(Id, Kind, Pressed, Enabled, Active, OpenRequest, ShowKeyTip);
+    public override int GetHashCode() => HashCode.Combine(Id, Kind, Pressed, Enabled, Active, OpenRequest, CloseRequest, ShowKeyTip);
 }

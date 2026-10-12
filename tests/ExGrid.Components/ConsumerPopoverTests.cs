@@ -424,6 +424,53 @@ public class ConsumerPopoverTests : GridTestContext
         Assert.Equal([root], Js.Focused.Skip(before));
     }
 
+    [Fact] // ADR-0050 item 16's note of 2026-10-12: a frame of the Consumer's own gives the keyboard back from where it stands, and the keys typed on it on the way are the grid's, asked for once
+    public async Task Return_keyboard_from_a_frame_hands_the_keys_typed_there_to_the_grid()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        var frame = new ElementReference("frame-of-the-consumers");
+        var asked = 0;
+        IReadOnlyList<KeyboardEventArgs> typed = [new() { Key = "Enter" }, new() { Key = "x", ShiftKey = true }];
+
+        await cut.Instance.ReturnKeyboardAsync(frame, () =>
+        {
+            asked++;
+            return typed;
+        });
+
+        var call = Assert.Single(Js.TakenBack.Invocations);
+        Assert.Equal(frame.Id, ((ElementReference)call.Arguments[0]!).Id);
+        var ticket = (int)call.Arguments[1]!;
+        Assert.Equal(0, asked);
+        // The key gate has the keyboard, and asks for what the frame heard on the way.
+        IReadOnlyList<KeyboardEventArgs> handed = [];
+        await cut.InvokeAsync(() => { handed = cut.Instance.KeysTypedOnTheWay(ticket); });
+        Assert.Equal(["Enter", "x"], handed.Select(k => k.Key));
+        Assert.True(handed[1].ShiftKey);
+        Assert.Equal(1, asked);
+        // Asked once: a second question for the same hand-back finds nothing.
+        await cut.InvokeAsync(() => { handed = cut.Instance.KeysTypedOnTheWay(ticket); });
+        Assert.Empty(handed);
+        Assert.Equal(1, asked);
+    }
+
+    [Fact] // ADR-0050 item 16, ADR-0100's CloseRequest (2026-10-12): a popover closed before its contents took the keyboard tells the key gate it is no longer going there; one they took does not
+    public async Task Closed_before_its_contents_took_the_keyboard_the_gate_stops_waiting_for_them()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+
+        await OpenAsync(cut, new Probe());
+        await cut.Instance.ClosePopoverAsync();
+        Assert.Equal(["popover", "none"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
+
+        await OpenAsync(cut, new Probe());
+        await cut.Find(".ex-popover-consumer > .ex-popover-body").FocusInAsync(new FocusEventArgs());
+        await cut.Instance.ClosePopoverAsync();
+        Assert.Equal(["popover", "none", "popover"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
+    }
+
     [Fact] // ADR-0050 item 16 / DC-60 / ADR-0018: two grids' popovers are independent
     public async Task Two_grids_are_independent()
     {

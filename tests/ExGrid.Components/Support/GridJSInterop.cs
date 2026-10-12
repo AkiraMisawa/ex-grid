@@ -192,6 +192,10 @@ internal sealed class GridJSInterop
         // 2026-10-01): to a Consumer's popover, or to a frame of the Consumer's own.
         var handOff = handle.SetupVoid("handOff", _ => true);
         handOff.SetVoidResult();
+        // The keyboard taken back from a frame of the Consumer's own, with the keys typed there
+        // (ADR-0050 item 16's note of 2026-10-12): the frame's element and the ticket the gate asks with.
+        var takeKeyboardBack = handle.SetupVoid("takeKeyboardBack", _ => true);
+        takeKeyboardBack.SetVoidResult();
         // ST-2's question (ADR-0007's note of 2026-10-11, refined the same day; ADR-0021's note of
         // that day): whether the open edit's fields still hold the text it opened with. A browser
         // here holds no typing but the input a test sends, which reaches the core ahead of the
@@ -219,6 +223,7 @@ internal sealed class GridJSInterop
             CloseAnswered = closeAnswered,
             _gateLog = gateLog,
             HandedOff = handOff,
+            TakenBack = takeKeyboardBack,
             _context = context,
             _module = module,
             _handle = handle,
@@ -254,8 +259,14 @@ internal sealed class GridJSInterop
         => _handle!.Setup<bool>("askUntouched", _ => true);
 
     /// <summary>Every time the core told the key gate where the keyboard is going (ADR-0039 and
-    /// ADR-0050 item 16, 2026-10-01): <c>popover</c> or <c>frame</c>.</summary>
+    /// ADR-0050 item 16, 2026-10-01): <c>popover</c> or <c>frame</c>; and <c>none</c>, when a Consumer's
+    /// popover closed before its contents took it (2026-10-12).</summary>
     internal JSRuntimeInvocationHandler HandedOff { get; private init; } = default!;
+
+    /// <summary>Every time the core asked the key gate to take the keyboard back from a frame of the
+    /// Consumer's own (ADR-0050 item 16's note of 2026-10-12): the frame's element, and the ticket the
+    /// gate asks for the keys typed there with.</summary>
+    internal JSRuntimeInvocationHandler TakenBack { get; private init; } = default!;
 
     /// <summary>Every time the core asked for the keyboard back on its root (ADR-0021/0018) —
     /// granted by the browser only while DOM focus is still inside the root or on nothing.</summary>

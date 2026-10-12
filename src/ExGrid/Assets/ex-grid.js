@@ -1066,6 +1066,42 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // keeps the keyboard where it can (the hand-back after a command, into the Keyboard Field on
     // a grid that edits), so the keys are heard here: one typed on nothing reaches no grid at all.
     let handOff = null;
+    // ExSheet's KeyTips (ADR-0100; ADR-0050 item 16's note of 2026-10-12, decided with the user): the
+    // Alt key gone down alone, on the root or in an edit, while the Consumer declares it (Alt+Alt), and
+    // not yet released. The release is the Consumer's to hear — a Blazor keyup on its own element —
+    // and it may then take the keyboard to a frame of its own outside this root (handOff), a round
+    // trip later on a circuit, where the letters typed meanwhile would open an edit in the cell. This
+    // listener hears no keyup (ADR-0021); it knows the release by the key after it: one that does not
+    // carry Alt, or Alt pressed again. That key and every key after it are held until the Consumer has
+    // answered the release: the drain asks the core an empty question (altReleased), which travels
+    // behind the release, so its answer comes after whatever the Consumer told this listener on hearing
+    // it. Handed off, the keys go to the frame, or are dropped with every key behind one it cannot take
+    // (a Tab), as a hand-off's are; told nothing, they are the grid's, as they always were. Ended by a
+    // chord (a key that carries Alt while it is down), a press on the grid, and DOM focus leaving it.
+    let altDownAlone = false;
+    // The control of a frame of the Consumer's own the core asked to hand the keyboard to while the
+    // keyboard is on its way there (handOff 'frame'; handKeyboardTo): given it in turn, by the hold,
+    // rather than at once, where a key typed straight on it could overtake the keys still held for it
+    // — Alt, H, O typed at once, the O on the band before the held H (ADR-0100's KeyTips, 2026-10-12).
+    let frameInTurn = null;
+    // Whether `k` comes after the release of an Alt that went down alone, noting the Alt it may itself
+    // be. A held Alt's repeats change nothing.
+    const afterAltAlone = (k) => {
+        const alone = k.key === 'Alt' && canonicalOf(k) === 'Alt+Alt' && declared.has('Alt+Alt') && (k.onRoot || k.inEditor);
+        if (!altDownAlone) {
+            altDownAlone = alone && k.repeat !== true;
+            return false;
+        }
+        if (k.key === 'Alt' && k.repeat === true) {
+            return false;
+        }
+        if (k.altKey && !alone) {
+            altDownAlone = false;
+            return false;
+        }
+        altDownAlone = alone;
+        return true;
+    };
     // The hand-off the drain is delivering: 'frame' once DOM focus has left the root for the
     // frame, and whether the keyboard never arrived, so the held keys are dropped.
     let deliveringOutside = false;
@@ -1118,6 +1154,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (target.matches('[role=menuitem]') && ((k.key === 'Enter' && !k.shiftKey) || (k.key === ' ' && !k.shiftKey))) {
                 return closes;
             }
+            // A choice among others — a Consumer's list of them, the Sheet Toolbar's colours and
+            // formats — closes its menu on Enter, as ARIA's menu pattern has it, and the keys after it
+            // are the grid's once the menu has gone: a second Enter typed before chose again
+            // (ADR-0100's note of 2026-10-12). Space may leave such a menu open, so only Enter holds.
+            if (target.matches('[role=menuitemradio]') && k.key === 'Enter' && !k.shiftKey) {
+                return closes;
+            }
             return target.closest('.ex-popover-commands') && runsLetter(popover, k) ? closes : null;
         }
         if (target.closest('.ex-value-list')) {
@@ -1163,6 +1206,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const disposed = !core;
             const editorReady = disposed || editing === 'none' || editorFocused() || focusDeclined;
             const popoverReady = disposed || !awaitingPopover || popoverFocused();
+            // A frame of the Consumer's own whose control is to take the keyboard in turn (frameInTurn)
+            // takes it now, when everything held before it has gone where it was going: the keys held
+            // for the frame are handed to it in this same task, so none typed after can overtake them.
+            // Not while the answer to an Alt's release is still to be asked for among the held keys
+            // (altReleased): the hold goes on to ask it, and the frame takes the keyboard after the
+            // answer, with the keys behind it, rather than take the keys typed meanwhile ahead of them.
+            if (!disposed && handOff === 'frame' && frameInTurn !== null && editorReady && popoverReady && moved()) {
+                if (held.some((h) => h.altReleased === true)) {
+                    resolve();
+                    return;
+                }
+                const frame = frameInTurn;
+                frameInTurn = null;
+                handle.handKeyboardTo(frame, true);
+            }
             const handOffReady = disposed || handedOver() || (handOff !== null && inOtherGrid());
             if (disposed || (editorReady && popoverReady && handOffReady && moved()) || performance.now() - holdStartedAt > 2000) {
                 awaitingPopover = false;
@@ -1172,6 +1230,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     deliveringOutside = handOff === 'frame' && !handOffMissed;
                     handOff = null;
                 }
+                frameInTurn = null;
                 resolve();
             } else {
                 requestAnimationFrame(look);
@@ -1422,6 +1481,34 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 await editorSettled();
                 continue;
             }
+            // The release of an Alt that went down alone (altDownAlone): the keys after it wait for the
+            // Consumer's answer. An empty question to the core travels behind the release the Consumer
+            // heard, so it is answered after whatever the Consumer told this listener then — a hand-off
+            // to a frame of its own (handOff), which the keys then wait for and go to, or nothing.
+            if (k.altReleased) {
+                await core.invokeMethodAsync('Ping').catch(() => false);
+                await editorSettled();
+                continue;
+            }
+            // Keys a frame of the Consumer's own heard on the way back to this root (takeKeyboardBack):
+            // in their place, ahead of every key typed on the root since, and the grid's from here.
+            if (k.typedOnTheWay !== undefined) {
+                const typed = await k.typedOnTheWay;
+                held.unshift(...(Array.isArray(typed) ? typed : []).map((t) => ({
+                    key: String(t.key ?? ''),
+                    ctrlKey: t.ctrlKey === true,
+                    shiftKey: t.shiftKey === true,
+                    altKey: t.altKey === true,
+                    metaKey: t.metaKey === true,
+                    repeat: t.repeat === true,
+                    onRoot: true,
+                    inEditor: false,
+                    inPopover: false,
+                    inFindField: false,
+                    paint: k.paint,
+                })).filter((t) => t.key.length > 0));
+                continue;
+            }
             // A composition that ended in the Keyboard Field (ADR-0080): with no edit open, the
             // core opens one holding its text, as a typed character opens one holding it, and the
             // keys after it wait for the editor; with one open — a second composition the IME
@@ -1585,8 +1672,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // A hold behind a move or a close is over the moment DOM focus has followed, though
         // its check runs a frame later: a key typed in between is the new holder's already.
         const holdOver = answering && awaitingMove !== null && held.length === 0 && moved() && handedOver();
-        if (!replaying && !holdOver && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused()))) {
+        // A key after the release of an Alt that went down alone waits for the Consumer's answer to
+        // that release, whatever else stands (altDownAlone).
+        const afterAlt = !replaying && afterAltAlone(k);
+        if (!replaying && (afterAlt || (!holdOver && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused()))))) {
             event.stopPropagation();
+            if (afterAlt) {
+                held.push({ altReleased: true });
+            }
             // A clipboard key is not held as a key: a copy or a paste dispatched from script does
             // nothing, so held it was lost — the clipboard kept what it held before, and a paste
             // never landed (CP-6 on the Server host, 2026-10-02). Its default runs, and the copy,
@@ -1927,6 +2020,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         tabReleased = false;
         releaseEndsHeard++;
         keyboardByPress = false;
+        // An Alt still down when the keyboard left is not released here (altDownAlone).
+        altDownAlone = false;
     };
     root.addEventListener('focus', onFocused, true);
     root.addEventListener('focusout', onFocusLeft, true);
@@ -2232,6 +2327,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!replaying) {
             releaseEndsHeard++;
             keyboardByPress = true;
+            // A press between an Alt and the next key: that key is not the release's (altDownAlone).
+            altDownAlone = false;
         }
         // A press into a field beside the rows gives that field a focus of its own, which a
         // late hand-back leaves alone (reclaimFocus).
@@ -3043,6 +3140,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the root until the keyboard arrives. No focus is moved and no layout is read: what
         // holds DOM focus is read, as the hold always has.
         handOff: (to) => {
+            // The core closed a Consumer's popover before its contents took the keyboard: it is no
+            // longer on its way there, and the keys held for it are the grid's, as they would have
+            // been, rather than waiting for a focus that will not come and then dropped (ADR-0100's
+            // CloseRequest, 2026-10-12).
+            if (to === 'none') {
+                if (handOff === 'popover') {
+                    handOff = null;
+                }
+                return;
+            }
             if (!core || (to !== 'popover' && to !== 'frame')) {
                 return;
             }
@@ -3187,14 +3294,58 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // A field a press on the rows left standing (staleField) — held, or kept for an edit it
         // might have pointed into, until that press is answered — is not the user's, and is
         // taken as the press would have taken it.
-        reclaimFocus: (fromField) => {
+        //
+        // Widened 2026-10-12 (ADR-0050 item 16's note of that day): granted too while DOM focus is still
+        // on `frame`, or inside it — a frame of the Consumer's own giving the keyboard back
+        // (takeKeyboardBack), which then need not give it up to nothing first. From a frame, a keyboard
+        // already inside this root — in a popover a command from the frame opened — is this grid's,
+        // and stays where it is. Answers whether it was granted.
+        reclaimFocus: (fromField, frame) => {
             const active = document.activeElement;
             const own = active instanceof Element && active !== staleField
                 && active.closest('.ex-formula-bar') !== null;
             if (root && (!active || active === document.body || active === document.documentElement
-                || (root.contains(active) && (fromField === true || !own)))) {
+                || (root.contains(active) && (fromField === true || !own))
+                || (frame instanceof Element && frame.contains(active)))) {
+                if (frame instanceof Element && active instanceof Element && root.contains(active)) {
+                    return true;
+                }
                 staleField = null;
                 (keyFieldOf() ?? root).focus({ preventScroll: true });
+                return true;
+            }
+            return false;
+        },
+        // The keyboard back from a frame of the Consumer's own outside this root that holds it — a
+        // toolbar, a list of its own (ReturnKeyboardAsync with a frame; ADR-0050 item 16's note of
+        // 2026-10-12, the mirror of handOff 'frame') — with the keys typed on the frame on the way.
+        // Granted where reclaimFocus is, and also while DOM focus is still on the frame or inside it,
+        // so the frame need not first give it up to nothing: a key typed while it is on nothing reaches
+        // no grid. The keys the frame heard are the core's to ask for, now that the keyboard has left
+        // it: the question travels behind every key the frame heard before this moment, so its answer
+        // holds them all, and they are held here, ahead of any typed on the root since, and then gated
+        // as the root's (ADR-0010). Declined — the user has put the keyboard elsewhere (ADR-0018) — the
+        // frame is still asked, so it stops holding, and its keys are dropped with the hand-back. It is
+        // reclaimFocus's decision, widened to the frame: no other focus is moved here.
+        takeKeyboardBack: (element, ticket) => {
+            if (!core) {
+                return;
+            }
+            const granted = handle.reclaimFocus(false, element) === true;
+            const typed = core.invokeMethodAsync('KeysTypedOnTheWay', ticket).catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to take the keys typed on the way', error);
+                }
+                return [];
+            });
+            if (!granted) {
+                return;
+            }
+            held.push({ typedOnTheWay: typed, paint: paintNow() });
+            if (answering) {
+                holdStartedAt = performance.now();
+            } else {
+                startHold();
             }
         },
         // The keyboard this grid holds, handed on to a control of the Consumer's own outside it —
@@ -3209,7 +3360,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the keyboard up as it does to reclaimFocus. The sixth decision about focus made in script
         // (ADR-0021's note of 2026-10-02); it reads document.activeElement and no layout. The
         // control scrolls into view, as its own focus would have had it.
-        handKeyboardTo: (element) => {
+        //
+        // While the keyboard is on its way to a frame of the Consumer's own (handOff 'frame') and a
+        // hold stands, the control takes it in turn instead (frameInTurn, inTurn): when the hold has
+        // reached it, with the keys held for the frame handed to it in the same task (ADR-0050 item
+        // 16's note of 2026-10-12). The condition is the same, read then.
+        handKeyboardTo: (element, inTurn) => {
+            if (inTurn !== true && handOff === 'frame' && answering && element instanceof HTMLElement
+                && !(root && root.contains(element))) {
+                frameInTurn = element;
+                return;
+            }
             const active = document.activeElement;
             const own = active instanceof Element && active !== staleField
                 && active.closest('.ex-formula-bar') !== null;

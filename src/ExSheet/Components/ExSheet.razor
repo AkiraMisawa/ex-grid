@@ -876,6 +876,7 @@
         _formatCells = context;
         _formatCellsFrame = null;
         StateHasChanged();
+        _toolbarChoicesTitle = null;
         if (await grid.OpenPopoverAsync(popover => BuiltInFormatCells(context, popover), SheetWords.FormatCellsTitle)) return true;
         _formatCells = null;
         return false;
@@ -1682,6 +1683,13 @@
             OpenToolbarChoicesAsync, _returnKeyboard,
             sentence => { Tell(sentence); StateHasChanged(); },
             () => _ = InvokeAsync(StateHasChanged));
+        // The toolbar is a frame of the Sheet's own outside the grid (ADR-0050 item 16): the keys
+        // typed while the keyboard goes to it are held for it, and the keys typed on it while the
+        // keyboard comes back are handed to the grid (ADR-0050 item 16's note of 2026-10-12).
+        _toolbar.HandKeyboardToToolbar ??= () => _grid?.HandKeyboardToFrameAsync() ?? Task.CompletedTask;
+        _toolbar.GiveToolbarTheKeyboard ??= band => _grid?.HandKeyboardToAsync(band) ?? band.FocusAsync(preventScroll: true).AsTask();
+        _toolbar.TakeKeyboardBack ??= TakeKeyboardBackFromToolbarAsync;
+        _toolbar.CloseChoices ??= CloseToolbarChoicesAsync;
         // One Toolbar Row is the Formula Bar's height, from the same Density (ADR-0100, ADR-0028).
         ListenForKeyUps();
         _toolbar.RowHeightPx = GridMetrics.Resolve(Presentation?.Density ?? GridDensity.Compact, RowHeight, defaults: Presentation).FormulaBarHeightPx;
@@ -1795,7 +1803,31 @@
     private async Task OpenToolbarChoicesAsync(string title, IReadOnlyList<ToolbarChoice> choices)
     {
         if (_grid is not { } grid || choices.Count == 0) return;
-        await grid.OpenPopoverAsync(popover => ToolbarChoices(title, choices, popover), title);
+        if (await grid.OpenPopoverAsync(popover => ToolbarChoices(title, choices, popover), title)) _toolbarChoicesTitle = title;
+    }
+
+    // The toolbar list the grid's popover frame was last opened with, by its title: the one a close
+    // request from the toolbar may close (ADR-0100's note of 2026-10-12).
+    private string? _toolbarChoicesTitle;
+
+    // The toolbar takes the keyboard back while an item's list may still be on its way, opened from the
+    // keys: under the built-in Chrome that list is the grid's popover, which closes, unless what stands
+    // there now is another list or Format Cells. Closed, the key gate stops waiting for its contents.
+    private Task CloseToolbarChoicesAsync(string title)
+    {
+        if (_grid is not { } grid || _toolbarChoicesTitle != title) return Task.CompletedTask;
+        _toolbarChoicesTitle = null;
+        if (_formatCells is not null && _formatCellsFrame is null) return Task.CompletedTask;
+        return grid.ClosePopoverAsync();
+    }
+
+    // The core's focus function from the toolbar, with the keys typed on it on the way. Without a grid
+    // there is nothing to hand them to.
+    private Task TakeKeyboardBackFromToolbarAsync(ElementReference from, Func<IReadOnlyList<KeyboardEventArgs>> typedOnTheWay)
+    {
+        if (_grid is { } grid) return grid.ReturnKeyboardAsync(from, typedOnTheWay);
+        typedOnTheWay();
+        return Task.CompletedTask;
     }
 
     private static RenderFragment ToolbarChoices(string title, IReadOnlyList<ToolbarChoice> choices, GridPopoverContext popover) =>

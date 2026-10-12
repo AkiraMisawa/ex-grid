@@ -386,15 +386,20 @@ key for the ribbon. Whether it is shown is yours to keep.
 Excel's KeyTips work while the toolbar is shown and no cell is being edited. Releasing Alt on its
 own, or pressing F10, shows a letter for each Toolbar Row. ExSheet's default row is H, as Excel's
 Home tab is. The row's letter then shows the items' letters, which are Excel's, so Alt, H, 1 sets
-bold. A row or a `ToolbarButton` of yours has a KeyTip only where you set its `KeyTip`. Two letters
-that collide at one level are refused when the toolbar renders. ExSheet's items are `BoldItem`,
+bold and Alt, H, O, E opens Format Cells. The letters can be typed at once: those typed before the
+KeyTips show wait for them, on a Blazor Server circuit too. A row or a `ToolbarButton` of yours has a
+KeyTip only where you set its `KeyTip`. Two letters that collide at one level are refused when the
+toolbar renders. ExSheet's items are `BoldItem`,
 `ItalicItem`, `UnderlineItem`, `StrikethroughItem`, `FontColourItem`, `FillItem`, `BordersItem`,
 `AlignLeftItem`, `AlignCenterItem`, `AlignRightItem`, `NumberFormatItem`, `PercentItem`,
 `CommaItem`, `FormatCellsItem` and `ToolbarSeparator`.
 
 - **The look is the Chrome's.** The built-in Chrome draws plain buttons with inline-SVG pictures.
   `MudSheetChrome` draws MudBlazor's controls. A Chrome of your own implements
-  `ISheetChrome.ToolbarItem`, which receives what the item means as a `ToolbarItemContext`.
+  `ISheetChrome.ToolbarItem`, which receives what the item means as a `ToolbarItemContext`. A list
+  of its own opens when `OpenRequest` changes and closes when `CloseRequest` does: the toolbar has
+  taken the keyboard back before the list took it, so the Chrome closes the list without calling
+  `ChoicesClosed`.
 - **An item of your own** derives from `ToolbarItemBase`. It reads the Sheet through the cascaded
   `SheetToolbarContext` and acts through the Sheet's public commands.
   `SetCellFormatFromFocusAsync` is the command for a change made from the Focus cell's Cell

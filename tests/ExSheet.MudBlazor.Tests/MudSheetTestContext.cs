@@ -40,7 +40,7 @@ public abstract class MudSheetTestContext : BunitContext
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         _handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "blur", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handOff", "dispose" })
+        foreach (var name in new[] { "setScrollOffset", "blur", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handOff", "dispose", "takeKeyboardBack", "handKeyboardTo" })
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
@@ -55,6 +55,30 @@ public abstract class MudSheetTestContext : BunitContext
 
     /// <summary>Where the grid told its key gate the keyboard is going, in order (ADR-0050 item 16, 2026-10-01).</summary>
     protected IReadOnlyList<string> HandOffs => [.. _handle.Invocations["handOff"].Select(i => (string)i.Arguments[0]!)];
+
+    /// <summary>How many times the toolbar has asked the grid to take the keyboard back from it, with the
+    /// keys typed there on the way (ADR-0050 item 16's note of 2026-10-12).</summary>
+    protected int TakeBackCount => _handle.Invocations["takeKeyboardBack"].Count;
+
+    private int _takeBacksAnswered;
+
+    /// <summary>
+    /// The browser's side of the hand-backs asked for since the last call (takeKeyboardBack): the key
+    /// gate has the keyboard and asks for the keys typed on the way. Answers them, in order.
+    /// </summary>
+    protected IReadOnlyList<KeyboardEventArgs> AnswerTakeBacks(IRenderedComponent<ExGrid<SheetRow>> grid)
+    {
+        var asked = _handle.Invocations["takeKeyboardBack"];
+        var keys = new List<KeyboardEventArgs>();
+        for (; _takeBacksAnswered < asked.Count; _takeBacksAnswered++)
+        {
+            var ticket = (int)asked[_takeBacksAnswered].Arguments[1]!;
+            IReadOnlyList<KeyboardEventArgs> typed = [];
+            grid.InvokeAsync(() => { typed = grid.Instance.KeysTypedOnTheWay(ticket); }).GetAwaiter().GetResult();
+            keys.AddRange(typed);
+        }
+        return keys;
+    }
 
     /// <summary>A Sheet of en-US whose cells are typed as given.</summary>
     protected static SheetDocument DocumentOf(params (string Address, string Typed)[] cells) => DocumentOf(null, cells);

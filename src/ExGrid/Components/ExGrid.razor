@@ -5210,6 +5210,11 @@
     private void ClosePopoverAndReturnFocus()
     {
         var wasOpen = AnyPopoverOpen;
+        // A Consumer's popover closed before its contents took the keyboard: the key gate stops
+        // waiting for them, and the keys it held for them are the grid's (ADR-0050 item 16; ADR-0100's
+        // CloseRequest, 2026-10-12). Told before the hand-back, which the held keys then follow.
+        if (_consumerPopover is not null && !_consumerContentsHeld)
+            _ = HandOffAsync("none");
         if (wasOpen)
             _ = ReclaimFocusAsync();
         CloseMenus();
@@ -6364,6 +6369,11 @@
     /// call cannot be made that way (a server circuit), the copy path knows to take the
     /// async route from the start — so a later synchronous failure is a failure to be
     /// reported, never mistaken for a missing channel (ADR-0005/0017).
+    ///
+    /// <para>Asked asynchronously too, as an empty question whose answer comes after everything the
+    /// browser sent before it has been taken up: the key gate's wait for a Consumer's answer to the
+    /// release of an Alt that went down alone (ADR-0100's KeyTips; ADR-0050 item 16's note of
+    /// 2026-10-12).</para>
     ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
