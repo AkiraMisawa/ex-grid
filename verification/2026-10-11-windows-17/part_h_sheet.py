@@ -51,7 +51,9 @@ def state(case, step):
     p.input('move 3700 300')
     time.sleep(0.4)
     name = f'h-{case}-{step}-{CHANNEL}.png'
-    p.cmd(op='shot', file=f'{SHOTS}\\{name}')
+    # The compositor's picture (CDP, fromSurface) in the window's device pixels. Playwright's own screenshot
+    # resamples to 1.5 pixels per CSS px at the browser's 150% (h11's second pass, records/part-h-first-try/).
+    p.cmd(op='cdpshot', file=f'{SHOTS}\\{name}')
     record(case, step, read=p.eval(READ), shot=name)
 
 
@@ -70,11 +72,13 @@ def drag(a, b, ctrl=False):
 
 
 def heading(text, role):
-    """The screen point of the column Heading (role columnheader) or the row Heading (rowheader) reading text."""
-    nth = p.eval(f"""(t) => [...document.querySelectorAll('{SHEET} [role={role}]')].findIndex((e) => e.textContent.trim() === t)""", text)
+    """The screen point of the column Heading (role columnheader) or the row Heading (.ex-row-heading, which
+    carries no role) reading text."""
+    sel = f'{SHEET} [role=columnheader]' if role == 'columnheader' else f'{SHEET} .ex-viewport .ex-row-heading'
+    nth = p.eval(f"""(t) => [...document.querySelectorAll('{sel}')].findIndex((e) => e.textContent.trim() === t)""", text)
     if nth < 0:
         raise RuntimeError(f'no {role} {text}')
-    return where(f'{SHEET} [role={role}]', nth)
+    return where(sel, nth)
 
 
 def fresh(path='/sheet'):
@@ -107,6 +111,10 @@ def h11():
         if zoom != 100:
             p.keys(keys, gap=300); time.sleep(1.5)
         fresh('/sheet?case=fills')
+        # At 150% the Sheet lies below the fold: the page is scrolled by a multiple of 4 CSS px (9 Device Pixels at
+        # 2.25), so that its lines keep their place within a Device Pixel, until the Sheet's top is in view.
+        p.eval("""() => { const g = document.querySelector('.ex-grid:has(> .ex-formula-bar)'); const y = Math.max(0, Math.floor((g.getBoundingClientRect().top + scrollY - 40) / 4) * 4); scrollTo(0, y); return y; }""")
+        time.sleep(0.6)
         state('h11', f'zoom-{zoom}')
     p.cmd(op='goto', url=f'{BASE}/wide', ready="() => !!document.querySelector('.ex-grid .ex-row')")
     p.cmd(op='front'); p.keys('^{KEY0}', gap=200); time.sleep(1.0)

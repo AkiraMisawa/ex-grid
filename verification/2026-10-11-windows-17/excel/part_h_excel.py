@@ -42,12 +42,12 @@ def picture(case, step, top_left='A1', bottom_right='G9', pad=60, scale=1):
     return f'{name}-cells.png'
 
 
-def state(case, step, *cells, pic=('A1', 'G9'), wait=0.6, look=None):
+def state(case, step, *cells, pic=('A1', 'G9'), wait=0.6, look=None, scale=1):
     time.sleep(wait)
     r = xs.ready()
     c = xs.cells(*cells) if cells and r.startswith('ready=') else None
     lk = xs.cmd('look ' + ' '.join(look)) if look and r.startswith('ready=') else None
-    shot = picture(case, step, *pic) if pic else None
+    shot = picture(case, step, *pic, scale=scale) if pic else None
     record(case, step, ready=r, cells=c, look=lk, shot=shot)
     return r
 
@@ -111,13 +111,18 @@ H5 = ['=VLOOKUP(1,A1:B2,2,', '=HLOOKUP(1,A1:B2,2,', '=MATCH(1,A1:A2,', '=YEARFRA
 
 def h5():
     record('h5', 'start', excel=fresh())
+    # While a cell is edited COM refuses every call: the picture's box is read before the typing.
+    g = xs.geo('A1', 'H12')
+    x0, y0 = max(0, g['A1'][0] - 60), max(0, g['A1'][1] - 60)
+    x1, y1 = g['H12'][2] + 8, g['H12'][3] + 8
     for i, text in enumerate(H5, 1):
         xs.keys(xs.lit(text), gap=30)
         time.sleep(1.2)
         # The list's entries read "TRUE - Approximate match", "0 - Exact match" and the like.
         names = xs.cmd(r'uianames ( - |^TRUE|^FALSE)')
-        shot = picture('h5', f'{i}-list', 'A1', 'H12')
-        record('h5', f'{i}-{text}', names=names, shot=shot)
+        name = name_of('h5', f'{i}-list')
+        xs.cmd(f'shot {name}'); xs.cmd(f'crop {name} {x0} {y0} {x1 - x0} {y1 - y0} {name}-cells 1')
+        record('h5', f'{i}-{text}', names=names, shot=f'{name}-cells.png')
         xs.keys('{ESC}'); time.sleep(0.4); xs.keys('{ESC}'); time.sleep(0.4)
 
 
@@ -148,6 +153,26 @@ def h7():
     xs.cmd(f'shot {name_of("h7-font-tab", "2-bold-chosen")}')
     xs.keys('{ENTER}'); state('h7-font-tab', '3-ok', 'A1', look=['A1'])
     record('h7-font-tab', '4-width', colwidth=xs.cmd('colwidth A1'))
+
+
+def hashes_standard(case):
+    """A1 holds 123456789.12 in 0.00 at the standard width, a width nobody set, so it shows ########."""
+    record(case, 'start', excel=fresh())
+    xs.cmd('setfmt A1 0.00'); xs.cmd('setup A1 123456789.12'); xs.cmd('select A1')
+    state(case, '0-hashes', 'A1', look=['A1'])
+
+
+def h7s():
+    # h7 again at the standard width (h8's second half showed Ctrl+5 widening there and not at a set width).
+    for key, name in (('^i', 'ctrl-i'), ('^u', 'ctrl-u')):
+        hashes_standard(f'h7-standard-{name}')
+        xs.keys(key); state(f'h7-standard-{name}', f'1-{name}', 'A1', look=['A1'])
+        record(f'h7-standard-{name}', '2-width', colwidth=xs.cmd('colwidth A1'))
+    hashes_standard('h7-standard-font-tab')
+    xs.keys('^1'); time.sleep(1.5); xs.keys('^{TAB}'); time.sleep(0.4); xs.keys('^{TAB}'); time.sleep(0.6)
+    xs.keys('%o'); time.sleep(0.3); xs.keys('Bold', gap=40); time.sleep(0.4)
+    xs.keys('{ENTER}'); state('h7-standard-font-tab', '3-ok', 'A1', look=['A1'])
+    record('h7-standard-font-tab', '4-width', colwidth=xs.cmd('colwidth A1'))
 
 
 def h8():
@@ -237,13 +262,30 @@ def h11():
 # ---- h12: a text section in a Number Format -------------------------------------------------------------------
 
 def h12():
-    record('h12', 'start', excel=fresh())
-    for i, code in enumerate(['@;0', '0;@;0'], 1):
-        row = 2 * i - 1
-        xs.cmd(f'setfmt A{row} {code}'); xs.cmd(f'setfmt A{row + 1} {code}')
-        xs.cmd(f'setup A{row} 12'); xs.cmd(f'setup A{row + 1} abc')
-    xs.cmd('setwidth A1 20')
-    state('h12', 'formats', 'A1', 'A2', 'A3', 'A4', pic=('A1', 'C6'))
+    # Each code on a number (12) and on text (abc): first through COM, then typed in Format Cells' Custom box,
+    # as a user would. A refusal is recorded with its words.
+    for code in ['@;0', '0;@;0']:
+        case = f'h12-{code}'
+        record(case, 'start', excel=fresh())
+        xs.cmd('setup A1 12'); xs.cmd('setup A2 abc'); xs.cmd('setwidth A1 20')
+        try:
+            xs.cmd(f'setfmt A1:A2 {code}')
+            record(case, 'com', result='set')
+        except RuntimeError as e:
+            record(case, 'com', result=str(e))
+        state(case, '1-after-com', 'A1', 'A2', pic=('A1', 'C4'))
+        xs.cmd('select A1:A2')
+        xs.keys('^1'); time.sleep(1.5)
+        xs.keys('%c'); time.sleep(0.3); xs.keys('{END}'); time.sleep(0.5)
+        xs.keys('%t'); time.sleep(0.3); xs.keys('^a'); xs.keys(xs.lit(code), gap=40); time.sleep(0.5)
+        xs.keys('{ENTER}'); time.sleep(1.2)
+        names = xs.cmd(r'uianames (cannot|number format|Microsoft Excel|OK|Help)')
+        xs.cmd(f'shot {name_of(case, "2-after-ok")}')
+        record(case, '2-after-ok', names=names, shot=f'{name_of(case, "2-after-ok")}.png (the whole window; kept on this machine)')
+        r = xs.ready()
+        if not r.startswith('ready='):
+            xs.keys('{ENTER}'); time.sleep(0.8); xs.keys('{ESC}'); time.sleep(0.8)
+        state(case, '3-cells', 'A1', 'A2', pic=('A1', 'C4'))
 
 
 if __name__ == '__main__':

@@ -1,0 +1,15 @@
+{"case": "h1", "step": "start", "t": "12:02:55", "excel": "ok start pid=52864 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=12847"}
+{"case": "h1", "step": "1-a1-c5-dragged", "t": "12:02:57", "ready": "ready=True active=Sheet1!A1 selection=A1:C5", "cells": null, "look": null, "shot": "h-h1-1-a1-c5-dragged-cells.png"}
+{"case": "h2", "step": "start", "t": "12:03:42", "excel": "ok start pid=34716 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=60214"}
+{"case": "h2", "step": "1-a1-b2", "t": "12:03:44", "ready": "ready=True active=Sheet1!A1 selection=A1:B2", "cells": null, "look": null, "shot": "h-h2-1-a1-b2-cells.png"}
+{"case": "h2", "step": "2-ctrl-d4-e6", "t": "12:03:46", "ready": "ready=True active=Sheet1!D4 selection=A1:B2,D4:E6", "cells": null, "look": null, "shot": "h-h2-2-ctrl-d4-e6-cells.png"}
+{"case": "h3", "step": "start", "t": "12:04:00", "excel": "ok start pid=22248 book=Book1 sheet=Sheet1 openedByItself= before=34716 layout=0x08090809 version=16.0 t=77821"}
+{"case": "h3", "step": "1-column-c", "t": "12:04:01", "ready": "ready=True active=Sheet1!C1 selection=C:C", "cells": null, "look": null, "shot": "h-h3-1-column-c-cells.png"}
+{"case": "h3", "step": "2-row-3", "t": "12:04:03", "ready": "ready=True active=Sheet1!A3 selection=3:3", "cells": null, "look": null, "shot": "h-h3-2-row-3-cells.png"}
+{"case": "h4", "step": "start", "t": "12:04:16", "excel": "ok start pid=31756 book=Book1 sheet=Sheet1 openedByItself= before=22248 layout=0x08090809 version=16.0 t=94391"}
+{"case": "h4", "step": "1-a1-b2", "t": "12:04:18", "ready": "ready=True active=Sheet1!A1 selection=A1:B2", "cells": null, "look": null, "shot": "h-h4-1-a1-b2-cells.png"}
+{"case": "h4", "step": "2-ctrl-click-f6", "t": "12:04:20", "ready": "ready=True active=Sheet1!F6 selection=A1:B2,F6", "cells": null, "look": null, "shot": "h-h4-2-ctrl-click-f6-cells.png"}
+{"case": "h4", "step": "3-ctrl-click-f6-again", "t": "12:04:21", "ready": "ready=True active=Sheet1!A1 selection=A1:B2", "cells": null, "look": null, "shot": "h-h4-3-ctrl-click-f6-again-cells.png"}
+{"case": "h4", "step": "4-enter-1", "t": "12:04:22", "ready": "ready=True active=Sheet1!A2 selection=A1:B2", "cells": null, "look": null, "shot": "h-h4-4-enter-1-cells.png"}
+{"case": "h4", "step": "5-enter-2", "t": "12:04:23", "ready": "ready=True active=Sheet1!B1 selection=A1:B2", "cells": null, "look": null, "shot": "h-h4-5-enter-2-cells.png"}
+{"case": "h4", "step": "6-enter-3", "t": "12:04:24", "ready": "ready=True active=Sheet1!B2 selection=A1:B2", "cells": null, "look": null, "shot": "h-h4-6-enter-3-cells.png"}
