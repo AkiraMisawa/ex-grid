@@ -9,8 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The Wrapper's floor (ADR-0022): the application resolves it upward. -->
-    <PackageReference Include="MudBlazor" Version="9.0.0" />
+    <!-- The range ExGrid.MudBlazor takes: 9.x from its floor, resolved upward by the
+         application (ADR-0022), and MudBlazor 10 told at restore (ADR-0205). -->
+    <PackageReference Include="MudBlazor" Version="[9.0.0,10.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

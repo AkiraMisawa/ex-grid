@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The lowest 9.x, as ExGrid.MudBlazor takes it (ADR-0022). -->
-    <PackageReference Include="MudBlazor" Version="9.0.0" />
+    <!-- 9.x from its floor, as ExGrid.MudBlazor takes it (ADR-0022, ADR-0205). -->
+    <PackageReference Include="MudBlazor" Version="[9.0.0,10.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

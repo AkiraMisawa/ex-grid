@@ -15,16 +15,17 @@ application, the Consumer. The grid displays what it is given and tells you what
 for. Where it cannot do something correctly, it refuses rather than guess: a copy is never
 truncated, and a number that does not fit shows `####`.
 
-> **This is a beta (`0.x`).** Every test layer passes in CI on the commit it was built from,
-> but the API may still change between betas, and the project's
+> **The API may still change.** While the version is `0.x`, it may change from one version to the
+> next; each version's [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what
+> changed. A prerelease, a version with a suffix such as `-rc.1`, passed every test layer in CI on
+> the commit it was built from, and its Release Notes say what the project's
 > [Definition of Done](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/definition-of-done.md)
-> has not been signed off. What it still owes is listed in
-> [`docs/implementation-status.md`](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/implementation-status.md).
+> still owed. A version without a suffix is published only once the Definition of Done is signed off
+> on it.
 
 ## Requirements
 
 - **.NET 10 or newer.** The package targets `net10.0` and loads unchanged in newer applications.
-  (`0.1.0-beta.1` targeted `net8.0`; every later version targets `net10.0`.)
 - **Chrome or Edge.** They are the supported browsers; Safari and Firefox are out of scope.
 - **An interactive render mode.** The grid handles keys, the pointer and the clipboard. It is
   verified under WebAssembly. Under Blazor Server every browser test also runs, against a
@@ -34,8 +35,10 @@ truncated, and a number that does not fit shows `####`.
 ## Install
 
 ```sh
-dotnet add package ExGrid --prerelease
+dotnet add package ExGrid
 ```
+
+Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
 
 Add the stylesheet to the page that hosts your application (`wwwroot/index.html`, or
 `App.razor` in a Blazor Web App):

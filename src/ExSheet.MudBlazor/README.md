@@ -13,16 +13,22 @@ the categories, the palette and the line styles, and the same choices set the sa
 under either Chrome. The dialog is page-level and modal; while it is open the keys are its own,
 and when it closes the keyboard is the Sheet's again.
 
-> **This is a prerelease (`0.x`).** ExSheet ships with ExGrid, at the same version. This package depends on exactly the ExSheet and ExGrid.MudBlazor versions it ships
-> with, so upgrade them together.
+> **ExSheet ships with ExGrid, at the same version.** This package depends on exactly the ExSheet
+> and ExGrid.MudBlazor versions it ships with, so upgrade them together. While the version is `0.x`,
+> the API may change from one version to the next; each version's
+> [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what changed.
 
 ## Install
 
 ```sh
-dotnet add package ExSheet.MudBlazor --prerelease
+dotnet add package ExSheet.MudBlazor
 ```
 
-This brings in ExSheet, ExGrid.MudBlazor and MudBlazor (9.0 or newer). Set MudBlazor up as usual:
+Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
+
+This brings in ExSheet, ExGrid.MudBlazor and MudBlazor 9: the package takes `[9.0.0,10.0.0)`, any
+9.x from 9.0.0, and an application on MudBlazor 10 is told so at restore (NU1608). Set MudBlazor up
+as usual:
 
 - `builder.Services.AddMudServices()`
 - MudBlazor's stylesheet and script
