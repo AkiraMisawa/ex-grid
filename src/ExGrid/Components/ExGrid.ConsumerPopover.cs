@@ -96,7 +96,9 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// Hands the keyboard this grid holds on to a control of the Consumer's own, outside the grid —
     /// the first control of a frame or a tab the Consumer has opened from it, a dialog's Close for
-    /// one (ADR-0070's note of 2026-10-02) — in place of that control's own <c>FocusAsync</c>. It
+    /// one (ADR-0070's note of 2026-10-02) — or inside it, a Template cell's control answering
+    /// <see cref="Cells.TemplateCellContext{TRow}.FocusRequest"/> (ADR-0204) — in place of that
+    /// control's own <c>FocusAsync</c>. It
     /// is granted only while the keyboard is still this grid's: DOM focus inside the root or on
     /// nothing, the condition every hand-back reads (ADR-0021's note of 2026-09-30).
     ///
