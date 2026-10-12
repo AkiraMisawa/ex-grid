@@ -59,4 +59,43 @@ public class VisualTokenAncestorTests : GridTestContext
         Assert.Equal(gridRenders, grid.RenderCount);
         Assert.Equal(rowRenders, rows.Select(r => r.RenderCount).ToArray());
     }
+
+    /// <summary>A Consumer that changes what it handed the grid in place — a row replaced in the
+    /// same array — and then renders, restyling its element.</summary>
+    private sealed class InPlaceWrapper : ComponentBase
+    {
+        public TestRow[] Window { get; } = TestRows.Many(50);
+
+        public List<GridColumn<TestRow>> Columns { get; } = [.. TestRows.Columns()];
+
+        [Parameter] public string Style { get; set; } = "";
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "style", Style);
+            builder.OpenComponent<ExGrid<TestRow>>(2);
+            builder.AddComponentParameter(3, nameof(ExGrid<TestRow>.Window), Window);
+            builder.AddComponentParameter(4, nameof(ExGrid<TestRow>.TotalCount), (int?)Window.Length);
+            builder.AddComponentParameter(5, nameof(ExGrid<TestRow>.Columns), (IReadOnlyList<GridColumn<TestRow>>)Columns);
+            builder.AddComponentParameter(6, nameof(ExGrid<TestRow>.RowHeight), 20d);
+            builder.AddComponentParameter(7, nameof(ExGrid<TestRow>.ViewportHeight), (ViewportSize)120);
+            builder.AddComponentParameter(8, nameof(ExGrid<TestRow>.ViewportWidth), (ViewportSize)800);
+            builder.CloseComponent();
+            builder.CloseElement();
+        }
+    }
+
+    [Fact] // UX-5, ADR-0027 P3 / ADR-0003: a row replaced in the same Window array repaints, as a new instance does
+    public void UX5_a_row_replaced_in_the_window_in_place_still_repaints()
+    {
+        var host = Render<InPlaceWrapper>(ps => ps.Add(w => w.Style, ""));
+        Assert.Contains("Row 000000", host.Markup);
+
+        host.Instance.Window[0] = new TestRow { Book = "Replaced row", Amount = 1 };
+        host.Render(ps => ps.Add(w => w.Style, "--ex-cell-color: navy"));
+
+        Assert.Contains("Replaced row", host.Markup);
+        Assert.DoesNotContain("Row 000000", host.Markup);
+    }
 }

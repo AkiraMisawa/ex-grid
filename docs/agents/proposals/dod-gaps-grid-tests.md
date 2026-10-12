@@ -8,8 +8,9 @@
 
 **Implemented on this branch:**
 - `ExGrid.SetParametersAsync` returns without rendering when every parameter it is handed is one it
-  already holds: the same instance for a reference type, an equal value for a value type. An
-  empty push still renders. The test is
+  already holds: the same instance for a reference type, an equal value for a value type, and for a
+  list or an array the same elements in the same order as when the grid last rendered for its
+  parameters. So a row replaced in the same Window array still repaints. An empty push still renders. The test is
   `VisualTokenAncestorTests.UX5_a_visual_token_set_on_the_wrapping_element_renders_nothing_in_dotnet`.
 - LV-22's ExPivot test now checks the bound after the pivot renders again: no earlier Window's row
   is alive but the rows the grid painted from the Window before the newest. Its Viewport is shorter
@@ -73,5 +74,20 @@ new ->
 ```
                 any delegates you pass in fields. A new array or lambda on every render looks like a change and renders
                 every row again; handed nothing new, the grid does not render at all, so restyling the element around it
-                costs no render — and a list you already handed it, changed in place, repaints nothing: hand a new one.
+                costs no render.
 ```
+
+## Finding, not acted on: a Columns list changed in place crashes the grid, before this branch and after
+
+**What happens.** A Consumer adds a column to the `Columns` list it already handed the grid, then
+renders. The grid throws `IndexOutOfRangeException` in `ResolveColumnGeometry`. A column replaced
+in the same list paints the old column. Both happen with the parameter-unchanged skip disabled
+too, as at a37c276a. The grid keys its column caches on the `Columns` instance (ADR-0003/0006's
+"identity is the change signal"). The skip compares elements, renders for both cases, and changes
+nothing here.
+
+**The problem.** A crash is not quiet. But a stale column is quietly wrong (principle 1). Whether
+to refuse an in-place change by name, or to take it, is a decision:
+- **(a)** Refuse by name. Compare the column elements at each render, and throw naming ADR-0003:
+  "hand a new list".
+- **(b)** Take it. Treat changed elements as a new Columns list.
