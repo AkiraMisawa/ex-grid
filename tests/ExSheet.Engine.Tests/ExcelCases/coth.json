@@ -13,12 +13,12 @@
     },
     {
       "id": "COTH-002",
-      "source": "documented",
-      "description": "Documented: the absolute value must be less than 2^27",
+      "source": "observed",
+      "description": "Microsoft documents a limit of 2^27, but Excel answers past it",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COTH(2^27)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": 1}
     },
     {
       "id": "COTH-003",
@@ -28,6 +28,33 @@
       "cells": {"ZZ1000": "=COTH(0)"},
       "check": "ZZ1000",
       "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "COTH-004",
+      "source": "uncertain",
+      "description": "Engine's answer (1/TANH) to 12 digits, Excel to be asked for its full double: COTH(2) was 1.0373147207275479, COSH/SINH's double, where 1/TANH gives 1.0373147207275482; at 0.5 COSH/SINH gives 2.1639534137386525, 1/TANH 2.163953413738653",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COTH(0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.16395341373865, "digits": 12}
+    },
+    {
+      "id": "COTH-005",
+      "source": "uncertain",
+      "description": "Engine's answer (1/TANH) to 12 digits, Excel to be asked for its full double: COSH/SINH gives 1.3130352854993312, 1/TANH 1.3130352854993315",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COTH(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.31303528549933, "digits": 12}
+    },
+    {
+      "id": "COTH-006",
+      "source": "uncertain",
+      "description": "Engine's answer (1/TANH) to 12 digits, Excel to be asked for its full double: COSH/SINH gives 1.0000908039820195, 1/TANH 1.0000908039820193",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COTH(5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.00009080398202, "digits": 12}
     }
   ]
 }
