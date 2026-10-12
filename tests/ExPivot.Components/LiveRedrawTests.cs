@@ -144,7 +144,7 @@ public class LiveRedrawTests : PivotTestContext
     /// Version was laid out as, and that report's cube; the Window state ExPivot holds, and its Report
     /// Version's metadata; and the display rows.</summary>
     private sealed record Shown(WeakReference Report, WeakReference Cube, WeakReference State, WeakReference Metadata,
-        WeakReference[] Rows);
+        WeakReference[] Rows, WeakReference[] Painted);
 
     /// <summary>Reads the Window on screen, and the engine report <paramref name="source"/> laid its
     /// Report Version out as, and answers weak references to them. Read here, in a frame of its own:
@@ -156,7 +156,8 @@ public class LiveRedrawTests : PivotTestContext
         var report = source.ReportOf(state.Metadata.Version)
             ?? throw new InvalidOperationException("The report source no longer holds the Report Version on screen.");
         return new(new(report), new(report.Cube), new(state), new(state.Metadata),
-            [.. state.Rows.Select(static row => new WeakReference(row))]);
+            [.. state.Rows.Select(static row => new WeakReference(row))],
+            [.. Painted(cut).Select(static row => new WeakReference(row.Instance.Row))]);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -228,8 +229,10 @@ public class LiveRedrawTests : PivotTestContext
         var cut = RenderPivot(PnlByRegionAndDesk, ps => LiveSettings(ps.Add(p => p.Slicing, Whole)), source: data);
         var shown = await RunOfRedrawsAsync(cut, AskedSource(cut), data, trades, TimeSpan.FromMilliseconds(spacingMs));
         var newest = shown.Count - 1;
-        // The Consumer renders the page again: Blazor's buffer of the render before the newest then
-        // names nothing of an earlier Window, so what stays is what the report source keeps.
+        // The Consumer renders the page again. ExPivot's buffer of the render before the newest then
+        // names nothing of an earlier Window; the grid, handed nothing new, does not render (UX-5),
+        // and its buffer holds at most the rows it painted from the Window before the newest — all
+        // of which the report source keeps here anyway, as the Baseline Window.
         cut.Render();
 
         Collect();
@@ -249,7 +252,7 @@ public class LiveRedrawTests : PivotTestContext
         Assert.Empty(AliveBeyond(shown, newest, newest, newest - 1));
     }
 
-    [Fact] // ADR-0160 / LV-22, ADR-0153: the grid holds no display row of an earlier Window — over the wire, as /pivot-live's server pivot, where the rows on screen are ExPivot's own copies that nothing of the server's holds, no row of an earlier Window is alive but the ones Blazor keeps for the render before the newest, and none once the pivot renders again
+    [Fact] // ADR-0160 / LV-22, ADR-0153: the grid holds no display row of an earlier Window beyond ADR-0160's bound — over the wire, as /pivot-live's server pivot, where the rows on screen are ExPivot's own copies that nothing of the server's holds: at any moment no row of a Window older than the one the grid's last render replaced is alive, and of that one only the rows the grid painted from it (one render's painted rows, which Blazor keeps), whether or not a Consumer render has happened since (UX-5: one that hands the grid nothing new does not render it)
     public async Task ADR0160_LV22_the_grid_holds_no_display_row_of_an_earlier_window()
     {
         var trades = Generate(2_000);
@@ -260,7 +263,10 @@ public class LiveRedrawTests : PivotTestContext
             async (request, ct) => PivotReportJson.Read<PivotReportUpdate>(PivotReportJson.Write(
                 await server.WindowAsync(PivotReportJson.Read<PivotReportRequest>(PivotReportJson.Write(request)), ct))));
         server.Changed += change => remote.NotifyChanged(change.SourceVersion);
+        // A Viewport shorter than the report, so the grid paints only some of each Window's rows and
+        // a holding of a whole Window can be told from Blazor's buffer of one render's painted rows.
         var cut = RenderPivot(PnlByRegionAndDesk, LiveSettings, reportSource: remote);
+        cut.Render(ps => ps.Add(p => p.ViewportHeight, (global::ExGrid.ViewportSize)160));
         var shown = await RunOfRedrawsAsync(cut, server, data, trades, TimeSpan.FromSeconds(1));
         var newest = shown.Count - 1;
 
@@ -278,10 +284,32 @@ public class LiveRedrawTests : PivotTestContext
         // painted. No row of a Window before that one.
         Assert.Empty(AliveBeyond(shown, newest, newest, newest - 1));
 
-        // The Consumer renders the page again, and the grid takes its parameters again.
+        // The Consumer renders the page again: ExPivot's host lets the Window before go, and the
+        // grid, handed nothing new, does not render — so its own buffer may still name the rows it
+        // painted from that Window, and nothing beyond them.
         cut.Render();
         Collect();
 
-        Assert.Empty(AliveBeyond(shown, newest, newest));
+        AssertWithinTheGridsBound(shown, newest);
+    }
+
+    /// <summary>ADR-0160's bound, once ExPivot's own host has rendered again: of the Windows before
+    /// the newest, nothing is alive but the rows the grid painted from the one just before it — one
+    /// render's painted rows, which Blazor's buffer keeps until the grid's next real render.</summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void AssertWithinTheGridsBound(List<Shown> shown, int newest)
+    {
+        var painted = shown[newest - 1].Painted.Select(row => row.Target).Where(row => row is not null)
+            .ToHashSet(ReferenceEqualityComparer.Instance);
+        Assert.NotEmpty(painted);
+        Assert.True(painted.Count < shown[newest - 1].Rows.Length, "the grid paints only part of the Window");
+        var onScreen = shown[newest].Rows.Select(row => row.Target).Where(row => row is not null)
+            .ToHashSet(ReferenceEqualityComparer.Instance);
+        var beyond = Enumerable.Range(0, newest)
+            .SelectMany(at => Alive(shown[at].Rows).Select(i => (at, i, row: shown[at].Rows[i].Target)))
+            .Where(p => p.row is not null && !onScreen.Contains(p.row) && !painted.Contains(p.row))
+            .Select(p => $"Window {p.at} row {p.i}")
+            .ToArray();
+        Assert.Empty(beyond);
     }
 }

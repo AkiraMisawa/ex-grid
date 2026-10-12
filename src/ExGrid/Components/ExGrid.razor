@@ -2692,9 +2692,41 @@
                 "hold it for you (pull) — an empty result is Window=\"[]\" (ADR-0001).");
         }
 
+        // A Consumer that renders hands the grid every parameter again, and Blazor cannot tell a
+        // reference type it was handed before from a new one, so it asks the grid to render. A
+        // Consumer that only restyled its own wrapping element — a Visual Token set on an
+        // ancestor — would cost a render of the root for a change only the browser paints
+        // (ADR-0027 P3, UX-5). Handed nothing new, the grid has nothing to render.
+        if (HandsNothingNew(parameters))
+            return Task.CompletedTask;
+
         _bound = true;
         return base.SetParametersAsync(parameters);
     }
+
+    private readonly Dictionary<string, object?> _heldParameters = new(StringComparer.Ordinal);
+
+    /// <summary>Whether every parameter in <paramref name="parameters"/> is the one the grid
+    /// already holds: the same instance for a reference type — a delegate re-created by the
+    /// Consumer's render, a RenderFragment above all, is new, since what it answers may have
+    /// changed — and an equal value for a value type. Records what it was handed either
+    /// way. A push of no parameters at all is a request to render, never a Consumer's render,
+    /// which hands every parameter it writes, and it renders as before.</summary>
+    private bool HandsNothingNew(ParameterView parameters)
+    {
+        var same = _bound && parameters.GetEnumerator().MoveNext();
+        foreach (var parameter in parameters)
+        {
+            if (same && !(_heldParameters.TryGetValue(parameter.Name, out var held) && SameParameter(held, parameter.Value)))
+                same = false;
+            _heldParameters[parameter.Name] = parameter.Value;
+        }
+        return same;
+    }
+
+    private static bool SameParameter(object? held, object? handed)
+        => ReferenceEquals(held, handed)
+            || (handed is not null && handed.GetType().IsValueType && handed.Equals(held));
 
     protected override void OnParametersSet()
     {

@@ -1,93 +1,77 @@
 # Proposals from claude/dod-gaps-grid-tests
 
-The branch closed layer-1 and layer-2 gaps in the Definition of Done for the ExGrid core and
-its Wrappers. One row could not be closed as written: **UX-5**. The test that would close it
-fails against the product, and the small fix collides with ADR-0160. The choice belongs to the
-user, so this file sets out what was found and two ways forward.
+## UX-5 and LV-22: a Consumer render that changes nothing no longer renders the grid
 
-## UX-5: the root renders once when the Consumer restyles its wrapping element
+**Decided with the user on 2026-10-12:**
+- Take the skip, so that UX-5 holds as written.
+- Check LV-22 at ADR-0160's own bound.
 
-**What was found.** In the layer-2 test, a Consumer component wraps `<ExGrid>` in a `div`
-whose `style` it owns. Every grid parameter is held in a field, so a render of the wrapper hands
-the grid the very same instances. The test changes the wrapper's style to
-`--ex-header-background: …; --ex-cell-color: …`. The result:
+**Implemented on this branch:**
+- `ExGrid.SetParametersAsync` returns without rendering when every parameter it is handed is one it
+  already holds: the same instance for a reference type, an equal value for a value type. An
+  empty push still renders. The test is
+  `VisualTokenAncestorTests.UX5_a_visual_token_set_on_the_wrapping_element_renders_nothing_in_dotnet`.
+- LV-22's ExPivot test now checks the bound after the pivot renders again: no earlier Window's row
+  is alive but the rows the grid painted from the Window before the newest. Its Viewport is shorter
+  than the report, so a holding of a whole Window can be told apart from that bound.
 
-- every `ExGridRow` keeps its `RenderCount` (rows render nothing);
-- the grid root's `RenderCount` goes up by exactly one.
+These edits to the ADR and the Definition of Done follow. The option of restating UX-5 is moot and
+has been removed.
 
-Blazor treats any reference-typed parameter (the Window array, the Columns list) as "may have
-changed". So every render of a Consumer calls `SetParametersAsync` on the grid, and the grid
-renders, whatever changed. ADR-0027 says what UX-5 is meant to guarantee, in its Consequences:
-"[A Wrapper] renders its own element around `<ExGrid>` and sets `--ex-*` on it. Nothing is
-passed, nothing is compared, nothing re-renders." And P3 says: "An appearance change
-re-renders nothing in .NET." The root renders, so the row fails as written.
+### 1. ADR-0160, under the ExPivot sub-bullet of "Blazor's renderer keeps the frames …"
 
-**The fix tried, and why it was not committed.** `SetParametersAsync` was made to skip when
-every parameter handed is the one already held: the same instance for a reference type, an
-equal value for a value type, and never for an empty push. With that change:
-- the UX-5 test passed;
-- ExGrid.Components, ExGrid.MudBlazor.Tests, ExSheet.Components, ExSheet.MudBlazor.Tests
-  and ExPivot.MudBlazor.Tests all passed;
-- `ExPivot.Components.Tests.LiveRedrawTests.ADR0160_LV22_the_grid_holds_no_display_row_of_an_earlier_window`
-  failed.
+old ->
+```
+    rows reach no report (ADR-0153). *(Found while building LV-22's ExPivot test, 2026-10-08.)*
+```
+new ->
+```
+    rows reach no report (ADR-0153). *(Found while building LV-22's ExPivot test, 2026-10-08.)*
+  - *(2026-10-12, decided with the user: a Consumer render that changes no parameter no longer renders
+    the grid — UX-5, ADR-0027 P3 — so the release of the previous render's painted rows waits for the
+    grid's next real render, a new Window or anything else it is handed. The bound stays one render's
+    painted rows: at any moment nothing of a Window older than the one the grid's last render replaced
+    is held, and of that one only the rows the grid painted from it.)*
+```
 
-That ExPivot test relies on ADR-0160's account of memory: Blazor keeps the render before the
-newest as the buffer it renders into next. A grid that renders again when its Consumer
-renders lets go of the older Window's rows. A grid that skips that render keeps them alive.
-So the skip trades P3 against ADR-0160's retention bound. That is a decision, not a defect fix.
+### 2. ADR-0160, "How it is checked", the ExPivot sentence
 
-**The two ways forward:**
+old ->
+```
+  Once the pivot renders again, the grid holds no display row of an earlier Window. *(Restated on
+```
+new ->
+```
+  Once the pivot renders again, nothing of an earlier Window is alive but the rows the grid painted from the Window before the newest, until the grid's next real render (2026-10-12, below the bullet on Blazor's frames). *(Restated on
+```
 
-1. **Keep UX-5 as written, and decide how the grid skips the render without holding an older
-   Window.** For example, the skip could apply only when the Window instance is unchanged *and*
-   the previous render already painted from it. This is an ADR-0027/ADR-0160 decision. The
-   failing test is ready to commit once the product meets it.
-2. **Restate UX-5's layer-2 pass condition** to what Blazor allows without the skip. This is
-   weaker, so it is the user's call:
+### 3. Definition of Done, LV-22 (whole row)
 
-   1. old ->
-      `| **UX-5** | MUST | Visual Tokens set on an ancestor element reach the grid, with **zero .NET renders** (ADR-0027 P3) | Layer 2: change the wrapping element's `style`; Layer 3: recolour and count | `RenderCount` unchanged; the paint changes |`
-      new ->
-      `| **UX-5** | MUST | Visual Tokens set on an ancestor element reach the grid, with **no row rendered** and at most the root's one render that the Consumer's own render causes (ADR-0027 P3) | Layer 2: change the wrapping element's `style`; Layer 3: recolour and count | every row's `RenderCount` unchanged and the root's up by at most one; the paint changes |`
+old ->
+```
+| **LV-22** | MUST | The grid holds no Consumer row instance, nor its Row Key, beyond the Window it was last given, apart from the Window last measured for Auto widths while the measure is deferred, the row of an Action press in flight and the Row Key of the row under an open editor — and the rows the render before the newest painted, which Blazor's renderer keeps as its previous frames: after a run of new Windows and a full collection, weak references to every earlier Window's rows are dead. Under ExPivot, after a run of live redraws, no engine report is alive but those its report source keeps by design: the `versionsKept` newest (two by default), and the reports the Change Highlight compares (each Source Version published within `ChangeHighlightDuration` of the newest, and the one before them). No display row is alive but those of the Window on screen and of the Window last served under the Report Version before it, the Baseline Window of the next Window Changes. Once the pivot renders again, the grid holds no display row of an earlier Window (ADR-0160/0153/0152; restated 2026-10-08, when its test was built, and decided with the user on 2026-10-09) | Layer 2: weak references, with `CellAppearance` declared and not, a Row Key declared and not; ExPivot on `/pivot-live`'s generator, redraws a second and 250 ms apart, local and with its Windows crossing JSON | none alive but the named exceptions; under ExPivot the exact set kept |
+```
+new ->
+```
+| **LV-22** | MUST | The grid holds no Consumer row instance, nor its Row Key, beyond the Window it was last given, apart from the Window last measured for Auto widths while the measure is deferred, the row of an Action press in flight and the Row Key of the row under an open editor — and the rows the render before the newest painted, which Blazor's renderer keeps as its previous frames: after a run of new Windows and a full collection, weak references to every earlier Window's rows are dead. Under ExPivot, after a run of live redraws, no engine report is alive but those its report source keeps by design: the `versionsKept` newest (two by default), and the reports the Change Highlight compares (each Source Version published within `ChangeHighlightDuration` of the newest, and the one before them). No display row is alive but those of the Window on screen and of the Window last served under the Report Version before it, the Baseline Window of the next Window Changes. Once the pivot renders again, nothing of an earlier Window is alive but the rows the grid painted from the Window before the newest, which Blazor's renderer keeps until the grid's next real render: a Consumer render that changes no parameter no longer renders the grid (UX-5), and the bound stays one render's painted rows (ADR-0160/0153/0152; restated 2026-10-08, when its test was built, decided with the user on 2026-10-09, and restated with the user on 2026-10-12) | Layer 2: weak references, with `CellAppearance` declared and not, a Row Key declared and not; ExPivot on `/pivot-live`'s generator, redraws a second and 250 ms apart, local and with its Windows crossing JSON | none alive but the named exceptions; under ExPivot the exact set kept, and after the pivot renders again no earlier Window's row but those the grid painted from the Window before the newest, with a Viewport shorter than the report |
+```
 
-**The test.** It is not committed, because it fails today. Its body, for whichever way is
-taken:
+### 4. Definition of Done, UX-5
 
-```csharp
-private sealed class TokenWrapper : ComponentBase
-{
-    private readonly TestRow[] _window = TestRows.Many(200);
-    private readonly IReadOnlyList<GridColumn<TestRow>> _columns = TestRows.Columns();
-    [Parameter] public string Style { get; set; } = "";
-    protected override void BuildRenderTree(RenderTreeBuilder builder)
-    {
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "consumer-theme");
-        builder.AddAttribute(2, "style", Style);
-        builder.OpenComponent<ExGrid<TestRow>>(3);
-        builder.AddComponentParameter(4, nameof(ExGrid<TestRow>.Window), _window);
-        builder.AddComponentParameter(5, nameof(ExGrid<TestRow>.TotalCount), (int?)_window.Length);
-        builder.AddComponentParameter(6, nameof(ExGrid<TestRow>.Columns), _columns);
-        builder.AddComponentParameter(7, nameof(ExGrid<TestRow>.RowHeight), 20d);
-        builder.AddComponentParameter(8, nameof(ExGrid<TestRow>.ViewportHeight), (ViewportSize)120);
-        builder.CloseComponent();
-        builder.CloseElement();
-    }
-}
+No edit. The row names no moment of release, and it holds as written.
 
-[Fact] // UX-5, ADR-0027 P3
-public void UX5_a_visual_token_set_on_the_wrapping_element_renders_nothing_in_dotnet()
-{
-    var host = Render<TokenWrapper>(ps => ps.Add(w => w.Style, ""));
-    var grid = host.FindComponent<ExGrid<TestRow>>();
-    var rows = host.FindComponents<ExGridRow<TestRow>>();
-    var gridRenders = grid.RenderCount;
-    var rowRenders = rows.Select(r => r.RenderCount).ToArray();
+### 5. Docs Site (pages are off limits to this branch): `samples/ExGrid.Docs/Pages/Grid/GridOverview.razor`, "Two rules that keep it fast"
 
-    host.Render(ps => ps.Add(w => w.Style, "--ex-header-background: rgb(200, 12, 12); --ex-cell-color: navy"));
+The page is still true. It could now say what the rule earns.
 
-    Assert.Equal("consumer-theme", host.Find(".ex-grid").ParentElement!.ClassName);
-    Assert.Equal(gridRenders, grid.RenderCount);          // fails today: gridRenders + 1
-    Assert.Equal(rowRenders, rows.Select(r => r.RenderCount).ToArray());
-}
+old ->
+```
+                any delegates you pass in fields. A new array or lambda on every render looks like a change and renders
+                every row again.
+```
+new ->
+```
+                any delegates you pass in fields. A new array or lambda on every render looks like a change and renders
+                every row again; handed nothing new, the grid does not render at all, so restyling the element around it
+                costs no render.
 ```
