@@ -25,6 +25,14 @@
       "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "A4": "3250", "A5": "2750", "B1": "39448", "B2": "39508", "B3": "39751", "B4": "39859", "B5": "39904", "ZZ1000": "=XNPV(0.09,A1:A3,B1:B2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "XNPV-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: dates where a correctly rounded power and e^(x ln(1+rate)), the ^ operator's, differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "cells": {"A1": "-10000", "A2": "2750", "A3": "2750", "A4": "2750", "A5": "4250", "B1": "39448", "B2": "39522", "B3": "40089", "B4": "40217", "B5": "40327", "ZZ1000": "=XNPV(0.12,A1:A5,B1:B5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 342.04308747657205, "digits": 6}
     }
   ]
 }

@@ -36,6 +36,39 @@
       "cells": {"ZZ1000": "=NPV(-1,1,2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "NPV-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: NPV-002's values typed as arguments, not read from a range (spikes/exsheet-financial-evaluation/)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NPV(0.08,8000,9200,10000,12000,14500)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 41922.06155493236, "digits": 12}
+    },
+    {
+      "id": "NPV-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: NPV-002 without the investment added after it",
+      "cells": {"A1": "0.08", "A2": "-40000", "A3": "8000", "A4": "9200", "A5": "10000", "A6": "12000", "A7": "14500", "ZZ1000": "=NPV(A1,A3:A7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 41922.06155493236, "digits": 12}
+    },
+    {
+      "id": "NPV-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: NPV-001's values read from a range",
+      "cells": {"A1": "-10000", "A2": "3000", "A3": "4200", "A4": "6800", "ZZ1000": "=NPV(0.1,A1:A4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1188.4434123352216, "digits": 12}
+    },
+    {
+      "id": "NPV-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: NPV-001 with its rate read from a cell",
+      "cells": {"A1": "0.1", "ZZ1000": "=NPV(A1,-10000,3000,4200,6800)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1188.4434123352216, "digits": 12}
     }
   ]
 }
