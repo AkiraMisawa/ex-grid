@@ -86,7 +86,7 @@ public class GridMetricsWiringTests : GridTestContext
     }
 
     [Fact] // ADR-0028/0053 / ST-1: at the end of the content, the re-anchored offset is clamped to what the new content reaches
-    public async Task A_density_change_at_the_end_anchors_within_the_new_maximum()
+    public async Task A_row_height_change_at_the_end_anchors_within_the_new_maximum()
     {
         // 100 rows of 30px under a 20px header in a 200px Viewport: the rows' room is 180px and
         // the end is at 3000 - 180 = 2820, the first visible row there 94 (found by ST-1, seed

@@ -160,10 +160,9 @@ public class OperatorMatrixTests
                 else
                 {
                     Assert.DoesNotContain((type, op), tested);
-                    var operand = op == FilterOperator.In ? null : Operand(type);
                     var (column, row) = Cell(type, Operand(type));
                     var refusal = Assert.Throws<InvalidOperationException>(() => TradeColumns.Matches(
-                        row, TradeColumns.FilterOn(column, new FilterClause(op, operand))));
+                        row, TradeColumns.FilterOn(column, new FilterClause(op, Operand(type)))));
                     Assert.Contains(column, refusal.Message);
                 }
             }

@@ -14,9 +14,9 @@ namespace ExGrid.Components.Tests;
 /// FN-17 (ADR-0009/0010/0034/0036): the Chrome seams are substitutable, and swapping Chrome
 /// changes rendering and nothing about behaviour. One script of keys and mouse gestures runs
 /// against the built-in Chrome and against a stub that replaces every seam it touches — the
-/// column menu, the filter panel, the Context Menu, the cell's message and the loading
-/// indicator — and the two runs must leave the same trace: the selections told, the sorts,
-/// the Edit Intents, the Consumer's command invoked, the message's text and the loading
+/// column menu, the filter panel, the cell editor, the Context Menu, the cell's message and the
+/// loading indicator — and the two runs must leave the same trace: the selections told, the
+/// sorts, the filter, the Edit Intents, the Consumer's command invoked, the message's text and the loading
 /// state. Under the stub each seam must also have been the stub's, so neither run passes by
 /// falling back to the other's markup.
 /// </summary>
@@ -65,7 +65,13 @@ public class ChromeSubstitutionTests : GridTestContext
             return b => b.AddMarkupContent(0, "<div class='stub-message'></div>");
         }
 
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
+        public CellEditorContext? Editor { get; private set; }
+
+        public RenderFragment? CellEditor(CellEditorContext context)
+        {
+            Editor = context;
+            return b => b.AddMarkupContent(0, "<span class='stub-editor'></span>");
+        }
 
         public RenderFragment? LoadingIndicator(LoadingContext context)
         {
@@ -90,7 +96,7 @@ public class ChromeSubstitutionTests : GridTestContext
               .Add(g => g.TotalCount, Rows.Length)
               .Add(g => g.Columns, (GridColumn<TestRow>[])
               [
-                  new("Book", ColumnType.Text, r => r.Book, width: Fixed100, editable: true),
+                  new("Book", ColumnType.Text, r => r.Book, width: Fixed100, editable: true, filterUi: FilterUiMode.Condition),
                   new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100),
               ])
               .Add(g => g.RowHeight, 20d)
@@ -101,6 +107,8 @@ public class ChromeSubstitutionTests : GridTestContext
                   trace.Add($"selection {string.Join(" ", s.Ranges)} focus {s.Focus}"))
               .Add(g => g.OnSortChanged, (IReadOnlyList<SortSpec> sorts) =>
                   trace.Add($"sort {string.Join(" ", sorts.Select(x => $"{x.Column}:{x.Direction}"))}"))
+              .Add(g => g.OnFilterChanged, (GridFilter? filter) =>
+                  trace.Add($"filter {string.Join(" ", (filter?.Columns ?? new Dictionary<string, FilterSpec>()).Select(c => $"{c.Key}:{string.Join(",", c.Value.Clauses.Select(x => $"{x.Operator}={x.Value}"))}"))}"))
               .Add(g => g.OnEdit, (GridEditIntent<TestRow> intent) =>
                   trace.Add($"edit {intent.Row.Book} {intent.Column} '{intent.Value}'"))
               .Add(g => g.CellMessageOf, (row, column) =>
@@ -142,7 +150,10 @@ public class ChromeSubstitutionTests : GridTestContext
         await KeyAsync(cut, "a", ctrl: true);
         await ClickAsync(cut, 50, 10);                       // (0, 0)
         await KeyAsync(cut, "x");
-        await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "xyz" });
+        if (stub is null)
+            await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "xyz" });
+        else
+            await cut.InvokeAsync(() => stub.Editor!.TextChanged("xyz"));
         await KeyAsync(cut, "Enter");
 
         // The column menu: Sort ascending on Book.
@@ -151,6 +162,19 @@ public class ChromeSubstitutionTests : GridTestContext
             await cut.FindAll(".ex-popover button[role=menuitem]").Single(b => b.TextContent.StartsWith("Sort ascending", StringComparison.Ordinal)).ClickAsync(new MouseEventArgs());
         else
             await cut.InvokeAsync(() => stub.Menu!.Commands.Single(c => c.Id == GridCommandIds.SortAscending).Invoke());
+
+        // The filter panel: Book equals "Row 000001", applied with the panel's OK.
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+        if (stub is null)
+        {
+            await cut.Find(".ex-popover select").ChangeAsync(new ChangeEventArgs { Value = nameof(FilterOperator.Equals) });
+            await cut.Find(".ex-popover input").InputAsync(new ChangeEventArgs { Value = "Row 000001" });
+            await cut.FindAll(".ex-popover-actions button").Single(b => b.TextContent == "OK").ClickAsync(new MouseEventArgs());
+        }
+        else
+        {
+            await cut.InvokeAsync(() => stub.Panel!.Apply(new FilterSpec([new FilterClause(FilterOperator.Equals, "Row 000001")])));
+        }
 
         // The Context Menu on (2, 1): the Consumer's own command.
         await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { Button = 2, OffsetX = 150, OffsetY = 50 });
@@ -167,15 +191,20 @@ public class ChromeSubstitutionTests : GridTestContext
             : $"message {stub.Message?.Message}");
 
         // Loading: the Consumer says it is fetching, then that it is not.
-        var loadingGrid = RenderGrid(stub, new Trace(), loading: true);
-        trace.Add(stub is null
-            ? $"loading {loadingGrid.Find(".ex-grid").ClassList.Contains("ex-loading")}"
-            : $"loading {stub.Loading?.IsLoading}");
+        foreach (var loading in new[] { true, false })
+        {
+            var loadingGrid = RenderGrid(stub, new Trace(), loading);
+            trace.Add(stub is null
+                ? $"loading {loadingGrid.Find(".ex-grid").ClassList.Contains("ex-loading")}"
+                : $"loading {stub.Loading?.IsLoading}");
+        }
 
         if (stub is not null)
         {
             // Every seam the script crossed was the stub's.
             Assert.NotNull(stub.Menu);
+            Assert.NotNull(stub.Panel);
+            Assert.NotNull(stub.Editor);
             Assert.NotNull(stub.ContextMenuContext);
             Assert.NotNull(stub.Message);
             Assert.NotNull(stub.Loading);
@@ -197,5 +226,7 @@ public class ChromeSubstitutionTests : GridTestContext
         Assert.Contains(builtIn, l => l.StartsWith("note ", StringComparison.Ordinal));
         Assert.Contains("message three is flagged", builtIn);
         Assert.Contains("loading True", builtIn);
+        Assert.Contains("loading False", builtIn);
+        Assert.Contains("filter Book:Equals=Row 000001", builtIn);
     }
 }
