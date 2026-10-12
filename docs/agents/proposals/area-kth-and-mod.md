@@ -2,7 +2,11 @@
 
 *(Rewritten 2026-10-12 after the second area pass, to say what is true after it. The first round's
 version, on `claude/area-kth-and-mod`, proposed seven classes of `MOD` evaluation and refusals where
-they parted; the second pass ruled out every one of the seven, and this version replaces it.)*
+they parted; the second pass ruled out every one of the seven, and this version replaces it. Corrected
+the same day after the orchestrator's review: the search records the evaluations at widths no hardware
+holds, which give every observed answer too, section 0 says plainly the judgment the engine answers on
+and how much it answers on it, MOD-039 and 040 ask that judgment, and the first round's class names for
+C2 and C4 are right.)*
 
 Branches: `claude/area-kth-and-mod` (the first pass's corrections, merged into `claude/area-corrections`)
 and `claude/area2-kth-and-mod` (the second pass's). The engine (`Functions.Math.cs`, `Functions.Subtotal.cs`),
@@ -32,15 +36,17 @@ Excel's double is its `number` (G17).
 | MOD-029 | `=MOD(-0.087626,6630)` | 6629.9123739999995 (E2) | 6629.912374 | Excel's, observed |
 | MOD-030 | `=MOD(1.1,0.1)` | 2.7755575615628914E-17 (E2) | 0 | Excel's, observed |
 | MOD-032 | `=MOD(-1E-20,1)` | 0 (E2) | 1 | 0, observed |
-| MOD-033 | `=MOD(-1E-17,1)` | not asked | 1 | `#VALUE!`, where the three evaluations that fit part (section 0) |
+| MOD-033 | `=MOD(-1E-17,1)` | not asked | 1 | `#VALUE!`, where the three evaluations at 64 bits that fit part (section 0) |
 | MOD-034 | `=MOD(-0.084474,2270)` | not asked | 2269.915526 | `#VALUE!`, likewise |
+| MOD-039 | `=MOD(-0.024901,2350)` | not asked | 2349.975099 | 2349.975099, on the judgment of section 0 (narrower widths give 2349.9750990000002) |
+| MOD-040 | `=MOD(-0.006664,5250)` | not asked | 5249.993336 | 5249.993336, likewise (5249.9933359999995) |
 
 MOD-018 to 028 and 030 to 032 are all Excel's now (`mod.json`); LARGE-013, 014, SMALL-007, 009, 010 and
 AGGREGATE-062 to 067 agreed in E2.
 
 ---
 
-## 0. MOD: three evaluations give every answer Excel gave, and the engine refuses where they part
+## 0. MOD: the evaluations that give every answer Excel gave, the three at 64 bits the engine follows, and where they part
 
 **What the second pass settled.** The first pass left seven classes of evaluation, which parted at
 MOD-020 to 032. Excel's answers there rule out all seven:
@@ -50,21 +56,25 @@ MOD-020 to 032. Excel's answers there rule out all seven:
   with or without a wrong sign taken as 0 (classes 3 to 5).
 - MOD-030 and 031: a remainder within 2^-49 of the number is itself (2.7755575615628914E-17): no
   cancellation of a final addition (classes 5 and 6).
-- MOD-029: `MOD(-0.087626,6630)` is 6629.9123739999995, the remainder plus the divisor rounded first at 64
-  bits and then to a double; rounded once it is 6629.912374 (every class but 2). The exact sum lies 15/65536
-  of a unit in the last place past the midpoint between the two doubles; 64 bits round it onto the
-  midpoint, and the double breaks the tie to the even one, below.
+- MOD-029: `MOD(-0.087626,6630)` is 6629.9123739999995, the remainder plus the divisor held at 64 bits,
+  rounded to nearest or truncated, and then stored as a double; rounded once it is 6629.912374 (every class
+  but 2). The exact sum lies 15/65536 of a unit in the last place past the midpoint between the two doubles;
+  64 bits put it onto the midpoint, and the double breaks the tie to the even one, below. So would a width
+  of 54 to 63 bits rounded, or 54 to 65 truncated (below).
 - MOD-032: `MOD(-1E-20,1)` is 0, a sum stored as the divisor itself taken as 0 (every class but 7).
 
 **The search, extended.** `mod-search.cs` now reads all 32 observed cases (67 reads, 27 numbers, Excel's
-`number`) and tries 41 evaluations, each written once; `mod-search.txt` records every candidate's match
-count and the cases it misses. The eight new ones add the divisor at 64 bits — rounded to nearest, as an
-x87 register adds, or truncated, as a sum of 64-bit significands would be — or truncated to a double, and
-take a sum that is the divisor as 0 in the double stored or in the register. Match counts: the identity in
-doubles and its variants (A to A9) 14 to 16 of 32; the first round's class 1 (B, B2, B3) 30, class 2 (B4,
-B5) 31, class 7 (B8) 31, classes 3 to 6 (C, C2 to C7, B6, B7) 19 to 30; x87 identities (D to D5) 17 to 25;
-decimal (E to E3) 15; the new B11 and B13 (truncated at 64 bits, 0 in the register or not at all) 31, B14
-to B16 (truncated to a double) 31. **Three give all 32:**
+`number`) and tries 75 evaluations, each written once; `mod-search.txt` records every candidate's match
+count and the cases it misses. After the second pass it gained eight, which add the divisor at 64 bits —
+rounded to nearest, as an x87 register adds, or truncated, as a sum of 64-bit significands would be — or
+truncated to a double, and take a sum that is the divisor as 0 in the double stored or in the register.
+After the orchestrator's review it gained 34 more: three of those eight with the sum held at 54 to 66 bits
+(B9@54 to B12@66, below). Match counts: the identity in doubles and its variants (A to A9) 14 to 16 of 32;
+the first round's class 1 (B, B2, B3, C2, C4) 30, class 2 (B4, B5) 31, class 7 (B8) 31, classes 3 to 6
+(C, C3, C5 to C7, B6, B7) 19 to 28; the multiply-add over a quotient read at 15 digits (C8) 20; x87
+identities (D to D5) 17 to 25; decimal (E to E3) 15; B11 and B13 (truncated at 64 bits, 0 in the register
+or not at all) 31, B14 to B16 (truncated to a double) 31. **34 give all 32.** At the hardware's widths, a
+double's 53 bits and an x87 register's 64, three:
 
 - **B9**: the exact remainder, the divisor added in an x87 register (64 bits, to nearest), stored as a
   double, and 0 where that double is the divisor;
@@ -72,11 +82,13 @@ to B16 (truncated to a double) 31. **Three give all 32:**
 - **B12**: the divisor added truncated at 64 bits, stored as a double to nearest, and 0 where it is the
   divisor.
 
-A register of 54 to 63 bits rounded to nearest, or truncation at 54 to 65, would give MOD-029 too; no
-hardware or natural software holds those widths, and they are not modelled. **The three part in two
-places** (3,616,066 inputs searched: a grid of 418, 1,915,648 random inputs of up to five digits,
-1,000,000 a few units from a multiple of the divisor, 200,000 far smaller than the divisor, of the other
-sign, and 500,000 whose sum with the divisor lies near a midpoint):
+The other 31 are the same three at widths no hardware holds: B9 and B10 with the sum held at 54 to 63 bits
+and rounded to nearest, and B12 with it truncated at 54 to 63 or 65 bits. Rounded at 65 bits, or truncated
+at 66, MOD-029's sum lies past the midpoint, and B9@65, B10@65 and B12@66, the bounds, give 31 of 32.
+
+**The three at 64 bits part in two places** (3,616,066 inputs searched: a grid of 418, 1,915,648 random
+inputs of up to five digits, 1,000,000 a few units from a multiple of the divisor, 200,000 far smaller
+than the divisor, of the other sign, and 500,000 whose sum with the divisor lies near a midpoint):
 
 - **The sum is the divisor as a double but not at 64 bits.** `MOD(-1E-17,1)` is 0 by B9 and B12, 1 by
   B10. 43,880 inputs, none of up to five digits. MOD-033.
@@ -87,24 +99,43 @@ sign, and 500,000 whose sum with the divisor lies near a midpoint):
   inputs, 13 of the 1,915,648 of up to five digits. MOD-034 to 036.
 
 **The engine** (`Mod`, `TurnedRemainder`) answers the exact remainder where it has the divisor's sign,
-and where it has the number's adds the divisor as the three do — from the sum rounded once and its exact
-error, the 64-bit sum is a whole number of 2^-11 steps of the double's last place — and is `#VALUE!` where
-they part. `mod-search.cs --discriminate` checks over every input searched that it refuses exactly there:
-130,316 of 3,616,066, and 13 of the 1,915,648 of up to five digits, where the seven classes' refusal took
-19,633. MOD-037 (`MOD(-1E-16,1)`, 0.9999999999999999) and MOD-038 (`MOD(1E-20,1)`, 1E-20) ask two answers
-all three give that an evaluation outside them might not: a sum one unit below the divisor, and a number of
-the divisor's sign far smaller than it.
+and where it has the number's adds the divisor as the three at 64 bits do — from the sum rounded once and
+its exact error, the 64-bit sum is a whole number of 2^-11 steps of the double's last place — and is
+`#VALUE!` where they part. `mod-search.cs --discriminate` checks over every input searched that it refuses
+exactly there: 130,316 of 3,616,066, and 13 of the 1,915,648 of up to five digits, where the seven classes'
+refusal took 19,633. MOD-037 (`MOD(-1E-16,1)`, 0.9999999999999999) and MOD-038 (`MOD(1E-20,1)`, 1E-20) ask
+two answers all 34 give that an evaluation outside them might not: a sum one unit below the divisor, and a
+number of the divisor's sign far smaller than it.
 
-**For the orchestrator, plainly.** None of the seven classes the first round named fits; the three that
-fit were found after the second pass's answers, by adding to the search the two features MOD-029 and
-MOD-032 show (a 64-bit sum, and a sum stored as the divisor taken as 0). Each is a natural way to write
-`MOD` on an x87 or with 64-bit significands, and the engine answers only where all three agree, so it
-answers nothing the observations leave open between them. If the user holds that evaluations named after
-the answers do not "follow from observed answers by a rule they settle" (ADR-0047), the alternative is to
-refuse wherever the divisor is added and the sum is not exact — about one input of up to five digits in
-ten, by a quick count over the search's random inputs, MOD-018, 019 and 029 among them, which would become
-recorded cases (`engineDiffersByDecision`) — until a further pass asks MOD-033 to 038; the engine does not
-do that now.
+**Where the engine answers and the widths no hardware holds give another double.** Every such input has
+the divisor added to a number of the other sign smaller than it; where the number is the larger, the
+remainder is a multiple of the divisor's last place and the sum is exact at every width. Of the 1,915,635
+inputs of up to five digits the engine answers, B9@54 and B10@54 give another double at 40,858 (2.1%),
+B12@54 at 45,509 (2.4%), about half as many at each further bit, down to 8 or 9 at 63 bits and 1 for
+B12@65 (a sum exactly on the 65-bit point 16/65536 past a midpoint), and any of the 31 at 65,972 (3.4%).
+Five of the grid's 418 are among them: `MOD(-0.3,7)` is 6.7 by the engine and 6.699999999999999 by B12@54.
+Two new `uncertain` cases ask the judgment below, each holding the engine's answer: MOD-039
+(`MOD(-0.024901,2350)`, 2349.975099, where B9 and B10 at 54 to 63 bits give 2349.9750990000002) and
+MOD-040 (`MOD(-0.006664,5250)`, 5249.993336, where B9 and B10 at 54 to 62 bits and B12 at 54 to 63 give
+5249.9933359999995). Between them every one of the 31 but B12@65 gives another double than the engine's;
+`mod-search.txt` lists, for each, the asked cases where it does. `KthAndModTests` pins the two with both
+signs.
+
+**For the orchestrator, plainly.** None of the seven classes the first round named fits; the evaluations
+that fit were found after the second pass's answers, by adding to the search the two features MOD-029 and
+MOD-032 show (a sum held wider than a double, and a sum stored as the divisor taken as 0). **The engine
+answers on a judgment that no observed answer settles: that only 53-bit and 64-bit intermediates are
+natural, the hardware's formats (a double, an x87 register's significand).** On it, of the 34 evaluations
+that fit, it follows the three at 64 bits, refuses only where they part (13 of 1,915,648 inputs of up to
+five digits), and answers where the 31 at other widths give another double: 65,972 of those inputs
+(3.4%), about 2% at 54 bits, rounded (40,858) or truncated (45,509). MOD-039 and 040 would show the
+judgment wrong if Excel answers them otherwise. If the user does not accept it now, there are two ways to
+answer only what the observations settle: refuse wherever any of the 34 part, 65,985 of the five-digit
+inputs (3.4%), which keeps every observed answer; or refuse wherever the divisor is added and the sum is
+not exact, the only inputs where any width can part from another, 192,038 of them (10.0%), MOD-029 and
+MOD-032 among the observed cases, which would become recorded cases (`engineDiffersByDecision`). (The
+previous version of this section named MOD-018 and 019 there too; their sums are exact.) The engine does
+neither now.
 
 ## 1. ADR-0047, the note of 2026-10-12 under "The catalogue's last Decide rows"
 
@@ -199,18 +230,23 @@ New:
   0.5000152587890625, and `MOD(1,0.1)` is 0.09999999999999995 (MOD-020), where the double quotient, 10,
   gives 0. A remainder a hair from 0 is itself, with no cancellation: `MOD(1.1,0.1)` is
   2.7755575615628914E-17 (MOD-030). Where the divisor is added to a remainder of the other sign, the sum
-  is not rounded once: `MOD(-0.087626,6630)` is 6629.9123739999995 (MOD-029), the sum rounded first at 64
-  bits and then to a double, where rounded once it is 6629.912374; and a sum stored as the divisor
-  itself is 0: `MOD(-1E-20,1)` is 0 (MOD-032). The first pass's answers left seven classes of
-  evaluation, and the second pass's ruled out all seven. Of 41 evaluations tried against the 32 cases
-  Excel answered (`spikes/exsheet-financial-evaluation/mod-search.cs`), three give every one: the
-  divisor added in an x87 register's 64 bits, or truncated at 64 bits, and stored as a double, a sum
-  that is the divisor taken as 0 in the double or, for the x87's, in the register. They part where the
-  sum is the divisor as a double but not at 64 bits (`MOD(-1E-17,1)` is 0 or 1) and where truncating at
-  64 bits stores another double than rounding there (`MOD(-0.084474,2270)` is 2269.915526 or
-  2269.9155259999998). So, as "admitted with some argument values refused" and ADR-0202 require, the
-  engine answers as the three where they agree and is `#VALUE!` where they part, 13 of 1,915,648 random
-  inputs of up to five digits, until a Windows run asks MOD-033 to MOD-036.)*
+  is not rounded once: `MOD(-0.087626,6630)` is 6629.9123739999995 (MOD-029), the sum held at 64 bits,
+  rounded to nearest or truncated, and then stored as a double, where rounded once it is 6629.912374;
+  and a sum stored as the divisor itself is 0: `MOD(-1E-20,1)` is 0 (MOD-032). The first pass's answers
+  left seven classes of evaluation, and the second pass's ruled out all seven. Of 75 evaluations tried
+  against the 32 cases Excel answered (`spikes/exsheet-financial-evaluation/mod-search.cs`), 34 give
+  every one. At the hardware's widths, a double's 53 bits and an x87 register's 64, three: the divisor
+  added in an x87 register's 64 bits, or truncated at 64 bits, and stored as a double, a sum that is the
+  divisor taken as 0 in the double or, for the x87's, in the register. The other 31 are the same with
+  the sum held at a width no hardware holds, 54 to 63 bits rounded or 54 to 65 truncated. The three at
+  64 bits part where the sum is the divisor as a double but not at 64 bits (`MOD(-1E-17,1)` is 0 or 1)
+  and where truncating at 64 bits stores another double than rounding there (`MOD(-0.084474,2270)` is
+  2269.915526 or 2269.9155259999998). So, as "admitted with some argument values refused" and ADR-0202
+  require, the engine answers as the three where they agree and is `#VALUE!` where they part, 13 of
+  1,915,648 random inputs of up to five digits, until a Windows run asks MOD-033 to MOD-036. It does not
+  model the other widths: that only the hardware's formats are natural intermediates is a judgment, which
+  no observed answer settles, and on it the engine answers 65,972 of those inputs (3.4%) where one of the
+  31 gives another double, about 2% at 54 bits; MOD-039 and MOD-040 ask two.)*
 ```
 
 ## 2. ADR-0202, "The run ExGrid's own by-hand rows need anyway"
@@ -233,8 +269,8 @@ New:
     refused with an Error Value**, as `MOD` refuses a quotient of 2^27 or more (ADR-0047). A width, a
     format or an undo that disagrees is corrected. *(2026-10-12: Excel answers a quotient of 2^27 or
     more, and so does `MOD` now; its `#NUM!` from 1,125,900,000,000 is Excel's own answer. `MOD` is an
-    example still: where the evaluations that give every answer Excel gave part, as at `MOD(-1E-17,1)`,
-    it is `#VALUE!` until a Windows run asks (ADR-0047's note of that date).)*
+    example still: where the evaluations at 64 bits that give every answer Excel gave part, as at
+    `MOD(-1E-17,1)`, it is `#VALUE!` until a Windows run asks (ADR-0047's note of that date).)*
 ```
 
 ## 3. The engine's README (`src/ExSheet.Engine/README.md`)
@@ -243,7 +279,7 @@ New:
 
 The financial and dates areas edit the same bullet, so the orchestrator merges by phrase: this area's
 phrase is "`SMALL` with a `k` that is not a whole number, and `LARGE` with one between 0 and 1", which
-goes, and "`MOD` where the evaluations … (`#VALUE!`; MOD-033 to 036)", which comes.
+goes, and "`MOD` where the evaluations at 64 bits … (`#VALUE!`; MOD-033 to 036)", which comes.
 
 Old:
 
@@ -256,8 +292,8 @@ New:
 
 ```markdown
   (`#VALUE!`); `NETWORKDAYS` and `WORKDAY` with a boolean typed as a date (`#VALUE!`); `MOD` where the
-  evaluations that give every answer Excel gave part, as at `MOD(-1E-17,1)` and `MOD(-0.084474,2270)`
-  (`#VALUE!`; MOD-033 to 036); `PMT`, `PV` and `FV` with a
+  evaluations at 64 bits that give every answer Excel gave part, as at `MOD(-1E-17,1)` and
+  `MOD(-0.084474,2270)` (`#VALUE!`; MOD-033 to 036); `PMT`, `PV` and `FV` with a
 ```
 
 ### 3b. "Answered as the seventeenth Windows run read Excel"
@@ -300,8 +336,11 @@ New:
   0.09999999999999995, where `number - divisor*INT(number/divisor)` in doubles gives 0.5000152587890625
   and 0. Where the divisor is added to a remainder of the other sign, the sum is held at 64 bits before
   it is stored as a double, which gives Excel's `MOD(-0.087626,6630)`, 6629.9123739999995, and a sum
-  stored as the divisor itself is 0, as Excel's `MOD(-1E-20,1)` is. Where the evaluations that give
-  every answer Excel gave still part, `MOD` is `#VALUE!` (above).
+  stored as the divisor itself is 0, as Excel's `MOD(-1E-20,1)` is. Where the evaluations at 64 bits
+  that give every answer Excel gave still part, `MOD` is `#VALUE!` (above). The same evaluations with the
+  sum held at a width no hardware holds (54 to 63 bits rounded, 54 to 65 truncated) give those answers
+  too; the engine does not model them, and answers as 64 bits do where they would give another last
+  digit, about 3 inputs of up to five digits in 100, a judgment Excel has yet to settle (MOD-039, 040).
 ```
 
 ### 3d. "`SUBTOTAL` and `AGGREGATE` while no row can be hidden"
@@ -356,7 +395,7 @@ Old:
 New:
 
 ```markdown
-| `MOD` | Supported | — | Excel's sign follows the divisor. The exact remainder; where the divisor is added to it, the sum held at 64 bits and then stored as a double, and a sum stored as the divisor 0, as Excel's (MOD-017 to 032); `#VALUE!` where the evaluations that give Excel's answers still part, as at `MOD(-1E-17,1)` and `MOD(-0.084474,2270)`, until Excel is asked (MOD-033 to 036; ADR-0047, 2026-10-12); `#NUM!` from a quotient of 1,125,900,000,000 |
+| `MOD` | Supported | — | Excel's sign follows the divisor. The exact remainder; where the divisor is added to it, the sum held at 64 bits and then stored as a double, and a sum stored as the divisor 0, as Excel's (MOD-017 to 032); `#VALUE!` where the evaluations at 64 bits that give Excel's answers still part, as at `MOD(-1E-17,1)` and `MOD(-0.084474,2270)`, until Excel is asked (MOD-033 to 036; ADR-0047, 2026-10-12); where only evaluations at widths no hardware holds give another double, the 64 bits' answer, on a judgment Excel has yet to settle (MOD-039, 040); `#NUM!` from a quotient of 1,125,900,000,000 |
 ```
 
 ## 5. Ticket 04 (`04-p2-ready-functions.md`, the financial area's)
@@ -391,22 +430,28 @@ A comment to append:
 > (`MOD(123456789012,0.7)` is 0.5000078322611261, MOD-017; `MOD(1,0.1)` is 0.09999999999999995, MOD-020,
 > where the identity in doubles gave 0.5000152587890625 and 0), a remainder a hair from 0 is itself
 > (`MOD(1.1,0.1)` is 2.7755575615628914E-17, MOD-030, where it gave 0), the divisor added to a remainder
-> of the other sign is held at 64 bits before the sum is stored as a double (`MOD(-0.087626,6630)` is
-> 6629.9123739999995, MOD-029), and a sum stored as the divisor itself is 0 (`MOD(-1E-20,1)`, MOD-032).
-> Three evaluations give all 32 answers Excel has given, and none evaluates the identity in doubles
-> (`spikes/exsheet-financial-evaluation/mod-search.cs`, `mod-search.txt`). The engine answers as the three
-> where they agree, and `#VALUE!` where they part: where the sum is the divisor as a double but not at 64
-> bits (`MOD(-1E-17,1)`), and where truncating at 64 bits stores another double than rounding there
-> (`MOD(-0.084474,2270)`), 13 of 1,915,648 random inputs of up to five digits. MOD-033 to 036 ask where
-> they part, and MOD-037 and 038 two answers they share (ADR-0047's note of that date; `KthAndModTests`).
+> of the other sign is not rounded once (`MOD(-0.087626,6630)` is 6629.9123739999995, MOD-029, the sum
+> held at 64 bits and then stored as a double), and a sum stored as the divisor itself is 0
+> (`MOD(-1E-20,1)`, MOD-032). At 64 bits three evaluations give all 32 answers Excel has given, and 31
+> more at widths no hardware holds (the sum held at 54 to 63 bits rounded, or 54 to 65 truncated); none
+> evaluates the identity in doubles (`spikes/exsheet-financial-evaluation/mod-search.cs`,
+> `mod-search.txt`). The engine answers as the three at 64 bits where they agree, and `#VALUE!` where they
+> part: where the sum is the divisor as a double but not at 64 bits (`MOD(-1E-17,1)`), and where
+> truncating at 64 bits stores another double than rounding there (`MOD(-0.084474,2270)`), 13 of 1,915,648
+> random inputs of up to five digits. It does not model the other widths, on the judgment that only the
+> hardware's formats are natural, and so answers 65,972 of those inputs (3.4%) where one of them gives
+> another double. MOD-033 to 036 ask where the three part, MOD-037 and 038 two answers all 34 share, and
+> MOD-039 and 040 two the judgment answers (ADR-0047's note of that date; `KthAndModTests`).
 
 The same ADR-0208 question as ticket 04's: a box —
 
-> - [ ] `oracle.ps1 -Area mod` before the tag (ADR-0208): MOD-033 to 038
+> - [ ] `oracle.ps1 -Area mod` before the tag (ADR-0208): MOD-033 to 040
 
 — the Status `ready-for-human`, and a `Roadmap:` line ("ExSheet — `MOD` checked against Excel where the
 divisor added to the remainder lands on the divisor or a hair from the midpoint between two doubles, as
-in `MOD(-1E-17,1)` and `MOD(-0.084474,2270)`, which are refused until then").
+in `MOD(-1E-17,1)` and `MOD(-0.084474,2270)`, which are refused until then, and where a register narrower
+than 64 bits would give another last digit, as in `MOD(-0.024901,2350)`, which is answered as 64 bits
+give it").
 
 ## 7. The Docs Site
 
@@ -433,11 +478,14 @@ New:
                 <code>number - divisor*INT(number/divisor)</code> in doubles would give 0. Where the divisor is
                 added to a remainder of the other sign, the sum is held at 64 bits before it is stored, which gives
                 Excel's <code>=MOD(-0.087626,6630)</code>, 6629.9123739999995, and a sum stored as the divisor is 0,
-                as Excel's <code>=MOD(-1E-20,1)</code> is. Where the ways of computing it that give every answer
-                Excel was seen to give part, it is <code>#VALUE!</code> until Excel has been asked: a sum that is
-                the divisor only once stored, as in <code>=MOD(-1E-17,1)</code>, and a sum a hair from the midpoint
-                between two doubles, as in <code>=MOD(-0.084474,2270)</code>, about one input of up to five digits
-                in 150,000. It is <code>#NUM!</code> from a quotient of 1,125,900,000,000, as Excel 365's.
+                as Excel's <code>=MOD(-1E-20,1)</code> is. Where the ways of computing it at 64 bits that give every
+                answer Excel was seen to give part, it is <code>#VALUE!</code> until Excel has been asked: a sum that
+                is the divisor only once stored, as in <code>=MOD(-1E-17,1)</code>, and a sum a hair from the
+                midpoint between two doubles, as in <code>=MOD(-0.084474,2270)</code>, about one input of up to five
+                digits in 150,000. Holding the sum at some other widths wider than a double's, which no hardware
+                holds, would give those answers too, and another last digit for about 3 inputs of up to five digits
+                in 100, as in <code>=MOD(-0.024901,2350)</code>; there it answers as 64 bits do, and Excel has yet
+                to be asked. It is <code>#NUM!</code> from a quotient of 1,125,900,000,000, as Excel 365's.
 ```
 
 In the `SUBTOTAL` and `AGGREGATE` list item, old:
