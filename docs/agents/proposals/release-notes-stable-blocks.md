@@ -99,7 +99,10 @@ Each is built as described. The user may want another answer.
    `tools/release/ExGrid.Release/SignOff.cs`) takes the one `verification/…/results.md` and the one
    40-character commit anywhere in the block. The two agree: the parser also refuses a second commit or
    a second record anywhere in the block, a link's address included, so notes that build are notes the
-   workflow can read.
+   workflow can read. It reads the block as written, as the workflow does, on the Record line as well:
+   a second record in a link's address there is refused, and so is the record's own path written with an
+   escape or an entity (`verification/2026\-11\-02/results.md`), which renders as the record but which
+   the workflow would read as a second one.
 5. **A known limitation names its products in bold, and links a page of the site**, not only an address
    outside it. ADR-0202 says it links "the page that says it in full", and its "Where 0.1.0 says what it
    does not do" names the product's Docs Site page. The products let the page's product filter show the

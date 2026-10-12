@@ -677,12 +677,20 @@ public class ReleaseNotesTests
         Assert.Equal(LineOf(text, "- **Record:**"), Line(error));
     }
 
-    [Theory] // ADR-0205: the release workflow reads the one record and the one commit the block names, so a second of either is refused first here
+    [Theory] // ADR-0205: the release workflow reads the one record and the one commit the block names, as written, so a second of either is refused first here
     [InlineData("- **OS:** Ubuntu 24.04, as fedcba9876543210fedcba9876543210fedcba98 recorded.", "'## Signed off' names a second commit, fedcba9876543210fedcba9876543210fedcba98", "- **OS:**")]
     [InlineData("- **OS:** Ubuntu 24.04, as `verification/2026-10-30/results.md` says.", "verification/2026-10-30/results.md is named outside the **Record:** line", "- **OS:**")]
+    [InlineData("- **OS:** Ubuntu 24.04\n  - **Record:** verification/2026-10-30/results.md, nested", "verification/2026-10-30/results.md is named outside the **Record:** line", "  - **Record:**")]
+    [InlineData("- **Record:** [verification/2026-11-02/results.md](https://github.com/AkiraMisawa/ex-grid/blob/v0.1.0/verification/2026-11-02/results.md), whose by-hand rows stand on "
+        + "[the seventeenth Windows run](https://github.com/AkiraMisawa/ex-grid/blob/v0.1.0/verification/2026-10-11-windows-17/results.md)",
+        "**Record:** names a second record, verification/2026-10-11-windows-17/results.md, in a link's address", "- **Record:**")]
+    [InlineData(@"- **Record:** [verification/2026\-11\-02/results.md](https://github.com/AkiraMisawa/ex-grid/blob/v0.1.0/verification/2026-11-02/results.md)",
+        @"**Record:** writes verification/2026\-11\-02/results.md, which the site renders as verification/2026-11-02/results.md", "- **Record:**")]
     public void A_signed_off_block_that_names_two_commits_or_records_is_an_error(string line, string message, string at)
     {
-        var text = Release(replace: ("Signed off", string.Join("\n", SignedOff.Split('\n').Select(l => l.StartsWith("- **OS:**", StringComparison.Ordinal) ? line : l))));
+        // The line given replaces the line of the block with its label.
+        var label = line.Substring(0, line.IndexOf(":**", StringComparison.Ordinal) + 3);
+        var text = Release(replace: ("Signed off", string.Join("\n", SignedOff.Split('\n').Select(l => l.StartsWith(label, StringComparison.Ordinal) ? line : l))));
 
         var error = One(RunRelease(text), "EXDOCS008");
         Assert.Contains(message, error.GetMessage());

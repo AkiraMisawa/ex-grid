@@ -962,6 +962,7 @@ public static class ReleaseNotes
             var title = heading.Title;
             var source = StableSource(title);
             var next = 0;
+            NotesBullet? recordLine = null;
             foreach (var block in content)
             {
                 if (block is not NotesBullet bullet)
@@ -1010,7 +1011,8 @@ public static class ReleaseNotes
                 switch ((title, label))
                 {
                     case ("Signed off", "Record"):
-                        CheckRecord(plain, links, header, valueStart, Math.Max(1, value.TrimEnd().Length), problems);
+                        recordLine = bullet;
+                        CheckRecord(bullet, plain, links, header, valueStart, Math.Max(1, value.TrimEnd().Length), problems);
                         break;
                     case ("Signed off", "Commit"):
                         var commit = SignedOffCommit.Match(value);
@@ -1051,12 +1053,14 @@ public static class ReleaseNotes
                     $"'## {title}' names no **{labels[missing]}:**. {LabelHint(title, labels[missing], header)}"));
             }
             if (title == "Signed off")
-                CheckSignedOffNamesOne(content, problems);
+                CheckSignedOffNamesOne(content, recordLine, problems);
         }
 
         // The release workflow reads the whole Signed off block for the one record and the one commit X it names
-        // (ADR-0205), so a second of either anywhere in it, a link's address included, is refused here first.
-        private static void CheckSignedOffNamesOne(List<NotesBlock> content, List<NotesProblem> problems)
+        // (ADR-0205), so a second of either anywhere in it, a link's address included, is refused here first. The
+        // record named on the Record line itself is CheckRecord's; a nested bullet that merely begins **Record:**
+        // is another line, read here like any other.
+        private static void CheckSignedOffNamesOne(List<NotesBlock> content, NotesBullet? recordLine, List<NotesProblem> problems)
         {
             var lines = content.OfType<NotesBullet>().SelectMany(b => b.Children.Prepend(b)).ToList();
             var commits = new List<(string Value, int Start)>();
@@ -1072,7 +1076,7 @@ public static class ReleaseNotes
                     $"'## Signed off' names a second commit, {second}: the release workflow reads the one commit X the block names, "
                     + "and refuses a block that names two. Name X once, on its **Commit:** line (ADR-0205)."));
             }
-            foreach (var line in lines.Where(l => !l.Text.Text.StartsWith("**Record:**", StringComparison.Ordinal)))
+            foreach (var line in lines.Where(l => !ReferenceEquals(l, recordLine)))
             {
                 if (SignedOffRecord.Match(line.Text.Text) is { Success: true } record)
                 {
@@ -1084,8 +1088,10 @@ public static class ReleaseNotes
         }
 
         // The Record line names one verification/<dir>/results.md and links it at this version's tag: the record is
-        // added after the commit it signs off, so it exists at the tag and not at X (ADR-0205).
-        private static void CheckRecord(string plain, List<NotesLink> links, VersionHeader header, int valueStart, int span, List<NotesProblem> problems)
+        // added after the commit it signs off, so it exists at the tag and not at X (ADR-0205). The line is read twice:
+        // as it renders, for the record it names, and as it is written, as the release workflow reads it, where a
+        // link's address and a backslash escape are text too. The two must find the same one record.
+        private static void CheckRecord(NotesBullet line, string plain, List<NotesLink> links, VersionHeader header, int valueStart, int span, List<NotesProblem> problems)
         {
             var records = SignedOffRecord.Matches(plain).Cast<Match>().Select(m => m.Value).Distinct(StringComparer.Ordinal).ToList();
             if (records.Count != 1)
@@ -1096,6 +1102,18 @@ public static class ReleaseNotes
                 return;
             }
             var expected = $"{NotesMarkdown.Repository}/blob/v{header.Name}/{records[0]}";
+            foreach (var written in SignedOffRecord.Matches(line.Text.Text).Cast<Match>()
+                .Where(m => m.Value != records[0]).GroupBy(m => m.Value, StringComparer.Ordinal).Select(g => g.First()))
+            {
+                var at = line.Text.OffsetOf(written.Index);
+                var inAddress = links.Any(l => at >= l.Start && at < l.Start + l.Length);
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, at, written.Length,
+                    (inAddress
+                        ? $"**Record:** names a second record, {written.Value}, in a link's address. "
+                        : $"**Record:** writes {written.Value}, which the site renders as {records[0]}, and the release workflow reads what is written: to it, that is a second record. ")
+                    + "The workflow reads the block as it is written, link addresses, escapes and entities included, and refuses a block that names two records. "
+                    + $"Link only the record, as [{records[0]}]({expected}), and write its path plainly (ADR-0205)."));
+            }
             var link = links.FirstOrDefault(l => l.External);
             if (link is null)
             {
