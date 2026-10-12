@@ -48,6 +48,11 @@ Tests, each named with its ADR:
 - `tests/ExGrid.Tests/GridSummaryTests.cs`: `ADR0130_an_error_among_the_cells_leaves_count_and_numerical_count`
   (b5 through `GridSummaryCells`, no answerer text on the figures shown nowhere) and
   `ADR0130_without_the_error_every_figure_is_shown` (b6).
+- `tests/ExGrid.Browser/selection-summary.spec.mjs`: the spec covered `/features` only, so a Sheet case is added
+  under both Chromes — b5 typed into F1:F5 of `/sheet`, Numerical Count, Min and Max ticked through the status
+  line's right-click menu as the run ticked them, then b6 — with real keys and presses. Run with
+  `--project=chrome --repeat-each=3` on the WebAssembly host and the Server host (Playwright's bundled
+  Chromium, headed under xvfb).
 - `tests/ExSheet.Components/SheetSummaryTests.cs` (new): b5, b6, b7 and b8 on a rendered Sheet with all six figures
   shown, by the run's own gestures (typing, Delete, the Name Box, Shift+arrow from the active cell), each figure's
   text Excel's verbatim. The b5 test fails without the fix (`["Count: 4"]`), and passes with it.
@@ -143,8 +148,6 @@ note ("A change that reaches two products has a note for each") and `Behaviour` 
   built-in `Min` and `Max` (`BuiltInCommandLabels`). The run's Excel was an English (UK) one; whether an English
   (US) Excel writes the dot was not read, and the built-in words are a Chrome's, replaceable through `Label`. A
   run on an English (US) Excel settles it.
-- **Layer 3.** `tests/ExGrid.Browser/selection-summary.spec.mjs` covers `/features` (a grid bound to
-  `GridSource.From`), not a Sheet; see the report for the Sheet case added there and its run.
 
 ## For a run: what the status bar was not asked
 
