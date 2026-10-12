@@ -17,17 +17,21 @@ old → new.
 - **C-diff-8** — the rewritten Reference's column letters are written in upper case; the rest of the
   text, a Sheet qualifier and the other end of a range among it, is left as typed.
 - **C-diff-3** — the engine answers the span of what it rewrote for a caret as for a selection; the core
-  (`OnCycleReferenceKey`) places it as a selection while the edit is in Caret and collapses it to a
-  caret at its end in Overwrite and while pointing. The Formula Bar is in Caret outside Point, so it
-  selects. `CycleReference`'s signature and `EditorRewrite` are unchanged; no public member was added
-  (ADR-0201). The placement-in-flight rule carries the selection as it carries a caret.
+  (`OnCycleReferenceKey`) places it as a selection while the edit is in Caret — after F2 in a cell,
+  and in the Formula Bar until F2 takes it to Enter mode — and collapses it to a caret at its end in
+  Overwrite and while pointing. `CycleReference`'s signature and `EditorRewrite` are unchanged; no
+  public member was added (ADR-0201), but both seams answer differently, and each has a Change Note
+  (below). The placement-in-flight rule carries the selection as it carries a caret.
 - **C-diff-7** — `ex-grid.js` forgets the user's caret move once the field's value is seen to differ
   from the text it was made in (`movedByUser`, and `setCaret` reads it before comparing), so an equal
   text written later by F4's cycle is not taken for the one the move was made in.
 - **C-diff-2** — in Overwrite the gate claims Shift+Home and the four Shift+arrows. Where a Reference
-  can go they do what Point does with them; elsewhere they commit and then extend the Selection exactly
-  as with no edit open, a Reject holding the commit. Caret, and a list of names open in Overwrite, keep
-  them the editor's.
+  can go they point: a Shift+arrow as Point does with it, and Shift+Home from the edited cell to the
+  row's first column (a reading, below). Elsewhere they commit and then extend the Selection exactly
+  as with no edit open, a Reject holding the commit; a commit whose own handler moved the order has
+  dropped the Selection, and they extend nothing then, as Enter and the arrows move nothing
+  (ADR-0142). Caret, and a list of names open in Overwrite, keep them the editor's, and Point keeps
+  Shift+Home the editor's, as it was.
 
 ## ADR-0051, "F4 cycles the Reference at the caret"
 
@@ -132,11 +136,12 @@ New:
   whole `$A:$A` and `$1:$1` in cases 8 and 9; typed, in cases 1, 10, 13, 21 and 22, it left a caret
   at the end)*. The Consumer answers the span of what was rewritten, a Sheet qualifier included
   before the first end, for a caret as for a selection. The grid selects it while the edit is in
-  Caret, Excel's Edit mode, and so in the Formula Bar, which is in Caret outside Point (above,
-  2026-09-30); in Overwrite and while pointing it places a caret at the span's end. A placement
-  still in flight carries the selection as it carries a caret (the rule settled while building,
-  above), so the next F4 cycles the same Reference. *(The Formula Bar's own F4 was not asked of
-  Excel; the bar follows Edit mode until it is. Whether Edit mode's selection starts at a Sheet
+  Caret, Excel's Edit mode: after F2 in a cell, and in the Formula Bar until F2 takes it to Enter
+  mode (above, 2026-09-30). In Overwrite — typed into a cell, or in the bar after F2 — and while
+  pointing it places a caret at the span's end. A placement still in flight carries the selection
+  as it carries a caret (the rule settled while building, above), so the next F4 cycles the same
+  Reference. *(The Formula Bar's own F4 was not asked of Excel; the bar follows the cell's mode
+  until it is: Edit mode, and Enter mode after F2. Whether Edit mode's selection starts at a Sheet
   qualifier was not asked either: case 10 was typed.)*
 ```
 
@@ -156,13 +161,17 @@ late":
 Shift+Home and the four Shift+arrows.** Typed into a cell, Excel's Enter mode committed `=A1+B2` on
 Shift+Home and extended the Selection, which the Shift+→ after it narrowed to `B10:D10`; ExGrid left
 the key to the editor, which selected its text, and F4 then rewrote both References. Where the
-Consumer says a Reference can go, they do what Point does with them
+Consumer says a Reference can go, they point
 ([ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md)): a Shift+arrow
-extends a pointing outline from the edited cell, and Shift+Home extends it to the row's first
-column, which Point now does with Shift+Home too. Elsewhere they commit, and then extend the
-Selection exactly as the same key does with no edit open
+extends a pointing outline from the edited cell, as Point does with it, and Shift+Home points from
+the edited cell to the row's first column (a reading: Excel was not asked where a Reference can go).
+Once pointing, Shift+Home stays the editor's, as it was: Point does not take it until Excel is asked.
+Elsewhere they commit, and then extend the Selection exactly as the same key does with no edit open
 ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)); a Reject holds the commit, as it does
-for the arrows ([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)).
+for the arrows ([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)),
+and a commit whose own handler moved the order has dropped the Selection the key was aimed with, so
+the key extends nothing, as Enter and the arrows move nothing then
+([ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)).
 Caret keeps them the editor's, and so does a list of names open in Overwrite
 ([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md), Q51). Only Shift+Home
 was observed committing; the Shift+arrows are Excel's documented meaning in Enter mode, and the next
@@ -184,7 +193,7 @@ F4 cycles the Reference at the caret as ADR-0051 says: `A1` → `$A$1` → `A$1`
 New:
 
 ```
-F4 cycles the Reference at the caret as ADR-0051 says: `A1` → `$A$1` → `A$1` → `$A1` → `A1`; of a cell range, the end at the caret, from its own form (`=SUM(A1:B2)`, the caret after `B2`, gives `=SUM(A1:$B$2)`); every Reference, and every end of a range, a selection covers, overlaps or touches at either end, to the first one's next form (`+` selected in `=A1+B1` gives `=$A$1+$B$1`); whole columns and rows in two forms; the Sheet qualifier kept; the rewritten Reference's column letters in upper case (`=b2` gives `=$B$2`); a structured reference, a function name, a number and text that is not a Formula unchanged; the rewritten Reference selected while the edit is in Caret, as in Excel's Edit mode and the Formula Bar, and a caret at its end in Overwrite and while pointing. The edge cases are the seventeenth Windows run's observations of Excel (ADR-0051, 2026-10-12; `verification/2026-10-11-windows-17/report.md`, Part C)
+F4 cycles the Reference at the caret as ADR-0051 says: `A1` → `$A$1` → `A$1` → `$A1` → `A1`; of a cell range, the end at the caret, from its own form (`=SUM(A1:B2)`, the caret after `B2`, gives `=SUM(A1:$B$2)`); every Reference, and every end of a range, a selection covers, overlaps or touches at either end, to the first one's next form (`+` selected in `=A1+B1` gives `=$A$1+$B$1`); whole columns and rows in two forms; the Sheet qualifier kept; the rewritten Reference's column letters in upper case (`=b2` gives `=$B$2`); a structured reference, a function name, a number and text that is not a Formula unchanged; the rewritten Reference selected while the edit is in Caret, Excel's Edit mode — after F2 in a cell, and in the Formula Bar until F2 takes it to Enter mode — and a caret at its end in Overwrite and while pointing. The edge cases are the seventeenth Windows run's observations of Excel (ADR-0051, 2026-10-12; `verification/2026-10-11-windows-17/report.md`, Part C)
 ```
 
 **DC-45's statement**:
@@ -248,9 +257,10 @@ New:
 ```
                 arrow, or a drag, writes a range. F4 cycles the Reference at the caret through <code>$A$1</code>,
                 <code>A$1</code>, <code>$A1</code> and <code>A1</code>; in a range, only the end at the caret
-                cycles, and its column letters are written in upper case. After <kbd>F2</kbd>, and in the Formula
-                Bar, the rewritten Reference is left selected, so the next F4 cycles it again; typing into a cell,
-                the caret stands after it.
+                cycles, and its column letters are written in upper case. In Excel's Edit mode — after
+                <kbd>F2</kbd> in a cell, and in the Formula Bar until <kbd>F2</kbd> takes it to Enter mode — the
+                rewritten Reference is left selected, so the next F4 cycles it again; typing into a cell, and while
+                pointing, the caret stands after it.
 ```
 
 **`samples/ExGrid.Docs/Pages/KeyboardByHand.cs`**, the F4 row:
@@ -264,7 +274,7 @@ Old:
 New:
 
 ```
-        new("Entries and Formulas", "[F4] while a Formula is typed", "Cycle the Reference at the caret through $A$1, A$1, $A1 and A1 — in a range, the end at the caret. After [F2] it is left selected.",
+        new("Entries and Formulas", "[F4] while a Formula is typed", "Cycle the Reference at the caret through $A$1, A$1, $A1 and A1 — in a range, the end at the caret. After [F2] in a cell, and in the Formula Bar until [F2], it is left selected.",
 ```
 
 And a row in the ExGrid "Editing" group, after `[Enter] / [Tab] while editing` (the `Editing` route
@@ -272,7 +282,7 @@ the rows beside it use; no `Canonical`, as the rows for keys while editing have 
 
 ```
         new("Editing", "Arrow keys, [Shift] + arrow or [Shift] + [Home] while typing over a value",
-            "Commit, then move or extend the selection as the same key does with no edit open. After [F2] they move the caret, or select text.", Editing,
+            "Commit, then move or extend the selection as the same key does with no edit open. After [F2] in the cell they move the caret, or select text.", Editing,
             ["ADR-0010", "ADR-0012"]),
 ```
 
@@ -293,29 +303,52 @@ New:
             block can be filled by typing; <kbd>Escape</kbd> cancels. While typing over a value, as in Excel's Enter
             mode, the arrow keys, <kbd>Home</kbd> and <kbd>End</kbd> commit and move, and <kbd>Shift</kbd> with an
             arrow or with <kbd>Home</kbd> commits and extends the selection from the edited cell; after
-            <kbd>F2</kbd> they move the caret, or select text, instead.
+            <kbd>F2</kbd> in the cell they move the caret, or select text, instead.
 ```
 
 ## Readings taken while building, and what the next ask of Excel covers
 
-- **The Formula Bar's F4** (`ask_excel` C-diff-10): the bar is in Caret, so F4 there selects the
-  rewritten Reference, as Excel's Edit mode does in the cell. Not yet observed in Excel's bar.
+- **The Formula Bar's F4** (`ask_excel` C-diff-10): the bar is in Caret until F2 takes it to Enter
+  mode, so F4 there selects the rewritten Reference, as Excel's Edit mode does in the cell, and after
+  F2 in the bar leaves a caret at its end, as Enter mode does. Not yet observed in Excel's bar.
 - **Shift+arrows in Enter mode** (`ask_excel` C-diff-10 (vii)): built as commit and extend, Excel's
   documented meaning; only Shift+Home was observed (case 7).
 - **Shift+Home where a Reference can go** — a reading this area took to give Overwrite's Shift+Home
-  "what Point does with it": Point had no meaning for Shift+Home and left it to the editor. It now
-  extends the pointing outline to the row's first column (from the edited cell where none stands:
-  `=` then Shift+Home in D10 writes `=A10:D10`), in Overwrite and in Point alike, since Point's key set
-  is Overwrite's and the four Shift+arrows. Asking Excel `=` then Shift+Home, and Shift+Home while
-  pointing, would settle it. A list open over Point still leaves Shift+Home to the editor (ADR-0058's
-  set is unchanged).
+  what Point does with the Shift+arrows: from Overwrite, with no outline standing, it points from the
+  edited cell to the row's first column (`=` then Shift+Home in D10 writes `=A10:D10`). Point keeps
+  its earlier behaviour: its key set does not take Shift+Home, which stays the editor's while
+  pointing, and one that reaches the core then neither moves the outline nor commits. *(As first
+  built on this branch Point took it too, extending the outline to the row's first column, because
+  its key set was Overwrite's and the four Shift+arrows. No run observed that, and the brief did not
+  ask it; the verifier's finding withdrew it.)* A list open over Point still leaves Shift+Home to
+  the editor (ADR-0058's set is unchanged).
 - **The span with a Sheet qualifier** starts at the qualifier (`Sheet2!$A$1` selected in Edit mode):
   case 10 was typed, so Excel's Edit mode was not seen here.
 - **Shift+End and the Primary Modifier's arrows** in Overwrite are unchanged (the editor's) until the
   ask answers.
 
+## Questions for the next Windows run
+
+Each is asked of Excel 16 on Windows, typed into a cell (Enter mode) unless it says otherwise, with the
+Selection, the Name Box, the cell's text and the caret or selection in it recorded after each key:
+
+1. **The Formula Bar's F4.** `=A1+B2` typed into the bar, the caret after `B2`, F4: is `$B$2`
+   selected? Then F2 in the bar (Enter mode), F4 again: a caret at its end, or selected?
+2. **The Shift+arrows in Enter mode** (`ask_excel` C-diff-10 (vii)). `=A1+B2` typed into D10, then
+   Shift+→ (and Shift+←, Shift+↑, Shift+↓ each from a fresh entry): committed, and the Selection
+   extended from D10?
+3. **`=` then Shift+Home** in D10: does Excel point `=A10:D10`, commit, or select text?
+4. **Shift+Home while pointing.** In D10, `=` then ↓ (pointing `=D11`), then Shift+Home: does the
+   outline extend to `A11:D11`, does it move, does the entry commit, or does the key select text? And
+   the same after Shift+↓ has already written a range (`=D11:D12`).
+5. **F4 in Edit mode on a Reference with a Sheet qualifier.** `=Sheet2!A1` with F2 first, the caret
+   after `A1`, F4: does the selection start at `Sheet2!` or at `$A$1`?
+6. **Shift+End and Ctrl+arrows in Enter mode** (`=A1+B2` typed into D10): committed and extended, or
+   the editor's?
+
 ## Files touched outside the area's list
 
 - `tests/ExGrid.Components/ShippedStylesheetTests.cs`: two regexes that pin `movedByUser` and
-  `setCaret` as written, updated to the fix (C-diff-7).
+  `setCaret` as written, updated to the fix (C-diff-7), and the one that pins `pointKeys`, which is now
+  written out so that it does not take Overwrite's Shift+Home (C-diff-2).
 - `tests/ExGrid.Components/OverwriteShiftKeyTests.cs` is new (named in the list).
