@@ -1,6 +1,6 @@
 {
   "area": "column-widths",
-  "about": "Column widths set on columns, and how insertion and deletion carry them (ADR-0046, ADR-0047, SH-22). A width is in Excel's unit, characters of the default font; setColumnWidth sets the columns its range spans, as Range.ColumnWidth does, and a null width puts them back at the standard width (Range.UseStandardWidth). width is the check column's recorded width, null where none is recorded, which Excel reports as its standard width (8.43). Microsoft documents Range.ColumnWidth in characters, setting it on every column of a range, 8.43 as the default and 255 as the widest; Excel snaps a width to whole pixels, so the cases use whole numbers. Microsoft documents that an inserted column takes the formatting of the column to its left (Insert Options, Format Same As Left), but not whether its width is part of that, nor how deletion moves widths: those cases are uncertain until the oracle asks Excel. custom says whether the check column's width is marked custom, Excel's customWidth attribute of a column in its files, which ECMA-376 documents as false when absent; the oracle reads it from a saved copy. A recorded width is one of two kinds, both marked custom (ADR-0046, 2026-09-28): one the user set (a drag, a size to fit, sizeToFit, which the oracle does as AutoFit, or a command), which an entry never widens, and one a typed entry widened the column to (CW-018, CW-027..029), which a longer entry widens again (CW-028). A width widened by entry (automatic) is set by nothing in Excel but a typed entry, so the oracle blocks those cases. A case with widens, widthAtMost or widthAtLeast is typed: the oracle types it with real keys (ask by keys), and the engine harness widens the check column after each of the case's cells as the component does, recording the width as widened by entry in the engine's characters. widthAtMost and widthAtLeast bound the check column's width after every entry, in characters; widthAtLeast asks whether a longer entry widens a column again.",
+  "about": "Column widths set on columns, and how insertion and deletion carry them (ADR-0046, ADR-0047, SH-22). A width is in Excel's unit, characters of the default font; setColumnWidth sets the columns its range spans, as Range.ColumnWidth does, and a null width puts them back at the standard width (Range.UseStandardWidth). width is the check column's recorded width, null where none is recorded, which Excel reports as its standard width (8.43). Microsoft documents Range.ColumnWidth in characters, setting it on every column of a range, 8.43 as the default and 255 as the widest; Excel snaps a width to whole pixels, so the cases use whole numbers. Microsoft documents that an inserted column takes the formatting of the column to its left (Insert Options, Format Same As Left), but not whether its width is part of that, nor how deletion moves widths: those cases are uncertain until the oracle asks Excel. custom says whether the check column's width is marked custom, Excel's customWidth attribute of a column in its files, which ECMA-376 documents as false when absent; the oracle reads it from a saved copy. A recorded width is one of two kinds, both marked custom (ADR-0046, 2026-09-28): one the user set (a drag, a size to fit, sizeToFit, which the oracle does as AutoFit, or a command), which an entry never widens, and one a typed entry widened the column to (CW-018, CW-027..029), which a longer entry widens again (CW-028). A width widened by entry (automatic) is set by nothing in Excel but a typed entry, so the oracle blocks those cases. A case with widens, widthAtMost or widthAtLeast is typed: the oracle types it with real keys (ask by keys), its own cells and its enter actions, and the engine harness widens the typed cell's column after each of them as the component does, recording the width as widened by entry in the engine's characters. widthAtMost and widthAtLeast bound the check column's width when the case is read, in characters; widthAtLeast asks whether a longer entry widens a column again. Excel's width for a typed entry is its own pixels' (12345678901 widened a column to 11.18 at 150% in the seventeenth Windows run, b10), so a typed case bounds the width rather than naming it. A column inserted beside a width widened by entry takes it as a width the user set: Excel writes the inserted column customWidth without bestFit, the flag ECMA-376 gives a column a typed number widens again, while the column to its left keeps bestFit (b10, CW-023). Deletion and undo keep a width's kind (CW-025, CW-026).",
   "cases": [
     {
       "id": "CW-001",
@@ -136,8 +136,8 @@
     },
     {
       "id": "CW-013",
-      "source": "uncertain",
-      "description": "Undoing a width puts back the standard width",
+      "source": "observed",
+      "description": "Undoing a width puts back the standard width (asked by hand: verification/2026-10-11-windows-17, b9)",
       "cells": {},
       "action": [
         {"do": "setColumnWidth", "range": "B:B", "width": 20},
@@ -148,8 +148,8 @@
     },
     {
       "id": "CW-014",
-      "source": "uncertain",
-      "description": "Undoing a column's deletion puts back its width",
+      "source": "observed",
+      "description": "Undoing a column's deletion puts back its width (asked by hand: verification/2026-10-11-windows-17, b9)",
       "cells": {},
       "action": [
         {"do": "setColumnWidth", "range": "B:B", "width": 20},
@@ -217,36 +217,32 @@
     },
     {
       "id": "CW-021",
-      "source": "uncertain",
-      "description": "A width widened by entry, which a component records with an automatic width (ADR-0046, 2026-09-28), is recorded, and marked custom as Excel's file marks it",
-      "cells": {},
-      "action": {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
+      "source": "observed",
+      "description": "A typed number that widens its column is recorded as a width widened by entry, marked custom as Excel's file marks it (ADR-0046, 2026-09-28): typed, Excel widened B to 11.18, written width=\"11.81640625\" bestFit=\"1\" customWidth=\"1\" (verification/2026-10-11-windows-17, b10). Excel's width for a typed entry is in its own pixels (11.18 at 150%), and the engine harness's is its characters (11), so the width is bounded, not compared",
+      "cells": {"B1": "12345678901"},
       "check": "B1",
-      "expect": {"width": 11, "custom": true}
+      "expect": {"widens": true, "widthAtLeast": 10.5, "widthAtMost": 12, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-10-11-windows-17, b10); ask by keys"
     },
     {
       "id": "CW-022",
-      "source": "uncertain",
-      "description": "The user setting a width over one widened by entry makes it the user's: recorded and marked as before, and never widened by an entry (ColumnWidthTests)",
-      "cells": {},
-      "action": [
-        {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
-        {"do": "setColumnWidth", "range": "B:B", "width": 11}
-      ],
+      "source": "observed",
+      "description": "The user setting a width over one widened by entry makes it the user's: recorded and marked custom, and never widened by an entry (ColumnWidthTests). Typed, Excel widened B to 11.18; Column Width 11 then left it 11, written customWidth=\"1\" without bestFit (verification/2026-10-11-windows-17, b10)",
+      "cells": {"B1": "12345678901"},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 11},
       "check": "B1",
-      "expect": {"width": 11, "custom": true}
+      "expect": {"widens": true, "width": 11, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-10-11-windows-17, b10); ask by keys"
     },
     {
       "id": "CW-023",
-      "source": "uncertain",
-      "description": "An inserted column takes the width widened by entry of the column to its left, of the same kind",
-      "cells": {},
-      "action": [
-        {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
-        {"do": "insertColumns", "column": "C"}
-      ],
+      "source": "observed",
+      "description": "An inserted column takes the width widened by entry of the column to its left as a width the user set: typed, Excel widened B to 11.18 (bestFit, customWidth), and the column inserted at C took 11.18 written customWidth=\"1\" without bestFit, while B kept bestFit (verification/2026-10-11-windows-17, b10). Excel's width for a typed entry is in its own pixels (11.18 at 150%), and the engine harness's is its characters (11), so the width is bounded, not compared",
+      "cells": {"B1": "12345678901"},
+      "action": {"do": "insertColumns", "column": "C"},
       "check": "C1",
-      "expect": {"width": 11, "custom": true}
+      "expect": {"widthAtLeast": 10.5, "widthAtMost": 12, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-10-11-windows-17, b10); ask by keys"
     },
     {
       "id": "CW-024",
@@ -262,28 +258,23 @@
     },
     {
       "id": "CW-025",
-      "source": "uncertain",
-      "description": "Deleting a column moves a width widened by entry to its right left, of the same kind",
-      "cells": {},
-      "action": [
-        {"do": "setColumnWidth", "range": "C:C", "width": 11, "automatic": true},
-        {"do": "deleteColumns", "column": "B"}
-      ],
+      "source": "observed",
+      "description": "Deleting a column moves a width widened by entry to its right left, of the same kind: typed, Excel widened C to 11.18, and with B deleted the column now B was 11.18, written bestFit=\"1\" customWidth=\"1\" (verification/2026-10-11-windows-17, b10). Excel's width for a typed entry is in its own pixels (11.18 at 150%), and the engine harness's is its characters (11), so the width is bounded, not compared",
+      "cells": {"C1": "12345678901"},
+      "action": {"do": "deleteColumns", "column": "B"},
       "check": "B1",
-      "expect": {"width": 11, "custom": true}
+      "expect": {"widthAtLeast": 10.5, "widthAtMost": 12, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-10-11-windows-17, b10); ask by keys"
     },
     {
       "id": "CW-026",
-      "source": "uncertain",
-      "description": "Undoing the user's width over one widened by entry puts that width back, of its kind",
-      "cells": {},
-      "action": [
-        {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
-        {"do": "setColumnWidth", "range": "B:B", "width": 20},
-        {"do": "undo"}
-      ],
+      "source": "observed",
+      "description": "Undoing the user's width over one widened by entry puts that width back, of its kind: typed, Excel widened B to 11.18; Column Width 20, then Ctrl+Z, gave 11.18 again, written bestFit=\"1\" customWidth=\"1\" (verification/2026-10-11-windows-17, b10). Excel's width for a typed entry is in its own pixels (11.18 at 150%), and the engine harness's is its characters (11), so the width is bounded, not compared; the bounds tell it from 20",
+      "cells": {"B1": "12345678901"},
+      "action": [{"do": "setColumnWidth", "range": "B:B", "width": 20}, {"do": "undo"}],
       "check": "B1",
-      "expect": {"width": 11, "custom": true}
+      "expect": {"widthAtLeast": 10.5, "widthAtMost": 12, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column, and Excel's undo does not reach changes made through COM: asked by hand (verification/2026-10-11-windows-17, b10)"
     },
     {
       "id": "CW-027",
@@ -310,6 +301,36 @@
       "cells": {"B2": "=123456789*10"},
       "check": "B2",
       "expect": {"widens": true, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; the case is typed with real keys; ask by keys"
+    },
+    {
+      "id": "CW-030",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a column inserted beside one a typed number widened (to 10.18, CW-028) holds its width as the user's, so a longer number typed into it does not widen it: Excel wrote the inserted column customWidth without bestFit (verification/2026-10-11-windows-17, b10, CW-023), the flag ECMA-376 gives a column a typed number widens",
+      "cells": {"B1": "1234567890"},
+      "action": [{"do": "insertColumns", "column": "C"}, {"do": "enter", "cells": {"C1": "12345678901"}}],
+      "check": "C1",
+      "expect": {"widthAtMost": 10.5, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; the case is typed with real keys; ask by keys"
+    },
+    {
+      "id": "CW-031",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the column a typed number widened keeps its kind when a column is inserted to its right, so a longer number typed into it widens it again: Excel kept its bestFit (verification/2026-10-11-windows-17, b10, CW-023)",
+      "cells": {"B1": "1234567890"},
+      "action": [{"do": "insertColumns", "column": "C"}, {"do": "enter", "cells": {"B2": "12345678901"}}],
+      "check": "B2",
+      "expect": {"widthAtLeast": 10.5, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; the case is typed with real keys; ask by keys"
+    },
+    {
+      "id": "CW-032",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a width widened by entry moved left by a deletion keeps its kind, so a longer number typed into it widens it again: Excel kept its bestFit (verification/2026-10-11-windows-17, b10, CW-025)",
+      "cells": {"C1": "1234567890"},
+      "action": [{"do": "deleteColumns", "column": "B"}, {"do": "enter", "cells": {"B2": "12345678901"}}],
+      "check": "B2",
+      "expect": {"widthAtLeast": 10.5, "custom": true},
       "oracleSkip": "A value set through COM never widens a column; the case is typed with real keys; ask by keys"
     }
   ]

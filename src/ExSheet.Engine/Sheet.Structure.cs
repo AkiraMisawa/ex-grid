@@ -34,7 +34,8 @@ public sealed partial class Sheet
     /// <summary>
     /// Inserts columns, as <see cref="InsertRows"/> does rows: each new cell takes the Number Format,
     /// Alignment, Font and Fill of the cell to its left, and each column those and the width recorded
-    /// on the column to its left, automatic or custom as it is (ADR-0046, ADR-0047, ADR-0071). They
+    /// on the column to its left, as a width the user set whichever its kind, as Excel's file holds it
+    /// (ADR-0046, ADR-0047, ADR-0071; the seventeenth Windows run, b10). They
     /// take none of its Borders, and every cell moves with its own four sides, so the first new
     /// column's left shows the line the column to its left records on its right (the twelfth Windows
     /// run, case 13). Columns inserted at <c>A</c> take nothing. A width set on a column moves with
