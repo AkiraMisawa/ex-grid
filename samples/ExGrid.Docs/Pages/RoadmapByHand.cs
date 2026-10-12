@@ -40,7 +40,7 @@ internal static class RoadmapByHand
             ["ExSheet"], ["ADR-0206"]),
         new("A saved view, its sort, filters, widths, column order and pinned columns, is written to JSON and read back equal through an entry point of ExGrid's own, each filter value with its type.",
             ["ExGrid"], ["ADR-0207"]),
-        new("The stable version is grown on a release branch and rehearsed by release candidates, published through the same checks a stable tag runs. The release workflow publishes a version without a suffix only when its notes name the sign-off and the commit it was made at, and the tagged commit adds nothing to that one but the records and the notes.",
+        new("The stable version is grown on a release branch and rehearsed by release candidates, published through the same checks a stable tag runs, their release notes included. The release workflow publishes a version without a suffix only when its notes name the sign-off and the commit it was made at, and the tagged commit adds nothing to that one but the records and the notes.",
             ["ExGrid", "ExSheet", "ExPivot", "Data"], ["ADR-0205"]),
     ];
 

@@ -46,16 +46,17 @@ public static class ReleaseNotes
         ["Highlights", "Breaking changes", "Behaviour changes", "ExGrid", "ExSheet", "ExPivot", "Data"];
 
     /// <summary>
-    /// The headings only a version without a suffix carries: Known limitations (ADR-0202), Signed off and
-    /// SHOULD criteria accepted failing (ADR-0190, the Definition of Done's §1 and Step 7), Out of scope for
-    /// this version and Supported (ADR-0205).
+    /// A release's blocks, the headings only a version without a suffix and a release candidate rehearsing it
+    /// carry: Known limitations (ADR-0202), Signed off and SHOULD criteria accepted failing (ADR-0190, the
+    /// Definition of Done's §1 and Step 7), Out of scope for this version and Supported (ADR-0205).
     /// </summary>
     public static readonly ImmutableArray<string> StableHeadings =
         ["Known limitations", "Signed off", "SHOULD criteria accepted failing", "Out of scope for this version", "Supported"];
 
     /// <summary>
-    /// A version without a suffix's headings, in order: ADR-0190's, with Known limitations after Behaviour
-    /// changes (ADR-0202), and the release's own blocks after the products (ADR-0190, ADR-0205).
+    /// A release's headings, in order, which a release candidate's notes carry too: ADR-0190's, with Known
+    /// limitations after Behaviour changes (ADR-0202), and the release's own blocks after the products
+    /// (ADR-0190, ADR-0205).
     /// </summary>
     public static readonly ImmutableArray<string> StableOrder =
     [
@@ -72,6 +73,52 @@ public static class ReleaseNotes
 
     /// <summary>The lines of a release's Supported block, in order, each beginning with its label in bold (ADR-0205).</summary>
     public static readonly ImmutableArray<string> SupportedLabels = ["Hosts", "Browsers", "Target framework", "Packages"];
+
+    /// <summary>What a version's suffix makes it, and so whether its notes carry a release's blocks (ADR-0190, ADR-0205).</summary>
+    public enum VersionKind
+    {
+        /// <summary>
+        /// A suffix other than <c>-rc.N</c>, as an alpha's or a beta's (<c>-beta.2</c>): published before any sign-off
+        /// (ADR-0042), and its notes carry none of a release's blocks.
+        /// </summary>
+        Prerelease,
+
+        /// <summary>
+        /// <c>-rc.N</c>, N from 1: a release candidate, which rehearses the stable path (ADR-0205), its release's notes
+        /// included. Its notes carry a release's blocks and are checked as a release's are (ADR-0190, 2026-10-12).
+        /// </summary>
+        Candidate,
+
+        /// <summary>No suffix: a release in the Definition of Done's sense, whose notes carry a release's blocks.</summary>
+        Release,
+    }
+
+    /// <summary>
+    /// What <paramref name="version"/> is by its suffix: none is a release, <c>-rc.N</c> with N from 1 a release
+    /// candidate, and any other a prerelease. A suffix that begins <c>rc</c> spelt otherwise is a prerelease here,
+    /// and <see cref="LooksLikeCandidate"/> says so.
+    /// </summary>
+    public static VersionKind VersionKindOf(string version)
+    {
+        var dash = version.IndexOf('-');
+        if (dash < 0)
+            return VersionKind.Release;
+        return CandidateSuffix.IsMatch(version.Substring(dash + 1)) ? VersionKind.Candidate : VersionKind.Prerelease;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="version"/>'s suffix begins <c>rc</c>, in any case, without being <c>-rc.N</c>: as
+    /// <c>-rc1</c>, <c>-RC.1</c> or <c>-rc.0</c>. Its notes would be read as a beta's, without the blocks a candidate
+    /// rehearses, so the build refuses the name.
+    /// </summary>
+    public static bool LooksLikeCandidate(string version)
+    {
+        var dash = version.IndexOf('-');
+        if (dash < 0)
+            return false;
+        var suffix = version.Substring(dash + 1);
+        return suffix.StartsWith("rc", StringComparison.OrdinalIgnoreCase) && !CandidateSuffix.IsMatch(suffix);
+    }
 
     /// <summary>The prerelease note's file under <c>docs/releases/</c>.</summary>
     public const string PrereleaseNoteName = "prerelease-note.md";
@@ -108,7 +155,7 @@ public static class ReleaseNotes
         category: "ExGrid.Docs",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "A version's notes name it on their first line, carry Published, Packages and Target, and every heading in order, each saying None. when it has nothing; a version without a suffix also carries Known limitations, Signed off, SHOULD criteria accepted failing, Out of scope for this version and Supported, and a prerelease none of them; a Change Note names its Product and Kind (ADR-0190, ADR-0202, ADR-0205).");
+        description: "A version's notes name it on their first line, carry Published, Packages and Target, and every heading in order, each saying None. when it has nothing; a version without a suffix, and a release candidate (-rc.N) rehearsing it, also carry Known limitations, Signed off, SHOULD criteria accepted failing, Out of scope for this version and Supported, and an alpha or a beta none of them; a Change Note names its Product and Kind (ADR-0190, ADR-0202, ADR-0205).");
 
     /// <summary>A link leads nowhere.</summary>
     public static readonly DiagnosticDescriptor LinkNowhere = new(
@@ -132,6 +179,9 @@ public static class ReleaseNotes
 
     private static readonly Regex VersionPattern = new(
         @"^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$", RegexOptions.CultureInvariant);
+
+    // A release candidate's suffix, as the release workflow reads a tag's: rc.N, N from 1 with no leading zero.
+    private static readonly Regex CandidateSuffix = new(@"^rc\.[1-9][0-9]*$", RegexOptions.CultureInvariant);
 
     private static readonly Regex HeaderLine = new(@"^([A-Za-z][A-Za-z ]*):(.*)$", RegexOptions.CultureInvariant);
 
@@ -618,12 +668,18 @@ public static class ReleaseNotes
         {
             var name = file.Name.Substring(0, file.Name.Length - 3);
             var text = file.Text;
-            var stable = name.IndexOf('-') < 0;
+            var kind = VersionKindOf(name);
             var first = text.Lines.Count > 0 ? text.Lines[0].ToString() : "";
             if (first != "# " + name)
             {
                 problems.Add(new NotesProblem(NotesProblemKind.Shape, 0, Math.Max(1, first.Length),
                     $"A version's notes begin with the line '# {name}', the file's name, and this one begins '{first}' ({Adr})."));
+            }
+            if (LooksLikeCandidate(name))
+            {
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, 0, Math.Max(1, first.Length),
+                    $"{name} looks like a release candidate, and a candidate is written -rc.N with N from 1, as 0.1.0-rc.1. Spelt otherwise, its notes "
+                    + "are read as a beta's, which carry none of the blocks a candidate rehearses. Name the file and its first line -rc.N (ADR-0190, ADR-0205)."));
             }
 
             var line = SkipBlank(text, 1);
@@ -708,29 +764,36 @@ public static class ReleaseNotes
             }
 
             var blocks = NotesMarkdown.ReadBlocks(text, line, problems);
-            var header = new VersionHeader(name, stable, packages, Target.IsMatch(target) ? target : null, Publishing: build.Version == name);
+            var header = new VersionHeader(name, kind, packages, Target.IsMatch(target) ? target : null, Publishing: build.Version == name);
             var sections = ReadSections(file, blocks, header, problems);
             Versions.Add(new NotesVersion(file, name, published, publishedStart, publishedLength, packages, target, sections));
         }
 
-        // What the sections of a version are read against: its name, whether it is a release, its header lines, and
-        // whether this build publishes it. Only that build reads a release's criteria and §21 items against the
-        // Definition of Done: at the tag the Definition of Done is the one the release was signed off against, and a
-        // version already published stays true of its own day however the Definition of Done is restated after it.
-        private sealed record VersionHeader(string Name, bool Stable, ImmutableArray<string> Packages, string? Target, bool Publishing);
+        // What the sections of a version are read against: its name, what its suffix makes it, its header lines, and
+        // whether this build publishes it. A release candidate's blocks are read as a release's are (ADR-0190, ADR-0205).
+        // Only the build that publishes a version reads its criteria and §21 items against the Definition of Done: at
+        // the tag the Definition of Done is the one the release was signed off against, and a version already
+        // published stays true of its own day however the Definition of Done is restated after it.
+        private sealed record VersionHeader(string Name, VersionKind Kind, ImmutableArray<string> Packages, string? Target, bool Publishing)
+        {
+            // Whether its notes carry a release's blocks: a release's, and a release candidate's, which rehearse them.
+            public bool CarriesRelease => Kind != VersionKind.Prerelease;
+        }
 
-        private static string Missing(string heading, string? before, bool stable)
+        private static string Missing(string heading, string? before, VersionHeader header)
         {
             var where = before is null ? "" : $" before '## {before}'";
-            return stable && StableHeadings.Contains(heading)
+            if (!header.CarriesRelease || !StableHeadings.Contains(heading))
+                return $"'## {heading}' is missing{where}. Every heading is present, in order, and one with nothing under it says None. ({Adr}).";
+            return header.Kind == VersionKind.Release
                 ? $"'## {heading}' is missing{where}. A version without a suffix is a release, and its notes say {StableWhat(heading)} ({StableSource(heading)})."
-                : $"'## {heading}' is missing{where}. Every heading is present, in order, and one with nothing under it says None. ({Adr}).";
+                : $"'## {heading}' is missing{where}. A release candidate rehearses its release's notes (ADR-0190, ADR-0205), so they carry every block a version "
+                  + $"without a suffix does, and say {StableWhat(heading)} ({StableSource(heading)}).";
         }
 
         private ImmutableArray<Section> ReadSections(NotesInput file, ImmutableArray<NotesBlock> blocks, VersionHeader header, List<NotesProblem> problems)
         {
-            var stable = header.Stable;
-            var expected = stable ? StableOrder : Headings;
+            var expected = header.CarriesRelease ? StableOrder : Headings;
             var groups = new List<(NotesHeading Heading, List<NotesBlock> Blocks)>();
             foreach (var block in blocks)
             {
@@ -754,9 +817,10 @@ public static class ReleaseNotes
                 var index = expected.IndexOf(heading.Title);
                 if (index < 0)
                 {
-                    var why = !stable && StableHeadings.Contains(heading.Title)
-                        ? $"Only a version without a suffix carries '## {heading.Title}' ({StableSource(heading.Title)}). A prerelease is not signed off, "
-                          + "and its prerelease note links what the Definition of Done still owes: remove the heading."
+                    var why = !header.CarriesRelease && StableHeadings.Contains(heading.Title)
+                        ? $"Only a version without a suffix, or a release candidate (-rc.N) rehearsing it, carries '## {heading.Title}' ({StableSource(heading.Title)}). "
+                          + $"{header.Name} is another prerelease, as an alpha or a beta is: it is not signed off, and its prerelease note links what the "
+                          + "Definition of Done still owes. Remove the heading (ADR-0190, ADR-0205)."
                         : $"'## {heading.Title}' is not one of the notes' headings, which are {string.Join(", ", expected)}, in that order ({Adr}).";
                     problems.Add(new NotesProblem(NotesProblemKind.Shape, heading.Start, heading.Title.Length + 3, why));
                     continue;
@@ -768,12 +832,12 @@ public static class ReleaseNotes
                     continue;
                 }
                 for (var missing = next; missing < index; missing++)
-                    problems.Add(new NotesProblem(NotesProblemKind.Shape, heading.Start, heading.Title.Length + 3, Missing(expected[missing], heading.Title, stable)));
+                    problems.Add(new NotesProblem(NotesProblemKind.Shape, heading.Start, heading.Title.Length + 3, Missing(expected[missing], heading.Title, header)));
                 next = index + 1;
                 sections.Add(ReadSection(heading, content, header, problems));
             }
             for (var missing = next; missing < expected.Length; missing++)
-                problems.Add(new NotesProblem(NotesProblemKind.Shape, Math.Max(0, file.Text.Length - 1), 1, Missing(expected[missing], null, stable)));
+                problems.Add(new NotesProblem(NotesProblemKind.Shape, Math.Max(0, file.Text.Length - 1), 1, Missing(expected[missing], null, header)));
             return sections.ToImmutable();
         }
 
@@ -819,8 +883,9 @@ public static class ReleaseNotes
                 }
                 if (kind == "SignedOff")
                 {
+                    var who = header.Kind == VersionKind.Candidate ? "A release is signed off, and its candidate rehearses the block" : "A release is signed off";
                     problems.Add(new NotesProblem(NotesProblemKind.Shape, only.Start, 5,
-                        $"A release is signed off: write its lines, {LabelList(labelled)}, naming the verification/<date>/results.md the sign-off was made against and the commit X (the Definition of Done's Step 7; ADR-0205)."));
+                        $"{who}: write its lines, {LabelList(labelled)}, naming the verification/<date>/results.md the sign-off was made against and the commit X (the Definition of Done's Step 7; ADR-0205)."));
                 }
                 if (kind == "Supported")
                 {

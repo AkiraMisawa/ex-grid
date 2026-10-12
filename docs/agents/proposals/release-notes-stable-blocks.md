@@ -1,75 +1,60 @@
 # Proposal: a release's blocks in the Release Notes
 
-From the background agent on `claude/release-notes-stable-blocks`, 2026-10-11. It asks for text in
-ADR-0190 and in `CONTEXT.md`, which a background agent does not write, and for the user's word on the
-points below that no decision states and the implementation had to settle.
+From the background agents on `claude/release-notes-stable-blocks`, 2026-10-11 and 2026-10-12. The text
+ADR-0190, ADR-0205, the Definition of Done and `CONTEXT.md` need is an apply list,
+`docs/agents/proposals/release-notes-stable-blocks-apply.md`. This file holds what the user may want to
+answer: two questions the decision of 2026-10-12 leaves open, and the points the implementation settled
+that no decision states.
 
 ## Why
 
 ADR-0190 lists two blocks a version without a suffix carries, Signed off and SHOULD criteria accepted
 failing, and its "What refuses a mistake" names only those two. ADR-0202 added Known limitations, after
 Behaviour changes. ADR-0205 added Out of scope for this version and Supported, and said what Signed off
-holds. Both say that they amend ADR-0190, and ADR-0190's text has not been amended.
+holds. On 2026-10-12 the user decided that a release candidate's notes carry the same blocks, checked as a
+stable version's are, and that an alpha's or a beta's are refused if they carry one (ADR-0190's and
+ADR-0205's notes of that date).
 
-The Docs Site's notes parser (`samples/ExGrid.Docs.Generator/ReleaseNotes.cs`) now requires the five
-blocks of a version without a suffix, in the order below, and refuses each of them on a prerelease. The
-text below is what ADR-0190 would say to match it.
+The Docs Site's notes parser (`samples/ExGrid.Docs.Generator/ReleaseNotes.cs`) now does exactly that:
 
-## Text for ADR-0190
+- a version without a suffix and an `-rc.N` carry all five blocks, in ADR-0190's order with Known
+  limitations after Behaviour changes and the release's own four after the products;
+- a candidate's blocks are read as a release's: the Record linked at the candidate's own tag, the full
+  commit, one record and one commit in the block, Supported agreeing with the header lines, and, in the
+  build given `-p:DocsVersion=` for it, the SHOULD criteria and §21 items read against the Definition of
+  Done;
+- any other suffix, an alpha's, a beta's or another, refuses each of the five at its heading.
 
-In "What a version says", replace the bullet that begins "A stable version's notes carry two more
-blocks" with:
+`tests/ExGrid.Docs.Generator.Tests/ReleaseNotesTests.cs` holds a test per kind: a candidate with every block
+builds, a candidate missing one is refused, a candidate's block out of form is refused as a release's is, an
+alpha or a beta carrying one is refused, and a release missing one is refused.
 
-> - **A stable version's notes carry five more blocks**, which the build requires of a version without a
->   suffix and refuses on a prerelease. A release's headings are, in this order: Highlights, Breaking
->   changes, Behaviour changes, **Known limitations**, ExGrid, ExSheet, ExPivot, Data, **Signed off**,
->   **SHOULD criteria accepted failing**, **Out of scope for this version** and **Supported**.
->   - **Known limitations**
->     ([ADR-0202](./0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md)):
->     what the version does not do, or "None.". Each line begins with the products it reaches in bold, as
->     a Breaking line does, names the limitation in a sentence, and links the page of the site that says
->     it in full.
->   - **Signed off** (the Definition of Done's Step 7,
->     [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)):
->     five lines, each beginning with its label in bold, in this order:
->     - `Record:` the `verification/<date>/results.md` the sign-off was made against, linked at the
->       version's tag (`…/blob/v<version>/verification/<date>/results.md`). The record is committed after
->       X, so it exists at the tag and not at X;
->     - `Commit:` the commit X, its 40 characters in a code span. The release workflow reads it;
->     - `Toolchain:`, `OS:` and `Browsers:`, the versions the sign-off ran with.
->
->     The block names one record and one commit, so that the release workflow reads exactly those.
->   - **SHOULD criteria accepted failing** (the Definition of Done's §1): each line begins with the
->     criterion's ID in bold, or several separated by commas, and gives the written reason it was accepted;
->     or "None.". The ID is a SHOULD of the Definition of Done: a MUST that fails stops the release, and an
->     OBSERVATIONAL number never fails.
->   - **Out of scope for this version** (Step 7, ADR-0205): each line names the Definition of Done's §21
->     item accepted in writing as out of the version's scope, as §21.11, and links where it was accepted;
->     or "None.".
->   - **Supported** (ADR-0205): four lines, each beginning with its label in bold, in this order:
->     `Hosts:`, `Browsers:`, `Target framework:` and `Packages:`. The target framework and the packages
->     are those its `Target:` and `Packages:` header lines name.
->
->   *(Amended 2026-10-11, decided with the user in ADR-0202 and ADR-0205: the decision first listed two
->   blocks, Signed off and SHOULD criteria accepted failing. ADR-0202 added Known limitations, and ADR-0205
->   added the last two and said what Signed off holds.)*
+## Questions the decision of 2026-10-12 leaves open
 
-In "What refuses a mistake", replace "a version without a suffix whose notes lack the Signed off and
-SHOULD blocks." with:
+1. **Does the release workflow read a candidate's Signed off block as it reads a stable version's?** The
+   reader is on `claude/release-workflow-checks` (`tools/release/ExGrid.Release/SignOff.cs`, called from
+   `Gate.cs`), not on this branch. That branch, written the day before, runs every check of a stable tag on
+   a candidate "except the two that read a sign-off": the Signed off block and the structural check (the
+   tag is X plus only `verification/` and `docs/releases/`). Its ADR-0042 rewrite says the same, and that a
+   candidate "is still not signed off". Read literally, "checked as a stable version's are" runs both on a
+   candidate too. Then:
+   - each candidate is tagged on its X plus records and notes, with a `results.md` that names X at the tag:
+     the sign-off record is begun at X before the candidate is tagged, and a fix is a new X and a new
+     candidate, as ADR-0205 already says;
+   - ADR-0202's note that the eighteenth run is made "on `0.1.0-rc.1` itself" reads as a run at X, which
+     `rc.1` publishes.
 
-> - a version without a suffix whose notes lack one of a release's five blocks, or hold one out of its form;
->   a prerelease whose notes carry one;
-> - in the build that publishes a release, a SHOULD criterion accepted failing that is not a SHOULD of the
->   Definition of Done, and a §21 item out of scope that §21 does not have.
-
-## Text for `CONTEXT.md`
-
-In **Release Notes**, replace "a stable version's name its sign-off and every SHOULD accepted failing" with:
-
-> a stable version's also say what it does not do (its Known limitations), name its sign-off, every SHOULD
-> accepted failing and what was left out of its scope, and say what it supports
-
-and add ADR-0202 and ADR-0205 beside ADR-0190.
+   A patch for that branch, which makes its reader do this, was prepared and tested apart from it (the
+   report names its file); it is not on any branch. The alternative is the branch as it stands: the build
+   checks a candidate's blocks (this branch), and the workflow reads a sign-off only on a stable tag. Either
+   way, the sibling's ADR-0042 rewrite needs a word for the candidate's notes.
+2. **The prerelease note above a candidate's Signed off block.** A candidate is a prerelease, so its GitHub
+   release and its section on the site begin with the prerelease note (ADR-0190), which says "the
+   Definition of Done has not been signed off". The candidate's notes now carry a block headed "Signed off"
+   naming a record and a commit. Both are true of a candidate whose sign-off is under way, but a reader sees
+   them one above the other. Options: leave it; give a candidate a note of its own, held beside
+   `prerelease-note.md`; or word the one note so that it fits both ("…has not been signed off; a release
+   candidate's Signed off block names the sign-off it rehearses").
 
 ## Points the implementation settled that no decision states
 
@@ -79,24 +64,20 @@ Each is built as described. The user may want another answer.
    changes. ADR-0205 lists Signed off, SHOULD criteria accepted failing, Out of scope and Supported in
    that order, but not where. They are placed after the products, where the parser already put the
    first two.
-2. **A prerelease refuses all five, Known limitations included.** ADR-0205 says only that the parser
-   requires them of a version without a suffix. The refusal follows from ADR-0190's fixed headings: a
-   prerelease's list does not have them, and a prerelease is not signed off. **It has a consequence for
-   the release candidates:** an `-rc.N` is a prerelease, so it carries none of the five, and the GitHub
-   release text of these blocks is first published by the stable tag. The candidates rehearse everything
-   else on the stable path. If the user wants the candidates to rehearse these blocks too, the
-   alternative is to let a release candidate carry Known limitations and Supported, but never Signed off,
-   SHOULD criteria accepted failing or Out of scope, which only a sign-off can write.
-3. **The Definition of Done is read only by the build that publishes the release**, the one given
-   `-p:DocsVersion=<version>`, which `ci.yml` runs on the tag before anything is pushed. Every build reads
-   the blocks' form. A version already published stays true of its day, however the Definition of Done is
-   restated after it. Without this, `release/0.1` merging back into `main` (ADR-0205) would fail
-   `main`'s build if `main` had restated a criterion the notes name during the days of the sign-off. The
-   cost is that the author of the cut sees a wrong ID only by building with
+2. **What a release candidate is, by its name.** `-rc.N`, with N from 1 and no leading zero, as the release
+   workflow on `claude/release-workflow-checks` reads a tag. A suffix that begins `rc` in any case and is not
+   that (`-rc1`, `-RC.1`, `-rc.0`, `-rc`, `-rc.1.2`) is refused at the file's first line: its notes would be
+   read as a beta's, which carry none of the blocks a candidate rehearses. Any other suffix, `-alpha`,
+   `-beta` or `-preview.1`, is a prerelease whose notes refuse the blocks.
+3. **The Definition of Done is read only by the build that publishes the version**, the one given
+   `-p:DocsVersion=<version>`, which `ci.yml` runs on the tag before anything is pushed: a candidate's tag as
+   a release's. Every build reads the blocks' form. A version already published stays true of its day,
+   however the Definition of Done is restated after it. Without this, `release/0.1` merging back into
+   `main` (ADR-0205) would fail `main`'s build if `main` had restated a criterion the notes name during the
+   days of the sign-off. The cost is that the author of the cut sees a wrong ID only by building with
    `-p:DocsVersion=<version>`. The cut's steps in ADR-0190 could say so.
 4. **The Signed off lines have labels**, so that the release workflow reads the commit and the record
-   from fixed places. The sibling branch's reader (`claude/release-workflow-checks`,
-   `tools/release/ExGrid.Release/SignOff.cs`) takes the one `verification/…/results.md` and the one
+   from fixed places. The sibling branch's reader takes the one `verification/…/results.md` and the one
    40-character commit anywhere in the block. The two agree: the parser also refuses a second commit or
    a second record anywhere in the block, a link's address included, so notes that build are notes the
    workflow can read. It reads the block as written, as the workflow does, on the Record line as well:
@@ -116,8 +97,8 @@ Each is built as described. The user may want another answer.
 
 ## What it changes nowhere else
 
-- `release.yml`'s render step ("The release's text") needs no change. It passes the version's file through,
-  with no prerelease note for a version without a suffix. It was run over a release's notes: every
-  block comes out as GitHub renders it, site routes made whole and ADRs linked. Marking the GitHub release
-  a release rather than a prerelease is ADR-0205's workflow change, which this branch does not touch.
-- No `docs/releases/<version>.md` without a suffix is added.
+- `release.yml` on this branch needs no change. Its render step ("The release's text") passes the version's
+  file through after the prerelease note for any version with a suffix, a candidate's blocks included, as
+  GitHub renders them, with site routes made whole and ADRs linked. Its admission is still `main`'s, which
+  refuses a version without a suffix; ADR-0205's workflow is `claude/release-workflow-checks`.
+- No `docs/releases/<version>.md` for a candidate or a release is added.

@@ -2,14 +2,17 @@
    from a tag, what is not on nuget.org yet. Every heading is shown, and one with nothing under it says
    "None.", so a reader can tell nothing from not written. A release, a version without a suffix, also
    shows its Known limitations (ADR-0202), and its sign-off, SHOULD criteria accepted failing, scope and
-   support (ADR-0190, ADR-0205). The chips filter by product, or keep only the breaking and behaviour
+   support (ADR-0190, ADR-0205); so does a release candidate, -rc.N, which rehearses its release's notes
+   (ADR-0190 and ADR-0205, 2026-10-12). The chips filter by product, or keep only the breaking and behaviour
    changes. Nothing is fetched: the notes were read when the site was built. *@
 <div class="docs-notes-intro">
     <p>
         A version's day is the UTC day nuget.org received its packages. A release, a version without a
         suffix, also names what it does not do under Known limitations, the record and commit it was signed off
         against, every SHOULD criterion accepted failing and why, what was left out of its scope, and the hosts,
-        browsers, target framework and packages it supports.
+        browsers, target framework and packages it supports. A release candidate, <code>-rc.N</code>, carries the
+        same blocks, checked as a release's are, so that a release's notes are read before its tag; an alpha or a
+        beta carries none of them.
         @if (!ReleaseNotes.AnyRelease)
         {
             <text>

@@ -159,7 +159,7 @@ public class ReleaseNotesTests
     [Theory] // ADR-0190: every heading is present, in order; a missing, repeated, unknown or out-of-order one is an error at its line
     [InlineData("## Breaking changes\n\nNone.\n\n## Highlights", "'## Highlights' is written twice, or out of order")]
     [InlineData("## Breaking changes\n\nNone.\n\n## Upgrading", "'## Upgrading' is not one of the notes' headings")]
-    [InlineData("## Signed off", "Only a version without a suffix carries '## Signed off'")]
+    [InlineData("## Signed off", "Only a version without a suffix, or a release candidate (-rc.N) rehearsing it, carries '## Signed off'")]
     public void A_heading_out_of_place_is_an_error(string extra, string message)
     {
         var text = Version("0.1.0-beta.2").Replace("## Data\n", extra + "\n\n## Data\n");
@@ -520,8 +520,11 @@ public class ReleaseNotesTests
 
     private const string Commit = "0123456789abcdef0123456789abcdef01234567";
 
-    private static readonly string SignedOff = string.Join("\n",
-        "- **Record:** [verification/2026-11-02/results.md](https://github.com/AkiraMisawa/ex-grid/blob/v0.1.0/verification/2026-11-02/results.md)",
+    private static readonly string SignedOff = SignedOffAt("0.1.0");
+
+    // The Signed off block of the version `name`, its record linked at that version's tag.
+    private static string SignedOffAt(string name) => string.Join("\n",
+        $"- **Record:** [verification/2026-11-02/results.md](https://github.com/AkiraMisawa/ex-grid/blob/v{name}/verification/2026-11-02/results.md)",
         $"- **Commit:** `{Commit}`",
         "- **Toolchain:** .NET SDK 10.0.203, Node 22.11.0, Playwright 1.56.0",
         "- **OS:** Ubuntu 24.04 (CI), Windows 11 24H2 and macOS 15.1 (by hand)",
@@ -546,7 +549,7 @@ public class ReleaseNotesTests
             ("ExSheet", "No change. Its packages are republished at this version."),
             ("ExPivot", "No change. Its packages are republished at this version."),
             ("Data", "No change. Its packages are republished at this version."),
-            ("Signed off", SignedOff),
+            ("Signed off", SignedOffAt(name)),
             ("SHOULD criteria accepted failing", "- **UX-10:** The bar's width follows the token on Chrome and not on Edge's overlay scrollbars; accepted in writing on 2026-11-01."),
             ("Out of scope for this version", "- Find All and Replace, a reservation of §21.11 ([accepted in writing](https://github.com/AkiraMisawa/ex-grid/blob/v0.1.0/docs/definition-of-done.md#2111-reserved-with-a-named-trigger--not-open-and-not-to-be-mistaken-for-oversights))."),
             ("Supported", Supported),
@@ -563,9 +566,12 @@ public class ReleaseNotesTests
     }
 
     // A release's notes as the build that publishes it reads them, at its tag, or as any other build does (`publishing: false`).
-    private static GeneratorRun RunRelease(string text, bool dod = true, bool publishing = true) =>
-        Run(dod ? Valid(Notes("0.1.0.md", text), Dod) : Valid(Notes("0.1.0.md", text)),
-            publishing ? "0.1.0" : "dev", publishing ? "v0.1.0" : "", publishing ? "2026-11-03" : "");
+    private static GeneratorRun RunRelease(string text, bool dod = true, bool publishing = true) => RunVersion("0.1.0", text, dod, publishing);
+
+    // The notes of the version `name`, beside the two betas, as the build that publishes it reads them or as any other build does.
+    private static GeneratorRun RunVersion(string name, string text, bool dod = true, bool publishing = true) =>
+        Run(dod ? Valid(Notes(name + ".md", text), Dod) : Valid(Notes(name + ".md", text)),
+            publishing ? name : "dev", publishing ? "v" + name : "", publishing ? "2026-11-03" : "");
 
     private static int LineOf(string text, string line) => text.Split('\n').ToList().FindIndex(l => l.StartsWith(line, StringComparison.Ordinal)) + 1;
 
@@ -624,20 +630,172 @@ public class ReleaseNotesTests
         Assert.Contains("Known limitations, ExGrid, ExSheet, ExPivot, Data, Signed off, SHOULD criteria accepted failing, Out of scope for this version, Supported", late.GetMessage());
     }
 
-    [Theory] // ADR-0190, ADR-0202, ADR-0205: a prerelease is not signed off, and carries none of a release's blocks
-    [InlineData("Known limitations", "(ADR-0202)")]
-    [InlineData("Signed off", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
-    [InlineData("SHOULD criteria accepted failing", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
-    [InlineData("Out of scope for this version", "(ADR-0205)")]
-    [InlineData("Supported", "(ADR-0205)")]
-    public void A_prerelease_with_a_release_block_is_an_error_at_its_heading(string heading, string source)
-    {
-        var text = Version("0.1.0-beta.2").Replace("## Data\n", $"## {heading}\n\nNone.\n\n## Data\n");
-        var run = Run(Valid().Where(f => !f.Item1.EndsWith("0.1.0-beta.2.md")).Append(Notes("0.1.0-beta.2.md", text)));
+    // What a version's suffix makes its notes (ADR-0190 and ADR-0205, 2026-10-12): a version without a suffix and a
+    // release candidate carry a release's blocks, checked alike; an alpha, a beta or any other prerelease carries none.
 
-        var error = One(run, "EXDOCS008");
-        Assert.Contains($"Only a version without a suffix carries '## {heading}' {source}. A prerelease is not signed off", error.GetMessage());
-        Assert.Equal(LineOf(text, "## " + heading), Line(error));
+    [Theory] // ADR-0190, ADR-0205: a version is a release, a release candidate or a prerelease by its suffix, as the release workflow reads its tag
+    [InlineData("0.1.0", ReleaseNotes.VersionKind.Release)]
+    [InlineData("1.12.3", ReleaseNotes.VersionKind.Release)]
+    [InlineData("0.1.0-rc.1", ReleaseNotes.VersionKind.Candidate)]
+    [InlineData("0.1.1-rc.12", ReleaseNotes.VersionKind.Candidate)]
+    [InlineData("0.1.0-beta.2", ReleaseNotes.VersionKind.Prerelease)]
+    [InlineData("0.2.0-alpha.1", ReleaseNotes.VersionKind.Prerelease)]
+    [InlineData("1.0.0-alpha", ReleaseNotes.VersionKind.Prerelease)]
+    [InlineData("0.1.0-preview.1", ReleaseNotes.VersionKind.Prerelease)]
+    [InlineData("0.1.0-rc1", ReleaseNotes.VersionKind.Prerelease)]
+    [InlineData("0.1.0-rc.1.2", ReleaseNotes.VersionKind.Prerelease)]
+    public void A_version_s_suffix_says_what_it_is(string version, ReleaseNotes.VersionKind kind)
+    {
+        Assert.Equal(kind, ReleaseNotes.VersionKindOf(version));
+        Assert.Equal(version is "0.1.0-rc1" or "0.1.0-rc.1.2", ReleaseNotes.LooksLikeCandidate(version));
+    }
+
+    [Theory] // ADR-0190, ADR-0205 (2026-10-12): a release candidate rehearses its release's notes, so its notes with every block build, on the build that publishes it and on any other
+    [InlineData("0.1.0-rc.1")]
+    [InlineData("0.1.0-rc.12")]
+    public void A_release_candidate_with_every_block_builds(string name)
+    {
+        var run = RunVersion(name, Release(name));
+
+        Assert.Empty(Notices(run));
+        Assert.Empty(Notices(RunVersion(name, Release(name), publishing: false)));
+        var source = run.Source("ReleaseNotes.g.cs");
+        var at = source.IndexOf($"new(\"{name}\",", StringComparison.Ordinal);
+        Assert.True(at > 0);
+        foreach (var kind in new[] { "KnownLimitations", "SignedOff", "ShouldAccepted", "OutOfScope", "Supported" })
+        {
+            at = source.IndexOf("global::ExGrid.Docs.ReleaseSectionKind." + kind + ",", at + 1, StringComparison.Ordinal);
+            Assert.True(at > 0, $"the candidate's section {kind} is emitted in its place");
+        }
+        Assert.Contains($"<strong>Record:</strong> <a href=\\\"https://github.com/AkiraMisawa/ex-grid/blob/v{name}/verification/2026-11-02/results.md\\\"", source);
+    }
+
+    [Theory] // ADR-0190, ADR-0202, ADR-0205 (2026-10-12): a release candidate missing one of a release's blocks is refused, saying what the block holds
+    [InlineData("Known limitations", "'## Known limitations' is missing before '## ExGrid'", "what it does not do", "(ADR-0202)")]
+    [InlineData("Signed off", "'## Signed off' is missing before '## SHOULD criteria accepted failing'", "the verification/<date>/results.md its sign-off was made against", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
+    [InlineData("SHOULD criteria accepted failing", "'## SHOULD criteria accepted failing' is missing before '## Out of scope for this version'", "each SHOULD criterion that fails", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
+    [InlineData("Out of scope for this version", "'## Out of scope for this version' is missing before '## Supported'", "§21 items", "(ADR-0205)")]
+    [InlineData("Supported", "'## Supported' is missing.", "the hosts, the browsers, the target framework and the packages", "(ADR-0205)")]
+    public void A_release_candidate_without_a_block_is_an_error(string heading, string missing, string what, string source)
+    {
+        var text = Release("0.1.0-rc.1", drop: [heading]);
+
+        foreach (var publishing in new[] { true, false })
+        {
+            var error = One(RunVersion("0.1.0-rc.1", text, publishing: publishing), "EXDOCS008");
+            Assert.Contains(missing, error.GetMessage());
+            Assert.Contains("A release candidate rehearses its release's notes (ADR-0190, ADR-0205), so they carry every block a version without a suffix does", error.GetMessage());
+            Assert.Contains(what, error.GetMessage());
+            Assert.Contains(source, error.GetMessage());
+            Assert.EndsWith("docs/releases/0.1.0-rc.1.md", FileOf(error));
+        }
+    }
+
+    [Fact] // ADR-0190, ADR-0205 (2026-10-12): a release candidate written as a beta is, with none of a release's blocks, is refused for each
+    public void A_release_candidate_written_as_a_beta_is_an_error_for_each_block()
+    {
+        var text = Version("0.1.0-rc.1", "pending");
+        var errors = Notices(RunVersion("0.1.0-rc.1", text));
+
+        Assert.Equal(5, errors.Length);
+        Assert.All(errors, e => Assert.Equal("EXDOCS008", e.Id));
+        Assert.All(errors, e => Assert.Contains("A release candidate rehearses its release's notes", e.GetMessage()));
+        foreach (var heading in ReleaseNotes.StableHeadings)
+            Assert.Single(errors, e => e.GetMessage().StartsWith($"'## {heading}' is missing", StringComparison.Ordinal));
+    }
+
+    [Theory] // ADR-0190, ADR-0205 (2026-10-12): a release candidate's blocks are checked as a release's are, at its own tag, and against the Definition of Done by the build that publishes it
+    [InlineData("Signed off", "LINK-AT-RELEASE", "EXDOCS009", "and the record this line names is https://github.com/AkiraMisawa/ex-grid/blob/v0.1.0-rc.1/verification/2026-11-02/results.md, at this version's tag")]
+    [InlineData("Signed off", "SHORT-COMMIT", "EXDOCS008", "**Commit:** is the commit X the sign-off was made against, its full 40 characters")]
+    [InlineData("Signed off", "None.", "EXDOCS008", "A release is signed off, and its candidate rehearses the block: write its lines")]
+    [InlineData("SHOULD criteria accepted failing", "- **VZ-12:** Measured, and accepted in writing.", "EXDOCS008", "VZ-12 is a MUST, and no reason accepts a MUST that fails")]
+    [InlineData("Out of scope for this version", "- A column band, §21.12 ([accepted](https://example.com/accepted)).", "EXDOCS009", "§21.12 names no item of the Definition of Done's §21")]
+    [InlineData("Supported", "- **Hosts:** WebAssembly and Blazor Server.\n- **Browsers:** Chrome and Edge.\n- **Target framework:** `net8.0`.\n- **Packages:** ExGrid and ExGrid.MudBlazor.", "EXDOCS008", "**Target framework:** names net10.0, as the Target: line does")]
+    [InlineData("Known limitations", "- **ExGrid:** Find All and Replace are not offered.", "EXDOCS008", "links the page of the site that says it in full")]
+    public void A_release_candidate_s_blocks_are_checked_as_a_release_s_are(string heading, string body, string id, string message)
+    {
+        const string Name = "0.1.0-rc.1";
+        body = body switch
+        {
+            "LINK-AT-RELEASE" => SignedOffAt("0.1.0"),
+            "SHORT-COMMIT" => SignedOffAt(Name).Replace($"`{Commit}`", "`0123456`"),
+            _ => body,
+        };
+        var error = One(RunVersion(Name, Release(Name, replace: (heading, body))), id);
+
+        Assert.Contains(message, error.GetMessage());
+        Assert.EndsWith($"docs/releases/{Name}.md", FileOf(error));
+    }
+
+    [Theory] // ADR-0190, ADR-0202, ADR-0205 (2026-10-12): an alpha or a beta is not signed off, and carries none of a release's blocks
+    [InlineData("0.1.0-beta.2", "Known limitations", "(ADR-0202)")]
+    [InlineData("0.1.0-beta.2", "Signed off", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
+    [InlineData("0.1.0-beta.2", "SHOULD criteria accepted failing", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
+    [InlineData("0.1.0-beta.2", "Out of scope for this version", "(ADR-0205)")]
+    [InlineData("0.1.0-beta.2", "Supported", "(ADR-0205)")]
+    [InlineData("0.2.0-alpha.1", "Known limitations", "(ADR-0202)")]
+    [InlineData("0.2.0-alpha.1", "Signed off", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
+    [InlineData("0.2.0-alpha.1", "SHOULD criteria accepted failing", "(the Definition of Done's §1 and Step 7; ADR-0190, ADR-0205)")]
+    [InlineData("0.2.0-alpha.1", "Out of scope for this version", "(ADR-0205)")]
+    [InlineData("0.2.0-alpha.1", "Supported", "(ADR-0205)")]
+    public void An_alpha_or_a_beta_with_a_release_block_is_an_error_at_its_heading(string name, string heading, string source)
+    {
+        var text = Version(name, "pending").Replace("## Data\n", $"## {heading}\n\nNone.\n\n## Data\n");
+        var notes = Valid().Where(f => !f.Item1.EndsWith("0.1.0-beta.2.md")).Append(Notes("0.1.0-beta.2.md", Version("0.1.0-beta.2")))
+            .Where(f => !f.Item1.EndsWith(name + ".md")).Append(Notes(name + ".md", text));
+
+        foreach (var publishing in new[] { true, false })
+        {
+            var run = Run(publishing ? notes.Append(Dod) : notes, publishing ? name : "dev", publishing ? "v" + name : "", publishing ? "2026-11-03" : "");
+            var error = One(run, "EXDOCS008");
+            Assert.Contains($"Only a version without a suffix, or a release candidate (-rc.N) rehearsing it, carries '## {heading}' {source}. "
+                + $"{name} is another prerelease, as an alpha or a beta is: it is not signed off", error.GetMessage());
+            Assert.Equal(LineOf(text, "## " + heading), Line(error));
+            Assert.EndsWith($"docs/releases/{name}.md", FileOf(error));
+        }
+    }
+
+    [Theory] // ADR-0190, ADR-0205 (2026-10-12): an alpha or a beta written with every block a release carries is refused at each of them
+    [InlineData("0.2.0-beta.1")]
+    [InlineData("0.2.0-alpha.1")]
+    public void An_alpha_or_a_beta_written_as_a_release_is_an_error_for_each_block(string name)
+    {
+        var text = Release(name);
+        var errors = Notices(RunVersion(name, text));
+
+        Assert.Equal(5, errors.Length);
+        Assert.All(errors, e => Assert.Equal("EXDOCS008", e.Id));
+        foreach (var heading in ReleaseNotes.StableHeadings)
+        {
+            var error = Assert.Single(errors, e => e.GetMessage().Contains($"carries '## {heading}'"));
+            Assert.Equal(LineOf(text, "## " + heading), Line(error));
+        }
+    }
+
+    [Fact] // ADR-0190, ADR-0202, ADR-0205: a release written as a beta is, with none of its blocks, is refused for each
+    public void A_release_written_as_a_beta_is_an_error_for_each_block()
+    {
+        var errors = Notices(RunRelease(Version("0.1.0", "pending")));
+
+        Assert.Equal(5, errors.Length);
+        Assert.All(errors, e => Assert.Equal("EXDOCS008", e.Id));
+        Assert.All(errors, e => Assert.Contains("A version without a suffix is a release, and its notes say", e.GetMessage()));
+        foreach (var heading in ReleaseNotes.StableHeadings)
+            Assert.Single(errors, e => e.GetMessage().StartsWith($"'## {heading}' is missing", StringComparison.Ordinal));
+    }
+
+    [Theory] // ADR-0190, ADR-0205: a suffix that begins rc and is not -rc.N would be read as a beta's notes, so the name is refused
+    [InlineData("0.1.0-rc1")]
+    [InlineData("0.1.0-RC.1")]
+    [InlineData("0.1.0-rc.0")]
+    [InlineData("0.1.0-rc")]
+    public void A_release_candidate_named_otherwise_than_rc_n_is_an_error(string name)
+    {
+        // Dated, and read by a build that publishes no version: -RC.1 sorts below the betas, as SemVer compares text.
+        var error = One(RunVersion(name, Version(name), publishing: false), "EXDOCS008");
+
+        Assert.Contains($"{name} looks like a release candidate, and a candidate is written -rc.N with N from 1, as 0.1.0-rc.1", error.GetMessage());
+        Assert.Equal(1, Line(error));
     }
 
     [Theory] // ADR-0205: Signed off names the record at the tag, the full commit X the release workflow reads, and the toolchain, OS and browsers, one line each in order
