@@ -11,7 +11,10 @@ internal static partial class FunctionLibrary
     /// </summary>
     /// <remarks>
     /// A row or a column of 0 names the whole column or row, which spills where it is more than one
-    /// cell (ADR-0125), and is a range a function such as <c>SUM</c> reads.
+    /// cell (ADR-0125), and is a range a function such as <c>SUM</c> reads. Over a Reference of
+    /// several rows and several columns, <c>column_num</c> cannot be left out: <c>INDEX(G1:H5,2)</c>
+    /// is <c>#REF!</c>, as Excel's is (INDEX-012, the seventeenth Windows run). Over an array it is
+    /// the whole row, as Microsoft documents.
     /// </remarks>
     private static Operand Index(FunctionCall call)
     {
@@ -39,6 +42,7 @@ internal static partial class FunctionLibrary
         row = Math.Truncate(row);
         column = Math.Truncate(column);
         if (row < 0 || column < 0) return Operand.Of(ErrorValue.Value);
+        if (call.Count < 3 && source.Kind == OperandKind.Area && rows > 1 && columns > 1) return Operand.Of(ErrorValue.Ref);
         if (row > rows || column > columns) return Operand.Of(ErrorValue.Ref);
         if ((row == 0 && rows > 1) || (column == 0 && columns > 1))
         {
