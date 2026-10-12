@@ -7,15 +7,17 @@ namespace ExGrid.Release;
 /// The latest record of a row checked by hand: the commit it was made at; the <c>verified/*</c> tag its run
 /// put on that commit, <c>verified/</c> followed by the name of the record's directory under
 /// <c>verification/</c>, through which the release workflow fetches it; the file that holds it; its verdict;
-/// and, on WR-10's record only, the MudBlazor versions its layer-2 runs covered.
+/// and, on WR-10's records only, the MudBlazor versions their layer-2 runs covered.
 /// </summary>
 public sealed record ByHandRecord(string Commit, string Tag, string Path, string Verdict, IReadOnlyList<string>? Versions = null);
 
 /// <summary>
 /// A row the Definition of Done checks by hand, where it is checked, the paths whose change could
-/// change its result, and its latest record, or none when it has never been recorded.
+/// change its result, and its latest record, or none when it has never been recorded. WR-10 alone may name
+/// besides, in <see cref="Later"/>, the records of layer-2 runs at a MudBlazor version published after its
+/// floor record, each a run of its own.
 /// </summary>
-public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> Paths, ByHandRecord? Record)
+public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> Paths, ByHandRecord? Record, IReadOnlyList<ByHandRecord>? Later = null)
 {
     /// <summary>How a message names the row: <c>FN-12e on macOS</c>.</summary>
     public string Name => $"{Row} on {Where}";
@@ -38,8 +40,13 @@ public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> P
 /// <c>verified/2026-10-01-windows-browser-11</c>. WR-10's floor run, an automated run a person makes once
 /// and its record carries forward, is indexed beside the rows, with its paths written as a <c>:(glob)</c>
 /// pattern where a directory name varies (ADR-0205's note of 2026-10-12); its record names the MudBlazor
-/// versions its layer-2 runs covered, and a stable version published within the Wrappers' declared range
-/// that it does not name refuses the tag (<see cref="WrapperRange"/>, 2026-10-12).</para>
+/// versions its layer-2 runs covered. A layer-2 run at a MudBlazor 9.x published after the floor record is a
+/// run of its own, with a record in a directory of its own, tagged by that directory, which WR-10's entry names
+/// besides the floor record in <c>laterRecords</c> (decided with the user, 2026-10-12). Every record the entry
+/// names is checked: each is a pass, names its commit, and is fetched through its tag, which names that commit;
+/// the floor record's paths hold since its commit, a later record's are not compared. The versions the records
+/// cover between them are held to those published within the Wrappers' declared range before X
+/// (<see cref="WrapperRange"/>, 2026-10-12).</para>
 /// </summary>
 public static partial class ByHand
 {
@@ -127,55 +134,49 @@ public static partial class ByHand
                 }
                 else if (held.ValueKind == JsonValueKind.Object)
                 {
-                    var commit = Text(held, "commit") ?? "";
-                    var tag = Text(held, "tag") ?? "";
-                    var at = Text(held, "path") ?? "";
-                    var verdict = Text(held, "verdict") ?? "";
-                    var good = true;
-                    var expected = IsPath(at) ? TagFor(at) : null;
-                    if (!FullCommit().IsMatch(commit))
-                    {
-                        report.Refuse($"{name}'s record in {IndexPath} names its commit as '{commit}'. Write the commit the record was made at in full, forty hex digits.", IndexPath);
-                        good = false;
-                    }
-                    if (tag.Length == 0)
-                    {
-                        report.Refuse($"{name}'s record in {IndexPath} names no 'tag'. A run tags the commit it verified with {TagRule}{(expected is null ? "" : $", here {expected}")}, and pushes the tag; the record names it, and the release workflow fetches the commit through it (ADR-0208, 2026-10-12).", IndexPath);
-                        good = false;
-                    }
-                    else if (expected is not null && tag != expected)
-                    {
-                        report.Refuse($"{name}'s record in {IndexPath} is {at} and names the tag '{tag}'. A record's tag is {TagRule}: {expected}, one tag for each record directory (ADR-0208, 2026-10-12).", IndexPath);
-                        good = false;
-                    }
-                    if (expected is null || at.EndsWith('/'))
-                    {
-                        report.Refuse($"{name}'s record in {IndexPath} is '{at}', and a record is a file in its run's directory under verification/, whose name its tag carries.", IndexPath);
-                        good = false;
-                    }
-                    if (!Verdicts.Contains(verdict))
-                    {
-                        report.Refuse($"{name}'s record in {IndexPath} has the verdict '{verdict}', and a verdict is one of {string.Join(", ", Verdicts)}.", IndexPath);
-                        good = false;
-                    }
-                    IReadOnlyList<string>? versions = null;
-                    if (row == WrapperRange.Row)
-                    {
-                        // The record names the MudBlazor versions its layer-2 runs covered, so that a version published
-                        // after it can be asked for (ADR-0205, ADR-0208, 2026-10-12).
-                        versions = Versions(held, name, report);
-                        if (versions is null) good = false;
-                    }
-                    if (good) record = new ByHandRecord(commit, tag, at, verdict, versions);
+                    record = Record(held, row, name, $"{name}'s record", report);
                 }
                 else if (held.ValueKind != JsonValueKind.Null)
                 {
                     report.Refuse($"{name}'s 'record' in {IndexPath} is neither a record nor null.", IndexPath);
                 }
 
+                var later = new List<ByHandRecord>();
+                if (item.TryGetProperty(LaterRecords, out var laterList))
+                {
+                    if (row != WrapperRange.Row)
+                    {
+                        report.Refuse($"{name} in {IndexPath} names '{LaterRecords}', and only {WrapperRange.Row}'s entry does: the records of layer-2 runs at a {WrapperRange.Package} version published after its floor record (2026-10-12).", IndexPath);
+                    }
+                    else if (laterList.ValueKind != JsonValueKind.Array)
+                    {
+                        report.Refuse($"{name}'s '{LaterRecords}' in {IndexPath} is not a list of records.", IndexPath);
+                    }
+                    else
+                    {
+                        if (record is null && laterList.GetArrayLength() > 0)
+                            report.Refuse($"{name} in {IndexPath} names records in '{LaterRecords}' and no floor record. A later layer-2 run stands beside the floor run, never in its place (ADR-0205, 2026-10-12).", IndexPath);
+                        var number2 = 0;
+                        foreach (var entry in laterList.EnumerateArray())
+                        {
+                            number2++;
+                            if (entry.ValueKind != JsonValueKind.Object)
+                            {
+                                report.Refuse($"Record {number2} of {name}'s '{LaterRecords}' in {IndexPath} is not a record.", IndexPath);
+                                continue;
+                            }
+                            if (Record(entry, row, name, $"{name}'s later record {number2}", report) is { } each) later.Add(each);
+                        }
+                        // One tag per record directory (2026-10-12): two records the entry names in one directory would share it.
+                        var all = (record is null ? later : [record, .. later]).ToList();
+                        foreach (var shared in all.GroupBy(r => r.Tag, StringComparer.Ordinal).Where(g => g.Count() > 1))
+                            report.Refuse($"{name} in {IndexPath} names {string.Join(", ", shared.Select(r => r.Path))} in one directory, tagged {shared.Key}. A layer-2 run at a later version is a run of its own, whose record goes in a directory of its own, one tag for each record directory (2026-10-12).", IndexPath);
+                    }
+                }
+
                 if (read.Any(r => r.Name == name))
                     report.Refuse($"{name} is written twice in {IndexPath}.", IndexPath);
-                read.Add(new ByHandRow(row, where, paths, record));
+                read.Add(new ByHandRow(row, where, paths, record, later));
             }
             return read;
         }
@@ -213,30 +214,9 @@ public static partial class ByHand
                 continue;
             }
             var record = row.Record;
-            var held = tree.ReadText(record.Path);
-            if (held is null)
-                report.Refuse($"{row.Name}'s record, {record.Path}, is not at the tag.", IndexPath);
-            else if (!SignOff.Names(held, record.Commit))
-                report.Refuse($"{row.Name}'s record, {record.Path}, does not name the commit {record.Commit[..12]} that {IndexPath} says it was made at. A record names the commit it verified.", record.Path);
-            if (record.Verdict != "pass")
+            if (!Verified(git, tree, row, record, "record", fetchMissing, report))
             {
-                report.Refuse($"{row.Name}'s latest record, {record.Path}, reads '{record.Verdict}', and a row holds only on a pass (ADR-0208; the Definition of Done's Step 7).", IndexPath);
-                toRun.Add(row.Name);
-                continue;
-            }
-            // The record's commit, through the tag its run put on it (2026-10-12): asked of the remote when this
-            // clone does not have the tag, and refused as unchecked when it cannot be had or names another commit.
-            var tagged = git.TagCommit(record.Tag) ?? (fetchMissing ? git.FetchTag(record.Tag) : null);
-            if (tagged is null)
-            {
-                report.Refuse($"{row.Name}'s record was made at {record.Commit[..12]}, and the tag {record.Tag} that keeps that commit is not in this repository"
-                    + (fetchMissing ? $", and {git.Remote} did not give it" : " (fetch the tags, or run with --fetch-missing)")
-                    + ", so whether its code changed since cannot be checked. The run that made the record tags the commit it verified and pushes the tag (ADR-0208, 2026-10-12).", IndexPath);
-                continue;
-            }
-            if (tagged != record.Commit)
-            {
-                report.Refuse($"{row.Name}'s record was made at {record.Commit[..12]}, and its tag {record.Tag} names {tagged[..12]}. A run's tag names the commit it verified and is never moved, so one of the two is wrong (ADR-0208, 2026-10-12).", IndexPath);
+                if (record.Verdict != "pass") toRun.Add(row.Name);
                 continue;
             }
             var commit = record.Commit;
@@ -250,12 +230,22 @@ public static partial class ByHand
             }
             if (row.Row == WrapperRange.Row)
             {
-                // A MudBlazor version published after the floor record asks for the layer-2 runs at it (2026-10-12).
-                var unrun = WrapperRange.Check(row, targetTree, mudBlazor, report);
-                if (unrun is null) continue;
+                // Every later record the entry names is read as the floor record is, but for its paths: a pass, naming
+                // its commit, fetched through its tag, which names that commit (2026-10-12). The versions are the union
+                // of those the records that hold cover.
+                var covered = new List<string>(record.Versions ?? []);
+                var laterHold = true;
+                foreach (var later in row.Later ?? [])
+                {
+                    if (Verified(git, tree, row, later, "later record", fetchMissing, report)) covered.AddRange(later.Versions ?? []);
+                    else laterHold = false;
+                }
+                // A MudBlazor version published after the floor record and before X asks for the layer-2 runs at it (2026-10-12).
+                var unrun = WrapperRange.Check(row, covered.Distinct(StringComparer.Ordinal).ToList(), targetTree, git.CommitTime(target), git.CommitTime(commit), mudBlazor, report);
+                if (unrun is null || !laterHold) continue;
                 if (unrun.Count > 0)
                 {
-                    toRun.Add($"{row.Name}'s layer-2 runs at {WrapperRange.Package} {string.Join(", ", unrun)}");
+                    toRun.Add($"{row.Name}'s layer-2 runs at {WrapperRange.Package} {string.Join(", ", unrun.Select(u => u.Version))}");
                     continue;
                 }
             }
@@ -295,6 +285,86 @@ public static partial class ByHand
             report.Refuse($"{listed.Name} is in {table.Source}'s table and not in {IndexPath}. The two list the same rows (ADR-0208).", table.Source, listed.Line);
     }
 
+    // Refuses a record whose file at the tag does not name its commit, and returns whether the rest of the record
+    // can be judged: its verdict is a pass, and its commit is had through its tag, which names it (2026-10-12), asked
+    // of the remote when this clone does not have the tag. Each failure is refused.
+    private static bool Verified(Git git, ISourceTree tree, ByHandRow row, ByHandRecord record, string what, bool fetchMissing, Report report)
+    {
+        var held = tree.ReadText(record.Path);
+        if (held is null)
+            report.Refuse($"{row.Name}'s {what}, {record.Path}, is not at the tag.", IndexPath);
+        else if (!SignOff.Names(held, record.Commit))
+            report.Refuse($"{row.Name}'s {what}, {record.Path}, does not name the commit {record.Commit[..12]} that {IndexPath} says it was made at. A record names the commit it verified.", record.Path);
+        if (record.Verdict != "pass")
+        {
+            report.Refuse($"{row.Name}'s {(what == "record" ? "latest record" : what)}, {record.Path}, reads '{record.Verdict}', and a row holds only on a pass (ADR-0208; the Definition of Done's Step 7).", IndexPath);
+            return false;
+        }
+        var tagged = git.TagCommit(record.Tag) ?? (fetchMissing ? git.FetchTag(record.Tag) : null);
+        if (tagged is null)
+        {
+            report.Refuse($"{row.Name}'s {what} was made at {record.Commit[..12]}, and the tag {record.Tag} that keeps that commit is not in this repository"
+                + (fetchMissing ? $", and {git.Remote} did not give it" : " (fetch the tags, or run with --fetch-missing)")
+                + ", so whether its code changed since cannot be checked. The run that made the record tags the commit it verified and pushes the tag (ADR-0208, 2026-10-12).", IndexPath);
+            return false;
+        }
+        if (tagged != record.Commit)
+        {
+            report.Refuse($"{row.Name}'s {what} was made at {record.Commit[..12]}, and its tag {record.Tag} names {tagged[..12]}. A run's tag names the commit it verified and is never moved, so one of the two is wrong (ADR-0208, 2026-10-12).", IndexPath);
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>The key of WR-10's entry that names the records of its later layer-2 runs.</summary>
+    public const string LaterRecords = "laterRecords";
+
+    // A record as the index writes it: commit, tag, path, verdict, and on WR-10 the versions. Null, refused, when
+    // any of it is malformed.
+    private static ByHandRecord? Record(JsonElement held, string row, string name, string what, Report report)
+    {
+        var commit = Text(held, "commit") ?? "";
+        var tag = Text(held, "tag") ?? "";
+        var at = Text(held, "path") ?? "";
+        var verdict = Text(held, "verdict") ?? "";
+        var good = true;
+        var expected = IsPath(at) ? TagFor(at) : null;
+        if (!FullCommit().IsMatch(commit))
+        {
+            report.Refuse($"{what} in {IndexPath} names its commit as '{commit}'. Write the commit the record was made at in full, forty hex digits.", IndexPath);
+            good = false;
+        }
+        if (tag.Length == 0)
+        {
+            report.Refuse($"{what} in {IndexPath} names no 'tag'. A run tags the commit it verified with {TagRule}{(expected is null ? "" : $", here {expected}")}, and pushes the tag; the record names it, and the release workflow fetches the commit through it (ADR-0208, 2026-10-12).", IndexPath);
+            good = false;
+        }
+        else if (expected is not null && tag != expected)
+        {
+            report.Refuse($"{what} in {IndexPath} is {at} and names the tag '{tag}'. A record's tag is {TagRule}: {expected}, one tag for each record directory (ADR-0208, 2026-10-12).", IndexPath);
+            good = false;
+        }
+        if (expected is null || at.EndsWith('/'))
+        {
+            report.Refuse($"{what} in {IndexPath} is '{at}', and a record is a file in its run's directory under verification/, whose name its tag carries.", IndexPath);
+            good = false;
+        }
+        if (!Verdicts.Contains(verdict))
+        {
+            report.Refuse($"{what} in {IndexPath} has the verdict '{verdict}', and a verdict is one of {string.Join(", ", Verdicts)}.", IndexPath);
+            good = false;
+        }
+        IReadOnlyList<string>? versions = null;
+        if (row == WrapperRange.Row)
+        {
+            // Each of WR-10's records names the MudBlazor versions its layer-2 runs covered, so that a version
+            // published after the floor record can be asked for (ADR-0205, ADR-0208, 2026-10-12).
+            versions = Versions(held, what, report);
+            if (versions is null) good = false;
+        }
+        return good ? new ByHandRecord(commit, tag, at, verdict, versions) : null;
+    }
+
     /// <summary>
     /// A path from the repository's root, not absolute, with no backslash and no '..': a file, or a
     /// directory ending in <c>/</c>, with no wildcard; or a pattern written <c>:(glob)&lt;pattern&gt;</c>,
@@ -323,11 +393,11 @@ public static partial class ByHand
         : tree.IsFile(path);
 
     // WR-10's 'versions': the stable MudBlazor versions its layer-2 runs covered, at least one.
-    private static IReadOnlyList<string>? Versions(JsonElement held, string name, Report report)
+    private static IReadOnlyList<string>? Versions(JsonElement held, string what, Report report)
     {
         if (!held.TryGetProperty("versions", out var list) || list.ValueKind != JsonValueKind.Array || list.GetArrayLength() == 0)
         {
-            report.Refuse($"{name}'s record in {IndexPath} names no 'versions'. Its record names the {WrapperRange.Package} versions its layer-2 runs covered, as [\"9.6.0\", \"9.7.0\"], and a stable version published within the Wrappers' declared range that it does not name refuses the tag (ADR-0205, ADR-0208, 2026-10-12).", IndexPath);
+            report.Refuse($"{what} in {IndexPath} names no 'versions'. Each of WR-10's records names the {WrapperRange.Package} versions its layer-2 runs covered, as [\"9.6.0\", \"9.7.0\"], and a stable version published within the Wrappers' declared range before X that none of them names refuses the tag (ADR-0205, ADR-0208, 2026-10-12).", IndexPath);
             return null;
         }
         var versions = new List<string>();
@@ -337,7 +407,7 @@ public static partial class ByHand
             var value = item.ValueKind == JsonValueKind.String ? item.GetString()! : item.ToString();
             if (item.ValueKind != JsonValueKind.String || PackageVersion.Parse(value) is not { IsStable: true })
             {
-                report.Refuse($"{name}'s record in {IndexPath} names '{value}' among its 'versions', and each is a stable {WrapperRange.Package} version its layer-2 runs covered, as 9.6.0.", IndexPath);
+                report.Refuse($"{what} in {IndexPath} names '{value}' among its 'versions', and each is a stable {WrapperRange.Package} version its layer-2 runs covered, as 9.6.0.", IndexPath);
                 good = false;
                 continue;
             }

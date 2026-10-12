@@ -8,9 +8,10 @@ using ExGrid.Release;
 //   dotnet run --project tools/release/ExGrid.Release -- gate --tag v0.1.0-rc.1 --commit HEAD
 //   dotnet run --project tools/release/ExGrid.Release -- by-hand --at HEAD
 //
-// WR-10's record is held to the MudBlazor versions nuget.org lists as published within the range the
-// Wrappers declare (2026-10-12): read from --mudblazor-index, nuget.org's flat-container index unless
-// another address, or a saved copy of it, is given. A list that cannot be read refuses the tag.
+// WR-10's records are held to the MudBlazor versions nuget.org gives as published within the range the
+// Wrappers declare before X's commit time (2026-10-12): read from --mudblazor-index, nuget.org's
+// registration index unless another address, or a saved copy of it with its pages inlined, is given. A
+// list that cannot be read refuses the tag.
 //
 // Exit code 0 admits, 1 refuses, 2 is a usage error or a check that could not be made.
 
@@ -25,8 +26,8 @@ const string Usage = """
               structural check (ADR-0205). For a stable version and a release candidate: the corpus
               check and the rows checked by hand (ADR-0208). A plain prerelease passes.
               --fetch-missing asks the remote for a record's verified/* tag this clone lacks.
-              --mudblazor-index is where MudBlazor's published versions are listed, for WR-10's
-              record (default: nuget.org's flat-container index).
+              --mudblazor-index is where MudBlazor's published versions and their dates are
+              listed, for WR-10's records (default: nuget.org's registration index).
       by-hand --at <rev> [--repo <dir>] [--remote <name>] [--fetch-missing]
               [--mudblazor-index <url or file>]
               Which rows checked by hand would hold if <rev> were signed off, and which need a run,
@@ -66,7 +67,7 @@ string? Option(string name) => options.TryGetValue(name, out var value) ? value 
 var git = new Git(Option("--repo") ?? Directory.GetCurrentDirectory()) { Remote = Option("--remote") ?? "origin" };
 var report = new Report();
 // Read only when WR-10's record otherwise holds, and then once.
-var mudBlazor = new NuGetFlatContainer(Option("--mudblazor-index") ?? WrapperRange.FlatContainer);
+var mudBlazor = new NuGetRegistration(Option("--mudblazor-index") ?? WrapperRange.Registration);
 
 try
 {

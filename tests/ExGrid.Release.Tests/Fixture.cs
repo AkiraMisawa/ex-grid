@@ -7,7 +7,10 @@ namespace ExGrid.Release.Tests;
 /// A row of a fixture's record index and table, the <c>verified/*</c> tag its record names, and, for WR-10, the
 /// MudBlazor versions its record's layer-2 runs covered.
 /// </summary>
-public sealed record Row(string Name, string Where, string[] Paths, (string Commit, string Path, string Verdict)? Record = null, string Tag = Fixture.RunTag, string[]? Versions = null);
+public sealed record Row(string Name, string Where, string[] Paths, (string Commit, string Path, string Verdict)? Record = null, string Tag = Fixture.RunTag, string[]? Versions = null, Later[]? Later = null);
+
+/// <summary>A later layer-2 run's record WR-10's entry names besides its floor record (2026-10-12).</summary>
+public sealed record Later(string Commit, string Tag, string Path, string Verdict, string[] Versions);
 
 /// <summary>The files a fixture repository holds, written as the release check reads them.</summary>
 public static class Fixture
@@ -31,12 +34,18 @@ public static class Fixture
         var json = new
         {
             about = "fixture",
-            rows = rows.Select(r => new
+            rows = rows.Select(r =>
             {
-                row = r.Name,
-                where = r.Where,
-                paths = r.Paths,
-                record = r.Record is { } held ? Record(held, r.Tag, r.Versions) : null,
+                var row = new Dictionary<string, object?>
+                {
+                    ["row"] = r.Name,
+                    ["where"] = r.Where,
+                    ["paths"] = r.Paths,
+                    ["record"] = r.Record is { } held ? Record(held, r.Tag, r.Versions) : null,
+                };
+                if (r.Later is not null)
+                    row["laterRecords"] = r.Later.Select(l => Record((l.Commit, l.Path, l.Verdict), l.Tag, l.Versions)).ToList();
+                return row;
             }),
         };
         return JsonSerializer.Serialize(json, new JsonSerializerOptions { WriteIndented = true });

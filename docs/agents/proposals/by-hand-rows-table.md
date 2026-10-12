@@ -35,13 +35,16 @@ change could change its result.
   - that commit cannot be fetched through the record's tag, or the tag names another commit, so whether
     its paths changed cannot be checked;
   - a path names nothing;
-  - for WR-10, a stable MudBlazor version nuget.org lists within the range the Wrappers declare is not among
-    the versions its record's layer-2 runs covered, or that list cannot be read *(2026-10-12, how the
-    release workflow checks the WR-10 row's note below; nuget.org gives no dates, so a version published
-    after X is asked for as well)*.
+  - for WR-10, a record its entry names besides the floor record is refused as the floor record would be,
+    but for its paths; or a stable MudBlazor version within the range the Wrappers declare, published before
+    X's commit time by nuget.org's registration index or given no date there, is not among the versions its
+    records' layer-2 runs covered; or that index cannot be read *(2026-10-12, how the release workflow checks
+    the WR-10 row's notes below)*.
 - **The records are indexed in `verification/by-hand.json`.** For each row it names the same paths as
-  this table, the row's latest record, the commit that record was made at, and the record's tag; for
-  WR-10, besides, the MudBlazor versions its layer-2 runs covered. A layer-1 test
+  this table, the row's latest record, the commit that record was made at, and the record's tag. *(2026-10-12,
+  how the release workflow checks the WR-10 row: for WR-10 each record names besides the MudBlazor versions
+  its layer-2 runs covered, and the entry names the records of later layer-2 runs, by the row's notes,
+  besides the floor record.)* A layer-1 test
   (`tests/ExGrid.Release.Tests`) fails when the index and the table differ, and the release workflow
   refuses a tag where they do.
 
@@ -96,4 +99,4 @@ row's and refuses a tag whose Wrappers or demo pages changed since the run.
 | **KB-3** | macOS | Layer 3 on a Mac, where `ControlOrMeta` presses Command: Cmd+Enter fills, on every key path, the editor's included | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Cells/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid.MudBlazor/`, `src/ExSheet/Components/`, `src/ExSheet/SheetFormatKeys.cs`, `src/ExSheet/SheetStructureKeys.cs`, `src/ExSheet/Toolbar/`, `src/ExSheet.MudBlazor/`, `tests/ExGrid.Browser/` |
 | **VZ-18** | the Citrix PC | Ctrl+↓, Ctrl+↑ and PageDown on the Docs Site's blotter paint the rows they reveal, without a further scroll | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExGrid/GridMetrics.cs`, `src/ExGrid/ViewportBox.cs`, `src/ExGrid/ViewportGeometry.cs`, `src/ExGrid/ViewportSize.cs`, `src/ExGrid.MudBlazor/`, `samples/ExGrid.Docs/Examples/Grid/Blotter/`, `samples/ExGrid.Docs/Showcases/Blotter.razor` |
 | **§21.11** | Windows | Where DOM focus is after ↓, → and ↓ ↓ on `/sheet`, with and without a Focus. Read under NVDA, under Narrator, and with neither, on Chrome and Edge | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
-| **WR-10** | Windows or Linux | Step 4's floor run: the layer-3 tests that run under a Wrapper, against a DemoHost built with the MudBlazor every Wrapper declares as its floor, on both hosts, in Chrome and in Edge; and beside it each Wrapper's layer-2 suite at every published version of its declared range. *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only; the floor run, layer 3 at 9.6.0, holds while its paths are unchanged.)* | `:(glob)src/*.MudBlazor/**`, `samples/ExGrid.DemoPages/` |
+| **WR-10** | Windows or Linux | Step 4's floor run: the layer-3 tests that run under a Wrapper, against a DemoHost built with the MudBlazor every Wrapper declares as its floor, on both hosts, in Chrome and in Edge; and beside it each Wrapper's layer-2 suite at every published version of its declared range. *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only; the floor run, layer 3 at 9.6.0, holds while its paths are unchanged.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own; its record goes in its own `verification/<date>-<name>/` directory, the run tags the commit it verified `verified/` followed by that directory's name, and WR-10's entry in `verification/by-hand.json` names that record besides the floor record. The release check reads every record the entry names: the floor record's paths hold since its commit, and each later record's tag names its commit.)* | `:(glob)src/*.MudBlazor/**`, `samples/ExGrid.DemoPages/` |

@@ -114,8 +114,8 @@ public class RepositoryTests
 
         Assert.Contains("tools/release/ExGrid.Release -c Release -- admit", release);
         Assert.Contains("tools/release/ExGrid.Release -c Release -- gate", release);
-        // WR-10's record is held to the MudBlazor versions nuget.org lists (ADR-0205, ADR-0208, 2026-10-12).
-        Assert.Contains($"--mudblazor-index {WrapperRange.FlatContainer}", release);
+        // WR-10's records are held to the MudBlazor versions nuget.org's registration index dates (ADR-0205, ADR-0208, 2026-10-12).
+        Assert.Contains($"--mudblazor-index {WrapperRange.Registration}", release);
         Assert.Contains("long: ${{ needs.admit.outputs.long == 'true' }}", release);
         Assert.Contains("if: needs.admit.outputs.site == 'true'", release);
         // A candidate's release opens with the candidate's note, any other prerelease's with the prerelease note (ADR-0190, 2026-10-12).

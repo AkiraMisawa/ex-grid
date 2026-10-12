@@ -65,7 +65,7 @@ public class GateTests
         Assert.DoesNotContain(report.Refusals, r => r.Message.Contains("Signed off"));
     }
 
-    [Fact] // ADR-0205, ADR-0208 (decided with the user, 2026-10-12): a candidate is refused while WR-10's record misses a MudBlazor version published within the Wrappers' range
+    [Fact] // ADR-0205, ADR-0208 (2026-10-12): a candidate is refused while WR-10's records miss a MudBlazor version published within the Wrappers' range before X
     public void A_candidate_is_refused_on_a_MudBlazor_version_its_floor_record_did_not_run()
     {
         using var repo = new Repo();
@@ -74,11 +74,11 @@ public class GateTests
         var version = TagVersion.Read("v0.1.0-rc.1", new Report())!;
 
         var covered = new Report();
-        Gate.Run(repo.Git, version, commit, covered, mudBlazor: new Listed(["9.5.0", "9.6.0", "9.7.0-preview.1"]));
+        Gate.Run(repo.Git, version, commit, covered, mudBlazor: Listed.Before(commit, repo, "9.5.0", "9.6.0", "9.7.0-preview.1"));
         Assert.Empty(covered.Refusals);
 
         var later = new Report();
-        Gate.Run(repo.Git, version, commit, later, mudBlazor: new Listed(["9.5.0", "9.6.0", "9.7.0"]));
+        Gate.Run(repo.Git, version, commit, later, mudBlazor: Listed.Before(commit, repo, "9.5.0", "9.6.0", "9.7.0"));
         Assert.Contains("WR-10 on Windows or Linux: MudBlazor 9.7.0, published within the range the Wrappers declare", Assert.Single(later.Refusals).Message);
     }
 

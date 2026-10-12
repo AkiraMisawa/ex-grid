@@ -11,14 +11,30 @@ public class ByHandTests
         return report;
     }
 
-    /// <summary>MudBlazor 9.0.0 to 9.11.0 and the prereleases around them, as nuget.org listed them on 2026-10-12.</summary>
-    private static readonly string[] Published =
-        ["8.15.0", "9.0.0-preview.1", "9.0.0-preview.2", "9.0.0-rc.1", "9.0.0", "9.1.0", "9.2.0", "9.3.0", "9.4.0", "9.5.0", "9.6.0", "9.7.0", "9.8.0", "9.9.0", "9.10.0", "9.11.0"];
+    /// <summary>
+    /// MudBlazor 8.15.0, 9.0.0 to 9.11.0 and the prereleases before 9.0.0, each with the date nuget.org's registration
+    /// index gave it on 2026-10-12.
+    /// </summary>
+    private static readonly (string Version, string Date)[] Published =
+    [
+        ("8.15.0", "2025-12-01T10:00:00Z"), ("9.0.0-preview.1", "2025-12-20T18:02:36Z"), ("9.0.0-preview.2", "2026-01-14T18:08:31Z"),
+        ("9.0.0-rc.1", "2026-02-11T00:24:17Z"), ("9.0.0", "2026-02-19T23:24:23Z"), ("9.1.0", "2026-03-03T21:45:43Z"),
+        ("9.2.0", "2026-03-18T01:04:43Z"), ("9.3.0", "2026-04-08T01:26:12Z"), ("9.4.0", "2026-04-22T22:51:21Z"),
+        ("9.5.0", "2026-05-26T19:35:44Z"), ("9.6.0", "2026-06-27T02:33:22Z"), ("9.7.0", "2026-07-09T18:04:10Z"),
+        ("9.8.0", "2026-08-05T17:06:24Z"), ("9.9.0", "2026-08-24T14:07:55Z"), ("9.10.0", "2026-09-13T23:02:43Z"),
+        ("9.11.0", "2026-09-27T16:05:14Z"),
+    ];
 
     /// <summary>The versions a floor record of 2026-10-12 would name: every published one of [9.6.0,10.0.0).</summary>
     private static readonly string[] Covered = ["9.6.0", "9.7.0", "9.8.0", "9.9.0", "9.10.0", "9.11.0"];
 
     private const string FloorTag = "verified/2026-11-02-linux-mudblazor-floor";
+
+    /// <summary>When a fixture's floor run verified its commit.</summary>
+    private static readonly DateTimeOffset FloorTime = DateTimeOffset.Parse("2026-10-12T12:00:00Z");
+
+    /// <summary>X's commit time in a fixture whose floor record is indexed at X.</summary>
+    private static readonly DateTimeOffset XTime = DateTimeOffset.Parse("2026-11-02T12:00:00Z");
 
     /// <summary>An index of WR-10 alone, its record written as given.</summary>
     private static string Wr10Index(string record) =>
@@ -28,22 +44,45 @@ public class ByHandTests
 
     /// <summary>
     /// A repository whose three Wrappers declare <paramref name="ranges"/> (one for all, or one each), and
-    /// whose WR-10 row is recorded at the commit their code was last changed, naming <paramref name="versions"/>.
-    /// Returns the commit that indexes it.
+    /// whose WR-10 row is recorded at the commit their code was last changed, made at <see cref="FloorTime"/>,
+    /// naming <paramref name="versions"/>. Returns the commit that indexes it, X, made at <see cref="XTime"/>.
     /// </summary>
-    private static string FloorRecorded(Repo repo, string[] versions, params string[] ranges)
+    private static string FloorRecorded(Repo repo, string[] versions, params string[] ranges) =>
+        FloorRecorded(repo, versions, null, ranges);
+
+    /// <summary>As <see cref="FloorRecorded(Repo, string[], string[])"/>, the index naming the later records <paramref name="later"/> makes.</summary>
+    private static string FloorRecorded(Repo repo, string[] versions, Func<Repo, string, Later[]>? later, params string[] ranges)
     {
         var wrappers = new[] { "ExGrid.MudBlazor", "ExSheet.MudBlazor", "ExPivot.MudBlazor" };
         for (var i = 0; i < wrappers.Length; i++)
             repo.Write($"src/{wrappers[i]}/{wrappers[i]}.csproj", Fixture.WrapperProject(ranges[Math.Min(i, ranges.Length - 1)]));
+        repo.Date = FloorTime;
         var recorded = repo.Write("samples/ExGrid.DemoPages/Pages/SheetPage.razor", "page").Commit("The Wrappers");
         repo.Tag(FloorTag, recorded);
+        var made = later?.Invoke(repo, recorded);
         var row = new Row("WR-10", "Windows or Linux", [":(glob)src/*.MudBlazor/**", "samples/ExGrid.DemoPages/"],
-            (recorded, FloorRecord, "pass"), FloorTag, versions);
-        return repo.Write(FloorRecord, $"Verified commit: `{recorded}`")
+            (recorded, FloorRecord, "pass"), FloorTag, versions, made);
+        repo.Date = XTime;
+        var x = repo.Write(FloorRecord, $"Verified commit: `{recorded}`")
             .Write("verification/by-hand.json", Fixture.Index(row))
             .Write("docs/definition-of-done.md", Fixture.Table(row))
             .Commit("The floor record");
+        repo.Date = null;
+        return x;
+    }
+
+    /// <summary>
+    /// A later layer-2 run at <paramref name="versions"/>, made at <paramref name="at"/> in a directory of its own,
+    /// <paramref name="directory"/>, its record naming <paramref name="names"/> (its commit unless given) and its
+    /// commit tagged <paramref name="tag"/> (verified/ and the directory unless given; none when empty).
+    /// </summary>
+    private static Later LaterRun(Repo repo, string at, string directory, string[] versions, string verdict = "pass", string? tag = null, string? names = null)
+    {
+        var path = $"verification/{directory}/mudblazor-layer2.log";
+        tag ??= $"verified/{directory}";
+        if (tag.Length > 0) repo.Tag(tag, at);
+        repo.Write(path, $"== MudBlazor {string.Join(", ", versions)}, at {names ?? at}");
+        return new Later(at, tag.Length > 0 ? tag : $"verified/{directory}", path, verdict, versions);
     }
 
     [Fact] // ADR-0208: a row's record holds while the code it covers is unchanged since
@@ -245,7 +284,7 @@ public class ByHandTests
             .Write("verification/by-hand.json", Fixture.Index(row))
             .Write("docs/definition-of-done.md", Fixture.Table(row))
             .Commit("The floor record");
-        var published = new Listed(Published);
+        var published = Listed.Dated(Published);
         Assert.Empty(Check(repo, indexed, indexed, published).Refusals);
 
         var core = repo.Write("src/ExGrid/Grid.cs", "core, changed").Write("samples/ExGrid.DemoHost/Program.cs", "host, changed").Commit("Neither a Wrapper nor a demo page");
@@ -322,34 +361,225 @@ public class ByHandTests
         Assert.Contains("a record is a file in its run's directory under verification/", Assert.Single(report.Refusals).Message);
     }
 
-    [Fact] // ADR-0205, ADR-0208 (decided with the user, 2026-10-12): WR-10 holds while its record names every stable MudBlazor published within the Wrappers' range
+    [Fact] // ADR-0205, ADR-0208 (2026-10-12): WR-10 holds while its record names every stable MudBlazor published within the Wrappers' range before X
     public void WR_10_holds_on_a_record_that_names_every_published_version_of_the_range()
     {
         using var repo = new Repo();
         var commit = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)");
 
         // Below the floor, above the range, and the prereleases are not asked for.
-        var report = Check(repo, commit, commit, new Listed([.. Published, "9.12.0-preview.1", "10.0.0", "10.1.0"]));
+        var report = Check(repo, commit, commit, Listed.Dated([.. Published, ("9.12.0-preview.1", "2026-10-15T00:00:00Z"), ("10.0.0", "2026-10-20T00:00:00Z"), ("10.1.0", "2026-10-25T00:00:00Z")]));
 
         Assert.Empty(report.Refusals);
         Assert.Contains(report.Notices, n => n.Contains("Holding on their records, their code unchanged since: WR-10 on Windows or Linux"));
     }
 
-    [Fact] // ADR-0205, ADR-0208 (decided with the user, 2026-10-12): a 9.x published after the floor record asks for the layer-2 runs at it, and the tag is refused naming it
-    public void WR_10_is_refused_naming_each_version_published_after_its_record()
+    [Fact] // ADR-0205, ADR-0208 (2026-10-12): a 9.x published after the floor record and before X asks for the layer-2 runs at it; the check refuses the tag naming it
+    public void WR_10_is_refused_naming_each_version_published_after_its_record_and_before_X()
     {
         using var repo = new Repo();
         var commit = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)");
 
-        var report = Check(repo, commit, commit, new Listed([.. Published, "9.12.0", "9.13.0-rc.1", "9.13.0", "10.0.0"]));
+        var report = Check(repo, commit, commit, Listed.Dated([.. Published,
+            ("9.12.0", "2026-10-20T00:00:00Z"), ("9.13.0-rc.1", "2026-10-25T00:00:00Z"), ("9.13.0", "2026-11-10T00:00:00Z"), ("10.0.0", "2026-10-30T00:00:00Z")]));
 
         var refusal = Assert.Single(report.Refusals).Message;
-        Assert.Contains("WR-10 on Windows or Linux: MudBlazor 9.12.0, 9.13.0, published within the range the Wrappers declare ([9.6.0,10.0.0)), are not among the versions its record's layer-2 runs covered (9.6.0, 9.7.0, 9.8.0, 9.9.0, 9.10.0, 9.11.0)", refusal);
-        Assert.Contains("asks for each Wrapper's layer-2 suite at that version only", refusal);
-        Assert.Contains("the floor run holds while its paths are unchanged", refusal);
+        Assert.Contains("WR-10 on Windows or Linux: MudBlazor 9.12.0, published within the range the Wrappers declare ([9.6.0,10.0.0)), is not among the versions its records' layer-2 runs covered (9.6.0, 9.7.0, 9.8.0, 9.9.0, 9.10.0, 9.11.0)", refusal);
+        Assert.Contains("9.12.0 (2026-10-20), published after the floor record and before X, which asks for each Wrapper's layer-2 suite at that version only, a run of its own whose record goes in a directory of its own", refusal);
+        Assert.Contains("The floor run holds while its paths are unchanged", refusal);
+        Assert.DoesNotContain("9.13.0", refusal);
         Assert.DoesNotContain("10.0.0,", refusal);
-        Assert.Contains(report.Notices, n => n.Contains("To run by hand at") && n.Contains("WR-10 on Windows or Linux's layer-2 runs at MudBlazor 9.12.0, 9.13.0"));
+        Assert.Contains(report.Notices, n => n.Contains("MudBlazor 9.13.0, published within the range the Wrappers declare after X (2026-11-02 12:00:00Z, its commit time), is not asked for"));
+        Assert.Contains(report.Notices, n => n.Contains("To run by hand at") && n.Contains("WR-10 on Windows or Linux's layer-2 runs at MudBlazor 9.12.0"));
         Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
+    }
+
+    [Fact] // ADR-0205, ADR-0208 (2026-10-12): a version published after X's commit time is not asked for, the time read from X's commit, not the clock
+    public void WR_10_does_not_ask_for_a_version_published_after_X()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)");
+
+        // A second after X's commit time, though long before the clock reads this test.
+        var report = Check(repo, commit, commit, Listed.Dated([.. Published, ("9.12.0", "2026-11-02T12:00:01Z")]));
+
+        Assert.Empty(report.Refusals);
+        Assert.Contains(report.Notices, n => n.Contains("MudBlazor 9.12.0, published within the range the Wrappers declare after X"));
+
+        // A second before it is asked for.
+        var before = Check(repo, commit, commit, Listed.Dated([.. Published, ("9.12.0", "2026-11-02T11:59:59Z")]));
+        Assert.Contains("MudBlazor 9.12.0, published within the range", Assert.Single(before.Refusals).Message);
+    }
+
+    [Fact] // ADR-0205 (2026-10-12): a version published before the floor record that it does not name is asked of the floor run's layer-2 runs, which cover every published version of the range
+    public void WR_10_is_refused_on_a_version_published_before_its_floor_record_that_it_does_not_name()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, ["9.6.0", "9.7.0", "9.9.0", "9.10.0", "9.11.0"], "[9.6.0,10.0.0)");
+
+        var refusal = Assert.Single(Check(repo, commit, commit, Listed.Dated(Published)).Refusals).Message;
+
+        Assert.Contains("MudBlazor 9.8.0, published within the range", refusal);
+        Assert.Contains("9.8.0 (2026-08-05), published before the floor record's commit, which the floor run's layer-2 runs cover", refusal);
+    }
+
+    [Fact] // ADR-0205 (2026-10-12): a version nuget.org gives no date for, as an unlisted one, is asked for, since whether it came before X cannot be said
+    public void WR_10_asks_for_a_version_without_a_date()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)");
+        var listed = new Listed([.. Listed.Dated(Published).Versions, new PublishedVersion("9.11.1", null)]);
+
+        var refusal = Assert.Single(Check(repo, commit, commit, listed).Refusals).Message;
+
+        Assert.Contains("9.11.1 (no date given), for which nuget.org gives no date", refusal);
+    }
+
+    [Fact] // ADR-0205, ADR-0208 (decided with the user, 2026-10-12): a layer-2 run at a later 9.x is a run of its own, and WR-10 holds on the versions its records cover between them
+    public void WR_10_holds_on_a_later_record_beside_the_floor_record()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, (r, floor) =>
+        {
+            r.Date = DateTimeOffset.Parse("2026-10-25T12:00:00Z");
+            var at = r.Write("README.md", "a later commit").Commit("Where the later run was made");
+            return [LaterRun(r, at, "2026-10-25-linux-mudblazor-9.12.0", ["9.12.0"])];
+        }, "[9.6.0,10.0.0)");
+        var listed = Listed.Dated([.. Published, ("9.12.0", "2026-10-20T00:00:00Z")]);
+
+        var report = Check(repo, commit, commit, listed);
+
+        Assert.Empty(report.Refusals);
+        Assert.Contains(report.Notices, n => n.Contains("Holding on their records, their code unchanged since: WR-10 on Windows or Linux"));
+        var row = Assert.Single(ByHand.ReadIndex(new CommitTree(repo.Git, commit), new Report())!);
+        Assert.Equal("verified/2026-10-25-linux-mudblazor-9.12.0", Assert.Single(row.Later!).Tag);
+    }
+
+    [Fact] // ADR-0208 (decided with the user, 2026-10-12): a later record's tag is verified/ followed by its own directory's name
+    public void A_later_record_tagged_for_another_directory_is_refused()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, (r, floor) =>
+        {
+            var at = r.Write("README.md", "later").Commit();
+            return [LaterRun(r, at, "2026-10-25-linux-mudblazor-9.12.0", ["9.12.0"], tag: "verified/2026-10-25-linux-mudblazor")];
+        }, "[9.6.0,10.0.0)");
+
+        var report = new Report();
+        var row = Assert.Single(ByHand.ReadIndex(new CommitTree(repo.Git, commit), report)!);
+
+        Assert.Empty(row.Later!);
+        Assert.Contains("WR-10 on Windows or Linux's later record 1 in verification/by-hand.json is verification/2026-10-25-linux-mudblazor-9.12.0/mudblazor-layer2.log and names the tag 'verified/2026-10-25-linux-mudblazor'", Assert.Single(report.Refusals).Message);
+    }
+
+    [Fact] // ADR-0208 (decided with the user, 2026-10-12): a later layer-2 run's record goes in a directory of its own, never the floor record's
+    public void A_later_record_in_the_floor_record_s_directory_is_refused()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, (r, floor) =>
+        {
+            r.Write("verification/2026-11-02-linux-mudblazor-floor/mudblazor-layer2-9.12.0.log", $"at {floor}");
+            return [new Later(floor, FloorTag, "verification/2026-11-02-linux-mudblazor-floor/mudblazor-layer2-9.12.0.log", "pass", ["9.12.0"])];
+        }, "[9.6.0,10.0.0)");
+
+        var report = new Report();
+        ByHand.ReadIndex(new CommitTree(repo.Git, commit), report);
+
+        Assert.Contains("names verification/2026-11-02-linux-mudblazor-floor/results.md, verification/2026-11-02-linux-mudblazor-floor/mudblazor-layer2-9.12.0.log in one directory, tagged verified/2026-11-02-linux-mudblazor-floor", Assert.Single(report.Refusals).Message);
+    }
+
+    [Fact] // ADR-0208 (decided with the user, 2026-10-12): a later record's commit is fetched through its tag; a tag that is not there refuses the tag as unchecked
+    public void A_later_record_whose_tag_is_missing_is_refused()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, (r, floor) =>
+        {
+            var at = r.Write("README.md", "later").Commit();
+            return [LaterRun(r, at, "2026-10-25-linux-mudblazor-9.12.0", ["9.12.0"], tag: "")];
+        }, "[9.6.0,10.0.0)");
+
+        var report = Check(repo, commit, commit, Listed.Dated([.. Published, ("9.12.0", "2026-10-20T00:00:00Z")]));
+
+        Assert.Contains(report.Refusals, r => r.Message.Contains("WR-10 on Windows or Linux's later record was made at") && r.Message.Contains("the tag verified/2026-10-25-linux-mudblazor-9.12.0 that keeps that commit is not in this repository"));
+        // Its versions are not counted: 9.12.0 is asked for besides.
+        Assert.Contains(report.Refusals, r => r.Message.Contains("MudBlazor 9.12.0, published within the range"));
+        Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
+    }
+
+    [Fact] // ADR-0208 (decided with the user, 2026-10-12): each later record's tag names its commit
+    public void A_later_record_whose_tag_names_another_commit_is_refused()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, (r, floor) =>
+        {
+            var at = r.Write("README.md", "later").Commit();
+            var other = r.Write("README.md", "another").Commit();
+            r.Tag("verified/2026-10-25-linux-mudblazor-9.12.0", other);
+            return [LaterRun(r, at, "2026-10-25-linux-mudblazor-9.12.0", ["9.12.0"], tag: "")];
+        }, "[9.6.0,10.0.0)");
+
+        var report = Check(repo, commit, commit, Listed.Dated([.. Published, ("9.12.0", "2026-10-20T00:00:00Z")]));
+
+        Assert.Contains(report.Refusals, r => r.Message.Contains("WR-10 on Windows or Linux's later record was made at") && r.Message.Contains("and its tag verified/2026-10-25-linux-mudblazor-9.12.0 names"));
+        Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
+
+        // Though no version is missing, a later record that does not hold keeps the row from holding.
+        var unasked = Check(repo, commit, commit, Listed.Dated(Published));
+        Assert.Contains("and its tag verified/2026-10-25-linux-mudblazor-9.12.0 names", Assert.Single(unasked.Refusals).Message);
+        Assert.DoesNotContain(unasked.Notices, n => n.Contains("Holding on their records"));
+    }
+
+    [Fact] // ADR-0208 (2026-10-12): a later record holds only on a pass, and names its commit; one that does not cover nothing
+    public void A_later_record_that_is_not_a_pass_or_does_not_name_its_commit_is_refused()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, (r, floor) =>
+        {
+            var failed = r.Write("README.md", "later").Commit();
+            var unnamed = r.Write("README.md", "later still").Commit();
+            return
+            [
+                LaterRun(r, failed, "2026-10-25-linux-mudblazor-9.12.0", ["9.12.0"], verdict: "fail"),
+                LaterRun(r, unnamed, "2026-10-26-linux-mudblazor-9.12.1", ["9.12.1"], names: "somewhere else"),
+            ];
+        }, "[9.6.0,10.0.0)");
+
+        var report = Check(repo, commit, commit, Listed.Dated([.. Published, ("9.12.0", "2026-10-20T00:00:00Z"), ("9.12.1", "2026-10-21T00:00:00Z")]));
+
+        Assert.Contains(report.Refusals, r => r.Message.Contains("WR-10 on Windows or Linux's later record, verification/2026-10-25-linux-mudblazor-9.12.0/mudblazor-layer2.log, reads 'fail'"));
+        Assert.Contains(report.Refusals, r => r.Message.Contains("WR-10 on Windows or Linux's later record, verification/2026-10-26-linux-mudblazor-9.12.1/mudblazor-layer2.log, does not name the commit"));
+        Assert.Contains(report.Refusals, r => r.Message.Contains("MudBlazor 9.12.0, published within the range"));
+        Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
+    }
+
+    [Fact] // ADR-0205 (decided with the user, 2026-10-12): the floor record is held by its paths since its commit, whatever later records the entry names
+    public void A_later_record_does_not_hold_the_floor_record_s_paths()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, (r, floor) =>
+        {
+            var at = r.Write("src/ExGrid.MudBlazor/MudCellEditor.razor", "a Wrapper changed after the floor run").Commit();
+            return [LaterRun(r, at, "2026-10-25-linux-mudblazor-9.12.0", ["9.12.0"])];
+        }, "[9.6.0,10.0.0)");
+
+        var report = Check(repo, commit, commit, Listed.Dated([.. Published, ("9.12.0", "2026-10-20T00:00:00Z")]));
+
+        var refusal = Assert.Single(report.Refusals).Message;
+        Assert.Contains("WR-10 on Windows or Linux: the code it covers changed between its record (verification/2026-11-02-linux-mudblazor-floor/results.md", refusal);
+        Assert.Contains("src/ExGrid.MudBlazor/MudCellEditor.razor", refusal);
+    }
+
+    [Fact] // ADR-0208 (2026-10-12): only WR-10's entry names later records
+    public void Later_records_on_another_row_are_refused()
+    {
+        using var repo = new Repo();
+        var held = "{\"commit\": \"" + new string('a', 40) + "\", \"tag\": \"verified/2026-10-01-windows-15\", \"path\": \"verification/2026-10-01-windows-15/report.md\", \"verdict\": \"pass\"}";
+        var commit = repo.Write(ByHand.IndexPath, Wr10Index(held).Replace("WR-10", "SH-42").Replace("Windows or Linux", "Windows").Replace("\"record\":", "\"laterRecords\": [], \"record\":")).Commit();
+
+        var report = new Report();
+        ByHand.ReadIndex(new CommitTree(repo.Git, commit), report);
+
+        Assert.Contains("SH-42 on Windows in verification/by-hand.json names 'laterRecords', and only WR-10's entry does", Assert.Single(report.Refusals).Message);
     }
 
     [Fact] // ADR-0205, ADR-0208 (2026-10-12): a list of published versions that cannot be read refuses the tag as unchecked, never lets WR-10 hold
@@ -368,7 +598,7 @@ public class ByHandTests
         Assert.Contains("no list of MudBlazor's published versions was given", Assert.Single(none.Refusals).Message);
     }
 
-    [Fact] // ADR-0205, ADR-0208 (2026-10-12): WR-10's record names the versions its layer-2 runs covered, each a stable version
+    [Fact] // ADR-0205, ADR-0208 (2026-10-12): WR-10's records name the versions their layer-2 runs covered, each a stable version
     public void WR_10_s_record_names_stable_versions()
     {
         using var repo = new Repo();
@@ -398,7 +628,7 @@ public class ByHandTests
         // One Wrapper still declaring the floor alone, 9.0.0 and above, asks for 9.0.0 to 9.5.0 and MudBlazor 10 too.
         var commit = FloorRecorded(repo, Covered, "9.0.0", "[9.6.0,10.0.0)");
 
-        var refusal = Assert.Single(Check(repo, commit, commit, new Listed([.. Published, "10.0.0"])).Refusals).Message;
+        var refusal = Assert.Single(Check(repo, commit, commit, Listed.Dated([.. Published, ("10.0.0", "2026-10-01T00:00:00Z")])).Refusals).Message;
 
         Assert.Contains("MudBlazor 9.0.0, 9.1.0, 9.2.0, 9.3.0, 9.4.0, 9.5.0, 10.0.0, published within the range the Wrappers declare (9.0.0, [9.6.0,10.0.0))", refusal);
     }
@@ -409,7 +639,7 @@ public class ByHandTests
         using var repo = new Repo();
         var commit = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)", "[9.6.0,10.0.0)", "9.*");
 
-        var refusal = Assert.Single(Check(repo, commit, commit, new Listed(Published)).Refusals);
+        var refusal = Assert.Single(Check(repo, commit, commit, Listed.Dated(Published)).Refusals);
 
         Assert.Contains("src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj declares MudBlazor '9.*', which this check cannot read as a range", refusal.Message);
         Assert.Equal("src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj", refusal.File);
@@ -445,30 +675,61 @@ public class ByHandTests
     [InlineData("nine")]
     public void What_is_not_a_range_is_not_read(string range) => Assert.Null(VersionRange.Parse(range));
 
-    [Fact] // ADR-0205 (2026-10-12): nuget.org's flat-container index is read as it is written; a copy that is not one is refused, never read as empty
-    public void A_flat_container_index_is_read_and_one_that_is_not_is_refused()
+    private const string RegistrationIndex = "https://registration.test/mudblazor/index.json";
+
+    private const string AwayPage = "https://registration.test/mudblazor/page/9.6.0/9.11.0.json";
+
+    private static string Leaf(string version, string published, bool listed = true) =>
+        "{\"catalogEntry\": {\"version\": \"" + version + "\", \"published\": \"" + published + "\", \"listed\": " + (listed ? "true" : "false") + "}}";
+
+    [Fact] // ADR-0205 (2026-10-12): nuget.org's registration index is read as it is written, its inlined pages and those read from their address, each version with its published date
+    public void A_registration_index_is_read_with_each_version_s_date()
     {
-        var directory = Path.Combine(Path.GetTempPath(), "exgrid-release-index-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(directory);
-        try
+        var addresses = new List<string>();
+        var data = new Dictionary<string, string>
         {
-            var saved = Path.Combine(directory, "index.json");
-            File.WriteAllText(saved, """{"versions": ["9.0.0-rc.1", "9.0.0", "9.11.0"]}""");
-            Assert.True(new NuGetFlatContainer(saved).TryRead(out var versions, out _));
-            Assert.Equal(["9.0.0-rc.1", "9.0.0", "9.11.0"], versions);
-
-            var wrong = Path.Combine(directory, "wrong.json");
-            File.WriteAllText(wrong, """{"items": []}""");
-            Assert.False(new NuGetFlatContainer(wrong).TryRead(out _, out var why));
-            Assert.Contains("not a flat-container index", why);
-
-            Assert.False(new NuGetFlatContainer(Path.Combine(directory, "absent.json")).TryRead(out _, out why));
-            Assert.NotEmpty(why);
-        }
-        finally
+            [RegistrationIndex] = $$"""{"count": 2, "items": [{"@id": "inlined", "items": [{{Leaf("9.5.0", "2026-05-26T19:35:44+00:00")}}]}, {"@id": "{{AwayPage}}"}]}""",
+            [AwayPage] = $$"""{"items": [{{Leaf("9.6.0", "2026-06-27T02:33:22.123+00:00")}}, {{Leaf("9.6.1", "1900-01-01T00:00:00+00:00", listed: false)}}]}""",
+        };
+        var registration = new NuGetRegistration(RegistrationIndex, address =>
         {
-            Directory.Delete(directory, recursive: true);
-        }
+            addresses.Add(address);
+            return data[address];
+        });
+
+        Assert.True(registration.TryRead(out var versions, out var failure), failure);
+        Assert.Equal([RegistrationIndex, AwayPage], addresses);
+        Assert.Equal(
+            [new PublishedVersion("9.5.0", DateTimeOffset.Parse("2026-05-26T19:35:44Z")), new PublishedVersion("9.6.0", DateTimeOffset.Parse("2026-06-27T02:33:22.123Z")), new PublishedVersion("9.6.1", null)],
+            versions);
+
+        // Read once.
+        Assert.True(registration.TryRead(out _, out _));
+        Assert.Equal(2, addresses.Count);
+    }
+
+    [Theory] // ADR-0205 (2026-10-12): what is not a registration index, or a listed version without a date, is refused, never read as empty or as undated
+    [InlineData("""{"versions": ["9.6.0"]}""", "not a registration index")]
+    [InlineData("""{"items": [{"count": 1}]}""", "neither its versions nor its address")]
+    [InlineData("""{"items": [{"items": [{"catalogEntry": {"version": "9.6.0", "listed": true}}]}]}""", "9.6.0 in the index is listed and gives no date it was published")]
+    [InlineData("""{"items": [{"items": [{"catalogEntry": {"version": "9.6.0", "published": "soon"}}]}]}""", "9.6.0 in the index is listed and gives no date it was published")]
+    [InlineData("""{"items": [{"items": [{"packageContent": "x"}]}]}""", "has no catalog entry naming it")]
+    [InlineData("not json", "not JSON")]
+    public void What_is_not_a_registration_index_is_refused(string json, string why)
+    {
+        Assert.False(new NuGetRegistration(RegistrationIndex, _ => json).TryRead(out _, out var failure));
+        Assert.Contains(why, failure);
+    }
+
+    [Fact] // ADR-0205 (2026-10-12): a page that cannot be read, or an address that cannot be reached, refuses the list
+    public void A_registration_page_that_cannot_be_read_is_refused()
+    {
+        var index = $$"""{"items": [{"@id": "{{AwayPage}}"}]}""";
+        Assert.False(new NuGetRegistration(RegistrationIndex, a => a == RegistrationIndex ? index : """{"count": 1}""").TryRead(out _, out var failure));
+        Assert.Contains($"{AwayPage} is not a registration page", failure);
+
+        Assert.False(new NuGetRegistration(RegistrationIndex, a => a == RegistrationIndex ? index : throw new HttpRequestException("the network is down")).TryRead(out _, out failure));
+        Assert.Equal("the network is down", failure);
     }
 
     [Fact] // ADR-0208: a glob that matches no file names nothing, and is refused as a path that names nothing is
@@ -481,7 +742,7 @@ public class ByHandTests
         var commit = repo.Write("verification/2026-10-12-windows-17/results.md", $"Verified commit: {recorded}")
             .Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row)).Commit();
 
-        var refusals = Check(repo, commit, commit, new Listed(Published)).Refusals;
+        var refusals = Check(repo, commit, commit, Listed.Dated(Published)).Refusals;
         Assert.Equal(2, refusals.Count);
         Assert.Contains("names :(glob)src/*.MudBlazor/**, which", refusals[0].Message);
         // With no Wrapper, the range its layer-2 runs cover cannot be read either.
@@ -669,12 +930,25 @@ public class ByHandTests
     }
 }
 
-/// <summary>A list of MudBlazor's published versions given to the check, as a test sets it.</summary>
-public sealed class Listed(IReadOnlyList<string> versions) : IPublishedVersions
+/// <summary>A list of MudBlazor's published versions and their dates given to the check, as a test sets it.</summary>
+public sealed class Listed(IReadOnlyList<PublishedVersion> versions) : IPublishedVersions
 {
+    public IReadOnlyList<PublishedVersion> Versions => versions;
+
+    /// <summary>These versions, each published at the date given with it.</summary>
+    public static Listed Dated(IEnumerable<(string Version, string Date)> listed) =>
+        new(listed.Select(v => new PublishedVersion(v.Version, DateTimeOffset.Parse(v.Date, System.Globalization.CultureInfo.InvariantCulture))).ToList());
+
+    /// <summary>These versions, each published a day before <paramref name="commit"/> was committed.</summary>
+    public static Listed Before(string commit, Repo repo, params string[] listed)
+    {
+        var at = repo.Git.CommitTime(commit).AddDays(-1);
+        return new(listed.Select(v => new PublishedVersion(v, at)).ToList());
+    }
+
     public string Source => "the test's list";
 
-    public bool TryRead(out IReadOnlyList<string> read, out string failure)
+    public bool TryRead(out IReadOnlyList<PublishedVersion> read, out string failure)
     {
         read = versions;
         failure = "";
@@ -687,7 +961,7 @@ public sealed class Unreadable : IPublishedVersions
 {
     public string Source => "the index";
 
-    public bool TryRead(out IReadOnlyList<string> read, out string failure)
+    public bool TryRead(out IReadOnlyList<PublishedVersion> read, out string failure)
     {
         read = [];
         failure = "the network is down";

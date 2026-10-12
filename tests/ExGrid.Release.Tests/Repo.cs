@@ -16,6 +16,9 @@ public sealed class Repo : IDisposable
 
     public Git Git { get; }
 
+    /// <summary>The date the next commits are made at, author's and committer's; the clock's when null.</summary>
+    public DateTimeOffset? Date { get; set; }
+
     public Repo()
     {
         Root = Path.Combine(Path.GetTempPath(), "exgrid-release-" + Guid.NewGuid().ToString("N"));
@@ -91,6 +94,11 @@ public sealed class Repo : IDisposable
         start.Environment["GIT_CONFIG_NOSYSTEM"] = "1";
         start.Environment["GIT_CONFIG_GLOBAL"] = Path.Combine(Root, ".git-global-config-none");
         start.Environment["GIT_TERMINAL_PROMPT"] = "0";
+        if (Date is { } date)
+        {
+            start.Environment["GIT_AUTHOR_DATE"] = date.ToString("yyyy-MM-ddTHH:mm:sszzz", System.Globalization.CultureInfo.InvariantCulture);
+            start.Environment["GIT_COMMITTER_DATE"] = start.Environment["GIT_AUTHOR_DATE"];
+        }
         using var process = Process.Start(start)!;
         var error = process.StandardError.ReadToEndAsync();
         var output = process.StandardOutput.ReadToEnd();
