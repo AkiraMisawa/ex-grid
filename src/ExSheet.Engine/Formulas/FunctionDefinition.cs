@@ -48,6 +48,6 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     /// <summary>For <c>RAND</c> and <c>RANDBETWEEN</c>: which of the Formula's draws this call is, counted in its text (ADR-0180).</summary>
     public int Place { get; init; }
 
-    /// <summary>Whether argument <paramref name="index"/> was given and not left empty.</summary>
-    public bool Has(int index) => index < arguments.Count && arguments[index] is not MissingNode;
+    /// <summary>Whether argument <paramref name="index"/> was given and not left empty (<see cref="MissingNode.IsEmpty"/>).</summary>
+    public bool Has(int index) => index < arguments.Count && !MissingNode.IsEmpty(arguments[index]);
 }
