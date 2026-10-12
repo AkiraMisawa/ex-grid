@@ -3262,7 +3262,7 @@
             // knows, and clamped as the new spacer will clamp it: the write is made only
             // over that (AnchorScrollTopAsync).
             _anchorFromScrollTopPx = Math.Clamp(_expectedScrollTopPx, 0, _geometry.MaxScrollTopPx);
-            _scrollTopPx = _geometry.ScrollTopAt(anchorContentPx);
+            _scrollTopPx = Math.Clamp(_geometry.ScrollTopAt(anchorContentPx), 0, _geometry.MaxScrollTopPx);
             _anchorScrollTopPx = _scrollTopPx;
         }
         var local = _geometry.SliceAt(_scrollTopPx);
