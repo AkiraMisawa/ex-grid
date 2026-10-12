@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, circuitQuiet } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { resolvedColour } from './pixels.mjs';
@@ -119,6 +119,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(focusFont).toHaveText('italic');
             await toolbarItem(page, 'Bold').click();
             await expect(focusFont).toHaveText('bold italic');
+            // That nothing widened is read once every round trip has landed (ADR-0056).
+            await circuitQuiet();
             await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
             expect(await width('E')).toBeCloseTo(standard, 0);
 
@@ -127,6 +129,7 @@ for (const chrome of ['builtin', 'mud']) {
                 await expect(focusFont).toHaveText(shown);
                 await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
                 await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
+                await circuitQuiet();
                 await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
                 expect(await width('F')).toBeCloseTo(sized, 0);
 
@@ -144,25 +147,29 @@ for (const chrome of ['builtin', 'mud']) {
         // The readings of 2026-10-12 (R6) pressed the Home tab's Bold, Italic and Underline over ####,
         // not Font Color, so that Excel's Font Color widens nothing is a reading. The Fill Colour face
         // widens nothing, as the fourteenth Windows run's Fill Colour button did not (case 7).
-        test(`ADR-0100/ADR-0071 (decided 2026-10-12): over #### the Font Colour face, a colour from its list and the Fill Colour face widen no column; Underline then widens the one at the standard width and leaves a sized one (${chrome})`, async ({ page }) => {
+        test(`ADR-0100/ADR-0071: over #### the Font Colour face and a colour from its list widen no column (decided 2026-10-12), nor does the Fill Colour face (the fourteenth run's case 7); Underline then widens the one at the standard width and leaves a sized one (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
             const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
 
             await toolbarItem(page, 'Font Colour').click();
             await expect.poll(() => inkOf(cell(grid, 'E1'))).toEqual([255, 0, 0]);
+            // That nothing widened is read once every round trip has landed (ADR-0056).
+            await circuitQuiet();
             await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
             expect(await width('E')).toBeCloseTo(standard, 0);
 
             await toolbarArrow(page, 'Font Colour').click();
             await page.locator('[role="menuitemradio"][aria-label="Blue"]').first().click();
             await expect.poll(() => inkOf(cell(grid, 'E1'))).toEqual([0x00, 0x70, 0xc0]);
+            await circuitQuiet();
             await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
             expect(await width('E')).toBeCloseTo(standard, 0);
 
             await expectKeyboardOn(grid);
             await toolbarItem(page, 'Fill Colour').click();
             await expect(cell(grid, 'E1')).toHaveCSS('background-color', 'rgb(255, 255, 0)');
+            await circuitQuiet();
             await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
             expect(await width('E')).toBeCloseTo(standard, 0);
             await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
@@ -173,6 +180,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('underline');
             await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
             await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
+            await circuitQuiet();
             await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
             expect(await width('F')).toBeCloseTo(sized, 0);
         });

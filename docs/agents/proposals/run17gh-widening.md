@@ -121,7 +121,8 @@ en-GB):
 - *(2026-10-12, decided with the user: `SetCellFormatAsync` widens as the formatting keys do, not as
   Format Cells' OK does.)*
   - It was decided from R6's `Range.Font` through COM. The day's first decision, from h7 before R6
-    was read, had `SetCellFormatAsync` widen as Format Cells' OK does. This one replaces it.
+    was read, had `SetCellFormatAsync` widen as Format Cells' OK does. This replaces that part of it;
+    the two rules above stand.
   - So a Number Format, underline or strikethrough set through it widens, and bold, italic or a
     Font colour does not.
 

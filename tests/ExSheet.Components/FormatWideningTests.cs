@@ -532,7 +532,7 @@ public class FormatWideningTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Theory] // ADR-0071, decided 2026-10-12: Format Cells' OK with a Fill, an alignment or a Border widens nothing over ####, as Excel's Fill tab and its Alignment tab's vertical alignment did not (the readings of 2026-10-12 (R6), case (2)); its Border tab did not over a General number shown rounded (the fourteenth run, case 9), so a Border over #### and the horizontal alignment set here are readings
+    [Theory] // ADR-0071: Format Cells' OK with a Fill or an alignment widens nothing over ####, as Excel's Fill tab and its Alignment tab's vertical alignment did not (the readings of 2026-10-12 (R6), case (2)); the horizontal alignment set here is a reading. A Border over #### is a reading too: Excel's Border tab was seen not to widen only over a General number shown rounded (the fourteenth run, case 9)
     [InlineData("Fill", "Yellow")]
     [InlineData("Alignment", "Center")]
     [InlineData("Border", "Outline")]
