@@ -59,6 +59,27 @@ public class RepositoryTests
             Assert.Contains(wrappers, f => f.StartsWith(wrapper, StringComparison.Ordinal) && f.EndsWith(".csproj", StringComparison.Ordinal));
     }
 
+    [Fact] // ADR-0205, ADR-0208 (2026-10-12): the release check can read the MudBlazor range each Wrapper declares, which WR-10's record is held to
+    public void The_Wrappers_MudBlazor_range_is_readable_by_the_release_check()
+    {
+        var report = new Report();
+        var declared = WrapperRange.Read(Tree, report, WrapperRange.Row);
+
+        Assert.True(report.Admitted, string.Join("\n", report.Refusals.Select(r => r.Message)));
+        Assert.Equal(
+            ["src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj", "src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj", "src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj"],
+            declared!.Select(d => d.Project).Order(StringComparer.Ordinal));
+    }
+
+    [Fact] // ADR-0208 (decided with the user, 2026-10-12): every record the index names is tagged verified/ followed by its directory's name
+    public void Every_record_is_tagged_for_its_directory()
+    {
+        var index = ByHand.ReadIndex(Tree, new Report())!;
+
+        Assert.All(index.Where(r => r.Record is not null), r => Assert.Equal(ByHand.TagFor(r.Record!.Path), r.Record!.Tag));
+        Assert.Equal("verified/2026-10-01-windows-browser-11", Assert.Single(index, r => r.Row == "SH-42").Record!.Tag);
+    }
+
     [Fact] // ADR-0208: a path that names nothing is a list nobody reviewed when its code moved
     public void Every_path_and_record_the_index_names_is_in_the_repository()
     {
@@ -93,6 +114,8 @@ public class RepositoryTests
 
         Assert.Contains("tools/release/ExGrid.Release -c Release -- admit", release);
         Assert.Contains("tools/release/ExGrid.Release -c Release -- gate", release);
+        // WR-10's record is held to the MudBlazor versions nuget.org lists (ADR-0205, ADR-0208, 2026-10-12).
+        Assert.Contains($"--mudblazor-index {WrapperRange.FlatContainer}", release);
         Assert.Contains("long: ${{ needs.admit.outputs.long == 'true' }}", release);
         Assert.Contains("if: needs.admit.outputs.site == 'true'", release);
         // A candidate's release opens with the candidate's note, any other prerelease's with the prerelease note (ADR-0190, 2026-10-12).

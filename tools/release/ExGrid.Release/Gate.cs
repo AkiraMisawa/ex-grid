@@ -16,9 +16,10 @@ public static class Gate
     /// <summary>
     /// Runs the checks <paramref name="version"/>'s kind needs against <paramref name="tagCommit"/>,
     /// saying every refusal. The rows checked by hand are judged against the signed-off commit X for a
-    /// stable version, and against the tagged commit for a candidate, which has no sign-off.
+    /// stable version, and against the tagged commit for a candidate, which has no sign-off; WR-10's record
+    /// is held besides to the MudBlazor versions <paramref name="mudBlazor"/> lists as published (2026-10-12).
     /// </summary>
-    public static void Run(Git git, TagVersion version, string tagCommit, Report report, bool fetchMissing = false)
+    public static void Run(Git git, TagVersion version, string tagCommit, Report report, bool fetchMissing = false, IPublishedVersions? mudBlazor = null)
     {
         if (!version.RehearsesStable)
         {
@@ -42,6 +43,6 @@ public static class Gate
         var target = signedOff ?? tagCommit;
         if (version.Kind == ReleaseKind.Stable && signedOff is null)
             report.Notice($"The notes name no signed-off commit this repository holds, so the rows checked by hand are judged against the tagged commit {tagCommit[..12]} instead.");
-        ByHand.Check(git, tag, target, report, fetchMissing);
+        ByHand.Check(git, tag, target, report, fetchMissing, mudBlazor);
     }
 }

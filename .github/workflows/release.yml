@@ -23,8 +23,9 @@
 #   documented without a written reason it cannot be asked (an oracleSkip that says why oracle.ps1
 #   cannot ask it; not "ask by keys", which oracle.ps1 -Keys asks, nor engineDiffersByDecision), and
 #   every row checked by hand holding on a record its code has not changed since, judged at the
-#   tagged commit, the record's commit fetched through its verified/* tag — and CI's long run, the
-#   soak and ST-1 at 10⁶ rows. Its notes carry a stable version's blocks, its Signed off block in a
+#   tagged commit, the record's commit fetched through its verified/* tag, named for the record's
+#   directory; WR-10's record naming every stable MudBlazor version nuget.org lists within the range
+#   the Wrappers declare — and CI's long run, the soak and ST-1 at 10⁶ rows. Its notes carry a stable version's blocks, its Signed off block in a
 #   pending form of its own that says the sign-off is being made against this candidate; ci.yml's
 #   build of the Docs Site reads them by form, and refuses the stable form there (ADR-0190,
 #   2026-10-12). The release check does not read its Signed off block. Its GitHub release is a
@@ -126,11 +127,18 @@ jobs:
       # twenty minutes (ADR-0205, ADR-0208): the sign-off and the structural check (a version without
       # a suffix only), the corpus check, and the rows checked by hand. Run even when the notes were
       # refused, so that one run names everything the tag still needs. A record's commit is read
-      # through the verified/* tag its run pushed; one this clone lacks is asked of the remote, and a
-      # tag the remote does not have refuses the tag as unchecked (ADR-0208, 2026-10-12).
+      # through the verified/* tag its run pushed, verified/ followed by the record's directory; one
+      # this clone lacks is asked of the remote, and a tag the remote does not have refuses the tag as
+      # unchecked (ADR-0208, 2026-10-12). WR-10's record names the MudBlazor versions its layer-2 runs
+      # covered; nuget.org's flat-container index lists those published, and each stable one within the
+      # range the Wrappers' projects declare that the record does not name refuses the tag, as does an
+      # index that cannot be read (ADR-0205, ADR-0208, 2026-10-12). The runner reaches nuget.org.
       - name: The stable path's checks
         if: ${{ !cancelled() && steps.admit.outcome == 'success' && steps.admit.outputs.kind != 'prerelease' }}
-        run: dotnet run --project tools/release/ExGrid.Release -c Release -- gate --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --fetch-missing
+        run: >-
+          dotnet run --project tools/release/ExGrid.Release -c Release -- gate
+          --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --fetch-missing
+          --mudblazor-index https://api.nuget.org/v3-flatcontainer/mudblazor/index.json
 
   verify:
     name: Every layer, and the packages

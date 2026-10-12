@@ -3,8 +3,11 @@ using System.Text.Json;
 
 namespace ExGrid.Release.Tests;
 
-/// <summary>A row of a fixture's record index and table, and the <c>verified/*</c> tag its record names.</summary>
-public sealed record Row(string Name, string Where, string[] Paths, (string Commit, string Path, string Verdict)? Record = null, string Tag = Fixture.RunTag);
+/// <summary>
+/// A row of a fixture's record index and table, the <c>verified/*</c> tag its record names, and, for WR-10, the
+/// MudBlazor versions its record's layer-2 runs covered.
+/// </summary>
+public sealed record Row(string Name, string Where, string[] Paths, (string Commit, string Path, string Verdict)? Record = null, string Tag = Fixture.RunTag, string[]? Versions = null);
 
 /// <summary>The files a fixture repository holds, written as the release check reads them.</summary>
 public static class Fixture
@@ -13,7 +16,13 @@ public static class Fixture
 
     public const string Results = "verification/2026-11-02-windows/results.md";
 
-    /// <summary>The tag a fixture's run puts on the commit it verified (ADR-0208, 2026-10-12).</summary>
+    /// <summary>The directory a fixture's run records in.</summary>
+    public const string RunDirectory = "verification/2026-10-12-windows-17";
+
+    /// <summary>
+    /// The tag a fixture's run puts on the commit it verified: <c>verified/</c> followed by the name of its
+    /// record's directory (ADR-0208, 2026-10-12).
+    /// </summary>
     public const string RunTag = "verified/2026-10-12-windows-17";
 
     /// <summary>A record index naming these rows.</summary>
@@ -27,11 +36,28 @@ public static class Fixture
                 row = r.Name,
                 where = r.Where,
                 paths = r.Paths,
-                record = r.Record is { } held ? new { commit = held.Commit, tag = r.Tag, path = held.Path, verdict = held.Verdict } : null,
+                record = r.Record is { } held ? Record(held, r.Tag, r.Versions) : null,
             }),
         };
         return JsonSerializer.Serialize(json, new JsonSerializerOptions { WriteIndented = true });
     }
+
+    private static Dictionary<string, object> Record((string Commit, string Path, string Verdict) held, string tag, string[]? versions)
+    {
+        var record = new Dictionary<string, object> { ["commit"] = held.Commit, ["tag"] = tag, ["path"] = held.Path, ["verdict"] = held.Verdict };
+        if (versions is not null) record["versions"] = versions;
+        return record;
+    }
+
+    /// <summary>A Wrapper's project declaring MudBlazor at <paramref name="range"/>, as the Wrappers do.</summary>
+    public static string WrapperProject(string range) =>
+        $"""
+        <Project Sdk="Microsoft.NET.Sdk.Razor">
+          <ItemGroup>
+            <PackageReference Include="MudBlazor" Version="{range}" />
+          </ItemGroup>
+        </Project>
+        """;
 
     /// <summary>A Markdown file holding the table of these rows under its heading, as the Definition of Done would.</summary>
     public static string Table(params Row[] rows)
@@ -87,9 +113,9 @@ public static class Fixture
             .Write($"{Corpus}/abs.json", Cases(("ABS-001", "observed", null, null), ("ABS-002", "documented", "Excel cannot be asked this through COM", null)));
         var coded = repo.Commit("Code");
         var held = row ?? new Row("VZ-14", "Windows", ["src/Code/"]);
-        held = held with { Record = held.Record ?? (coded, "verification/2026-10-12-windows-17/report.md", "pass") };
+        held = held with { Record = held.Record ?? (coded, $"{RunDirectory}/report.md", "pass") };
         repo.Tag(held.Tag, held.Record!.Value.Commit);
-        repo.Write("verification/2026-10-12-windows-17/report.md", $"Verified commit: `{coded[..7]}`")
+        repo.Write($"{RunDirectory}/report.md", $"Verified commit: `{coded[..7]}`")
             .Write("verification/by-hand.json", Index(held))
             .Write("docs/definition-of-done.md", Table(held));
         return repo.Commit("Records the row");

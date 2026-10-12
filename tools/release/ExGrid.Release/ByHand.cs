@@ -5,9 +5,11 @@ namespace ExGrid.Release;
 
 /// <summary>
 /// The latest record of a row checked by hand: the commit it was made at; the <c>verified/*</c> tag its run
-/// put on that commit, through which the release workflow fetches it; the file that holds it; and its verdict.
+/// put on that commit, <c>verified/</c> followed by the name of the record's directory under
+/// <c>verification/</c>, through which the release workflow fetches it; the file that holds it; its verdict;
+/// and, on WR-10's record only, the MudBlazor versions its layer-2 runs covered.
 /// </summary>
-public sealed record ByHandRecord(string Commit, string Tag, string Path, string Verdict);
+public sealed record ByHandRecord(string Commit, string Tag, string Path, string Verdict, IReadOnlyList<string>? Versions = null);
 
 /// <summary>
 /// A row the Definition of Done checks by hand, where it is checked, the paths whose change could
@@ -29,10 +31,15 @@ public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> P
 /// <c>verification/by-hand.json</c>, which this check reads, beside each row's latest record.
 /// <para>A record names the commit its run verified and the <c>verified/*</c> tag the run put on it, and
 /// the commit is fetched through that tag: a squash merge or a deleted branch cannot take it away, and a
-/// commit that cannot be fetched refuses the tag as unchecked, never lets it pass (2026-10-12). WR-10's
-/// floor run, an automated run a person makes once and its record carries forward, is indexed beside the
-/// rows, with its paths written as a <c>:(glob)</c> pattern where a directory name varies (ADR-0205's note
-/// of 2026-10-12).</para>
+/// commit that cannot be fetched refuses the tag as unchecked, never lets it pass (2026-10-12). The tag is
+/// <c>verified/</c> followed by the name of the record's directory under <c>verification/</c>, and nothing
+/// else, one tag per record directory, whatever the platform or the run's purpose (decided with the user,
+/// 2026-10-12): <c>verification/2026-10-01-windows-browser-11/keys.md</c> is tagged
+/// <c>verified/2026-10-01-windows-browser-11</c>. WR-10's floor run, an automated run a person makes once
+/// and its record carries forward, is indexed beside the rows, with its paths written as a <c>:(glob)</c>
+/// pattern where a directory name varies (ADR-0205's note of 2026-10-12); its record names the MudBlazor
+/// versions its layer-2 runs covered, and a stable version published within the Wrappers' declared range
+/// that it does not name refuses the tag (<see cref="WrapperRange"/>, 2026-10-12).</para>
 /// </summary>
 public static partial class ByHand
 {
@@ -42,13 +49,22 @@ public static partial class ByHand
     /// <summary>The verdicts a record may carry. Only a pass lets a row hold.</summary>
     public static readonly IReadOnlyList<string> Verdicts = ["pass", "fail", "not run"];
 
+    /// <summary>How a record's tag is named, as a refusal says it (ADR-0208, decided with the user on 2026-10-12).</summary>
+    public const string TagRule = "'verified/' followed by the name of the record's directory under verification/, and nothing else";
+
     /// <summary>
-    /// How a record's tag is named: <c>verified/&lt;date&gt;-windows-&lt;NN&gt;</c> for a numbered Windows run,
-    /// <c>verified/&lt;date&gt;-windows-&lt;name&gt;</c> for an area or readings pass, and likewise on another
-    /// platform, as <c>verified/2026-11-02-macos-kb3</c>: the date the run began, in lower case, words joined
-    /// by hyphens.
+    /// The tag a record at <paramref name="recordPath"/> is kept by: <c>verified/</c> followed by the first
+    /// path segment under <c>verification/</c>, the record's directory, as
+    /// <c>verification/2026-10-01-windows-15/report.md</c> is tagged <c>verified/2026-10-01-windows-15</c>;
+    /// null when the path is not a file in a directory under <c>verification/</c>.
     /// </summary>
-    public const string TagForm = "verified/<date>-<platform>-<NN or name>, as verified/2026-10-11-windows-17";
+    public static string? TagFor(string recordPath)
+    {
+        var parts = recordPath.Split('/');
+        return parts.Length >= 3 && parts[0] == "verification" && parts[1].Length > 0 && parts[^1].Length > 0
+            ? $"verified/{parts[1]}"
+            : null;
+    }
 
     /// <summary>Reads the record index, refusing what is malformed; null when it cannot be read at all.</summary>
     public static IReadOnlyList<ByHandRow>? ReadIndex(ISourceTree tree, Report report)
@@ -116,21 +132,25 @@ public static partial class ByHand
                     var at = Text(held, "path") ?? "";
                     var verdict = Text(held, "verdict") ?? "";
                     var good = true;
+                    var expected = IsPath(at) ? TagFor(at) : null;
                     if (!FullCommit().IsMatch(commit))
                     {
                         report.Refuse($"{name}'s record in {IndexPath} names its commit as '{commit}'. Write the commit the record was made at in full, forty hex digits.", IndexPath);
                         good = false;
                     }
-                    if (!VerifiedTag().IsMatch(tag))
+                    if (tag.Length == 0)
                     {
-                        report.Refuse(tag.Length == 0
-                            ? $"{name}'s record in {IndexPath} names no 'tag'. A run tags the commit it verified, {TagForm}, and pushes the tag; the record names it, and the release workflow fetches the commit through it (ADR-0208, 2026-10-12)."
-                            : $"{name}'s record in {IndexPath} names the tag '{tag}', and a run's tag is {TagForm} (ADR-0208, 2026-10-12).", IndexPath);
+                        report.Refuse($"{name}'s record in {IndexPath} names no 'tag'. A run tags the commit it verified with {TagRule}{(expected is null ? "" : $", here {expected}")}, and pushes the tag; the record names it, and the release workflow fetches the commit through it (ADR-0208, 2026-10-12).", IndexPath);
                         good = false;
                     }
-                    if (!at.StartsWith("verification/", StringComparison.Ordinal) || !IsPath(at) || at.EndsWith('/'))
+                    else if (expected is not null && tag != expected)
                     {
-                        report.Refuse($"{name}'s record in {IndexPath} is '{at}', and a record is a file under verification/.", IndexPath);
+                        report.Refuse($"{name}'s record in {IndexPath} is {at} and names the tag '{tag}'. A record's tag is {TagRule}: {expected}, one tag for each record directory (ADR-0208, 2026-10-12).", IndexPath);
+                        good = false;
+                    }
+                    if (expected is null || at.EndsWith('/'))
+                    {
+                        report.Refuse($"{name}'s record in {IndexPath} is '{at}', and a record is a file in its run's directory under verification/, whose name its tag carries.", IndexPath);
                         good = false;
                     }
                     if (!Verdicts.Contains(verdict))
@@ -138,7 +158,14 @@ public static partial class ByHand
                         report.Refuse($"{name}'s record in {IndexPath} has the verdict '{verdict}', and a verdict is one of {string.Join(", ", Verdicts)}.", IndexPath);
                         good = false;
                     }
-                    if (good) record = new ByHandRecord(commit, tag, at, verdict);
+                    IReadOnlyList<string>? versions = null;
+                    if (row == WrapperRange.Row)
+                    {
+                        // Decided with the user on 2026-10-12: the record names the MudBlazor versions its layer-2 runs covered.
+                        versions = Versions(held, name, report);
+                        if (versions is null) good = false;
+                    }
+                    if (good) record = new ByHandRecord(commit, tag, at, verdict, versions);
                 }
                 else if (held.ValueKind != JsonValueKind.Null)
                 {
@@ -156,9 +183,12 @@ public static partial class ByHand
     /// <summary>
     /// Refuses the tag unless every row checked by hand holds at <paramref name="target"/>: the commit
     /// being signed off for a stable version, the tagged commit for a release candidate. The index and
-    /// the table are read from <paramref name="tree"/>, the tag's.
+    /// the table are read from <paramref name="tree"/>, the tag's. WR-10's record, once it otherwise holds,
+    /// is held besides to the MudBlazor versions <paramref name="mudBlazor"/> lists as published within the
+    /// range the Wrappers declare at <paramref name="target"/>; with no list, or one that cannot be read, it is
+    /// refused as unchecked.
     /// </summary>
-    public static void Check(Git git, ISourceTree tree, string target, Report report, bool fetchMissing)
+    public static void Check(Git git, ISourceTree tree, string target, Report report, bool fetchMissing, IPublishedVersions? mudBlazor = null)
     {
         var refusedBefore = report.Refusals.Count;
         var index = ReadIndex(tree, report);
@@ -216,6 +246,17 @@ public static partial class ByHand
                 report.Refuse($"{row.Name}: the code it covers changed between its record ({record.Path}, made at {commit[..12]}) and {target[..12]}: {shown}. Run it again at the commit to be signed off, and record it (ADR-0208).", IndexPath);
                 toRun.Add(row.Name);
                 continue;
+            }
+            if (row.Row == WrapperRange.Row)
+            {
+                // A MudBlazor version published after the floor record asks for the layer-2 runs at it (2026-10-12).
+                var unrun = WrapperRange.Check(row, targetTree, mudBlazor, report);
+                if (unrun is null) continue;
+                if (unrun.Count > 0)
+                {
+                    toRun.Add($"{row.Name}'s layer-2 runs at {WrapperRange.Package} {string.Join(", ", unrun)}");
+                    continue;
+                }
             }
             holding.Add(row.Name);
         }
@@ -280,14 +321,35 @@ public static partial class ByHand
         : path.EndsWith('/') ? tree.IsDirectory(path)
         : tree.IsFile(path);
 
+    // WR-10's 'versions': the stable MudBlazor versions its layer-2 runs covered, at least one.
+    private static IReadOnlyList<string>? Versions(JsonElement held, string name, Report report)
+    {
+        if (!held.TryGetProperty("versions", out var list) || list.ValueKind != JsonValueKind.Array || list.GetArrayLength() == 0)
+        {
+            report.Refuse($"{name}'s record in {IndexPath} names no 'versions'. Its record names the {WrapperRange.Package} versions its layer-2 runs covered, as [\"9.6.0\", \"9.7.0\"], and a stable version published within the Wrappers' declared range that it does not name refuses the tag (ADR-0205, ADR-0208, 2026-10-12).", IndexPath);
+            return null;
+        }
+        var versions = new List<string>();
+        var good = true;
+        foreach (var item in list.EnumerateArray())
+        {
+            var value = item.ValueKind == JsonValueKind.String ? item.GetString()! : item.ToString();
+            if (item.ValueKind != JsonValueKind.String || PackageVersion.Parse(value) is not { IsStable: true })
+            {
+                report.Refuse($"{name}'s record in {IndexPath} names '{value}' among its 'versions', and each is a stable {WrapperRange.Package} version its layer-2 runs covered, as 9.6.0.", IndexPath);
+                good = false;
+                continue;
+            }
+            versions.Add(value);
+        }
+        return good ? versions : null;
+    }
+
     private static string? Text(JsonElement item, string name) =>
         item.ValueKind == JsonValueKind.Object && item.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     [GeneratedRegex(@"^[0-9a-f]{40}$", RegexOptions.CultureInvariant)]
     private static partial Regex FullCommit();
-
-    [GeneratedRegex(@"^verified/[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant)]
-    private static partial Regex VerifiedTag();
 }
 
 /// <summary>

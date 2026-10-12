@@ -18,8 +18,9 @@ would mislead a reader.
 *(Added 2026-10-12, decided with the user: the table
 [ADR-0208](adr/0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md)
 of 2026-10-11 asks for, written with the release workflow's check, and what that check reads, confirmed the
-same day: FN-12e as two rows, a record's commit kept fetchable by a tag, and WR-10's floor run indexed beside
-the rows.)* Each row a person checks, where it is checked, and the paths whose change could change its result.
+same day: FN-12e as two rows, a record's commit kept fetchable by a tag named for the record's directory, and
+WR-10's floor run indexed beside the rows.)* Each row a person checks, where it is checked, and the paths whose
+change could change its result.
 
 - **A row's latest record holds while its paths are unchanged.** That means unchanged between the
   commit the record was made at and the commit being signed off, or, for a release candidate, the
@@ -30,13 +31,19 @@ the rows.)* Each row a person checks, where it is checked, and the paths whose c
   - the row has no record;
   - its latest record is not a pass;
   - its record does not name the commit the index gives it;
+  - the record's tag is not `verified/` followed by the name of the record's directory;
   - that commit cannot be fetched through the record's tag, or the tag names another commit, so whether
     its paths changed cannot be checked;
-  - a path names nothing.
+  - a path names nothing;
+  - for WR-10, a stable MudBlazor version nuget.org lists within the range the Wrappers declare is not among
+    the versions its record's layer-2 runs covered, or that list cannot be read *(2026-10-12, how the
+    release workflow checks the WR-10 row's note below; nuget.org gives no dates, so a version published
+    after X is asked for as well)*.
 - **The records are indexed in `verification/by-hand.json`.** For each row it names the same paths as
-  this table, the row's latest record, the commit that record was made at, and the record's tag. A
-  layer-1 test (`tests/ExGrid.Release.Tests`) fails when the two differ, and the release workflow refuses
-  a tag where they do.
+  this table, the row's latest record, the commit that record was made at, and the record's tag; for
+  WR-10, besides, the MudBlazor versions its layer-2 runs covered. A layer-1 test
+  (`tests/ExGrid.Release.Tests`) fails when the index and the table differ, and the release workflow
+  refuses a tag where they do.
 
 **The paths are drawn wide** (ADR-0208). A row names whole files, and a directory where its behaviour
 crosses several:
@@ -54,12 +61,15 @@ every file below each Wrapper.
 
 **A run that records a row** writes its record under `verification/`, in a directory named for the run, as
 `verification/2026-10-11-windows-17/`, naming the commit it verified in full or by seven digits or more. It
-tags that commit: `verified/<date>-windows-<NN>` for a numbered Windows run, `verified/<date>-windows-<name>`
-for an area or readings pass, and likewise for a run on another platform, as `verified/2026-11-02-macos-kb3`.
-The session that made the run pushes the tag, which is never moved, so a squash merge or a deleted branch
-cannot take the commit away. In the same commit as the record, it replaces the row's record in
-`verification/by-hand.json`, naming the commit, the tag, the file and the verdict. The release workflow
-fetches the commit through the tag.
+tags that commit `verified/` followed by the name of that directory *(2026-10-12, decided with the user: the
+tag is `verified/` followed by the name of the record's directory under `verification/`, and nothing else, one
+tag for each record directory, whatever the platform or the run's purpose; a record whose tag is not exactly
+that is refused)*: `verification/2026-10-01-windows-browser-11/keys.md` is tagged
+`verified/2026-10-01-windows-browser-11`, and a later `verification/2026-11-02-macos-kb3/`,
+`verified/2026-11-02-macos-kb3`. The session that made the run pushes the tag, which is never moved, so a squash
+merge or a deleted branch cannot take the commit away. In the same commit as the record, it replaces the row's
+record in `verification/by-hand.json`, naming the commit, the tag, the file and the verdict. The release
+workflow fetches the commit through the tag.
 
 **FN-12e is two rows.** On Windows it keeps the measurement as well as the painting while
 `tests/GlyphWidths` holds no `system-ui.windows.json`, so that its MUST, the widest glyph measured on each
@@ -86,4 +96,4 @@ row's and refuses a tag whose Wrappers or demo pages changed since the run.
 | **KB-3** | macOS | Layer 3 on a Mac, where `ControlOrMeta` presses Command: Cmd+Enter fills, on every key path, the editor's included | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Cells/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid.MudBlazor/`, `src/ExSheet/Components/`, `src/ExSheet/SheetFormatKeys.cs`, `src/ExSheet/SheetStructureKeys.cs`, `src/ExSheet/Toolbar/`, `src/ExSheet.MudBlazor/`, `tests/ExGrid.Browser/` |
 | **VZ-18** | the Citrix PC | Ctrl+↓, Ctrl+↑ and PageDown on the Docs Site's blotter paint the rows they reveal, without a further scroll | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExGrid/GridMetrics.cs`, `src/ExGrid/ViewportBox.cs`, `src/ExGrid/ViewportGeometry.cs`, `src/ExGrid/ViewportSize.cs`, `src/ExGrid.MudBlazor/`, `samples/ExGrid.Docs/Examples/Grid/Blotter/`, `samples/ExGrid.Docs/Showcases/Blotter.razor` |
 | **§21.11** | Windows | Where DOM focus is after ↓, → and ↓ ↓ on `/sheet`, with and without a Focus. Read under NVDA, under Narrator, and with neither, on Chrome and Edge | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
-| **WR-10** | Windows or Linux | Step 4's floor run: the layer-3 tests that run under a Wrapper, against a DemoHost built with the MudBlazor every Wrapper declares as its floor, on both hosts, in Chrome and in Edge; and beside it each Wrapper's layer-2 suite at every published version of its declared range | `:(glob)src/*.MudBlazor/**`, `samples/ExGrid.DemoPages/` |
+| **WR-10** | Windows or Linux | Step 4's floor run: the layer-3 tests that run under a Wrapper, against a DemoHost built with the MudBlazor every Wrapper declares as its floor, on both hosts, in Chrome and in Edge; and beside it each Wrapper's layer-2 suite at every published version of its declared range. *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only; the floor run, layer 3 at 9.6.0, holds while its paths are unchanged.)* | `:(glob)src/*.MudBlazor/**`, `samples/ExGrid.DemoPages/` |

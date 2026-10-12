@@ -4,11 +4,46 @@ namespace ExGrid.Release.Tests;
 
 public class ByHandTests
 {
-    private static Report Check(Repo repo, string tag, string target)
+    private static Report Check(Repo repo, string tag, string target, IPublishedVersions? mudBlazor = null)
     {
         var report = new Report();
-        ByHand.Check(repo.Git, new CommitTree(repo.Git, tag), target, report, fetchMissing: false);
+        ByHand.Check(repo.Git, new CommitTree(repo.Git, tag), target, report, fetchMissing: false, mudBlazor);
         return report;
+    }
+
+    /// <summary>MudBlazor 9.0.0 to 9.11.0 and the prereleases around them, as nuget.org listed them on 2026-10-12.</summary>
+    private static readonly string[] Published =
+        ["8.15.0", "9.0.0-preview.1", "9.0.0-preview.2", "9.0.0-rc.1", "9.0.0", "9.1.0", "9.2.0", "9.3.0", "9.4.0", "9.5.0", "9.6.0", "9.7.0", "9.8.0", "9.9.0", "9.10.0", "9.11.0"];
+
+    /// <summary>The versions a floor record of 2026-10-12 would name: every published one of [9.6.0,10.0.0).</summary>
+    private static readonly string[] Covered = ["9.6.0", "9.7.0", "9.8.0", "9.9.0", "9.10.0", "9.11.0"];
+
+    private const string FloorTag = "verified/2026-11-02-linux-mudblazor-floor";
+
+    /// <summary>An index of WR-10 alone, its record written as given.</summary>
+    private static string Wr10Index(string record) =>
+        "{\"rows\": [{\"row\": \"WR-10\", \"where\": \"Windows or Linux\", \"paths\": [\"src/\"], \"record\": " + record + "}]}";
+
+    private const string FloorRecord = "verification/2026-11-02-linux-mudblazor-floor/results.md";
+
+    /// <summary>
+    /// A repository whose three Wrappers declare <paramref name="ranges"/> (one for all, or one each), and
+    /// whose WR-10 row is recorded at the commit their code was last changed, naming <paramref name="versions"/>.
+    /// Returns the commit that indexes it.
+    /// </summary>
+    private static string FloorRecorded(Repo repo, string[] versions, params string[] ranges)
+    {
+        var wrappers = new[] { "ExGrid.MudBlazor", "ExSheet.MudBlazor", "ExPivot.MudBlazor" };
+        for (var i = 0; i < wrappers.Length; i++)
+            repo.Write($"src/{wrappers[i]}/{wrappers[i]}.csproj", Fixture.WrapperProject(ranges[Math.Min(i, ranges.Length - 1)]));
+        var recorded = repo.Write("samples/ExGrid.DemoPages/Pages/SheetPage.razor", "page").Commit("The Wrappers");
+        repo.Tag(FloorTag, recorded);
+        var row = new Row("WR-10", "Windows or Linux", [":(glob)src/*.MudBlazor/**", "samples/ExGrid.DemoPages/"],
+            (recorded, FloorRecord, "pass"), FloorTag, versions);
+        return repo.Write(FloorRecord, $"Verified commit: `{recorded}`")
+            .Write("verification/by-hand.json", Fixture.Index(row))
+            .Write("docs/definition-of-done.md", Fixture.Table(row))
+            .Commit("The floor record");
     }
 
     [Fact] // ADR-0208: a row's record holds while the code it covers is unchanged since
@@ -64,9 +99,9 @@ public class ByHandTests
         using var repo = new Repo();
         repo.Write("src/Code/a.cs", "a").Write("src/Code/sub/b.cs", "b").Write("src/CodeX/c.cs", "c").Write("src/one.cs", "1").Write("src/one.cs.bak", "x");
         var recorded = repo.Commit();
-        var row = new Row("VZ-14", "Windows", ["src/Code/", "src/one.cs"], (recorded, "verification/r/report.md", "pass"));
+        var row = new Row("VZ-14", "Windows", ["src/Code/", "src/one.cs"], (recorded, "verification/2026-10-12-windows-17/report.md", "pass"));
         repo.Tag(Fixture.RunTag, recorded);
-        repo.Write("verification/r/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        repo.Write("verification/2026-10-12-windows-17/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var indexed = repo.Commit();
         Assert.Empty(Check(repo, indexed, indexed).Refusals);
 
@@ -98,8 +133,8 @@ public class ByHandTests
     {
         using var repo = new Repo();
         var recorded = repo.Write("src/Code/a.cs", "a").Commit();
-        var row = new Row("ED-30", "Windows", ["src/Code/"], (recorded, "verification/r/report.md", verdict));
-        repo.Write("verification/r/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        var row = new Row("ED-30", "Windows", ["src/Code/"], (recorded, "verification/2026-10-12-windows-17/report.md", verdict));
+        repo.Write("verification/2026-10-12-windows-17/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var commit = repo.Commit();
 
         Assert.Contains($"reads '{verdict}', and a row holds only on a pass", Assert.Single(Check(repo, commit, commit).Refusals).Message);
@@ -110,8 +145,8 @@ public class ByHandTests
     {
         using var repo = new Repo();
         repo.Write("src/Code/a.cs", "a");
-        var row = new Row("VZ-14", "Windows", ["src/Code/"], (new string('c', 40), "verification/r/report.md", "pass"));
-        repo.Write("verification/r/report.md", $"Verified commit: {new string('c', 40)}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        var row = new Row("VZ-14", "Windows", ["src/Code/"], (new string('c', 40), "verification/2026-10-12-windows-17/report.md", "pass"));
+        repo.Write("verification/2026-10-12-windows-17/report.md", $"Verified commit: {new string('c', 40)}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var commit = repo.Commit();
 
         var refusal = Assert.Single(Check(repo, commit, commit).Refusals).Message;
@@ -126,8 +161,8 @@ public class ByHandTests
         var recorded = repo.Write("src/Code/a.cs", "a").Commit();
         var later = repo.Write("src/Code/a.cs", "a, later").Commit();
         repo.Tag(Fixture.RunTag, later);
-        var row = new Row("VZ-14", "Windows", ["src/Code/"], (recorded, "verification/r/report.md", "pass"));
-        repo.Write("verification/r/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        var row = new Row("VZ-14", "Windows", ["src/Code/"], (recorded, "verification/2026-10-12-windows-17/report.md", "pass"));
+        repo.Write("verification/2026-10-12-windows-17/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var commit = repo.Commit();
 
         var refusal = Assert.Single(Check(repo, commit, commit).Refusals).Message;
@@ -173,8 +208,8 @@ public class ByHandTests
     {
         using var origin = new Repo();
         var verified = origin.Write("src/Code/a.cs", "a").Commit("Code");
-        var row = new Row("VZ-14", "Windows", ["src/Code/"], (verified, "verification/r/report.md", "pass"), "verified/2026-11-02-windows-18");
-        var tagged = origin.Write("verification/r/report.md", $"Verified commit: {verified}")
+        var row = new Row("VZ-14", "Windows", ["src/Code/"], (verified, "verification/2026-11-02-windows-18/report.md", "pass"), "verified/2026-11-02-windows-18");
+        var tagged = origin.Write("verification/2026-11-02-windows-18/report.md", $"Verified commit: {verified}")
             .Write("verification/by-hand.json", Fixture.Index(row))
             .Write("docs/definition-of-done.md", Fixture.Table(row))
             .Commit("Records the row; its run never pushed its tag");
@@ -197,33 +232,243 @@ public class ByHandTests
             .Write("src/ExGrid.MudBlazor/MudCellEditor.razor", "editor")
             .Write("src/ExSheet.MudBlazor/Toolbar/MudToolbar.razor", "toolbar")
             .Write("src/ExPivot.MudBlazor/MudPivotChrome.cs", "pivot")
+            .Write("src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj", Fixture.WrapperProject("[9.6.0,10.0.0)"))
+            .Write("src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj", Fixture.WrapperProject("[9.6.0,10.0.0)"))
+            .Write("src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj", Fixture.WrapperProject("[9.6.0,10.0.0)"))
             .Write("samples/ExGrid.DemoPages/Pages/SheetPage.razor", "page")
             .Write("samples/ExGrid.DemoHost/Program.cs", "host")
             .Commit("Code");
-        repo.Tag("verified/2026-11-02-linux-mudblazor-floor", recorded);
+        repo.Tag(FloorTag, recorded);
         var row = new Row("WR-10", "Windows or Linux", [":(glob)src/*.MudBlazor/**", "samples/ExGrid.DemoPages/"],
-            (recorded, "verification/2026-11-02-linux-mudblazor-floor/results.md", "pass"), "verified/2026-11-02-linux-mudblazor-floor");
-        var indexed = repo.Write("verification/2026-11-02-linux-mudblazor-floor/results.md", $"Verified commit: `{recorded}`")
+            (recorded, FloorRecord, "pass"), FloorTag, Covered);
+        var indexed = repo.Write(FloorRecord, $"Verified commit: `{recorded}`")
             .Write("verification/by-hand.json", Fixture.Index(row))
             .Write("docs/definition-of-done.md", Fixture.Table(row))
             .Commit("The floor record");
-        Assert.Empty(Check(repo, indexed, indexed).Refusals);
+        var published = new Listed(Published);
+        Assert.Empty(Check(repo, indexed, indexed, published).Refusals);
 
         var core = repo.Write("src/ExGrid/Grid.cs", "core, changed").Write("samples/ExGrid.DemoHost/Program.cs", "host, changed").Commit("Neither a Wrapper nor a demo page");
-        Assert.Empty(Check(repo, core, core).Refusals);
+        Assert.Empty(Check(repo, core, core, published).Refusals);
 
         var nested = repo.Write("src/ExSheet.MudBlazor/Toolbar/MudToolbar.razor", "toolbar, changed").Commit("A Wrapper, two directories down");
-        var wrapper = Assert.Single(Check(repo, nested, nested).Refusals).Message;
+        var wrapper = Assert.Single(Check(repo, nested, nested, published).Refusals).Message;
         Assert.Contains("WR-10 on Windows or Linux: the code it covers changed", wrapper);
         Assert.Contains("src/ExSheet.MudBlazor/Toolbar/MudToolbar.razor", wrapper);
 
         var page = repo.Write("src/ExSheet.MudBlazor/Toolbar/MudToolbar.razor", "toolbar")
             .Write("samples/ExGrid.DemoPages/Pages/SheetPage.razor", "page, changed").Commit("A demo page");
-        Assert.Contains("samples/ExGrid.DemoPages/Pages/SheetPage.razor", Assert.Single(Check(repo, page, page).Refusals).Message);
+        Assert.Contains("samples/ExGrid.DemoPages/Pages/SheetPage.razor", Assert.Single(Check(repo, page, page, published).Refusals).Message);
 
         var added = repo.Write("samples/ExGrid.DemoPages/Pages/SheetPage.razor", "page")
             .Write("src/ExPivot.MudBlazor/New.cs", "a new Wrapper file").Commit("A file added to a Wrapper");
-        Assert.Contains("src/ExPivot.MudBlazor/New.cs", Assert.Single(Check(repo, added, added).Refusals).Message);
+        Assert.Contains("src/ExPivot.MudBlazor/New.cs", Assert.Single(Check(repo, added, added, published).Refusals).Message);
+    }
+
+    [Fact] // ADR-0208 (decided with the user, 2026-10-12): a record's tag is verified/ followed by its directory's name, so a tag naming another directory is refused
+    public void A_tag_that_names_another_directory_is_refused()
+    {
+        using var repo = new Repo();
+        var verified = repo.Write("src/Code/a.cs", "a").Commit();
+        // The eleventh run's Part B was recorded in its own directory; its run number alone is not its tag.
+        repo.Tag("verified/2026-10-01-windows-11", verified);
+        var row = new Row("SH-42", "Windows", ["src/Code/"], (verified, "verification/2026-10-01-windows-browser-11/keys.md", "pass"), "verified/2026-10-01-windows-11");
+        var commit = repo.Write("verification/2026-10-01-windows-browser-11/keys.md", $"Verified commit: `{verified}`")
+            .Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row)).Commit();
+
+        var report = Check(repo, commit, commit);
+
+        var refusal = Assert.Single(report.Refusals, r => r.Message.Contains("names the tag"));
+        Assert.Contains("SH-42 on Windows's record in verification/by-hand.json is verification/2026-10-01-windows-browser-11/keys.md and names the tag 'verified/2026-10-01-windows-11'", refusal.Message);
+        Assert.Contains("'verified/' followed by the name of the record's directory under verification/, and nothing else: verified/2026-10-01-windows-browser-11", refusal.Message);
+        Assert.Contains("(ADR-0208, 2026-10-12)", refusal.Message);
+        Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
+    }
+
+    [Theory] // ADR-0208 (decided with the user, 2026-10-12): a tag that is exactly verified/ and its record's directory holds, whatever the platform or the run's purpose
+    [InlineData("verification/2026-10-01-windows-browser-11/keys.md", "verified/2026-10-01-windows-browser-11")]
+    [InlineData("verification/2026-10-01-windows-15/report.md", "verified/2026-10-01-windows-15")]
+    [InlineData("verification/2026-11-02-macos-kb3/part-a/keys.md", "verified/2026-11-02-macos-kb3")]
+    public void A_tag_named_for_its_record_directory_holds(string record, string tag)
+    {
+        Assert.Equal(tag, ByHand.TagFor(record));
+        using var repo = new Repo();
+        var verified = repo.Write("src/Code/a.cs", "a").Commit();
+        repo.Tag(tag, verified);
+        var row = new Row("SH-42", "Windows", ["src/Code/"], (verified, record, "pass"), tag);
+        var commit = repo.Write(record, $"Verified commit: `{verified}`")
+            .Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row)).Commit();
+
+        var report = Check(repo, commit, commit);
+
+        Assert.Empty(report.Refusals);
+        Assert.Contains(report.Notices, n => n.Contains("Holding on their records, their code unchanged since: SH-42 on Windows"));
+    }
+
+    [Theory] // ADR-0208 (2026-10-12): a record is a file in its run's directory, whose name its tag carries
+    [InlineData("verification/keys.md")]
+    [InlineData("verification//keys.md")]
+    [InlineData("docs/2026-10-01-windows-15/keys.md")]
+    public void A_record_outside_a_run_directory_is_refused(string record)
+    {
+        Assert.Null(ByHand.TagFor(record));
+        using var repo = new Repo();
+        var held = "{\"commit\": \"" + new string('a', 40) + "\", \"tag\": \"verified/2026-10-01-windows-15\", \"path\": \"" + record + "\", \"verdict\": \"pass\"}";
+        var commit = repo.Write(ByHand.IndexPath, Wr10Index(held).Replace("WR-10", "SH-42").Replace("Windows or Linux", "Windows")).Commit();
+
+        var report = new Report();
+        ByHand.ReadIndex(new CommitTree(repo.Git, commit), report);
+
+        Assert.Contains("a record is a file in its run's directory under verification/", Assert.Single(report.Refusals).Message);
+    }
+
+    [Fact] // ADR-0205, ADR-0208 (decided with the user, 2026-10-12): WR-10 holds while its record names every stable MudBlazor published within the Wrappers' range
+    public void WR_10_holds_on_a_record_that_names_every_published_version_of_the_range()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)");
+
+        // Below the floor, above the range, and the prereleases are not asked for.
+        var report = Check(repo, commit, commit, new Listed([.. Published, "9.12.0-preview.1", "10.0.0", "10.1.0"]));
+
+        Assert.Empty(report.Refusals);
+        Assert.Contains(report.Notices, n => n.Contains("Holding on their records, their code unchanged since: WR-10 on Windows or Linux"));
+    }
+
+    [Fact] // ADR-0205, ADR-0208 (decided with the user, 2026-10-12): a 9.x published after the floor record asks for the layer-2 runs at it, and the tag is refused naming it
+    public void WR_10_is_refused_naming_each_version_published_after_its_record()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)");
+
+        var report = Check(repo, commit, commit, new Listed([.. Published, "9.12.0", "9.13.0-rc.1", "9.13.0", "10.0.0"]));
+
+        var refusal = Assert.Single(report.Refusals).Message;
+        Assert.Contains("WR-10 on Windows or Linux: MudBlazor 9.12.0, 9.13.0, published within the range the Wrappers declare ([9.6.0,10.0.0)), are not among the versions its record's layer-2 runs covered (9.6.0, 9.7.0, 9.8.0, 9.9.0, 9.10.0, 9.11.0)", refusal);
+        Assert.Contains("asks for each Wrapper's layer-2 suite at that version only", refusal);
+        Assert.Contains("the floor run holds while its paths are unchanged", refusal);
+        Assert.DoesNotContain("10.0.0,", refusal);
+        Assert.Contains(report.Notices, n => n.Contains("To run by hand at") && n.Contains("WR-10 on Windows or Linux's layer-2 runs at MudBlazor 9.12.0, 9.13.0"));
+        Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
+    }
+
+    [Fact] // ADR-0205, ADR-0208 (2026-10-12): a list of published versions that cannot be read refuses the tag as unchecked, never lets WR-10 hold
+    public void WR_10_is_refused_when_the_published_versions_cannot_be_read()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)");
+
+        var unread = Check(repo, commit, commit, new Unreadable());
+        var refusal = Assert.Single(unread.Refusals).Message;
+        Assert.Contains("MudBlazor's published versions could not be read from the index (the network is down)", refusal);
+        Assert.Contains("refused as unchecked", refusal);
+        Assert.DoesNotContain(unread.Notices, n => n.Contains("Holding on their records") || n.Contains("Every row checked by hand holds"));
+
+        var none = Check(repo, commit, commit);
+        Assert.Contains("no list of MudBlazor's published versions was given", Assert.Single(none.Refusals).Message);
+    }
+
+    [Fact] // ADR-0205, ADR-0208 (2026-10-12): WR-10's record names the versions its layer-2 runs covered, each a stable version
+    public void WR_10_s_record_names_stable_versions()
+    {
+        using var repo = new Repo();
+        var record = "{\"commit\": \"" + new string('a', 40) + "\", \"tag\": \"" + FloorTag + "\", \"path\": \"" + FloorRecord + "\", \"verdict\": \"pass\"";
+        var missing = repo.Write(ByHand.IndexPath, Wr10Index(record + "}")).Commit();
+        var report = new Report();
+        Assert.Null(Assert.Single(ByHand.ReadIndex(new CommitTree(repo.Git, missing), report)!).Record);
+        Assert.Contains("WR-10 on Windows or Linux's record in verification/by-hand.json names no 'versions'", Assert.Single(report.Refusals).Message);
+
+        var prerelease = repo.Write(ByHand.IndexPath, Wr10Index(record + ", \"versions\": [\"9.6.0\", \"9.12.0-preview.1\", 9.7]}")).Commit();
+        report = new Report();
+        ByHand.ReadIndex(new CommitTree(repo.Git, prerelease), report);
+        Assert.Equal(2, report.Refusals.Count);
+        Assert.Contains("names '9.12.0-preview.1' among its 'versions'", report.Refusals[0].Message);
+        Assert.Contains("names '9.7' among its 'versions'", report.Refusals[1].Message);
+
+        var named = repo.Write(ByHand.IndexPath, Wr10Index(record + ", \"versions\": [\"9.6.0\", \"9.7.0\"]}")).Commit();
+        report = new Report();
+        Assert.Equal(["9.6.0", "9.7.0"], Assert.Single(ByHand.ReadIndex(new CommitTree(repo.Git, named), report)!).Record!.Versions);
+        Assert.Empty(report.Refusals);
+    }
+
+    [Fact] // ADR-0205 (2026-10-12): the range is read from every Wrapper's project, and a version inside any of them is asked for
+    public void WR_10_reads_the_range_every_Wrapper_declares()
+    {
+        using var repo = new Repo();
+        // One Wrapper still declaring the floor alone, 9.0.0 and above, asks for 9.0.0 to 9.5.0 and MudBlazor 10 too.
+        var commit = FloorRecorded(repo, Covered, "9.0.0", "[9.6.0,10.0.0)");
+
+        var refusal = Assert.Single(Check(repo, commit, commit, new Listed([.. Published, "10.0.0"])).Refusals).Message;
+
+        Assert.Contains("MudBlazor 9.0.0, 9.1.0, 9.2.0, 9.3.0, 9.4.0, 9.5.0, 10.0.0, published within the range the Wrappers declare (9.0.0, [9.6.0,10.0.0))", refusal);
+    }
+
+    [Fact] // ADR-0205 (2026-10-12): a Wrapper whose MudBlazor range cannot be read refuses the tag, never lets WR-10 hold on a guess
+    public void A_Wrapper_whose_range_cannot_be_read_is_refused()
+    {
+        using var repo = new Repo();
+        var commit = FloorRecorded(repo, Covered, "[9.6.0,10.0.0)", "[9.6.0,10.0.0)", "9.*");
+
+        var refusal = Assert.Single(Check(repo, commit, commit, new Listed(Published)).Refusals);
+
+        Assert.Contains("src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj declares MudBlazor '9.*', which this check cannot read as a range", refusal.Message);
+        Assert.Equal("src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj", refusal.File);
+    }
+
+    [Theory] // ADR-0205 (2026-10-12): a Wrapper's MudBlazor version is read as NuGet reads a range
+    [InlineData("9.0.0", "8.15.0", false)]
+    [InlineData("9.0.0", "9.0.0", true)]
+    [InlineData("9.0.0", "10.0.0", true)]
+    [InlineData("[9.6.0,10.0.0)", "9.5.0", false)]
+    [InlineData("[9.6.0,10.0.0)", "9.6.0", true)]
+    [InlineData("[9.6.0,10.0.0)", "9.6", true)]
+    [InlineData("[9.6.0, 10.0.0)", "9.11.0", true)]
+    [InlineData("[9.6.0,10.0.0)", "10.0.0", false)]
+    [InlineData("[9.6.0,10.0.0)", "10.0.0-preview.1", true)]
+    [InlineData("(9.6.0,10.0.0]", "9.6.0", false)]
+    [InlineData("(9.6.0,10.0.0]", "10.0.0", true)]
+    [InlineData("(,10.0.0)", "1.0.0", true)]
+    [InlineData("[9.6.0,)", "42.0.0", true)]
+    [InlineData("[9.6.0]", "9.6.0", true)]
+    [InlineData("[9.6.0]", "9.6.1", false)]
+    public void A_range_contains_what_NuGet_would_take(string range, string version, bool inside) =>
+        Assert.Equal(inside, VersionRange.Parse(range)!.Contains(PackageVersion.Parse(version)!));
+
+    [Theory] // ADR-0205 (2026-10-12): what is not a range is not read as one
+    [InlineData("")]
+    [InlineData("9.*")]
+    [InlineData("[9.6.0")]
+    [InlineData("(9.6.0)")]
+    [InlineData("[9.6.0)")]
+    [InlineData("[,]")]
+    [InlineData("[9.6.0,10.0.0,11.0.0)")]
+    [InlineData("nine")]
+    public void What_is_not_a_range_is_not_read(string range) => Assert.Null(VersionRange.Parse(range));
+
+    [Fact] // ADR-0205 (2026-10-12): nuget.org's flat-container index is read as it is written; a copy that is not one is refused, never read as empty
+    public void A_flat_container_index_is_read_and_one_that_is_not_is_refused()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "exgrid-release-index-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var saved = Path.Combine(directory, "index.json");
+            File.WriteAllText(saved, """{"versions": ["9.0.0-rc.1", "9.0.0", "9.11.0"]}""");
+            Assert.True(new NuGetFlatContainer(saved).TryRead(out var versions, out _));
+            Assert.Equal(["9.0.0-rc.1", "9.0.0", "9.11.0"], versions);
+
+            var wrong = Path.Combine(directory, "wrong.json");
+            File.WriteAllText(wrong, """{"items": []}""");
+            Assert.False(new NuGetFlatContainer(wrong).TryRead(out _, out var why));
+            Assert.Contains("not a flat-container index", why);
+
+            Assert.False(new NuGetFlatContainer(Path.Combine(directory, "absent.json")).TryRead(out _, out why));
+            Assert.NotEmpty(why);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
     }
 
     [Fact] // ADR-0208: a glob that matches no file names nothing, and is refused as a path that names nothing is
@@ -232,11 +477,15 @@ public class ByHandTests
         using var repo = new Repo();
         var recorded = repo.Write("src/ExGrid/Grid.cs", "core").Commit();
         repo.Tag(Fixture.RunTag, recorded);
-        var row = new Row("WR-10", "Windows or Linux", [":(glob)src/*.MudBlazor/**", "src/ExGrid/"], (recorded, "verification/r/results.md", "pass"));
-        var commit = repo.Write("verification/r/results.md", $"Verified commit: {recorded}")
+        var row = new Row("WR-10", "Windows or Linux", [":(glob)src/*.MudBlazor/**", "src/ExGrid/"], (recorded, "verification/2026-10-12-windows-17/results.md", "pass"), Versions: Covered);
+        var commit = repo.Write("verification/2026-10-12-windows-17/results.md", $"Verified commit: {recorded}")
             .Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row)).Commit();
 
-        Assert.Contains("names :(glob)src/*.MudBlazor/**, which", Assert.Single(Check(repo, commit, commit).Refusals).Message);
+        var refusals = Check(repo, commit, commit, new Listed(Published)).Refusals;
+        Assert.Equal(2, refusals.Count);
+        Assert.Contains("names :(glob)src/*.MudBlazor/**, which", refusals[0].Message);
+        // With no Wrapper, the range its layer-2 runs cover cannot be read either.
+        Assert.Contains("has no Wrapper project", refusals[1].Message);
     }
 
     [Fact] // ADR-0208: the record the index names is at the tag
@@ -245,11 +494,11 @@ public class ByHandTests
         using var repo = new Repo();
         var recorded = repo.Write("src/Code/a.cs", "a").Commit();
         repo.Tag(Fixture.RunTag, recorded);
-        var row = new Row("VZ-14", "Windows", ["src/Code/"], (recorded, "verification/r/report.md", "pass"));
+        var row = new Row("VZ-14", "Windows", ["src/Code/"], (recorded, "verification/2026-10-12-windows-17/report.md", "pass"));
         repo.Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var commit = repo.Commit();
 
-        Assert.Contains("verification/r/report.md, is not at the tag", Assert.Single(Check(repo, commit, commit).Refusals).Message);
+        Assert.Contains("verification/2026-10-12-windows-17/report.md, is not at the tag", Assert.Single(Check(repo, commit, commit).Refusals).Message);
     }
 
     [Fact] // ADR-0208: a record names the commit it verified, so a slip in the index cannot move a row's baseline
@@ -259,13 +508,13 @@ public class ByHandTests
         var verified = repo.Write("src/Code/a.cs", "a").Commit();
         var recorded = repo.Write("src/Code/a.cs", "a, later").Commit();
         repo.Tag(Fixture.RunTag, recorded);
-        var row = new Row("VZ-14", "Windows", ["src/Code/"], (recorded, "verification/r/report.md", "pass"));
-        repo.Write("verification/r/report.md", $"Verified commit: `{verified[..7]}`").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        var row = new Row("VZ-14", "Windows", ["src/Code/"], (recorded, "verification/2026-10-12-windows-17/report.md", "pass"));
+        repo.Write("verification/2026-10-12-windows-17/report.md", $"Verified commit: `{verified[..7]}`").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var commit = repo.Commit();
 
         var refusal = Assert.Single(Check(repo, commit, commit).Refusals);
         Assert.Contains($"does not name the commit {recorded[..12]}", refusal.Message);
-        Assert.Equal("verification/r/report.md", refusal.File);
+        Assert.Equal("verification/2026-10-12-windows-17/report.md", refusal.File);
     }
 
     [Fact] // ADR-0208: a path that names nothing is a list that was not reviewed when its code moved
@@ -275,8 +524,8 @@ public class ByHandTests
         repo.Write("src/Code/a.cs", "a").Write("src/Moved/b.cs", "b");
         var recorded = repo.Commit();
         repo.Tag(Fixture.RunTag, recorded);
-        var row = new Row("VZ-14", "Windows", ["src/Code/", "src/Gone/", "src/Code/a.cs/", "src/Moved"], (recorded, "verification/r/report.md", "pass"));
-        repo.Write("verification/r/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
+        var row = new Row("VZ-14", "Windows", ["src/Code/", "src/Gone/", "src/Code/a.cs/", "src/Moved"], (recorded, "verification/2026-10-12-windows-17/report.md", "pass"));
+        repo.Write("verification/2026-10-12-windows-17/report.md", $"Verified commit: {recorded}").Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row));
         var commit = repo.Commit();
 
         var refusal = Assert.Single(Check(repo, commit, commit).Refusals);
@@ -300,10 +549,10 @@ public class ByHandTests
         using var repo = new Repo();
         var recorded = repo.Write("src/Code/a.cs", "a").Write("src/Other/b.cs", "b").Commit();
         repo.Tag(Fixture.RunTag, recorded);
-        var indexed = new Row("VZ-14", "Windows", ["src/Code/"], (recorded, "verification/r/report.md", "pass"));
+        var indexed = new Row("VZ-14", "Windows", ["src/Code/"], (recorded, "verification/2026-10-12-windows-17/report.md", "pass"));
         var listed = new Row("VZ-14", "Windows", ["src/Code/", "src/Other/"]);
         var onlyListed = new Row("KB-3", "macOS", ["src/Code/"]);
-        repo.Write("verification/r/report.md", $"Verified commit: {recorded}")
+        repo.Write("verification/2026-10-12-windows-17/report.md", $"Verified commit: {recorded}")
             .Write("verification/by-hand.json", Fixture.Index(indexed))
             .Write("docs/definition-of-done.md", Fixture.Table(listed, onlyListed));
         var commit = repo.Commit();
@@ -375,12 +624,12 @@ public class ByHandTests
     [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["../src/"], "record": null}]}""", "which is not a path from the repository's root")]
     [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": [], "record": null}]}""", "names no paths")]
     [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"]}]}""", "has no 'record'")]
-    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "1655299", "tag": "verified/2026-10-01-windows-15", "path": "verification/a/r.md", "verdict": "pass"}}]}""", "Write the commit the record was made at in full")]
-    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "tag": "verified/2026-10-01-windows-15", "path": "docs/r.md", "verdict": "pass"}}]}""", "a record is a file under verification/")]
-    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "tag": "verified/2026-10-01-windows-15", "path": "verification/a/r.md", "verdict": "passed"}}]}""", "has the verdict 'passed'")]
-    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "path": "verification/a/r.md", "verdict": "pass"}}]}""", "names no 'tag'. A run tags the commit it verified")]
-    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "tag": "windows-15", "path": "verification/a/r.md", "verdict": "pass"}}]}""", "names the tag 'windows-15', and a run's tag is verified/<date>-<platform>-<NN or name>")]
-    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "tag": "verified/2026-10-01-Windows-15", "path": "verification/a/r.md", "verdict": "pass"}}]}""", "names the tag 'verified/2026-10-01-Windows-15'")]
+    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "1655299", "tag": "verified/2026-10-01-windows-15", "path": "verification/2026-10-01-windows-15/r.md", "verdict": "pass"}}]}""", "Write the commit the record was made at in full")]
+    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "tag": "verified/2026-10-01-windows-15", "path": "docs/r.md", "verdict": "pass"}}]}""", "a record is a file in its run's directory under verification/")]
+    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "tag": "verified/2026-10-01-windows-15", "path": "verification/2026-10-01-windows-15/r.md", "verdict": "passed"}}]}""", "has the verdict 'passed'")]
+    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "path": "verification/2026-10-01-windows-15/r.md", "verdict": "pass"}}]}""", "names no 'tag'. A run tags the commit it verified")]
+    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "tag": "windows-15", "path": "verification/2026-10-01-windows-15/r.md", "verdict": "pass"}}]}""", "names the tag 'windows-15'. A record's tag is 'verified/' followed by the name of the record's directory under verification/, and nothing else: verified/2026-10-01-windows-15")]
+    [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "tag": "verified/2026-10-01-Windows-15", "path": "verification/2026-10-01-windows-15/r.md", "verdict": "pass"}}]}""", "names the tag 'verified/2026-10-01-Windows-15'")]
     [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": null}, {"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": null}]}""", "is written twice")]
     [InlineData("""{"rows": [{"row": "VZ-14", "paths": ["src/"], "record": null}]}""", "does not say which row it is and where")]
     [InlineData("""{"records": []}""", "holds no 'rows' array")]
@@ -417,5 +666,31 @@ public class ByHandTests
         var commit = repo.Write("README.md", "r").Commit();
 
         Assert.Contains("has no verification/by-hand.json", Assert.Single(Check(repo, commit, commit).Refusals).Message);
+    }
+}
+
+/// <summary>A list of MudBlazor's published versions given to the check, as a test sets it.</summary>
+public sealed class Listed(IReadOnlyList<string> versions) : IPublishedVersions
+{
+    public string Source => "the test's list";
+
+    public bool TryRead(out IReadOnlyList<string> read, out string failure)
+    {
+        read = versions;
+        failure = "";
+        return true;
+    }
+}
+
+/// <summary>A list that cannot be read, as nuget.org is when the network is down.</summary>
+public sealed class Unreadable : IPublishedVersions
+{
+    public string Source => "the index";
+
+    public bool TryRead(out IReadOnlyList<string> read, out string failure)
+    {
+        read = [];
+        failure = "the network is down";
+        return false;
     }
 }
